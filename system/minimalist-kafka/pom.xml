@@ -108,6 +108,21 @@
             </exclusions>
         </dependency>
 
+        <!-- Confluent Protobuf serializer/deserializer (same role again, for the Protobuf wire format).
+             It brings com.google.protobuf:protobuf-java + kafka-protobuf-provider (ProtobufSchema) so we
+             can build/read DynamicMessage. Exclude the transitive kafka-clients to keep our pinned version. -->
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-protobuf-serializer</artifactId>
+            <version>${confluent.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-clients</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- Embedded Kafka (real KRaft broker) for integration tests. -->
         <dependency>
             <groupId>org.apache.kafka</groupId>

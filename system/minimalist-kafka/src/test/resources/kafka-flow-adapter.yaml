@@ -19,3 +19,8 @@ consumer:
     flow: 'schema-sink-flow'
     group: 'avro-test-group'
     schema.enabled: true
+  # Protobuf variant: a third schema-enabled binding into the same sink flow.
+  - topic: 'protobuf-test-topic'
+    flow: 'schema-sink-flow'
+    group: 'protobuf-test-group'
+    schema.enabled: true

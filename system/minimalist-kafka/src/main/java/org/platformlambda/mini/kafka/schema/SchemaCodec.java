@@ -23,6 +23,7 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchemaProvider;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
@@ -49,9 +50,9 @@ import java.util.Map;
  * looks up the registered schema's {@code schemaType}, and dispatches to the matching deserializer.</p>
  *
  * <p>Each {@link SchemaType} is handled by a {@link SchemaSerde} kept in {@link #serdes}; this codec just
- * picks one (by the {@code schema-type} header on produce, by the registered type on consume). JSON and Avro
- * are wired; Protobuf throws clearly until its phase. The shared {@link SchemaRegistryClient} is a
- * {@link FileCachedSchemaRegistryClient}, so schema lookups by id are cached on disk (TTL-bounded).</p>
+ * picks one (by the {@code schema-type} header on produce, by the registered type on consume). JSON, Avro,
+ * and Protobuf are wired. The shared {@link SchemaRegistryClient} is a {@link FileCachedSchemaRegistryClient},
+ * so schema lookups by id are cached on disk (TTL-bounded).</p>
  */
 public class SchemaCodec {
     private static final Logger log = LoggerFactory.getLogger(SchemaCodec.class);
@@ -95,11 +96,13 @@ public class SchemaCodec {
         Map<String, Object> srConfig = new HashMap<>();
         srConfig.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
         SchemaRegistryClient client = new FileCachedSchemaRegistryClient(List.of(registryUrl),
-                IDENTITY_MAP_CAPACITY, List.of(new JsonSchemaProvider(), new AvroSchemaProvider()),
+                IDENTITY_MAP_CAPACITY,
+                List.of(new JsonSchemaProvider(), new AvroSchemaProvider(), new ProtobufSchemaProvider()),
                 srConfig, cacheDir, ttlMillis);
         Map<SchemaType, SchemaSerde> serdes = new EnumMap<>(SchemaType.class);
         serdes.put(SchemaType.JSON, new JsonSchemaSerde(client, registryUrl));
         serdes.put(SchemaType.AVRO, new AvroSchemaSerde(client, registryUrl));
+        serdes.put(SchemaType.PROTOBUF, new ProtobufSchemaSerde(client, registryUrl));
         log.info("Schema codec ready (registry={}, cache={}, ttlMs={}, types={})",
                 registryUrl, cacheDir, ttlMillis, serdes.keySet());
         return new SchemaCodec(client, serdes);

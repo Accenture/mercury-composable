@@ -24,6 +24,7 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchema;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
+import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchema;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,8 +45,8 @@ import java.util.Map;
  *
  * <p>The directory + TTL come from {@code application.properties} ({@code schema.registry.data.store}-style:
  * {@code schema.registry.cache.dir}, {@code schema.registry.cache.ttl}). The Confluent serdes call
- * {@code getSchemaById} through this client, so they transparently benefit. JSON and Avro schemas are
- * reconstructed from the cache; any other type simply falls through to the registry (still correct).</p>
+ * {@code getSchemaById} through this client, so they transparently benefit. JSON, Avro, and Protobuf schemas
+ * are reconstructed from the cache; any other type simply falls through to the registry (still correct).</p>
  */
 public class FileCachedSchemaRegistryClient extends CachedSchemaRegistryClient {
     private static final Logger log = LoggerFactory.getLogger(FileCachedSchemaRegistryClient.class);
@@ -95,12 +96,15 @@ public class FileCachedSchemaRegistryClient extends CachedSchemaRegistryClient {
                     .readValue(Files.readString(file), Map.class);
             String type = String.valueOf(entry.get(SCHEMA_TYPE));
             String schema = String.valueOf(entry.get(SCHEMA));
-            // Reconstruct the cached JSON/Avro schema; an unknown type falls through to the registry.
+            // Reconstruct the cached JSON/Avro/Protobuf schema; an unknown type falls through to the registry.
             if (SchemaType.JSON.name().equals(type)) {
                 return new JsonSchema(schema);
             }
             if (SchemaType.AVRO.name().equals(type)) {
                 return new AvroSchema(schema);
+            }
+            if (SchemaType.PROTOBUF.name().equals(type)) {
+                return new ProtobufSchema(schema);
             }
             return null;
         } catch (IOException | RuntimeException e) {
