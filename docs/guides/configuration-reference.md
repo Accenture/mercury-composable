@@ -273,6 +273,9 @@ Kafka. See the [Kafka Flow Adapter guide](kafka-flow-adapter.md). The inbound ad
 | `kafka.flow.max.retries` | `int` | `3` | Retry attempts on a flow-processing failure before dead-lettering. |
 | `kafka.flow.retry.backoff.ms` | `long` (ms) | `500` | Pause between retry attempts. |
 | `kafka.flow.dlq.suffix` | `String` | `.dlq` | Suffix appended to a source topic to form its per-topic dead-letter topic (`<topic><suffix>`). A blank value falls back to `.dlq`. |
+| `schema.registry.url` | `String` (URL) | — | Confluent Schema Registry URL. Unset = schema features off (raw `byte[]`); set to enable the [Schema Registry integration](kafka-flow-adapter.md#schema) (JSON Schema / Avro / Protobuf). |
+| `schema.registry.cache.dir` | `String` (path) | `/tmp/schema-registry-cache` | On-disk cache of schemas fetched by id; cleared at startup (rebuildable). |
+| `schema.registry.cache.ttl` | duration | `24h` | Time-to-live for a cached schema entry before it is refreshed from the registry. |
 
 The Kafka **connection and security** settings (`bootstrap.servers`, `security.protocol`, `sasl.*`, `ssl.*`,
 `acks`, `auto.offset.reset`) live in the `kafka-producer.properties` / `kafka-consumer.properties` template
@@ -282,8 +285,10 @@ defaults to `${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}`. The library pins the (d
 consumer's `enable.auto.commit=false` / `max.poll.records=1`; everything else is template-owned.
 
 Per-binding fields in `kafka-flow-adapter.yaml` (all `${ENV_VAR:default}`-substitutable): `topic` (required),
-`flow` (required), `group` (optional consumer group, used verbatim; default `kafka-flow-adapter.<topic>`), and
-`partition` (optional; pins one partition via manual assignment).
+`flow` (required), `group` (optional consumer group, used verbatim; default `kafka-flow-adapter.<topic>`),
+`partition` (optional; pins one partition via manual assignment), and `schema.enabled` (optional `boolean`,
+default `false`; when `true`, decode the Confluent-framed value to a `Map` before routing — see the
+[Schema Registry integration](kafka-flow-adapter.md#schema)).
 
 ---
 

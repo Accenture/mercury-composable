@@ -6,7 +6,8 @@ summary: The opt-in minimalist-kafka library — route Kafka topics into Event S
 layer: operate
 audience: [developer, ai-agent]
 keywords: [kafka, flow adapter, minimalist-kafka, consumer, producer, dead letter queue, dlq, partition,
-  consumer group, kafka-flow-adapter.yaml, simple.kafka.notification, at-least-once, traceparent]
+  consumer group, kafka-flow-adapter.yaml, simple.kafka.notification, at-least-once, traceparent,
+  schema registry, confluent, avro, protobuf, json schema, schema-id, schema-type, schema.enabled]
 ---
 
 # Kafka Flow Adapter
@@ -68,6 +69,7 @@ consumer:
 | `flow` | yes | Event Script flow id each message is routed into. |
 | `group` | no | Consumer group id (see [consumer group](#group)). Defaults to `kafka-flow-adapter.<topic>`. |
 | `partition` | no | Pins a single partition (see [partition pinning](#pinning)). Omit for group-managed assignment. |
+| `schema.enabled` | no | When `true`, decode the Confluent-framed value into a `Map` before routing it into the flow (see [Schema Registry](#schema)). Default `false` (raw `byte[]`). |
 
 The file is read by `ConfigReader`, so **every value supports `${ENV_VAR:default}` substitution** — e.g.
 `group: '${KAFKA_CONSUMER_GROUP:sales-order-group}'`. A malformed entry (missing `topic`/`flow`, non-map)
@@ -107,7 +109,8 @@ parameters its contract depends on and lets the template own everything else:
 | Connection / security | — | `bootstrap.servers`, `security.protocol`, `sasl.*`, `ssl.*`, `acks` |
 
 `bootstrap.servers` is template-only via `${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}`. The byte[] wire
-contract keeps the building blocks serializer-free; richer encodings (e.g. a Schema Registry) layer on top.
+contract keeps the building blocks serializer-free; richer encodings layer on top via the
+[Schema Registry integration](#schema) (JSON Schema / Avro / Protobuf), opt-in per binding.
 
 ## Reliability: at-least-once, retry, and dead-letter {#reliability}
 
@@ -158,12 +161,89 @@ po.send(new EventEnvelope().setTo("simple.kafka.notification")
 Publishing is **drop-n-forget** (Kafka's commit log is the durable buffer), but async delivery failures are
 logged rather than silently masked.
 
+Two optional headers opt a publish into the Confluent wire format instead of raw `byte[]`: `schema-id` and
+`schema-type` (see [Schema Registry](#schema)). They are encoding directives — consumed by the function, not
+forwarded as Kafka headers.
+
 ### Trace continuity across Kafka {#tracing}
 
 Rather than forwarding the caller's stale `traceparent`, the notification function stamps a **fresh** W3C
 `traceparent` from its own current span; the adapter parses it on the way in and chains the flow onto that
 span. The result is one continuous distributed trace across the asynchronous Kafka boundary — the two
 notification hops are the bridge spans. See [Observability](observability.md).
+
+## Schema Registry: typed payloads (opt-in) {#schema}
+
+The default wire contract is raw `byte[]`, which keeps the building blocks serializer-free. To interoperate
+with existing Confluent client projects, the library can also speak the **Confluent Schema Registry wire
+format** — `[magic 0x00][4-byte global schema id][payload]` — using Confluent's *own* serializers as a
+library (not a reinvented codec). **JSON Schema, Avro, and Protobuf** are supported.
+
+Set `schema.registry.url` to turn the feature on (point it at a real Confluent registry or the local
+[`schema-registry-standalone`](schema-registry-mock.md) mock). When it is unset, schema features stay off and
+the library keeps its raw `byte[]` behavior.
+
+```properties
+schema.registry.url=${SCHEMA_REGISTRY_URL:http://127.0.0.1:8081}
+schema.registry.cache.dir=/tmp/schema-registry-cache   # on-disk schema cache (by id)
+schema.registry.cache.ttl=24h
+```
+
+### Produce: id-driven, no subject or naming strategy {#schema-produce}
+
+`simple.kafka.notification` serializes the body into the wire format when you supply two headers:
+
+| Header | Description |
+|--------|-------------|
+| `schema-id` | The **global** schema id to serialize with. The schema must be **pre-registered**; the producer fetches it by id (`GET /schemas/ids/{id}`) and never registers. |
+| `schema-type` | `JSON`, `AVRO`, or `PROTOBUF`. Selects the serializer. Defaults to `JSON`. |
+
+```yaml
+# in a flow task that publishes via simple.kafka.notification
+input:
+  - 'text(orders) -> header.topic'
+  - 'text(AVRO) -> header.schema-type'
+  - 'text(42) -> header.schema-id'
+  - 'model.payload -> *'        # the body: a Map / JSON document
+process: 'simple.kafka.notification'
+```
+
+The Confluent wire format carries only the global id, never the subject — so being **id-driven** makes the
+producer **subject-naming-strategy agnostic** (TopicName / RecordName / TopicRecordName are all supported by
+construction, and a topic can carry many record types). Whoever registers the schema — CI, a client project,
+an admin tool — owns the strategy. This assumes schemas are **governed artifacts registered out-of-band**, as
+they are in practice; the producer never auto-registers.
+
+### Consume: decode by embedded id {#schema-consume}
+
+Set `schema.enabled: true` on a consumer binding. The adapter reads the magic byte + embedded id, looks up
+the registered schema's type, dispatches to the matching deserializer, and hands the flow a **`Map`** as
+`input.body` (instead of `byte[]`). No flow-YAML change is needed (`input.body -> *` is type-neutral); a
+schema-fed flow task simply takes `Map<String,Object>` instead of `byte[]`.
+
+```yaml
+consumer:
+  - topic: 'orders'
+    flow: 'process-order'
+    group: 'order-group'
+    schema.enabled: true
+```
+
+A **decode failure is a poison message** (retrying won't help), so the raw record is dead-lettered
+immediately via the [DLQ path](#reliability) rather than retried.
+
+### Notes {#schema-notes}
+
+- **One id-driven path, three formats.** The producer and consumer are type-generic; only the `schema-type`
+  header (and the registered schema) differ. JSON Schema is *open* (`additionalProperties`), while Avro and
+  Protobuf records are *closed-shape* — a message must match the declared fields, and a non-schema field is
+  dropped on the wire. Avro applies declared field defaults for absent fields; Protobuf relies on proto3
+  implicit defaults. Avro/Protobuf decode to generic records (no generated classes), rendered to a `Map`.
+- **Schema cache.** Lookups by id are cached on disk under `schema.registry.cache.dir` (TTL
+  `schema.registry.cache.ttl`) to cut registry round-trips and tolerate a brief registry outage. The cache is
+  rebuildable, so it is **cleared at startup** — a schema changed between runs is never served stale.
+- **Worked example.** The [sync-over-async demo](sync-over-async.md) runs the same end-to-end flow over all
+  three formats (`json-topic-1/2`, `avro-topic-1/2`, `protobuf-topic-1/2`) alongside the raw `byte[]` path.
 
 ## Configuration keys {#config}
 
@@ -179,10 +259,14 @@ The essentials:
 | `kafka.flow.max.retries` | `3` | Retry attempts before dead-lettering. |
 | `kafka.flow.retry.backoff.ms` | `500` | Pause between retry attempts. |
 | `kafka.flow.dlq.suffix` | `.dlq` | Suffix appended to the source topic to form its DLQ. |
+| `schema.registry.url` | — | Confluent Schema Registry URL; unset = [schema features](#schema) off (raw `byte[]`). |
+| `schema.registry.cache.dir` | `/tmp/schema-registry-cache` | On-disk schema cache (by id); cleared at startup. |
+| `schema.registry.cache.ttl` | `24h` | Time-to-live for a cached schema entry. |
 
 ## See also
 
 - [Sync-over-Async](sync-over-async.md) — cross-pod synchronous request/response built on this library plus a Redis return route.
+- [Schema Registry mock](schema-registry-mock.md) — the local Confluent-compatible registry the [schema integration](#schema) talks to.
 - [Configuration Reference](configuration-reference.md#kafka-flow-adapter) — every Kafka flow-adapter key.
 - [Observability](observability.md) — how trace context stays continuous across the Kafka hop.
 - [Minimalist Service Mesh](service-mesh.md) — the *different* `cloud.connector=kafka` event mesh.
