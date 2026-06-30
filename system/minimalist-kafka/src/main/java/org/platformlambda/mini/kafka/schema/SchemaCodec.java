@@ -38,6 +38,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Bridges the minimalist {@code byte[]} Kafka transport to the Confluent Schema Registry wire format
@@ -68,12 +69,33 @@ public class SchemaCodec {
     private static final int IDENTITY_MAP_CAPACITY = 1000;
     private static final byte MAGIC_BYTE = 0x0;
 
+    /**
+     * The classloader that loaded the Confluent serde classes. Confluent's config validation resolves classes
+     * (e.g. the default {@code context.name.strategy} → {@code NullContextNameStrategy}) via the <b>thread
+     * context</b> classloader. When the producer runs on a {@code @KernelThreadRunner} pool thread - whose
+     * context classloader is not the application's - that lookup fails, so a serde build/use is wrapped with
+     * {@link #withSerdeClassLoader} to set this for the duration of the call and restore the previous one after.
+     */
+    private static final ClassLoader SERDE_CLASSLOADER = AbstractKafkaSchemaSerDeConfig.class.getClassLoader();
+
     private final SchemaRegistryClient client;
     private final String registryUrl;
 
     SchemaCodec(SchemaRegistryClient client, String registryUrl) {
         this.client = client;
         this.registryUrl = registryUrl;
+    }
+
+    /** Run {@code action} with the Confluent serde classloader as the thread context classloader. */
+    private static <T> T withSerdeClassLoader(Supplier<T> action) {
+        Thread thread = Thread.currentThread();
+        ClassLoader previous = thread.getContextClassLoader();
+        try {
+            thread.setContextClassLoader(SERDE_CLASSLOADER);
+            return action.get();
+        } finally {
+            thread.setContextClassLoader(previous);
+        }
     }
 
     /**
@@ -133,7 +155,7 @@ public class SchemaCodec {
      * @return a new {@link Encoder} for one producer owner (e.g. one {@code simple.kafka.notification} instance)
      */
     public Encoder newEncoder() {
-        return new Encoder(newSerdes());
+        return withSerdeClassLoader(() -> new Encoder(newSerdes()));
     }
 
     /**
@@ -141,7 +163,7 @@ public class SchemaCodec {
      *         {@link org.platformlambda.mini.kafka.KafkaFlowConsumer})
      */
     public Decoder newDecoder() {
-        return new Decoder(this, newSerdes());
+        return withSerdeClassLoader(() -> new Decoder(this, newSerdes()));
     }
 
     /**
@@ -216,7 +238,7 @@ public class SchemaCodec {
          * @throws UnsupportedOperationException if {@code type} has no registered serde
          */
         public byte[] serialize(String topic, SchemaType type, int schemaId, Object value) {
-            return serde(serdes, type).serialize(topic, schemaId, value);
+            return withSerdeClassLoader(() -> serde(serdes, type).serialize(topic, schemaId, value));
         }
     }
 
@@ -246,7 +268,7 @@ public class SchemaCodec {
             if (!isFramed(data)) {
                 throw new IllegalArgumentException("payload is not Confluent schema-framed (missing magic byte)");
             }
-            return serde(serdes, codec.schemaTypeOf(schemaId(data))).decode(topic, data);
+            return withSerdeClassLoader(() -> serde(serdes, codec.schemaTypeOf(schemaId(data))).decode(topic, data));
         }
     }
 }

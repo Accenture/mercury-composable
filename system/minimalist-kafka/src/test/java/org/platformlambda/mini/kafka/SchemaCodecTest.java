@@ -43,6 +43,8 @@ import org.platformlambda.mini.kafka.schema.SchemaCodec;
 import org.platformlambda.mini.kafka.schema.SchemaType;
 
 import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +52,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -207,5 +210,24 @@ class SchemaCodecTest {
     void disabledWhenNoRegistryUrl() {
         assertNull(SchemaCodec.fromConfig(AppConfigReader.getInstance(), "  "),
                 "blank registry url ⇒ schema features off");
+    }
+
+    @Test
+    void serializeDecodeRestoreThreadContextClassLoader() throws Exception {
+        // Guards the @KernelThreadRunner classloader fix: serde build/use pins the Confluent serde classloader
+        // as the thread context classloader, then must restore the caller's - never leak SERDE_CLASSLOADER.
+        int id = codec.client().register(TOPIC + "-tccl-value", new JsonSchema(JSON_SCHEMA));
+        Thread thread = Thread.currentThread();
+        ClassLoader original = thread.getContextClassLoader();
+        ClassLoader sentinel = new URLClassLoader(new URL[0], original);
+        try {
+            thread.setContextClassLoader(sentinel);
+            byte[] framed = encoder.serialize(TOPIC, SchemaType.JSON, id, Map.of("hello", "tccl"));
+            assertEquals("tccl", ((Map<?, ?>) decoder.decode(TOPIC, framed)).get("hello"));
+            assertSame(sentinel, thread.getContextClassLoader(),
+                    "serialize/decode restore the caller's thread context classloader");
+        } finally {
+            thread.setContextClassLoader(original);
+        }
     }
 }
