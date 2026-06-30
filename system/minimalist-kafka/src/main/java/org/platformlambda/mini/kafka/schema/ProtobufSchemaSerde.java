@@ -51,13 +51,21 @@ class ProtobufSchemaSerde implements SchemaSerde {
 
     private final SchemaRegistryClient client;
     private final String registryUrl;
-    // one serializer per global schema id (use.schema.id is fixed at configure time); owner-confined
+    // one serializer per global schema id (use.schema.id is fixed at configure time); owner-confined,
+    // lazily populated per id. There is only ever one deserializer, so it is built eagerly.
     private final ConcurrentMap<Integer, KafkaProtobufSerializer<Message>> serializers = new ConcurrentHashMap<>();
-    private KafkaProtobufDeserializer<Message> deserializer;
+    private final KafkaProtobufDeserializer<Message> deserializer;
 
+    // S2095: the deserializer (and the per-id serializers in newSerializer) are kept for the life of this
+    // owner-confined serde - not method-local resources - so they are not closed here.
+    @SuppressWarnings("java:S2095")
     ProtobufSchemaSerde(SchemaRegistryClient client, String registryUrl) {
         this.client = client;
         this.registryUrl = registryUrl;
+        Map<String, Object> cfg = new HashMap<>();
+        cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
+        // no specific.protobuf.value.type -> deserialize to a generic DynamicMessage
+        this.deserializer = new KafkaProtobufDeserializer<>(client, cfg);
     }
 
     @Override
@@ -69,7 +77,7 @@ class ProtobufSchemaSerde implements SchemaSerde {
     @Override
     public Object decode(String topic, byte[] data) {
         // generic reader -> DynamicMessage; render it to a plain Map for the flow body.
-        return ProtobufConversions.fromMessage(deserializer().deserialize(topic, data));
+        return ProtobufConversions.fromMessage(deserializer.deserialize(topic, data));
     }
 
     /** Resolve a pre-registered Protobuf schema by global id (cached by {@link FileCachedSchemaRegistryClient}). */
@@ -98,17 +106,5 @@ class ProtobufSchemaSerde implements SchemaSerde {
         cfg.put(AbstractKafkaSchemaSerDeConfig.ID_COMPATIBILITY_STRICT, false);
         cfg.put(AbstractKafkaSchemaSerDeConfig.LATEST_COMPATIBILITY_STRICT, false);
         return new KafkaProtobufSerializer<>(client, cfg);
-    }
-
-    // S2095: the deserializer is cached for the life of this owner-confined serde (see newSerializer).
-    @SuppressWarnings("java:S2095")
-    private KafkaProtobufDeserializer<Message> deserializer() {
-        if (deserializer == null) {
-            Map<String, Object> cfg = new HashMap<>();
-            cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
-            // no specific.protobuf.value.type -> deserialize to a generic DynamicMessage
-            deserializer = new KafkaProtobufDeserializer<>(client, cfg);
-        }
-        return deserializer;
     }
 }

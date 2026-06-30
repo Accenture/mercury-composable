@@ -50,13 +50,20 @@ class JsonSchemaSerde implements SchemaSerde {
 
     private final SchemaRegistryClient client;
     private final String registryUrl;
-    // one serializer per global schema id (use.schema.id is fixed at configure time); owner-confined
+    // one serializer per global schema id (use.schema.id is fixed at configure time); owner-confined,
+    // lazily populated per id. There is only ever one deserializer, so it is built eagerly.
     private final ConcurrentMap<Integer, KafkaJsonSchemaSerializer<Object>> serializers = new ConcurrentHashMap<>();
-    private KafkaJsonSchemaDeserializer<Object> deserializer;
+    private final KafkaJsonSchemaDeserializer<Object> deserializer;
 
+    // S2095: the deserializer (and the per-id serializers in newSerializer) are kept for the life of this
+    // owner-confined serde - not method-local resources - so they are not closed here.
+    @SuppressWarnings("java:S2095")
     JsonSchemaSerde(SchemaRegistryClient client, String registryUrl) {
         this.client = client;
         this.registryUrl = registryUrl;
+        Map<String, Object> cfg = new HashMap<>();
+        cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
+        this.deserializer = new KafkaJsonSchemaDeserializer<>(client, cfg);
     }
 
     @Override
@@ -72,7 +79,7 @@ class JsonSchemaSerde implements SchemaSerde {
 
     @Override
     public Object decode(String topic, byte[] data) {
-        return toMap(deserializer().deserialize(topic, data));
+        return toMap(deserializer.deserialize(topic, data));
     }
 
     /** Resolve a pre-registered JSON schema by global id (cached by {@link FileCachedSchemaRegistryClient}). */
@@ -101,17 +108,6 @@ class JsonSchemaSerde implements SchemaSerde {
         cfg.put(AbstractKafkaSchemaSerDeConfig.ID_COMPATIBILITY_STRICT, false);
         cfg.put(AbstractKafkaSchemaSerDeConfig.LATEST_COMPATIBILITY_STRICT, false);
         return new KafkaJsonSchemaSerializer<>(client, cfg);
-    }
-
-    // S2095: the deserializer is cached for the life of this owner-confined serde (see newSerializer).
-    @SuppressWarnings("java:S2095")
-    private KafkaJsonSchemaDeserializer<Object> deserializer() {
-        if (deserializer == null) {
-            Map<String, Object> cfg = new HashMap<>();
-            cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
-            deserializer = new KafkaJsonSchemaDeserializer<>(client, cfg);
-        }
-        return deserializer;
     }
 
     /** Normalize the deserializer output to a {@code Map} for the flow dataset body. */
