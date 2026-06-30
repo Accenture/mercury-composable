@@ -85,6 +85,9 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
      *   <li>{@code GET /schemas/ids/{id}} - {@link #getById}</li>
      * </ul>
      * Anything else is logged + answered 404.
+     *
+     * @param exchange the HTTP exchange to route and respond to
+     * @throws IOException if writing the response fails
      */
     private void handle(com.sun.net.httpserver.HttpExchange exchange) throws IOException {
         try {

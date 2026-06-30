@@ -44,7 +44,7 @@ class KafkaFlowAdapterConfigTest {
         return reader;
     }
 
-    /** S2095: the constructor throws during config validation, so no adapter escapes to be closed (and if one ever did, the assertThrows would fail). */
+    // S2095: the constructor throws during config validation, so no adapter escapes to be closed (and if one ever did, the assertThrows would fail).
     @SuppressWarnings("java:S2095")
     private static void build(ConfigReader config) {
         // consumer props are unused: every case here fails validation before any consumer is built

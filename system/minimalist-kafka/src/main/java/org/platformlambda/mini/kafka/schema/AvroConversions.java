@@ -48,7 +48,13 @@ final class AvroConversions {
 
     private AvroConversions() { }
 
-    /** Build the Avro representation of {@code value} against {@code schema}, applying field defaults. */
+    /**
+     * Build the Avro representation of {@code value} against {@code schema}, applying field defaults.
+     *
+     * @param value  the plain Java value (a {@code Map} for a record, a {@code Collection} for an array, etc.)
+     * @param schema the Avro schema to build against
+     * @return the Avro object graph ({@code GenericRecord}, {@code GenericArray}, primitive, ...)
+     */
     static Object toAvro(Object value, Schema schema) {
         return switch (schema.getType()) {
             case RECORD -> toRecord(value, schema);
@@ -115,7 +121,12 @@ final class AvroConversions {
         return out;
     }
 
-    /** Render a decoded Avro value back to plain Java ({@code Map}/{@code List}/{@code String}/primitive). */
+    /**
+     * Render a decoded Avro value back to plain Java.
+     *
+     * @param value a decoded Avro value ({@code GenericRecord}, {@code Utf8}, {@code Collection}, primitive, ...)
+     * @return the plain-Java equivalent ({@code Map}/{@code List}/{@code String}/primitive)
+     */
     static Object fromAvro(Object value) {
         if (value instanceof GenericRecord genericRecord) {
             Map<String, Object> map = new LinkedHashMap<>();

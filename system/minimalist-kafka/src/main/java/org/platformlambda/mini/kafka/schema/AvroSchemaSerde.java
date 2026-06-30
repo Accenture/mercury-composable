@@ -73,7 +73,13 @@ class AvroSchemaSerde implements SchemaSerde {
         return AvroConversions.fromAvro(deserializer.deserialize(topic, data));
     }
 
-    /** Resolve a pre-registered Avro schema by global id (cached by {@link FileCachedSchemaRegistryClient}). */
+    /**
+     * Resolve a pre-registered Avro schema by global id (cached by {@link FileCachedSchemaRegistryClient}).
+     *
+     * @param schemaId the global schema id
+     * @return the registered schema as an {@link AvroSchema}
+     * @throws IllegalStateException if the id is unresolvable or registered as a non-Avro type
+     */
     private AvroSchema avroSchemaById(int schemaId) {
         try {
             ParsedSchema schema = client.getSchemaById(schemaId);
@@ -90,6 +96,9 @@ class AvroSchemaSerde implements SchemaSerde {
      * Build the serializer for {@code schemaId}, pinned to that global id via {@code use.schema.id} (the
      * GenericRecord is built against that exact schema, so strict compatibility checks against a value-derived
      * schema are off, and auto-register is off). Cached and reused for the life of this serde - one per id.
+     *
+     * @param schemaId the global schema id to pin via {@code use.schema.id}
+     * @return a serializer configured for that id
      */
     private KafkaAvroSerializer newSerializer(int schemaId) {
         Map<String, Object> cfg = new HashMap<>();

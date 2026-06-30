@@ -77,14 +77,23 @@ public class SchemaCodec {
     }
 
     /**
-     * Build a codec from application config, or return {@code null} when {@code schema.registry.url} is not
-     * set (schema features simply stay off - the library keeps its raw byte[] behavior).
+     * Build a codec from application config (schema features stay off when {@code schema.registry.url} is
+     * unset - the library keeps its raw byte[] behavior).
+     *
+     * @param config the application configuration (read for {@code schema.registry.url} and the cache settings)
+     * @return a codec, or {@code null} when {@code schema.registry.url} is unset/blank
      */
     public static SchemaCodec fromConfig(AppConfigReader config) {
         return fromConfig(config, config.getProperty(REGISTRY_URL));
     }
 
-    /** Build a codec for an explicit registry URL (used by tests); {@code null}/blank URL ⇒ {@code null}. */
+    /**
+     * Build a codec for an explicit registry URL (used by tests).
+     *
+     * @param config      configuration source for the cache dir/TTL settings
+     * @param registryUrl the Schema Registry URL; a {@code null}/blank value disables schema features
+     * @return a codec, or {@code null} when {@code registryUrl} is {@code null}/blank
+     */
     public static SchemaCodec fromConfig(ConfigBase config, String registryUrl) {
         if (registryUrl == null || registryUrl.isBlank()) {
             return null;
@@ -109,7 +118,9 @@ public class SchemaCodec {
         return new SchemaCodec(client, registryUrl);
     }
 
-    /** A fresh, owner-confined serde set (one {@link SchemaSerde} per type) over the shared registry client. */
+    /**
+     * @return a fresh, owner-confined serde set (one {@link SchemaSerde} per type) over the shared client
+     */
     private Map<SchemaType, SchemaSerde> newSerdes() {
         Map<SchemaType, SchemaSerde> serdes = new EnumMap<>(SchemaType.class);
         serdes.put(SchemaType.JSON, new JsonSchemaSerde(client, registryUrl));
@@ -118,27 +129,44 @@ public class SchemaCodec {
         return serdes;
     }
 
-    /** Mint an {@link Encoder} for one producer owner (e.g. one {@code simple.kafka.notification} instance). */
+    /**
+     * @return a new {@link Encoder} for one producer owner (e.g. one {@code simple.kafka.notification} instance)
+     */
     public Encoder newEncoder() {
         return new Encoder(newSerdes());
     }
 
-    /** Mint a {@link Decoder} for one consumer owner (one {@link org.platformlambda.mini.kafka.KafkaFlowConsumer}). */
+    /**
+     * @return a new {@link Decoder} for one consumer owner (one
+     *         {@link org.platformlambda.mini.kafka.KafkaFlowConsumer})
+     */
     public Decoder newDecoder() {
         return new Decoder(this, newSerdes());
     }
 
-    /** True if the bytes are Confluent-framed (magic byte + 4-byte id + payload). */
+    /**
+     * @param data the bytes to inspect (may be {@code null})
+     * @return {@code true} if the bytes are Confluent-framed (magic byte + 4-byte id + payload)
+     */
     public static boolean isFramed(byte[] data) {
         return data != null && data.length >= 5 && data[0] == MAGIC_BYTE;
     }
 
-    /** The global schema id embedded in framed bytes. */
+    /**
+     * @param data Confluent-framed bytes (see {@link #isFramed})
+     * @return the global schema id embedded in the frame
+     */
     public static int schemaId(byte[] data) {
         return ByteBuffer.wrap(data, 1, 4).getInt();
     }
 
-    /** Look up the registered {@code schemaType} for a global id (shared, thread-safe, disk-cached). */
+    /**
+     * Look up the registered {@code schemaType} for a global id (shared, thread-safe, disk-cached).
+     *
+     * @param id the global schema id
+     * @return the schema's {@link SchemaType}
+     * @throws IllegalStateException if the id cannot be resolved against the registry
+     */
     SchemaType schemaTypeOf(int id) {
         try {
             ParsedSchema schema = client.getSchemaById(id);
@@ -156,7 +184,11 @@ public class SchemaCodec {
         return serde;
     }
 
-    /** Visible for tests: the shared registry client (file-cached). */
+    /**
+     * Visible for tests.
+     *
+     * @return the shared (file-cached) registry client
+     */
     public SchemaRegistryClient client() {
         return client;
     }
@@ -175,6 +207,13 @@ public class SchemaCodec {
         /**
          * Serialize using the serde for {@code type}. The schema is fetched by id and NOT registered
          * (auto-register off), so no subject/strategy is involved.
+         *
+         * @param topic    the destination topic (a serde may derive its subject from it)
+         * @param type     the schema type that selects the serde
+         * @param schemaId the pre-registered global schema id to frame with
+         * @param value    the value to serialize (typically a {@code Map})
+         * @return the Confluent-framed bytes
+         * @throws UnsupportedOperationException if {@code type} has no registered serde
          */
         public byte[] serialize(String topic, SchemaType type, int schemaId, Object value) {
             return serde(serdes, type).serialize(topic, schemaId, value);
@@ -195,8 +234,13 @@ public class SchemaCodec {
         }
 
         /**
-         * Read the embedded id, look up the registered {@code schemaType}, and dispatch to the matching serde,
-         * returning a {@code Map}. Throws for unframed bytes or a schema type not yet supported.
+         * Read the embedded id, look up the registered {@code schemaType}, and dispatch to the matching serde.
+         *
+         * @param topic the source topic
+         * @param data  the Confluent-framed bytes
+         * @return the decoded value as a {@code Map}
+         * @throws IllegalArgumentException      if {@code data} is not Confluent-framed
+         * @throws UnsupportedOperationException if the embedded schema type has no registered serde
          */
         public Object decode(String topic, byte[] data) {
             if (!isFramed(data)) {

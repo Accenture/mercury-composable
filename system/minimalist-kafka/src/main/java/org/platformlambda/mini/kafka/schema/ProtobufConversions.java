@@ -46,7 +46,15 @@ final class ProtobufConversions {
 
     private ProtobufConversions() { }
 
-    /** Build a {@link DynamicMessage} for {@code value} against {@code descriptor}. */
+    /**
+     * Build a {@link DynamicMessage} for {@code value} against {@code descriptor}.
+     *
+     * @param value      the message as a {@code Map} of field-name to value
+     * @param descriptor the message descriptor to build against
+     * @return the populated {@link DynamicMessage}
+     * @throws IllegalArgumentException if {@code value} is not a {@code Map}, or a repeated field is not a
+     *                                  {@code Collection}
+     */
     static DynamicMessage toMessage(Object value, Descriptor descriptor) {
         if (!(value instanceof Map<?, ?> map)) {
             throw new IllegalArgumentException("expected a Map for protobuf message " + descriptor.getFullName());
@@ -85,7 +93,12 @@ final class ProtobufConversions {
         };
     }
 
-    /** Render a decoded protobuf {@link Message} back to a plain {@code Map}. */
+    /**
+     * Render a decoded protobuf {@link Message} back to a plain {@code Map}.
+     *
+     * @param message the decoded protobuf message
+     * @return the message as a {@code Map} of field-name to plain-Java value
+     */
     static Map<String, Object> fromMessage(Message message) {
         Map<String, Object> out = new LinkedHashMap<>();
         for (FieldDescriptor field : message.getDescriptorForType().getFields()) {

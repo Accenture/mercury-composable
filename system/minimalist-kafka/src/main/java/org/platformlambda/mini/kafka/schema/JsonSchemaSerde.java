@@ -81,7 +81,13 @@ class JsonSchemaSerde implements SchemaSerde {
         return toMap(deserializer.deserialize(topic, data));
     }
 
-    /** Resolve a pre-registered JSON schema by global id (cached by {@link FileCachedSchemaRegistryClient}). */
+    /**
+     * Resolve a pre-registered JSON schema by global id (cached by {@link FileCachedSchemaRegistryClient}).
+     *
+     * @param schemaId the global schema id
+     * @return the registered schema as a {@link JsonSchema}
+     * @throws IllegalStateException if the id is unresolvable or registered as a non-JSON type
+     */
     private JsonSchema jsonSchemaById(int schemaId) {
         try {
             ParsedSchema schema = client.getSchemaById(schemaId);
@@ -98,6 +104,9 @@ class JsonSchemaSerde implements SchemaSerde {
      * Build the serializer for {@code schemaId}, pinned to that global id via {@code use.schema.id} (the
      * registered schema is authoritative, so strict compatibility checks against a value-derived schema are
      * off, and auto-register is off). Cached and reused for the life of this serde - one per id.
+     *
+     * @param schemaId the global schema id to pin via {@code use.schema.id}
+     * @return a serializer configured for that id
      */
     private KafkaJsonSchemaSerializer<Object> newSerializer(int schemaId) {
         Map<String, Object> cfg = new HashMap<>();

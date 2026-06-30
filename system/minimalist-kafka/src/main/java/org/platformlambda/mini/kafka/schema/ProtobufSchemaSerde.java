@@ -77,7 +77,13 @@ class ProtobufSchemaSerde implements SchemaSerde {
         return ProtobufConversions.fromMessage(deserializer.deserialize(topic, data));
     }
 
-    /** Resolve a pre-registered Protobuf schema by global id (cached by {@link FileCachedSchemaRegistryClient}). */
+    /**
+     * Resolve a pre-registered Protobuf schema by global id (cached by {@link FileCachedSchemaRegistryClient}).
+     *
+     * @param schemaId the global schema id
+     * @return the registered schema as a {@link ProtobufSchema}
+     * @throws IllegalStateException if the id is unresolvable or registered as a non-Protobuf type
+     */
     private ProtobufSchema protobufSchemaById(int schemaId) {
         try {
             ParsedSchema schema = client.getSchemaById(schemaId);
@@ -94,6 +100,9 @@ class ProtobufSchemaSerde implements SchemaSerde {
      * Build the serializer for {@code schemaId}, pinned to that global id via {@code use.schema.id} (the
      * DynamicMessage is built against that exact schema, so strict compatibility checks against a value-derived
      * schema are off, and auto-register is off). Cached and reused for the life of this serde - one per id.
+     *
+     * @param schemaId the global schema id to pin via {@code use.schema.id}
+     * @return a serializer configured for that id
      */
     private KafkaProtobufSerializer<Message> newSerializer(int schemaId) {
         Map<String, Object> cfg = new HashMap<>();
