@@ -53,7 +53,6 @@ public class SchemaStore {
     private static final SchemaStore instance = new SchemaStore();
 
     public static final String AVRO_TYPE = "AVRO";
-    public static final String JSON_TYPE = "JSON";
     public static final String PROTOBUF_TYPE = "PROTOBUF";
 
     private final ConcurrentMap<Integer, SchemaEntry> idToSchema = new ConcurrentHashMap<>();
@@ -76,16 +75,6 @@ public class SchemaStore {
 
     public static SchemaStore getInstance() {
         return instance;
-    }
-    
-    /**
-     * Clear the store (mostly for testing).
-     */
-    public void clear() {
-        idToSchema.clear();
-        hashToId.clear();
-        idGenerator.set(1);
-        saveToDisk();
     }
 
     private String getHash(String typeAndSchema) {
@@ -114,54 +103,55 @@ public class SchemaStore {
         return idToSchema.get(id);
     }
     
-    @SuppressWarnings("unchecked")
     private void loadFromDisk() {
         File dir = new File(storeDir);
         if (!dir.exists() && !dir.mkdirs()) {
             log.warn("Failed to create directory: {}", storeDir);
             return;
         }
-
         Path filePath = Path.of(storeFile);
         if (!Files.exists(filePath)) {
             return;
         }
-        
         try {
             String json = Files.readString(filePath);
-            if (json.isEmpty()) {
-                return;
-            }
-            
-            Object parsed = org.platformlambda.core.serializers.SimpleMapper.getInstance().getMapper().readValue(json, Object.class);
-            if (parsed instanceof Map) {
-                Map<String, Object> map = (Map<String, Object>) parsed;
-                int maxId = 0;
-                for (Map.Entry<String, Object> entry : map.entrySet()) {
-                    int id = util.str2int(entry.getKey());
-                    if (entry.getValue() instanceof Map) {
-                        Map<String, String> schemaMap = (Map<String, String>) entry.getValue();
-                        String schema = schemaMap.get("schema");
-                        String type = schemaMap.getOrDefault("schemaType", AVRO_TYPE);
-                        if (schemaMap.containsKey("schema_type")) {
-                             type = schemaMap.get("schema_type");
-                        }
-                        
-                        idToSchema.put(id, new SchemaEntry(schema, type));
-                        hashToId.put(getHash(type + ":" + schema), id);
-                        if (id > maxId) {
-                            maxId = id;
-                        }
-                    }
-                }
-                if (maxId > 0) {
-                    idGenerator.set(maxId + 1);
-                }
-                log.info("Loaded {} schemas from disk. Next ID will be {}", idToSchema.size(), idGenerator.get());
+            if (!json.isEmpty()) {
+                loadEntries(json);
             }
         } catch (IOException e) {
             log.warn("Failed to load schemas from disk: {}", e.getMessage());
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loadEntries(String json) throws IOException {
+        Object parsed = org.platformlambda.core.serializers.SimpleMapper.getInstance()
+                .getMapper().readValue(json, Object.class);
+        if (!(parsed instanceof Map)) {
+            return;
+        }
+        int maxId = 0;
+        for (Map.Entry<String, Object> entry : ((Map<String, Object>) parsed).entrySet()) {
+            if (entry.getValue() instanceof Map) {
+                int id = util.str2int(entry.getKey());
+                loadEntry(id, (Map<String, String>) entry.getValue());
+                maxId = Math.max(maxId, id);
+            }
+        }
+        if (maxId > 0) {
+            idGenerator.set(maxId + 1);
+        }
+        log.info("Loaded {} schemas from disk. Next ID will be {}", idToSchema.size(), idGenerator.get());
+    }
+
+    private void loadEntry(int id, Map<String, String> schemaMap) {
+        String schema = schemaMap.get("schema");
+        // accept either "schemaType" (canonical) or a legacy "schema_type"; default to AVRO.
+        String type = schemaMap.containsKey("schema_type")
+                ? schemaMap.get("schema_type")
+                : schemaMap.getOrDefault("schemaType", AVRO_TYPE);
+        idToSchema.put(id, new SchemaEntry(schema, type));
+        hashToId.put(getHash(type + ":" + schema), id);
     }
     
     private void saveToDisk() {

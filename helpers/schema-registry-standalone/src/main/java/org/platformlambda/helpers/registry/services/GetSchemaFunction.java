@@ -24,6 +24,8 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.helpers.registry.store.SchemaStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +40,7 @@ import java.util.Map;
  */
 @PreLoad(route = "schema.registry.get", instances = 10)
 public class GetSchemaFunction implements TypedLambdaFunction<AsyncHttpRequest, EventEnvelope> {
+    private static final Logger log = LoggerFactory.getLogger(GetSchemaFunction.class);
 
     private final SchemaStore store = SchemaStore.getInstance();
     private final Utility util = Utility.getInstance();
@@ -46,11 +49,13 @@ public class GetSchemaFunction implements TypedLambdaFunction<AsyncHttpRequest, 
     public EventEnvelope handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
         String idStr = input.getPathParameter("id");
         if (idStr == null || !util.isDigits(idStr)) {
+            log.warn("GET /schemas/ids/{} -> 404 (invalid id)", idStr);
             return ApiError.of(404, ApiError.SCHEMA_NOT_FOUND, "Schema not found");
         }
         int id = util.str2int(idStr);
         SchemaStore.SchemaEntry entry = store.get(id);
         if (entry == null) {
+            log.warn("GET /schemas/ids/{} -> 404 (not found)", id);
             return ApiError.of(404, ApiError.SCHEMA_NOT_FOUND, "Schema " + id + " not found");
         }
         Map<String, Object> response = new HashMap<>();
@@ -59,6 +64,7 @@ public class GetSchemaFunction implements TypedLambdaFunction<AsyncHttpRequest, 
         if (!SchemaStore.AVRO_TYPE.equals(entry.schemaType())) {
             response.put("schemaType", entry.schemaType());
         }
+        log.info("GET /schemas/ids/{} -> 200 (schemaType={})", id, entry.schemaType());
         return new EventEnvelope().setStatus(200).setBody(response);
     }
 }
