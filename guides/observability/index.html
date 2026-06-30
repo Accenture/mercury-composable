@@ -135,6 +135,18 @@
     </li>
         </ul>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#log-context">Application log context</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#log-context-enable">Turning it on</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#log-context-custom">Adding your own key-values</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#log-context-output">What it looks like</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#log-context-scope">Scope and boundaries</a>
+    </li>
+        </ul>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
     </ul>
@@ -225,6 +237,8 @@
 <li><strong>Built-in</strong> — distributed tracing is part of the platform; you turn it on per endpoint/flow and the
   spans propagate without code.</li>
 <li><strong>For</strong> developers and operators wiring Mercury to Dynatrace, Splunk, Jaeger, Tempo, or an OpenTelemetry Collector.</li>
+<li><strong>Logs too</strong> — an opt-in <a href="#log-context">application log context</a> stamps the same correlation/trace ids (plus your
+  own key-values) into structured log lines, so logs and spans join up in your backend.</li>
 </ul>
 </blockquote>
 <p>In an event-driven, composable system a single request fans out across <strong>decoupled</strong> functions, flows, and graph
@@ -256,7 +270,8 @@ is <strong>OpenTelemetry-compliant</strong>, so the spans drop straight into the
 annotations={ &lt;your key&gt;=&lt;value&gt;, ... }
 </code></pre>
 <p><code>span_id</code> and <code>parent_span_id</code> are the OpenTelemetry-compatible IDs (see <a href="#w3c">W3C trace context</a>); you can attach
-business context with <code>PostOffice.annotateTrace(key, value)</code>.</p>
+business context to the span with <code>PostOffice.annotateTrace(key, value)</code>. To attach context to <strong>application logs</strong>
+instead, see <a href="#log-context">Application log context</a>.</p>
 <h3 id="layers">Spans across the three layers</h3>
 <p>The span tree mirrors the <a href="../architecture/">three paradigm layers</a>, and tracing is <strong>virtual-thread-safe</strong> — the
 parent span is threaded through a per-task anchor, not a <code>ThreadLocal</code>, so concurrently-dispatched siblings still
@@ -339,6 +354,109 @@ values as span attributes, with <code>service.name</code> on the resource. See t
 <p>To target a system without an OTLP path, implement your own function at <code>distributed.trace.forwarder</code> and consume
 the dataset described in <a href="#metrics">What a trace records</a> — for example, write it to a metrics database or a
 proprietary APM API.</p>
+<h2 id="log-context">Application log context</h2>
+<p>Spans tell you the causal path; <strong>application logs</strong> tell you what happened inside each step. The log-context
+feature closes the gap between them: it injects a <code>context</code> block — correlation id, trace/span ids, service name,
+and any business key-values you add — into every structured log line a traced function emits. With the same
+<code>traceId</code>/<code>spanId</code> on both the span and the log line, you can pivot from a Dynatrace/Splunk trace straight to the
+exact log entries that belong to it.</p>
+<p>It deliberately <strong>avoids the ThreadLocal / Log4j MDC</strong> pattern (heavy for a virtual-thread runtime). The context
+rides the same per-request mechanism as the trace itself, keyed to the worker thread and torn down when the
+function returns.</p>
+<h3 id="log-context-enable">Turning it on</h3>
+<p>The feature is <strong>opt-in</strong> and activates only when an optional <code>app-log-context.yaml</code> is on the classpath
+(<code>src/main/resources/</code>). It applies to the two <strong>structured JSON appenders</strong> — select one via the log4j2
+configuration (<code>log4j2-json.xml</code> for pretty output, <code>log4j2-compact.xml</code> for single-line); the plain <code>Console</code>
+appender is unaffected.</p>
+<pre><code class="language-yaml"># src/main/resources/app-log-context.yaml
+context:
+  cid: $cid
+  traceId: $traceId
+  tracePath: $tracePath
+  spanId: $spanId
+  parentSpanId: $parentSpanId
+  service: $service
+  timestamp: $utc
+  environment: '${ENV_NAME:dev}'
+  hello: world
+</code></pre>
+<p>The <strong>left side</strong> is the output key (your choice). The <strong>right side</strong> is one of three forms:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Form</th>
+<th style="text-align: left;">Example</th>
+<th style="text-align: left;">Resolved</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Reserved <strong><code>$token</code></strong></td>
+<td style="text-align: left;"><code>service: $service</code></td>
+<td style="text-align: left;">live, per log line, from the request's trace context</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><code>${ENV:default}</code></strong> substitution</td>
+<td style="text-align: left;"><code>environment: '${ENV_NAME:dev}'</code></td>
+<td style="text-align: left;">once at startup, from the environment</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Hardcoded literal</strong></td>
+<td style="text-align: left;"><code>hello: world</code></td>
+<td style="text-align: left;">emitted verbatim on every line</td>
+</tr>
+</tbody>
+</table>
+<p>The reserved tokens are <code>$cid</code>, <code>$traceId</code>, <code>$tracePath</code>, <code>$spanId</code>, <code>$parentSpanId</code>, <code>$service</code> (the current
+function's route), and <code>$utc</code> (the log line's UTC timestamp). A token (or env value) that resolves to nothing is
+<strong>omitted</strong> from the block rather than printed as <code>null</code> — so a root span simply has no <code>parentSpanId</code> key.</p>
+<h3 id="log-context-custom">Adding your own key-values</h3>
+<p>Inside a function, add business context with <code>PostOffice.updateContext(key, value)</code>:</p>
+<pre><code class="language-java">var po = new PostOffice(headers, instance);
+po.updateContext(&quot;user&quot;, &quot;demo&quot;);   // appears in the context block of every subsequent log line
+log.info(&quot;processing request&quot;);
+</code></pre>
+<p>The reserved keys (<code>cid</code>, <code>traceId</code>, <code>tracePath</code>, <code>spanId</code>, <code>parentSpanId</code>, <code>service</code>, <code>utc</code>) are protected —
+passing one to <code>updateContext</code> throws <code>IllegalArgumentException</code>. On a non-traced request, or when the feature is
+off, the call is a silent no-op.</p>
+<blockquote>
+<p><strong><code>updateContext</code> vs <code>annotateTrace</code></strong> — two distinct sinks. <code>annotateTrace(...)</code> attaches business data to the
+<strong>distributed-trace dataset</strong> that flows to your APM backend (<a href="#metrics">What a trace records</a>);
+<code>updateContext(...)</code> attaches it to the <strong>application log</strong> stream only. Neither leaks into the other.</p>
+</blockquote>
+<h3 id="log-context-output">What it looks like</h3>
+<p>A log line from a traced function then carries the resolved <code>context</code> (from the worked example above, with
+<code>po.updateContext("user", "demo")</code> added in the function):</p>
+<pre><code class="language-json">{
+  &quot;level&quot;: &quot;INFO&quot;,
+  &quot;context&quot;: {
+    &quot;cid&quot;: &quot;20260630c6ee70d866cb4fae9ab3c44d926ce21a&quot;,
+    &quot;traceId&quot;: &quot;fbb60df209084531b2b00f6b36a3e651&quot;,
+    &quot;tracePath&quot;: &quot;GET /api/profile/100&quot;,
+    &quot;spanId&quot;: &quot;bf8d4b2b6a923d67&quot;,
+    &quot;parentSpanId&quot;: &quot;98f8e26ae7d9a422&quot;,
+    &quot;service&quot;: &quot;v1.hello.exception&quot;,
+    &quot;environment&quot;: &quot;dev&quot;,
+    &quot;hello&quot;: &quot;world&quot;,
+    &quot;user&quot;: &quot;demo&quot;,
+    &quot;timestamp&quot;: &quot;2026-06-30T21:17:03Z&quot;
+  },
+  &quot;time&quot;: &quot;2026-06-30 14:17:03.575&quot;,
+  &quot;source&quot;: &quot;com.accenture.demo.tasks.HelloException.handleEvent(HelloException.java:51)&quot;,
+  &quot;thread&quot;: 297,
+  &quot;message&quot;: &quot;User defined exception handler - status=404 error=Profile 100 not found&quot;
+}
+</code></pre>
+<p>The <code>traceId</code> and <code>spanId</code> here match the <code>v1.hello.exception</code> span the tracer emitted for the same request, so the
+log line and the span join up in your backend. (Key order within <code>context</code> is not significant — log viewers reorder
+keys on display.)</p>
+<h3 id="log-context-scope">Scope and boundaries</h3>
+<ul>
+<li>The <code>context</code> block appears <strong>only</strong> when a request is traced and a <code>traceId</code> is present. Framework boot logs and
+  logs emitted from a <code>Mono</code>/<code>Flux</code> completion that runs <strong>after</strong> the worker returns (on a different thread) carry
+  no context — the same boundary distributed tracing has.</li>
+<li>Feature <strong>off</strong> (no <code>app-log-context.yaml</code>) costs one boolean check per log line and nothing else.</li>
+</ul>
 <h2 id="see-also">See also</h2>
 <ul>
 <li><a href="../build-test-deploy/">Build, Test &amp; Deploy</a> — enabling tracing and the forwarder hook.</li>
