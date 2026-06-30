@@ -67,8 +67,11 @@ public class KafkaFlowAutoStart implements EntryPoint {
                 new KafkaRequestPublisher(new KafkaProducer<>(KafkaClientConfig.producerProperties(config)));
         KafkaRuntime.setPublisher(publisher);
 
-        // Optional Confluent Schema Registry codec (null when schema.registry.url is not configured);
-        // shared by simple.kafka.notification (produce) and the flow adapter (consume).
+        /*
+         * Optional Confluent Schema Registry codec (null when schema.registry.url is not configured). A shared
+         * factory: simple.kafka.notification (produce) and the flow adapter (consume) each mint their own
+         * owner-confined encoder/decoder from it, since the Confluent serdes are not thread-safe.
+         */
         SchemaCodec schemaCodec = SchemaCodec.fromConfig(config);
         KafkaRuntime.setSchemaCodec(schemaCodec);
 

@@ -39,14 +39,18 @@ import java.util.concurrent.ConcurrentMap;
  * built against the pre-registered schema (resolved by id) - see {@link AvroConversions} - so a field absent
  * from the {@code Map} takes its schema default. On decode the deserializer yields a {@code GenericRecord}
  * (generic, not specific - no generated classes) which is rendered back to a {@code Map}.</p>
+ *
+ * <p><b>Confinement.</b> The Confluent serdes are not thread-safe; one instance of this class is owned by a
+ * single-flight {@link SchemaCodec.Encoder}/{@link SchemaCodec.Decoder}, so the cached serializers (per id)
+ * and the lazily-built deserializer are only ever touched by one thread - no synchronization needed.</p>
  */
 class AvroSchemaSerde implements SchemaSerde {
 
     private final SchemaRegistryClient client;
     private final String registryUrl;
-    // one serializer per global schema id (use.schema.id is fixed at configure time)
+    // one serializer per global schema id (use.schema.id is fixed at configure time); owner-confined
     private final ConcurrentMap<Integer, KafkaAvroSerializer> serializers = new ConcurrentHashMap<>();
-    private volatile KafkaAvroDeserializer deserializer;
+    private KafkaAvroDeserializer deserializer;
 
     AvroSchemaSerde(SchemaRegistryClient client, String registryUrl) {
         this.client = client;
@@ -55,8 +59,8 @@ class AvroSchemaSerde implements SchemaSerde {
 
     @Override
     public byte[] serialize(String topic, int schemaId, Object value) {
-        Object record = AvroConversions.toAvro(value, avroSchemaById(schemaId).rawSchema());
-        return serializers.computeIfAbsent(schemaId, this::newSerializer).serialize(topic, record);
+        Object avroRecord = AvroConversions.toAvro(value, avroSchemaById(schemaId).rawSchema());
+        return serializers.computeIfAbsent(schemaId, this::newSerializer).serialize(topic, avroRecord);
     }
 
     @Override
@@ -78,6 +82,9 @@ class AvroSchemaSerde implements SchemaSerde {
         }
     }
 
+    // S2095: the serializer is cached for the life of this owner-confined serde (not a method-local resource);
+    // closing it here would tear down a still-in-use serializer.
+    @SuppressWarnings("java:S2095")
     private KafkaAvroSerializer newSerializer(int schemaId) {
         Map<String, Object> cfg = new HashMap<>();
         cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
@@ -90,15 +97,13 @@ class AvroSchemaSerde implements SchemaSerde {
         return new KafkaAvroSerializer(client, cfg);
     }
 
+    // S2095: the deserializer is cached for the life of this owner-confined serde (see newSerializer).
+    @SuppressWarnings("java:S2095")
     private KafkaAvroDeserializer deserializer() {
         if (deserializer == null) {
-            synchronized (this) {
-                if (deserializer == null) {
-                    Map<String, Object> cfg = new HashMap<>();
-                    cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
-                    deserializer = new KafkaAvroDeserializer(client, cfg);
-                }
-            }
+            Map<String, Object> cfg = new HashMap<>();
+            cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
+            deserializer = new KafkaAvroDeserializer(client, cfg);
         }
         return deserializer;
     }

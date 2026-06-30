@@ -62,9 +62,9 @@ import java.util.concurrent.TimeoutException;
  * offset stays uncommitted and Kafka redelivers the message to a surviving instance in the group - the
  * deliberate resilience-over-throughput tradeoff for the consume side.</p>
  *
- * <p><b>Flow outcome.</b> A flow <b>succeeds</b> when it replies with status 200; any other status - or a
- * thrown exception, including a timeout when it does not reply within its {@code ttl} (the flow's {@code ttl}
- * is the deadline, since Kafka has no inherent request timeout) - is a <b>failure</b>.</p>
+ * <p><b>Flow outcome.</b> A flow <b>succeeds</b> when it replies with a status below 400 (a 2xx/3xx); any
+ * 4xx/5xx status - or a thrown exception, including a timeout when it does not reply within its {@code ttl}
+ * (the flow's {@code ttl} is the deadline, since Kafka has no inherent request timeout) - is a <b>failure</b>.</p>
  *
  * <p><b>Flow-failure handling.</b> A failure is retried up to {@link RetryPolicy#maxRetries()} times; if it
  * still fails, the original message is routed to the per-topic dead-letter topic ({@code <topic><dlqSuffix>},
@@ -97,7 +97,9 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private final long dlqTimeout;   // confirm-write timeout for the dead-letter publish (broker ack)
     private final RetryPolicy retryPolicy;
     private final Integer partition;   // null = group-managed subscribe; non-null = pin this partition
-    private final SchemaCodec schemaCodec;   // null = raw byte[] body; non-null = decode Confluent-framed value
+    // null = raw byte[] body; non-null = decode Confluent-framed value. Owned by this consumer's single poll
+    // thread (the Confluent deserializers are not thread-safe), minted from the shared SchemaCodec factory.
+    private final SchemaCodec.Decoder decoder;
     private final String deadLetterTopic;
     private final ExecutorService loop;
 
@@ -112,7 +114,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
         this.dlqTimeout = dlqTimeout;
         this.retryPolicy = retryPolicy;
         this.partition = partition;
-        this.schemaCodec = schemaCodec;
+        this.decoder = schemaCodec == null ? null : schemaCodec.newDecoder();
         // per-topic DLQ; a blank suffix falls back to .dlq so the DLQ can never equal the source topic
         String suffix = retryPolicy.dlqSuffix();
         this.deadLetterTopic = topic + (suffix == null || suffix.isBlank() ? DLQ_SUFFIX : suffix);
@@ -171,11 +173,11 @@ public class KafkaFlowConsumer implements AutoCloseable {
      */
     boolean routeToFlow(ConsumerRecord<String, byte[]> consumerRecord) {
         Map<String, Object> dataset = toDataset(consumerRecord);
-        if (schemaCodec != null) {
+        if (decoder != null) {
             // Decode the Confluent-framed value to a Map for the flow. A decode failure is a poison
             // message (retrying won't help), so dead-letter the RAW record immediately.
             try {
-                dataset.put(BODY, schemaCodec.decode(topic, consumerRecord.value()));
+                dataset.put(BODY, decoder.decode(topic, consumerRecord.value()));
             } catch (RuntimeException e) {
                 log.warn("Failed to decode schema-framed message on '{}'; routing to {}",
                         topic, deadLetterTopic, e);
@@ -206,7 +208,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
     }
 
     /**
-     * Invoke the flow with bounded retry, then dead-letter. A failure is a non-200 reply or a thrown
+     * Invoke the flow with bounded retry, then dead-letter. A failure is a 4xx/5xx reply or a thrown
      * exception (flow/transport error, or a timeout when the flow does not reply within its ttl).
      *
      * @return whether the offset may be committed (see {@link #writeToDeadLetter}); false only on shutdown.
@@ -218,8 +220,8 @@ public class KafkaFlowConsumer implements AutoCloseable {
             Throwable cause;
             try {
                 EventEnvelope response = invokeFlow(forward, traceId, tracePath);
-                if (response.getStatus() == 200) {
-                    return true;   // the flow finished normally -> acknowledge (commit) and move on
+                if (response.getStatus() < 400) {
+                    return true;   // the flow finished normally (2xx/3xx) -> acknowledge (commit) and move on
                 }
                 cause = new IllegalStateException("flow " + flowId + " returned status " + response.getStatus());
             } catch (InterruptedException e) {

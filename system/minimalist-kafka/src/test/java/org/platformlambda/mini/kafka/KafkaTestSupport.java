@@ -21,16 +21,6 @@ package org.platformlambda.mini.kafka;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.util.List;
 import java.util.Properties;
@@ -39,32 +29,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Shared Kafka client factory helpers for the integration tests. The wire contract matches the
- * building blocks: {@code key=String}, {@code value=byte[]}.
+ * Shared Kafka admin helper for the integration tests (the producer/consumer go through the library's own
+ * publisher + flow adapter, so the wire contract - {@code key=String}, {@code value=byte[]} - is exercised
+ * there, not here).
  */
 final class KafkaTestSupport {
 
     private KafkaTestSupport() {}
-
-    static Producer<String, byte[]> newProducer(String bootstrapServers) {
-        Properties p = new Properties();
-        p.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        p.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        p.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
-        p.put(ProducerConfig.ACKS_CONFIG, "all");
-        return new KafkaProducer<>(p);
-    }
-
-    static Consumer<String, byte[]> newConsumer(String bootstrapServers, String groupId) {
-        Properties p = new Properties();
-        p.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        p.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-        p.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        p.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-        p.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        p.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
-        return new KafkaConsumer<>(p);
-    }
 
     static void createTopic(String bootstrapServers, String topic)
             throws InterruptedException, ExecutionException, TimeoutException {

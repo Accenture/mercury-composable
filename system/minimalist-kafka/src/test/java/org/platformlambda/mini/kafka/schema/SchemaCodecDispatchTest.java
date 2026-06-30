@@ -26,17 +26,18 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Covers the {@link SchemaCodec} dispatch guard: a {@link SchemaType} with no registered {@link SchemaSerde}
- * fails clearly rather than silently mis-encoding. Uses the package-private constructor with an empty serde
- * map so no registry is needed. (All three types are wired in production via {@code fromConfig}; this guards
- * the path should a future type be requested before its serde lands.)
+ * Covers the {@link SchemaCodec.Encoder} dispatch guard: a {@link SchemaType} with no registered
+ * {@link SchemaSerde} fails clearly rather than silently mis-encoding. Uses the package-private constructor
+ * with an empty serde map so no registry is needed. (All three types are wired in production via
+ * {@code newEncoder()}; this guards the path should a future type be requested before its serde lands.)
  */
 class SchemaCodecDispatchTest {
 
     @Test
-    void serializeWithNoSerdeForTypeThrows() {
-        SchemaCodec codec = new SchemaCodec(null, new EnumMap<>(SchemaType.class));
+    void encodeWithNoSerdeForTypeThrows() {
+        SchemaCodec.Encoder encoder = new SchemaCodec.Encoder(new EnumMap<>(SchemaType.class));
+        Map<String, Object> value = Map.of("a", "b");
         assertThrows(UnsupportedOperationException.class,
-                () -> codec.serialize("topic", SchemaType.JSON, 1, Map.of("a", "b")));
+                () -> encoder.serialize("topic", SchemaType.JSON, 1, value));
     }
 }

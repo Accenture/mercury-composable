@@ -48,10 +48,9 @@ final class ProtobufConversions {
 
     /** Build a {@link DynamicMessage} for {@code value} against {@code descriptor}. */
     static DynamicMessage toMessage(Object value, Descriptor descriptor) {
-        if (!(value instanceof Map)) {
+        if (!(value instanceof Map<?, ?> map)) {
             throw new IllegalArgumentException("expected a Map for protobuf message " + descriptor.getFullName());
         }
-        Map<?, ?> map = (Map<?, ?>) value;
         DynamicMessage.Builder builder = DynamicMessage.newBuilder(descriptor);
         for (FieldDescriptor field : descriptor.getFields()) {
             Object fieldValue = map.get(field.getName());
@@ -73,26 +72,17 @@ final class ProtobufConversions {
     }
 
     private static Object toField(Object value, FieldDescriptor field) {
-        switch (field.getJavaType()) {
-            case INT:
-                return value instanceof Number n ? n.intValue() : value;
-            case LONG:
-                return value instanceof Number n ? n.longValue() : value;
-            case FLOAT:
-                return value instanceof Number n ? n.floatValue() : value;
-            case DOUBLE:
-                return value instanceof Number n ? n.doubleValue() : value;
-            case STRING:
-                return String.valueOf(value);
-            case BYTE_STRING:
-                return value instanceof byte[] bytes ? ByteString.copyFrom(bytes) : value;
-            case ENUM:
-                return field.getEnumType().findValueByName(String.valueOf(value));
-            case MESSAGE:
-                return toMessage(value, field.getMessageType());
-            default:
-                return value;   // BOOLEAN
-        }
+        return switch (field.getJavaType()) {
+            case INT -> value instanceof Number n ? n.intValue() : value;
+            case LONG -> value instanceof Number n ? n.longValue() : value;
+            case FLOAT -> value instanceof Number n ? n.floatValue() : value;
+            case DOUBLE -> value instanceof Number n ? n.doubleValue() : value;
+            case STRING -> String.valueOf(value);
+            case BYTE_STRING -> value instanceof byte[] bytes ? ByteString.copyFrom(bytes) : value;
+            case ENUM -> field.getEnumType().findValueByName(String.valueOf(value));
+            case MESSAGE -> toMessage(value, field.getMessageType());
+            default -> value;   // BOOLEAN
+        };
     }
 
     /** Render a decoded protobuf {@link Message} back to a plain {@code Map}. */

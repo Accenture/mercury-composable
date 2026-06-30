@@ -42,14 +42,18 @@ import java.util.concurrent.ConcurrentMap;
  * so no generated classes are needed. On decode the deserializer yields a {@code DynamicMessage} which is
  * rendered back to a {@code Map}. (Confluent's protobuf wire format adds a message-index header after the
  * id; the serde handles that framing - this codec only reads the leading magic byte + global id.)</p>
+ *
+ * <p><b>Confinement.</b> The Confluent serdes are not thread-safe; one instance of this class is owned by a
+ * single-flight {@link SchemaCodec.Encoder}/{@link SchemaCodec.Decoder}, so the cached serializers (per id)
+ * and the lazily-built deserializer are only ever touched by one thread - no synchronization needed.</p>
  */
 class ProtobufSchemaSerde implements SchemaSerde {
 
     private final SchemaRegistryClient client;
     private final String registryUrl;
-    // one serializer per global schema id (use.schema.id is fixed at configure time)
+    // one serializer per global schema id (use.schema.id is fixed at configure time); owner-confined
     private final ConcurrentMap<Integer, KafkaProtobufSerializer<Message>> serializers = new ConcurrentHashMap<>();
-    private volatile KafkaProtobufDeserializer<Message> deserializer;
+    private KafkaProtobufDeserializer<Message> deserializer;
 
     ProtobufSchemaSerde(SchemaRegistryClient client, String registryUrl) {
         this.client = client;
@@ -81,6 +85,9 @@ class ProtobufSchemaSerde implements SchemaSerde {
         }
     }
 
+    // S2095: the serializer is cached for the life of this owner-confined serde (not a method-local resource);
+    // closing it here would tear down a still-in-use serializer.
+    @SuppressWarnings("java:S2095")
     private KafkaProtobufSerializer<Message> newSerializer(int schemaId) {
         Map<String, Object> cfg = new HashMap<>();
         cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
@@ -93,16 +100,14 @@ class ProtobufSchemaSerde implements SchemaSerde {
         return new KafkaProtobufSerializer<>(client, cfg);
     }
 
+    // S2095: the deserializer is cached for the life of this owner-confined serde (see newSerializer).
+    @SuppressWarnings("java:S2095")
     private KafkaProtobufDeserializer<Message> deserializer() {
         if (deserializer == null) {
-            synchronized (this) {
-                if (deserializer == null) {
-                    Map<String, Object> cfg = new HashMap<>();
-                    cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
-                    // no specific.protobuf.value.type -> deserialize to a generic DynamicMessage
-                    deserializer = new KafkaProtobufDeserializer<>(client, cfg);
-                }
-            }
+            Map<String, Object> cfg = new HashMap<>();
+            cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
+            // no specific.protobuf.value.type -> deserialize to a generic DynamicMessage
+            deserializer = new KafkaProtobufDeserializer<>(client, cfg);
         }
         return deserializer;
     }
