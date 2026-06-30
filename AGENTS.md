@@ -119,9 +119,12 @@ expected (the decay math counts log files — `DECAY.md` §4).
    so they don't depend on you remembering. (Also run on demand if the user says "review memory".)
 4. Remind the user: `git add memory/ && git commit -m "session YYYY-MM-DD [agent]"`.
    **Commits are deliberate and human-initiated.** When you commit at the human's direction,
-   **identify yourself** the same way you do in session logs — e.g. a `Co-Authored-By: <your agent
-   name>` trailer — so authorship is traceable across vendors. (If your runtime already adds one,
-   nothing to do.)
+   **identify yourself** the same way you do in session logs — a `Co-Authored-By: <your agent name>`
+   trailer using your **stable agent name** (e.g. `Claude Code`, `Gemini CLI`) — the actual AI
+   collaborator, **not** a model-version string — so the attribution stays one identity across
+   releases and vendors. (If your runtime auto-injects a model-version trailer you can't override,
+   accept it.) On a **squash-merge**, collapse to a **single** `Co-Authored-By:` — GitHub appends a
+   consolidated one after the `---------` line, so trim the redundant inline repeats; one is enough.
    - **Opening a pull request?** Lead the description with two short sections — **What** (the
      change) and **Why** (the intent it serves — the Blueprint gap, decision, or problem behind
      it; substantive intent, *not* a restatement of What) — each 1–2 short paragraphs, drawn from

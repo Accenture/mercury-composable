@@ -13,6 +13,6 @@
 -->
 
 ---
-Co-Authored-By: <!-- your agent name, e.g. "Claude Code" — the same identity you use in commits & session logs -->
+Co-Authored-By: <!-- the AI collaborator's stable agent name (e.g. "Claude Code", "Gemini CLI") — not a model version; same identity as your session logs -->
 
 <sub>agent-memory convention: PRs lead with **What** and **Why** (the *why* is a first-class artifact here — see the session log), and self-identify the authoring agent (above), same as commit trailers & session logs. Advisory, not a gate.</sub>

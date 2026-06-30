@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-30T04:51:51Z | agent: Claude Code (2026-06-30-045151)
+- **last_session:** 2026-06-30T05:53:33Z | agent: Claude Code (2026-06-30-055333)
 - **last_review:** 2026-06-29 | through 2026-06-29-223651.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -165,6 +165,18 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [x] **Upgraded agent-memory v4.27.0 → v4.28.0** (Mode B, by Claude Code from the tool checkout). Single,
+  additive rung — **co-author convention cleanup** (refines v4.27.0, from this repo's PR #126 finding):
+  the `Co-Authored-By` self-identification now uses the **stable agent name** (e.g. `Claude Code`) — the
+  actual AI collaborator, not a model-version string that churns each release — and on a **squash-merge**
+  collapse to a **single** trailer (GitHub appends a consolidated one after `---------`; trim the inline
+  repeats). Applied here: additively refined the `AGENTS.md` commit-trailer note + re-copied
+  `.github/pull_request_template.md` (footer comment updated), stamped `.agent/version.md` → 4.28.0.
+  Fetched + switched to `main` + `pull --ff-only` first (local was on the merged `chore/sonar-ide-cleanup`
+  with a stale main). No memory-shape/skill/adapter change. `memory-lint`: **0 errors**. Working tree
+  **uncommitted** — review + commit at the mercury team's discretion.
+  <!-- id: agent-memory-upgrade-v4280 | created: 2026-06-30 | last_used: 2026-06-30 | uses: 1 | tier: working | origin: 2026-06-30-055333 -->
 
 - [x] **Upgraded agent-memory v4.26.1 → v4.27.0** (Mode B, by Claude Code from the tool checkout). Single,
   additive rung — **standardized PR descriptions (What / Why)**: every enabled repo now ships a
