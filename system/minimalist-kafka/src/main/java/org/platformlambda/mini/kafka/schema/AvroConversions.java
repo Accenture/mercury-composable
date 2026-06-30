@@ -75,8 +75,7 @@ final class AvroConversions {
             if (map.containsKey(field.name())) {
                 genericRecord.put(field.pos(), toAvro(map.get(field.name()), field.schema()));
             } else {
-                // No value supplied: use the field's schema default (throws if the field has no default,
-                // which is the correct Avro behavior - a required field must be present).
+                // absent field -> its schema default (Avro throws if a no-default field is missing, as required)
                 genericRecord.put(field.pos(), GenericData.get().getDefaultValue(field));
             }
         }

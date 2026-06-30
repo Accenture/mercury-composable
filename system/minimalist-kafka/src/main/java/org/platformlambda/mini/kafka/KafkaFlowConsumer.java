@@ -97,8 +97,11 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private final long dlqTimeout;   // confirm-write timeout for the dead-letter publish (broker ack)
     private final RetryPolicy retryPolicy;
     private final Integer partition;   // null = group-managed subscribe; non-null = pin this partition
-    // null = raw byte[] body; non-null = decode Confluent-framed value. Owned by this consumer's single poll
-    // thread (the Confluent deserializers are not thread-safe), minted from the shared SchemaCodec factory.
+    /**
+     * {@code null} = raw byte[] body; non-null = decode Confluent-framed values to a Map. Owned by this
+     * consumer's single poll thread (the Confluent deserializers are not thread-safe), minted from the shared
+     * {@link SchemaCodec} factory.
+     */
     private final SchemaCodec.Decoder decoder;
     private final String deadLetterTopic;
     private final ExecutorService loop;

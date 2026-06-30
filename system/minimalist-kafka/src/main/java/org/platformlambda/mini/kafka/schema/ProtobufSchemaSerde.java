@@ -43,22 +43,19 @@ import java.util.concurrent.ConcurrentMap;
  * rendered back to a {@code Map}. (Confluent's protobuf wire format adds a message-index header after the
  * id; the serde handles that framing - this codec only reads the leading magic byte + global id.)</p>
  *
- * <p><b>Confinement.</b> The Confluent serdes are not thread-safe; one instance of this class is owned by a
- * single-flight {@link SchemaCodec.Encoder}/{@link SchemaCodec.Decoder}, so the cached serializers (per id)
- * and the lazily-built deserializer are only ever touched by one thread - no synchronization needed.</p>
+ * <p><b>Confinement &amp; lifetime.</b> The Confluent serdes are not thread-safe; one instance of this class
+ * is owned by a single-flight {@link SchemaCodec.Encoder}/{@link SchemaCodec.Decoder}, so the serializers and
+ * deserializer are only ever touched by one thread - no synchronization needed. They are kept for the life of
+ * this serde (not per-call resources), so they are intentionally not closed here: the per-id serializers are
+ * cached lazily and the single deserializer is built eagerly in the constructor.</p>
  */
 class ProtobufSchemaSerde implements SchemaSerde {
 
     private final SchemaRegistryClient client;
     private final String registryUrl;
-    // one serializer per global schema id (use.schema.id is fixed at configure time); owner-confined,
-    // lazily populated per id. There is only ever one deserializer, so it is built eagerly.
     private final ConcurrentMap<Integer, KafkaProtobufSerializer<Message>> serializers = new ConcurrentHashMap<>();
     private final KafkaProtobufDeserializer<Message> deserializer;
 
-    // S2095: the deserializer (and the per-id serializers in newSerializer) are kept for the life of this
-    // owner-confined serde - not method-local resources - so they are not closed here.
-    @SuppressWarnings("java:S2095")
     ProtobufSchemaSerde(SchemaRegistryClient client, String registryUrl) {
         this.client = client;
         this.registryUrl = registryUrl;
@@ -93,16 +90,16 @@ class ProtobufSchemaSerde implements SchemaSerde {
         }
     }
 
-    // S2095: the serializer is cached for the life of this owner-confined serde (not a method-local resource);
-    // closing it here would tear down a still-in-use serializer.
-    @SuppressWarnings("java:S2095")
+    /**
+     * Build the serializer for {@code schemaId}, pinned to that global id via {@code use.schema.id} (the
+     * DynamicMessage is built against that exact schema, so strict compatibility checks against a value-derived
+     * schema are off, and auto-register is off). Cached and reused for the life of this serde - one per id.
+     */
     private KafkaProtobufSerializer<Message> newSerializer(int schemaId) {
         Map<String, Object> cfg = new HashMap<>();
         cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
         cfg.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS, false);
         cfg.put(AbstractKafkaSchemaSerDeConfig.USE_SCHEMA_ID, schemaId);
-        // we serialize a pre-registered schema by id; the DynamicMessage is built against that exact schema,
-        // so do not enforce strict compatibility checks against a schema derived from the value.
         cfg.put(AbstractKafkaSchemaSerDeConfig.ID_COMPATIBILITY_STRICT, false);
         cfg.put(AbstractKafkaSchemaSerDeConfig.LATEST_COMPATIBILITY_STRICT, false);
         return new KafkaProtobufSerializer<>(client, cfg);

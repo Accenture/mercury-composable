@@ -92,9 +92,11 @@ public class SchemaCodec {
         File cacheDir = new File(config.getProperty(CACHE_DIR, DEFAULT_CACHE_DIR));
         long ttlMillis = 1000L * Utility.getInstance()
                 .getDurationInSeconds(config.getProperty(CACHE_TTL, DEFAULT_CACHE_TTL));
-        // The schema cache is rebuildable from the registry, so clear it at startup - a stale entry (e.g.
-        // after the registry's schemas changed between runs) is never served. It re-populates on demand and
-        // TTL-expires within the run. (Unlike the registry's data store, a cache has no durable mode.)
+        /*
+         * The schema cache is rebuildable from the registry, so clear it at startup - a stale entry (e.g.
+         * after the registry's schemas changed between runs) is never served. It re-populates on demand and
+         * TTL-expires within the run. (Unlike the registry's data store, a cache has no durable mode.)
+         */
         Utility.getInstance().cleanupDir(cacheDir);
         Map<String, Object> srConfig = new HashMap<>();
         srConfig.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
