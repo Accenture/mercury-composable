@@ -219,7 +219,7 @@
 <ul>
 <li><strong>Location:</strong> <code>helpers/schema-registry-standalone</code></li>
 <li><strong>Default Port:</strong> <code>8081</code> (Confluent's default)</li>
-<li><strong>Storage:</strong> In-memory, persisted to <code>schemas.json</code> under a configurable directory (<code>schema.registry.data.store</code>, default <code>/tmp/schema-registry</code>)</li>
+<li><strong>Storage:</strong> In-memory, persisted as one file per schema id (<code>&lt;id&gt;.json</code>, e.g. <code>1.json</code>) under a configurable directory (<code>schema.registry.data.store</code>, default <code>/tmp/schema-registry</code>)</li>
 <li><strong>Supported Types:</strong> Avro (default), JSON Schema, Protobuf.</li>
 </ul>
 <h2 id="why-use-this">Why use this?</h2>
@@ -294,9 +294,12 @@ subject) returns the same id.</p>
 </tbody>
 </table>
 <h2 id="state-management">State Management</h2>
-<p>Schemas are persisted to a JSON file (<code>schemas.json</code>) under a configurable directory, so that if you
-restart the mock the schema IDs assigned to your applications remain valid — preventing deserialization
-errors during iterative local development.</p>
+<p>Schemas are persisted as <strong>one file per id</strong> (<code>&lt;id&gt;.json</code>, holding <code>{"schema": ..., "schemaType": ...}</code>)
+under a configurable directory, so that if you restart the mock the schema IDs assigned to your applications
+remain valid — preventing deserialization errors during iterative local development.</p>
+<p>Because storage is one file per id, you can <strong>drop a new schema file (e.g. <code>10.json</code>) into the directory
+while the server is running</strong> and it is picked up on demand by the next <code>GET /schemas/ids/10</code> — no restart
+needed. (A file present at boot is loaded then; a file added later is loaded lazily on first lookup.)</p>
 <p>The directory is set with the <code>schema.registry.data.store</code> config key (in <code>application.properties</code>),
 defaulting to a transient <code>/tmp/schema-registry</code>:</p>
 <pre><code class="language-properties">schema.registry.data.store=/tmp/schema-registry

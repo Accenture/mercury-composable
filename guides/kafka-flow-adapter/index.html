@@ -418,8 +418,7 @@ library (not a reinvented codec). <strong>JSON Schema, Avro, and Protobuf</stron
 <a href="../schema-registry-mock/"><code>schema-registry-standalone</code></a> mock). When it is unset, schema features stay off and
 the library keeps its raw <code>byte[]</code> behavior.</p>
 <pre><code class="language-properties">schema.registry.url=${SCHEMA_REGISTRY_URL:http://127.0.0.1:8081}
-schema.registry.cache.dir=/tmp/schema-registry-cache   # on-disk schema cache (by id)
-schema.registry.cache.ttl=24h
+schema.registry.cache.ttl=30m                          # TTL for the in-memory schema cache (by id)
 </code></pre>
 <h3 id="schema-produce">Produce: id-driven, no subject or naming strategy</h3>
 <p><code>simple.kafka.notification</code> serializes the body into the wire format when you supply two headers:</p>
@@ -474,9 +473,12 @@ immediately via the <a href="#reliability">DLQ path</a> rather than retried.</p>
   Protobuf records are <em>closed-shape</em> — a message must match the declared fields, and a non-schema field is
   dropped on the wire. Avro applies declared field defaults for absent fields; Protobuf relies on proto3
   implicit defaults. Avro/Protobuf decode to generic records (no generated classes), rendered to a <code>Map</code>.</li>
-<li><strong>Schema cache.</strong> Lookups by id are cached on disk under <code>schema.registry.cache.dir</code> (TTL
-  <code>schema.registry.cache.ttl</code>) to cut registry round-trips and tolerate a brief registry outage. The cache is
-  rebuildable, so it is <strong>cleared at startup</strong> — a schema changed between runs is never served stale.</li>
+<li><strong>Schema cache.</strong> Lookups by id are cached <strong>in memory</strong> (platform <code>ManagedCache</code>, TTL
+  <code>schema.registry.cache.ttl</code>, default <code>30m</code>) to cut registry round-trips. A global schema id is immutable, so
+  a cache hit is always the right schema. <strong>Positive results only</strong> — a not-found id is never cached, so a
+  schema registered while the app is running becomes visible on the next lookup. The TTL lets schema changes
+  be picked up without restarting pods (handy in dev / lower environments); lengthen it in production where
+  schemas change rarely. The cache is rebuildable and <strong>cleared at startup</strong>.</li>
 <li><strong>Worked example.</strong> The <a href="../sync-over-async/">sync-over-async demo</a> runs the same end-to-end flow over all
   three formats (<code>json-topic-1/2</code>, <code>avro-topic-1/2</code>, <code>protobuf-topic-1/2</code>) alongside the raw <code>byte[]</code> path.</li>
 </ul>
@@ -533,14 +535,9 @@ The essentials:</p>
 <td>Confluent Schema Registry URL; unset = <a href="#schema">schema features</a> off (raw <code>byte[]</code>).</td>
 </tr>
 <tr>
-<td><code>schema.registry.cache.dir</code></td>
-<td><code>/tmp/schema-registry-cache</code></td>
-<td>On-disk schema cache (by id); cleared at startup.</td>
-</tr>
-<tr>
 <td><code>schema.registry.cache.ttl</code></td>
-<td><code>24h</code></td>
-<td>Time-to-live for a cached schema entry.</td>
+<td><code>30m</code></td>
+<td>TTL for the in-memory (<code>ManagedCache</code>) schema cache (by id); positive results only; cleared at startup.</td>
 </tr>
 </tbody>
 </table>

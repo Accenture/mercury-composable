@@ -1094,16 +1094,10 @@ Kafka. See the <a href="../kafka-flow-adapter/">Kafka Flow Adapter guide</a>. Th
 <td>Confluent Schema Registry URL. Unset = schema features off (raw <code>byte[]</code>); set to enable the <a href="../kafka-flow-adapter/#schema">Schema Registry integration</a> (JSON Schema / Avro / Protobuf).</td>
 </tr>
 <tr>
-<td><code>schema.registry.cache.dir</code></td>
-<td><code>String</code> (path)</td>
-<td><code>/tmp/schema-registry-cache</code></td>
-<td>On-disk cache of schemas fetched by id; cleared at startup (rebuildable).</td>
-</tr>
-<tr>
 <td><code>schema.registry.cache.ttl</code></td>
 <td>duration</td>
-<td><code>24h</code></td>
-<td>Time-to-live for a cached schema entry before it is refreshed from the registry.</td>
+<td><code>30m</code></td>
+<td>Time-to-live for an entry in the in-memory (platform <code>ManagedCache</code>) cache of schemas fetched by id. Positive results only — a not-found id is never cached, so a newly-registered schema is visible immediately. The TTL bounds how long a cached schema is reused before re-fetching; <code>30m</code> lets schema changes be picked up without a pod restart (lengthen it in production where schemas change rarely). Cleared at startup (rebuildable).</td>
 </tr>
 </tbody>
 </table>
