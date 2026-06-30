@@ -91,13 +91,6 @@ public class ReturnRouteCoordinator implements AutoCloseable {
     }
 
     /**
-     * Originating pod: block for the response. On timeout, do one final Redis read so a dropped Pub/Sub
-     * notification still resolves the request before giving up.
-     *
-     * @return the response payload
-     * @throws TimeoutException if no response arrived (and none is in Redis) within {@code timeoutMillis}
-     */
-    /**
      * Originating pod, await-by-cid: used when {@code begin} and the await run as separate flow tasks, so the
      * caller no longer holds the future returned by {@link #begin}. Looks the future up by correlation-id and
      * blocks on it. If the entry is already gone (the response arrived and completed it between the two tasks),
@@ -118,6 +111,13 @@ public class ReturnRouteCoordinator implements AutoCloseable {
         throw new IllegalStateException("No pending request for " + correlationId);
     }
 
+    /**
+     * Originating pod: block on the supplied future for the response. On timeout, do one final Redis read so a
+     * dropped Pub/Sub notification still resolves the request before giving up.
+     *
+     * @return the response payload
+     * @throws TimeoutException if no response arrived (and none is in Redis) within {@code timeoutMillis}
+     */
     public String awaitResponse(String correlationId, CompletableFuture<String> future, long timeoutMillis)
             throws InterruptedException, TimeoutException {
         try {

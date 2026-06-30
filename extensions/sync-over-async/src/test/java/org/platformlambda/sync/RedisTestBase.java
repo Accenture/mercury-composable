@@ -26,13 +26,13 @@ import redis.embedded.RedisServer;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.ServerSocket;
 
 /**
- * Boots a real (embedded) {@code redis-server} on a free port for the duration of the test class and
+ * Boots a real (embedded) {@code redis-server} on a fixed high port for the duration of the test class and
  * exposes a Lettuce client to it. The bundled binary covers macOS arm64/amd64 and Linux arm64/amd64,
  * so the return-route mechanism is exercised against genuine Redis semantics (incl. Pub/Sub) with no
- * Docker dependency.
+ * Docker dependency. The port is fixed (predictable: if it is in use the test fails fast) and high enough
+ * to avoid a developer's local Redis on {@code 6379}.
  *
  * <p>The working directory is pinned to {@code /tmp/soa-redis} - the same transient {@code /tmp} location
  * the {@code redis-standalone} helper uses (cloud-native pattern). It is <b>wiped and recreated before the
@@ -44,6 +44,8 @@ public abstract class RedisTestBase {
 
     /** Transient working directory for Redis data; shared with the redis-standalone helper. */
     protected static final String REDIS_DATA_DIR = "/tmp/soa-redis";
+    // fixed high port (predictable; avoids a developer's local Redis on 6379)
+    private static final int REDIS_PORT = 16379;
 
     protected static RedisServer redisServer;
     protected static RedisClient redisClient;
@@ -53,7 +55,7 @@ public abstract class RedisTestBase {
     @SuppressWarnings("java:S5443")
     @BeforeAll
     static void startRedis() throws IOException {
-        redisPort = freePort();
+        redisPort = REDIS_PORT;
         // wipe the transient store and recreate it, so each run begins from a clean slate
         File dir = new File(REDIS_DATA_DIR);
         Utility.getInstance().cleanupDir(dir);
@@ -75,12 +77,6 @@ public abstract class RedisTestBase {
         }
         if (redisServer != null) {
             redisServer.stop();
-        }
-    }
-
-    private static int freePort() throws IOException {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
         }
     }
 }

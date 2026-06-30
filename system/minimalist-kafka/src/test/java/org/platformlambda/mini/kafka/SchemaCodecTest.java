@@ -18,6 +18,8 @@
 
 package org.platformlambda.mini.kafka;
 
+import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Message;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
@@ -29,8 +31,6 @@ import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufSerializer;
-import com.google.protobuf.DynamicMessage;
-import com.google.protobuf.Message;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
@@ -43,17 +43,25 @@ import org.platformlambda.mini.kafka.schema.SchemaCodec;
 import org.platformlambda.mini.kafka.schema.SchemaType;
 
 import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Validates the {@link SchemaCodec} against the real Confluent JSON Schema serdes and a self-contained,
+ * Validates the {@link SchemaCodec} (and its owner-confined {@link SchemaCodec.Encoder}/
+ * {@link SchemaCodec.Decoder}) against the real Confluent JSON/Avro/Protobuf serdes and a self-contained,
  * in-JVM {@link EmbeddedSchemaRegistry} (no Kafka broker, no AutoStart, no network beyond loopback):
  * id-driven serialize, magic-id dispatch + decode to a Map, on-disk schema cache, and - critically -
- * decoding messages produced by a stock {@code KafkaJsonSchemaSerializer} (interop with client projects).
+ * decoding messages produced by stock Confluent serializers (interop with client projects).
  */
 class SchemaCodecTest {
 
@@ -68,6 +76,8 @@ class SchemaCodecTest {
 
     private static EmbeddedSchemaRegistry registry;
     private static SchemaCodec codec;
+    private static SchemaCodec.Encoder encoder;
+    private static SchemaCodec.Decoder decoder;
     private static File cacheDir;
 
     @BeforeAll
@@ -77,6 +87,8 @@ class SchemaCodecTest {
         cacheDir = new File(config.getProperty("schema.registry.cache.dir", "/tmp/schema-registry-cache-test"));
         Utility.getInstance().cleanupDir(cacheDir);   // transient /tmp cache: start clean
         codec = SchemaCodec.fromConfig(config, registry.baseUrl());
+        encoder = codec.newEncoder();
+        decoder = codec.newDecoder();
     }
 
     @AfterAll
@@ -91,11 +103,11 @@ class SchemaCodecTest {
     void serializeByIdThenDecodeRoundTrips() throws Exception {
         int id = codec.client().register(TOPIC + "-value", new JsonSchema(JSON_SCHEMA));
 
-        byte[] framed = codec.serialize(TOPIC, SchemaType.JSON, id, Map.of("hello", "world"));
+        byte[] framed = encoder.serialize(TOPIC, SchemaType.JSON, id, Map.of("hello", "world"));
         assertTrue(SchemaCodec.isFramed(framed), "output is Confluent-framed (magic byte + id)");
         assertEquals(id, SchemaCodec.schemaId(framed), "the framed id matches the pre-registered schema");
 
-        Object decoded = codec.decode(TOPIC, framed);
+        Object decoded = decoder.decode(TOPIC, framed);
         assertInstanceOf(Map.class, decoded);
         assertEquals("world", ((Map<?, ?>) decoded).get("hello"));
 
@@ -103,7 +115,7 @@ class SchemaCodecTest {
     }
 
     @Test
-    void decodesMessageFromStockConfluentSerializer() throws Exception {
+    void decodesMessageFromStockConfluentSerializer() {
         // External-client stand-in: a stock KafkaJsonSchemaSerializer that auto-registers from the value.
         CachedSchemaRegistryClient srClient = new CachedSchemaRegistryClient(List.of(registry.baseUrl()),
                 100, List.of(new JsonSchemaProvider()), Map.of());
@@ -112,7 +124,7 @@ class SchemaCodecTest {
         cfg.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS, true);
         try (KafkaJsonSchemaSerializer<Object> serializer = new KafkaJsonSchemaSerializer<>(srClient, cfg)) {
             byte[] framed = serializer.serialize(TOPIC, Map.of("hello", "external"));
-            Object decoded = codec.decode(TOPIC, framed);
+            Object decoded = decoder.decode(TOPIC, framed);
             assertInstanceOf(Map.class, decoded);
             assertEquals("external", ((Map<?, ?>) decoded).get("hello"),
                     "minimalist-kafka decodes messages produced by a stock Confluent serializer");
@@ -123,11 +135,11 @@ class SchemaCodecTest {
     void serializeAvroByIdThenDecodeRoundTrips() throws Exception {
         int id = codec.client().register(TOPIC + "-avro-value", new AvroSchema(AVRO_SCHEMA));
 
-        byte[] framed = codec.serialize(TOPIC, SchemaType.AVRO, id, Map.of("hello", "avro"));
+        byte[] framed = encoder.serialize(TOPIC, SchemaType.AVRO, id, Map.of("hello", "avro"));
         assertTrue(SchemaCodec.isFramed(framed), "output is Confluent-framed (magic byte + id)");
         assertEquals(id, SchemaCodec.schemaId(framed), "the framed id matches the pre-registered schema");
 
-        Object decoded = codec.decode(TOPIC, framed);
+        Object decoded = decoder.decode(TOPIC, framed);
         assertInstanceOf(Map.class, decoded);
         assertEquals("avro", ((Map<?, ?>) decoded).get("hello"));
 
@@ -135,18 +147,18 @@ class SchemaCodecTest {
     }
 
     @Test
-    void decodesMessageFromStockConfluentAvroSerializer() throws Exception {
+    void decodesMessageFromStockConfluentAvroSerializer() {
         // External-client stand-in: a stock KafkaAvroSerializer that auto-registers from the GenericRecord.
         CachedSchemaRegistryClient srClient = new CachedSchemaRegistryClient(List.of(registry.baseUrl()),
                 100, List.of(new AvroSchemaProvider()), Map.of());
         Map<String, Object> cfg = new HashMap<>();
         cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registry.baseUrl());
         cfg.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS, true);
-        GenericRecord record = new GenericData.Record(new Schema.Parser().parse(AVRO_SCHEMA));
-        record.put("hello", "external-avro");
+        GenericRecord greeting = new GenericData.Record(new Schema.Parser().parse(AVRO_SCHEMA));
+        greeting.put("hello", "external-avro");
         try (KafkaAvroSerializer serializer = new KafkaAvroSerializer(srClient, cfg)) {
-            byte[] framed = serializer.serialize(TOPIC, record);
-            Object decoded = codec.decode(TOPIC, framed);
+            byte[] framed = serializer.serialize(TOPIC, greeting);
+            Object decoded = decoder.decode(TOPIC, framed);
             assertInstanceOf(Map.class, decoded);
             assertEquals("external-avro", ((Map<?, ?>) decoded).get("hello"),
                     "minimalist-kafka decodes Avro messages produced by a stock Confluent serializer");
@@ -157,11 +169,11 @@ class SchemaCodecTest {
     void serializeProtobufByIdThenDecodeRoundTrips() throws Exception {
         int id = codec.client().register(TOPIC + "-proto-value", new ProtobufSchema(PROTO_SCHEMA));
 
-        byte[] framed = codec.serialize(TOPIC, SchemaType.PROTOBUF, id, Map.of("hello", "protobuf"));
+        byte[] framed = encoder.serialize(TOPIC, SchemaType.PROTOBUF, id, Map.of("hello", "protobuf"));
         assertTrue(SchemaCodec.isFramed(framed), "output is Confluent-framed (magic byte + id)");
         assertEquals(id, SchemaCodec.schemaId(framed), "the framed id matches the pre-registered schema");
 
-        Object decoded = codec.decode(TOPIC, framed);
+        Object decoded = decoder.decode(TOPIC, framed);
         assertInstanceOf(Map.class, decoded);
         assertEquals("protobuf", ((Map<?, ?>) decoded).get("hello"));
 
@@ -169,7 +181,7 @@ class SchemaCodecTest {
     }
 
     @Test
-    void decodesMessageFromStockConfluentProtobufSerializer() throws Exception {
+    void decodesMessageFromStockConfluentProtobufSerializer() {
         // External-client stand-in: a stock KafkaProtobufSerializer that auto-registers from the message.
         CachedSchemaRegistryClient srClient = new CachedSchemaRegistryClient(List.of(registry.baseUrl()),
                 100, List.of(new ProtobufSchemaProvider()), Map.of());
@@ -181,7 +193,7 @@ class SchemaCodecTest {
                 .setField(schema.toDescriptor().findFieldByName("hello"), "external-proto").build();
         try (KafkaProtobufSerializer<Message> serializer = new KafkaProtobufSerializer<>(srClient, cfg)) {
             byte[] framed = serializer.serialize(TOPIC, message);
-            Object decoded = codec.decode(TOPIC, framed);
+            Object decoded = decoder.decode(TOPIC, framed);
             assertInstanceOf(Map.class, decoded);
             assertEquals("external-proto", ((Map<?, ?>) decoded).get("hello"),
                     "minimalist-kafka decodes Protobuf messages produced by a stock Confluent serializer");
@@ -190,12 +202,32 @@ class SchemaCodecTest {
 
     @Test
     void rejectsUnframedPayload() {
-        assertThrows(IllegalArgumentException.class, () -> codec.decode(TOPIC, "{\"hello\":\"x\"}".getBytes()));
+        byte[] unframed = "{\"hello\":\"x\"}".getBytes();
+        assertThrows(IllegalArgumentException.class, () -> decoder.decode(TOPIC, unframed));
     }
 
     @Test
     void disabledWhenNoRegistryUrl() {
         assertNull(SchemaCodec.fromConfig(AppConfigReader.getInstance(), "  "),
                 "blank registry url ⇒ schema features off");
+    }
+
+    @Test
+    void serializeDecodeRestoreThreadContextClassLoader() throws Exception {
+        // Guards the @KernelThreadRunner classloader fix: serde build/use pins the Confluent serde classloader
+        // as the thread context classloader, then must restore the caller's - never leak SERDE_CLASSLOADER.
+        int id = codec.client().register(TOPIC + "-tccl-value", new JsonSchema(JSON_SCHEMA));
+        Thread thread = Thread.currentThread();
+        ClassLoader original = thread.getContextClassLoader();
+        ClassLoader sentinel = new URLClassLoader(new URL[0], original);
+        try {
+            thread.setContextClassLoader(sentinel);
+            byte[] framed = encoder.serialize(TOPIC, SchemaType.JSON, id, Map.of("hello", "tccl"));
+            assertEquals("tccl", ((Map<?, ?>) decoder.decode(TOPIC, framed)).get("hello"));
+            assertSame(sentinel, thread.getContextClassLoader(),
+                    "serialize/decode restore the caller's thread context classloader");
+        } finally {
+            thread.setContextClassLoader(original);
+        }
     }
 }

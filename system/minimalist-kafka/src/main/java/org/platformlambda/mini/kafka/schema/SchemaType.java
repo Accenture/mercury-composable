@@ -29,7 +29,13 @@ public enum SchemaType {
     AVRO,
     PROTOBUF;
 
-    /** Parse a type name case-insensitively; {@code null}/blank defaults to {@link #JSON}. */
+    /**
+     * Parse a type name case-insensitively.
+     *
+     * @param value the type name (e.g. {@code "AVRO"}); {@code null}/blank defaults to {@link #JSON}
+     * @return the matching {@link SchemaType}
+     * @throws IllegalArgumentException if {@code value} is non-blank but not a known type
+     */
     public static SchemaType from(String value) {
         if (value == null || value.isBlank()) {
             return JSON;

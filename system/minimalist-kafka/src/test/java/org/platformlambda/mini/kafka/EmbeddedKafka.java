@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
-import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,13 +37,16 @@ import java.util.List;
 import java.util.Properties;
 
 /**
- * Embedded single-node KRaft Kafka broker for integration tests. Allocates dynamic broker/controller
- * ports and a private temp log directory ({@code /tmp/mini-kafka}), formatted with the official KRaft
- * {@link Formatter} (the legacy meta.properties format is invalid on Kafka 4.x). Cleaned up on close.
+ * Embedded single-node KRaft Kafka broker for integration tests. Uses <b>fixed</b> broker/controller ports
+ * (predictable: if a port is already in use the test fails fast rather than picking a surprise port) and a
+ * private temp log directory ({@code /tmp/mini-kafka}), formatted with the official KRaft {@link Formatter}
+ * (the legacy meta.properties format is invalid on Kafka 4.x). Cleaned up on close.
  */
 final class EmbeddedKafka implements AutoCloseable {
 
     private static final int NODE_ID = 1;
+    private static final int BROKER_PORT = 19092;
+    private static final int CONTROLLER_PORT = 19093;
     private static final String CONTROLLER_LISTENER = "CONTROLLER";
     private static final String LOG_DIR = "/tmp/mini-kafka";
 
@@ -54,13 +56,11 @@ final class EmbeddedKafka implements AutoCloseable {
 
     EmbeddedKafka() {
         try {
-            int brokerPort = freePort();
-            int controllerPort = freePort();
-            this.bootstrapServers = "127.0.0.1:" + brokerPort;
+            this.bootstrapServers = "127.0.0.1:" + BROKER_PORT;
             this.logDir = prepareLogDir();
             formatStorage(logDir);
             this.server = new KafkaRaftServer(
-                    new KafkaConfig(brokerConfig(brokerPort, controllerPort, logDir)), Time.SYSTEM);
+                    new KafkaConfig(brokerConfig(BROKER_PORT, CONTROLLER_PORT, logDir)), Time.SYSTEM);
             this.server.startup();
         } catch (IOException e) {
             throw new UncheckedIOException("Unable to start embedded Kafka", e);
@@ -111,12 +111,6 @@ final class EmbeddedKafka implements AutoCloseable {
                     .run();
         } catch (Exception e) {
             throw new IllegalStateException("Unable to format embedded Kafka storage", e);
-        }
-    }
-
-    private static int freePort() throws IOException {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
         }
     }
 

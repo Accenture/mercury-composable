@@ -30,12 +30,21 @@ interface SchemaSerde {
     /**
      * Serialize {@code value} (typically a {@code Map}) into the Confluent wire format for a pre-registered
      * global {@code schemaId}, using this type's Confluent serializer ({@code use.schema.id}, no auto-register).
+     *
+     * @param topic    the destination topic (a serde may derive its subject from it)
+     * @param schemaId the pre-registered global schema id to frame with
+     * @param value    the value to serialize
+     * @return the Confluent-framed bytes
      */
     byte[] serialize(String topic, int schemaId, Object value);
 
     /**
      * Decode Confluent-framed bytes (the embedded id selected this serde) back into a plain {@code Map} for
      * the flow dataset body.
+     *
+     * @param topic the source topic
+     * @param data  the Confluent-framed bytes
+     * @return the decoded value (a {@code Map})
      */
     Object decode(String topic, byte[] data);
 }

@@ -48,53 +48,44 @@ final class AvroConversions {
 
     private AvroConversions() { }
 
-    /** Build the Avro representation of {@code value} against {@code schema}, applying field defaults. */
+    /**
+     * Build the Avro representation of {@code value} against {@code schema}, applying field defaults.
+     *
+     * @param value  the plain Java value (a {@code Map} for a record, a {@code Collection} for an array, etc.)
+     * @param schema the Avro schema to build against
+     * @return the Avro object graph ({@code GenericRecord}, {@code GenericArray}, primitive, ...)
+     */
     static Object toAvro(Object value, Schema schema) {
-        switch (schema.getType()) {
-            case RECORD:
-                return toRecord(value, schema);
-            case UNION:
-                return toUnion(value, schema);
-            case ARRAY:
-                return toArray(value, schema);
-            case MAP:
-                return toMap(value, schema);
-            case ENUM:
-                return new GenericData.EnumSymbol(schema, String.valueOf(value));
-            case BYTES:
-            case FIXED:
-                return value instanceof byte[] bytes ? ByteBuffer.wrap(bytes) : value;
-            case STRING:
-                return value == null ? null : value.toString();
-            case INT:
-                return value instanceof Number n ? n.intValue() : value;
-            case LONG:
-                return value instanceof Number n ? n.longValue() : value;
-            case FLOAT:
-                return value instanceof Number n ? n.floatValue() : value;
-            case DOUBLE:
-                return value instanceof Number n ? n.doubleValue() : value;
-            default:
-                return value;   // BOOLEAN, NULL
-        }
+        return switch (schema.getType()) {
+            case RECORD -> toRecord(value, schema);
+            case UNION -> toUnion(value, schema);
+            case ARRAY -> toArray(value, schema);
+            case MAP -> toMap(value, schema);
+            case ENUM -> new GenericData.EnumSymbol(schema, String.valueOf(value));
+            case BYTES, FIXED -> value instanceof byte[] bytes ? ByteBuffer.wrap(bytes) : value;
+            case STRING -> value == null ? null : value.toString();
+            case INT -> value instanceof Number n ? n.intValue() : value;
+            case LONG -> value instanceof Number n ? n.longValue() : value;
+            case FLOAT -> value instanceof Number n ? n.floatValue() : value;
+            case DOUBLE -> value instanceof Number n ? n.doubleValue() : value;
+            default -> value;   // BOOLEAN, NULL
+        };
     }
 
     private static GenericRecord toRecord(Object value, Schema schema) {
-        if (!(value instanceof Map)) {
+        if (!(value instanceof Map<?, ?> map)) {
             throw new IllegalArgumentException("expected a Map for Avro record " + schema.getFullName());
         }
-        Map<?, ?> map = (Map<?, ?>) value;
-        GenericRecord record = new GenericData.Record(schema);
+        GenericRecord genericRecord = new GenericData.Record(schema);
         for (Schema.Field field : schema.getFields()) {
             if (map.containsKey(field.name())) {
-                record.put(field.pos(), toAvro(map.get(field.name()), field.schema()));
+                genericRecord.put(field.pos(), toAvro(map.get(field.name()), field.schema()));
             } else {
-                // No value supplied: use the field's schema default (throws if the field has no default,
-                // which is the correct Avro behavior - a required field must be present).
-                record.put(field.pos(), GenericData.get().getDefaultValue(field));
+                // absent field -> its schema default (Avro throws if a no-default field is missing, as required)
+                genericRecord.put(field.pos(), GenericData.get().getDefaultValue(field));
             }
         }
-        return record;
+        return genericRecord;
     }
 
     private static Object toUnion(Object value, Schema schema) {
@@ -111,10 +102,9 @@ final class AvroConversions {
     }
 
     private static GenericData.Array<Object> toArray(Object value, Schema schema) {
-        if (!(value instanceof Collection)) {
+        if (!(value instanceof Collection<?> items)) {
             throw new IllegalArgumentException("expected a Collection for Avro array");
         }
-        Collection<?> items = (Collection<?>) value;
         GenericData.Array<Object> array = new GenericData.Array<>(items.size(), schema);
         for (Object item : items) {
             array.add(toAvro(item, schema.getElementType()));
@@ -123,20 +113,25 @@ final class AvroConversions {
     }
 
     private static Map<String, Object> toMap(Object value, Schema schema) {
-        if (!(value instanceof Map)) {
+        if (!(value instanceof Map<?, ?> map)) {
             throw new IllegalArgumentException("expected a Map for Avro map");
         }
         Map<String, Object> out = new LinkedHashMap<>();
-        ((Map<?, ?>) value).forEach((k, v) -> out.put(String.valueOf(k), toAvro(v, schema.getValueType())));
+        map.forEach((k, v) -> out.put(String.valueOf(k), toAvro(v, schema.getValueType())));
         return out;
     }
 
-    /** Render a decoded Avro value back to plain Java ({@code Map}/{@code List}/{@code String}/primitive). */
+    /**
+     * Render a decoded Avro value back to plain Java.
+     *
+     * @param value a decoded Avro value ({@code GenericRecord}, {@code Utf8}, {@code Collection}, primitive, ...)
+     * @return the plain-Java equivalent ({@code Map}/{@code List}/{@code String}/primitive)
+     */
     static Object fromAvro(Object value) {
-        if (value instanceof GenericRecord record) {
+        if (value instanceof GenericRecord genericRecord) {
             Map<String, Object> map = new LinkedHashMap<>();
-            for (Schema.Field field : record.getSchema().getFields()) {
-                map.put(field.name(), fromAvro(record.get(field.pos())));
+            for (Schema.Field field : genericRecord.getSchema().getFields()) {
+                map.put(field.name(), fromAvro(genericRecord.get(field.pos())));
             }
             return map;
         }

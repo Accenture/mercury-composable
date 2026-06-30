@@ -44,6 +44,8 @@ class KafkaFlowAdapterConfigTest {
         return reader;
     }
 
+    // S2095: the constructor throws during config validation, so no adapter escapes to be closed (and if one ever did, the assertThrows would fail).
+    @SuppressWarnings("java:S2095")
     private static void build(ConfigReader config) {
         // consumer props are unused: every case here fails validation before any consumer is built
         new KafkaFlowAdapter(new Properties(), config, 1000, POLICY, null);
@@ -58,28 +60,32 @@ class KafkaFlowAdapterConfigTest {
 
     @Test
     void rejectsEmptyConsumerList() {
-        assertThrows(IllegalArgumentException.class, () -> build(config(List.of())));
+        ConfigReader config = config(List.of());
+        assertThrows(IllegalArgumentException.class, () -> build(config));
     }
 
     @Test
     void rejectsNonMapEntry() {
-        assertThrows(IllegalArgumentException.class, () -> build(config(List.of("just-a-string"))));
+        ConfigReader config = config(List.of("just-a-string"));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
     }
 
     @Test
     void rejectsEntryMissingTopic() {
-        assertThrows(IllegalArgumentException.class, () -> build(config(List.of(Map.of("flow", "f")))));
+        ConfigReader config = config(List.of(Map.of("flow", "f")));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
     }
 
     @Test
     void rejectsEntryMissingFlow() {
-        assertThrows(IllegalArgumentException.class, () -> build(config(List.of(Map.of("topic", "t")))));
+        ConfigReader config = config(List.of(Map.of("topic", "t")));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
     }
 
     @Test
     void rejectsBlankTopic() {
-        assertThrows(IllegalArgumentException.class,
-                () -> build(config(List.of(Map.of("topic", "  ", "flow", "f")))));
+        ConfigReader config = config(List.of(Map.of("topic", "  ", "flow", "f")));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
     }
 
     @Test

@@ -53,6 +53,8 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
     private static final String SCHEMA = "schema";
     private static final String SCHEMA_TYPE = "schemaType";
     private static final String AVRO = "AVRO";
+    // fixed port (predictable: if it is in use the test fails fast rather than picking a surprise port)
+    private static final int PORT = 18081;
 
     private final HttpServer server;
     private final AtomicInteger idGenerator = new AtomicInteger(1);
@@ -60,7 +62,7 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
     private final ConcurrentMap<Integer, Map<String, Object>> idToSchema = new ConcurrentHashMap<>();
 
     public EmbeddedSchemaRegistry() throws IOException {
-        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", PORT), 0);
         server.createContext("/", this::handle);
         server.start();
         log.info("Embedded schema registry on {}", baseUrl());
@@ -75,18 +77,27 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
         server.stop(0);
     }
 
+    /**
+     * Route by method + path to the matching Confluent endpoint handler:
+     * <ul>
+     *   <li>{@code POST /subjects/{subject}/versions} - {@link #register}</li>
+     *   <li>{@code POST /subjects/{subject}} - {@link #lookup} (lookup a schema under a subject)</li>
+     *   <li>{@code GET /schemas/ids/{id}} - {@link #getById}</li>
+     * </ul>
+     * Anything else is logged + answered 404.
+     *
+     * @param exchange the HTTP exchange to route and respond to
+     * @throws IOException if writing the response fails
+     */
     private void handle(com.sun.net.httpserver.HttpExchange exchange) throws IOException {
         try {
             String method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();
             String[] p = path.split("/");
-            // /subjects/{subject}/versions  (register)
             if ("POST".equals(method) && p.length == 4 && "subjects".equals(p[1]) && "versions".equals(p[3])) {
                 register(exchange);
-            // /subjects/{subject}  (lookup a schema under a subject)
             } else if ("POST".equals(method) && p.length == 3 && "subjects".equals(p[1])) {
                 lookup(exchange, decode(p[2]));
-            // /schemas/ids/{id}
             } else if ("GET".equals(method) && p.length == 4 && "schemas".equals(p[1]) && "ids".equals(p[2])) {
                 getById(exchange, Utility.getInstance().str2int(p[3]));
             } else {

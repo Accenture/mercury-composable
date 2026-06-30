@@ -18,6 +18,7 @@
 
 package org.platformlambda.mini.kafka;
 
+import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TraceInfo;
 import org.platformlambda.core.models.TypedLambdaFunction;
@@ -32,6 +33,8 @@ import reactor.core.publisher.Mono;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Kafka Notification Function - a minimalist composable function that publishes a Post Office event to a
@@ -52,9 +55,20 @@ import java.util.Map;
  * (RPC) therefore learns whether the publish succeeded - a publish failure propagates back as an error -
  * while a {@code po.send} (async) caller simply doesn't observe it. The Mono is realized as {@code null}
  * (a {@code Void} body) on success.</p>
+ *
+ * <p><b>{@code @KernelThreadRunner}.</b> When the Schema Registry is used, this function builds Confluent
+ * serializers, which use {@code synchronized} internally and are not thread-safe. Running on a kernel thread
+ * (rather than a virtual thread) avoids pinning a virtual-thread carrier on those {@code synchronized}
+ * sections, and each worker instance is single-flight - so each instance keeps its <b>own</b>
+ * {@link SchemaCodec.Encoder} (in {@link #encoders}, keyed by instance), guaranteeing a Confluent serializer
+ * is never touched by two threads at once.</p>
  */
+@KernelThreadRunner
 @PreLoad(route = "simple.kafka.notification", instances = 10)
 public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono<Void>> {
+
+    // one Encoder per worker instance (an instance is single-flight) -> owner-confined Confluent serializers.
+    private final ConcurrentMap<Integer, SchemaCodec.Encoder> encoders = new ConcurrentHashMap<>();
 
     @Override
     public Mono<Void> handleEvent(Map<String, String> headers, byte[] body, int instance) {
@@ -78,16 +92,16 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
         if (traceparent != null) {
             kafkaHeaders.put(W3cTrace.TRACEPARENT, traceparent.getBytes(StandardCharsets.UTF_8));
         }
-        byte[] payload = encode(topic, headers, body);
+        byte[] payload = encode(topic, headers, body, instance);
         return KafkaRuntime.publisher().publish(topic, partition, kafkaHeaders, payload);
     }
 
     /**
-     * When a {@code schema-id} header is present, serialize the body into the Confluent wire format via the
-     * shared {@link SchemaCodec} (the schema is pre-registered; identified by id). Otherwise the body is
-     * published as raw byte[] - the default minimalist behavior.
+     * When a {@code schema-id} header is present, serialize the body into the Confluent wire format via this
+     * instance's own {@link SchemaCodec.Encoder} (the schema is pre-registered; identified by id). Otherwise
+     * the body is published as raw byte[] - the default minimalist behavior.
      */
-    private static byte[] encode(String topic, Map<String, String> headers, byte[] body) {
+    private byte[] encode(String topic, Map<String, String> headers, byte[] body, int instance) {
         String schemaId = headers.get(KafkaHeaders.SCHEMA_ID);
         if (schemaId == null) {
             return body;
@@ -104,7 +118,8 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
         SchemaType type = SchemaType.from(headers.get(KafkaHeaders.SCHEMA_TYPE));
         // The body is the structured value to encode (for JSON, a JSON document); parse it for the serializer.
         Object value = SimpleMapper.getInstance().getMapper().readValue(body, Object.class);
-        return codec.serialize(topic, type, Integer.parseInt(schemaId.trim()), value);
+        SchemaCodec.Encoder encoder = encoders.computeIfAbsent(instance, i -> codec.newEncoder());
+        return encoder.serialize(topic, type, Integer.parseInt(schemaId.trim()), value);
     }
 
     /** Build a W3C traceparent from this function's current trace context (null if tracing is off). */

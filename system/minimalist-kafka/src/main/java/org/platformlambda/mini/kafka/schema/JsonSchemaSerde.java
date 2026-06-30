@@ -39,6 +39,12 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * The {@link SchemaType#JSON} serde: wraps Confluent's {@link KafkaJsonSchemaSerializer}/
  * {@link KafkaJsonSchemaDeserializer}.
+ *
+ * <p><b>Confinement &amp; lifetime.</b> The Confluent serdes are not thread-safe; one instance of this class
+ * is owned by a single-flight {@link SchemaCodec.Encoder}/{@link SchemaCodec.Decoder}, so the serializers and
+ * deserializer are only ever touched by one thread - no synchronization needed. They are kept for the life of
+ * this serde (not per-call resources), so they are intentionally not closed here: the per-id serializers are
+ * cached lazily and the single deserializer is built eagerly in the constructor.</p>
  */
 class JsonSchemaSerde implements SchemaSerde {
 
@@ -46,21 +52,25 @@ class JsonSchemaSerde implements SchemaSerde {
 
     private final SchemaRegistryClient client;
     private final String registryUrl;
-    // one serializer per global schema id (use.schema.id is fixed at configure time)
     private final ConcurrentMap<Integer, KafkaJsonSchemaSerializer<Object>> serializers = new ConcurrentHashMap<>();
-    private volatile KafkaJsonSchemaDeserializer<Object> deserializer;
+    private final KafkaJsonSchemaDeserializer<Object> deserializer;
 
     JsonSchemaSerde(SchemaRegistryClient client, String registryUrl) {
         this.client = client;
         this.registryUrl = registryUrl;
+        Map<String, Object> cfg = new HashMap<>();
+        cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
+        this.deserializer = new KafkaJsonSchemaDeserializer<>(client, cfg);
     }
 
     @Override
     public byte[] serialize(String topic, int schemaId, Object value) {
-        // Envelope the value with its (pre-registered) schema, so the serializer uses that schema directly
-        // instead of DERIVING one from the value's Map<String,Object> type - the derivation can't introspect
-        // the Object-typed map values (noisy "Unable to process java.lang.Object" warnings) and is wasted
-        // work. use.schema.id still pins the wire id and resolves via getSchemaById (no subject lookup).
+        /*
+         * Envelope the value with its (pre-registered) schema, so the serializer uses that schema directly
+         * instead of DERIVING one from the value's Map<String,Object> type - the derivation can't introspect
+         * the Object-typed map values (noisy "Unable to process java.lang.Object" warnings) and is wasted
+         * work. use.schema.id still pins the wire id and resolves via getSchemaById (no subject lookup).
+         */
         JsonNode node = JSON.valueToTree(value);
         Object enveloped = JsonSchemaUtils.envelope(jsonSchemaById(schemaId), node);
         return serializers.computeIfAbsent(schemaId, this::newSerializer).serialize(topic, enveloped);
@@ -68,10 +78,16 @@ class JsonSchemaSerde implements SchemaSerde {
 
     @Override
     public Object decode(String topic, byte[] data) {
-        return toMap(deserializer().deserialize(topic, data));
+        return toMap(deserializer.deserialize(topic, data));
     }
 
-    /** Resolve a pre-registered JSON schema by global id (cached by {@link FileCachedSchemaRegistryClient}). */
+    /**
+     * Resolve a pre-registered JSON schema by global id (cached by {@link FileCachedSchemaRegistryClient}).
+     *
+     * @param schemaId the global schema id
+     * @return the registered schema as a {@link JsonSchema}
+     * @throws IllegalStateException if the id is unresolvable or registered as a non-JSON type
+     */
     private JsonSchema jsonSchemaById(int schemaId) {
         try {
             ParsedSchema schema = client.getSchemaById(schemaId);
@@ -84,29 +100,22 @@ class JsonSchemaSerde implements SchemaSerde {
         }
     }
 
+    /**
+     * Build the serializer for {@code schemaId}, pinned to that global id via {@code use.schema.id} (the
+     * registered schema is authoritative, so strict compatibility checks against a value-derived schema are
+     * off, and auto-register is off). Cached and reused for the life of this serde - one per id.
+     *
+     * @param schemaId the global schema id to pin via {@code use.schema.id}
+     * @return a serializer configured for that id
+     */
     private KafkaJsonSchemaSerializer<Object> newSerializer(int schemaId) {
         Map<String, Object> cfg = new HashMap<>();
         cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
         cfg.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS, false);
         cfg.put(AbstractKafkaSchemaSerDeConfig.USE_SCHEMA_ID, schemaId);
-        // we serialize a pre-registered schema by id; do not enforce strict compatibility checks against
-        // a schema derived from the value (the registered schema is authoritative).
         cfg.put(AbstractKafkaSchemaSerDeConfig.ID_COMPATIBILITY_STRICT, false);
         cfg.put(AbstractKafkaSchemaSerDeConfig.LATEST_COMPATIBILITY_STRICT, false);
         return new KafkaJsonSchemaSerializer<>(client, cfg);
-    }
-
-    private KafkaJsonSchemaDeserializer<Object> deserializer() {
-        if (deserializer == null) {
-            synchronized (this) {
-                if (deserializer == null) {
-                    Map<String, Object> cfg = new HashMap<>();
-                    cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
-                    deserializer = new KafkaJsonSchemaDeserializer<>(client, cfg);
-                }
-            }
-        }
-        return deserializer;
     }
 
     /** Normalize the deserializer output to a {@code Map} for the flow dataset body. */

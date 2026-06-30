@@ -25,6 +25,8 @@ import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.helpers.registry.store.SchemaStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
@@ -41,6 +43,7 @@ import java.util.Map;
  */
 @PreLoad(route = "schema.registry.register", instances = 10)
 public class RegisterSchemaFunction implements TypedLambdaFunction<AsyncHttpRequest, EventEnvelope> {
+    private static final Logger log = LoggerFactory.getLogger(RegisterSchemaFunction.class);
 
     private static final String SCHEMA = "schema";
     private static final String SCHEMA_TYPE = "schemaType";
@@ -51,14 +54,17 @@ public class RegisterSchemaFunction implements TypedLambdaFunction<AsyncHttpRequ
     public EventEnvelope handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
         String subject = input.getPathParameter("subject");
         if (subject == null || subject.isEmpty()) {
+            log.warn("POST /subjects/{}/versions -> 404 (subject not found)", subject);
             return ApiError.of(404, ApiError.SUBJECT_NOT_FOUND, "Subject not found");
         }
         if (!(input.getBody() instanceof Map)) {
+            log.warn("POST /subjects/{}/versions -> 422 (missing request body)", subject);
             return ApiError.of(422, ApiError.INVALID_SCHEMA, "Invalid schema: missing request body");
         }
         @SuppressWarnings("unchecked")
         Map<String, Object> body = (Map<String, Object>) input.getBody();
         if (!(body.get(SCHEMA) instanceof String schema) || schema.isEmpty()) {
+            log.warn("POST /subjects/{}/versions -> 422 ('schema' string is required)", subject);
             return ApiError.of(422, ApiError.INVALID_SCHEMA, "Invalid schema: 'schema' string is required");
         }
         Object typeObj = body.getOrDefault(SCHEMA_TYPE, SchemaStore.AVRO_TYPE);
@@ -67,9 +73,11 @@ public class RegisterSchemaFunction implements TypedLambdaFunction<AsyncHttpRequ
         // documents, so a well-formedness check approximates that faithfully without bundling a parser
         // per schema language. Protobuf IDL is not JSON, so it is accepted as-is.
         if (!SchemaStore.PROTOBUF_TYPE.equalsIgnoreCase(schemaType) && malformedJson(schema)) {
+            log.warn("POST /subjects/{}/versions (schemaType={}) -> 422 (not well-formed JSON)", subject, schemaType);
             return ApiError.of(422, ApiError.INVALID_SCHEMA, "Invalid schema: not well-formed JSON");
         }
         int id = store.register(schema, schemaType);
+        log.info("POST /subjects/{}/versions (schemaType={}) -> 200 id={}", subject, schemaType, id);
         return new EventEnvelope().setStatus(200).setBody(Map.of("id", id));
     }
 

@@ -42,18 +42,27 @@ import java.util.concurrent.ConcurrentMap;
  * so no generated classes are needed. On decode the deserializer yields a {@code DynamicMessage} which is
  * rendered back to a {@code Map}. (Confluent's protobuf wire format adds a message-index header after the
  * id; the serde handles that framing - this codec only reads the leading magic byte + global id.)</p>
+ *
+ * <p><b>Confinement &amp; lifetime.</b> The Confluent serdes are not thread-safe; one instance of this class
+ * is owned by a single-flight {@link SchemaCodec.Encoder}/{@link SchemaCodec.Decoder}, so the serializers and
+ * deserializer are only ever touched by one thread - no synchronization needed. They are kept for the life of
+ * this serde (not per-call resources), so they are intentionally not closed here: the per-id serializers are
+ * cached lazily and the single deserializer is built eagerly in the constructor.</p>
  */
 class ProtobufSchemaSerde implements SchemaSerde {
 
     private final SchemaRegistryClient client;
     private final String registryUrl;
-    // one serializer per global schema id (use.schema.id is fixed at configure time)
     private final ConcurrentMap<Integer, KafkaProtobufSerializer<Message>> serializers = new ConcurrentHashMap<>();
-    private volatile KafkaProtobufDeserializer<Message> deserializer;
+    private final KafkaProtobufDeserializer<Message> deserializer;
 
     ProtobufSchemaSerde(SchemaRegistryClient client, String registryUrl) {
         this.client = client;
         this.registryUrl = registryUrl;
+        Map<String, Object> cfg = new HashMap<>();
+        cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
+        // no specific.protobuf.value.type -> deserialize to a generic DynamicMessage
+        this.deserializer = new KafkaProtobufDeserializer<>(client, cfg);
     }
 
     @Override
@@ -65,10 +74,16 @@ class ProtobufSchemaSerde implements SchemaSerde {
     @Override
     public Object decode(String topic, byte[] data) {
         // generic reader -> DynamicMessage; render it to a plain Map for the flow body.
-        return ProtobufConversions.fromMessage(deserializer().deserialize(topic, data));
+        return ProtobufConversions.fromMessage(deserializer.deserialize(topic, data));
     }
 
-    /** Resolve a pre-registered Protobuf schema by global id (cached by {@link FileCachedSchemaRegistryClient}). */
+    /**
+     * Resolve a pre-registered Protobuf schema by global id (cached by {@link FileCachedSchemaRegistryClient}).
+     *
+     * @param schemaId the global schema id
+     * @return the registered schema as a {@link ProtobufSchema}
+     * @throws IllegalStateException if the id is unresolvable or registered as a non-Protobuf type
+     */
     private ProtobufSchema protobufSchemaById(int schemaId) {
         try {
             ParsedSchema schema = client.getSchemaById(schemaId);
@@ -81,29 +96,21 @@ class ProtobufSchemaSerde implements SchemaSerde {
         }
     }
 
+    /**
+     * Build the serializer for {@code schemaId}, pinned to that global id via {@code use.schema.id} (the
+     * DynamicMessage is built against that exact schema, so strict compatibility checks against a value-derived
+     * schema are off, and auto-register is off). Cached and reused for the life of this serde - one per id.
+     *
+     * @param schemaId the global schema id to pin via {@code use.schema.id}
+     * @return a serializer configured for that id
+     */
     private KafkaProtobufSerializer<Message> newSerializer(int schemaId) {
         Map<String, Object> cfg = new HashMap<>();
         cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
         cfg.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS, false);
         cfg.put(AbstractKafkaSchemaSerDeConfig.USE_SCHEMA_ID, schemaId);
-        // we serialize a pre-registered schema by id; the DynamicMessage is built against that exact schema,
-        // so do not enforce strict compatibility checks against a schema derived from the value.
         cfg.put(AbstractKafkaSchemaSerDeConfig.ID_COMPATIBILITY_STRICT, false);
         cfg.put(AbstractKafkaSchemaSerDeConfig.LATEST_COMPATIBILITY_STRICT, false);
         return new KafkaProtobufSerializer<>(client, cfg);
-    }
-
-    private KafkaProtobufDeserializer<Message> deserializer() {
-        if (deserializer == null) {
-            synchronized (this) {
-                if (deserializer == null) {
-                    Map<String, Object> cfg = new HashMap<>();
-                    cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
-                    // no specific.protobuf.value.type -> deserialize to a generic DynamicMessage
-                    deserializer = new KafkaProtobufDeserializer<>(client, cfg);
-                }
-            }
-        }
-        return deserializer;
     }
 }
