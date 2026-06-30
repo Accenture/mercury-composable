@@ -82,7 +82,7 @@ class JsonSchemaSerde implements SchemaSerde {
     }
 
     /**
-     * Resolve a pre-registered JSON schema by global id (cached by {@link FileCachedSchemaRegistryClient}).
+     * Resolve a pre-registered JSON schema by global id (cached by {@link ManagedCacheSchemaRegistryClient}).
      *
      * @param schemaId the global schema id
      * @return the registered schema as a {@link JsonSchema}

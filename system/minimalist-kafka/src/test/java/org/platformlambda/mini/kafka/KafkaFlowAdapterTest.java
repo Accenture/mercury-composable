@@ -75,9 +75,9 @@ class KafkaFlowAdapterTest {
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), PROTOBUF_TOPIC);
         // self-contained, in-JVM Confluent-compatible registry on a random port. Set the exact config key
         // as a system property (ConfigReader consults system properties before the file, at get-time) so it
-        // wins regardless of when AppConfigReader was first loaded by other tests. Start the cache clean.
+        // wins regardless of when AppConfigReader was first loaded by other tests. The id->schema cache is
+        // in-memory (platform ManagedCache) and SchemaCodec clears it at startup.
         registry = new EmbeddedSchemaRegistry();
-        Utility.getInstance().cleanupDir(new java.io.File("/tmp/schema-registry-cache-test"));
         System.setProperty("schema.registry.url", registry.baseUrl());
         // resolved by ${KAFKA_BOOTSTRAP_SERVERS:...} in the kafka-producer/consumer.properties templates
         System.setProperty("KAFKA_BOOTSTRAP_SERVERS", kafka.bootstrapServers());
@@ -106,7 +106,6 @@ class KafkaFlowAdapterTest {
         if (registry != null) {
             registry.close();
         }
-        Utility.getInstance().cleanupDir(new java.io.File("/tmp/schema-registry-cache-test"));   // don't leave it behind
         System.clearProperty("KAFKA_BOOTSTRAP_SERVERS");
         System.clearProperty("schema.registry.url");
     }

@@ -185,8 +185,7 @@ the library keeps its raw `byte[]` behavior.
 
 ```properties
 schema.registry.url=${SCHEMA_REGISTRY_URL:http://127.0.0.1:8081}
-schema.registry.cache.dir=/tmp/schema-registry-cache   # on-disk schema cache (by id)
-schema.registry.cache.ttl=24h
+schema.registry.cache.ttl=30m                          # TTL for the in-memory schema cache (by id)
 ```
 
 ### Produce: id-driven, no subject or naming strategy {#schema-produce}
@@ -239,9 +238,12 @@ immediately via the [DLQ path](#reliability) rather than retried.
   Protobuf records are *closed-shape* — a message must match the declared fields, and a non-schema field is
   dropped on the wire. Avro applies declared field defaults for absent fields; Protobuf relies on proto3
   implicit defaults. Avro/Protobuf decode to generic records (no generated classes), rendered to a `Map`.
-- **Schema cache.** Lookups by id are cached on disk under `schema.registry.cache.dir` (TTL
-  `schema.registry.cache.ttl`) to cut registry round-trips and tolerate a brief registry outage. The cache is
-  rebuildable, so it is **cleared at startup** — a schema changed between runs is never served stale.
+- **Schema cache.** Lookups by id are cached **in memory** (platform `ManagedCache`, TTL
+  `schema.registry.cache.ttl`, default `30m`) to cut registry round-trips. A global schema id is immutable, so
+  a cache hit is always the right schema. **Positive results only** — a not-found id is never cached, so a
+  schema registered while the app is running becomes visible on the next lookup. The TTL lets schema changes
+  be picked up without restarting pods (handy in dev / lower environments); lengthen it in production where
+  schemas change rarely. The cache is rebuildable and **cleared at startup**.
 - **Worked example.** The [sync-over-async demo](sync-over-async.md) runs the same end-to-end flow over all
   three formats (`json-topic-1/2`, `avro-topic-1/2`, `protobuf-topic-1/2`) alongside the raw `byte[]` path.
 
@@ -260,8 +262,7 @@ The essentials:
 | `kafka.flow.retry.backoff.ms` | `500` | Pause between retry attempts. |
 | `kafka.flow.dlq.suffix` | `.dlq` | Suffix appended to the source topic to form its DLQ. |
 | `schema.registry.url` | — | Confluent Schema Registry URL; unset = [schema features](#schema) off (raw `byte[]`). |
-| `schema.registry.cache.dir` | `/tmp/schema-registry-cache` | On-disk schema cache (by id); cleared at startup. |
-| `schema.registry.cache.ttl` | `24h` | Time-to-live for a cached schema entry. |
+| `schema.registry.cache.ttl` | `30m` | TTL for the in-memory (`ManagedCache`) schema cache (by id); positive results only; cleared at startup. |
 
 ## See also
 
