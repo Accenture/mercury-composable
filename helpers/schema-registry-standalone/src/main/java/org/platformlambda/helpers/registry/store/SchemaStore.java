@@ -18,6 +18,7 @@
 
 package org.platformlambda.helpers.registry.store;
 
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.CryptoApi;
 import org.platformlambda.core.util.Utility;
@@ -27,19 +28,22 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Minimalist in-memory schema store mimicking Confluent Schema Registry, persisted to {@code schemas.json}
- * under the configurable {@code schema.registry.data.store} directory (default {@code /tmp/schema-registry}).
+ * Minimalist in-memory schema store mimicking Confluent Schema Registry, persisted as <b>one file per schema
+ * id</b> ({@code <id>.json}, e.g. {@code 1.json}) under the configurable {@code schema.registry.data.store}
+ * directory (default {@code /tmp/schema-registry}). Each file holds {@code {"schema": ..., "schemaType": ...}}.
  *
- * <p>The store is <b>loaded on boot and persists across restarts</b>, so schema ids stay stable - {@code
- * schemas.json} is a convenient single-file store you can back up / seed (e.g. for a demo with known ids).
- * The default lives under {@code /tmp} (cleared by the OS on reboot); override to a durable directory
+ * <p>The store is loaded on boot and persists across restarts, so schema ids stay stable - the per-id files
+ * are a convenient store you can back up / seed (e.g. a demo with known ids). Because storage is one file per
+ * id, a schema <b>dropped into the directory while the server is running</b> (e.g. {@code 10.json}) is picked
+ * up <b>on demand</b> by the next {@code GET /schemas/ids/10} - no restart needed (see {@link #get(int)}).</p>
+ *
+ * <p>The default lives under {@code /tmp} (cleared by the OS on reboot); override to a durable directory
  * ({@code -Dschema.registry.data.store=$HOME/schema-registry}) to survive reboots.</p>
  */
 public class SchemaStore {
@@ -49,6 +53,10 @@ public class SchemaStore {
     // 'schema.registry.data.store' or the JVM flag -Dschema.registry.data.store=<dir>.
     private static final String STORE_DIR_KEY = "schema.registry.data.store";
     private static final String DEFAULT_STORE_DIR = "/tmp/schema-registry";
+    private static final String JSON_SUFFIX = ".json";
+    private static final String SCHEMA = "schema";
+    private static final String SCHEMA_TYPE = "schemaType";
+    private static final String LEGACY_SCHEMA_TYPE = "schema_type";
 
     private static final SchemaStore instance = new SchemaStore();
 
@@ -60,7 +68,6 @@ public class SchemaStore {
     private final AtomicInteger idGenerator = new AtomicInteger(1);
 
     private final String storeDir;
-    private final String storeFile;
     private final Utility util = Utility.getInstance();
     private final CryptoApi crypto = new CryptoApi();
 
@@ -68,98 +75,117 @@ public class SchemaStore {
 
     private SchemaStore() {
         this.storeDir = AppConfigReader.getInstance().getProperty(STORE_DIR_KEY, DEFAULT_STORE_DIR);
-        this.storeFile = storeDir + "/schemas.json";
-        log.info("Schema data store at {} (override with -D{}=<dir>)", storeDir, STORE_DIR_KEY);
-        loadFromDisk();
+        log.info("Schema data store at {} (one <id>{} per schema; override with -D{}=<dir>)",
+                storeDir, JSON_SUFFIX, STORE_DIR_KEY);
+        loadAllFromDisk();
     }
 
     public static SchemaStore getInstance() {
         return instance;
     }
 
-    private String getHash(String typeAndSchema) {
-        byte[] hashBytes = crypto.getSHA256(util.getUTF(typeAndSchema));
-        return util.bytes2hex(hashBytes);
-    }
-
     public int register(String schema, String schemaType) {
         String type = schemaType == null || schemaType.isEmpty() ? AVRO_TYPE : schemaType;
         String hashKey = getHash(type + ":" + schema);
-        
         Integer existingId = hashToId.get(hashKey);
         if (existingId != null) {
             return existingId;
         }
-
-        int newId = idGenerator.getAndIncrement();
-        idToSchema.put(newId, new SchemaEntry(schema, type));
+        int newId = nextFreeId();
+        SchemaEntry entry = new SchemaEntry(schema, type);
+        idToSchema.put(newId, entry);
         hashToId.put(hashKey, newId);
-        
-        saveToDisk();
+        saveEntry(newId, entry);
         return newId;
     }
 
+    /**
+     * Look up a schema by id. If it is not already in memory, an {@code <id>.json} dropped into the store
+     * directory while the server is running is loaded here (on demand) - so a newly added schema is served on
+     * the next request without a restart.
+     *
+     * @param id the global schema id
+     * @return the stored entry, or {@code null} if no such id exists in memory or on disk
+     */
     public SchemaEntry get(int id) {
-        return idToSchema.get(id);
+        SchemaEntry entry = idToSchema.get(id);
+        return entry != null ? entry : loadEntry(id);
     }
-    
-    private void loadFromDisk() {
+
+    private String getHash(String typeAndSchema) {
+        return util.bytes2hex(crypto.getSHA256(util.getUTF(typeAndSchema)));
+    }
+
+    private File fileFor(int id) {
+        return new File(storeDir, id + JSON_SUFFIX);
+    }
+
+    /** Next id not already used in memory or on disk, so a dropped {@code <id>.json} is never overwritten. */
+    private int nextFreeId() {
+        int id;
+        do {
+            id = idGenerator.getAndIncrement();
+        } while (idToSchema.containsKey(id) || fileFor(id).exists());
+        return id;
+    }
+
+    private void loadAllFromDisk() {
         File dir = new File(storeDir);
         if (!dir.exists() && !dir.mkdirs()) {
             log.warn("Failed to create directory: {}", storeDir);
             return;
         }
-        Path filePath = Path.of(storeFile);
-        if (!Files.exists(filePath)) {
+        File[] files = dir.listFiles((d, name) -> name.length() > JSON_SUFFIX.length()
+                && name.endsWith(JSON_SUFFIX)
+                && util.isDigits(name.substring(0, name.length() - JSON_SUFFIX.length())));
+        if (files == null) {
             return;
         }
-        try {
-            String json = Files.readString(filePath);
-            if (!json.isEmpty()) {
-                loadEntries(json);
-            }
-        } catch (IOException e) {
-            log.warn("Failed to load schemas from disk: {}", e.getMessage());
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void loadEntries(String json) throws IOException {
-        Object parsed = org.platformlambda.core.serializers.SimpleMapper.getInstance()
-                .getMapper().readValue(json, Object.class);
-        if (!(parsed instanceof Map)) {
-            return;
-        }
-        int maxId = 0;
-        for (Map.Entry<String, Object> entry : ((Map<String, Object>) parsed).entrySet()) {
-            if (entry.getValue() instanceof Map) {
-                int id = util.str2int(entry.getKey());
-                loadEntry(id, (Map<String, String>) entry.getValue());
-                maxId = Math.max(maxId, id);
-            }
-        }
-        if (maxId > 0) {
-            idGenerator.set(maxId + 1);
+        for (File file : files) {
+            String name = file.getName();
+            loadEntry(util.str2int(name.substring(0, name.length() - JSON_SUFFIX.length())));
         }
         log.info("Loaded {} schemas from disk. Next ID will be {}", idToSchema.size(), idGenerator.get());
     }
 
-    private void loadEntry(int id, Map<String, String> schemaMap) {
-        String schema = schemaMap.get("schema");
-        // accept either "schemaType" (canonical) or a legacy "schema_type"; default to AVRO.
-        String type = schemaMap.containsKey("schema_type")
-                ? schemaMap.get("schema_type")
-                : schemaMap.getOrDefault("schemaType", AVRO_TYPE);
-        idToSchema.put(id, new SchemaEntry(schema, type));
-        hashToId.put(getHash(type + ":" + schema), id);
-    }
-    
-    private void saveToDisk() {
+    /**
+     * Read {@code <id>.json} from disk into memory and advance the id generator past it (so a later
+     * registration never reuses the id). Returns {@code null} when the file is absent or unreadable.
+     */
+    @SuppressWarnings("unchecked")
+    private SchemaEntry loadEntry(int id) {
+        File file = fileFor(id);
+        if (!file.exists()) {
+            return null;
+        }
         try {
-            String json = org.platformlambda.core.serializers.SimpleMapper.getInstance().getMapper().writeValueAsString(idToSchema);
-            Files.writeString(Path.of(storeFile), json);
+            Map<String, String> map = SimpleMapper.getInstance().getMapper()
+                    .readValue(Files.readString(file.toPath()), Map.class);
+            String schema = map.get(SCHEMA);
+            if (schema == null) {
+                return null;
+            }
+            // accept either "schemaType" (canonical) or a legacy "schema_type"; default to AVRO.
+            String type = map.containsKey(LEGACY_SCHEMA_TYPE)
+                    ? map.get(LEGACY_SCHEMA_TYPE)
+                    : map.getOrDefault(SCHEMA_TYPE, AVRO_TYPE);
+            SchemaEntry entry = new SchemaEntry(schema, type);
+            idToSchema.put(id, entry);
+            hashToId.put(getHash(type + ":" + schema), id);
+            idGenerator.accumulateAndGet(id + 1, Math::max);
+            return entry;
+        } catch (IOException | RuntimeException e) {
+            log.warn("Ignoring unreadable schema file {}: {}", file, e.getMessage());
+            return null;
+        }
+    }
+
+    private void saveEntry(int id, SchemaEntry entry) {
+        try {
+            Files.writeString(fileFor(id).toPath(),
+                    SimpleMapper.getInstance().getMapper().writeValueAsString(entry));
         } catch (IOException e) {
-            log.warn("Failed to save schemas to disk: {}", e.getMessage());
+            log.warn("Failed to save schema {}: {}", id, e.getMessage());
         }
     }
 }

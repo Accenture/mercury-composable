@@ -112,17 +112,20 @@ runs over a parallel pair of topics — `json-topic-1` (request) and `json-topic
 compare the two side by side; the byte[] path (`soa.request` / `soa.response`) is untouched.
 
 **Seed the registry, then start it.** Schemas are governed artifacts registered out-of-band, so the demo
-ships pre-registered schemas rather than self-registering at runtime. [`registry/schemas.json`](registry/schemas.json)
-defines the `SyncDemoMessage` schema as **id 1** (a permissive JSON Schema covering both JSON legs),
-**id 2** (the [Avro variant](#avro-variant-confluent-wire-format)), and **id 3** (the
-[Protobuf variant](#protobuf-variant-confluent-wire-format)). Copy it into the registry's store (default
-`/tmp/schema-registry`), then start the registry — one registry serves all three variants:
+ships pre-registered schemas rather than self-registering at runtime. The [`registry/`](registry/) folder
+holds one file per schema id — [`1.json`](registry/1.json) (a permissive JSON Schema covering both JSON legs),
+[`2.json`](registry/2.json) (the [Avro variant](#avro-variant-confluent-wire-format)), and
+[`3.json`](registry/3.json) (the [Protobuf variant](#protobuf-variant-confluent-wire-format)). Copy them into
+the registry's store (default `/tmp/schema-registry`), then start the registry — one registry serves all
+three variants:
 ```shell
 # Terminal F — seed + start the local Confluent-compatible Schema Registry (port 8081)
 mkdir -p /tmp/schema-registry
-cp examples/sync-over-async-demo/registry/schemas.json /tmp/schema-registry/schemas.json
+cp examples/sync-over-async-demo/registry/*.json /tmp/schema-registry/
 cd helpers/schema-registry-standalone && java -jar target/schema-registry-standalone-4.5.0.jar
 ```
+The store keeps one `<id>.json` per schema, so you can also drop a new file (e.g. `4.json`) into
+`/tmp/schema-registry` while the registry is running — it is picked up on the next request, no restart needed.
 The schema (the escaped `schema` string in the seed) is:
 ```json
 { "$schema": "http://json-schema.org/draft-07/schema#", "title": "SyncDemoMessage",
@@ -142,7 +145,7 @@ trace continuity — is identical):
 | Aspect | How |
 |--------|-----|
 | **Producer is id-driven** | the flows publish with `schema-id: 1` + `schema-type: JSON` headers; `simple.kafka.notification` serializes the body into the Confluent wire format using that **pre-registered** id. The producer never needs the subject or a naming strategy — see [the Kafka Flow Adapter guide](../../docs/guides/kafka-flow-adapter.md). |
-| **Schema registered out-of-band** | the registry is seeded from `registry/schemas.json` (id 1); the serializer only does `GET /schemas/ids/1`. Mirrors enterprise reality, where schemas are governed artifacts — no runtime registration in the app. |
+| **Schema registered out-of-band** | the registry is seeded from `registry/1.json` (id 1); the serializer only does `GET /schemas/ids/1`. Mirrors enterprise reality, where schemas are governed artifacts — no runtime registration in the app. |
 | **Consumer decodes by id** | the `json-topic-1` / `json-topic-2` adapter bindings set `schema.enabled: true`, so the adapter reads the embedded id, fetches the schema, and hands the flow a decoded **Map**. |
 | **Map-input task variants** | because the decoded body is a Map, `system.of.record.json` and `soa.reply.json` take a `Map` (vs the byte[] `system.of.record` / `soa.reply`); they reuse the same logic. |
 
@@ -232,8 +235,8 @@ produce + `schema.enabled` consume path, differing only by the `schema-type` hea
 | `soa-reply.yml` (`soa.reply`) | facade | deliver the Kafka reply to the coordinator → wake the awaiting request |
 | `system-of-record.yml` (`system.of.record`) | backend | the application's async processing, on a separate pod |
 | Redis return route | facade | routes the reply back to the originating pod (cross-pod, scalable) |
-| `*-json.yml` flows + `registry/schemas.json` (id 1) | both | the [JSON Schema variant](#json-schema-variant-confluent-wire-format) over `json-topic-1` / `json-topic-2` |
-| `*-avro.yml` flows + `registry/schemas.json` (id 2) | both | the [Avro variant](#avro-variant-confluent-wire-format) over `avro-topic-1` / `avro-topic-2` |
+| `*-json.yml` flows + `registry/1.json` (id 1) | both | the [JSON Schema variant](#json-schema-variant-confluent-wire-format) over `json-topic-1` / `json-topic-2` |
+| `*-avro.yml` flows + `registry/2.json` (id 2) | both | the [Avro variant](#avro-variant-confluent-wire-format) over `avro-topic-1` / `avro-topic-2` |
 
 ## Validated runs (telemetry evidence)
 

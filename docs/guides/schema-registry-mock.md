@@ -11,7 +11,7 @@ The `schema-registry-standalone` module is a lightweight, zero-dependency mock o
 
 * **Location:** `helpers/schema-registry-standalone`
 * **Default Port:** `8081` (Confluent's default)
-* **Storage:** In-memory, persisted to `schemas.json` under a configurable directory (`schema.registry.data.store`, default `/tmp/schema-registry`)
+* **Storage:** In-memory, persisted as one file per schema id (`<id>.json`, e.g. `1.json`) under a configurable directory (`schema.registry.data.store`, default `/tmp/schema-registry`)
 * **Supported Types:** Avro (default), JSON Schema, Protobuf.
 
 ## Why use this?
@@ -91,9 +91,13 @@ Errors use Confluent's shape — `{"error_code": <int>, "message": "..."}` — w
 
 ## State Management
 
-Schemas are persisted to a JSON file (`schemas.json`) under a configurable directory, so that if you
-restart the mock the schema IDs assigned to your applications remain valid — preventing deserialization
-errors during iterative local development.
+Schemas are persisted as **one file per id** (`<id>.json`, holding `{"schema": ..., "schemaType": ...}`)
+under a configurable directory, so that if you restart the mock the schema IDs assigned to your applications
+remain valid — preventing deserialization errors during iterative local development.
+
+Because storage is one file per id, you can **drop a new schema file (e.g. `10.json`) into the directory
+while the server is running** and it is picked up on demand by the next `GET /schemas/ids/10` — no restart
+needed. (A file present at boot is loaded then; a file added later is loaded lazily on first lookup.)
 
 The directory is set with the `schema.registry.data.store` config key (in `application.properties`),
 defaulting to a transient `/tmp/schema-registry`:
