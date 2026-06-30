@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-30T05:53:33Z | agent: Claude Code (2026-06-30-055333)
+- **last_session:** 2026-06-30T14:41:49Z | agent: Claude Code (2026-06-30-144149)
 - **last_review:** 2026-06-29 | through 2026-06-29-223651.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -76,8 +76,10 @@
   or naming-strategy logic, which makes it agnostic to all 3 Confluent strategies and lets a topic carry many
   record types. **Consumer** opt-in per binding (`schema.enabled` in kafka-flow-adapter.yaml): reads the magic
   id → registered `schemaType` → matching deserializer → hands the flow a Map; decode failure dead-letters the
-  raw record. Codec in `org.platformlambda.mini.kafka.schema` (`SchemaCodec`, `FileCachedSchemaRegistryClient`
-  = on-disk schema cache by id with TTL serving the serde hot path, cleared at startup; `SchemaType`).
+  raw record. Codec in `org.platformlambda.mini.kafka.schema` (`SchemaCodec`, `ManagedCacheSchemaRegistryClient`
+  = in-memory platform `ManagedCache` of schemas by id serving the serde hot path — **positive results only**
+  (a not-found id is never cached; Confluent's own `missing.*` caches pinned to 0), default TTL 30m, cleared at
+  startup; `SchemaType`).
   Serialize uses `JsonSchemaUtils.envelope(schema, value)` (the pre-registered schema, not a derived one) to
   avoid the kjetland derivation WARN. Built as a **per-type `SchemaSerde` strategy** — `JsonSchemaSerde`,
   `AvroSchemaSerde` (`AvroConversions`: Map⇄GenericRecord, serialize walks the schema so absent fields take
@@ -99,7 +101,13 @@
   `kafka.flow.timeout.ms`); success = HTTP < 400 (2xx/3xx), else retry→DLQ; a failed DLQ write
   drops-with-ERROR + commits (no recovery storm) bounded by `kafka.dlq.timeout.ms`. Builds on
   [[standalone-schema-registry-mock]].
-  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-06-30 | uses: 7 | tier: active | origin: 2026-06-29-010147 -->
+  **Optimization iteration (2026-06-30, PR #127):** swapped the file cache → in-memory `ManagedCache` (above),
+  shrank the `simple.kafka.notification` pool 10→5 (kernel-thread frugality, `@KernelThreadRunner`), and per-id'd
+  the mock store ([[standalone-schema-registry-mock]]). **Forensic finding: no client-side negative caching
+  exists** (decompiled Confluent 8.2.0 — the id→schema path `getSchemaById`→`getSchemaBySubjectAndId` caches
+  positives only; `missingIdCache` is producer-side getId-by-content, default TTL 0=off); an earlier "not found
+  persists" symptom was the mock loading `schemas.json` only at boot, now fixed by its on-demand per-id store.
+  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-06-30 | uses: 8 | tier: active | origin: 2026-06-29-010147 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -353,7 +361,9 @@
   reactive HTTP server + REST automation, no `rest-spring`); each endpoint is wired in `rest.yaml` directly to
   a function taking `AsyncHttpRequest`. Returns faithful Confluent error bodies `{error_code,message}`
   (40403/40401/42201). Store is **configurable** via `schema.registry.data.store` (default transient
-  `/tmp/schema-registry`, `-D`-overridable for a durable dir); the server *loads* schemas on boot (never
-  wipes) so ids stay stable — the deliberate inverse of the redis/kafka helpers. Tests hit the real HTTP
+  `/tmp/schema-registry`, `-D`-overridable for a durable dir). **Persists one `<id>.json` per schema** (not a
+  single `schemas.json`; changed 2026-06-30, PR #127) and *loads* on boot AND **on demand** — a file dropped
+  into the store dir while the server runs is served on the next GET, no restart. Never wipes, so ids stay
+  stable — the deliberate inverse of the redis/kafka helpers. Tests hit the real HTTP
   endpoints via `async.http.request`. Documented in `docs/guides/schema-registry-mock.md`. See [[minimalist-kafka-schema-registry]].
-  <!-- id: standalone-schema-registry-mock | created: 2026-06-28 | last_used: 2026-06-29 | uses: 4 | tier: active -->
+  <!-- id: standalone-schema-registry-mock | created: 2026-06-28 | last_used: 2026-06-30 | uses: 5 | tier: active -->
