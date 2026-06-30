@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-30T14:41:49Z | agent: Claude Code (2026-06-30-144149)
+- **last_session:** 2026-06-30T21:29:55Z | agent: Claude Code (2026-06-30-212955)
 - **last_review:** 2026-06-29 | through 2026-06-29-223651.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -62,6 +62,26 @@
   <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-27 | uses: 4 | tier: core -->
 
 ## Key Decisions
+
+- **Application log context — virtual-thread-safe MDC alternative (2026-06-30, PR #128).** A `context`
+  block (cid, traceId, tracePath, spanId, parentSpanId, service, utc + developer key-values) is injected
+  into structured JSON log output so logs and OTel spans join on traceId/spanId. **Deliberately NOT
+  Log4j MDC/ThreadLocal** (anti-pattern for virtual threads). Mirrors the `TraceInfo` mechanism: a
+  per-request `LogContext` in a registry keyed by `Thread.currentThread().threadId()`
+  (`org.platformlambda.core.logging` — `LogContext`/`LogContextManager`/`LogContextConfig`), created
+  after `startTracing` and removed after `stopTracing` in `WorkerHandler` (same keying the OTel feature
+  proves correct; see [[trace-thread-keyed-mono-gotcha]]). The JSON appender runs on the worker thread so
+  it looks the context up by thread id in `JsonLogger.getJson` — nothing passed through Log4j; covers
+  JsonAppender + CompactAppender. **Opt-in** via optional `app-log-context.yaml` (absent ⇒ one boolean
+  check/line, no writes); entries are a reserved `$token` / `${ENV:default}` / hardcoded literal;
+  null-valued keys omitted (never `"null"`); token `$service` (not `$route`) for vocabulary consistency.
+  `PostOffice.updateContext(key,value)` adds custom keys (logging-only sink, distinct from `annotateTrace`;
+  rejects reserved keys; no-op when untraced/off). Same boundary as tracing — no context on boot logs or
+  post-return Mono/Flux tails. `LogContextConfig` is an eager Utility-style singleton (no volatile/DCL).
+  Shipped with two pre-existing-SonarQube refactors in `WorkerHandler` (extract `invokeFunction` +
+  null-guard; split `updateResponse`). 16 tests; platform-core suite 367 green; validated end-to-end in
+  `composable-example`. Design spec: `draft-design-specs/application_log_context_design.md` (gitignored).
+  <!-- id: application-log-context | created: 2026-06-30 | last_used: 2026-06-30 | uses: 1 | tier: working | origin: 2026-06-30-212955 -->
 
 - **Schema Registry mock server implementation.** Created `helpers/schema-registry-standalone`, providing a minimalist REST API that mimics the Confluent schema registry (`/subjects/{subject}/versions` and `/schemas/ids/{id}`). It supports both Avro and JSON Schema and serves as an end-to-end demo and testing layer. The worked example `examples/schema-registry-demo` is now curl + zero-dependency `.mjs` scripts (no longer a Maven module). See [[standalone-schema-registry-mock]] and [[minimalist-kafka-schema-registry]].
   <!-- id: schema-registry-mock | created: 2026-06-28 | last_used: 2026-06-29 | uses: 2 | tier: active | origin: 2026-06-28-191114 -->
@@ -173,6 +193,13 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [x] (completed — Eric, 2026-06-30) **Application log context feature.** Designed + implemented +
+  documented + shipped on **PR #128** (`feature/application-log-context`). Full detail in the Key
+  Decision [[application-log-context]] and the 2026-06-30-212955 session log. Manual end-to-end
+  validation by Eric in `composable-example` passed (context block + custom `user:demo` key, logs/spans
+  correlated). Open to follow-up if review surfaces changes.
+  <!-- id: thread-application-log-context | created: 2026-06-30 | last_used: 2026-06-30 | uses: 1 | tier: active | origin: 2026-06-30-212955 -->
 
 - [x] **Upgraded agent-memory v4.27.0 → v4.28.0** (Mode B, by Claude Code from the tool checkout). Single,
   additive rung — **co-author convention cleanup** (refines v4.27.0, from this repo's PR #126 finding):
