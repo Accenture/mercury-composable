@@ -7,7 +7,7 @@
 #                                  closed-shape Avro SyncDemoMessage record (action, status, processedBy, traceId).
 #   2. simple.kafka.notification - publish the reply to 'avro-topic-2' as Avro (schema-id=2 + type).
 #
-# schema-id 2 is the demo's pre-registered Avro SyncDemoMessage schema (see registry/schemas.json).
+# schema-id 2 is the demo's pre-registered Avro SyncDemoMessage schema (see registry/2.json).
 #
 flow:
   id: 'system-of-record-avro'

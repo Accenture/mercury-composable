@@ -62,9 +62,15 @@ import java.util.concurrent.ConcurrentMap;
  * sections, and each worker instance is single-flight - so each instance keeps its <b>own</b>
  * {@link SchemaCodec.Encoder} (in {@link #encoders}, keyed by instance), guaranteeing a Confluent serializer
  * is never touched by two threads at once.</p>
+ *
+ * <p><b>Keep the worker pool small.</b> Because {@code @KernelThreadRunner} puts each instance on a (scarce)
+ * kernel thread rather than a virtual thread, keep {@code instances} low - {@code 5} is the default here.
+ * Kafka publishing is fast and mostly waits on the broker ack, so a handful of single-flight workers sustain
+ * high throughput while holding kernel-thread usage down. Raise it only if profiling shows the publish path
+ * is genuinely the bottleneck.</p>
  */
 @KernelThreadRunner
-@PreLoad(route = "simple.kafka.notification", instances = 10)
+@PreLoad(route = "simple.kafka.notification", instances = 5)
 public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono<Void>> {
 
     // one Encoder per worker instance (an instance is single-flight) -> owner-confined Confluent serializers.

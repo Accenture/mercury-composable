@@ -274,8 +274,7 @@ Kafka. See the [Kafka Flow Adapter guide](kafka-flow-adapter.md). The inbound ad
 | `kafka.flow.retry.backoff.ms` | `long` (ms) | `500` | Pause between retry attempts. |
 | `kafka.flow.dlq.suffix` | `String` | `.dlq` | Suffix appended to a source topic to form its per-topic dead-letter topic (`<topic><suffix>`). A blank value falls back to `.dlq`. |
 | `schema.registry.url` | `String` (URL) | — | Confluent Schema Registry URL. Unset = schema features off (raw `byte[]`); set to enable the [Schema Registry integration](kafka-flow-adapter.md#schema) (JSON Schema / Avro / Protobuf). |
-| `schema.registry.cache.dir` | `String` (path) | `/tmp/schema-registry-cache` | On-disk cache of schemas fetched by id; cleared at startup (rebuildable). |
-| `schema.registry.cache.ttl` | duration | `24h` | Time-to-live for a cached schema entry before it is refreshed from the registry. |
+| `schema.registry.cache.ttl` | duration | `30m` | Time-to-live for an entry in the in-memory (platform `ManagedCache`) cache of schemas fetched by id. Positive results only — a not-found id is never cached, so a newly-registered schema is visible immediately. The TTL bounds how long a cached schema is reused before re-fetching; `30m` lets schema changes be picked up without a pod restart (lengthen it in production where schemas change rarely). Cleared at startup (rebuildable). |
 
 The Kafka **connection and security** settings (`bootstrap.servers`, `security.protocol`, `sasl.*`, `ssl.*`,
 `acks`, `auto.offset.reset`) live in the `kafka-producer.properties` / `kafka-consumer.properties` template

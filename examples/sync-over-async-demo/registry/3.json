@@ -1,0 +1,4 @@
+{
+  "schema": "syntax = \"proto3\";\npackage com.accenture.soa.demo;\n\nmessage SyncDemoMessage {\n  string action = 1;\n  string status = 2;\n  string processedBy = 3;\n  string traceId = 4;\n}\n",
+  "schemaType": "PROTOBUF"
+}

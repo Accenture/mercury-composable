@@ -30,6 +30,7 @@ import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,9 +79,13 @@ class SchemaRegistryTest {
         wipeTransientStore();
     }
 
+    private static String storeDir() {
+        return AppConfigReader.getInstance().getProperty("schema.registry.data.store", "/tmp/schema-registry");
+    }
+
     /** Remove the configured store dir, but only when it is a transient /tmp path (never a durable one). */
     private static void wipeTransientStore() {
-        String storeDir = AppConfigReader.getInstance().getProperty("schema.registry.data.store", "/tmp/schema-registry");
+        String storeDir = storeDir();
         if (storeDir.startsWith("/tmp/")) {
             Utility.getInstance().cleanupDir(new File(storeDir));
         }
@@ -144,6 +149,22 @@ class SchemaRegistryTest {
         // Confluent error body: {"error_code": 40403, "message": "..."}
         Map<?, ?> body = (Map<?, ?>) res.getBody();
         assertEquals(40403, body.get("error_code"));
+    }
+
+    @Test
+    void picksUpSchemaFileDroppedWhileRunning() throws Exception {
+        // On-demand load: an <id>.json dropped into the store dir after boot is served on the next GET,
+        // without a restart. (Confirms the per-id-file storage; the prior single-file store needed a reboot.)
+        int id = 4242;
+        String schema = asSchemaString(Map.of("type", "object", "title", "DroppedIn"));
+        Files.writeString(new File(storeDir(), id + ".json").toPath(),
+                SimpleMapper.getInstance().getCompactGson().toJson(Map.of("schema", schema, "schemaType", "JSON")));
+
+        EventEnvelope res = http("GET", "/schemas/ids/" + id, null);
+        assertEquals(200, res.getStatus());
+        Map<?, ?> body = (Map<?, ?>) res.getBody();
+        assertEquals(schema, body.get("schema"));
+        assertEquals("JSON", body.get("schemaType"));
     }
 
     @Test

@@ -23,6 +23,7 @@ import com.google.protobuf.Message;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchema;
@@ -38,11 +39,10 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.util.AppConfigReader;
-import org.platformlambda.core.util.Utility;
+import org.platformlambda.core.util.ManagedCache;
 import org.platformlambda.mini.kafka.schema.SchemaCodec;
 import org.platformlambda.mini.kafka.schema.SchemaType;
 
-import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -60,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Validates the {@link SchemaCodec} (and its owner-confined {@link SchemaCodec.Encoder}/
  * {@link SchemaCodec.Decoder}) against the real Confluent JSON/Avro/Protobuf serdes and a self-contained,
  * in-JVM {@link EmbeddedSchemaRegistry} (no Kafka broker, no AutoStart, no network beyond loopback):
- * id-driven serialize, magic-id dispatch + decode to a Map, on-disk schema cache, and - critically -
+ * id-driven serialize, magic-id dispatch + decode to a Map, in-memory schema cache, and - critically -
  * decoding messages produced by stock Confluent serializers (interop with client projects).
  */
 class SchemaCodecTest {
@@ -78,14 +79,11 @@ class SchemaCodecTest {
     private static SchemaCodec codec;
     private static SchemaCodec.Encoder encoder;
     private static SchemaCodec.Decoder decoder;
-    private static File cacheDir;
 
     @BeforeAll
     static void setup() throws Exception {
         registry = new EmbeddedSchemaRegistry();
         AppConfigReader config = AppConfigReader.getInstance();
-        cacheDir = new File(config.getProperty("schema.registry.cache.dir", "/tmp/schema-registry-cache-test"));
-        Utility.getInstance().cleanupDir(cacheDir);   // transient /tmp cache: start clean
         codec = SchemaCodec.fromConfig(config, registry.baseUrl());
         encoder = codec.newEncoder();
         decoder = codec.newDecoder();
@@ -96,7 +94,11 @@ class SchemaCodecTest {
         if (registry != null) {
             registry.close();
         }
-        Utility.getInstance().cleanupDir(cacheDir);   // don't leave the transient schema cache behind
+    }
+
+    private static boolean schemaCached(int id) {
+        ManagedCache cache = ManagedCache.getInstance(SchemaCodec.CACHE_NAME);
+        return cache != null && cache.exists(Integer.toString(id));
     }
 
     @Test
@@ -111,7 +113,7 @@ class SchemaCodecTest {
         assertInstanceOf(Map.class, decoded);
         assertEquals("world", ((Map<?, ?>) decoded).get("hello"));
 
-        assertTrue(new File(cacheDir, id + ".json").exists(), "schema cached to disk by id");
+        assertTrue(schemaCached(id), "schema cached in memory by id");
     }
 
     @Test
@@ -143,7 +145,7 @@ class SchemaCodecTest {
         assertInstanceOf(Map.class, decoded);
         assertEquals("avro", ((Map<?, ?>) decoded).get("hello"));
 
-        assertTrue(new File(cacheDir, id + ".json").exists(), "schema cached to disk by id");
+        assertTrue(schemaCached(id), "schema cached in memory by id");
     }
 
     @Test
@@ -177,7 +179,7 @@ class SchemaCodecTest {
         assertInstanceOf(Map.class, decoded);
         assertEquals("protobuf", ((Map<?, ?>) decoded).get("hello"));
 
-        assertTrue(new File(cacheDir, id + ".json").exists(), "schema cached to disk by id");
+        assertTrue(schemaCached(id), "schema cached in memory by id");
     }
 
     @Test
@@ -204,6 +206,37 @@ class SchemaCodecTest {
     void rejectsUnframedPayload() {
         byte[] unframed = "{\"hello\":\"x\"}".getBytes();
         assertThrows(IllegalArgumentException.class, () -> decoder.decode(TOPIC, unframed));
+    }
+
+    @Test
+    void notFoundSchemaIdIsNotCached() {
+        // Positive results only: a not-found id must throw and must NOT be remembered, so a schema
+        // registered moments later is visible without waiting for a TTL to elapse or a pod restart.
+        int unknownId = 987654;
+        assertThrows(RestClientException.class, () -> codec.client().getSchemaById(unknownId));
+        assertFalse(schemaCached(unknownId), "a not-found schema id is never cached");
+    }
+
+    @Test
+    void encoderRecoversAfterSchemaAppears() throws Exception {
+        // Reproduce the reported scenario at the producer level: encoding with a schema-id that is not
+        // registered yet must fail WITHOUT poisoning the encoder, so once the id appears on the registry
+        // (e.g. its <id>.json dropped into the registry) the same encoder succeeds - the miss was never cached.
+        int existing = codec.client().register("recover-a-value", new JsonSchema(
+                "{\"type\":\"object\",\"properties\":{\"recoverA\":{\"type\":\"string\"}},\"additionalProperties\":true}"));
+        int futureId = existing + 1;   // EmbeddedSchemaRegistry assigns ids sequentially -> not present yet
+        assertThrows(RuntimeException.class,
+                () -> encoder.serialize(TOPIC, SchemaType.JSON, futureId, Map.of("hello", "x")),
+                "encoding against an unregistered id fails");
+        assertFalse(schemaCached(futureId), "the failed lookup is not cached");
+
+        int assigned = codec.client().register("recover-b-value", new JsonSchema(
+                "{\"type\":\"object\",\"properties\":{\"recoverB\":{\"type\":\"string\"}},\"additionalProperties\":true}"));
+        assertEquals(futureId, assigned, "the next registration takes the id we probed");
+
+        byte[] framed = encoder.serialize(TOPIC, SchemaType.JSON, futureId, Map.of("hello", "recovered"));
+        assertEquals(futureId, SchemaCodec.schemaId(framed), "the same encoder now succeeds");
+        assertEquals("recovered", ((Map<?, ?>) decoder.decode(TOPIC, framed)).get("hello"));
     }
 
     @Test

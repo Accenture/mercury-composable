@@ -8,7 +8,7 @@
 #   3. sync.await                - block until the backend's reply arrives via 'avro-topic-2' + Redis.
 #
 # schema-id 2 is the demo's Avro SyncDemoMessage schema, pre-registered in the Schema Registry (see
-# registry/schemas.json). The producer is id-driven: it never needs a subject or naming strategy.
+# registry/2.json). The producer is id-driven: it never needs a subject or naming strategy.
 #
 flow:
   id: 'sync-to-async-avro'

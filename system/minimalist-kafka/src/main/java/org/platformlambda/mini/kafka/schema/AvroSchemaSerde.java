@@ -74,7 +74,7 @@ class AvroSchemaSerde implements SchemaSerde {
     }
 
     /**
-     * Resolve a pre-registered Avro schema by global id (cached by {@link FileCachedSchemaRegistryClient}).
+     * Resolve a pre-registered Avro schema by global id (cached by {@link ManagedCacheSchemaRegistryClient}).
      *
      * @param schemaId the global schema id
      * @return the registered schema as an {@link AvroSchema}

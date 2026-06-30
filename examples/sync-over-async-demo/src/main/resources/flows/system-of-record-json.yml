@@ -6,7 +6,7 @@
 #   1. system.of.record.json     - the backend logic (echo + metadata) on the decoded Map.
 #   2. simple.kafka.notification - publish the reply to 'json-topic-2' as JSON Schema (schema-id + type).
 #
-# schema-id 1 is the demo's pre-registered SyncDemoMessage schema (see registry/schemas.json).
+# schema-id 1 is the demo's pre-registered SyncDemoMessage schema (see registry/1.json).
 #
 flow:
   id: 'system-of-record-json'

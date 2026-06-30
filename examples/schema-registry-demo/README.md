@@ -18,8 +18,9 @@ java -jar helpers/schema-registry-standalone/target/schema-registry-standalone-4
 
 It listens on port **8081** (Confluent's default). Override with `-Drest.server.port=…`.
 
-Schemas are persisted to `schemas.json` under `schema.registry.data.store` (default `/tmp/schema-registry`),
-so ids survive a restart. Point it at a durable directory to keep ids stable across reboots:
+Schemas are persisted as one `<id>.json` file per schema under `schema.registry.data.store` (default
+`/tmp/schema-registry`), so ids survive a restart — and a new `<id>.json` dropped in while the server runs is
+picked up on the next request. Point it at a durable directory to keep ids stable across reboots:
 
 ```bash
 java -Drest.server.port=8081 -Dschema.registry.data.store=$HOME/schema-registry \

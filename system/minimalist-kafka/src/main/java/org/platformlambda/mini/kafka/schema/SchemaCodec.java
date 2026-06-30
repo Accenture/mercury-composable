@@ -21,17 +21,18 @@ package org.platformlambda.mini.kafka.schema;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchemaProvider;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import org.platformlambda.core.util.AppConfigReader;
+import org.platformlambda.core.util.ManagedCache;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.core.util.common.ConfigBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.EnumMap;
@@ -52,7 +53,7 @@ import java.util.function.Supplier;
  *
  * <p><b>Thread model.</b> The Confluent serializers/deserializers are <b>not thread-safe</b>, so this codec is
  * a <b>factory</b>, not a shared (de)serializer holder: the shared, thread-safe parts - the
- * {@link FileCachedSchemaRegistryClient} (id→schema lookups, disk-cached) and {@link #schemaTypeOf} - stay on
+ * {@link ManagedCacheSchemaRegistryClient} (id→schema lookups, in-memory cached) and {@link #schemaTypeOf} - stay on
  * the singleton, while {@link #newEncoder()} / {@link #newDecoder()} mint <b>owner-confined</b> serde sets. A
  * producer keeps one {@link Encoder} per worker instance (an instance is single-flight); a consumer keeps one
  * {@link Decoder} for its single poll thread. So a given Confluent serializer/deserializer is only ever
@@ -62,10 +63,10 @@ public class SchemaCodec {
     private static final Logger log = LoggerFactory.getLogger(SchemaCodec.class);
 
     private static final String REGISTRY_URL = "schema.registry.url";
-    private static final String CACHE_DIR = "schema.registry.cache.dir";
     private static final String CACHE_TTL = "schema.registry.cache.ttl";
-    private static final String DEFAULT_CACHE_DIR = "/tmp/schema-registry-cache";
-    private static final String DEFAULT_CACHE_TTL = "24h";
+    private static final String DEFAULT_CACHE_TTL = "30m";
+    /** Name of the platform {@link ManagedCache} that holds id→schema lookups (for monitoring/inspection). */
+    public static final String CACHE_NAME = "schema.registry";
     private static final int IDENTITY_MAP_CAPACITY = 1000;
     private static final byte MAGIC_BYTE = 0x0;
 
@@ -112,7 +113,7 @@ public class SchemaCodec {
     /**
      * Build a codec for an explicit registry URL (used by tests).
      *
-     * @param config      configuration source for the cache dir/TTL settings
+     * @param config      configuration source for the cache TTL setting
      * @param registryUrl the Schema Registry URL; a {@code null}/blank value disables schema features
      * @return a codec, or {@code null} when {@code registryUrl} is {@code null}/blank
      */
@@ -120,23 +121,33 @@ public class SchemaCodec {
         if (registryUrl == null || registryUrl.isBlank()) {
             return null;
         }
-        File cacheDir = new File(config.getProperty(CACHE_DIR, DEFAULT_CACHE_DIR));
         long ttlMillis = 1000L * Utility.getInstance()
                 .getDurationInSeconds(config.getProperty(CACHE_TTL, DEFAULT_CACHE_TTL));
         /*
          * The schema cache is rebuildable from the registry, so clear it at startup - a stale entry (e.g.
          * after the registry's schemas changed between runs) is never served. It re-populates on demand and
-         * TTL-expires within the run. (Unlike the registry's data store, a cache has no durable mode.)
+         * TTL-expires within the run. ManagedCache is a JVM-wide singleton by name, so an earlier run in the
+         * same JVM (e.g. another test) could have left entries behind; clear() guarantees a clean start.
          */
-        Utility.getInstance().cleanupDir(cacheDir);
+        ManagedCache cache = ManagedCache.createCache(CACHE_NAME, ttlMillis);
+        cache.clear();
         Map<String, Object> srConfig = new HashMap<>();
         srConfig.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
-        SchemaRegistryClient client = new FileCachedSchemaRegistryClient(List.of(registryUrl),
+        /*
+         * Cache positive results only. Pin Confluent's "missing" (negative) caches to 0 so a not-yet-created
+         * schema id is never remembered as absent: a schema registered while the app is running becomes
+         * visible on the next lookup, with no stale "not found" lingering until a TTL elapses or the pod is
+         * restarted. (These default to 0 already; setting them makes the requirement explicit and durable.)
+         */
+        srConfig.put(SchemaRegistryClientConfig.MISSING_ID_CACHE_TTL_CONFIG, 0L);
+        srConfig.put(SchemaRegistryClientConfig.MISSING_VERSION_CACHE_TTL_CONFIG, 0L);
+        srConfig.put(SchemaRegistryClientConfig.MISSING_SCHEMA_CACHE_TTL_CONFIG, 0L);
+        SchemaRegistryClient client = new ManagedCacheSchemaRegistryClient(List.of(registryUrl),
                 IDENTITY_MAP_CAPACITY,
                 List.of(new JsonSchemaProvider(), new AvroSchemaProvider(), new ProtobufSchemaProvider()),
-                srConfig, cacheDir, ttlMillis);
+                srConfig, cache);
         log.info("Schema codec ready (registry={}, cache={}, ttlMs={}, types={})",
-                registryUrl, cacheDir, ttlMillis, List.of(SchemaType.values()));
+                registryUrl, CACHE_NAME, ttlMillis, List.of(SchemaType.values()));
         return new SchemaCodec(client, registryUrl);
     }
 
