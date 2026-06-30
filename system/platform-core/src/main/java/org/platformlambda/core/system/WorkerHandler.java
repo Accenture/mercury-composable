@@ -19,6 +19,9 @@
 package org.platformlambda.core.system;
 
 import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.logging.LogContext;
+import org.platformlambda.core.logging.LogContextConfig;
+import org.platformlambda.core.logging.LogContextManager;
 import org.platformlambda.core.models.*;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleObjectMapper;
@@ -101,8 +104,23 @@ public class WorkerHandler {
         String rpc = event.getTag(EventEmitter.RPC);
         EventEmitter po = EventEmitter.getInstance();
         String ref = tracing? po.startTracing(parentRoute, event.getTraceId(), event.getTracePath(), event.getSpanId(), instance) : "?";
+        // Register the application log context for this worker thread, in lockstep with the trace
+        // bracket. The JSON appenders look it up by thread id at log time. Gated on a real trace
+        // having been created and on the log-context feature being enabled.
+        long threadId = Thread.currentThread().threadId();
+        if (tracing && LogContextConfig.getInstance().isEnabled()) {
+            // tracing defaults on for every function, but a context only makes sense once a real
+            // traceId is available (trace.id != null), per the log-context contract.
+            TraceInfo logTrace = po.getTrace(parentRoute, instance);
+            if (logTrace != null && logTrace.id != null) {
+                LogContextManager.register(threadId, new LogContext(logTrace, event.getCorrelationId()));
+            }
+        }
         ProcessStatus ps = processEvent(event, rpc);
         TraceInfo trace = po.stopTracing(ref);
+        // processEvent never throws (it has a catch-all), so this always runs - no leak. Cheap no-op
+        // when nothing was registered. A Mono/Flux completion after this point has no context (see docs).
+        LogContextManager.remove(threadId);
         if (tracing && trace != null && trace.id != null && trace.path != null) {
             sendTracingInfo(event.getFrom(), rpc, ps, trace);
         } else if (ps.isNotDelivered()) {
@@ -193,21 +211,7 @@ public class WorkerHandler {
             if (event.getTracePath() != null) {
                 parameters.put(MY_TRACE_PATH, event.getTracePath());
             }
-            Object result;
-            try {
-                result = f.handleEvent(parameters, body, instance);
-            } catch (ClassCastException ce) {
-                // special case when the TypedLambdaFunction is defined in-line instead of a class
-                if (ce.getMessage().contains(CASTING_ERROR)) {
-                    var holder = new EventEnvelope().setBody(body);
-                    if (event.getType() != null) {
-                        holder.setType(event.getType());
-                    }
-                    result = f.handleEvent(parameters, holder, instance);
-                } else {
-                    throw ce;
-                }
-            }
+            Object result = invokeFunction(f, parameters, body, event);
             md.diff = getExecTime(begin);
             String replyTo = event.getReplyTo();
             if (replyTo != null) {
@@ -219,6 +223,26 @@ public class WorkerHandler {
             return ps.setExecutionTime(md.diff).setInputOutput(md.inputOutput);
         } catch (NoClassDefFoundError | AssertionError | Exception e) {
             return getErrorProcessStatus(f, e, ps, md, event, begin);
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private Object invokeFunction(TypedLambdaFunction f, Map<String, String> parameters, Object body,
+                                  EventEnvelope event) throws Exception {
+        try {
+            return f.handleEvent(parameters, body, instance);
+        } catch (ClassCastException ce) {
+            // special case when the TypedLambdaFunction is defined in-line instead of a class
+            String message = ce.getMessage();
+            if (message != null && message.contains(CASTING_ERROR)) {
+                var holder = new EventEnvelope().setBody(body);
+                if (event.getType() != null) {
+                    holder.setType(event.getType());
+                }
+                return f.handleEvent(parameters, holder, instance);
+            } else {
+                throw ce;
+            }
         }
     }
 
@@ -500,32 +524,45 @@ public class WorkerHandler {
     private boolean updateResponse(EventEnvelope response, Object result) {
         CustomSerializer serializer = def.getCustomSerializer();
         if (result instanceof EventEnvelope resultEvent) {
-            Map<String, String> headers = resultEvent.getHeaders();
-            if (headers.isEmpty() && resultEvent.getStatus() == 408 && resultEvent.getRawBody() == null) {
-                // simulate a READ timeout for ObjectStreamService
-                return true;
-            } else {
-                /*
-                 * When EventEnvelope is used as a return type, the system will transport
-                 * 1. payload
-                 * 2. key-values (as headers)
-                 */
-                if (resultEvent.getType() != null) {
-                    response.setType(resultEvent.getType());
-                }
-                renderOutputBody(resultEvent.getOriginalBody(), serializer, response);
-                for (Map.Entry<String, String> kv: headers.entrySet()) {
-                    String k = kv.getKey();
-                    if (!MY_ROUTE.equals(k) && !MY_TRACE_ID.equals(k) && !MY_TRACE_PATH.equals(k)) {
-                        response.setHeader(k, kv.getValue());
-                    }
-                }
-                response.setStatus(resultEvent.getStatus());
-            }
+            return applyEnvelopeResult(resultEvent, response, serializer);
         } else {
             renderOutputBody(result, serializer, response);
+            return false;
         }
+    }
+
+    /**
+     * Apply an EventEnvelope result onto the response.
+     *
+     * @return true to simulate a READ timeout for ObjectStreamService, false otherwise
+     */
+    private boolean applyEnvelopeResult(EventEnvelope resultEvent, EventEnvelope response, CustomSerializer serializer) {
+        Map<String, String> headers = resultEvent.getHeaders();
+        if (headers.isEmpty() && resultEvent.getStatus() == 408 && resultEvent.getRawBody() == null) {
+            // simulate a READ timeout for ObjectStreamService
+            return true;
+        }
+        /*
+         * When EventEnvelope is used as a return type, the system will transport
+         * 1. payload
+         * 2. key-values (as headers)
+         */
+        if (resultEvent.getType() != null) {
+            response.setType(resultEvent.getType());
+        }
+        renderOutputBody(resultEvent.getOriginalBody(), serializer, response);
+        copyResponseHeaders(headers, response);
+        response.setStatus(resultEvent.getStatus());
         return false;
+    }
+
+    private void copyResponseHeaders(Map<String, String> headers, EventEnvelope response) {
+        for (Map.Entry<String, String> kv: headers.entrySet()) {
+            String k = kv.getKey();
+            if (!MY_ROUTE.equals(k) && !MY_TRACE_ID.equals(k) && !MY_TRACE_PATH.equals(k)) {
+                response.setHeader(k, kv.getValue());
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

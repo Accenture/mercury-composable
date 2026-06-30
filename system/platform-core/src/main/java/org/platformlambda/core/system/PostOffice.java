@@ -19,6 +19,8 @@
 package org.platformlambda.core.system;
 
 import io.vertx.core.Future;
+import org.platformlambda.core.logging.LogContext;
+import org.platformlambda.core.logging.LogContextManager;
 import org.platformlambda.core.models.CustomSerializer;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
@@ -260,6 +262,35 @@ public class PostOffice {
         if (trace != null) {
             trace.annotate(key, value);
         }
+    }
+
+    /**
+     * User application may add a custom key-value to the application log context using this method.
+     * The key-value is rendered into the "context" block of structured log output (JsonAppender /
+     * CompactAppender) when the optional app-log-context.yaml is configured.
+     * <p>
+     * Unlike annotateTrace (which feeds the distributed-trace telemetry), this is a logging-only
+     * sink. The reserved keys (cid, traceId, tracePath, spanId, parentSpanId, service, utc) cannot
+     * be overridden and will throw IllegalArgumentException.
+     * <p>
+     * This is available inside a user function that implements LambdaFunction or TypedLambdaFunction.
+     * It is a no-op when the request is not traced or the log-context feature is not enabled.
+     *
+     * @param key of the log context entry (must not be a reserved key)
+     * @param value associated value; null removes the key
+     * @return this PostOffice instance
+     * @throws IllegalArgumentException if key is one of the reserved keys
+     */
+    public PostOffice updateContext(String key, Object value) {
+        if (LogContext.isReservedKey(key)) {
+            throw new IllegalArgumentException("Cannot override reserved log context key '" + key
+                    + "' - reserved keys are " + LogContext.RESERVED_KEYS);
+        }
+        LogContext context = LogContextManager.get(Thread.currentThread().threadId());
+        if (context != null) {
+            context.put(key, value);
+        }
+        return this;
     }
 
     /**
