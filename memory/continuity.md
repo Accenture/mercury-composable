@@ -261,6 +261,19 @@
   (continuous-trace telemetry). The kafka-flow-adapter guide now documents the Schema Registry integration
   (`5ffb7dc7`). Closed — the feature is ready for PR review/merge. See [[minimalist-kafka-schema-registry]].
   <!-- id: thread-schema-registry-avro-protobuf | created: 2026-06-29 | last_used: 2026-06-29 | uses: 4 | tier: active | origin: 2026-06-29-010147 -->
+- [ ] (planned — Eric, 2026-06-30; **next session**) **minimalist-kafka: resolve `schemaId` from
+  schema-name for `simple.kafka.notification`.** Today the producer is **id-driven** — the caller passes a
+  `schema-id` header and the serializer only does `GET /schemas/ids/{id}` (subject/naming-strategy logic was
+  deliberately avoided — see [[minimalist-kafka-schema-registry]]). **Gap:** a caller function that has only
+  a **schema-name** (subject), not the global id, cannot use it. Add a resolution path schema-name → schema-id.
+  **Investigate industry best practice first** (Confluent): e.g. `GET /subjects/{subject}/versions/latest` →
+  `{id, version, schema}` (latest-version lookup), the three subject naming strategies (Topic / Record /
+  TopicRecord), and `auto.register` vs pre-registered / `use.latest.version`. Decide how the caller specifies
+  the name (header) and where resolution + caching live (the existing `ManagedCacheSchemaRegistryClient`
+  caches id→schema positively; a name→id cache is the analogue). This **revisits** the id-driven decision —
+  weigh keeping id-driven as the fast path with name-resolution as opt-in. The standalone mock
+  ([[standalone-schema-registry-mock]]) will need a `GET /subjects/{subject}/versions/...` endpoint to test it.
+  <!-- id: thread-kafka-schemaid-from-name | created: 2026-06-30 | last_used: 2026-06-30 | uses: 1 | tier: working | origin: 2026-06-30-212955 -->
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
   build for the multi-module project.
