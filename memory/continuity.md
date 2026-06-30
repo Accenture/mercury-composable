@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-29T23:17:47Z | agent: Claude Code (2026-06-29-231747)
+- **last_session:** 2026-06-30T03:12:58Z | agent: Claude Code (2026-06-30-031258)
 - **last_review:** 2026-06-29 | through 2026-06-29-223651.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -83,15 +83,18 @@
   `AvroSchemaSerde` (`AvroConversions`: Map⇄GenericRecord, serialize walks the schema so absent fields take
   their defaults), `ProtobufSchemaSerde` (`ProtobufConversions`: Map⇄DynamicMessage reflectively, no codegen;
   proto3 implicit defaults). The codec dispatches by the `schema-type` header on produce / the registered
-  type on consume; producer + consumer are type-generic. **All three serdes (JSON + Avro + Protobuf) done,
-  tested (49 tests, 85% gate), and demoed end-to-end** (`EmbeddedSchemaRegistry` test helper +
-  sync-over-async-demo `json/avro/protobuf-topic-1/2` paths, all three manually validated via continuous-trace
-  telemetry). Only remaining task: document the schema headers in the kafka-flow-adapter guide (see
-  [[thread-schema-registry-avro-protobuf]]). Shipped alongside Kafka-flow-adapter hardening: a flow's own
-  `ttl` is the deadline (no `kafka.flow.timeout.ms`); success = HTTP 200, else retry→DLQ; a failed DLQ write
+  type on consume; producer + consumer are type-generic. **Thread-safety (2026-06-30):** the Confluent serdes
+  are NOT thread-safe, so `SchemaCodec` is a **factory** — `newEncoder()`/`newDecoder()` mint owner-confined
+  serde sets (serializers per producer worker-`instance`, deserializers per consumer), and
+  `simple.kafka.notification` is `@KernelThreadRunner` (the serdes use `synchronized` → would pin a VT carrier).
+  **All three serdes (JSON + Avro + Protobuf) done, tested (49 tests, 85% gate), demoed end-to-end, and
+  documented** (`EmbeddedSchemaRegistry` test helper + sync-over-async-demo `json/avro/protobuf-topic-1/2`
+  paths, all manually validated via continuous-trace telemetry; kafka-flow-adapter guide has the schema
+  section). Shipped alongside Kafka-flow-adapter hardening: a flow's own `ttl` is the deadline (no
+  `kafka.flow.timeout.ms`); success = HTTP < 400 (2xx/3xx), else retry→DLQ; a failed DLQ write
   drops-with-ERROR + commits (no recovery storm) bounded by `kafka.dlq.timeout.ms`. Builds on
   [[standalone-schema-registry-mock]].
-  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-06-29 | uses: 5 | tier: active | origin: 2026-06-29-010147 -->
+  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-06-30 | uses: 6 | tier: active | origin: 2026-06-29-010147 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
