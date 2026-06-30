@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
-import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,8 +41,9 @@ import java.util.Properties;
  * kafka-standalone} module's {@code EmbeddedKafka}. Two changes make it safe to run inside the reactor
  * build:
  * <ul>
- *   <li><b>Dynamic ports</b> - the standalone hardcodes {@code 9092}/{@code 9093}, which would collide
- *       with a developer's local Kafka or a parallel module; this allocates free ports instead.</li>
+ *   <li><b>Fixed high ports</b> ({@code 19192}/{@code 19193}) - predictable (if a port is in use the test
+ *       fails fast rather than picking a surprise port), and high enough to avoid the standalone's
+ *       {@code 9092}/{@code 9093}, which would collide with a developer's local Kafka.</li>
  *   <li><b>KRaft storage formatting</b> - Kafka 4.x rejects the legacy {@code meta.properties} format, so
  *       storage is formatted with the official {@link Formatter} before {@link KafkaRaftServer#startup()}.</li>
  * </ul>
@@ -55,6 +55,8 @@ import java.util.Properties;
 final class EmbeddedKafka implements AutoCloseable {
 
     private static final int NODE_ID = 1;
+    private static final int BROKER_PORT = 19192;
+    private static final int CONTROLLER_PORT = 19193;
     private static final String CONTROLLER_LISTENER = "CONTROLLER";
     private static final String LOG_DIR = "/tmp/soa-kafka";
 
@@ -64,13 +66,11 @@ final class EmbeddedKafka implements AutoCloseable {
 
     EmbeddedKafka() {
         try {
-            int brokerPort = freePort();
-            int controllerPort = freePort();
-            this.bootstrapServers = "127.0.0.1:" + brokerPort;
+            this.bootstrapServers = "127.0.0.1:" + BROKER_PORT;
             this.logDir = prepareLogDir();
             formatStorage(logDir);
             this.server = new KafkaRaftServer(
-                    new KafkaConfig(brokerConfig(brokerPort, controllerPort, logDir)), Time.SYSTEM);
+                    new KafkaConfig(brokerConfig(BROKER_PORT, CONTROLLER_PORT, logDir)), Time.SYSTEM);
             this.server.startup();
         } catch (IOException e) {
             throw new UncheckedIOException("Unable to start embedded Kafka", e);
@@ -126,12 +126,6 @@ final class EmbeddedKafka implements AutoCloseable {
                     .run();
         } catch (Exception e) {
             throw new IllegalStateException("Unable to format embedded Kafka storage", e);
-        }
-    }
-
-    private static int freePort() throws IOException {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
         }
     }
 
