@@ -53,6 +53,15 @@ public abstract class JsonLogger extends AbstractAppender {
         if (ex != null) {
             data.putAll(util.stackTraceToMap(util.getStackTrace(ex)));
         }
+        // Add the application log context (cid, trace ids, service, custom key-values) when the
+        // optional app-log-context.yaml is present and this log line runs inside a traced worker.
+        // The appender runs on the worker thread, so the context is found by the current thread id.
+        if (LogContextConfig.getInstance().isEnabled()) {
+            LogContext context = LogContextManager.get(Thread.currentThread().threadId());
+            if (context != null) {
+                data.put("context", LogContextConfig.getInstance().render(context, event.getTimeMillis()));
+            }
+        }
         return data;
     }
 

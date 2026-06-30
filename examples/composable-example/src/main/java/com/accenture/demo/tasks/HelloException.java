@@ -20,6 +20,7 @@ package com.accenture.demo.tasks;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,9 @@ public class HelloException implements TypedLambdaFunction<Map<String, Object>, 
 
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+        var po = new PostOffice(headers, instance);
+        // demonstrate adding a user provided key-value into the log context
+        po.updateContext("user", "demo");
         if (input.containsKey(STACK)) {
             // set stack trace as a map. It will be printed as pretty JSON when log.format=json
             var map = Utility.getInstance().stackTraceToMap(String.valueOf(input.get(STACK)));
