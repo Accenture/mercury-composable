@@ -18,13 +18,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 2. New `system/minimalist-kafka` library — reusable Kafka building blocks: a drop-n-forget Kafka
    notification function (`simple.kafka.notification`) and a Kafka Flow Adapter that routes each topic
    into an Event Script flow (one consumer thread per topic; at-least-once via commit-after-process),
-   with W3C trace context propagated across the Kafka hops.
+   with W3C trace context propagated across the Kafka hops. Includes opt-in Confluent Schema Registry
+   integration (`schema.registry.url`) for **JSON Schema and Avro** — see "Removed" below for Protobuf.
 3. New `extensions/sync-over-async` extension — exposes synchronous REST semantics over asynchronous
    Kafka processing across horizontally scaled pods, using Redis to carry the cross-pod return route.
 
 ### Removed
 
-N/A
+1. **Protobuf support was removed from `minimalist-kafka`'s Schema Registry integration before this
+   release**, i.e. it never shipped. It was implemented and demoed in an earlier development phase, but
+   Confluent's `kafka-protobuf-provider` depends on `com.squareup.wire:wire-runtime-jvm`, a **discontinued**
+   artifact carrying an unpatched denial-of-service CVE (CVE-2026-45799 / GHSA-7xpr-hc2w-34m9) with no fix
+   available in that coordinate — Wire's maintainers will not patch it, and Confluent has not adopted the
+   renamed `wire-runtime` replacement as of `kafka-protobuf-provider:8.3.0`. Shipping it would fail our
+   security gate. **JSON Schema and Avro are unaffected and fully supported.** This is tracked as a backlog
+   item, to be re-wired once Confluent moves to the patched coordinate, or sooner for a specific field
+   installation that explicitly needs Protobuf and accepts the residual risk. See the
+   [Kafka Flow Adapter guide](docs/guides/kafka-flow-adapter.md#schema) for detail.
 
 ### Changed
 

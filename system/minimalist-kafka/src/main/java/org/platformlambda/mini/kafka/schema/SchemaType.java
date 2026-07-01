@@ -21,8 +21,18 @@ package org.platformlambda.mini.kafka.schema;
 /**
  * The Confluent schema types. These match the {@code schemaType} the registry reports
  * ({@code io.confluent.kafka.schemaregistry.ParsedSchema#schemaType()}) and the {@code schema-type} header
- * a producer may send. Only {@link #JSON} is wired in this phase; {@link #AVRO} and {@link #PROTOBUF} are
- * recognized so the dispatcher can fail clearly until their phases land.
+ * a producer may send.
+ *
+ * <p>{@link #JSON} and {@link #AVRO} are wired. {@link #PROTOBUF} is recognized (so the dispatcher fails
+ * clearly, via {@code SchemaCodec}'s {@code UnsupportedOperationException}, rather than with a
+ * {@code NullPointerException} or an unknown-enum error) but has <b>no registered serde</b>: Confluent's
+ * {@code kafka-protobuf-provider} depends on {@code com.squareup.wire:wire-runtime-jvm}, a discontinued
+ * artifact carrying an unpatched CVE (CVE-2026-45799 / GHSA-7xpr-hc2w-34m9, a crafted 10-byte payload can
+ * crash any Wire-decoding consumer). Wire's maintainers will not patch that coordinate; the fix exists only
+ * under the renamed {@code wire-runtime} artifact, which Confluent has not adopted (confirmed unchanged as
+ * of {@code kafka-protobuf-provider:8.3.0}). Re-wiring Protobuf is tracked, not abandoned - see the project
+ * backlog - and can also be reintroduced early for a specific field installation that explicitly accepts the
+ * residual risk.</p>
  */
 public enum SchemaType {
     JSON,

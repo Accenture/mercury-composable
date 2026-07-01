@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-01T21:55:33Z | agent: Claude Code (2026-07-01-215533)
+- **last_session:** 2026-07-01T23:02:46Z | agent: Claude Code (2026-07-01-230246)
 - **last_review:** 2026-06-29 | through 2026-06-29-223651.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -155,8 +155,9 @@
   Serialize uses `JsonSchemaUtils.envelope(schema, value)` (the pre-registered schema, not a derived one) to
   avoid the kjetland derivation WARN. Built as a **per-type `SchemaSerde` strategy** — `JsonSchemaSerde`,
   `AvroSchemaSerde` (`AvroConversions`: Map⇄GenericRecord, serialize walks the schema so absent fields take
-  their defaults), `ProtobufSchemaSerde` (`ProtobufConversions`: Map⇄DynamicMessage reflectively, no codegen;
-  proto3 implicit defaults). The codec dispatches by the `schema-type` header on produce / the registered
+  their defaults). (A `ProtobufSchemaSerde` existed briefly but was **removed 2026-07-01, pre-release** — see
+  [[minimalist-kafka-protobuf-removed]] — `SchemaType.PROTOBUF` is still recognized so dispatch fails clearly.)
+  The codec dispatches by the `schema-type` header on produce / the registered
   type on consume; producer + consumer are type-generic. **Thread-safety (2026-06-30):** the Confluent serdes
   are NOT thread-safe, so `SchemaCodec` is a **factory** — `newEncoder()`/`newDecoder()` mint owner-confined
   serde sets (serializers per producer worker-`instance`, deserializers per consumer), and
@@ -166,10 +167,10 @@
   thread (e.g. the `@KernelThreadRunner` ForkJoinPool worker) throws `ConfigException: ...could not be found`.
   Fix: `SchemaCodec.withSerdeClassLoader(...)` pins `AbstractKafkaSchemaSerDeConfig`'s classloader as the TCCL
   around build + serialize/decode. Flat-classpath unit tests can't reproduce it.
-  **All three serdes (JSON + Avro + Protobuf) done, tested (50 tests, 85% gate), demoed end-to-end, and
-  documented** (`EmbeddedSchemaRegistry` test helper + sync-over-async-demo `json/avro/protobuf-topic-1/2`
-  paths, all manually validated via continuous-trace telemetry; kafka-flow-adapter guide has the schema
-  section). Shipped alongside Kafka-flow-adapter hardening: a flow's own `ttl` is the deadline (no
+  **JSON + Avro serdes done, tested, demoed end-to-end, and documented** (`EmbeddedSchemaRegistry` test
+  helper + sync-over-async-demo `json/avro-topic-1/2` paths, all manually validated via continuous-trace
+  telemetry; kafka-flow-adapter guide has the schema section) — **Protobuf was also completed at this point
+  but later removed pre-release, see [[minimalist-kafka-protobuf-removed]]**. Shipped alongside Kafka-flow-adapter hardening: a flow's own `ttl` is the deadline (no
   `kafka.flow.timeout.ms`); success = HTTP < 400 (2xx/3xx), else retry→DLQ; a failed DLQ write
   drops-with-ERROR + commits (no recovery storm) bounded by `kafka.dlq.timeout.ms`. Builds on
   [[standalone-schema-registry-mock]].
@@ -180,6 +181,57 @@
   positives only; `missingIdCache` is producer-side getId-by-content, default TTL 0=off); an earlier "not found
   persists" symptom was the mock loading `schemas.json` only at boot, now fixed by its on-demand per-id store.
   <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-06-30 | uses: 8 | tier: active | origin: 2026-06-29-010147 -->
+
+- **Protobuf support removed from `minimalist-kafka`'s Schema Registry integration, pre-release (2026-07-01).**
+  Snyk's pipeline gate (a hard must-pass — no exemption path available) flagged `com.squareup.wire:wire-runtime-jvm:5.5.0`
+  (pulled transitively via `io.confluent:kafka-protobuf-serializer` → `kafka-protobuf-provider`) for
+  CVE-2026-45799 / GHSA-7xpr-hc2w-34m9: `skipGroup()` doesn't reject a negative varint length, so a crafted
+  **10-byte payload crashes any Wire-decoding consumer** (uncaught `ArrayIndexOutOfBoundsException` escapes
+  the documented `IOException` boundary — a DoS, not RCE). **No fix exists or ever will for this coordinate** —
+  confirmed via the live GitHub advisory: `wire-runtime-jvm` is discontinued; the fix ships only under the
+  renamed `com.squareup.wire:wire-runtime` (6.3.0+), a different Maven coordinate Confluent has not adopted
+  (checked directly against `kafka-protobuf-provider:8.3.0`'s own POM — `wire.version` is still pinned to
+  `5.5.0`, unchanged from 8.2.0). Excluding `wire-runtime-jvm` and forcing the renamed `wire-runtime` ourselves
+  was considered and rejected — an unverified major-version (5→6) substitution into a dependency graph we
+  don't control is too risky to gamble on a hard release gate. **Decision:** remove Protobuf entirely
+  (`ProtobufSchemaSerde`/`ProtobufConversions` deleted, `kafka-protobuf-serializer` dependency dropped,
+  `SchemaType.PROTOBUF` kept as a recognized-but-unwired enum value so `SchemaCodec`'s dispatcher still fails
+  clearly via `UnsupportedOperationException`, never silently/NPE). Backed by an industry check (WebSearch,
+  no hard % found but strong qualitative consensus across 2025–2026 Kafka-ecosystem sources): Avro dominates
+  Confluent-Schema-Registry-backed Kafka specifically, Protobuf's stronghold is gRPC/polyglot microservices —
+  a different ecosystem — so JSON+Avro covers the dominant case here. **Zero backward-compat cost**: per
+  CHANGELOG.md, `minimalist-kafka` (and its Schema Registry integration) was introduced *in* 4.5.0 — the
+  exact version blocked at this Snyk gate — so no client has ever received a published artifact with Protobuf
+  support. Removed end-to-end: `system/minimalist-kafka` code + tests + pom;
+  `examples/sync-over-async-demo`'s parallel protobuf-topic-1/2 demo path (Java tasks, flows, rest.yaml entry,
+  kafka-adapter bindings, registry seed, Node topic script); user-facing docs
+  (`docs/guides/kafka-flow-adapter.md`, `configuration-reference.md`, `schema-registry-mock.md`, the demo's own
+  README, `helpers/schema-registry-standalone/README.md`) all state the rationale + limitation explicitly
+  rather than silently dropping it — an explicit honesty/objectivity call from Eric. **Not a dead end:**
+  tracked as a backlog item — [[thread-minimalist-kafka-protobuf-revival]] — to re-wire once Confluent adopts
+  `wire-runtime`, or sooner for a specific field installation that explicitly needs Protobuf and accepts the
+  residual risk. Full reactor `mvn test` green after removal (see [[thread-minimalist-kafka-protobuf-removal]]).
+  Supersedes the Protobuf-inclusive claims in [[minimalist-kafka-schema-registry]] (its JSON/Avro
+  architecture detail is otherwise unchanged and still current).
+  <!-- id: minimalist-kafka-protobuf-removed | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-224313 -->
+
+- **`minimalist-kafka`: `confluent.version` bumped 8.2.0 → 8.3.0; `kafka.version` (4.2.0) upgrade deliberately
+  deferred (2026-07-01).** After the Protobuf removal above, `confluent.version` only governs
+  `kafka-json-schema-serializer`/`kafka-avro-serializer` (no `kafka-protobuf-serializer` anymore). Verified
+  before bumping, not assumed: resolved dependency-tree diff is clean (Confluent's own artifacts + a
+  `swagger-annotations`→`swagger-annotations-jakarta` swap + two split-out artifacts `kafka-avro-types`/
+  `kafka-schema-types` + minor patch bumps), zero OSV vulnerabilities in anything new/changed, full test
+  suite green (49/49 in `minimalist-kafka` incl. the stock-Confluent-serializer interop tests). **Deferred:**
+  Confluent's own compatibility table pairs Platform 8.3.x with Apache Kafka **4.3.x**, but this repo
+  deliberately does not follow that pairing — `kafka.version` is pinned independently (excluding Confluent's
+  transitively-suggested `kafka-clients`) specifically so the Confluent serializers (which implement the
+  stable `Serializer`/`Deserializer` contract, tolerant of client-version drift) never force a broker/client
+  version choice here. Bumping `kafka.version` to 4.3.x is a **separate, deliberately deferred** decision:
+  no CVE drives it (checked: 0 vulns at both 4.2.0 and 4.3.1), but the blast radius is far wider — it's
+  pinned in **24 pom.xml files**, including the embedded KRaft broker used across many modules' integration
+  tests, a materially different risk category (broker behavioral change) from a pure serializer-library bump.
+  Tracked as its own backlog item, not blocked on anything — see [[thread-kafka-client-version-upgrade]].
+  <!-- id: minimalist-kafka-confluent-8-3-0 | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-230246 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -245,6 +297,36 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [x] (completed — Eric, 2026-07-01) **Remove Protobuf support from minimalist-kafka's Schema Registry
+  integration (Snyk-driven, pre-release).** Full detail in the Key Decision
+  [[minimalist-kafka-protobuf-removed]] and the 2026-07-01-224313 session log. Code + tests + pom +
+  sync-over-async-demo's parallel demo path + user-facing docs (kafka-flow-adapter.md,
+  configuration-reference.md, schema-registry-mock.md, demo README, schema-registry-standalone README) all
+  updated with the rationale stated explicitly, not silently dropped. Full reactor `mvn test`: green.
+  <!-- id: thread-minimalist-kafka-protobuf-removal | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-224313 -->
+
+- [ ] (planned — backlog, no ETA) **Reintroduce Protobuf support in minimalist-kafka's Schema Registry
+  integration.** Blocked on Confluent adopting the renamed `com.squareup.wire:wire-runtime` coordinate in
+  `kafka-protobuf-provider` (still unchanged at `wire-runtime-jvm:5.5.0` as of `8.3.0`, checked 2026-07-01 —
+  re-check on any future Confluent release before assuming it's fixed). Alternative unblocking paths, either
+  of which could move this sooner than waiting on Confluent: (a) vendor a patched fork of `wire-runtime-jvm`
+  — the upstream fix (reject a negative varint length in `skipGroup()`) is a tiny, well-understood one-line
+  change; (b) a specific field installation explicitly needs Protobuf and accepts the residual
+  CVE-2026-45799 risk, reintroducing it for that installation only. See [[minimalist-kafka-protobuf-removed]]
+  for the removal rationale and exactly what to restore (`ProtobufSchemaSerde`/`ProtobufConversions`,
+  the `kafka-protobuf-serializer` dependency, the demo's protobuf-topic-1/2 path — all still in git history).
+  <!-- id: thread-minimalist-kafka-protobuf-revival | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-224313 -->
+
+- [ ] (planned — backlog, no ETA, no CVE driver) **Upgrade `kafka.version` (4.2.0 → 4.3.x) across the 24
+  pom.xml files that pin it.** Deliberately deferred alongside the `confluent.version` 8.2.0→8.3.0 bump — see
+  [[minimalist-kafka-confluent-8-3-0]] for the full reasoning. Confluent Platform 8.3.x's own tested pairing
+  is Kafka 4.3.x, but nothing here requires following that pairing (this repo pins its own Kafka client
+  independent of Confluent's suggestion, and the Confluent serializers are client-version-tolerant by
+  design). Scope when picked up: verify kafka-clients 4.3.x + the embedded KRaft broker (`kafka_2.13:4.3.x`)
+  behavioral compatibility (config defaults, controller behavior) across all 24 files, not just
+  `minimalist-kafka` — a materially larger test surface than a serializer-library bump.
+  <!-- id: thread-kafka-client-version-upgrade | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-230246 -->
 
 - [x] (PR open — Eric, 2026-07-01) **Deprecate 'simple type matching' in TaskExecutor → 'simple plugin'
   syntax.** Shipped as **PR [#130](https://github.com/Accenture/mercury-composable/pull/130)**

@@ -110,7 +110,7 @@ parameters its contract depends on and lets the template own everything else:
 
 `bootstrap.servers` is template-only via `${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}`. The byte[] wire
 contract keeps the building blocks serializer-free; richer encodings layer on top via the
-[Schema Registry integration](#schema) (JSON Schema / Avro / Protobuf), opt-in per binding.
+[Schema Registry integration](#schema) (JSON Schema / Avro), opt-in per binding.
 
 ## Reliability: at-least-once, retry, and dead-letter {#reliability}
 
@@ -177,7 +177,17 @@ notification hops are the bridge spans. See [Observability](observability.md).
 The default wire contract is raw `byte[]`, which keeps the building blocks serializer-free. To interoperate
 with existing Confluent client projects, the library can also speak the **Confluent Schema Registry wire
 format** — `[magic 0x00][4-byte global schema id][payload]` — using Confluent's *own* serializers as a
-library (not a reinvented codec). **JSON Schema, Avro, and Protobuf** are supported.
+library (not a reinvented codec). **JSON Schema and Avro** are supported.
+
+> **Protobuf is not currently supported.** It was implemented and demoed in an earlier development phase but
+> removed before its first release: Confluent's `kafka-protobuf-provider` depends on
+> `com.squareup.wire:wire-runtime-jvm`, a **discontinued** artifact carrying an unpatched denial-of-service CVE
+> ([CVE-2026-45799 / GHSA-7xpr-hc2w-34m9](https://github.com/square/wire/security/advisories/GHSA-7xpr-hc2w-34m9))
+> with no fix available anywhere in that coordinate — Wire's maintainers will not patch it, and Confluent has
+> not adopted the renamed `wire-runtime` replacement as of `kafka-protobuf-provider:8.3.0`. This is a tracked
+> backlog item, not an abandoned one: it gets re-wired once Confluent moves, or sooner for a specific field
+> installation that explicitly needs Protobuf and accepts the residual risk. `SchemaType.PROTOBUF` is still
+> recognized internally so a misconfigured attempt fails clearly (`UnsupportedOperationException`), not silently.
 
 Set `schema.registry.url` to turn the feature on (point it at a real Confluent registry or the local
 [`schema-registry-standalone`](schema-registry-mock.md) mock). When it is unset, schema features stay off and
@@ -194,7 +204,7 @@ schema.registry.cache.ttl=30m                          # TTL for the in-memory s
 
 | Header | Description |
 |--------|-------------|
-| `subject` | The registry **subject** to serialize against. The schema must be **pre-registered**; the producer resolves the subject to a global schema id (and its type — `JSON`, `AVRO`, or `PROTOBUF`) from the registry and never registers. |
+| `subject` | The registry **subject** to serialize against. The schema must be **pre-registered**; the producer resolves the subject to a global schema id (and its type — `JSON` or `AVRO`) from the registry and never registers. |
 | `version` | Optional. The subject version to resolve: a positive integer to **pin** a specific version, or `latest` to track the current version. Defaults to `latest`. |
 
 ```yaml
@@ -240,12 +250,12 @@ immediately via the [DLQ path](#reliability) rather than retried.
 
 ### Notes {#schema-notes}
 
-- **One subject-driven path, three formats.** The producer and consumer are type-generic; only the `subject`
+- **One subject-driven path, two formats.** The producer and consumer are type-generic; only the `subject`
   (and the registered schema behind it) differ — the producer reads the schema type from the registry, so the
-  flow never names it. JSON Schema is *open* (`additionalProperties`), while Avro and
-  Protobuf records are *closed-shape* — a message must match the declared fields, and a non-schema field is
-  dropped on the wire. Avro applies declared field defaults for absent fields; Protobuf relies on proto3
-  implicit defaults. Avro/Protobuf decode to generic records (no generated classes), rendered to a `Map`.
+  flow never names it. JSON Schema is *open* (`additionalProperties`), while Avro records are *closed-shape* —
+  a message must match the declared fields, and a non-schema field is dropped on the wire. Avro applies
+  declared field defaults for absent fields, and decodes to a generic record (no generated classes), rendered
+  to a `Map`.
 - **Schema cache.** Lookups by id are cached **in memory** (platform `ManagedCache`, TTL
   `schema.registry.cache.ttl`, default `30m`) to cut registry round-trips. A global schema id is immutable, so
   a cache hit is always the right schema. **Positive results only** — a not-found id is never cached, so a
@@ -258,8 +268,8 @@ immediately via the [DLQ path](#reliability) rather than retried.
   new version is registered, so it is cached on a **short TTL** and re-resolved frequently, picking up a new
   current version without a restart. Pin a version in production paths where the schema must not shift
   underneath you; use `latest` in dev / lower environments where tracking the newest schema is convenient.
-- **Worked example.** The [sync-over-async demo](sync-over-async.md) runs the same end-to-end flow over all
-  three formats (`json-topic-1/2`, `avro-topic-1/2`, `protobuf-topic-1/2`) alongside the raw `byte[]` path.
+- **Worked example.** The [sync-over-async demo](sync-over-async.md) runs the same end-to-end flow over both
+  formats (`json-topic-1/2`, `avro-topic-1/2`) alongside the raw `byte[]` path.
 
 ## Configuration keys {#config}
 

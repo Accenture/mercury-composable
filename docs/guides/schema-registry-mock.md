@@ -12,7 +12,7 @@ The `schema-registry-standalone` module is a lightweight, zero-dependency mock o
 * **Location:** `helpers/schema-registry-standalone`
 * **Default Port:** `8081` (Confluent's default)
 * **Storage:** In-memory, persisted as one file per schema id (`<id>.json`, e.g. `1.json`) under a configurable directory (`schema.registry.data.store`, default `/tmp/schema-registry`)
-* **Supported Types:** Avro (default), JSON Schema, Protobuf.
+* **Supported Types:** Avro (default), JSON Schema, Protobuf — the mock is schema-language-agnostic (it stores/serves an opaque schema string regardless of type), so it can serve any Confluent client, including a Protobuf one. **`minimalist-kafka`'s own client integration only consumes JSON Schema and Avro** — see the [Kafka Flow Adapter guide](kafka-flow-adapter.md#schema) for why Protobuf support was removed.
 
 ## Why use this?
 

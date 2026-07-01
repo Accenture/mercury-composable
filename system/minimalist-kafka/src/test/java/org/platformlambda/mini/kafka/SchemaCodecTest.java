@@ -18,20 +18,15 @@
 
 package org.platformlambda.mini.kafka;
 
-import com.google.protobuf.DynamicMessage;
-import com.google.protobuf.Message;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
-import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchema;
-import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchemaProvider;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
-import io.confluent.kafka.serializers.protobuf.KafkaProtobufSerializer;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
@@ -60,10 +55,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Validates the {@link SchemaCodec} (and its owner-confined {@link SchemaCodec.Encoder}/
- * {@link SchemaCodec.Decoder}) against the real Confluent JSON/Avro/Protobuf serdes and a self-contained,
+ * {@link SchemaCodec.Decoder}) against the real Confluent JSON/Avro serdes and a self-contained,
  * in-JVM {@link EmbeddedSchemaRegistry} (no Kafka broker, no AutoStart, no network beyond loopback):
  * id-driven serialize, magic-id dispatch + decode to a Map, in-memory schema cache, and - critically -
- * decoding messages produced by stock Confluent serializers (interop with client projects).
+ * decoding messages produced by stock Confluent serializers (interop with client projects). Also guards
+ * that {@link SchemaType#PROTOBUF} - recognized but deliberately unwired, see its Javadoc - fails clearly.
  */
 class SchemaCodecTest {
 
@@ -73,8 +69,6 @@ class SchemaCodecTest {
     private static final String AVRO_SCHEMA =
             "{\"type\":\"record\",\"name\":\"Greeting\",\"namespace\":\"test\","
             + "\"fields\":[{\"name\":\"hello\",\"type\":\"string\"}]}";
-    private static final String PROTO_SCHEMA =
-            "syntax = \"proto3\"; package test; message Greeting { string hello = 1; }";
 
     private static EmbeddedSchemaRegistry registry;
     private static SchemaCodec codec;
@@ -200,38 +194,15 @@ class SchemaCodecTest {
     }
 
     @Test
-    void serializeProtobufByIdThenDecodeRoundTrips() throws Exception {
-        int id = codec.client().register(TOPIC + "-proto-value", new ProtobufSchema(PROTO_SCHEMA));
-
-        byte[] framed = encoder.serialize(TOPIC, SchemaType.PROTOBUF, id, Map.of("hello", "protobuf"));
-        assertTrue(SchemaCodec.isFramed(framed), "output is Confluent-framed (magic byte + id)");
-        assertEquals(id, SchemaCodec.schemaId(framed), "the framed id matches the pre-registered schema");
-
-        Object decoded = decoder.decode(TOPIC, framed);
-        assertInstanceOf(Map.class, decoded);
-        assertEquals("protobuf", ((Map<?, ?>) decoded).get("hello"));
-
-        assertTrue(schemaCached(id), "schema cached in memory by id");
-    }
-
-    @Test
-    void decodesMessageFromStockConfluentProtobufSerializer() {
-        // External-client stand-in: a stock KafkaProtobufSerializer that auto-registers from the message.
-        CachedSchemaRegistryClient srClient = new CachedSchemaRegistryClient(List.of(registry.baseUrl()),
-                100, List.of(new ProtobufSchemaProvider()), Map.of());
-        Map<String, Object> cfg = new HashMap<>();
-        cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registry.baseUrl());
-        cfg.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS, true);
-        ProtobufSchema schema = new ProtobufSchema(PROTO_SCHEMA);
-        DynamicMessage message = DynamicMessage.newBuilder(schema.toDescriptor())
-                .setField(schema.toDescriptor().findFieldByName("hello"), "external-proto").build();
-        try (KafkaProtobufSerializer<Message> serializer = new KafkaProtobufSerializer<>(srClient, cfg)) {
-            byte[] framed = serializer.serialize(TOPIC, message);
-            Object decoded = decoder.decode(TOPIC, framed);
-            assertInstanceOf(Map.class, decoded);
-            assertEquals("external-proto", ((Map<?, ?>) decoded).get("hello"),
-                    "minimalist-kafka decodes Protobuf messages produced by a stock Confluent serializer");
-        }
+    void protobufIsRecognizedButNotSupported() throws Exception {
+        // PROTOBUF is a real SchemaType (parses fine, dispatch reaches the serde lookup) but has no
+        // registered serde - see SchemaCodec's class Javadoc and SchemaType.PROTOBUF's Javadoc for why
+        // (Confluent's kafka-protobuf-provider depends on the unpatched, discontinued wire-runtime-jvm).
+        // It must fail clearly (UnsupportedOperationException), never silently or with an NPE.
+        int id = codec.client().register(TOPIC + "-proto-value", new JsonSchema(JSON_SCHEMA));
+        assertThrows(UnsupportedOperationException.class,
+                () -> encoder.serialize(TOPIC, SchemaType.PROTOBUF, id, Map.of("hello", "protobuf")),
+                "Protobuf is recognized but deliberately unwired - must fail clearly, not silently");
     }
 
     @Test

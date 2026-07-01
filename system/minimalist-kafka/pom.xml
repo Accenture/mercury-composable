@@ -25,12 +25,18 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>21</java.version>
         <netty.version>4.2.15.Final</netty.version>
+        <jackson-2-bom.version>2.22.0</jackson-2-bom.version>
         <!-- Pin the Kafka client to the same version as the embedded broker used in tests
              (kafka_2.13) to avoid client/broker protocol skew. -->
         <kafka.version>4.2.0</kafka.version>
-        <!-- Confluent Platform 8.2.x aligns with Apache Kafka 4.2.x. Provides the out-of-the-box
-             Schema Registry serializers (interop with existing client projects). -->
-        <confluent.version>8.2.0</confluent.version>
+        <!-- Provides the out-of-the-box Schema Registry serializers (interop with existing client
+             projects). Confluent Platform 8.3.x's own tested pairing is Apache Kafka 4.3.x, but we
+             deliberately pin our own kafka-clients (above) rather than follow that pairing - the
+             serializers implement the stable Serializer/Deserializer contract, so they are tolerant of a
+             different Kafka client version. Bumping kafka.version to 4.3.x is a separate, deferred
+             decision (broader blast radius: 24 modules, embedded broker behavior, no CVE driver) -
+             see the project backlog. -->
+        <confluent.version>8.3.0</confluent.version>
     </properties>
 
     <dependencyManagement>
@@ -109,20 +115,11 @@
             </exclusions>
         </dependency>
 
-        <!-- Confluent Protobuf serializer/deserializer (same role again, for the Protobuf wire format).
-             It brings com.google.protobuf:protobuf-java + kafka-protobuf-provider (ProtobufSchema) so we
-             can build/read DynamicMessage. Exclude the transitive kafka-clients to keep our pinned version. -->
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-protobuf-serializer</artifactId>
-            <version>${confluent.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.kafka</groupId>
-                    <artifactId>kafka-clients</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+        <!-- Confluent Protobuf serializer/deserializer is deliberately NOT a dependency. It pulls
+             com.squareup.wire:wire-runtime-jvm, a discontinued artifact with an unpatched DoS CVE
+             (CVE-2026-45799 / GHSA-7xpr-hc2w-34m9) that fails our security gate. Confluent has not moved to
+             the renamed wire-runtime coordinate as of kafka-protobuf-provider:8.3.0. See SchemaType.PROTOBUF's
+             Javadoc for the full rationale and the reintroduction path. -->
 
         <!-- Embedded Kafka (real KRaft broker) for integration tests. -->
         <dependency>

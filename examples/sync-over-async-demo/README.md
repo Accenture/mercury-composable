@@ -34,7 +34,7 @@ business logic) and [`SyncErrorHandler`](src/main/java/com/accenture/soa/demo/su
 
 - Java 21 + Maven. Build once from the repo root: `mvn -pl examples/sync-over-async-demo -am install`.
 - The `redis-standalone` and `kafka-standalone` helper jars (built by the same reactor).
-- The `schema-registry-standalone` helper jar — only for the [JSON Schema](#json-schema-variant-confluent-wire-format), [Avro](#avro-variant-confluent-wire-format), and [Protobuf](#protobuf-variant-confluent-wire-format) variants below.
+- The `schema-registry-standalone` helper jar — only for the [JSON Schema](#json-schema-variant-confluent-wire-format) and [Avro](#avro-variant-confluent-wire-format) variants below (Protobuf is [not currently supported](#protobuf-not-currently-supported)).
 - Node.js 18+ — only for the one-time topic-creation helper in `node/` (the app client is `curl`).
 
 ## Run it
@@ -54,10 +54,9 @@ cd examples/sync-over-async-demo/node
 npm install        # once
 node create-topics.js
 ```
-This creates eight topics with **10 partitions** each: `soa.request` / `soa.response` (the byte[] path),
-`json-topic-1` / `json-topic-2` (the [JSON Schema path](#json-schema-variant-confluent-wire-format)),
-`avro-topic-1` / `avro-topic-2` (the [Avro path](#avro-variant-confluent-wire-format)), and
-`protobuf-topic-1` / `protobuf-topic-2` (the [Protobuf path](#protobuf-variant-confluent-wire-format)). Don't
+This creates six topics with **10 partitions** each: `soa.request` / `soa.response` (the byte[] path),
+`json-topic-1` / `json-topic-2` (the [JSON Schema path](#json-schema-variant-confluent-wire-format)), and
+`avro-topic-1` / `avro-topic-2` (the [Avro path](#avro-variant-confluent-wire-format)). Don't
 rely on Kafka auto-creation here: an auto-created topic has a single partition, so the `soa-reply-group`
 consumer group can only place it on **one** facade — a second facade would stay idle. Multiple partitions
 let the group spread across facades, which is what makes the multi-facade test below meaningful.
@@ -114,11 +113,11 @@ compare the two side by side; the byte[] path (`soa.request` / `soa.response`) i
 **Seed the registry, then start it.** Schemas are governed artifacts registered out-of-band, so the demo
 ships pre-registered schemas rather than self-registering at runtime. The [`registry/`](registry/) folder
 holds one file per schema id, each now carrying its `subject` + `version` — [`1.json`](registry/1.json)
-(subject `sync-demo-json`, a permissive JSON Schema covering both JSON legs),
-[`2.json`](registry/2.json) (subject `sync-demo-avro`, the [Avro variant](#avro-variant-confluent-wire-format)), and
-[`3.json`](registry/3.json) (subject `sync-demo-protobuf`, the [Protobuf variant](#protobuf-variant-confluent-wire-format)). Copy them into
-the registry's store (default `/tmp/schema-registry`), then start the registry — one registry serves all
-three variants:
+(subject `sync-demo-json`, a permissive JSON Schema covering both JSON legs), and
+[`2.json`](registry/2.json) (subject `sync-demo-avro`, the [Avro variant](#avro-variant-confluent-wire-format)).
+Copy them into
+the registry's store (default `/tmp/schema-registry`), then start the registry — one registry serves both
+variants:
 ```shell
 # Terminal F — seed + start the local Confluent-compatible Schema Registry (port 8081)
 mkdir -p /tmp/schema-registry
@@ -192,42 +191,31 @@ The one instructive difference from JSON Schema — **Avro records are closed-sh
 Everything else — subject-driven produce, out-of-band registration, `schema.enabled` decode-by-id, the Redis
 return route, and trace continuity — is identical to the JSON path.
 
-## Protobuf variant (Confluent wire format)
+## Protobuf (not currently supported)
 
-The third and final schema type, over `protobuf-topic-1` (request) and `protobuf-topic-2` (reply). Again
-nothing in the producer/consumer machinery changes: the flows publish with a `subject: sync-demo-protobuf`
-header, and `simple.kafka.notification` resolves that subject to the Protobuf schema id + type and dispatches
-to the Protobuf serializer. The registry seed already includes **subject `sync-demo-protobuf`**
-(`registry/3.json`); the same Terminal F registry serves all three variants.
+`minimalist-kafka`'s Schema Registry integration supports **JSON Schema and Avro only**. Protobuf was
+implemented and demoed in an earlier development phase (the same subject-driven produce + `schema.enabled`
+consume path shown above, over `protobuf-topic-1`/`protobuf-topic-2`), but was **removed before its first
+release** because Confluent's `kafka-protobuf-provider` depends on `com.squareup.wire:wire-runtime-jvm`, a
+**discontinued** artifact carrying an unpatched denial-of-service CVE
+([CVE-2026-45799 / GHSA-7xpr-hc2w-34m9](https://github.com/square/wire/security/advisories/GHSA-7xpr-hc2w-34m9)):
+a crafted 10-byte payload can crash any Wire-decoding consumer. Wire's maintainers will not patch that
+coordinate — the fix exists only under the renamed `wire-runtime` artifact, which Confluent has not adopted
+(confirmed unchanged as of `kafka-protobuf-provider:8.3.0`). Shipping it would fail our security gate.
 
-Call the Protobuf endpoint:
-```shell
-curl -sS -X POST http://127.0.0.1:8400/api/sync-to-async-protobuf \
-     -H 'content-type: application/json' -d '{"action":"create","order":"A-100"}'
-```
-You get the same synchronous reply — the message's four fields, `traceId` continuous across the Kafka hops:
-```json
-{ "traceId": "...", "action": "create", "processedBy": "system-of-record", "status": "processed" }
-```
-The Protobuf `SyncDemoMessage` schema (id 3 in the seed) is:
-```protobuf
-syntax = "proto3";
-package com.accenture.soa.demo;
-message SyncDemoMessage {
-  string action = 1; string status = 2; string processedBy = 3; string traceId = 4;
-}
-```
+**Path forward:** this is tracked as a backlog item, not abandoned. It gets re-wired once Confluent moves to
+the patched coordinate, or sooner for a specific field installation that explicitly needs Protobuf and
+accepts the residual risk. Until then, `SchemaType.PROTOBUF` is still recognized by the codec (see its
+Javadoc) so an attempt to use it fails clearly (`UnsupportedOperationException`), never silently.
 
-It behaves like the Avro path — **closed-shape**, so `order` is dropped on the wire and the reply is flat —
-with two protobuf-specific notes:
+We're noting this here rather than quietly dropping it, so anyone evaluating this library knows exactly
+what's supported and why — see also the [kafka-flow-adapter guide](../../docs/guides/kafka-flow-adapter.md#schema-registry-integration).
 
-| Aspect | How |
-|--------|-----|
-| **Defaults are free (proto3)** | a field absent from the request is simply not set; proto3's implicit default (`""`) applies on read. The framework's Map→`DynamicMessage` conversion just skips unset fields — no explicit defaults needed (unlike Avro). |
-| **DynamicMessage, no codegen** | serialize builds a `DynamicMessage` against the registered schema's descriptor and decode renders the `DynamicMessage` back to a `Map` — no generated `.proto` Java classes. Confluent's Protobuf wire format also carries a message-index after the id; the serde handles that framing transparently. |
-
-That completes the three Confluent wire formats — **JSON Schema, Avro, and Protobuf** — over one
-subject-driven produce + `schema.enabled` consume path, differing only by the `subject` header.
+That leaves **two** Confluent wire formats — **JSON Schema and Avro** — over one subject-driven produce +
+`schema.enabled` consume path, differing only by the `subject` header. (For context: industry usage of
+Confluent Schema Registry skews heavily toward Avro and JSON Schema already — Protobuf's stronghold is
+gRPC/polyglot microservices, a different ecosystem from Schema-Registry-backed Kafka — so this narrows
+scope rather than dropping the most common path.)
 
 ## How it maps to the pattern
 

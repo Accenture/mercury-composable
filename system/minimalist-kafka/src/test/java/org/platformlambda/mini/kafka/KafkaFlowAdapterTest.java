@@ -20,7 +20,6 @@ package org.platformlambda.mini.kafka;
 
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
-import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchema;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -53,14 +52,11 @@ class KafkaFlowAdapterTest {
     private static final String TOPIC = "mini-test-topic";
     private static final String SCHEMA_TOPIC = "schema-test-topic";
     private static final String AVRO_TOPIC = "avro-test-topic";
-    private static final String PROTOBUF_TOPIC = "protobuf-test-topic";
     private static final String JSON_SCHEMA =
             "{\"type\":\"object\",\"properties\":{\"hello\":{\"type\":\"string\"}},\"additionalProperties\":true}";
     private static final String AVRO_SCHEMA =
             "{\"type\":\"record\",\"name\":\"Greeting\",\"namespace\":\"test\","
             + "\"fields\":[{\"name\":\"hello\",\"type\":\"string\"}]}";
-    private static final String PROTO_SCHEMA =
-            "syntax = \"proto3\"; package test; message Greeting { string hello = 1; }";
     private static final String TRACE_ID = "11112222333344445555666677778888";
 
     private static EmbeddedKafka kafka;
@@ -72,7 +68,6 @@ class KafkaFlowAdapterTest {
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), TOPIC);
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), SCHEMA_TOPIC);
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), AVRO_TOPIC);
-        KafkaTestSupport.createTopic(kafka.bootstrapServers(), PROTOBUF_TOPIC);
         // self-contained, in-JVM Confluent-compatible registry on a random port. Set the exact config key
         // as a system property (ConfigReader consults system properties before the file, at get-time) so it
         // wins regardless of when AppConfigReader was first loaded by other tests. The id->schema cache is
@@ -187,31 +182,4 @@ class KafkaFlowAdapterTest {
         assertEquals(TRACE_ID, received.get("traceId"), "trace-id stayed continuous across the Kafka hop");
     }
 
-    @Test
-    @SuppressWarnings("unchecked")
-    void protobufFramedMessageDecodedIntoFlow() throws Exception {
-        SchemaSinkTask.RECEIVED.clear();
-        // pre-register the Protobuf schema (governed artifact) under a subject; the producer names the subject
-        String subject = PROTOBUF_TOPIC + "-value";
-        KafkaRuntime.schemaCodec().client().register(subject, new ProtobufSchema(PROTO_SCHEMA));
-        String cid = Utility.getInstance().getUuid();
-
-        // publish via simple.kafka.notification with subject (version defaults to latest): the body is
-        // serialized into the Confluent Protobuf wire format; the schema-enabled adapter binding decodes it.
-        PostOffice po = PostOffice.trackable("unit.test", TRACE_ID, "TEST /protobuf");
-        po.send(new EventEnvelope().setTo("simple.kafka.notification")
-                .setHeader(KafkaHeaders.TOPIC, PROTOBUF_TOPIC)
-                .setHeader(KafkaHeaders.CORRELATION_ID, cid)
-                .setHeader(KafkaHeaders.SUBJECT, subject)
-                .setBody("{\"hello\":\"protobuf\"}".getBytes(StandardCharsets.UTF_8))
-                .setTraceId(TRACE_ID).setTracePath("TEST /protobuf"));
-
-        Map<String, Object> received = SchemaSinkTask.RECEIVED.poll(25, TimeUnit.SECONDS);
-        assertNotNull(received, "the schema sink flow should receive the decoded Protobuf message");
-        assertEquals(cid, received.get("cid"), "correlation-id propagated as a Kafka header");
-        assertInstanceOf(Map.class, received.get("body"), "body decoded to a Map (not raw byte[])");
-        assertEquals("protobuf", ((Map<String, Object>) received.get("body")).get("hello"),
-                "Protobuf message round-tripped: produced by id, decoded by the adapter");
-        assertEquals(TRACE_ID, received.get("traceId"), "trace-id stayed continuous across the Kafka hop");
-    }
 }
