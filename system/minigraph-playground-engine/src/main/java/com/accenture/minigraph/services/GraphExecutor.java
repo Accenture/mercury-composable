@@ -19,6 +19,7 @@
 package com.accenture.minigraph.services;
 
 import com.accenture.minigraph.common.GraphLambdaFunction;
+import com.accenture.minigraph.models.CompiledGraphs;
 import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.models.Visits;
 import com.accenture.minigraph.skills.GraphJoin;
@@ -305,6 +306,12 @@ public class GraphExecutor extends GraphLambdaFunction {
     private Map<String, Object> getGraphModel(String graphId) {
         if (graphId.startsWith("tutorial") && !isDevEnv) {
             throw new IllegalArgumentException("tutorial graph models not allowed");
+        }
+        // graphs validated and converted at startup by CompileGraph are reused as-is to avoid
+        // re-parsing the JSON file and re-resolving deprecated syntax on every request
+        var compiled = CompiledGraphs.getGraph(graphId);
+        if (compiled != null) {
+            return util.deepCopy(compiled);
         }
         // use config reader to resolve environment variables
         try {
