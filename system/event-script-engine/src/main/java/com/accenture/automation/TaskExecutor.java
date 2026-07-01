@@ -97,9 +97,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String MAP_TO = "->";
     private static final String ALL = "*";
     private static final String END = "end";
-    private static final String TRUE = "true";
-    private static final String FALSE = "false";
-    private static final String NULL = "null";
     private static final String RESPONSE = "response";
     private static final String SEQUENTIAL = "sequential";
     private static final String PARALLEL = "parallel";
@@ -114,8 +111,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String BREAK = "break";
     private static final String INCREMENT = "++";
     private static final String DECREMENT = "--";
-    private static final String BOOLEAN_SUFFIX = "boolean";
-    private static final String UUID_SUFFIX = "uuid";
     private static final String ITEM_SUFFIX = ".ITEM";
     private static final String INDEX_SUFFIX = ".INDEX";
     private static final String TTL = "ttl";
@@ -1107,10 +1102,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
     private Object getInputDataMappingLhsValue(InputMappingMetadata md, int dynamicListIndex, String dynamicListKey) {
         Object value = helper.getLhsElement(md.lhs, md.source);
-        // special cases for simple type matching for a non-exist model variable
-        if (value == null && md.lhs.startsWith(MODEL_NAMESPACE)) {
-            value = getValueFromNonExistModel(md.lhs);
-        }
         // special case for a dynamic list in fork and join
         if (value == null && dynamicListKey != null) {
             if (md.lhs.equals(dynamicListKey + ITEM_SUFFIX)) {
@@ -1152,38 +1143,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private Object getValueFromNonExistModel(String lhs) {
-        int colon = lhs.lastIndexOf(':');
-        if (colon > 0) {
-            var qualifier = lhs.substring(colon+1).trim();
-            if (UUID_SUFFIX.equals(qualifier)) {
-                return util.getUuid4();
-            } else {
-                var v = getNullBooleanValue(qualifier);
-                if (v == 1) {
-                    return true;
-                }
-                if (v == 2) {
-                    return false;
-                }
-            }
-        }
-        return null;
-    }
-
-    private int getNullBooleanValue(String qualifier) {
-        var parts = util.split(qualifier, "(= )");
-        if (parts.size() == 3 && BOOLEAN_SUFFIX.equals(parts.getFirst()) && NULL.equals(parts.get(1))) {
-            if (TRUE.equals(parts.get(2))) {
-                return 1;
-            }
-            if (FALSE.equals(parts.get(2))) {
-                return 2;
-            }
-        }
-        return 0;
-    }
-
     private void callExternalStateMachine(FlowInstance flowInstance, Task task, String rhs, Object value) {
         String key = rhs.substring(EXT_NAMESPACE.length()).trim();
         String externalStateMachine = flowInstance.getFlow().externalStateMachine;
@@ -1215,19 +1174,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private void removeModelElement(String rhs, MultiLevelMap model) {
-        int colon = getModelTypeIndex(rhs);
-        if (colon != -1) {
-            String key = rhs.substring(0, colon);
-            String type = rhs.substring(colon+1);
-            Object value = helper.getValueByType(type, null, "?", model);
-            if (value != null) {
-                setRhsElement(value, key, model);
-            } else {
-                model.removeElement(key);
-            }
-        } else {
-            model.removeElement(rhs);
-        }
+        model.removeElement(rhs);
     }
 
     private Object getDynamicListItem(String dynamicListKey, int dynamicListIndex, MultiLevelMap source) {
@@ -1337,35 +1284,19 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         sb.append(ptr);
     }
 
-    private int getModelTypeIndex(String text) {
-        if (text.startsWith(MODEL_NAMESPACE)) {
-            return text.indexOf(':');
-        } else {
-            return -1;
-        }
-    }
-
     @SuppressWarnings("unchecked")
     private void setRhsElement(Object value, String rhs, MultiLevelMap target) {
-        int colon = getModelTypeIndex(rhs);
-        String selector = colon == -1? rhs : rhs.substring(0, colon).trim();
-        if (colon != -1) {
-            String type = rhs.substring(colon+1).trim();
-            Object matched = helper.getValueByType(type, value, "RHS '"+rhs+"'", target);
-            target.setElement(selector, matched);
-        } else {
-            if (selector.startsWith(MODEL_NAMESPACE)) {
-                if (value instanceof Map) {
-                    target.setElement(selector, util.deepCopy((Map<String, Object>) value));
-                    return;
-                }
-                if (value instanceof List) {
-                    target.setElement(selector, util.deepCopy((List<Object>) value));
-                    return;
-                }
+        if (rhs.startsWith(MODEL_NAMESPACE)) {
+            if (value instanceof Map) {
+                target.setElement(rhs, util.deepCopy((Map<String, Object>) value));
+                return;
             }
-            target.setElement(selector, value);
+            if (value instanceof List) {
+                target.setElement(rhs, util.deepCopy((List<Object>) value));
+                return;
+            }
         }
+        target.setElement(rhs, value);
     }
 
     private void setConstantValue(String lhs, String rhs, MultiLevelMap target) {

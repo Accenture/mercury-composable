@@ -48,6 +48,7 @@ import java.util.*;
 public class CompileFlows implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(CompileFlows.class);
     private static final DataMappingHelper helper = DataMappingHelper.getInstance();
+    private static final SimpleTypeMatchingConverter converter = SimpleTypeMatchingConverter.getInstance();
     private static final String INPUT = "input";
     private static final String PROCESS = "process";
     private static final String NAME = "name";
@@ -231,7 +232,9 @@ public class CompileFlows implements EntryPoint {
 
     private boolean validInputMapping(String name, List<String> inputList, Task task, FlowConfigMetadata md) {
         List<String> filteredInputMapping = filterDataMapping(inputList);
-        for (String line : filteredInputMapping) {
+        for (String raw : filteredInputMapping) {
+            // convert deprecated "simple type matching" syntax to "simple plugin" syntax
+            String line = converter.convert(raw);
             if (helper.validInput(line)) {
                 int sep = line.lastIndexOf(MAP_TO);
                 String rhs = line.substring(sep + 2).trim();
@@ -255,7 +258,9 @@ public class CompileFlows implements EntryPoint {
     private boolean validOutputMapping(String name, List<String> outputList, Task task, FlowConfigMetadata md) {
         boolean isDecisionTask = DECISION.equals(md.execution);
         List<String> filteredOutputMapping = filterDataMapping(outputList);
-        for (String line : filteredOutputMapping) {
+        for (String raw : filteredOutputMapping) {
+            // convert deprecated "simple type matching" syntax to "simple plugin" syntax
+            String line = converter.convert(raw);
             if (helper.validOutput(line, isDecisionTask)) {
                 task.output.add(line);
                 if (line.contains(MODEL_PARENT) || line.contains(MODEL_ROOT)) {

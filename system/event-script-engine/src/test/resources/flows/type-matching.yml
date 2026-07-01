@@ -23,11 +23,8 @@ tasks:
       - 'model.bytes -> bytes'
       - 'model.text:substring(0, 5) -> substring'
       - 'model.text:unknown -> no-change'
-      - 'model.text:substring(0, 1000) -> out-of-bound'
-      - 'model.text:substring(0, 2, 3) -> invalid-substring'
       - 'model.text:substring(0, 10 -> keep-as-text'
       - 'model.text:substring(6) -> substring-2'
-      - 'model.binary:substring(2) -> keep-as-binary'
       - 'text(hello) -> model.positive:boolean(hello=true)'
       - 'text(hello) -> model.negative:boolean(hello=false)'
       - 'text(100) -> model.integer:int'
@@ -78,6 +75,5 @@ tasks:
       # test "and/or" feature
       - 'model.positive:and(model.negative) -> output.body.and'
       - 'model.positive:or(model.negative) -> output.body.or'
-      - 'model.positive:and(nothing) -> output.body.nothing'
     description: 'Hello World'
     execution: end

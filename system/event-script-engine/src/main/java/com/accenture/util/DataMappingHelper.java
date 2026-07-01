@@ -362,7 +362,7 @@ public class DataMappingHelper {
         if (prefix >= 0 && startParen > 0 && endParen > 0) {
             String pluginName = selector.substring(prefix+2, startParen);
             String pluginParams = selector.substring(startParen+1, endParen);
-            List<String> params = Utility.getInstance().split(pluginParams, ",");
+            List<String> params = splitTopLevelArguments(pluginParams);
             // ignore nested plugin to avoid execution loop
             Object[] input = params.stream()
                     .map(String::trim)
@@ -376,6 +376,35 @@ public class DataMappingHelper {
             return plugin.calculate(input);
         }
         return null;
+    }
+
+    /**
+     * Split plugin arguments by top-level comma only, ignoring commas nested inside
+     * parentheses (e.g. a "text(,)" constant used as one of the arguments).
+     */
+    private List<String> splitTopLevelArguments(String text) {
+        List<String> result = new ArrayList<>();
+        int depth = 0;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '(') {
+                depth++;
+            }
+            if (c == ')') {
+                depth--;
+            }
+            if (c == ',' && depth == 0) {
+                result.add(sb.toString());
+                sb.setLength(0);
+            } else {
+                sb.append(c);
+            }
+        }
+        if (!sb.isEmpty()) {
+            result.add(sb.toString());
+        }
+        return result;
     }
 
     public Object getValueByType(String type, Object value, String path, MultiLevelMap data) {

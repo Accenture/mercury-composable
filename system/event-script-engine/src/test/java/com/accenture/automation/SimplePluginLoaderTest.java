@@ -61,6 +61,7 @@ public class SimplePluginLoaderTest {
                 Arguments.of(new DateGenerator(), new Object[]{}),
                 Arguments.of(new UUIDGenerator(), new Object[]{}),
                 Arguments.of(new EqualsOperator(), new Object[]{5,5}),
+                Arguments.of(new NotEqualsOperator(), new Object[]{5,6}),
                 Arguments.of(new GreaterThanOperator(), new Object[]{5,3}),
                 Arguments.of(new LessThanOperator(), new Object[]{5,7}),
                 Arguments.of(new IsNullOperator(), new Object[]{null}),
