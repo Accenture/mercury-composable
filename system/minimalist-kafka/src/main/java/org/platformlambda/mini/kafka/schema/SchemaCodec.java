@@ -65,8 +65,19 @@ public class SchemaCodec {
     private static final String REGISTRY_URL = "schema.registry.url";
     private static final String CACHE_TTL = "schema.registry.cache.ttl";
     private static final String DEFAULT_CACHE_TTL = "30m";
-    /** Name of the platform {@link ManagedCache} that holds id→schema lookups (for monitoring/inspection). */
+    private static final String VERSION_CACHE_TTL = "schema.registry.version.cache.ttl";
+    // A pinned subject+numeric-version is immutable, so it can be cached effectively forever; a long TTL
+    // (plus a bounded item count) keeps it fresh enough while removing any unbounded-growth risk.
+    private static final String DEFAULT_VERSION_CACHE_TTL = "10d";
+    private static final long VERSION_CACHE_MAX_ITEMS = 3000L;
+    /**
+     * Name of the platform {@link ManagedCache} that holds id→schema lookups (for monitoring/inspection).
+     * It also holds {@code subject+latest → (id,type)} resolutions (mutable, so the same short TTL applies),
+     * under {@code "latest/"}-namespaced keys that cannot collide with the digit-only id keys.
+     */
     public static final String CACHE_NAME = "schema.registry";
+    /** ManagedCache holding {@code subject+numeric-version → (id,type)} resolutions (immutable, long TTL, bounded). */
+    public static final String VERSION_CACHE_NAME = "schema.registry.version";
     private static final int IDENTITY_MAP_CAPACITY = 1000;
     private static final byte MAGIC_BYTE = 0x0;
 
@@ -131,6 +142,12 @@ public class SchemaCodec {
          */
         ManagedCache cache = ManagedCache.createCache(CACHE_NAME, ttlMillis);
         cache.clear();
+        // subject+numeric-version → (id,type): immutable, so a long TTL (default 10d), bounded to 3000 items.
+        long versionTtlMillis = 1000L * Utility.getInstance()
+                .getDurationInSeconds(config.getProperty(VERSION_CACHE_TTL, DEFAULT_VERSION_CACHE_TTL));
+        ManagedCache versionCache = ManagedCache.createCache(VERSION_CACHE_NAME, versionTtlMillis, VERSION_CACHE_MAX_ITEMS);
+        versionCache.clear();
+        // (subject+latest resolutions share the short-TTL id cache above; no separate cache needed.)
         Map<String, Object> srConfig = new HashMap<>();
         srConfig.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
         /*
@@ -145,7 +162,7 @@ public class SchemaCodec {
         SchemaRegistryClient client = new ManagedCacheSchemaRegistryClient(List.of(registryUrl),
                 IDENTITY_MAP_CAPACITY,
                 List.of(new JsonSchemaProvider(), new AvroSchemaProvider(), new ProtobufSchemaProvider()),
-                srConfig, cache);
+                srConfig, cache, versionCache);
         log.info("Schema codec ready (registry={}, cache={}, ttlMs={}, types={})",
                 registryUrl, CACHE_NAME, ttlMillis, List.of(SchemaType.values()));
         return new SchemaCodec(client, registryUrl);
@@ -206,6 +223,29 @@ public class SchemaCodec {
             return SchemaType.from(schema.schemaType());
         } catch (IOException | RestClientException e) {
             throw new IllegalStateException("Unable to resolve schema id " + id + ": " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Resolve a {@code (subject, version)} to a global schema id + type (cached two-tier; see
+     * {@link ManagedCacheSchemaRegistryClient#resolve}). This is the producer-side convenience that lets a
+     * caller name a subject instead of knowing the global id.
+     *
+     * @param subject the registered subject name
+     * @param version {@code "latest"} (or null/blank) for the newest version, or a positive integer
+     * @return the resolved global id and schema type
+     * @throws IllegalStateException    if the subject/version cannot be resolved against the registry
+     * @throws IllegalArgumentException if {@code version} is neither {@code "latest"} nor a positive integer
+     */
+    public ResolvedSchema resolve(String subject, String version) {
+        if (!(client instanceof ManagedCacheSchemaRegistryClient resolver)) {
+            throw new IllegalStateException("subject/version resolution requires ManagedCacheSchemaRegistryClient");
+        }
+        try {
+            return resolver.resolve(subject, version);
+        } catch (IOException | RestClientException e) {
+            throw new IllegalStateException("Unable to resolve subject '" + subject + "' version '"
+                    + version + "': " + e.getMessage(), e);
         }
     }
 

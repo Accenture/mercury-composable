@@ -21,8 +21,10 @@ package org.platformlambda.mini.kafka.schema;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.SchemaProvider;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import org.platformlambda.core.util.ManagedCache;
+import org.platformlambda.core.util.Utility;
 
 import java.io.IOException;
 import java.util.List;
@@ -46,13 +48,18 @@ import java.util.Map;
  */
 public class ManagedCacheSchemaRegistryClient extends CachedSchemaRegistryClient {
 
+    /** The reserved version alias that resolves to a subject's current newest version. */
+    public static final String LATEST = "latest";
+
     private final ManagedCache cache;
+    private final ManagedCache versionCache;
 
     public ManagedCacheSchemaRegistryClient(List<String> urls, int identityMapCapacity,
                                             List<SchemaProvider> providers, Map<String, ?> configs,
-                                            ManagedCache cache) {
+                                            ManagedCache cache, ManagedCache versionCache) {
         super(urls, identityMapCapacity, providers, configs);
         this.cache = cache;
+        this.versionCache = versionCache;
     }
 
     /**
@@ -75,5 +82,57 @@ public class ManagedCacheSchemaRegistryClient extends CachedSchemaRegistryClient
         ParsedSchema schema = super.getSchemaById(id);
         cache.put(key, schema);
         return schema;
+    }
+
+    /**
+     * Resolve a {@code (subject, version)} to a global schema id and its type. The id is then used by the
+     * id-based serializer ({@code use.schema.id}) to frame the Confluent wire format - subject/version are a
+     * producer-side convenience and never travel on the wire.
+     *
+     * <p><b>Cache, by mutability.</b> A pinned numeric version is immutable, so its resolution is cached in
+     * {@code versionCache} (long TTL, bounded). A subject's {@code latest} is mutable (a new registration
+     * moves it), so it shares the short-TTL id→schema {@code cache} (under a {@code "latest/"}-namespaced key
+     * that cannot collide with the digit-only id keys) - a short TTL re-resolves a moved {@code latest}.</p>
+     *
+     * <p>The schema type is taken from the parsed schema (via {@link #getSchemaById(int)}), so it is
+     * authoritative - never guessed from a possibly-absent {@code schemaType} - and that lookup also warms the
+     * id→schema cache, so the subsequent serialize needs no extra round-trip.</p>
+     *
+     * @param subject the registered subject name
+     * @param version {@code "latest"} (or null/blank) for the newest version, or a positive integer
+     * @return the resolved global id and schema type
+     * @throws IOException              if a registry round-trip fails
+     * @throws RestClientException      if the registry rejects the lookup (e.g. subject/version not found)
+     * @throws IllegalArgumentException if {@code version} is neither {@code "latest"} nor a positive integer
+     */
+    public ResolvedSchema resolve(String subject, String version) throws IOException, RestClientException {
+        boolean latest = version == null || version.isBlank() || LATEST.equalsIgnoreCase(version.trim());
+        int parsedVersion = latest ? 0 : parseVersion(version);
+        // latest shares the short-TTL id cache (mutable); pinned numeric versions use the long-TTL version
+        // cache (immutable). The "latest/" prefix keeps latest keys out of the id cache's digit-only key space.
+        String key = latest ? LATEST + "/" + subject : subject + "/" + parsedVersion;
+        ManagedCache nameCache = latest ? cache : versionCache;
+        if (nameCache.get(key) instanceof ResolvedSchema cached) {
+            return cached;
+        }
+        SchemaMetadata metadata = latest ? getLatestSchemaMetadata(subject) : getSchemaMetadata(subject, parsedVersion);
+        int id = metadata.getId();
+        // Authoritative type from the parsed schema; also warms the id→schema cache for the serialize step.
+        ResolvedSchema resolved = new ResolvedSchema(id, SchemaType.from(getSchemaById(id).schemaType()));
+        nameCache.put(key, resolved);
+        return resolved;
+    }
+
+    private static int parseVersion(String version) {
+        String v = version.trim();
+        if (!Utility.getInstance().isDigits(v)) {
+            throw new IllegalArgumentException("'version' must be '" + LATEST
+                    + "' or a positive integer, got '" + version + "'");
+        }
+        int parsed = Integer.parseInt(v);
+        if (parsed < 1) {
+            throw new IllegalArgumentException("'version' must be >= 1, got '" + version + "'");
+        }
+        return parsed;
     }
 }

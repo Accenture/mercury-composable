@@ -24,10 +24,9 @@ import org.platformlambda.core.models.TraceInfo;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.PostOffice;
-import org.platformlambda.core.util.Utility;
 import org.platformlambda.core.util.W3cTrace;
+import org.platformlambda.mini.kafka.schema.ResolvedSchema;
 import org.platformlambda.mini.kafka.schema.SchemaCodec;
-import org.platformlambda.mini.kafka.schema.SchemaType;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
@@ -85,11 +84,11 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
         Integer partition = parsePartition(headers.get(KafkaHeaders.PARTITION));
         Map<String, byte[]> kafkaHeaders = new HashMap<>();
         headers.forEach((key, value) -> {
-            // topic/partition/schema-* are routing/encoding directives; the inbound traceparent is replaced below.
+            // topic/partition/subject/version are routing/encoding directives; the inbound traceparent is replaced below.
             if (!KafkaHeaders.TOPIC.equals(key)
                     && !KafkaHeaders.PARTITION.equals(key)
-                    && !KafkaHeaders.SCHEMA_ID.equals(key)
-                    && !KafkaHeaders.SCHEMA_TYPE.equals(key)
+                    && !KafkaHeaders.SUBJECT.equals(key)
+                    && !KafkaHeaders.VERSION.equals(key)
                     && !W3cTrace.TRACEPARENT.equals(key)) {
                 kafkaHeaders.put(key, value.getBytes(StandardCharsets.UTF_8));
             }
@@ -103,29 +102,28 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
     }
 
     /**
-     * When a {@code schema-id} header is present, serialize the body into the Confluent wire format via this
-     * instance's own {@link SchemaCodec.Encoder} (the schema is pre-registered; identified by id). Otherwise
-     * the body is published as raw byte[] - the default minimalist behavior.
+     * When a {@code subject} header is present, serialize the body into the Confluent wire format via this
+     * instance's own {@link SchemaCodec.Encoder}: the {@code subject} + {@code version} (default
+     * {@code latest}) are resolved to a global schema id and type, and the body is framed with that id.
+     * Otherwise the body is published as raw byte[] - the default minimalist behavior.
      */
     private byte[] encode(String topic, Map<String, String> headers, byte[] body, int instance) {
-        String schemaId = headers.get(KafkaHeaders.SCHEMA_ID);
-        if (schemaId == null) {
+        String subject = headers.get(KafkaHeaders.SUBJECT);
+        if (subject == null || subject.isBlank()) {
             return body;
         }
         SchemaCodec codec = KafkaRuntime.schemaCodec();
         if (codec == null) {
-            throw new IllegalStateException("'" + KafkaHeaders.SCHEMA_ID + "' header set but "
+            throw new IllegalStateException("'" + KafkaHeaders.SUBJECT + "' header set but "
                     + "'schema.registry.url' is not configured");
         }
-        if (!Utility.getInstance().isDigits(schemaId.trim())) {
-            throw new IllegalArgumentException("'" + KafkaHeaders.SCHEMA_ID + "' must be an integer, got '"
-                    + schemaId + "'");
-        }
-        SchemaType type = SchemaType.from(headers.get(KafkaHeaders.SCHEMA_TYPE));
+        String version = headers.getOrDefault(KafkaHeaders.VERSION, KafkaHeaders.DEFAULT_VERSION);
+        // Resolve subject+version -> global id + type (cached); throws IllegalState/IllegalArgument on failure.
+        ResolvedSchema resolved = codec.resolve(subject, version);
         // The body is the structured value to encode (for JSON, a JSON document); parse it for the serializer.
         Object value = SimpleMapper.getInstance().getMapper().readValue(body, Object.class);
         SchemaCodec.Encoder encoder = encoders.computeIfAbsent(instance, i -> codec.newEncoder());
-        return encoder.serialize(topic, type, Integer.parseInt(schemaId.trim()), value);
+        return encoder.serialize(topic, resolved.type(), resolved.id(), value);
     }
 
     /** Build a W3C traceparent from this function's current trace context (null if tracing is off). */

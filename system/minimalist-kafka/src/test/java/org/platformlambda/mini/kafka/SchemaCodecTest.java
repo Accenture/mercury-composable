@@ -40,6 +40,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ManagedCache;
+import org.platformlambda.mini.kafka.schema.ResolvedSchema;
 import org.platformlambda.mini.kafka.schema.SchemaCodec;
 import org.platformlambda.mini.kafka.schema.SchemaType;
 
@@ -114,6 +115,37 @@ class SchemaCodecTest {
         assertEquals("world", ((Map<?, ?>) decoded).get("hello"));
 
         assertTrue(schemaCached(id), "schema cached in memory by id");
+    }
+
+    @Test
+    void resolveSubjectVersionToId() throws Exception {
+        String subject = "resolve-demo-value";
+        int id = codec.client().register(subject, new JsonSchema(JSON_SCHEMA));
+
+        ResolvedSchema byLatest = codec.resolve(subject, "latest");
+        assertEquals(id, byLatest.id(), "latest resolves to the registered global id");
+        assertEquals(SchemaType.JSON, byLatest.type(), "type derived authoritatively from the parsed schema");
+
+        assertEquals(id, codec.resolve(subject, null).id(), "null/blank version means latest");
+        assertEquals(id, codec.resolve(subject, "1").id(), "pinned version 1 resolves to the same id");
+
+        // resolution is cached: numeric in the (long-TTL) version cache, latest in the (short-TTL) id cache
+        assertTrue(ManagedCache.getInstance(SchemaCodec.VERSION_CACHE_NAME).exists(subject + "/1"),
+                "numeric version resolution cached");
+        assertTrue(ManagedCache.getInstance(SchemaCodec.CACHE_NAME).exists("latest/" + subject),
+                "latest resolution cached in the id cache under a namespaced key");
+    }
+
+    @Test
+    void resolveRejectsBadVersionAndUnknownSubject() throws Exception {
+        String subject = "resolve-errors-value";
+        codec.client().register(subject, new JsonSchema(JSON_SCHEMA));
+        // a non-numeric, non-"latest" version is rejected up front
+        assertThrows(IllegalArgumentException.class, () -> codec.resolve(subject, "v2"),
+                "version must be 'latest' or a positive integer");
+        // an unknown subject cannot be resolved
+        assertThrows(IllegalStateException.class, () -> codec.resolve("no-such-subject", "latest"),
+                "unknown subject fails to resolve");
     }
 
     @Test

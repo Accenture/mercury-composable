@@ -34,17 +34,21 @@ public final class KafkaHeaders {
     public static final String CORRELATION_ID = "cid";
 
     /**
-     * Optional for {@code simple.kafka.notification}: the global schema id (an int) to serialize the body
-     * with, using the Confluent wire format. When present, {@link #SCHEMA_TYPE} selects the serializer.
-     * Absent ⇒ the body is published as raw byte[] (the default minimalist behavior).
+     * Optional for {@code simple.kafka.notification}: the registry <b>subject</b> whose schema serializes the
+     * body into the Confluent wire format. The subject + {@link #VERSION} are resolved to a global schema id
+     * (and type) via the Schema Registry client; the caller never needs to know the id. Absent ⇒ the body is
+     * published as raw byte[] (the default minimalist behavior).
      */
-    public static final String SCHEMA_ID = "schema-id";
+    public static final String SUBJECT = "subject";
 
     /**
-     * Optional companion to {@link #SCHEMA_ID}: the schema type (e.g. {@code JSON}). Defaults to {@code JSON}
-     * when a {@link #SCHEMA_ID} is given without a type.
+     * Optional companion to {@link #SUBJECT}: the subject version to resolve - {@code "latest"} (the default
+     * when omitted) or a positive integer. The schema type is resolved from the registry, not supplied.
      */
-    public static final String SCHEMA_TYPE = "schema-type";
+    public static final String VERSION = "version";
+
+    /** Default {@link #VERSION} when a {@link #SUBJECT} is given without one. */
+    public static final String DEFAULT_VERSION = "latest";
 
     private KafkaHeaders() {}
 }

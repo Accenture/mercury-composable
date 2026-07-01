@@ -185,6 +185,42 @@ class SchemaRegistryTest {
         assertEquals(42201, body.get("error_code"));
     }
 
+    @Test
+    void resolveSubjectVersion() throws Exception {
+        String schema = asSchemaString(JSON_SCHEMA);
+        EventEnvelope reg = http("POST", "/subjects/test-version/versions", registerBody(schema, "JSON"));
+        int id = (Integer) ((Map<?, ?>) reg.getBody()).get("id");
+
+        // GET /subjects/{subject}/versions/latest -> Confluent metadata shape {subject,id,version,schema,schemaType}
+        EventEnvelope latest = http("GET", "/subjects/test-version/versions/latest", null);
+        assertEquals(200, latest.getStatus());
+        Map<?, ?> body = (Map<?, ?>) latest.getBody();
+        assertEquals("test-version", body.get("subject"));
+        assertEquals(id, ((Number) body.get("id")).intValue());
+        assertEquals(1, ((Number) body.get("version")).intValue());
+        assertEquals("JSON", body.get("schemaType"));
+        assertEquals(schema, body.get("schema"));
+
+        // .../versions/1 resolves the same id as latest
+        EventEnvelope v1 = http("GET", "/subjects/test-version/versions/1", null);
+        assertEquals(200, v1.getStatus());
+        assertEquals(id, ((Number) ((Map<?, ?>) v1.getBody()).get("id")).intValue());
+    }
+
+    @Test
+    void unknownSubjectAndVersionReturn404() throws Exception {
+        // unknown subject -> Confluent error_code 40401
+        EventEnvelope noSubject = http("GET", "/subjects/no-such-subject/versions/latest", null);
+        assertEquals(404, noSubject.getStatus());
+        assertEquals(40401, ((Map<?, ?>) noSubject.getBody()).get("error_code"));
+
+        // known subject, unknown version -> Confluent error_code 40402
+        http("POST", "/subjects/test-ver-404/versions", registerBody(asSchemaString(Map.of("type", "string")), null));
+        EventEnvelope noVersion = http("GET", "/subjects/test-ver-404/versions/99", null);
+        assertEquals(404, noVersion.getStatus());
+        assertEquals(40402, ((Map<?, ?>) noVersion.getBody()).get("error_code"));
+    }
+
     /** Serialize a schema document to the compact (non-pretty) escaped string the Confluent API carries. */
     private static String asSchemaString(Map<String, Object> schema) {
         return SimpleMapper.getInstance().getCompactGson().toJson(schema);

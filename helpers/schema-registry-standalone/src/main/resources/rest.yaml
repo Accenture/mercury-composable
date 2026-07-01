@@ -13,3 +13,8 @@ rest:
     methods:
       - "GET"
     url: "/schemas/ids/{id}"
+
+  - service: "schema.registry.get.version"
+    methods:
+      - "GET"
+    url: "/subjects/{subject}/versions/{version}"

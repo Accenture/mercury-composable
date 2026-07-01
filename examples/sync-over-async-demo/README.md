@@ -113,9 +113,10 @@ compare the two side by side; the byte[] path (`soa.request` / `soa.response`) i
 
 **Seed the registry, then start it.** Schemas are governed artifacts registered out-of-band, so the demo
 ships pre-registered schemas rather than self-registering at runtime. The [`registry/`](registry/) folder
-holds one file per schema id — [`1.json`](registry/1.json) (a permissive JSON Schema covering both JSON legs),
-[`2.json`](registry/2.json) (the [Avro variant](#avro-variant-confluent-wire-format)), and
-[`3.json`](registry/3.json) (the [Protobuf variant](#protobuf-variant-confluent-wire-format)). Copy them into
+holds one file per schema id, each now carrying its `subject` + `version` — [`1.json`](registry/1.json)
+(subject `sync-demo-json`, a permissive JSON Schema covering both JSON legs),
+[`2.json`](registry/2.json) (subject `sync-demo-avro`, the [Avro variant](#avro-variant-confluent-wire-format)), and
+[`3.json`](registry/3.json) (subject `sync-demo-protobuf`, the [Protobuf variant](#protobuf-variant-confluent-wire-format)). Copy them into
 the registry's store (default `/tmp/schema-registry`), then start the registry — one registry serves all
 three variants:
 ```shell
@@ -144,8 +145,8 @@ trace continuity — is identical):
 
 | Aspect | How |
 |--------|-----|
-| **Producer is id-driven** | the flows publish with `schema-id: 1` + `schema-type: JSON` headers; `simple.kafka.notification` serializes the body into the Confluent wire format using that **pre-registered** id. The producer never needs the subject or a naming strategy — see [the Kafka Flow Adapter guide](../../docs/guides/kafka-flow-adapter.md). |
-| **Schema registered out-of-band** | the registry is seeded from `registry/1.json` (id 1); the serializer only does `GET /schemas/ids/1`. Mirrors enterprise reality, where schemas are governed artifacts — no runtime registration in the app. |
+| **Producer is subject-driven** | the flows publish with a `subject: sync-demo-json` header (no explicit `version`, so it defaults to `latest`); `simple.kafka.notification` resolves the global schema id and type from that subject internally, then serializes the body into the Confluent wire format using the **pre-registered** schema. The producer never needs a naming strategy — see [the Kafka Flow Adapter guide](../../docs/guides/kafka-flow-adapter.md). |
+| **Schema registered out-of-band** | the registry is seeded from `registry/1.json` (subject `sync-demo-json`, version 1); the producer resolves the subject to an id and the serializer fetches the schema. Mirrors enterprise reality, where schemas are governed artifacts — no runtime registration in the app. |
 | **Consumer decodes by id** | the `json-topic-1` / `json-topic-2` adapter bindings set `schema.enabled: true`, so the adapter reads the embedded id, fetches the schema, and hands the flow a decoded **Map**. |
 | **Map-input task variants** | because the decoded body is a Map, `system.of.record.json` and `soa.reply.json` take a `Map` (vs the byte[] `system.of.record` / `soa.reply`); they reuse the same logic. |
 
@@ -153,9 +154,10 @@ trace continuity — is identical):
 
 The same end-to-end pattern again, now over **Confluent Avro** on a third pair of topics — `avro-topic-1`
 (request) and `avro-topic-2` (reply). Nothing in the producer/consumer machinery changes from the JSON path:
-the flows publish with `schema-type: AVRO` + `schema-id: 2`, and `simple.kafka.notification` dispatches to
-the Avro serializer purely from those headers. The registry seed already includes **id 2** (copied in the
-step above), so the same Terminal F registry serves both variants.
+the flows publish with a `subject: sync-demo-avro` header, and `simple.kafka.notification` resolves that
+subject to the Avro schema id + type and dispatches to the Avro serializer. The registry seed already
+includes **subject `sync-demo-avro`** (`registry/2.json`, copied in the step above), so the same Terminal F
+registry serves both variants.
 
 Call the Avro endpoint:
 ```shell
@@ -187,15 +189,16 @@ The one instructive difference from JSON Schema — **Avro records are closed-sh
 | **Defaults fill partial input** | the request carries only `action`; the framework's Map→`GenericRecord` conversion applies each field's **schema default** (`""`) for the rest, so a partial input serializes cleanly (Avro's own strict JSON decoder would reject it). |
 | **Generic, no codegen** | decode yields a `GenericRecord` (not a generated class), rendered back to a `Map` — so the flow tasks stay plain `Map`-in/`Map`-out, exactly like the JSON variant. |
 
-Everything else — id-driven produce, out-of-band registration, `schema.enabled` decode-by-id, the Redis
+Everything else — subject-driven produce, out-of-band registration, `schema.enabled` decode-by-id, the Redis
 return route, and trace continuity — is identical to the JSON path.
 
 ## Protobuf variant (Confluent wire format)
 
 The third and final schema type, over `protobuf-topic-1` (request) and `protobuf-topic-2` (reply). Again
-nothing in the producer/consumer machinery changes: the flows publish with `schema-type: PROTOBUF` +
-`schema-id: 3`, and `simple.kafka.notification` dispatches to the Protobuf serializer from those headers.
-The registry seed already includes **id 3** (the same Terminal F registry serves all three variants).
+nothing in the producer/consumer machinery changes: the flows publish with a `subject: sync-demo-protobuf`
+header, and `simple.kafka.notification` resolves that subject to the Protobuf schema id + type and dispatches
+to the Protobuf serializer. The registry seed already includes **subject `sync-demo-protobuf`**
+(`registry/3.json`); the same Terminal F registry serves all three variants.
 
 Call the Protobuf endpoint:
 ```shell
@@ -223,8 +226,8 @@ with two protobuf-specific notes:
 | **Defaults are free (proto3)** | a field absent from the request is simply not set; proto3's implicit default (`""`) applies on read. The framework's Map→`DynamicMessage` conversion just skips unset fields — no explicit defaults needed (unlike Avro). |
 | **DynamicMessage, no codegen** | serialize builds a `DynamicMessage` against the registered schema's descriptor and decode renders the `DynamicMessage` back to a `Map` — no generated `.proto` Java classes. Confluent's Protobuf wire format also carries a message-index after the id; the serde handles that framing transparently. |
 
-That completes the three Confluent wire formats — **JSON Schema, Avro, and Protobuf** — over one id-driven
-produce + `schema.enabled` consume path, differing only by the `schema-type` header.
+That completes the three Confluent wire formats — **JSON Schema, Avro, and Protobuf** — over one
+subject-driven produce + `schema.enabled` consume path, differing only by the `subject` header.
 
 ## How it maps to the pattern
 
@@ -235,8 +238,8 @@ produce + `schema.enabled` consume path, differing only by the `schema-type` hea
 | `soa-reply.yml` (`soa.reply`) | facade | deliver the Kafka reply to the coordinator → wake the awaiting request |
 | `system-of-record.yml` (`system.of.record`) | backend | the application's async processing, on a separate pod |
 | Redis return route | facade | routes the reply back to the originating pod (cross-pod, scalable) |
-| `*-json.yml` flows + `registry/1.json` (id 1) | both | the [JSON Schema variant](#json-schema-variant-confluent-wire-format) over `json-topic-1` / `json-topic-2` |
-| `*-avro.yml` flows + `registry/2.json` (id 2) | both | the [Avro variant](#avro-variant-confluent-wire-format) over `avro-topic-1` / `avro-topic-2` |
+| `*-json.yml` flows + `registry/1.json` (subject `sync-demo-json`, id 1) | both | the [JSON Schema variant](#json-schema-variant-confluent-wire-format) over `json-topic-1` / `json-topic-2` |
+| `*-avro.yml` flows + `registry/2.json` (subject `sync-demo-avro`, id 2) | both | the [Avro variant](#avro-variant-confluent-wire-format) over `avro-topic-1` / `avro-topic-2` |
 
 ## Validated runs (telemetry evidence)
 
