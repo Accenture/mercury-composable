@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-01T17:39:51Z | agent: Claude Code (2026-07-01-173951)
+- **last_session:** 2026-07-01T21:55:33Z | agent: Claude Code (2026-07-01-215533)
 - **last_review:** 2026-06-29 | through 2026-06-29-223651.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -102,6 +102,35 @@
   `draft-design-specs/kafka_schemaid_from_subject_version_design.md` (gitignored). Supersedes the id-driven
   detail in [[minimalist-kafka-schema-registry]].
   <!-- id: kafka-schemaid-from-subject-version | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-004724 -->
+
+- **Repo-wide OSS dependency security update (2026-07-01, committed on `feature/deprecate-simple-type-matching`).**
+  Snyk flagged high-risk dependency CVEs on `system/minimalist-kafka`, `extensions/sync-over-async`,
+  `extensions/reactive-postgres` + two SAST findings. Root cause for the dependency CVEs: each Spring-Boot-parented
+  module resolves transitive `netty:*`/`jackson-databind` versions from **its own** `netty.version`/`jackson-2-bom.version`
+  properties, not from what `platform-core` (or any other dependency) declares — `minimalist-kafka` and
+  `sync-over-async` had **no** `netty.version` override at all; `reactive-postgres`'s was stale
+  (`4.2.13.Final`, missing 3 more CVEs fixed only in `4.2.15.Final`, confirmed via OSV.dev). Fixed repo-wide,
+  not just the 3 flagged modules: `spring-boot-starter-parent` → **`4.1.0`** everywhere except
+  `system/rest-spring-3` + `examples/rest-spring-3-example` (the Spring Boot 3.x line) → **`3.5.16`**;
+  `netty.version` → **`4.2.15.Final`** in all 26 files that had it, **added** to the 2 that didn't
+  (closing the actual root cause); `tomcat.version` → **`11.0.23`** (rest-spring-3 line → `10.1.56`);
+  `vertx-core` → **`5.1.3`** (single declaration point, `platform-core/pom.xml`); `xsi:schemaLocation` → `https://`
+  (all 28 files, both URL forms in use). Spring Boot 4.1.0's own BOM default already ships
+  `jackson-2-bom.version=2.21.4`, so 2 of 3 jackson CVEs were fixed by the parent bump alone with no extra
+  override needed. Spring Boot 4.1.0 also silently jumped `lettuce-core` `6.8.2.RELEASE` → `7.5.2.RELEASE`
+  (its own managed default, not something either of us set) — verified via a full `sync-over-async` test run
+  (32/32 green) specifically because of that major-version surprise. **Not fixable by a pom edit** (tracked,
+  not resolved): `wire-runtime-jvm` (Confluent's protobuf dependency) is a discontinued artifact with no
+  patched release — only fix is Confluent adopting the renamed `wire-runtime` coordinate upstream; one
+  jackson-databind CVE (`@JsonIgnoreProperties` bypass) has no fix yet in the 2.x line either. The two SAST
+  findings (AppConfigReader.java deserialization, HttpRouter.java CRLF injection) were verified **empirically**
+  against the actual libraries in use — SnakeYAML 2.5's default `Yaml()` rejected a classic RCE gadget
+  (`ComposerException: Global tag is not allowed`), Netty 4.2.12's `DefaultHttpHeaders` (under Vert.x's
+  `putHeader`) rejected an embedded `\r\n` — both already mitigated by library defaults, no code change.
+  Two full-reactor `mvn test` runs (before/after the touch-ups): **BUILD SUCCESS, all 28 modules, zero
+  failures**, plus the standalone `examples/pg-example` (excluded from the root aggregator) run separately,
+  also green both times.
+  <!-- id: snyk-oss-dependency-update-2026-07 | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-215533 -->
 
 - **Schema Registry mock server implementation.** Created `helpers/schema-registry-standalone`, providing a minimalist REST API that mimics the Confluent schema registry (`/subjects/{subject}/versions` and `/schemas/ids/{id}`). It supports both Avro and JSON Schema and serves as an end-to-end demo and testing layer. The worked example `examples/schema-registry-demo` is now curl + zero-dependency `.mjs` scripts (no longer a Maven module). See [[standalone-schema-registry-mock]] and [[minimalist-kafka-schema-registry]].
   <!-- id: schema-registry-mock | created: 2026-06-28 | last_used: 2026-06-29 | uses: 2 | tier: active | origin: 2026-06-28-191114 -->
@@ -217,17 +246,26 @@
 
 ## Open Threads
 
-- [ ] **Deprecate 'simple type matching' in TaskExecutor → 'simple plugin' syntax (committed, PR pending).**
-  Full detail in the 2026-07-01-172822 session log. Three parts, all committed as 3 commits on branch
-  `feature/deprecate-simple-type-matching` in worktree `~/accenture/mercury-composable-2`:
-  `d5761c38` — event-script-engine (SimpleTypeMatchingConverter, CompileFlows, TaskExecutor cleanup, `ne`
-  plugin, TypeConversionUtils + DataMappingHelper bug fixes, 115 tests green);
-  `495d2252` — minigraph CompileGraph startup gate + CompiledGraphs cache (55 tests green);
-  `56ad6fb8` — GraphCommandService interactive validation + deprecation notice + help doc updates.
-  **Next: open PR.**
-  Do not run this thread from `~/accenture/mercury-composable` (that worktree carries the concurrent Kafka
-  CSFLE work — see [[thread-csfle-field-encryption]]).
-  <!-- id: thread-deprecate-simple-type-matching | created: 2026-07-01 | last_used: 2026-07-01 | uses: 2 | tier: working | origin: 2026-07-01-172822 -->
+- [x] (PR open — Eric, 2026-07-01) **Deprecate 'simple type matching' in TaskExecutor → 'simple plugin'
+  syntax.** Shipped as **PR [#130](https://github.com/Accenture/mercury-composable/pull/130)**
+  (`feature/deprecate-simple-type-matching`, worktree `~/accenture/mercury-composable-2`). Full detail in
+  the 2026-07-01-172822 session log. 4 commits: `d5761c38` — event-script-engine
+  (SimpleTypeMatchingConverter, CompileFlows, TaskExecutor cleanup, `ne` plugin, TypeConversionUtils +
+  DataMappingHelper bug fixes, 115 tests green); `495d2252` — minigraph CompileGraph startup gate +
+  CompiledGraphs cache (55 tests green); `56ad6fb8` — GraphCommandService interactive validation +
+  deprecation notice + help doc updates; `d125d4a3` — memory. Open to follow-up if review surfaces changes.
+  <!-- id: thread-deprecate-simple-type-matching | created: 2026-07-01 | last_used: 2026-07-01 | uses: 3 | tier: working | origin: 2026-07-01-172822 -->
+
+- [x] (completed — Eric, 2026-07-01) **Repo-wide OSS dependency security update (Snyk-driven).** Committed
+  to `feature/deprecate-simple-type-matching` alongside PR #130's changes (Eric: "regular security
+  vulnerability OSS update... we are good"). Full detail in the Key Decision
+  [[snyk-oss-dependency-update-2026-07]] and the 2026-07-01-215533 session log. `spring-boot-starter-parent`
+  → 4.1.0 (rest-spring-3 line → 3.5.16), `netty.version` → 4.2.15.Final (added where missing — the actual
+  root cause), `tomcat.version` → 11.0.23 (rest-spring-3 line → 10.1.56), `vertx-core` → 5.1.3,
+  `xsi:schemaLocation` → https. Two full-reactor `mvn test` runs, both BUILD SUCCESS, 28 modules, zero
+  failures. `wire-runtime-jvm` (no supported fix, Confluent's discontinued artifact) and one jackson-databind
+  CVE remain open — tracked as upstream-blocked, not resolvable here.
+  <!-- id: thread-snyk-oss-dependency-update | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-215533 -->
 
 - [x] (completed — Eric, 2026-06-30) **Application log context feature.** Designed + implemented +
   documented + shipped on **PR #128** (`feature/application-log-context`). Full detail in the Key
