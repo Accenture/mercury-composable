@@ -3,12 +3,13 @@
 #
 # Identical to the byte[]/JSON/Avro flows except it publishes to 'protobuf-topic-1' as Confluent Protobuf:
 #   1. sync.prepare              - register the return route and serialize the request payload.
-#   2. simple.kafka.notification - publish to 'protobuf-topic-1' with schema-id=3 + schema-type=PROTOBUF, so
-#                                  the body is serialized into the Confluent wire format (magic + id + index + payload).
+#   2. simple.kafka.notification - publish to 'protobuf-topic-1' with subject=sync-demo-protobuf (version
+#                                  defaults to latest); the producer resolves the schema id from the subject and
+#                                  serializes the body into the Confluent wire format (magic + id + index + payload).
 #   3. sync.await                - block until the backend's reply arrives via 'protobuf-topic-2' + Redis.
 #
-# schema-id 3 is the demo's Protobuf SyncDemoMessage schema, pre-registered in the Schema Registry (see
-# registry/3.json). The producer is id-driven: it never needs a subject or naming strategy.
+# subject 'sync-demo-protobuf' is the demo's Protobuf SyncDemoMessage schema, pre-registered in the Schema
+# Registry (see registry/3.json, which carries subject + version). The producer resolves the schema id internally.
 #
 flow:
   id: 'sync-to-async-protobuf'
@@ -32,8 +33,7 @@ tasks:
 
   - input:
       - 'text(protobuf-topic-1) -> header.topic'
-      - 'text(PROTOBUF) -> header.schema-type'
-      - 'text(3) -> header.schema-id'
+      - 'text(sync-demo-protobuf) -> header.subject'
       - 'model.cid -> header.cid'
       - 'model.payload -> *'
     process: 'simple.kafka.notification'

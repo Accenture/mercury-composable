@@ -134,18 +134,19 @@ class KafkaFlowAdapterTest {
     @SuppressWarnings("unchecked")
     void schemaFramedMessageDecodedIntoFlow() throws Exception {
         SchemaSinkTask.RECEIVED.clear();
-        // pre-register the JSON schema (governed artifact); the producer publishes by its global id
-        int schemaId = KafkaRuntime.schemaCodec().client().register(SCHEMA_TOPIC + "-value", new JsonSchema(JSON_SCHEMA));
+        // pre-register the JSON schema (governed artifact) under a subject; the producer names the subject
+        String subject = SCHEMA_TOPIC + "-value";
+        KafkaRuntime.schemaCodec().client().register(subject, new JsonSchema(JSON_SCHEMA));
         String cid = Utility.getInstance().getUuid();
 
-        // publish via simple.kafka.notification with schema-id: the body is serialized into the Confluent
-        // wire format; the schema-enabled adapter binding decodes it back to a Map for the flow.
+        // publish via simple.kafka.notification with subject (version defaults to latest): the producer
+        // resolves the schema id, serializes into the Confluent wire format; the schema-enabled adapter
+        // binding decodes it back to a Map for the flow.
         PostOffice po = PostOffice.trackable("unit.test", TRACE_ID, "TEST /schema");
         po.send(new EventEnvelope().setTo("simple.kafka.notification")
                 .setHeader(KafkaHeaders.TOPIC, SCHEMA_TOPIC)
                 .setHeader(KafkaHeaders.CORRELATION_ID, cid)
-                .setHeader(KafkaHeaders.SCHEMA_ID, String.valueOf(schemaId))
-                .setHeader(KafkaHeaders.SCHEMA_TYPE, "JSON")
+                .setHeader(KafkaHeaders.SUBJECT, subject)
                 .setBody("{\"hello\":\"schema\"}".getBytes(StandardCharsets.UTF_8))
                 .setTraceId(TRACE_ID).setTracePath("TEST /schema"));
 
@@ -162,18 +163,18 @@ class KafkaFlowAdapterTest {
     @SuppressWarnings("unchecked")
     void avroFramedMessageDecodedIntoFlow() throws Exception {
         SchemaSinkTask.RECEIVED.clear();
-        // pre-register the Avro schema (governed artifact); the producer publishes by its global id
-        int schemaId = KafkaRuntime.schemaCodec().client().register(AVRO_TOPIC + "-value", new AvroSchema(AVRO_SCHEMA));
+        // pre-register the Avro schema (governed artifact) under a subject; the producer names the subject
+        String subject = AVRO_TOPIC + "-value";
+        KafkaRuntime.schemaCodec().client().register(subject, new AvroSchema(AVRO_SCHEMA));
         String cid = Utility.getInstance().getUuid();
 
-        // publish via simple.kafka.notification with schema-type=AVRO: the body is serialized into the
-        // Confluent Avro wire format; the schema-enabled adapter binding decodes it back to a Map.
+        // publish via simple.kafka.notification with subject (version defaults to latest): the body is
+        // serialized into the Confluent Avro wire format; the schema-enabled adapter binding decodes it to a Map.
         PostOffice po = PostOffice.trackable("unit.test", TRACE_ID, "TEST /avro");
         po.send(new EventEnvelope().setTo("simple.kafka.notification")
                 .setHeader(KafkaHeaders.TOPIC, AVRO_TOPIC)
                 .setHeader(KafkaHeaders.CORRELATION_ID, cid)
-                .setHeader(KafkaHeaders.SCHEMA_ID, String.valueOf(schemaId))
-                .setHeader(KafkaHeaders.SCHEMA_TYPE, "AVRO")
+                .setHeader(KafkaHeaders.SUBJECT, subject)
                 .setBody("{\"hello\":\"avro\"}".getBytes(StandardCharsets.UTF_8))
                 .setTraceId(TRACE_ID).setTracePath("TEST /avro"));
 
@@ -190,19 +191,18 @@ class KafkaFlowAdapterTest {
     @SuppressWarnings("unchecked")
     void protobufFramedMessageDecodedIntoFlow() throws Exception {
         SchemaSinkTask.RECEIVED.clear();
-        // pre-register the Protobuf schema (governed artifact); the producer publishes by its global id
-        int schemaId = KafkaRuntime.schemaCodec().client()
-                .register(PROTOBUF_TOPIC + "-value", new ProtobufSchema(PROTO_SCHEMA));
+        // pre-register the Protobuf schema (governed artifact) under a subject; the producer names the subject
+        String subject = PROTOBUF_TOPIC + "-value";
+        KafkaRuntime.schemaCodec().client().register(subject, new ProtobufSchema(PROTO_SCHEMA));
         String cid = Utility.getInstance().getUuid();
 
-        // publish via simple.kafka.notification with schema-type=PROTOBUF: the body is serialized into the
-        // Confluent Protobuf wire format; the schema-enabled adapter binding decodes it back to a Map.
+        // publish via simple.kafka.notification with subject (version defaults to latest): the body is
+        // serialized into the Confluent Protobuf wire format; the schema-enabled adapter binding decodes it.
         PostOffice po = PostOffice.trackable("unit.test", TRACE_ID, "TEST /protobuf");
         po.send(new EventEnvelope().setTo("simple.kafka.notification")
                 .setHeader(KafkaHeaders.TOPIC, PROTOBUF_TOPIC)
                 .setHeader(KafkaHeaders.CORRELATION_ID, cid)
-                .setHeader(KafkaHeaders.SCHEMA_ID, String.valueOf(schemaId))
-                .setHeader(KafkaHeaders.SCHEMA_TYPE, "PROTOBUF")
+                .setHeader(KafkaHeaders.SUBJECT, subject)
                 .setBody("{\"hello\":\"protobuf\"}".getBytes(StandardCharsets.UTF_8))
                 .setTraceId(TRACE_ID).setTracePath("TEST /protobuf"));
 

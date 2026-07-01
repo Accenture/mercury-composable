@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -36,12 +37,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Minimalist in-memory schema store mimicking Confluent Schema Registry, persisted as <b>one file per schema
  * id</b> ({@code <id>.json}, e.g. {@code 1.json}) under the configurable {@code schema.registry.data.store}
- * directory (default {@code /tmp/schema-registry}). Each file holds {@code {"schema": ..., "schemaType": ...}}.
+ * directory (default {@code /tmp/schema-registry}). Each file holds
+ * {@code {"schema": ..., "schemaType": ..., "subject": ..., "version": ...}}.
  *
  * <p>The store is loaded on boot and persists across restarts, so schema ids stay stable - the per-id files
  * are a convenient store you can back up / seed (e.g. a demo with known ids). Because storage is one file per
  * id, a schema <b>dropped into the directory while the server is running</b> (e.g. {@code 10.json}) is picked
  * up <b>on demand</b> by the next {@code GET /schemas/ids/10} - no restart needed (see {@link #get(int)}).</p>
+ *
+ * <p><b>Subjects &amp; versions.</b> A global schema id is content-addressed (identical content = same id, even
+ * across subjects, faithful to Confluent). Versions are per-subject and tracked in an in-memory
+ * {@code subject → (version → id)} index, rebuilt on boot from the per-id files (each records the subject and
+ * version it was first registered under). This backs {@code GET /subjects/{subject}/versions/{version}} and
+ * {@code .../latest}. <b>Mock limitation:</b> a single {@code <id>.json} records one subject/version, so the
+ * uncommon case of the same content registered under multiple subjects only round-trips the first across a
+ * restart (all subjects still resolve within a running session). A file dropped in after boot is id-resolvable
+ * on demand, but subject-resolvable only after a restart (or re-registration).</p>
  *
  * <p>The default lives under {@code /tmp} (cleared by the OS on reboot); override to a durable directory
  * ({@code -Dschema.registry.data.store=$HOME/schema-registry}) to survive reboots.</p>
@@ -57,6 +68,8 @@ public class SchemaStore {
     private static final String SCHEMA = "schema";
     private static final String SCHEMA_TYPE = "schemaType";
     private static final String LEGACY_SCHEMA_TYPE = "schema_type";
+    private static final String SUBJECT = "subject";
+    private static final String VERSION = "version";
 
     private static final SchemaStore instance = new SchemaStore();
 
@@ -65,13 +78,16 @@ public class SchemaStore {
 
     private final ConcurrentMap<Integer, SchemaEntry> idToSchema = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Integer> hashToId = new ConcurrentHashMap<>();
+    // subject -> (version -> global schema id); versions are per-subject, ids are global/content-addressed.
+    private final ConcurrentMap<String, ConcurrentMap<Integer, Integer>> subjectVersions = new ConcurrentHashMap<>();
     private final AtomicInteger idGenerator = new AtomicInteger(1);
 
     private final String storeDir;
     private final Utility util = Utility.getInstance();
     private final CryptoApi crypto = new CryptoApi();
 
-    public record SchemaEntry(String schema, String schemaType) {}
+    /** A stored schema: the opaque schema string, its type, and the subject/version it was registered under. */
+    public record SchemaEntry(String schema, String schemaType, String subject, int version) {}
 
     private SchemaStore() {
         this.storeDir = AppConfigReader.getInstance().getProperty(STORE_DIR_KEY, DEFAULT_STORE_DIR);
@@ -84,19 +100,48 @@ public class SchemaStore {
         return instance;
     }
 
-    public int register(String schema, String schemaType) {
+    /**
+     * Register a schema under a subject. The global id is content-addressed (identical content returns the
+     * same id, even across subjects); a new version is assigned under the subject unless this id is already a
+     * version there (idempotent).
+     *
+     * @param subject    the subject to register under (the per-subject version sequence)
+     * @param schema     the opaque schema string
+     * @param schemaType {@code AVRO} (default when null/empty), {@code JSON}, or {@code PROTOBUF}
+     * @return the global schema id
+     */
+    public int register(String subject, String schema, String schemaType) {
         String type = schemaType == null || schemaType.isEmpty() ? AVRO_TYPE : schemaType;
         String hashKey = getHash(type + ":" + schema);
         Integer existingId = hashToId.get(hashKey);
-        if (existingId != null) {
-            return existingId;
+        int id = existingId != null ? existingId : nextFreeId();
+        int version = assignVersion(subject, id);
+        if (existingId == null) {
+            // First time this content is seen: store + persist with the registering subject/version.
+            SchemaEntry entry = new SchemaEntry(schema, type, subject, version);
+            idToSchema.put(id, entry);
+            hashToId.put(hashKey, id);
+            saveEntry(id, entry);
         }
-        int newId = nextFreeId();
-        SchemaEntry entry = new SchemaEntry(schema, type);
-        idToSchema.put(newId, entry);
-        hashToId.put(hashKey, newId);
-        saveEntry(newId, entry);
-        return newId;
+        return id;
+    }
+
+    /** Assign (or find, if idempotent) the per-subject version for {@code id}. Returns 0 when no subject. */
+    private int assignVersion(String subject, int id) {
+        if (subject == null || subject.isEmpty()) {
+            return 0;
+        }
+        ConcurrentMap<Integer, Integer> versions = subjectVersions.computeIfAbsent(subject, k -> new ConcurrentHashMap<>());
+        synchronized (versions) {
+            for (Map.Entry<Integer, Integer> e : versions.entrySet()) {
+                if (e.getValue().equals(id)) {
+                    return e.getKey();
+                }
+            }
+            int version = versions.isEmpty() ? 1 : Collections.max(versions.keySet()) + 1;
+            versions.put(version, id);
+            return version;
+        }
     }
 
     /**
@@ -110,6 +155,29 @@ public class SchemaStore {
     public SchemaEntry get(int id) {
         SchemaEntry entry = idToSchema.get(id);
         return entry != null ? entry : loadEntry(id);
+    }
+
+    /** @return true if the subject has at least one registered version. */
+    public boolean hasSubject(String subject) {
+        ConcurrentMap<Integer, Integer> versions = subjectVersions.get(subject);
+        return versions != null && !versions.isEmpty();
+    }
+
+    /** @return the newest version number for the subject, or {@code null} if the subject is unknown/empty. */
+    public Integer latestVersion(String subject) {
+        ConcurrentMap<Integer, Integer> versions = subjectVersions.get(subject);
+        if (versions == null || versions.isEmpty()) {
+            return null;
+        }
+        synchronized (versions) {
+            return Collections.max(versions.keySet());
+        }
+    }
+
+    /** @return the global schema id for {@code subject} at {@code version}, or {@code null} if not found. */
+    public Integer idForVersion(String subject, int version) {
+        ConcurrentMap<Integer, Integer> versions = subjectVersions.get(subject);
+        return versions == null ? null : versions.get(version);
     }
 
     private String getHash(String typeAndSchema) {
@@ -145,12 +213,14 @@ public class SchemaStore {
             String name = file.getName();
             loadEntry(util.str2int(name.substring(0, name.length() - JSON_SUFFIX.length())));
         }
-        log.info("Loaded {} schemas from disk. Next ID will be {}", idToSchema.size(), idGenerator.get());
+        log.info("Loaded {} schemas ({} subjects) from disk. Next ID will be {}",
+                idToSchema.size(), subjectVersions.size(), idGenerator.get());
     }
 
     /**
-     * Read {@code <id>.json} from disk into memory and advance the id generator past it (so a later
-     * registration never reuses the id). Returns {@code null} when the file is absent or unreadable.
+     * Read {@code <id>.json} from disk into memory, index its subject/version, and advance the id generator
+     * past it (so a later registration never reuses the id). Returns {@code null} when the file is absent or
+     * unreadable.
      */
     @SuppressWarnings("unchecked")
     private SchemaEntry loadEntry(int id) {
@@ -159,19 +229,24 @@ public class SchemaStore {
             return null;
         }
         try {
-            Map<String, String> map = SimpleMapper.getInstance().getMapper()
+            Map<String, Object> map = SimpleMapper.getInstance().getMapper()
                     .readValue(Files.readString(file.toPath()), Map.class);
-            String schema = map.get(SCHEMA);
-            if (schema == null) {
+            Object schemaValue = map.get(SCHEMA);
+            if (!(schemaValue instanceof String schema) || schema.isEmpty()) {
                 return null;
             }
             // accept either "schemaType" (canonical) or a legacy "schema_type"; default to AVRO.
-            String type = map.containsKey(LEGACY_SCHEMA_TYPE)
-                    ? map.get(LEGACY_SCHEMA_TYPE)
+            Object typeValue = map.containsKey(LEGACY_SCHEMA_TYPE) ? map.get(LEGACY_SCHEMA_TYPE)
                     : map.getOrDefault(SCHEMA_TYPE, AVRO_TYPE);
-            SchemaEntry entry = new SchemaEntry(schema, type);
+            String type = typeValue == null ? AVRO_TYPE : String.valueOf(typeValue);
+            String subject = map.get(SUBJECT) == null ? null : String.valueOf(map.get(SUBJECT));
+            int version = map.get(VERSION) == null ? 0 : util.str2int(String.valueOf(map.get(VERSION)));
+            SchemaEntry entry = new SchemaEntry(schema, type, subject, version);
             idToSchema.put(id, entry);
             hashToId.put(getHash(type + ":" + schema), id);
+            if (subject != null && !subject.isEmpty() && version > 0) {
+                subjectVersions.computeIfAbsent(subject, k -> new ConcurrentHashMap<>()).put(version, id);
+            }
             idGenerator.accumulateAndGet(id + 1, Math::max);
             return entry;
         } catch (IOException | RuntimeException e) {

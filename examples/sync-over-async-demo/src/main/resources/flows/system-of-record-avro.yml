@@ -5,9 +5,11 @@
 #
 #   1. system.of.record.avro     - the backend logic on the decoded Map; builds a FLAT reply matching the
 #                                  closed-shape Avro SyncDemoMessage record (action, status, processedBy, traceId).
-#   2. simple.kafka.notification - publish the reply to 'avro-topic-2' as Avro (schema-id=2 + type).
+#   2. simple.kafka.notification - publish the reply to 'avro-topic-2' with subject=sync-demo-avro (version
+#                                  defaults to latest); the producer resolves the schema id from the subject.
 #
-# schema-id 2 is the demo's pre-registered Avro SyncDemoMessage schema (see registry/2.json).
+# subject 'sync-demo-avro' is the demo's pre-registered Avro SyncDemoMessage schema (see registry/2.json,
+# which carries subject + version).
 #
 flow:
   id: 'system-of-record-avro'
@@ -32,8 +34,7 @@ tasks:
 
   - input:
       - 'text(avro-topic-2) -> header.topic'
-      - 'text(AVRO) -> header.schema-type'
-      - 'text(2) -> header.schema-id'
+      - 'text(sync-demo-avro) -> header.subject'
       - 'model.cid -> header.cid'
       - 'model.payload -> *'
     process: 'simple.kafka.notification'

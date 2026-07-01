@@ -4,9 +4,11 @@
 # already decoded the Confluent-framed value to a Map, which 'system.of.record.json' receives.
 #
 #   1. system.of.record.json     - the backend logic (echo + metadata) on the decoded Map.
-#   2. simple.kafka.notification - publish the reply to 'json-topic-2' as JSON Schema (schema-id + type).
+#   2. simple.kafka.notification - publish the reply to 'json-topic-2' with subject=sync-demo-json (version
+#                                  defaults to latest); the producer resolves the schema id from the subject.
 #
-# schema-id 1 is the demo's pre-registered SyncDemoMessage schema (see registry/1.json).
+# subject 'sync-demo-json' is the demo's pre-registered JSON SyncDemoMessage schema (see registry/1.json,
+# which carries subject + version).
 #
 flow:
   id: 'system-of-record-json'
@@ -31,8 +33,7 @@ tasks:
 
   - input:
       - 'text(json-topic-2) -> header.topic'
-      - 'text(JSON) -> header.schema-type'
-      - 'text(1) -> header.schema-id'
+      - 'text(sync-demo-json) -> header.subject'
       - 'model.cid -> header.cid'
       - 'model.payload -> *'
     process: 'simple.kafka.notification'

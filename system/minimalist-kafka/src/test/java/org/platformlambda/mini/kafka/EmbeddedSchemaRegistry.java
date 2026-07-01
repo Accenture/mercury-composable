@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,7 +41,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <ul>
  *   <li>{@code POST /subjects/{subject}/versions} - register, returns {@code {"id": N}} (content-based,
- *       global, deduplicated)</li>
+ *       global, deduplicated; also assigns a per-subject version)</li>
+ *   <li>{@code GET /subjects/{subject}/versions/{version}} - subject+version metadata ({@code latest} or an
+ *       integer), used to resolve a subject/version to a global id</li>
  *   <li>{@code GET /schemas/ids/{id}} - returns {@code {"schema": ..., "schemaType": ...}}</li>
  *   <li>{@code POST /subjects/{subject}} - schema lookup, returns the registered entity or 404</li>
  * </ul>
@@ -56,10 +59,14 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
     // fixed port (predictable: if it is in use the test fails fast rather than picking a surprise port)
     private static final int PORT = 18081;
 
+    private static final String LATEST = "latest";
+
     private final HttpServer server;
     private final AtomicInteger idGenerator = new AtomicInteger(1);
     private final ConcurrentMap<String, Integer> contentToId = new ConcurrentHashMap<>();
     private final ConcurrentMap<Integer, Map<String, Object>> idToSchema = new ConcurrentHashMap<>();
+    // subject -> (version -> global id); versions are per-subject, ids are global/content-addressed.
+    private final ConcurrentMap<String, ConcurrentMap<Integer, Integer>> subjectVersions = new ConcurrentHashMap<>();
 
     public EmbeddedSchemaRegistry() throws IOException {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", PORT), 0);
@@ -95,7 +102,9 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
             String path = exchange.getRequestURI().getPath();
             String[] p = path.split("/");
             if ("POST".equals(method) && p.length == 4 && "subjects".equals(p[1]) && "versions".equals(p[3])) {
-                register(exchange);
+                register(exchange, decode(p[2]));
+            } else if ("GET".equals(method) && p.length == 5 && "subjects".equals(p[1]) && "versions".equals(p[3])) {
+                getVersion(exchange, decode(p[2]), p[4]);
             } else if ("POST".equals(method) && p.length == 3 && "subjects".equals(p[1])) {
                 lookup(exchange, decode(p[2]));
             } else if ("GET".equals(method) && p.length == 4 && "schemas".equals(p[1]) && "ids".equals(p[2])) {
@@ -109,7 +118,7 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
         }
     }
 
-    private void register(com.sun.net.httpserver.HttpExchange exchange) throws IOException {
+    private void register(com.sun.net.httpserver.HttpExchange exchange, String subject) throws IOException {
         Map<String, Object> body = readBody(exchange);
         String schema = String.valueOf(body.get(SCHEMA));
         String type = body.containsKey(SCHEMA_TYPE) ? String.valueOf(body.get(SCHEMA_TYPE)) : AVRO;
@@ -121,7 +130,48 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
             idToSchema.put(newId, entry);
             return newId;
         });
+        assignVersion(subject, id);
         respond(exchange, 200, Map.of("id", id));
+    }
+
+    /** Assign (or find, if idempotent) the per-subject version for {@code id}. */
+    private void assignVersion(String subject, int id) {
+        ConcurrentMap<Integer, Integer> versions = subjectVersions.computeIfAbsent(subject, k -> new ConcurrentHashMap<>());
+        synchronized (versions) {
+            for (Map.Entry<Integer, Integer> e : versions.entrySet()) {
+                if (e.getValue().equals(id)) {
+                    return;
+                }
+            }
+            versions.put(versions.isEmpty() ? 1 : Collections.max(versions.keySet()) + 1, id);
+        }
+    }
+
+    /** {@code GET /subjects/{subject}/versions/{version}} - metadata used to resolve subject+version to an id. */
+    private void getVersion(com.sun.net.httpserver.HttpExchange exchange, String subject, String versionParam)
+            throws IOException {
+        ConcurrentMap<Integer, Integer> versions = subjectVersions.get(subject);
+        if (versions == null || versions.isEmpty()) {
+            respond(exchange, 404, Map.of("error_code", 40401, "message", "Subject '" + subject + "' not found"));
+            return;
+        }
+        Integer version = LATEST.equalsIgnoreCase(versionParam) ? Collections.max(versions.keySet())
+                : (Utility.getInstance().isDigits(versionParam) ? Utility.getInstance().str2int(versionParam) : null);
+        Integer id = version == null ? null : versions.get(version);
+        if (id == null) {
+            respond(exchange, 404, Map.of("error_code", 40402, "message", "Version '" + versionParam + "' not found"));
+            return;
+        }
+        Map<String, Object> entry = idToSchema.get(id);
+        Map<String, Object> entity = new HashMap<>();
+        entity.put("subject", subject);
+        entity.put("version", version);
+        entity.put("id", id);
+        entity.put(SCHEMA, entry.get(SCHEMA));
+        if (!AVRO.equals(entry.get(SCHEMA_TYPE))) {
+            entity.put(SCHEMA_TYPE, entry.get(SCHEMA_TYPE));
+        }
+        respond(exchange, 200, entity);
     }
 
     private void lookup(com.sun.net.httpserver.HttpExchange exchange, String subject) throws IOException {

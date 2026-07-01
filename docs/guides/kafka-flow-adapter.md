@@ -7,7 +7,7 @@ layer: operate
 audience: [developer, ai-agent]
 keywords: [kafka, flow adapter, minimalist-kafka, consumer, producer, dead letter queue, dlq, partition,
   consumer group, kafka-flow-adapter.yaml, simple.kafka.notification, at-least-once, traceparent,
-  schema registry, confluent, avro, protobuf, json schema, schema-id, schema-type, schema.enabled]
+  schema registry, confluent, avro, protobuf, json schema, subject, version, schema.enabled]
 ---
 
 # Kafka Flow Adapter
@@ -161,9 +161,9 @@ po.send(new EventEnvelope().setTo("simple.kafka.notification")
 Publishing is **drop-n-forget** (Kafka's commit log is the durable buffer), but async delivery failures are
 logged rather than silently masked.
 
-Two optional headers opt a publish into the Confluent wire format instead of raw `byte[]`: `schema-id` and
-`schema-type` (see [Schema Registry](#schema)). They are encoding directives — consumed by the function, not
-forwarded as Kafka headers.
+One header opts a publish into the Confluent wire format instead of raw `byte[]`: `subject` (with an optional
+`version`; see [Schema Registry](#schema)). It is an encoding directive — consumed by the function, not
+forwarded as a Kafka header.
 
 ### Trace continuity across Kafka {#tracing}
 
@@ -188,30 +188,37 @@ schema.registry.url=${SCHEMA_REGISTRY_URL:http://127.0.0.1:8081}
 schema.registry.cache.ttl=30m                          # TTL for the in-memory schema cache (by id)
 ```
 
-### Produce: id-driven, no subject or naming strategy {#schema-produce}
+### Produce: subject-driven {#schema-produce}
 
-`simple.kafka.notification` serializes the body into the wire format when you supply two headers:
+`simple.kafka.notification` serializes the body into the wire format when you supply a `subject` header:
 
 | Header | Description |
 |--------|-------------|
-| `schema-id` | The **global** schema id to serialize with. The schema must be **pre-registered**; the producer fetches it by id (`GET /schemas/ids/{id}`) and never registers. |
-| `schema-type` | `JSON`, `AVRO`, or `PROTOBUF`. Selects the serializer. Defaults to `JSON`. |
+| `subject` | The registry **subject** to serialize against. The schema must be **pre-registered**; the producer resolves the subject to a global schema id (and its type — `JSON`, `AVRO`, or `PROTOBUF`) from the registry and never registers. |
+| `version` | Optional. The subject version to resolve: a positive integer to **pin** a specific version, or `latest` to track the current version. Defaults to `latest`. |
 
 ```yaml
 # in a flow task that publishes via simple.kafka.notification
 input:
   - 'text(orders) -> header.topic'
-  - 'text(AVRO) -> header.schema-type'
-  - 'text(42) -> header.schema-id'
+  - 'text(orders-value) -> header.subject'    # version omitted → latest
   - 'model.payload -> *'        # the body: a Map / JSON document
 process: 'simple.kafka.notification'
 ```
 
-The Confluent wire format carries only the global id, never the subject — so being **id-driven** makes the
-producer **subject-naming-strategy agnostic** (TopicName / RecordName / TopicRecordName are all supported by
-construction, and a topic can carry many record types). Whoever registers the schema — CI, a client project,
-an admin tool — owns the strategy. This assumes schemas are **governed artifacts registered out-of-band**, as
-they are in practice; the producer never auto-registers.
+The producer resolves the subject (+ version) to a **global schema id** and its **schema type** from the
+registry, then serializes with Confluent's own serializer. The wire format itself is unchanged — it still
+carries only the global id (`[magic 0x00][4-byte global schema id][payload]`) — and the consumer
+(id-from-wire) is unchanged; only the producer's *input* moved from an explicit id+type to a subject. Whoever
+registers the schema — CI, a client project, an admin tool — owns the subject naming strategy (TopicName /
+RecordName / TopicRecordName are all supported, and a topic can carry many record types). This assumes schemas
+are **governed artifacts registered out-of-band**, as they are in practice; the producer never auto-registers.
+
+> **CSFLE not yet wired.** [Confluent Client-Side Field Level Encryption (CSFLE)](https://docs.confluent.io/cloud/current/security/encrypt/csfle/overview.html)
+> is **not yet supported** by `minimalist-kafka` — the serializer is configured **without** encryption rule
+> executors or a KMS. A schema that carries CSFLE encryption rules would therefore be serialized in
+> **PLAINTEXT** (the rules are silently ignored, not enforced). **Do not use `simple.kafka.notification` to
+> produce to CSFLE-protected topics** until CSFLE support lands (planned).
 
 ### Consume: decode by embedded id {#schema-consume}
 
@@ -233,8 +240,9 @@ immediately via the [DLQ path](#reliability) rather than retried.
 
 ### Notes {#schema-notes}
 
-- **One id-driven path, three formats.** The producer and consumer are type-generic; only the `schema-type`
-  header (and the registered schema) differ. JSON Schema is *open* (`additionalProperties`), while Avro and
+- **One subject-driven path, three formats.** The producer and consumer are type-generic; only the `subject`
+  (and the registered schema behind it) differ — the producer reads the schema type from the registry, so the
+  flow never names it. JSON Schema is *open* (`additionalProperties`), while Avro and
   Protobuf records are *closed-shape* — a message must match the declared fields, and a non-schema field is
   dropped on the wire. Avro applies declared field defaults for absent fields; Protobuf relies on proto3
   implicit defaults. Avro/Protobuf decode to generic records (no generated classes), rendered to a `Map`.
@@ -244,6 +252,12 @@ immediately via the [DLQ path](#reliability) rather than retried.
   schema registered while the app is running becomes visible on the next lookup. The TTL lets schema changes
   be picked up without restarting pods (handy in dev / lower environments); lengthen it in production where
   schemas change rarely. The cache is rebuildable and **cleared at startup**.
+- **Subject→id resolution cache.** The producer also caches the *subject (+ version) → schema id* resolution,
+  and how long depends on the version. A **pinned numeric version** (`subject` + `version: N`) maps to one
+  immutable schema id, so it is cached **long** (effectively forever). `latest` (the default) can change when a
+  new version is registered, so it is cached on a **short TTL** and re-resolved frequently, picking up a new
+  current version without a restart. Pin a version in production paths where the schema must not shift
+  underneath you; use `latest` in dev / lower environments where tracking the newest schema is convenient.
 - **Worked example.** The [sync-over-async demo](sync-over-async.md) runs the same end-to-end flow over all
   three formats (`json-topic-1/2`, `avro-topic-1/2`, `protobuf-topic-1/2`) alongside the raw `byte[]` path.
 

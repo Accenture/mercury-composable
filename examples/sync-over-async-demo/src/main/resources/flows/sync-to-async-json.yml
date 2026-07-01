@@ -3,12 +3,13 @@
 #
 # Identical to the byte[] flow except it publishes to 'json-topic-1' as Confluent JSON Schema:
 #   1. sync.prepare              - register the return route and serialize the request payload.
-#   2. simple.kafka.notification - publish to 'json-topic-1' with schema-id + schema-type=JSON, so the body
-#                                  is serialized into the Confluent wire format (magic byte + id + payload).
+#   2. simple.kafka.notification - publish to 'json-topic-1' with subject=sync-demo-json (version defaults to
+#                                  latest); the producer resolves the schema id from the subject and serializes
+#                                  the body into the Confluent wire format (magic byte + id + payload).
 #   3. sync.await                - block until the backend's reply arrives via 'json-topic-2' + Redis.
 #
-# schema-id 1 is the demo's SyncDemoMessage schema, pre-registered in the Schema Registry (see
-# registry/1.json). The producer is id-driven: it never needs a subject or naming strategy.
+# subject 'sync-demo-json' is the demo's JSON SyncDemoMessage schema, pre-registered in the Schema Registry
+# (see registry/1.json, which carries subject + version). The producer resolves the schema id internally.
 #
 flow:
   id: 'sync-to-async-json'
@@ -32,8 +33,7 @@ tasks:
 
   - input:
       - 'text(json-topic-1) -> header.topic'
-      - 'text(JSON) -> header.schema-type'
-      - 'text(1) -> header.schema-id'
+      - 'text(sync-demo-json) -> header.subject'
       - 'model.cid -> header.cid'
       - 'model.payload -> *'
     process: 'simple.kafka.notification'

@@ -29,6 +29,7 @@ import java.util.Map;
  * where {@code error_code} is a registry-specific sub-code (not the HTTP status). The well-known codes:
  * <ul>
  *   <li>40401 - Subject not found (HTTP 404)</li>
+ *   <li>40402 - Version not found (HTTP 404)</li>
  *   <li>40403 - Schema not found (HTTP 404)</li>
  *   <li>42201 - Invalid schema (HTTP 422)</li>
  * </ul>
@@ -36,6 +37,7 @@ import java.util.Map;
 final class ApiError {
 
     static final int SUBJECT_NOT_FOUND = 40401;
+    static final int VERSION_NOT_FOUND = 40402;
     static final int SCHEMA_NOT_FOUND = 40403;
     static final int INVALID_SCHEMA = 42201;
 

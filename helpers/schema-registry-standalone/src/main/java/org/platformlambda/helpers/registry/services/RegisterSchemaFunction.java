@@ -76,7 +76,7 @@ public class RegisterSchemaFunction implements TypedLambdaFunction<AsyncHttpRequ
             log.warn("POST /subjects/{}/versions (schemaType={}) -> 422 (not well-formed JSON)", subject, schemaType);
             return ApiError.of(422, ApiError.INVALID_SCHEMA, "Invalid schema: not well-formed JSON");
         }
-        int id = store.register(schema, schemaType);
+        int id = store.register(subject, schema, schemaType);
         log.info("POST /subjects/{}/versions (schemaType={}) -> 200 id={}", subject, schemaType, id);
         return new EventEnvelope().setStatus(200).setBody(Map.of("id", id));
     }

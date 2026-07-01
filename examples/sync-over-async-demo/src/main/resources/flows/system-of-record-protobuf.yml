@@ -5,9 +5,11 @@
 #
 #   1. system.of.record.protobuf - the backend logic on the decoded Map; builds a FLAT reply matching the
 #                                  closed-shape protobuf SyncDemoMessage (action, status, processedBy, traceId).
-#   2. simple.kafka.notification - publish the reply to 'protobuf-topic-2' as Protobuf (schema-id=3 + type).
+#   2. simple.kafka.notification - publish the reply to 'protobuf-topic-2' with subject=sync-demo-protobuf
+#                                  (version defaults to latest); the producer resolves the schema id from the subject.
 #
-# schema-id 3 is the demo's pre-registered Protobuf SyncDemoMessage schema (see registry/3.json).
+# subject 'sync-demo-protobuf' is the demo's pre-registered Protobuf SyncDemoMessage schema (see
+# registry/3.json, which carries subject + version).
 #
 flow:
   id: 'system-of-record-protobuf'
@@ -32,8 +34,7 @@ tasks:
 
   - input:
       - 'text(protobuf-topic-2) -> header.topic'
-      - 'text(PROTOBUF) -> header.schema-type'
-      - 'text(3) -> header.schema-id'
+      - 'text(sync-demo-protobuf) -> header.subject'
       - 'model.cid -> header.cid'
       - 'model.payload -> *'
     process: 'simple.kafka.notification'
