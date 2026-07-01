@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-30T21:29:55Z | agent: Claude Code (2026-06-30-212955)
+- **last_session:** 2026-07-01T00:47:24Z | agent: Claude Code (2026-07-01-004724)
 - **last_review:** 2026-06-29 | through 2026-06-29-223651.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -83,18 +83,41 @@
   `composable-example`. Design spec: `draft-design-specs/application_log_context_design.md` (gitignored).
   <!-- id: application-log-context | created: 2026-06-30 | last_used: 2026-06-30 | uses: 1 | tier: working | origin: 2026-06-30-212955 -->
 
+- **minimalist-kafka producer: subject/version schema resolution (2026-07-01, PR #129).** `simple.kafka.notification`
+  is now **subject-driven**, not id-driven: the caller supplies a registry `subject` (+ optional `version`,
+  default `latest`) and the producer resolves it to a global schema id + type, then serializes via the
+  unchanged `use.schema.id` path. The old `schema-id`/`schema-type` headers were **removed** (no backward
+  compat — 4.5.0 unreleased). It's the **single** contract, and it keeps the producer ignorant of Confluent's
+  3 naming strategies (the caller names the subject → nothing to derive). Type is derived authoritatively from
+  `getSchemaById(id).schemaType()` (also warms the id cache). **Two caches by mutability:** pinned numeric
+  versions (immutable) in a dedicated long-TTL (10d)/bounded (3000) `ManagedCache`; `latest` (mutable) shares
+  the existing 30m id→schema cache under a `latest/`-namespaced key. `resolve()` on
+  `ManagedCacheSchemaRegistryClient` (+ `ResolvedSchema`, `SchemaCodec.resolve` facade); unknown subject /
+  registry-down fails the notification loudly (never silent plaintext). **Wire + consumer unchanged** (global
+  id on the wire; id-from-wire decode) — only the producer's input moved. Standalone mock + `EmbeddedSchemaRegistry`
+  gained `GET /subjects/{subject}/versions/{version}` (latest|int, Confluent shape, 40401/40402) + an in-memory
+  `subject→version→id` index rebuilt on boot from the per-id files (seed = drop `<id>.json` + restart; runtime
+  = register API); mock got a README. **CSFLE is ready-not-wired** (see [[thread-csfle-field-encryption]]).
+  Validated e2e (JSON/Avro/Protobuf) incl. continuous OTel span propagation across both Kafka hops. Design spec:
+  `draft-design-specs/kafka_schemaid_from_subject_version_design.md` (gitignored). Supersedes the id-driven
+  detail in [[minimalist-kafka-schema-registry]].
+  <!-- id: kafka-schemaid-from-subject-version | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-004724 -->
+
 - **Schema Registry mock server implementation.** Created `helpers/schema-registry-standalone`, providing a minimalist REST API that mimics the Confluent schema registry (`/subjects/{subject}/versions` and `/schemas/ids/{id}`). It supports both Avro and JSON Schema and serves as an end-to-end demo and testing layer. The worked example `examples/schema-registry-demo` is now curl + zero-dependency `.mjs` scripts (no longer a Maven module). See [[standalone-schema-registry-mock]] and [[minimalist-kafka-schema-registry]].
   <!-- id: schema-registry-mock | created: 2026-06-28 | last_used: 2026-06-29 | uses: 2 | tier: active | origin: 2026-06-28-191114 -->
 
-- **minimalist-kafka Schema Registry support — id-driven, Confluent serdes as a library (2026-06-29).**
+- **minimalist-kafka Schema Registry support — Confluent serdes as a library (2026-06-29; producer became
+  subject/version-driven 2026-07-01, PR #129 — see [[kafka-schemaid-from-subject-version]]).**
   To interoperate with existing client projects, `minimalist-kafka` speaks the Confluent wire format
   (`[magic 0x00][global schema id][payload]`) using **Confluent's own serializers** (`io.confluent:kafka-json-schema-serializer`
   8.2.0 ↔ Kafka 4.2), NOT a reinvented codec — called as a library around the unchanged String/byte[]
-  transport so DLQ + trace keep working on raw bytes. **Producer is id-driven**: `simple.kafka.notification`
-  takes optional `schema-id`/`schema-type` headers; schemas are pre-registered administratively, so the
-  serializer only does `GET /schemas/ids/{id}` (`use.schema.id` + `auto.register.schemas=false`) — no subject
-  or naming-strategy logic, which makes it agnostic to all 3 Confluent strategies and lets a topic carry many
-  record types. **Consumer** opt-in per binding (`schema.enabled` in kafka-flow-adapter.yaml): reads the magic
+  transport so DLQ + trace keep working on raw bytes. **Producer is subject-driven as of PR #129
+  (2026-07-01 — was id-driven; see [[kafka-schemaid-from-subject-version]]):** `simple.kafka.notification`
+  takes a `subject` (+ optional `version`, default `latest`) header and resolves it to a global id + type;
+  the old `schema-id`/`schema-type` headers were removed. Under the hood the serializer still pins the
+  resolved id (`use.schema.id` + `auto.register.schemas=false`, only `GET /schemas/ids/{id}` at serialize),
+  so it remains agnostic to all 3 Confluent naming strategies (the caller names the subject — nothing to
+  derive) and a topic can still carry many record types. **Consumer** opt-in per binding (`schema.enabled` in kafka-flow-adapter.yaml): reads the magic
   id → registered `schemaType` → matching deserializer → hands the flow a Map; decode failure dead-letters the
   raw record. Codec in `org.platformlambda.mini.kafka.schema` (`SchemaCodec`, `ManagedCacheSchemaRegistryClient`
   = in-memory platform `ManagedCache` of schemas by id serving the serde hot path — **positive results only**
@@ -261,19 +284,27 @@
   (continuous-trace telemetry). The kafka-flow-adapter guide now documents the Schema Registry integration
   (`5ffb7dc7`). Closed — the feature is ready for PR review/merge. See [[minimalist-kafka-schema-registry]].
   <!-- id: thread-schema-registry-avro-protobuf | created: 2026-06-29 | last_used: 2026-06-29 | uses: 4 | tier: active | origin: 2026-06-29-010147 -->
-- [ ] (planned — Eric, 2026-06-30; **next session**) **minimalist-kafka: resolve `schemaId` from
-  schema-name for `simple.kafka.notification`.** Today the producer is **id-driven** — the caller passes a
-  `schema-id` header and the serializer only does `GET /schemas/ids/{id}` (subject/naming-strategy logic was
-  deliberately avoided — see [[minimalist-kafka-schema-registry]]). **Gap:** a caller function that has only
-  a **schema-name** (subject), not the global id, cannot use it. Add a resolution path schema-name → schema-id.
-  **Investigate industry best practice first** (Confluent): e.g. `GET /subjects/{subject}/versions/latest` →
-  `{id, version, schema}` (latest-version lookup), the three subject naming strategies (Topic / Record /
-  TopicRecord), and `auto.register` vs pre-registered / `use.latest.version`. Decide how the caller specifies
-  the name (header) and where resolution + caching live (the existing `ManagedCacheSchemaRegistryClient`
-  caches id→schema positively; a name→id cache is the analogue). This **revisits** the id-driven decision —
-  weigh keeping id-driven as the fast path with name-resolution as opt-in. The standalone mock
-  ([[standalone-schema-registry-mock]]) will need a `GET /subjects/{subject}/versions/...` endpoint to test it.
-  <!-- id: thread-kafka-schemaid-from-name | created: 2026-06-30 | last_used: 2026-06-30 | uses: 1 | tier: working | origin: 2026-06-30-212955 -->
+- [x] (completed — Eric, 2026-07-01, PR #129) **minimalist-kafka: resolve `schemaId` from subject/version
+  for `simple.kafka.notification`.** Shipped as the subject/version producer contract — full detail in the
+  Key Decision [[kafka-schemaid-from-subject-version]] and the 2026-07-01-004724 session log. Resolved to
+  **subject/version only** (no id-driven fallback; naming strategies dropped), two-tier cache, new mock
+  `GET /subjects/{subject}/versions/{version}` endpoint. Validated e2e.
+  <!-- id: thread-kafka-schemaid-from-name | created: 2026-06-30 | last_used: 2026-07-01 | uses: 2 | tier: working | origin: 2026-06-30-212955 -->
+
+- [ ] (planned — Eric, 2026-07-01; **next session**) **minimalist-kafka: wire Confluent CSFLE (Client-Side
+  Field Level Encryption).** The current installation uses CSFLE, but minimalist-kafka's serdes are
+  configured **without encryption rule executors or a KMS**, so a schema carrying CSFLE encryption rules
+  would serialize in **plaintext** (silent — the rules aren't enforced). The subject/version work
+  ([[kafka-schemaid-from-subject-version]]) is the right, subject-centric foundation; this thread wires the
+  encryption. **Investigate/verify first** (Confluent serdes 8.2.0): whether the encryption ruleSet executes
+  under the current `use.schema.id` + `JsonSchemaUtils.envelope` mechanism, or whether serialize must move to
+  subject + `use.latest.with.metadata`; and whether `getSchemaById(id)` returns the ruleSet. **Scope:** pass
+  `rule.executors` (`FieldEncryptionExecutor`) + KMS config through `SchemaCodec`/serde config on **both**
+  serializer and deserializer (decrypt is symmetric); a CSFLE **test environment** (real Confluent registry +
+  real/local KMS — the standalone mock has no ruleSet/KMS and cannot exercise CSFLE). Until it lands, the
+  kafka-flow-adapter guide's caveat stands: do not produce to CSFLE-protected topics. → relates
+  [[minimalist-kafka-schema-registry]].
+  <!-- id: thread-csfle-field-encryption | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-004724 -->
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
   build for the multi-module project.
