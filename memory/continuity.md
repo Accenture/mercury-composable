@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-01T00:47:24Z | agent: Claude Code (2026-07-01-004724)
+- **last_session:** 2026-07-01T17:39:51Z | agent: Claude Code (2026-07-01-173951)
 - **last_review:** 2026-06-29 | through 2026-06-29-223651.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -216,6 +216,18 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] **Deprecate 'simple type matching' in TaskExecutor → 'simple plugin' syntax (committed, PR pending).**
+  Full detail in the 2026-07-01-172822 session log. Three parts, all committed as 3 commits on branch
+  `feature/deprecate-simple-type-matching` in worktree `~/accenture/mercury-composable-2`:
+  `d5761c38` — event-script-engine (SimpleTypeMatchingConverter, CompileFlows, TaskExecutor cleanup, `ne`
+  plugin, TypeConversionUtils + DataMappingHelper bug fixes, 115 tests green);
+  `495d2252` — minigraph CompileGraph startup gate + CompiledGraphs cache (55 tests green);
+  `56ad6fb8` — GraphCommandService interactive validation + deprecation notice + help doc updates.
+  **Next: open PR.**
+  Do not run this thread from `~/accenture/mercury-composable` (that worktree carries the concurrent Kafka
+  CSFLE work — see [[thread-csfle-field-encryption]]).
+  <!-- id: thread-deprecate-simple-type-matching | created: 2026-07-01 | last_used: 2026-07-01 | uses: 2 | tier: working | origin: 2026-07-01-172822 -->
 
 - [x] (completed — Eric, 2026-06-30) **Application log context feature.** Designed + implemented +
   documented + shipped on **PR #128** (`feature/application-log-context`). Full detail in the Key
