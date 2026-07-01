@@ -18,6 +18,8 @@
 
 package com.accenture.minigraph.services;
 
+import com.accenture.automation.SimplePluginLoader;
+import com.accenture.automation.SimpleTypeMatchingConverter;
 import com.accenture.minigraph.common.GraphLambdaFunction;
 import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.models.GraphSession;
@@ -59,6 +61,8 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final String INVALID_GRAPH_NAME = "Invalid filename - must be a-z, A-Z, 0-9 with optional hyphen";
     private static final String SESSION_TAG = "Session ";
     private static final long EXPIRY = 20 * 1000L;
+    private static final String[] MAPPING_PROPERTIES = {"mapping", "input", "output", "for_each"};
+    private static final SimpleTypeMatchingConverter converter = SimpleTypeMatchingConverter.getInstance();
     private final AtomicInteger counter = new AtomicInteger();
     private final File tempDir;
     private final String deployedGraphLocation;
@@ -1214,15 +1218,18 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     private void handleUpdateNode(PostOffice po, String inRoute, String outRoute, String nodeName, List<String> lines) {
         var keyValues = getNodeProperties(lines);
+        // reject invalid data mapping syntax and auto-convert deprecated "simple type matching" to
+        // "simple plugin" syntax before the properties are stored in the node
+        var deprecationNotice = convertMappingProperties(keyValues);
         var type = getNodeType(lines);
         var graph = graphModels.get(inRoute);
         if (graph != null) {
-            updateNode(po, graph, outRoute, nodeName, type, keyValues);
+            updateNode(po, graph, outRoute, nodeName, type, keyValues, deprecationNotice);
         }
     }
 
-    private void updateNode(PostOffice po, MiniGraph graph, String outRoute,
-                            String nodeName, String type, MultiLevelMap keyValues) {
+    private void updateNode(PostOffice po, MiniGraph graph, String outRoute, String nodeName, String type,
+                            MultiLevelMap keyValues, String deprecationNotice) {
         var node = graph.findNodeByAlias(nodeName);
         if (node == null) {
             po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + NOT_FOUND));
@@ -1234,21 +1241,26 @@ public class GraphCommandService extends GraphLambdaFunction {
             for (Map.Entry<String, Object> entry : map.entrySet()) {
                 node.addProperty(entry.getKey(), entry.getValue());
             }
-            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + " updated"));
+            var message = NODE_NAME + nodeName + " updated";
+            po.send(new EventEnvelope().setTo(outRoute)
+                    .setBody(deprecationNotice == null? message : message + "\n\n" + deprecationNotice));
         }
     }
 
     private void handleCreateNode(PostOffice po, String inRoute, String outRoute, String nodeName, List<String> lines) {
         var keyValues = getNodeProperties(lines);
+        // reject invalid data mapping syntax and auto-convert deprecated "simple type matching" to
+        // "simple plugin" syntax before the properties are stored in the node
+        var deprecationNotice = convertMappingProperties(keyValues);
         var type = getNodeType(lines);
         var graph = graphModels.get(inRoute);
         if (graph != null) {
-            createNode(po, graph, outRoute, nodeName, type, keyValues);
+            createNode(po, graph, outRoute, nodeName, type, keyValues, deprecationNotice);
         }
     }
 
-    private void createNode(PostOffice po, MiniGraph graph, String outRoute,
-                            String nodeName, String type, MultiLevelMap keyValues) {
+    private void createNode(PostOffice po, MiniGraph graph, String outRoute, String nodeName, String type,
+                            MultiLevelMap keyValues, String deprecationNotice) {
         var node = graph.findNodeByAlias(nodeName);
         if (node != null) {
             po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + " already exists"));
@@ -1258,8 +1270,90 @@ public class GraphCommandService extends GraphLambdaFunction {
             for (Map.Entry<String, Object> entry : map.entrySet()) {
                 node.addProperty(entry.getKey(), entry.getValue());
             }
-            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + " created"));
+            var message = NODE_NAME + nodeName + " created";
+            po.send(new EventEnvelope().setTo(outRoute)
+                    .setBody(deprecationNotice == null? message : message + "\n\n" + deprecationNotice));
         }
+    }
+
+    /**
+     * Validate the "mapping", "input", "output" and "for_each" properties of an interactively created or
+     * updated node, rejecting malformed data mapping syntax immediately instead of letting it fail later
+     * at graph execution time.
+     * <p>
+     * The deprecated "simple type matching" syntax (e.g. model.someKey:type) is automatically converted to
+     * the "simple plugin" syntax (e.g. f:type(model.someKey)). When a conversion happens, a deprecation
+     * notice is returned so that both a human user and an AI companion driving this service learn to use
+     * the new syntax going forward.
+     *
+     * @param keyValues node properties being created or updated
+     * @return a deprecation notice if any entry was auto-converted, otherwise null
+     * @throws IllegalArgumentException when a data mapping entry has invalid syntax
+     */
+    private String convertMappingProperties(MultiLevelMap keyValues) {
+        var map = keyValues.getMap();
+        List<String> conversions = new ArrayList<>();
+        for (String property : MAPPING_PROPERTIES) {
+            if (map.get(property) instanceof List<?> entries) {
+                List<String> converted = new ArrayList<>();
+                for (Object o : entries) {
+                    converted.add(convertOneMappingLine(property, String.valueOf(o), conversions));
+                }
+                keyValues.setElement(property, converted);
+            }
+        }
+        return conversions.isEmpty()? null : buildDeprecationNotice(conversions);
+    }
+
+    private String convertOneMappingLine(String property, String line, List<String> conversions) {
+        var sep = line.lastIndexOf(MAP_TO);
+        if (sep <= 0) {
+            throw new IllegalArgumentException(
+                    "Invalid '" + property + "' entry - syntax must be 'LHS -> RHS'. Actual: '" + line + "'");
+        }
+        var lhs = line.substring(0, sep).trim();
+        var rhs = line.substring(sep + MAP_TO.length()).trim();
+        if (lhs.isEmpty() || rhs.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Invalid '" + property + "' entry - LHS and RHS must not be empty. Actual: '" + line + "'");
+        }
+        var converted = converter.convert(line);
+        if (!converted.equals(line)) {
+            conversions.add(line + "  =>  " + converted);
+        }
+        validatePluginReference(property, converted);
+        return converted;
+    }
+
+    private void validatePluginReference(String property, String line) {
+        var lhs = line.substring(0, line.lastIndexOf(MAP_TO)).trim();
+        if (lhs.startsWith(PLUGIN_PREFIX)) {
+            var open = lhs.indexOf('(');
+            var close = lhs.lastIndexOf(')');
+            if (open < 0 || close < open) {
+                throw new IllegalArgumentException(
+                        "Invalid '" + property + "' entry - malformed plugin call. Actual: '" + lhs + "'");
+            }
+            var pluginName = lhs.substring(PLUGIN_PREFIX.length(), open);
+            if (!SimplePluginLoader.containsSimplePlugin(pluginName)) {
+                throw new IllegalArgumentException(
+                        "Invalid '" + property + "' entry - unknown simple plugin 'f:" + pluginName +
+                                "'. Actual: '" + lhs + "'");
+            }
+        }
+    }
+
+    private String buildDeprecationNotice(List<String> conversions) {
+        var sb = new StringBuilder();
+        sb.append("DEPRECATION NOTICE for AI agents and developers: 'simple type matching' syntax ")
+          .append("(e.g. model.key:type) is deprecated. Please use 'simple plugin' syntax instead ")
+          .append("(e.g. f:type(model.key)). The following ")
+          .append(conversions.size() == 1? "entry was" : "entries were")
+          .append(" automatically converted:\n");
+        for (var c : conversions) {
+            sb.append("  ").append(c).append('\n');
+        }
+        return sb.toString().trim();
     }
 
     private String getNodeType(List<String> lines) {

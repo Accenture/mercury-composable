@@ -130,6 +130,14 @@ output[]=result.person_address -> output.body.address
 - The "->" signature indicates the direction of mapping where the left-hand-side is a source
   and right-hand-side is a target
 
+Deprecated syntax
+-----------------
+Event Script's "simple type matching" syntax (e.g. `model.someKey:text`) is deprecated. Use "simple plugin"
+syntax instead (e.g. `f:text(model.someKey)`). If you (or an AI agent) submit a "create node" or "update node"
+command that still uses the deprecated colon-type syntax, the system will automatically convert it to the
+simple plugin syntax and return a deprecation notice - it will not silently fail, but please switch to the
+new syntax going forward.
+
 Custom error handling
 ---------------------
 By default, when an API request fails, the system will abort the graph execution and return the error code
