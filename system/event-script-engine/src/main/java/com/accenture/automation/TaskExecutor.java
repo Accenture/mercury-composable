@@ -555,7 +555,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 if (md.consolidated.keyExists(md.lhs)) {
                     md.consolidated.setElement(md.rhs, null);
                 } else {
-                    removeModelElement(md.rhs, md.consolidated);
+                    // remove model element
+                    md.consolidated.removeElement(md.rhs);
                 }
             }
         } else {
@@ -1078,7 +1079,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                                              Object value, boolean inputLike) {
         if (inputLike) {
             if (value == null && !md.source.keyExists(md.lhs)) {
-                removeModelElement(md.rhs, model);
+                // remove model element
+                model.removeElement(md.rhs);
             } else {
                 setRhsElement(value, md.rhs, model);
             }
@@ -1171,10 +1173,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 }
             }
         }
-    }
-
-    private void removeModelElement(String rhs, MultiLevelMap model) {
-        model.removeElement(rhs);
     }
 
     private Object getDynamicListItem(String dynamicListKey, int dynamicListIndex, MultiLevelMap source) {
@@ -1304,7 +1302,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         if (value != null) {
             setRhsElement(value, rhs, target);
         } else {
-            removeModelElement(rhs, target);
+            // remove model element
+            target.removeElement(rhs);
         }
     }
 

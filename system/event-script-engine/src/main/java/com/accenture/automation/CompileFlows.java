@@ -235,6 +235,10 @@ public class CompileFlows implements EntryPoint {
         for (String raw : filteredInputMapping) {
             // convert deprecated "simple type matching" syntax to "simple plugin" syntax
             String line = converter.convert(raw);
+            if (!line.equals(raw)) {
+                log.warn("Deprecated input syntax in task {} of {} - '{}' converted to '{}'",
+                        md.uniqueTaskName, name, raw, line);
+            }
             if (helper.validInput(line)) {
                 int sep = line.lastIndexOf(MAP_TO);
                 String rhs = line.substring(sep + 2).trim();
@@ -261,6 +265,10 @@ public class CompileFlows implements EntryPoint {
         for (String raw : filteredOutputMapping) {
             // convert deprecated "simple type matching" syntax to "simple plugin" syntax
             String line = converter.convert(raw);
+            if (!line.equals(raw)) {
+                log.warn("Deprecated output syntax in task {} of {} - '{}' converted to '{}'",
+                        md.uniqueTaskName, name, raw, line);
+            }
             if (helper.validOutput(line, isDecisionTask)) {
                 task.output.add(line);
                 if (line.contains(MODEL_PARENT) || line.contains(MODEL_ROOT)) {
@@ -665,6 +673,7 @@ public class CompileFlows implements EntryPoint {
         for (String k: keys) {
             if (k.equals(sequencer.getFirst())) {
                 found = true;
+                break;
             }
         }
         return found;

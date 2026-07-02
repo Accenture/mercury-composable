@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-01T23:02:46Z | agent: Claude Code (2026-07-01-230246)
+- **last_session:** 2026-07-02T00:46:06Z | agent: Claude Code (2026-07-02-004606)
 - **last_review:** 2026-06-29 | through 2026-06-29-223651.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -233,6 +233,31 @@
   Tracked as its own backlog item, not blocked on anything — see [[thread-kafka-client-version-upgrade]].
   <!-- id: minimalist-kafka-confluent-8-3-0 | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-230246 -->
 
+- **Code review closeout for PR #130 added deprecation-conversion visibility + real lifecycle docs
+  (2026-07-02).** Eric's IDE-driven review of the simple-type-matching deprecation work
+  ([[thread-deprecate-simple-type-matching]]) surfaced two durable additions beyond small cleanups
+  (unused import, constant-reuse, a missing loop `break`, inlining a trimmed-to-one-line private method —
+  `MultiLevelMap.removeElement(String)` is the real API, not `.remove()`): (1) **both `CompileFlows` and
+  `CompileGraph` now log `WARN` whenever they silently auto-convert a deprecated `model.key:type` entry** —
+  `"Deprecated {input|output} syntax in task {} of {} - '{}' converted to '{}'"` in `CompileFlows` (two call
+  sites, qualified input/output since they'd otherwise produce identical, ambiguous lines) and
+  `"Deprecated syntax in graph {} node[{}].{} - '{}' converted to '{}'"` in `CompileGraph` (one call site,
+  covers `mapping`/`input`/`output`/`for_each` generically) — so silent conversion became visible
+  conversion, closing a real gap Eric noticed (previously "CompileFlows silently converts... It would be
+  better to advise the user"). (2) **New "Application Lifecycle" section in `docs/guides/architecture.md`**
+  documenting the real `@BeforeApplication` → `@PreLoad` → HTTP-server-startup → `@MainApplication`
+  sequence, traced from source (`AutoStart.java` → `AppStarter.java` → rest-spring's `AppLoader.java`) —
+  prompted by Eric noticing the sequence-number rationale was "hidden in code and comments, not in user
+  facing documentation." Along the way, found and fixed a real doc bug: `annotations-reference.md` claimed
+  `sequence=2` was reserved for the Event Script engine; the actual source uses `sequence=5`
+  (`CompileFlows`) with `CompileGraph` at `6` right after it (confirmed deliberate — reuses the same
+  `SimpleTypeMatchingConverter`, and keeps flow-then-graph startup ordering deterministic). Also corrected
+  `@MainApplication`'s Spring Boot note from vague ("after the HTTP server completes startup") to precise
+  (deferred until Spring's `ApplicationReadyEvent`, both `rest-spring-3`/`rest-spring-4`). All fixes verified
+  with a full module test run immediately after each edit — event-script-engine 115 tests, minigraph-
+  playground-engine 55 tests, green throughout; docs changes needed no test run.
+  <!-- id: event-script-minigraph-code-review-2026-07 | created: 2026-07-02 | last_used: 2026-07-02 | uses: 1 | tier: working | origin: 2026-07-02-004606 -->
+
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
   `WorkerHandler` calls `stopTracing` (removing it) as soon as `processEvent` returns. So any work that
@@ -318,6 +343,18 @@
   the `kafka-protobuf-serializer` dependency, the demo's protobuf-topic-1/2 path — all still in git history).
   <!-- id: thread-minimalist-kafka-protobuf-revival | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-224313 -->
 
+- [ ] (backlog — Eric, 2026-07-02; next iteration, not scoped) **`CompileGraph` does not carry out
+  comprehensive syntax validation.** Raised during PR #130 code review closeout — not a blocker for that
+  sprint. `CompileGraph` today does structural validation (`MiniGraph.importGraph()`) and the deprecated-
+  syntax conversion pass ([[event-script-minigraph-code-review-2026-07]]), but "comprehensive syntax
+  validation" for the mapping-string mini-DSL itself (the same one `DataMappingHelper`/`SimpleTypeMatching
+  Converter` handle) isn't yet defined or scoped — needs its own design pass before implementation:
+  what would "comprehensive" mean here (malformed plugin calls? unknown plugin names? arg-count/type
+  checks?), and should it reuse or diverge from `event-script-engine`'s own `validInput`/`validOutput`
+  validation (already confirmed to diverge in places — minigraph's per-skill namespace rules, e.g. fetcher
+  input/output/dictionary, don't match event-script's).
+  <!-- id: thread-compilegraph-syntax-validation | created: 2026-07-02 | last_used: 2026-07-02 | uses: 1 | tier: working | origin: 2026-07-02-004606 -->
+
 - [ ] (planned — backlog, no ETA, no CVE driver) **Upgrade `kafka.version` (4.2.0 → 4.3.x) across the 24
   pom.xml files that pin it.** Deliberately deferred alongside the `confluent.version` 8.2.0→8.3.0 bump — see
   [[minimalist-kafka-confluent-8-3-0]] for the full reasoning. Confluent Platform 8.3.x's own tested pairing
@@ -328,15 +365,24 @@
   `minimalist-kafka` — a materially larger test surface than a serializer-library bump.
   <!-- id: thread-kafka-client-version-upgrade | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-230246 -->
 
-- [x] (PR open — Eric, 2026-07-01) **Deprecate 'simple type matching' in TaskExecutor → 'simple plugin'
-  syntax.** Shipped as **PR [#130](https://github.com/Accenture/mercury-composable/pull/130)**
-  (`feature/deprecate-simple-type-matching`, worktree `~/accenture/mercury-composable-2`). Full detail in
-  the 2026-07-01-172822 session log. 4 commits: `d5761c38` — event-script-engine
-  (SimpleTypeMatchingConverter, CompileFlows, TaskExecutor cleanup, `ne` plugin, TypeConversionUtils +
-  DataMappingHelper bug fixes, 115 tests green); `495d2252` — minigraph CompileGraph startup gate +
-  CompiledGraphs cache (55 tests green); `56ad6fb8` — GraphCommandService interactive validation +
-  deprecation notice + help doc updates; `d125d4a3` — memory. Open to follow-up if review surfaces changes.
-  <!-- id: thread-deprecate-simple-type-matching | created: 2026-07-01 | last_used: 2026-07-01 | uses: 3 | tier: working | origin: 2026-07-01-172822 -->
+- [x] (sprint complete — Eric, 2026-07-02) **Deprecate 'simple type matching' in TaskExecutor → 'simple
+  plugin' syntax.** Shipped as **PR [#130](https://github.com/Accenture/mercury-composable/pull/130)**
+  (`feature/deprecate-simple-type-matching`, worktree `~/accenture/mercury-composable-2`). Full detail
+  across the 2026-07-01-172822 session log (original implementation) and 2026-07-02-004606 (code review
+  closeout). Eric's closing words: *"What you have done is not trivial. The framework is streamlined."*
+  Code review pass fixed a handful of small IDE-flagged items in both modules and added a genuinely new
+  capability — see [[event-script-minigraph-code-review-2026-07]] for detail (deprecation-conversion WARN
+  logging in both `CompileFlows` and `CompileGraph`, plus a new "Application Lifecycle" doc section born
+  from this review). One backlog item raised, not blocking: [[thread-compilegraph-syntax-validation]].
+  Commits from the original implementation: `d5761c38` — event-script-engine (SimpleTypeMatchingConverter,
+  CompileFlows, TaskExecutor cleanup, `ne` plugin, TypeConversionUtils + DataMappingHelper bug fixes, 115
+  tests green); `495d2252` — minigraph CompileGraph startup gate + CompiledGraphs cache (55 tests green);
+  `56ad6fb8` — GraphCommandService interactive validation + deprecation notice + help doc updates;
+  `d125d4a3` — memory. (Two more commits — jackson bump `994b1954`, Protobuf removal `63d46041` — landed
+  mid-review as a separate Snyk-driven thread; see [[minimalist-kafka-protobuf-removed]].) The code-review
+  round's own changes (event-script-engine + minigraph-playground-engine fixes, docs) are queued for commit
+  as of this writing.
+  <!-- id: thread-deprecate-simple-type-matching | created: 2026-07-01 | last_used: 2026-07-02 | uses: 4 | tier: working | origin: 2026-07-01-172822 -->
 
 - [x] (completed — Eric, 2026-07-01) **Repo-wide OSS dependency security update (Snyk-driven).** Committed
   to `feature/deprecate-simple-type-matching` alongside PR #130's changes (Eric: "regular security

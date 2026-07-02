@@ -20,7 +20,6 @@ package com.accenture.automation;
 
 import org.platformlambda.core.util.Utility;
 
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -39,8 +38,6 @@ import java.util.Set;
 public class SimpleTypeMatchingConverter {
     private static final SimpleTypeMatchingConverter INSTANCE = new SimpleTypeMatchingConverter();
     private static final Utility util = Utility.getInstance();
-    private static final Set<String> SIMPLE_TYPES = Set.of(
-            "text", "binary", "int", "long", "float", "double", "boolean", "uuid", "length", "b64");
     private static final String MODEL_NAMESPACE = "model.";
     private static final String MAP_TO = "->";
     private static final String SIMPLE_PLUGIN_PREFIX = "f:";
@@ -54,6 +51,8 @@ public class SimpleTypeMatchingConverter {
     private static final String NULL_TOKEN = "null";
     private static final String TRUE_TOKEN = "true";
     private static final String CLOSE_BRACKET = ")";
+    private static final Set<String> SIMPLE_TYPES = Set.of(
+            "text", "binary", "int", "long", "float", "double", BOOLEAN_TYPE, "uuid", "length", "b64");
 
     private SimpleTypeMatchingConverter() {
         // singleton
@@ -112,7 +111,7 @@ public class SimpleTypeMatchingConverter {
         }
         if (qualifier.startsWith(CONCAT_TYPE) && qualifier.endsWith(CLOSE_BRACKET)) {
             var inner = qualifier.substring(CONCAT_TYPE.length(), qualifier.length() - 1).trim();
-            return SIMPLE_PLUGIN_PREFIX + "concat(" + source + ", " + inner + ")";
+            return SIMPLE_PLUGIN_PREFIX + CONCAT_TYPE + source + ", " + inner + ")";
         }
         if (qualifier.startsWith(SUBSTRING_TYPE) && qualifier.endsWith(CLOSE_BRACKET)) {
             var inner = qualifier.substring(SUBSTRING_TYPE.length(), qualifier.length() - 1);
@@ -131,7 +130,7 @@ public class SimpleTypeMatchingConverter {
             var v = part.trim();
             args.append(", ").append(v.startsWith(MODEL_NAMESPACE)? v : "int(" + v + ")");
         }
-        return SIMPLE_PLUGIN_PREFIX + "substring(" + args + ")";
+        return SIMPLE_PLUGIN_PREFIX + SUBSTRING_TYPE + args + ")";
     }
 
     private boolean isBooleanValueMatch(String qualifier) {

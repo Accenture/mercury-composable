@@ -128,7 +128,12 @@ public class CompileGraph implements EntryPoint {
         for (Object o : entries) {
             var line = String.valueOf(o);
             if (line.contains(MAP_TO)) {
-                converted.add(converter.convert(line));
+                var convertedLine = converter.convert(line);
+                if (!convertedLine.equals(line)) {
+                    log.warn("Deprecated syntax in graph {} node[{}].{} - '{}' converted to '{}'",
+                            graphId, nodeIndex, property, line, convertedLine);
+                }
+                converted.add(convertedLine);
             } else {
                 log.error("Invalid data mapping in graph {} node[{}].{} - missing '->' in '{}'",
                         graphId, nodeIndex, property, line);

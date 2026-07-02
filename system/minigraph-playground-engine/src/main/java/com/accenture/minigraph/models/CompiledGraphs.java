@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentMap;
  * graph ID that was not declared in the graph manifest.
  */
 public class CompiledGraphs {
-    private static final ConcurrentMap<String, Map<String, Object>> compiledGraphs = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, Map<String, Object>> COMPILED_GRAPHS = new ConcurrentHashMap<>();
 
     private CompiledGraphs() {}
 
@@ -46,7 +46,7 @@ public class CompiledGraphs {
      * @return the compiled graph model, or null if not compiled at startup
      */
     public static Map<String, Object> getGraph(String graphId) {
-        return compiledGraphs.get(graphId);
+        return COMPILED_GRAPHS.get(graphId);
     }
 
     /**
@@ -57,7 +57,7 @@ public class CompiledGraphs {
      * @return true if the graph model was compiled at startup
      */
     public static boolean graphExists(String graphId) {
-        return compiledGraphs.containsKey(graphId);
+        return COMPILED_GRAPHS.containsKey(graphId);
     }
 
     /**
@@ -68,7 +68,7 @@ public class CompiledGraphs {
      * @param model the validated and converted graph model
      */
     public static void addGraph(String graphId, Map<String, Object> model) {
-        compiledGraphs.put(graphId, model);
+        COMPILED_GRAPHS.put(graphId, model);
     }
 
     /**
@@ -78,6 +78,6 @@ public class CompiledGraphs {
      * @return all compiled graph IDs
      */
     public static List<String> getAllGraphs() {
-        return new ArrayList<>(compiledGraphs.keySet());
+        return new ArrayList<>(COMPILED_GRAPHS.keySet());
     }
 }
