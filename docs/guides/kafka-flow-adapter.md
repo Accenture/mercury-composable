@@ -7,7 +7,8 @@ layer: operate
 audience: [developer, ai-agent]
 keywords: [kafka, flow adapter, minimalist-kafka, consumer, producer, dead letter queue, dlq, partition,
   consumer group, kafka-flow-adapter.yaml, simple.kafka.notification, at-least-once, traceparent,
-  schema registry, confluent, avro, protobuf, json schema, subject, version, schema.enabled]
+  schema registry, confluent, avro, json schema, subject, version, schema.enabled, csfle,
+  field level encryption, kms, aws kms, azure key vault, gcp kms]
 ---
 
 # Kafka Flow Adapter
@@ -224,11 +225,60 @@ registers the schema — CI, a client project, an admin tool — owns the subjec
 RecordName / TopicRecordName are all supported, and a topic can carry many record types). This assumes schemas
 are **governed artifacts registered out-of-band**, as they are in practice; the producer never auto-registers.
 
-> **CSFLE not yet wired.** [Confluent Client-Side Field Level Encryption (CSFLE)](https://docs.confluent.io/cloud/current/security/encrypt/csfle/overview.html)
-> is **not yet supported** by `minimalist-kafka` — the serializer is configured **without** encryption rule
-> executors or a KMS. A schema that carries CSFLE encryption rules would therefore be serialized in
-> **PLAINTEXT** (the rules are silently ignored, not enforced). **Do not use `simple.kafka.notification` to
-> produce to CSFLE-protected topics** until CSFLE support lands (planned).
+### CSFLE (Client-Side Field Level Encryption) {#csfle}
+
+`minimalist-kafka` supports [Confluent CSFLE](https://docs.confluent.io/cloud/current/security/encrypt/csfle/overview.html)
+by **delegation** — the framework adds no encryption/rule logic of its own. A schema's `ruleSet` (its
+`ENCRYPT` rules, tagging fields for encryption) travels with the schema itself through the *same*
+`getSchemaById` lookup the producer/consumer already use, and Confluent's own serializer/deserializer run
+those rules during the *same* `use.schema.id` + envelope serialize/deserialize call this library already
+makes. So there is no separate "encrypted" code path to opt into — CSFLE activates the moment (a) the
+encryption executor + a KMS driver are on the classpath and (b) their configuration is present; everything
+else — resolving keys, encrypting tagged fields on write, decrypting on read — is Confluent's serializer/
+deserializer doing exactly what it would do in any Confluent-based application.
+
+**1. Dependencies.** `system/minimalist-kafka/pom.xml` already declares:
+
+- `io.confluent:kafka-schema-registry-client-encryption` — the field-encryption rule executor (auto-discovered
+  via `ServiceLoader`; no explicit `rule.executors` config needed).
+- **Exactly one** cloud KMS driver: `io.confluent:kafka-schema-registry-client-encryption-aws` is uncommented
+  by default; if your installation uses Azure Key Vault or GCP KMS instead, comment out the AWS dependency and
+  uncomment the matching one. A field installation configures one KMS vendor, not several.
+
+**2. The `ENCRYPT` rule — and its KEK/KMS identity — is per-subject, set on the schema, not in this app's
+config.** When a subject is registered with an `ENCRYPT` rule tagging a field (e.g. `confluent:tags: ["PII"]`
+inline in the schema, or via a `Metadata` tags map), that rule's own parameters —
+`encrypt.kek.name`/`encrypt.kms.type`/`encrypt.kms.key.id` — say *which* key encrypts *that* subject's tagged
+fields. This is deliberate: Confluent's rule executor resolves these from the registered rule (or the
+schema's `Metadata`) and **never** from this library's serde config, so different subjects can use different
+KEKs/vendors without any code or config change here. Whoever registers/governs the schema — CI, an admin
+tool — owns this binding. A schema with no `ENCRYPT` rule serializes exactly as before (plaintext); CSFLE is
+per-subject, never a single global on/off switch.
+
+**3. What *does* go in `application.properties` — the `schema.registry.serde.*` pass-through.** This is
+reserved for genuinely **global, app-level** settings the KMS *driver* itself needs (not per-subject key
+identity): typically nothing at all if you rely on your cloud's default credential chain (e.g. an IAM role for
+AWS), or explicit driver credentials if you don't:
+
+```properties
+# Only needed if you are not relying on the AWS SDK default credential chain (an IAM role, etc.):
+schema.registry.serde.access.key.id=${AWS_ACCESS_KEY_ID}
+schema.registry.serde.secret.access.key=${AWS_SECRET_ACCESS_KEY}
+```
+
+Any property under this prefix is merged, prefix stripped, into **both** the serializer's and the
+deserializer's Confluent config map (decrypt is symmetric, so both directions need the same driver
+credentials). It is a generic pass-through — a KMS driver's own config keys (AWS's `access.key.id`/
+`secret.access.key`/`profile`/`role.arn`, or Azure's/GCP's equivalents) flow through with no code change here.
+
+**4. Wire format and consumer are unchanged.** The frame is still `[magic 0x00][4-byte global schema id]
+[payload]` — CSFLE only changes the *value* of the tagged fields inside that payload to ciphertext (with
+embedded DEK metadata Confluent's deserializer reads to decrypt). DLQ handling, tracing, and the
+`schema.enabled` consumer binding are unaffected.
+
+**5. Not covered by the standalone mock.** [`schema-registry-standalone`](schema-registry-mock.md) is a
+plaintext dev tool with no `ruleSet`/KMS support (deliberately — see its own docs). Test/demo CSFLE against a
+real Confluent Schema Registry and a real (or local) KMS.
 
 ### Consume: decode by embedded id {#schema-consume}
 

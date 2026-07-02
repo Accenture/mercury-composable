@@ -52,13 +52,20 @@ class JsonSchemaSerde implements SchemaSerde {
 
     private final SchemaRegistryClient client;
     private final String registryUrl;
+    private final Map<String, Object> extraSerdeConfig;
     private final ConcurrentMap<Integer, KafkaJsonSchemaSerializer<Object>> serializers = new ConcurrentHashMap<>();
     private final KafkaJsonSchemaDeserializer<Object> deserializer;
 
-    JsonSchemaSerde(SchemaRegistryClient client, String registryUrl) {
+    /**
+     * @param extraSerdeConfig CSFLE (and any other Confluent serde) pass-through properties from
+     *                         {@code schema.registry.serde.*} (see {@link SchemaCodec}); merged into both
+     *                         the serializer and deserializer config maps. Empty when CSFLE is not configured.
+     */
+    JsonSchemaSerde(SchemaRegistryClient client, String registryUrl, Map<String, Object> extraSerdeConfig) {
         this.client = client;
         this.registryUrl = registryUrl;
-        Map<String, Object> cfg = new HashMap<>();
+        this.extraSerdeConfig = extraSerdeConfig;
+        Map<String, Object> cfg = new HashMap<>(extraSerdeConfig);
         cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
         this.deserializer = new KafkaJsonSchemaDeserializer<>(client, cfg);
     }
@@ -109,7 +116,7 @@ class JsonSchemaSerde implements SchemaSerde {
      * @return a serializer configured for that id
      */
     private KafkaJsonSchemaSerializer<Object> newSerializer(int schemaId) {
-        Map<String, Object> cfg = new HashMap<>();
+        Map<String, Object> cfg = new HashMap<>(extraSerdeConfig);
         cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
         cfg.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS, false);
         cfg.put(AbstractKafkaSchemaSerDeConfig.USE_SCHEMA_ID, schemaId);

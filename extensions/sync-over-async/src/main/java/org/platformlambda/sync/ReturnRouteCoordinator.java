@@ -126,7 +126,6 @@ public class ReturnRouteCoordinator implements AutoCloseable {
             return response;
         } catch (TimeoutException timeout) {
             String late = store.getResponse(correlationId);
-            pending.cancel(correlationId);
             if (late != null) {
                 log.debug("Recovered response for {} via final read (missed notification)", correlationId);
                 store.cleanup(correlationId);
@@ -134,9 +133,22 @@ public class ReturnRouteCoordinator implements AutoCloseable {
             }
             throw timeout;
         } catch (ExecutionException e) {
-            pending.cancel(correlationId);
             throw new IllegalStateException("Pending request failed: " + correlationId, e.getCause());
+        } finally {
+            // idempotent: no-op if already removed by complete(), ensures release on all exit paths
+            // including InterruptedException, which the catch blocks above do not cover
+            pending.cancel(correlationId);
         }
+    }
+
+    /**
+     * Cancel a pending request without waiting for a response. Called by the flow's exception handler when
+     * the publish step fails (fail-fast path): {@code sync.await} never runs in that case, so the entry
+     * registered by {@code begin} would otherwise leak until the pod restarts. Safe to call if the entry
+     * has already been removed (e.g. the response arrived concurrently) — cancel is a no-op in that case.
+     */
+    public void abort(String correlationId) {
+        pending.cancel(correlationId);
     }
 
     /**

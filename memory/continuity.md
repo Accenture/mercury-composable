@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-02T00:46:06Z | agent: Claude Code (2026-07-02-004606)
+- **last_session:** 2026-07-02T02:04:29Z | agent: Claude Code (2026-07-02-020429)
 - **last_review:** 2026-06-29 | through 2026-06-29-223651.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -97,11 +97,48 @@
   id on the wire; id-from-wire decode) — only the producer's input moved. Standalone mock + `EmbeddedSchemaRegistry`
   gained `GET /subjects/{subject}/versions/{version}` (latest|int, Confluent shape, 40401/40402) + an in-memory
   `subject→version→id` index rebuilt on boot from the per-id files (seed = drop `<id>.json` + restart; runtime
-  = register API); mock got a README. **CSFLE is ready-not-wired** (see [[thread-csfle-field-encryption]]).
+  = register API); mock got a README. **CSFLE is now wired** (see [[kafka-csfle-delegation]]; uncommitted as
+  of 2026-07-02, [[thread-csfle-field-encryption]]).
   Validated e2e (JSON/Avro/Protobuf) incl. continuous OTel span propagation across both Kafka hops. Design spec:
   `draft-design-specs/kafka_schemaid_from_subject_version_design.md` (gitignored). Supersedes the id-driven
   detail in [[minimalist-kafka-schema-registry]].
   <!-- id: kafka-schemaid-from-subject-version | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-004724 -->
+
+- **CSFLE (Client-Side Field Level Encryption) for minimalist-kafka — pure delegation, no framework rule/schema
+  code (2026-07-02, branch `feature/kafka-csfle-field-encryption`, uncommitted).** Eric's field observation
+  ("real apps just delegate CSFLE to the Confluent serdes via config, no framework code") replaced an earlier
+  in-session plan (attach the ruleSet ourselves via `resolve()`/`copy(ruleSet)`). Decompiling Confluent
+  8.2.0/8.3.0 confirmed delegation is sufficient: `executeRules(WRITE)` fires in the `use.schema.id` branch
+  minimalist-kafka already uses, and `getSchemaById` (our existing lookup) already returns a `ParsedSchema`
+  with its `ruleSet` populated (from `SchemaString.getRuleSet()`) — so **zero changes to `resolve()`,
+  `ResolvedSchema`, or `SchemaStore`**. CSFLE reduces to: add the encryption executor + **one** KMS driver jar
+  (AWS uncommented/default in `pom.xml`; Azure/GCP dependency blocks present but commented out — a field
+  installation configures exactly one vendor), and thread operator config into the serde. New
+  `SchemaCodec.extractSerdeConfig(ConfigBase)` extracts the generic `schema.registry.serde.*` prefix
+  (stripped) and merges it into **both** `JsonSchemaSerde`/`AvroSchemaSerde`'s serializer and deserializer
+  config maps; absent config ⇒ unchanged plaintext behavior (regression-tested).
+  **Per-subject binding, verified not assumed:** Eric flagged that CSFLE config must bind per-subject in field
+  installations; decompiling `FieldEncryptionExecutorTransform.getKekName` confirmed `encrypt.kek.name`/
+  `encrypt.kms.type`/`encrypt.kms.key.id` resolve strictly from the **registered rule's own params** (or
+  schema `Metadata`) — never from the executor-level config map — so this was **already correct** in the
+  design; the mistake was the guide's example and both tests redundantly duplicating those 3 keys into the
+  serde-level config, implying a false global KEK. Corrected in the guide (rule params = per-subject/
+  schema-owned; `schema.registry.serde.*` = the KMS **driver's own** credentials only, e.g. AWS's
+  `access.key.id`/`secret.access.key`) and in `SchemaCodecCsfleConfigTest`.
+  **Local verification without HTTP mocking:** `FieldEncryptionExecutor` needs Confluent's DEK-registry
+  (`DekRegistryClient.getOrCreateKek`), which neither `EmbeddedSchemaRegistry` nor the standalone mock
+  implement — but `EncryptionExecutor.configure()` builds that client from the *same* `schema.registry.url`
+  value, and `DekRegistryClientFactory` honors the identical `mock://<scope>` test convention as
+  `SchemaRegistryClientFactory` (both Confluent test utilities). So a single `mock://<scope>` URL backs both
+  clients — new tests `CsfleLocalRoundTripTest` (raw Confluent API spike) and `SchemaCodecCsfleConfigTest` (4
+  tests through the real `SchemaCodec.Encoder`/`Decoder`, via the package-private constructor since
+  `fromConfig`'s `ManagedCacheSchemaRegistryClient` opens a real `RestService` and does **not** honor
+  `mock://`) both run with zero HTTP, zero cloud KMS, zero changes to `EmbeddedSchemaRegistry`/the mock.
+  **Wire/consumer unchanged** — only the tagged field *values* become ciphertext. Guide docs:
+  `docs/guides/kafka-flow-adapter.md` §"CSFLE". Design spec (v3.0, gitignored):
+  `draft-design-specs/kafka_csfle_field_encryption_design.md` — §10/§11 record exactly what shipped.
+  **Status: implemented, all tests green, uncommitted — pending Eric's review.** See [[thread-csfle-field-encryption]].
+  <!-- id: kafka-csfle-delegation | created: 2026-07-02 | last_used: 2026-07-02 | uses: 1 | tier: working | origin: 2026-07-02-020429 -->
 
 - **Repo-wide OSS dependency security update (2026-07-01, committed on `feature/deprecate-simple-type-matching`).**
   Snyk flagged high-risk dependency CVEs on `system/minimalist-kafka`, `extensions/sync-over-async`,
@@ -469,20 +506,14 @@
   `GET /subjects/{subject}/versions/{version}` endpoint. Validated e2e.
   <!-- id: thread-kafka-schemaid-from-name | created: 2026-06-30 | last_used: 2026-07-01 | uses: 2 | tier: working | origin: 2026-06-30-212955 -->
 
-- [ ] (planned — Eric, 2026-07-01; **next session**) **minimalist-kafka: wire Confluent CSFLE (Client-Side
-  Field Level Encryption).** The current installation uses CSFLE, but minimalist-kafka's serdes are
-  configured **without encryption rule executors or a KMS**, so a schema carrying CSFLE encryption rules
-  would serialize in **plaintext** (silent — the rules aren't enforced). The subject/version work
-  ([[kafka-schemaid-from-subject-version]]) is the right, subject-centric foundation; this thread wires the
-  encryption. **Investigate/verify first** (Confluent serdes 8.2.0): whether the encryption ruleSet executes
-  under the current `use.schema.id` + `JsonSchemaUtils.envelope` mechanism, or whether serialize must move to
-  subject + `use.latest.with.metadata`; and whether `getSchemaById(id)` returns the ruleSet. **Scope:** pass
-  `rule.executors` (`FieldEncryptionExecutor`) + KMS config through `SchemaCodec`/serde config on **both**
-  serializer and deserializer (decrypt is symmetric); a CSFLE **test environment** (real Confluent registry +
-  real/local KMS — the standalone mock has no ruleSet/KMS and cannot exercise CSFLE). Until it lands, the
-  kafka-flow-adapter guide's caveat stands: do not produce to CSFLE-protected topics. → relates
-  [[minimalist-kafka-schema-registry]].
-  <!-- id: thread-csfle-field-encryption | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-004724 -->
+- [ ] (implemented, **uncommitted** — Claude Code, 2026-07-02) **minimalist-kafka: Confluent CSFLE wired.**
+  Full detail in the Key Decision [[kafka-csfle-delegation]] and the 2026-07-02-020429 session log. Branch
+  `feature/kafka-csfle-field-encryption`, working tree dirty (5 modified + 2 new test files), **nothing
+  committed**. All tests green (5 new + full `minimalist-kafka` suite 54, coverage gate met). Design spec
+  `draft-design-specs/kafka_csfle_field_encryption_design.md` (v3.0, gitignored) fully in sync — §10/§11
+  record exactly what shipped. **Next action: Eric's code review, then commit + PR** (same flow as #128/#129).
+  → relates [[minimalist-kafka-schema-registry]], [[kafka-schemaid-from-subject-version]].
+  <!-- id: thread-csfle-field-encryption | created: 2026-07-01 | last_used: 2026-07-02 | uses: 2 | tier: working | origin: 2026-07-02-020429 -->
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
   build for the multi-module project.
