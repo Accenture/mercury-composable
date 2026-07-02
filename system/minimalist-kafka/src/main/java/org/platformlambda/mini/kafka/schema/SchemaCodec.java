@@ -70,6 +70,15 @@ public class SchemaCodec {
     private static final Logger log = LoggerFactory.getLogger(SchemaCodec.class);
 
     private static final String REGISTRY_URL = "schema.registry.url";
+    /**
+     * Prefix for CSFLE (and any other Confluent serde) properties to pass through verbatim - each
+     * {@code schema.registry.serde.<key>} in application config becomes {@code <key>} in both the
+     * serializer and deserializer config maps of every {@link SchemaSerde}. Generic and driver-agnostic:
+     * the encryption executor + AWS/Azure/GCP/Tink KMS driver config keys (e.g. {@code encrypt.kek.name},
+     * {@code encrypt.kms.type}, {@code encrypt.kms.key.id}, cloud credentials) flow through without any
+     * code change here. Absent entries ⇒ the serdes build exactly as before (plaintext).
+     */
+    private static final String SERDE_CONFIG_PREFIX = "schema.registry.serde.";
     private static final String CACHE_TTL = "schema.registry.cache.ttl";
     private static final String DEFAULT_CACHE_TTL = "30m";
     private static final String VERSION_CACHE_TTL = "schema.registry.version.cache.ttl";
@@ -99,10 +108,33 @@ public class SchemaCodec {
 
     private final SchemaRegistryClient client;
     private final String registryUrl;
+    private final Map<String, Object> extraSerdeConfig;
 
     SchemaCodec(SchemaRegistryClient client, String registryUrl) {
+        this(client, registryUrl, Map.of());
+    }
+
+    SchemaCodec(SchemaRegistryClient client, String registryUrl, Map<String, Object> extraSerdeConfig) {
         this.client = client;
         this.registryUrl = registryUrl;
+        this.extraSerdeConfig = extraSerdeConfig;
+    }
+
+    /**
+     * Extract the {@code schema.registry.serde.*} pass-through properties (see {@link #SERDE_CONFIG_PREFIX}).
+     * Package-private (rather than private) so it is directly unit-testable.
+     *
+     * @param config the application configuration to scan
+     * @return output key (prefix stripped) → value; empty when none are configured
+     */
+    static Map<String, Object> extractSerdeConfig(ConfigBase config) {
+        Map<String, Object> extra = new HashMap<>();
+        config.getCompositeKeyValues().forEach((key, value) -> {
+            if (key.startsWith(SERDE_CONFIG_PREFIX)) {
+                extra.put(key.substring(SERDE_CONFIG_PREFIX.length()), value);
+            }
+        });
+        return extra;
     }
 
     /** Run {@code action} with the Confluent serde classloader as the thread context classloader. */
@@ -170,9 +202,10 @@ public class SchemaCodec {
                 IDENTITY_MAP_CAPACITY,
                 List.of(new JsonSchemaProvider(), new AvroSchemaProvider()),
                 srConfig, cache, versionCache);
-        log.info("Schema codec ready (registry={}, cache={}, ttlMs={}, types={})",
-                registryUrl, CACHE_NAME, ttlMillis, List.of(SchemaType.values()));
-        return new SchemaCodec(client, registryUrl);
+        Map<String, Object> extraSerdeConfig = extractSerdeConfig(config);
+        log.info("Schema codec ready (registry={}, cache={}, ttlMs={}, types={}, csfle={})",
+                registryUrl, CACHE_NAME, ttlMillis, List.of(SchemaType.values()), !extraSerdeConfig.isEmpty());
+        return new SchemaCodec(client, registryUrl, extraSerdeConfig);
     }
 
     /**
@@ -180,8 +213,8 @@ public class SchemaCodec {
      */
     private Map<SchemaType, SchemaSerde> newSerdes() {
         Map<SchemaType, SchemaSerde> serdes = new EnumMap<>(SchemaType.class);
-        serdes.put(SchemaType.JSON, new JsonSchemaSerde(client, registryUrl));
-        serdes.put(SchemaType.AVRO, new AvroSchemaSerde(client, registryUrl));
+        serdes.put(SchemaType.JSON, new JsonSchemaSerde(client, registryUrl, extraSerdeConfig));
+        serdes.put(SchemaType.AVRO, new AvroSchemaSerde(client, registryUrl, extraSerdeConfig));
         // SchemaType.PROTOBUF is intentionally unregistered - see the class-level Javadoc above.
         // serde(...) below fails clearly (UnsupportedOperationException) rather than silently.
         return serdes;

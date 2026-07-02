@@ -37,8 +37,7 @@ public class EqualsOperator implements PluginFunction {
         if (input.length < 2) {
             throw new IllegalArgumentException("Input is required to check for equality");
         }
-        return Arrays.stream(input)
-                .reduce(Objects::equals)
-                .orElse(false);
+        Object first = input[0];
+        return Arrays.stream(input).skip(1).allMatch(v -> Objects.equals(first, v));
     }
 }

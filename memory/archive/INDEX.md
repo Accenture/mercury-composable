@@ -38,3 +38,7 @@
 - helpers-and-worked-examples — Standalone dev servers live in `helpers/`; worked examples teach the patterns. `helpers/`… — faded — 2026-Q2.md
 - minimalist-examples — Examples are kept deliberately minimal (avoid drift). Bare-minimum examples on principle (… — faded — 2026-Q2.md
 - kafka-soa-docs — minimalist-kafka + sync-over-async are documented in mkdocs (2026-06-27). Two new publishe… — faded — 2026-Q2.md
+- schema-registry-mock — Schema Registry mock server implementation. Created `helpers/schema-registry-standalone`,… — faded — 2026-Q3.md
+- agent-memory-upgrade-v4261 — Upgraded agent-memory v4.25.0 → v4.26.1 (Mode B, by Claude Code from the tool checkout) —… — faded — 2026-Q3.md
+- agent-memory-upgrade-v4250 — Upgraded agent-memory v4.23.1 → v4.25.0 (Mode B, by Claude Code from the tool checkout). — faded — 2026-Q3.md
+- thread-schema-registry — (completed — Eric, 2026-06-28) Schema Registry feature. Implemented `helpers/schema-regist… — faded — 2026-Q3.md

@@ -1,12 +1,19 @@
 #
 # Synchronous REST facade flow (facade role), in the composable (Event Script) pattern.
 #
-#   1. sync.prepare              - allocate a correlation-id, register the cross-pod return route in Redis,
-#                                  and serialize the request into the Kafka payload.
+#   1. sync.prepare              - register the cross-pod return route in Redis and serialize the request
+#                                  into the Kafka payload.
 #   2. simple.kafka.notification - publish the request to the 'soa.request' topic. A publish failure fails
 #                                  this task and is routed to sync.error.handler (fail-fast).
 #   3. sync.await                - block until the backend's reply arrives via 'soa.response' + the Redis
 #                                  return route; return HTTP 200 with the body, or raise 408 on timeout.
+#
+# Correlation-id: model.cid is the framework-assigned trace/correlation ID (from the first matching HTTP
+# header in trace.http.header, e.g. X-Correlation-Id, X-Trace-Id, or traceparent for OTel, or a generated
+# UUID). It is passed to sync.prepare via 'model.cid -> header.cid'. To use a proprietary upstream header
+# instead, replace that mapping with 'input.header.<your-header> -> header.cid', for example:
+#   'input.header.x-b3-traceid -> header.cid'   (Zipkin / B3 tracing)
+#   'input.header.x-request-id -> header.cid'   (NGINX / Kong / AWS ALB)
 #
 flow:
   id: 'sync-to-async'
@@ -18,11 +25,11 @@ first.task: 'sync.prepare'
 
 tasks:
   - input:
+      - 'model.cid -> header.cid'
       - 'input.body -> *'
     process: 'sync.prepare'
     output:
       - 'result -> model.payload'
-      - 'header.cid -> model.cid'
     description: 'Register the return route and serialize the request payload'
     execution: sequential
     next:
@@ -49,6 +56,7 @@ tasks:
     execution: end
 
   - input:
+      - 'model.cid -> cid'
       - 'error.code -> status'
       - 'error.message -> message'
     process: 'sync.error.handler'

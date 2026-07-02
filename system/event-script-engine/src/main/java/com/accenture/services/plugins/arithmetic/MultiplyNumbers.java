@@ -39,7 +39,7 @@ public class MultiplyNumbers implements PluginFunction {
         }
         return SimplePluginUtils.promoteInput(input)
                 .reduce((l1, l2) -> l1 * l2)
-                .orElseThrow(() -> new IllegalStateException("Could not multiply the input: " + Arrays.toString(input)));
+                .orElseThrow(() -> new IllegalArgumentException("Could not multiply the input: " + Arrays.toString(input)));
     }
 
 }

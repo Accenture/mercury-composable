@@ -55,36 +55,52 @@ public class InputValidation implements PluginFunction {
      * Optional keyword "evaluate" can be appended to the end.
      * e.g. adding "evaluate keyword will return true or false instead of value or exception.
      * f:validate(input.body.id, text(id; String; evaluate))
+     * <p>
+     * When the "required" keyword is not configured, the field is optional
+     * and a null value passes validation.
      *
      * @param input expected 2 arguments where the second one is the validation rule
      * @return argument one if validation passes IllegalArgumentException will be thrown
      */
     @Override
     public Object calculate(Object... input) {
-        if (input.length == 2 && input[1] instanceof String text) {
-            var value = input[0];
-            var rules = TypeConversionUtils.getRules(text);
-            if (rules.size() < 2) {
-                throw new IllegalArgumentException("Invalid validation rule. " +
-                        "Syntax: text(id, type), text(id, type, required) or text(id, type, range-start, range-end)");
-            }
-            var fieldName = rules.getFirst();
-            var type = rules.get(1);
-            var clazz = TYPES.get(type);
-            if (clazz == null) {
-                throw new IllegalArgumentException("Validation type '" + type + "' is not supported. " +
-                        "Use String, Integer, Long, Float, Double, Boolean, Map or List.");
-            }
-            if (rules.size() > 2 && REQUIRED.equalsIgnoreCase(rules.get(2)) && value == null) {
-                throw new IllegalArgumentException(fieldName+" is required.");
-            }
-            var evaluate = EVALUATE.equalsIgnoreCase(rules.getLast());
-            var filtered = filterRules(rules);
-            return evaluateOrException(fieldName, value, clazz, filtered, evaluate);
-        } else {
+        if (input.length != 2 || !(input[1] instanceof String text)) {
             throw new IllegalArgumentException("Validation syntax error. " +
                     "Expect 2 arguments where the second one is the validation rule.");
         }
+        var value = input[0];
+        var rules = TypeConversionUtils.getRules(text);
+        if (rules.size() < 2) {
+            throw new IllegalArgumentException("Invalid validation rule. " +
+                    "Syntax: text(id, type), text(id, type, required) or text(id, type, range-start, range-end)");
+        }
+        var fieldName = rules.getFirst();
+        var clazz = resolveType(rules.get(1));
+        var evaluate = EVALUATE.equalsIgnoreCase(rules.getLast());
+        if (value == null) {
+            return resolveNullValue(fieldName, rules, evaluate);
+        }
+        return evaluateOrException(fieldName, value, clazz, filterRules(rules), evaluate);
+    }
+
+    private Class<?> resolveType(String type) {
+        var clazz = TYPES.get(type);
+        if (clazz == null) {
+            throw new IllegalArgumentException("Validation type '" + type + "' is not supported. " +
+                    "Use String, Integer, Long, Float, Double, Boolean, Map or List.");
+        }
+        return clazz;
+    }
+
+    private Object resolveNullValue(String fieldName, List<String> rules, boolean evaluate) {
+        if (rules.stream().noneMatch(REQUIRED::equalsIgnoreCase)) {
+            // when 'required' is not configured, the field is optional so a null value is allowed
+            return evaluate? Boolean.TRUE : null;
+        }
+        if (evaluate) {
+            return Boolean.FALSE;
+        }
+        throw new IllegalArgumentException(fieldName + " is required.");
     }
 
     private List<String> filterRules(List<String> rules) {
@@ -116,13 +132,11 @@ public class InputValidation implements PluginFunction {
     }
 
     private Object validate(String fieldName, Object value, Class<?> clazz, List<String> rules) {
-        if (value != null && validClass(value, clazz)) {
+        // null values are resolved by the caller - value is never null here
+        if (validClass(value, clazz)) {
             return rules.size() == 2? value : rangeCheck(fieldName, value, rules);
         } else {
-            if (value == null && rules.size() > 2) {
-                throw new IllegalArgumentException(fieldName+" is required.");
-            }
-            var actual = value == null? "null" : value.getClass().getSimpleName();
+            var actual = value.getClass().getSimpleName();
             throw new IllegalArgumentException("Expect "+fieldName+" as "+clazz.getSimpleName()+", Actual: "+actual);
         }
     }

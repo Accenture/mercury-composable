@@ -121,6 +121,61 @@
              the renamed wire-runtime coordinate as of kafka-protobuf-provider:8.3.0. See SchemaType.PROTOBUF's
              Javadoc for the full rationale and the reintroduction path. -->
 
+        <!-- CSFLE (Client-Side Field Level Encryption). The base artifact carries the FieldEncryptionExecutor
+             (registered as a Confluent RuleExecutor via ServiceLoader) and the local KMS driver used for tests.
+             CSFLE is delegated entirely to the Confluent serdes: with these on the classpath and rule.executors
+             + KMS configured, encryption/decryption runs on the existing serialize/deserialize path. Absent the
+             config, the serdes behave exactly as before (plaintext). -->
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-schema-registry-client-encryption</artifactId>
+            <version>${confluent.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-clients</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Cloud KMS driver. A field installation configures exactly ONE KMS vendor - each registers its
+             KmsDriver via ServiceLoader and pulls that cloud's SDK, and the field-encryption executor above
+             works with whichever single driver is present. AWS is the default here; if your installation
+             uses Azure Key Vault or GCP KMS instead, comment out the AWS dependency below and uncomment the
+             matching one. optional=true so a consumer of this module isn't forced to resolve a cloud SDK it
+             doesn't use. -->
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-schema-registry-client-encryption-aws</artifactId>
+            <version>${confluent.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <!--
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-schema-registry-client-encryption-azure</artifactId>
+            <version>${confluent.version}</version>
+            <optional>true</optional>
+        </dependency>
+        -->
+        <!--
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-schema-registry-client-encryption-gcp</artifactId>
+            <version>${confluent.version}</version>
+            <optional>true</optional>
+        </dependency>
+        -->
+
+        <!-- Local (Tink) KMS driver: a static in-JVM keyset for repeatable CSFLE round-trip tests, so
+             encryption is exercised in CI without cloud credentials. Test scope only. -->
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-schema-registry-client-encryption-tink</artifactId>
+            <version>${confluent.version}</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Embedded Kafka (real KRaft broker) for integration tests. -->
         <dependency>
             <groupId>org.apache.kafka</groupId>

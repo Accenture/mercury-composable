@@ -39,6 +39,6 @@ public class AddNumbers implements PluginFunction {
         }
         return SimplePluginUtils.promoteInput(input)
                 .reduce(Long::sum)
-                .orElseThrow(() -> new IllegalStateException("Could not add the input: " + Arrays.toString(input)));
+                .orElseThrow(() -> new IllegalArgumentException("Could not add the input: " + Arrays.toString(input)));
     }
 }

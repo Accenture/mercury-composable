@@ -21,6 +21,7 @@ package org.platformlambda.support;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.sync.SyncRuntime;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,6 +43,11 @@ public class SyncErrorHandler implements TypedLambdaFunction<Map<String, Object>
 
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+        // cancel the pending entry registered by sync.prepare when the publish step fails (fail-fast path)
+        Object cid = input.get("cid");
+        if (cid != null) {
+            SyncRuntime.coordinator().abort(String.valueOf(cid));
+        }
         int status = Utility.getInstance().str2int(String.valueOf(input.getOrDefault("status", 500)));
         if (status >= 500) {
             status = SERVICE_UNAVAILABLE;   // backend unreachable (publish/registration failure) -> retriable 503

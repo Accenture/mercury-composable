@@ -22,7 +22,7 @@ import com.accenture.models.PluginFunction;
 import com.accenture.models.SimplePlugin;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 @SimplePlugin
@@ -36,7 +36,8 @@ public class UniqueSet implements PluginFunction {
     @Override
     public Object calculate(Object... input) {
         if (input.length == 1 && input[0] instanceof List<?> items) {
-            return new ArrayList<>(new HashSet<>(items));
+            // LinkedHashSet preserves the original element order for deterministic output
+            return new ArrayList<>(new LinkedHashSet<>(items));
         }
         return null;
     }

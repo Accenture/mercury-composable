@@ -35,7 +35,7 @@ public class DateGenerator implements PluginFunction {
 
     @Override
     public Object calculate(Object... input) {
-        DateTimeFormatter dateFormatter = (input.length == 1)?
+        DateTimeFormatter dateFormatter = (input.length >= 1)?
                 DateTimeFormatter.ofPattern(String.valueOf(input[0])) : DateTimeFormatter.ISO_DATE_TIME;
         ZoneId zone = (input.length == 2)? ZoneId.of(String.valueOf(input[1])) : ZoneId.systemDefault();
         return ZonedDateTime.now(zone).format(dateFormatter);

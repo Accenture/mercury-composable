@@ -34,13 +34,14 @@ public class DivideNumbers implements PluginFunction {
 
     @Override
     public Object calculate(Object... input) {
-        SimplePluginUtils.divideByZeroCheck(input);
         if (input.length < 2) {
             throw new IllegalArgumentException("Expected at least two Whole Numbers to divide");
         }
+        // only divisors can trigger division by zero - a zero dividend is valid
+        SimplePluginUtils.divideByZeroCheck(Arrays.copyOfRange(input, 1, input.length));
         return SimplePluginUtils.promoteInput(input)
                 .reduce((l1, l2) -> l1 / l2)
-                .orElseThrow(() -> new IllegalStateException("Could not divide the input: " + Arrays.toString(input)));
+                .orElseThrow(() -> new IllegalArgumentException("Could not divide the input: " + Arrays.toString(input)));
     }
 
 }

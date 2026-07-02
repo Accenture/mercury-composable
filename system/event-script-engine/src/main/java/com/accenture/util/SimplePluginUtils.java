@@ -28,7 +28,7 @@ public class SimplePluginUtils {
                 .map(SimplePluginUtils::promoteNumber)
                 .anyMatch(l -> l == 0L);
         if (anyZero) {
-            throw new IllegalStateException("Dividing the input: " + Arrays.toString(input) + " would cause Division By Zero");
+            throw new IllegalArgumentException("Dividing the input: " + Arrays.toString(input) + " would cause Division By Zero");
         }
     }
 
@@ -42,7 +42,7 @@ public class SimplePluginUtils {
             case Integer i -> i.longValue();
             case Long l -> l;
             case String s -> Long.valueOf(s);
-            default -> throw new IllegalArgumentException("Cannot add the object: " + o);
+            default -> throw new IllegalArgumentException("Cannot convert the object to a whole number: " + o);
         };
     }
 }
