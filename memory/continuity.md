@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-02T02:04:29Z | agent: Claude Code (2026-07-02-020429)
+- **last_session:** 2026-07-02T05:54:23Z | agent: Claude Code (2026-07-02-055423)
 - **last_review:** 2026-06-29 | through 2026-06-29-223651.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -168,6 +168,22 @@
   failures**, plus the standalone `examples/pg-example` (excluded from the root aggregator) run separately,
   also green both times.
   <!-- id: snyk-oss-dependency-update-2026-07 | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-215533 -->
+
+- **Dependabot alert #28 (jackson-databind `@JsonIgnoreProperties` case-insensitive bypass, CWE-915) assessed
+  NOT APPLICABLE (2026-07-02).** The same jackson-databind CVE tracked as "no fix yet in the 2.x line" in
+  [[snyk-oss-dependency-update-2026-07]], now surfaced as GitHub alert #28 on `helpers/kafka-standalone/pom.xml`
+  (pins 2.22.0; affected >= 2.22.0, < 2.22.1). **Verified, not assumed:** the exploit requires BOTH
+  case-insensitive property matching (`ACCEPT_CASE_INSENSITIVE_PROPERTIES` via `MapperFeature` or per-property
+  `@JsonFormat`) AND reliance on per-property `@JsonIgnoreProperties` to keep a field unwritable — the repo's
+  Java sources contain **zero occurrences of either**, and `helpers/kafka-standalone` never constructs an
+  `ObjectMapper` at all (its databind pin only satisfies Kafka's transitive dependency). **No bump possible yet:**
+  Maven Central's latest is still 2.22.0 — the fixing 2.22.1 is unreleased ("Patched version: None"; only 3.x
+  shipped its fix, 3.1.4 on 2026-06-04). Recommended to Eric: dismiss alert #28 as "vulnerable code is not in
+  use"; bump when 2.22.1 lands — Dependabot re-flags on release (that's the reminder), and the version is
+  centralized (`jackson-2-bom.version` in ~30 poms + 3 explicit `jackson-databind` pins: platform-core,
+  rest-spring-3, kafka-standalone). Do not re-investigate this alert while the pinned version is 2.22.0 and
+  those two grep checks stay empty.
+  <!-- id: jackson-databind-alert28-not-applicable | created: 2026-07-02 | last_used: 2026-07-02 | uses: 1 | tier: working | origin: 2026-07-02-055423 -->
 
 - **Schema Registry mock server implementation.** Created `helpers/schema-registry-standalone`, providing a minimalist REST API that mimics the Confluent schema registry (`/subjects/{subject}/versions` and `/schemas/ids/{id}`). It supports both Avro and JSON Schema and serves as an end-to-end demo and testing layer. The worked example `examples/schema-registry-demo` is now curl + zero-dependency `.mjs` scripts (no longer a Maven module). See [[standalone-schema-registry-mock]] and [[minimalist-kafka-schema-registry]].
   <!-- id: schema-registry-mock | created: 2026-06-28 | last_used: 2026-06-29 | uses: 2 | tier: active | origin: 2026-06-28-191114 -->
