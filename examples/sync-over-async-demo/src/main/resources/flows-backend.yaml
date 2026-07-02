@@ -7,5 +7,3 @@ flows:
   - 'system-of-record-json.yml'
   # Avro variant of the backend flow
   - 'system-of-record-avro.yml'
-  # Protobuf variant of the backend flow
-  - 'system-of-record-protobuf.yml'

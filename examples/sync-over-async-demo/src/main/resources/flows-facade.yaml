@@ -10,6 +10,3 @@ flows:
   # Avro variant of the two facade flows
   - 'sync-to-async-avro.yml'
   - 'soa-reply-avro.yml'
-  # Protobuf variant of the two facade flows
-  - 'sync-to-async-protobuf.yml'
-  - 'soa-reply-protobuf.yml'

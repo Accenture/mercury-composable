@@ -354,6 +354,42 @@ Calling code uses the same `PostOffice` API whether the target is local or remot
 
 ---
 
+## Application Lifecycle
+
+Startup order matters as much as request-time behavior does, but it is easy to lose track of because it
+spans platform-core (`AutoStart` / `AppStarter`) and, for Spring Boot deployments, the framework's Spring
+integration too. From `AutoStart.main()` — the universal entry point — the sequence is:
+
+1. **`@BeforeApplication`** classes run first, ordered by their `sequence` (0–999, lower first). This is
+   where platform machinery does its validation/compilation work before anything is registered or served
+   — for example, `event-script-engine`'s `CompileFlows` (`sequence=5`) parses and validates every flow
+   YAML, and `minigraph-playground-engine`'s `CompileGraph` (`sequence=6`, deliberately placed right after
+   `CompileFlows` because it reuses the same deprecated-syntax converter) validates opt-in graph models.
+   `0` is reserved for `EssentialServiceLoader`; user code should use `3`–`999` (or `1` to run before all
+   framework modules — see [`@BeforeApplication`](annotations-reference.md#beforeapplication)).
+2. **`@PreLoad`** composable functions are registered next — every function annotated with `@PreLoad` is
+   scanned and bound to its route(s) in the Platform's routing table, becoming callable via `PostOffice`/
+   `EventEmitter` from this point on.
+3. **The reactive HTTP/WebSocket server starts**, if `rest.automation=true` in `application.properties`
+   (default `false`) or a `@WebSocketService` is registered — REST endpoints are compiled from
+   `rest.yaml`, and the Vert.x server begins listening.
+4. **`@MainApplication`** runs last — but *when* depends on whether Spring Boot is in the build:
+   - **No Spring Boot**: `AppStarter` runs `@MainApplication` classes immediately, in the same pass as
+     steps 1–3.
+   - **Spring Boot** (detected via the `spring.boot.main` config property, e.g. `RestServer` in
+     `rest-spring-3`/`rest-spring-4`): `AppStarter` completes steps 1–3, then hands off to Spring Boot's
+     own `main()`, which runs its full bootstrap (bean creation, its own embedded server if used)
+     independently. Only once Spring Boot fires `ApplicationReadyEvent` does the framework's `AppLoader`
+     component autowire Spring dependencies into the already-registered composable functions and *then*
+     call `AppStarter.runMainApp()` — so `@MainApplication` genuinely runs after Spring Boot finishes, not
+     before or during it.
+
+This ordering is why a flow YAML is fully parsed and validated (step 1) before any HTTP request could
+possibly reach it (step 3), and why a composable function can safely assume every other `@PreLoad`
+function's route already exists by the time its own `@MainApplication` logic runs.
+
+---
+
 ## Key Annotations Reference
 
 | Annotation | Purpose |

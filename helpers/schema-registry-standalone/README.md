@@ -11,8 +11,10 @@ This is a sibling of [`kafka-standalone`](../kafka-standalone) and [`redis-stand
 under `helpers/`: together they give you a local Kafka broker, a local Redis server, and a local Schema
 Registry without external infrastructure. It backs the schema features of
 [`minimalist-kafka`](../../system/minimalist-kafka) and the
-[`sync-over-async-demo`](../../examples/sync-over-async-demo). See also the guide:
-[`docs/guides/schema-registry-mock.md`](../../docs/guides/schema-registry-mock.md).
+[`sync-over-async-demo`](../../examples/sync-over-async-demo) — **for JSON Schema and Avro only**;
+`minimalist-kafka`'s own client integration does not currently consume Protobuf even though this mock can
+serve it (schema-language-agnostic), see [`docs/guides/kafka-flow-adapter.md#schema`](../../docs/guides/kafka-flow-adapter.md#schema)
+for why. See also the guide: [`docs/guides/schema-registry-mock.md`](../../docs/guides/schema-registry-mock.md).
 
 ## Build and run
 

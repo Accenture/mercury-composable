@@ -1,6 +1,7 @@
 #
-# Sample application log context configuration (used by LogContextConfigTest).
-# to demonstrate application context logging
+# Sample application log context configuration to demonstrate application context logging
+# (The presence of this file activates the Application Log Context feature when log.format is json or compact.
+#  For simplicity, Log context feature is not enabled when log.format=text)
 #
 # Left side  = output key name (your choice)
 # Right side = a reserved $token (resolved per log line) or a ${ENV:default} substitution.
@@ -16,4 +17,5 @@ context:
   service: $service
   timestamp: $utc
   environment: '${ENV_NAME:dev}'
+  # this is just for demo - you don't need hard coded key-values
   hello: 'world'

@@ -9,8 +9,8 @@ export default {
   jsonResponseTopic: 'json-topic-2',  // backend -> facade (soa-reply-json)         [JSON Schema]
   avroRequestTopic: 'avro-topic-1',   // facade -> backend (system-of-record-avro)  [Avro]
   avroResponseTopic: 'avro-topic-2',  // backend -> facade (soa-reply-avro)         [Avro]
-  protobufRequestTopic: 'protobuf-topic-1',   // facade -> backend (system-of-record-protobuf) [Protobuf]
-  protobufResponseTopic: 'protobuf-topic-2',  // backend -> facade (soa-reply-protobuf)        [Protobuf]
+  // Protobuf topics are deliberately not created here - see README.md's "Protobuf (not currently
+  // supported)" section for why.
   // Multiple partitions so the facade consumer group (soa-reply-group) can spread across more than one
   // facade instance - that is what lets you run two facades and see the Redis return route deliver each
   // reply to the pod that originated the request. (Auto-created topics get only 1 partition.)

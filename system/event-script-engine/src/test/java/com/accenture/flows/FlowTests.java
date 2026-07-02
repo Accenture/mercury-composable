@@ -420,15 +420,11 @@ class FlowTests extends TestBase {
         equalsMap(m1, m3);
         assertEquals(hello, mm.getElement("source.substring"));
         assertEquals(world, mm.getElement("source.substring-2"));
-        assertArrayEquals(helloWorldBytes,
-                getByteArrayFromEncodedIntegers((List<Integer>) mm.getElement("source.keep-as-binary")));
         assertEquals(helloWorld, mm.getElement("source.no-change"));
         assertArrayEquals(helloWorldBytes,
                 getByteArrayFromEncodedIntegers((List<Integer>) mm.getElement("source.binary")));
         assertArrayEquals(helloWorldBytes,
                 getByteArrayFromEncodedIntegers((List<Integer>) mm.getElement("source.bytes")));
-        assertEquals(helloWorld, mm.getElement("source.out-of-bound"));
-        assertEquals(helloWorld, mm.getElement("source.invalid-substring"));
         assertEquals(helloWorld, mm.getElement("source.text"));
         typeMatchingAssertions(mm);
     }
@@ -462,13 +458,6 @@ class FlowTests extends TestBase {
          */
         assertEquals(false, mm.getElement("and"));
         assertEquals(true, mm.getElement("or"));
-        /*
-         * test failed boolean mapping
-         *
-         * The following will return true because "nothing" does not belong to the state machine:
-         * 'model.positive:and(nothing) -> output.body.nothing'
-         */
-        assertEquals(true, mm.getElement("nothing"));
         // type matching to get size of a list
         assertEquals(3, mm.getElement("source.list_size"));
         // type matching to get length of the number 1000

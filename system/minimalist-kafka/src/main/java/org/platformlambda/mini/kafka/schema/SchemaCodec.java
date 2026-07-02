@@ -24,7 +24,6 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
-import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchemaProvider;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ManagedCache;
@@ -57,7 +56,15 @@ import java.util.function.Supplier;
  * the singleton, while {@link #newEncoder()} / {@link #newDecoder()} mint <b>owner-confined</b> serde sets. A
  * producer keeps one {@link Encoder} per worker instance (an instance is single-flight); a consumer keeps one
  * {@link Decoder} for its single poll thread. So a given Confluent serializer/deserializer is only ever
- * touched by one thread at a time. JSON, Avro, and Protobuf are wired.</p>
+ * touched by one thread at a time. JSON and Avro are wired.</p>
+ *
+ * <p><b>Protobuf is deliberately not wired.</b> Confluent's {@code kafka-protobuf-provider} depends on the
+ * discontinued {@code com.squareup.wire:wire-runtime-jvm} coordinate, which carries an unpatched
+ * denial-of-service CVE (CVE-2026-45799 / GHSA-7xpr-hc2w-34m9) with no available fix — Wire's maintainers
+ * will not patch that artifact; the fix only exists under the renamed {@code wire-runtime} coordinate, which
+ * Confluent has not adopted as of {@code kafka-protobuf-provider:8.3.0}. Shipping it would fail our security
+ * gate, so it is out of scope until Confluent moves or a specific field installation needs it and accepts the
+ * risk (see {@link SchemaType#PROTOBUF}).</p>
  */
 public class SchemaCodec {
     private static final Logger log = LoggerFactory.getLogger(SchemaCodec.class);
@@ -161,7 +168,7 @@ public class SchemaCodec {
         srConfig.put(SchemaRegistryClientConfig.MISSING_SCHEMA_CACHE_TTL_CONFIG, 0L);
         SchemaRegistryClient client = new ManagedCacheSchemaRegistryClient(List.of(registryUrl),
                 IDENTITY_MAP_CAPACITY,
-                List.of(new JsonSchemaProvider(), new AvroSchemaProvider(), new ProtobufSchemaProvider()),
+                List.of(new JsonSchemaProvider(), new AvroSchemaProvider()),
                 srConfig, cache, versionCache);
         log.info("Schema codec ready (registry={}, cache={}, ttlMs={}, types={})",
                 registryUrl, CACHE_NAME, ttlMillis, List.of(SchemaType.values()));
@@ -175,7 +182,8 @@ public class SchemaCodec {
         Map<SchemaType, SchemaSerde> serdes = new EnumMap<>(SchemaType.class);
         serdes.put(SchemaType.JSON, new JsonSchemaSerde(client, registryUrl));
         serdes.put(SchemaType.AVRO, new AvroSchemaSerde(client, registryUrl));
-        serdes.put(SchemaType.PROTOBUF, new ProtobufSchemaSerde(client, registryUrl));
+        // SchemaType.PROTOBUF is intentionally unregistered - see the class-level Javadoc above.
+        // serde(...) below fails clearly (UnsupportedOperationException) rather than silently.
         return serdes;
     }
 

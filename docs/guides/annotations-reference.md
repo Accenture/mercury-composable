@@ -232,8 +232,9 @@ public class MainApp implements EntryPoint {
 - The static `main` method should contain only `AutoStart.main(args)`. All initialization
   logic belongs in `start()`.
 - Can be combined with `@OptionalService` for conditional activation.
-- In Spring Boot apps (`rest-spring-3`) execution is deferred until the HTTP server
-  completes startup.
+- In Spring Boot apps (`rest-spring-3`/`rest-spring-4`), execution is deferred until Spring
+  Boot itself fires `ApplicationReadyEvent` — see
+  [Application Lifecycle](architecture.md#application-lifecycle) for the full sequence.
 
 ---
 
@@ -251,7 +252,7 @@ generating X.509 certificates before the rest of the application starts.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `sequence` | `int` | `10` | Execution order. Range 1–999. Sequences 0 and 2 are reserved by the framework. |
+| `sequence` | `int` | `10` | Execution order. Range 1–999. Sequence 0 is reserved by the framework. |
 
 ### Behavior
 
@@ -279,10 +280,15 @@ public class EnvSetup implements EntryPoint {
 
 ### Notes
 
-- **Reserved sequences**: `0` is used by `EssentialServiceLoader`; `2` is used by the
-  Event Script engine. User code should use sequences 3–999 (or 1 if it must run before
-  all framework modules).
-- Execution order: `@BeforeApplication` → `@PreLoad` registration → `@MainApplication`.
+- **Reserved sequences**: `0` is used by `EssentialServiceLoader`; `5` is used by
+  `event-script-engine`'s `CompileFlows` (flow YAML compile-time validation); `6` is used
+  by `minigraph-playground-engine`'s `CompileGraph` (opt-in graph-model validation,
+  deliberately placed right after `CompileFlows` since it reuses the same syntax
+  converter). User code should use sequences 3–999 (or 1 if it must run before all
+  framework modules).
+- Execution order: `@BeforeApplication` → `@PreLoad` registration → HTTP server startup →
+  `@MainApplication` — see [Application Lifecycle](architecture.md#application-lifecycle)
+  for the full sequence, including how Spring Boot deployments defer `@MainApplication`.
 - Can be combined with `@OptionalService`.
 
 ---

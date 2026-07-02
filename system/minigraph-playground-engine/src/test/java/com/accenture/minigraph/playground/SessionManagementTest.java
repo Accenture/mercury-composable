@@ -221,6 +221,83 @@ class SessionManagementTest {
         }
     }
 
+    @Test
+    void aiCompanionAutoConvertsDeprecatedTypeMatchingSyntaxTest() throws InterruptedException, ExecutionException {
+        SessionFixture fx = createFixture();
+        if (fx == null) {
+            return;
+        }
+        try (fx) {
+            // the AI companion (or a human) still uses the deprecated "simple type matching" syntax
+            var command = """
+                    create node data-mapper
+                    with properties
+                    skill=graph.data.mapper
+                    mapping[]=model.hello:int -> output.body.value""";
+            assertEquals(200, postCompanion(fx.sessionA(), command).getStatus());
+            // "node ... created" and the deprecation notice are sent together as a single message -
+            // the deprecated syntax must be silently upgraded to the "simple plugin" syntax and the
+            // caller (human or AI agent) must be told about it so it can switch going forward
+            var notice = waitForMessage(fx.messagesA(), "node data-mapper created", 5);
+            assertNotNull(notice);
+            assertTrue(notice.contains("DEPRECATION NOTICE"));
+            assertTrue(notice.contains("simple type matching"));
+            assertTrue(notice.contains("f:int(model.hello) -> output.body.value"));
+
+            var live = getLiveGraph(fx.sessionA());
+            assertEquals(200, live.getStatus());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void aiCompanionRejectsMalformedMappingSyntaxTest() throws InterruptedException, ExecutionException {
+        SessionFixture fx = createFixture();
+        if (fx == null) {
+            return;
+        }
+        try (fx) {
+            var command = """
+                    create node data-mapper
+                    with properties
+                    skill=graph.data.mapper
+                    mapping[]=missing-arrow-here""";
+            var response = postCompanion(fx.sessionA(), command);
+            assertEquals(200, response.getStatus());
+            var message = waitForMessage(fx.messagesA(), "ERROR:", 5);
+            assertNotNull(message, "Expected a rejection for malformed data mapping syntax");
+            assertTrue(message.contains("syntax must be 'LHS -> RHS'"));
+
+            // the invalid node must not have been created
+            var live = getLiveGraph(fx.sessionA());
+            assertEquals(200, live.getStatus());
+            var graph = (Map<String, Object>) live.getBody();
+            var nodes = (List<Map<String, Object>>) graph.get("nodes");
+            var aliases = nodes.stream().map(n -> String.valueOf(n.get("alias"))).toList();
+            assertFalse(aliases.contains("data-mapper"), "Node with invalid syntax must be rejected");
+        }
+    }
+
+    @Test
+    void aiCompanionRejectsUnknownPluginReferenceTest() throws InterruptedException, ExecutionException {
+        SessionFixture fx = createFixture();
+        if (fx == null) {
+            return;
+        }
+        try (fx) {
+            var command = """
+                    create node data-mapper
+                    with properties
+                    skill=graph.data.mapper
+                    mapping[]=f:doesNotExist(model.hello) -> output.body.value""";
+            var response = postCompanion(fx.sessionA(), command);
+            assertEquals(200, response.getStatus());
+            var message = waitForMessage(fx.messagesA(), "ERROR:", 5);
+            assertNotNull(message, "Expected a rejection for an unregistered simple plugin");
+            assertTrue(message.contains("unknown simple plugin"));
+        }
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void aiCompanionRejectsUnknownSessionTest() throws ExecutionException, InterruptedException {

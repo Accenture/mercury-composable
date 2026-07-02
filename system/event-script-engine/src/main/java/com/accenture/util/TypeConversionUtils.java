@@ -75,35 +75,23 @@ public class TypeConversionUtils {
     }
 
     public static Double convertDouble(Object input){
-        return switch (input) {
-            case Double i -> i;
-            case String s -> Double.parseDouble(s);
-            default -> throw new IllegalArgumentException("Cannot convert input to double: " + input);
-        };
+        // matches the "-1 if not numeric" behavior of the deprecated ":double" type matching syntax
+        return input instanceof Double d? d : util.str2double(String.valueOf(input));
     }
 
     public static Integer convertInteger(Object input){
-        return switch (input){
-            case Integer i -> i;
-            case String s -> Integer.parseInt(s);
-            default -> throw new IllegalArgumentException("Cannot convert input to integer: " + input);
-        };
+        // matches the "-1 if not numeric" behavior of the deprecated ":int" type matching syntax
+        return input instanceof Integer i? i : util.str2int(String.valueOf(input));
     }
 
     public static Long convertLong(Object input){
-        return switch (input) {
-            case Long i -> i;
-            case String s -> Long.parseLong(s);
-            default -> throw new IllegalArgumentException("Cannot convert input to long: " + input);
-        };
+        // matches the "-1 if not numeric" behavior of the deprecated ":long" type matching syntax
+        return input instanceof Long l? l : util.str2long(String.valueOf(input));
     }
 
     public static Float convertFloat(Object input){
-        return switch (input) {
-            case Float i -> i;
-            case String s -> Float.parseFloat(s);
-            default -> throw new IllegalArgumentException("Cannot convert input to float: " + input);
-        };
+        // matches the "-1 if not numeric" behavior of the deprecated ":float" type matching syntax
+        return input instanceof Float f? f : util.str2float(String.valueOf(input));
     }
 
     public static String getTextValue(Object value) {

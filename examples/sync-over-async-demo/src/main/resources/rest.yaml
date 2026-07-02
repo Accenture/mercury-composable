@@ -25,11 +25,3 @@ rest:
     flow: 'sync-to-async-avro'
     timeout: 30s
     tracing: true
-
-  # Protobuf variant: same end-to-end path, but the Kafka legs use the Confluent Protobuf wire format.
-  - service: "http.flow.adapter"
-    methods: ['POST']
-    url: "/api/sync-to-async-protobuf"
-    flow: 'sync-to-async-protobuf'
-    timeout: 30s
-    tracing: true

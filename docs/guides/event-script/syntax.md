@@ -785,6 +785,12 @@ should apply JSON-Path only when the use case requires it.
 
 ### Simple type matching and conversion
 
+> *Deprecated*: "Simple type matching" is deprecated in favor of [Simple Plugins](#simple-plugins). It is
+  documented here only for backward compatibility. `CompileFlows` automatically converts this syntax into the
+  equivalent `Simple Plugin` call at compile time (e.g. `model.someKey:text` becomes `f:text(model.someKey)`),
+  so `TaskExecutor` never has to interpret this syntax at runtime. Existing event flow configuration files that
+  use this syntax will continue to work. New event flows should use `Simple Plugins` directly.
+
 Event script's state machine supports simple type matching and conversion for the model namespace.
 
 This "impedance matching" feature allows us to accommodate minor interface contract changes without
@@ -1498,10 +1504,13 @@ For example:
 | **Generator**       | dateTime        | None.                                                                                                                 |
 | **Generator**       | now             | text(iso), text(local) or text(ms)                                                                                    |
 | **Logical**         | eq              | At least two Objects                                                                                                  |
+| **Logical**         | ne              | At least two Objects                                                                                                  |
 | **Logical**         | isNull          | A single Object                                                                                                       |
+| **Logical**         | notNull         | A single Object                                                                                                       |
 | **Logical**         | ternary         | Three variables, the first variable must evaluate to a Boolean                                                        |
 | **Logical**         | and             | At least two boolean                                                                                                  |
 | **Logical**         | or              | At least two boolean                                                                                                  |
+| **Logical**         | not             | A single boolean                                                                                                      |
 | **Logical**         | not             | A single boolean                                                                                                      |
 | **Logical**         | gt              | Two individual whole numbers                                                                                          |
 | **Logical**         | lt              | Two individual whole numbers                                                                                          |
