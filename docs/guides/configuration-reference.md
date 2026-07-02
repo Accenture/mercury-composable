@@ -272,7 +272,6 @@ Kafka. See the [Kafka Flow Adapter guide](kafka-flow-adapter.md). The inbound ad
 | `kafka.dlq.timeout.ms` | `long` (ms) | `10000` | Confirm-write timeout for the dead-letter publish (broker ack). Flow processing has no timeout knob — the flow's own `ttl` is the deadline (Kafka is asynchronous). |
 | `kafka.flow.max.retries` | `int` | `3` | Retry attempts on a flow-processing failure before dead-lettering. |
 | `kafka.flow.retry.backoff.ms` | `long` (ms) | `500` | Pause between retry attempts. |
-| `kafka.flow.dlq.suffix` | `String` | `.dlq` | Suffix appended to a source topic to form its per-topic dead-letter topic (`<topic><suffix>`). A blank value falls back to `.dlq`. |
 | `schema.registry.url` | `String` (URL) | — | Confluent Schema Registry URL. Unset = schema features off (raw `byte[]`); set to enable the [Schema Registry integration](kafka-flow-adapter.md#schema) (JSON Schema / Avro — Protobuf is [not currently supported](kafka-flow-adapter.md#schema)). |
 | `schema.registry.cache.ttl` | duration | `30m` | Time-to-live for an entry in the in-memory (platform `ManagedCache`) cache of schemas fetched by id. Positive results only — a not-found id is never cached, so a newly-registered schema is visible immediately. The TTL bounds how long a cached schema is reused before re-fetching; `30m` lets schema changes be picked up without a pod restart (lengthen it in production where schemas change rarely). Cleared at startup (rebuildable). |
 
@@ -280,14 +279,22 @@ The Kafka **connection and security** settings (`bootstrap.servers`, `security.p
 `acks`, `auto.offset.reset`) live in the `kafka-producer.properties` / `kafka-consumer.properties` template
 files — not as `application.properties` keys — so any enterprise installation is configured by editing or
 overriding those templates. All template values support `${ENV_VAR:default}` substitution; `bootstrap.servers`
-defaults to `${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}`. The library pins the (de)serializers and the
-consumer's `enable.auto.commit=false` / `max.poll.records=1`; everything else is template-owned.
+defaults to `${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}`. The library pins the (de)serializers; the consumer's
+`enable.auto.commit` / `max.poll.records` are a per-binding overlay (see `auto-commit` below), not a global
+template setting.
 
-Per-binding fields in `kafka-flow-adapter.yaml` (all `${ENV_VAR:default}`-substitutable): `topic` (required),
-`flow` (required), `group` (optional consumer group, used verbatim; default `kafka-flow-adapter.<topic>`),
-`partition` (optional; pins one partition via manual assignment), and `schema.enabled` (optional `boolean`,
-default `false`; when `true`, decode the Confluent-framed value to a `Map` before routing — see the
-[Schema Registry integration](kafka-flow-adapter.md#schema)).
+Per-binding fields in `kafka-flow-adapter.yaml` (all `${ENV_VAR:default}`-substitutable): exactly one of
+`topic` (literal) or `topic-pattern` (regex, subscribed via `subscribe(Pattern)`) is required; `flow`
+(required); `group` (optional consumer group, used verbatim; default `kafka-flow-adapter.<topic>` for a
+literal topic, required for `topic-pattern`); `partition` (optional; pins one partition via manual
+assignment, mutually exclusive with `topic-pattern`); `schema.enabled` (optional `boolean`, default `false`;
+when `true`, decode the Confluent-framed value to a `Map` before routing — see the
+[Schema Registry integration](kafka-flow-adapter.md#schema)); `dlq-topic` (optional; pre-provisioned
+dead-letter topic for this binding, used verbatim — no DLQ if omitted); `auto-commit` (optional `boolean`,
+default `false`; `true` uses Kafka-native auto-commit instead of manual commit-after-process); and
+`max-poll-records` (optional `int`; overrides the delivery mode's default of `1` for manual-commit or `500`
+for auto-commit). See the [Kafka Flow Adapter guide](kafka-flow-adapter.md#adapter-yaml) for the full
+per-field rationale and validation rules.
 
 ---
 

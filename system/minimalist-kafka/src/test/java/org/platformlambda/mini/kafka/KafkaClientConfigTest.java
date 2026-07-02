@@ -34,7 +34,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * An empty {@link ConfigReader} is a no-op {@link ConfigBase} (every {@code getProperty(key, default)}
  * returns the default), so these load the default classpath templates (file:/tmp/... falls back to
- * classpath) and assert that the library pins the wire/at-least-once contract over whatever the template says.
+ * classpath) and assert that the library pins the wire contract over whatever the template says. The
+ * delivery-mode overlay ({@code enable.auto.commit} / {@code max.poll.records}) is applied per-binding by
+ * {@link KafkaFlowAdapter#applyDeliveryMode}, not here - see {@code KafkaFlowAdapterConfigTest}.
  */
 class KafkaClientConfigTest {
 
@@ -50,12 +52,10 @@ class KafkaClientConfigTest {
     }
 
     @Test
-    void consumerLoadsTemplateAndPinsAtLeastOnceContract() {
+    void consumerLoadsTemplateAndPinsDeserializers() {
         Properties p = KafkaClientConfig.consumerProperties(EMPTY);
         assertEquals(StringDeserializer.class.getName(), p.getProperty("key.deserializer"));
         assertEquals(ByteArrayDeserializer.class.getName(), p.getProperty("value.deserializer"));
-        assertEquals("false", p.getProperty("enable.auto.commit"));
-        assertEquals("1", p.getProperty("max.poll.records"));
         assertNotNull(p.getProperty("bootstrap.servers"));
     }
 }

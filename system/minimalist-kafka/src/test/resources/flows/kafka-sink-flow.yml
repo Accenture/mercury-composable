@@ -2,6 +2,17 @@
 # Flow reached when the Kafka flow adapter routes a message from 'mini-test-topic'. Its single task
 # records the received message so the test can assert delivery + trace continuity.
 #
+# Correlation-id: unlike an HTTP-triggered flow, do NOT use model.cid here. KafkaFlowConsumer.invokeFlow
+# starts this flow via a blocking PostOffice.request(...) (it must wait for the outcome to decide
+# commit/retry/DLQ) - and PostOffice's RPC plumbing (FutureInbox) overwrites the correlation-id with a
+# temporary id for reply-matching BEFORE the event reaches this flow, restoring the original only on the
+# caller's reply (which this adapter never inspects for that purpose). So model.cid here is RPC-internal
+# noise, not the Kafka message's correlation-id. Read it from the raw inbound header instead - the adapter
+# resolves the Kafka 'cid' header (KafkaHeaders.CORRELATION_ID) as this message's correlation-id, so
+# 'input.header.cid' carries it unchanged. If an upstream producer instead used a proprietary header (e.g.
+# a CloudEvents 'ce-id', or a custom 'x-correlation-id'), read that header name instead, for example:
+#   'input.header.x-correlation-id -> header.cid'
+#
 flow:
   id: 'kafka-sink-flow'
   description: 'Record a Kafka message routed by the flow adapter'
@@ -13,6 +24,8 @@ tasks:
   - input:
       - 'input.body -> *'
       - 'input.header.cid -> header.cid'
+      # To use a proprietary upstream header instead, replace the mapping above with, for example:
+      #   'input.header.x-correlation-id -> header.cid'
     process: 'kafka.test.sink'
     output:
       - 'result -> output.body'

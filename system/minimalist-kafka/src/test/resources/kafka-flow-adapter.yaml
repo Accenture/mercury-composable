@@ -8,6 +8,9 @@ consumer:
     group: '${KAFKA_TEST_CONSUMER_GROUP:mini-test-group}'
     # partition: 0                      # optional; pins this partition (manual assign, no group rebalancing)
     # partition: '${POD_PARTITION}'     # or per-pod via env substitution
+    # dlq-topic: 'mini-test-topic-dlq'  # optional; pre-provisioned DLQ topic - no DLQ if omitted
+    # auto-commit: true                 # optional; trades pod-death redelivery for throughput
+    # max-poll-records: 500             # optional; only meaningful with auto-commit (its own default when set)
   # Schema-aware binding: decode Confluent-framed values to a Map before routing into the flow.
   - topic: 'schema-test-topic'
     flow: 'schema-sink-flow'
@@ -19,3 +22,10 @@ consumer:
     flow: 'schema-sink-flow'
     group: 'avro-test-group'
     schema.enabled: true
+  # Regex subscription example (commented out - topic-pattern is mutually exclusive with 'topic', and
+  # 'group' is required since no sensible default exists for a regex string). Matches any topic like
+  # 'events.de', 'events.fr', etc.; one 'dlq-topic' covers every matched topic, not one DLQ per topic.
+  # - topic-pattern: 'events\.[a-z]{2}'
+  #   flow: 'kafka-sink-flow'
+  #   group: 'region-events-group'
+  #   dlq-topic: 'region-events-dlq'

@@ -40,9 +40,10 @@ import java.util.Properties;
  * the {@code kafka.producer.properties} / {@code kafka.consumer.properties} application settings.
  *
  * <p>Only the parameters the library's contract depends on are <b>pinned in code</b> (and override
- * whatever the template says): the {@code String}/{@code byte[]} (de)serializers (the wire contract), and -
- * for the consumer - {@code enable.auto.commit=false} and {@code max.poll.records=1} (the at-least-once,
- * commit-after-process contract). The per-topic {@code group.id} is set by {@link KafkaFlowAdapter}.</p>
+ * whatever the template says): the {@code String}/{@code byte[]} (de)serializers (the wire contract).
+ * The per-topic {@code group.id}, plus the per-binding delivery-mode overlay ({@code enable.auto.commit}
+ * and {@code max.poll.records}, driven by each binding's {@code auto-commit}/{@code max-poll-records}), are
+ * applied by {@link KafkaFlowAdapter#newConsumer}.</p>
  */
 public final class KafkaClientConfig {
 
@@ -64,16 +65,14 @@ public final class KafkaClientConfig {
     }
 
     /**
-     * Base consumer config from the template, with the wire-contract deserializers and the at-least-once
-     * settings pinned. The caller ({@link KafkaFlowAdapter}) adds a per-topic {@code group.id}.
+     * Base consumer config from the template, with only the wire-contract deserializers pinned. The caller
+     * ({@link KafkaFlowAdapter#newConsumer}) adds a per-topic {@code group.id} and the binding's
+     * delivery-mode overlay ({@code enable.auto.commit} / {@code max.poll.records}).
      */
     public static Properties consumerProperties(ConfigBase appConfig) {
         Properties p = load(appConfig.getProperty(CONSUMER_LOCATION, DEFAULT_CONSUMER));
         p.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         p.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
-        // commit-after-process, one message at a time -> at-least-once (see KafkaFlowConsumer)
-        p.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-        p.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "1");
         return p;
     }
 

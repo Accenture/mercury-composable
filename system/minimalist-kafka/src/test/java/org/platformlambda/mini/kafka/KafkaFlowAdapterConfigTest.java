@@ -26,8 +26,10 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Validates that the flow adapter rejects malformed {@code consumer} config loudly (fail-fast) instead
@@ -36,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class KafkaFlowAdapterConfigTest {
 
-    private static final RetryPolicy POLICY = new RetryPolicy(0, 0, ".dlq", null);
+    private static final RetryPolicy POLICY = new RetryPolicy(0, 0, null);
 
     private static ConfigReader config(Object consumerSection) {
         ConfigReader reader = new ConfigReader();
@@ -77,6 +79,51 @@ class KafkaFlowAdapterConfigTest {
     }
 
     @Test
+    void rejectsBothTopicAndTopicPattern() {
+        ConfigReader config = config(List.of(Map.of("topic", "orders", "topic-pattern", "orders-.*",
+                "flow", "f", "group", "g")));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
+    void rejectsPatternWithPartition() {
+        ConfigReader config = config(List.of(Map.of("topic-pattern", "events\\.[a-z]{2}",
+                "flow", "f", "group", "g", "partition", 0)));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
+    void rejectsInvalidRegexPattern() {
+        ConfigReader config = config(List.of(Map.of("topic-pattern", "events\\.[a-z", "flow", "f", "group", "g")));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
+    void rejectsPatternWithoutExplicitGroup() {
+        ConfigReader config = config(List.of(Map.of("topic-pattern", "events\\.[a-z]{2}", "flow", "f")));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
+    void rejectsDlqTopicEqualToSourceTopic() {
+        ConfigReader config = config(List.of(Map.of("topic", "orders", "flow", "f", "dlq-topic", "orders")));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
+    void rejectsDlqTopicMatchingSourcePattern() {
+        ConfigReader config = config(List.of(Map.of("topic-pattern", "events\\.[a-z]{2}", "flow", "f",
+                "group", "g", "dlq-topic", "events.de")));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
+    void rejectsNonPositiveMaxPollRecords() {
+        ConfigReader config = config(List.of(Map.of("topic", "orders", "flow", "f", "max-poll-records", 0)));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
     void rejectsEntryMissingFlow() {
         ConfigReader config = config(List.of(Map.of("topic", "t")));
         assertThrows(IllegalArgumentException.class, () -> build(config));
@@ -92,20 +139,96 @@ class KafkaFlowAdapterConfigTest {
     void usesExplicitGroupExactly() {
         assertEquals("sales-order-group",
                 KafkaFlowAdapter.resolveGroupId(
-                        Map.of("topic", "orders", "flow", "f", "group", "sales-order-group"), "orders"),
+                        Map.of("topic", "orders", "flow", "f", "group", "sales-order-group"), "orders", false),
                 "an administratively-assigned group id is used verbatim, no suffix");
     }
 
     @Test
     void defaultsGroupPerTopicWhenOmitted() {
         assertEquals("kafka-flow-adapter.orders",
-                KafkaFlowAdapter.resolveGroupId(Map.of("topic", "orders", "flow", "f"), "orders"));
+                KafkaFlowAdapter.resolveGroupId(Map.of("topic", "orders", "flow", "f"), "orders", false));
     }
 
     @Test
     void blankGroupFallsBackToDefault() {
         assertEquals("kafka-flow-adapter.orders",
-                KafkaFlowAdapter.resolveGroupId(Map.of("topic", "orders", "flow", "f", "group", "  "), "orders"));
+                KafkaFlowAdapter.resolveGroupId(
+                        Map.of("topic", "orders", "flow", "f", "group", "  "), "orders", false));
+    }
+
+    @Test
+    void patternBindingRequiresExplicitGroup() {
+        assertThrows(IllegalArgumentException.class, () -> KafkaFlowAdapter.resolveGroupId(
+                Map.of("topic-pattern", "events\\.[a-z]{2}", "flow", "f"), null, true));
+    }
+
+    @Test
+    void patternBindingUsesExplicitGroupExactly() {
+        assertEquals("region-events-group", KafkaFlowAdapter.resolveGroupId(
+                Map.of("topic-pattern", "events\\.[a-z]{2}", "flow", "f", "group", "region-events-group"),
+                null, true));
+    }
+
+    @Test
+    void resolvesExplicitDlqTopic() {
+        assertEquals("orders-poison", KafkaFlowAdapter.resolveDlqTopic(
+                Map.of("dlq-topic", "orders-poison"), 0, "topic 'orders'", "orders", null));
+    }
+
+    @Test
+    void absentDlqTopicIsNull() {
+        assertNull(KafkaFlowAdapter.resolveDlqTopic(Map.of(), 0, "topic 'orders'", "orders", null));
+    }
+
+    @Test
+    void isAutoCommitParsesBooleanFlag() {
+        assertTrue(KafkaFlowAdapter.isAutoCommit(Map.of("auto-commit", "true")));
+        assertFalse(KafkaFlowAdapter.isAutoCommit(Map.of()));
+        assertFalse(KafkaFlowAdapter.isAutoCommit(Map.of("auto-commit", "false")));
+    }
+
+    @Test
+    void parsesMaxPollRecordsWhenPresent() {
+        assertEquals(500, KafkaFlowAdapter.parseMaxPollRecords("500"));
+        assertEquals(500, KafkaFlowAdapter.parseMaxPollRecords(500));
+    }
+
+    @Test
+    void absentMaxPollRecordsIsNull() {
+        assertNull(KafkaFlowAdapter.parseMaxPollRecords(null));
+    }
+
+    @Test
+    void rejectsNonIntegerMaxPollRecords() {
+        assertThrows(IllegalArgumentException.class, () -> KafkaFlowAdapter.parseMaxPollRecords("abc"));
+    }
+
+    @Test
+    void manualCommitModeDefaultsMaxPollRecordsToOne() {
+        Properties p = new Properties();
+        KafkaConsumerBinding binding = KafkaConsumerBinding.builder().topic("orders").flowId("f").build();
+        KafkaFlowAdapter.applyDeliveryMode(p, binding);
+        assertEquals("false", p.getProperty("enable.auto.commit"));
+        assertEquals("1", p.getProperty("max.poll.records"));
+    }
+
+    @Test
+    void autoCommitModeDefaultsMaxPollRecordsTo500() {
+        Properties p = new Properties();
+        KafkaConsumerBinding binding =
+                KafkaConsumerBinding.builder().topic("orders").flowId("f").autoCommit(true).build();
+        KafkaFlowAdapter.applyDeliveryMode(p, binding);
+        assertEquals("true", p.getProperty("enable.auto.commit"));
+        assertEquals("500", p.getProperty("max.poll.records"));
+    }
+
+    @Test
+    void explicitMaxPollRecordsOverridesModeDefault() {
+        Properties p = new Properties();
+        KafkaConsumerBinding binding = KafkaConsumerBinding.builder().topic("orders").flowId("f")
+                .autoCommit(true).maxPollRecords(50).build();
+        KafkaFlowAdapter.applyDeliveryMode(p, binding);
+        assertEquals("50", p.getProperty("max.poll.records"));
     }
 
     @Test

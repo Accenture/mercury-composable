@@ -20,21 +20,19 @@ package org.platformlambda.mini.kafka;
 
 /**
  * How a {@link KafkaFlowConsumer} handles a flow-processing failure: retry a bounded number of times,
- * then route the un-processable message to a <b>per-topic</b> dead-letter topic before committing, so a
- * poison message is neither lost nor reprocessed forever.
+ * then route the un-processable message to the binding's configured dead-letter topic before committing,
+ * so a poison message is neither lost nor reprocessed forever.
  *
- * <p>The DLQ is strictly per source topic ({@code <topic><dlqSuffix>}) - a shared/global DLQ is an
- * anti-pattern, because mixing many source schemas into one topic makes reprocessing (the whole point of a
- * DLQ) hard. Only the suffix is configurable, since conventions vary across orgs ({@code .dlq},
- * {@code -dlq}, {@code -DLQ}, Spring's {@code .DLT}).</p>
+ * <p>The DLQ topic itself is a per-{@link KafkaConsumerBinding} concern ({@code dlq-topic} in
+ * {@code kafka-flow-adapter.yaml}), not part of this shared/global policy - this record only carries the
+ * retry/backoff shape and the publisher used to write to whichever DLQ topic the binding configured.</p>
  *
  * @param maxRetries          extra attempts after the first failure (0 = no retry, straight to DLQ).
  * @param backoffMs           pause between attempts in milliseconds (0 = retry immediately).
- * @param dlqSuffix           suffix appended to the source topic to form its DLQ topic (e.g. {@code .dlq});
- *                            a blank suffix falls back to {@code .dlq} so the DLQ can never equal the source.
- * @param deadLetterPublisher the shared publisher used to park exhausted messages on the DLQ topic;
- *                            may be {@code null}, in which case the message is not committed (it redelivers).
+ * @param deadLetterPublisher the shared publisher used to park exhausted messages on a DLQ topic; may be
+ *                            {@code null}, in which case a dead-letter write is skipped and the message is
+ *                            dropped with a logged {@code ERROR} (the offset still commits, to avoid a
+ *                            redelivery storm - see {@link KafkaFlowConsumer#writeToDeadLetter}).
  */
-public record RetryPolicy(int maxRetries, long backoffMs, String dlqSuffix,
-                          KafkaRequestPublisher deadLetterPublisher) {
+public record RetryPolicy(int maxRetries, long backoffMs, KafkaRequestPublisher deadLetterPublisher) {
 }
