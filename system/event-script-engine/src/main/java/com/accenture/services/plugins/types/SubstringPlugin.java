@@ -32,6 +32,9 @@ public class SubstringPlugin implements PluginFunction {
 
     @Override
     public Object calculate(Object... input) {
+        if (input.length == 0) {
+            throw new IllegalArgumentException("Input is required for substring");
+        }
         String value = TypeConversionUtils.getTextValue(input[0]);
         int start = (input.length > 1)?  TypeConversionUtils.convertInteger(input[1]) : -1;
         int end = (input.length > 2)?  TypeConversionUtils.convertInteger(input[2]) : -1;

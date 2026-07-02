@@ -39,6 +39,6 @@ public class SubtractNumbers implements PluginFunction {
         }
         return SimplePluginUtils.promoteInput(input)
                 .reduce((a,b) -> a - b)
-                .orElseThrow(() -> new IllegalStateException("Could not add the input: " + Arrays.toString(input)));
+                .orElseThrow(() -> new IllegalArgumentException("Could not subtract the input: " + Arrays.toString(input)));
     }
 }

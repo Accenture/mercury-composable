@@ -41,6 +41,6 @@ public class ModulusNumbers implements PluginFunction {
         return SimplePluginUtils.promoteInput(input)
                 .reduce((l1, l2) -> l1 % l2)
                 .orElseThrow(() ->
-                        new IllegalStateException("Could not get modulus for the input: " + Arrays.toString(input)));
+                        new IllegalArgumentException("Could not get modulus for the input: " + Arrays.toString(input)));
     }
 }

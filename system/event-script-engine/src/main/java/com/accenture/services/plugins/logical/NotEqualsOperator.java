@@ -37,9 +37,7 @@ public class NotEqualsOperator implements PluginFunction {
         if (input.length < 2) {
             throw new IllegalArgumentException("Input is required to check for inequality");
         }
-        boolean allEqual = (Boolean) Arrays.stream(input)
-                .reduce(Objects::equals)
-                .orElse(false);
-        return !allEqual;
+        Object first = input[0];
+        return Arrays.stream(input).skip(1).anyMatch(v -> !Objects.equals(first, v));
     }
 }

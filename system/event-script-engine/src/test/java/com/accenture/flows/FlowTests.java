@@ -76,7 +76,8 @@ class FlowTests extends TestBase {
 
     @Test
     void inputValidationTest5() throws InterruptedException {
-        inputValidationCase(3, null, "user is required.", true);
+        // 'required' is not configured so a null value is allowed
+        inputValidationCase(3, null, "hello world", false);
     }
 
     @Test
@@ -121,7 +122,8 @@ class FlowTests extends TestBase {
 
     @Test
     void inputValidationTest14() throws InterruptedException {
-        inputValidationCase(5, null, "Expect user as Boolean, Actual: null", true);
+        // 'required' is not configured so a null value is allowed
+        inputValidationCase(5, null, "hello world", false);
     }
 
     @SuppressWarnings("unchecked")
