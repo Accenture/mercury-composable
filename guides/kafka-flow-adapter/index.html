@@ -359,7 +359,7 @@ parameters its contract depends on and lets the template own everything else:</p
 </table>
 <p><code>bootstrap.servers</code> is template-only via <code>${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}</code>. The byte[] wire
 contract keeps the building blocks serializer-free; richer encodings layer on top via the
-<a href="#schema">Schema Registry integration</a> (JSON Schema / Avro / Protobuf), opt-in per binding.</p>
+<a href="#schema">Schema Registry integration</a> (JSON Schema / Avro), opt-in per binding.</p>
 <h2 id="reliability">Reliability: at-least-once, retry, and dead-letter</h2>
 <p>The consumer commits offsets <strong>only after</strong> the flow finishes a message, one message at a time
 (<code>max.poll.records=1</code>). If the instance crashes before the commit, Kafka redelivers — the deliberate
@@ -413,7 +413,18 @@ notification hops are the bridge spans. See <a href="../observability/">Observab
 <p>The default wire contract is raw <code>byte[]</code>, which keeps the building blocks serializer-free. To interoperate
 with existing Confluent client projects, the library can also speak the <strong>Confluent Schema Registry wire
 format</strong> — <code>[magic 0x00][4-byte global schema id][payload]</code> — using Confluent's <em>own</em> serializers as a
-library (not a reinvented codec). <strong>JSON Schema, Avro, and Protobuf</strong> are supported.</p>
+library (not a reinvented codec). <strong>JSON Schema and Avro</strong> are supported.</p>
+<blockquote>
+<p><strong>Protobuf is not currently supported.</strong> It was implemented and demoed in an earlier development phase but
+removed before its first release: Confluent's <code>kafka-protobuf-provider</code> depends on
+<code>com.squareup.wire:wire-runtime-jvm</code>, a <strong>discontinued</strong> artifact carrying an unpatched denial-of-service CVE
+(<a href="https://github.com/square/wire/security/advisories/GHSA-7xpr-hc2w-34m9">CVE-2026-45799 / GHSA-7xpr-hc2w-34m9</a>)
+with no fix available anywhere in that coordinate — Wire's maintainers will not patch it, and Confluent has
+not adopted the renamed <code>wire-runtime</code> replacement as of <code>kafka-protobuf-provider:8.3.0</code>. This is a tracked
+backlog item, not an abandoned one: it gets re-wired once Confluent moves, or sooner for a specific field
+installation that explicitly needs Protobuf and accepts the residual risk. <code>SchemaType.PROTOBUF</code> is still
+recognized internally so a misconfigured attempt fails clearly (<code>UnsupportedOperationException</code>), not silently.</p>
+</blockquote>
 <p>Set <code>schema.registry.url</code> to turn the feature on (point it at a real Confluent registry or the local
 <a href="../schema-registry-mock/"><code>schema-registry-standalone</code></a> mock). When it is unset, schema features stay off and
 the library keeps its raw <code>byte[]</code> behavior.</p>
@@ -432,7 +443,7 @@ schema.registry.cache.ttl=30m                          # TTL for the in-memory s
 <tbody>
 <tr>
 <td><code>subject</code></td>
-<td>The registry <strong>subject</strong> to serialize against. The schema must be <strong>pre-registered</strong>; the producer resolves the subject to a global schema id (and its type — <code>JSON</code>, <code>AVRO</code>, or <code>PROTOBUF</code>) from the registry and never registers.</td>
+<td>The registry <strong>subject</strong> to serialize against. The schema must be <strong>pre-registered</strong>; the producer resolves the subject to a global schema id (and its type — <code>JSON</code> or <code>AVRO</code>) from the registry and never registers.</td>
 </tr>
 <tr>
 <td><code>version</code></td>
@@ -476,12 +487,12 @@ schema-fed flow task simply takes <code>Map&lt;String,Object&gt;</code> instead 
 immediately via the <a href="#reliability">DLQ path</a> rather than retried.</p>
 <h3 id="schema-notes">Notes</h3>
 <ul>
-<li><strong>One subject-driven path, three formats.</strong> The producer and consumer are type-generic; only the <code>subject</code>
+<li><strong>One subject-driven path, two formats.</strong> The producer and consumer are type-generic; only the <code>subject</code>
   (and the registered schema behind it) differ — the producer reads the schema type from the registry, so the
-  flow never names it. JSON Schema is <em>open</em> (<code>additionalProperties</code>), while Avro and
-  Protobuf records are <em>closed-shape</em> — a message must match the declared fields, and a non-schema field is
-  dropped on the wire. Avro applies declared field defaults for absent fields; Protobuf relies on proto3
-  implicit defaults. Avro/Protobuf decode to generic records (no generated classes), rendered to a <code>Map</code>.</li>
+  flow never names it. JSON Schema is <em>open</em> (<code>additionalProperties</code>), while Avro records are <em>closed-shape</em> —
+  a message must match the declared fields, and a non-schema field is dropped on the wire. Avro applies
+  declared field defaults for absent fields, and decodes to a generic record (no generated classes), rendered
+  to a <code>Map</code>.</li>
 <li><strong>Schema cache.</strong> Lookups by id are cached <strong>in memory</strong> (platform <code>ManagedCache</code>, TTL
   <code>schema.registry.cache.ttl</code>, default <code>30m</code>) to cut registry round-trips. A global schema id is immutable, so
   a cache hit is always the right schema. <strong>Positive results only</strong> — a not-found id is never cached, so a
@@ -494,8 +505,8 @@ immediately via the <a href="#reliability">DLQ path</a> rather than retried.</p>
   new version is registered, so it is cached on a <strong>short TTL</strong> and re-resolved frequently, picking up a new
   current version without a restart. Pin a version in production paths where the schema must not shift
   underneath you; use <code>latest</code> in dev / lower environments where tracking the newest schema is convenient.</li>
-<li><strong>Worked example.</strong> The <a href="../sync-over-async/">sync-over-async demo</a> runs the same end-to-end flow over all
-  three formats (<code>json-topic-1/2</code>, <code>avro-topic-1/2</code>, <code>protobuf-topic-1/2</code>) alongside the raw <code>byte[]</code> path.</li>
+<li><strong>Worked example.</strong> The <a href="../sync-over-async/">sync-over-async demo</a> runs the same end-to-end flow over both
+  formats (<code>json-topic-1/2</code>, <code>avro-topic-1/2</code>) alongside the raw <code>byte[]</code> path.</li>
 </ul>
 <h2 id="config">Configuration keys</h2>
 <p>All keys are documented in the <a href="../configuration-reference/#kafka-flow-adapter">Configuration Reference</a>.

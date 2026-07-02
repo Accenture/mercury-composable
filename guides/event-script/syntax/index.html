@@ -1080,6 +1080,13 @@ JSON-Path retrieval method in the left-hand-side for input/output data mapping.<
 <p>Note that the basic retrieval method is more efficient than the JSON-Path method. Therefore, you
 should apply JSON-Path only when the use case requires it. </p>
 <h3 id="simple-type-matching-and-conversion">Simple type matching and conversion</h3>
+<blockquote>
+<p><em>Deprecated</em>: "Simple type matching" is deprecated in favor of <a href="#simple-plugins">Simple Plugins</a>. It is
+  documented here only for backward compatibility. <code>CompileFlows</code> automatically converts this syntax into the
+  equivalent <code>Simple Plugin</code> call at compile time (e.g. <code>model.someKey:text</code> becomes <code>f:text(model.someKey)</code>),
+  so <code>TaskExecutor</code> never has to interpret this syntax at runtime. Existing event flow configuration files that
+  use this syntax will continue to work. New event flows should use <code>Simple Plugins</code> directly.</p>
+</blockquote>
 <p>Event script's state machine supports simple type matching and conversion for the model namespace.</p>
 <p>This "impedance matching" feature allows us to accommodate minor interface contract changes without
 refactoring business logic of a user function.</p>
@@ -1789,7 +1796,17 @@ constant as a model variable and apply the model variable as an argument to a pl
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">ne</td>
+<td style="text-align: left;">At least two Objects</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
 <td style="text-align: left;">isNull</td>
+<td style="text-align: left;">A single Object</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">notNull</td>
 <td style="text-align: left;">A single Object</td>
 </tr>
 <tr>
@@ -1806,6 +1823,11 @@ constant as a model variable and apply the model variable as an argument to a pl
 <td style="text-align: left;"><strong>Logical</strong></td>
 <td style="text-align: left;">or</td>
 <td style="text-align: left;">At least two boolean</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">not</td>
+<td style="text-align: left;">A single boolean</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Logical</strong></td>

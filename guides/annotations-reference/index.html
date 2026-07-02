@@ -694,8 +694,9 @@ public class MainApp implements EntryPoint {
 <li>The static <code>main</code> method should contain only <code>AutoStart.main(args)</code>. All initialization
   logic belongs in <code>start()</code>.</li>
 <li>Can be combined with <code>@OptionalService</code> for conditional activation.</li>
-<li>In Spring Boot apps (<code>rest-spring-3</code>) execution is deferred until the HTTP server
-  completes startup.</li>
+<li>In Spring Boot apps (<code>rest-spring-3</code>/<code>rest-spring-4</code>), execution is deferred until Spring
+  Boot itself fires <code>ApplicationReadyEvent</code> — see
+  <a href="../architecture/#application-lifecycle">Application Lifecycle</a> for the full sequence.</li>
 </ul>
 <hr />
 <h2 id="beforeapplication">@BeforeApplication</h2>
@@ -720,7 +721,7 @@ generating X.509 certificates before the rest of the application starts.</p>
 <td><code>sequence</code></td>
 <td><code>int</code></td>
 <td><code>10</code></td>
-<td>Execution order. Range 1–999. Sequences 0 and 2 are reserved by the framework.</td>
+<td>Execution order. Range 1–999. Sequence 0 is reserved by the framework.</td>
 </tr>
 </tbody>
 </table>
@@ -743,10 +744,15 @@ public class EnvSetup implements EntryPoint {
 </code></pre>
 <h3 id="notes_3">Notes</h3>
 <ul>
-<li><strong>Reserved sequences</strong>: <code>0</code> is used by <code>EssentialServiceLoader</code>; <code>2</code> is used by the
-  Event Script engine. User code should use sequences 3–999 (or 1 if it must run before
-  all framework modules).</li>
-<li>Execution order: <code>@BeforeApplication</code> → <code>@PreLoad</code> registration → <code>@MainApplication</code>.</li>
+<li><strong>Reserved sequences</strong>: <code>0</code> is used by <code>EssentialServiceLoader</code>; <code>5</code> is used by
+  <code>event-script-engine</code>'s <code>CompileFlows</code> (flow YAML compile-time validation); <code>6</code> is used
+  by <code>minigraph-playground-engine</code>'s <code>CompileGraph</code> (opt-in graph-model validation,
+  deliberately placed right after <code>CompileFlows</code> since it reuses the same syntax
+  converter). User code should use sequences 3–999 (or 1 if it must run before all
+  framework modules).</li>
+<li>Execution order: <code>@BeforeApplication</code> → <code>@PreLoad</code> registration → HTTP server startup →
+  <code>@MainApplication</code> — see <a href="../architecture/#application-lifecycle">Application Lifecycle</a>
+  for the full sequence, including how Spring Boot deployments defer <code>@MainApplication</code>.</li>
 <li>Can be combined with <code>@OptionalService</code>.</li>
 </ul>
 <hr />

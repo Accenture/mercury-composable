@@ -71,6 +71,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#distributed-architecture">Distributed Architecture</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#application-lifecycle">Application Lifecycle</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#key-annotations-reference">Key Annotations Reference</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#key-configuration-files">Key Configuration Files</a>
@@ -493,6 +495,39 @@ reached via internal cluster DNS without requiring an ingress.</p>
 publishes public-function routes to the distributed registry and bridges inter-instance events
 through Kafka. Functions with <code>isPrivate = false</code> become reachable by any instance in the mesh.
 Calling code uses the same <code>PostOffice</code> API whether the target is local or remote.</p>
+<hr />
+<h2 id="application-lifecycle">Application Lifecycle</h2>
+<p>Startup order matters as much as request-time behavior does, but it is easy to lose track of because it
+spans platform-core (<code>AutoStart</code> / <code>AppStarter</code>) and, for Spring Boot deployments, the framework's Spring
+integration too. From <code>AutoStart.main()</code> — the universal entry point — the sequence is:</p>
+<ol>
+<li><strong><code>@BeforeApplication</code></strong> classes run first, ordered by their <code>sequence</code> (0–999, lower first). This is
+   where platform machinery does its validation/compilation work before anything is registered or served
+   — for example, <code>event-script-engine</code>'s <code>CompileFlows</code> (<code>sequence=5</code>) parses and validates every flow
+   YAML, and <code>minigraph-playground-engine</code>'s <code>CompileGraph</code> (<code>sequence=6</code>, deliberately placed right after
+   <code>CompileFlows</code> because it reuses the same deprecated-syntax converter) validates opt-in graph models.
+   <code>0</code> is reserved for <code>EssentialServiceLoader</code>; user code should use <code>3</code>–<code>999</code> (or <code>1</code> to run before all
+   framework modules — see <a href="../annotations-reference/#beforeapplication"><code>@BeforeApplication</code></a>).</li>
+<li><strong><code>@PreLoad</code></strong> composable functions are registered next — every function annotated with <code>@PreLoad</code> is
+   scanned and bound to its route(s) in the Platform's routing table, becoming callable via <code>PostOffice</code>/
+   <code>EventEmitter</code> from this point on.</li>
+<li><strong>The reactive HTTP/WebSocket server starts</strong>, if <code>rest.automation=true</code> in <code>application.properties</code>
+   (default <code>false</code>) or a <code>@WebSocketService</code> is registered — REST endpoints are compiled from
+   <code>rest.yaml</code>, and the Vert.x server begins listening.</li>
+<li><strong><code>@MainApplication</code></strong> runs last — but <em>when</em> depends on whether Spring Boot is in the build:</li>
+<li><strong>No Spring Boot</strong>: <code>AppStarter</code> runs <code>@MainApplication</code> classes immediately, in the same pass as
+     steps 1–3.</li>
+<li><strong>Spring Boot</strong> (detected via the <code>spring.boot.main</code> config property, e.g. <code>RestServer</code> in
+     <code>rest-spring-3</code>/<code>rest-spring-4</code>): <code>AppStarter</code> completes steps 1–3, then hands off to Spring Boot's
+     own <code>main()</code>, which runs its full bootstrap (bean creation, its own embedded server if used)
+     independently. Only once Spring Boot fires <code>ApplicationReadyEvent</code> does the framework's <code>AppLoader</code>
+     component autowire Spring dependencies into the already-registered composable functions and <em>then</em>
+     call <code>AppStarter.runMainApp()</code> — so <code>@MainApplication</code> genuinely runs after Spring Boot finishes, not
+     before or during it.</li>
+</ol>
+<p>This ordering is why a flow YAML is fully parsed and validated (step 1) before any HTTP request could
+possibly reach it (step 3), and why a composable function can safely assume every other <code>@PreLoad</code>
+function's route already exists by the time its own <code>@MainApplication</code> logic runs.</p>
 <hr />
 <h2 id="key-annotations-reference">Key Annotations Reference</h2>
 <table>
