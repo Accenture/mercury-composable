@@ -239,6 +239,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
         }
         EventEnvelope forward = new EventEnvelope();
         forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, binding.flowId())
+                .setHeader(EventScriptManager.CORRELATION_ID, correlationId)
                 .setCorrelationId(correlationId).setBody(dataset)
                 .setTraceId(traceId).setTracePath(tracePath);
         if (trace != null) {

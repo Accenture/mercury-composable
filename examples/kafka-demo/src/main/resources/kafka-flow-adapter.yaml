@@ -6,4 +6,5 @@ consumer:
   - topic: 'demo.inbound'
     flow: 'kafka-demo-flow'
     group: '${KAFKA_DEMO_CONSUMER_GROUP:kafka-demo-group}'
+    dlq-topic: 'demo.inbound.dlq'      # pre-provision this topic to exercise the failure path
     # partition: 0                    # optional; pins one partition (manual assign, no group rebalancing)

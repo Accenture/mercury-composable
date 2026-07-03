@@ -30,6 +30,7 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import com.accenture.automation.EventScriptManager;
 import org.platformlambda.core.models.EventEnvelope;
 import org.junit.jupiter.api.Test;
 
@@ -247,6 +248,29 @@ class KafkaFlowConsumerTest {
 
         assertTrue(committed.get(tp) == null, "auto-commit mode must not manually commit - Kafka's own "
                 + "periodic timer owns offset commits, not KafkaFlowConsumer");
+    }
+
+    @Test
+    void businessCorrelationIdSurvivesRpcRequestPlumbing() {
+        // EventScriptManager reads the business cid from the "correlation_id" HEADER, not from
+        // EventEnvelope.getCorrelationId() (that field is overwritten by PostOffice.request's RPC inbox
+        // plumbing before EventScriptManager ever sees the envelope) - so the forward envelope must carry
+        // both, mirroring FlowExecutor.request's established pattern.
+        EventEnvelope[] captured = new EventEnvelope[1];
+        RetryPolicy policy = new RetryPolicy(0, 0, null);
+        KafkaFlowConsumer consumer = new KafkaFlowConsumer(null, binding().build(), 1000, policy, null) {
+            @Override
+            EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath) {
+                captured[0] = forward;
+                return new EventEnvelope().setStatus(200);
+            }
+        };
+
+        consumer.routeToFlow(inboundRecord());
+
+        assertEquals("cid-1", captured[0].getHeader(EventScriptManager.CORRELATION_ID),
+                "the business correlation-id must ride the header EventScriptManager actually reads");
+        assertEquals("cid-1", captured[0].getCorrelationId());
     }
 
     @Test

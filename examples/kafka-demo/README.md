@@ -110,6 +110,6 @@ carried unchanged.) If the publisher sends no `traceparent`, the flow simply sta
 
 - Point at a different broker with `export KAFKA_BOOTSTRAP_SERVERS=host:port` (both the Java app and the
   Node programs honor it).
-- On repeated processing failure, a message is dead-lettered to `demo.inbound.dlq` (per
-  `kafka.flow.dlq.suffix`); pre-create that topic if you want to exercise the failure path. The happy path
-  never touches it.
+- On repeated processing failure, a message is dead-lettered to `demo.inbound.dlq` (the binding's configured
+  `dlq-topic` in `kafka-flow-adapter.yaml`); pre-create that topic if you want to exercise the failure path.
+  The happy path never touches it.
