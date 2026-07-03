@@ -75,6 +75,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String OUTPUT_BODY = "output.body";
     private static final String OUTPUT_HEADER = "output.header";
     private static final String MODEL = "model";
+    // Read-only reserved header exposing the flow's correlation-id (model.cid) to every function task.
+    private static final String MY_CORRELATION_ID = "my_correlation_id";
     private static final String RESULT = "result";
     private static final String DATA_TYPE = "datatype";
     private static final String HEADER = "header";
@@ -949,6 +951,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                                                 .setReplyTo(TaskExecutor.SERVICE_NAME)
                                                 .setHeader(PARENT, flowInstance.id)
                                                 .setHeader(FLOW_ID, flowId).setBody(dataset)
+                                                // sub-flow inherits the parent's business correlation-id (model.cid)
+                                                .setHeader(EventScriptManager.CORRELATION_ID, flowInstance.correlationId)
                                                 .setCorrelationId(compositeCid)
                                                 .setSpanId(parentSpanId);
             var po = new PostOffice(functionRoute, flowInstance.getTraceId(), flowInstance.getTracePath());
@@ -959,7 +963,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             var event = new EventEnvelope().setTo(functionRoute).setReplyTo(TaskExecutor.SERVICE_NAME)
                                             .setCorrelationId(compositeCid)
                                             .setBody(unwrapBodyIfWildcard(md))
-                                            .setSpanId(parentSpanId);
+                                            .setSpanId(parentSpanId)
+                                            // expose the flow's business correlation-id (model.cid) as a read-only header
+                                            .setHeader(MY_CORRELATION_ID, flowInstance.correlationId);
             md.optionalHeaders.forEach(event::setHeader);
             // execute task by sending event
             if (deferred > 0) {

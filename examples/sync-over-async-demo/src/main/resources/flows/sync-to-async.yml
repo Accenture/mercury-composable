@@ -8,9 +8,8 @@
 #   3. sync.await                - block until the backend's reply arrives via 'soa.response' + the Redis
 #                                  return route; return HTTP 200 with the body, or raise 408 on timeout.
 #
-# Correlation-id: model.cid is the framework-assigned trace/correlation ID (from the first matching HTTP
-# header in trace.http.header, e.g. X-Correlation-Id, X-Trace-Id, or traceparent for OTel, or a generated
-# UUID). It is passed to sync.prepare via 'model.cid -> header.cid'. To use a proprietary upstream header
+# Correlation-id: model.cid is the business correlation-id captured at the edge (from the configured
+# http.correlation.id.header, default X-Correlation-Id, or a fresh UUID). It is passed to sync.prepare via 'model.cid -> header.cid'. To use a proprietary upstream header
 # instead, replace that mapping with 'input.header.<your-header> -> header.cid', for example:
 #   'input.header.x-b3-traceid -> header.cid'   (Zipkin / B3 tracing)
 #   'input.header.x-request-id -> header.cid'   (NGINX / Kong / AWS ALB)

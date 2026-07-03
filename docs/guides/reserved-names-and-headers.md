@@ -104,17 +104,23 @@ as an exception handler. For more details, refer to [Event Script Syntax](event-
 The following event headers are injected by the system as READ only metadata. They are available from the
 input "headers". However, they are not part of the EventEnvelope.
 
-| Header        | Purpose                                    | 
-|:--------------|:-------------------------------------------|
-| my_route      | route name of your function                |
-| my_trace_id   | trace ID, if any, for the incoming event   |
-| my_trace_path | trace path, if any, for the incoming event | 
+| Header            | Purpose                                                             |
+|:------------------|:-------------------------------------------------------------------|
+| my_route          | route name of your function                                        |
+| my_trace_id       | trace ID, if any, for the incoming event                          |
+| my_trace_path     | trace path, if any, for the incoming event                        |
+| my_correlation_id | business correlation-id, if any (the flow's `model.cid`)          |
+
+These are READ only. Do not set them as response headers - the framework injects them and filters them
+out of responses. Read them through the PostOffice API (`getRoute`, `getTraceId`, `getTracePath`,
+`getMyCorrelationId`) rather than the raw header map.
 
 You can create a trackable PostOffice using the "headers" and the "instance" parameters in the input arguments
 of your function.
 
 ```java
 var po = new PostOffice(headers, instance);
+String correlationId = po.getMyCorrelationId();   // upstream correlation-id, propagated to this function
 ```
 
 ## Reserved HTTP header names
@@ -126,38 +132,58 @@ var po = new PostOffice(headers, instance);
 | X-Small-Payload-As-Bytes | This header, if set to true, tells system to render stream content as bytes |
 | X-Event-Api              | The system uses this header to indicate that the request is sent over HTTP  |
 | X-Async                  | This header, if set to true, indicates it is a drop-n-forget request        |
-| X-Trace-Id               | Legacy header to propagate trace ID                                         |
-| X-Correlation-Id         | Alternative to X-Trace-Id                                                   |
+| X-Trace-Id               | Propagates the trace ID (end-to-end telemetry)                              |
+| X-Correlation-Id         | Business correlation-id (default header name; configurable)                 |
 | traceparent              | W3C Trace Context header carrying trace ID + parent span ID (OpenTelemetry) |
 | X-Content-Length         | If present, it is the expected length of a streaming content                |
 | X-Raw-Xml                | This header, if set to true, tells to system to skip XML rendering          |
 | X-Flow-Id                | This tells the event manager to select a flow configuration by ID           |
 | X-App-Instance           | This header is used by some protected actuator REST endpoints               |
 
-To support traceId that is stored in X-Correlation-Id HTTP header, set this in application.properties.
+### Trace ID (X-Trace-Id and W3C traceparent)
+
+The trace ID is for end-to-end telemetry. Two header mechanisms are supported, both accepted inbound and
+emitted outbound:
+
+- **X-Trace-Id** - carries the trace ID. When absent inbound, a fresh trace ID is generated at the edge.
+- **traceparent** (W3C Trace Context) - carries the trace ID *and* the caller's span ID. On inbound it
+  **takes precedence** over `X-Trace-Id`: the trace ID segment becomes the Mercury trace ID and the parent
+  span ID is adopted, so the trace continues from the upstream caller (span lineage across HTTP boundaries).
+  On outbound the system emits `traceparent` built from this hop's own span, alongside `X-Trace-Id`.
+
+The framework does **not** echo the trace ID (or the correlation-id) back to the HTTP client.
+
+> The legacy `trace.http.header` parameter (which allowed `X-Correlation-Id` to double as a trace ID) has
+> been retired. Use `X-Trace-Id` / `traceparent` for the trace ID, and `X-Correlation-Id` for the
+> correlation-id (below) - the two concerns are now separate.
+
+### Correlation ID propagation
+
+The correlation-id ties a transaction together across business domains, from upstream through the mid-tier
+to downstream. Its header name is enterprise-specific, so it is **configurable**:
 
 ```properties
-# list of supported traceId headers where the first one is the default label
-trace.http.header=X-Correlation-Id, X-Trace-Id
+# HTTP: many enterprises use X-Correlation-Id (the default)
+http.correlation.id.header=X-Correlation-Id
+# Kafka: no cross-vendor standard exists, so "cid" is the default
+kafka.correlation.id.header=cid
 ```
 
-### W3C Trace Context (OpenTelemetry)
+Propagation:
 
-The system also supports the W3C `traceparent` header for end-to-end OpenTelemetry tracing
-(span lineage across HTTP boundaries):
-
-- **Inbound** - when a request carries a well-formed `traceparent`, it takes precedence over the
-  legacy `trace.http.header`. The trace ID segment becomes the Mercury trace ID and the parent span
-  ID is adopted, so the trace continues from the upstream caller. The legacy header is honored only
-  when `traceparent` is absent.
-- **Outbound** - the system emits `traceparent` and, for backward compatibility, the legacy header.
-  Set `trace.http.legacy.header.enabled=false` to emit only `traceparent` once all downstream
-  services are on OpenTelemetry.
-
-```properties
-# emit the legacy trace header outbound alongside traceparent (default true)
-trace.http.legacy.header.enabled=true
-```
+- **Captured at the edge.** REST automation (HTTP) and the Kafka Flow Adapter read the configured header;
+  when absent, a fresh UUID (no dashes, via `util.getUuid()`) is generated.
+- **Preserved in the flow** as `model.cid`, distinct from the internal per-request id used to route the
+  reply, and exposed to every function task as the read-only `my_correlation_id` header
+  (`PostOffice.getMyCorrelationId()`).
+- **Carried to any touch point.** Every `PostOffice` send/RPC/broadcast stamps `my_correlation_id` on the
+  outgoing event (the same way the trace context is carried), so the correlation-id follows the call graph
+  automatically — across in-memory calls, the cross-instance **event-over-HTTP** hop (it rides in the
+  serialized envelope and the peer target reads it via `getMyCorrelationId()`), and into downstream systems.
+- **Handed downstream.** `simple.kafka.notification` stamps it on the outbound Kafka message (under
+  `kafka.correlation.id.header`), and `AsyncHttpClient` emits it as the configured HTTP header
+  (`http.correlation.id.header`) on downstream calls — in both cases an explicitly set header (e.g. a flow
+  mapping `model.cid -> header.cid`, or a request that already carries the header) takes precedence.
 
 ## Transient data store
 

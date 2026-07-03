@@ -88,6 +88,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private static final String HEAD = "HEAD";
     private static final String X_STREAM_ID = "x-stream-id";
     private static final String X_TTL = "x-ttl";
+    private static final String TRACE_ID_HEADER = "X-Trace-Id";
     private static final String CONTENT_TYPE = "content-type";
     private static final String CONTENT_LENGTH = "content-length";
     private static final String X_CONTENT_LENGTH = "x-content-length";
@@ -322,16 +323,23 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 http.set(kv.getKey(), kv.getValue());
             }
         }
-        // propagate the legacy trace header (X-Trace-Id / X-Correlation-Id) for backward
-        // compatibility, unless disabled via trace.http.legacy.header.enabled=false
+        // propagate the trace ID as X-Trace-Id alongside the W3C "traceparent" below
         String traceId = po.getTraceId();
-        if (traceId != null && HttpRouter.isLegacyTraceHeaderEnabled()) {
-            http.set(HttpRouter.getDefaultTraceIdLabel(), traceId);
+        if (traceId != null) {
+            http.set(TRACE_ID_HEADER, traceId);
         }
         // propagate W3C trace context so the downstream server span chains to this caller's span
         String traceparent = W3cTrace.traceparent(traceId, spanId);
         if (traceparent != null) {
             http.set(W3cTrace.TRACEPARENT, traceparent);
+        }
+        // propagate the business correlation-id downstream (unless the caller set the header explicitly)
+        String correlationId = po.getMyCorrelationId();
+        if (correlationId != null) {
+            String cidHeader = HttpRouter.getCorrelationIdHeader();
+            if (cidHeader != null && request.getHeader(cidHeader) == null) {
+                http.set(cidHeader, correlationId);
+            }
         }
         // set cookies if any
         Map<String, String> cookies  = request.getCookies();
