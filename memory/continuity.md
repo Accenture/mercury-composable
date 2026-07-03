@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-02T16:14:33Z | agent: Claude Code (2026-07-02-161433)
+- **last_session:** 2026-07-03T01:47:59Z | agent: Claude Code (2026-07-03-014759)
 - **last_review:** 2026-07-02 | through 2026-07-02-161433.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -62,6 +62,49 @@
   <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-27 | uses: 4 | tier: core -->
 
 ## Key Decisions
+
+- **Tracing & correlation-id cleanup (2026-07-03, branch `fix/traceid-correlationid-propagation`, uncommitted).**
+  Implemented Eric's `~/Desktop/tracing-and-correlation.md` brief. **TraceId:** retired `trace.http.header` +
+  `trace.http.legacy.header.enabled` entirely — trace ID travels only as hardcoded `X-Trace-Id` + W3C
+  `traceparent`; removed the legacy `X-Correlation-Id, X-Trace-Id` config from 7 application.properties;
+  `EventEmitter` event-over-HTTP relay now also emits traceparent. **No echo-back:** deleted the single
+  `HttpRouter` line that echoed the trace header onto the HTTP response (+ flipped the 2 RestEndpointTest
+  assertions). **Correlation-id end-to-end:** new configurable `http.correlation.id.header`
+  (default `X-Correlation-Id`) + `kafka.correlation.id.header` (default `cid`); captured at the edge (fresh
+  dash-less `util.getUuid()` if absent), preserved as `model.cid`, exposed to every function task as read-only
+  reserved header `my_correlation_id` (`PostOffice.getMyCorrelationId()`), and stamped outbound by
+  `simple.kafka.notification`; `KafkaFlowConsumer` reads the configurable inbound header with fresh-UUID
+  fallback (was traceId). Reserved `my_*` headers no longer leak to Kafka. **Feature-complete propagation to
+  any touch point:** `PostOffice.touch()` stamps `my_correlation_id` on every outgoing event (single choke
+  point for send/RPC/broadcast/event-over-HTTP, mirroring trace-context propagation), so the business cid
+  follows the whole call graph incl. the cross-instance event-over-HTTP hop (peer reads via
+  `getMyCorrelationId()`); `AsyncHttpClient` emits `http.correlation.id.header` downstream. Diagnostic finding:
+  `EventEnvelope.cid` is an RPC reply-routing field, not surfaced to fire-and-forget targets — business cid
+  rides the `my_correlation_id` header, not the routing cid. **Plain REST-to-function endpoints** (no flow)
+  are covered too: `HttpRequestEvent.correlationId` (set at edge; in toMap/fromMap) + `HttpRouter` stamps
+  `my_correlation_id` on the primary/secondary/post-auth events, so `getMyCorrelationId()` works for any HTTP
+  entry (self-originated chains — scheduler/startup — seed their own if needed). Full reactor (28) + pg-example (6) green; tests:
+  `PostOfficeTest#reservedHeadersExposedToFunction`, `FlowTests#correlationIdPropagationTest`,
+  `EventHttpTest#eventOverHttpPropagatesTraceAndCorrelationId`,
+  `RestEndpointTest#asyncHttpClientForwardsCorrelationIdDownstream`,
+  `RestEndpointTest#plainRestFunctionReceivesCorrelationId`.
+  Plan: `~/.claude/plans/glowing-tinkering-glacier.md`. See [[flow-cid-vs-business-correlation-decoupled]] and
+  [[thread-traceid-correlation-propagation]]. **Status: implemented + feature-complete, all tests green, uncommitted — pending Eric.**
+  <!-- id: tracing-correlation-cleanup | created: 2026-07-03 | last_used: 2026-07-03 | uses: 1 | tier: working | origin: 2026-07-03-014759 -->
+
+- **A flow's reply cid and its business correlation-id are distinct and must stay decoupled (2026-07-03).**
+  `FlowInstance.cid` is the **reply-routing** key: REST automation awaits an HTTP response whose correlationId
+  equals the internal per-request UUID (`requestId`), matched via HttpRouter's `contexts` map — so the flow's
+  reply cid must equal that requestId. The **business** correlation-id (upstream `X-Correlation-Id`, or fresh)
+  is a separate concern surfaced as `model.cid`. Conflating them (setting the flow cid = business cid) breaks
+  HTTP reply matching → every HTTP flow times out (discovered when 65/70 FlowTests failed). Design: added
+  `FlowInstance.correlationId` (business → `model.cid` + the `my_correlation_id` reserved header) alongside
+  `FlowInstance.cid` (routing, unchanged); the business cid rides the launch-event header
+  `EventScriptManager.CORRELATION_ID` ("correlation_id"), set by `FlowExecutor` (new 6-arg `launch`,
+  businessCid defaults to routing cid for non-HTTP callers) and by `HttpToFlow` (routing = requestId,
+  business = X-Correlation-Id); subflows inherit the parent's business cid via the same header. Kafka: the two
+  coincide (no requestId indirection). Relates [[trace-thread-keyed-mono-gotcha]].
+  <!-- id: flow-cid-vs-business-correlation-decoupled | created: 2026-07-03 | last_used: 2026-07-03 | uses: 1 | tier: working | origin: 2026-07-03-014759 -->
 
 - **Application log context — virtual-thread-safe MDC alternative (2026-06-30, PR #128).** A `context`
   block (cid, traceId, tracePath, spanId, parentSpanId, service, utc + developer key-values) is injected
@@ -372,6 +415,17 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (implemented, **uncommitted** — Claude Code, 2026-07-03) **TraceId & correlation-id propagation cleanup.**
+  Branch `fix/traceid-correlationid-propagation` (was empty; now ~36 files changed, nothing committed). Full
+  detail in the Key Decision [[tracing-correlation-cleanup]] + the decoupling insight
+  [[flow-cid-vs-business-correlation-decoupled]] and the 2026-07-03-014759 session log. Retired
+  `trace.http.header`; no trace echo-back; configurable `http.correlation.id.header`/`kafka.correlation.id.header`;
+  business cid → `model.cid` → `my_correlation_id` → `simple.kafka.notification`. Full reactor + pg-example +
+  4 new tests green. **Feature-complete:** business cid propagates to any touch point via `PostOffice.touch()`
+  (incl. event-over-HTTP) + `AsyncHttpClient` downstream + `simple.kafka.notification`. Full reactor (28) +
+  pg-example (6) green. **Next: Eric's code review, then commit + PR** (same flow as #128/#129).
+  <!-- id: thread-traceid-correlation-propagation | created: 2026-07-03 | last_used: 2026-07-03 | uses: 1 | tier: working | origin: 2026-07-03-014759 -->
 
 - [x] (completed — Eric, 2026-07-01) **Remove Protobuf support from minimalist-kafka's Schema Registry
   integration (Snyk-driven, pre-release).** Full detail in the Key Decision
