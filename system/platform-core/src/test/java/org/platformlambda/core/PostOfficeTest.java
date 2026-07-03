@@ -371,6 +371,25 @@ class PostOfficeTest extends TestBase {
         assertFalse(po.exists((String) null));
     }
 
+    @Test
+    void reservedHeadersExposedToFunction() {
+        // The framework injects these read-only reserved headers into a function's input headers;
+        // PostOffice exposes them, including the business correlation-id (my_correlation_id).
+        Map<String, String> headers = Map.of(
+                "my_route", "unit.test",
+                "my_trace_id", "trace-123",
+                "my_trace_path", "GET /demo",
+                "my_correlation_id", "corr-456");
+        PostOffice po = new PostOffice(headers, 1);
+        assertEquals("unit.test", po.getRoute());
+        assertEquals("trace-123", po.getTraceId());
+        assertEquals("GET /demo", po.getTracePath());
+        assertEquals("corr-456", po.getMyCorrelationId());
+        // absent correlation-id resolves to null
+        PostOffice none = new PostOffice(Map.of("my_route", "unit.test"), 1);
+        assertNull(none.getMyCorrelationId());
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void rpcTagTest() throws InterruptedException {

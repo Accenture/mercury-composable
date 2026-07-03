@@ -28,6 +28,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.core.util.W3cTrace;
 import org.platformlambda.mini.kafka.schema.SchemaCodec;
@@ -90,6 +91,9 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private static final String DLQ_SUFFIX = ".dlq";
     private static final String DLQ_ERROR_HEADER = "dlq.error";
     private static final String DLQ_ORIGIN_TOPIC_HEADER = "dlq.origin.topic";
+    // Configurable inbound correlation-id header (default "cid"); its value seeds the flow's model.cid.
+    private static final String CORRELATION_ID_HEADER = AppConfigReader.getInstance()
+            .getProperty("kafka.correlation.id.header", KafkaHeaders.CORRELATION_ID);
 
     private final Consumer<String, byte[]> consumer;
     private final String topic;
@@ -199,7 +203,11 @@ public class KafkaFlowConsumer implements AutoCloseable {
     /** Build the flow-engine request from the decoded dataset, chaining onto the inbound trace/span. */
     private EventEnvelope toFlowRequest(Map<String, Object> dataset, Map<String, String> headers,
                                         String[] trace, String traceId, String tracePath) {
-        String correlationId = headers.getOrDefault(KafkaHeaders.CORRELATION_ID, traceId);
+        // Capture the upstream correlation-id from the configured header; generate a fresh one if absent.
+        String correlationId = headers.get(CORRELATION_ID_HEADER);
+        if (correlationId == null) {
+            correlationId = Utility.getInstance().getUuid();
+        }
         EventEnvelope forward = new EventEnvelope();
         forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, flowId)
                 .setCorrelationId(correlationId).setBody(dataset)

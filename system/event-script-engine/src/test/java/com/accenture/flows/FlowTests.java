@@ -491,7 +491,6 @@ class FlowTests extends TestBase {
         Map<String, Object> pojoBody = new HashMap<>();
         pojoBody.put("user", hello);
         pojoBody.put("sequence", seq);
-        pojoBody.put("date", new Date());
         pojoBody.put("key1", valueA);
         pojoBody.put("key2", valueB);
         // put the pojo data structure into a holder to test "input data mapping" feature
@@ -742,6 +741,11 @@ class FlowTests extends TestBase {
         assertEquals(getAppName(), result.get("name"));
         assertEquals("hello world", result.get("greeting"));
         assertEquals(true, result.get("positive"));
+        // no X-Correlation-Id was sent, so a fresh dash-less UUID is generated at the edge and exposed as model.cid
+        assertInstanceOf(String.class, result.get("cid"));
+        String freshCid = (String) result.get("cid");
+        assertEquals(32, freshCid.length());
+        assertFalse(freshCid.contains("-"));
         assertTrue(result.containsKey("original"));
         Map<String, Object> original = (Map<String, Object>) result.get("original");
         assertEquals(201, res.getStatus());
@@ -750,6 +754,28 @@ class FlowTests extends TestBase {
         // output mapping 'header.demo -> output.header.x-demo' maps the original header "demo" to "x-demo"
         assertEquals("test-header", res.getHeader("x-demo"));
         greetingAssertions(placeholder, original, result);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void correlationIdPropagationTest() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long timeout = 8000;
+        final String correlationId = "client-corr-" + Utility.getInstance().getUuid();
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        // upstream supplies its own X-Correlation-Id; it must thread through to model.cid
+        request.setHeader("X-Correlation-Id", correlationId);
+        request.setUrl("/api/greetings/12345");
+        PostOffice po = new PostOffice("unit.test", "1002", "TEST /correlation");
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        // the upstream correlation-id is captured at the edge and preserved as the flow's model.cid
+        assertEquals(correlationId, result.get("cid"));
     }
 
     private void greetingAssertions(String user, Map<String, Object> original, Map<String, Object> result) {

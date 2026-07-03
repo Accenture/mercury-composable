@@ -72,6 +72,7 @@ public class WorkerHandler {
     private static final String MY_ROUTE = "my_route";
     private static final String MY_TRACE_ID = "my_trace_id";
     private static final String MY_TRACE_PATH = "my_trace_path";
+    private static final String MY_CORRELATION_ID = "my_correlation_id";
     private static final String X_STREAM_ID = "x-stream-id";
     private static final String X_TTL = "x-ttl";
     private static final String READY = "ready:";
@@ -559,7 +560,8 @@ public class WorkerHandler {
     private void copyResponseHeaders(Map<String, String> headers, EventEnvelope response) {
         for (Map.Entry<String, String> kv: headers.entrySet()) {
             String k = kv.getKey();
-            if (!MY_ROUTE.equals(k) && !MY_TRACE_ID.equals(k) && !MY_TRACE_PATH.equals(k)) {
+            if (!MY_ROUTE.equals(k) && !MY_TRACE_ID.equals(k) && !MY_TRACE_PATH.equals(k)
+                    && !MY_CORRELATION_ID.equals(k)) {
                 response.setHeader(k, kv.getValue());
             }
         }

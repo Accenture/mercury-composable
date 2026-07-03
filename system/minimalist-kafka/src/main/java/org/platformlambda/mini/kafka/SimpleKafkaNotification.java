@@ -24,6 +24,7 @@ import org.platformlambda.core.models.TraceInfo;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.PostOffice;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.W3cTrace;
 import org.platformlambda.mini.kafka.schema.ResolvedSchema;
 import org.platformlambda.mini.kafka.schema.SchemaCodec;
@@ -72,6 +73,15 @@ import java.util.concurrent.ConcurrentMap;
 @PreLoad(route = "simple.kafka.notification", instances = 5)
 public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono<Void>> {
 
+    // Read-only reserved headers injected by the framework; never forwarded to Kafka as raw headers.
+    private static final String MY_ROUTE = "my_route";
+    private static final String MY_TRACE_ID = "my_trace_id";
+    private static final String MY_TRACE_PATH = "my_trace_path";
+    private static final String MY_CORRELATION_ID = "my_correlation_id";
+    // Configurable outbound correlation-id header (default "cid").
+    private static final String CORRELATION_ID_HEADER = AppConfigReader.getInstance()
+            .getProperty("kafka.correlation.id.header", KafkaHeaders.CORRELATION_ID);
+
     // one Encoder per worker instance (an instance is single-flight) -> owner-confined Confluent serializers.
     private final ConcurrentMap<Integer, SchemaCodec.Encoder> encoders = new ConcurrentHashMap<>();
 
@@ -84,15 +94,16 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
         Integer partition = parsePartition(headers.get(KafkaHeaders.PARTITION));
         Map<String, byte[]> kafkaHeaders = new HashMap<>();
         headers.forEach((key, value) -> {
-            // topic/partition/subject/version are routing/encoding directives; the inbound traceparent is replaced below.
-            if (!KafkaHeaders.TOPIC.equals(key)
-                    && !KafkaHeaders.PARTITION.equals(key)
-                    && !KafkaHeaders.SUBJECT.equals(key)
-                    && !KafkaHeaders.VERSION.equals(key)
-                    && !W3cTrace.TRACEPARENT.equals(key)) {
+            if (isPropagatableHeader(key)) {
                 kafkaHeaders.put(key, value.getBytes(StandardCharsets.UTF_8));
             }
         });
+        // propagate the business correlation-id under the configured header; an explicitly mapped value
+        // wins over the flow's correlation-id (model.cid, carried as the my_correlation_id reserved header).
+        String correlationId = headers.getOrDefault(CORRELATION_ID_HEADER, headers.get(MY_CORRELATION_ID));
+        if (correlationId != null) {
+            kafkaHeaders.put(CORRELATION_ID_HEADER, correlationId.getBytes(StandardCharsets.UTF_8));
+        }
         String traceparent = currentTraceparent(new PostOffice(headers, instance));
         if (traceparent != null) {
             kafkaHeaders.put(W3cTrace.TRACEPARENT, traceparent.getBytes(StandardCharsets.UTF_8));
@@ -130,6 +141,25 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
     private static String currentTraceparent(PostOffice po) {
         TraceInfo trace = po.getTrace();
         return trace == null ? null : W3cTrace.traceparent(po.getTraceId(), trace.spanId);
+    }
+
+    /**
+     * Whether an event header is forwarded verbatim as a Kafka header. Excludes routing/encoding directives
+     * (topic/partition/subject/version), the inbound traceparent (replaced with this hop's own span), the
+     * correlation-id header (stamped explicitly from the resolved value), and the framework's read-only
+     * reserved headers (my_route / my_trace_id / my_trace_path / my_correlation_id).
+     */
+    private static boolean isPropagatableHeader(String key) {
+        return !KafkaHeaders.TOPIC.equals(key)
+                && !KafkaHeaders.PARTITION.equals(key)
+                && !KafkaHeaders.SUBJECT.equals(key)
+                && !KafkaHeaders.VERSION.equals(key)
+                && !W3cTrace.TRACEPARENT.equals(key)
+                && !CORRELATION_ID_HEADER.equals(key)
+                && !MY_ROUTE.equals(key)
+                && !MY_TRACE_ID.equals(key)
+                && !MY_TRACE_PATH.equals(key)
+                && !MY_CORRELATION_ID.equals(key);
     }
 
     private static Integer parsePartition(String value) {

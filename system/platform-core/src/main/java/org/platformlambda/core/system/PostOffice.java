@@ -35,10 +35,12 @@ public class PostOffice {
     private static final String MY_ROUTE = "my_route";
     private static final String MY_TRACE_ID = "my_trace_id";
     private static final String MY_TRACE_PATH = "my_trace_path";
+    private static final String MY_CORRELATION_ID = "my_correlation_id";
     public static final String MISSING_EVENT = "Missing outgoing event";
     private final String myRoute;
     private final String myTraceId;
     private final String myTracePath;
+    private final String myCorrelationId;
     private final int instance;
     private final CustomSerializer serializer;
 
@@ -69,6 +71,7 @@ public class PostOffice {
         myRoute = headers.get(MY_ROUTE);
         myTraceId = headers.get(MY_TRACE_ID);
         myTracePath = headers.get(MY_TRACE_PATH);
+        myCorrelationId = headers.get(MY_CORRELATION_ID);
         this.instance = instance;
         this.serializer = null;
     }
@@ -84,6 +87,7 @@ public class PostOffice {
         myRoute = headers.get(MY_ROUTE);
         myTraceId = headers.get(MY_TRACE_ID);
         myTracePath = headers.get(MY_TRACE_PATH);
+        myCorrelationId = headers.get(MY_CORRELATION_ID);
         this.instance = instance;
         this.serializer = serializer;
     }
@@ -101,6 +105,7 @@ public class PostOffice {
         this.myRoute = myRoute;
         this.myTraceId = myTraceId;
         this.myTracePath = myTracePath;
+        this.myCorrelationId = null;
         this.instance = 0;
         this.serializer = null;
     }
@@ -119,6 +124,7 @@ public class PostOffice {
         this.myRoute = myRoute;
         this.myTraceId = myTraceId;
         this.myTracePath = myTracePath;
+        this.myCorrelationId = null;
         this.instance = 0;
         this.serializer = serializer;
     }
@@ -150,6 +156,20 @@ public class PostOffice {
      */
     public String getTracePath() {
         return myTracePath;
+    }
+
+    /**
+     * User application may obtain the business correlation-id of the current transaction.
+     * <p>
+     * For an Event Script flow this is the flow's correlation-id ({@code model.cid}) - the upstream
+     * value captured at the edge (HTTP {@code http.correlation.id.header} / Kafka
+     * {@code kafka.correlation.id.header}) or a fresh UUID generated when none was supplied. It is a
+     * read-only value injected by the framework; do not set it as a response header.
+     *
+     * @return correlation-id of the current transaction, or null if none is in scope
+     */
+    public String getMyCorrelationId() {
+        return myCorrelationId;
     }
 
     /**
@@ -692,6 +712,11 @@ public class PostOffice {
         }
         if (event.getTracePath() == null) {
             event.setTracePath(myTracePath);
+        }
+        // propagate the business correlation-id to the next touch point (read via getMyCorrelationId());
+        // carried as a read-only reserved header so it reaches any function, HTTP client, or Kafka producer
+        if (myCorrelationId != null && event.getHeader(MY_CORRELATION_ID) == null) {
+            event.setHeader(MY_CORRELATION_ID, myCorrelationId);
         }
         // carry this function's spanId so the receiver can store it as its parentSpanId
         TraceInfo trace = getTrace();

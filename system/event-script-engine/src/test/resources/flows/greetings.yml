@@ -64,6 +64,8 @@ tasks:
       - 'header.demo -> output.header.x-demo'
       - 'text(${application.name}) -> output.body.name'
       - 'model.bool -> !model.bool -> output.body.positive'
+      # expose the business correlation-id captured at the edge (from X-Correlation-Id or a fresh UUID)
+      - 'model.cid -> output.body.cid'
     description: 'Hello World'
     execution: end
 
