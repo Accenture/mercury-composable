@@ -35,10 +35,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    item, to be re-wired once Confluent moves to the patched coordinate, or sooner for a specific field
    installation that explicitly needs Protobuf and accepts the residual risk. See the
    [Kafka Flow Adapter guide](docs/guides/kafka-flow-adapter.md#schema) for detail.
+2. **`trace.http.header` and `trace.http.legacy.header.enabled` configuration parameters were removed.**
+   Before OpenTelemetry support, `X-Correlation-Id` was mistakenly allowed to double as a trace ID via
+   `trace.http.header`; that conflation is retired. Use `X-Trace-Id` / W3C `traceparent` for the trace ID,
+   and `http.correlation.id.header` for the correlation-id.
 
 ### Changed
 
-N/A
+1. **Tracing/correlation cleanup (breaking, pre-release).** The trace ID now travels only as the
+   `X-Trace-Id` header and the W3C `traceparent` header (traceId + spanId). The framework no longer
+   **echoes** the trace ID — or the correlation-id — back to the HTTP client. `X-Correlation-Id` is now
+   strictly the **business correlation-id**, not a trace-ID fallback.
+2. **Correlation-id is propagated end-to-end.** It is captured at the edge (HTTP or Kafka), preserved as the
+   flow's `model.cid` (distinct from the internal reply-routing id), and exposed to every function as the
+   read-only `my_correlation_id` header (`PostOffice.getMyCorrelationId()`). Every `PostOffice`
+   send/RPC/broadcast now carries it to the next touch point automatically (the same way the trace context is
+   carried), so it follows the whole call graph — in-memory, across the cross-instance event-over-HTTP hop,
+   and into downstream systems: `simple.kafka.notification` stamps it on the outbound Kafka message and
+   `AsyncHttpClient` emits it as the configured HTTP header on downstream calls. The header name is
+   configurable: `http.correlation.id.header` (default `X-Correlation-Id`) and `kafka.correlation.id.header`
+   (default `cid`). A fresh dash-less UUID is generated when none is supplied upstream.
 
 ---
 ## Version 4.4.11, 5/29/2026

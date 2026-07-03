@@ -569,7 +569,8 @@ in user code when operating at the HTTP boundary:
 | `X-Stream-Id` | Stream ID for Flux streaming responses |
 | `X-TTL` | Time-to-live for Flux stream consumers |
 | `X-Trace-Id` | Distributed trace identifier |
-| `X-Correlation-Id` | Caller-assigned correlation ID |
+| `traceparent` | W3C Trace Context (trace ID + parent span ID); takes precedence over `X-Trace-Id` inbound |
+| `X-Correlation-Id` | Business correlation-id (default header name; configurable via `http.correlation.id.header`) |
 | `X-Flow-Id` | Active flow ID |
 | `X-App-Instance` | Target application instance for Event-over-HTTP |
 | `X-Async` | Marks an event as fire-and-forget over HTTP |

@@ -47,6 +47,8 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
     private static final String FLOW_ID = "flow_id";
     private static final String PARENT = "parent";
     private static final String TTL = "ttl";
+    // Launch-event header carrying the business correlation-id, distinct from the reply-routing cid.
+    public static final String CORRELATION_ID = "correlation_id";
 
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
@@ -98,10 +100,15 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
             throw new IllegalArgumentException("Missing correlation ID for "+ flowId);
         }
         String replyTo = event.getReplyTo();
-        // Save the original correlation-ID ("cid") from the calling party in a flow instance and
-        // return this value to the calling party at the end of flow execution
+        // The routing cid is returned to the calling party at the end of flow execution. The business
+        // correlation-id (preserved from upstream) is exposed as model.cid; it falls back to the routing
+        // cid when a flow adapter does not supply one.
+        String correlationId = event.getHeader(CORRELATION_ID);
+        if (correlationId == null) {
+            correlationId = cid;
+        }
         var parent = event.getHeader(PARENT);
-        FlowInstance flowInstance = new FlowInstance(flowId, cid, replyTo, template, parent, ttl);
+        FlowInstance flowInstance = new FlowInstance(flowId, cid, correlationId, replyTo, template, parent, ttl);
         // Optional distributed trace
         String traceId = event.getTraceId();
         String tracePath = event.getTracePath();

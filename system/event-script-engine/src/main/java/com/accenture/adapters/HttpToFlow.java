@@ -25,6 +25,8 @@ import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.PostOffice;
+import org.platformlambda.core.util.AppConfigReader;
+import org.platformlambda.core.util.Utility;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,6 +48,9 @@ public class HttpToFlow implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String ERROR = "error";
     private static final String STATUS = "status";
     private static final String MESSAGE = "message";
+    // Configurable upstream correlation-id header (default X-Correlation-Id); its value seeds model.cid.
+    private static final String CORRELATION_ID_HEADER =
+            AppConfigReader.getInstance().getProperty("http.correlation.id.header", "X-Correlation-Id");
 
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
@@ -88,6 +93,14 @@ public class HttpToFlow implements TypedLambdaFunction<EventEnvelope, Void> {
         dataset.put("ip", request.getRemoteIp());
         dataset.put("filename", request.getFileName());
         dataset.put("session", request.getSessionInfo());
-        FlowExecutor.getInstance().launch(po, flowId, dataset, event.getReplyTo(), event.getCorrelationId());
+        // The internal request id (event correlation-id) routes the HTTP response and must be preserved as
+        // the flow's reply cid. The upstream business correlation-id (guaranteed at the HTTP edge) is passed
+        // separately so it becomes the flow's model.cid; fall back to a fresh UUID if ever absent.
+        String businessCid = request.getHeader(CORRELATION_ID_HEADER);
+        if (businessCid == null) {
+            businessCid = Utility.getInstance().getUuid();
+        }
+        FlowExecutor.getInstance().launch(po, flowId, dataset, event.getReplyTo(),
+                event.getCorrelationId(), businessCid);
     }
 }

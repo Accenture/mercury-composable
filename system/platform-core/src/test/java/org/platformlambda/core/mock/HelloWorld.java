@@ -22,6 +22,7 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.Platform;
+import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +69,8 @@ public class HelloWorld implements LambdaFunction {
         result.put("instance", instance);
         result.put("counter", counter);
         result.put("origin", Platform.getInstance().getOrigin());
+        // surface the business correlation-id this plain function received (from my_correlation_id)
+        result.put("my_correlation_id", new PostOffice(headers, instance).getMyCorrelationId());
         return result;
     }
 

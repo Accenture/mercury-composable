@@ -23,11 +23,13 @@ import org.junit.jupiter.api.Test;
 import org.platformlambda.common.TestBase;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
+import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
+import org.platformlambda.core.util.Utility;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -81,6 +83,53 @@ class EventHttpTest extends TestBase {
         asyncResponse.onSuccess(evt -> wait2.add(evt.getBody()));
         Object result = wait2.poll(5, TimeUnit.SECONDS);
         assertEquals(hello, result);
+    }
+
+    @Test
+    void eventOverHttpPropagatesTraceAndCorrelationId() throws InterruptedException {
+        // The whole EventEnvelope is serialized into the HTTP body over the "event over HTTP" hop, so the
+        // peer's target function continues the same trace (traceId exposed as my_trace_id) and receives the
+        // caller's business correlation-id (carried as the my_correlation_id reserved header by touch()).
+        final BlockingQueue<Map<String, String>> captured = new ArrayBlockingQueue<>(1);
+        final String captureRoute = "event.http.trace.capture";
+        TypedLambdaFunction<EventEnvelope, Object> capture = (headers, event, instance) -> {
+            PostOffice po = new PostOffice(headers, instance);
+            Map<String, String> seen = new HashMap<>();
+            seen.put("trace_id", po.getTraceId());
+            seen.put("correlation_id", po.getMyCorrelationId());
+            captured.add(seen);
+            return null;
+        };
+        Platform.getInstance().register(captureRoute, capture, 1);
+        try {
+            final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+            long timeout = 5000;
+            String traceId = "trace-" + Utility.getInstance().getUuid();
+            String correlationId = "corr-" + Utility.getInstance().getUuid();
+            Map<String, String> securityHeaders = new HashMap<>();
+            securityHeaders.put("Authorization", "demo");
+            // a caller carrying a business correlation-id (as in a flow task or an upstream-captured request)
+            Map<String, String> callerContext = new HashMap<>();
+            callerContext.put("my_route", "unit.test");
+            callerContext.put("my_trace_id", traceId);
+            callerContext.put("my_trace_path", "TEST /event/over/http/trace");
+            callerContext.put("my_correlation_id", correlationId);
+            PostOffice po = PostOffice.trackable(callerContext, 1);
+            EventEnvelope event = new EventEnvelope().setTo(captureRoute).setBody("ping");
+            Future<EventEnvelope> response = po.asyncRequest(event, timeout, securityHeaders,
+                    "http://127.0.0.1:" + port + "/api/event", false);
+            response.onSuccess(bench::add);
+            EventEnvelope ack = bench.poll(timeout, TimeUnit.MILLISECONDS);
+            assertNotNull(ack);
+            assertEquals(202, ack.getStatus());
+            Map<String, String> seen = captured.poll(timeout, TimeUnit.MILLISECONDS);
+            assertNotNull(seen);
+            // traceId and the business correlation-id both propagate to the peer target function
+            assertEquals(traceId, seen.get("trace_id"));
+            assertEquals(correlationId, seen.get("correlation_id"));
+        } finally {
+            Platform.getInstance().release(captureRoute);
+        }
     }
 
     @Test

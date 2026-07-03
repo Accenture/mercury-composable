@@ -137,6 +137,58 @@ class RestEndpointTest extends TestBase {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void asyncHttpClientForwardsCorrelationIdDownstream() throws InterruptedException, ExecutionException {
+        String correlationId = "corr-" + Utility.getInstance().getUuid();
+        // a caller carrying a business correlation-id (as a flow task or upstream-captured request would)
+        Map<String, String> callerContext = new HashMap<>();
+        callerContext.put("my_route", "unit.test");
+        callerContext.put("my_trace_id", "201");
+        callerContext.put("my_trace_path", "/HELLO");
+        callerContext.put("my_correlation_id", correlationId);
+        PostOffice po = PostOffice.trackable(callerContext, 1);
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("GET").setHeader("accept", "application/json");
+        req.setUrl("/api/hello/world").setTargetHost("http://127.0.0.1:" + port);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
+        EventEnvelope response = po.eRequest(request, RPC_TIMEOUT).get();
+        assert response != null;
+        assertInstanceOf(Map.class, response.getBody());
+        MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
+        // AsyncHttpClient forwarded the business correlation-id downstream; the service echoes it back
+        assertEquals(correlationId, map.getElement("headers.x-correlation-id"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void plainRestFunctionReceivesCorrelationId() throws InterruptedException, ExecutionException {
+        // "/api/simple/{task}/*" is a pure "service: hello.world" mapping (no flow) — a plain REST endpoint
+        // routed directly to a composable function. It must still receive the business correlation-id.
+        var po = PostOffice.trackable("unit.test", "301", "/HELLO");
+        // 1) upstream supplies X-Correlation-Id -> the plain function sees it via getMyCorrelationId()
+        String correlationId = "corr-" + Utility.getInstance().getUuid();
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("GET").setHeader("accept", "application/json").setHeader("X-Correlation-Id", correlationId);
+        req.setUrl("/api/simple/demo/test").setTargetHost("http://127.0.0.1:" + port);
+        EventEnvelope res1 = po.eRequest(new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST)
+                .setBody(req), RPC_TIMEOUT).get();
+        assertInstanceOf(Map.class, res1.getBody());
+        MultiLevelMap map1 = new MultiLevelMap((Map<String, Object>) res1.getBody());
+        assertEquals(correlationId, map1.getElement("my_correlation_id"));
+        // 2) none supplied -> a fresh dash-less UUID is generated at the edge and still reaches the function
+        AsyncHttpRequest req2 = new AsyncHttpRequest();
+        req2.setMethod("GET").setHeader("accept", "application/json");
+        req2.setUrl("/api/simple/demo/test").setTargetHost("http://127.0.0.1:" + port);
+        EventEnvelope res2 = po.eRequest(new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST)
+                .setBody(req2), RPC_TIMEOUT).get();
+        MultiLevelMap map2 = new MultiLevelMap((Map<String, Object>) res2.getBody());
+        Object generated = map2.getElement("my_correlation_id");
+        assertInstanceOf(String.class, generated);
+        assertEquals(32, ((String) generated).length());
+        assertFalse(((String) generated).contains("-"));
+    }
+
     @Test
     void nonExistUrlTest() throws InterruptedException, ExecutionException {
         checkHttpRouting("/api/hello/../world &moved to https://evil.site?hello world=abc");
@@ -743,8 +795,9 @@ class RestEndpointTest extends TestBase {
         // HTTP head response may include custom headers and content-length
         assertEquals("HEAD request received", response.getHeader("X-Response"));
         assertEquals("100", response.getHeader("Content-Length"));
-        // the same correlation-id is returned to the caller
-        assertEquals(traceId, response.getHeader("X-Correlation-Id"));
+        // the trace/correlation header is NOT echoed back to the caller (legacy echo-back removed)
+        assertNull(response.getHeader("X-Correlation-Id"));
+        assertNull(response.getHeader("X-Trace-Id"));
         // multiple "set-cookie" headers are consolidated into one composite value
         assertEquals("first=cookie|second=one", response.getHeader("set-cookie"));
         var json = response.getHeader("x-cookies");
@@ -792,8 +845,8 @@ class RestEndpointTest extends TestBase {
         // HTTP head response may include custom headers and content-length
         assertEquals("HEAD request received", headers.get("X-Response"));
         assertEquals("100", headers.get("Content-Length"));
-        // the same correlation-id is returned to the caller
-        assertEquals(traceId, headers.get("X-Trace-Id"));
+        // the trace header is NOT echoed back to the caller (legacy echo-back removed)
+        assertNull(headers.get("X-Trace-Id"));
     }
 
     @SuppressWarnings("unchecked")

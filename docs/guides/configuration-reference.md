@@ -154,8 +154,8 @@ below tune it. The `otel.*` keys are read by the `opentelemetry-forwarder` exten
 | `show.env.variables` | `String` (comma-sep list) | — | Environment variable names to expose via the `/env` actuator endpoint. |
 | `skip.rpc.tracing` | `String` (comma-sep list) | `async.http.request` | Route names excluded from distributed trace recording. |
 | `stack.trace.transport.size` | `int` | `10` | Maximum stack-trace lines embedded in an `EventEnvelope` when an exception occurs. |
-| `trace.http.header` | `String` (comma-sep list) | `X-Trace-Id` | Legacy HTTP request header(s) carrying a trace ID (e.g. `X-Trace-Id`, `X-Correlation-Id`). Accepted on inbound requests as a fallback; the first entry is used as the outbound legacy trace header. The W3C `traceparent` header takes precedence over these on inbound. |
-| `trace.http.legacy.header.enabled` | `boolean` | `true` | When `true`, outbound HTTP requests emit the legacy `trace.http.header` alongside W3C `traceparent`. Set to `false` to send only `traceparent` once downstream services are fully on OpenTelemetry. Inbound acceptance of the legacy header is unaffected by this flag. |
+| `http.correlation.id.header` | `String` | `X-Correlation-Id` | HTTP header carrying the business correlation-id (enterprise-specific; case-insensitive on inbound). Captured at the edge and preserved end-to-end — exposed to flows as `model.cid` and to functions via `PostOffice.getMyCorrelationId()`. A fresh dash-less UUID is generated when the header is absent. |
+| `kafka.correlation.id.header` | `String` | `cid` | Kafka message header carrying the business correlation-id (no cross-vendor standard exists for non-HTTP transport, so it is configurable). Read inbound by the Kafka Flow Adapter and written outbound by `simple.kafka.notification`; a fresh UUID is generated inbound when absent. |
 | `otel.trace.forwarder.enabled` | `boolean` | `true` | Used by the `opentelemetry-forwarder` extension. `false` makes the forwarder a no-op (jar present, no export). |
 | `otel.exporter.otlp.endpoint` | `String` | `http://localhost:4318/v1/traces` | OTLP/HTTP traces endpoint the `opentelemetry-forwarder` extension exports spans to. |
 | `otel.exporter.otlp.timeout` | `int` (ms) | `10000` | OTLP export timeout for the `opentelemetry-forwarder` extension. |
@@ -378,11 +378,14 @@ kernel.thread.pool=100
 http.client.connection.timeout=5000
 
 # --- Distributed Tracing ---
-# Legacy trace headers, in preference order; first entry is also the outbound legacy header.
-# The W3C "traceparent" header takes precedence over these on inbound requests.
-trace.http.header=X-Trace-Id
-# Emit the legacy header outbound alongside "traceparent" (set false for pure W3C OpenTelemetry).
-trace.http.legacy.header.enabled=true
+# The trace ID travels as the "X-Trace-Id" header and the W3C "traceparent" header (traceId + spanId).
+# Both are emitted outbound and accepted inbound; "traceparent" takes precedence on inbound. No config.
+
+# --- Correlation ID ---
+# Business correlation-id headers (configurable; defaults shown). Captured at the edge, preserved as
+# model.cid, and propagated downstream. A fresh UUID is generated when absent.
+http.correlation.id.header=X-Correlation-Id
+kafka.correlation.id.header=cid
 
 # --- Health ---
 # List health-check routes that must all pass for /health to return 200.

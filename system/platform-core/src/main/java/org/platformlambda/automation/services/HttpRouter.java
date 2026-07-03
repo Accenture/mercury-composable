@@ -105,8 +105,13 @@ public class HttpRouter {
     private static final Path SIGNATURE_FOLDER_PATH = SIGNATURE_FOLDER.toPath();
     // requestId -> context
     private static final ConcurrentMap<String, AsyncContextHolder> contexts = new ConcurrentHashMap<>();
-    private static List<String> traceIdLabels;
-    private static boolean legacyTraceHeaderEnabled;
+    // The only HTTP trace header the framework recognizes/emits, alongside W3C "traceparent".
+    private static final String TRACE_ID_HEADER = "X-Trace-Id";
+    // Configurable HTTP correlation-id header (enterprise-specific); default X-Correlation-Id.
+    private static String correlationIdHeader;
+    // Read-only reserved header exposing the business correlation-id to the target function.
+    // Package-private so the HttpAuth handler (same package) can stamp it on the post-auth forward.
+    static final String MY_CORRELATION_ID = "my_correlation_id";
     private static String staticFolder;
     private static String resourceFolder;
 
@@ -121,17 +126,8 @@ public class HttpRouter {
                 LOADED.set(true);
                 Platform platform = Platform.getInstance();
                 AppConfigReader config = AppConfigReader.getInstance();
-                List<String> labels = util.split(config.getProperty("trace.http.header"), ", ");
-                if (labels.isEmpty()) {
-                    labels.add("X-Trace-Id");
-                }
-                traceIdLabels = labels;
-                // When enabled (default), outbound HTTP calls also emit the legacy trace header
-                // alongside W3C "traceparent". Set to false once downstreams are fully on OTel.
-                legacyTraceHeaderEnabled = "true".equalsIgnoreCase(
-                        config.getProperty("trace.http.legacy.header.enabled", "true"));
-                log.info("Initialized with HTTP trace headers {}, outbound legacy header {}",
-                        traceIdLabels, legacyTraceHeaderEnabled ? "enabled" : "disabled");
+                correlationIdHeader = config.getProperty("http.correlation.id.header", "X-Correlation-Id");
+                log.info("Correlation-id HTTP header is '{}'", correlationIdHeader);
                 String folder = config.getProperty("spring.web.resources.static-locations",
                         config.getProperty("static.html.folder", "classpath:/public"));
                 if (folder.endsWith("/")) {
@@ -157,20 +153,15 @@ public class HttpRouter {
         }
     }
 
-    public static String getDefaultTraceIdLabel() {
-        return traceIdLabels.getFirst();
-    }
 
     /**
-     * Whether outbound HTTP requests should emit the legacy trace header (X-Trace-Id /
-     * X-Correlation-Id) in addition to the W3C "traceparent". Controlled by the
-     * "trace.http.legacy.header.enabled" property (default true). Inbound acceptance of the
-     * legacy header is unconditional and not affected by this flag.
+     * The configured HTTP correlation-id header name (default X-Correlation-Id). Used by AsyncHttpClient
+     * to propagate the business correlation-id to a downstream HTTP service.
      *
-     * @return true if the legacy outbound trace header is enabled
+     * @return the correlation-id header name
      */
-    public static boolean isLegacyTraceHeaderEnabled() {
-        return legacyTraceHeaderEnabled;
+    public static String getCorrelationIdHeader() {
+        return correlationIdHeader;
     }
 
     public ConcurrentMap<String, AsyncContextHolder> getContexts() {
@@ -478,14 +469,20 @@ public class HttpRouter {
             }
         }
         AsyncHttpRequest req = prepareHttpRequest(request, route, uri);
+        // Ensure the request carries a business correlation-id; generate a fresh one at the edge if absent.
+        // This is independent of tracing so a correlation-id is always available to flows and functions.
+        String correlationId = req.getHeader(correlationIdHeader);
+        if (correlationId == null) {
+            correlationId = util.getUuid();
+            req.setHeader(correlationIdHeader, correlationId);
+        }
         // Distributed tracing required?
         String traceId = null;
         String tracePath = null;
         String parentSpanId = null;
         // Set trace header if needed
         if (route.info.tracing) {
-            List<String> traceHeader = getTraceId(request);
-            traceId = traceHeader.get(1);
+            traceId = getTraceId(request);
             tracePath = method + " " + uri;
             if (req.getQueryString() != null) {
                 tracePath += "?" + req.getQueryString();
@@ -496,10 +493,10 @@ public class HttpRouter {
                 traceId = traceParent[0];
                 parentSpanId = traceParent[1];
             }
-            response.putHeader(traceHeader.get(0), traceId);
         }
         final HttpRequestEvent requestEvent = new HttpRequestEvent(requestId, route, authService, traceId, tracePath);
         requestEvent.parentSpanId = parentSpanId;
+        requestEvent.correlationId = correlationId;
         // load HTTP body
         if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {
             handlePayload(request, route, requestEvent, req);
@@ -822,6 +819,10 @@ public class HttpRouter {
             event.setTo(requestEvent.primary).setFrom(HTTP_REQUEST)
                     .setCorrelationId(requestEvent.requestId).setBody(requestEvent.httpRequest)
                     .setReplyTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
+            // expose the business correlation-id to the target function (and downstream via PostOffice)
+            if (requestEvent.correlationId != null) {
+                event.setHeader(MY_CORRELATION_ID, requestEvent.correlationId);
+            }
             // enable distributed tracing if needed
             if (requestEvent.tracing) {
                 event.setTrace(requestEvent.traceId, requestEvent.tracePath);
@@ -846,6 +847,9 @@ public class HttpRouter {
             if (!secondary.equals(requestEvent.primary)) {
                 EventEnvelope copy = new EventEnvelope().setTo(secondary).setFrom(HTTP_REQUEST)
                         .setBody(requestEvent.httpRequest);
+                if (requestEvent.correlationId != null) {
+                    copy.setHeader(MY_CORRELATION_ID, requestEvent.correlationId);
+                }
                 if (requestEvent.tracing) {
                     copy.setTrace(requestEvent.traceId, requestEvent.tracePath);
                     if (requestEvent.parentSpanId != null) {
@@ -884,26 +888,16 @@ public class HttpRouter {
     }
 
     /**
-     * Get X-Trace-Id from HTTP request headers if any.
-     * Otherwise, generate a unique ID.
+     * Get the trace ID from the X-Trace-Id HTTP request header if present, otherwise
+     * generate a fresh one. (A well-formed W3C "traceparent" takes precedence over this
+     * at the call site.)
      *
      * @param request HTTP
-     * @return traceLabel and traceId
+     * @return the trace ID
      */
-    private List<String> getTraceId(HttpServerRequest request) {
-        List<String> result = new ArrayList<>();
-        for (String label: traceIdLabels) {
-            String id = request.getHeader(label);
-            if (id != null) {
-                result.add(label);
-                result.add(id);
-            }
-        }
-        if (result.isEmpty()) {
-            result.add(getDefaultTraceIdLabel());
-            result.add(util.getUuid());
-        }
-        return result;
+    private String getTraceId(HttpServerRequest request) {
+        String id = request.getHeader(TRACE_ID_HEADER);
+        return id != null ? id : util.getUuid();
     }
 
     private String getHeaderCase(String header) {
@@ -973,6 +967,10 @@ class HttpAuth implements LambdaFunction {
             forward.setTo(event.primary).setBody(req)
                     .setCorrelationId(event.requestId)
                     .setReplyTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
+            // expose the business correlation-id to the target function (and downstream via PostOffice)
+            if (event.correlationId != null) {
+                forward.setHeader(HttpRouter.MY_CORRELATION_ID, event.correlationId);
+            }
             // enable distributed tracing if needed
             if (event.tracing) {
                 forward.setFrom(event.authService);

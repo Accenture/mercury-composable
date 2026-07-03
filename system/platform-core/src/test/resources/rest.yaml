@@ -24,7 +24,6 @@ rest:
   - service: ["hello.mock"]
     methods: ['GET', 'PUT', 'POST', 'HEAD', 'PATCH', 'DELETE']
     url: "/api/hello/world"
-    flow: "hello-world"
     timeout: 15s
     #
     # Optional authentication service which should return a true or false result

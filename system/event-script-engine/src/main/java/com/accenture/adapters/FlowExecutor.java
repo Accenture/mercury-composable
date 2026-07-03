@@ -155,6 +155,28 @@ public class FlowExecutor {
      */
     public void launch(PostOffice po, String flowId, Map<String, Object> dataset,
                        String callback, String correlationId) {
+        launch(po, flowId, dataset, callback, correlationId, correlationId);
+    }
+
+    /**
+     * Start an asynchronous flow execution, supplying a business correlation-id distinct from the
+     * reply-routing correlation-id. The business correlation-id is exposed to the flow as {@code model.cid}
+     * and propagated to every task (the {@code my_correlation_id} reserved header); the routing
+     * correlationId still routes the flow's reply back to the caller. A flow adapter serving a transport
+     * where the two differ (e.g. HTTP, whose response is matched on an internal request id) uses this to
+     * preserve the upstream correlation-id end-to-end.
+     *
+     * @param po PostOffice
+     * @param flowId of the event flow configuration script
+     * @param dataset is a Map containing at least headers and body
+     * @param callback is the route of a composable function
+     * @param correlationId reply-routing correlation-id (must be a unique ID)
+     * @param businessCorrelationId upstream business correlation-id exposed as model.cid (defaults to
+     *                              correlationId when null)
+     * @throws IllegalArgumentException in case of routing error
+     */
+    public void launch(PostOffice po, String flowId, Map<String, Object> dataset,
+                       String callback, String correlationId, String businessCorrelationId) {
         if (flowId == null) {
             throw new IllegalArgumentException("Missing flowId");
         }
@@ -164,6 +186,8 @@ public class FlowExecutor {
         if (dataset.containsKey(BODY)) {
             EventEnvelope forward = new EventEnvelope();
             forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, flowId);
+            forward.setHeader(EventScriptManager.CORRELATION_ID,
+                    businessCorrelationId != null ? businessCorrelationId : correlationId);
             forward.setCorrelationId(correlationId).setBody(dataset);
             if (callback != null) {
                 forward.setReplyTo(callback);
@@ -245,6 +269,7 @@ public class FlowExecutor {
         if (dataset != null && dataset.containsKey(BODY)) {
             EventEnvelope forward = new EventEnvelope();
             forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, flowId);
+            forward.setHeader(EventScriptManager.CORRELATION_ID, correlationId);
             forward.setCorrelationId(correlationId).setBody(dataset);
             return po.request(forward, timeout);
         } else {

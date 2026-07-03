@@ -28,6 +28,7 @@ import org.platformlambda.core.services.TemporaryInbox;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.core.util.W3cTrace;
 import org.platformlambda.core.websocket.common.MultipartPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -826,9 +827,14 @@ public class EventEmitter {
                 req.setHeader(kv.getKey(), kv.getValue());
             }
         }
-        // propagate trace-ID if any
-        if (event.getTraceId() != null) {
-            req.setHeader(X_TRACE_ID, event.getTraceId());
+        // propagate trace context: X-Trace-Id plus W3C "traceparent" (traceId + spanId) if available
+        String eventTraceId = event.getTraceId();
+        if (eventTraceId != null) {
+            req.setHeader(X_TRACE_ID, eventTraceId);
+            String traceParent = W3cTrace.traceparent(eventTraceId, event.getSpanId());
+            if (traceParent != null) {
+                req.setHeader(W3cTrace.TRACEPARENT, traceParent);
+            }
         }
         req.setUrl(url.getPath());
         req.setTargetHost(getTargetFromUrl(url));
@@ -957,9 +963,14 @@ public class EventEmitter {
                 req.setHeader(kv.getKey(), kv.getValue());
             }
         }
-        // propagate trace-ID if any
-        if (event.getTraceId() != null) {
-            req.setHeader(X_TRACE_ID, event.getTraceId());
+        // propagate trace context: X-Trace-Id plus W3C "traceparent" (traceId + spanId) if available
+        String eventTraceId = event.getTraceId();
+        if (eventTraceId != null) {
+            req.setHeader(X_TRACE_ID, eventTraceId);
+            String traceParent = W3cTrace.traceparent(eventTraceId, event.getSpanId());
+            if (traceParent != null) {
+                req.setHeader(W3cTrace.TRACEPARENT, traceParent);
+            }
         }
         req.setUrl(url.getPath());
         req.setTargetHost(getTargetFromUrl(url));

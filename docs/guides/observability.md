@@ -83,12 +83,12 @@ Mercury's trace and span IDs follow the [W3C Trace Context](https://www.w3.org/T
 OpenTelemetry uses: a **32-hex trace ID** and **16-hex span ID**. Across an HTTP boundary the system propagates the
 standard `traceparent` header:
 
-- outbound — the HTTP client injects `traceparent` carrying the current trace + span;
-- inbound — the HTTP layer extracts `traceparent`, continues the upstream trace, and adopts the caller's span as the parent.
+- outbound — the HTTP client injects `traceparent` carrying the current trace + span, alongside `X-Trace-Id`;
+- inbound — the HTTP layer extracts `traceparent`, continues the upstream trace, and adopts the caller's span as the parent. `traceparent` takes precedence over `X-Trace-Id` when both are present.
 
-For a transition period you can also emit the legacy `X-Trace-Id` header alongside `traceparent` — controlled by
-`trace.http.legacy.header.enabled` (default `true`; set `false` once every service is on OpenTelemetry). Inbound
-acceptance of the legacy header is unaffected by the flag.
+The `X-Trace-Id` header carries the trace ID for callers not yet on W3C Trace Context. The framework does not
+echo the trace ID back to the HTTP client. (The correlation-id — a separate concern — is documented in
+[Reserved Names & Headers](reserved-names-and-headers.md#correlation-id-propagation).)
 
 ## Exporting telemetry {#export}
 
