@@ -39,9 +39,13 @@ public class KafkaSinkTask implements TypedLambdaFunction<byte[], Map<String, Ob
 
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, byte[] input, int instance) {
+        PostOffice po = new PostOffice(headers, instance);
         Map<String, Object> entry = new HashMap<>();
         entry.put("cid", headers.get(KafkaHeaders.CORRELATION_ID));
-        entry.put("traceId", new PostOffice(headers, instance).getTraceId());
+        // the business correlation-id surfaced to the task as model.cid (KafkaFlowConsumer stamps the
+        // inbound Kafka cid as the flow's correlation-id, which survives the RPC hop as this header)
+        entry.put("myCid", po.getMyCorrelationId());
+        entry.put("traceId", po.getTraceId());
         entry.put("body", new String(input, StandardCharsets.UTF_8));
         RECEIVED.add(entry);
         return Map.of("status", "received");

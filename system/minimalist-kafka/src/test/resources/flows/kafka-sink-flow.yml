@@ -2,15 +2,14 @@
 # Flow reached when the Kafka flow adapter routes a message from 'mini-test-topic'. Its single task
 # records the received message so the test can assert delivery + trace continuity.
 #
-# Correlation-id: unlike an HTTP-triggered flow, do NOT use model.cid here. KafkaFlowConsumer.invokeFlow
-# starts this flow via a blocking PostOffice.request(...) (it must wait for the outcome to decide
-# commit/retry/DLQ) - and PostOffice's RPC plumbing (FutureInbox) overwrites the correlation-id with a
-# temporary id for reply-matching BEFORE the event reaches this flow, restoring the original only on the
-# caller's reply (which this adapter never inspects for that purpose). So model.cid here is RPC-internal
-# noise, not the Kafka message's correlation-id. Read it from the raw inbound header instead - the adapter
-# resolves the Kafka 'cid' header (KafkaHeaders.CORRELATION_ID) as this message's correlation-id, so
-# 'input.header.cid' carries it unchanged. If an upstream producer instead used a proprietary header (e.g.
-# a CloudEvents 'ce-id', or a custom 'x-correlation-id'), read that header name instead, for example:
+# Correlation-id: the adapter stamps the inbound Kafka correlation-id (the 'cid' header,
+# KafkaHeaders.CORRELATION_ID) onto the flow request as the 'correlation_id' header EventScriptManager
+# reads, so 'model.cid' carries it here - and every task sees it via PostOffice.getMyCorrelationId() - just
+# like an HTTP-triggered flow. (It is set alongside the envelope correlation-id, which
+# KafkaFlowConsumer.invokeFlow's blocking PostOffice.request(...) rewrites for RPC reply-matching; setting
+# the header too is what keeps model.cid correct - see KafkaFlowConsumer.toFlowRequest.) This flow reads
+# the raw inbound header ('input.header.cid') instead - equivalent for the default header, and the way to
+# read a proprietary upstream header name (e.g. a CloudEvents 'ce-id', or a custom 'x-correlation-id'):
 #   'input.header.x-correlation-id -> header.cid'
 #
 flow:

@@ -39,9 +39,12 @@ public class SchemaSinkTask implements TypedLambdaFunction<Map<String, Object>, 
 
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+        PostOffice po = new PostOffice(headers, instance);
         Map<String, Object> entry = new HashMap<>();
         entry.put("cid", headers.get(KafkaHeaders.CORRELATION_ID));
-        entry.put("traceId", new PostOffice(headers, instance).getTraceId());
+        // the business correlation-id surfaced to the task as model.cid (see KafkaSinkTask)
+        entry.put("myCid", po.getMyCorrelationId());
+        entry.put("traceId", po.getTraceId());
         entry.put("body", input);
         RECEIVED.add(entry);
         return Map.of("status", "received");

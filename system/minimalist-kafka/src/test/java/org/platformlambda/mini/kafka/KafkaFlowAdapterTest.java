@@ -121,6 +121,8 @@ class KafkaFlowAdapterTest {
         Map<String, Object> received = KafkaSinkTask.RECEIVED.poll(25, TimeUnit.SECONDS);
         assertNotNull(received, "the sink flow should receive the message routed by the adapter");
         assertEquals(cid, received.get("cid"), "correlation-id propagated as a Kafka header");
+        assertEquals(cid, received.get("myCid"),
+                "business cid surfaced to the task as model.cid / getMyCorrelationId() through the flow engine");
         assertEquals("{\"hello\":\"kafka\"}", received.get("body"), "body round-tripped through Kafka");
         assertEquals(TRACE_ID, received.get("traceId"), "trace-id stayed continuous across the Kafka hop");
     }
@@ -148,6 +150,8 @@ class KafkaFlowAdapterTest {
         Map<String, Object> received = SchemaSinkTask.RECEIVED.poll(25, TimeUnit.SECONDS);
         assertNotNull(received, "the schema sink flow should receive the decoded message");
         assertEquals(cid, received.get("cid"), "correlation-id propagated as a Kafka header");
+        assertEquals(cid, received.get("myCid"),
+                "business cid surfaced to the task as model.cid / getMyCorrelationId() through the flow engine");
         assertInstanceOf(Map.class, received.get("body"), "body decoded to a Map (not raw byte[])");
         assertEquals("schema", ((Map<String, Object>) received.get("body")).get("hello"),
                 "JSON Schema message round-tripped: produced by id, decoded by the adapter");
@@ -176,6 +180,8 @@ class KafkaFlowAdapterTest {
         Map<String, Object> received = SchemaSinkTask.RECEIVED.poll(25, TimeUnit.SECONDS);
         assertNotNull(received, "the schema sink flow should receive the decoded Avro message");
         assertEquals(cid, received.get("cid"), "correlation-id propagated as a Kafka header");
+        assertEquals(cid, received.get("myCid"),
+                "business cid surfaced to the task as model.cid / getMyCorrelationId() through the flow engine");
         assertInstanceOf(Map.class, received.get("body"), "body decoded to a Map (not raw byte[])");
         assertEquals("avro", ((Map<String, Object>) received.get("body")).get("hello"),
                 "Avro message round-tripped: produced by id, decoded by the adapter");
