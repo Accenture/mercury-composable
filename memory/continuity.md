@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-03 | agent: Claude Code (2026-07-03-185156)
+- **last_session:** 2026-07-03 | agent: Claude Code (2026-07-03-200826)
 - **last_review:** 2026-07-02 | through 2026-07-02-161433.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -651,7 +651,11 @@
   **Review round 1 (2026-07-03, Copilot) applied:** merged `main` (PR #132) clean; fixed the inbound
   business-cid loss ([[kafka-flow-consumer-cid-header]]) + the stale `kafka-demo` DLQ-suffix config.
   **E2E-validated** against `sync-over-async-demo` (byte[] round-trip, 3-pod trace continuity, cid
-  propagation, cross-pod Redis return route, 408 timeout). Awaiting review round 2.
+  propagation, cross-pod Redis return route, 408 timeout).
+  **Review round 2 (2026-07-03):** corrected the stale "model.cid is RPC noise" comments in the two
+  test-resource sink flows (the round-1 fix made model.cid carry the Kafka cid); added embedded-Kafka
+  `KafkaFlowAdapterTest` assertions that a task's `getMyCorrelationId()` == the sent cid, regression-guarding
+  the fix end-to-end. See [[kafka-flow-consumer-cid-header]].
   **Review-driven hardening pass (2026-06-26, Claude Code):** applied the Copilot review
   (`draft-design-specs/kafka-sync-over-async-review.md`) via `apply-critique` — 6 fixes across both modules:
   mk#1 producer failure-logging callback (still drop-n-forget), mk#2 consumer retry→DLQ (`kafka-flow-failure-dlq`),
