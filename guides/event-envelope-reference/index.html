@@ -1192,8 +1192,12 @@ in user code when operating at the HTTP boundary:</p>
 <td>Distributed trace identifier</td>
 </tr>
 <tr>
+<td><code>traceparent</code></td>
+<td>W3C Trace Context (trace ID + parent span ID); takes precedence over <code>X-Trace-Id</code> inbound</td>
+</tr>
+<tr>
 <td><code>X-Correlation-Id</code></td>
-<td>Caller-assigned correlation ID</td>
+<td>Business correlation-id (default header name; configurable via <code>http.correlation.id.header</code>)</td>
 </tr>
 <tr>
 <td><code>X-Flow-Id</code></td>

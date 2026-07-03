@@ -664,16 +664,16 @@ below tune it. The <code>otel.*</code> keys are read by the <code>opentelemetry-
 <td>Maximum stack-trace lines embedded in an <code>EventEnvelope</code> when an exception occurs.</td>
 </tr>
 <tr>
-<td><code>trace.http.header</code></td>
-<td><code>String</code> (comma-sep list)</td>
-<td><code>X-Trace-Id</code></td>
-<td>Legacy HTTP request header(s) carrying a trace ID (e.g. <code>X-Trace-Id</code>, <code>X-Correlation-Id</code>). Accepted on inbound requests as a fallback; the first entry is used as the outbound legacy trace header. The W3C <code>traceparent</code> header takes precedence over these on inbound.</td>
+<td><code>http.correlation.id.header</code></td>
+<td><code>String</code></td>
+<td><code>X-Correlation-Id</code></td>
+<td>HTTP header carrying the business correlation-id (enterprise-specific; case-insensitive on inbound). Captured at the edge and preserved end-to-end — exposed to flows as <code>model.cid</code> and to functions via <code>PostOffice.getMyCorrelationId()</code>. A fresh dash-less UUID is generated when the header is absent.</td>
 </tr>
 <tr>
-<td><code>trace.http.legacy.header.enabled</code></td>
-<td><code>boolean</code></td>
-<td><code>true</code></td>
-<td>When <code>true</code>, outbound HTTP requests emit the legacy <code>trace.http.header</code> alongside W3C <code>traceparent</code>. Set to <code>false</code> to send only <code>traceparent</code> once downstream services are fully on OpenTelemetry. Inbound acceptance of the legacy header is unaffected by this flag.</td>
+<td><code>kafka.correlation.id.header</code></td>
+<td><code>String</code></td>
+<td><code>cid</code></td>
+<td>Kafka message header carrying the business correlation-id (no cross-vendor standard exists for non-HTTP transport, so it is configurable). Read inbound by the Kafka Flow Adapter and written outbound by <code>simple.kafka.notification</code>; a fresh UUID is generated inbound when absent.</td>
 </tr>
 <tr>
 <td><code>otel.trace.forwarder.enabled</code></td>
@@ -1289,11 +1289,14 @@ kernel.thread.pool=100
 http.client.connection.timeout=5000
 
 # --- Distributed Tracing ---
-# Legacy trace headers, in preference order; first entry is also the outbound legacy header.
-# The W3C &quot;traceparent&quot; header takes precedence over these on inbound requests.
-trace.http.header=X-Trace-Id
-# Emit the legacy header outbound alongside &quot;traceparent&quot; (set false for pure W3C OpenTelemetry).
-trace.http.legacy.header.enabled=true
+# The trace ID travels as the &quot;X-Trace-Id&quot; header and the W3C &quot;traceparent&quot; header (traceId + spanId).
+# Both are emitted outbound and accepted inbound; &quot;traceparent&quot; takes precedence on inbound. No config.
+
+# --- Correlation ID ---
+# Business correlation-id headers (configurable; defaults shown). Captured at the edge, preserved as
+# model.cid, and propagated downstream. A fresh UUID is generated when absent.
+http.correlation.id.header=X-Correlation-Id
+kafka.correlation.id.header=cid
 
 # --- Health ---
 # List health-check routes that must all pass for /health to return 200.

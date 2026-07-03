@@ -309,12 +309,12 @@ addition at Layer 2 is the synthetic flow summary that brackets the whole flow's
 OpenTelemetry uses: a <strong>32-hex trace ID</strong> and <strong>16-hex span ID</strong>. Across an HTTP boundary the system propagates the
 standard <code>traceparent</code> header:</p>
 <ul>
-<li>outbound — the HTTP client injects <code>traceparent</code> carrying the current trace + span;</li>
-<li>inbound — the HTTP layer extracts <code>traceparent</code>, continues the upstream trace, and adopts the caller's span as the parent.</li>
+<li>outbound — the HTTP client injects <code>traceparent</code> carrying the current trace + span, alongside <code>X-Trace-Id</code>;</li>
+<li>inbound — the HTTP layer extracts <code>traceparent</code>, continues the upstream trace, and adopts the caller's span as the parent. <code>traceparent</code> takes precedence over <code>X-Trace-Id</code> when both are present.</li>
 </ul>
-<p>For a transition period you can also emit the legacy <code>X-Trace-Id</code> header alongside <code>traceparent</code> — controlled by
-<code>trace.http.legacy.header.enabled</code> (default <code>true</code>; set <code>false</code> once every service is on OpenTelemetry). Inbound
-acceptance of the legacy header is unaffected by the flag.</p>
+<p>The <code>X-Trace-Id</code> header carries the trace ID for callers not yet on W3C Trace Context. The framework does not
+echo the trace ID back to the HTTP client. (The correlation-id — a separate concern — is documented in
+<a href="../reserved-names-and-headers/#correlation-id-propagation">Reserved Names &amp; Headers</a>.)</p>
 <h2 id="export">Exporting telemetry</h2>
 <h3 id="forwarder">The forwarder extension point</h3>
 <p>By default the trace dataset is logged. To ship it elsewhere, register a function at the reserved route

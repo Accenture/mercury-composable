@@ -152,7 +152,9 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#reserved-http-header-names">Reserved HTTP header names</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#w3c-trace-context-opentelemetry">W3C Trace Context (OpenTelemetry)</a>
+    <li class="toctree-l3"><a class="reference internal" href="#trace-id-x-trace-id-and-w3c-traceparent">Trace ID (X-Trace-Id and W3C traceparent)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#correlation-id-propagation">Correlation ID propagation</a>
     </li>
         </ul>
     </li>
@@ -486,11 +488,19 @@ input "headers". However, they are not part of the EventEnvelope.</p>
 <td style="text-align: left;">my_trace_path</td>
 <td style="text-align: left;">trace path, if any, for the incoming event</td>
 </tr>
+<tr>
+<td style="text-align: left;">my_correlation_id</td>
+<td style="text-align: left;">business correlation-id, if any (the flow's <code>model.cid</code>)</td>
+</tr>
 </tbody>
 </table>
+<p>These are READ only. Do not set them as response headers - the framework injects them and filters them
+out of responses. Read them through the PostOffice API (<code>getRoute</code>, <code>getTraceId</code>, <code>getTracePath</code>,
+<code>getMyCorrelationId</code>) rather than the raw header map.</p>
 <p>You can create a trackable PostOffice using the "headers" and the "instance" parameters in the input arguments
 of your function.</p>
 <pre><code class="language-java">var po = new PostOffice(headers, instance);
+String correlationId = po.getMyCorrelationId();   // upstream correlation-id, propagated to this function
 </code></pre>
 <h2 id="reserved-http-header-names">Reserved HTTP header names</h2>
 <table>
@@ -523,11 +533,11 @@ of your function.</p>
 </tr>
 <tr>
 <td style="text-align: left;">X-Trace-Id</td>
-<td style="text-align: left;">Legacy header to propagate trace ID</td>
+<td style="text-align: left;">Propagates the trace ID (end-to-end telemetry)</td>
 </tr>
 <tr>
 <td style="text-align: left;">X-Correlation-Id</td>
-<td style="text-align: left;">Alternative to X-Trace-Id</td>
+<td style="text-align: left;">Business correlation-id (default header name; configurable)</td>
 </tr>
 <tr>
 <td style="text-align: left;">traceparent</td>
@@ -551,25 +561,46 @@ of your function.</p>
 </tr>
 </tbody>
 </table>
-<p>To support traceId that is stored in X-Correlation-Id HTTP header, set this in application.properties.</p>
-<pre><code class="language-properties"># list of supported traceId headers where the first one is the default label
-trace.http.header=X-Correlation-Id, X-Trace-Id
-</code></pre>
-<h3 id="w3c-trace-context-opentelemetry">W3C Trace Context (OpenTelemetry)</h3>
-<p>The system also supports the W3C <code>traceparent</code> header for end-to-end OpenTelemetry tracing
-(span lineage across HTTP boundaries):</p>
+<h3 id="trace-id-x-trace-id-and-w3c-traceparent">Trace ID (X-Trace-Id and W3C traceparent)</h3>
+<p>The trace ID is for end-to-end telemetry. Two header mechanisms are supported, both accepted inbound and
+emitted outbound:</p>
 <ul>
-<li><strong>Inbound</strong> - when a request carries a well-formed <code>traceparent</code>, it takes precedence over the
-  legacy <code>trace.http.header</code>. The trace ID segment becomes the Mercury trace ID and the parent span
-  ID is adopted, so the trace continues from the upstream caller. The legacy header is honored only
-  when <code>traceparent</code> is absent.</li>
-<li><strong>Outbound</strong> - the system emits <code>traceparent</code> and, for backward compatibility, the legacy header.
-  Set <code>trace.http.legacy.header.enabled=false</code> to emit only <code>traceparent</code> once all downstream
-  services are on OpenTelemetry.</li>
+<li><strong>X-Trace-Id</strong> - carries the trace ID. When absent inbound, a fresh trace ID is generated at the edge.</li>
+<li><strong>traceparent</strong> (W3C Trace Context) - carries the trace ID <em>and</em> the caller's span ID. On inbound it
+  <strong>takes precedence</strong> over <code>X-Trace-Id</code>: the trace ID segment becomes the Mercury trace ID and the parent
+  span ID is adopted, so the trace continues from the upstream caller (span lineage across HTTP boundaries).
+  On outbound the system emits <code>traceparent</code> built from this hop's own span, alongside <code>X-Trace-Id</code>.</li>
 </ul>
-<pre><code class="language-properties"># emit the legacy trace header outbound alongside traceparent (default true)
-trace.http.legacy.header.enabled=true
+<p>The framework does <strong>not</strong> echo the trace ID (or the correlation-id) back to the HTTP client.</p>
+<blockquote>
+<p>The legacy <code>trace.http.header</code> parameter (which allowed <code>X-Correlation-Id</code> to double as a trace ID) has
+been retired. Use <code>X-Trace-Id</code> / <code>traceparent</code> for the trace ID, and <code>X-Correlation-Id</code> for the
+correlation-id (below) - the two concerns are now separate.</p>
+</blockquote>
+<h3 id="correlation-id-propagation">Correlation ID propagation</h3>
+<p>The correlation-id ties a transaction together across business domains, from upstream through the mid-tier
+to downstream. Its header name is enterprise-specific, so it is <strong>configurable</strong>:</p>
+<pre><code class="language-properties"># HTTP: many enterprises use X-Correlation-Id (the default)
+http.correlation.id.header=X-Correlation-Id
+# Kafka: no cross-vendor standard exists, so &quot;cid&quot; is the default
+kafka.correlation.id.header=cid
 </code></pre>
+<p>Propagation:</p>
+<ul>
+<li><strong>Captured at the edge.</strong> REST automation (HTTP) and the Kafka Flow Adapter read the configured header;
+  when absent, a fresh UUID (no dashes, via <code>util.getUuid()</code>) is generated.</li>
+<li><strong>Preserved in the flow</strong> as <code>model.cid</code>, distinct from the internal per-request id used to route the
+  reply, and exposed to every function task as the read-only <code>my_correlation_id</code> header
+  (<code>PostOffice.getMyCorrelationId()</code>).</li>
+<li><strong>Carried to any touch point.</strong> Every <code>PostOffice</code> send/RPC/broadcast stamps <code>my_correlation_id</code> on the
+  outgoing event (the same way the trace context is carried), so the correlation-id follows the call graph
+  automatically — across in-memory calls, the cross-instance <strong>event-over-HTTP</strong> hop (it rides in the
+  serialized envelope and the peer target reads it via <code>getMyCorrelationId()</code>), and into downstream systems.</li>
+<li><strong>Handed downstream.</strong> <code>simple.kafka.notification</code> stamps it on the outbound Kafka message (under
+  <code>kafka.correlation.id.header</code>), and <code>AsyncHttpClient</code> emits it as the configured HTTP header
+  (<code>http.correlation.id.header</code>) on downstream calls — in both cases an explicitly set header (e.g. a flow
+  mapping <code>model.cid -&gt; header.cid</code>, or a request that already carries the header) takes precedence.</li>
+</ul>
 <h2 id="transient-data-store">Transient data store</h2>
 <p>The system uses a temp folder in "/tmp/reactive" for event streaming.</p>
 <h2 id="see-also">See also</h2>
