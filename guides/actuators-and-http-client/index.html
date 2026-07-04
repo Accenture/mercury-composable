@@ -398,6 +398,15 @@ EventEnvelope request = new EventEnvelope().setTo(&quot;async.http.request&quot;
 EventEnvelope res = po.request(request, 5000).get();
 // the response is a Java Future and the result is an EventEnvelope
 </code></pre>
+<blockquote>
+<p><strong>Trace headers are managed for you.</strong> Do not set <code>X-Trace-Id</code> or <code>traceparent</code> on the <code>AsyncHttpRequest</code>
+inside a traced flow or function — the HTTP client injects them automatically from the current trace context
+(overwriting any value you provide), so distributed traces stay connected across the HTTP boundary and the
+upstream trace is propagated for you. If the call is <strong>not</strong> traced (e.g. an endpoint with <code>tracing: false</code>,
+or a standalone / unit-test call), a trace header you set is forwarded as-is — which is what lets you
+propagate a trace to a third-party system, or test an external endpoint with full control over its request
+headers.</p>
+</blockquote>
 <p>By default, your user function is running in a virtual thread.
 While the RPC call looks like synchronous, the po.request API will run in non-blocking mode in the same fashion
 as the "async/await" pattern.</p>
