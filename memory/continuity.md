@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-03 | agent: Claude Code (2026-07-03-200826)
+- **last_session:** 2026-07-04 | agent: Claude Code (2026-07-04-170349)
 - **last_review:** 2026-07-02 | through 2026-07-02-161433.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -656,6 +656,12 @@
   test-resource sink flows (the round-1 fix made model.cid carry the Kafka cid); added embedded-Kafka
   `KafkaFlowAdapterTest` assertions that a task's `getMyCorrelationId()` == the sent cid, regression-guarding
   the fix end-to-end. See [[kafka-flow-consumer-cid-header]].
+  **Terminology refactor (2026-07-04):** renamed the ambiguous `correlationId` naming to
+  `businessCorrelationId`/`internalCorrelationId` across event-script-engine, minimalist-kafka,
+  platform-core's HTTP path, and `extensions/sync-over-async` — Java identifiers only (fields/locals/internal
+  constants); `EventEnvelope.cid`, `PostOffice.getMyCorrelationId()`, and all wire header strings/config keys
+  are unchanged. Full reactor + all affected test suites green. See
+  [[business-vs-internal-correlation-id-terminology]].
   **Review-driven hardening pass (2026-06-26, Claude Code):** applied the Copilot review
   (`draft-design-specs/kafka-sync-over-async-review.md`) via `apply-critique` — 6 fixes across both modules:
   mk#1 producer failure-logging callback (still drop-n-forget), mk#2 consumer retry→DLQ (`kafka-flow-failure-dlq`),
