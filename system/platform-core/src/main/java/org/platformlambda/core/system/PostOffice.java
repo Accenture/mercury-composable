@@ -40,7 +40,7 @@ public class PostOffice {
     private final String myRoute;
     private final String myTraceId;
     private final String myTracePath;
-    private final String myCorrelationId;
+    private final String businessCorrelationId;
     private final int instance;
     private final CustomSerializer serializer;
 
@@ -71,7 +71,7 @@ public class PostOffice {
         myRoute = headers.get(MY_ROUTE);
         myTraceId = headers.get(MY_TRACE_ID);
         myTracePath = headers.get(MY_TRACE_PATH);
-        myCorrelationId = headers.get(MY_CORRELATION_ID);
+        businessCorrelationId = headers.get(MY_CORRELATION_ID);
         this.instance = instance;
         this.serializer = null;
     }
@@ -87,7 +87,7 @@ public class PostOffice {
         myRoute = headers.get(MY_ROUTE);
         myTraceId = headers.get(MY_TRACE_ID);
         myTracePath = headers.get(MY_TRACE_PATH);
-        myCorrelationId = headers.get(MY_CORRELATION_ID);
+        businessCorrelationId = headers.get(MY_CORRELATION_ID);
         this.instance = instance;
         this.serializer = serializer;
     }
@@ -105,7 +105,7 @@ public class PostOffice {
         this.myRoute = myRoute;
         this.myTraceId = myTraceId;
         this.myTracePath = myTracePath;
-        this.myCorrelationId = null;
+        this.businessCorrelationId = null;
         this.instance = 0;
         this.serializer = null;
     }
@@ -124,7 +124,7 @@ public class PostOffice {
         this.myRoute = myRoute;
         this.myTraceId = myTraceId;
         this.myTracePath = myTracePath;
-        this.myCorrelationId = null;
+        this.businessCorrelationId = null;
         this.instance = 0;
         this.serializer = serializer;
     }
@@ -169,7 +169,7 @@ public class PostOffice {
      * @return correlation-id of the current transaction, or null if none is in scope
      */
     public String getMyCorrelationId() {
-        return myCorrelationId;
+        return businessCorrelationId;
     }
 
     /**
@@ -715,8 +715,8 @@ public class PostOffice {
         }
         // propagate the business correlation-id to the next touch point (read via getMyCorrelationId());
         // carried as a read-only reserved header so it reaches any function, HTTP client, or Kafka producer
-        if (myCorrelationId != null && event.getHeader(MY_CORRELATION_ID) == null) {
-            event.setHeader(MY_CORRELATION_ID, myCorrelationId);
+        if (businessCorrelationId != null && event.getHeader(MY_CORRELATION_ID) == null) {
+            event.setHeader(MY_CORRELATION_ID, businessCorrelationId);
         }
         // carry this function's spanId so the receiver can store it as its parentSpanId
         TraceInfo trace = getTrace();

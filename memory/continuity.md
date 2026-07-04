@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-03T01:47:59Z | agent: Claude Code (2026-07-03-014759)
+- **last_session:** 2026-07-04 | agent: Claude Code (2026-07-04-181333)
 - **last_review:** 2026-07-02 | through 2026-07-02-161433.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -643,6 +643,32 @@
   per-module README (code-level); and Gradle build (`thread-add-gradle-build`).
   Also done this sprint: externalized Kafka client config ([[kafka-client-config-templates]]), configurable
   per-binding consumer group, and the Copilot-review hardening (incl. [[kafka-flow-failure-dlq]]).
+  **2026-07-02 extension (PR #133, `feature/kafka-regex-dlq-commit-mode`):** regex topic subscription
+  (`topic-pattern`), per-binding `dlq-topic` (replaces `kafka.flow.dlq.suffix`), `auto-commit` delivery
+  mode (`max-poll-records` configurable), and `metadata.*` (topic/partition/offset/timestamp/key) injected
+  into the flow input dataset. `KafkaConsumerBinding` (builder pattern) carries all per-binding config.
+  PR open: https://github.com/Accenture/mercury-composable/pull/133
+  **Review round 1 (2026-07-03, Copilot) applied:** merged `main` (PR #132) clean; fixed the inbound
+  business-cid loss ([[kafka-flow-consumer-cid-header]]) + the stale `kafka-demo` DLQ-suffix config.
+  **E2E-validated** against `sync-over-async-demo` (byte[] round-trip, 3-pod trace continuity, cid
+  propagation, cross-pod Redis return route, 408 timeout).
+  **Review round 2 (2026-07-03):** corrected the stale "model.cid is RPC noise" comments in the two
+  test-resource sink flows (the round-1 fix made model.cid carry the Kafka cid); added embedded-Kafka
+  `KafkaFlowAdapterTest` assertions that a task's `getMyCorrelationId()` == the sent cid, regression-guarding
+  the fix end-to-end. See [[kafka-flow-consumer-cid-header]].
+  **Terminology refactor (2026-07-04):** renamed the ambiguous `correlationId` naming to
+  `businessCorrelationId`/`internalCorrelationId` across event-script-engine, minimalist-kafka,
+  platform-core's HTTP path, and `extensions/sync-over-async` — Java identifiers only (fields/locals/internal
+  constants); `EventEnvelope.cid`, `PostOffice.getMyCorrelationId()`, and all wire header strings/config keys
+  are unchanged. Full reactor + all affected test suites green. See
+  [[business-vs-internal-correlation-id-terminology]].
+  **Test-infra improvements (2026-07-04, reviewer-driven):** (1) added `topic-pattern` embedded-Kafka e2e
+  test proving `subscribe(Pattern)` + `input.metadata.*` surfaces the concrete matched topic/partition
+  (was mock/config-only); (2) renamed the JSON schema-registry test path `schema-*`→`json-*` to sit
+  parallel to the Avro case; (3) split the shared `schema-sink-flow`/`SchemaSinkTask` (an agile artifact -
+  JSON first, Avro bolted on) into per-format `json-sink-flow`/`JsonSinkTask` + `avro-sink-flow`/
+  `AvroSinkTask`, removing the latent shared-queue coupling (codec id-dispatch still proven by
+  `SchemaCodecTest`). minimalist-kafka 78 tests green.
   **Review-driven hardening pass (2026-06-26, Claude Code):** applied the Copilot review
   (`draft-design-specs/kafka-sync-over-async-review.md`) via `apply-critique` — 6 fixes across both modules:
   mk#1 producer failure-logging callback (still drop-n-forget), mk#2 consumer retry→DLQ (`kafka-flow-failure-dlq`),

@@ -74,9 +74,9 @@ public class ReturnRouteCoordinator implements AutoCloseable {
         subscription = client.connectPubSub();
         subscription.addListener(new RedisPubSubAdapter<>() {
             @Override
-            public void message(String channel, String correlationId) {
+            public void message(String channel, String businessCorrelationId) {
                 // off the event loop: the response read below is a blocking sync command
-                signalWorkers.submit(() -> onResponseSignal(correlationId));
+                signalWorkers.submit(() -> onResponseSignal(businessCorrelationId));
             }
         });
         subscription.sync().subscribe(returnChannel);
@@ -84,9 +84,9 @@ public class ReturnRouteCoordinator implements AutoCloseable {
     }
 
     /** Originating pod: register the pending request and publish its return route. */
-    public CompletableFuture<String> begin(String correlationId) {
-        CompletableFuture<String> future = pending.register(correlationId);
-        store.saveRoute(correlationId, returnChannel, config.routeTtlSeconds());
+    public CompletableFuture<String> begin(String businessCorrelationId) {
+        CompletableFuture<String> future = pending.register(businessCorrelationId);
+        store.saveRoute(businessCorrelationId, returnChannel, config.routeTtlSeconds());
         return future;
     }
 
@@ -97,18 +97,18 @@ public class ReturnRouteCoordinator implements AutoCloseable {
      * the response is still in Redis - because {@link #deliver} saves it before signalling - so a final read
      * recovers it instead of failing.
      */
-    public String awaitResponse(String correlationId, long timeoutMillis)
+    public String awaitResponse(String businessCorrelationId, long timeoutMillis)
             throws InterruptedException, TimeoutException {
-        CompletableFuture<String> future = pending.get(correlationId);
+        CompletableFuture<String> future = pending.get(businessCorrelationId);
         if (future != null) {
-            return awaitResponse(correlationId, future, timeoutMillis);
+            return awaitResponse(businessCorrelationId, future, timeoutMillis);
         }
-        String early = store.getResponse(correlationId);
+        String early = store.getResponse(businessCorrelationId);
         if (early != null) {
-            store.cleanup(correlationId);
+            store.cleanup(businessCorrelationId);
             return early;
         }
-        throw new IllegalStateException("No pending request for " + correlationId);
+        throw new IllegalStateException("No pending request for " + businessCorrelationId);
     }
 
     /**
@@ -118,26 +118,26 @@ public class ReturnRouteCoordinator implements AutoCloseable {
      * @return the response payload
      * @throws TimeoutException if no response arrived (and none is in Redis) within {@code timeoutMillis}
      */
-    public String awaitResponse(String correlationId, CompletableFuture<String> future, long timeoutMillis)
+    public String awaitResponse(String businessCorrelationId, CompletableFuture<String> future, long timeoutMillis)
             throws InterruptedException, TimeoutException {
         try {
             String response = future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-            store.cleanup(correlationId);   // rendezvous done; free the keys now instead of on TTL
+            store.cleanup(businessCorrelationId);   // rendezvous done; free the keys now instead of on TTL
             return response;
         } catch (TimeoutException timeout) {
-            String late = store.getResponse(correlationId);
+            String late = store.getResponse(businessCorrelationId);
             if (late != null) {
-                log.debug("Recovered response for {} via final read (missed notification)", correlationId);
-                store.cleanup(correlationId);
+                log.debug("Recovered response for {} via final read (missed notification)", businessCorrelationId);
+                store.cleanup(businessCorrelationId);
                 return late;
             }
             throw timeout;
         } catch (ExecutionException e) {
-            throw new IllegalStateException("Pending request failed: " + correlationId, e.getCause());
+            throw new IllegalStateException("Pending request failed: " + businessCorrelationId, e.getCause());
         } finally {
             // idempotent: no-op if already removed by complete(), ensures release on all exit paths
             // including InterruptedException, which the catch blocks above do not cover
-            pending.cancel(correlationId);
+            pending.cancel(businessCorrelationId);
         }
     }
 
@@ -147,8 +147,8 @@ public class ReturnRouteCoordinator implements AutoCloseable {
      * registered by {@code begin} would otherwise leak until the pod restarts. Safe to call if the entry
      * has already been removed (e.g. the response arrived concurrently) — cancel is a no-op in that case.
      */
-    public void abort(String correlationId) {
-        pending.cancel(correlationId);
+    public void abort(String businessCorrelationId) {
+        pending.cancel(businessCorrelationId);
     }
 
     /**
@@ -157,21 +157,21 @@ public class ReturnRouteCoordinator implements AutoCloseable {
      * @return {@code true} if a route existed and a notification was published; {@code false} for an orphan
      *         (route expired or unknown correlation-id - the response is still stored under its TTL).
      */
-    public boolean deliver(String correlationId, String responsePayload) {
-        store.saveResponse(correlationId, responsePayload, config.responseTtlSeconds());
-        String channel = store.getRoute(correlationId);
+    public boolean deliver(String businessCorrelationId, String responsePayload) {
+        store.saveResponse(businessCorrelationId, responsePayload, config.responseTtlSeconds());
+        String channel = store.getRoute(businessCorrelationId);
         if (channel == null) {
-            log.debug("Orphan response for {} - no return route", correlationId);
+            log.debug("Orphan response for {} - no return route", businessCorrelationId);
             return false;
         }
-        commandConnection.sync().publish(channel, correlationId);
+        commandConnection.sync().publish(channel, businessCorrelationId);
         return true;
     }
 
-    private void onResponseSignal(String correlationId) {
-        String payload = store.getResponse(correlationId);
+    private void onResponseSignal(String businessCorrelationId) {
+        String payload = store.getResponse(businessCorrelationId);
         if (payload != null) {
-            pending.complete(correlationId, payload);
+            pending.complete(businessCorrelationId, payload);
         }
     }
 

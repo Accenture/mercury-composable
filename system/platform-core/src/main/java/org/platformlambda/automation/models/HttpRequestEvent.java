@@ -37,7 +37,7 @@ public class HttpRequestEvent {
     private static final String TIMEOUT_TAG = "8";
     private static final String TRACING_TAG = "9";
     private static final String PARENT_SPAN_ID = "10";
-    private static final String CORRELATION_ID = "11";
+    private static final String BUSINESS_CORRELATION_ID = "11";
 
     public String requestId;
     public String primary;
@@ -51,7 +51,7 @@ public class HttpRequestEvent {
     // W3C trace context: the caller's span ID extracted from an inbound "traceparent" header, if any
     public String parentSpanId;
     // business correlation-id captured at the edge, exposed to the target function as my_correlation_id
-    public String correlationId;
+    public String businessCorrelationId;
 
     @SuppressWarnings("unchecked")
     public HttpRequestEvent(Object data) {
@@ -67,7 +67,7 @@ public class HttpRequestEvent {
             this.timeout = Utility.getInstance().str2long(map.get(TIMEOUT_TAG).toString());
             this.tracing = (boolean) map.get(TRACING_TAG);
             this.parentSpanId = (String) map.get(PARENT_SPAN_ID);
-            this.correlationId = (String) map.get(CORRELATION_ID);
+            this.businessCorrelationId = (String) map.get(BUSINESS_CORRELATION_ID);
         }
     }
 
@@ -102,8 +102,8 @@ public class HttpRequestEvent {
         if (parentSpanId != null) {
             result.put(PARENT_SPAN_ID, parentSpanId);
         }
-        if (correlationId != null) {
-            result.put(CORRELATION_ID, correlationId);
+        if (businessCorrelationId != null) {
+            result.put(BUSINESS_CORRELATION_ID, businessCorrelationId);
         }
         return result;
     }

@@ -48,16 +48,16 @@ public class PendingRequests {
      *
      * @throws IllegalStateException if the pod is at capacity or the correlation-id is already in flight
      */
-    public CompletableFuture<String> register(String correlationId) {
+    public CompletableFuture<String> register(String businessCorrelationId) {
         // reserve the slot atomically before the map write so two threads can't both pass the cap check
         if (inFlight.incrementAndGet() > maxPending) {
             inFlight.decrementAndGet();
             throw new IllegalStateException("Too many pending requests (max " + maxPending + ")");
         }
         CompletableFuture<String> future = new CompletableFuture<>();
-        if (pending.putIfAbsent(correlationId, future) != null) {
+        if (pending.putIfAbsent(businessCorrelationId, future) != null) {
             inFlight.decrementAndGet();
-            throw new IllegalStateException("Duplicate correlation-id in flight: " + correlationId);
+            throw new IllegalStateException("Duplicate correlation-id in flight: " + businessCorrelationId);
         }
         return future;
     }
@@ -66,27 +66,27 @@ public class PendingRequests {
      * Complete the waiting future for this correlation-id. Idempotent: returns {@code false} (a no-op)
      * if no request is pending - i.e. an orphan, duplicate, or already-completed/timed-out response.
      */
-    public boolean complete(String correlationId, String response) {
-        CompletableFuture<String> future = remove(correlationId);
+    public boolean complete(String businessCorrelationId, String response) {
+        CompletableFuture<String> future = remove(businessCorrelationId);
         return future != null && future.complete(response);
     }
 
     /** Drop a pending request (e.g. on timeout) without completing it. */
-    public void cancel(String correlationId) {
-        remove(correlationId);
+    public void cancel(String businessCorrelationId) {
+        remove(businessCorrelationId);
     }
 
     /** Remove the entry and release its reserved slot, exactly once. */
-    private CompletableFuture<String> remove(String correlationId) {
-        CompletableFuture<String> future = pending.remove(correlationId);
+    private CompletableFuture<String> remove(String businessCorrelationId) {
+        CompletableFuture<String> future = pending.remove(businessCorrelationId);
         if (future != null) {
             inFlight.decrementAndGet();
         }
         return future;
     }
 
-    public boolean isPending(String correlationId) {
-        return pending.containsKey(correlationId);
+    public boolean isPending(String businessCorrelationId) {
+        return pending.containsKey(businessCorrelationId);
     }
 
     /**
@@ -94,8 +94,8 @@ public class PendingRequests {
      * request is in flight - e.g. the response already arrived and completed (and removed) the entry.
      * Used by the await-by-cid path when {@code begin} and {@code awaitResponse} run as separate flow tasks.
      */
-    public CompletableFuture<String> get(String correlationId) {
-        return pending.get(correlationId);
+    public CompletableFuture<String> get(String businessCorrelationId) {
+        return pending.get(businessCorrelationId);
     }
 
     public int size() {

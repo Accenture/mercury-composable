@@ -8,14 +8,23 @@ consumer:
     group: '${KAFKA_TEST_CONSUMER_GROUP:mini-test-group}'
     # partition: 0                      # optional; pins this partition (manual assign, no group rebalancing)
     # partition: '${POD_PARTITION}'     # or per-pod via env substitution
-  # Schema-aware binding: decode Confluent-framed values to a Map before routing into the flow.
-  - topic: 'schema-test-topic'
-    flow: 'schema-sink-flow'
-    group: 'schema-test-group'
+    # dlq-topic: 'mini-test-topic-dlq'  # optional; pre-provisioned DLQ topic - no DLQ if omitted
+    # auto-commit: true                 # optional; trades pod-death redelivery for throughput
+    # max-poll-records: 500             # optional; only meaningful with auto-commit (its own default when set)
+  # Schema-aware bindings: decode Confluent-framed values to a Map before routing into the flow. The two
+  # supported wire formats each get their own flow + sink for clarity - JSON Schema (json-sink-flow) and
+  # Avro (avro-sink-flow). The codec supports both by dispatching on the embedded schema id (proven at the
+  # codec level by SchemaCodecTest); these two bindings prove each wire format end-to-end through the adapter.
+  - topic: 'json-test-topic'
+    flow: 'json-sink-flow'
+    group: 'json-test-group'
     schema.enabled: true
-  # Avro variant: a second schema-enabled binding into the same sink flow (the codec dispatches by the
-  # embedded schema id, so one flow handles both JSON- and Avro-framed values).
   - topic: 'avro-test-topic'
-    flow: 'schema-sink-flow'
+    flow: 'avro-sink-flow'
     group: 'avro-test-group'
     schema.enabled: true
+  # Regex subscription: matches any topic like 'events.de', 'events.fr', etc. - one binding, one flow,
+  # shared across every matched topic ('group' is required since no sensible default exists for a regex).
+  - topic-pattern: 'events\.[a-z]{2}'
+    flow: 'kafka-pattern-sink-flow'
+    group: 'region-events-test-group'

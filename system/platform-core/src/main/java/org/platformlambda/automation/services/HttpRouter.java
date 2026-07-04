@@ -108,7 +108,7 @@ public class HttpRouter {
     // The only HTTP trace header the framework recognizes/emits, alongside W3C "traceparent".
     private static final String TRACE_ID_HEADER = "X-Trace-Id";
     // Configurable HTTP correlation-id header (enterprise-specific); default X-Correlation-Id.
-    private static String correlationIdHeader;
+    private static String businessCorrelationIdHeader;
     // Read-only reserved header exposing the business correlation-id to the target function.
     // Package-private so the HttpAuth handler (same package) can stamp it on the post-auth forward.
     static final String MY_CORRELATION_ID = "my_correlation_id";
@@ -126,8 +126,8 @@ public class HttpRouter {
                 LOADED.set(true);
                 Platform platform = Platform.getInstance();
                 AppConfigReader config = AppConfigReader.getInstance();
-                correlationIdHeader = config.getProperty("http.correlation.id.header", "X-Correlation-Id");
-                log.info("Correlation-id HTTP header is '{}'", correlationIdHeader);
+                businessCorrelationIdHeader = config.getProperty("http.correlation.id.header", "X-Correlation-Id");
+                log.info("Correlation-id HTTP header is '{}'", businessCorrelationIdHeader);
                 String folder = config.getProperty("spring.web.resources.static-locations",
                         config.getProperty("static.html.folder", "classpath:/public"));
                 if (folder.endsWith("/")) {
@@ -161,7 +161,7 @@ public class HttpRouter {
      * @return the correlation-id header name
      */
     public static String getCorrelationIdHeader() {
-        return correlationIdHeader;
+        return businessCorrelationIdHeader;
     }
 
     public ConcurrentMap<String, AsyncContextHolder> getContexts() {
@@ -471,10 +471,10 @@ public class HttpRouter {
         AsyncHttpRequest req = prepareHttpRequest(request, route, uri);
         // Ensure the request carries a business correlation-id; generate a fresh one at the edge if absent.
         // This is independent of tracing so a correlation-id is always available to flows and functions.
-        String correlationId = req.getHeader(correlationIdHeader);
-        if (correlationId == null) {
-            correlationId = util.getUuid();
-            req.setHeader(correlationIdHeader, correlationId);
+        String businessCorrelationId = req.getHeader(businessCorrelationIdHeader);
+        if (businessCorrelationId == null) {
+            businessCorrelationId = util.getUuid();
+            req.setHeader(businessCorrelationIdHeader, businessCorrelationId);
         }
         // Distributed tracing required?
         String traceId = null;
@@ -496,7 +496,7 @@ public class HttpRouter {
         }
         final HttpRequestEvent requestEvent = new HttpRequestEvent(requestId, route, authService, traceId, tracePath);
         requestEvent.parentSpanId = parentSpanId;
-        requestEvent.correlationId = correlationId;
+        requestEvent.businessCorrelationId = businessCorrelationId;
         // load HTTP body
         if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {
             handlePayload(request, route, requestEvent, req);
@@ -820,8 +820,8 @@ public class HttpRouter {
                     .setCorrelationId(requestEvent.requestId).setBody(requestEvent.httpRequest)
                     .setReplyTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
             // expose the business correlation-id to the target function (and downstream via PostOffice)
-            if (requestEvent.correlationId != null) {
-                event.setHeader(MY_CORRELATION_ID, requestEvent.correlationId);
+            if (requestEvent.businessCorrelationId != null) {
+                event.setHeader(MY_CORRELATION_ID, requestEvent.businessCorrelationId);
             }
             // enable distributed tracing if needed
             if (requestEvent.tracing) {
@@ -847,8 +847,8 @@ public class HttpRouter {
             if (!secondary.equals(requestEvent.primary)) {
                 EventEnvelope copy = new EventEnvelope().setTo(secondary).setFrom(HTTP_REQUEST)
                         .setBody(requestEvent.httpRequest);
-                if (requestEvent.correlationId != null) {
-                    copy.setHeader(MY_CORRELATION_ID, requestEvent.correlationId);
+                if (requestEvent.businessCorrelationId != null) {
+                    copy.setHeader(MY_CORRELATION_ID, requestEvent.businessCorrelationId);
                 }
                 if (requestEvent.tracing) {
                     copy.setTrace(requestEvent.traceId, requestEvent.tracePath);
@@ -968,8 +968,8 @@ class HttpAuth implements LambdaFunction {
                     .setCorrelationId(event.requestId)
                     .setReplyTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
             // expose the business correlation-id to the target function (and downstream via PostOffice)
-            if (event.correlationId != null) {
-                forward.setHeader(HttpRouter.MY_CORRELATION_ID, event.correlationId);
+            if (event.businessCorrelationId != null) {
+                forward.setHeader(HttpRouter.MY_CORRELATION_ID, event.businessCorrelationId);
             }
             // enable distributed tracing if needed
             if (event.tracing) {

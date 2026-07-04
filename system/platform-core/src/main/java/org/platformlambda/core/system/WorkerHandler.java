@@ -192,7 +192,7 @@ public class WorkerHandler {
         return metrics;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     private ProcessStatus processEvent(EventEnvelope event, String rpc) {
         ProcessStatus ps = new ProcessStatus();
         ProcessMetadata md = new ProcessMetadata();

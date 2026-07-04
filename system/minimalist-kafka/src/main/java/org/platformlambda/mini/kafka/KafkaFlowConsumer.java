@@ -45,11 +45,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Pattern;
 
 /**
- * One Kafka consumer thread for the {@link KafkaFlowAdapter}: it polls a topic and routes each message
- * into a configured Event Script flow - the same way {@code http.flow.adapter} routes an HTTP request
- * into a flow - so the flow's tasks (not this I/O layer) emit the telemetry traces.
+ * One Kafka consumer thread for the {@link KafkaFlowAdapter}: it polls a topic (or a regex-matched set of
+ * topics) and routes each message into a configured Event Script flow - the same way {@code
+ * http.flow.adapter} routes an HTTP request into a flow - so the flow's tasks (not this I/O layer) emit the
+ * telemetry traces.
  *
  * <p><b>Trace continuity.</b> The {@code traceparent} carried in the Kafka headers is parsed into its
  * trace-id and parent span-id; the request to the flow engine is sent with {@code setSpanId(parentSpanId)}
@@ -57,28 +59,49 @@ import java.util.concurrent.TimeoutException;
  * low-level {@link PostOffice} API is used directly rather than the FlowExecutor convenience methods,
  * which do not expose the inbound span-id.</p>
  *
- * <p><b>At-least-once delivery.</b> Offsets are committed manually, only AFTER the flow finishes
- * processing a message (the request blocks the poll loop), and {@code max.poll.records=1} processes one
- * message at a time. If the instance crashes before the commit (e.g. a Kubernetes rolling restart), the
- * offset stays uncommitted and Kafka redelivers the message to a surviving instance in the group - the
- * deliberate resilience-over-throughput tradeoff for the consume side.</p>
+ * <p><b>Flow input dataset.</b> Every message hands the flow a {@code Map} with {@code header} (Kafka
+ * headers), {@code metadata} (the record's own {@code topic}, {@code partition}, {@code offset},
+ * {@code timestamp}, and {@code key} when present - see {@link #toMetadata}), and {@code body} (the raw
+ * {@code byte[]}, or a decoded {@code Map} when {@link KafkaConsumerBinding#schemaEnabled()}). {@code
+ * metadata.topic} is the record's actual topic, not the binding's configured {@code topic}/
+ * {@code topic-pattern} - the only way a {@code topic-pattern} flow (or a reprocessing flow reading a
+ * {@code dlq-topic}) recovers which concrete topic a message came from.</p>
+ *
+ * <p><b>Delivery mode.</b> By default ({@link KafkaConsumerBinding#autoCommit()} false), offsets are
+ * committed manually, only AFTER the flow finishes processing a message (the request blocks the poll
+ * loop), and {@code max.poll.records} defaults to 1. If the instance crashes before the commit (e.g. a
+ * Kubernetes rolling restart), the offset stays uncommitted and Kafka redelivers the message to a
+ * surviving instance in the group - the deliberate resilience-over-throughput tradeoff. A binding may opt
+ * into {@code auto-commit: true} instead: Kafka commits offsets on its own periodic timer regardless of
+ * processing outcome, trading that redelivery guarantee for throughput (and typically a higher
+ * {@code max.poll.records}). Retry/DLQ handling on flow failure is unaffected either way - auto-commit
+ * only changes when Kafka considers the offset committed, not whether a failure is retried/dead-lettered.</p>
  *
  * <p><b>Flow outcome.</b> A flow <b>succeeds</b> when it replies with a status below 400 (a 2xx/3xx); any
  * 4xx/5xx status - or a thrown exception, including a timeout when it does not reply within its {@code ttl}
  * (the flow's {@code ttl} is the deadline, since Kafka has no inherent request timeout) - is a <b>failure</b>.</p>
  *
  * <p><b>Flow-failure handling.</b> A failure is retried up to {@link RetryPolicy#maxRetries()} times; if it
- * still fails, the original message is routed to the per-topic dead-letter topic ({@code <topic><dlqSuffix>},
- * suffix default {@code .dlq}) with a <b>confirmed</b> write. <b>DLQ topics must be pre-provisioned</b> (Kafka
- * auto-creation is off in production). If the DLQ write itself fails, the message is dropped with a loud
- * {@code ERROR} and the offset committed - see {@link #writeToDeadLetter} for why (avoiding a recovery storm),
- * the resulting data-loss caveat, and the planned alternative-path improvement.</p>
+ * still fails, the original message is routed to the binding's configured {@code dlq-topic} (one DLQ topic
+ * per binding, not per matched concrete topic - see {@link KafkaFlowAdapter}) with a <b>confirmed</b>
+ * write. <b>DLQ topics must be pre-provisioned</b> (Kafka auto-creation is off in production). If no
+ * {@code dlq-topic} is configured, or the DLQ write itself fails, the message is dropped with a loud
+ * {@code ERROR} and the offset committed - see {@link #writeToDeadLetter} for why (avoiding a recovery
+ * storm), the resulting data-loss caveat, and the planned alternative-path improvement.</p>
  *
  * <p><b>Partition pinning (opt-in).</b> When a {@code partition} is supplied for the binding, the consumer
  * <b>manually assigns</b> that one topic-partition ({@code assign}) instead of joining the consumer group
  * ({@code subscribe}). This bypasses group rebalancing - the pinned consumer reads exactly that partition -
  * so the operator owns the deployment model (e.g. one consumer per partition, or each pod pinning a distinct
- * partition via {@code partition: ${POD_PARTITION}}). Offsets still commit under the configured group id.</p>
+ * partition via {@code partition: ${POD_PARTITION}}). Offsets still commit under the configured group id.
+ * Mutually exclusive with pattern subscription (below), since manual assignment needs concrete
+ * topic-partitions up front.</p>
+ *
+ * <p><b>Pattern subscription (opt-in).</b> When the binding is a {@code topic-pattern} rather than a
+ * literal {@code topic}, the consumer subscribes via {@code subscribe(Pattern)}: Kafka's client tracks
+ * which topics currently match the regex and adds/removes them from the subscription automatically as
+ * matching topics are created - no adapter-side polling of topic metadata, no restart needed when a new
+ * matching topic appears.</p>
  */
 public class KafkaFlowConsumer implements AutoCloseable {
 
@@ -88,45 +111,47 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private static final String FLOW_ID = "flow_id";   // header key read by event.script.manager
     private static final String HEADER = "header";
     private static final String BODY = "body";
-    private static final String DLQ_SUFFIX = ".dlq";
+    private static final String METADATA = "metadata";
+    private static final String METADATA_TOPIC = "topic";
+    private static final String METADATA_PARTITION = "partition";
+    private static final String METADATA_OFFSET = "offset";
+    private static final String METADATA_TIMESTAMP = "timestamp";
+    private static final String METADATA_KEY = "key";
     private static final String DLQ_ERROR_HEADER = "dlq.error";
     private static final String DLQ_ORIGIN_TOPIC_HEADER = "dlq.origin.topic";
-    // Configurable inbound correlation-id header (default "cid"); its value seeds the flow's model.cid.
-    private static final String CORRELATION_ID_HEADER = AppConfigReader.getInstance()
+    // Configurable inbound business correlation-id header (default "cid"); its value seeds the flow's model.cid.
+    private static final String BUSINESS_CORRELATION_ID_HEADER = AppConfigReader.getInstance()
             .getProperty("kafka.correlation.id.header", KafkaHeaders.CORRELATION_ID);
 
     private final Consumer<String, byte[]> consumer;
-    private final String topic;
-    private final String flowId;
+    private final KafkaConsumerBinding binding;
     private final long dlqTimeout;   // confirm-write timeout for the dead-letter publish (broker ack)
     private final RetryPolicy retryPolicy;
-    private final Integer partition;   // null = group-managed subscribe; non-null = pin this partition
+    /** Non-null only for a {@code topic-pattern} binding; precompiled once rather than per poll. */
+    private final Pattern compiledPattern;
     /**
      * {@code null} = raw byte[] body; non-null = decode Confluent-framed values to a Map. Owned by this
      * consumer's single poll thread (the Confluent deserializers are not thread-safe), minted from the shared
      * {@link SchemaCodec} factory.
      */
     private final SchemaCodec.Decoder decoder;
+    /** The binding's configured {@code dlq-topic}, or {@code null} when none was configured. */
     private final String deadLetterTopic;
     private final ExecutorService loop;
 
     private volatile boolean running;
 
-    public KafkaFlowConsumer(Consumer<String, byte[]> consumer, String topic, String flowId,
-                             long dlqTimeout, RetryPolicy retryPolicy, Integer partition,
-                             SchemaCodec schemaCodec) {
+    public KafkaFlowConsumer(Consumer<String, byte[]> consumer, KafkaConsumerBinding binding,
+                             long dlqTimeout, RetryPolicy retryPolicy, SchemaCodec schemaCodec) {
         this.consumer = consumer;
-        this.topic = topic;
-        this.flowId = flowId;
+        this.binding = binding;
         this.dlqTimeout = dlqTimeout;
         this.retryPolicy = retryPolicy;
-        this.partition = partition;
+        this.compiledPattern = binding.isPattern() ? Pattern.compile(binding.topicOrPattern()) : null;
         this.decoder = schemaCodec == null ? null : schemaCodec.newDecoder();
-        // per-topic DLQ; a blank suffix falls back to .dlq so the DLQ can never equal the source topic
-        String suffix = retryPolicy.dlqSuffix();
-        this.deadLetterTopic = topic + (suffix == null || suffix.isBlank() ? DLQ_SUFFIX : suffix);
+        this.deadLetterTopic = binding.dlqTopic();
         this.loop = Executors.newSingleThreadExecutor(runnable -> {
-            Thread thread = new Thread(runnable, "kafka-flow-" + topic);
+            Thread thread = new Thread(runnable, "kafka-flow-" + binding.topicOrPattern());
             thread.setDaemon(true);
             return thread;
         });
@@ -143,7 +168,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
             while (running) {
                 ConsumerRecords<String, byte[]> records = consumer.poll(POLL_TIMEOUT);
                 for (ConsumerRecord<String, byte[]> consumerRecord : records) {
-                    if (routeToFlow(consumerRecord)) {
+                    if (routeToFlow(consumerRecord) && !binding.autoCommit()) {
                         commit(consumerRecord);   // commit only after the flow finished -> at-least-once
                     }
                 }
@@ -151,7 +176,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
         } catch (WakeupException e) {
             // expected: close() called wakeup() to break the poll
         } catch (RuntimeException e) {
-            log.error("Kafka flow consumer for topic {} stopped unexpectedly", topic, e);
+            log.error("Kafka flow consumer for {} stopped unexpectedly", binding.topicOrPattern(), e);
         } finally {
             consumer.close();
         }
@@ -159,13 +184,16 @@ public class KafkaFlowConsumer implements AutoCloseable {
 
     /**
      * Group-managed {@code subscribe} by default; manual {@code assign} of the single pinned topic-partition
-     * when a {@code partition} was configured. Visible for testing.
+     * when a {@code partition} was configured; regex {@code subscribe(Pattern)} for a {@code topic-pattern}
+     * binding. Visible for testing.
      */
     void subscribeOrAssign(Consumer<String, byte[]> consumer) {
-        if (partition != null) {
-            consumer.assign(List.of(new TopicPartition(topic, partition)));
+        if (binding.partition() != null) {
+            consumer.assign(List.of(new TopicPartition(binding.topicOrPattern(), binding.partition())));
+        } else if (binding.isPattern()) {
+            consumer.subscribe(compiledPattern);
         } else {
-            consumer.subscribe(List.of(topic));
+            consumer.subscribe(List.of(binding.topicOrPattern()));
         }
     }
 
@@ -182,12 +210,13 @@ public class KafkaFlowConsumer implements AutoCloseable {
         Map<String, Object> dataset = toDataset(consumerRecord);
         if (decoder != null) {
             // Decode the Confluent-framed value to a Map for the flow. A decode failure is a poison
-            // message (retrying won't help), so dead-letter the RAW record immediately.
+            // message (retrying won't help), so dead-letter the RAW record immediately. Uses the record's
+            // own topic (not the binding's configured field), correct for both literal and pattern bindings.
             try {
-                dataset.put(BODY, decoder.decode(topic, consumerRecord.value()));
+                dataset.put(BODY, decoder.decode(consumerRecord.topic(), consumerRecord.value()));
             } catch (RuntimeException e) {
                 log.warn("Failed to decode schema-framed message on '{}'; routing to {}",
-                        topic, deadLetterTopic, e);
+                        consumerRecord.topic(), deadLetterTopic, e);
                 return writeToDeadLetter(consumerRecord, e);
             }
         }
@@ -195,7 +224,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
         Map<String, String> headers = (Map<String, String>) dataset.get(HEADER);
         String[] trace = W3cTrace.parse(headers.get(W3cTrace.TRACEPARENT));
         String traceId = trace != null ? trace[0] : Utility.getInstance().getUuid();
-        String tracePath = "KAFKA /" + topic;
+        String tracePath = "KAFKA /" + consumerRecord.topic();
         EventEnvelope forward = toFlowRequest(dataset, headers, trace, traceId, tracePath);
         return deliver(consumerRecord, forward, traceId, tracePath);
     }
@@ -203,14 +232,15 @@ public class KafkaFlowConsumer implements AutoCloseable {
     /** Build the flow-engine request from the decoded dataset, chaining onto the inbound trace/span. */
     private EventEnvelope toFlowRequest(Map<String, Object> dataset, Map<String, String> headers,
                                         String[] trace, String traceId, String tracePath) {
-        // Capture the upstream correlation-id from the configured header; generate a fresh one if absent.
-        String correlationId = headers.get(CORRELATION_ID_HEADER);
-        if (correlationId == null) {
-            correlationId = Utility.getInstance().getUuid();
+        // Capture the upstream business correlation-id from the configured header; generate a fresh one if absent.
+        String businessCorrelationId = headers.get(BUSINESS_CORRELATION_ID_HEADER);
+        if (businessCorrelationId == null) {
+            businessCorrelationId = Utility.getInstance().getUuid();
         }
         EventEnvelope forward = new EventEnvelope();
-        forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, flowId)
-                .setCorrelationId(correlationId).setBody(dataset)
+        forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, binding.flowId())
+                .setHeader(EventScriptManager.BUSINESS_CORRELATION_ID, businessCorrelationId)
+                .setCorrelationId(businessCorrelationId).setBody(dataset)
                 .setTraceId(traceId).setTracePath(tracePath);
         if (trace != null) {
             forward.setSpanId(trace[1]);   // chain onto the upstream span carried in the Kafka traceparent
@@ -234,7 +264,8 @@ public class KafkaFlowConsumer implements AutoCloseable {
                 if (response.getStatus() < 400) {
                     return true;   // the flow finished normally (2xx/3xx) -> acknowledge (commit) and move on
                 }
-                cause = new IllegalStateException("flow " + flowId + " returned status " + response.getStatus());
+                cause = new IllegalStateException(
+                        "flow " + binding.flowId() + " returned status " + response.getStatus());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 running = false;
@@ -244,12 +275,12 @@ public class KafkaFlowConsumer implements AutoCloseable {
             }
             if (attempt >= retryPolicy.maxRetries()) {
                 log.warn("Flow {} failed for a '{}' message after {} attempt(s); routing to {}",
-                        flowId, topic, attempt + 1, deadLetterTopic, cause);
+                        binding.flowId(), consumerRecord.topic(), attempt + 1, deadLetterTopic, cause);
                 return writeToDeadLetter(consumerRecord, cause);
             }
             attempt++;
             log.warn("Flow {} failed for a '{}' message (attempt {}/{}); retrying",
-                    flowId, topic, attempt, retryPolicy.maxRetries(), cause);
+                    binding.flowId(), consumerRecord.topic(), attempt, retryPolicy.maxRetries(), cause);
             if (!backoff()) {
                 return false;   // interrupted during backoff -> redeliver, do not commit
             }
@@ -269,7 +300,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
     EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath)
             throws InterruptedException, ExecutionException {
         PostOffice po = PostOffice.trackable(ADAPTER_ROUTE, traceId, tracePath);
-        long ttl = Flows.getFlow(flowId).ttl;
+        long ttl = Flows.getFlow(binding.flowId()).ttl;
         return po.request(forward, ttl).get();
     }
 
@@ -289,18 +320,21 @@ public class KafkaFlowConsumer implements AutoCloseable {
     }
 
     /**
-     * Park an un-processable message on {@code <topic><dlqSuffix>} with a <b>confirmed</b> write, preserving
-     * its headers + body. Visible (package-private, non-final) so the commit-gating can be unit-tested.
+     * Park an un-processable message on the binding's configured {@code dlq-topic} with a <b>confirmed</b>
+     * write, preserving its headers + body. Visible (package-private, non-final) so the commit-gating can be
+     * unit-tested.
      *
-     * <p>The DLQ is the last line of defense. If the write to it <b>fails</b>, there is no further fallback -
-     * an "exception of an exception". Refusing to commit would redeliver the same poison message, which would
-     * fail the flow and the DLQ write again, indefinitely - a self-sustaining retry/recovery storm, a known
-     * cause of prolonged outages. So instead we log a loud {@code ERROR} and commit, deliberately accepting
-     * the loss of this one message in exchange for partition liveness.</p>
+     * <p>If no {@code dlq-topic} is configured, or the write to it <b>fails</b>, there is no further
+     * fallback - an "exception of an exception" in the latter case. Refusing to commit would redeliver the
+     * same poison message, which would fail the flow (and the DLQ write, if configured) again, indefinitely -
+     * a self-sustaining retry/recovery storm, a known cause of prolonged outages. So instead we log a loud
+     * {@code ERROR} and commit, deliberately accepting the loss of this one message in exchange for
+     * partition liveness.</p>
      *
-     * <p><b>Data loss:</b> when the DLQ write fails, the message is <b>dropped</b> - only the ERROR log
-     * records it. A future improvement is the classic resilience <i>alternative path</i>: on DLQ failure,
-     * persist the record to a durable store (file/object store/DB) for later replay, rather than dropping it.</p>
+     * <p><b>Data loss:</b> when there is no DLQ configured, or the DLQ write fails, the message is
+     * <b>dropped</b> - only the ERROR log records it. A future improvement is the classic resilience
+     * <i>alternative path</i>: on DLQ failure, persist the record to a durable store (file/object store/DB)
+     * for later replay, rather than dropping it.</p>
      *
      * @return true once the offset may be committed - either the message was durably dead-lettered, or it
      *         could not be and was dropped-with-an-ERROR to avoid a recovery storm. Returns false only on a
@@ -310,15 +344,21 @@ public class KafkaFlowConsumer implements AutoCloseable {
     // method opens - closing it here (try-with-resources) would tear down the shared producer for everyone.
     @SuppressWarnings("java:S2095")
     boolean writeToDeadLetter(ConsumerRecord<String, byte[]> consumerRecord, Throwable cause) {
+        if (deadLetterTopic == null) {
+            log.error("DATA LOSS: no dlq-topic configured; dropping '{}' offset {} after flow failure "
+                    + "(set dlq-topic to retain failed messages)",
+                    consumerRecord.topic(), consumerRecord.offset(), cause);
+            return true;
+        }
         KafkaRequestPublisher publisher = retryPolicy.deadLetterPublisher();
         if (publisher == null) {
-            log.error("DATA LOSS: no dead-letter publisher; dropping '{}' offset {} after flow failure "
-                    + "(configure a DLQ to retain failed messages)", topic, consumerRecord.offset(), cause);
+            log.error("DATA LOSS: no dead-letter publisher; dropping '{}' offset {} after flow failure",
+                    consumerRecord.topic(), consumerRecord.offset(), cause);
             return true;
         }
         Map<String, byte[]> deadLetterHeaders = new HashMap<>();
         consumerRecord.headers().forEach(h -> deadLetterHeaders.put(h.key(), h.value()));
-        deadLetterHeaders.put(DLQ_ORIGIN_TOPIC_HEADER, topic.getBytes(StandardCharsets.UTF_8));
+        deadLetterHeaders.put(DLQ_ORIGIN_TOPIC_HEADER, consumerRecord.topic().getBytes(StandardCharsets.UTF_8));
         deadLetterHeaders.put(DLQ_ERROR_HEADER,
                 (cause != null ? cause.toString() : "unknown").getBytes(StandardCharsets.UTF_8));
         try {
@@ -333,19 +373,42 @@ public class KafkaFlowConsumer implements AutoCloseable {
             // block the partition retrying forever (a recovery storm). Future: an alternative-path store.
             log.error("DATA LOSS: dead-letter write to {} failed; dropping '{}' offset {} to avoid a "
                             + "redelivery storm (ensure the DLQ topic exists). Cause: {}",
-                    deadLetterTopic, topic, consumerRecord.offset(), e.getMessage(), cause);
+                    deadLetterTopic, consumerRecord.topic(), consumerRecord.offset(), e.getMessage(), cause);
             return true;
         }
     }
 
-    /** Decode a Kafka record into a flow dataset ({@code header} + {@code body}). Visible for testing. */
+    /**
+     * Decode a Kafka record into a flow dataset ({@code header} + {@code metadata} + {@code body}).
+     * Visible for testing.
+     */
     static Map<String, Object> toDataset(ConsumerRecord<String, byte[]> consumerRecord) {
         Map<String, String> headers = new HashMap<>();
         consumerRecord.headers().forEach(h -> headers.put(h.key(), new String(h.value(), StandardCharsets.UTF_8)));
         Map<String, Object> dataset = new HashMap<>();
         dataset.put(HEADER, headers);
+        dataset.put(METADATA, toMetadata(consumerRecord));
         dataset.put(BODY, consumerRecord.value());
         return dataset;
+    }
+
+    /**
+     * The record's own envelope facts - <b>the actual topic and partition a message arrived on</b>, not the
+     * binding's configured {@code topic}/{@code topic-pattern}. This is the only way a flow (or a
+     * reprocessing flow reading a {@code dlq-topic}) can recover the exact source topic for a
+     * {@code topic-pattern} binding, where many concrete topics share one flow. {@code key} is omitted when
+     * the record carries none (Kafka keys are optional). Visible for testing.
+     */
+    static Map<String, Object> toMetadata(ConsumerRecord<String, byte[]> consumerRecord) {
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put(METADATA_TOPIC, consumerRecord.topic());
+        metadata.put(METADATA_PARTITION, consumerRecord.partition());
+        metadata.put(METADATA_OFFSET, consumerRecord.offset());
+        metadata.put(METADATA_TIMESTAMP, consumerRecord.timestamp());
+        if (consumerRecord.key() != null) {
+            metadata.put(METADATA_KEY, consumerRecord.key());
+        }
+        return metadata;
     }
 
     private void commit(ConsumerRecord<String, byte[]> consumerRecord) {

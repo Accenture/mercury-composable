@@ -78,8 +78,8 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
     private static final String MY_TRACE_ID = "my_trace_id";
     private static final String MY_TRACE_PATH = "my_trace_path";
     private static final String MY_CORRELATION_ID = "my_correlation_id";
-    // Configurable outbound correlation-id header (default "cid").
-    private static final String CORRELATION_ID_HEADER = AppConfigReader.getInstance()
+    // Configurable outbound business correlation-id header (default "cid").
+    private static final String BUSINESS_CORRELATION_ID_HEADER = AppConfigReader.getInstance()
             .getProperty("kafka.correlation.id.header", KafkaHeaders.CORRELATION_ID);
 
     // one Encoder per worker instance (an instance is single-flight) -> owner-confined Confluent serializers.
@@ -100,9 +100,9 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
         });
         // propagate the business correlation-id under the configured header; an explicitly mapped value
         // wins over the flow's correlation-id (model.cid, carried as the my_correlation_id reserved header).
-        String correlationId = headers.getOrDefault(CORRELATION_ID_HEADER, headers.get(MY_CORRELATION_ID));
-        if (correlationId != null) {
-            kafkaHeaders.put(CORRELATION_ID_HEADER, correlationId.getBytes(StandardCharsets.UTF_8));
+        String businessCorrelationId = headers.getOrDefault(BUSINESS_CORRELATION_ID_HEADER, headers.get(MY_CORRELATION_ID));
+        if (businessCorrelationId != null) {
+            kafkaHeaders.put(BUSINESS_CORRELATION_ID_HEADER, businessCorrelationId.getBytes(StandardCharsets.UTF_8));
         }
         String traceparent = currentTraceparent(new PostOffice(headers, instance));
         if (traceparent != null) {
@@ -155,7 +155,7 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
                 && !KafkaHeaders.SUBJECT.equals(key)
                 && !KafkaHeaders.VERSION.equals(key)
                 && !W3cTrace.TRACEPARENT.equals(key)
-                && !CORRELATION_ID_HEADER.equals(key)
+                && !BUSINESS_CORRELATION_ID_HEADER.equals(key)
                 && !MY_ROUTE.equals(key)
                 && !MY_TRACE_ID.equals(key)
                 && !MY_TRACE_PATH.equals(key)

@@ -20,7 +20,6 @@ package org.platformlambda.mini.kafka;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.system.PostOffice;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -29,24 +28,24 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 /**
- * Test sink: the task of the {@code kafka-sink-flow} the adapter routes a topic into. It records what it
- * received (correlation-id, current trace-id, body) so the test can assert delivery and trace continuity.
+ * Test sink: the task of the {@code kafka-pattern-sink-flow} a {@code topic-pattern} binding routes into.
+ * Records the record's own topic/partition/offset (from {@code input.metadata.*}, mapped into headers by
+ * the flow) so the test can assert a topic-pattern binding surfaces which concrete matched topic a message
+ * actually came from - the reason {@code metadata.*} exists (see {@code KafkaFlowConsumer#toMetadata}).
  */
-@PreLoad(route = "kafka.test.sink", instances = 5)
-public class KafkaSinkTask implements TypedLambdaFunction<byte[], Map<String, Object>> {
+@PreLoad(route = "kafka.pattern.test.sink", instances = 5)
+public class KafkaPatternSinkTask implements TypedLambdaFunction<byte[], Map<String, Object>> {
 
     static final BlockingQueue<Map<String, Object>> RECEIVED = new ArrayBlockingQueue<>(16);
 
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, byte[] input, int instance) {
-        PostOffice po = new PostOffice(headers, instance);
         Map<String, Object> entry = new HashMap<>();
         entry.put("cid", headers.get(KafkaHeaders.CORRELATION_ID));
-        // the business correlation-id surfaced to the task as model.cid (KafkaFlowConsumer stamps the
-        // inbound Kafka cid as the flow's correlation-id, which survives the RPC hop as this header)
-        entry.put("myCid", po.getMyCorrelationId());
-        entry.put("traceId", po.getTraceId());
         entry.put("body", new String(input, StandardCharsets.UTF_8));
+        entry.put("topic", headers.get("topic"));
+        entry.put("partition", Integer.valueOf(headers.get("partition")));
+        entry.put("offset", Long.valueOf(headers.get("offset")));
         RECEIVED.add(entry);
         return Map.of("status", "received");
     }

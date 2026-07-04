@@ -59,10 +59,10 @@ public class FlowInstance {
     private final AtomicBoolean responded = new AtomicBoolean(false);
     private final AtomicBoolean running = new AtomicBoolean(true);
     public final String id = Utility.getInstance().getUuid();
-    // cid is the reply-routing correlation-id (matches the calling party's pending request); correlationId is
-    // the business correlation-id preserved from upstream and exposed to the flow as model.cid.
-    public final String cid;
-    public final String correlationId;
+    // internalCorrelationId is the reply-routing correlation-id (matches the calling party's pending
+    // request); businessCorrelationId is preserved from upstream and exposed to the flow as model.cid.
+    public final String internalCorrelationId;
+    public final String businessCorrelationId;
     public final String replyTo;
     private final String timeoutWatcher;
     private final Flow template;
@@ -79,23 +79,23 @@ public class FlowInstance {
      * DO NOT use this directly in your application code.
      *
      * @param flowId of the event flow configuration
-     * @param cid reply-routing correlation ID (matches the calling party's pending request)
-     * @param correlationId business correlation-id preserved from upstream (exposed as model.cid)
+     * @param internalCorrelationId reply-routing correlation ID (matches the calling party's pending request)
+     * @param businessCorrelationId business correlation-id preserved from upstream (exposed as model.cid)
      * @param replyTo of the caller to a flow adapter
      * @param template event flow configuration
      * @param parentId is the parent flow instance ID
      */
-    public FlowInstance(String flowId, String cid, String correlationId, String replyTo,
+    public FlowInstance(String flowId, String internalCorrelationId, String businessCorrelationId, String replyTo,
                         Flow template, String parentId, long ttl) {
         this.ttl = ttl;
         this.template = template;
-        this.cid = cid;
-        this.correlationId = correlationId;
+        this.internalCorrelationId = internalCorrelationId;
+        this.businessCorrelationId = businessCorrelationId;
         this.replyTo = replyTo;
         // initialize the state machine
         Map<String, Object> model = new HashMap<>();
         model.put(INSTANCE, id);
-        model.put(CID_TAG, correlationId);
+        model.put(CID_TAG, businessCorrelationId);
         model.put(TTL_TAG, ttl);
         model.put(FLOW, flowId);
         // "parent" and "root" are aliases to the shared state machine in the root

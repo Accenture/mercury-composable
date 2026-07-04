@@ -41,13 +41,12 @@ import java.util.Properties;
  * configured without code changes.</p>
  *
  * <p>Flow-failure handling is tunable via {@code application.properties}:
- * {@code kafka.flow.max.retries} (default 3), {@code kafka.flow.retry.backoff.ms} (default 500),
- * {@code kafka.flow.dlq.suffix} (default {@code .dlq}) - appended to each source topic to form its
- * <b>per-topic</b> DLQ ({@code orders} → {@code orders.dlq}) - and {@code kafka.dlq.timeout.ms} (default
- * 10000), the confirm-write timeout for the dead-letter publish. Only the suffix is configurable, since a
- * shared/global DLQ is an anti-pattern for reprocessing; DLQ topics must be pre-provisioned. There is no
- * flow-processing timeout knob: a flow's own {@code ttl} is its deadline (Kafka is asynchronous, with no
- * inherent request timeout).</p>
+ * {@code kafka.flow.max.retries} (default 3), {@code kafka.flow.retry.backoff.ms} (default 500), and
+ * {@code kafka.dlq.timeout.ms} (default 10000), the confirm-write timeout for the dead-letter publish. The
+ * DLQ topic itself is a per-binding {@code dlq-topic} in {@code kafka-flow-adapter.yaml} (see
+ * {@link KafkaFlowAdapter}), not a global setting - a binding without one drops an exhausted message with a
+ * logged {@code ERROR} instead of dead-lettering it. There is no flow-processing timeout knob: a flow's own
+ * {@code ttl} is its deadline (Kafka is asynchronous, with no inherent request timeout).</p>
  */
 @MainApplication
 public class KafkaFlowAutoStart implements EntryPoint {
@@ -58,7 +57,6 @@ public class KafkaFlowAutoStart implements EntryPoint {
     private static final String DLQ_TIMEOUT = "kafka.dlq.timeout.ms";
     private static final String MAX_RETRIES = "kafka.flow.max.retries";
     private static final String RETRY_BACKOFF = "kafka.flow.retry.backoff.ms";
-    private static final String DLQ_SUFFIX = "kafka.flow.dlq.suffix";
 
     @Override
     public void start(String[] args) {
@@ -81,10 +79,8 @@ public class KafkaFlowAutoStart implements EntryPoint {
             long dlqTimeout = Long.parseLong(config.getProperty(DLQ_TIMEOUT, "10000"));
             int maxRetries = Integer.parseInt(config.getProperty(MAX_RETRIES, "3"));
             long retryBackoffMs = Long.parseLong(config.getProperty(RETRY_BACKOFF, "500"));
-            // per-topic DLQ: <topic><suffix>; only the suffix is configurable (no global DLQ - anti-pattern)
-            String dlqSuffix = config.getProperty(DLQ_SUFFIX, ".dlq");
-            // failed messages are dead-lettered through the same shared producer
-            RetryPolicy retryPolicy = new RetryPolicy(maxRetries, retryBackoffMs, dlqSuffix, publisher);
+            // failed messages are dead-lettered through the same shared producer, to each binding's dlq-topic
+            RetryPolicy retryPolicy = new RetryPolicy(maxRetries, retryBackoffMs, publisher);
             Properties consumerProps = KafkaClientConfig.consumerProperties(config);
             KafkaFlowAdapter adapter = new KafkaFlowAdapter(consumerProps, new ConfigReader(adapterConfig),
                     dlqTimeout, retryPolicy, schemaCodec);

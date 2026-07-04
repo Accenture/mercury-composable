@@ -47,8 +47,9 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
     private static final String FLOW_ID = "flow_id";
     private static final String PARENT = "parent";
     private static final String TTL = "ttl";
-    // Launch-event header carrying the business correlation-id, distinct from the reply-routing cid.
-    public static final String CORRELATION_ID = "correlation_id";
+    // Launch-event header carrying the business correlation-id, distinct from the reply-routing
+    // internal correlation-id (EventEnvelope.getCorrelationId()).
+    public static final String BUSINESS_CORRELATION_ID = "correlation_id";
 
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
@@ -95,20 +96,21 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
     }
 
     private FlowInstance getFlowInstance(EventEnvelope event, String flowId, Flow template, long ttl) {
-        String cid = event.getCorrelationId();
-        if (cid == null) {
+        String internalCorrelationId = event.getCorrelationId();
+        if (internalCorrelationId == null) {
             throw new IllegalArgumentException("Missing correlation ID for "+ flowId);
         }
         String replyTo = event.getReplyTo();
-        // The routing cid is returned to the calling party at the end of flow execution. The business
-        // correlation-id (preserved from upstream) is exposed as model.cid; it falls back to the routing
-        // cid when a flow adapter does not supply one.
-        String correlationId = event.getHeader(CORRELATION_ID);
-        if (correlationId == null) {
-            correlationId = cid;
+        // The internal correlation-id is returned to the calling party at the end of flow execution. The
+        // business correlation-id (preserved from upstream) is exposed as model.cid; it falls back to the
+        // internal correlation-id when a flow adapter does not supply one.
+        String businessCorrelationId = event.getHeader(BUSINESS_CORRELATION_ID);
+        if (businessCorrelationId == null) {
+            businessCorrelationId = internalCorrelationId;
         }
         var parent = event.getHeader(PARENT);
-        FlowInstance flowInstance = new FlowInstance(flowId, cid, correlationId, replyTo, template, parent, ttl);
+        FlowInstance flowInstance = new FlowInstance(flowId, internalCorrelationId, businessCorrelationId,
+                replyTo, template, parent, ttl);
         // Optional distributed trace
         String traceId = event.getTraceId();
         String tracePath = event.getTracePath();

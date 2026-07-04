@@ -1,6 +1,8 @@
 #
-# Flow reached when the Kafka flow adapter routes a message from 'mini-test-topic'. Its single task
-# records the received message so the test can assert delivery + trace continuity.
+# Sink flow for the JSON Schema e2e case ('json-test-topic'). Because the binding sets schema.enabled, the
+# adapter decodes the Confluent-framed JSON value and hands this flow the decoded Map as input.body.
+# (The parallel Avro case lives in avro-sink-flow.yml; the codec supports both, dispatching by the embedded
+# schema id - see SchemaCodecTest for the codec-level proof that one decoder handles both wire formats.)
 #
 # Correlation-id: the adapter stamps the inbound Kafka correlation-id (the 'cid' header,
 # KafkaHeaders.CORRELATION_ID) onto the flow request as the 'correlation_id' header EventScriptManager
@@ -13,11 +15,11 @@
 #   'input.header.x-correlation-id -> header.cid'
 #
 flow:
-  id: 'kafka-sink-flow'
-  description: 'Record a Kafka message routed by the flow adapter'
+  id: 'json-sink-flow'
+  description: 'Record a JSON-Schema-decoded Kafka message routed by the flow adapter'
   ttl: 30s
 
-first.task: 'kafka.test.sink'
+first.task: 'json.test.sink'
 
 tasks:
   - input:
@@ -25,8 +27,8 @@ tasks:
       - 'input.header.cid -> header.cid'
       # To use a proprietary upstream header instead, replace the mapping above with, for example:
       #   'input.header.x-correlation-id -> header.cid'
-    process: 'kafka.test.sink'
+    process: 'json.test.sink'
     output:
       - 'result -> output.body'
-    description: 'Record the received message'
+    description: 'Record the decoded message'
     execution: end
