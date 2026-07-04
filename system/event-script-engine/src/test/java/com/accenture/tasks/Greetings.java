@@ -23,6 +23,7 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.system.PostOffice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
@@ -91,6 +92,9 @@ public class Greetings implements TypedLambdaFunction<EventEnvelope, Object> {
             result.put(MESSAGE, "I got your greeting message - " + greeting);
             result.put(TIME, new Date());
             result.put(ORIGINAL, input);
+            // expose the framework-injected read-only business correlation-id as this task actually sees it,
+            // proving a caller/flow-mapped "my_correlation_id" header cannot override the authoritative value
+            result.put("my_cid", new PostOffice(headers, instance).getMyCorrelationId());
             if (headers.containsKey(DEMO)) {
                 result.put(DEMO + 1, headers.get(DEMO));
             }

@@ -964,10 +964,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             var event = new EventEnvelope().setTo(functionRoute).setReplyTo(TaskExecutor.SERVICE_NAME)
                                             .setCorrelationId(compositeInternalCorrelationId)
                                             .setBody(unwrapBodyIfWildcard(md))
-                                            .setSpanId(parentSpanId)
-                                            // expose the flow's business correlation-id (model.cid) as a read-only header
-                                            .setHeader(MY_CORRELATION_ID, flowInstance.businessCorrelationId);
+                                            .setSpanId(parentSpanId);
             md.optionalHeaders.forEach(event::setHeader);
+            // expose the flow's business correlation-id (model.cid) as a read-only reserved header - stamped
+            // last so a mapped optional header named my_correlation_id cannot override the framework value
+            event.setHeader(MY_CORRELATION_ID, flowInstance.businessCorrelationId);
             // execute task by sending event
             if (deferred > 0) {
                 po.sendLater(event, new Date(System.currentTimeMillis() + deferred));

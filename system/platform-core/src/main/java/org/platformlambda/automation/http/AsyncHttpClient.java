@@ -323,12 +323,16 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 http.set(kv.getKey(), kv.getValue());
             }
         }
-        // propagate the trace ID as X-Trace-Id alongside the W3C "traceparent" below
+        // Trace headers (X-Trace-Id / W3C "traceparent") copied from the request above are left intact when
+        // this call is not being traced: an explicitly developer-set trace header is an intentional act (e.g.
+        // handing a trace context to a 3rd-party system, or forwarding an upstream trace) and must propagate.
+        // When this call IS traced, the framework's own current trace context takes precedence below so the
+        // downstream span chains to this caller's span - and since a traced request's context is itself adopted
+        // from the upstream X-Trace-Id/traceparent at ingress, the upstream trace still propagates.
         String traceId = po.getTraceId();
         if (traceId != null) {
             http.set(TRACE_ID_HEADER, traceId);
         }
-        // propagate W3C trace context so the downstream server span chains to this caller's span
         String traceparent = W3cTrace.traceparent(traceId, spanId);
         if (traceparent != null) {
             http.set(W3cTrace.TRACEPARENT, traceparent);
