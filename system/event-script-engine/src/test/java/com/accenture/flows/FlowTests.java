@@ -766,6 +766,9 @@ class FlowTests extends TestBase {
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
         // upstream supplies its own X-Correlation-Id; it must thread through to model.cid
         request.setHeader("X-Correlation-Id", correlationId);
+        // a hostile/accidental attempt to override the read-only reserved header: the greetings flow relays
+        // all inbound HTTP headers via 'input.header -> header', so this rides into the task's optional headers
+        request.setHeader("my_correlation_id", "spoofed-" + Utility.getInstance().getUuid());
         request.setUrl("/api/greetings/12345");
         PostOffice po = new PostOffice("unit.test", "1002", "TEST /correlation");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -776,6 +779,9 @@ class FlowTests extends TestBase {
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         // the upstream correlation-id is captured at the edge and preserved as the flow's model.cid
         assertEquals(correlationId, result.get("cid"));
+        // the framework-injected my_correlation_id is read-only: the spoofed inbound header does NOT win -
+        // the task observes the authoritative business correlation-id via getMyCorrelationId()
+        assertEquals(correlationId, result.get("my_cid"));
     }
 
     private void greetingAssertions(String user, Map<String, Object> original, Map<String, Object> result) {
