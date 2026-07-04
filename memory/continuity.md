@@ -111,7 +111,9 @@
   (strip `my_route`/`my_trace_id`/`my_trace_path`) assessed + deferred: `WorkerHandler` L207-214 already makes
   `my_route` authoritative and overwrites `my_trace_id`/`my_trace_path` whenever traced (inert-only when spoofable).
   Full suites green: platform-core 372, event-script-engine 132. Refines [[tracing-correlation-cleanup]]; see
-  [[thread-traceid-correlation-propagation]]. **Status: finding-1 fix + tests done, uncommitted — pending Eric.**
+  [[thread-traceid-correlation-propagation]]. **Status: shipped as PR [#134](https://github.com/Accenture/mercury-composable/pull/134)**
+  (branch `fix/correlation-id-readonly-and-trace-header-docs`; 2 commits — `3065f804` source+tests+docs,
+  `707056e5` memory) — pending review/merge.
   <!-- id: traceid-cid-propagation-edgecase-fixes | created: 2026-07-04 | last_used: 2026-07-04 | uses: 1 | tier: working | origin: 2026-07-04-223237 -->
 
 - **Design principle — a developer-set outbound trace header (`X-Trace-Id` / W3C `traceparent`) is an
@@ -472,8 +474,10 @@
   (incl. event-over-HTTP) + `AsyncHttpClient` downstream + `simple.kafka.notification`. Full reactor (28) +
   pg-example (6) green. **Next: Eric's code review, then commit + PR** (same flow as #128/#129).
   **Update (2026-07-04):** the feature shipped as PR #132 (`1ab78077` on `main`); an external assessment then
-  surfaced two edge-case gaps in it, both now fixed + tested (uncommitted) — see
-  [[traceid-cid-propagation-edgecase-fixes]].
+  reviewed it — one real fix (`my_correlation_id` read-only) + trace-header docs shipped as
+  PR [#134](https://github.com/Accenture/mercury-composable/pull/134) (the "traceparent leak" finding was
+  rejected by design) — see [[traceid-cid-propagation-edgecase-fixes]] and
+  [[developer-set-trace-headers-are-intentional]].
   <!-- id: thread-traceid-correlation-propagation | created: 2026-07-03 | last_used: 2026-07-03 | uses: 1 | tier: working | origin: 2026-07-03-014759 -->
 
 - [x] (completed — Eric, 2026-07-01) **Remove Protobuf support from minimalist-kafka's Schema Registry
