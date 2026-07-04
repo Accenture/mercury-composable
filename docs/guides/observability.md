@@ -90,6 +90,14 @@ The `X-Trace-Id` header carries the trace ID for callers not yet on W3C Trace Co
 echo the trace ID back to the HTTP client. (The correlation-id — a separate concern — is documented in
 [Reserved Names & Headers](reserved-names-and-headers.md#correlation-id-propagation).)
 
+> **Let the framework manage trace headers — don't set them yourself.** Inside a traced flow or function the
+> platform injects `X-Trace-Id` and `traceparent` on every outbound HTTP call from the current trace context,
+> overwriting any value you set on the request — so the trace stays correct and connected end-to-end, and the
+> upstream trace is propagated automatically. The one exception is a call that is **not** being traced (an
+> endpoint with `tracing: false`, or a call made outside a trace): there a trace header you set passes through
+> untouched — the intended escape hatch for handing a trace context to a third-party system, or for
+> unit-testing an external endpoint with full control over its request headers.
+
 ## Exporting telemetry {#export}
 
 ### The forwarder extension point {#forwarder}

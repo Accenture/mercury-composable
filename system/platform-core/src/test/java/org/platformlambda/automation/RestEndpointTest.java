@@ -162,6 +162,29 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
+    void asyncHttpClientForwardsDeveloperSuppliedTraceparent() throws InterruptedException {
+        // When this call is not being traced, an explicitly developer-set W3C "traceparent" is an intentional
+        // act (e.g. handing a trace context to a 3rd-party system, or forwarding an upstream trace). The
+        // framework must NOT strip it - it only stamps its own traceparent when it has an active trace to
+        // propagate. This guards against re-introducing a blanket ignore of caller-supplied trace headers.
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        String traceparent = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01";
+        EventEmitter po = EventEmitter.getInstance();
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("GET").setHeader("accept", "application/json").setHeader("traceparent", traceparent);
+        req.setUrl("/api/hello/world").setTargetHost("http://127.0.0.1:" + port);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
+        po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
+        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        assert response != null;
+        assertInstanceOf(Map.class, response.getBody());
+        MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
+        // the downstream service received the developer-supplied traceparent unchanged
+        assertEquals(traceparent, map.getElement("headers.traceparent"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void plainRestFunctionReceivesCorrelationId() throws InterruptedException, ExecutionException {
         // "/api/simple/{task}/*" is a pure "service: hello.world" mapping (no flow) — a plain REST endpoint
         // routed directly to a composable function. It must still receive the business correlation-id.

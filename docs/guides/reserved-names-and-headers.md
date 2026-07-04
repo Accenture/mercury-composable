@@ -157,6 +157,13 @@ The framework does **not** echo the trace ID (or the correlation-id) back to the
 > been retired. Use `X-Trace-Id` / `traceparent` for the trace ID, and `X-Correlation-Id` for the
 > correlation-id (below) - the two concerns are now separate.
 
+> **Don't set `X-Trace-Id` / `traceparent` yourself in application code — let the framework handle it.** When a
+> call is traced, the platform stamps both headers from the current trace context on every outbound HTTP request
+> and overwrites anything you set, so the trace lineage stays correct and the upstream trace propagates
+> automatically. Only when a call is **not** traced (`tracing: false`, or a call made outside a trace) does a
+> value you set pass through unchanged — the intended escape hatch for propagating a trace to a third-party
+> system or for unit tests.
+
 ### Correlation ID propagation
 
 The correlation-id ties a transaction together across business domains, from upstream through the mid-tier
