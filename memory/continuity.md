@@ -181,9 +181,9 @@
   `docs/guides/kafka-flow-adapter.md` §"CSFLE". Design spec (v3.0, gitignored):
   `draft-design-specs/kafka_csfle_field_encryption_design.md` — §10/§11 record exactly what shipped.
   **Status: shipped as PR #131 (commit `49d4eeca` on `main`).** See [[thread-csfle-field-encryption]].
-  **Assessment follow-up (2026-07-04, branch `fix/csfle-docs-and-avro-test`, uncommitted):** an external
-  GitHub Copilot report confirmed the delegation model is correct and found three non-blocking gaps, all
-  addressed — (1) the AWS KMS driver is Maven `optional` so it is NOT inherited transitively; docs + POM comment
+  **Assessment follow-up — PR [#135](https://github.com/Accenture/mercury-composable/pull/135) (2026-07-04,
+  branch `fix/csfle-docs-and-avro-test`):** an external GitHub Copilot report confirmed the delegation model is
+  correct and found three non-blocking gaps, all addressed — (1) the AWS KMS driver is Maven `optional` so it is NOT inherited transitively; docs + POM comment
   now state the executor IS inherited but the app must supply exactly one KMS driver itself
   (`docs/guides/kafka-flow-adapter.md` §"CSFLE" step 1, `pom.xml` comment); (2) the `SchemaCodec` Javadoc + the
   `SchemaCodecCsfleConfigTest#extractSerdeConfigStripsPrefixAndIgnoresOtherKeys` example listed the rule-owned
