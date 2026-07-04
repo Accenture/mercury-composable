@@ -500,7 +500,7 @@ out of responses. Read them through the PostOffice API (<code>getRoute</code>, <
 <p>You can create a trackable PostOffice using the "headers" and the "instance" parameters in the input arguments
 of your function.</p>
 <pre><code class="language-java">var po = new PostOffice(headers, instance);
-String correlationId = po.getMyCorrelationId();   // upstream correlation-id, propagated to this function
+String businessCorrelationId = po.getMyCorrelationId();   // upstream correlation-id, propagated to this function
 </code></pre>
 <h2 id="reserved-http-header-names">Reserved HTTP header names</h2>
 <table>
@@ -588,10 +588,12 @@ kafka.correlation.id.header=cid
 <p>Propagation:</p>
 <ul>
 <li><strong>Captured at the edge.</strong> REST automation (HTTP) and the Kafka Flow Adapter read the configured header;
-  when absent, a fresh UUID (no dashes, via <code>util.getUuid()</code>) is generated.</li>
-<li><strong>Preserved in the flow</strong> as <code>model.cid</code>, distinct from the internal per-request id used to route the
-  reply, and exposed to every function task as the read-only <code>my_correlation_id</code> header
-  (<code>PostOffice.getMyCorrelationId()</code>).</li>
+  when absent, a fresh UUID (no dashes, via <code>util.getUuid()</code>) is generated. This is the <strong>business
+  correlation-id</strong>, distinct from the <strong>internal correlation-id</strong> used to route the reply back to the
+  caller (<code>EventEnvelope.getCorrelationId()</code>/<code>setCorrelationId()</code>) — the internal one is transport
+  plumbing invisible to application code; the business one is the durable, end-to-end identifier.</li>
+<li><strong>Preserved in the flow</strong> as <code>model.cid</code>, and exposed to every function task as the read-only
+  <code>my_correlation_id</code> header (<code>PostOffice.getMyCorrelationId()</code>).</li>
 <li><strong>Carried to any touch point.</strong> Every <code>PostOffice</code> send/RPC/broadcast stamps <code>my_correlation_id</code> on the
   outgoing event (the same way the trace context is carried), so the correlation-id follows the call graph
   automatically — across in-memory calls, the cross-instance <strong>event-over-HTTP</strong> hop (it rides in the

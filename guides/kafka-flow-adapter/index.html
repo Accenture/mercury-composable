@@ -123,15 +123,25 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#adapter-yaml">Inbound: the adapter YAML</a>
         <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#dataset">Message dataset</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#group">Consumer group</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#pinning">Partition pinning</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#pattern">Pattern subscription</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#client-config">Kafka client configuration</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#reliability">Reliability: at-least-once, retry, and dead-letter</a>
+    <li class="toctree-l2"><a class="reference internal" href="#reliability">Reliability: delivery mode, retry, and dead-letter</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#delivery-mode">Delivery mode</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#retry-and-dead-letter">Retry and dead-letter</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#outbound">Outbound: publishing to Kafka</a>
         <ul>
@@ -234,13 +244,16 @@
 <p><strong>At a glance</strong></p>
 <ul>
 <li><strong>What</strong> — <code>minimalist-kafka</code> is an opt-in library with two composable building blocks: an <strong>inbound</strong>
-  Kafka Flow Adapter that routes each topic into an Event Script flow (the Kafka counterpart of
-  <code>rest.yaml</code>), and an <strong>outbound</strong> notification function that publishes an event to a topic.</li>
+  Kafka Flow Adapter that routes each topic (or regex-matched set of topics) into an Event Script flow (the
+  Kafka counterpart of <code>rest.yaml</code>), and an <strong>outbound</strong> notification function that publishes an event to
+  a topic.</li>
 <li><strong>Config, not code</strong> — Kafka client connection/security comes from external <code>kafka-producer.properties</code>
-  / <code>kafka-consumer.properties</code> templates; the YAML binds topics to flows with optional consumer group and
-  partition pinning. Enterprise SASL/OAuth2/mTLS is configured, never coded.</li>
-<li><strong>Reliable</strong> — at-least-once consume (commit-after-process), bounded retry then a per-topic dead-letter
-  topic, and continuous W3C trace context across the Kafka hop.</li>
+  / <code>kafka-consumer.properties</code> templates; the YAML binds topics (literal or regex) to flows with optional
+  consumer group, partition pinning, a per-binding dead-letter topic, and a per-binding delivery mode.
+  Enterprise SASL/OAuth2/mTLS is configured, never coded.</li>
+<li><strong>Reliable, with a throughput escape hatch</strong> — at-least-once consume (commit-after-process) by default,
+  bounded retry then a per-binding dead-letter topic, and continuous W3C trace context across the Kafka
+  hop; a binding may opt into Kafka-native auto-commit for higher throughput instead.</li>
 <li><strong>For</strong> developers and operators triggering flows from Kafka, or emitting Kafka events from a flow.</li>
 </ul>
 </blockquote>
@@ -269,9 +282,17 @@ activate the inbound adapter. The outbound <code>simple.kafka.notification</code
   - topic: 'incoming-orders'
     flow: 'process-order'
     group: 'sales-order-group'        # optional
+    dlq-topic: 'incoming-orders-dlq'  # optional; no DLQ if omitted (failed messages dropped w/ ERROR)
   - topic: 'incoming-payments'
     flow: 'process-payment'
     partition: 0                      # optional
+  - topic-pattern: 'events\.[a-z]{2}' # optional; regex subscribe instead of a literal 'topic'
+    flow: 'process-region-event'
+    group: 'region-events-group'      # required for topic-pattern bindings
+  - topic: 'clickstream'
+    flow: 'ingest-clickstream'
+    auto-commit: true                 # optional; trades pod-death redelivery for throughput
+    max-poll-records: 500             # optional; only meaningful with auto-commit
 </code></pre>
 <table>
 <thead>
@@ -284,8 +305,13 @@ activate the inbound adapter. The outbound <code>simple.kafka.notification</code
 <tbody>
 <tr>
 <td><code>topic</code></td>
-<td>yes</td>
-<td>Source Kafka topic.</td>
+<td>one of <code>topic</code>/<code>topic-pattern</code></td>
+<td>Literal source Kafka topic.</td>
+</tr>
+<tr>
+<td><code>topic-pattern</code></td>
+<td>one of <code>topic</code>/<code>topic-pattern</code></td>
+<td>Regex subscription instead of a literal topic (see <a href="#pattern">pattern subscription</a>).</td>
 </tr>
 <tr>
 <td><code>flow</code></td>
@@ -294,35 +320,117 @@ activate the inbound adapter. The outbound <code>simple.kafka.notification</code
 </tr>
 <tr>
 <td><code>group</code></td>
-<td>no</td>
-<td>Consumer group id (see <a href="#group">consumer group</a>). Defaults to <code>kafka-flow-adapter.&lt;topic&gt;</code>.</td>
+<td>no (required for <code>topic-pattern</code>)</td>
+<td>Consumer group id (see <a href="#group">consumer group</a>). Defaults to <code>kafka-flow-adapter.&lt;topic&gt;</code> for a literal topic; no default exists for a pattern.</td>
 </tr>
 <tr>
 <td><code>partition</code></td>
 <td>no</td>
-<td>Pins a single partition (see <a href="#pinning">partition pinning</a>). Omit for group-managed assignment.</td>
+<td>Pins a single partition (see <a href="#pinning">partition pinning</a>). Omit for group-managed assignment. Cannot be combined with <code>topic-pattern</code>.</td>
 </tr>
 <tr>
 <td><code>schema.enabled</code></td>
 <td>no</td>
 <td>When <code>true</code>, decode the Confluent-framed value into a <code>Map</code> before routing it into the flow (see <a href="#schema">Schema Registry</a>). Default <code>false</code> (raw <code>byte[]</code>).</td>
 </tr>
+<tr>
+<td><code>dlq-topic</code></td>
+<td>no</td>
+<td>Pre-provisioned topic for exhausted messages (see <a href="#reliability">reliability</a>). No DLQ if omitted.</td>
+</tr>
+<tr>
+<td><code>auto-commit</code></td>
+<td>no</td>
+<td>When <code>true</code>, use Kafka-native auto-commit instead of the default manual commit-after-process (see <a href="#delivery-mode">delivery mode</a>). Default <code>false</code>.</td>
+</tr>
+<tr>
+<td><code>max-poll-records</code></td>
+<td>no</td>
+<td>Override the delivery mode's default poll batch size (1 for manual-commit, 500 for auto-commit).</td>
+</tr>
 </tbody>
 </table>
 <p>The file is read by <code>ConfigReader</code>, so <strong>every value supports <code>${ENV_VAR:default}</code> substitution</strong> — e.g.
-<code>group: '${KAFKA_CONSUMER_GROUP:sales-order-group}'</code>. A malformed entry (missing <code>topic</code>/<code>flow</code>, non-map)
-fails startup fast and loud rather than being silently skipped.</p>
+<code>group: '${KAFKA_CONSUMER_GROUP:sales-order-group}'</code>. A malformed entry (missing <code>topic</code>/<code>topic-pattern</code>/
+<code>flow</code>, both <code>topic</code> and <code>topic-pattern</code> set, an invalid regex, a <code>dlq-topic</code> that equals or matches its own
+source, etc.) fails startup fast and loud rather than being silently skipped.</p>
+<h3 id="dataset">Message dataset</h3>
+<p>Every message hands the flow a <code>Map</code> with three top-level objects — <code>input.body</code>, <code>input.header</code>, and
+<code>input.metadata</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>body</code></td>
+<td><code>byte[]</code> or <code>Map</code></td>
+<td>The message payload; a <code>Map</code> when <a href="#schema"><code>schema.enabled</code></a> decodes a Confluent-framed value, raw <code>byte[]</code> otherwise.</td>
+</tr>
+<tr>
+<td><code>header</code></td>
+<td><code>Map&lt;String,String&gt;</code></td>
+<td>The record's Kafka headers, including <code>traceparent</code> (consumed for <a href="#tracing">trace continuity</a>) and <code>cid</code> (correlation id) when the producer set them.</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td><code>Map&lt;String,Object&gt;</code></td>
+<td>The record's own envelope facts — <code>topic</code>, <code>partition</code>, <code>offset</code>, <code>timestamp</code>, and <code>key</code> (omitted when the record carries no key).</td>
+</tr>
+</tbody>
+</table>
+<p><code>metadata.topic</code> and <code>metadata.partition</code> are the record's <strong>actual</strong> topic and partition — not the
+binding's configured <code>topic</code>/<code>topic-pattern</code>. For a literal <code>topic</code> binding this is redundant (the flow
+already knows the topic from its own YAML), but for a <a href="#pattern"><code>topic-pattern</code></a> binding it's the <em>only</em>
+way a flow recovers which of the many matched topics a given message came from, since every matched topic
+shares one <code>flow</code>. It's equally useful for a reprocessing flow bound to a <code>dlq-topic</code>: <code>metadata.topic</code> there
+is the DLQ topic itself, while the <code>dlq.origin.topic</code> header (see <a href="#reliability">reliability</a>) carries the
+original source topic — together they let a reprocessor recover both "where this landed" and "where it came
+from" without any framework-side rule/schema code.</p>
+<p>Because <code>metadata</code> is just another field on <code>input</code>, a task's own <code>input:</code> mapping can pass it straight to
+a composable function's parameter — no <code>model.*</code> relay needed. This is what makes
+<a href="#pattern"><code>topic-pattern</code></a> practical for a "serving" function that must vary its behavior by the concrete
+topic a message arrived on, even though every matched topic shares one <code>flow</code>:</p>
+<pre><code class="language-yaml"># in the first task of a topic-pattern flow, passed straight to the composable function
+input:
+  - 'input.metadata.topic -&gt; topic'      # e.g. 'events.de' - the function decides per-topic behavior
+  - 'input.metadata.partition -&gt; partition'
+  - 'input.body -&gt; body'
+process: 'topic.aware.dispatcher'
+</code></pre>
+<p><code>model.*</code> is only needed when a <em>later</em> task (not the one receiving the message) needs the value — store it
+once (<code>'input.metadata.topic -&gt; model.source_topic'</code>) and reference <code>model.source_topic</code> from there on.</p>
 <h3 id="group">Consumer group</h3>
 <p><code>group</code> is the Kafka consumer group id, used <strong>exactly as given</strong>. Enterprise DevSecOps teams typically
-provision topics, ACLs, and consumer groups administratively, so the library never decorates the value. When
-omitted it defaults to <code>kafka-flow-adapter.&lt;topic&gt;</code> for convenience in dev/test. All instances that share a
-group load-balance that topic's partitions; set it explicitly to your assigned group in production.</p>
+provision topics, ACLs, and consumer groups administratively, so the library never decorates the value. For
+a literal <code>topic</code> it defaults to <code>kafka-flow-adapter.&lt;topic&gt;</code> for convenience in dev/test; a <code>topic-pattern</code>
+binding has no sensible default (a regex string is not a group id) and must set <code>group</code> explicitly. All
+instances that share a group load-balance that binding's partitions; set it explicitly to your assigned
+group in production.</p>
 <h3 id="pinning">Partition pinning</h3>
 <p>When <code>partition</code> is present, the consumer <strong>manually assigns</strong> that single topic-partition instead of joining
 the consumer group for dynamic assignment. This bypasses group rebalancing — the pinned consumer reads
 exactly that partition — so you own the deployment model (one consumer per partition, or each pod pinning a
 distinct partition via <code>partition: ${POD_PARTITION}</code>). Offsets still commit under the configured group.
-Omit <code>partition</code> for normal group-managed consumption.</p>
+Omit <code>partition</code> for normal group-managed consumption. Mutually exclusive with <code>topic-pattern</code> (below), since
+manual assignment needs concrete topic-partitions up front.</p>
+<h3 id="pattern">Pattern subscription</h3>
+<p>Set <code>topic-pattern</code> instead of <code>topic</code> to subscribe to every topic matching a regex, using Kafka's native
+<code>subscribe(Pattern)</code>: the client tracks which topics currently match and adds/removes them from the
+subscription automatically as matching topics are created — no adapter-side polling of topic metadata, no
+restart needed when a new matching topic appears. All messages from every matched topic route into the same
+<code>flow</code>.</p>
+<pre><code class="language-yaml">  - topic-pattern: 'events\.[a-z]{2}'   # matches events.de, events.fr, events.us, ...
+    flow: 'process-region-event'
+    group: 'region-events-group'        # required - no sensible default for a regex string
+</code></pre>
+<p>Two rules follow from this: <code>topic-pattern</code> cannot be combined with <code>partition</code> (manual assignment needs
+concrete topic-partitions up front, which a pattern doesn't provide), and <code>group</code> must be set explicitly.
+<code>dlq-topic</code>, if configured, must not itself match the pattern (see <a href="#reliability">reliability</a>).</p>
 <h2 id="client-config">Kafka client configuration</h2>
 <p>Connection and security settings live in <strong>template files</strong>, not code, because enterprise Kafka varies
 widely (on-prem, cloud, SaaS, Confluent; SASL/PLAIN, SASL/SCRAM, OAuth2, mTLS):</p>
@@ -349,7 +457,7 @@ parameters its contract depends on and lets the template own everything else:</p
 </tr>
 <tr>
 <td>Delivery semantics (consumer)</td>
-<td><code>enable.auto.commit=false</code>, <code>max.poll.records=1</code></td>
+<td><code>enable.auto.commit</code> / <code>max.poll.records</code> — per-binding overlay (see <a href="#delivery-mode">delivery mode</a>)</td>
 <td><code>auto.offset.reset</code></td>
 </tr>
 <tr>
@@ -362,43 +470,59 @@ parameters its contract depends on and lets the template own everything else:</p
 <p><code>bootstrap.servers</code> is template-only via <code>${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}</code>. The byte[] wire
 contract keeps the building blocks serializer-free; richer encodings layer on top via the
 <a href="#schema">Schema Registry integration</a> (JSON Schema / Avro), opt-in per binding.</p>
-<h2 id="reliability">Reliability: at-least-once, retry, and dead-letter</h2>
-<p>The consumer commits offsets <strong>only after</strong> the flow finishes a message, one message at a time
-(<code>max.poll.records=1</code>). If the instance crashes before the commit, Kafka redelivers — the deliberate
-resilience-over-throughput trade-off.</p>
+<h2 id="reliability">Reliability: delivery mode, retry, and dead-letter</h2>
+<h3 id="delivery-mode">Delivery mode</h3>
+<p>By default (<code>auto-commit: false</code>, or omitted) the consumer commits offsets <strong>only after</strong> the flow finishes
+a message, one message at a time (<code>max.poll.records</code> defaults to <code>1</code>). If the instance crashes before the
+commit, Kafka redelivers to a surviving instance in the group — the deliberate resilience-over-throughput
+trade-off.</p>
+<p>Set <code>auto-commit: true</code> on a binding to trade that guarantee for throughput: Kafka commits offsets on its
+own periodic timer regardless of processing outcome, and <code>max.poll.records</code> defaults to <code>500</code> (still
+overridable via <code>max-poll-records</code>). A message being processed when a pod dies may already be considered
+committed and is <strong>not</strong> redelivered. Retry/dead-letter handling on flow failure is unaffected either way —
+auto-commit only changes <em>when</em> Kafka considers the offset committed, not whether a failure is retried or
+dead-lettered. Choose this per binding for high-volume topics (e.g. clickstream/telemetry) that can tolerate
+occasional loss on crash in exchange for throughput; leave strict topics on the default.</p>
 <p>A flow <strong>succeeds</strong> when it replies with status <code>200</code>. Any other status — or a thrown exception, including a
 <strong>timeout</strong> when the flow does not reply within its own <code>ttl</code> — is a <strong>failure</strong>. (Kafka is asynchronous, so
 unlike an HTTP entry the adapter has no inherent request timeout: the flow's <code>ttl</code> <em>is</em> the processing
 deadline. There is no separate flow-timeout knob.)</p>
+<h3 id="retry-and-dead-letter">Retry and dead-letter</h3>
 <p>On a <strong>failure</strong>, the message is retried up to <code>kafka.flow.max.retries</code> times (with
-<code>kafka.flow.retry.backoff.ms</code> between attempts), then written to a <strong>per-topic dead-letter topic</strong>
-<code>&lt;topic&gt;&lt;suffix&gt;</code> (suffix <code>kafka.flow.dlq.suffix</code>, default <code>.dlq</code>):</p>
+<code>kafka.flow.retry.backoff.ms</code> between attempts), then written to the binding's configured <code>dlq-topic</code>:</p>
 <ul>
-<li>The DLQ is <strong>strictly per topic</strong> — a global/shared DLQ is an anti-pattern because mixing source schemas
-  makes reprocessing (the whole point of a DLQ) hard. Only the suffix is configurable.</li>
+<li><strong>One DLQ topic per binding</strong>, not per concrete topic — a <code>topic-pattern</code> binding that matches many topics
+  still has a single <code>dlq-topic</code> (or none). The same flow that consumes a matched topic can reprocess a
+  dead-lettered message later regardless of which concrete topic it originated from; that provenance is
+  preserved via the <code>dlq.origin.topic</code> header, so a shared DLQ isn't the "mixing source schemas" anti-pattern
+  it would be for unrelated topics. <code>dlq-topic</code> must not equal the source <code>topic</code>, nor match <code>topic-pattern</code>,
+  or a dead-lettered message would be re-consumed by the same binding and fail forever — the adapter rejects
+  that configuration at startup.</li>
+<li><code>dlq-topic</code> is <strong>optional</strong>. When omitted, a message that exhausts retries is dropped with a logged
+  <code>ERROR</code> instead of being dead-lettered — the same fallback used when the DLQ write itself fails (below).</li>
 <li>The DLQ write is <strong>confirmed</strong> (it blocks on broker acknowledgement, bounded by <code>kafka.dlq.timeout.ms</code>);
-  on success the offset commits.</li>
+  on success the offset commits (or, in auto-commit mode, is left to Kafka's own timer as usual).</li>
 <li><strong>DLQ topics must be pre-provisioned</strong> (Kafka auto-creation is off in production). The original record's
   headers are preserved, plus <code>dlq.origin.topic</code> and <code>dlq.error</code>.</li>
 </ul>
 <blockquote>
-<p><strong>When the DLQ write itself fails (data loss).</strong> The DLQ is the last line of defense; a failed write to it
-is an <em>exception of an exception</em> with no further fallback. Blocking the partition to retry forever would
-re-run the failing flow and re-attempt the failing DLQ write indefinitely — a self-sustaining <strong>recovery
-storm</strong> (a known cause of prolonged outages). So the adapter instead logs a loud <code>ERROR</code> and <strong>commits</strong>,
-deliberately <strong>dropping that one message</strong> to keep the partition live. This is a conscious data-loss
-trade-off; a planned improvement is a classic resilience <strong>alternative path</strong> — persisting the record to a
-durable store for later replay instead of dropping it.</p>
+<p><strong>When there's no DLQ, or the DLQ write itself fails (data loss).</strong> A failed write to the DLQ is an
+<em>exception of an exception</em> with no further fallback. Blocking the partition to retry forever would re-run
+the failing flow and re-attempt the failing DLQ write indefinitely — a self-sustaining <strong>recovery storm</strong>
+(a known cause of prolonged outages). So the adapter instead logs a loud <code>ERROR</code> and <strong>commits</strong> (in
+manual-commit mode), deliberately <strong>dropping that one message</strong> to keep the partition live. This is a
+conscious data-loss trade-off; a planned improvement is a classic resilience <strong>alternative path</strong> —
+persisting the record to a durable store for later replay instead of dropping it.</p>
 </blockquote>
-<p><strong>Reprocessing</strong> (read <code>&lt;topic&gt;.dlq</code> → fix → replay) is business-domain logic and is intentionally out of
-scope: the library guarantees durable capture (when the DLQ is reachable), not replay.</p>
+<p><strong>Reprocessing</strong> (read the DLQ topic → fix → replay) is business-domain logic and is intentionally out of
+scope: the library guarantees durable capture (when a <code>dlq-topic</code> is configured and reachable), not replay.</p>
 <h2 id="outbound">Outbound: publishing to Kafka</h2>
 <p><code>simple.kafka.notification</code> is a composable function that publishes an event to a topic. Send it an
 <code>EventEnvelope</code> with a <code>topic</code> header (required), an optional <code>partition</code> header, a <code>byte[]</code> body, and any
 other headers (forwarded as Kafka headers):</p>
 <pre><code class="language-java">po.send(new EventEnvelope().setTo(&quot;simple.kafka.notification&quot;)
         .setHeader(&quot;topic&quot;, &quot;outgoing-events&quot;)
-        .setHeader(&quot;cid&quot;, correlationId)
+        .setHeader(&quot;cid&quot;, businessCorrelationId)
         .setBody(payloadBytes));
 </code></pre>
 <p>Publishing is <strong>drop-n-forget</strong> (Kafka's commit log is the durable buffer), but async delivery failures are
@@ -590,11 +714,6 @@ The essentials:</p>
 <td><code>kafka.flow.retry.backoff.ms</code></td>
 <td><code>500</code></td>
 <td>Pause between retry attempts.</td>
-</tr>
-<tr>
-<td><code>kafka.flow.dlq.suffix</code></td>
-<td><code>.dlq</code></td>
-<td>Suffix appended to the source topic to form its DLQ.</td>
 </tr>
 <tr>
 <td><code>schema.registry.url</code></td>

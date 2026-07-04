@@ -416,7 +416,7 @@ public class InspectEvent implements TypedLambdaFunction&lt;EventEnvelope, Map&l
     public Map&lt;String, Object&gt; handleEvent(Map&lt;String, String&gt; headers,
                                            EventEnvelope input, int instance) throws Exception {
         String traceId = input.getTraceId();
-        String correlationId = input.getCorrelationId();
+        String internalCorrelationId = input.getCorrelationId();
         Object body = input.getBody();
         return Map.of(&quot;trace&quot;, traceId, &quot;body&quot;, body);
     }
@@ -567,12 +567,12 @@ These keys are read-only context — do not set them on outgoing envelopes:</p>
 <tr>
 <td><code>getCorrelationId()</code></td>
 <td><code>String</code></td>
-<td>A caller-assigned correlation ID for matching responses to requests.</td>
+<td>A caller-assigned <strong>internal correlation-id</strong> for matching responses to requests (reply routing). This is transport plumbing, not the end-to-end business correlation-id — see <a href="../reserved-names-and-headers/#correlation-id-propagation">Correlation ID propagation</a> for that, exposed via <code>PostOffice.getMyCorrelationId()</code> / the flow's <code>model.cid</code>.</td>
 </tr>
 <tr>
 <td><code>setCorrelationId(String cid)</code></td>
 <td><code>EventEnvelope</code></td>
-<td>Sets the correlation ID. Returns <code>this</code>.</td>
+<td>Sets the internal correlation ID. Returns <code>this</code>.</td>
 </tr>
 </tbody>
 </table>

@@ -1082,12 +1082,6 @@ Kafka. See the <a href="../kafka-flow-adapter/">Kafka Flow Adapter guide</a>. Th
 <td>Pause between retry attempts.</td>
 </tr>
 <tr>
-<td><code>kafka.flow.dlq.suffix</code></td>
-<td><code>String</code></td>
-<td><code>.dlq</code></td>
-<td>Suffix appended to a source topic to form its per-topic dead-letter topic (<code>&lt;topic&gt;&lt;suffix&gt;</code>). A blank value falls back to <code>.dlq</code>.</td>
-</tr>
-<tr>
 <td><code>schema.registry.url</code></td>
 <td><code>String</code> (URL)</td>
 <td>—</td>
@@ -1105,13 +1099,21 @@ Kafka. See the <a href="../kafka-flow-adapter/">Kafka Flow Adapter guide</a>. Th
 <code>acks</code>, <code>auto.offset.reset</code>) live in the <code>kafka-producer.properties</code> / <code>kafka-consumer.properties</code> template
 files — not as <code>application.properties</code> keys — so any enterprise installation is configured by editing or
 overriding those templates. All template values support <code>${ENV_VAR:default}</code> substitution; <code>bootstrap.servers</code>
-defaults to <code>${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}</code>. The library pins the (de)serializers and the
-consumer's <code>enable.auto.commit=false</code> / <code>max.poll.records=1</code>; everything else is template-owned.</p>
-<p>Per-binding fields in <code>kafka-flow-adapter.yaml</code> (all <code>${ENV_VAR:default}</code>-substitutable): <code>topic</code> (required),
-<code>flow</code> (required), <code>group</code> (optional consumer group, used verbatim; default <code>kafka-flow-adapter.&lt;topic&gt;</code>),
-<code>partition</code> (optional; pins one partition via manual assignment), and <code>schema.enabled</code> (optional <code>boolean</code>,
-default <code>false</code>; when <code>true</code>, decode the Confluent-framed value to a <code>Map</code> before routing — see the
-<a href="../kafka-flow-adapter/#schema">Schema Registry integration</a>).</p>
+defaults to <code>${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}</code>. The library pins the (de)serializers; the consumer's
+<code>enable.auto.commit</code> / <code>max.poll.records</code> are a per-binding overlay (see <code>auto-commit</code> below), not a global
+template setting.</p>
+<p>Per-binding fields in <code>kafka-flow-adapter.yaml</code> (all <code>${ENV_VAR:default}</code>-substitutable): exactly one of
+<code>topic</code> (literal) or <code>topic-pattern</code> (regex, subscribed via <code>subscribe(Pattern)</code>) is required; <code>flow</code>
+(required); <code>group</code> (optional consumer group, used verbatim; default <code>kafka-flow-adapter.&lt;topic&gt;</code> for a
+literal topic, required for <code>topic-pattern</code>); <code>partition</code> (optional; pins one partition via manual
+assignment, mutually exclusive with <code>topic-pattern</code>); <code>schema.enabled</code> (optional <code>boolean</code>, default <code>false</code>;
+when <code>true</code>, decode the Confluent-framed value to a <code>Map</code> before routing — see the
+<a href="../kafka-flow-adapter/#schema">Schema Registry integration</a>); <code>dlq-topic</code> (optional; pre-provisioned
+dead-letter topic for this binding, used verbatim — no DLQ if omitted); <code>auto-commit</code> (optional <code>boolean</code>,
+default <code>false</code>; <code>true</code> uses Kafka-native auto-commit instead of manual commit-after-process); and
+<code>max-poll-records</code> (optional <code>int</code>; overrides the delivery mode's default of <code>1</code> for manual-commit or <code>500</code>
+for auto-commit). See the <a href="../kafka-flow-adapter/#adapter-yaml">Kafka Flow Adapter guide</a> for the full
+per-field rationale and validation rules.</p>
 <hr />
 <h2 id="sync-over-async">Sync-over-Async (<code>sync-over-async</code> extension)</h2>
 <p>The opt-in <code>sync-over-async</code> extension exposes a synchronous REST request/response over an asynchronous,
