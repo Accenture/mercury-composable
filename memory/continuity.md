@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-04 | agent: Claude Code (2026-07-04-170349)
+- **last_session:** 2026-07-04 | agent: Claude Code (2026-07-04-181333)
 - **last_review:** 2026-07-02 | through 2026-07-02-161433.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -662,6 +662,13 @@
   constants); `EventEnvelope.cid`, `PostOffice.getMyCorrelationId()`, and all wire header strings/config keys
   are unchanged. Full reactor + all affected test suites green. See
   [[business-vs-internal-correlation-id-terminology]].
+  **Test-infra improvements (2026-07-04, reviewer-driven):** (1) added `topic-pattern` embedded-Kafka e2e
+  test proving `subscribe(Pattern)` + `input.metadata.*` surfaces the concrete matched topic/partition
+  (was mock/config-only); (2) renamed the JSON schema-registry test path `schema-*`→`json-*` to sit
+  parallel to the Avro case; (3) split the shared `schema-sink-flow`/`SchemaSinkTask` (an agile artifact -
+  JSON first, Avro bolted on) into per-format `json-sink-flow`/`JsonSinkTask` + `avro-sink-flow`/
+  `AvroSinkTask`, removing the latent shared-queue coupling (codec id-dispatch still proven by
+  `SchemaCodecTest`). minimalist-kafka 78 tests green.
   **Review-driven hardening pass (2026-06-26, Claude Code):** applied the Copilot review
   (`draft-design-specs/kafka-sync-over-async-review.md`) via `apply-critique` — 6 fixes across both modules:
   mk#1 producer failure-logging callback (still drop-n-forget), mk#2 consumer retry→DLQ (`kafka-flow-failure-dlq`),
