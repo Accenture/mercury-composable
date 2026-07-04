@@ -74,9 +74,13 @@ public class SchemaCodec {
      * Prefix for CSFLE (and any other Confluent serde) properties to pass through verbatim - each
      * {@code schema.registry.serde.<key>} in application config becomes {@code <key>} in both the
      * serializer and deserializer config maps of every {@link SchemaSerde}. Generic and driver-agnostic:
-     * the encryption executor + AWS/Azure/GCP/Tink KMS driver config keys (e.g. {@code encrypt.kek.name},
-     * {@code encrypt.kms.type}, {@code encrypt.kms.key.id}, cloud credentials) flow through without any
-     * code change here. Absent entries ⇒ the serdes build exactly as before (plaintext).
+     * this is for the KMS <i>driver's</i> own global settings only - e.g. cloud credentials such as
+     * {@code access.key.id}/{@code secret.access.key}/{@code profile} (AWS), or the local Tink driver's
+     * {@code secret} - which flow through without any code change here. It is <b>not</b> where a key is
+     * chosen: the KEK/KMS identity ({@code encrypt.kek.name}/{@code encrypt.kms.type}/
+     * {@code encrypt.kms.key.id}) is per-subject and lives on the registered schema's {@code ENCRYPT} rule,
+     * which Confluent resolves via {@code RuleContext.getParameter} - never from this serde config. Absent
+     * entries ⇒ the serdes build exactly as before (plaintext).
      */
     private static final String SERDE_CONFIG_PREFIX = "schema.registry.serde.";
     private static final String CACHE_TTL = "schema.registry.cache.ttl";

@@ -140,10 +140,14 @@
 
         <!-- Cloud KMS driver. A field installation configures exactly ONE KMS vendor - each registers its
              KmsDriver via ServiceLoader and pulls that cloud's SDK, and the field-encryption executor above
-             works with whichever single driver is present. AWS is the default here; if your installation
-             uses Azure Key Vault or GCP KMS instead, comment out the AWS dependency below and uncomment the
-             matching one. optional=true so a consumer of this module isn't forced to resolve a cloud SDK it
-             doesn't use. -->
+             works with whichever single driver is present. AWS is enabled here as the default/template; for
+             Azure Key Vault or GCP KMS instead, comment out the AWS dependency below and uncomment the
+             matching one.
+             NOTE: optional=true means this driver is NOT inherited transitively - a downstream app depending
+             on the published minimalist-kafka artifact does NOT receive a KMS driver from here and must
+             declare exactly one itself (this keeps non-CSFLE and other-vendor consumers from being forced to
+             resolve a cloud SDK they don't use). The field-encryption executor above is a normal compile
+             dependency, so consumers DO inherit it - only the vendor KMS driver is the app's own choice. -->
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-schema-registry-client-encryption-aws</artifactId>
