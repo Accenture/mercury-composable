@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-04 | agent: Claude Code (2026-07-04-181333)
+- **last_session:** 2026-07-04 | agent: Claude Code (2026-07-04-232341)
 - **last_review:** 2026-07-02 | through 2026-07-02-161433.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -180,7 +180,19 @@
   **Wire/consumer unchanged** — only the tagged field *values* become ciphertext. Guide docs:
   `docs/guides/kafka-flow-adapter.md` §"CSFLE". Design spec (v3.0, gitignored):
   `draft-design-specs/kafka_csfle_field_encryption_design.md` — §10/§11 record exactly what shipped.
-  **Status: implemented, all tests green, uncommitted — pending Eric's review.** See [[thread-csfle-field-encryption]].
+  **Status: shipped as PR #131 (commit `49d4eeca` on `main`).** See [[thread-csfle-field-encryption]].
+  **Assessment follow-up (2026-07-04, branch `fix/csfle-docs-and-avro-test`, uncommitted):** an external
+  GitHub Copilot report confirmed the delegation model is correct and found three non-blocking gaps, all
+  addressed — (1) the AWS KMS driver is Maven `optional` so it is NOT inherited transitively; docs + POM comment
+  now state the executor IS inherited but the app must supply exactly one KMS driver itself
+  (`docs/guides/kafka-flow-adapter.md` §"CSFLE" step 1, `pom.xml` comment); (2) the `SchemaCodec` Javadoc + the
+  `SchemaCodecCsfleConfigTest#extractSerdeConfigStripsPrefixAndIgnoresOtherKeys` example listed the rule-owned
+  `encrypt.kek.name` as a `schema.registry.serde.*` pass-through key — corrected to genuine driver keys
+  (`access.key.id`/`secret`); this completes the earlier partial correction (the guide + the *other* test method
+  were fixed 2026-07-02, but the Javadoc + this test example were missed); (3) added
+  `SchemaCodecCsfleConfigTest#avroCsfleConfigReachesEncoderAndDecoder` — the first direct Avro CSFLE round-trip
+  through `SchemaCodec.Encoder`/`Decoder` (Avro was only symmetrically wired, JSON-only tested). Full module
+  green (79 tests, coverage gate met).
   <!-- id: kafka-csfle-delegation | created: 2026-07-02 | last_used: 2026-07-02 | uses: 1 | tier: working | origin: 2026-07-02-020429 -->
 
 - **Repo-wide OSS dependency security update (2026-07-01, committed on `feature/deprecate-simple-type-matching`).**
