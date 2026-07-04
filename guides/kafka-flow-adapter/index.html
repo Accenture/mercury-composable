@@ -601,14 +601,24 @@ makes. So there is no separate "encrypted" code path to opt into — CSFLE activ
 encryption executor + a KMS driver are on the classpath and (b) their configuration is present; everything
 else — resolving keys, encrypting tagged fields on write, decrypting on read — is Confluent's serializer/
 deserializer doing exactly what it would do in any Confluent-based application.</p>
-<p><strong>1. Dependencies.</strong> <code>system/minimalist-kafka/pom.xml</code> already declares:</p>
+<p><strong>1. Dependencies.</strong> <code>system/minimalist-kafka/pom.xml</code> declares:</p>
 <ul>
 <li><code>io.confluent:kafka-schema-registry-client-encryption</code> — the field-encryption rule executor (auto-discovered
-  via <code>ServiceLoader</code>; no explicit <code>rule.executors</code> config needed).</li>
-<li><strong>Exactly one</strong> cloud KMS driver: <code>io.confluent:kafka-schema-registry-client-encryption-aws</code> is uncommented
-  by default; if your installation uses Azure Key Vault or GCP KMS instead, comment out the AWS dependency and
-  uncomment the matching one. A field installation configures one KMS vendor, not several.</li>
+  via <code>ServiceLoader</code>; no explicit <code>rule.executors</code> config needed). This is a normal compile dependency, so an
+  app that depends on <code>minimalist-kafka</code> <strong>inherits the executor transitively</strong> — nothing to add.</li>
+<li><strong>Exactly one</strong> cloud KMS driver — <strong>which your application must supply itself.</strong> In this module's own POM the
+  AWS driver (<code>io.confluent:kafka-schema-registry-client-encryption-aws</code>) is uncommented as the default/template
+  (Azure and GCP are present alongside it, commented out). But that dependency is marked Maven <code>&lt;optional&gt;true&lt;/optional&gt;</code>,
+  so it is <strong>not inherited transitively</strong> by a downstream consumer of the published artifact. Your app must
+  therefore declare exactly one KMS driver appropriate to its environment — AWS, Azure, GCP, or (for tests) the
+  local Tink driver — on its own classpath. A field installation configures one KMS vendor, not several.</li>
 </ul>
+<blockquote>
+<p>Why optional rather than a default AWS dependency for everyone? Forcing the AWS SDK onto every consumer would
+be wrong for Azure/GCP and non-CSFLE users. So <code>minimalist-kafka</code> ships the vendor-neutral executor and lets
+the application pick its one KMS driver. A common symptom of skipping this: a subject configured with a CSFLE
+rule fails at runtime because no KMS driver is on the app's classpath.</p>
+</blockquote>
 <p><strong>2. The <code>ENCRYPT</code> rule — and its KEK/KMS identity — is per-subject, set on the schema, not in this app's
 config.</strong> When a subject is registered with an <code>ENCRYPT</code> rule tagging a field (e.g. <code>confluent:tags: ["PII"]</code>
 inline in the schema, or via a <code>Metadata</code> tags map), that rule's own parameters —
