@@ -125,19 +125,19 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
-        String compositeCid = event.getCorrelationId();
-        if (compositeCid == null) {
+        String compositeInternalCorrelationId = event.getCorrelationId();
+        if (compositeInternalCorrelationId == null) {
             log.error("Event {} dropped - missing correlation ID", event.getId());
             return null;
         }
-        int sep = compositeCid.indexOf('#');
-        final String cid;
+        int sep = compositeInternalCorrelationId.indexOf('#');
+        final String internalCorrelationId;
         final int seq;
         if (sep > 0) {
-            cid = compositeCid.substring(0, sep);
-            seq = util.str2int(compositeCid.substring(sep+1));
+            internalCorrelationId = compositeInternalCorrelationId.substring(0, sep);
+            seq = util.str2int(compositeInternalCorrelationId.substring(sep+1));
         } else {
-            cid = compositeCid;
+            internalCorrelationId = compositeInternalCorrelationId;
             seq = -1;
         }
         /*
@@ -147,8 +147,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
          * 1. first task
          * 2. flow timeout
          */
-        var ref = taskRefs.remove(cid);
-        String refId = ref == null? cid : ref.flowInstanceId;
+        var ref = taskRefs.remove(internalCorrelationId);
+        String refId = ref == null? internalCorrelationId : ref.flowInstanceId;
         FlowInstance flowInstance = Flows.getFlowInstance(refId);
         if (flowInstance == null) {
             log.debug("Flow instance {} is invalid or expired", refId);
@@ -281,7 +281,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             flowInstance.setReference(ERROR, result);
             EventEnvelope error = new EventEnvelope();
             // restore the original correlation-ID to the calling party
-            error.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.cid)
+            error.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.internalCorrelationId)
                  .setSpanId(parentSpanId);
             error.setStatus(status).setBody(result);
             PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME,
@@ -359,7 +359,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     var advice = new EventEnvelope().setTo(route).setHeader(TYPE, END)
                             .setHeader(FLOW_ID, flowInstance.getFlow().id)
                             .setHeader(INSTANCE_ID, flowInstance.id)
-                            .setCorrelationId(flowInstance.cid);
+                            .setCorrelationId(flowInstance.internalCorrelationId);
                     var error = flowInstance.getReference(ERROR);
                     advice.setBody(error instanceof Map ? error : Map.of(TYPE, END));
                     po.send(advice);
@@ -857,7 +857,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private void sendResponseFromTask(String parentSpanId, PostOffice po, FlowInstance flowInstance, Task task, MultiLevelMap map) {
         EventEnvelope result = new EventEnvelope();
         // restore the original correlation-ID to the calling party
-        result.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.cid)
+        result.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.internalCorrelationId)
               .setSpanId(parentSpanId);
         Object headers = map.getElement(OUTPUT_HEADER);
         Object body = map.getElement(OUTPUT_BODY);
@@ -930,7 +930,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         var taskMetrics = new TaskMetrics(task.service, functionRoute);
         flowInstance.metrics.put(uuid, taskMetrics);
         flowInstance.tasks.add(taskMetrics);
-        final var compositeCid = seq > 0? uuid + "#" + seq : uuid;
+        final var compositeInternalCorrelationId = seq > 0? uuid + "#" + seq : uuid;
         if (functionRoute.startsWith(FLOW_PROTOCOL)) {
             var flowId = functionRoute.substring(FLOW_PROTOCOL.length());
             var subFlow = Flows.getFlow(flowId);
@@ -952,8 +952,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                                                 .setHeader(PARENT, flowInstance.id)
                                                 .setHeader(FLOW_ID, flowId).setBody(dataset)
                                                 // sub-flow inherits the parent's business correlation-id (model.cid)
-                                                .setHeader(EventScriptManager.CORRELATION_ID, flowInstance.correlationId)
-                                                .setCorrelationId(compositeCid)
+                                                .setHeader(EventScriptManager.BUSINESS_CORRELATION_ID,
+                                                        flowInstance.businessCorrelationId)
+                                                .setCorrelationId(compositeInternalCorrelationId)
                                                 .setSpanId(parentSpanId);
             var po = new PostOffice(functionRoute, flowInstance.getTraceId(), flowInstance.getTracePath());
             po.send(forward);
@@ -961,11 +962,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             var po = new PostOffice(TaskExecutor.SERVICE_NAME,
                                             flowInstance.getTraceId(), flowInstance.getTracePath());
             var event = new EventEnvelope().setTo(functionRoute).setReplyTo(TaskExecutor.SERVICE_NAME)
-                                            .setCorrelationId(compositeCid)
+                                            .setCorrelationId(compositeInternalCorrelationId)
                                             .setBody(unwrapBodyIfWildcard(md))
                                             .setSpanId(parentSpanId)
                                             // expose the flow's business correlation-id (model.cid) as a read-only header
-                                            .setHeader(MY_CORRELATION_ID, flowInstance.correlationId);
+                                            .setHeader(MY_CORRELATION_ID, flowInstance.businessCorrelationId);
             md.optionalHeaders.forEach(event::setHeader);
             // execute task by sending event
             if (deferred > 0) {

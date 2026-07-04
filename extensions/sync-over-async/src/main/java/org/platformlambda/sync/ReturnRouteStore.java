@@ -42,30 +42,30 @@ public class ReturnRouteStore {
         this.connection = connection;
     }
 
-    public void saveRoute(String correlationId, String returnChannel, long ttlSeconds) {
-        commands().setex(ROUTE_PREFIX + correlationId, ttlSeconds, returnChannel);
+    public void saveRoute(String businessCorrelationId, String returnChannel, long ttlSeconds) {
+        commands().setex(ROUTE_PREFIX + businessCorrelationId, ttlSeconds, returnChannel);
     }
 
     /** @return the return channel for this correlation-id, or {@code null} if absent/expired (orphan). */
-    public String getRoute(String correlationId) {
-        return commands().get(ROUTE_PREFIX + correlationId);
+    public String getRoute(String businessCorrelationId) {
+        return commands().get(ROUTE_PREFIX + businessCorrelationId);
     }
 
-    public void saveResponse(String correlationId, String payload, long ttlSeconds) {
-        commands().setex(RESPONSE_PREFIX + correlationId, ttlSeconds, payload);
+    public void saveResponse(String businessCorrelationId, String payload, long ttlSeconds) {
+        commands().setex(RESPONSE_PREFIX + businessCorrelationId, ttlSeconds, payload);
     }
 
     /** @return the response payload for this correlation-id, or {@code null} if not yet written/expired. */
-    public String getResponse(String correlationId) {
-        return commands().get(RESPONSE_PREFIX + correlationId);
+    public String getResponse(String businessCorrelationId) {
+        return commands().get(RESPONSE_PREFIX + businessCorrelationId);
     }
 
     /**
      * Delete both keys for a completed rendezvous. The TTLs are the safety net for crashes/timeouts;
      * deleting on success frees the keys immediately instead of waiting out the TTL (less key churn).
      */
-    public void cleanup(String correlationId) {
-        commands().del(ROUTE_PREFIX + correlationId, RESPONSE_PREFIX + correlationId);
+    public void cleanup(String businessCorrelationId) {
+        commands().del(ROUTE_PREFIX + businessCorrelationId, RESPONSE_PREFIX + businessCorrelationId);
     }
 
     private RedisCommands<String, String> commands() {

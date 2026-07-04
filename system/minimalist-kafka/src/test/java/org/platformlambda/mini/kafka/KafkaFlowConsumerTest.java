@@ -268,7 +268,7 @@ class KafkaFlowConsumerTest {
 
         consumer.routeToFlow(inboundRecord());
 
-        assertEquals("cid-1", captured[0].getHeader(EventScriptManager.CORRELATION_ID),
+        assertEquals("cid-1", captured[0].getHeader(EventScriptManager.BUSINESS_CORRELATION_ID),
                 "the business correlation-id must ride the header EventScriptManager actually reads");
         assertEquals("cid-1", captured[0].getCorrelationId());
     }

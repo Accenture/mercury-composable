@@ -119,8 +119,8 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private static final String METADATA_KEY = "key";
     private static final String DLQ_ERROR_HEADER = "dlq.error";
     private static final String DLQ_ORIGIN_TOPIC_HEADER = "dlq.origin.topic";
-    // Configurable inbound correlation-id header (default "cid"); its value seeds the flow's model.cid.
-    private static final String CORRELATION_ID_HEADER = AppConfigReader.getInstance()
+    // Configurable inbound business correlation-id header (default "cid"); its value seeds the flow's model.cid.
+    private static final String BUSINESS_CORRELATION_ID_HEADER = AppConfigReader.getInstance()
             .getProperty("kafka.correlation.id.header", KafkaHeaders.CORRELATION_ID);
 
     private final Consumer<String, byte[]> consumer;
@@ -232,15 +232,15 @@ public class KafkaFlowConsumer implements AutoCloseable {
     /** Build the flow-engine request from the decoded dataset, chaining onto the inbound trace/span. */
     private EventEnvelope toFlowRequest(Map<String, Object> dataset, Map<String, String> headers,
                                         String[] trace, String traceId, String tracePath) {
-        // Capture the upstream correlation-id from the configured header; generate a fresh one if absent.
-        String correlationId = headers.get(CORRELATION_ID_HEADER);
-        if (correlationId == null) {
-            correlationId = Utility.getInstance().getUuid();
+        // Capture the upstream business correlation-id from the configured header; generate a fresh one if absent.
+        String businessCorrelationId = headers.get(BUSINESS_CORRELATION_ID_HEADER);
+        if (businessCorrelationId == null) {
+            businessCorrelationId = Utility.getInstance().getUuid();
         }
         EventEnvelope forward = new EventEnvelope();
         forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, binding.flowId())
-                .setHeader(EventScriptManager.CORRELATION_ID, correlationId)
-                .setCorrelationId(correlationId).setBody(dataset)
+                .setHeader(EventScriptManager.BUSINESS_CORRELATION_ID, businessCorrelationId)
+                .setCorrelationId(businessCorrelationId).setBody(dataset)
                 .setTraceId(traceId).setTracePath(tracePath);
         if (trace != null) {
             forward.setSpanId(trace[1]);   // chain onto the upstream span carried in the Kafka traceparent

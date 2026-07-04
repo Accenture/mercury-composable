@@ -251,7 +251,7 @@ other headers (forwarded as Kafka headers):
 ```java
 po.send(new EventEnvelope().setTo("simple.kafka.notification")
         .setHeader("topic", "outgoing-events")
-        .setHeader("cid", correlationId)
+        .setHeader("cid", businessCorrelationId)
         .setBody(payloadBytes));
 ```
 

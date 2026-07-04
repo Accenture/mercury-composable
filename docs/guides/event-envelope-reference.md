@@ -114,7 +114,7 @@ public class InspectEvent implements TypedLambdaFunction<EventEnvelope, Map<Stri
     public Map<String, Object> handleEvent(Map<String, String> headers,
                                            EventEnvelope input, int instance) throws Exception {
         String traceId = input.getTraceId();
-        String correlationId = input.getCorrelationId();
+        String internalCorrelationId = input.getCorrelationId();
         Object body = input.getBody();
         return Map.of("trace", traceId, "body", body);
     }
@@ -175,8 +175,8 @@ PostOffice po = PostOffice.trackable(headers, instance);
 | `getTracePath()` | `String` | The accumulated path of all routes this event has passed through. |
 | `setTracePath(String tracePath)` | `EventEnvelope` | Sets the trace path. Returns `this`. |
 | `setTrace(String traceId, String tracePath)` | `EventEnvelope` | Sets both trace ID and trace path in one call. Returns `this`. |
-| `getCorrelationId()` | `String` | A caller-assigned correlation ID for matching responses to requests. |
-| `setCorrelationId(String cid)` | `EventEnvelope` | Sets the correlation ID. Returns `this`. |
+| `getCorrelationId()` | `String` | A caller-assigned **internal correlation-id** for matching responses to requests (reply routing). This is transport plumbing, not the end-to-end business correlation-id — see [Correlation ID propagation](reserved-names-and-headers.md#correlation-id-propagation) for that, exposed via `PostOffice.getMyCorrelationId()` / the flow's `model.cid`. |
+| `setCorrelationId(String cid)` | `EventEnvelope` | Sets the internal correlation ID. Returns `this`. |
 
 ### Fields set automatically by PostOffice
 

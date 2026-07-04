@@ -61,9 +61,9 @@ public class SyncPrepareTask implements TypedLambdaFunction<Map<String, Object>,
     public EventEnvelope handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         // model.cid is the business correlation-id captured at the edge (from http.correlation.id.header,
         // default X-Correlation-Id, or a fresh UUID). The flow maps it here as header.cid.
-        String correlationId = headers.getOrDefault("cid", Utility.getInstance().getUuid());
-        SyncRuntime.coordinator().begin(correlationId);   // register the return route before publishing
+        String businessCorrelationId = headers.getOrDefault("cid", Utility.getInstance().getUuid());
+        SyncRuntime.coordinator().begin(businessCorrelationId);   // register the return route before publishing
         byte[] payload = SimpleMapper.getInstance().getMapper().writeValueAsBytes(input);
-        return new EventEnvelope().setHeader(KafkaHeaders.CORRELATION_ID, correlationId).setBody(payload);
+        return new EventEnvelope().setHeader(KafkaHeaders.CORRELATION_ID, businessCorrelationId).setBody(payload);
     }
 }

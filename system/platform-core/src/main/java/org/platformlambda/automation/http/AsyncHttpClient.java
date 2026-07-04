@@ -334,11 +334,11 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             http.set(W3cTrace.TRACEPARENT, traceparent);
         }
         // propagate the business correlation-id downstream (unless the caller set the header explicitly)
-        String correlationId = po.getMyCorrelationId();
-        if (correlationId != null) {
+        String businessCorrelationId = po.getMyCorrelationId();
+        if (businessCorrelationId != null) {
             String cidHeader = HttpRouter.getCorrelationIdHeader();
             if (cidHeader != null && request.getHeader(cidHeader) == null) {
-                http.set(cidHeader, correlationId);
+                http.set(cidHeader, businessCorrelationId);
             }
         }
         // set cookies if any

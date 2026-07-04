@@ -120,7 +120,7 @@ of your function.
 
 ```java
 var po = new PostOffice(headers, instance);
-String correlationId = po.getMyCorrelationId();   // upstream correlation-id, propagated to this function
+String businessCorrelationId = po.getMyCorrelationId();   // upstream correlation-id, propagated to this function
 ```
 
 ## Reserved HTTP header names
@@ -172,10 +172,12 @@ kafka.correlation.id.header=cid
 Propagation:
 
 - **Captured at the edge.** REST automation (HTTP) and the Kafka Flow Adapter read the configured header;
-  when absent, a fresh UUID (no dashes, via `util.getUuid()`) is generated.
-- **Preserved in the flow** as `model.cid`, distinct from the internal per-request id used to route the
-  reply, and exposed to every function task as the read-only `my_correlation_id` header
-  (`PostOffice.getMyCorrelationId()`).
+  when absent, a fresh UUID (no dashes, via `util.getUuid()`) is generated. This is the **business
+  correlation-id**, distinct from the **internal correlation-id** used to route the reply back to the
+  caller (`EventEnvelope.getCorrelationId()`/`setCorrelationId()`) — the internal one is transport
+  plumbing invisible to application code; the business one is the durable, end-to-end identifier.
+- **Preserved in the flow** as `model.cid`, and exposed to every function task as the read-only
+  `my_correlation_id` header (`PostOffice.getMyCorrelationId()`).
 - **Carried to any touch point.** Every `PostOffice` send/RPC/broadcast stamps `my_correlation_id` on the
   outgoing event (the same way the trace context is carried), so the correlation-id follows the call graph
   automatically — across in-memory calls, the cross-instance **event-over-HTTP** hop (it rides in the
