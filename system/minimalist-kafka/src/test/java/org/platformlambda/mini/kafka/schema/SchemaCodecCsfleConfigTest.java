@@ -18,6 +18,9 @@
 
 package org.platformlambda.mini.kafka.schema;
 
+import io.confluent.kafka.schemaregistry.ParsedSchema;
+import io.confluent.kafka.schemaregistry.avro.AvroSchema;
+import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientFactory;
 import io.confluent.kafka.schemaregistry.client.rest.entities.Rule;
@@ -80,14 +83,17 @@ class SchemaCodecCsfleConfigTest {
     @Test
     void extractSerdeConfigStripsPrefixAndIgnoresOtherKeys() {
         Map<String, Object> appConfig = new HashMap<>();
-        appConfig.put("schema.registry.serde.encrypt.kek.name", "my-kek");
+        // genuine driver-level keys only: an AWS credential + the local KMS driver's secret. NOT
+        // encrypt.kek.name/kms.type/kms.key.id - those are per-subject rule params resolved from the
+        // registered schema, never from this serde pass-through (see csfleConfigReachesEncoderAndDecoder).
+        appConfig.put("schema.registry.serde.access.key.id", "AKIA-example");
         appConfig.put("schema.registry.serde.secret", "my-secret");
         appConfig.put("schema.registry.cache.ttl", "30m");   // not a serde.* key - must be excluded
         appConfig.put("schema.registry.url", "http://localhost:8081"); // likewise excluded
 
         Map<String, Object> extracted = SchemaCodec.extractSerdeConfig(new MapConfig(appConfig));
 
-        assertEquals(Map.of("encrypt.kek.name", "my-kek", "secret", "my-secret"), extracted);
+        assertEquals(Map.of("access.key.id", "AKIA-example", "secret", "my-secret"), extracted);
     }
 
     @Test
@@ -139,6 +145,50 @@ class SchemaCodecCsfleConfigTest {
         SchemaCodec.Decoder decoder = codec.newDecoder();
         Map<String, Object> decoded = (Map<String, Object>) decoder.decode(TOPIC, framed);
         assertEquals("123-45-6789", decoded.get(TAGGED_FIELD), "SchemaCodec.Decoder decrypts back to the original");
+        assertEquals("world", decoded.get("hello"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void avroCsfleConfigReachesEncoderAndDecoder() throws Exception {
+        // Avro mirror of csfleConfigReachesEncoderAndDecoder: Avro has different mechanics (the input Map is
+        // converted to a GenericRecord against the registered schema before serialize), so CSFLE is proven
+        // end-to-end for Avro too, not just assumed symmetric with JSON. Same delegation model: the ENCRYPT
+        // rule + its KEK/KMS identity live on the registered schema; only the local KMS driver's global
+        // "secret" comes through the schema.registry.serde.* pass-through.
+        String mockUrl = "mock://" + util.getUuid();
+
+        Map<String, Object> extraSerdeConfig = new HashMap<>();
+        extraSerdeConfig.put("secret", "spike-test-passphrase");
+
+        SchemaRegistryClient mockClient = SchemaRegistryClientFactory.newClient(
+                List.of(mockUrl), 100, List.of(new AvroSchemaProvider()), Map.of(), Map.of());
+        SchemaCodec codec = new SchemaCodec(mockClient, mockUrl, extraSerdeConfig);
+
+        // the tagged field carries confluent:tags inline in the Avro schema; the ENCRYPT rule selects by tag
+        String schemaString = "{\"type\":\"record\",\"name\":\"Customer\",\"namespace\":\"test\",\"fields\":["
+                + "{\"name\":\"hello\",\"type\":\"string\"},"
+                + "{\"name\":\"" + TAGGED_FIELD + "\",\"type\":\"string\",\"confluent:tags\":[\"" + PII_TAG + "\"]}"
+                + "]}";
+        Map<String, String> ruleParams = new HashMap<>();
+        ruleParams.put("encrypt.kek.name", "csfle-avro-kek");
+        ruleParams.put("encrypt.kms.type", "local-kms");
+        ruleParams.put("encrypt.kms.key.id", "local-kms://csfle-avro-key");
+        Rule encryptRule = new Rule("encryptPII", null, RuleKind.TRANSFORM, RuleMode.WRITEREAD,
+                "ENCRYPT", Set.of(PII_TAG), ruleParams, null, null, "ERROR", false);
+        ParsedSchema ruledSchema = new AvroSchema(schemaString).copy(null, new RuleSet(List.of(), List.of(encryptRule)));
+        int id = mockClient.register(TOPIC + "-avro-value", ruledSchema);
+
+        SchemaCodec.Encoder encoder = codec.newEncoder();
+        Map<String, Object> value = Map.of("hello", "world", TAGGED_FIELD, "123-45-6789");
+        byte[] framed = encoder.serialize(TOPIC, SchemaType.AVRO, id, value);
+
+        String wireText = new String(framed, StandardCharsets.ISO_8859_1);
+        assertFalse(wireText.contains("123-45-6789"), "tagged Avro field must be encrypted on the wire via SchemaCodec");
+
+        SchemaCodec.Decoder decoder = codec.newDecoder();
+        Map<String, Object> decoded = (Map<String, Object>) decoder.decode(TOPIC, framed);
+        assertEquals("123-45-6789", decoded.get(TAGGED_FIELD), "SchemaCodec.Decoder decrypts the Avro field back");
         assertEquals("world", decoded.get("hello"));
     }
 
