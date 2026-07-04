@@ -3,4 +3,6 @@
 #
 flows:
   - 'kafka-sink-flow.yml'
-  - 'schema-sink-flow.yml'
+  - 'json-sink-flow.yml'
+  - 'avro-sink-flow.yml'
+  - 'kafka-pattern-sink-flow.yml'

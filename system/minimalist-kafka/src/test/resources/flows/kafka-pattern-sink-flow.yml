@@ -1,0 +1,24 @@
+#
+# Flow reached when the Kafka flow adapter routes a message from a topic-pattern binding
+# ('events\.[a-z]{2}'). Every matched topic shares this one flow, so 'input.metadata.*' - the record's own
+# topic/partition/offset - is the only way the sink task recovers which concrete topic a message came from.
+#
+flow:
+  id: 'kafka-pattern-sink-flow'
+  description: 'Record a Kafka message routed by a topic-pattern binding'
+  ttl: 30s
+
+first.task: 'kafka.pattern.test.sink'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+      - 'input.header.cid -> header.cid'
+      - 'input.metadata.topic -> header.topic'
+      - 'input.metadata.partition -> header.partition'
+      - 'input.metadata.offset -> header.offset'
+    process: 'kafka.pattern.test.sink'
+    output:
+      - 'result -> output.body'
+    description: 'Record the pattern-routed message'
+    execution: end

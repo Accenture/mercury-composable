@@ -1,0 +1,34 @@
+#
+# Sink flow for the Avro e2e case ('avro-test-topic'). Because the binding sets schema.enabled, the adapter
+# decodes the Confluent-framed Avro value and hands this flow the decoded Map as input.body.
+# (The parallel JSON Schema case lives in json-sink-flow.yml; the codec supports both, dispatching by the
+# embedded schema id - see SchemaCodecTest for the codec-level proof that one decoder handles both formats.)
+#
+# Correlation-id: the adapter stamps the inbound Kafka correlation-id (the 'cid' header,
+# KafkaHeaders.CORRELATION_ID) onto the flow request as the 'correlation_id' header EventScriptManager
+# reads, so 'model.cid' carries it here - and every task sees it via PostOffice.getMyCorrelationId() - just
+# like an HTTP-triggered flow. (It is set alongside the envelope correlation-id, which
+# KafkaFlowConsumer.invokeFlow's blocking PostOffice.request(...) rewrites for RPC reply-matching; setting
+# the header too is what keeps model.cid correct - see KafkaFlowConsumer.toFlowRequest.) This flow reads
+# the raw inbound header ('input.header.cid') instead - equivalent for the default header, and the way to
+# read a proprietary upstream header name (e.g. a CloudEvents 'ce-id', or a custom 'x-correlation-id'):
+#   'input.header.x-correlation-id -> header.cid'
+#
+flow:
+  id: 'avro-sink-flow'
+  description: 'Record an Avro-decoded Kafka message routed by the flow adapter'
+  ttl: 30s
+
+first.task: 'avro.test.sink'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+      - 'input.header.cid -> header.cid'
+      # To use a proprietary upstream header instead, replace the mapping above with, for example:
+      #   'input.header.x-correlation-id -> header.cid'
+    process: 'avro.test.sink'
+    output:
+      - 'result -> output.body'
+    description: 'Record the decoded message'
+    execution: end

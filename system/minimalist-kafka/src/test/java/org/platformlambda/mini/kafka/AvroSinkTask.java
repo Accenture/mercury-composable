@@ -28,12 +28,13 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 /**
- * Test sink for the schema-decoding path: unlike {@link KafkaSinkTask} (raw byte[]), this receives the
- * <b>decoded Map</b> that the adapter produced from a Confluent-framed message. Records the body + trace
- * so the test can assert decoding and trace continuity.
+ * Test sink for the Avro e2e path ({@code avro-sink-flow}): the adapter decodes the Confluent-framed Avro
+ * value (schema.enabled) and hands this task the decoded Map as input.body. Records what it received so the
+ * test can assert decoding, correlation-id, and trace continuity. Separate from {@link JsonSinkTask} (its own
+ * {@code RECEIVED} queue) so the JSON and Avro e2e cases never share mutable state.
  */
-@PreLoad(route = "schema.test.sink", instances = 5)
-public class SchemaSinkTask implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
+@PreLoad(route = "avro.test.sink", instances = 5)
+public class AvroSinkTask implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
 
     static final BlockingQueue<Map<String, Object>> RECEIVED = new ArrayBlockingQueue<>(16);
 

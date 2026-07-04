@@ -39,10 +39,15 @@ final class KafkaTestSupport {
 
     static void createTopic(String bootstrapServers, String topic)
             throws InterruptedException, ExecutionException, TimeoutException {
+        createTopic(bootstrapServers, topic, 1);
+    }
+
+    static void createTopic(String bootstrapServers, String topic, int partitions)
+            throws InterruptedException, ExecutionException, TimeoutException {
         Properties p = new Properties();
         p.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         try (Admin admin = Admin.create(p)) {
-            admin.createTopics(List.of(new NewTopic(topic, 1, (short) 1))).all().get(20, TimeUnit.SECONDS);
+            admin.createTopics(List.of(new NewTopic(topic, partitions, (short) 1))).all().get(20, TimeUnit.SECONDS);
         }
     }
 }
