@@ -57,14 +57,16 @@ class FileElasticStore implements ElasticStore {
     private static final String SEGMENT_PREFIX = "eq-";
     private static final String SEGMENT_SUFFIX = ".dat";
     private static final long DEFAULT_SEGMENT_BYTES = 16L * 1024 * 1024;
+    private static final long MIN_SEGMENT_BYTES = 512;
+    private static final String SEGMENT_SIZE_CONFIG = "elastic.queue.segment.size.bytes";
 
     private static final ReentrantLock SAFETY = new ReentrantLock();
     private static final AtomicBoolean LOADED = new AtomicBoolean(false);
-    private static File baseDir;
-    private static long segmentBytes = DEFAULT_SEGMENT_BYTES;
+    static File baseDir;   // package-private: read by tests to assert segment reclamation
 
     private final String id;
     private final String safeId;
+    private final long segmentBytes;
     private final ConcurrentLinkedQueue<byte[]> memory = new ConcurrentLinkedQueue<>();
     private final Deque<Segment> segments = new ArrayDeque<>();
     private long readCounter;
@@ -79,6 +81,9 @@ class FileElasticStore implements ElasticStore {
     FileElasticStore(String id) {
         this.id = util.validServiceName(id) ? id : util.filteredServiceName(id);
         this.safeId = sanitize(this.id);
+        this.segmentBytes = Math.max(MIN_SEGMENT_BYTES, util.str2long(
+                AppConfigReader.getInstance().getProperty(SEGMENT_SIZE_CONFIG,
+                        String.valueOf(DEFAULT_SEGMENT_BYTES))));
         resetCounter();
         ensureBaseDir();
     }
@@ -95,15 +100,12 @@ class FileElasticStore implements ElasticStore {
                     File tmpRoot = new File(config.getProperty("transient.data.store", "/tmp/reactive"));
                     baseDir = runningInCloud ? tmpRoot
                             : new File(tmpRoot, platform.getName() + "-" + platform.getOrigin());
-                    segmentBytes = Math.max(64L * 1024,
-                            util.str2long(config.getProperty("elastic.queue.segment.size.bytes",
-                                    String.valueOf(DEFAULT_SEGMENT_BYTES))));
                     if (!baseDir.exists() && baseDir.mkdirs()) {
                         log.info("{} created", baseDir);
                     }
                     // transient store: clear any leftover segment files from a prior run
                     purgeLeftoverSegments(null);
-                    log.info("Elastic file store ready ({}, segment={} bytes)", baseDir, segmentBytes);
+                    log.info("Elastic file store ready ({})", baseDir);
                 }
             } finally {
                 SAFETY.unlock();
