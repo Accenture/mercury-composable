@@ -520,8 +520,10 @@
   callback+RPC end-to-end harness → self-contained HTML report (inline SVG histogram + percentile plot),
   runnable in the field/pipeline, records store+dispatch for file-vs-bdb A/B. **Open decision for Eric:** the
   flip inverts PR #137's "default unchanged" premise — fold into #137 (re-frame) or split into a follow-up PR;
-  awaiting direction before pushing. **After that = field steps: run benchmark-reporter on real envs, then P4
-  retire BDB.** Docs/ADR sync tracked separately in [[thread-elastic-queue-docs-adr]].
+  **Eric chose (2026-07-05): fold into PR #137 + re-frame** (file = default + benchmark tooling); pushed
+  `44202a57`, so #137 is now the whole field-test-ready change (re-framed title/description handed to Eric).
+  **Next = field steps: run benchmark-reporter on real envs, then P4 retire BDB.** Docs/ADR sync tracked
+  separately in [[thread-elastic-queue-docs-adr]].
   <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
 
 - [ ] (backlog — do at ElasticQueue merge / P4, Claude Code 2026-07-05) **Docs sync + ADR for the ElasticQueue
