@@ -26,6 +26,7 @@ import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
 
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -42,6 +43,11 @@ class DispatchBenchmark {
 
     private static final String ROUTE = "dispatch.bench.sink";
     private static final AtomicLong PROCESSED = new AtomicLong(0);
+
+    // fast-path overhead test (distinct route + state so it can run independently of the throughput test)
+    private static final String TIMED_ROUTE = "dispatch.bench.timed";
+    private static final AtomicLong TIMED_COUNT = new AtomicLong(0);
+    private static volatile long[] timedLatencies;
 
     @Test
     @EnabledIfSystemProperty(named = "bench.run", matches = "true")
@@ -71,6 +77,69 @@ class DispatchBenchmark {
         System.out.printf("events=%,d  processed=%,d  elapsed=%.2fs  throughput=%,.0f events/s%n",
                 iterations, PROCESSED.get(), elapsedSec, iterations / elapsedSec);
         System.out.println("================================================================");
+    }
+
+    /**
+     * Fast-path dispatch OVERHEAD: measures the send→worker latency on the non-back-pressure path
+     * (in-flight=1 sequential + 5 spare-ready worker instances ⇒ a worker is always ready ⇒ direct
+     * dispatch, no ElasticQueue spill). The loop-vs-vthread delta of this latency IS the cost of the
+     * ServiceQueue mailbox hand-off (loop enqueue → per-route VT take → dispatch to WorkerQueue).
+     */
+    @Test
+    @EnabledIfSystemProperty(named = "bench.run", matches = "true")
+    void fastPathDispatchOverhead() {
+        int warmup = Integer.getInteger("bench.warmup", 10000);
+        int n = Integer.getInteger("bench.iterations", 200000);
+        String mode = AppConfigReader.getInstance().getProperty("elastic.queue.dispatch", "loop");
+        Platform platform = Platform.getInstance();
+        if (!platform.hasRoute(TIMED_ROUTE)) {
+            LambdaFunction sink = (headers, input, instance) -> {
+                long sent = input instanceof Number num ? num.longValue() : Long.parseLong(String.valueOf(input));
+                long lat = System.nanoTime() - sent;
+                long idx = TIMED_COUNT.getAndIncrement();
+                long[] arr = timedLatencies;
+                if (arr != null && idx < arr.length) {
+                    arr[(int) idx] = lat;
+                }
+                return null;
+            };
+            platform.registerPrivate(TIMED_ROUTE, sink, 5); // spare ready workers ⇒ always fast path
+        }
+        EventEmitter po = EventEmitter.getInstance();
+        timedLatencies = new long[warmup];
+        TIMED_COUNT.set(0);
+        sequential(po, warmup);
+        long[] lat = new long[n];
+        timedLatencies = lat;
+        TIMED_COUNT.set(0);
+        sequential(po, n);
+
+        Arrays.sort(lat);
+        System.out.printf("%n===== ServiceQueue fast-path dispatch overhead [dispatch=%s] =====%n", mode);
+        System.out.printf("in-flight=1 sequential, N=%,d  (send->worker dispatch latency, microseconds)%n", n);
+        System.out.printf("p50=%.2f  p90=%.2f  p99=%.2f  p99.9=%.2f  max=%.2f%n",
+                us(lat, 50), us(lat, 90), us(lat, 99), us(lat, 99.9), lat[n - 1] / 1000.0);
+        System.out.println("================================================================");
+    }
+
+    /** In-flight=1: send one timestamped event, wait until it is processed, repeat. */
+    private static void sequential(EventEmitter po, int count) {
+        long deadline = System.currentTimeMillis() + 120000;
+        for (int i = 0; i < count; i++) {
+            long target = i + 1L;
+            po.send(new EventEnvelope().setTo(TIMED_ROUTE).setBody(System.nanoTime()));
+            while (TIMED_COUNT.get() < target) {
+                Thread.onSpinWait();
+                if (System.currentTimeMillis() > deadline) {
+                    throw new IllegalStateException("timed out at " + i);
+                }
+            }
+        }
+    }
+
+    private static double us(long[] sorted, double pct) {
+        int idx = (int) Math.min(sorted.length - 1L, Math.round(sorted.length * pct / 100.0));
+        return sorted[idx] / 1000.0;
     }
 
     /** Send n fire-and-forget events, then wait until all have been processed. */
