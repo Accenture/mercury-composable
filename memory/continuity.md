@@ -514,9 +514,14 @@
   `draft-design-specs/elastic-queue-file-mode-field-notes.md` (gitignored; graduate into the PR/runbook at merge).
   **All phases P0–P5 + the mode simplification + cleanup isolation implemented + tested; submitted as
   PR [#137](https://github.com/Accenture/mercury-composable/pull/137)** (`feature/elastic-queue-file-fifo` →
-  `main`; opt-in, BDB stays default). **Remaining after merge = field steps: canary (deploy
-  `elastic.queue.store=file`, one flip from the `bdb` default), then P4 retire BDB.**
-  Docs/ADR sync tracked separately in [[thread-elastic-queue-docs-adr]].
+  `main`; opt-in, BDB stays default). **Field-test prep (2026-07-05, on the same branch, NOT pushed yet):**
+  (1) flipped the default to `file` (`6e21fcd1`; bdb = explicit fallback; platform-core 381 green on the new
+  default); (2) added the `benchmark/benchmark-reporter` module (`e4c39aee`) — self-contained single-JVM
+  callback+RPC end-to-end harness → self-contained HTML report (inline SVG histogram + percentile plot),
+  runnable in the field/pipeline, records store+dispatch for file-vs-bdb A/B. **Open decision for Eric:** the
+  flip inverts PR #137's "default unchanged" premise — fold into #137 (re-frame) or split into a follow-up PR;
+  awaiting direction before pushing. **After that = field steps: run benchmark-reporter on real envs, then P4
+  retire BDB.** Docs/ADR sync tracked separately in [[thread-elastic-queue-docs-adr]].
   <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
 
 - [ ] (backlog — do at ElasticQueue merge / P4, Claude Code 2026-07-05) **Docs sync + ADR for the ElasticQueue
