@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-04 | agent: Claude Code (2026-07-04-232341)
+- **last_session:** 2026-07-05 | agent: Claude Code (2026-07-05-011131)
 - **last_review:** 2026-07-02 | through 2026-07-02-161433.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -283,9 +283,26 @@
   Maven Central's latest is still 2.22.0 — the fixing 2.22.1 is unreleased ("Patched version: None"; only 3.x
   shipped its fix, 3.1.4 on 2026-06-04). Recommended to Eric: dismiss alert #28 as "vulnerable code is not in
   use"; bump when 2.22.1 lands — Dependabot re-flags on release (that's the reminder), and the version is
-  centralized (`jackson-2-bom.version` in ~30 poms + 3 explicit `jackson-databind` pins: platform-core,
-  rest-spring-3, kafka-standalone). Do not re-investigate this alert while the pinned version is 2.22.0 and
-  those two grep checks stay empty.
+  centralized (`jackson-2-bom.version` in ~30 poms + explicit `jackson-databind` pins: rest-spring-3,
+  kafka-standalone — platform-core's test-scope pin was removed 2026-07-05, see below). Do not re-investigate
+  this alert while the pinned version is 2.22.0 and those two grep checks stay empty.
+  **Jackson 3 investigation + field-exemption decision (2026-07-05, Eric).** Asked whether moving to Jackson 3
+  (Spring Boot 4's default) could eliminate the Jackson 2 CVE. Findings: **Spring Boot 4.1.0 already put the
+  core/Spring stack on Jackson 3** — platform-core/event-script-engine/rest-spring-4 resolve
+  `tools.jackson:jackson-databind:3.1.4` at compile; Mercury's own code is Gson-based (one direct Jackson import,
+  `JsonSchemaSerde`). Jackson 2 and 3 coexist by design (different group/package). **platform-core is now free of
+  Jackson 2 databind/core** — it already excludes Vert.x's `com.fasterxml jackson-core` (Vert.x runs on Jackson 3),
+  and PR (branch `chore/platform-core-drop-jackson2-test-dep`) migrated the test `JacksonSerializer` to Jackson 3
+  + dropped the test-scope `jackson-databind`; only `jackson-annotations:2.22` remains, which **Jackson 3.1.4
+  itself requires** (annotation model still on the `com.fasterxml.jackson.core` coordinate) and which has no CVE.
+  **The real shipped Jackson 2 databind/core is load-bearing in `minimalist-kafka` and NOT removable:** `databind`
+  ← Confluent JSON-schema serdes (compiled against Jackson 2; `JsonSchemaSerde` calls that API directly) + their
+  `jackson-datatype-*` modules; `core` ← Apache Avro (`kafka-avro-serializer`). Unlike platform-core's Vert.x case,
+  there is no Jackson-3 substitution (Confluent 8.3.0 + Avro 1.12.1 reference `com.fasterxml.*` classes). Also
+  present in `rest-spring-3` (the Spring Boot 3.x line, by design). **Snyk flags by presence, not reachability** —
+  so a field app pulling `minimalist-kafka` will see `jackson-databind:2.22.0` in a scan even though #28 is
+  unreachable. **Decision (Eric): best-effort done; report to the field for a Snyk exemption** citing the
+  not-applicable assessment, and bump to 2.22.1 when Confluent's transitive fix / the release lands.
   <!-- id: jackson-databind-alert28-not-applicable | created: 2026-07-02 | last_used: 2026-07-02 | uses: 1 | tier: working | origin: 2026-07-02-055423 -->
 
 - **minimalist-kafka Schema Registry support — Confluent serdes as a library (2026-06-29; producer became
