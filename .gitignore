@@ -20,6 +20,8 @@ hs_err_pid*
 bin
 target
 logs
+# generated benchmark-reporter output (default writes to the working directory)
+benchmark-report*.html
 project
 .project
 .classpath

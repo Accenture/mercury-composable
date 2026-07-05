@@ -1,0 +1,6 @@
+target/
+*.iml
+.idea/
+# generated benchmark reports
+*.html
+benchmark-report*.html
