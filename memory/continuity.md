@@ -475,7 +475,7 @@
 
 ## Open Threads
 
-- [ ] (P2 largely done — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; P3 next) **Replace
+- [ ] (P3 A/B done — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; P4/P5 next — canary is a field step) **Replace
   ElasticQueue's Berkeley DB spill tier with a portable file-backed segmented FIFO.** Full detail + rationale
   (perf/complexity/Rust portability) in the Key Decision [[elastic-queue-file-fifo-plan]] and the design spec
   `draft-design-specs/elastic_queue_file_fifo_design.md` (gitignored). **P0 (`fc225d34`):** quantified the BDB
@@ -488,7 +488,11 @@
   (max GC pause 2.0ms) → OS dirty-page-flush throttle. Decided (Eric): no in-store flusher; **P5 elevated to
   RECOMMENDED** (per-route VT off-loading makes on-loop spill stalls harmless) + **document tmpfs**. Full
   platform-core 381 green. Remaining P2: external-IO fault injection (needs a mockable seam; deferred).
-  **Next: P3 — A/B `file` vs `bdb` + canary; then P4 retire BDB; P5 (recommended) VT off-loading.**
+  **P3 A/B (`73d1959a`, reports saved via `-Dbench.report`):** file vs bdb — throughput +56%, write p99.9
+  1.66ms→0.035ms (~47×), read max 54ms→3.5ms (~15×), stalls>20ms 90→3; file's only blemish a single 552ms
+  OS-flush outlier (bdb's badness is pervasive: 90 stalls). **`file` decisively flattens the tail — goal met.**
+  **Next: canary (field step — deploy with switch default `file`, `bdb` one flip away); then P4 retire BDB;
+  P5 (recommended) VT off-loading.**
   <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
 
 - [ ] (implemented, **uncommitted** — Claude Code, 2026-07-03) **TraceId & correlation-id propagation cleanup.**
