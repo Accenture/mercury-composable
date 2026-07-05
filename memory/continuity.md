@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-05 | agent: Claude Code (2026-07-05-042400)
+- **last_session:** 2026-07-05 | agent: Claude Code (2026-07-05-045654)
 - **last_review:** 2026-07-05 | through 2026-07-05-012640.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -475,7 +475,7 @@
 
 ## Open Threads
 
-- [ ] (P3 A/B done — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; P4/P5 next — canary is a field step) **Replace
+- [ ] (P0–P5 code-complete — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; remaining = field canary → P4 retire-BDB) **Replace
   ElasticQueue's Berkeley DB spill tier with a portable file-backed segmented FIFO.** Full detail + rationale
   (perf/complexity/Rust portability) in the Key Decision [[elastic-queue-file-fifo-plan]] and the design spec
   `draft-design-specs/elastic_queue_file_fifo_design.md` (gitignored). **P0 (`fc225d34`):** quantified the BDB
@@ -491,8 +491,13 @@
   **P3 A/B (`73d1959a`, reports saved via `-Dbench.report`):** file vs bdb — throughput +56%, write p99.9
   1.66ms→0.035ms (~47×), read max 54ms→3.5ms (~15×), stalls>20ms 90→3; file's only blemish a single 552ms
   OS-flush outlier (bdb's badness is pervasive: 90 stalls). **`file` decisively flattens the tail — goal met.**
-  **Next: canary (field step — deploy with switch default `file`, `bdb` one flip away); then P4 retire BDB;
-  P5 (recommended) VT off-loading.**
+  **P5 (`e8e5cdee`):** off-loop dispatch — `elastic.queue.dispatch = loop | vthread` (default `loop`); in
+  `vthread` a per-route virtual thread runs the `ServiceQueue` state machine + blocking spill I/O, so the
+  552ms OS-flush stall parks the VT carrier, not the shared loop. Full platform-core 381 green in BOTH modes;
+  `DispatchBenchmark` loop 83k vs vthread 98k events/s (+18% under load, no hot-path regression).
+  **All phases P0–P5 implemented + tested on the branch. Remaining = field steps only: canary (deploy with
+  `elastic.queue.store=file` + `elastic.queue.dispatch=vthread`, both one flip from the safe defaults), then
+  P4 retire BDB after the field validates.**
   <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
 
 - [ ] (implemented, **uncommitted** — Claude Code, 2026-07-03) **TraceId & correlation-id propagation cleanup.**
