@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-05 | agent: Claude Code (2026-07-05-033922)
+- **last_session:** 2026-07-05 | agent: Claude Code (2026-07-05-042400)
 - **last_review:** 2026-07-05 | through 2026-07-05-012640.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -475,18 +475,20 @@
 
 ## Open Threads
 
-- [ ] (P1 done — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; P2 next) **Replace
+- [ ] (P2 largely done — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; P3 next) **Replace
   ElasticQueue's Berkeley DB spill tier with a portable file-backed segmented FIFO.** Full detail + rationale
   (perf/complexity/Rust portability) in the Key Decision [[elastic-queue-file-fifo-plan]] and the design spec
-  `draft-design-specs/elastic_queue_file_fifo_design.md` (gitignored). **P0 (commit `fc225d34`):** benchmark
-  quantified the BDB event-loop tail. **P1 (commit `07221351`):** `ElasticQueue` is now a facade over an
-  `ElasticStore` strategy (`elastic.queue.store = bdb | file`, default `bdb`); `BdbElasticStore` = old logic
-  verbatim, `FileElasticStore` = new per-route segmented append FIFO; `ElasticStoreParityTest` passes both;
-  full platform-core 376 green. Empirical (worse-case) file vs bdb: write p99.9 1.63ms→0.035ms (~46×), read
-  max 98ms→3.9ms (~25×), stalls>20ms 53→2, throughput +49% — **tail flattened, goal met.** **P2 (next) must
-  root-cause the one 572ms `file` write outlier** (likely GC on the constrained heap or OS dirty-page-flush
-  throttle since we don't fsync) + fault injection + FD-lifecycle + sustained-overflow soak + segment-size
-  tune. Then P3 A/B + canary, P4 retire BDB, optional P5 (spill I/O → per-route virtual threads).
+  `draft-design-specs/elastic_queue_file_fifo_design.md` (gitignored). **P0 (`fc225d34`):** quantified the BDB
+  event-loop tail. **P1 (`07221351`):** `ElasticQueue` → facade over an `ElasticStore` strategy
+  (`elastic.queue.store = bdb | file`, default `bdb`); `BdbElasticStore` = old logic verbatim, `FileElasticStore`
+  = new per-route segmented append FIFO; parity test passes both. Worse-case file vs bdb: write p99.9
+  1.63ms→0.035ms (~46×), read max 98ms→3.9ms (~25×), stalls>20ms 53→2 — **tail flattened.** **P2 (`2885d9e3`):**
+  hardening tests (multi-segment FIFO, bounded-disk reclamation, no-leak across 50 reuse cycles, clean reuse,
+  degenerate inputs); `segmentBytes` → per-instance config. **Root-caused the 582ms `file` outlier: NOT GC**
+  (max GC pause 2.0ms) → OS dirty-page-flush throttle. Decided (Eric): no in-store flusher; **P5 elevated to
+  RECOMMENDED** (per-route VT off-loading makes on-loop spill stalls harmless) + **document tmpfs**. Full
+  platform-core 381 green. Remaining P2: external-IO fault injection (needs a mockable seam; deferred).
+  **Next: P3 — A/B `file` vs `bdb` + canary; then P4 retire BDB; P5 (recommended) VT off-loading.**
   <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
 
 - [ ] (implemented, **uncommitted** — Claude Code, 2026-07-03) **TraceId & correlation-id propagation cleanup.**
