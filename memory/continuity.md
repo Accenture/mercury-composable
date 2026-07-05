@@ -292,7 +292,8 @@
   `tools.jackson:jackson-databind:3.1.4` at compile; Mercury's own code is Gson-based (one direct Jackson import,
   `JsonSchemaSerde`). Jackson 2 and 3 coexist by design (different group/package). **platform-core is now free of
   Jackson 2 databind/core** — it already excludes Vert.x's `com.fasterxml jackson-core` (Vert.x runs on Jackson 3),
-  and PR (branch `chore/platform-core-drop-jackson2-test-dep`) migrated the test `JacksonSerializer` to Jackson 3
+  and PR [#136](https://github.com/Accenture/mercury-composable/pull/136) (branch
+  `chore/platform-core-drop-jackson2-test-dep`) migrated the test `JacksonSerializer` to Jackson 3
   + dropped the test-scope `jackson-databind`; only `jackson-annotations:2.22` remains, which **Jackson 3.1.4
   itself requires** (annotation model still on the `com.fasterxml.jackson.core` coordinate) and which has no CVE.
   **The real shipped Jackson 2 databind/core is load-bearing in `minimalist-kafka` and NOT removable:** `databind`
