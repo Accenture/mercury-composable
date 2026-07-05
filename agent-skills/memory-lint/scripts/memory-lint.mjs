@@ -358,7 +358,7 @@ export function check_stale_metadata(cont, pinned, refs, stems, ww, acw, aw) {
   return out;
 }
 
-export function check_continuity_health(cont, sessions, cont_text, cont_lines, re_every, max_facts, max_lines) {
+export function check_continuity_health(cont, sessions, cont_text, cont_lines, re_every, max_facts, max_lines, pinned = new Set()) {
   // (8) advisory cadence/size triggers — what would have caught a real product repo
   // that ran 61 sessions and never archived (review never fired in the field).
   // All advisory (WARN): a review is a human/agent ritual, never a hard gate.
@@ -370,10 +370,16 @@ export function check_continuity_health(cont, sessions, cont_text, cont_lines, r
         `${re_every} — run the REVIEW.md ritual`
     );
   }
-  const nfacts = cont.size;
+  // Count only decay-eligible facts — exclude tier:core (structural invariants) and pinned
+  // open threads (active workstreams). Those can never be archived, so counting them against
+  // the cap produces permanent noise after a correct review (field report: mercury-composable).
+  let nfacts = 0;
+  for (const [fid, fields] of cont) {
+    if (fields.tier !== "core" && !pinned.has(fid)) nfacts++;
+  }
   if (nfacts > max_facts) {
     out.push(
-      `[continuity-bloat] ${nfacts} continuity facts > continuity_max_facts ` +
+      `[continuity-bloat] ${nfacts} decay-eligible facts > continuity_max_facts ` +
         `${max_facts} — a review is due to lean it down`
     );
   }
@@ -436,7 +442,7 @@ export function main(argv) {
     ...check_session_filenames(sessions),
     ...check_continuity_health(
       cont, sessions, cont_text, cont_lines,
-      w.review_every, w.continuity_max_facts, w.continuity_max_lines
+      w.review_every, w.continuity_max_facts, w.continuity_max_lines, pinned
     ),
     ...check_stale_metadata(cont, pinned, refs, stems, w.working_window, acw, aw),
   ];

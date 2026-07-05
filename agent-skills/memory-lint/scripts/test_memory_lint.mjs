@@ -365,7 +365,22 @@ test("check_continuity_health flags fact bloat", () => {
   const cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n";
   const w = check_continuity_health(facts(31), ["2026-06-27-120000.md"], cont_text, 10, 10, 30, 600);
   assert.equal(w.length, 1);
-  assert.ok(w[0].includes("31 continuity facts > continuity_max_facts 30"));
+  assert.ok(w[0].includes("31 decay-eligible facts > continuity_max_facts 30"));
+});
+
+test("check_continuity_health: fact bloat excludes core and pinned", () => {
+  // tier:core and pinned open threads must NOT count toward the cap — they can never be
+  // archived, so counting them produces permanent noise (field report: mercury-composable).
+  const cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n";
+  const entries = [];
+  for (let i = 0; i < 14; i++) entries.push([`core-${i}`, { tier: "core" }]);     // 14 core — never decay
+  for (let i = 0; i < 11; i++) entries.push([`pinned-${i}`, { tier: "working" }]); // 11 pinned open threads
+  for (let i = 0; i < 16; i++) entries.push([`working-${i}`, { tier: "working" }]); // 16 decay-eligible
+  const cont = new Map(entries);
+  const pinned = new Set(Array.from({ length: 11 }, (_, i) => `pinned-${i}`));
+  // 41 total facts, only 16 decay-eligible — should be well under the cap of 30
+  const w = check_continuity_health(cont, ["2026-06-27-120000.md"], cont_text, 10, 10, 30, 600, pinned);
+  assert.deepEqual(w, [], "core + pinned facts must not trigger continuity-bloat");
 });
 
 test("check_continuity_health flags line bloat", () => {

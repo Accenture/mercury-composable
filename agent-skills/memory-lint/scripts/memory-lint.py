@@ -344,10 +344,12 @@ def check_stale_metadata(cont, pinned, refs, stems, ww, acw, aw):
     return out
 
 
-def check_continuity_health(cont, sessions, cont_text, cont_lines, re_every, max_facts, max_lines):
+def check_continuity_health(cont, sessions, cont_text, cont_lines, re_every, max_facts, max_lines, pinned=None):
     # (8) advisory cadence/size triggers — what would have caught a real product repo
     # that ran 61 sessions and never archived (review never fired in the field).
     # All advisory (WARN): a review is a human/agent ritual, never a hard gate.
+    if pinned is None:
+        pinned = set()
     out = []
     ssr = sessions_since_review(sessions, cont_text)
     if ssr >= re_every:
@@ -355,10 +357,17 @@ def check_continuity_health(cont, sessions, cont_text, cont_lines, re_every, max
             f"[review-overdue] {ssr} session(s) since last review >= review_every "
             f"{re_every} — run the REVIEW.md ritual"
         )
-    nfacts = len(cont)
+    # Count only decay-eligible facts — exclude tier:core (structural invariants) and pinned
+    # open threads (active workstreams). Those can never be archived, so counting them against
+    # the cap produces permanent noise after a correct review (field report: mercury-composable).
+    decay_eligible = {
+        fid: fields for fid, fields in cont.items()
+        if fields.get("tier") != "core" and fid not in pinned
+    }
+    nfacts = len(decay_eligible)
     if nfacts > max_facts:
         out.append(
-            f"[continuity-bloat] {nfacts} continuity facts > continuity_max_facts "
+            f"[continuity-bloat] {nfacts} decay-eligible facts > continuity_max_facts "
             f"{max_facts} — a review is due to lean it down"
         )
     if cont_lines > max_lines:
@@ -417,6 +426,7 @@ def main():
         + check_continuity_health(
             cont, sessions, cont_text, cont_lines,
             w["review_every"], w["continuity_max_facts"], w["continuity_max_lines"],
+            pinned,
         )
         + check_stale_metadata(cont, pinned, refs, stems, w["working_window"], acw, aw)
     )

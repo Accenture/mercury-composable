@@ -299,7 +299,22 @@ class TestContinuityHealth(unittest.TestCase):
         sessions = ["2026-06-27-120000.md"]
         w = memory_lint.check_continuity_health(self._facts(31), sessions, cont_text, 10, 10, 30, 600)
         self.assertEqual(len(w), 1)
-        self.assertIn("31 continuity facts > continuity_max_facts 30", w[0])
+        self.assertIn("31 decay-eligible facts > continuity_max_facts 30", w[0])
+
+    def test_fact_bloat_excludes_core_and_pinned(self):
+        # tier:core and pinned open threads must NOT count toward the cap — they can never be
+        # archived, so counting them produces permanent noise (field report: mercury-composable).
+        cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n"
+        sessions = ["2026-06-27-120000.md"]
+        cont = {
+            **{f"core-{i}": {"tier": "core"} for i in range(14)},     # 14 core — never decay
+            **{f"pinned-{i}": {"tier": "working"} for i in range(11)}, # 11 pinned open threads
+            **{f"working-{i}": {"tier": "working"} for i in range(16)}, # 16 decay-eligible
+        }
+        pinned = {f"pinned-{i}" for i in range(11)}
+        # 41 total facts, only 16 decay-eligible — should be well under the cap of 30
+        w = memory_lint.check_continuity_health(cont, sessions, cont_text, 10, 10, 30, 600, pinned=pinned)
+        self.assertEqual(w, [], "core + pinned facts must not trigger continuity-bloat")
 
     def test_line_bloat_flagged(self):
         cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n"
