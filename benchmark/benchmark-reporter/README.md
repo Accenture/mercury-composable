@@ -1,18 +1,29 @@
 # benchmark-reporter
 
-A self-contained, single-JVM end-to-end performance harness for the Mercury framework. It drives one echo
-service two ways and writes a **self-contained HTML report** (inline SVG histogram + percentile plot + a
-statistics table + environment metadata — no external files, so it opens anywhere):
+A self-contained, single-JVM end-to-end performance harness for the Mercury framework. It registers one echo
+service (with `bench.consumers` worker instances) and runs a **suite of scenarios** against it, then writes a
+**self-contained HTML report** (inline SVG histogram + percentile plot + a statistics table + environment
+metadata — no external files, so it opens anywhere). The scenarios come in two groups so the report shows the
+whole robustness picture — predictable healthy operation *and* graceful overload:
 
-- **RPC** (`request()`) — closed-loop request/reply. In-flight is bounded by client concurrency; below the
-  20-event memory buffer this does **not** exercise the ElasticQueue, so it measures pure event round-trip.
-- **Callback** (`asyncRequest()`) — open-loop async, up to a bounded in-flight window. With in-flight well
-  above the memory buffer, events queue at the worker and spill through the **ElasticQueue** back-pressure
-  buffer. This is the path that stresses the disk-backed FIFO.
+**Normal operation (no back-pressure)** — arrival rate ≤ capacity, so the ElasticQueue stays within its
+20-event in-memory buffer and never spills. These characterise a well-architected production service:
+- **RPC 1 → C** — one publisher, in-flight = 1: baseline request/reply round-trip.
+- **RPC C → C** — balanced (publishers = consumers): backlog stays in the in-memory tier, so throughput
+  reaches the single-route dispatch ceiling (~an order of magnitude over 1→C) and latency stays sub-ms.
+- **Callback C → C (paced)** — async at a sustainable rate (publishers spaced `bench.callback.pacing.micros`
+  apart) so consumers keep up: latency ≈ service time.
+
+**Overload (back-pressure engaged)** — backlog exceeds the 20-event buffer and spills to disk; both scenarios
+land at the same disk-spill throughput ceiling, and the system stays stable and loss-free:
+- **RPC 2C → C** — over-subscribed 2:1: ~C requests queue (> 20), so it spills. Throughput drops to the
+  spill ceiling and latency rises well beyond a naive 2× — back-pressure via oversubscription.
+- **Callback flood → C** — open-loop `asyncRequest()`, in-flight ≫ 20: events spill through the ElasticQueue
+  and latency becomes queue-bounded (Little's law).
 
 Because it needs only the in-JVM event bus, it runs anywhere a JRE does — a laptop, a real deployed
 environment, or a benchmark pipeline. Use it to estimate framework performance across environments and to
-re-measure while tuning (e.g. A/B the `file` vs `bdb` ElasticQueue store).
+re-measure while tuning (e.g. A/B the `file` vs `bdb` ElasticQueue store). `C` = `bench.consumers`.
 
 ## Build
 ```bash
@@ -30,17 +41,17 @@ The report is written to `bench.report` (default `benchmark-report.html` in the 
 summary is printed to stdout. The process exits when done, so it drops cleanly into a pipeline.
 
 ### Parameters (all optional; system properties)
-| property                   | default | meaning                                                           |
-|----------------------------|---------|-------------------------------------------------------------------|
-| `bench.ops`                | 200000  | timed operations per workload                                     |
-| `bench.warmup`             | 20000   | warm-up operations per workload (discarded)                       |
-| `bench.payload`            | 256     | request body size in bytes                                        |
-| `bench.rpc.concurrency`    | 1       | RPC client threads = max in-flight (1 ⇒ pure round-trip latency)  |
-| `bench.callback.inflight`  | 2000    | callback max in-flight (≫ 20 ⇒ exercises the ElasticQueue spill)  |
-| `bench.callback.producers` | 1       | callback producer threads sharing the in-flight window (>1 mimics concurrent async clients; lifts the single-producer send ceiling) |
-| `bench.workers`            | 1       | worker route instances (lower ⇒ deeper back-pressure on callback) |
-| `bench.timeout`            | 30000   | per-request timeout (ms)                                          |
-| `bench.report`             | benchmark-report.html | output HTML path                                    |
+| property                       | default | meaning                                                       |
+|--------------------------------|---------|---------------------------------------------------------------|
+| `bench.ops`                    | 200000  | timed operations per scenario                                 |
+| `bench.warmup`                 | 20000   | warm-up operations per path (discarded)                       |
+| `bench.payload`                | 256     | request body size in bytes                                    |
+| `bench.consumers`              | 50      | worker instances `C`; sets the RPC publisher counts (1, C, 2C) and the paced-callback publisher count |
+| `bench.callback.pacing.micros` | 1000    | per-publisher pause in the paced (healthy) callback scenario  |
+| `bench.callback.inflight`      | 2000    | flood-scenario max in-flight (≫ 20 ⇒ exercises the ElasticQueue spill) |
+| `bench.callback.producers`     | 1       | flood-scenario producer threads sharing the in-flight window (>1 mimics concurrent async clients) |
+| `bench.timeout`                | 30000   | per-request timeout (ms)                                      |
+| `bench.report`                 | benchmark-report.html | output HTML path                                |
 
 ### A/B the ElasticQueue store
 The report records the active store and dispatch mode. Compare the default file FIFO against the legacy

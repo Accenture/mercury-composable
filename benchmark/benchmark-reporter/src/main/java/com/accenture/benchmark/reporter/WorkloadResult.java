@@ -24,6 +24,7 @@ import java.util.Map;
  * The outcome of one workload run.
  *
  * @param name        short display name (e.g. "Callback (async)")
+ * @param category    grouping heading in the report (e.g. normal operation vs overload)
  * @param description one-line explanation of what the workload exercises
  * @param params      display parameters (ops, concurrency, payload, …) shown in the report
  * @param attempted   number of operations attempted
@@ -31,7 +32,7 @@ import java.util.Map;
  * @param elapsedSec  wall-clock duration of the timed phase
  * @param stats       latency summary over the successful operations
  */
-public record WorkloadResult(String name, String description, Map<String, String> params,
+public record WorkloadResult(String name, String category, String description, Map<String, String> params,
                              long attempted, long failures, double elapsedSec, Stats stats) {
 
     /** Successful operations per second over the timed phase. */

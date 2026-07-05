@@ -43,8 +43,11 @@ public final class HtmlReport {
                 .append("<style>\n").append(css()).append("\n</style>\n</head>\n<body>\n");
 
         h.append("<h1>Mercury benchmark report</h1>\n");
-        h.append("<p class=\"sub\">End-to-end latency &amp; throughput — callback (async) vs RPC — measured "
-                + "in a single JVM.</p>\n");
+        h.append("<p class=\"sub\">End-to-end latency &amp; throughput in a single JVM. "
+                + "<b>Normal operation</b> scenarios keep the arrival rate at or below consumer capacity, so the "
+                + "ElasticQueue stays within its in-memory buffer; the <b>overload</b> scenario drives it into "
+                + "the disk-backed back-pressure buffer. Together they show how the event system behaves both in "
+                + "healthy steady state and under sustained overload.</p>\n");
 
         // environment
         h.append("<div class=\"card\"><h2>Environment</h2>\n<table class=\"env\">\n");
@@ -54,9 +57,14 @@ public final class HtmlReport {
         }
         h.append("</table></div>\n");
 
-        // workloads
+        // workloads, grouped by category
         int i = 0;
+        String lastCategory = "";
         for (WorkloadResult r : results) {
+            if (!r.category().equals(lastCategory)) {
+                h.append("<h2 class=\"category\">").append(escape(r.category())).append("</h2>\n");
+                lastCategory = r.category();
+            }
             String color = COLORS[i % COLORS.length];
             i++;
             Stats s = r.stats();
@@ -263,7 +271,10 @@ public final class HtmlReport {
                 h1 { font-size: 22px; margin: 0 0 2px; }
                 h2 { font-size: 17px; margin: 0 0 8px; display: flex; align-items: center; }
                 h3 { font-size: 13px; font-weight: 600; color: #4b5563; margin: 0 0 4px; }
-                .sub { color: #6b7280; margin: 0 0 18px; }
+                .sub { color: #6b7280; margin: 0 0 18px; max-width: 90ch; }
+                .category { font-size: 12px; text-transform: uppercase; letter-spacing: .07em;
+                        color: #6b7280; margin: 24px 0 10px; border-bottom: 1px solid #e5e7eb;
+                        padding-bottom: 5px; }
                 .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px 18px;
                         margin: 0 0 18px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
                 .desc { color: #6b7280; font-size: 13px; margin: 0 0 12px; max-width: 70ch; }
