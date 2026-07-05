@@ -22,6 +22,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ElasticQueue;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -29,9 +30,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * This is reserved for system use.
@@ -60,7 +63,13 @@ public class ServiceQueue {
     private final List<WorkerQueues> workers = new ArrayList<>();
     private MessageConsumer<Object> consumer;
     private boolean buffering = true;
-    private boolean stopped = false;
+    private volatile boolean stopped = false;
+    // P5: optional off-loop dispatch. When elastic.queue.dispatch=vthread, the Vert.x consumer only
+    // enqueues (non-blocking) to this mailbox and a per-route virtual thread runs the state machine +
+    // blocking spill I/O — so an OS-flush / disk stall parks the VT's carrier, never the shared event loop.
+    private final boolean vthreadDispatch;
+    private final BlockingQueue<Object> mailbox;
+    private Thread dispatchThread;
 
     public ServiceQueue(ServiceDef service) {
         this.service = service;
@@ -72,7 +81,23 @@ public class ServiceQueue {
         this.elasticQueue = new ElasticQueue(route);
         // create consumer
         system = Platform.getInstance().getEventSystem();
-        consumer = system.localConsumer(route, new ServiceHandler());
+        this.vthreadDispatch = "vthread".equalsIgnoreCase(
+                AppConfigReader.getInstance().getProperty("elastic.queue.dispatch", "loop"));
+        ServiceHandler handler = new ServiceHandler();
+        if (vthreadDispatch) {
+            // event loop only enqueues (non-blocking); a per-route virtual thread runs the state machine
+            this.mailbox = new LinkedBlockingQueue<>();
+            consumer = system.localConsumer(route, message -> {
+                if (!stopped) {
+                    mailbox.offer(message.body());
+                }
+            });
+            dispatchThread = Thread.ofVirtual().name("dispatch." + route).start(() -> drainLoop(handler));
+        } else {
+            // default: the state machine runs inline on the event-loop thread (unchanged behaviour)
+            this.mailbox = null;
+            consumer = system.localConsumer(route, handler);
+        }
         if (service.isStream()) {
             streamRoute = route + HASH + 1;
             var worker = new StreamQueue(service, streamRoute);
@@ -121,10 +146,41 @@ public class ServiceQueue {
         return service;
     }
 
+    /**
+     * Per-route dispatch loop for {@code elastic.queue.dispatch=vthread}: runs the state machine + blocking
+     * spill I/O on a virtual thread, so a disk/OS stall parks this carrier instead of the shared event loop.
+     * A caught exception (e.g. a transient spill I/O error) is logged without killing the route's dispatch.
+     */
+    private void drainLoop(ServiceHandler handler) {
+        while (!stopped) {
+            try {
+                Object body = mailbox.take();
+                if (stopped) {
+                    break;
+                }
+                handler.process(body);
+            } catch (InterruptedException e) {
+                break;
+            } catch (Exception e) {
+                log.error("{} dispatch error - {}", service.getRoute(), e.getMessage());
+            }
+        }
+    }
+
     public void stop() {
         if (consumer != null && consumer.isRegistered()) {
-            // closing consumer
+            stopped = true;
+            // closing consumer (no further enqueues)
             consumer.unregister();
+            // wake + let the per-route dispatch virtual thread finish before destroying the elastic queue
+            if (dispatchThread != null) {
+                dispatchThread.interrupt();
+                try {
+                    dispatchThread.join(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
             // stopping worker
             for (WorkerQueues w: workers) {
                 w.stop();
@@ -132,7 +188,6 @@ public class ServiceQueue {
             // completely close the associated elastic queue
             elasticQueue.destroy();
             consumer = null;
-            stopped = true;
             if (this.isControlRoute) {
                 log.debug("{} stopped", service.getRoute());
             } else {
@@ -145,7 +200,11 @@ public class ServiceQueue {
 
         @Override
         public void handle(Message<Object> message) {
-            Object body = message.body();
+            // loop-dispatch mode: run inline on the event-loop thread (vthread mode enqueues instead)
+            process(message.body());
+        }
+
+        void process(Object body) {
             if (!stopped) {
                 if (body instanceof String input) {
                     processReadySignal(input);
