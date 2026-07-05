@@ -194,6 +194,14 @@ class BdbElasticStore implements ElasticStore {
         return writeCounter == 0;
     }
 
+    @Override
+    public boolean supportsVirtualThreadDispatch() {
+        // Berkeley DB JE uses internal synchronized/latches that PIN virtual-thread carriers under
+        // concurrency (observed as carrier starvation in the reactor test suites), so the BDB store must
+        // run inline on the event loop — never on a per-route virtual thread.
+        return false;
+    }
+
     private static void shutdown() {
         if (dbLoaded) {
             dbLoaded = false;

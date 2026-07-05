@@ -226,6 +226,13 @@ class FileElasticStore implements ElasticStore {
         return writeCounter == 0;
     }
 
+    @Override
+    public boolean supportsVirtualThreadDispatch() {
+        // per-route files, no shared lock, no synchronized in the hot path — a blocking segment I/O op
+        // parks the virtual thread's carrier cleanly instead of pinning it, so off-loop dispatch is safe.
+        return true;
+    }
+
     private void resetCounter() {
         if (!empty) {
             empty = true;

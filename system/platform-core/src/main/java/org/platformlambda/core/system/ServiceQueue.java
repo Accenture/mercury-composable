@@ -22,7 +22,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ElasticQueue;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -35,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This is reserved for system use.
@@ -47,6 +47,7 @@ public class ServiceQueue {
     private static final String PUBLIC = "PUBLIC";
     private static final String PRIVATE = "PRIVATE";
     private static final int UUID_LENGTH = Utility.getInstance().getUuid().length();
+    private static final AtomicBoolean DISPATCH_MODE_LOGGED = new AtomicBoolean(false);
     private static final String CALLBACK_PREFIX = "callback.";
     private static final String STREAM_PREFIX = "stream.";
     private static final String STREAM_IN = ".in";
@@ -64,9 +65,9 @@ public class ServiceQueue {
     private MessageConsumer<Object> consumer;
     private boolean buffering = true;
     private volatile boolean stopped = false;
-    // P5: optional off-loop dispatch. When elastic.queue.dispatch=vthread, the Vert.x consumer only
-    // enqueues (non-blocking) to this mailbox and a per-route virtual thread runs the state machine +
-    // blocking spill I/O — so an OS-flush / disk stall parks the VT's carrier, never the shared event loop.
+    // Off-loop dispatch, enabled when the elastic store is virtual-thread-safe (the file store). The Vert.x
+    // consumer only enqueues (non-blocking) to this mailbox and a per-route virtual thread runs the state
+    // machine + blocking spill I/O — so an OS-flush / disk stall parks the VT's carrier, never the event loop.
     private final boolean vthreadDispatch;
     private final BlockingQueue<Object> mailbox;
     private Thread dispatchThread;
@@ -81,10 +82,15 @@ public class ServiceQueue {
         this.elasticQueue = new ElasticQueue(route);
         // create consumer
         system = Platform.getInstance().getEventSystem();
-        this.vthreadDispatch = "vthread".equalsIgnoreCase(
-                AppConfigReader.getInstance().getProperty("elastic.queue.dispatch", "loop"));
+        // dispatch mode is derived from the store: a virtual-thread-safe store (file) runs off the loop on
+        // a per-route VT; a carrier-pinning store (bdb) runs inline on the loop. One knob (the store),
+        // two safe modes — the unsafe vthread+bdb combo is unreachable.
+        this.vthreadDispatch = elasticQueue.supportsVirtualThreadDispatch();
         ServiceHandler handler = new ServiceHandler();
         if (vthreadDispatch) {
+            if (DISPATCH_MODE_LOGGED.compareAndSet(false, true)) {
+                log.info("ServiceQueue dispatch = vthread (per-route virtual thread; store is virtual-thread-safe)");
+            }
             // event loop only enqueues (non-blocking); a per-route virtual thread runs the state machine
             this.mailbox = new LinkedBlockingQueue<>();
             consumer = system.localConsumer(route, message -> {
@@ -147,7 +153,7 @@ public class ServiceQueue {
     }
 
     /**
-     * Per-route dispatch loop for {@code elastic.queue.dispatch=vthread}: runs the state machine + blocking
+     * Per-route dispatch loop used when the store is virtual-thread-safe: runs the state machine + blocking
      * spill I/O on a virtual thread, so a disk/OS stall parks this carrier instead of the shared event loop.
      * A caught exception (e.g. a transient spill I/O error) is logged without killing the route's dispatch.
      */

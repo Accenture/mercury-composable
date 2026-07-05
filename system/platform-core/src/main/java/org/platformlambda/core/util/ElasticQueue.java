@@ -88,4 +88,14 @@ public class ElasticQueue implements AutoCloseable {
     public boolean isClosed() {
         return store.isClosed();
     }
+
+    /**
+     * @return true if the selected store is safe to drive from a per-route virtual thread (the {@code file}
+     *         store), false if it must run inline on the event loop (the {@code bdb} store, which pins
+     *         virtual-thread carriers). ServiceQueue uses this to pick its dispatch mode, so the store
+     *         choice alone determines the (store, dispatch) pairing.
+     */
+    public boolean supportsVirtualThreadDispatch() {
+        return store.supportsVirtualThreadDispatch();
+    }
 }

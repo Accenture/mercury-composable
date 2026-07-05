@@ -53,4 +53,13 @@ interface ElasticStore extends AutoCloseable {
     void destroy();
 
     boolean isClosed();
+
+    /**
+     * Whether this store is safe to drive from a per-route virtual thread. When true, ServiceQueue runs
+     * its dispatch + spill I/O on a per-route virtual thread (off the event loop); when false it must run
+     * inline on the event loop. This is what couples the two valid modes — {@code file}+vthread and
+     * {@code bdb}+loop — so the unsafe combination (a carrier-pinning store on a virtual thread) is
+     * unreachable via configuration.
+     */
+    boolean supportsVirtualThreadDispatch();
 }

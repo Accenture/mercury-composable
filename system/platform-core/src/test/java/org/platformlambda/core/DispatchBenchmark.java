@@ -31,13 +31,13 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * P5 fast-path benchmark: end-to-end dispatch throughput of a ServiceQueue. Fires N fire-and-forget events
- * at a fast multi-instance sink and times how long until all N are processed. Comparing
- * elastic.queue.dispatch=loop vs vthread shows whether the per-route virtual-thread hand-off regresses the
- * hot path. Fire-and-forget (no RPC reply routing) keeps the harness simple and robust.
+ * at a fast multi-instance sink and times how long until all N are processed. Dispatch mode follows the
+ * store (bdb⇒loop, file⇒vthread), so the two valid modes are compared by selecting the store. Fire-and-forget
+ * (no RPC reply routing) keeps the harness simple and robust.
  *
  * Gated on -Dbench.run=true. Run each mode:
- *   mvn -pl system/platform-core test -Dtest=DispatchBenchmark -Dbench.run=true
- *   mvn -pl system/platform-core test -Dtest=DispatchBenchmark -Dbench.run=true -Delastic.queue.dispatch=vthread
+ *   mvn -pl system/platform-core test -Dtest=DispatchBenchmark -Dbench.run=true                          (bdb+loop)
+ *   mvn -pl system/platform-core test -Dtest=DispatchBenchmark -Dbench.run=true -Delastic.queue.store=file (file+vthread)
  */
 class DispatchBenchmark {
 
@@ -54,7 +54,8 @@ class DispatchBenchmark {
     void dispatchThroughput() throws Exception {
         int warmup = Integer.getInteger("bench.warmup", 20000);
         int iterations = Integer.getInteger("bench.iterations", 500000);
-        String mode = AppConfigReader.getInstance().getProperty("elastic.queue.dispatch", "loop");
+        String store = AppConfigReader.getInstance().getProperty("elastic.queue.store", "bdb");
+        String mode = "file".equalsIgnoreCase(store) ? "vthread" : "loop";
 
         Platform platform = Platform.getInstance();
         if (!platform.hasRoute(ROUTE)) {
@@ -90,7 +91,8 @@ class DispatchBenchmark {
     void fastPathDispatchOverhead() {
         int warmup = Integer.getInteger("bench.warmup", 10000);
         int n = Integer.getInteger("bench.iterations", 200000);
-        String mode = AppConfigReader.getInstance().getProperty("elastic.queue.dispatch", "loop");
+        String store = AppConfigReader.getInstance().getProperty("elastic.queue.store", "bdb");
+        String mode = "file".equalsIgnoreCase(store) ? "vthread" : "loop";
         Platform platform = Platform.getInstance();
         if (!platform.hasRoute(TIMED_ROUTE)) {
             LambdaFunction sink = (headers, input, instance) -> {
