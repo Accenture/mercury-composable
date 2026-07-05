@@ -76,6 +76,7 @@ public class BenchmarkApp implements EntryPoint {
     private int payloadBytes;
     private int rpcConcurrency;
     private int callbackInflight;
+    private int callbackProducers;
     private int workers;
     private long timeoutMs;
     private String reportPath;
@@ -91,6 +92,7 @@ public class BenchmarkApp implements EntryPoint {
         payloadBytes = Integer.getInteger("bench.payload", 256);
         rpcConcurrency = Math.max(1, Integer.getInteger("bench.rpc.concurrency", 1));
         callbackInflight = Math.max(1, Integer.getInteger("bench.callback.inflight", 2_000));
+        callbackProducers = Math.max(1, Integer.getInteger("bench.callback.producers", 1));
         workers = Math.max(1, Integer.getInteger("bench.workers", 1));
         timeoutMs = Long.getLong("bench.timeout", 30_000L);
         reportPath = System.getProperty("bench.report", "benchmark-report.html");
@@ -112,12 +114,13 @@ public class BenchmarkApp implements EntryPoint {
 
             log.info("Warming up ({} ops per workload)…", warmup);
             runRpc(po, payload, rpcConcurrency, warmup);
-            runCallback(po, payload, callbackInflight, warmup);
+            runCallback(po, payload, callbackInflight, callbackProducers, warmup);
 
             log.info("Measuring RPC ({} ops, concurrency {})…", ops, rpcConcurrency);
             WorkloadResult rpc = runRpc(po, payload, rpcConcurrency, ops);
-            log.info("Measuring callback ({} ops, in-flight {})…", ops, callbackInflight);
-            WorkloadResult callback = runCallback(po, payload, callbackInflight, ops);
+            log.info("Measuring callback ({} ops, in-flight {}, producers {})…",
+                    ops, callbackInflight, callbackProducers);
+            WorkloadResult callback = runCallback(po, payload, callbackInflight, callbackProducers, ops);
 
             List<WorkloadResult> results = new ArrayList<>(List.of(rpc, callback));
             Map<String, String> env = environment();
@@ -174,41 +177,62 @@ public class BenchmarkApp implements EntryPoint {
                 params, total, failures.get(), elapsed, Stats.compute(ns, idx.get()));
     }
 
-    /** Open-loop callback: {@code asyncRequest()} with a bounded in-flight window (stresses ElasticQueue). */
-    private WorkloadResult runCallback(EventEmitter po, byte[] payload, int inflight, int totalOps)
+    /**
+     * Open-loop callback: {@code producers} threads fire {@code asyncRequest()} without blocking, sharing one
+     * global in-flight window (a semaphore). Multiple producers mimic many concurrent async clients and lift
+     * the single-producer send-rate ceiling, so the measured limit reflects the framework (per-route dispatch
+     * + workers), not one caller thread. In-flight well above the 20-event memory buffer makes events queue at
+     * the worker and spill through the ElasticQueue back-pressure buffer.
+     */
+    private WorkloadResult runCallback(EventEmitter po, byte[] payload, int inflight, int producers, int totalOps)
             throws InterruptedException {
-        long[] ns = new long[totalOps];
+        int per = Math.max(1, totalOps / producers);
+        int total = per * producers;
+        long[] ns = new long[total];
         AtomicInteger idx = new AtomicInteger();
         AtomicLong failures = new AtomicLong();
         Semaphore permits = new Semaphore(inflight);
-        CountDownLatch done = new CountDownLatch(totalOps);
+        CountDownLatch done = new CountDownLatch(total);
         long t0 = System.nanoTime();
-        for (int i = 0; i < totalOps; i++) {
-            permits.acquire();
-            final long s = System.nanoTime();
-            po.asyncRequest(new EventEnvelope().setTo(WORKER).setBody(payload), timeoutMs)
-                    .onComplete(ar -> {
-                        if (ar.succeeded()) {
-                            ns[idx.getAndIncrement()] = System.nanoTime() - s;
-                        } else {
-                            failures.incrementAndGet();
+        try (ExecutorService ex = Executors.newVirtualThreadPerTaskExecutor()) {
+            for (int p = 0; p < producers; p++) {
+                ex.submit(() -> {
+                    for (int i = 0; i < per; i++) {
+                        try {
+                            permits.acquire();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            return;
                         }
-                        permits.release();
-                        done.countDown();
-                    });
+                        final long s = System.nanoTime();
+                        po.asyncRequest(new EventEnvelope().setTo(WORKER).setBody(payload), timeoutMs)
+                                .onComplete(ar -> {
+                                    if (ar.succeeded()) {
+                                        ns[idx.getAndIncrement()] = System.nanoTime() - s;
+                                    } else {
+                                        failures.incrementAndGet();
+                                    }
+                                    permits.release();
+                                    done.countDown();
+                                });
+                    }
+                });
+            }
+            done.await();
         }
-        done.await();
         double elapsed = (System.nanoTime() - t0) / 1e9;
         Map<String, String> params = new LinkedHashMap<>();
-        params.put("operations", String.format("%,d", totalOps));
+        params.put("operations", String.format("%,d", total));
         params.put("max in-flight", String.format("%,d", inflight));
+        params.put("producer threads", String.valueOf(producers));
         params.put("worker instances", String.valueOf(workers));
         params.put("payload", payload.length + " bytes");
         return new WorkloadResult("Callback (async request)",
-                "Open-loop: asyncRequest() fires without blocking, up to the in-flight window. With in-flight "
-                        + "well above the 20-event memory buffer, events queue at the worker and spill through "
-                        + "the ElasticQueue back-pressure buffer — the path that exercises the disk-backed FIFO.",
-                params, totalOps, failures.get(), elapsed, Stats.compute(ns, idx.get()));
+                "Open-loop: producer threads fire asyncRequest() without blocking, sharing a global in-flight "
+                        + "window. With in-flight well above the 20-event memory buffer, events queue at the "
+                        + "worker and spill through the ElasticQueue back-pressure buffer — the path that "
+                        + "exercises the disk-backed FIFO. Multiple producers mimic concurrent async clients.",
+                params, total, failures.get(), elapsed, Stats.compute(ns, idx.get()));
     }
 
     private Map<String, String> environment() {

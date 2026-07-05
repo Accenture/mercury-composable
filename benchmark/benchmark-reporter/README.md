@@ -37,6 +37,7 @@ summary is printed to stdout. The process exits when done, so it drops cleanly i
 | `bench.payload`            | 256     | request body size in bytes                                        |
 | `bench.rpc.concurrency`    | 1       | RPC client threads = max in-flight (1 ⇒ pure round-trip latency)  |
 | `bench.callback.inflight`  | 2000    | callback max in-flight (≫ 20 ⇒ exercises the ElasticQueue spill)  |
+| `bench.callback.producers` | 1       | callback producer threads sharing the in-flight window (>1 mimics concurrent async clients; lifts the single-producer send ceiling) |
 | `bench.workers`            | 1       | worker route instances (lower ⇒ deeper back-pressure on callback) |
 | `bench.timeout`            | 30000   | per-request timeout (ms)                                          |
 | `bench.report`             | benchmark-report.html | output HTML path                                    |
