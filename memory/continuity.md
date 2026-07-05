@@ -512,8 +512,10 @@
   so its heavy BDB `cleanLog()`/cursor work runs on a kernel thread — closes a live in-field VT-pinning vector
   (independent of dispatch mode). **Canary field notes** drafted at
   `draft-design-specs/elastic-queue-file-mode-field-notes.md` (gitignored; graduate into the PR/runbook at merge).
-  **All phases P0–P5 + the mode simplification + cleanup isolation implemented + tested on the branch. Remaining
-  = field steps: canary (deploy `elastic.queue.store=file`, one flip from the `bdb` default), then P4 retire BDB.**
+  **All phases P0–P5 + the mode simplification + cleanup isolation implemented + tested; submitted as
+  PR [#137](https://github.com/Accenture/mercury-composable/pull/137)** (`feature/elastic-queue-file-fifo` →
+  `main`; opt-in, BDB stays default). **Remaining after merge = field steps: canary (deploy
+  `elastic.queue.store=file`, one flip from the `bdb` default), then P4 retire BDB.**
   Docs/ADR sync tracked separately in [[thread-elastic-queue-docs-adr]].
   <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
 
