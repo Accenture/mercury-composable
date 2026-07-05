@@ -35,7 +35,7 @@ public final class HtmlReport {
     private static final int W = 760;
     private static final int HT = 300;
     private static final String SVG_OPEN = String.format(Locale.US,
-            "<svg viewBox=\"0 0 %d %d\" xmlns=\"http://www.w3.org/2000/svg\" class=\"svg\">\n", W, HT);
+            "<svg viewBox=\"0 0 %d %d\" xmlns=\"http://www.w3.org/2000/svg\" class=\"svg\">", W, HT) + "\n";
     private static final String DIV_CLOSE = "</div>\n";
 
     private HtmlReport() {
@@ -50,7 +50,7 @@ public final class HtmlReport {
         h.append("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n")
                 .append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
                 .append("<title>Mercury benchmark report</title>\n")
-                .append("<style>\n").append(css()).append("\n</style>\n</head>\n<body>\n");
+                .append("<style>\n").append(CSS).append("\n</style>\n</head>\n<body>\n");
 
         h.append("<h1>Mercury benchmark report</h1>\n");
         h.append("<p class=\"sub\">End-to-end latency &amp; throughput in a single JVM. "
@@ -147,7 +147,7 @@ public final class HtmlReport {
         StringBuilder g = new StringBuilder();
         g.append(SVG_OPEN);
         // baseline
-        g.append(line(left, top + plotH, left + plotW, top + plotH, "#d1d5db", 1));
+        g.append(line(left, top + plotH, left + plotW, top + plotH, "#d1d5db"));
         for (int i = 0; i < bins.size(); i++) {
             double x = left + i * slot + (slot - barW) / 2;
             if (bins.get(i) > 0) {
@@ -199,7 +199,7 @@ public final class HtmlReport {
         for (int t = 0; t <= 4; t++) {
             double v = yMax * t / 4.0;
             double y = top + plotH - plotH * (t / 4.0);
-            g.append(line(left, y, left + plotW, y, "#eef1f5", 1));
+            g.append(line(left, y, left + plotW, y, "#eef1f5"));
             fmtln(g,
                     "<text x=\"%.2f\" y=\"%.2f\" class=\"tick\" text-anchor=\"end\">%s</text>",
                     left - 6, y + 3, num(v, v < 1 ? 3 : 2));
@@ -233,10 +233,10 @@ public final class HtmlReport {
         return g.toString();
     }
 
-    private static String line(double x1, double y1, double x2, double y2, String stroke, double sw) {
+    private static String line(double x1, double y1, double x2, double y2, String stroke) {
         return String.format(Locale.US,
-                "<line x1=\"%.2f\" y1=\"%.2f\" x2=\"%.2f\" y2=\"%.2f\" stroke=\"%s\" stroke-width=\"%.1f\"/>",
-                x1, y1, x2, y2, stroke, sw) + "\n";
+                "<line x1=\"%.2f\" y1=\"%.2f\" x2=\"%.2f\" y2=\"%.2f\" stroke=\"%s\" stroke-width=\"1.0\"/>",
+                x1, y1, x2, y2, stroke) + "\n";
     }
 
     private static void chip(StringBuilder h, String k, String v) {
@@ -267,8 +267,7 @@ public final class HtmlReport {
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 
-    private static String css() {
-        return """
+    private static final String CSS = """
                 :root { color-scheme: light; }
                 * { box-sizing: border-box; }
                 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
@@ -308,5 +307,4 @@ public final class HtmlReport {
                 .foot { color: #9ca3af; font-size: 12px; margin-top: 8px; }
                 code { background: #eef1f5; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
                 """;
-    }
 }

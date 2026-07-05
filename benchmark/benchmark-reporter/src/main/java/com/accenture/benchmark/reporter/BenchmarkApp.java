@@ -79,11 +79,41 @@ public class BenchmarkApp implements EntryPoint {
     private static final String NORMAL = "Normal operation (no back-pressure)";
     private static final String OVERLOAD = "Overload (back-pressure engaged)";
     private static final String MIXED = "Mixed workload (latency isolation under load)";
-    private static final String WARMUP = "warmup";
-    private static final String CONSUMERS = "consumers";
+    private static final String WARMUP_LABEL = "warmup";
+    private static final String CONSUMERS_LABEL = "consumers";
 
     /** Display labels for a workload (grouped to keep run* signatures small). */
     private record Meta(String name, String category, String description) {
+    }
+
+    /** Bundles the per-workload latency-sample buffer and success/failure counters. */
+    private static final class Collector {
+        private final long[] ns;
+        private final AtomicInteger idx = new AtomicInteger();
+        private final AtomicLong failures = new AtomicLong();
+
+        Collector(int capacity) {
+            ns = new long[capacity];
+        }
+
+        void record(long latencyNs) {
+            int k = idx.getAndIncrement();
+            if (k < ns.length) {
+                ns[k] = latencyNs;
+            }
+        }
+
+        void fail() {
+            failures.incrementAndGet();
+        }
+
+        long failed() {
+            return failures.get();
+        }
+
+        Stats stats() {
+            return Stats.compute(ns, idx.get());
+        }
     }
 
     private int ops;
@@ -134,19 +164,20 @@ public class BenchmarkApp implements EntryPoint {
             int c = consumers;
 
             log.info("Warming up…");
-            runRpc(po, payload, new Meta(WARMUP, WARMUP, ""), Math.min(c, 16), warmup);
-            runCallback(po, payload, new Meta(WARMUP, WARMUP, ""), callbackProducers, 0, callbackInflight, warmup);
+            runRpc(po, payload, new Meta(WARMUP_LABEL, WARMUP_LABEL, ""), Math.min(c, 16), warmup);
+            runCallback(po, payload, new Meta(WARMUP_LABEL, WARMUP_LABEL, ""),
+                    callbackProducers, 0, callbackInflight, warmup);
 
             List<WorkloadResult> results = new ArrayList<>();
 
             // --- Normal operation (no back-pressure): backlog stays within the 20-event memory buffer ---
             log.info("[1/6] RPC 1 → {}", c);
-            results.add(runRpc(po, payload, new Meta("RPC · 1 → " + c + " " + CONSUMERS, NORMAL,
+            results.add(runRpc(po, payload, new Meta("RPC · 1 → " + c + " " + CONSUMERS_LABEL, NORMAL,
                     "One publisher, in-flight = 1: pure request/reply round-trip. Baseline latency; the "
                             + "ElasticQueue is idle."), 1, ops));
 
             log.info("[2/6] RPC {} → {}", c, c);
-            results.add(runRpc(po, payload, new Meta("RPC · " + c + " → " + c + " " + CONSUMERS, NORMAL,
+            results.add(runRpc(po, payload, new Meta("RPC · " + c + " → " + c + " " + CONSUMERS_LABEL, NORMAL,
                     "Balanced (publishers = consumers): the backlog stays within the 20-event memory buffer, so "
                             + "it runs on the fast in-memory tier — throughput reaches the single-route dispatch "
                             + "ceiling (~an order of magnitude over 1→" + c + ") and latency stays sub-millisecond."),
@@ -154,7 +185,7 @@ public class BenchmarkApp implements EntryPoint {
 
             log.info("[3/6] Callback {} → {} paced ~{}µs", c, c, pacingMicros);
             results.add(runCallback(po, payload,
-                    new Meta("Callback · " + c + " → " + c + " " + CONSUMERS + " (paced)", NORMAL,
+                    new Meta("Callback · " + c + " → " + c + " " + CONSUMERS_LABEL + " (paced)", NORMAL,
                     "Async callback at a sustainable rate: " + c + " publishers spaced ~" + pacingMicros
                             + "µs apart so consumers keep up. The backlog stays under the 20-event memory buffer "
                             + "— no disk spill, latency ≈ service time. Healthy steady-state async operation."),
@@ -162,7 +193,7 @@ public class BenchmarkApp implements EntryPoint {
 
             // --- Overload (back-pressure engaged): backlog exceeds the buffer and spills to disk ---
             log.info("[4/6] RPC {} → {} (over-subscribed 2:1)", 2 * c, c);
-            results.add(runRpc(po, payload, new Meta("RPC · " + (2 * c) + " → " + c + " " + CONSUMERS, OVERLOAD,
+            results.add(runRpc(po, payload, new Meta("RPC · " + (2 * c) + " → " + c + " " + CONSUMERS_LABEL, OVERLOAD,
                     "Over-subscribed 2:1: with " + (2 * c) + " publishers and " + c + " consumers, ~" + c
                             + " requests queue behind the workers — above the 20-event memory buffer, so events "
                             + "spill to disk. Throughput drops to the disk-spill ceiling (≈ the flood below) and "
@@ -170,7 +201,7 @@ public class BenchmarkApp implements EntryPoint {
                     2 * c, ops));
 
             log.info("[5/6] Callback flood → {} (in-flight {})", c, callbackInflight);
-            results.add(runCallback(po, payload, new Meta("Callback · flood → " + c + " " + CONSUMERS, OVERLOAD,
+            results.add(runCallback(po, payload, new Meta("Callback · flood → " + c + " " + CONSUMERS_LABEL, OVERLOAD,
                     "Async callback with no pacing, up to " + String.format("%,d", callbackInflight)
                             + " in-flight — far above the 20-event memory buffer. Events spill through the "
                             + "ElasticQueue back-pressure buffer and latency becomes queue-bounded (Little's law), "
@@ -202,9 +233,7 @@ public class BenchmarkApp implements EntryPoint {
                                   int publishers, int totalOps) throws InterruptedException {
         int per = Math.max(1, totalOps / publishers);
         int total = per * publishers;
-        long[] ns = new long[total];
-        AtomicInteger idx = new AtomicInteger();
-        AtomicLong failures = new AtomicLong();
+        Collector col = new Collector(total);
         CountDownLatch done = new CountDownLatch(publishers);
         long t0 = System.nanoTime();
         try (ExecutorService ex = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -214,12 +243,12 @@ public class BenchmarkApp implements EntryPoint {
                         long s = System.nanoTime();
                         try {
                             po.request(new EventEnvelope().setTo(WORKER).setBody(payload), timeoutMs).get();
-                            ns[idx.getAndIncrement()] = System.nanoTime() - s;
+                            col.record(System.nanoTime() - s);
                         } catch (Exception e) {
                             if (e instanceof InterruptedException) {
                                 Thread.currentThread().interrupt();
                             }
-                            failures.incrementAndGet();
+                            col.fail();
                         }
                     }
                     done.countDown();
@@ -230,11 +259,11 @@ public class BenchmarkApp implements EntryPoint {
         double elapsed = (System.nanoTime() - t0) / 1e9;
         Map<String, String> params = new LinkedHashMap<>();
         params.put("publishers (in-flight)", String.valueOf(publishers));
-        params.put(CONSUMERS, String.valueOf(consumers));
+        params.put(CONSUMERS_LABEL, String.valueOf(consumers));
         params.put("operations", String.format("%,d", total));
         params.put("payload", payload.length + " bytes");
         return new WorkloadResult(meta.name(), meta.category(), meta.description(), params, total,
-                failures.get(), elapsed, Stats.compute(ns, idx.get()));
+                col.failed(), elapsed, col.stats());
     }
 
     /**
@@ -248,22 +277,20 @@ public class BenchmarkApp implements EntryPoint {
                                        int totalOps) throws InterruptedException {
         int per = Math.max(1, totalOps / publishers);
         int total = per * publishers;
-        long[] ns = new long[total];
-        AtomicInteger idx = new AtomicInteger();
-        AtomicLong failures = new AtomicLong();
+        Collector col = new Collector(total);
         Semaphore permits = new Semaphore(maxInflight);
         CountDownLatch done = new CountDownLatch(total);
         long t0 = System.nanoTime();
         try (ExecutorService ex = Executors.newVirtualThreadPerTaskExecutor()) {
             for (int p = 0; p < publishers; p++) {
-                ex.submit(() -> callbackProducer(po, payload, per, pacingMicros, permits, ns, idx, failures, done));
+                ex.submit(() -> callbackProducer(po, payload, per, pacingMicros, permits, col, done));
             }
             done.await();
         }
         double elapsed = (System.nanoTime() - t0) / 1e9;
         Map<String, String> params = new LinkedHashMap<>();
         params.put("publishers", String.valueOf(publishers));
-        params.put(CONSUMERS, String.valueOf(consumers));
+        params.put(CONSUMERS_LABEL, String.valueOf(consumers));
         if (pacingMicros > 0) {
             params.put("pacing", pacingMicros + " µs/publisher");
         } else {
@@ -272,12 +299,12 @@ public class BenchmarkApp implements EntryPoint {
         params.put("operations", String.format("%,d", total));
         params.put("payload", payload.length + " bytes");
         return new WorkloadResult(meta.name(), meta.category(), meta.description(), params, total,
-                failures.get(), elapsed, Stats.compute(ns, idx.get()));
+                col.failed(), elapsed, col.stats());
     }
 
     /** One open-loop producer for {@link #runCallback}: fire {@code per} async requests under the shared window. */
     private void callbackProducer(EventEmitter po, byte[] payload, int per, long pacingMicros, Semaphore permits,
-                                  long[] ns, AtomicInteger idx, AtomicLong failures, CountDownLatch done) {
+                                  Collector col, CountDownLatch done) {
         for (int i = 0; i < per; i++) {
             try {
                 permits.acquire();
@@ -289,9 +316,9 @@ public class BenchmarkApp implements EntryPoint {
             po.asyncRequest(new EventEnvelope().setTo(WORKER).setBody(payload), timeoutMs)
                     .onComplete(ar -> {
                         if (ar.succeeded()) {
-                            ns[idx.getAndIncrement()] = System.nanoTime() - s;
+                            col.record(System.nanoTime() - s);
                         } else {
-                            failures.incrementAndGet();
+                            col.fail();
                         }
                         permits.release();
                         done.countDown();
@@ -312,7 +339,6 @@ public class BenchmarkApp implements EntryPoint {
     private WorkloadResult runMixed(EventEmitter po, byte[] payload, int bgInflight, int probeCount, long probePace)
             throws InterruptedException {
         String name = "Latency probe under background flood";
-        String category = MIXED;
         String desc = "The real production question: a latency-sensitive probe — a paced RPC on a SEPARATE route ("
                 + PROBE + ") — measured WHILE a background callback flood hammers " + WORKER + "'s "
                 + "ElasticQueue. With file+vthread the spill runs OFF the event loop, so the probe "
@@ -324,38 +350,22 @@ public class BenchmarkApp implements EntryPoint {
         AtomicLong bgOps = new AtomicLong();
         try (ExecutorService bg = Executors.newVirtualThreadPerTaskExecutor()) {
             for (int p = 0; p < 4; p++) {
-                bg.submit(() -> {
-                    while (!stop.get()) {
-                        try {
-                            permits.acquire();
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            return;
-                        }
-                        po.asyncRequest(new EventEnvelope().setTo(WORKER).setBody(payload), timeoutMs)
-                                .onComplete(ar -> {
-                                    permits.release();
-                                    bgOps.incrementAndGet();
-                                });
-                    }
-                });
+                bg.submit(() -> floodProducer(po, payload, permits, stop, bgOps));
             }
             Thread.sleep(750); // let the backlog build past the memory buffer and start spilling
 
-            long[] ns = new long[probeCount];
-            int rec = 0;
-            long failures = 0;
+            Collector probe = new Collector(probeCount);
             long t0 = System.nanoTime();
             for (int i = 0; i < probeCount; i++) {
                 long s = System.nanoTime();
                 try {
                     po.request(new EventEnvelope().setTo(PROBE).setBody(payload), timeoutMs).get();
-                    ns[rec++] = System.nanoTime() - s;
+                    probe.record(System.nanoTime() - s);
                 } catch (Exception e) {
                     if (e instanceof InterruptedException) {
                         Thread.currentThread().interrupt();
                     }
-                    failures++;
+                    probe.fail();
                 }
                 if (probePace > 0) {
                     LockSupport.parkNanos(probePace * 1_000L);
@@ -371,9 +381,27 @@ public class BenchmarkApp implements EntryPoint {
             params.put("background", "flood → " + WORKER + ", up to " + String.format("%,d", bgInflight)
                     + " in-flight");
             params.put("background ops (concurrent)", String.format("%,d", bgOps.get()));
-            params.put(CONSUMERS, String.valueOf(consumers));
-            return new WorkloadResult(name, category, desc, params, probeCount, failures, elapsed,
-                    Stats.compute(ns, rec));
+            params.put(CONSUMERS_LABEL, String.valueOf(consumers));
+            return new WorkloadResult(name, MIXED, desc, params, probeCount, probe.failed(), elapsed,
+                    probe.stats());
+        }
+    }
+
+    /** One background-flood producer for {@link #runMixed}: fire async requests until {@code stop} is set. */
+    private void floodProducer(EventEmitter po, byte[] payload, Semaphore permits, AtomicBoolean stop,
+                               AtomicLong bgOps) {
+        while (!stop.get()) {
+            try {
+                permits.acquire();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+            po.asyncRequest(new EventEnvelope().setTo(WORKER).setBody(payload), timeoutMs)
+                    .onComplete(ar -> {
+                        permits.release();
+                        bgOps.incrementAndGet();
+                    });
         }
     }
 
