@@ -96,7 +96,7 @@ public class BenchmarkApp implements EntryPoint {
             ns = new long[capacity];
         }
 
-        void record(long latencyNs) {
+        void sample(long latencyNs) {
             int k = idx.getAndIncrement();
             if (k < ns.length) {
                 ns[k] = latencyNs;
@@ -243,7 +243,7 @@ public class BenchmarkApp implements EntryPoint {
                         long s = System.nanoTime();
                         try {
                             po.request(new EventEnvelope().setTo(WORKER).setBody(payload), timeoutMs).get();
-                            col.record(System.nanoTime() - s);
+                            col.sample(System.nanoTime() - s);
                         } catch (Exception e) {
                             if (e instanceof InterruptedException) {
                                 Thread.currentThread().interrupt();
@@ -316,7 +316,7 @@ public class BenchmarkApp implements EntryPoint {
             po.asyncRequest(new EventEnvelope().setTo(WORKER).setBody(payload), timeoutMs)
                     .onComplete(ar -> {
                         if (ar.succeeded()) {
-                            col.record(System.nanoTime() - s);
+                            col.sample(System.nanoTime() - s);
                         } else {
                             col.fail();
                         }
@@ -360,7 +360,7 @@ public class BenchmarkApp implements EntryPoint {
                 long s = System.nanoTime();
                 try {
                     po.request(new EventEnvelope().setTo(PROBE).setBody(payload), timeoutMs).get();
-                    probe.record(System.nanoTime() - s);
+                    probe.sample(System.nanoTime() - s);
                 } catch (Exception e) {
                     if (e instanceof InterruptedException) {
                         Thread.currentThread().interrupt();
