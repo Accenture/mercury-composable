@@ -270,8 +270,8 @@
   Java sources contain **zero occurrences of either**, and `helpers/kafka-standalone` never constructs an
   `ObjectMapper` at all (its databind pin only satisfies Kafka's transitive dependency). **No bump possible yet:**
   Maven Central's latest is still 2.22.0 — the fixing 2.22.1 is unreleased ("Patched version: None"; only 3.x
-  shipped its fix, 3.1.4 on 2026-06-04). Recommended to Eric: dismiss alert #28 as "vulnerable code is not in
-  use"; bump when 2.22.1 lands — Dependabot re-flags on release (that's the reminder), and the version is
+  shipped its fix, 3.1.4 on 2026-06-04). **Eric confirmed (2026-07-05): ignore/defer #28 for now, bump when Jackson 2.22.1 releases** — dismiss as
+  "vulnerable code is not in use"; Dependabot re-flags on release (that's the reminder), and the version is
   centralized (`jackson-2-bom.version` in ~30 poms + explicit `jackson-databind` pins: rest-spring-3,
   kafka-standalone — platform-core's test-scope pin was removed 2026-07-05, see below). Do not re-investigate
   this alert while the pinned version is 2.22.0 and those two grep checks stay empty.
