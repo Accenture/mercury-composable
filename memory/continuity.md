@@ -475,14 +475,18 @@
 
 ## Open Threads
 
-- [ ] (design approved on paper — Eric, 2026-07-05; P0 done, P1 next) **Replace ElasticQueue's Berkeley DB
-  spill tier with a portable file-backed segmented FIFO.** Full detail + rationale (perf/complexity/Rust
-  portability) + the P0 empirical baseline in the Key Decision [[elastic-queue-file-fifo-plan]] and the design
-  spec `draft-design-specs/elastic_queue_file_fifo_design.md` (gitignored). Done: design + decisions
-  (segmentation YES, transitional `bdb|file` switch YES), P0 benchmark (`ElasticQueueBenchmark`, uncommitted —
-  quantified the BDB event-loop tail stalls). **Next: P1 — implement the `file` strategy behind the switch,
-  port `ElasticQueueTest` against both impls.** Then P2 harden, P3 A/B + canary, P4 retire BDB, optional P5
-  (spill I/O → per-route virtual threads).
+- [ ] (P1 done — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; P2 next) **Replace
+  ElasticQueue's Berkeley DB spill tier with a portable file-backed segmented FIFO.** Full detail + rationale
+  (perf/complexity/Rust portability) in the Key Decision [[elastic-queue-file-fifo-plan]] and the design spec
+  `draft-design-specs/elastic_queue_file_fifo_design.md` (gitignored). **P0 (commit `fc225d34`):** benchmark
+  quantified the BDB event-loop tail. **P1 (commit `07221351`):** `ElasticQueue` is now a facade over an
+  `ElasticStore` strategy (`elastic.queue.store = bdb | file`, default `bdb`); `BdbElasticStore` = old logic
+  verbatim, `FileElasticStore` = new per-route segmented append FIFO; `ElasticStoreParityTest` passes both;
+  full platform-core 376 green. Empirical (worse-case) file vs bdb: write p99.9 1.63ms→0.035ms (~46×), read
+  max 98ms→3.9ms (~25×), stalls>20ms 53→2, throughput +49% — **tail flattened, goal met.** **P2 (next) must
+  root-cause the one 572ms `file` write outlier** (likely GC on the constrained heap or OS dirty-page-flush
+  throttle since we don't fsync) + fault injection + FD-lifecycle + sustained-overflow soak + segment-size
+  tune. Then P3 A/B + canary, P4 retire BDB, optional P5 (spill I/O → per-route virtual threads).
   <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
 
 - [ ] (implemented, **uncommitted** — Claude Code, 2026-07-03) **TraceId & correlation-id propagation cleanup.**
