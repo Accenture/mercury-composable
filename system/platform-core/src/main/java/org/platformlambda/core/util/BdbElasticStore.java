@@ -40,9 +40,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The Berkeley DB JE (SleepyCat) implementation of the elastic overflow buffer — the long-standing,
- * proven default. Moved verbatim from the original {@code ElasticQueue}; behaviour is unchanged. It is
- * kept as a config-selectable fallback ({@code elastic.queue.store=bdb}, the default) while the
- * {@link FileElasticStore} alternative is proven in the field. See {@link ElasticStore}.
+ * proven store. Moved verbatim from the original {@code ElasticQueue}; behaviour is unchanged. It is now
+ * the config-selectable legacy fallback ({@code elastic.queue.store=bdb}); the {@link FileElasticStore}
+ * FIFO is the default. Retained while the file store is proven in the field. See {@link ElasticStore}.
  */
 class BdbElasticStore implements ElasticStore {
     private static final Logger log = LoggerFactory.getLogger(BdbElasticStore.class);

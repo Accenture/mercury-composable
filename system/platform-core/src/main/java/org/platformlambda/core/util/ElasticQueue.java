@@ -23,8 +23,9 @@ package org.platformlambda.core.util;
  * the first {@link #MEMORY_BUFFER} events in memory and spills the overflow to a transient disk store.
  *
  * <p>This is a thin facade over an {@link ElasticStore} strategy selected by the {@code elastic.queue.store}
- * config (default {@code bdb} = {@link BdbElasticStore}; {@code file} = {@link FileElasticStore}). The public
- * API is unchanged, so ServiceQueue and applications are unaffected by the choice of store. See
+ * config (default {@code file} = {@link FileElasticStore}, the portable virtual-thread-friendly FIFO;
+ * {@code bdb} = {@link BdbElasticStore}, the legacy Berkeley DB fallback). The public API is unchanged, so
+ * ServiceQueue and applications are unaffected by the choice of store. See
  * draft-design-specs/elastic_queue_file_fifo_design.md.</p>
  */
 public class ElasticQueue implements AutoCloseable {
@@ -44,9 +45,9 @@ public class ElasticQueue implements AutoCloseable {
     }
 
     private static ElasticStore create(String id) {
-        String type = AppConfigReader.getInstance().getProperty(STORE_CONFIG, BDB);
-        // default (and any unrecognized value) uses the long-standing BDB store
-        return FILE.equalsIgnoreCase(type) ? new FileElasticStore(id) : new BdbElasticStore(id);
+        String type = AppConfigReader.getInstance().getProperty(STORE_CONFIG, FILE);
+        // default (and any unrecognized value) uses the file store; bdb is the explicit legacy fallback
+        return BDB.equalsIgnoreCase(type) ? new BdbElasticStore(id) : new FileElasticStore(id);
     }
 
     public String getId() {
