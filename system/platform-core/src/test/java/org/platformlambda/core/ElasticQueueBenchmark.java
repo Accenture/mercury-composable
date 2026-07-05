@@ -24,6 +24,9 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ElasticQueue;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -113,19 +116,32 @@ class ElasticQueueBenchmark {
 
             double elapsed = (System.currentTimeMillis() - start) / 1000.0;
             String storeType = AppConfigReader.getInstance().getProperty("elastic.queue.store", "bdb");
-            System.out.printf("%n============ ElasticQueue spill latency [store=%s] ============%n", storeType);
-            System.out.printf("duration=%.0fs  ops=%,d  throughput=%,.0f ops/s%n", elapsed, ops, ops / elapsed);
-            System.out.println("(latency = time the event-loop thread is blocked inside ElasticQueue per op)\n");
-            System.out.printf("%-8s %10s %10s %10s %10s %10s %10s %12s%n",
-                    "op", "p50", "p90", "p99", "p99.9", "max", ">10ms", ">50ms/>100ms");
-            writes.print("write");
-            reads.print("read");
-            System.out.printf("%nStalls (>%dms) captured: %d%s%n",
-                    stallNs / 1_000_000L, stalls.size(), stalls.size() == 500 ? " (capped)" : "");
+            StringBuilder rpt = new StringBuilder();
+            rpt.append(String.format("%n============ ElasticQueue spill latency [store=%s] ============%n", storeType));
+            rpt.append(String.format("params: payload=%dB backlog=%d stallThreshold=%dms%n",
+                    payload, backlog, stallNs / 1_000_000L));
+            rpt.append(String.format("duration=%.0fs  ops=%,d  throughput=%,.0f ops/s%n", elapsed, ops, ops / elapsed));
+            rpt.append("(latency = time the event-loop thread is blocked inside ElasticQueue per op)\n\n");
+            rpt.append(String.format("%-8s %10s %10s %10s %10s %10s %10s %12s%n",
+                    "op", "p50", "p90", "p99", "p99.9", "max", ">10ms", ">50ms/>100ms"));
+            rpt.append(writes.format("write"));
+            rpt.append(reads.format("read"));
+            rpt.append(String.format("%nStalls (>%dms) captured: %d%s%n",
+                    stallNs / 1_000_000L, stalls.size(), stalls.size() == 500 ? " (capped)" : ""));
             for (String s : stalls) {
-                System.out.println(s);
+                rpt.append(s).append('\n');
             }
-            System.out.println("==================================================================");
+            rpt.append("==================================================================\n");
+            System.out.print(rpt);
+            String reportPath = System.getProperty("bench.report");
+            if (reportPath != null) {
+                try {
+                    Files.writeString(Path.of(reportPath), rpt.toString());
+                    System.out.println("report written to " + reportPath);
+                } catch (IOException e) {
+                    System.out.println("failed to write report to " + reportPath + ": " + e.getMessage());
+                }
+            }
         } finally {
             q.destroy();
         }
@@ -169,8 +185,8 @@ class ElasticQueueBenchmark {
             return maxNs / 1_000_000.0; // in the overflow (>1s) tail
         }
 
-        void print(String label) {
-            System.out.printf("%-8s %9.3f %9.3f %9.3f %9.3f %9.3f %10d %6d/%d%n",
+        String format(String label) {
+            return String.format("%-8s %9.3f %9.3f %9.3f %9.3f %9.3f %10d %6d/%d%n",
                     label, pct(50), pct(90), pct(99), pct(99.9), maxNs / 1_000_000.0,
                     over10, over50, over100);
         }
