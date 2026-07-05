@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-05 | agent: Claude Code (2026-07-05-045654)
+- **last_session:** 2026-07-05 | agent: Claude Code (2026-07-05-054815)
 - **last_review:** 2026-07-05 | through 2026-07-05-012640.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -81,8 +81,16 @@
   into housekeeping bursts**. Target for `file`: **flatten the tail** (throughput is already ample, not the
   bar). **Optional P5 follow-on:** move the spill I/O off the event loop onto a **per-route virtual thread**
   (keep the non-blocking fast path on the loop) — gated on whether on-loop file I/O still shows in the tail
-  after P3. Design spec (gitignored): `draft-design-specs/elastic_queue_file_fifo_design.md`. See
-  [[thread-elastic-queue-bdb-to-file]]; relates [[virtual-threads-rpc]].
+  after P3. **Key finding (2026-07-05): Berkeley DB is NOT virtual-thread-friendly — it pins VT carriers**
+  (internal synchronized/latches). Proven by A/B: vthread+file green across the reactor, but vthread+bdb
+  starved minigraph (11F/3E, carrier starvation under concurrency). This likely explains BDB's poor
+  high-pressure field behaviour better than GC (already live in the field via the `elastic.queue.cleanup`
+  task, a non-`@KernelThreadRunner` function doing `cleanLog()` on a VT). So the file store is the **only
+  VT-compatible store** — required, not just nicer, for a VT-first runtime. **Design simplified to one switch
+  (Eric):** dispatch is derived from the store's `supportsVirtualThreadDispatch()` (`bdb`→false/loop,
+  `file`→true/vthread); the standalone `elastic.queue.dispatch` config was removed, so the unsafe vthread+bdb
+  combo is unreachable by construction. Design spec (gitignored): `draft-design-specs/elastic_queue_file_fifo_design.md`.
+  See [[thread-elastic-queue-bdb-to-file]]; relates [[virtual-threads-rpc]].
   <!-- id: elastic-queue-file-fifo-plan | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
 
 - **Tracing & correlation-id cleanup (2026-07-03, branch `fix/traceid-correlationid-propagation`, uncommitted).**
@@ -494,10 +502,14 @@
   **P5 (`e8e5cdee`):** off-loop dispatch — `elastic.queue.dispatch = loop | vthread` (default `loop`); in
   `vthread` a per-route virtual thread runs the `ServiceQueue` state machine + blocking spill I/O, so the
   552ms OS-flush stall parks the VT carrier, not the shared loop. Full platform-core 381 green in BOTH modes;
-  `DispatchBenchmark` loop 83k vs vthread 98k events/s (+18% under load, no hot-path regression).
-  **All phases P0–P5 implemented + tested on the branch. Remaining = field steps only: canary (deploy with
-  `elastic.queue.store=file` + `elastic.queue.dispatch=vthread`, both one flip from the safe defaults), then
-  P4 retire BDB after the field validates.**
+  `DispatchBenchmark` loop 83k vs vthread 98k events/s (+18% under load, no hot-path regression); measured
+  mailbox fast-path overhead ~5–9µs/dispatch. **Reactor validation (`dd77f067`) found BDB pins VT carriers**
+  (vthread+bdb starved minigraph; vthread+file green everywhere) → **simplified to ONE switch:**
+  `elastic.queue.store` alone (`bdb`⇒loop, `file`⇒vthread, derived from `supportsVirtualThreadDispatch()`);
+  removed the standalone `elastic.queue.dispatch` config so vthread+bdb is unreachable. Verified: platform-core
+  381 green both modes, minigraph 55 green with file.
+  **All phases P0–P5 + the mode simplification implemented + tested on the branch. Remaining = field steps:
+  canary (deploy `elastic.queue.store=file`, one flip from the `bdb` default), then P4 retire BDB.**
   <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
 
 - [ ] (implemented, **uncommitted** — Claude Code, 2026-07-03) **TraceId & correlation-id propagation cleanup.**
