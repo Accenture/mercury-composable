@@ -18,21 +18,22 @@
 
 package org.platformlambda.common;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.platformlambda.core.models.CustomSerializer;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.Map;
 
+// Test-only CustomSerializer that plugs a Jackson mapper into platform-core's serializer extension point
+// (the default is Gson). Uses Jackson 3 (tools.jackson), which Spring Boot 4 already puts on the compile
+// classpath - so this needs no separate Jackson dependency and keeps Jackson 2 off platform-core entirely.
 public class JacksonSerializer implements CustomSerializer {
 
-    private static final ObjectMapper mapper;
-
-    static {
-        mapper = JsonMapper.builder().build();
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-    }
+    // Jackson 3's builder is the immutable configuration API; FAIL_ON_UNKNOWN_PROPERTIES is off by default
+    // in Jackson 3, but we disable it explicitly so the intent survives any future default change.
+    private static final JsonMapper mapper = JsonMapper.builder()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .build();
 
     @SuppressWarnings("unchecked")
     @Override
