@@ -83,6 +83,15 @@ class BdbElasticStore implements ElasticStore {
     BdbElasticStore(String id) {
         this.id = util.validServiceName(id)? id : util.filteredServiceName(id);
         resetCounter();
+        initOnce();
+    }
+
+    /**
+     * One-time initialization of the process-wide BDB environment (shared by every route). Kept out of the
+     * constructor so the shared static state is not written per-instance; guarded by {@code LOADED} under
+     * {@code SAFETY} so it runs exactly once.
+     */
+    private static void initOnce() {
         SAFETY.lock();
         try {
             if (!LOADED.get()) {
@@ -122,11 +131,11 @@ class BdbElasticStore implements ElasticStore {
         }
     }
 
-    private void keepAlive() {
+    private static void keepAlive() {
         util.str2file(new File(dbFolder, RUNNING), util.getTimestamp());
     }
 
-    private void housekeeping() {
+    private static void housekeeping() {
         long now = System.currentTimeMillis();
         List<File> outdated = new ArrayList<>();
         File[] files = dbFolder.listFiles();
@@ -343,7 +352,7 @@ class BdbElasticStore implements ElasticStore {
         return NOTHING;
     }
 
-    private void scanExpiredStores(File tmpRoot) {
+    private static void scanExpiredStores(File tmpRoot) {
         if (runningInCloud) {
             removeExpiredStore(tmpRoot);
         } else {
@@ -358,7 +367,7 @@ class BdbElasticStore implements ElasticStore {
         }
     }
 
-    private void removeExpiredStore(File folder) {
+    private static void removeExpiredStore(File folder) {
         File f = new File(folder, RUNNING);
         if (f.exists()) {
             if (System.currentTimeMillis() - f.lastModified() > ONE_HOUR) {
