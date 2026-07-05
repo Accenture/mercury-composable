@@ -16,8 +16,8 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-05 | agent: Claude Code (2026-07-05-011131)
-- **last_review:** 2026-07-02 | through 2026-07-02-161433.md
+- **last_session:** 2026-07-05 | agent: Claude Code (2026-07-05-012640)
+- **last_review:** 2026-07-05 | through 2026-07-05-012640.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -90,7 +90,7 @@
   `RestEndpointTest#plainRestFunctionReceivesCorrelationId`.
   Plan: `~/.claude/plans/glowing-tinkering-glacier.md`. See [[flow-cid-vs-business-correlation-decoupled]] and
   [[thread-traceid-correlation-propagation]]. **Status: implemented + feature-complete, all tests green, uncommitted — pending Eric.**
-  <!-- id: tracing-correlation-cleanup | created: 2026-07-03 | last_used: 2026-07-03 | uses: 1 | tier: working | origin: 2026-07-03-014759 -->
+  <!-- id: tracing-correlation-cleanup | created: 2026-07-03 | last_used: 2026-07-04 | uses: 5 | tier: active | origin: 2026-07-03-014759 -->
 
 - **External assessment of the shipped trace/cid feature (PR #132): one real fix kept, one "finding" rejected
   by design (2026-07-04, uncommitted).** GitHub Copilot's report
@@ -114,7 +114,7 @@
   [[thread-traceid-correlation-propagation]]. **Status: shipped as PR [#134](https://github.com/Accenture/mercury-composable/pull/134)**
   (branch `fix/correlation-id-readonly-and-trace-header-docs`; 2 commits — `3065f804` source+tests+docs,
   `707056e5` memory) — pending review/merge.
-  <!-- id: traceid-cid-propagation-edgecase-fixes | created: 2026-07-04 | last_used: 2026-07-04 | uses: 1 | tier: working | origin: 2026-07-04-223237 -->
+  <!-- id: traceid-cid-propagation-edgecase-fixes | created: 2026-07-04 | last_used: 2026-07-04 | uses: 2 | tier: active | origin: 2026-07-04-223237 -->
 
 - **Design principle — a developer-set outbound trace header (`X-Trace-Id` / W3C `traceparent`) is an
   intentional act the framework must honor, not strip (Eric, 2026-07-04).** `AsyncHttpClient` deliberately does
@@ -152,48 +152,7 @@
   businessCid defaults to routing cid for non-HTTP callers) and by `HttpToFlow` (routing = requestId,
   business = X-Correlation-Id); subflows inherit the parent's business cid via the same header. Kafka: the two
   coincide (no requestId indirection). Relates [[trace-thread-keyed-mono-gotcha]].
-  <!-- id: flow-cid-vs-business-correlation-decoupled | created: 2026-07-03 | last_used: 2026-07-03 | uses: 1 | tier: working | origin: 2026-07-03-014759 -->
-
-- **Application log context — virtual-thread-safe MDC alternative (2026-06-30, PR #128).** A `context`
-  block (cid, traceId, tracePath, spanId, parentSpanId, service, utc + developer key-values) is injected
-  into structured JSON log output so logs and OTel spans join on traceId/spanId. **Deliberately NOT
-  Log4j MDC/ThreadLocal** (anti-pattern for virtual threads). Mirrors the `TraceInfo` mechanism: a
-  per-request `LogContext` in a registry keyed by `Thread.currentThread().threadId()`
-  (`org.platformlambda.core.logging` — `LogContext`/`LogContextManager`/`LogContextConfig`), created
-  after `startTracing` and removed after `stopTracing` in `WorkerHandler` (same keying the OTel feature
-  proves correct; see [[trace-thread-keyed-mono-gotcha]]). The JSON appender runs on the worker thread so
-  it looks the context up by thread id in `JsonLogger.getJson` — nothing passed through Log4j; covers
-  JsonAppender + CompactAppender. **Opt-in** via optional `app-log-context.yaml` (absent ⇒ one boolean
-  check/line, no writes); entries are a reserved `$token` / `${ENV:default}` / hardcoded literal;
-  null-valued keys omitted (never `"null"`); token `$service` (not `$route`) for vocabulary consistency.
-  `PostOffice.updateContext(key,value)` adds custom keys (logging-only sink, distinct from `annotateTrace`;
-  rejects reserved keys; no-op when untraced/off). Same boundary as tracing — no context on boot logs or
-  post-return Mono/Flux tails. `LogContextConfig` is an eager Utility-style singleton (no volatile/DCL).
-  Shipped with two pre-existing-SonarQube refactors in `WorkerHandler` (extract `invokeFunction` +
-  null-guard; split `updateResponse`). 16 tests; platform-core suite 367 green; validated end-to-end in
-  `composable-example`. Design spec: `draft-design-specs/application_log_context_design.md` (gitignored).
-  <!-- id: application-log-context | created: 2026-06-30 | last_used: 2026-06-30 | uses: 1 | tier: archive-candidate | origin: 2026-06-30-212955 -->
-
-- **minimalist-kafka producer: subject/version schema resolution (2026-07-01, PR #129).** `simple.kafka.notification`
-  is now **subject-driven**, not id-driven: the caller supplies a registry `subject` (+ optional `version`,
-  default `latest`) and the producer resolves it to a global schema id + type, then serializes via the
-  unchanged `use.schema.id` path. The old `schema-id`/`schema-type` headers were **removed** (no backward
-  compat — 4.5.0 unreleased). It's the **single** contract, and it keeps the producer ignorant of Confluent's
-  3 naming strategies (the caller names the subject → nothing to derive). Type is derived authoritatively from
-  `getSchemaById(id).schemaType()` (also warms the id cache). **Two caches by mutability:** pinned numeric
-  versions (immutable) in a dedicated long-TTL (10d)/bounded (3000) `ManagedCache`; `latest` (mutable) shares
-  the existing 30m id→schema cache under a `latest/`-namespaced key. `resolve()` on
-  `ManagedCacheSchemaRegistryClient` (+ `ResolvedSchema`, `SchemaCodec.resolve` facade); unknown subject /
-  registry-down fails the notification loudly (never silent plaintext). **Wire + consumer unchanged** (global
-  id on the wire; id-from-wire decode) — only the producer's input moved. Standalone mock + `EmbeddedSchemaRegistry`
-  gained `GET /subjects/{subject}/versions/{version}` (latest|int, Confluent shape, 40401/40402) + an in-memory
-  `subject→version→id` index rebuilt on boot from the per-id files (seed = drop `<id>.json` + restart; runtime
-  = register API); mock got a README. **CSFLE is now wired** (see [[kafka-csfle-delegation]]; uncommitted as
-  of 2026-07-02, [[thread-csfle-field-encryption]]).
-  Validated e2e (JSON/Avro/Protobuf) incl. continuous OTel span propagation across both Kafka hops. Design spec:
-  `draft-design-specs/kafka_schemaid_from_subject_version_design.md` (gitignored). Supersedes the id-driven
-  detail in [[minimalist-kafka-schema-registry]].
-  <!-- id: kafka-schemaid-from-subject-version | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: archive-candidate | origin: 2026-07-01-004724 -->
+  <!-- id: flow-cid-vs-business-correlation-decoupled | created: 2026-07-03 | last_used: 2026-07-04 | uses: 6 | tier: active | origin: 2026-07-03-014759 -->
 
 - **CSFLE (Client-Side Field Level Encryption) for minimalist-kafka — pure delegation, no framework rule/schema
   code (2026-07-02, branch `feature/kafka-csfle-field-encryption`, uncommitted).** Eric's field observation
@@ -241,7 +200,7 @@
   `SchemaCodecCsfleConfigTest#avroCsfleConfigReachesEncoderAndDecoder` — the first direct Avro CSFLE round-trip
   through `SchemaCodec.Encoder`/`Decoder` (Avro was only symmetrically wired, JSON-only tested). Full module
   green (79 tests, coverage gate met).
-  <!-- id: kafka-csfle-delegation | created: 2026-07-02 | last_used: 2026-07-02 | uses: 1 | tier: working | origin: 2026-07-02-020429 -->
+  <!-- id: kafka-csfle-delegation | created: 2026-07-02 | last_used: 2026-07-05 | uses: 3 | tier: active | origin: 2026-07-02-020429 -->
 
 - **Repo-wide OSS dependency security update (2026-07-01, committed on `feature/deprecate-simple-type-matching`).**
   Snyk flagged high-risk dependency CVEs on `system/minimalist-kafka`, `extensions/sync-over-async`,
@@ -270,7 +229,7 @@
   Two full-reactor `mvn test` runs (before/after the touch-ups): **BUILD SUCCESS, all 28 modules, zero
   failures**, plus the standalone `examples/pg-example` (excluded from the root aggregator) run separately,
   also green both times.
-  <!-- id: snyk-oss-dependency-update-2026-07 | created: 2026-07-01 | last_used: 2026-07-02 | uses: 2 | tier: active | origin: 2026-07-01-215533 -->
+  <!-- id: snyk-oss-dependency-update-2026-07 | created: 2026-07-01 | last_used: 2026-07-05 | uses: 3 | tier: active | origin: 2026-07-01-215533 -->
 
 - **Dependabot alert #28 (jackson-databind `@JsonIgnoreProperties` case-insensitive bypass, CWE-915) assessed
   NOT APPLICABLE (2026-07-02).** The same jackson-databind CVE tracked as "no fix yet in the 2.x line" in
@@ -304,7 +263,7 @@
   so a field app pulling `minimalist-kafka` will see `jackson-databind:2.22.0` in a scan even though #28 is
   unreachable. **Decision (Eric): best-effort done; report to the field for a Snyk exemption** citing the
   not-applicable assessment, and bump to 2.22.1 when Confluent's transitive fix / the release lands.
-  <!-- id: jackson-databind-alert28-not-applicable | created: 2026-07-02 | last_used: 2026-07-02 | uses: 1 | tier: working | origin: 2026-07-02-055423 -->
+  <!-- id: jackson-databind-alert28-not-applicable | created: 2026-07-02 | last_used: 2026-07-05 | uses: 2 | tier: active | origin: 2026-07-02-055423 -->
 
 - **minimalist-kafka Schema Registry support — Confluent serdes as a library (2026-06-29; producer became
   subject/version-driven 2026-07-01, PR #129 — see [[kafka-schemaid-from-subject-version]]).**
@@ -351,7 +310,7 @@
   exists** (decompiled Confluent 8.2.0 — the id→schema path `getSchemaById`→`getSchemaBySubjectAndId` caches
   positives only; `missingIdCache` is producer-side getId-by-content, default TTL 0=off); an earlier "not found
   persists" symptom was the mock loading `schemas.json` only at boot, now fixed by its on-demand per-id store.
-  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-07-01 | uses: 11 | tier: active | origin: 2026-06-29-010147 -->
+  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-07-05 | uses: 14 | tier: active | origin: 2026-06-29-010147 -->
 
 - **Protobuf support removed from `minimalist-kafka`'s Schema Registry integration, pre-release (2026-07-01).**
   Snyk's pipeline gate (a hard must-pass — no exemption path available) flagged `com.squareup.wire:wire-runtime-jvm:5.5.0`
@@ -384,7 +343,7 @@
   residual risk. Full reactor `mvn test` green after removal (see [[thread-minimalist-kafka-protobuf-removal]]).
   Supersedes the Protobuf-inclusive claims in [[minimalist-kafka-schema-registry]] (its JSON/Avro
   architecture detail is otherwise unchanged and still current).
-  <!-- id: minimalist-kafka-protobuf-removed | created: 2026-07-01 | last_used: 2026-07-01 | uses: 2 | tier: active | origin: 2026-07-01-224313 -->
+  <!-- id: minimalist-kafka-protobuf-removed | created: 2026-07-01 | last_used: 2026-07-01 | uses: 2 | tier: archive-candidate | origin: 2026-07-01-224313 -->
 
 - **`minimalist-kafka`: `confluent.version` bumped 8.2.0 → 8.3.0; `kafka.version` (4.2.0) upgrade deliberately
   deferred (2026-07-01).** After the Protobuf removal above, `confluent.version` only governs
@@ -402,7 +361,7 @@
   pinned in **24 pom.xml files**, including the embedded KRaft broker used across many modules' integration
   tests, a materially different risk category (broker behavioral change) from a pure serializer-library bump.
   Tracked as its own backlog item, not blocked on anything — see [[thread-kafka-client-version-upgrade]].
-  <!-- id: minimalist-kafka-confluent-8-3-0 | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: active | origin: 2026-07-01-230246 -->
+  <!-- id: minimalist-kafka-confluent-8-3-0 | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: archive-candidate | origin: 2026-07-01-230246 -->
 
 - **Code review closeout for PR #130 added deprecation-conversion visibility + real lifecycle docs
   (2026-07-02).** Eric's IDE-driven review of the simple-type-matching deprecation work
@@ -427,7 +386,7 @@
   (deferred until Spring's `ApplicationReadyEvent`, both `rest-spring-3`/`rest-spring-4`). All fixes verified
   with a full module test run immediately after each edit — event-script-engine 115 tests, minigraph-
   playground-engine 55 tests, green throughout; docs changes needed no test run.
-  <!-- id: event-script-minigraph-code-review-2026-07 | created: 2026-07-02 | last_used: 2026-07-02 | uses: 1 | tier: working | origin: 2026-07-02-004606 -->
+  <!-- id: event-script-minigraph-code-review-2026-07 | created: 2026-07-02 | last_used: 2026-07-02 | uses: 1 | tier: archive-candidate | origin: 2026-07-02-004606 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -508,7 +467,7 @@
   PR [#134](https://github.com/Accenture/mercury-composable/pull/134) (the "traceparent leak" finding was
   rejected by design) — see [[traceid-cid-propagation-edgecase-fixes]] and
   [[developer-set-trace-headers-are-intentional]].
-  <!-- id: thread-traceid-correlation-propagation | created: 2026-07-03 | last_used: 2026-07-03 | uses: 1 | tier: working | origin: 2026-07-03-014759 -->
+  <!-- id: thread-traceid-correlation-propagation | created: 2026-07-03 | last_used: 2026-07-04 | uses: 4 | tier: working | origin: 2026-07-03-014759 -->
 
 - [x] (completed — Eric, 2026-07-01) **Remove Protobuf support from minimalist-kafka's Schema Registry
   integration (Snyk-driven, pre-release).** Full detail in the Key Decision
@@ -516,7 +475,7 @@
   sync-over-async-demo's parallel demo path + user-facing docs (kafka-flow-adapter.md,
   configuration-reference.md, schema-registry-mock.md, demo README, schema-registry-standalone README) all
   updated with the rationale stated explicitly, not silently dropped. Full reactor `mvn test`: green.
-  <!-- id: thread-minimalist-kafka-protobuf-removal | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: active | origin: 2026-07-01-224313 -->
+  <!-- id: thread-minimalist-kafka-protobuf-removal | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: archive-candidate | origin: 2026-07-01-224313 -->
 
 - [ ] (planned — backlog, no ETA) **Reintroduce Protobuf support in minimalist-kafka's Schema Registry
   integration.** Blocked on Confluent adopting the renamed `com.squareup.wire:wire-runtime` coordinate in
@@ -569,7 +528,7 @@
   mid-review as a separate Snyk-driven thread; see [[minimalist-kafka-protobuf-removed]].) The code-review
   round's own changes (event-script-engine + minigraph-playground-engine fixes, docs) are queued for commit
   as of this writing.
-  <!-- id: thread-deprecate-simple-type-matching | created: 2026-07-01 | last_used: 2026-07-02 | uses: 4 | tier: active | origin: 2026-07-01-172822 -->
+  <!-- id: thread-deprecate-simple-type-matching | created: 2026-07-01 | last_used: 2026-07-02 | uses: 4 | tier: archive-candidate | origin: 2026-07-01-172822 -->
 
 - [x] (completed — Eric, 2026-07-01) **Repo-wide OSS dependency security update (Snyk-driven).** Committed
   to `feature/deprecate-simple-type-matching` alongside PR #130's changes (Eric: "regular security
@@ -589,42 +548,6 @@
   correlated). Open to follow-up if review surfaces changes.
   <!-- id: thread-application-log-context | created: 2026-06-30 | last_used: 2026-06-30 | uses: 1 | tier: active | origin: 2026-06-30-212955 -->
 
-- [x] **Upgraded agent-memory v4.27.0 → v4.28.0** (Mode B, by Claude Code from the tool checkout). Single,
-  additive rung — **co-author convention cleanup** (refines v4.27.0, from this repo's PR #126 finding):
-  the `Co-Authored-By` self-identification now uses the **stable agent name** (e.g. `Claude Code`) — the
-  actual AI collaborator, not a model-version string that churns each release — and on a **squash-merge**
-  collapse to a **single** trailer (GitHub appends a consolidated one after `---------`; trim the inline
-  repeats). Applied here: additively refined the `AGENTS.md` commit-trailer note + re-copied
-  `.github/pull_request_template.md` (footer comment updated), stamped `.agent/version.md` → 4.28.0.
-  Fetched + switched to `main` + `pull --ff-only` first (local was on the merged `chore/sonar-ide-cleanup`
-  with a stale main). No memory-shape/skill/adapter change. `memory-lint`: **0 errors**. Working tree
-  **uncommitted** — review + commit at the mercury team's discretion.
-  <!-- id: agent-memory-upgrade-v4280 | created: 2026-06-30 | last_used: 2026-06-30 | uses: 2 | tier: archive-candidate | origin: 2026-06-30-055333 -->
-
-- [x] **Upgraded agent-memory v4.26.1 → v4.27.0** (Mode B, by Claude Code from the tool checkout). Single,
-  additive rung — **standardized PR descriptions (What / Why)**: every enabled repo now ships a
-  `.github/pull_request_template.md` whose body leads with **What** + **Why** (intent, not a restatement)
-  and closes with a self-identifying `Co-Authored-By:` footer (extends the commit/session-log authorship
-  convention to the PR altitude; advisory, never a gate). Applied here: installed the template (mercury had
-  none), **additively merged** the convention + a checklist line into `AGENTS.md` (customizations preserved),
-  stamped `.agent/version.md` → 4.27.0. No memory-shape/skill/adapter change. Post-upgrade `memory-lint`:
-  **0 errors, 0 warnings**. Working tree **uncommitted** — review + commit at the mercury team's discretion.
-  <!-- id: agent-memory-upgrade-v4270 | created: 2026-06-29 | last_used: 2026-06-30 | uses: 2 | tier: archive-candidate | origin: 2026-06-29-231747 -->
-
-- [x] (completed — Eric, 2026-06-29) **minimalist-kafka Schema Registry serdes — feature COMPLETE & pushed.**
-  All three serde phases done, tested (49 tests, 85% gate), demoed end-to-end, and **pushed** to
-  `feature/sync-over-async` (PR #124, `7e2fe746..5ffb7dc7`): JSON Schema, Avro (`1bc2731e`/`6fc8c56c`),
-  Protobuf (`bdab28f3`/`bc9be976`); Avro + Protobuf each validated via Eric's multi-terminal run
-  (continuous-trace telemetry). The kafka-flow-adapter guide now documents the Schema Registry integration
-  (`5ffb7dc7`). Closed — the feature is ready for PR review/merge. See [[minimalist-kafka-schema-registry]].
-  <!-- id: thread-schema-registry-avro-protobuf | created: 2026-06-29 | last_used: 2026-06-29 | uses: 4 | tier: archive-candidate | origin: 2026-06-29-010147 -->
-- [x] (completed — Eric, 2026-07-01, PR #129) **minimalist-kafka: resolve `schemaId` from subject/version
-  for `simple.kafka.notification`.** Shipped as the subject/version producer contract — full detail in the
-  Key Decision [[kafka-schemaid-from-subject-version]] and the 2026-07-01-004724 session log. Resolved to
-  **subject/version only** (no id-driven fallback; naming strategies dropped), two-tier cache, new mock
-  `GET /subjects/{subject}/versions/{version}` endpoint. Validated e2e.
-  <!-- id: thread-kafka-schemaid-from-name | created: 2026-06-30 | last_used: 2026-07-01 | uses: 1 | tier: archive-candidate | origin: 2026-06-30-212955 -->
-
 - [ ] (implemented, **uncommitted** — Claude Code, 2026-07-02) **minimalist-kafka: Confluent CSFLE wired.**
   Full detail in the Key Decision [[kafka-csfle-delegation]] and the 2026-07-02-020429 session log. Branch
   `feature/kafka-csfle-field-encryption`, working tree dirty (5 modified + 2 new test files), **nothing
@@ -632,7 +555,7 @@
   `draft-design-specs/kafka_csfle_field_encryption_design.md` (v3.0, gitignored) fully in sync — §10/§11
   record exactly what shipped. **Next action: Eric's code review, then commit + PR** (same flow as #128/#129).
   → relates [[minimalist-kafka-schema-registry]], [[kafka-schemaid-from-subject-version]].
-  <!-- id: thread-csfle-field-encryption | created: 2026-07-01 | last_used: 2026-07-02 | uses: 2 | tier: working | origin: 2026-07-02-020429 -->
+  <!-- id: thread-csfle-field-encryption | created: 2026-07-01 | last_used: 2026-07-04 | uses: 3 | tier: working | origin: 2026-07-02-020429 -->
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
   build for the multi-module project.
@@ -778,17 +701,3 @@
 ## Team / Members
 
 (none recorded yet)
-
-- **Standalone Schema Registry mock for local development (Eric, 2026-06-28; corrected 2026-06-29).**
-  `helpers/schema-registry-standalone` emulates the Confluent Schema Registry HTTP API (Avro + JSON Schema),
-  a `http://localhost:8081` endpoint for `KafkaAvroSerializer`/`KafkaJsonSchemaSerializer` to register
-  (`POST /subjects/{subject}/versions`) and fetch (`GET /schemas/ids/{id}`). **platform-core only** (built-in
-  reactive HTTP server + REST automation, no `rest-spring`); each endpoint is wired in `rest.yaml` directly to
-  a function taking `AsyncHttpRequest`. Returns faithful Confluent error bodies `{error_code,message}`
-  (40403/40401/42201). Store is **configurable** via `schema.registry.data.store` (default transient
-  `/tmp/schema-registry`, `-D`-overridable for a durable dir). **Persists one `<id>.json` per schema** (not a
-  single `schemas.json`; changed 2026-06-30, PR #127) and *loads* on boot AND **on demand** — a file dropped
-  into the store dir while the server runs is served on the next GET, no restart. Never wipes, so ids stay
-  stable — the deliberate inverse of the redis/kafka helpers. Tests hit the real HTTP
-  endpoints via `async.http.request`. Documented in `docs/guides/schema-registry-mock.md`. See [[minimalist-kafka-schema-registry]].
-  <!-- id: standalone-schema-registry-mock | created: 2026-06-28 | last_used: 2026-07-01 | uses: 6 | tier: archive-candidate -->

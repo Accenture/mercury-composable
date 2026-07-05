@@ -42,3 +42,10 @@
 - agent-memory-upgrade-v4261 — Upgraded agent-memory v4.25.0 → v4.26.1 (Mode B, by Claude Code from the tool checkout) —… — faded — 2026-Q3.md
 - agent-memory-upgrade-v4250 — Upgraded agent-memory v4.23.1 → v4.25.0 (Mode B, by Claude Code from the tool checkout). — faded — 2026-Q3.md
 - thread-schema-registry — (completed — Eric, 2026-06-28) Schema Registry feature. Implemented `helpers/schema-regist… — faded — 2026-Q3.md
+- application-log-context — Application log context — virtual-thread-safe MDC alternative (2026-06-30, PR #128). A `co… — faded — 2026-Q3.md
+- kafka-schemaid-from-subject-version — minimalist-kafka producer: subject/version schema resolution (2026-07-01, PR #129). `simpl… — faded — 2026-Q3.md
+- standalone-schema-registry-mock — Standalone Schema Registry mock for local development (Eric, 2026-06-28; corrected 2026-06… — faded — 2026-Q3.md
+- agent-memory-upgrade-v4280 — Upgraded agent-memory v4.27.0 → v4.28.0 (Mode B, by Claude Code from the tool checkout). S… — completed thread swept — 2026-Q3.md
+- agent-memory-upgrade-v4270 — Upgraded agent-memory v4.26.1 → v4.27.0 (Mode B, by Claude Code from the tool checkout). S… — completed thread swept — 2026-Q3.md
+- thread-schema-registry-avro-protobuf — (completed — Eric, 2026-06-29) minimalist-kafka Schema Registry serdes — feature COMPLETE… — completed thread swept — 2026-Q3.md
+- thread-kafka-schemaid-from-name — (completed — Eric, 2026-07-01, PR #129) minimalist-kafka: resolve `schemaId` from subject/… — completed thread swept — 2026-Q3.md
