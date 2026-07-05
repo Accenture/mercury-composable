@@ -1,6 +1,6 @@
 target/
 *.iml
 .idea/
-# generated benchmark reports
-*.html
-benchmark-report*.html
+# generated benchmark reports written to the module root during local runs
+# (curated reference snapshots under analysis/ are committed)
+/*.html

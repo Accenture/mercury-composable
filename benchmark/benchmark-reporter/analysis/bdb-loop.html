@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mercury benchmark report</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+       sans-serif; margin: 0; padding: 24px; background: #f6f7f9; color: #1a1a2e; }
+h1 { font-size: 22px; margin: 0 0 2px; }
+h2 { font-size: 17px; margin: 0 0 8px; display: flex; align-items: center; }
+h3 { font-size: 13px; font-weight: 600; color: #4b5563; margin: 0 0 4px; }
+.sub { color: #6b7280; margin: 0 0 18px; max-width: 90ch; }
+.category { font-size: 12px; text-transform: uppercase; letter-spacing: .07em;
+        color: #6b7280; margin: 24px 0 10px; border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 5px; }
+.card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px 18px;
+        margin: 0 0 18px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+.desc { color: #6b7280; font-size: 13px; margin: 0 0 12px; max-width: 70ch; }
+.dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+table.env { border-collapse: collapse; font-size: 13px; }
+table.env th { text-align: left; color: #6b7280; font-weight: 500; padding: 2px 18px 2px 0;
+        white-space: nowrap; vertical-align: top; }
+table.env td { padding: 2px 0; font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.chip { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 999px; padding: 3px 11px;
+        font-size: 12px; color: #334155; }
+.chip b { color: #64748b; font-weight: 500; }
+table.stats { border-collapse: collapse; width: 100%; font-size: 13px;
+        font-variant-numeric: tabular-nums; }
+table.stats th { color: #6b7280; font-weight: 500; text-align: right; padding: 4px 10px;
+        border-bottom: 1px solid #e5e7eb; }
+table.stats td { text-align: right; padding: 5px 10px; }
+.unit { color: #9ca3af; font-size: 11px; margin: 3px 0 0; text-align: right; }
+.charts { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; }
+.chart { flex: 1 1 340px; min-width: 320px; }
+.svg { width: 100%; height: auto; background: #fff; border: 1px solid #f0f0f2;
+       border-radius: 6px; }
+.tick { font-size: 9px; fill: #6b7280; }
+.pt { font-size: 9px; fill: #374151; font-variant-numeric: tabular-nums; }
+.axis { font-size: 10px; fill: #9ca3af; }
+.foot { color: #9ca3af; font-size: 12px; margin-top: 8px; }
+code { background: #eef1f5; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+
+</style>
+</head>
+<body>
+<h1>Mercury benchmark report</h1>
+<p class="sub">End-to-end latency &amp; throughput in a single JVM. <b>Normal operation</b> scenarios keep the arrival rate at or below consumer capacity, so the ElasticQueue stays within its in-memory buffer; the <b>overload</b> scenario drives it into the disk-backed back-pressure buffer. Together they show how the event system behaves both in healthy steady state and under sustained overload.</p>
+<div class="card"><h2>Environment</h2>
+<table class="env">
+<tr><th>Generated</th><td>Sun, 5 Jul 2026 14:53:31 -0700</td></tr>
+<tr><th>Java</th><td>21.0.11 (OpenJDK 64-Bit Server VM)</td></tr>
+<tr><th>OS</th><td>Mac OS X 26.5.1 / aarch64</td></tr>
+<tr><th>Available processors</th><td>12</td></tr>
+<tr><th>Max heap</th><td>9216 MB</td></tr>
+<tr><th>ElasticQueue store</th><td>bdb</td></tr>
+<tr><th>Dispatch</th><td>event-loop (inline)</td></tr>
+<tr><th>transient.data.store</th><td>/tmp/reactive</td></tr>
+</table></div>
+<h2 class="category">Normal operation (no back-pressure)</h2>
+<div class="card">
+<h2><span class="dot" style="background:#2563eb"></span>RPC · 1 → 50 consumers</h2>
+<p class="desc">One publisher, in-flight = 1: pure request/reply round-trip. Baseline latency; the ElasticQueue is idle.</p>
+<div class="chips">
+<span class="chip"><b>throughput</b> 30,438 ops/s</span>
+<span class="chip"><b>ok</b> 200,000</span>
+<span class="chip"><b>failures</b> 0</span>
+<span class="chip"><b>elapsed</b> 6.57 s</span>
+<span class="chip"><b>publishers (in-flight)</b> 1</span>
+<span class="chip"><b>consumers</b> 50</span>
+<span class="chip"><b>operations</b> 200,000</span>
+<span class="chip"><b>payload</b> 256 bytes</span>
+</div>
+<table class="stats">
+<thead><tr><th>min</th><th>mean</th><th>std dev</th><th>p50</th><th>p90</th><th>p99</th><th>p99.9</th><th>p99.99</th><th>max</th></tr></thead>
+<tbody><tr><td>0.018</td><td>0.033</td><td>0.028</td><td>0.031</td><td>0.038</td><td>0.058</td><td>0.107</td><td>1.30</td><td>2.03</td></tr></tbody></table>
+<p class="unit">latencies in milliseconds</p>
+<div class="charts">
+<div class="chart"><h3>Latency distribution</h3>
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" class="svg">
+<line x1="44.00" y1="240.00" x2="748.00" y2="240.00" stroke="#d1d5db" stroke-width="1.0"/>
+<text x="62.53" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 62.53 250.00)">10µs</text>
+<rect x="85.13" y="199.26" width="28.90" height="40.74" fill="#2563eb" rx="1"><title>20µs: 8</title></rect>
+<text x="99.58" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 99.58 250.00)">20µs</text>
+<rect x="122.18" y="14.00" width="28.90" height="226.00" fill="#2563eb" rx="1"><title>50µs: 196,581</title></rect>
+<text x="136.63" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 136.63 250.00)">50µs</text>
+<rect x="159.23" y="90.43" width="28.90" height="149.57" fill="#2563eb" rx="1"><title>0.1ms: 3,185</title></rect>
+<text x="173.68" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 173.68 250.00)">0.1ms</text>
+<rect x="196.29" y="153.71" width="28.90" height="86.29" fill="#2563eb" rx="1"><title>0.2ms: 104</title></rect>
+<text x="210.74" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 210.74 250.00)">0.2ms</text>
+<rect x="233.34" y="192.44" width="28.90" height="47.56" fill="#2563eb" rx="1"><title>0.5ms: 12</title></rect>
+<text x="247.79" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 247.79 250.00)">0.5ms</text>
+<rect x="270.39" y="183.55" width="28.90" height="56.45" fill="#2563eb" rx="1"><title>1ms: 20</title></rect>
+<text x="284.84" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 284.84 250.00)">1ms</text>
+<rect x="307.44" y="156.57" width="28.90" height="83.43" fill="#2563eb" rx="1"><title>2ms: 89</title></rect>
+<text x="321.89" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 321.89 250.00)">2ms</text>
+<rect x="344.50" y="227.15" width="28.90" height="12.85" fill="#2563eb" rx="1"><title>5ms: 1</title></rect>
+<text x="358.95" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 358.95 250.00)">5ms</text>
+<text x="396.00" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 396.00 250.00)">10ms</text>
+<text x="433.05" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 433.05 250.00)">20ms</text>
+<text x="470.11" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 470.11 250.00)">50ms</text>
+<text x="507.16" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 507.16 250.00)">100ms</text>
+<text x="544.21" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 544.21 250.00)">200ms</text>
+<text x="581.26" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 581.26 250.00)">500ms</text>
+<text x="618.32" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 618.32 250.00)">1s</text>
+<text x="655.37" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 655.37 250.00)">2s</text>
+<text x="692.42" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 692.42 250.00)">5s</text>
+<text x="729.47" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 729.47 250.00)">10s+</text>
+<text x="44.00" y="11.00" class="axis">count (log scale) — peak 196,581</text>
+</svg></div>
+<div class="chart"><h3>Latency by percentile</h3>
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" class="svg">
+<line x1="56.00" y1="256.00" x2="744.00" y2="256.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="259.00" class="tick" text-anchor="end">0.000</text>
+<line x1="56.00" y1="196.00" x2="744.00" y2="196.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="199.00" class="tick" text-anchor="end">0.559</text>
+<line x1="56.00" y1="136.00" x2="744.00" y2="136.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="139.00" class="tick" text-anchor="end">1.12</text>
+<line x1="56.00" y1="76.00" x2="744.00" y2="76.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="79.00" class="tick" text-anchor="end">1.68</text>
+<line x1="56.00" y1="16.00" x2="744.00" y2="16.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="19.00" class="tick" text-anchor="end">2.24</text>
+<polyline points="56.00,252.66 193.60,251.97 331.20,249.75 468.80,244.56 606.40,116.96 744.00,37.82" fill="none" stroke="#2563eb" stroke-width="2"/>
+<circle cx="56.00" cy="252.66" r="3.5" fill="#2563eb"/>
+<text x="56.00" y="244.66" class="pt" text-anchor="middle">0.031</text>
+<text x="56.00" y="272.00" class="tick" text-anchor="middle">50%</text>
+<circle cx="193.60" cy="251.97" r="3.5" fill="#2563eb"/>
+<text x="193.60" y="243.97" class="pt" text-anchor="middle">0.038</text>
+<text x="193.60" y="272.00" class="tick" text-anchor="middle">90%</text>
+<circle cx="331.20" cy="249.75" r="3.5" fill="#2563eb"/>
+<text x="331.20" y="241.75" class="pt" text-anchor="middle">0.058</text>
+<text x="331.20" y="272.00" class="tick" text-anchor="middle">99%</text>
+<circle cx="468.80" cy="244.56" r="3.5" fill="#2563eb"/>
+<text x="468.80" y="236.56" class="pt" text-anchor="middle">0.107</text>
+<text x="468.80" y="272.00" class="tick" text-anchor="middle">99.9%</text>
+<circle cx="606.40" cy="116.96" r="3.5" fill="#2563eb"/>
+<text x="606.40" y="108.96" class="pt" text-anchor="middle">1.30</text>
+<text x="606.40" y="272.00" class="tick" text-anchor="middle">99.99%</text>
+<circle cx="744.00" cy="37.82" r="3.5" fill="#2563eb"/>
+<text x="744.00" y="29.82" class="pt" text-anchor="middle">2.03</text>
+<text x="744.00" y="272.00" class="tick" text-anchor="middle">max</text>
+<text x="8.00" y="136.00" class="axis">latency ms</text>
+</svg></div>
+</div>
+</div>
+<div class="card">
+<h2><span class="dot" style="background:#db2777"></span>RPC · 50 → 50 consumers</h2>
+<p class="desc">Balanced (publishers = consumers): the backlog stays within the 20-event memory buffer, so it runs on the fast in-memory tier — throughput reaches the single-route dispatch ceiling (~an order of magnitude over 1→50) and latency stays sub-millisecond.</p>
+<div class="chips">
+<span class="chip"><b>throughput</b> 173,909 ops/s</span>
+<span class="chip"><b>ok</b> 200,000</span>
+<span class="chip"><b>failures</b> 0</span>
+<span class="chip"><b>elapsed</b> 1.15 s</span>
+<span class="chip"><b>publishers (in-flight)</b> 50</span>
+<span class="chip"><b>consumers</b> 50</span>
+<span class="chip"><b>operations</b> 200,000</span>
+<span class="chip"><b>payload</b> 256 bytes</span>
+</div>
+<table class="stats">
+<thead><tr><th>min</th><th>mean</th><th>std dev</th><th>p50</th><th>p90</th><th>p99</th><th>p99.9</th><th>p99.99</th><th>max</th></tr></thead>
+<tbody><tr><td>0.015</td><td>0.286</td><td>0.170</td><td>0.255</td><td>0.468</td><td>0.759</td><td>1.67</td><td>1.91</td><td>2.94</td></tr></tbody></table>
+<p class="unit">latencies in milliseconds</p>
+<div class="charts">
+<div class="chart"><h3>Latency distribution</h3>
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" class="svg">
+<line x1="44.00" y1="240.00" x2="748.00" y2="240.00" stroke="#d1d5db" stroke-width="1.0"/>
+<text x="62.53" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 62.53 250.00)">10µs</text>
+<rect x="85.13" y="208.86" width="28.90" height="31.14" fill="#db2777" rx="1"><title>20µs: 4</title></rect>
+<text x="99.58" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 99.58 250.00)">20µs</text>
+<rect x="122.18" y="112.65" width="28.90" height="127.35" fill="#db2777" rx="1"><title>50µs: 721</title></rect>
+<text x="136.63" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 136.63 250.00)">50µs</text>
+<rect x="159.23" y="66.66" width="28.90" height="173.34" fill="#db2777" rx="1"><title>0.1ms: 7,775</title></rect>
+<text x="173.68" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 173.68 250.00)">0.1ms</text>
+<rect x="196.29" y="27.63" width="28.90" height="212.37" fill="#db2777" rx="1"><title>0.2ms: 58,461</title></rect>
+<text x="210.74" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 210.74 250.00)">0.2ms</text>
+<rect x="233.34" y="14.00" width="28.90" height="226.00" fill="#db2777" rx="1"><title>0.5ms: 118,266</title></rect>
+<text x="247.79" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 247.79 250.00)">0.5ms</text>
+<rect x="270.39" y="56.42" width="28.90" height="183.58" fill="#db2777" rx="1"><title>1ms: 13,202</title></rect>
+<text x="284.84" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 284.84 250.00)">1ms</text>
+<rect x="307.44" y="97.76" width="28.90" height="142.24" fill="#db2777" rx="1"><title>2ms: 1,558</title></rect>
+<text x="321.89" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 321.89 250.00)">2ms</text>
+<rect x="344.50" y="188.94" width="28.90" height="51.06" fill="#db2777" rx="1"><title>5ms: 13</title></rect>
+<text x="358.95" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 358.95 250.00)">5ms</text>
+<text x="396.00" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 396.00 250.00)">10ms</text>
+<text x="433.05" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 433.05 250.00)">20ms</text>
+<text x="470.11" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 470.11 250.00)">50ms</text>
+<text x="507.16" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 507.16 250.00)">100ms</text>
+<text x="544.21" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 544.21 250.00)">200ms</text>
+<text x="581.26" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 581.26 250.00)">500ms</text>
+<text x="618.32" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 618.32 250.00)">1s</text>
+<text x="655.37" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 655.37 250.00)">2s</text>
+<text x="692.42" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 692.42 250.00)">5s</text>
+<text x="729.47" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 729.47 250.00)">10s+</text>
+<text x="44.00" y="11.00" class="axis">count (log scale) — peak 118,266</text>
+</svg></div>
+<div class="chart"><h3>Latency by percentile</h3>
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" class="svg">
+<line x1="56.00" y1="256.00" x2="744.00" y2="256.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="259.00" class="tick" text-anchor="end">0.000</text>
+<line x1="56.00" y1="196.00" x2="744.00" y2="196.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="199.00" class="tick" text-anchor="end">0.809</text>
+<line x1="56.00" y1="136.00" x2="744.00" y2="136.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="139.00" class="tick" text-anchor="end">1.62</text>
+<line x1="56.00" y1="76.00" x2="744.00" y2="76.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="79.00" class="tick" text-anchor="end">2.43</text>
+<line x1="56.00" y1="16.00" x2="744.00" y2="16.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="19.00" class="tick" text-anchor="end">3.24</text>
+<polyline points="56.00,237.09 193.60,221.30 331.20,199.76 468.80,131.84 606.40,114.69 744.00,37.82" fill="none" stroke="#db2777" stroke-width="2"/>
+<circle cx="56.00" cy="237.09" r="3.5" fill="#db2777"/>
+<text x="56.00" y="229.09" class="pt" text-anchor="middle">0.255</text>
+<text x="56.00" y="272.00" class="tick" text-anchor="middle">50%</text>
+<circle cx="193.60" cy="221.30" r="3.5" fill="#db2777"/>
+<text x="193.60" y="213.30" class="pt" text-anchor="middle">0.468</text>
+<text x="193.60" y="272.00" class="tick" text-anchor="middle">90%</text>
+<circle cx="331.20" cy="199.76" r="3.5" fill="#db2777"/>
+<text x="331.20" y="191.76" class="pt" text-anchor="middle">0.759</text>
+<text x="331.20" y="272.00" class="tick" text-anchor="middle">99%</text>
+<circle cx="468.80" cy="131.84" r="3.5" fill="#db2777"/>
+<text x="468.80" y="123.84" class="pt" text-anchor="middle">1.67</text>
+<text x="468.80" y="272.00" class="tick" text-anchor="middle">99.9%</text>
+<circle cx="606.40" cy="114.69" r="3.5" fill="#db2777"/>
+<text x="606.40" y="106.69" class="pt" text-anchor="middle">1.91</text>
+<text x="606.40" y="272.00" class="tick" text-anchor="middle">99.99%</text>
+<circle cx="744.00" cy="37.82" r="3.5" fill="#db2777"/>
+<text x="744.00" y="29.82" class="pt" text-anchor="middle">2.94</text>
+<text x="744.00" y="272.00" class="tick" text-anchor="middle">max</text>
+<text x="8.00" y="136.00" class="axis">latency ms</text>
+</svg></div>
+</div>
+</div>
+<div class="card">
+<h2><span class="dot" style="background:#059669"></span>Callback · 50 → 50 consumers (paced)</h2>
+<p class="desc">Async callback at a sustainable rate: 50 publishers spaced ~1000µs apart so consumers keep up. The backlog stays under the 20-event memory buffer — no disk spill, latency ≈ service time. Healthy steady-state async operation.</p>
+<div class="chips">
+<span class="chip"><b>throughput</b> 39,998 ops/s</span>
+<span class="chip"><b>ok</b> 200,000</span>
+<span class="chip"><b>failures</b> 0</span>
+<span class="chip"><b>elapsed</b> 5.00 s</span>
+<span class="chip"><b>publishers</b> 50</span>
+<span class="chip"><b>consumers</b> 50</span>
+<span class="chip"><b>pacing</b> 1000 µs/publisher</span>
+<span class="chip"><b>operations</b> 200,000</span>
+<span class="chip"><b>payload</b> 256 bytes</span>
+</div>
+<table class="stats">
+<thead><tr><th>min</th><th>mean</th><th>std dev</th><th>p50</th><th>p90</th><th>p99</th><th>p99.9</th><th>p99.99</th><th>max</th></tr></thead>
+<tbody><tr><td>0.019</td><td>0.279</td><td>0.212</td><td>0.246</td><td>0.451</td><td>0.803</td><td>3.88</td><td>4.49</td><td>4.98</td></tr></tbody></table>
+<p class="unit">latencies in milliseconds</p>
+<div class="charts">
+<div class="chart"><h3>Latency distribution</h3>
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" class="svg">
+<line x1="44.00" y1="240.00" x2="748.00" y2="240.00" stroke="#d1d5db" stroke-width="1.0"/>
+<text x="62.53" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 62.53 250.00)">10µs</text>
+<rect x="85.13" y="213.16" width="28.90" height="26.84" fill="#059669" rx="1"><title>20µs: 3</title></rect>
+<text x="99.58" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 99.58 250.00)">20µs</text>
+<rect x="122.18" y="112.92" width="28.90" height="127.08" fill="#059669" rx="1"><title>50µs: 707</title></rect>
+<text x="136.63" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 136.63 250.00)">50µs</text>
+<rect x="159.23" y="62.01" width="28.90" height="177.99" fill="#059669" rx="1"><title>0.1ms: 9,816</title></rect>
+<text x="173.68" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 173.68 250.00)">0.1ms</text>
+<rect x="196.29" y="27.69" width="28.90" height="212.31" fill="#059669" rx="1"><title>0.2ms: 57,744</title></rect>
+<text x="210.74" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 210.74 250.00)">0.2ms</text>
+<rect x="233.34" y="14.00" width="28.90" height="226.00" fill="#059669" rx="1"><title>0.5ms: 117,115</title></rect>
+<text x="247.79" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 247.79 250.00)">0.5ms</text>
+<rect x="270.39" y="55.31" width="28.90" height="184.69" fill="#059669" rx="1"><title>1ms: 13,873</title></rect>
+<text x="284.84" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 284.84 250.00)">1ms</text>
+<rect x="307.44" y="123.88" width="28.90" height="116.12" fill="#059669" rx="1"><title>2ms: 401</title></rect>
+<text x="321.89" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 321.89 250.00)">2ms</text>
+<rect x="344.50" y="127.01" width="28.90" height="112.99" fill="#059669" rx="1"><title>5ms: 341</title></rect>
+<text x="358.95" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 358.95 250.00)">5ms</text>
+<text x="396.00" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 396.00 250.00)">10ms</text>
+<text x="433.05" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 433.05 250.00)">20ms</text>
+<text x="470.11" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 470.11 250.00)">50ms</text>
+<text x="507.16" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 507.16 250.00)">100ms</text>
+<text x="544.21" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 544.21 250.00)">200ms</text>
+<text x="581.26" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 581.26 250.00)">500ms</text>
+<text x="618.32" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 618.32 250.00)">1s</text>
+<text x="655.37" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 655.37 250.00)">2s</text>
+<text x="692.42" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 692.42 250.00)">5s</text>
+<text x="729.47" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 729.47 250.00)">10s+</text>
+<text x="44.00" y="11.00" class="axis">count (log scale) — peak 117,115</text>
+</svg></div>
+<div class="chart"><h3>Latency by percentile</h3>
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" class="svg">
+<line x1="56.00" y1="256.00" x2="744.00" y2="256.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="259.00" class="tick" text-anchor="end">0.000</text>
+<line x1="56.00" y1="196.00" x2="744.00" y2="196.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="199.00" class="tick" text-anchor="end">1.37</text>
+<line x1="56.00" y1="136.00" x2="744.00" y2="136.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="139.00" class="tick" text-anchor="end">2.74</text>
+<line x1="56.00" y1="76.00" x2="744.00" y2="76.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="79.00" class="tick" text-anchor="end">4.11</text>
+<line x1="56.00" y1="16.00" x2="744.00" y2="16.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="19.00" class="tick" text-anchor="end">5.48</text>
+<polyline points="56.00,245.22 193.60,236.24 331.20,220.86 468.80,86.07 606.40,59.54 744.00,37.82" fill="none" stroke="#059669" stroke-width="2"/>
+<circle cx="56.00" cy="245.22" r="3.5" fill="#059669"/>
+<text x="56.00" y="237.22" class="pt" text-anchor="middle">0.246</text>
+<text x="56.00" y="272.00" class="tick" text-anchor="middle">50%</text>
+<circle cx="193.60" cy="236.24" r="3.5" fill="#059669"/>
+<text x="193.60" y="228.24" class="pt" text-anchor="middle">0.451</text>
+<text x="193.60" y="272.00" class="tick" text-anchor="middle">90%</text>
+<circle cx="331.20" cy="220.86" r="3.5" fill="#059669"/>
+<text x="331.20" y="212.86" class="pt" text-anchor="middle">0.803</text>
+<text x="331.20" y="272.00" class="tick" text-anchor="middle">99%</text>
+<circle cx="468.80" cy="86.07" r="3.5" fill="#059669"/>
+<text x="468.80" y="78.07" class="pt" text-anchor="middle">3.88</text>
+<text x="468.80" y="272.00" class="tick" text-anchor="middle">99.9%</text>
+<circle cx="606.40" cy="59.54" r="3.5" fill="#059669"/>
+<text x="606.40" y="51.54" class="pt" text-anchor="middle">4.49</text>
+<text x="606.40" y="272.00" class="tick" text-anchor="middle">99.99%</text>
+<circle cx="744.00" cy="37.82" r="3.5" fill="#059669"/>
+<text x="744.00" y="29.82" class="pt" text-anchor="middle">4.98</text>
+<text x="744.00" y="272.00" class="tick" text-anchor="middle">max</text>
+<text x="8.00" y="136.00" class="axis">latency ms</text>
+</svg></div>
+</div>
+</div>
+<h2 class="category">Overload (back-pressure engaged)</h2>
+<div class="card">
+<h2><span class="dot" style="background:#d97706"></span>RPC · 100 → 50 consumers</h2>
+<p class="desc">Over-subscribed 2:1: with 100 publishers and 50 consumers, ~50 requests queue behind the workers — above the 20-event memory buffer, so events spill to disk. Throughput drops to the disk-spill ceiling (≈ the flood below) and latency rises well beyond a naive 2×. This is back-pressure via oversubscription.</p>
+<div class="chips">
+<span class="chip"><b>throughput</b> 187,057 ops/s</span>
+<span class="chip"><b>ok</b> 200,000</span>
+<span class="chip"><b>failures</b> 0</span>
+<span class="chip"><b>elapsed</b> 1.07 s</span>
+<span class="chip"><b>publishers (in-flight)</b> 100</span>
+<span class="chip"><b>consumers</b> 50</span>
+<span class="chip"><b>operations</b> 200,000</span>
+<span class="chip"><b>payload</b> 256 bytes</span>
+</div>
+<table class="stats">
+<thead><tr><th>min</th><th>mean</th><th>std dev</th><th>p50</th><th>p90</th><th>p99</th><th>p99.9</th><th>p99.99</th><th>max</th></tr></thead>
+<tbody><tr><td>0.015</td><td>0.532</td><td>0.285</td><td>0.468</td><td>0.862</td><td>1.56</td><td>2.58</td><td>2.98</td><td>3.39</td></tr></tbody></table>
+<p class="unit">latencies in milliseconds</p>
+<div class="charts">
+<div class="chart"><h3>Latency distribution</h3>
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" class="svg">
+<line x1="44.00" y1="240.00" x2="748.00" y2="240.00" stroke="#d1d5db" stroke-width="1.0"/>
+<text x="62.53" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 62.53 250.00)">10µs</text>
+<rect x="85.13" y="201.95" width="28.90" height="38.05" fill="#d97706" rx="1"><title>20µs: 6</title></rect>
+<text x="99.58" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 99.58 250.00)">20µs</text>
+<rect x="122.18" y="142.55" width="28.90" height="97.45" fill="#d97706" rx="1"><title>50µs: 145</title></rect>
+<text x="136.63" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 136.63 250.00)">50µs</text>
+<rect x="159.23" y="112.90" width="28.90" height="127.10" fill="#d97706" rx="1"><title>0.1ms: 664</title></rect>
+<text x="173.68" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 173.68 250.00)">0.1ms</text>
+<rect x="196.29" y="70.46" width="28.90" height="169.54" fill="#d97706" rx="1"><title>0.2ms: 5,827</title></rect>
+<text x="210.74" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 210.74 250.00)">0.2ms</text>
+<rect x="233.34" y="14.00" width="28.90" height="226.00" fill="#d97706" rx="1"><title>0.5ms: 104,599</title></rect>
+<text x="247.79" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 247.79 250.00)">0.5ms</text>
+<rect x="270.39" y="20.07" width="28.90" height="219.93" fill="#d97706" rx="1"><title>1ms: 76,697</title></rect>
+<text x="284.84" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 284.84 250.00)">1ms</text>
+<rect x="307.44" y="57.86" width="28.90" height="182.14" fill="#d97706" rx="1"><title>2ms: 11,100</title></rect>
+<text x="321.89" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 321.89 250.00)">2ms</text>
+<rect x="344.50" y="105.66" width="28.90" height="134.34" fill="#d97706" rx="1"><title>5ms: 962</title></rect>
+<text x="358.95" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 358.95 250.00)">5ms</text>
+<text x="396.00" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 396.00 250.00)">10ms</text>
+<text x="433.05" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 433.05 250.00)">20ms</text>
+<text x="470.11" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 470.11 250.00)">50ms</text>
+<text x="507.16" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 507.16 250.00)">100ms</text>
+<text x="544.21" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 544.21 250.00)">200ms</text>
+<text x="581.26" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 581.26 250.00)">500ms</text>
+<text x="618.32" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 618.32 250.00)">1s</text>
+<text x="655.37" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 655.37 250.00)">2s</text>
+<text x="692.42" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 692.42 250.00)">5s</text>
+<text x="729.47" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 729.47 250.00)">10s+</text>
+<text x="44.00" y="11.00" class="axis">count (log scale) — peak 104,599</text>
+</svg></div>
+<div class="chart"><h3>Latency by percentile</h3>
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" class="svg">
+<line x1="56.00" y1="256.00" x2="744.00" y2="256.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="259.00" class="tick" text-anchor="end">0.000</text>
+<line x1="56.00" y1="196.00" x2="744.00" y2="196.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="199.00" class="tick" text-anchor="end">0.933</text>
+<line x1="56.00" y1="136.00" x2="744.00" y2="136.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="139.00" class="tick" text-anchor="end">1.87</text>
+<line x1="56.00" y1="76.00" x2="744.00" y2="76.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="79.00" class="tick" text-anchor="end">2.80</text>
+<line x1="56.00" y1="16.00" x2="744.00" y2="16.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="19.00" class="tick" text-anchor="end">3.73</text>
+<polyline points="56.00,225.92 193.60,200.55 331.20,155.96 468.80,89.92 606.40,64.40 744.00,37.82" fill="none" stroke="#d97706" stroke-width="2"/>
+<circle cx="56.00" cy="225.92" r="3.5" fill="#d97706"/>
+<text x="56.00" y="217.92" class="pt" text-anchor="middle">0.468</text>
+<text x="56.00" y="272.00" class="tick" text-anchor="middle">50%</text>
+<circle cx="193.60" cy="200.55" r="3.5" fill="#d97706"/>
+<text x="193.60" y="192.55" class="pt" text-anchor="middle">0.862</text>
+<text x="193.60" y="272.00" class="tick" text-anchor="middle">90%</text>
+<circle cx="331.20" cy="155.96" r="3.5" fill="#d97706"/>
+<text x="331.20" y="147.96" class="pt" text-anchor="middle">1.56</text>
+<text x="331.20" y="272.00" class="tick" text-anchor="middle">99%</text>
+<circle cx="468.80" cy="89.92" r="3.5" fill="#d97706"/>
+<text x="468.80" y="81.92" class="pt" text-anchor="middle">2.58</text>
+<text x="468.80" y="272.00" class="tick" text-anchor="middle">99.9%</text>
+<circle cx="606.40" cy="64.40" r="3.5" fill="#d97706"/>
+<text x="606.40" y="56.40" class="pt" text-anchor="middle">2.98</text>
+<text x="606.40" y="272.00" class="tick" text-anchor="middle">99.99%</text>
+<circle cx="744.00" cy="37.82" r="3.5" fill="#d97706"/>
+<text x="744.00" y="29.82" class="pt" text-anchor="middle">3.39</text>
+<text x="744.00" y="272.00" class="tick" text-anchor="middle">max</text>
+<text x="8.00" y="136.00" class="axis">latency ms</text>
+</svg></div>
+</div>
+</div>
+<div class="card">
+<h2><span class="dot" style="background:#2563eb"></span>Callback · flood → 50 consumers</h2>
+<p class="desc">Async callback with no pacing, up to 2,000 in-flight — far above the 20-event memory buffer. Events spill through the ElasticQueue back-pressure buffer and latency becomes queue-bounded (Little's law), yet the system stays stable and loss-free.</p>
+<div class="chips">
+<span class="chip"><b>throughput</b> 91,872 ops/s</span>
+<span class="chip"><b>ok</b> 200,000</span>
+<span class="chip"><b>failures</b> 0</span>
+<span class="chip"><b>elapsed</b> 2.18 s</span>
+<span class="chip"><b>publishers</b> 1</span>
+<span class="chip"><b>consumers</b> 50</span>
+<span class="chip"><b>max in-flight</b> 2,000</span>
+<span class="chip"><b>operations</b> 200,000</span>
+<span class="chip"><b>payload</b> 256 bytes</span>
+</div>
+<table class="stats">
+<thead><tr><th>min</th><th>mean</th><th>std dev</th><th>p50</th><th>p90</th><th>p99</th><th>p99.9</th><th>p99.99</th><th>max</th></tr></thead>
+<tbody><tr><td>0.056</td><td>21.61</td><td>4.54</td><td>20.27</td><td>26.77</td><td>40.24</td><td>48.28</td><td>49.88</td><td>50.03</td></tr></tbody></table>
+<p class="unit">latencies in milliseconds</p>
+<div class="charts">
+<div class="chart"><h3>Latency distribution</h3>
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" class="svg">
+<line x1="44.00" y1="240.00" x2="748.00" y2="240.00" stroke="#d1d5db" stroke-width="1.0"/>
+<text x="62.53" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 62.53 250.00)">10µs</text>
+<text x="99.58" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 99.58 250.00)">20µs</text>
+<text x="136.63" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 136.63 250.00)">50µs</text>
+<rect x="159.23" y="190.09" width="28.90" height="49.91" fill="#2563eb" rx="1"><title>0.1ms: 12</title></rect>
+<text x="173.68" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 173.68 250.00)">0.1ms</text>
+<rect x="196.29" y="165.94" width="28.90" height="74.06" fill="#2563eb" rx="1"><title>0.2ms: 44</title></rect>
+<text x="210.74" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 210.74 250.00)">0.2ms</text>
+<rect x="233.34" y="151.40" width="28.90" height="88.60" fill="#2563eb" rx="1"><title>0.5ms: 94</title></rect>
+<text x="247.79" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 247.79 250.00)">0.5ms</text>
+<rect x="270.39" y="162.75" width="28.90" height="77.25" fill="#2563eb" rx="1"><title>1ms: 52</title></rect>
+<text x="284.84" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 284.84 250.00)">1ms</text>
+<rect x="307.44" y="159.39" width="28.90" height="80.61" fill="#2563eb" rx="1"><title>2ms: 62</title></rect>
+<text x="321.89" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 321.89 250.00)">2ms</text>
+<rect x="344.50" y="129.48" width="28.90" height="110.52" fill="#2563eb" rx="1"><title>5ms: 292</title></rect>
+<text x="358.95" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 358.95 250.00)">5ms</text>
+<rect x="381.55" y="114.71" width="28.90" height="125.29" fill="#2563eb" rx="1"><title>10ms: 625</title></rect>
+<text x="396.00" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 396.00 250.00)">10ms</text>
+<rect x="418.60" y="18.48" width="28.90" height="221.52" fill="#2563eb" rx="1"><title>20ms: 88,003</title></rect>
+<text x="433.05" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 433.05 250.00)">20ms</text>
+<rect x="455.65" y="14.00" width="28.90" height="226.00" fill="#2563eb" rx="1"><title>50ms: 110,811</title></rect>
+<text x="470.11" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 470.11 250.00)">50ms</text>
+<rect x="492.71" y="205.14" width="28.90" height="34.86" fill="#2563eb" rx="1"><title>100ms: 5</title></rect>
+<text x="507.16" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 507.16 250.00)">100ms</text>
+<text x="544.21" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 544.21 250.00)">200ms</text>
+<text x="581.26" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 581.26 250.00)">500ms</text>
+<text x="618.32" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 618.32 250.00)">1s</text>
+<text x="655.37" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 655.37 250.00)">2s</text>
+<text x="692.42" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 692.42 250.00)">5s</text>
+<text x="729.47" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 729.47 250.00)">10s+</text>
+<text x="44.00" y="11.00" class="axis">count (log scale) — peak 110,811</text>
+</svg></div>
+<div class="chart"><h3>Latency by percentile</h3>
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" class="svg">
+<line x1="56.00" y1="256.00" x2="744.00" y2="256.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="259.00" class="tick" text-anchor="end">0.000</text>
+<line x1="56.00" y1="196.00" x2="744.00" y2="196.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="199.00" class="tick" text-anchor="end">13.76</text>
+<line x1="56.00" y1="136.00" x2="744.00" y2="136.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="139.00" class="tick" text-anchor="end">27.51</text>
+<line x1="56.00" y1="76.00" x2="744.00" y2="76.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="79.00" class="tick" text-anchor="end">41.27</text>
+<line x1="56.00" y1="16.00" x2="744.00" y2="16.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="19.00" class="tick" text-anchor="end">55.03</text>
+<polyline points="56.00,167.58 193.60,139.26 331.20,80.48 468.80,45.41 606.40,38.45 744.00,37.82" fill="none" stroke="#2563eb" stroke-width="2"/>
+<circle cx="56.00" cy="167.58" r="3.5" fill="#2563eb"/>
+<text x="56.00" y="159.58" class="pt" text-anchor="middle">20.27</text>
+<text x="56.00" y="272.00" class="tick" text-anchor="middle">50%</text>
+<circle cx="193.60" cy="139.26" r="3.5" fill="#2563eb"/>
+<text x="193.60" y="131.26" class="pt" text-anchor="middle">26.77</text>
+<text x="193.60" y="272.00" class="tick" text-anchor="middle">90%</text>
+<circle cx="331.20" cy="80.48" r="3.5" fill="#2563eb"/>
+<text x="331.20" y="72.48" class="pt" text-anchor="middle">40.24</text>
+<text x="331.20" y="272.00" class="tick" text-anchor="middle">99%</text>
+<circle cx="468.80" cy="45.41" r="3.5" fill="#2563eb"/>
+<text x="468.80" y="37.41" class="pt" text-anchor="middle">48.28</text>
+<text x="468.80" y="272.00" class="tick" text-anchor="middle">99.9%</text>
+<circle cx="606.40" cy="38.45" r="3.5" fill="#2563eb"/>
+<text x="606.40" y="30.45" class="pt" text-anchor="middle">49.88</text>
+<text x="606.40" y="272.00" class="tick" text-anchor="middle">99.99%</text>
+<circle cx="744.00" cy="37.82" r="3.5" fill="#2563eb"/>
+<text x="744.00" y="29.82" class="pt" text-anchor="middle">50.03</text>
+<text x="744.00" y="272.00" class="tick" text-anchor="middle">max</text>
+<text x="8.00" y="136.00" class="axis">latency ms</text>
+</svg></div>
+</div>
+</div>
+<h2 class="category">Mixed workload (latency isolation under load)</h2>
+<div class="card">
+<h2><span class="dot" style="background:#db2777"></span>Latency probe under background flood</h2>
+<p class="desc">The real production question: a latency-sensitive probe — a paced RPC on a SEPARATE route (benchmark.probe) — measured WHILE a background callback flood hammers benchmark.worker's ElasticQueue. With file+vthread the spill runs OFF the event loop, so the probe stays fast; with bdb+loop the spill runs INLINE on the shared event loop, inflating the probe's tail. Watch the probe's p99.9/max, and compare this scenario across stores (-Delastic.queue.store=bdb) — this is where the isolation win shows.</p>
+<div class="chips">
+<span class="chip"><b>throughput</b> 263 ops/s</span>
+<span class="chip"><b>ok</b> 3,000</span>
+<span class="chip"><b>failures</b> 0</span>
+<span class="chip"><b>elapsed</b> 11.41 s</span>
+<span class="chip"><b>probe</b> benchmark.probe (paced RPC, in-flight 1)</span>
+<span class="chip"><b>probe pacing</b> 2000 µs</span>
+<span class="chip"><b>background</b> flood → benchmark.worker, up to 2,000 in-flight</span>
+<span class="chip"><b>background ops (concurrent)</b> 1,060,090</span>
+<span class="chip"><b>consumers</b> 50</span>
+</div>
+<table class="stats">
+<thead><tr><th>min</th><th>mean</th><th>std dev</th><th>p50</th><th>p90</th><th>p99</th><th>p99.9</th><th>p99.99</th><th>max</th></tr></thead>
+<tbody><tr><td>0.423</td><td>1.32</td><td>0.929</td><td>1.10</td><td>1.88</td><td>5.05</td><td>12.12</td><td>24.63</td><td>24.63</td></tr></tbody></table>
+<p class="unit">latencies in milliseconds</p>
+<div class="charts">
+<div class="chart"><h3>Latency distribution</h3>
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" class="svg">
+<line x1="44.00" y1="240.00" x2="748.00" y2="240.00" stroke="#d1d5db" stroke-width="1.0"/>
+<text x="62.53" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 62.53 250.00)">10µs</text>
+<text x="99.58" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 99.58 250.00)">20µs</text>
+<text x="136.63" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 136.63 250.00)">50µs</text>
+<text x="173.68" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 173.68 250.00)">0.1ms</text>
+<text x="210.74" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 210.74 250.00)">0.2ms</text>
+<rect x="233.34" y="181.49" width="28.90" height="58.51" fill="#db2777" rx="1"><title>0.5ms: 6</title></rect>
+<text x="247.79" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 247.79 250.00)">0.5ms</text>
+<rect x="270.39" y="35.37" width="28.90" height="204.63" fill="#db2777" rx="1"><title>1ms: 902</title></rect>
+<text x="284.84" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 284.84 250.00)">1ms</text>
+<rect x="307.44" y="14.00" width="28.90" height="226.00" fill="#db2777" rx="1"><title>2ms: 1,837</title></rect>
+<text x="321.89" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 321.89 250.00)">2ms</text>
+<rect x="344.50" y="77.42" width="28.90" height="162.58" fill="#db2777" rx="1"><title>5ms: 222</title></rect>
+<text x="358.95" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 358.95 250.00)">5ms</text>
+<rect x="381.55" y="137.73" width="28.90" height="102.27" fill="#db2777" rx="1"><title>10ms: 29</title></rect>
+<text x="396.00" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 396.00 250.00)">10ms</text>
+<rect x="418.60" y="198.32" width="28.90" height="41.68" fill="#db2777" rx="1"><title>20ms: 3</title></rect>
+<text x="433.05" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 433.05 250.00)">20ms</text>
+<rect x="455.65" y="219.16" width="28.90" height="20.84" fill="#db2777" rx="1"><title>50ms: 1</title></rect>
+<text x="470.11" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 470.11 250.00)">50ms</text>
+<text x="507.16" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 507.16 250.00)">100ms</text>
+<text x="544.21" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 544.21 250.00)">200ms</text>
+<text x="581.26" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 581.26 250.00)">500ms</text>
+<text x="618.32" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 618.32 250.00)">1s</text>
+<text x="655.37" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 655.37 250.00)">2s</text>
+<text x="692.42" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 692.42 250.00)">5s</text>
+<text x="729.47" y="250.00" class="tick" text-anchor="end" transform="rotate(-45 729.47 250.00)">10s+</text>
+<text x="44.00" y="11.00" class="axis">count (log scale) — peak 1,837</text>
+</svg></div>
+<div class="chart"><h3>Latency by percentile</h3>
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" class="svg">
+<line x1="56.00" y1="256.00" x2="744.00" y2="256.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="259.00" class="tick" text-anchor="end">0.000</text>
+<line x1="56.00" y1="196.00" x2="744.00" y2="196.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="199.00" class="tick" text-anchor="end">6.77</text>
+<line x1="56.00" y1="136.00" x2="744.00" y2="136.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="139.00" class="tick" text-anchor="end">13.54</text>
+<line x1="56.00" y1="76.00" x2="744.00" y2="76.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="79.00" class="tick" text-anchor="end">20.32</text>
+<line x1="56.00" y1="16.00" x2="744.00" y2="16.00" stroke="#eef1f5" stroke-width="1.0"/>
+<text x="50.00" y="19.00" class="tick" text-anchor="end">27.09</text>
+<polyline points="56.00,246.21 193.60,239.35 331.20,211.27 468.80,148.65 606.40,37.82 744.00,37.82" fill="none" stroke="#db2777" stroke-width="2"/>
+<circle cx="56.00" cy="246.21" r="3.5" fill="#db2777"/>
+<text x="56.00" y="238.21" class="pt" text-anchor="middle">1.10</text>
+<text x="56.00" y="272.00" class="tick" text-anchor="middle">50%</text>
+<circle cx="193.60" cy="239.35" r="3.5" fill="#db2777"/>
+<text x="193.60" y="231.35" class="pt" text-anchor="middle">1.88</text>
+<text x="193.60" y="272.00" class="tick" text-anchor="middle">90%</text>
+<circle cx="331.20" cy="211.27" r="3.5" fill="#db2777"/>
+<text x="331.20" y="203.27" class="pt" text-anchor="middle">5.05</text>
+<text x="331.20" y="272.00" class="tick" text-anchor="middle">99%</text>
+<circle cx="468.80" cy="148.65" r="3.5" fill="#db2777"/>
+<text x="468.80" y="140.65" class="pt" text-anchor="middle">12.12</text>
+<text x="468.80" y="272.00" class="tick" text-anchor="middle">99.9%</text>
+<circle cx="606.40" cy="37.82" r="3.5" fill="#db2777"/>
+<text x="606.40" y="29.82" class="pt" text-anchor="middle">24.63</text>
+<text x="606.40" y="272.00" class="tick" text-anchor="middle">99.99%</text>
+<circle cx="744.00" cy="37.82" r="3.5" fill="#db2777"/>
+<text x="744.00" y="29.82" class="pt" text-anchor="middle">24.63</text>
+<text x="744.00" y="272.00" class="tick" text-anchor="middle">max</text>
+<text x="8.00" y="136.00" class="axis">latency ms</text>
+</svg></div>
+</div>
+</div>
+<p class="foot">Generated by benchmark-reporter — a self-contained Mercury performance harness. Re-run with different <code>-Dbench.*</code> / <code>-Delastic.queue.store</code> settings to compare.</p>
+</body>
+</html>
