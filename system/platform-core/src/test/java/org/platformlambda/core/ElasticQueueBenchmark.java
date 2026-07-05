@@ -21,6 +21,7 @@ package org.platformlambda.core;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ElasticQueue;
 
 import java.util.ArrayList;
@@ -111,7 +112,8 @@ class ElasticQueueBenchmark {
             }
 
             double elapsed = (System.currentTimeMillis() - start) / 1000.0;
-            System.out.println("\n================ ElasticQueue (BDB) spill latency ================");
+            String storeType = AppConfigReader.getInstance().getProperty("elastic.queue.store", "bdb");
+            System.out.printf("%n============ ElasticQueue spill latency [store=%s] ============%n", storeType);
             System.out.printf("duration=%.0fs  ops=%,d  throughput=%,.0f ops/s%n", elapsed, ops, ops / elapsed);
             System.out.println("(latency = time the event-loop thread is blocked inside ElasticQueue per op)\n");
             System.out.printf("%-8s %10s %10s %10s %10s %10s %10s %12s%n",

@@ -18,367 +18,74 @@
 
 package org.platformlambda.core.util;
 
-import com.sleepycat.je.*;
-import org.platformlambda.core.annotations.ZeroTracing;
-import org.platformlambda.core.models.LambdaFunction;
-import org.platformlambda.core.system.Platform;
-import org.platformlambda.core.system.EventEmitter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
-
+/**
+ * Reactive back-pressure overflow buffer behind every ServiceQueue: a per-route two-tier FIFO that holds
+ * the first {@link #MEMORY_BUFFER} events in memory and spills the overflow to a transient disk store.
+ *
+ * <p>This is a thin facade over an {@link ElasticStore} strategy selected by the {@code elastic.queue.store}
+ * config (default {@code bdb} = {@link BdbElasticStore}; {@code file} = {@link FileElasticStore}). The public
+ * API is unchanged, so ServiceQueue and applications are unaffected by the choice of store. See
+ * draft-design-specs/elastic_queue_file_fifo_design.md.</p>
+ */
 public class ElasticQueue implements AutoCloseable {
-    private static final Logger log = LoggerFactory.getLogger(ElasticQueue.class);
-    private static final Utility util = Utility.getInstance();
-    private static final ReentrantLock SAFETY = new ReentrantLock();
-    private static final AtomicBoolean LOADED = new AtomicBoolean(false);
-    private static final AtomicInteger generation = new AtomicInteger(0);
-    public static final int MEMORY_BUFFER = 20;
-    private static final byte[] NOTHING = new byte[0];
-    private static final long ONE_SECOND = 1000L;
-    private static final long ONE_MINUTE = 60 * ONE_SECOND;
-    private static final long ONE_HOUR = 60 * ONE_MINUTE;
-    private static final long ONE_DAY = 24 * ONE_HOUR;
-    private static final long KEEP_ALIVE_INTERVAL = 20 * ONE_SECOND;
-    private static final long HOUSEKEEPING_INTERVAL = 10 * ONE_MINUTE;
-    private static final String RUNNING = "RUNNING";
-    private static final String CLEAN_UP_TASK = "elastic.queue.cleanup";
-    private static final String SLASH = "/";
-    private static final int MAX_EVENTS = 100000000;
-    private static Database db;
-    private static Environment dbEnv;
-    private static File dbFolder;
-    private static boolean dbLoaded = false;
-    private static boolean runningInCloud;
-    private long readCounter;
-    private long writeCounter;
-    private boolean empty = false;
-    private byte[] peeked = NOTHING;
-    private int currentVersion = generation.get();
-    private final String id;
-    private final ConcurrentLinkedQueue<byte[]> memory = new ConcurrentLinkedQueue<>();
+
+    public static final int MEMORY_BUFFER = ElasticStore.MEMORY_BUFFER;
+    private static final String STORE_CONFIG = "elastic.queue.store";
+    private static final String FILE = "file";
+    private static final String BDB = "bdb";
+
+    private final ElasticStore store;
 
     /**
-     * Two-stage elastic queue using memory and disk
-     *
      * @param id service route path
      */
     public ElasticQueue(String id) {
-        this.id = util.validServiceName(id)? id : util.filteredServiceName(id);
-        resetCounter();
-        SAFETY.lock();
-        try {
-            if (!LOADED.get()) {
-                LOADED.set(true);
-                Platform platform = Platform.getInstance();
-                platform.registerPrivate(CLEAN_UP_TASK, new Cleanup(), 1);
-                Runtime.getRuntime().addShutdownHook(new Thread(ElasticQueue::shutdown));
-                AppConfigReader config = AppConfigReader.getInstance();
-                runningInCloud = "true".equals(config.getProperty("running.in.cloud", "false"));
-                File tmpRoot = new File(config.getProperty("transient.data.store", "/tmp/reactive"));
-                if (runningInCloud) {
-                    dbFolder = tmpRoot;
-                } else {
-                    String instanceId = platform.getName() + "-" + platform.getOrigin();
-                    dbFolder = new File(tmpRoot, instanceId);
-                }
-                if (!dbFolder.exists() && dbFolder.mkdirs()) {
-                    log.info("{} created", dbFolder);
-                }
-                // save a signature file first
-                util.str2file(new File(dbFolder, RUNNING), util.getTimestamp());
-                /*
-                 * Normally the system should initialize commit log before using the elastic queue.
-                 */
-                boolean deferred = "true".equals(config.getProperty("deferred.commit.log", "false"));
-                if (!deferred) {
-                    getDatabase();
-                    log.info("Commit log started");
-                }
-                scanExpiredStores(tmpRoot);
-                platform.getVertx().setPeriodic(KEEP_ALIVE_INTERVAL, t -> keepAlive());
-                platform.getVertx().setPeriodic(HOUSEKEEPING_INTERVAL, t -> housekeeping());
-                log.info("Housekeeper started");
-            }
-        } finally {
-            SAFETY.unlock();
-        }
+        this.store = create(id);
     }
 
-    private void keepAlive() {
-        util.str2file(new File(dbFolder, RUNNING), util.getTimestamp());
-    }
-
-    private void housekeeping() {
-        long now = System.currentTimeMillis();
-        List<File> outdated = new ArrayList<>();
-        File[] files = dbFolder.listFiles();
-        if (files != null) {
-            for (File f : files) {
-                String name = f.getName();
-                if (name.startsWith("je.stat.") && name.endsWith(".csv")
-                        && !"je.stat.csv".equals(name) && now - f.lastModified() > ONE_DAY) {
-                    outdated.add(f);
-                }
-            }
-            for (File f : outdated) {
-                try {
-                    Files.deleteIfExists(f.toPath());
-                    log.info("Outdated {} deleted", f);
-                } catch (IOException e) {
-                    log.error("Unable to delete outdated file {} - {}", f, e.getMessage());
-                }
-            }
-        }
+    private static ElasticStore create(String id) {
+        String type = AppConfigReader.getInstance().getProperty(STORE_CONFIG, BDB);
+        // default (and any unrecognized value) uses the long-standing BDB store
+        return FILE.equalsIgnoreCase(type) ? new FileElasticStore(id) : new BdbElasticStore(id);
     }
 
     public String getId() {
-        return id;
+        return store.getId();
     }
 
     public long getReadCounter() {
-        return readCounter;
+        return store.getReadCounter();
     }
 
     public long getWriteCounter() {
-        return writeCounter;
+        return store.getWriteCounter();
+    }
+
+    public void write(byte[] event) {
+        store.write(event);
+    }
+
+    public byte[] peek() {
+        return store.peek();
+    }
+
+    public byte[] read() {
+        return store.read();
     }
 
     @Override
     public void close() {
-        if (!isClosed()) {
-            if (dbEnv != null && !dbEnv.isClosed()) {
-                if (readCounter < writeCounter && writeCounter > MEMORY_BUFFER) {
-                    EventEmitter.getInstance().send(CLEAN_UP_TASK, id + SLASH + currentVersion);
-                } else {
-                    dbEnv.cleanLog();
-                }
-            }
-            resetCounter();
-        }
+        store.close();
     }
 
     /**
      * This method may be called when the route supported by this elastic queue is no longer in service
      */
     public void destroy() {
-        close();
-        if (dbEnv != null) {
-            // perform final clean up
-            EventEmitter.getInstance().send(CLEAN_UP_TASK, id);
-        }
+        store.destroy();
     }
 
     public boolean isClosed() {
-        return writeCounter == 0;
-    }
-
-    private static void shutdown() {
-        if (dbLoaded) {
-            dbLoaded = false;
-            try {
-                db.close();
-            } catch (Exception e) {
-                log.debug("Exception while closing DB - {}", e.getMessage());
-            }
-            try {
-                dbEnv.close();
-            } catch (Exception e) {
-                log.debug("Exception while closing - {}", e.getMessage());
-            }
-            if (dbFolder.exists()) {
-                util.cleanupDir(dbFolder, runningInCloud);
-                log.info("Holding area {} cleared", dbFolder);
-            }
-        }
-    }
-
-    private void resetCounter() {
-        if (!empty) {
-            empty = true;
-            readCounter = writeCounter = 0;
-            memory.clear();
-            currentVersion = generation.incrementAndGet();
-        }
-    }
-
-    private static void setupCommitLog(File dir) {
-        try {
-            long t1 = System.currentTimeMillis();
-            dbEnv = new Environment(dir,
-                    new EnvironmentConfig()
-                            .setAllowCreate(true)
-                            .setConfigParam(EnvironmentConfig.MAX_DISK, "0")
-                            .setConfigParam(EnvironmentConfig.FREE_DISK, "0"));
-            dbEnv.checkpoint(new CheckpointConfig().setMinutes(1));
-            db = dbEnv.openDatabase(null, "kv",
-                    new DatabaseConfig().setAllowCreate(true).setTemporary(false));
-            dbLoaded = true;
-            long diff = System.currentTimeMillis() - t1;
-            log.info("Created holding area {} in {} ms", dir, diff);
-        } catch (Exception e) {
-            log.error("Unable to create holding area in {} - {}", dir, e.getMessage());
-            System.exit(-1);
-        }
-    }
-
-    private static Database getDatabase() {
-        if (db == null) {
-            SAFETY.lock();
-            try {
-                if (dbEnv == null) {
-                    setupCommitLog(dbFolder);
-                }
-            } finally {
-                SAFETY.unlock();
-            }
-        }
-        return db;
-    }
-
-    public void write(byte[] event) {
-        if (event != null && event.length > 0) {
-            if (writeCounter < MEMORY_BUFFER) {
-                // for highest performance, save to memory for the first few blocks
-                memory.add(event);
-            } else {
-                // otherwise, save to disk
-                String key = id + SLASH + currentVersion + SLASH + util.zeroFill(writeCounter, MAX_EVENTS);
-                DatabaseEntry k = new DatabaseEntry(util.getUTF(key));
-                DatabaseEntry v = new DatabaseEntry(event);
-                Database database = getDatabase();
-                if (database != null) {
-                    database.put(null, k, v);
-                }
-            }
-            writeCounter++;
-            empty = false;
-        }
-    }
-
-    public byte[] peek() {
-        if (peeked.length > 0) {
-            return peeked;
-        }
-        peeked = read();
-        return peeked;
-    }
-
-    public byte[] read() {
-        if (peeked.length > 0) {
-            byte[] result = peeked;
-            peeked = NOTHING;
-            return result;
-        }
-        if (readCounter >= writeCounter) {
-            // catch up with writes and thus nothing to read
-            close();
-            return NOTHING;
-        }
-        if (readCounter < MEMORY_BUFFER) {
-            byte[] event = memory.poll();
-            if (event != null) {
-                readCounter++;
-            }
-            return event;
-        }
-        boolean hasRecord = false;
-        String key = id + SLASH + currentVersion + SLASH + util.zeroFill(readCounter, MAX_EVENTS);
-        DatabaseEntry k = new DatabaseEntry(util.getUTF(key));
-        DatabaseEntry v = new DatabaseEntry();
-        Database database = getDatabase();
-        if (database != null) {
-            try {
-                OperationStatus status = database.get(null, k, v, LockMode.DEFAULT);
-                if (status == OperationStatus.SUCCESS) {
-                    // must be an exact match
-                    String ks = util.getUTF(k.getData());
-                    if (ks.equals(key)) {
-                        hasRecord = true;
-                        readCounter++;
-                        return v.getData();
-                    } else {
-                        log.error("Expected {}, Actual: {}", key, ks);
-                    }
-                }
-            } finally {
-                if (hasRecord) {
-                    database.delete(null, k);
-                }
-            }
-        }
-        return NOTHING;
-    }
-
-    private void scanExpiredStores(File tmpRoot) {
-        if (runningInCloud) {
-            removeExpiredStore(tmpRoot);
-        } else {
-            File[] dirs = tmpRoot.listFiles();
-            if (dirs != null) {
-                for (File d : dirs) {
-                    if (d.isDirectory()) {
-                        removeExpiredStore(d);
-                    }
-                }
-            }
-        }
-    }
-
-    private void removeExpiredStore(File folder) {
-        File f = new File(folder, RUNNING);
-        if (f.exists()) {
-            if (System.currentTimeMillis() - f.lastModified() > ONE_HOUR) {
-                util.cleanupDir(folder, runningInCloud);
-                log.info("Holding area {} expired", folder);
-            }
-        } else {
-            util.cleanupDir(folder, runningInCloud);
-            log.warn("Unknown holding area {} removed", folder);
-        }
-    }
-
-    @ZeroTracing
-    private static class Cleanup implements LambdaFunction {
-
-        @Override
-        public Object handleEvent(Map<String, String> headers, Object input, int instance) {
-            if (input instanceof String && db != null && dbEnv != null) {
-                Utility util = Utility.getInstance();
-                int n = 0;
-                String prefix = input + SLASH;
-                DatabaseEntry k = new DatabaseEntry(util.getUTF(prefix));
-                DatabaseEntry v = new DatabaseEntry();
-                try (Cursor cursor = db.openCursor(null, new CursorConfig())) {
-                    OperationStatus status = cursor.getSearchKeyRange(k, v, LockMode.DEFAULT);
-                    while (status == OperationStatus.SUCCESS) {
-                        String ks = util.getUTF(k.getData());
-                        if (!ks.startsWith(prefix)) {
-                            break;
-                        }
-                        db.delete(null, k);
-                        n++;
-                        status = cursor.getNext(k, v, LockMode.DEFAULT);
-                    }
-                    if (n > 0) {
-                        dbEnv.cleanLog();
-                        log.info("Cleared {} unread event{} for {}", n, n == 1? "" : "s", input);
-                    }
-                } catch (Exception e) {
-                    log.debug("Unable to scan {} - {}", input, e.getMessage());
-                }
-            }
-            return true;
-        }
+        return store.isClosed();
     }
 }
