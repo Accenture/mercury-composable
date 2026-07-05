@@ -65,59 +65,65 @@ public class ServiceQueue {
     private MessageConsumer<Object> consumer;
     private boolean buffering = true;
     private volatile boolean stopped = false;
-    // Off-loop dispatch, enabled when the elastic store is virtual-thread-safe (the file store). The Vert.x
+    // Off-loop dispatch, used when the elastic store is virtual-thread-safe (the file store): the Vert.x
     // consumer only enqueues (non-blocking) to this mailbox and a per-route virtual thread runs the state
     // machine + blocking spill I/O — so an OS-flush / disk stall parks the VT's carrier, never the event loop.
-    private final boolean vthreadDispatch;
+    // In loop-dispatch mode (bdb) the mailbox is null and the state machine runs inline on the event loop.
     private final BlockingQueue<Object> mailbox;
     private Thread dispatchThread;
 
     public ServiceQueue(ServiceDef service) {
         this.service = service;
         String route = service.getRoute();
-        this.isControlRoute =  service.isStream() ||
-                (route.startsWith(CALLBACK_PREFIX) && route.length() == CALLBACK_LENGTH) ||
-                (route.startsWith(STREAM_PREFIX) && route.length() == STREAM_IN_LENGTH && route.endsWith(STREAM_IN));
+        this.isControlRoute = isControlRoute(service, route);
         this.readyPrefix = READY + ":" + route + HASH;
+        this.streamRoute = service.isStream() ? route + HASH + 1 : null;
         this.elasticQueue = new ElasticQueue(route);
-        // create consumer
-        system = Platform.getInstance().getEventSystem();
-        // dispatch mode is derived from the store: a virtual-thread-safe store (file) runs off the loop on
-        // a per-route VT; a carrier-pinning store (bdb) runs inline on the loop. One knob (the store),
-        // two safe modes — the unsafe vthread+bdb combo is unreachable.
-        this.vthreadDispatch = elasticQueue.supportsVirtualThreadDispatch();
-        ServiceHandler handler = new ServiceHandler();
+        this.system = Platform.getInstance().getEventSystem();
+        // Dispatch mode is derived from the store: a virtual-thread-safe store (file) runs off the loop on a
+        // per-route VT; a carrier-pinning store (bdb) runs inline on the loop. One knob (the store), two safe
+        // modes — the unsafe vthread+bdb combo is unreachable.
+        boolean vthreadDispatch = elasticQueue.supportsVirtualThreadDispatch();
+        this.mailbox = vthreadDispatch ? new LinkedBlockingQueue<>() : null;
+        initConsumer(route, vthreadDispatch, new ServiceHandler());
+        setupWorkers(route);
+    }
+
+    private static boolean isControlRoute(ServiceDef service, String route) {
+        return service.isStream()
+                || (route.startsWith(CALLBACK_PREFIX) && route.length() == CALLBACK_LENGTH)
+                || (route.startsWith(STREAM_PREFIX) && route.length() == STREAM_IN_LENGTH && route.endsWith(STREAM_IN));
+    }
+
+    private void initConsumer(String route, boolean vthreadDispatch, ServiceHandler handler) {
         if (vthreadDispatch) {
             if (DISPATCH_MODE_LOGGED.compareAndSet(false, true)) {
                 log.info("ServiceQueue dispatch = vthread (per-route virtual thread; store is virtual-thread-safe)");
             }
-            // event loop only enqueues (non-blocking); a per-route virtual thread runs the state machine
-            this.mailbox = new LinkedBlockingQueue<>();
+            // event loop only enqueues (non-blocking); the per-route virtual thread runs the state machine
             consumer = system.localConsumer(route, message -> {
-                if (!stopped) {
-                    mailbox.offer(message.body());
+                if (!stopped && !mailbox.offer(message.body())) {
+                    log.error("{} dispatch mailbox rejected an event", route);
                 }
             });
             dispatchThread = Thread.ofVirtual().name("dispatch." + route).start(() -> drainLoop(handler));
         } else {
             // default: the state machine runs inline on the event-loop thread (unchanged behaviour)
-            this.mailbox = null;
             consumer = system.localConsumer(route, handler);
         }
+    }
+
+    private void setupWorkers(String route) {
         if (service.isStream()) {
-            streamRoute = route + HASH + 1;
-            var worker = new StreamQueue(service, streamRoute);
-            workers.add(worker);
+            workers.add(new StreamQueue(service, streamRoute));
             log.debug("{} {} started as stream function", service.isPrivate() ? PRIVATE : PUBLIC, route);
         } else {
-            streamRoute = null;
             int instances = service.getConcurrency();
             for (int i = 0; i < instances; i++) {
                 int n = i + 1;
-                var worker = new WorkerDispatcher(service, route + HASH + n, n);
-                workers.add(worker);
+                workers.add(new WorkerDispatcher(service, route + HASH + n, n));
             }
-            var type = service.isKernelThread()? "kernel" : "virtual";
+            var type = service.isKernelThread() ? "kernel" : "virtual";
             if (instances == 1) {
                 startupLog(route, type);
             } else {
@@ -161,11 +167,12 @@ public class ServiceQueue {
         while (!stopped) {
             try {
                 Object body = mailbox.take();
-                if (stopped) {
-                    break;
+                if (!stopped) {
+                    handler.process(body);
                 }
-                handler.process(body);
             } catch (InterruptedException e) {
+                // interrupt is the stop signal: restore the flag and let the loop exit
+                Thread.currentThread().interrupt();
                 break;
             } catch (Exception e) {
                 log.error("{} dispatch error - {}", service.getRoute(), e.getMessage());
