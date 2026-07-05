@@ -21,6 +21,13 @@ land at the same disk-spill throughput ceiling, and the system stays stable and 
 - **Callback flood → C** — open-loop `asyncRequest()`, in-flight ≫ 20: events spill through the ElasticQueue
   and latency becomes queue-bounded (Little's law).
 
+**Mixed workload (latency isolation under load)** — the production-critical question:
+- **Latency probe under background flood** — a paced RPC on a *separate* route (`benchmark.probe`) measured
+  *while* a background flood hammers `benchmark.worker`'s ElasticQueue. With **file+vthread** the spill runs
+  **off** the event loop, so the probe stays fast; with **bdb+loop** the spill runs **inline** on the shared
+  event loop, inflating the probe's tail. Run this under both stores — it's where the isolation win shows,
+  which a single isolated workload cannot reveal.
+
 Because it needs only the in-JVM event bus, it runs anywhere a JRE does — a laptop, a real deployed
 environment, or a benchmark pipeline. Use it to estimate framework performance across environments and to
 re-measure while tuning (e.g. A/B the `file` vs `bdb` ElasticQueue store). `C` = `bench.consumers`.
@@ -50,6 +57,8 @@ summary is printed to stdout. The process exits when done, so it drops cleanly i
 | `bench.callback.pacing.micros` | 1000    | per-publisher pause in the paced (healthy) callback scenario  |
 | `bench.callback.inflight`      | 2000    | flood-scenario max in-flight (≫ 20 ⇒ exercises the ElasticQueue spill) |
 | `bench.callback.producers`     | 1       | flood-scenario producer threads sharing the in-flight window (>1 mimics concurrent async clients) |
+| `bench.probe.ops`              | 3000    | mixed-workload probe requests (the latency-sensitive path)    |
+| `bench.probe.pacing.micros`    | 2000    | pause between probe requests (2000 µs ⇒ ~500 probes/s)        |
 | `bench.timeout`                | 30000   | per-request timeout (ms)                                      |
 | `bench.report`                 | benchmark-report.html | output HTML path                                |
 

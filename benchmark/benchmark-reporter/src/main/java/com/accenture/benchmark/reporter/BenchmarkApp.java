@@ -39,6 +39,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
@@ -74,8 +76,10 @@ public class BenchmarkApp implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(BenchmarkApp.class);
 
     private static final String WORKER = "benchmark.worker";
+    private static final String PROBE = "benchmark.probe";
     private static final String NORMAL = "Normal operation (no back-pressure)";
     private static final String OVERLOAD = "Overload (back-pressure engaged)";
+    private static final String MIXED = "Mixed workload (latency isolation under load)";
 
     private int ops;
     private int warmup;
@@ -84,6 +88,8 @@ public class BenchmarkApp implements EntryPoint {
     private int callbackInflight;
     private int callbackProducers;
     private long pacingMicros;
+    private int probeOps;
+    private long probePaceMicros;
     private long timeoutMs;
     private String reportPath;
 
@@ -100,11 +106,14 @@ public class BenchmarkApp implements EntryPoint {
         callbackInflight = Math.max(1, Integer.getInteger("bench.callback.inflight", 2_000));
         callbackProducers = Math.max(1, Integer.getInteger("bench.callback.producers", 1));
         pacingMicros = Long.getLong("bench.callback.pacing.micros", 1_000L);
+        probeOps = Integer.getInteger("bench.probe.ops", 3_000);
+        probePaceMicros = Long.getLong("bench.probe.pacing.micros", 2_000L);
         timeoutMs = Long.getLong("bench.timeout", 30_000L);
         reportPath = System.getProperty("bench.report", "benchmark-report.html");
 
         Platform platform = Platform.getInstance();
         platform.registerPrivate(WORKER, new Worker(), consumers);
+        platform.registerPrivate(PROBE, new Worker(), Math.min(consumers, 8));
 
         // Run the (blocking) benchmark off the platform startup callback, then exit.
         Thread.ofPlatform().name("benchmark-driver").start(this::drive);
@@ -126,19 +135,19 @@ public class BenchmarkApp implements EntryPoint {
             List<WorkloadResult> results = new ArrayList<>();
 
             // --- Normal operation (no back-pressure): backlog stays within the 20-event memory buffer ---
-            log.info("[1/5] RPC 1 → {}", c);
+            log.info("[1/6] RPC 1 → {}", c);
             results.add(runRpc(po, payload, "RPC · 1 → " + c + " consumers", NORMAL,
                     "One publisher, in-flight = 1: pure request/reply round-trip. Baseline latency; the "
                             + "ElasticQueue is idle.", 1, ops));
 
-            log.info("[2/5] RPC {} → {}", c, c);
+            log.info("[2/6] RPC {} → {}", c, c);
             results.add(runRpc(po, payload, "RPC · " + c + " → " + c + " consumers", NORMAL,
                     "Balanced (publishers = consumers): the backlog stays within the 20-event memory buffer, so "
                             + "it runs on the fast in-memory tier — throughput reaches the single-route dispatch "
                             + "ceiling (~an order of magnitude over 1→" + c + ") and latency stays sub-millisecond.",
                     c, ops));
 
-            log.info("[3/5] Callback {} → {} paced ~{}µs", c, c, pacingMicros);
+            log.info("[3/6] Callback {} → {} paced ~{}µs", c, c, pacingMicros);
             results.add(runCallback(po, payload, "Callback · " + c + " → " + c + " consumers (paced)", NORMAL,
                     "Async callback at a sustainable rate: " + c + " publishers spaced ~" + pacingMicros
                             + "µs apart so consumers keep up. The backlog stays under the 20-event memory buffer "
@@ -146,7 +155,7 @@ public class BenchmarkApp implements EntryPoint {
                     c, pacingMicros, Integer.MAX_VALUE, ops));
 
             // --- Overload (back-pressure engaged): backlog exceeds the buffer and spills to disk ---
-            log.info("[4/5] RPC {} → {} (over-subscribed 2:1)", 2 * c, c);
+            log.info("[4/6] RPC {} → {} (over-subscribed 2:1)", 2 * c, c);
             results.add(runRpc(po, payload, "RPC · " + (2 * c) + " → " + c + " consumers", OVERLOAD,
                     "Over-subscribed 2:1: with " + (2 * c) + " publishers and " + c + " consumers, ~" + c
                             + " requests queue behind the workers — above the 20-event memory buffer, so events "
@@ -154,13 +163,24 @@ public class BenchmarkApp implements EntryPoint {
                             + "latency rises well beyond a naive 2×. This is back-pressure via oversubscription.",
                     2 * c, ops));
 
-            log.info("[5/5] Callback flood → {} (in-flight {})", c, callbackInflight);
+            log.info("[5/6] Callback flood → {} (in-flight {})", c, callbackInflight);
             results.add(runCallback(po, payload, "Callback · flood → " + c + " consumers", OVERLOAD,
                     "Async callback with no pacing, up to " + String.format("%,d", callbackInflight)
                             + " in-flight — far above the 20-event memory buffer. Events spill through the "
                             + "ElasticQueue back-pressure buffer and latency becomes queue-bounded (Little's law), "
                             + "yet the system stays stable and loss-free.",
                     callbackProducers, 0, callbackInflight, ops));
+
+            // --- Mixed workload: a latency-sensitive probe measured while the main route is flooded ---
+            log.info("[6/6] Mixed: latency probe on {} while flooding {}", PROBE, WORKER);
+            results.add(runMixed(po, payload, "Latency probe under background flood", MIXED,
+                    "The real production question: a latency-sensitive probe — a paced RPC on a SEPARATE route ("
+                            + PROBE + ") — measured WHILE a background callback flood hammers " + WORKER + "'s "
+                            + "ElasticQueue. With file+vthread the spill runs OFF the event loop, so the probe "
+                            + "stays fast; with bdb+loop the spill runs INLINE on the shared event loop, inflating "
+                            + "the probe's tail. Watch the probe's p99.9/max, and compare this scenario across "
+                            + "stores (-Delastic.queue.store=bdb) — this is where the isolation win shows.",
+                    callbackInflight, probeOps, probePaceMicros));
 
             Map<String, String> env = environment();
             printSummary(env, results);
@@ -270,6 +290,70 @@ public class BenchmarkApp implements EntryPoint {
         params.put("payload", payload.length + " bytes");
         return new WorkloadResult(name, category, desc, params, total, failures.get(), elapsed,
                 Stats.compute(ns, idx.get()));
+    }
+
+    /**
+     * Mixed workload: run a latency-sensitive probe (a paced RPC on the separate {@link #PROBE} route) while a
+     * background callback flood saturates {@link #WORKER}'s ElasticQueue. The reported stats are the PROBE's —
+     * they show whether the background spill leaks into a latency-sensitive path. With file+vthread the spill
+     * is off the event loop (probe stays fast); with bdb+loop it is inline on the shared loop (probe tail
+     * inflates). Run under both stores to compare.
+     */
+    private WorkloadResult runMixed(EventEmitter po, byte[] payload, String name, String category,
+                                    String desc, int bgInflight, int probeCount, long probePace)
+            throws InterruptedException {
+        AtomicBoolean stop = new AtomicBoolean(false);
+        Semaphore permits = new Semaphore(bgInflight);
+        AtomicLong bgOps = new AtomicLong();
+        ExecutorService bg = Executors.newVirtualThreadPerTaskExecutor();
+        for (int p = 0; p < 4; p++) {
+            bg.submit(() -> {
+                while (!stop.get()) {
+                    try {
+                        permits.acquire();
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                    po.asyncRequest(new EventEnvelope().setTo(WORKER).setBody(payload), timeoutMs)
+                            .onComplete(ar -> {
+                                permits.release();
+                                bgOps.incrementAndGet();
+                            });
+                }
+            });
+        }
+        Thread.sleep(750); // let the backlog build past the memory buffer and start spilling
+
+        long[] ns = new long[probeCount];
+        int rec = 0;
+        long failures = 0;
+        long t0 = System.nanoTime();
+        for (int i = 0; i < probeCount; i++) {
+            long s = System.nanoTime();
+            try {
+                po.request(new EventEnvelope().setTo(PROBE).setBody(payload), timeoutMs).get();
+                ns[rec++] = System.nanoTime() - s;
+            } catch (Exception e) {
+                failures++;
+            }
+            if (probePace > 0) {
+                LockSupport.parkNanos(probePace * 1_000L);
+            }
+        }
+        double elapsed = (System.nanoTime() - t0) / 1e9;
+        stop.set(true);
+        bg.shutdownNow();
+        bg.awaitTermination(5, TimeUnit.SECONDS);
+
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("probe", PROBE + " (paced RPC, in-flight 1)");
+        params.put("probe pacing", probePace + " µs");
+        params.put("background", "flood → " + WORKER + ", up to " + String.format("%,d", bgInflight)
+                + " in-flight");
+        params.put("background ops (concurrent)", String.format("%,d", bgOps.get()));
+        params.put("consumers", String.valueOf(consumers));
+        return new WorkloadResult(name, category, desc, params, probeCount, failures, elapsed,
+                Stats.compute(ns, rec));
     }
 
     private Map<String, String> environment() {
