@@ -47,7 +47,7 @@ java -Dbench.report=/tmp/report.html -jar benchmark/benchmark-reporter/target/be
 The report is written to `bench.report` and a summary is printed to stdout; the process exits when done, so
 it drops cleanly into a pipeline. Write reports outside the repo (e.g. under `/tmp`) so generated HTML isn't
 mixed into the working tree — the committed reference reports live in [`analysis/`](analysis/README.md).
-(If `bench.report` is omitted it defaults to `benchmark-report.html` in the current directory.)
+(If `bench.report` is omitted it defaults to `/tmp/benchmark-report.html`.)
 
 ### Parameters (all optional; system properties)
 | property                       | default | meaning                                                       |
@@ -62,7 +62,7 @@ mixed into the working tree — the committed reference reports live in [`analys
 | `bench.probe.ops`              | 3000    | mixed-workload probe requests (the latency-sensitive path)    |
 | `bench.probe.pacing.micros`    | 2000    | pause between probe requests (2000 µs ⇒ ~500 probes/s)        |
 | `bench.timeout`                | 30000   | per-request timeout (ms)                                      |
-| `bench.report`                 | benchmark-report.html | output HTML path                                |
+| `bench.report`                 | /tmp/benchmark-report.html | output HTML path                           |
 
 ### A/B the ElasticQueue store
 The report records the active store and dispatch mode. Compare the default file FIFO against the legacy

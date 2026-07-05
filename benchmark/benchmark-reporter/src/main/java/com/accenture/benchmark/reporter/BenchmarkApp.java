@@ -109,7 +109,7 @@ public class BenchmarkApp implements EntryPoint {
         probeOps = Integer.getInteger("bench.probe.ops", 3_000);
         probePaceMicros = Long.getLong("bench.probe.pacing.micros", 2_000L);
         timeoutMs = Long.getLong("bench.timeout", 30_000L);
-        reportPath = System.getProperty("bench.report", "benchmark-report.html");
+        reportPath = System.getProperty("bench.report", "/tmp/benchmark-report.html");
 
         Platform platform = Platform.getInstance();
         platform.registerPrivate(WORKER, new Worker(), consumers);

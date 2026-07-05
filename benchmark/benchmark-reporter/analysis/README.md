@@ -9,7 +9,7 @@ back-pressure buffer, produced with [`benchmark-reporter`](../README.md).
 > **These are dev-laptop figures — indicative, not SLAs.** Absolute numbers vary by hardware/OS; re-run
 > `benchmark-reporter` in each target environment. The *relative* findings below are what matter.
 
-## Recommendation (TL;DR)
+## Recommendation
 
 **Default to `file`+vthread for production installations; keep `bdb` as a one-flag fallback
 (`elastic.queue.store=bdb`).** Not because it's a faster store — in isolation BDB is actually
