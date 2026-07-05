@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-05 | agent: Claude Code (2026-07-05-021352)
+- **last_session:** 2026-07-05 | agent: Claude Code (2026-07-05-033922)
 - **last_review:** 2026-07-05 | through 2026-07-05-012640.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -62,6 +62,28 @@
   <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-27 | uses: 4 | tier: core -->
 
 ## Key Decisions
+
+- **ElasticQueue: replace the Berkeley DB (SleepyCat) spill tier with a portable file-backed segmented
+  FIFO — design approved on paper 2026-07-05 (Eric), not yet implemented.** `ElasticQueue` (platform-core)
+  is the reactive back-pressure overflow buffer behind every `ServiceQueue`: ~20 events in memory, then
+  spill. Today the spill tier is BDB JE (`com.sleepycat:je:18.3.12`) — used *only* here, and at a fraction
+  of its capability (no txns, no durability — wiped on restart, FIFO-only, no random access; a transactional
+  B-tree serving as a transient disk FIFO). **Drivers:** (1) performance — BDB's background checkpointer/log-
+  cleaner occasionally block the Vert.x event loop; (2) complexity reduction (simple = robust); (3) **cross-
+  language portability** — Mercury is to be ported to Rust/others, and BDB is JVM-only, but a length-prefixed
+  segmented FIFO is a language-agnostic format. **Design:** per-route append-only **segmented** files
+  (`[4-byte len][payload]`), memory head + file tail, advance read offset, **delete segment on last-record
+  consumed** (no cleaner thread). Same `ElasticQueue` API preserved (swap internals of one class); a
+  transitional `elastic.queue.store = bdb | file` **switch** keeps BDB as a pipeline-flippable fallback until
+  retired. Phased P0→P5. **P0 empirical baseline (measured 2026-07-05, `ElasticQueueBenchmark`):** median
+  ~1–3µs but the tail is pressure-sensitive — fast box write max 32ms/~10 stalls>20ms per 130s; under 512MB
+  heap + 80k×4KB working set write p99.9 1.6ms, **read max 98ms, 3,339 ops>10ms, 53 stalls>20ms clustering
+  into housekeeping bursts**. Target for `file`: **flatten the tail** (throughput is already ample, not the
+  bar). **Optional P5 follow-on:** move the spill I/O off the event loop onto a **per-route virtual thread**
+  (keep the non-blocking fast path on the loop) — gated on whether on-loop file I/O still shows in the tail
+  after P3. Design spec (gitignored): `draft-design-specs/elastic_queue_file_fifo_design.md`. See
+  [[thread-elastic-queue-bdb-to-file]]; relates [[virtual-threads-rpc]].
+  <!-- id: elastic-queue-file-fifo-plan | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
 
 - **Tracing & correlation-id cleanup (2026-07-03, branch `fix/traceid-correlationid-propagation`, uncommitted).**
   Implemented Eric's `~/Desktop/tracing-and-correlation.md` brief. **TraceId:** retired `trace.http.header` +
@@ -452,6 +474,16 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (design approved on paper — Eric, 2026-07-05; P0 done, P1 next) **Replace ElasticQueue's Berkeley DB
+  spill tier with a portable file-backed segmented FIFO.** Full detail + rationale (perf/complexity/Rust
+  portability) + the P0 empirical baseline in the Key Decision [[elastic-queue-file-fifo-plan]] and the design
+  spec `draft-design-specs/elastic_queue_file_fifo_design.md` (gitignored). Done: design + decisions
+  (segmentation YES, transitional `bdb|file` switch YES), P0 benchmark (`ElasticQueueBenchmark`, uncommitted —
+  quantified the BDB event-loop tail stalls). **Next: P1 — implement the `file` strategy behind the switch,
+  port `ElasticQueueTest` against both impls.** Then P2 harden, P3 A/B + canary, P4 retire BDB, optional P5
+  (spill I/O → per-route virtual threads).
+  <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
 
 - [ ] (implemented, **uncommitted** — Claude Code, 2026-07-03) **TraceId & correlation-id propagation cleanup.**
   Branch `fix/traceid-correlationid-propagation` (was empty; now ~36 files changed, nothing committed). Full
