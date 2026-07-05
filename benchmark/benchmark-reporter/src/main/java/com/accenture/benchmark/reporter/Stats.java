@@ -19,6 +19,7 @@
 package com.accenture.benchmark.reporter;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Latency summary computed from an array of raw nanosecond samples: exact percentiles (nearest-rank over a
@@ -29,13 +30,17 @@ import java.util.Arrays;
  * @param minMs     minimum latency (ms)
  * @param meanMs    arithmetic mean (ms)
  * @param stddevMs  population standard deviation (ms)
- * @param p50..p9999 percentiles (ms)
+ * @param p50       50th percentile (ms)
+ * @param p90       90th percentile (ms)
+ * @param p99       99th percentile (ms)
+ * @param p999      99.9th percentile (ms)
+ * @param p9999     99.99th percentile (ms)
  * @param maxMs     maximum latency (ms)
  * @param binCounts sample counts per histogram bin (aligned to {@link #EDGES_MS})
  */
 public record Stats(long count, double minMs, double meanMs, double stddevMs,
                     double p50, double p90, double p99, double p999, double p9999, double maxMs,
-                    long[] binCounts) {
+                    List<Long> binCounts) {
 
     /** Upper edges (ms) of the log-spaced histogram bins; the last bin absorbs everything larger. */
     public static final double[] EDGES_MS = {
@@ -54,7 +59,8 @@ public record Stats(long count, double minMs, double meanMs, double stddevMs,
      */
     public static Stats compute(long[] ns, int n) {
         if (n <= 0) {
-            return new Stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, new long[EDGES_MS.length]);
+            return new Stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    java.util.Collections.nCopies(EDGES_MS.length, 0L));
         }
         long[] sorted = Arrays.copyOf(ns, n);
         Arrays.sort(sorted);
@@ -75,7 +81,7 @@ public record Stats(long count, double minMs, double meanMs, double stddevMs,
         double variance = Math.max(0, sumSq / n - mean * mean);
         return new Stats(n, sorted[0] / 1e6, mean, Math.sqrt(variance),
                 pct(sorted, 50), pct(sorted, 90), pct(sorted, 99), pct(sorted, 99.9), pct(sorted, 99.99),
-                sorted[n - 1] / 1e6, bins);
+                sorted[n - 1] / 1e6, Arrays.stream(bins).boxed().toList());
     }
 
     /** Nearest-rank percentile (ms) from an ascending-sorted nanosecond array. */
