@@ -93,8 +93,10 @@ Two further architectural properties reinforce the choice, independent of these 
 ```bash
 mvn -pl benchmark/benchmark-reporter -am package -DskipTests
 # file (default):
-java -Dbench.report=file-vthread.html   -jar benchmark/benchmark-reporter/target/benchmark-reporter.jar
+java -Dbench.report=/tmp/file-vthread.html -jar benchmark/benchmark-reporter/target/benchmark-reporter.jar
 # bdb (fallback):
-java -Delastic.queue.store=bdb -Dbench.report=bdb-loop.html -jar benchmark/benchmark-reporter/target/benchmark-reporter.jar
+java -Delastic.queue.store=bdb -Dbench.report=/tmp/bdb-loop.html -jar benchmark/benchmark-reporter/target/benchmark-reporter.jar
 ```
-Open the two HTML files side by side; the **Mixed workload** section's probe histogram tells the story at a glance.
+Open the two HTML files side by side; the **Mixed workload** section's probe histogram tells the story at a
+glance. To refresh the committed reference snapshots, copy `/tmp/file-vthread.html` and `/tmp/bdb-loop.html`
+into this `analysis/` folder.

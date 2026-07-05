@@ -42,10 +42,12 @@ Produces an executable jar: `benchmark/benchmark-reporter/target/benchmark-repor
 ## Run
 ```bash
 # NOTE: -D system properties MUST come BEFORE -jar (after -jar they are program args and ignored)
-java -Dbench.report=report.html -jar benchmark/benchmark-reporter/target/benchmark-reporter.jar
+java -Dbench.report=/tmp/report.html -jar benchmark/benchmark-reporter/target/benchmark-reporter.jar
 ```
-The report is written to `bench.report` (default `benchmark-report.html` in the current directory) and a
-summary is printed to stdout. The process exits when done, so it drops cleanly into a pipeline.
+The report is written to `bench.report` and a summary is printed to stdout; the process exits when done, so
+it drops cleanly into a pipeline. Write reports outside the repo (e.g. under `/tmp`) so generated HTML isn't
+mixed into the working tree — the committed reference reports live in [`analysis/`](analysis/README.md).
+(If `bench.report` is omitted it defaults to `benchmark-report.html` in the current directory.)
 
 ### Parameters (all optional; system properties)
 | property                       | default | meaning                                                       |
@@ -64,10 +66,12 @@ summary is printed to stdout. The process exits when done, so it drops cleanly i
 
 ### A/B the ElasticQueue store
 The report records the active store and dispatch mode. Compare the default file FIFO against the legacy
-Berkeley DB store:
+Berkeley DB store (a saved A/B lives in [`analysis/`](analysis/README.md)):
 ```bash
-java -Dbench.report=file.html -jar .../benchmark-reporter.jar                       # default: file + off-loop vthread
-java -Delastic.queue.store=bdb -Dbench.report=bdb.html -jar .../benchmark-reporter.jar   # legacy: bdb + inline loop
+# default: file + off-loop vthread
+java -Dbench.report=/tmp/file-vthread.html -jar benchmark/benchmark-reporter/target/benchmark-reporter.jar
+# legacy: bdb + inline loop
+java -Delastic.queue.store=bdb -Dbench.report=/tmp/bdb-loop.html -jar benchmark/benchmark-reporter/target/benchmark-reporter.jar
 ```
 For latency-sensitive perf runs, point the spill at tmpfs: `-Dtransient.data.store=/dev/shm/reactive`.
 
