@@ -508,9 +508,29 @@
   `elastic.queue.store` alone (`bdb`⇒loop, `file`⇒vthread, derived from `supportsVirtualThreadDispatch()`);
   removed the standalone `elastic.queue.dispatch` config so vthread+bdb is unreachable. Verified: platform-core
   381 green both modes, minigraph 55 green with file.
-  **All phases P0–P5 + the mode simplification implemented + tested on the branch. Remaining = field steps:
-  canary (deploy `elastic.queue.store=file`, one flip from the `bdb` default), then P4 retire BDB.**
+  **Cleanup isolation (`70c9feff`):** annotated the `elastic.queue.cleanup` `Cleanup` class `@KernelThreadRunner`
+  so its heavy BDB `cleanLog()`/cursor work runs on a kernel thread — closes a live in-field VT-pinning vector
+  (independent of dispatch mode). **Canary field notes** drafted at
+  `draft-design-specs/elastic-queue-file-mode-field-notes.md` (gitignored; graduate into the PR/runbook at merge).
+  **All phases P0–P5 + the mode simplification + cleanup isolation implemented + tested on the branch. Remaining
+  = field steps: canary (deploy `elastic.queue.store=file`, one flip from the `bdb` default), then P4 retire BDB.**
+  Docs/ADR sync tracked separately in [[thread-elastic-queue-docs-adr]].
   <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
+
+- [ ] (backlog — do at ElasticQueue merge / P4, Claude Code 2026-07-05) **Docs sync + ADR for the ElasticQueue
+  file store / off-loop dispatch.** Deferred deliberately: nothing in the current guides is *wrong* today
+  (default `bdb` is unchanged; Berkeley DB is never named in the guides), and the config surface is still moving
+  (P4 retires BDB → removes `deferred.commit.log`, the `elastic.queue.cleanup` reserved route, and collapses
+  `elastic.queue.store`). When the branch merges (post-canary) / at P4: (1) `docs/guides/configuration-reference.md`
+  — add `elastic.queue.segment.size.bytes`, adjust `elastic.queue.store` to the final surface, add the tmpfs tip
+  on `transient.data.store`, remove/soften `deferred.commit.log`; (2) `docs/guides/reserved-names-and-headers.md`
+  — remove `elastic.queue.cleanup` when BDB is retired; (3) `docs/guides/architecture.md` — refresh the
+  overflow-buffer line to the file segmented FIFO + off-loop VT dispatch (VT-first/portability angle);
+  (4) propose an **ADR** in `docs/arch-decisions/ADR.md` for the durable decision (replace BDB, off-loop VT
+  dispatch, one switch) — human-gated; (5) graduate the field notes
+  (`draft-design-specs/elastic-queue-file-mode-field-notes.md`) into the PR description / canary runbook.
+  Relates [[thread-elastic-queue-bdb-to-file]], [[elastic-queue-file-fifo-plan]].
+  <!-- id: thread-elastic-queue-docs-adr | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
 
 - [ ] (implemented, **uncommitted** — Claude Code, 2026-07-03) **TraceId & correlation-id propagation cleanup.**
   Branch `fix/traceid-correlationid-propagation` (was empty; now ~36 files changed, nothing committed). Full
