@@ -19,6 +19,7 @@
 package org.platformlambda.core.util;
 
 import com.sleepycat.je.*;
+import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.Platform;
@@ -370,7 +371,11 @@ class BdbElasticStore implements ElasticStore {
         }
     }
 
+    // @KernelThreadRunner: this does heavy BDB work (cleanLog + cursor scan) that uses internal
+    // synchronized/latches; running it on a kernel (platform) thread keeps it from pinning a virtual-thread
+    // carrier under back-pressure (when cleanup fires often). Isolates the one BDB-on-a-VT path.
     @ZeroTracing
+    @KernelThreadRunner
     private static class Cleanup implements LambdaFunction {
 
         @Override
