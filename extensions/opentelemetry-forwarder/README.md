@@ -17,7 +17,7 @@ Add the dependency to your application:
 <dependency>
     <groupId>org.platformlambda</groupId>
     <artifactId>opentelemetry-forwarder</artifactId>
-    <version>4.6.0</version>
+    <version>4.6.1</version>
 </dependency>
 ```
 
@@ -32,7 +32,9 @@ to your collector.
 |-----|---------|-------------|
 | `otel.trace.forwarder.enabled` | `true` | `false` makes the forwarder a no-op (jar present, no export). |
 | `otel.exporter.otlp.endpoint` | `http://localhost:4318/v1/traces` | OTLP/HTTP traces endpoint of your collector. |
-| `otel.exporter.otlp.timeout` | `10000` | Export timeout in milliseconds. |
+| `otel.exporter.otlp.timeout` | `10000` | Per-export timeout in milliseconds. |
+| `otel.exporter.otlp.connect.timeout` | `10000` | TCP/TLS connect timeout in milliseconds (separate from the export timeout). |
+| `otel.exporter.otlp.compression` | `none` | Request body compression: `gzip` or `none`. `gzip` cuts egress bandwidth for high trace volumes. |
 | `otel.service.name` | `application.name`, else `mercury` | `service.name` resource attribute on every span. |
 | `otel.exporter.otlp.headers` | — | Comma-separated `key=value` request headers — where backend credentials go. |
 
@@ -97,13 +99,15 @@ point any OTLP/HTTP exporter — or `curl` — at either path:
 - `http://127.0.0.1:8299/v2/trace/otlp` — Splunk Observability-style
 
 `OtlpComposableExportTest` drives the real exporter against both and asserts the credential header arrives.
-The mock also **decodes the OTLP protobuf** (`opentelemetry-proto`, test scope) and logs the span key-values
-— trace/span/parent IDs, name, timing, status, attributes — so a reviewer can see the exact payload, e.g.:
+The mock also **decodes the OTLP protobuf** with a small built-in wire-format reader — no
+`opentelemetry-proto` / `com.google.protobuf` dependency (retired for security) — and logs the span
+key-values (trace/span/parent IDs, name, timing, status, attributes) so a reviewer can see the exact
+payload. Enum fields show their numeric OTLP values (`kind` 1 = INTERNAL / 2 = SERVER, `status` 1 = OK):
 
 ```
-Mock OTLP received POST /api/v2/otlp/v1/traces - 204 bytes, 1 ResourceSpans
+Mock OTLP received POST /api/v2/otlp/v1/traces - 188 bytes, 1 ResourceSpans
   resource: service.name=mercury-otel-demo
-  span: name=hello.world kind=SPAN_KIND_INTERNAL trace_id=4bf9…4736 span_id=00f0…02b7 parent_span_id=a3ce…4736 status=STATUS_CODE_OK
+  span: name=hello.world kind=1 trace_id=4bf92f3577b34da6a3ce929d0e0e4736 span_id=00f067aa0ba902b7 parent_span_id=a3ce929d0e0e4736 start=... end=... status=1
     attr route=hello.world
 ```
 

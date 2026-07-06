@@ -101,6 +101,29 @@ class OtlpComposableExportTest {
     }
 
     @Test
+    void gzipCompressionIsAppliedOnTheWire() throws Exception {
+        // otel.exporter.otlp.compression=gzip must make the exporter gzip the request body. The mock's
+        // HTTP layer doesn't surface a compressed body to the function (getBody() is null for a gzip
+        // request), so we prove the knob by the Content-Encoding header the exporter set on the wire -
+        // a real collector inflates that body natively.
+        MockOtlpCollector.CAPTURED.clear();
+        String endpoint = "http://127.0.0.1:" + port + "/api/v2/otlp/v1/traces";
+        try (SpanExporter exporter = OtelForwarderContext.buildExporter(
+                endpoint, 5000, 5000, "gzip", Map.of("Authorization", "Api-Token dt0c01.SECRET"))) {
+            CompletableResultCode rc = exporter.export(List.of(sampleSpan()));
+            rc.join(10, TimeUnit.SECONDS);
+            assertTrue(rc.isSuccess(), "gzip-compressed OTLP export should be accepted (HTTP 200)");
+
+            Map<String, Object> captured = MockOtlpCollector.CAPTURED.poll(10, TimeUnit.SECONDS);
+            assertNotNull(captured, "the collector should have received the gzip-compressed POST");
+            assertEquals("gzip", captured.get("content-encoding"),
+                    "the compression setting must gzip the request body on the wire");
+            assertEquals("Api-Token dt0c01.SECRET", captured.get("authorization"),
+                    "credential headers still reach the collector when compression is on");
+        }
+    }
+
+    @Test
     void parsesCredentialHeaders() {
         // value may itself contain '=' (e.g. base64) - split only on the first '='
         Map<String, String> h = OtelForwarderContext.parseHeaders("Authorization=Api-Token dt0c01.ABC=,X-SF-Token=xyz");

@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>reactive-postgres</artifactId>
-    <version>4.6.0</version>
+    <version>4.6.1</version>
     <packaging>jar</packaging>
     <name>Reactive R2DBC sample module</name>
 
@@ -49,7 +49,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>rest-spring-4</artifactId>
-            <version>4.6.0</version>
+            <version>4.6.1</version>
         </dependency>
 
         <dependency>
@@ -75,7 +75,19 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>r2dbc-postgresql</artifactId>
-            <version>1.1.1.RELEASE</version>
+            <version>1.1.2.RELEASE</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.ongres.scram</groupId>
+            <artifactId>scram-client</artifactId>
+            <version>3.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.ongres.scram</groupId>
+            <artifactId>scram-common</artifactId>
+            <version>3.3</version>
         </dependency>
 
         <dependency>

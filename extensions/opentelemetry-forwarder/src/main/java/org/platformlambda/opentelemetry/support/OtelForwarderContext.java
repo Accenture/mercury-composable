@@ -43,7 +43,8 @@ public class OtelForwarderContext {
     private static final Logger log = LoggerFactory.getLogger(OtelForwarderContext.class);
 
     public static final String INSTRUMENTATION_NAME = "org.platformlambda.opentelemetry-forwarder";
-    private static final String VERSION = "4.5.0";
+    // OTLP instrumentation-scope version — keep in step with the module/release version.
+    private static final String VERSION = "4.6.1";
     private static final String SERVICE_NAME_KEY = "service.name";
 
     private final boolean enabled;
@@ -81,13 +82,32 @@ public class OtelForwarderContext {
         });
     }
 
+    /** OTLP/HTTP compression: {@code gzip} or {@code none} (the OpenTelemetry default). */
+    private static final String NO_COMPRESSION = "none";
+    /** Matches the OpenTelemetry SDK's default connect timeout (10s), so an unconfigured build is unchanged. */
+    private static final long DEFAULT_CONNECT_TIMEOUT_MS = 10_000;
+
     /**
-     * Build the OTLP/HTTP span exporter. Header <em>values</em> are never logged.
+     * Build the OTLP/HTTP span exporter with defaults (no compression, 10s connect timeout).
+     * Header <em>values</em> are never logged.
      */
     public static SpanExporter buildExporter(String endpoint, long timeoutMs, Map<String, String> headers) {
+        return buildExporter(endpoint, timeoutMs, DEFAULT_CONNECT_TIMEOUT_MS, NO_COMPRESSION, headers);
+    }
+
+    /**
+     * Build the OTLP/HTTP span exporter. {@code compression} is {@code gzip} or {@code none} (a blank
+     * value is treated as {@code none}); {@code connectTimeoutMs} bounds the TCP/TLS handshake, separate
+     * from the per-export {@code timeoutMs}. Header <em>values</em> are never logged.
+     */
+    public static SpanExporter buildExporter(String endpoint, long timeoutMs, long connectTimeoutMs,
+                                             String compression, Map<String, String> headers) {
+        String encoding = (compression == null || compression.isBlank()) ? NO_COMPRESSION : compression.trim();
         var builder = OtlpHttpSpanExporter.builder()
                 .setEndpoint(endpoint)
-                .setTimeout(Duration.ofMillis(timeoutMs));
+                .setTimeout(Duration.ofMillis(timeoutMs))
+                .setConnectTimeout(Duration.ofMillis(connectTimeoutMs))
+                .setCompression(encoding);
         headers.forEach(builder::addHeader);
         return builder.build();
     }

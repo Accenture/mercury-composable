@@ -8,6 +8,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.6.1, 7/6/2026
+
+Security and maintenance release: remediates OSS dependency vulnerabilities flagged by Snyk static
+analysis, adds two opt-in OTLP exporter tunables, and removes the `com.google.protobuf` runtime from the
+`opentelemetry-forwarder` module. No breaking changes; the runtime export path is unchanged.
+
+### Security
+
+1. **`reactive-postgres` / `pg-example` — patched the R2DBC PostgreSQL SCRAM dependencies.** Upgraded
+   `org.postgresql:r2dbc-postgresql` 1.1.1 → 1.1.2 and pinned `com.ongres.scram:scram-client` /
+   `com.ongres.scram:scram-common` to `3.3` as direct dependencies, overriding the vulnerable `3.2` that
+   r2dbc-postgresql pulls in transitively (same coordinates and major version, so Maven's nearest-wins
+   resolves `3.3` cleanly with no leftover `3.2`).
+2. **`opentelemetry-forwarder` — removed the `com.google.protobuf` runtime from the module.** Upgraded the
+   OpenTelemetry BOM 1.45.0 → 1.63.0 and dropped the test-scoped `io.opentelemetry.proto:opentelemetry-proto`
+   dependency — the only thing pulling in the protobuf-java runtime (retired earlier for a vulnerability with
+   no fixed version). `protobuf-java` now resolves on no scope (compile, runtime, or test). The production
+   export path was already protobuf-java-free: OpenTelemetry's OTLP/HTTP exporter serializes with its own
+   internal marshaler, not protobuf-java.
+
+### Added
+
+1. **`opentelemetry-forwarder` — two new OTLP/HTTP exporter tunables.** `otel.exporter.otlp.compression`
+   (`gzip` or `none`, default `none`) gzip-compresses the request body to cut egress bandwidth for high trace
+   volumes, and `otel.exporter.otlp.connect.timeout` (milliseconds, default `10000`) bounds the TCP/TLS
+   handshake separately from the per-export `otel.exporter.otlp.timeout`. Both support `${ENV:default}`
+   substitution and default to the exporter's prior behaviour.
+
+### Changed
+
+1. **`opentelemetry-forwarder` mock collector rewritten to be dependency-free (test scope).**
+   `MockOtlpCollector` now decodes the OTLP protobuf payload with a small built-in wire-format reader instead
+   of the generated `opentelemetry-proto` classes, so the test harness no longer needs the protobuf runtime.
+   Full round-trip coverage — trace/span/parent IDs, span name, and attributes — is retained.
+
+---
 ## Version 4.6.0, 7/5/2026
 
 ### Added

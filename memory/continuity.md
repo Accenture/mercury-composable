@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-05 | agent: GitHub Copilot (2026-07-05-235813)
+- **last_session:** 2026-07-06 | agent: Claude Code (2026-07-06-164315)
 - **last_review:** 2026-07-05 | through 2026-07-05-235813.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -62,6 +62,31 @@
   <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-27 | uses: 4 | tier: core -->
 
 ## Key Decisions
+
+- **Release 4.6.1 — security + maintenance patch on top of 4.6.0 (2026-07-06, branch `chore/release-4.6.1`,
+  Claude Code).** 4.6.0 was already GitHub-released (tag `v4.6.0`, immutable); rather than recall/re-tag it,
+  Eric chose to supersede with a clean 4.6.1 (treat a published release as immutable). **Scope:** (1) **Snyk
+  OSS fixes** — `org.postgresql:r2dbc-postgresql` 1.1.1→1.1.2 in `examples/pg-example` +
+  `extensions/reactive-postgres`, plus direct `com.ongres.scram:scram-client`/`scram-common` `3.3` deps that
+  override the transitive **vulnerable 3.2** r2dbc-postgresql 1.1.2 pulls in (same coords + major → nearest-wins,
+  no leftover 3.2; Eric confirmed Snyk wants 3.3); (2) **`opentelemetry-forwarder` — protobuf runtime removed
+  from the module entirely** — OTel BOM 1.45.0→1.63.0 and dropped the test-scoped
+  `io.opentelemetry.proto:opentelemetry-proto` (the only thing pulling in `com.google.protobuf`, retired for a
+  no-fix CVE). Verified `com.google.protobuf` resolves on **no scope**. Production export path was already
+  protobuf-java-free (OTLP/HTTP exporter uses OTel's internal marshaler in `opentelemetry-exporter-otlp-common`,
+  not protobuf-java). **`MockOtlpCollector` (test) rewritten** to decode OTLP protobuf with a small hand-rolled
+  wire-format `ProtoReader` (no generated classes); full round-trip coverage retained (22 tests green). Key bug
+  found+fixed during the rewrite: a `pos += (int) readVarint()` compound-assignment discarded the read-advance
+  (Java captures the LHS before the RHS mutates `pos`). (3) **Added two OTLP exporter tunables** —
+  `otel.exporter.otlp.compression` (`gzip`/`none`, default `none`) + `otel.exporter.otlp.connect.timeout`
+  (ms, default 10000), wired via a new 5-arg `OtelForwarderContext.buildExporter` (old 3-arg kept, defaults
+  unchanged). Harness limitation noted: Mercury REST automation delivers a `null` body for a gzip-encoded
+  request, so the gzip test asserts `Content-Encoding: gzip` on the wire rather than an inflate-decode round-trip.
+  **Version bump 4.6.0→4.6.1:** 31 module poms + CHANGELOG (Security/Added/Changed) + docs/guides + example/helper
+  READMEs + CLAUDE.md/GEMINI.md + memory current-version refs. **Pre-existing, left as-is:** `OtelForwarderContext.VERSION`
+  instrumentation-scope constant still reads `4.5.0` (was not bumped for 4.6.0 either — out of release scope; flagged).
+  See [[thread-release-4.6.1-field-scan]] and the earlier [[snyk-oss-dependency-update-2026-07]].
+  <!-- id: release-4.6.1-security-patch | created: 2026-07-06 | last_used: 2026-07-06 | uses: 1 | tier: working | origin: 2026-07-06-164315 -->
 
 - **ElasticQueue: replace the Berkeley DB (SleepyCat) spill tier with a portable file-backed segmented
   FIFO — implemented on branch `feature/elastic-queue-file-fifo`; PR #137 is in review hardening.** `ElasticQueue` (platform-core)
@@ -406,6 +431,15 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (release cut — Claude Code, 2026-07-06, branch `chore/release-4.6.1`, committed + tagged `v4.6.1` locally,
+  **not pushed**) **4.6.1 security patch → field SCA + Snyk re-scan.** Full detail in the Key Decision
+  [[release-4.6.1-security-patch]]. Local build green (opentelemetry-forwarder 22/22; reactor `mvn validate`).
+  **Next (Eric):** push branch → PR → merge to `main` (protected, per 4.6.0/#138 flow) → publish GitHub release
+  tag `v4.6.1` on the merge commit; then run the field static-code-analysis + Snyk scan to confirm the r2dbc/SCRAM
+  + protobuf-removal remediations clear. The local `v4.6.1` tag points at the branch commit — re-tag on the merge
+  commit at release-publish (mirrors how `v4.6.0` was created on publish). Relates [[snyk-oss-dependency-update-2026-07]].
+  <!-- id: thread-release-4.6.1-field-scan | created: 2026-07-06 | last_used: 2026-07-06 | uses: 1 | tier: working | origin: 2026-07-06-164315 -->
 
 - [ ] (P0–P5 code-complete — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; remaining = field canary → P4 retire-BDB) **Replace
   ElasticQueue's Berkeley DB spill tier with a portable file-backed segmented FIFO.** Full detail + rationale
