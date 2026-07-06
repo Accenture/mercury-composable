@@ -18,120 +18,76 @@
 
 package org.platformlambda.system;
 
-import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.util.Utility;
 
-import java.io.File;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Boots the standalone single-node KRaft broker through {@link EmbeddedKafka} and round-trips a few
- * messages over a real publish/subscribe - validating that the {@code Formatter}-based storage init
- * produces a working cluster. {@code server.properties} fixes the broker to {@code 127.0.0.1:9092}.
+ * Unit tests for {@link EmbeddedKafka} internals that do NOT require a running broker - the happy-path
+ * boot-and-round-trip is covered by {@code org.platformlambda.example.MainAppTest}. This class lives in the
+ * same package and reaches the private storage helpers reflectively to drive the fail-fast / cleanup
+ * branches deterministically (missing resource, absent {@code log.dirs}, and re-formatting an existing dir).
  */
 class EmbeddedKafkaTest {
 
-    private static final String BOOTSTRAP = "127.0.0.1:9092";
-    private static EmbeddedKafka kafka;
-
-    @BeforeAll
-    static void startBroker() throws Exception {
-        kafka = new EmbeddedKafka(true);
-        kafka.startServer();   // blocks until the broker is ready; throws (not System.exit) on failure
-    }
-
-    @AfterAll
-    static void stopBroker() {
-        if (kafka != null) {
-            kafka.shutdown();
-        }
-        File logs = new File("/tmp/kafka-logs");   // log.dirs from server.properties
-        if (logs.exists()) {
-            Utility.getInstance().cleanupDir(logs);
-        }
+    @Test
+    void shutdownBeforeStartIsANoOp() {
+        // shutdown() before startServer() must be a safe no-op (internal server is still null), not an error
+        assertDoesNotThrow(() -> new EmbeddedKafka(true).shutdown());
     }
 
     @Test
-    void publishSubscribeRoundTrip() throws Exception {
-        String topic = "standalone-pubsub-test";
-        createTopic(topic);
+    void startServerWithMissingResourceThrows() throws Exception {
+        EmbeddedKafka kafka = new EmbeddedKafka(true);
+        setPropPath(kafka, "/no-such-server.properties");
+        Exception ex = assertThrows(IllegalArgumentException.class, kafka::startServer);
+        assertTrue(ex.getMessage().contains("not available as resource"));
+    }
 
-        try (Producer<String, byte[]> producer = newProducer()) {
-            for (int i = 0; i < 3; i++) {
-                producer.send(new ProducerRecord<>(topic, "k" + i, ("msg-" + i).getBytes(UTF_8)))
-                        .get(10, TimeUnit.SECONDS);
-            }
-        }
+    @Test
+    void formatStorageWithoutLogDirsThrows() {
+        InvocationTargetException ite = assertThrows(InvocationTargetException.class,
+                () -> invokeFormatStorage(new EmbeddedKafka(true), new Properties()));
+        assertInstanceOf(IllegalArgumentException.class, ite.getCause());
+        assertTrue(ite.getCause().getMessage().contains("log.dirs is required"));
+    }
 
-        try (Consumer<String, byte[]> consumer = newConsumer("standalone-test-group")) {
-            consumer.subscribe(List.of(topic));
-            List<String> received = drain(consumer, 3, 20_000);
-            assertEquals(List.of("msg-0", "msg-1", "msg-2"), received,
-                    "all three messages should round-trip in order on a single partition");
+    @Test
+    void formatStorageCleansAndFormatsExistingDir() throws Exception {
+        Path dir = Files.createTempDirectory("kafka-standalone-fmt");
+        Files.writeString(dir.resolve("stale.tmp"), "left over from a previous run");
+        Properties config = new Properties();
+        config.setProperty("log.dirs", dir.toString());
+        config.setProperty("node.id", "1");
+        try {
+            // exercises the "directory already exists" cleanup path, then the real KRaft Formatter
+            invokeFormatStorage(new EmbeddedKafka(true), config);
+            assertTrue(Files.exists(dir), "the log directory should be (re)created and formatted");
+        } finally {
+            Utility.getInstance().cleanupDir(dir.toFile());
         }
     }
 
-    private static void createTopic(String topic) throws Exception {
-        Properties p = new Properties();
-        p.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP);
-        try (Admin admin = Admin.create(p)) {
-            admin.createTopics(List.of(new NewTopic(topic, 1, (short) 1))).all().get(20, TimeUnit.SECONDS);
-        }
+    private static void setPropPath(EmbeddedKafka kafka, String path) throws Exception {
+        Field field = EmbeddedKafka.class.getDeclaredField("serverPropPath");
+        field.setAccessible(true);
+        field.set(kafka, path);
     }
 
-    private static Producer<String, byte[]> newProducer() {
-        Properties p = new Properties();
-        p.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP);
-        p.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        p.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
-        p.put(ProducerConfig.ACKS_CONFIG, "all");
-        return new KafkaProducer<>(p);
-    }
-
-    private static Consumer<String, byte[]> newConsumer(String group) {
-        Properties p = new Properties();
-        p.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP);
-        p.put(ConsumerConfig.GROUP_ID_CONFIG, group);
-        p.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        p.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-        p.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        return new KafkaConsumer<>(p);
-    }
-
-    private static List<String> drain(Consumer<String, byte[]> consumer, int expected, long timeoutMillis) {
-        List<String> values = new ArrayList<>();
-        long deadline = System.currentTimeMillis() + timeoutMillis;
-        while (values.size() < expected && System.currentTimeMillis() < deadline) {
-            ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofMillis(500));
-            for (ConsumerRecord<String, byte[]> consumerRecord : records) {
-                values.add(new String(consumerRecord.value(), UTF_8));
-            }
-        }
-        return values;
+    private static void invokeFormatStorage(EmbeddedKafka kafka, Properties config) throws Exception {
+        Method method = EmbeddedKafka.class.getDeclaredMethod("formatStorage", Properties.class);
+        method.setAccessible(true);
+        method.invoke(kafka, config);
     }
 }
