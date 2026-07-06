@@ -26,6 +26,7 @@ import org.platformlambda.postgres.support.PgRequest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import com.accenture.postgres.models.TempTestData;
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.serializers.SimpleMapper;
@@ -310,6 +311,24 @@ class ReactiveDbTest {
         // Confirm the record has been deleted
         records = sql.query(po, SQL_READ, id);
         assertEquals(0, records.size());
+    }
+
+    /**
+     * The PgRequest helper rejects malformed calls before any database round-trip.
+     */
+    @Test
+    void pgRequestValidationGuards() {
+        var po = PostOffice.trackable("unit.test", "700", "TEST /guards");
+        var sql = new PgRequest(TIMEOUT);
+        var missingPo = assertThrows(AppException.class, () -> sql.query(null, SQL_READ, "x"));
+        assertEquals("Missing PostOffice", missingPo.getMessage());
+        var missingSql = assertThrows(AppException.class, () -> sql.query(po, (String) null));
+        assertEquals("Missing SQL statement", missingSql.getMessage());
+        assertThrows(AppException.class, () -> sql.update(null, SQL_INSERT));
+        var emptyBatch = assertThrows(AppException.class, () -> sql.batch(po, SQL_UPDATE, List.of()));
+        assertEquals("Missing list of lists of parameters", emptyBatch.getMessage());
+        var missingStatements = assertThrows(AppException.class, () -> sql.transaction(po, null, null));
+        assertEquals("Missing SQL statements", missingStatements.getMessage());
     }
 
     @Test
