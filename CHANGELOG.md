@@ -8,6 +8,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.6.0, 7/5/2026
+
+### Added
+
+1. **File-backed FIFO overflow buffer for ElasticQueue — now the default store.** A new dependency-free,
+   portable, virtual-thread-friendly `FileElasticStore` replaces Berkeley DB as the default per-route reactive
+   back-pressure buffer (`elastic.queue.store=file`). It is a per-route sequence of fixed-size, append-only
+   segment files (`[4-byte length][payload]`) with immediate O(1) reclamation of fully-consumed segments (no
+   compaction, no cleaner thread). Paired with **off-loop dispatch**: when the store is virtual-thread-safe,
+   each route's ServiceQueue state machine + blocking spill I/O run on a per-route virtual thread, so a
+   disk/OS-flush stall parks that carrier instead of stalling the shared Vert.x event loop. Tunables:
+   `elastic.queue.segment.size.bytes` (default 16 MB), `elastic.queue.dispatch.mailbox.size` (default 1024,
+   bounded with back-pressure), and `transient.data.store` (tmpfs recommended for latency-sensitive pods). The
+   buffer remains transient (wiped on restart).
+2. **`benchmark/benchmark-reporter`** — a self-contained, single-JVM end-to-end performance harness that drives
+   an echo service via RPC (closed-loop) and callback (open-loop, the path that exercises the ElasticQueue),
+   plus a mixed-workload latency-isolation probe, and writes a self-contained HTML report (inline SVG latency
+   histogram + percentile plot + environment metadata). It runs anywhere a JRE does — a real deployed
+   environment or a benchmark pipeline — and records the active store so `file` and `bdb` can be A/B'd. A
+   committed file-vs-bdb reference analysis lives under `benchmark/benchmark-reporter/analysis/`.
+
+### Changed
+
+1. **ElasticQueue is now a pluggable store, defaulting to `file` (was Berkeley DB).** `ElasticQueue` became a
+   thin facade over an `ElasticStore` strategy selected by `elastic.queue.store` (`file` default, `bdb`
+   fallback). ServiceQueue derives its dispatch mode from the store — `file` runs off the event loop on a
+   per-route virtual thread, `bdb` runs inline on the loop — so the single knob picks a safe (store, dispatch)
+   pairing and the unsafe virtual-thread + BDB combination is unreachable by construction. Rationale: Berkeley
+   DB's internal synchronized/latches stall the shared event loop during housekeeping and pin virtual-thread
+   carriers under load; the file store removes both, and is portable and dependency-free. **Berkeley DB
+   remains fully supported as a one-flag fallback** (`elastic.queue.store=bdb`) — existing installations can
+   opt back at any time, with no data migration (the buffer is transient). The `elastic.queue.cleanup` task is
+   now annotated `@KernelThreadRunner` so its heavy BDB work runs on a kernel thread and never pins a
+   virtual-thread carrier.
+
+### Fixed
+
+1. **File-store production hardening.** The off-loop dispatch mailbox is bounded and applies back-pressure when
+   full instead of growing the heap without bound; open file descriptors are bounded to O(1) (only the write
+   tail and read head stay open, sealed segments reopen on demand); crash/stale spill directories are handled
+   on startup (RUNNING marker + keepalive, plus conservative removal of stale per-origin stores that still
+   contain segment files); and the peek cache is reset on close/reuse in both the file and BDB stores.
+
+---
 ## Version 4.5.0, 6/25/2026
 
 ### Added
