@@ -16,8 +16,8 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-06 | agent: Claude Code (2026-07-06-185829)
-- **last_review:** 2026-07-06 | through 2026-07-06-165910.md
+- **last_session:** 2026-07-06 | agent: Claude Code (2026-07-06-190821)
+- **last_review:** 2026-07-06 | through 2026-07-06-190821.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -117,97 +117,6 @@
   combo is unreachable by construction. Design spec (gitignored): `draft-design-specs/elastic_queue_file_fifo_design.md`.
   See [[thread-elastic-queue-bdb-to-file]]; relates [[virtual-threads-rpc]].
   <!-- id: elastic-queue-file-fifo-plan | created: 2026-07-05 | last_used: 2026-07-05 | uses: 6 | tier: active | origin: 2026-07-05-033922 -->
-
-- **Tracing & correlation-id cleanup (2026-07-03, branch `fix/traceid-correlationid-propagation`, uncommitted).**
-  Implemented Eric's `~/Desktop/tracing-and-correlation.md` brief. **TraceId:** retired `trace.http.header` +
-  `trace.http.legacy.header.enabled` entirely — trace ID travels only as hardcoded `X-Trace-Id` + W3C
-  `traceparent`; removed the legacy `X-Correlation-Id, X-Trace-Id` config from 7 application.properties;
-  `EventEmitter` event-over-HTTP relay now also emits traceparent. **No echo-back:** deleted the single
-  `HttpRouter` line that echoed the trace header onto the HTTP response (+ flipped the 2 RestEndpointTest
-  assertions). **Correlation-id end-to-end:** new configurable `http.correlation.id.header`
-  (default `X-Correlation-Id`) + `kafka.correlation.id.header` (default `cid`); captured at the edge (fresh
-  dash-less `util.getUuid()` if absent), preserved as `model.cid`, exposed to every function task as read-only
-  reserved header `my_correlation_id` (`PostOffice.getMyCorrelationId()`), and stamped outbound by
-  `simple.kafka.notification`; `KafkaFlowConsumer` reads the configurable inbound header with fresh-UUID
-  fallback (was traceId). Reserved `my_*` headers no longer leak to Kafka. **Feature-complete propagation to
-  any touch point:** `PostOffice.touch()` stamps `my_correlation_id` on every outgoing event (single choke
-  point for send/RPC/broadcast/event-over-HTTP, mirroring trace-context propagation), so the business cid
-  follows the whole call graph incl. the cross-instance event-over-HTTP hop (peer reads via
-  `getMyCorrelationId()`); `AsyncHttpClient` emits `http.correlation.id.header` downstream. Diagnostic finding:
-  `EventEnvelope.cid` is an RPC reply-routing field, not surfaced to fire-and-forget targets — business cid
-  rides the `my_correlation_id` header, not the routing cid. **Plain REST-to-function endpoints** (no flow)
-  are covered too: `HttpRequestEvent.correlationId` (set at edge; in toMap/fromMap) + `HttpRouter` stamps
-  `my_correlation_id` on the primary/secondary/post-auth events, so `getMyCorrelationId()` works for any HTTP
-  entry (self-originated chains — scheduler/startup — seed their own if needed). Full reactor (28) + pg-example (6) green; tests:
-  `PostOfficeTest#reservedHeadersExposedToFunction`, `FlowTests#correlationIdPropagationTest`,
-  `EventHttpTest#eventOverHttpPropagatesTraceAndCorrelationId`,
-  `RestEndpointTest#asyncHttpClientForwardsCorrelationIdDownstream`,
-  `RestEndpointTest#plainRestFunctionReceivesCorrelationId`.
-  Plan: `~/.claude/plans/glowing-tinkering-glacier.md`. See [[flow-cid-vs-business-correlation-decoupled]] and
-  [[thread-traceid-correlation-propagation]]. **Status: implemented + feature-complete, all tests green, uncommitted — pending Eric.**
-  <!-- id: tracing-correlation-cleanup | created: 2026-07-03 | last_used: 2026-07-04 | uses: 5 | tier: archive-candidate | origin: 2026-07-03-014759 -->
-
-- **External assessment of the shipped trace/cid feature (PR #132): one real fix kept, one "finding" rejected
-  by design (2026-07-04, uncommitted).** GitHub Copilot's report
-  (`/tmp/traceid-business-correlationid-propagation-assessment.md`) reviewed `main` and raised two
-  "high-confidence" gaps; verified both against source. **(1) KEPT — `my_correlation_id` was overridable despite
-  being documented read-only:** `TaskExecutor` stamped the reserved header *before* applying `md.optionalHeaders`,
-  so a flow relaying inbound HTTP headers (`input.header -> header`) let a caller spoof the value a task reads via
-  `getMyCorrelationId()` → fix: stamp `my_correlation_id` **last**, after optional headers, so the framework value
-  wins. Regression test proven to fail pre-fix (`FlowTests#correlationIdPropagationTest` extended + `Greetings`
-  echoes `getMyCorrelationId()`). **(2) REJECTED — "AsyncHttpClient leaks caller-supplied `traceparent`":** first
-  fixed (added `traceparent` to `HEADERS_TO_IGNORE`) then **reverted on Eric's guidance** — see the design
-  principle [[developer-set-trace-headers-are-intentional]]. In production the "hijack" cannot occur (a traced
-  request always stamps a fresh W3C traceparent that overwrites; Mercury ids are always W3C-compatible), and when
-  untraced, forwarding a developer-set `traceparent`/`X-Trace-Id` is the *intended* behavior (propagating a trace
-  to a 3rd party / forwarding upstream). The report's leak only reproduces with non-W3C ids (a test artifact).
-  AsyncHttpClient net change = a documenting comment only; replaced the negative test with a positive guard
-  `RestEndpointTest#asyncHttpClientForwardsDeveloperSuppliedTraceparent`. Finding-1 defense-in-depth
-  (strip `my_route`/`my_trace_id`/`my_trace_path`) assessed + deferred: `WorkerHandler` L207-214 already makes
-  `my_route` authoritative and overwrites `my_trace_id`/`my_trace_path` whenever traced (inert-only when spoofable).
-  Full suites green: platform-core 372, event-script-engine 132. Refines [[tracing-correlation-cleanup]]; see
-  [[thread-traceid-correlation-propagation]]. **Status: shipped as PR [#134](https://github.com/Accenture/mercury-composable/pull/134)**
-  (branch `fix/correlation-id-readonly-and-trace-header-docs`; 2 commits — `3065f804` source+tests+docs,
-  `707056e5` memory) — pending review/merge.
-  <!-- id: traceid-cid-propagation-edgecase-fixes | created: 2026-07-04 | last_used: 2026-07-04 | uses: 2 | tier: archive-candidate | origin: 2026-07-04-223237 -->
-
-- **Design principle — a developer-set outbound trace header (`X-Trace-Id` / W3C `traceparent`) is an
-  intentional act the framework must honor, not strip (Eric, 2026-07-04).** `AsyncHttpClient` deliberately does
-  **not** filter caller-supplied trace headers. Two legitimate uses: (a) when the call is **untraced**
-  (`tracing: false`, no current context), an app may explicitly set `traceparent`/`X-Trace-Id` to hand a trace
-  context to a downstream/3rd-party system — this passes through unchanged; (b) when the call **is traced**, the
-  framework's own current trace context takes precedence (stamps `X-Trace-Id` = current traceId and `traceparent`
-  = current traceId+spanId at `AsyncHttpClient.updateHttpHeaders`), so the downstream span chains to *this*
-  caller's span — and because a traced request's context is itself adopted from the upstream `X-Trace-Id`/
-  `traceparent` at ingress (`HttpRouter.getTraceId` + `W3cTrace.parse`, L485-495), the upstream trace still
-  propagates automatically. Net: framework overwrites only when it has an active trace of its own; otherwise the
-  developer's explicit header wins. This is *why* the assessment's "traceparent leak" finding was rejected (the
-  only leak case needs non-W3C ids, a test artifact). Contrast: `my_correlation_id` is a reserved *internal*
-  header (surfaced via `getMyCorrelationId()`, not a wire header) and **is** protected as read-only
-  ([[traceid-cid-propagation-edgecase-fixes]] finding 1); the business cid goes downstream as the configurable
-  `http.correlation.id.header` (e.g. `X-Correlation-Id`), which AsyncHttpClient also honors-if-caller-set.
-  **Testability corollary (Eric):** because an *untraced* invocation (the default in a plain unit test — no
-  trace context set) passes every non-hop-by-hop header through verbatim, a unit test can exercise an external
-  /downstream REST endpoint with full control over the request headers (incl. trace headers), no framework
-  interference — guarded by `RestEndpointTest#asyncHttpClientForwardsDeveloperSuppliedTraceparent`.
-  **Documented (2026-07-04):** "let the framework manage trace headers; don't set `X-Trace-Id`/`traceparent`
-  yourself (with the untraced escape hatch)" callouts added to `docs/guides/observability.md` (§W3C),
-  `reserved-names-and-headers.md` (§Trace ID), and `actuators-and-http-client.md` (§AsyncHttpClient).
-  <!-- id: developer-set-trace-headers-are-intentional | created: 2026-07-04 | last_used: 2026-07-04 | uses: 1 | tier: archive-candidate | origin: 2026-07-04-224922 -->
-
-- **A flow's reply cid and its business correlation-id are distinct and must stay decoupled (2026-07-03).**
-  `FlowInstance.cid` is the **reply-routing** key: REST automation awaits an HTTP response whose correlationId
-  equals the internal per-request UUID (`requestId`), matched via HttpRouter's `contexts` map — so the flow's
-  reply cid must equal that requestId. The **business** correlation-id (upstream `X-Correlation-Id`, or fresh)
-  is a separate concern surfaced as `model.cid`. Conflating them (setting the flow cid = business cid) breaks
-  HTTP reply matching → every HTTP flow times out (discovered when 65/70 FlowTests failed). Design: added
-  `FlowInstance.correlationId` (business → `model.cid` + the `my_correlation_id` reserved header) alongside
-  `FlowInstance.cid` (routing, unchanged); the business cid rides the launch-event header
-  `EventScriptManager.CORRELATION_ID` ("correlation_id"), set by `FlowExecutor` (new 6-arg `launch`,
-  businessCid defaults to routing cid for non-HTTP callers) and by `HttpToFlow` (routing = requestId,
-  business = X-Correlation-Id); subflows inherit the parent's business cid via the same header. Kafka: the two
-  coincide (no requestId indirection). Relates [[trace-thread-keyed-mono-gotcha]].
-  <!-- id: flow-cid-vs-business-correlation-decoupled | created: 2026-07-03 | last_used: 2026-07-04 | uses: 6 | tier: archive-candidate | origin: 2026-07-03-014759 -->
 
 - **CSFLE (Client-Side Field Level Encryption) for minimalist-kafka — pure delegation, no framework rule/schema
   code (2026-07-02, branch `feature/kafka-csfle-field-encryption`, uncommitted).** Eric's field observation
@@ -517,22 +426,6 @@
   (`draft-design-specs/elastic-queue-file-mode-field-notes.md`) into the PR description / canary runbook.
   Relates [[thread-elastic-queue-bdb-to-file]], [[elastic-queue-file-fifo-plan]].
   <!-- id: thread-elastic-queue-docs-adr | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
-
-- [ ] (implemented, **uncommitted** — Claude Code, 2026-07-03) **TraceId & correlation-id propagation cleanup.**
-  Branch `fix/traceid-correlationid-propagation` (was empty; now ~36 files changed, nothing committed). Full
-  detail in the Key Decision [[tracing-correlation-cleanup]] + the decoupling insight
-  [[flow-cid-vs-business-correlation-decoupled]] and the 2026-07-03-014759 session log. Retired
-  `trace.http.header`; no trace echo-back; configurable `http.correlation.id.header`/`kafka.correlation.id.header`;
-  business cid → `model.cid` → `my_correlation_id` → `simple.kafka.notification`. Full reactor + pg-example +
-  4 new tests green. **Feature-complete:** business cid propagates to any touch point via `PostOffice.touch()`
-  (incl. event-over-HTTP) + `AsyncHttpClient` downstream + `simple.kafka.notification`. Full reactor (28) +
-  pg-example (6) green. **Next: Eric's code review, then commit + PR** (same flow as #128/#129).
-  **Update (2026-07-04):** the feature shipped as PR #132 (`1ab78077` on `main`); an external assessment then
-  reviewed it — one real fix (`my_correlation_id` read-only) + trace-header docs shipped as
-  PR [#134](https://github.com/Accenture/mercury-composable/pull/134) (the "traceparent leak" finding was
-  rejected by design) — see [[traceid-cid-propagation-edgecase-fixes]] and
-  [[developer-set-trace-headers-are-intentional]].
-  <!-- id: thread-traceid-correlation-propagation | created: 2026-07-03 | last_used: 2026-07-04 | uses: 4 | tier: working | origin: 2026-07-03-014759 -->
 
 - [ ] (planned — backlog, no ETA) **Reintroduce Protobuf support in minimalist-kafka's Schema Registry
   integration.** Blocked on Confluent adopting the renamed `com.squareup.wire:wire-runtime` coordinate in

@@ -56,3 +56,8 @@
 - thread-deprecate-simple-type-matching — (sprint complete — Eric, 2026-07-02) Deprecate 'simple type matching' in TaskExecutor → 's… — faded — 2026-Q3.md
 - thread-snyk-oss-dependency-update — (completed — Eric, 2026-07-01) Repo-wide OSS dependency security update (Snyk-driven). Com… — completed thread swept (older than archive_window=20) — 2026-Q3.md
 - thread-application-log-context — (completed — Eric, 2026-06-30) Application log context feature. Designed + implemented + — completed thread swept (older than archive_window=20) — 2026-Q3.md
+- tracing-correlation-cleanup — Tracing & correlation-id cleanup (2026-07-03, branch `fix/traceid-correlationid-propagatio… — faded — trace/cid work shipped (PR #132/#134) + assessed; past archive_window — 2026-Q3.md
+- traceid-cid-propagation-edgecase-fixes — External assessment of the shipped trace/cid feature (PR #132): one real fix kept, one "fi… — faded — trace/cid work shipped (PR #132/#134) + assessed; past archive_window — 2026-Q3.md
+- developer-set-trace-headers-are-intentional — Design principle — a developer-set outbound trace header (`X-Trace-Id` / W3C `traceparent`… — faded — trace/cid work shipped (PR #132/#134) + assessed; past archive_window — 2026-Q3.md
+- flow-cid-vs-business-correlation-decoupled — A flow's reply cid and its business correlation-id are distinct and must stay decoupled (2… — faded — trace/cid work shipped (PR #132/#134) + assessed; past archive_window — 2026-Q3.md
+- thread-traceid-correlation-propagation — (completed — shipped PR #132 + #134, 2026-07-04) TraceId & correlation-id propagation clea… — faded — trace/cid work shipped (PR #132/#134) + assessed; past archive_window — 2026-Q3.md
