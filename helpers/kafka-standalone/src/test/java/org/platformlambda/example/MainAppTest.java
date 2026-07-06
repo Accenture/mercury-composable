@@ -54,21 +54,36 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * embedded broker(s), then a real producer/consumer round-trips messages through {@code 127.0.0.1:9092}.
  * <p>
  * The test {@code application.properties} sets {@code dual.servers=true}, so {@code start()} exercises the
- * two-broker path (9092 via {@code /server.properties} and 8092 via {@code /server2.properties}) and only
- * returns after confirming the first broker is up via an {@code AdminClient}.
+ * two-broker path (9092 via {@code /server.properties} and 8092 via {@code /server2.properties}). Both
+ * brokers are awaited before the tests run and shut down explicitly afterwards, so the forked test JVM
+ * terminates cleanly (KRaft threads are non-daemon and would otherwise linger until JVM-exit hooks fire).
  */
 class MainAppTest {
 
     private static final String BOOTSTRAP = "127.0.0.1:9092";
+    private static final String BOOTSTRAP_2 = "127.0.0.1:8092";
+    private static MainApp app;
 
     @BeforeAll
     static void startViaMainApp() throws Exception {
-        new MainApp().start(new String[0]);
+        app = new MainApp();
+        app.start(new String[0]);
+        // ensure BOTH brokers are fully up (the 2nd is started asynchronously) so shutdown is deterministic
+        awaitBroker(BOOTSTRAP);
+        awaitBroker(BOOTSTRAP_2);
     }
 
     @AfterAll
-    static void cleanup() {
-        // brokers stop via their JVM shutdown hooks at exit; tidy the KRaft log dirs (best effort)
+    static void stopBrokers() {
+        if (app != null) {
+            app.brokers.forEach(broker -> {
+                try {
+                    broker.shutdown();
+                } catch (Exception e) {
+                    // best effort - the JVM shutdown hook is a backstop
+                }
+            });
+        }
         Utility util = Utility.getInstance();
         for (String dir : List.of("/tmp/kafka-logs", "/tmp/kafka2-logs")) {
             File f = new File(dir);
@@ -76,7 +91,7 @@ class MainAppTest {
                 try {
                     util.cleanupDir(f);
                 } catch (Exception e) {
-                    // a broker may still hold files until the JVM exits - not a test failure
+                    // best effort
                 }
             }
         }
@@ -99,6 +114,16 @@ class MainAppTest {
             List<String> received = drain(consumer, 3, 20_000);
             assertEquals(List.of("msg-0", "msg-1", "msg-2"), received,
                     "all three messages should round-trip in order on a single partition");
+        }
+    }
+
+    /** Block until the broker answers an AdminClient metadata request (or the API timeout elapses). */
+    private static void awaitBroker(String bootstrap) throws Exception {
+        Properties p = new Properties();
+        p.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
+        p.put(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, 30000);
+        try (Admin admin = Admin.create(p)) {
+            admin.describeCluster().nodes().get(30, TimeUnit.SECONDS);
         }
     }
 
