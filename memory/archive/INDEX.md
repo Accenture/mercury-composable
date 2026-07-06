@@ -49,3 +49,8 @@
 - agent-memory-upgrade-v4270 — Upgraded agent-memory v4.26.1 → v4.27.0 (Mode B, by Claude Code from the tool checkout). S… — completed thread swept — 2026-Q3.md
 - thread-schema-registry-avro-protobuf — (completed — Eric, 2026-06-29) minimalist-kafka Schema Registry serdes — feature COMPLETE… — completed thread swept — 2026-Q3.md
 - thread-kafka-schemaid-from-name — (completed — Eric, 2026-07-01, PR #129) minimalist-kafka: resolve `schemaId` from subject/… — completed thread swept — 2026-Q3.md
+- minimalist-kafka-protobuf-removed — Protobuf support removed from `minimalist-kafka`'s Schema Registry integration, pre-releas… — faded — 2026-Q3.md
+- minimalist-kafka-confluent-8-3-0 — `minimalist-kafka`: `confluent.version` bumped 8.2.0 → 8.3.0; `kafka.version` (4.2.0) upgr… — faded — 2026-Q3.md
+- event-script-minigraph-code-review-2026-07 — Code review closeout for PR #130 added deprecation-conversion visibility + real lifecycle… — faded — 2026-Q3.md
+- thread-minimalist-kafka-protobuf-removal — (completed — Eric, 2026-07-01) Remove Protobuf support from minimalist-kafka's Schema Regi… — faded — 2026-Q3.md
+- thread-deprecate-simple-type-matching — (sprint complete — Eric, 2026-07-02) Deprecate 'simple type matching' in TaskExecutor → 's… — faded — 2026-Q3.md

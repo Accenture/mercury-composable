@@ -51,6 +51,7 @@
 
         <!-- Executables for benchmark tests -->
         <module>benchmark/benchmark-client</module>
+        <module>benchmark/benchmark-reporter</module>
     </modules>
 
 </project>
