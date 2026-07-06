@@ -42,7 +42,8 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * Configuration is read from {@code application.properties} at construction (keys
  * {@code otel.exporter.otlp.endpoint}, {@code otel.service.name}, {@code otel.exporter.otlp.headers},
- * {@code otel.exporter.otlp.timeout}, {@code otel.trace.forwarder.enabled}); values may use
+ * {@code otel.exporter.otlp.timeout}, {@code otel.exporter.otlp.connect.timeout},
+ * {@code otel.exporter.otlp.compression}, {@code otel.trace.forwarder.enabled}); values may use
  * {@code ${ENV_VAR:default}} substitution. Credentials belong in {@code otel.exporter.otlp.headers}
  * sourced from an environment variable with <b>no default value</b> so no secret is hard-coded - an
  * unset variable resolves to {@code null}, which parses to zero headers. See the module README for
@@ -56,11 +57,15 @@ public class OpenTelemetryForwarder implements LambdaFunction {
     private static final String ENABLED = "otel.trace.forwarder.enabled";
     private static final String ENDPOINT = "otel.exporter.otlp.endpoint";
     private static final String TIMEOUT = "otel.exporter.otlp.timeout";
+    private static final String CONNECT_TIMEOUT = "otel.exporter.otlp.connect.timeout";
+    private static final String COMPRESSION = "otel.exporter.otlp.compression";
     private static final String HEADERS = "otel.exporter.otlp.headers";
     private static final String SERVICE_NAME = "otel.service.name";
     private static final String APP_NAME = "application.name";
     private static final String DEFAULT_ENDPOINT = "http://localhost:4318/v1/traces";
     private static final String DEFAULT_TIMEOUT = "10000";
+    private static final String DEFAULT_CONNECT_TIMEOUT = "10000";
+    private static final String DEFAULT_COMPRESSION = "none";
     private static final String DEFAULT_SERVICE = "mercury";
 
     private final OtelForwarderContext context;
@@ -79,17 +84,21 @@ public class OpenTelemetryForwarder implements LambdaFunction {
             return;
         }
         String endpoint = config.getProperty(ENDPOINT, DEFAULT_ENDPOINT);
-        long timeoutMs = Utility.getInstance().str2long(config.getProperty(TIMEOUT, DEFAULT_TIMEOUT));
+        Utility util = Utility.getInstance();
+        long timeoutMs = util.str2long(config.getProperty(TIMEOUT, DEFAULT_TIMEOUT));
+        long connectTimeoutMs = util.str2long(config.getProperty(CONNECT_TIMEOUT, DEFAULT_CONNECT_TIMEOUT));
+        String compression = config.getProperty(COMPRESSION, DEFAULT_COMPRESSION);
         // Credentials come from the environment via ${OTEL_EXPORTER_OTLP_HEADERS} in application.properties.
         // No hard-coded default (static-analysis-safe): an unset variable -> null -> "null" -> no header.
         Map<String, String> headers = OtelForwarderContext.parseHeaders(String.valueOf(config.getProperty(HEADERS)));
-        SpanExporter exporter = OtelForwarderContext.buildExporter(endpoint, timeoutMs, headers);
+        SpanExporter exporter =
+                OtelForwarderContext.buildExporter(endpoint, timeoutMs, connectTimeoutMs, compression, headers);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             exporter.flush().join(timeoutMs, TimeUnit.MILLISECONDS);
             exporter.shutdown();
         }));
-        log.info("OpenTelemetry trace forwarder ready - service={}, OTLP endpoint={}, credential headers={}",
-                serviceName, endpoint, headers.keySet());
+        log.info("OpenTelemetry trace forwarder ready - service={}, OTLP endpoint={}, compression={}, "
+                + "credential headers={}", serviceName, endpoint, compression, headers.keySet());
         this.context = new OtelForwarderContext(true, exporter, serviceName);
     }
 

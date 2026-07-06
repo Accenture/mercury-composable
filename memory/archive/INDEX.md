@@ -54,3 +54,5 @@
 - event-script-minigraph-code-review-2026-07 — Code review closeout for PR #130 added deprecation-conversion visibility + real lifecycle… — faded — 2026-Q3.md
 - thread-minimalist-kafka-protobuf-removal — (completed — Eric, 2026-07-01) Remove Protobuf support from minimalist-kafka's Schema Regi… — faded — 2026-Q3.md
 - thread-deprecate-simple-type-matching — (sprint complete — Eric, 2026-07-02) Deprecate 'simple type matching' in TaskExecutor → 's… — faded — 2026-Q3.md
+- thread-snyk-oss-dependency-update — (completed — Eric, 2026-07-01) Repo-wide OSS dependency security update (Snyk-driven). Com… — completed thread swept (older than archive_window=20) — 2026-Q3.md
+- thread-application-log-context — (completed — Eric, 2026-06-30) Application log context feature. Designed + implemented + — completed thread swept (older than archive_window=20) — 2026-Q3.md

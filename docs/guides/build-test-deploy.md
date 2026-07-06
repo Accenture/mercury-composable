@@ -433,7 +433,7 @@ Add the dependency and it auto-registers (no code):
 <dependency>
     <groupId>org.platformlambda</groupId>
     <artifactId>opentelemetry-forwarder</artifactId>
-    <version>4.6.0</version>
+    <version>4.6.1</version>
 </dependency>
 ```
 
