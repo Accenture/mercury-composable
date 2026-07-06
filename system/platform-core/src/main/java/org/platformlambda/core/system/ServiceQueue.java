@@ -130,24 +130,23 @@ public class ServiceQueue {
     }
 
     private void enqueue(String route, Object body) {
-        if (!mailbox.offer(body)) {
-            if (mailboxBackPressureLogged.compareAndSet(false, true)) {
-                log.warn("{} dispatch mailbox full (capacity={}); applying back-pressure",
-                        route, dispatchMailboxSize());
-            }
-            boolean interrupted = false;
+        if (mailbox.offer(body)) {
+            return;
+        }
+        if (mailboxBackPressureLogged.compareAndSet(false, true)) {
+            log.warn("{} dispatch mailbox full (capacity={}); applying back-pressure",
+                    route, dispatchMailboxSize());
+        }
+        // block here to apply back-pressure until space frees or the route stops; an interrupt
+        // (shutdown) restores the flag and abandons this event
+        try {
             while (!stopped) {
-                try {
-                    if (mailbox.offer(body, 100, TimeUnit.MILLISECONDS)) {
-                        break;
-                    }
-                } catch (InterruptedException e) {
-                    interrupted = true;
+                if (mailbox.offer(body, 100, TimeUnit.MILLISECONDS)) {
+                    return;
                 }
             }
-            if (interrupted) {
-                Thread.currentThread().interrupt();
-            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

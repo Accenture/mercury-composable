@@ -172,7 +172,7 @@ class FileElasticStore implements ElasticStore {
     }
 
     private static void removeExpiredStore(File folder, File currentDir) {
-        if (sameFile(folder, currentDir)) {
+        if (folder == null || sameFile(folder, currentDir)) {
             return;
         }
         File running = new File(folder, RUNNING);
