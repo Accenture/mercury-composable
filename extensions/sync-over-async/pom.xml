@@ -40,6 +40,14 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- Converge Guava to platform-core's version: Confluent's serdes (via minimalist-kafka)
+                 otherwise win with an older 32.0.1, leaving this module on a different Guava (and
+                 failureaccess) than the rest of the reactor. Pinning here keeps one Guava companion. -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>33.5.0-jre</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -58,6 +66,16 @@
             <groupId>org.platformlambda</groupId>
             <artifactId>minimalist-kafka</artifactId>
             <version>4.6.1</version>
+        </dependency>
+
+        <!-- Guava's failureaccess companion is required at runtime by Confluent's serdes (Guava
+             LocalCache -> InternalFutureFailureAccess), reached transitively via minimalist-kafka.
+             Declared explicitly so it is a first-class classpath entry and cannot be dropped by
+             strict/curated dependency resolution in the field. -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>failureaccess</artifactId>
+            <version>1.0.3</version>
         </dependency>
 
         <!-- Reactor-native, battle-tested Redis client with robust Pub/Sub + auto-reconnect.

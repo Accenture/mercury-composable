@@ -43,6 +43,14 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- Converge Guava to platform-core's version: Confluent's serdes (via sync-over-async ->
+                 minimalist-kafka) otherwise win with an older 32.0.1. The failureaccess companion already
+                 arrives transitively; this keeps the demo on the same Guava as the reactor. -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>33.5.0-jre</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
