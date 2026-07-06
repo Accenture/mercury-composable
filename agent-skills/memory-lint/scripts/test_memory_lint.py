@@ -317,11 +317,26 @@ class TestContinuityHealth(unittest.TestCase):
         self.assertEqual(w, [], "core + pinned facts must not trigger continuity-bloat")
 
     def test_line_bloat_flagged(self):
+        # archivable > 0 → a review CAN lean it down → the actionable "review is due" message.
         cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n"
         sessions = ["2026-06-27-120000.md"]
-        w = memory_lint.check_continuity_health(self._facts(1), sessions, cont_text, 700, 10, 30, 600)
+        w = memory_lint.check_continuity_health(self._facts(1), sessions, cont_text, 700, 10, 30, 600, archivable=3)
         self.assertEqual(len(w), 1)
         self.assertIn("continuity.md 700 lines > continuity_max_lines 600", w[0])
+        self.assertIn("a review is due to lean it down", w[0])
+
+    def test_line_bloat_active_verbosity_when_nothing_archivable(self):
+        # archivable == 0 → a review has no honest lever (nothing faded/superseded). The message must
+        # NOT claim a review will fix it (that nudges toward premature archival of active facts —
+        # REVIEW.md's costliest error); it names the real lever instead (v4.28.3, mercury-composable).
+        cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n"
+        sessions = ["2026-06-27-120000.md"]
+        w = memory_lint.check_continuity_health(self._facts(1), sessions, cont_text, 700, 10, 30, 600, archivable=0)
+        self.assertEqual(len(w), 1)
+        self.assertIn("continuity.md 700 lines > continuity_max_lines 600", w[0])
+        self.assertIn("nothing is archivable yet", w[0])
+        self.assertIn("Condense shipped decisions", w[0])
+        self.assertNotIn("a review is due to lean it down", w[0])
 
     def test_healthy_ok(self):
         cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n"

@@ -344,10 +344,13 @@ def check_stale_metadata(cont, pinned, refs, stems, ww, acw, aw):
     return out
 
 
-def check_continuity_health(cont, sessions, cont_text, cont_lines, re_every, max_facts, max_lines, pinned=None):
+def check_continuity_health(cont, sessions, cont_text, cont_lines, re_every, max_facts, max_lines, pinned=None, archivable=None):
     # (8) advisory cadence/size triggers — what would have caught a real product repo
     # that ran 61 sessions and never archived (review never fired in the field).
     # All advisory (WARN): a review is a human/agent ritual, never a hard gate.
+    # `archivable` (optional) = count of entries a review could archive right now (facts overdue
+    # for decay + superseded facts). When it's 0, a lines-only breach can't be honestly cleared by
+    # a review, so the message says so instead of nudging toward premature archival (v4.28.3).
     if pinned is None:
         pinned = set()
     out = []
@@ -371,10 +374,22 @@ def check_continuity_health(cont, sessions, cont_text, cont_lines, re_every, max
             f"{max_facts} — a review is due to lean it down"
         )
     if cont_lines > max_lines:
-        out.append(
-            f"[continuity-bloat] continuity.md {cont_lines} lines > continuity_max_lines "
-            f"{max_lines} — a review is due to lean it down"
-        )
+        if archivable == 0:
+            # Lines over budget but a review has nothing to archive right now (nothing faded past
+            # archive_window, nothing superseded). "A review will lean it down" would be dishonest
+            # and pressures archiving an *active* fact — REVIEW.md's costliest error. Name the real
+            # lever instead (field report: mercury-composable, a complex repo's dense active facts).
+            out.append(
+                f"[continuity-bloat] continuity.md {cont_lines} lines > continuity_max_lines "
+                f"{max_lines} — but nothing is archivable yet; the excess is active/dense facts. "
+                f"Condense shipped decisions, or raise continuity_max_lines in decay-policy.md if "
+                f"this repo is legitimately large."
+            )
+        else:
+            out.append(
+                f"[continuity-bloat] continuity.md {cont_lines} lines > continuity_max_lines "
+                f"{max_lines} — a review is due to lean it down"
+            )
     return out
 
 
@@ -419,14 +434,18 @@ def main():
         + check_conflict_markers(root)
     )
     stems = [os.path.basename(s)[:-3] for s in sessions]
+    overdue = check_overdue(cont, pinned, sslu, aw)
+    # What a review could archive right now: facts overdue for decay + superseded facts. When 0,
+    # a lines-only bloat breach has no honest fix via archival (v4.28.3).
+    archivable = len(overdue) + sum(1 for f in cont.values() if f.get("tier") == "superseded")
     warns = (
-        check_overdue(cont, pinned, sslu, aw)
+        overdue
         + check_dangling({**cont, **arch, **extra})
         + check_session_filenames(sessions)
         + check_continuity_health(
             cont, sessions, cont_text, cont_lines,
             w["review_every"], w["continuity_max_facts"], w["continuity_max_lines"],
-            pinned,
+            pinned, archivable,
         )
         + check_stale_metadata(cont, pinned, refs, stems, w["working_window"], acw, aw)
     )

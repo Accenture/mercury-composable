@@ -383,11 +383,25 @@ test("check_continuity_health: fact bloat excludes core and pinned", () => {
   assert.deepEqual(w, [], "core + pinned facts must not trigger continuity-bloat");
 });
 
-test("check_continuity_health flags line bloat", () => {
+test("check_continuity_health flags line bloat (archivable > 0 → review can lean it down)", () => {
   const cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n";
-  const w = check_continuity_health(facts(1), ["2026-06-27-120000.md"], cont_text, 700, 10, 30, 600);
+  const w = check_continuity_health(facts(1), ["2026-06-27-120000.md"], cont_text, 700, 10, 30, 600, new Set(), 3);
   assert.equal(w.length, 1);
   assert.ok(w[0].includes("continuity.md 700 lines > continuity_max_lines 600"));
+  assert.ok(w[0].includes("a review is due to lean it down"));
+});
+
+test("check_continuity_health: line bloat with nothing archivable → active-verbosity message", () => {
+  // archivable === 0 → a review has no honest lever (nothing faded/superseded). The message must
+  // NOT claim a review will fix it (that nudges toward premature archival of active facts —
+  // REVIEW.md's costliest error); it names the real lever instead (v4.28.3, mercury-composable).
+  const cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n";
+  const w = check_continuity_health(facts(1), ["2026-06-27-120000.md"], cont_text, 700, 10, 30, 600, new Set(), 0);
+  assert.equal(w.length, 1);
+  assert.ok(w[0].includes("continuity.md 700 lines > continuity_max_lines 600"));
+  assert.ok(w[0].includes("nothing is archivable yet"));
+  assert.ok(w[0].includes("Condense shipped decisions"));
+  assert.ok(!w[0].includes("a review is due to lean it down"));
 });
 
 test("check_continuity_health: a healthy layer is OK", () => {
