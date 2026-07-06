@@ -39,7 +39,7 @@ Run each step in its own terminal, from the repo root unless noted.
 ```shell
 cd helpers/kafka-standalone
 mvn clean package
-java -jar target/kafka-standalone-4.5.0.jar
+java -jar target/kafka-standalone-4.6.0.jar
 ```
 Wait for it to report the broker is up on `127.0.0.1:9092`.
 
@@ -54,7 +54,7 @@ node create-topics.js
 ```shell
 cd examples/kafka-demo
 mvn clean package
-java -jar target/kafka-demo-4.5.0.jar
+java -jar target/kafka-demo-4.6.0.jar
 ```
 It starts the flow adapter (consuming `demo.inbound`) and the producer.
 

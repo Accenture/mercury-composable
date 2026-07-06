@@ -48,7 +48,7 @@ mvn clean install
 
 ```shell
 cd examples/composable-example
-java -jar target/composable-example-4.5.0.jar
+java -jar target/composable-example-4.6.0.jar
 ```
 
 Look for these lines to confirm it's running:
@@ -103,7 +103,7 @@ built-in tutorial graph:
 
 ```shell
 cd examples/minigraph-playground
-java -jar target/minigraph-playground-4.5.0.jar
+java -jar target/minigraph-playground-4.6.0.jar
 ```
 
 ```bash

@@ -21,7 +21,7 @@ for why. See also the guide: [`docs/guides/schema-registry-mock.md`](../../docs/
 ```shell
 cd helpers/schema-registry-standalone
 mvn clean package
-java -jar target/schema-registry-standalone-4.5.0.jar
+java -jar target/schema-registry-standalone-4.6.0.jar
 ```
 
 The server starts on `http://127.0.0.1:8081`. Press `Ctrl-C` to stop.
@@ -122,7 +122,7 @@ Schemas are persisted as **one file per global id** — `<id>.json` (e.g. `1.jso
 Override the store for a durable location:
 
 ```shell
-java -Dschema.registry.data.store="$HOME/schema-registry" -jar target/schema-registry-standalone-4.5.0.jar
+java -Dschema.registry.data.store="$HOME/schema-registry" -jar target/schema-registry-standalone-4.6.0.jar
 ```
 
 ## Choosing a port
@@ -130,7 +130,7 @@ java -Dschema.registry.data.store="$HOME/schema-registry" -jar target/schema-reg
 The port defaults to `8081`. Override it with the `rest.server.port` property:
 
 ```shell
-java -Drest.server.port=8082 -jar target/schema-registry-standalone-4.5.0.jar
+java -Drest.server.port=8082 -jar target/schema-registry-standalone-4.6.0.jar
 ```
 
 ## Prefer Docker / the real registry?

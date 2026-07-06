@@ -118,7 +118,7 @@ Tempo, …). Add the dependency and it auto-registers; no code required:
 <dependency>
     <groupId>org.platformlambda</groupId>
     <artifactId>opentelemetry-forwarder</artifactId>
-    <version>4.5.0</version>
+    <version>4.6.0</version>
 </dependency>
 ```
 
