@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-06 | agent: Claude Code (2026-07-06-175027)
+- **last_session:** 2026-07-06 | agent: Claude Code (2026-07-06-185829)
 - **last_review:** 2026-07-06 | through 2026-07-06-165910.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -431,6 +431,21 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (field fix on `main` `b47fac39`, 2026-07-06 Claude Code — pending field-test → 4.6.2) **Guava
+  `failureaccess` `NoClassDefFound` in the field build.** v4.6.1 built fine locally + Snyk passed, but the
+  field build failed: `NoClassDefFoundError: com/google/common/util/concurrent/internal/InternalFutureFailureAccess`
+  in `minimalist-kafka` `SchemaCodecCsfleConfigTest` (Confluent serializer → Guava `LocalCache`). **Root
+  cause (Maven nearest-wins, NOT a 4.6.1 regression):** Confluent's `kafka-avro-serializer` pulls `guava:32.0.1`
+  at depth 2, beating platform-core's `guava:33.5.0` at depth 3, so `failureaccess` arrived only as a
+  transitive-of-a-transitive that strict/curated field resolution drops. **Not reproducible locally.** **Fix
+  (`b47fac39`, 4 poms):** pin Guava `33.5.0` + declare `com.google.guava:failureaccess:1.0.3` explicitly
+  (depth-1) in `minimalist-kafka` + `sync-over-async`; pin Guava in `kafka-demo` + `sync-over-async-demo` for
+  consistency. Reactor now uniformly on Guava `33.5.0` + `failureaccess 1.0.3` (minimalist-kafka 79 +
+  sync-over-async 32 tests green). **⚠ Don't remove the explicit `failureaccess`** — that's what guarantees the
+  class in strict field resolution. **Next (Eric):** field-test the build from `main`; on green, cut 4.6.2
+  (31-pom bump + CHANGELOG "Fixed" + tag/release). Relates [[release-4.6.1-security-patch]].
+  <!-- id: thread-guava-failureaccess-field-fix | created: 2026-07-06 | last_used: 2026-07-06 | uses: 1 | tier: working | origin: 2026-07-06-185829 -->
 
 - [ ] (release cut — Claude Code, 2026-07-06, branch `chore/release-4.6.1`, committed + tagged `v4.6.1` locally,
   **not pushed**) **4.6.1 security patch → field SCA + Snyk re-scan.** Full detail in the Key Decision
