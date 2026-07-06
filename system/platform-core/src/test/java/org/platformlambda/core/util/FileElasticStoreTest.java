@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -154,6 +156,71 @@ class FileElasticStoreTest {
         assertEquals(0, q.read().length);
         assertTrue(q.isClosed());
         q.destroy();
+    }
+
+    @Test
+    void closeAfterPeekReuseClearsCachedEvent() {
+        FileElasticStore q = new FileElasticStore("peek.close.reuse");
+        q.write(record("a"));
+        assertEquals("a", body(q.peek()));
+        q.close();
+        q.write(record("b"));
+        assertEquals("b", body(q.read()));
+        assertEquals(0, q.read().length);
+        q.destroy();
+    }
+
+    @Test
+    void openChannelsStayBoundedAfterManySegmentRolls() {
+        System.setProperty(SEG_PROP, "512");
+        FileElasticStore q = new FileElasticStore("fd.bound");
+        for (int i = 0; i < M + 1000; i++) {
+            q.write(record("fd-" + i + "-" + "x".repeat(200)));
+        }
+        assertTrue(segmentFiles("fd.bound") > 10, "expected many segment rolls");
+        assertTrue(q.openSegmentChannels() <= 2, "open segment channels should stay O(1)");
+        q.destroy();
+    }
+
+    @Test
+    void staleStoreDirectoriesAreCleanedWithoutDeletingCurrent() throws IOException {
+        FileElasticStore q = new FileElasticStore("stale.cleanup.bootstrap");
+        File current = FileElasticStore.baseDir;
+        File tmpRoot = current.getParentFile();
+        assertNotNull(tmpRoot, "file store should be under a transient root");
+        File stale = new File(tmpRoot, "stale-file-store-" + System.nanoTime());
+        assertTrue(stale.mkdirs(), "stale directory created");
+        Files.writeString(new File(stale, "RUNNING").toPath(), "old");
+        Files.write(new File(stale, "eq-stale-1-0.dat").toPath(), new byte[] {1, 2, 3});
+        assertTrue(new File(stale, "RUNNING").setLastModified(System.currentTimeMillis() - 2L * 60 * 60 * 1000));
+        File currentLeftover = new File(current, "eq-current-leftover.dat");
+        Files.write(currentLeftover.toPath(), new byte[] {4, 5, 6});
+        FileElasticStore.scanExpiredStores(tmpRoot, current);
+        assertFalse(stale.exists(), "stale prior store should be removed");
+        assertTrue(current.exists(), "current store directory must not be deleted");
+        assertTrue(currentLeftover.exists(), "stale scan must not purge current directory segments");
+        FileElasticStore.purgeLeftoverSegments(current, null);
+        assertFalse(currentLeftover.exists(), "startup purge removes current leftover eq segments");
+        q.destroy();
+    }
+
+    @Test
+    void staleRunningOnlyDirectoryIsNotDeleted() throws IOException {
+        FileElasticStore q = new FileElasticStore("stale.running.only.bootstrap");
+        File current = FileElasticStore.baseDir;
+        File tmpRoot = current.getParentFile();
+        assertNotNull(tmpRoot, "file store should be under a transient root");
+        File unrelated = new File(tmpRoot, "stale-running-only-" + System.nanoTime());
+        assertTrue(unrelated.mkdirs(), "unrelated directory created");
+        File running = new File(unrelated, "RUNNING");
+        Files.writeString(running.toPath(), "old");
+        assertTrue(running.setLastModified(System.currentTimeMillis() - 2L * 60 * 60 * 1000));
+        FileElasticStore.scanExpiredStores(tmpRoot, current);
+        assertTrue(unrelated.exists(), "RUNNING-only directory without eq segments must not be removed");
+        q.destroy();
+        FileElasticStore.purgeLeftoverSegments(unrelated, null);
+        Files.deleteIfExists(running.toPath());
+        Files.deleteIfExists(unrelated.toPath());
     }
 
     @Test

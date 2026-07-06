@@ -22,6 +22,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ElasticQueue;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -34,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -53,6 +55,8 @@ public class ServiceQueue {
     private static final String STREAM_IN = ".in";
     private static final int CALLBACK_LENGTH = CALLBACK_PREFIX.length() + UUID_LENGTH;
     private static final int STREAM_IN_LENGTH = STREAM_PREFIX.length() + UUID_LENGTH + STREAM_IN.length();
+    private static final String DISPATCH_MAILBOX_SIZE = "elastic.queue.dispatch.mailbox.size";
+    private static final int DEFAULT_DISPATCH_MAILBOX_SIZE = 1024;
     private final ElasticQueue elasticQueue;
     private final ServiceDef service;
     private final String readyPrefix;
@@ -66,10 +70,11 @@ public class ServiceQueue {
     private boolean buffering = true;
     private volatile boolean stopped = false;
     // Off-loop dispatch, used when the elastic store is virtual-thread-safe (the file store): the Vert.x
-    // consumer only enqueues (non-blocking) to this mailbox and a per-route virtual thread runs the state
-    // machine + blocking spill I/O — so an OS-flush / disk stall parks the VT's carrier, never the event loop.
-    // In loop-dispatch mode (bdb) the mailbox is null and the state machine runs inline on the event loop.
+    // consumer enqueues to this bounded mailbox (blocking only when full for back-pressure) and a per-route
+    // virtual thread runs the state machine + blocking spill I/O. In loop-dispatch mode (bdb) the mailbox is
+    // null and the state machine runs inline on the event loop.
     private final BlockingQueue<Object> mailbox;
+    private final AtomicBoolean mailboxBackPressureLogged = new AtomicBoolean(false);
     private Thread dispatchThread;
 
     public ServiceQueue(ServiceDef service) {
@@ -84,9 +89,16 @@ public class ServiceQueue {
         // per-route VT; a carrier-pinning store (bdb) runs inline on the loop. One knob (the store), two safe
         // modes — the unsafe vthread+bdb combo is unreachable.
         boolean vthreadDispatch = elasticQueue.supportsVirtualThreadDispatch();
-        this.mailbox = vthreadDispatch ? new LinkedBlockingQueue<>() : null;
+        this.mailbox = vthreadDispatch ? new LinkedBlockingQueue<>(dispatchMailboxSize()) : null;
         initConsumer(route, vthreadDispatch, new ServiceHandler());
         setupWorkers(route);
+    }
+
+    static int dispatchMailboxSize() {
+        int configured = Utility.getInstance().str2int(AppConfigReader.getInstance().getProperty(
+                DISPATCH_MAILBOX_SIZE, String.valueOf(DEFAULT_DISPATCH_MAILBOX_SIZE)));
+        int size = configured > 0 ? configured : DEFAULT_DISPATCH_MAILBOX_SIZE;
+        return Math.max(ElasticQueue.MEMORY_BUFFER, size);
     }
 
     private static boolean isControlRoute(ServiceDef service, String route) {
@@ -100,16 +112,42 @@ public class ServiceQueue {
             if (DISPATCH_MODE_LOGGED.compareAndSet(false, true)) {
                 log.info("ServiceQueue dispatch = vthread (per-route virtual thread; store is virtual-thread-safe)");
             }
-            // event loop only enqueues (non-blocking); the per-route virtual thread runs the state machine
+            // event loop enqueues; if the bounded mailbox fills, block here to apply back-pressure, not drops
             consumer = system.localConsumer(route, message -> {
-                if (!stopped && !mailbox.offer(message.body())) {
-                    log.error("{} dispatch mailbox rejected an event", route);
+                if (!stopped) {
+                    enqueue(route, message.body());
                 }
             });
             dispatchThread = Thread.ofVirtual().name("dispatch." + route).start(() -> drainLoop(handler));
         } else {
             // default: the state machine runs inline on the event-loop thread (unchanged behaviour)
             consumer = system.localConsumer(route, handler);
+        }
+    }
+
+    int getDispatchMailboxRemainingCapacity() {
+        return mailbox == null ? 0 : mailbox.remainingCapacity();
+    }
+
+    private void enqueue(String route, Object body) {
+        if (!mailbox.offer(body)) {
+            if (mailboxBackPressureLogged.compareAndSet(false, true)) {
+                log.warn("{} dispatch mailbox full (capacity={}); applying back-pressure",
+                        route, dispatchMailboxSize());
+            }
+            boolean interrupted = false;
+            while (!stopped) {
+                try {
+                    if (mailbox.offer(body, 100, TimeUnit.MILLISECONDS)) {
+                        break;
+                    }
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                }
+            }
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 

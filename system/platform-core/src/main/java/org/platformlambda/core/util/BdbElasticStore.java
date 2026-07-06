@@ -233,6 +233,7 @@ class BdbElasticStore implements ElasticStore {
     }
 
     private void resetCounter() {
+        peeked = NOTHING;
         if (!empty) {
             empty = true;
             readCounter = writeCounter = 0;

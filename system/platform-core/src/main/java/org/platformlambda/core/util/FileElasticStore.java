@@ -44,9 +44,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * <b>deleted immediately</b> (O(1) reclamation — no compaction, no cleaner thread, no background housekeeping,
  * which is the whole point vs. Berkeley DB).</p>
  *
- * <p><b>Threading:</b> single-threaded per route (the Vert.x consumer's event-loop thread), exactly like the
- * BDB store. A {@link FileChannel} per segment gives write-then-read visibility within the process via the OS
- * page cache; no fsync (the buffer is transient — not durable across restart).</p>
+ * <p><b>Threading:</b> single-threaded per route. At most the active write tail and the current read head hold
+ * open {@link FileChannel}s; sealed inactive segments are reopened only when they become the read head. There
+ * is no fsync (the buffer is transient — not durable across restart).</p>
  */
 class FileElasticStore implements ElasticStore {
     private static final Logger log = LoggerFactory.getLogger(FileElasticStore.class);
@@ -59,6 +59,11 @@ class FileElasticStore implements ElasticStore {
     private static final long DEFAULT_SEGMENT_BYTES = 16L * 1024 * 1024;
     private static final long MIN_SEGMENT_BYTES = 512;
     private static final String SEGMENT_SIZE_CONFIG = "elastic.queue.segment.size.bytes";
+    private static final String RUNNING = "RUNNING";
+    private static final long ONE_SECOND = 1000L;
+    private static final long ONE_MINUTE = 60 * ONE_SECOND;
+    private static final long ONE_HOUR = 60 * ONE_MINUTE;
+    private static final long KEEP_ALIVE_INTERVAL = 20 * ONE_SECOND;
 
     private static final ReentrantLock SAFETY = new ReentrantLock();
     private static final AtomicBoolean LOADED = new AtomicBoolean(false);
@@ -96,15 +101,20 @@ class FileElasticStore implements ElasticStore {
                     LOADED.set(true);
                     Platform platform = Platform.getInstance();
                     AppConfigReader config = AppConfigReader.getInstance();
-                    boolean runningInCloud = "true".equals(config.getProperty("running.in.cloud", "false"));
                     File tmpRoot = new File(config.getProperty("transient.data.store", "/tmp/reactive"));
+                    boolean runningInCloud = "true".equals(config.getProperty("running.in.cloud", "false"));
                     baseDir = runningInCloud ? tmpRoot
                             : new File(tmpRoot, platform.getName() + "-" + platform.getOrigin());
                     if (!baseDir.exists() && baseDir.mkdirs()) {
                         log.info("{} created", baseDir);
                     }
-                    // transient store: clear any leftover segment files from a prior run
-                    purgeLeftoverSegments(null);
+                    util.str2file(new File(baseDir, RUNNING), util.getTimestamp());
+                    purgeLeftoverSegments(baseDir, null);
+                    if (!runningInCloud) {
+                        scanExpiredStores(tmpRoot, baseDir);
+                    }
+                    Runtime.getRuntime().addShutdownHook(new Thread(FileElasticStore::shutdown));
+                    platform.getVertx().setPeriodic(KEEP_ALIVE_INTERVAL, t -> keepAlive());
                     log.info("Elastic file store ready ({})", baseDir);
                 }
             } finally {
@@ -114,8 +124,8 @@ class FileElasticStore implements ElasticStore {
     }
 
     /** Best-effort removal of leftover segment files (all, or only those for a given safe id prefix). */
-    private static void purgeLeftoverSegments(String idPrefix) {
-        File[] files = baseDir.listFiles();
+    static void purgeLeftoverSegments(File dir, String idPrefix) {
+        File[] files = dir == null ? null : dir.listFiles();
         if (files != null) {
             String prefix = idPrefix == null ? SEGMENT_PREFIX : SEGMENT_PREFIX + idPrefix + "-";
             for (File f : files) {
@@ -127,6 +137,76 @@ class FileElasticStore implements ElasticStore {
                     }
                 }
             }
+        }
+    }
+
+    private static void keepAlive() {
+        if (baseDir != null) {
+            util.str2file(new File(baseDir, RUNNING), util.getTimestamp());
+        }
+    }
+
+    private static void shutdown() {
+        if (baseDir != null) {
+            purgeLeftoverSegments(baseDir, null);
+            try {
+                Files.deleteIfExists(new File(baseDir, RUNNING).toPath());
+            } catch (IOException e) {
+                log.debug("Unable to delete {} marker - {}", RUNNING, e.getMessage());
+            }
+        }
+    }
+
+    static void scanExpiredStores(File tmpRoot, File currentDir) {
+        if (tmpRoot == null) {
+            return;
+        }
+        File[] dirs = tmpRoot.listFiles();
+        if (dirs != null) {
+            for (File d : dirs) {
+                if (d.isDirectory()) {
+                    removeExpiredStore(d, currentDir);
+                }
+            }
+        }
+    }
+
+    private static void removeExpiredStore(File folder, File currentDir) {
+        if (sameFile(folder, currentDir)) {
+            return;
+        }
+        File running = new File(folder, RUNNING);
+        if (running.exists()) {
+            if (System.currentTimeMillis() - running.lastModified() > ONE_HOUR && hasSegmentFiles(folder)) {
+                util.cleanupDir(folder);
+                log.info("Elastic file holding area {} expired", folder);
+            }
+        } else if (hasSegmentFiles(folder)) {
+            util.cleanupDir(folder);
+            log.warn("Unknown elastic file holding area {} removed", folder);
+        }
+    }
+
+    private static boolean hasSegmentFiles(File folder) {
+        File[] files = folder.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.isFile() && f.getName().startsWith(SEGMENT_PREFIX) && f.getName().endsWith(SEGMENT_SUFFIX)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean sameFile(File a, File b) {
+        if (a == null || b == null) {
+            return false;
+        }
+        try {
+            return a.getCanonicalFile().equals(b.getCanonicalFile());
+        } catch (IOException e) {
+            return a.getAbsoluteFile().equals(b.getAbsoluteFile());
         }
     }
 
@@ -218,7 +298,7 @@ class FileElasticStore implements ElasticStore {
     public void destroy() {
         close();
         // final clean-up: remove any stray segment files for this route (across generations)
-        purgeLeftoverSegments(safeId);
+        purgeLeftoverSegments(baseDir, safeId);
     }
 
     @Override
@@ -234,6 +314,7 @@ class FileElasticStore implements ElasticStore {
     }
 
     private void resetCounter() {
+        peeked = NOTHING;
         if (!empty) {
             empty = true;
             readCounter = writeCounter = 0;
@@ -254,10 +335,13 @@ class FileElasticStore implements ElasticStore {
         }
         ByteBuffer buf = ByteBuffer.allocate(LENGTH_PREFIX + event.length);
         buf.putInt(event.length).put(event).flip();
-        tail.writePos = writeFully(tail.channel, buf, tail.writePos);
+        tail.writePos = writeFully(tail.channelForWrite(), buf, tail.writePos);
         tail.recordsWritten++;
         if (tail.writePos >= segmentBytes) {
             tail.sealed = true;
+            if (tail != segments.peekFirst()) {
+                tail.closeQuietly();
+            }
         }
     }
 
@@ -268,10 +352,11 @@ class FileElasticStore implements ElasticStore {
             return NOTHING;
         }
         ByteBuffer lenBuf = ByteBuffer.allocate(LENGTH_PREFIX);
-        readFully(head.channel, lenBuf, head.readPos);
+        FileChannel ch = head.channelForRead();
+        readFully(ch, lenBuf, head.readPos);
         int len = lenBuf.getInt(0);
         ByteBuffer payload = ByteBuffer.allocate(len);
-        readFully(head.channel, payload, head.readPos + LENGTH_PREFIX);
+        readFully(ch, payload, head.readPos + LENGTH_PREFIX);
         head.readPos += LENGTH_PREFIX + len;
         head.recordsRead++;
         // a sealed, fully-consumed segment is reclaimed immediately (O(1), no cleaner thread)
@@ -291,6 +376,16 @@ class FileElasticStore implements ElasticStore {
         } catch (IOException e) {
             throw new IllegalStateException("Unable to open elastic segment " + f + " - " + e.getMessage(), e);
         }
+    }
+
+    int openSegmentChannels() {
+        int n = 0;
+        for (Segment s : segments) {
+            if (s.isOpen()) {
+                n++;
+            }
+        }
+        return n;
     }
 
     private static long writeFully(FileChannel ch, ByteBuffer buf, long pos) {
@@ -328,7 +423,7 @@ class FileElasticStore implements ElasticStore {
     private static final class Segment {
         private final int index;
         private final File file;
-        private final FileChannel channel;
+        private FileChannel channel;
         private long writePos = 0;
         private long readPos = 0;
         private long recordsWritten = 0;
@@ -341,12 +436,43 @@ class FileElasticStore implements ElasticStore {
             this.channel = channel;
         }
 
-        private void closeAndDelete() {
-            try {
-                channel.close();
-            } catch (IOException e) {
-                log.debug("Unable to close segment {} - {}", file, e.getMessage());
+        private boolean isOpen() {
+            return channel != null && channel.isOpen();
+        }
+
+        private FileChannel channelForWrite() {
+            return channelFor(StandardOpenOption.READ, StandardOpenOption.WRITE);
+        }
+
+        private FileChannel channelForRead() {
+            return channelFor(StandardOpenOption.READ);
+        }
+
+        private FileChannel channelFor(StandardOpenOption... options) {
+            if (!isOpen()) {
+                try {
+                    channel = FileChannel.open(file.toPath(), options);
+                } catch (IOException e) {
+                    throw new IllegalStateException("Unable to reopen elastic segment " + file + " - "
+                            + e.getMessage(), e);
+                }
             }
+            return channel;
+        }
+
+        private void closeQuietly() {
+            if (isOpen()) {
+                try {
+                    channel.close();
+                } catch (IOException e) {
+                    log.debug("Unable to close segment {} - {}", file, e.getMessage());
+                }
+            }
+            channel = null;
+        }
+
+        private void closeAndDelete() {
+            closeQuietly();
             try {
                 Files.deleteIfExists(file.toPath());
             } catch (IOException e) {

@@ -66,6 +66,20 @@ class ElasticStoreParityTest {
     }
 
     @Test
+    void closeAfterPeekReuseClearsCachedEvent() {
+        for (String type : IMPLS) {
+            ElasticStore spooler = store(type, "parity." + type + ".peek.close");
+            spooler.write(new EventEnvelope().setBody("a").toBytes());
+            assertEquals("a", body(spooler.peek()), type);
+            spooler.close();
+            spooler.write(new EventEnvelope().setBody("b").toBytes());
+            assertEquals("b", body(spooler.read()), type);
+            assertEquals(0, spooler.read().length, type);
+            spooler.destroy();
+        }
+    }
+
+    @Test
     void normalPayload() {
         for (String type : IMPLS) {
             readWrite(type, "parity." + type + ".normal", 10);
