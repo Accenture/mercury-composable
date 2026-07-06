@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.serializers.SimpleMapper;
-import org.platformlambda.core.system.AutoStart;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
@@ -66,8 +65,12 @@ class SchemaRegistryTest {
         // The store defaults to the transient /tmp/schema-registry; wipe it before boot so each run
         // starts clean. (The test shares the default store path, so it must not leave data behind.)
         wipeTransientStore();
-        // AutoStart is idempotent - it boots the platform-core runtime + REST automation HTTP server once.
-        AutoStart.main(new String[0]);
+        // Recreate the store dir explicitly: the SchemaStore singleton may already have been constructed
+        // by a sibling test (its constructor's mkdirs runs only once), so the on-disk drop-in test needs
+        // the directory to exist regardless of construction order.
+        new File(storeDir()).mkdirs();
+        // MainApp.main delegates to AutoStart (idempotent) - boots the runtime + REST HTTP server once.
+        MainApp.main(new String[0]);
         restPort = Utility.getInstance().str2int(
                 AppConfigReader.getInstance().getProperty("rest.server.port", "8383"));
     }
