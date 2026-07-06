@@ -16,8 +16,8 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-05 | agent: Claude Code (2026-07-05-054815)
-- **last_review:** 2026-07-05 | through 2026-07-05-012640.md
+- **last_session:** 2026-07-05 | agent: GitHub Copilot (2026-07-05-235813)
+- **last_review:** 2026-07-05 | through 2026-07-05-235813.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -64,7 +64,7 @@
 ## Key Decisions
 
 - **ElasticQueue: replace the Berkeley DB (SleepyCat) spill tier with a portable file-backed segmented
-  FIFO — design approved on paper 2026-07-05 (Eric), not yet implemented.** `ElasticQueue` (platform-core)
+  FIFO — implemented on branch `feature/elastic-queue-file-fifo`; PR #137 is in review hardening.** `ElasticQueue` (platform-core)
   is the reactive back-pressure overflow buffer behind every `ServiceQueue`: ~20 events in memory, then
   spill. Today the spill tier is BDB JE (`com.sleepycat:je:18.3.12`) — used *only* here, and at a fraction
   of its capability (no txns, no durability — wiped on restart, FIFO-only, no random access; a transactional
@@ -91,7 +91,7 @@
   `file`→true/vthread); the standalone `elastic.queue.dispatch` config was removed, so the unsafe vthread+bdb
   combo is unreachable by construction. Design spec (gitignored): `draft-design-specs/elastic_queue_file_fifo_design.md`.
   See [[thread-elastic-queue-bdb-to-file]]; relates [[virtual-threads-rpc]].
-  <!-- id: elastic-queue-file-fifo-plan | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
+  <!-- id: elastic-queue-file-fifo-plan | created: 2026-07-05 | last_used: 2026-07-05 | uses: 6 | tier: active | origin: 2026-07-05-033922 -->
 
 - **Tracing & correlation-id cleanup (2026-07-03, branch `fix/traceid-correlationid-propagation`, uncommitted).**
   Implemented Eric's `~/Desktop/tracing-and-correlation.md` brief. **TraceId:** retired `trace.http.header` +
@@ -120,7 +120,7 @@
   `RestEndpointTest#plainRestFunctionReceivesCorrelationId`.
   Plan: `~/.claude/plans/glowing-tinkering-glacier.md`. See [[flow-cid-vs-business-correlation-decoupled]] and
   [[thread-traceid-correlation-propagation]]. **Status: implemented + feature-complete, all tests green, uncommitted — pending Eric.**
-  <!-- id: tracing-correlation-cleanup | created: 2026-07-03 | last_used: 2026-07-04 | uses: 5 | tier: active | origin: 2026-07-03-014759 -->
+  <!-- id: tracing-correlation-cleanup | created: 2026-07-03 | last_used: 2026-07-04 | uses: 5 | tier: archive-candidate | origin: 2026-07-03-014759 -->
 
 - **External assessment of the shipped trace/cid feature (PR #132): one real fix kept, one "finding" rejected
   by design (2026-07-04, uncommitted).** GitHub Copilot's report
@@ -144,7 +144,7 @@
   [[thread-traceid-correlation-propagation]]. **Status: shipped as PR [#134](https://github.com/Accenture/mercury-composable/pull/134)**
   (branch `fix/correlation-id-readonly-and-trace-header-docs`; 2 commits — `3065f804` source+tests+docs,
   `707056e5` memory) — pending review/merge.
-  <!-- id: traceid-cid-propagation-edgecase-fixes | created: 2026-07-04 | last_used: 2026-07-04 | uses: 2 | tier: active | origin: 2026-07-04-223237 -->
+  <!-- id: traceid-cid-propagation-edgecase-fixes | created: 2026-07-04 | last_used: 2026-07-04 | uses: 2 | tier: archive-candidate | origin: 2026-07-04-223237 -->
 
 - **Design principle — a developer-set outbound trace header (`X-Trace-Id` / W3C `traceparent`) is an
   intentional act the framework must honor, not strip (Eric, 2026-07-04).** `AsyncHttpClient` deliberately does
@@ -168,7 +168,7 @@
   **Documented (2026-07-04):** "let the framework manage trace headers; don't set `X-Trace-Id`/`traceparent`
   yourself (with the untraced escape hatch)" callouts added to `docs/guides/observability.md` (§W3C),
   `reserved-names-and-headers.md` (§Trace ID), and `actuators-and-http-client.md` (§AsyncHttpClient).
-  <!-- id: developer-set-trace-headers-are-intentional | created: 2026-07-04 | last_used: 2026-07-04 | uses: 1 | tier: working | origin: 2026-07-04-224922 -->
+  <!-- id: developer-set-trace-headers-are-intentional | created: 2026-07-04 | last_used: 2026-07-04 | uses: 1 | tier: archive-candidate | origin: 2026-07-04-224922 -->
 
 - **A flow's reply cid and its business correlation-id are distinct and must stay decoupled (2026-07-03).**
   `FlowInstance.cid` is the **reply-routing** key: REST automation awaits an HTTP response whose correlationId
@@ -182,7 +182,7 @@
   businessCid defaults to routing cid for non-HTTP callers) and by `HttpToFlow` (routing = requestId,
   business = X-Correlation-Id); subflows inherit the parent's business cid via the same header. Kafka: the two
   coincide (no requestId indirection). Relates [[trace-thread-keyed-mono-gotcha]].
-  <!-- id: flow-cid-vs-business-correlation-decoupled | created: 2026-07-03 | last_used: 2026-07-04 | uses: 6 | tier: active | origin: 2026-07-03-014759 -->
+  <!-- id: flow-cid-vs-business-correlation-decoupled | created: 2026-07-03 | last_used: 2026-07-04 | uses: 6 | tier: archive-candidate | origin: 2026-07-03-014759 -->
 
 - **CSFLE (Client-Side Field Level Encryption) for minimalist-kafka — pure delegation, no framework rule/schema
   code (2026-07-02, branch `feature/kafka-csfle-field-encryption`, uncommitted).** Eric's field observation
@@ -230,7 +230,7 @@
   `SchemaCodecCsfleConfigTest#avroCsfleConfigReachesEncoderAndDecoder` — the first direct Avro CSFLE round-trip
   through `SchemaCodec.Encoder`/`Decoder` (Avro was only symmetrically wired, JSON-only tested). Full module
   green (79 tests, coverage gate met).
-  <!-- id: kafka-csfle-delegation | created: 2026-07-02 | last_used: 2026-07-05 | uses: 3 | tier: active | origin: 2026-07-02-020429 -->
+  <!-- id: kafka-csfle-delegation | created: 2026-07-02 | last_used: 2026-07-05 | uses: 3 | tier: archive-candidate | origin: 2026-07-02-020429 -->
 
 - **Repo-wide OSS dependency security update (2026-07-01, committed on `feature/deprecate-simple-type-matching`).**
   Snyk flagged high-risk dependency CVEs on `system/minimalist-kafka`, `extensions/sync-over-async`,
@@ -259,7 +259,7 @@
   Two full-reactor `mvn test` runs (before/after the touch-ups): **BUILD SUCCESS, all 28 modules, zero
   failures**, plus the standalone `examples/pg-example` (excluded from the root aggregator) run separately,
   also green both times.
-  <!-- id: snyk-oss-dependency-update-2026-07 | created: 2026-07-01 | last_used: 2026-07-05 | uses: 3 | tier: active | origin: 2026-07-01-215533 -->
+  <!-- id: snyk-oss-dependency-update-2026-07 | created: 2026-07-01 | last_used: 2026-07-05 | uses: 3 | tier: archive-candidate | origin: 2026-07-01-215533 -->
 
 - **Dependabot alert #28 (jackson-databind `@JsonIgnoreProperties` case-insensitive bypass, CWE-915) assessed
   NOT APPLICABLE (2026-07-02).** The same jackson-databind CVE tracked as "no fix yet in the 2.x line" in
@@ -293,7 +293,7 @@
   so a field app pulling `minimalist-kafka` will see `jackson-databind:2.22.0` in a scan even though #28 is
   unreachable. **Decision (Eric): best-effort done; report to the field for a Snyk exemption** citing the
   not-applicable assessment, and bump to 2.22.1 when Confluent's transitive fix / the release lands.
-  <!-- id: jackson-databind-alert28-not-applicable | created: 2026-07-02 | last_used: 2026-07-05 | uses: 2 | tier: active | origin: 2026-07-02-055423 -->
+  <!-- id: jackson-databind-alert28-not-applicable | created: 2026-07-02 | last_used: 2026-07-05 | uses: 2 | tier: archive-candidate | origin: 2026-07-02-055423 -->
 
 - **minimalist-kafka Schema Registry support — Confluent serdes as a library (2026-06-29; producer became
   subject/version-driven 2026-07-01, PR #129 — see [[kafka-schemaid-from-subject-version]]).**
@@ -340,83 +340,7 @@
   exists** (decompiled Confluent 8.2.0 — the id→schema path `getSchemaById`→`getSchemaBySubjectAndId` caches
   positives only; `missingIdCache` is producer-side getId-by-content, default TTL 0=off); an earlier "not found
   persists" symptom was the mock loading `schemas.json` only at boot, now fixed by its on-demand per-id store.
-  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-07-05 | uses: 14 | tier: active | origin: 2026-06-29-010147 -->
-
-- **Protobuf support removed from `minimalist-kafka`'s Schema Registry integration, pre-release (2026-07-01).**
-  Snyk's pipeline gate (a hard must-pass — no exemption path available) flagged `com.squareup.wire:wire-runtime-jvm:5.5.0`
-  (pulled transitively via `io.confluent:kafka-protobuf-serializer` → `kafka-protobuf-provider`) for
-  CVE-2026-45799 / GHSA-7xpr-hc2w-34m9: `skipGroup()` doesn't reject a negative varint length, so a crafted
-  **10-byte payload crashes any Wire-decoding consumer** (uncaught `ArrayIndexOutOfBoundsException` escapes
-  the documented `IOException` boundary — a DoS, not RCE). **No fix exists or ever will for this coordinate** —
-  confirmed via the live GitHub advisory: `wire-runtime-jvm` is discontinued; the fix ships only under the
-  renamed `com.squareup.wire:wire-runtime` (6.3.0+), a different Maven coordinate Confluent has not adopted
-  (checked directly against `kafka-protobuf-provider:8.3.0`'s own POM — `wire.version` is still pinned to
-  `5.5.0`, unchanged from 8.2.0). Excluding `wire-runtime-jvm` and forcing the renamed `wire-runtime` ourselves
-  was considered and rejected — an unverified major-version (5→6) substitution into a dependency graph we
-  don't control is too risky to gamble on a hard release gate. **Decision:** remove Protobuf entirely
-  (`ProtobufSchemaSerde`/`ProtobufConversions` deleted, `kafka-protobuf-serializer` dependency dropped,
-  `SchemaType.PROTOBUF` kept as a recognized-but-unwired enum value so `SchemaCodec`'s dispatcher still fails
-  clearly via `UnsupportedOperationException`, never silently/NPE). Backed by an industry check (WebSearch,
-  no hard % found but strong qualitative consensus across 2025–2026 Kafka-ecosystem sources): Avro dominates
-  Confluent-Schema-Registry-backed Kafka specifically, Protobuf's stronghold is gRPC/polyglot microservices —
-  a different ecosystem — so JSON+Avro covers the dominant case here. **Zero backward-compat cost**: per
-  CHANGELOG.md, `minimalist-kafka` (and its Schema Registry integration) was introduced *in* 4.5.0 — the
-  exact version blocked at this Snyk gate — so no client has ever received a published artifact with Protobuf
-  support. Removed end-to-end: `system/minimalist-kafka` code + tests + pom;
-  `examples/sync-over-async-demo`'s parallel protobuf-topic-1/2 demo path (Java tasks, flows, rest.yaml entry,
-  kafka-adapter bindings, registry seed, Node topic script); user-facing docs
-  (`docs/guides/kafka-flow-adapter.md`, `configuration-reference.md`, `schema-registry-mock.md`, the demo's own
-  README, `helpers/schema-registry-standalone/README.md`) all state the rationale + limitation explicitly
-  rather than silently dropping it — an explicit honesty/objectivity call from Eric. **Not a dead end:**
-  tracked as a backlog item — [[thread-minimalist-kafka-protobuf-revival]] — to re-wire once Confluent adopts
-  `wire-runtime`, or sooner for a specific field installation that explicitly needs Protobuf and accepts the
-  residual risk. Full reactor `mvn test` green after removal (see [[thread-minimalist-kafka-protobuf-removal]]).
-  Supersedes the Protobuf-inclusive claims in [[minimalist-kafka-schema-registry]] (its JSON/Avro
-  architecture detail is otherwise unchanged and still current).
-  <!-- id: minimalist-kafka-protobuf-removed | created: 2026-07-01 | last_used: 2026-07-01 | uses: 2 | tier: archive-candidate | origin: 2026-07-01-224313 -->
-
-- **`minimalist-kafka`: `confluent.version` bumped 8.2.0 → 8.3.0; `kafka.version` (4.2.0) upgrade deliberately
-  deferred (2026-07-01).** After the Protobuf removal above, `confluent.version` only governs
-  `kafka-json-schema-serializer`/`kafka-avro-serializer` (no `kafka-protobuf-serializer` anymore). Verified
-  before bumping, not assumed: resolved dependency-tree diff is clean (Confluent's own artifacts + a
-  `swagger-annotations`→`swagger-annotations-jakarta` swap + two split-out artifacts `kafka-avro-types`/
-  `kafka-schema-types` + minor patch bumps), zero OSV vulnerabilities in anything new/changed, full test
-  suite green (49/49 in `minimalist-kafka` incl. the stock-Confluent-serializer interop tests). **Deferred:**
-  Confluent's own compatibility table pairs Platform 8.3.x with Apache Kafka **4.3.x**, but this repo
-  deliberately does not follow that pairing — `kafka.version` is pinned independently (excluding Confluent's
-  transitively-suggested `kafka-clients`) specifically so the Confluent serializers (which implement the
-  stable `Serializer`/`Deserializer` contract, tolerant of client-version drift) never force a broker/client
-  version choice here. Bumping `kafka.version` to 4.3.x is a **separate, deliberately deferred** decision:
-  no CVE drives it (checked: 0 vulns at both 4.2.0 and 4.3.1), but the blast radius is far wider — it's
-  pinned in **24 pom.xml files**, including the embedded KRaft broker used across many modules' integration
-  tests, a materially different risk category (broker behavioral change) from a pure serializer-library bump.
-  Tracked as its own backlog item, not blocked on anything — see [[thread-kafka-client-version-upgrade]].
-  <!-- id: minimalist-kafka-confluent-8-3-0 | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: archive-candidate | origin: 2026-07-01-230246 -->
-
-- **Code review closeout for PR #130 added deprecation-conversion visibility + real lifecycle docs
-  (2026-07-02).** Eric's IDE-driven review of the simple-type-matching deprecation work
-  ([[thread-deprecate-simple-type-matching]]) surfaced two durable additions beyond small cleanups
-  (unused import, constant-reuse, a missing loop `break`, inlining a trimmed-to-one-line private method —
-  `MultiLevelMap.removeElement(String)` is the real API, not `.remove()`): (1) **both `CompileFlows` and
-  `CompileGraph` now log `WARN` whenever they silently auto-convert a deprecated `model.key:type` entry** —
-  `"Deprecated {input|output} syntax in task {} of {} - '{}' converted to '{}'"` in `CompileFlows` (two call
-  sites, qualified input/output since they'd otherwise produce identical, ambiguous lines) and
-  `"Deprecated syntax in graph {} node[{}].{} - '{}' converted to '{}'"` in `CompileGraph` (one call site,
-  covers `mapping`/`input`/`output`/`for_each` generically) — so silent conversion became visible
-  conversion, closing a real gap Eric noticed (previously "CompileFlows silently converts... It would be
-  better to advise the user"). (2) **New "Application Lifecycle" section in `docs/guides/architecture.md`**
-  documenting the real `@BeforeApplication` → `@PreLoad` → HTTP-server-startup → `@MainApplication`
-  sequence, traced from source (`AutoStart.java` → `AppStarter.java` → rest-spring's `AppLoader.java`) —
-  prompted by Eric noticing the sequence-number rationale was "hidden in code and comments, not in user
-  facing documentation." Along the way, found and fixed a real doc bug: `annotations-reference.md` claimed
-  `sequence=2` was reserved for the Event Script engine; the actual source uses `sequence=5`
-  (`CompileFlows`) with `CompileGraph` at `6` right after it (confirmed deliberate — reuses the same
-  `SimpleTypeMatchingConverter`, and keeps flow-then-graph startup ordering deterministic). Also corrected
-  `@MainApplication`'s Spring Boot note from vague ("after the HTTP server completes startup") to precise
-  (deferred until Spring's `ApplicationReadyEvent`, both `rest-spring-3`/`rest-spring-4`). All fixes verified
-  with a full module test run immediately after each edit — event-script-engine 115 tests, minigraph-
-  playground-engine 55 tests, green throughout; docs changes needed no test run.
-  <!-- id: event-script-minigraph-code-review-2026-07 | created: 2026-07-02 | last_used: 2026-07-02 | uses: 1 | tier: archive-candidate | origin: 2026-07-02-004606 -->
+  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-07-05 | uses: 14 | tier: archive-candidate | origin: 2026-06-29-010147 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -522,9 +446,13 @@
   flip inverts PR #137's "default unchanged" premise — fold into #137 (re-frame) or split into a follow-up PR;
   **Eric chose (2026-07-05): fold into PR #137 + re-frame** (file = default + benchmark tooling); pushed
   `44202a57`, so #137 is now the whole field-test-ready change (re-framed title/description handed to Eric).
-  **Next = field steps: run benchmark-reporter on real envs, then P4 retire BDB.** Docs/ADR sync tracked
+  **Review hardening (GitHub Copilot, 2026-07-05):** bounded the off-loop dispatch mailbox
+  (`elastic.queue.dispatch.mailbox.size`, default 1024, clamped ≥ memory buffer) with no-drop back-pressure;
+  changed `FileElasticStore` to keep only O(1) segment channels open, add RUNNING/keepalive stale-dir cleanup,
+  purge current leftovers at startup, and clear `peeked` on reset for both stores; added regressions + small
+  benchmark-reporter smoke. **Next = field steps: run benchmark-reporter on real envs, then P4 retire BDB.** Docs/ADR sync tracked
   separately in [[thread-elastic-queue-docs-adr]].
-  <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-07-05 | uses: 1 | tier: working | origin: 2026-07-05-033922 -->
+  <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-07-05 | uses: 11 | tier: working | origin: 2026-07-05-033922 -->
 
 - [ ] (backlog — do at ElasticQueue merge / P4, Claude Code 2026-07-05) **Docs sync + ADR for the ElasticQueue
   file store / off-loop dispatch.** Deferred deliberately: nothing in the current guides is *wrong* today
@@ -556,14 +484,6 @@
   rejected by design) — see [[traceid-cid-propagation-edgecase-fixes]] and
   [[developer-set-trace-headers-are-intentional]].
   <!-- id: thread-traceid-correlation-propagation | created: 2026-07-03 | last_used: 2026-07-04 | uses: 4 | tier: working | origin: 2026-07-03-014759 -->
-
-- [x] (completed — Eric, 2026-07-01) **Remove Protobuf support from minimalist-kafka's Schema Registry
-  integration (Snyk-driven, pre-release).** Full detail in the Key Decision
-  [[minimalist-kafka-protobuf-removed]] and the 2026-07-01-224313 session log. Code + tests + pom +
-  sync-over-async-demo's parallel demo path + user-facing docs (kafka-flow-adapter.md,
-  configuration-reference.md, schema-registry-mock.md, demo README, schema-registry-standalone README) all
-  updated with the rationale stated explicitly, not silently dropped. Full reactor `mvn test`: green.
-  <!-- id: thread-minimalist-kafka-protobuf-removal | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: archive-candidate | origin: 2026-07-01-224313 -->
 
 - [ ] (planned — backlog, no ETA) **Reintroduce Protobuf support in minimalist-kafka's Schema Registry
   integration.** Blocked on Confluent adopting the renamed `com.squareup.wire:wire-runtime` coordinate in
@@ -598,25 +518,6 @@
   behavioral compatibility (config defaults, controller behavior) across all 24 files, not just
   `minimalist-kafka` — a materially larger test surface than a serializer-library bump.
   <!-- id: thread-kafka-client-version-upgrade | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-230246 -->
-
-- [x] (sprint complete — Eric, 2026-07-02) **Deprecate 'simple type matching' in TaskExecutor → 'simple
-  plugin' syntax.** Shipped as **PR [#130](https://github.com/Accenture/mercury-composable/pull/130)**
-  (`feature/deprecate-simple-type-matching`, worktree `~/accenture/mercury-composable-2`). Full detail
-  across the 2026-07-01-172822 session log (original implementation) and 2026-07-02-004606 (code review
-  closeout). Eric's closing words: *"What you have done is not trivial. The framework is streamlined."*
-  Code review pass fixed a handful of small IDE-flagged items in both modules and added a genuinely new
-  capability — see [[event-script-minigraph-code-review-2026-07]] for detail (deprecation-conversion WARN
-  logging in both `CompileFlows` and `CompileGraph`, plus a new "Application Lifecycle" doc section born
-  from this review). One backlog item raised, not blocking: [[thread-compilegraph-syntax-validation]].
-  Commits from the original implementation: `d5761c38` — event-script-engine (SimpleTypeMatchingConverter,
-  CompileFlows, TaskExecutor cleanup, `ne` plugin, TypeConversionUtils + DataMappingHelper bug fixes, 115
-  tests green); `495d2252` — minigraph CompileGraph startup gate + CompiledGraphs cache (55 tests green);
-  `56ad6fb8` — GraphCommandService interactive validation + deprecation notice + help doc updates;
-  `d125d4a3` — memory. (Two more commits — jackson bump `994b1954`, Protobuf removal `63d46041` — landed
-  mid-review as a separate Snyk-driven thread; see [[minimalist-kafka-protobuf-removed]].) The code-review
-  round's own changes (event-script-engine + minigraph-playground-engine fixes, docs) are queued for commit
-  as of this writing.
-  <!-- id: thread-deprecate-simple-type-matching | created: 2026-07-01 | last_used: 2026-07-02 | uses: 4 | tier: archive-candidate | origin: 2026-07-01-172822 -->
 
 - [x] (completed — Eric, 2026-07-01) **Repo-wide OSS dependency security update (Snyk-driven).** Committed
   to `feature/deprecate-simple-type-matching` alongside PR #130's changes (Eric: "regular security
