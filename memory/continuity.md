@@ -16,8 +16,8 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-06 | agent: Claude Code (2026-07-06-164315)
-- **last_review:** 2026-07-05 | through 2026-07-05-235813.md
+- **last_session:** 2026-07-06 | agent: Claude Code (2026-07-06-165910)
+- **last_review:** 2026-07-06 | through 2026-07-06-165910.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -284,7 +284,7 @@
   Two full-reactor `mvn test` runs (before/after the touch-ups): **BUILD SUCCESS, all 28 modules, zero
   failures**, plus the standalone `examples/pg-example` (excluded from the root aggregator) run separately,
   also green both times.
-  <!-- id: snyk-oss-dependency-update-2026-07 | created: 2026-07-01 | last_used: 2026-07-05 | uses: 3 | tier: archive-candidate | origin: 2026-07-01-215533 -->
+  <!-- id: snyk-oss-dependency-update-2026-07 | created: 2026-07-01 | last_used: 2026-07-06 | uses: 4 | tier: active | origin: 2026-07-01-215533 -->
 
 - **Dependabot alert #28 (jackson-databind `@JsonIgnoreProperties` case-insensitive bypass, CWE-915) assessed
   NOT APPLICABLE (2026-07-02).** The same jackson-databind CVE tracked as "no fix yet in the 2.x line" in
@@ -486,7 +486,7 @@
   purge current leftovers at startup, and clear `peeked` on reset for both stores; added regressions + small
   benchmark-reporter smoke. **Next = field steps: run benchmark-reporter on real envs, then P4 retire BDB.** Docs/ADR sync tracked
   separately in [[thread-elastic-queue-docs-adr]].
-  <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-07-05 | uses: 11 | tier: working | origin: 2026-07-05-033922 -->
+  <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-07-06 | uses: 12 | tier: working | origin: 2026-07-05-033922 -->
 
 - [ ] (backlog — do at ElasticQueue merge / P4, Claude Code 2026-07-05) **Docs sync + ADR for the ElasticQueue
   file store / off-loop dispatch.** Deferred deliberately: nothing in the current guides is *wrong* today
@@ -552,24 +552,6 @@
   behavioral compatibility (config defaults, controller behavior) across all 24 files, not just
   `minimalist-kafka` — a materially larger test surface than a serializer-library bump.
   <!-- id: thread-kafka-client-version-upgrade | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-230246 -->
-
-- [x] (completed — Eric, 2026-07-01) **Repo-wide OSS dependency security update (Snyk-driven).** Committed
-  to `feature/deprecate-simple-type-matching` alongside PR #130's changes (Eric: "regular security
-  vulnerability OSS update... we are good"). Full detail in the Key Decision
-  [[snyk-oss-dependency-update-2026-07]] and the 2026-07-01-215533 session log. `spring-boot-starter-parent`
-  → 4.1.0 (rest-spring-3 line → 3.5.16), `netty.version` → 4.2.15.Final (added where missing — the actual
-  root cause), `tomcat.version` → 11.0.23 (rest-spring-3 line → 10.1.56), `vertx-core` → 5.1.3,
-  `xsi:schemaLocation` → https. Two full-reactor `mvn test` runs, both BUILD SUCCESS, 28 modules, zero
-  failures. `wire-runtime-jvm` (no supported fix, Confluent's discontinued artifact) and one jackson-databind
-  CVE remain open — tracked as upstream-blocked, not resolvable here.
-  <!-- id: thread-snyk-oss-dependency-update | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-215533 -->
-
-- [x] (completed — Eric, 2026-06-30) **Application log context feature.** Designed + implemented +
-  documented + shipped on **PR #128** (`feature/application-log-context`). Full detail in the Key
-  Decision [[application-log-context]] and the 2026-06-30-212955 session log. Manual end-to-end
-  validation by Eric in `composable-example` passed (context block + custom `user:demo` key, logs/spans
-  correlated). Open to follow-up if review surfaces changes.
-  <!-- id: thread-application-log-context | created: 2026-06-30 | last_used: 2026-06-30 | uses: 1 | tier: active | origin: 2026-06-30-212955 -->
 
 - [ ] (implemented, **uncommitted** — Claude Code, 2026-07-02) **minimalist-kafka: Confluent CSFLE wired.**
   Full detail in the Key Decision [[kafka-csfle-delegation]] and the 2026-07-02-020429 session log. Branch
