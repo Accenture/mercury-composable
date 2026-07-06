@@ -11,7 +11,7 @@ RPC perform on par with reactive code. Also available for Node.js (separate repo
 
 **Type:** Multi-module framework / SDK (Maven reactor)
 **Primary language:** Java 21 (one Kotlin example module)
-**Coordinates:** `com.accenture.mercury:parent-mercury` (currently `4.5.0`)
+**Coordinates:** `com.accenture.mercury:parent-mercury` (currently `4.6.0`)
 **Build:** Maven 3.9.7+ — `pom.xml` source of truth for the version
 **Upstream:** github.com/Accenture/mercury-composable · docs: accenture.github.io/mercury-composable
 

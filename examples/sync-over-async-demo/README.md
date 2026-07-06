@@ -41,11 +41,11 @@ business logic) and [`SyncErrorHandler`](src/main/java/com/accenture/soa/demo/su
 
 ### Terminal A — Redis
 ```shell
-cd helpers/redis-standalone && java -jar target/redis-standalone-4.5.0.jar
+cd helpers/redis-standalone && java -jar target/redis-standalone-4.6.0.jar
 ```
 ### Terminal B — Kafka
 ```shell
-cd helpers/kafka-standalone && java -jar target/kafka-standalone-4.5.0.jar
+cd helpers/kafka-standalone && java -jar target/kafka-standalone-4.6.0.jar
 ```
 
 ### Create the topics (10 partitions each) — once
@@ -68,11 +68,11 @@ let the group spread across facades, which is what makes the multi-facade test b
 
 ### Terminal C — backend pod
 ```shell
-java -Dspring.profiles.active=backend -jar examples/sync-over-async-demo/target/sync-over-async-demo-4.5.0.jar
+java -Dspring.profiles.active=backend -jar examples/sync-over-async-demo/target/sync-over-async-demo-4.6.0.jar
 ```
 ### Terminal D — facade pod (REST on :8400)
 ```shell
-java -Dspring.profiles.active=facade -jar examples/sync-over-async-demo/target/sync-over-async-demo-4.5.0.jar
+java -Dspring.profiles.active=facade -jar examples/sync-over-async-demo/target/sync-over-async-demo-4.6.0.jar
 ```
 ### Terminal E — call it synchronously
 ```shell
@@ -94,7 +94,7 @@ The facade and backend logs show the same `traceId` across the Kafka hops.
   originated the request, even when the *other* facade is the one that consumed the reply off `soa.response`
   (watch which facade logs `soa.reply` vs. which one returns the HTTP response):
   ```shell
-  java -Dspring.profiles.active=facade -Drest.server.port=8401 -jar examples/sync-over-async-demo/target/sync-over-async-demo-4.5.0.jar
+  java -Dspring.profiles.active=facade -Drest.server.port=8401 -jar examples/sync-over-async-demo/target/sync-over-async-demo-4.6.0.jar
   curl -sS -X POST http://127.0.0.1:8401/api/sync-to-async -H 'content-type: application/json' -d '{"order":"B-200"}'
   ```
 - **Timeout → HTTP 408.** Stop the backend (Terminal C) and call again with a short budget; with no reply,
@@ -122,7 +122,7 @@ variants:
 # Terminal F — seed + start the local Confluent-compatible Schema Registry (port 8081)
 mkdir -p /tmp/schema-registry
 cp examples/sync-over-async-demo/registry/*.json /tmp/schema-registry/
-cd helpers/schema-registry-standalone && java -jar target/schema-registry-standalone-4.5.0.jar
+cd helpers/schema-registry-standalone && java -jar target/schema-registry-standalone-4.6.0.jar
 ```
 The store keeps one `<id>.json` per schema, so you can also drop a new file (e.g. `4.json`) into
 `/tmp/schema-registry` while the registry is running — it is picked up on the next request, no restart needed.
