@@ -44,7 +44,7 @@ class FileElasticStoreTest {
         System.clearProperty(SEG_PROP);
     }
 
-    private static byte[] record(String body) {
+    private static byte[] toRecord(String body) {
         return new EventEnvelope().setBody(body).toBytes();
     }
 
@@ -77,7 +77,7 @@ class FileElasticStoreTest {
         FileElasticStore q = new FileElasticStore(id);
         int total = M + 300; // 300 records on disk
         for (int i = 0; i < total; i++) {
-            q.write(record("rec-" + i));
+            q.write(toRecord("rec-" + i));
         }
         // the disk tier must have rolled into several segments
         assertTrue(segmentFiles(id) > 1, "expected multiple segments, got " + segmentFiles(id));
@@ -98,11 +98,11 @@ class FileElasticStoreTest {
         FileElasticStore q = new FileElasticStore(id);
         // maintain a steady on-disk backlog, then churn write+read 1:1 for many iterations
         for (int i = 0; i < M + 100; i++) {
-            q.write(record("prefill-" + i));
+            q.write(toRecord("prefill-" + i));
         }
         int peak = 0;
         for (int i = 0; i < 5000; i++) {
-            q.write(record("evt-" + i));
+            q.write(toRecord("evt-" + i));
             assertNotEquals(0, q.read().length);
             peak = Math.max(peak, segmentFiles(id));
         }
@@ -122,7 +122,7 @@ class FileElasticStoreTest {
         FileElasticStore q = new FileElasticStore(id);
         for (int cycle = 0; cycle < 50; cycle++) {
             for (int i = 0; i < M + 40; i++) {
-                q.write(record("c" + cycle + "-" + i));
+                q.write(toRecord("c" + cycle + "-" + i));
             }
             while (q.read().length > 0) {
                 // drain → auto close() → reclaim segments
@@ -139,7 +139,7 @@ class FileElasticStoreTest {
         System.setProperty(SEG_PROP, "2048");
         FileElasticStore q = new FileElasticStore("clean.reuse");
         for (int i = 0; i < M + 50; i++) {
-            q.write(record("a-" + i));
+            q.write(toRecord("a-" + i));
         }
         for (int i = 0; i < M + 50; i++) {
             assertEquals("a-" + i, body(q.read()));
@@ -148,7 +148,7 @@ class FileElasticStoreTest {
         assertTrue(q.isClosed());
         // reuse the same instance: must not surface any stale "a-" data
         for (int i = 0; i < M + 50; i++) {
-            q.write(record("b-" + i));
+            q.write(toRecord("b-" + i));
         }
         for (int i = 0; i < M + 50; i++) {
             assertEquals("b-" + i, body(q.read()));
@@ -161,10 +161,10 @@ class FileElasticStoreTest {
     @Test
     void closeAfterPeekReuseClearsCachedEvent() {
         FileElasticStore q = new FileElasticStore("peek.close.reuse");
-        q.write(record("a"));
+        q.write(toRecord("a"));
         assertEquals("a", body(q.peek()));
         q.close();
-        q.write(record("b"));
+        q.write(toRecord("b"));
         assertEquals("b", body(q.read()));
         assertEquals(0, q.read().length);
         q.destroy();
@@ -175,7 +175,7 @@ class FileElasticStoreTest {
         System.setProperty(SEG_PROP, "512");
         FileElasticStore q = new FileElasticStore("fd.bound");
         for (int i = 0; i < M + 1000; i++) {
-            q.write(record("fd-" + i + "-" + "x".repeat(200)));
+            q.write(toRecord("fd-" + i + "-" + "x".repeat(200)));
         }
         assertTrue(segmentFiles("fd.bound") > 10, "expected many segment rolls");
         assertTrue(q.openSegmentChannels() <= 2, "open segment channels should stay O(1)");
@@ -232,7 +232,7 @@ class FileElasticStoreTest {
         assertEquals(0, q.read().length);
         assertTrue(q.isClosed());
         // peek returns the same event a subsequent read returns
-        q.write(record("only"));
+        q.write(toRecord("only"));
         byte[] peeked = q.peek();
         byte[] read = q.read();
         assertEquals("only", body(peeked));

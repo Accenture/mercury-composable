@@ -489,7 +489,7 @@ public class HttpRouter {
             }
             // W3C trace context: continue an upstream trace and adopt the caller's span as our parent
             String[] traceParent = W3cTrace.parse(request.getHeader(W3cTrace.TRACEPARENT));
-            if (traceParent != null) {
+            if (traceParent.length > 0) {
                 traceId = traceParent[0];
                 parentSpanId = traceParent[1];
             }
@@ -845,23 +845,27 @@ public class HttpRouter {
     private void copyToSecondaryTarget(HttpRequestEvent requestEvent) {
         for (String secondary : requestEvent.services) {
             if (!secondary.equals(requestEvent.primary)) {
-                EventEnvelope copy = new EventEnvelope().setTo(secondary).setFrom(HTTP_REQUEST)
-                        .setBody(requestEvent.httpRequest);
-                if (requestEvent.businessCorrelationId != null) {
-                    copy.setHeader(MY_CORRELATION_ID, requestEvent.businessCorrelationId);
-                }
-                if (requestEvent.tracing) {
-                    copy.setTrace(requestEvent.traceId, requestEvent.tracePath);
-                    if (requestEvent.parentSpanId != null) {
-                        copy.setSpanId(requestEvent.parentSpanId);
-                    }
-                }
-                try {
-                    EventEmitter.getInstance().send(copy);
-                } catch (Exception e) {
-                    log.warn("Unable to copy event to {} - {}", copy.getTo(), e.getMessage());
-                }
+                copyEventTo(secondary, requestEvent);
             }
+        }
+    }
+
+    private void copyEventTo(String secondary, HttpRequestEvent requestEvent) {
+        EventEnvelope copy = new EventEnvelope().setTo(secondary).setFrom(HTTP_REQUEST)
+                .setBody(requestEvent.httpRequest);
+        if (requestEvent.businessCorrelationId != null) {
+            copy.setHeader(MY_CORRELATION_ID, requestEvent.businessCorrelationId);
+        }
+        if (requestEvent.tracing) {
+            copy.setTrace(requestEvent.traceId, requestEvent.tracePath);
+            if (requestEvent.parentSpanId != null) {
+                copy.setSpanId(requestEvent.parentSpanId);
+            }
+        }
+        try {
+            EventEmitter.getInstance().send(copy);
+        } catch (Exception e) {
+            log.warn("Unable to copy event to {} - {}", copy.getTo(), e.getMessage());
         }
     }
 

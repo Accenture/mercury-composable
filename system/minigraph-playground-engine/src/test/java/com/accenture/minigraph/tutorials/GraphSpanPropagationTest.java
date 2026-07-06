@@ -191,12 +191,7 @@ class GraphSpanPropagationTest {
                 lastSize = size;
                 stableSince = System.currentTimeMillis();
             }
-            try {
-                TimeUnit.MILLISECONDS.sleep(50);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
+            Utility.getInstance().sleep(50);
         }
         List<Map<String, Object>> captured = CAPTURED.get(traceId);
         assertNotNull(captured, "no telemetry captured for trace " + traceId);
@@ -208,7 +203,7 @@ class GraphSpanPropagationTest {
         List<Span> spans = new ArrayList<>();
         for (Map<String, Object> dataset : datasets) {
             Map<String, Object> metrics = (Map<String, Object>) dataset.get(TRACE);
-            // Skip RPC round-trip client traces (they carry "round_trip" and no span_id);
+            // skip RPC round-trip client traces - they carry a round_trip annotation and no span id
             // they are the caller's own measurement, not a node in the span tree.
             if (metrics.get(SPAN_ID) == null) {
                 continue;

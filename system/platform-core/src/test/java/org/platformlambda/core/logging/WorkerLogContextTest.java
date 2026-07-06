@@ -97,7 +97,7 @@ class WorkerLogContextTest extends TestBase {
             // the context must be removed once the worker returns
             long tid = workerThreadId.get();
             for (int i = 0; i < 40 && LogContextManager.get(tid) != null; i++) {
-                Thread.sleep(50);
+                Utility.getInstance().sleep(50);
             }
             assertNull(LogContextManager.get(tid), "log context must be removed after the worker returns");
         } finally {

@@ -158,8 +158,9 @@ class KafkaFlowAdapterConfigTest {
 
     @Test
     void patternBindingRequiresExplicitGroup() {
-        assertThrows(IllegalArgumentException.class, () -> KafkaFlowAdapter.resolveGroupId(
-                Map.of("topic-pattern", "events\\.[a-z]{2}", "flow", "f"), null, true));
+        var binding = Map.of("topic-pattern", "events\\.[a-z]{2}", "flow", "f");
+        assertThrows(IllegalArgumentException.class,
+                () -> KafkaFlowAdapter.resolveGroupId(binding, null, true));
     }
 
     @Test

@@ -333,7 +333,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         if (traceId != null) {
             http.set(TRACE_ID_HEADER, traceId);
         }
-        String traceparent = W3cTrace.traceparent(traceId, spanId);
+        String traceparent = W3cTrace.format(traceId, spanId);
         if (traceparent != null) {
             http.set(W3cTrace.TRACEPARENT, traceparent);
         }

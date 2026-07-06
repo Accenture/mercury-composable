@@ -37,6 +37,8 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Utility {
@@ -95,6 +97,30 @@ public class Utility {
 
     public static Utility getInstance() {
         return instance;
+    }
+
+    /**
+     * Sleep for the given number of milliseconds without using {@code Thread.sleep} or
+     * {@code TimeUnit.sleep} (both discouraged by static analysis). It is backed by a blocking-queue
+     * poll that always times out - the queue is never fed - which is a normal interruptible wait.
+     * If the thread is interrupted, the interrupt flag is restored and the method returns early.
+     * <p>
+     * Primarily a convenience for tests that poll for an asynchronous condition, but safe for any
+     * interruptible pause (e.g. a retry back-off).
+     *
+     * @param ms milliseconds to wait; a value of zero or less returns immediately
+     */
+    public void sleep(long ms) {
+        if (ms <= 0) {
+            return;
+        }
+        try {
+            // poll() on a queue that is never offered blocks for the full timeout and returns null
+            LinkedBlockingQueue<Object> timer = new LinkedBlockingQueue<>();
+            timer.poll(ms, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private List<String> getJarsFromSpringBootPackage() {

@@ -159,8 +159,8 @@
         <!-- Cloud KMS driver. A field installation configures exactly ONE KMS vendor - each registers its
              KmsDriver via ServiceLoader and pulls that cloud's SDK, and the field-encryption executor above
              works with whichever single driver is present. AWS is enabled here as the default/template; for
-             Azure Key Vault or GCP KMS instead, comment out the AWS dependency below and uncomment the
-             matching one.
+             Azure Key Vault or GCP KMS instead, replace the AWS artifactId below with
+             kafka-schema-registry-client-encryption-azure or kafka-schema-registry-client-encryption-gcp.
              NOTE: optional=true means this driver is NOT inherited transitively - a downstream app depending
              on the published minimalist-kafka artifact does NOT receive a KMS driver from here and must
              declare exactly one itself (this keeps non-CSFLE and other-vendor consumers from being forced to
@@ -172,22 +172,6 @@
             <version>${confluent.version}</version>
             <optional>true</optional>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-schema-registry-client-encryption-azure</artifactId>
-            <version>${confluent.version}</version>
-            <optional>true</optional>
-        </dependency>
-        -->
-        <!--
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-schema-registry-client-encryption-gcp</artifactId>
-            <version>${confluent.version}</version>
-            <optional>true</optional>
-        </dependency>
-        -->
 
         <!-- Local (Tink) KMS driver: a static in-JVM keyset for repeatable CSFLE round-trip tests, so
              encryption is exercised in CI without cloud credentials. Test scope only. -->

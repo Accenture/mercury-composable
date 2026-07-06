@@ -200,8 +200,9 @@ class SchemaCodecTest {
         // (Confluent's kafka-protobuf-provider depends on the unpatched, discontinued wire-runtime-jvm).
         // It must fail clearly (UnsupportedOperationException), never silently or with an NPE.
         int id = codec.client().register(TOPIC + "-proto-value", new JsonSchema(JSON_SCHEMA));
+        var protoPayload = Map.of("hello", "protobuf");
         assertThrows(UnsupportedOperationException.class,
-                () -> encoder.serialize(TOPIC, SchemaType.PROTOBUF, id, Map.of("hello", "protobuf")),
+                () -> encoder.serialize(TOPIC, SchemaType.PROTOBUF, id, protoPayload),
                 "Protobuf is recognized but deliberately unwired - must fail clearly, not silently");
     }
 
@@ -228,8 +229,9 @@ class SchemaCodecTest {
         int existing = codec.client().register("recover-a-value", new JsonSchema(
                 "{\"type\":\"object\",\"properties\":{\"recoverA\":{\"type\":\"string\"}},\"additionalProperties\":true}"));
         int futureId = existing + 1;   // EmbeddedSchemaRegistry assigns ids sequentially -> not present yet
+        var missPayload = Map.of("hello", "x");
         assertThrows(RuntimeException.class,
-                () -> encoder.serialize(TOPIC, SchemaType.JSON, futureId, Map.of("hello", "x")),
+                () -> encoder.serialize(TOPIC, SchemaType.JSON, futureId, missPayload),
                 "encoding against an unregistered id fails");
         assertFalse(schemaCached(futureId), "the failed lookup is not cached");
 
@@ -255,8 +257,7 @@ class SchemaCodecTest {
         int id = codec.client().register(TOPIC + "-tccl-value", new JsonSchema(JSON_SCHEMA));
         Thread thread = Thread.currentThread();
         ClassLoader original = thread.getContextClassLoader();
-        ClassLoader sentinel = new URLClassLoader(new URL[0], original);
-        try {
+        try (URLClassLoader sentinel = new URLClassLoader(new URL[0], original)) {
             thread.setContextClassLoader(sentinel);
             byte[] framed = encoder.serialize(TOPIC, SchemaType.JSON, id, Map.of("hello", "tccl"));
             assertEquals("tccl", ((Map<?, ?>) decoder.decode(TOPIC, framed)).get("hello"));

@@ -48,7 +48,7 @@ public class W3cTrace {
      * @param spanId 16-char lowercase hex span ID (becomes the downstream's parent span)
      * @return the traceparent value, or null if either ID is not W3C-compatible
      */
-    public static String traceparent(String traceId, String spanId) {
+    public static String format(String traceId, String spanId) {
         if (validTraceId(traceId) && validSpanId(spanId)) {
             return VERSION + SEPARATOR + traceId + SEPARATOR + spanId + SEPARATOR + SAMPLED;
         }
@@ -59,7 +59,7 @@ public class W3cTrace {
      * Parse a W3C traceparent header value.
      *
      * @param traceparent header value
-     * @return a 2-element array of {trace-id, parent-span-id}, or null if the value is invalid
+     * @return a 2-element array of {trace-id, parent-span-id}, or an empty array if the value is invalid
      */
     public static String[] parse(String traceparent) {
         if (traceparent != null) {
@@ -69,7 +69,7 @@ public class W3cTrace {
                 return new String[] { parts[1], parts[2] };
             }
         }
-        return null;
+        return new String[0];
     }
 
     private static boolean validTraceId(String id) {

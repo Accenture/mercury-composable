@@ -140,14 +140,7 @@ public class KafkaFlowAdapter implements AutoCloseable {
         }
         String topic = text(entry.get(TOPIC));
         String topicPattern = text(entry.get(TOPIC_PATTERN));
-        if (topic == null && topicPattern == null) {
-            throw new IllegalArgumentException("consumer[" + i + "] is missing a 'topic' or 'topic-pattern'");
-        }
-        if (topic != null && topicPattern != null) {
-            throw new IllegalArgumentException(
-                    "consumer[" + i + "] cannot set both 'topic' and 'topic-pattern'");
-        }
-        String label = topic != null ? "topic '" + topic + "'" : "topic-pattern '" + topicPattern + "'";
+        String label = validateTopicSelector(i, topic, topicPattern);
         String flowId = text(entry.get(FLOW));
         if (flowId == null) {
             throw new IllegalArgumentException("consumer[" + i + "] (" + label + ") is missing a 'flow'");
@@ -157,14 +150,6 @@ public class KafkaFlowAdapter implements AutoCloseable {
         if (topicPattern != null && partition != null) {
             throw new IllegalArgumentException("consumer[" + i + "] (" + label + ") cannot combine "
                     + "'topic-pattern' with 'partition' - manual partition assignment requires a literal 'topic'");
-        }
-        if (topicPattern != null) {
-            try {
-                Pattern.compile(topicPattern);
-            } catch (PatternSyntaxException e) {
-                throw new IllegalArgumentException("consumer[" + i + "] (" + label
-                        + ") is not a valid regex: " + e.getMessage(), e);
-            }
         }
         String groupId = resolveGroupId(entry, topic, topicPattern != null);
         String dlqTopic = resolveDlqTopic(entry, i, label, topic, topicPattern);
@@ -182,11 +167,7 @@ public class KafkaFlowAdapter implements AutoCloseable {
             throw new IllegalArgumentException("consumer[" + i + "] (" + label + ") sets "
                     + "schema.enabled but 'schema.registry.url' is not configured");
         }
-        log.info("Kafka flow adapter binding: {} -> flow '{}' (consumer group '{}'{}{}{}{})",
-                label, flowId, groupId, partition != null ? ", pinned to partition " + partition : "",
-                schemaEnabled ? ", schema decode on" : "",
-                dlqTopic != null ? ", dlq-topic '" + dlqTopic + "'" : "",
-                autoCommit ? ", auto-commit on" : "");
+        logBinding(label, flowId, groupId, partition, schemaEnabled, dlqTopic, autoCommit);
         KafkaConsumerBinding.Builder builder = KafkaConsumerBinding.builder()
                 .flowId(flowId).groupId(groupId).partition(partition).schemaEnabled(schemaEnabled)
                 .dlqTopic(dlqTopic).autoCommit(autoCommit).maxPollRecords(maxPollRecords);
@@ -194,6 +175,36 @@ public class KafkaFlowAdapter implements AutoCloseable {
                 : builder.topic(topic)).build();
         return new KafkaFlowConsumer(newConsumer(binding), binding, dlqTimeout, retryPolicy,
                 schemaEnabled ? schemaCodec : null);
+    }
+
+    /** Validate the topic/topic-pattern selector (exactly one is set, valid regex) and return a display label. */
+    private String validateTopicSelector(int i, String topic, String topicPattern) {
+        if (topic == null && topicPattern == null) {
+            throw new IllegalArgumentException("consumer[" + i + "] is missing a 'topic' or 'topic-pattern'");
+        }
+        if (topic != null && topicPattern != null) {
+            throw new IllegalArgumentException(
+                    "consumer[" + i + "] cannot set both 'topic' and 'topic-pattern'");
+        }
+        if (topicPattern != null) {
+            try {
+                Pattern.compile(topicPattern);
+            } catch (PatternSyntaxException e) {
+                throw new IllegalArgumentException("consumer[" + i + "] (topic-pattern '" + topicPattern
+                        + "') is not a valid regex: " + e.getMessage(), e);
+            }
+        }
+        return topic != null ? "topic '" + topic + "'" : "topic-pattern '" + topicPattern + "'";
+    }
+
+    /** Log a one-line summary of a resolved consumer binding. */
+    private void logBinding(String label, String flowId, String groupId, Integer partition,
+                            boolean schemaEnabled, String dlqTopic, boolean autoCommit) {
+        log.info("Kafka flow adapter binding: {} -> flow '{}' (consumer group '{}'{}{}{}{})",
+                label, flowId, groupId, partition != null ? ", pinned to partition " + partition : "",
+                schemaEnabled ? ", schema decode on" : "",
+                dlqTopic != null ? ", dlq-topic '" + dlqTopic + "'" : "",
+                autoCommit ? ", auto-commit on" : "");
     }
 
     /**
@@ -337,8 +348,8 @@ public class KafkaFlowAdapter implements AutoCloseable {
      */
     static void applyDeliveryMode(Properties p, KafkaConsumerBinding binding) {
         p.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, String.valueOf(binding.autoCommit()));
-        int maxPollRecords = binding.maxPollRecords() != null ? binding.maxPollRecords()
-                : (binding.autoCommit() ? AUTO_COMMIT_MAX_POLL_RECORDS : MANUAL_COMMIT_MAX_POLL_RECORDS);
+        int defaultMaxPoll = binding.autoCommit() ? AUTO_COMMIT_MAX_POLL_RECORDS : MANUAL_COMMIT_MAX_POLL_RECORDS;
+        int maxPollRecords = binding.maxPollRecords() != null ? binding.maxPollRecords() : defaultMaxPoll;
         p.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, String.valueOf(maxPollRecords));
     }
 

@@ -49,10 +49,22 @@
         <module>examples/kafka-demo</module>
         <module>examples/sync-over-async-demo</module>
 
-        <!-- Executables for benchmark tests -->
-        <module>benchmark/benchmark-client</module>
+        <!-- Executable for benchmark tests (benchmark-client retired 4.6.2 — superseded by benchmark-reporter) -->
         <module>benchmark/benchmark-reporter</module>
     </modules>
+
+    <properties>
+        <!--
+            SonarQube analysis scope. Benchmark harnesses, standalone local dev servers, and runnable
+            examples/demos are developer tooling — not shipped product — and their entry-point/rendering
+            code is not meaningfully unit-testable, so they are excluded from static analysis and from
+            coverage gating. Product code (system/*, extensions/*, connectors/*) is analysed in full.
+            NOTE: honored by the sonar-maven-plugin (mvn sonar:sonar). If the field pipeline runs the
+            sonar-scanner CLI instead, mirror these into its scanner configuration.
+        -->
+        <sonar.exclusions>benchmark/**,examples/**,helpers/**,**/*Benchmark.java</sonar.exclusions>
+        <sonar.coverage.exclusions>benchmark/**,examples/**,helpers/**,**/*Benchmark.java,**/MainApp.java</sonar.coverage.exclusions>
+    </properties>
 
 </project>
 

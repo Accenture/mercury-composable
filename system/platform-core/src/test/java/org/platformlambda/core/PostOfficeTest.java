@@ -373,7 +373,7 @@ class PostOfficeTest extends TestBase {
 
     @Test
     void reservedHeadersExposedToFunction() {
-        // The framework injects these read-only reserved headers into a function's input headers;
+        // the framework injects these read-only reserved headers into a function input-headers map
         // PostOffice exposes them, including the business correlation-id (my_correlation_id).
         Map<String, String> headers = Map.of(
                 "my_route", "unit.test",

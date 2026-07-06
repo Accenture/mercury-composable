@@ -76,5 +76,5 @@ java -Delastic.queue.store=bdb -Dbench.report=/tmp/bdb-loop.html -jar benchmark/
 For latency-sensitive perf runs, point the spill at tmpfs: `-Dtransient.data.store=/dev/shm/reactive`.
 
 ## Scope
-This module is intentionally separate from `benchmark-client` (a REST/WebSocket load client), which is left
-untouched for a future sprint.
+This module supersedes the retired `benchmark-client` (a REST/WebSocket load client): it is a self-contained,
+single-JVM performance harness that needs no external load generator.

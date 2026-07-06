@@ -98,7 +98,7 @@ public class MockOtlpCollector implements TypedLambdaFunction<AsyncHttpRequest, 
             return;
         }
         try {
-            // ExportTraceServiceRequest { repeated ResourceSpans resource_spans = 1; }
+            // OTLP ExportTraceServiceRequest - field 1 holds the repeated ResourceSpans
             List<byte[]> resourceSpans = new ArrayList<>();
             ProtoReader r = new ProtoReader(body);
             while (r.hasMore()) {

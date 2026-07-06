@@ -213,8 +213,7 @@ class SpanPropagationTest extends TestBase {
                 lastSize = size;
                 stableSince = System.currentTimeMillis();
             }
-            //noinspection BusyWait
-            Thread.sleep(50);
+            Utility.getInstance().sleep(50);
         }
         List<Map<String, Object>> captured = CAPTURED.get(traceId);
         assertNotNull(captured, "no telemetry captured for trace " + traceId);

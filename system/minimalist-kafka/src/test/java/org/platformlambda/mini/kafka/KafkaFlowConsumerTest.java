@@ -32,6 +32,7 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import com.accenture.automation.EventScriptManager;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.util.Utility;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -45,6 +46,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -240,13 +242,13 @@ class KafkaFlowConsumerTest {
         consumer.start();
         long deadline = System.currentTimeMillis() + 2000;
         while (processed.get() == 0 && System.currentTimeMillis() < deadline) {
-            Thread.sleep(10);
+            Utility.getInstance().sleep(10);
         }
         assertEquals(1, processed.get(), "the record was processed by the flow");
         Map<TopicPartition, OffsetAndMetadata> committed = mock.committed(Set.of(tp));
         consumer.close();
 
-        assertTrue(committed.get(tp) == null, "auto-commit mode must not manually commit - Kafka's own "
+        assertNull(committed.get(tp), "auto-commit mode must not manually commit - Kafka's own "
                 + "periodic timer owns offset commits, not KafkaFlowConsumer");
     }
 

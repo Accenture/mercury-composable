@@ -713,7 +713,7 @@ public class PostOffice {
         if (event.getTracePath() == null) {
             event.setTracePath(myTracePath);
         }
-        // propagate the business correlation-id to the next touch point (read via getMyCorrelationId());
+        // propagate the business correlation-id to the next touch point, readable via getMyCorrelationId
         // carried as a read-only reserved header so it reaches any function, HTTP client, or Kafka producer
         if (businessCorrelationId != null && event.getHeader(MY_CORRELATION_ID) == null) {
             event.setHeader(MY_CORRELATION_ID, businessCorrelationId);
