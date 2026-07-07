@@ -325,7 +325,8 @@ class ReactiveDbTest {
         var missingSql = assertThrows(AppException.class, () -> sql.query(po, (String) null));
         assertEquals("Missing SQL statement", missingSql.getMessage());
         assertThrows(AppException.class, () -> sql.update(null, SQL_INSERT));
-        var emptyBatch = assertThrows(AppException.class, () -> sql.batch(po, SQL_UPDATE, List.of()));
+        List<List<Object>> noRows = List.of();
+        var emptyBatch = assertThrows(AppException.class, () -> sql.batch(po, SQL_UPDATE, noRows));
         assertEquals("Missing list of lists of parameters", emptyBatch.getMessage());
         var missingStatements = assertThrows(AppException.class, () -> sql.transaction(po, null, null));
         assertEquals("Missing SQL statements", missingStatements.getMessage());

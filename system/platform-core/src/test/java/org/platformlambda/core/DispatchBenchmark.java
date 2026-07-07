@@ -25,9 +25,12 @@ import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
+import org.platformlambda.core.util.Utility;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * P5 fast-path benchmark: end-to-end dispatch throughput of a ServiceQueue. Fires N fire-and-forget events
@@ -78,6 +81,7 @@ class DispatchBenchmark {
         System.out.printf("events=%,d  processed=%,d  elapsed=%.2fs  throughput=%,.0f events/s%n",
                 iterations, PROCESSED.get(), elapsedSec, iterations / elapsedSec);
         System.out.println("================================================================");
+        assertEquals(iterations, PROCESSED.get(), "every dispatched event should be processed");
     }
 
     /**
@@ -122,6 +126,7 @@ class DispatchBenchmark {
         System.out.printf("p50=%.2f  p90=%.2f  p99=%.2f  p99.9=%.2f  max=%.2f%n",
                 us(lat, 50), us(lat, 90), us(lat, 99), us(lat, 99.9), lat[n - 1] / 1000.0);
         System.out.println("================================================================");
+        assertEquals(n, TIMED_COUNT.get(), "every timed event should be processed");
     }
 
     /** In-flight=1: send one timestamped event, wait until it is processed, repeat. */
@@ -145,17 +150,18 @@ class DispatchBenchmark {
     }
 
     /** Send n fire-and-forget events, then wait until all have been processed. */
-    private static void runBatch(EventEmitter po, String payload, int n) throws InterruptedException {
+    private static void runBatch(EventEmitter po, String payload, int n) {
         long target = PROCESSED.get() + n;
         for (int i = 0; i < n; i++) {
             po.send(new EventEnvelope().setTo(ROUTE).setBody(payload));
         }
+        Utility util = Utility.getInstance();
         long deadline = System.currentTimeMillis() + 60000;
         while (PROCESSED.get() < target) {
             if (System.currentTimeMillis() > deadline) {
                 throw new IllegalStateException("timed out: processed " + PROCESSED.get() + " of " + target);
             }
-            Thread.sleep(1);
+            util.sleep(1);
         }
     }
 }

@@ -46,6 +46,7 @@ public class GetVersionFunction implements TypedLambdaFunction<AsyncHttpRequest,
     private static final Logger log = LoggerFactory.getLogger(GetVersionFunction.class);
 
     private static final String LATEST = "latest";
+    private static final String NOT_FOUND_SUFFIX = "' not found";
 
     private final SchemaStore store = SchemaStore.getInstance();
     private final Utility util = Utility.getInstance();
@@ -56,18 +57,18 @@ public class GetVersionFunction implements TypedLambdaFunction<AsyncHttpRequest,
         String versionParam = input.getPathParameter("version");
         if (subject == null || subject.isEmpty() || !store.hasSubject(subject)) {
             log.warn("GET /subjects/{}/versions/{} -> 404 (subject not found)", subject, versionParam);
-            return ApiError.of(404, ApiError.SUBJECT_NOT_FOUND, "Subject '" + subject + "' not found");
+            return ApiError.of(404, ApiError.SUBJECT_NOT_FOUND, "Subject '" + subject + NOT_FOUND_SUFFIX);
         }
         Integer version = resolveVersion(subject, versionParam);
         if (version == null) {
             log.warn("GET /subjects/{}/versions/{} -> 404 (version not found)", subject, versionParam);
-            return ApiError.of(404, ApiError.VERSION_NOT_FOUND, "Version '" + versionParam + "' not found");
+            return ApiError.of(404, ApiError.VERSION_NOT_FOUND, "Version '" + versionParam + NOT_FOUND_SUFFIX);
         }
         Integer id = store.idForVersion(subject, version);
         SchemaStore.SchemaEntry entry = id == null ? null : store.get(id);
         if (entry == null) {
             log.warn("GET /subjects/{}/versions/{} -> 404 (version not found)", subject, versionParam);
-            return ApiError.of(404, ApiError.VERSION_NOT_FOUND, "Version '" + versionParam + "' not found");
+            return ApiError.of(404, ApiError.VERSION_NOT_FOUND, "Version '" + versionParam + NOT_FOUND_SUFFIX);
         }
         Map<String, Object> response = new HashMap<>();
         response.put("subject", subject);

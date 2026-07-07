@@ -30,6 +30,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * P0 benchmark (design: draft-design-specs/elastic_queue_file_fifo_design.md).
  *
@@ -85,13 +87,13 @@ class ElasticQueueBenchmark {
                 long t0 = System.nanoTime();
                 q.write(event);
                 long wNs = System.nanoTime() - t0;
-                writes.record(wNs);
+                writes.observe(wNs);
 
                 long t1 = System.nanoTime();
                 byte[] out = q.read();
                 long rNs = System.nanoTime() - t1;
                 if (out.length > 0) {
-                    reads.record(rNs);
+                    reads.observe(rNs);
                 }
                 ops++;
                 secWrites++;
@@ -114,6 +116,7 @@ class ElasticQueueBenchmark {
                 }
             }
 
+            assertTrue(ops > 0, "the spill benchmark should have performed at least one op");
             double elapsed = (System.currentTimeMillis() - start) / 1000.0;
             String storeType = AppConfigReader.getInstance().getProperty("elastic.queue.store", "bdb");
             StringBuilder rpt = new StringBuilder();
@@ -156,7 +159,7 @@ class ElasticQueueBenchmark {
         private long maxNs = 0;
         private long over10 = 0, over50 = 0, over100 = 0;
 
-        void record(long nanos) {
+        void observe(long nanos) {
             count++;
             if (nanos > maxNs) {
                 maxNs = nanos;

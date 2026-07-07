@@ -193,10 +193,12 @@ class SqlStatementTypesTest {
     void rejectsMalformedListBindings() {
         // statement lacks $2 for the second position -> transform fails fast
         var q1 = new PgQueryStatement("SELECT * FROM t WHERE a = $1");
-        assertThrows(IllegalArgumentException.class, () -> q1.bindParameters(List.of(1, 2), "x"));
+        var listAndScalar = List.of(1, 2);
+        assertThrows(IllegalArgumentException.class, () -> q1.bindParameters(listAndScalar, "x"));
         // a list whose elements mix numbers and strings is rejected
         var q2 = new PgQueryStatement("SELECT * FROM t WHERE a IN ($1)");
-        assertThrows(IllegalArgumentException.class, () -> q2.bindParameters(List.of(1, "x")));
+        var mixedTypeList = List.of(1, "x");
+        assertThrows(IllegalArgumentException.class, () -> q2.bindParameters(mixedTypeList));
         // negative start index is rejected
         var q3 = new PgQueryStatement("SELECT 1");
         assertThrows(IllegalArgumentException.class, () -> q3.bindParametersFrom(-1, "a"));
