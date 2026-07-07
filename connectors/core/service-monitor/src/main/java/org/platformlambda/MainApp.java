@@ -103,8 +103,8 @@ public class MainApp implements EntryPoint {
         // start consumer
         String monitorTopic = config.getProperty("monitor.topic", "service.monitor");
         // range: 3 - 30
-        int maxGroups = Math.min(30,
-                Math.max(3, util.str2int(config.getProperty("max.closed.user.groups", "10"))));
+        int maxGroups = Math.clamp(
+                util.str2int(config.getProperty("max.closed.user.groups", "10")), 3, 30);
         int requiredPartitions = maxGroups + 1;
         if (!ensureMonitorTopic(ps, monitorTopic, requiredPartitions)) {
             return;

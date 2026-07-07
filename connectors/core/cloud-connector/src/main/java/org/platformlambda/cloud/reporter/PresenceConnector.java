@@ -85,8 +85,8 @@ public class PresenceConnector implements LambdaFunction {
         monitorTopic = config.getProperty("monitor.topic", "service.monitor");
         begin = Utility.getInstance().getLocalTimestamp();
         // range: 3 to 30
-        int maxGroups = Math.min(30,
-                Math.max(3, util.str2int(config.getProperty("max.closed.user.groups", "10"))));
+        int maxGroups = Math.clamp(
+                util.str2int(config.getProperty("max.closed.user.groups", "10")), 3, 30);
         closedUserGroup = util.str2int(config.getProperty("closed.user.group", "1"));
         if (closedUserGroup < 1 || closedUserGroup > maxGroups) {
             log.error("closed.user.group is invalid. Please select a number from 1 to {}", maxGroups);
