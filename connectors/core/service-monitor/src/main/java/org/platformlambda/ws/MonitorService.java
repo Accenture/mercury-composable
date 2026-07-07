@@ -209,45 +209,53 @@ public class MonitorService implements LambdaFunction {
 
     private void handleBytes(Map<String, String> headers, byte[] payload) {
         String route = headers.get(WsEnvelope.ROUTE);
-        EventEmitter po = EventEmitter.getInstance();
         WsMetadata md = connections.get(route);
-        if (md != null) {
-            md.touch();
-            try {
-                EventEnvelope command = new EventEnvelope(payload);
-                boolean register = INFO.equals(command.getTo());
-                boolean alive = ALIVE.equals(command.getTo());
-                if (myConnections.containsKey(md.origin)) {
-                    Map<String, Object> info = myConnections.get(md.origin);
-                    if (register || alive) {
-                        updateInfo(info, command.getHeaders());
-                        // broadcast to all presence monitors
-                        po.send(MainApp.PRESENCE_HANDLER + MONITOR_PARTITION, info,
-                                new Kv(TYPE, PUT), new Kv(ORIGIN, md.origin));
-                        if (register) {
-                            // tell the connected application instance to proceed
-                            PendingConnection pc = pendingConnections.get(route);
-                            if (pc != null) {
-                                pendingConnections.put(route, pc.setType(PendingConnection.PendingType.HANDSHAKE));
-                                log.info("Member registered {} {}", md.origin, info.get(NAME));
-                                po.send(MainApp.TOPIC_CONTROLLER, new Kv(TYPE, GET_TOPIC),
-                                        new Kv(TX_PATH, md.txPath), new Kv(ORIGIN, md.origin));
-                            }
-                        } else {
-                            // this guarantees that a topic is used exclusively by a single app instance
-                            if (isTopicAssigned(md.origin, info)) {
-                                closeConnection(md.txPath, TRY_AGAIN_LATER, TOPIC_ASSIGNED);
-                            } else {
-                                log.debug("Member {} is alive {}", md.origin, info.get(SEQ));
-                            }
-                        }
-                    }
-                }
+        if (md == null) {
+            return;
+        }
+        md.touch();
+        try {
+            processCommand(route, md, new EventEnvelope(payload));
+        } catch (Exception e) {
+            closeConnection(md.txPath, TRY_AGAIN_LATER, INVALID_PROTOCOL);
+        }
+    }
 
-            } catch (Exception e) {
-                closeConnection(md.txPath, TRY_AGAIN_LATER, INVALID_PROTOCOL);
-            }
+    private void processCommand(String route, WsMetadata md, EventEnvelope command) {
+        boolean register = INFO.equals(command.getTo());
+        boolean alive = ALIVE.equals(command.getTo());
+        if (!myConnections.containsKey(md.origin) || (!register && !alive)) {
+            return;
+        }
+        Map<String, Object> info = myConnections.get(md.origin);
+        updateInfo(info, command.getHeaders());
+        // broadcast to all presence monitors
+        EventEmitter.getInstance().send(MainApp.PRESENCE_HANDLER + MONITOR_PARTITION, info,
+                new Kv(TYPE, PUT), new Kv(ORIGIN, md.origin));
+        if (register) {
+            onMemberRegister(route, md, info);
+        } else {
+            onMemberAlive(md, info);
+        }
+    }
 
+    private void onMemberRegister(String route, WsMetadata md, Map<String, Object> info) {
+        // tell the connected application instance to proceed
+        PendingConnection pc = pendingConnections.get(route);
+        if (pc != null) {
+            pendingConnections.put(route, pc.setType(PendingConnection.PendingType.HANDSHAKE));
+            log.info("Member registered {} {}", md.origin, info.get(NAME));
+            EventEmitter.getInstance().send(MainApp.TOPIC_CONTROLLER, new Kv(TYPE, GET_TOPIC),
+                    new Kv(TX_PATH, md.txPath), new Kv(ORIGIN, md.origin));
+        }
+    }
+
+    private void onMemberAlive(WsMetadata md, Map<String, Object> info) {
+        // this guarantees that a topic is used exclusively by a single app instance
+        if (isTopicAssigned(md.origin, info)) {
+            closeConnection(md.txPath, TRY_AGAIN_LATER, TOPIC_ASSIGNED);
+        } else {
+            log.debug("Member {} is alive {}", md.origin, info.get(SEQ));
         }
     }
 
@@ -312,26 +320,28 @@ public class MonitorService implements LambdaFunction {
         info.put(UPDATED, util.getLocalTimestamp(new Date().getTime()));
     }
 
-    @SuppressWarnings("unchecked")
     private boolean isTopicAssigned(String origin, Map<String, Object> info) {
-        if (info.containsKey(TOPIC)) {
-            String myTopic = info.get(TOPIC).toString();
-            Map<String, Object> allConnections = getConnections();
-            for (var entry : allConnections.entrySet()) {
-                String peer = entry.getKey();
-                if (!origin.equals(peer)) {
-                    Object o = entry.getValue();
-                    if (o instanceof Map) {
-                        Map<String, Object> map = (Map<String, Object>) o;
-                        if (map.containsKey(TOPIC)) {
-                            String peerTopic = map.get(TOPIC).toString();
-                            if (myTopic.equals(peerTopic)) {
-                                log.warn("{} rejected because {} already assigned to {}", origin, peer, peerTopic);
-                                return true;
-                            }
-                        }
-                    }
-                }
+        if (!info.containsKey(TOPIC)) {
+            return false;
+        }
+        String myTopic = info.get(TOPIC).toString();
+        Map<String, Object> allConnections = getConnections();
+        for (var entry : allConnections.entrySet()) {
+            String peer = entry.getKey();
+            if (!origin.equals(peer) && peerHasTopic(entry.getValue(), myTopic)) {
+                log.warn("{} rejected because {} already assigned to {}", origin, peer, myTopic);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean peerHasTopic(Object peerInfo, String myTopic) {
+        if (peerInfo instanceof Map) {
+            Map<String, Object> map = (Map<String, Object>) peerInfo;
+            if (map.containsKey(TOPIC)) {
+                return myTopic.equals(map.get(TOPIC).toString());
             }
         }
         return false;
