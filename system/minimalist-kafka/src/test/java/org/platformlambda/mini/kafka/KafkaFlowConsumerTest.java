@@ -219,7 +219,7 @@ class KafkaFlowConsumerTest {
     }
 
     @Test
-    void autoCommitModeSkipsManualCommit() throws InterruptedException {
+    void autoCommitModeSkipsManualCommit() {
         MockConsumer<String, byte[]> mock = new MockConsumer<>("earliest");
         TopicPartition tp = new TopicPartition("orders", 0);
         AtomicInteger processed = new AtomicInteger();

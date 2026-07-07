@@ -495,8 +495,8 @@ public class HttpRouter {
             }
         }
         final HttpRequestEvent requestEvent = new HttpRequestEvent(requestId, route, authService, traceId, tracePath);
-        requestEvent.parentSpanId = parentSpanId;
-        requestEvent.businessCorrelationId = businessCorrelationId;
+        requestEvent.setParentSpanId(parentSpanId);
+        requestEvent.setBusinessCorrelationId(businessCorrelationId);
         // load HTTP body
         if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {
             handlePayload(request, route, requestEvent, req);
@@ -820,14 +820,14 @@ public class HttpRouter {
                     .setCorrelationId(requestEvent.requestId).setBody(requestEvent.httpRequest)
                     .setReplyTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
             // expose the business correlation-id to the target function (and downstream via PostOffice)
-            if (requestEvent.businessCorrelationId != null) {
-                event.setHeader(MY_CORRELATION_ID, requestEvent.businessCorrelationId);
+            if (requestEvent.getBusinessCorrelationId() != null) {
+                event.setHeader(MY_CORRELATION_ID, requestEvent.getBusinessCorrelationId());
             }
             // enable distributed tracing if needed
             if (requestEvent.tracing) {
                 event.setTrace(requestEvent.traceId, requestEvent.tracePath);
-                if (requestEvent.parentSpanId != null) {
-                    event.setSpanId(requestEvent.parentSpanId);
+                if (requestEvent.getParentSpanId() != null) {
+                    event.setSpanId(requestEvent.getParentSpanId());
                 }
             }
             try {
@@ -853,13 +853,13 @@ public class HttpRouter {
     private void copyEventTo(String secondary, HttpRequestEvent requestEvent) {
         EventEnvelope copy = new EventEnvelope().setTo(secondary).setFrom(HTTP_REQUEST)
                 .setBody(requestEvent.httpRequest);
-        if (requestEvent.businessCorrelationId != null) {
-            copy.setHeader(MY_CORRELATION_ID, requestEvent.businessCorrelationId);
+        if (requestEvent.getBusinessCorrelationId() != null) {
+            copy.setHeader(MY_CORRELATION_ID, requestEvent.getBusinessCorrelationId());
         }
         if (requestEvent.tracing) {
             copy.setTrace(requestEvent.traceId, requestEvent.tracePath);
-            if (requestEvent.parentSpanId != null) {
-                copy.setSpanId(requestEvent.parentSpanId);
+            if (requestEvent.getParentSpanId() != null) {
+                copy.setSpanId(requestEvent.getParentSpanId());
             }
         }
         try {
@@ -942,8 +942,8 @@ class HttpAuth implements LambdaFunction {
                 if (event.tracing) {
                     authRequest.setFrom(HTTP_REQUEST);
                     authRequest.setTrace(event.traceId, event.tracePath);
-                    if (event.parentSpanId != null) {
-                        authRequest.setSpanId(event.parentSpanId);
+                    if (event.getParentSpanId() != null) {
+                        authRequest.setSpanId(event.getParentSpanId());
                     }
                 }
                 po.asyncRequest(authRequest, event.timeout)
@@ -972,15 +972,15 @@ class HttpAuth implements LambdaFunction {
                     .setCorrelationId(event.requestId)
                     .setReplyTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
             // expose the business correlation-id to the target function (and downstream via PostOffice)
-            if (event.businessCorrelationId != null) {
-                forward.setHeader(HttpRouter.MY_CORRELATION_ID, event.businessCorrelationId);
+            if (event.getBusinessCorrelationId() != null) {
+                forward.setHeader(HttpRouter.MY_CORRELATION_ID, event.getBusinessCorrelationId());
             }
             // enable distributed tracing if needed
             if (event.tracing) {
                 forward.setFrom(event.authService);
                 forward.setTrace(event.traceId, event.tracePath);
-                if (event.parentSpanId != null) {
-                    forward.setSpanId(event.parentSpanId);
+                if (event.getParentSpanId() != null) {
+                    forward.setSpanId(event.getParentSpanId());
                 }
             }
             try {

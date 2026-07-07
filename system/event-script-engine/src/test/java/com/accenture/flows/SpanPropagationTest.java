@@ -200,7 +200,7 @@ class SpanPropagationTest extends TestBase {
      * Telemetry is forwarded asynchronously, so wait until the captured-span count
      * for a trace stops growing before asserting against it.
      */
-    private List<Map<String, Object>> awaitStableCapture(String traceId) throws InterruptedException {
+    private List<Map<String, Object>> awaitStableCapture(String traceId) {
         final long deadline = System.currentTimeMillis() + FLOW_TIMEOUT;
         int lastSize = -1;
         long stableSince = System.currentTimeMillis();

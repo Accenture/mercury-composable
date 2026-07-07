@@ -49,9 +49,9 @@ public class HttpRequestEvent {
     public long timeout;
     public boolean tracing;
     // W3C trace context: the caller's span ID extracted from an inbound "traceparent" header, if any
-    public String parentSpanId;
+    private String parentSpanId;
     // business correlation-id captured at the edge, exposed to the target function as my_correlation_id
-    public String businessCorrelationId;
+    private String businessCorrelationId;
 
     @SuppressWarnings("unchecked")
     public HttpRequestEvent(Object data) {
@@ -86,6 +86,22 @@ public class HttpRequestEvent {
     public HttpRequestEvent setHttpRequest(AsyncHttpRequest request) {
         this.httpRequest = request.toMap();
         return this;
+    }
+
+    public String getParentSpanId() {
+        return parentSpanId;
+    }
+
+    public void setParentSpanId(String parentSpanId) {
+        this.parentSpanId = parentSpanId;
+    }
+
+    public String getBusinessCorrelationId() {
+        return businessCorrelationId;
+    }
+
+    public void setBusinessCorrelationId(String businessCorrelationId) {
+        this.businessCorrelationId = businessCorrelationId;
     }
 
     public Map<String, Object> toMap() {
