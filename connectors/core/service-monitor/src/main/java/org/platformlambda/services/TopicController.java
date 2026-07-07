@@ -196,11 +196,13 @@ public class TopicController implements LambdaFunction {
             return false;
         }
         String topic = headers.get(TOPIC);
+        String appOrigin = headers.get(ORIGIN);
+        String appName = headers.get(NAME);
         if (!activeTopics.containsKey(topic)) {
-            log.info("{} -> {}, {}", headers.get(TOPIC), headers.get(ORIGIN), headers.get(NAME));
+            log.info("{} -> {}, {}", topic, appOrigin, appName);
         }
         activeTopics.put(topic, System.currentTimeMillis());
-        topicStore.put(topic, headers.get(ORIGIN));
+        topicStore.put(topic, appOrigin);
         return true;
     }
 
@@ -220,7 +222,8 @@ public class TopicController implements LambdaFunction {
         }
         String holder = headers.get(MONITOR);
         if (bids.containsKey(holder)) {
-            log.info("Monitor ({}) {} starts RSVP", getMonitorType(holder), holder);
+            String monitorType = getMonitorType(holder);
+            log.info("Monitor ({}) {} starts RSVP", monitorType, holder);
         }
         return true;
     }
@@ -231,7 +234,8 @@ public class TopicController implements LambdaFunction {
         }
         String holder = headers.get(MONITOR);
         bids.remove(holder);
-        log.info("Monitor ({}) {} finished RSVP", getMonitorType(holder), holder);
+        String monitorType = getMonitorType(holder);
+        log.info("Monitor ({}) {} finished RSVP", monitorType, holder);
         return true;
     }
 

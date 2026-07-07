@@ -267,7 +267,7 @@ public class PubSubManager implements PubSubProvider {
                 properties.put(ProducerConfig.CLIENT_ID_CONFIG, id);
                 producer = new KafkaProducer<>(properties);
                 producerId = properties.getProperty(ProducerConfig.CLIENT_ID_CONFIG);
-                log.info("Producer {} ready", properties.getProperty(ProducerConfig.CLIENT_ID_CONFIG));
+                log.info("Producer {} ready", producerId);
             }
         } finally {
             SAFETY.unlock();
