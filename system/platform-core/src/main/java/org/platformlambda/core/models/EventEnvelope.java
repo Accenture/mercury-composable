@@ -28,7 +28,7 @@ public class EventEnvelope {
     private static final Logger log = LoggerFactory.getLogger(EventEnvelope.class);
     private static final Utility util = Utility.getInstance();
     private static final MsgPack msgPack = new MsgPack();
-    private static final String TYPE = "type";
+    private static final String TYPE_FIELD = "type";
     private static final String ERROR = "error";
     private static final String ID_FIELD = "id";
     private static final String TO_FIELD = "to";
@@ -210,7 +210,7 @@ public class EventEnvelope {
                 case Map<?, ?> error -> {
                     // extract error message as text if standard Composable signature is detected
                     return error.size() == 3 &&
-                            ERROR.equals(error.get(TYPE)) && error.get(STATUS_FIELD) instanceof Integer &&
+                            ERROR.equals(error.get(TYPE_FIELD)) && error.get(STATUS_FIELD) instanceof Integer &&
                             error.get(MESSAGE) instanceof String text? text : body;
                 }
                 case byte[] ignored -> {
