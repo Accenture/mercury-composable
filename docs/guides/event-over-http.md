@@ -54,17 +54,21 @@ to create "ingress" for this purpose.
 
 You may now test drive the Event API service.
 
-First, build and run the lambda-example application in port 8085.
+First, build and run the lambda-example application in port 8085. The examples are not part of the
+top-level reactor build, so build each one with `mvn clean package` first (the `mvn clean install` in
+[Getting Started](getting-started.md) installs the libraries they depend on).
 
 ```shell
 cd examples/lambda-example
+mvn clean package
 java -jar target/lambda-example-3.1.2.jar
 ```
 
-Second, build and run the rest-spring-example application.
+Second, build and run the rest-spring-3-example application.
 
 ```shell
-cd examples/rest-spring-example-3
+cd examples/rest-spring-3-example
+mvn clean package
 java -jar target/rest-spring-3-example-3.1.2.jar
 ```
 

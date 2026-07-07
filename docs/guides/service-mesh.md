@@ -152,16 +152,20 @@ Let's run the rest-spring-3-example and lambda-example applications with Kafka c
 For demo purpose, the rest-spring-3-example and lambda-example are pre-configured with "kafka-connector". 
 If you do not need these libraries, please remove them from the pom.xml built script.
 
-Since kafka-connector is pre-configured, we can start the two demo applications like this:
+Since kafka-connector is pre-configured, we can build and start the two demo applications like this. The
+examples are not part of the top-level reactor build, so build each one with `mvn clean package` first
+(the `mvn clean install` in [Getting Started](getting-started.md) installs the libraries they depend on):
 
 ```text
 cd examples/rest-spring-3-example
+mvn clean package
 java -Dcloud.connector=kafka -Dmandatory.health.dependencies=cloud.connector.health 
      -jar target/rest-spring-3-example-3.1.2.jar
 ```
 
 ```text
 cd examples/lambda-example
+mvn clean package
 java -Dcloud.connector=kafka -Dmandatory.health.dependencies=cloud.connector.health 
      -jar target/lambda-example-3.1.2.jar
 ```
