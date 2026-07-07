@@ -39,7 +39,7 @@ Run each step in its own terminal, from the repo root unless noted.
 ```shell
 cd helpers/kafka-standalone
 mvn clean package
-java -jar target/kafka-standalone-4.6.1.jar
+java -jar target/kafka-standalone-4.6.1-exec.jar
 ```
 Wait for it to report the broker is up on `127.0.0.1:9092`.
 

@@ -45,7 +45,7 @@ cd helpers/redis-standalone && java -jar target/redis-standalone-4.6.1.jar
 ```
 ### Terminal B — Kafka
 ```shell
-cd helpers/kafka-standalone && java -jar target/kafka-standalone-4.6.1.jar
+cd helpers/kafka-standalone && java -jar target/kafka-standalone-4.6.1-exec.jar
 ```
 
 ### Create the topics (10 partitions each) — once

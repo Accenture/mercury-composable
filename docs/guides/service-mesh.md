@@ -97,7 +97,7 @@ the executable JAR should be available after the `mvn clean install` command in 
 ```shell
 cd helpers/kafka-standalone
 mvn clean package
-java -jar target/kafka-standalone-4.6.1.jar
+java -jar target/kafka-standalone-4.6.1-exec.jar
 ```
 
 The standalone Kafka server will start at port 9092. You may adjust the "server.properties" in the standalone-kafka

@@ -28,7 +28,7 @@ dual.servers=true
 Alternatively, you can instruct this application to start two Kafka servers using run-time parameter like this:
 
 ```shell
-java -Ddual.servers=true -jar target/kafka-standalone-4.3.5.jar
+java -Ddual.servers=true -jar target/kafka-standalone-4.6.1-exec.jar
 ```
 
 ## Using docker

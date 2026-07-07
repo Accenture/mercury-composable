@@ -8,6 +8,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.6.2, 7/7/2026
+
+Code quality and test coverage release: remediates all SonarQube quality-gate findings on the overall
+codebase (1 blocker, 24 critical and 83 major issues plus code smells) and adds unit test suites for the
+kafka connector and presence monitor. All refactoring is behavior-preserving; there are no API changes.
+
+### Added
+
+1. **kafka-connector unit tests against an embedded Kafka broker.** The `kafka-standalone` helper is now
+   a test-scoped dependency of `kafka-connector`; its MainApplication auto-starts an embedded KRaft broker
+   at `127.0.0.1:9092` and the test suite exercises the real connector end-to-end - topic administration
+   (create/exists/partitions/list/delete), publish/subscribe for text, map, list and binary payloads,
+   embedded event routing with recipient validation, and the user-domain pub/sub (`kafka.pubsub`).
+2. **kafka-presence (presence monitor) unit tests.** The executable is booted against a mock cloud
+   harness (adapted from service-monitor) covering the `/info`, `/health` and `/livenessprobe` endpoints
+   and idempotent re-entry of the main entry point. The placeholder tests (MsgPackTest, ServiceNameTest,
+   PoJo) in the kafka-connector and kafka-presence modules were retired in favour of the real suites.
+
+### Changed
+
+1. **SonarQube quality-gate remediation across the codebase.** Behavior-preserving refactoring only:
+   cognitive-complexity reduction with extract-method, guard clauses and switch dispatch; re-interruption
+   of `InterruptedException` in catch blocks; modern JDK idioms (`Math.clamp`, `computeIfAbsent`,
+   `computeIfPresent`, `putIfAbsent`, `Files.deleteIfExists`, enum switch); conditional log arguments;
+   private constructors for utility classes; static-field initialization moved out of constructors;
+   encapsulated the new trace/correlation fields of `HttpRequestEvent`; unit-test hygiene (blocking-queue
+   sleep utility instead of `Thread.sleep`, parameterized tests, removal of redundant `throws` clauses).
+   Intentional patterns (stdout log appenders, framework interface contracts) carry targeted suppressions
+   with explanatory comments.
+2. **kafka-standalone executable jar is renamed with the `-exec` suffix.** The spring-boot repackaged
+   (runnable) jar is now `kafka-standalone-<version>-exec.jar` while the main artifact remains a plain
+   library jar, so that other modules can use it as a dependency (required by the new kafka-connector
+   tests). Local dev scripts should be updated accordingly, e.g.
+   `java -jar target/kafka-standalone-4.6.1-exec.jar`. Docs, guides and the kafka-standalone Dockerfile
+   have been updated to the new name.
+
+---
 ## Version 4.6.1, 7/6/2026
 
 Security and maintenance release: remediates OSS dependency vulnerabilities flagged by Snyk static
