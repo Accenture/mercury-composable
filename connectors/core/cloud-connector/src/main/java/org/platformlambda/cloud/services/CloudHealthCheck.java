@@ -60,58 +60,68 @@ public class CloudHealthCheck implements TypedLambdaFunction<EventEnvelope, Void
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws Exception {
         if (INFO.equals(headers.get(TYPE))) {
-            Map<String, Object> result = new HashMap<>();
-            result.put("service", ConnectorConfig.getServiceName());
-            result.put("href", ConnectorConfig.getDisplayUrl());
-            result.put("topics", ConnectorConfig.topicSubstitutionEnabled()? "pre-allocated" : "on-demand");
-            sendResponse(input, result);
+            handleInfo(input);
         }
         if (HEALTH.equals(headers.get(TYPE))) {
-            if (presenceMonitor) {
-                EventEmitter po = EventEmitter.getInstance();
-                EventEnvelope req = new EventEnvelope().setTo(CLOUD_MANAGER).setHeader(TYPE, LIST)
-                        .setHeader(ORIGIN, Platform.getInstance().getOrigin());
-                Future<EventEnvelope> res = po.asyncRequest(req, TIMEOUT);
-                res.onSuccess(evt -> {
-                    if (evt.getBody() instanceof List) {
-                        List<String> topicList = (List<String>) evt.getBody();
-                        String message;
-                        if (topicList.isEmpty()) {
-                            message = "System does not have any topics";
-                        } else {
-                            message = "System contains " +
-                                    topicList.size() + " " + (topicList.size() == 1 ? "topic" : "topics");
-                        }
-                        doLoopbackTest(input, monitorTopicPartition, message);
-                    } else {
-                        sendError(input, 500, "Unable to list topics");
-                    }
-                });
-            } else {
-                PresenceConnector connector = PresenceConnector.getInstance();
-                boolean ready = connector.isConnected() && connector.isReady();
-                boolean offline = false;
-                if (ready) {
-                    String topicPartition = PresenceConnector.getInstance().getTopic();
-                    if (topicPartition != null) {
-                        doLoopbackTest(input, topicPartition, null);
-                    } else {
-                        offline = true;
-                    }
-                } else {
-                    offline = true;
-                }
-                if (offline) {
-                    sendResponse(input, "offline");
-                }
-            }
+            handleHealth(input);
         } else {
             sendError(input, 400, "Usage: type=health");
         }
         return null;
+    }
+
+    private void handleInfo(EventEnvelope input) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("service", ConnectorConfig.getServiceName());
+        result.put("href", ConnectorConfig.getDisplayUrl());
+        result.put("topics", ConnectorConfig.topicSubstitutionEnabled()? "pre-allocated" : "on-demand");
+        sendResponse(input, result);
+    }
+
+    private void handleHealth(EventEnvelope input) {
+        if (presenceMonitor) {
+            checkMonitorHealth(input);
+        } else {
+            checkConnectorHealth(input);
+        }
+    }
+
+    private void checkMonitorHealth(EventEnvelope input) {
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(CLOUD_MANAGER).setHeader(TYPE, LIST)
+                .setHeader(ORIGIN, Platform.getInstance().getOrigin());
+        Future<EventEnvelope> res = po.asyncRequest(req, TIMEOUT);
+        res.onSuccess(evt -> onTopicList(input, evt));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void onTopicList(EventEnvelope input, EventEnvelope evt) {
+        if (evt.getBody() instanceof List) {
+            List<String> topicList = (List<String>) evt.getBody();
+            String message;
+            if (topicList.isEmpty()) {
+                message = "System does not have any topics";
+            } else {
+                message = "System contains " +
+                        topicList.size() + " " + (topicList.size() == 1 ? "topic" : "topics");
+            }
+            doLoopbackTest(input, monitorTopicPartition, message);
+        } else {
+            sendError(input, 500, "Unable to list topics");
+        }
+    }
+
+    private void checkConnectorHealth(EventEnvelope input) {
+        PresenceConnector connector = PresenceConnector.getInstance();
+        boolean ready = connector.isConnected() && connector.isReady();
+        String topicPartition = ready ? connector.getTopic() : null;
+        if (topicPartition != null) {
+            doLoopbackTest(input, topicPartition, null);
+        } else {
+            sendResponse(input, "offline");
+        }
     }
 
     private void doLoopbackTest(EventEnvelope input, String topicPartition, String message) {
