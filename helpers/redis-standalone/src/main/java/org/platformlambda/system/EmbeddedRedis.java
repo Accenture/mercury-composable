@@ -52,7 +52,7 @@ public class EmbeddedRedis {
 
     private final int port;
     private RedisServer redisServer;
-    private boolean testMode;
+    private boolean testMode = false;
 
     public EmbeddedRedis(int port) {
         this.port = port;
