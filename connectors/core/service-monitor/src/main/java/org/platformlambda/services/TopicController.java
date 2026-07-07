@@ -105,14 +105,22 @@ public class TopicController implements LambdaFunction {
                 topicStore.put(topicPartition, AVAILABLE);
             }
         }
+        indexAllTopics();
+        if (rsvpProcessor == null) {
+            startRsvpProcessor(new RsvpProcessor());
+        }
+    }
+
+    private static void indexAllTopics() {
         if (allTopics == null) {
             allTopics = new ArrayList<>(topicStore.keySet());
             Collections.sort(allTopics);
         }
-        if (rsvpProcessor == null) {
-            rsvpProcessor = new RsvpProcessor();
-            rsvpProcessor.start();
-        }
+    }
+
+    private static void startRsvpProcessor(RsvpProcessor processor) {
+        rsvpProcessor = processor;
+        rsvpProcessor.start();
     }
 
     private String getMonitorType(String origin) {

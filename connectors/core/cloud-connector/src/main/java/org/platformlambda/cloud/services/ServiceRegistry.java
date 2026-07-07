@@ -82,13 +82,13 @@ public class ServiceRegistry implements LambdaFunction {
     private static final ConcurrentMap<String, Boolean> pmSubscribers = new ConcurrentHashMap<>();
     private static final ManagedCache cache = ManagedCache.createCache("member.life.cycle.events", 5000);
     private long lastBroadcastAdd = 0;
-    private static String monitorTopic;
+    private static final String monitorTopic = AppConfigReader.getInstance()
+            .getProperty("monitor.topic", "service.monitor");
 
     public ServiceRegistry() {
         Utility util = Utility.getInstance();
         AppConfigReader config = AppConfigReader.getInstance();
         presenceMonitor = "true".equals(config.getProperty("service.monitor", "false"));
-        monitorTopic = config.getProperty("monitor.topic", "service.monitor");
         // range: 3 - 30
         int maxGroups = Math.clamp(
                 util.str2int(config.getProperty("max.closed.user.groups", "10")), 3, 30);
