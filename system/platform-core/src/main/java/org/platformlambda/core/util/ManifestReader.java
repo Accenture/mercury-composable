@@ -31,6 +31,8 @@ public class ManifestReader {
     private static final String APP_VERSION = "info.app.version";
     private static final String DEFAULT_APP_VERSION = "1.0.0";
 
+    private ManifestReader() {}
+
     public static String getVersionFromManifest() {
         // Manifest information available from compiled JAR or bundle only
         try (InputStream in = ManifestReader.class.getClassLoader().getResourceAsStream(META_INF_MANIFEST)) {

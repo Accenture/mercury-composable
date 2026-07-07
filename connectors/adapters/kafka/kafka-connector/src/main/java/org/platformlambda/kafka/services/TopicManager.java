@@ -225,8 +225,7 @@ public class TopicManager implements LambdaFunction {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            log.error("Unable to create {} - {}", topic, e.getMessage());
-            throw new IllegalArgumentException(e.getMessage());
+            throw new IllegalArgumentException("Unable to create " + topic + " - " + e.getMessage(), e);
         }
     }
 

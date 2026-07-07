@@ -26,6 +26,8 @@ import java.util.*;
 public class TypeConversionUtils {
     private static final Utility util = Utility.getInstance();
 
+    private TypeConversionUtils() {}
+
     public static String getUUID(){
         return util.getUuid4();
     }

@@ -399,10 +399,8 @@ public class ServiceRegistry implements LambdaFunction {
     }
 
     private boolean addRoute(String origin, String route, String personality) {
-        if (!cloudRoutes.containsKey(route)) {
-            cloudRoutes.put(route, new ConcurrentHashMap<>());
-        }
-        ConcurrentMap<String, String> originMap = cloudRoutes.get(route);
+        ConcurrentMap<String, String> originMap =
+                cloudRoutes.computeIfAbsent(route, k -> new ConcurrentHashMap<>());
         if (originMap.containsKey(origin)) {
             return false;
         } else {

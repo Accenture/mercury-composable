@@ -21,8 +21,6 @@ package org.platformlambda.core.util;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
 import java.util.*;
@@ -33,7 +31,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * DO NOT use this directly in your application code.
  */
 public class SimpleClassScanner {
-    private static final Logger log = LoggerFactory.getLogger(SimpleClassScanner.class);
     private static final String WEB_COMPONENT_SCAN = "web.component.scan";
     private static final String PLATFORM_LAMBDA = "org.platformlambda.";
     private static final String ACCENTURE_COM = "com.accenture.";
