@@ -103,7 +103,7 @@ public class EventProducer implements LambdaFunction {
         boolean isSegmented = id != null && count != null && total != null;
         if (isSegmented) {
             List<String> cached = cachedSegmentDestinations(id, count, total);
-            if (cached != null) {
+            if (!cached.isEmpty()) {
                 return cached;
             }
         }
@@ -120,7 +120,7 @@ public class EventProducer implements LambdaFunction {
     private List<String> cachedSegmentDestinations(String id, String count, String total) {
         Object cached = stickyDest.get(id);
         if (!(cached instanceof List)) {
-            return null;
+            return Collections.emptyList();
         }
         // clear cache because this is the last block
         if (count.equals(total)) {

@@ -167,8 +167,7 @@ public class ServiceRegistry implements LambdaFunction {
             return;
         }
         String subscriber = headers.get(ROUTE);
-        if (!subscriber.contains("@") && !lifeCycleSubscribers.containsKey(subscriber)) {
-            lifeCycleSubscribers.put(subscriber, true);
+        if (!subscriber.contains("@") && lifeCycleSubscribers.putIfAbsent(subscriber, true) == null) {
             log.info("{} subscribed to member life-cycle events", subscriber);
         }
     }
@@ -189,8 +188,7 @@ public class ServiceRegistry implements LambdaFunction {
             return;
         }
         String subscriber = headers.get(ROUTE);
-        if (!subscriber.contains("@") && !pmSubscribers.containsKey(subscriber)) {
-            pmSubscribers.put(subscriber, true);
+        if (!subscriber.contains("@") && pmSubscribers.putIfAbsent(subscriber, true) == null) {
             log.info("{} subscribed to presence monitor connection status", subscriber);
         }
     }
@@ -219,8 +217,9 @@ public class ServiceRegistry implements LambdaFunction {
             return;
         }
         if (origin.equals(myOrigin)) {
-            if (headers.containsKey(VERSION)) {
-                log.info("Presence monitor v{} detected", headers.get(VERSION));
+            String monitorVersion = headers.get(VERSION);
+            if (monitorVersion != null) {
+                log.info("Presence monitor v{} detected", monitorVersion);
             } else {
                 notifyLifeCycleSubscribers(new Kv(TYPE, CONNECTED));
                 notifyPmSubscribers(new Kv(TYPE, CONNECTED));
