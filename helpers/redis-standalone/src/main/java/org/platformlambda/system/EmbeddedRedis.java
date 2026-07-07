@@ -48,44 +48,72 @@ public class EmbeddedRedis {
 
     /** Transient working directory for Redis data (cloud-native {@code /tmp} pattern). */
     public static final String DATA_DIR = "/tmp/soa-redis";
+    private static final String EMULATED_FAILURE = "emulate exception";
 
     private final int port;
     private RedisServer redisServer;
+    private boolean testMode;
 
     public EmbeddedRedis(int port) {
         this.port = port;
     }
 
+    /**
+     * Enable test mode so {@link #startServer()} and {@link #stop()} emulate an {@code IOException}. This
+     * exists purely so the failure-handling branches can be covered by a unit test: a standalone dev server
+     * otherwise fails fast via {@code System.exit(-1)}, which cannot be exercised without terminating the
+     * test JVM. Never enabled in production.
+     */
+    void setTestMode(boolean testMode) {
+        this.testMode = testMode;
+    }
+
     /** Start the embedded redis-server subprocess and register a shutdown hook to stop it cleanly. */
+    public void start() {
+        try {
+            startServer();
+            Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
+        } catch (IOException e) {
+            log.error("Unable to start Redis server on port {} - {}", port, e.getMessage());
+            if (!testMode) {
+                System.exit(-1);
+            }
+        }
+    }
+
+    /**
+     * Wipe the transient store, (re)create it, and start the embedded redis-server, blocking until it is
+     * ready. Package-visible so a unit test can drive startup directly; {@link #start()} wraps this and
+     * exits the JVM on failure (a standalone dev server has nothing to fall back to).
+     */
     // S5443: the fixed /tmp/soa-redis path is intentional for this dev/test-only standalone server - a
     // known, transient store, shared with the test suite and wiped before each start (never production).
     @SuppressWarnings("java:S5443")
-    public void start() {
-        try {
-            // wipe the transient store and recreate it, so a restart begins from a clean slate
-            File dir = new File(DATA_DIR);
-            Utility.getInstance().cleanupDir(dir);
-            if (!dir.mkdirs()) {
-                log.error("Unable to create Redis data directory {}", DATA_DIR);
-                System.exit(-1);
-            }
-            redisServer = RedisServer.newRedisServer()
-                    .port(port)
-                    .setting("dir " + DATA_DIR)        // transient /tmp working dir
-                    .setting("dbfilename dump.rdb")
-                    .setting("appendonly no")
-                    .build();
-            redisServer.start();
-            Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
-            log.info("Standalone Redis server started on 127.0.0.1:{} (data dir {})", port, DATA_DIR);
-        } catch (IOException e) {
-            log.error("Unable to start Redis server on port {} - {}", port, e.getMessage());
-            System.exit(-1);
+    void startServer() throws IOException {
+        if (testMode) {
+            throw new IOException(EMULATED_FAILURE);
         }
+        // wipe the transient store and recreate it, so a restart begins from a clean slate
+        File dir = new File(DATA_DIR);
+        Utility.getInstance().cleanupDir(dir);
+        if (!dir.mkdirs()) {
+            throw new IOException("Unable to create Redis data directory " + DATA_DIR);
+        }
+        redisServer = RedisServer.newRedisServer()
+                .port(port)
+                .setting("dir " + DATA_DIR)        // transient /tmp working dir
+                .setting("dbfilename dump.rdb")
+                .setting("appendonly no")
+                .build();
+        redisServer.start();
+        log.info("Standalone Redis server started on 127.0.0.1:{} (data dir {})", port, DATA_DIR);
     }
 
     public void stop() {
         try {
+            if (testMode) {
+                throw new IOException(EMULATED_FAILURE);
+            }
             if (redisServer != null) {
                 redisServer.stop();
                 log.info("Standalone Redis server on port {} stopped", port);
