@@ -72,8 +72,10 @@ the service "hello.world" every 15 seconds and the flow "hello-flow" every 25 se
 1. You can run the application class MainApp from the IDE
 2. You may also run the application by building it using `mvn clean package` and then run the application as follows:
 
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+
 ```shell
-java -jar target/scheduler-example-4.3.30.jar
+java -jar target/scheduler-example-x.y.z.jar
 ```
 
 ## Admin endpoints

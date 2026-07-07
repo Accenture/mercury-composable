@@ -13,10 +13,12 @@ Kafka broker and a local Redis server without external infrastructure, which is 
 
 ## Build and run
 
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+
 ```shell
 cd helpers/redis-standalone
 mvn clean package
-java -jar target/redis-standalone-4.6.1.jar
+java -jar target/redis-standalone-x.y.z.jar
 ```
 
 The server starts on `127.0.0.1:6379`. Press `Ctrl-C` to stop (it shuts the `redis-server` subprocess down
@@ -27,7 +29,7 @@ cleanly).
 The port defaults to `6379`. Override it with the `redis.port` property:
 
 ```shell
-java -Dredis.port=6380 -jar target/redis-standalone-4.6.1.jar
+java -Dredis.port=6380 -jar target/redis-standalone-x.y.z.jar
 ```
 
 ## Prefer Docker?
