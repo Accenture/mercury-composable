@@ -49,7 +49,7 @@ public class EventProducer implements LambdaFunction {
     public static final String BYTES_DATA = "bytes";
     public static final String MAP_DATA = "map";
     public static final String LIST_DATA = "list";
-    private static final long ONE_MINUTE = 60 * 1000;
+    private static final long ONE_MINUTE = 60 * 1000L;
     private static final long TEN_MINUTES = 10 * ONE_MINUTE;
     private static final SimpleCache stickyDest = SimpleCache.createCache("sticky.destinations", ONE_MINUTE);
     private static final SimpleCache workLoad = SimpleCache.createCache("service.load.balancer", TEN_MINUTES);
@@ -67,29 +67,33 @@ public class EventProducer implements LambdaFunction {
                 PubSub ps = PubSub.getInstance();
                 Utility util = Utility.getInstance();
                 for (String target : destinations) {
-                    String topicPartition = ServiceRegistry.getTopic(target);
-                    if (topicPartition != null) {
-                        final String topic;
-                        int partition = -1;
-                        if (topicPartition.contains("-")) {
-                            int separator = topicPartition.lastIndexOf('-');
-                            topic = topicPartition.substring(0, separator);
-                            partition = util.str2int(topicPartition.substring(separator + 1));
-                        } else {
-                            topic = topicPartition;
-                        }
-                        Map<String, String> parameters = new HashMap<>();
-                        parameters.put(EMBED_EVENT, "1");
-                        parameters.put(RECIPIENT, target);
-                        ps.publish(topic, partition, parameters, payload);
-                    }
+                    publishToTarget(target, payload, ps, util);
                 }
             }
         }
         return true;
     }
 
-    @SuppressWarnings("unchecked")
+    private void publishToTarget(String target, byte[] payload, PubSub ps, Utility util) {
+        String topicPartition = ServiceRegistry.getTopic(target);
+        if (topicPartition == null) {
+            return;
+        }
+        final String topic;
+        int partition = -1;
+        if (topicPartition.contains("-")) {
+            int separator = topicPartition.lastIndexOf('-');
+            topic = topicPartition.substring(0, separator);
+            partition = util.str2int(topicPartition.substring(separator + 1));
+        } else {
+            topic = topicPartition;
+        }
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(EMBED_EVENT, "1");
+        parameters.put(RECIPIENT, target);
+        ps.publish(topic, partition, parameters, payload);
+    }
+
     private List<String> getDestinations(Map<String, String> headers) {
         String to = headers.get(TO);
         boolean broadcast = headers.containsKey(BROADCAST);
@@ -98,54 +102,66 @@ public class EventProducer implements LambdaFunction {
         String total = headers.get(TOTAL);
         boolean isSegmented = id != null && count != null && total != null;
         if (isSegmented) {
-            Object cached = stickyDest.get(id);
-            if (cached instanceof List) {
-                // clear cache because this is the last block
-                if (count.equals(total)) {
-                    stickyDest.remove(id);
-                } else {
-                    // reset expiry timer
-                    stickyDest.put(id, cached);
-                }
-                log.debug("cached target {} for {} {} {}", cached, id, count, total);
-                return (List<String>) cached;
+            List<String> cached = cachedSegmentDestinations(id, count, total);
+            if (cached != null) {
+                return cached;
             }
         }
         // normal message
-        Platform platform = Platform.getInstance();
         if (to.contains("@")) {
             String target = to.substring(to.indexOf('@') + 1);
-            if (ServiceRegistry.destinationExists(target)) {
-                return Collections.singletonList(target);
-            }
-        } else {
-            if (!broadcast && platform.hasRoute(to)) {
-                // use local routing
-                return Collections.singletonList(platform.getOrigin());
-            }
-            Map<String, String> targets = ServiceRegistry.getDestinations(to);
-            if (targets != null) {
-                List<String> available = new ArrayList<>(targets.keySet());
-                if (!available.isEmpty()) {
-                    if (broadcast) {
-                        if (isSegmented) {
-                            stickyDest.put(id, available);
-                        }
-                        return available;
-                    } else {
-                        String target = getNextAvailable(available);
-                        if (target != null) {
-                            List<String> result = Collections.singletonList(target);
-                            if (isSegmented) {
-                                stickyDest.put(id, result);
-                            }
-                            return result;
-                        }
-                    }
-                }
-            }
+            return ServiceRegistry.destinationExists(target)
+                    ? Collections.singletonList(target) : Collections.emptyList();
         }
-        return Collections.emptyList();
+        return resolveByRoute(to, broadcast, id, isSegmented);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> cachedSegmentDestinations(String id, String count, String total) {
+        Object cached = stickyDest.get(id);
+        if (!(cached instanceof List)) {
+            return null;
+        }
+        // clear cache because this is the last block
+        if (count.equals(total)) {
+            stickyDest.remove(id);
+        } else {
+            // reset expiry timer
+            stickyDest.put(id, cached);
+        }
+        log.debug("cached target {} for {} {} {}", cached, id, count, total);
+        return (List<String>) cached;
+    }
+
+    private List<String> resolveByRoute(String to, boolean broadcast, String id, boolean isSegmented) {
+        Platform platform = Platform.getInstance();
+        if (!broadcast && platform.hasRoute(to)) {
+            // use local routing
+            return Collections.singletonList(platform.getOrigin());
+        }
+        Map<String, String> targets = ServiceRegistry.getDestinations(to);
+        if (targets == null) {
+            return Collections.emptyList();
+        }
+        List<String> available = new ArrayList<>(targets.keySet());
+        if (available.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (broadcast) {
+            if (isSegmented) {
+                stickyDest.put(id, available);
+            }
+            return available;
+        }
+        String target = getNextAvailable(available);
+        if (target == null) {
+            return Collections.emptyList();
+        }
+        List<String> result = Collections.singletonList(target);
+        if (isSegmented) {
+            stickyDest.put(id, result);
+        }
+        return result;
     }
 
     private String getNextAvailable(List<String> targetList) {
@@ -157,39 +173,43 @@ public class EventProducer implements LambdaFunction {
         }
         if (available.isEmpty()) {
             return null;
-        } else if (available.size() == 1) {
-            return available.getFirst();
-        } else {
-            // select target using round-robin protocol
-            Map<String, Long> load = new HashMap<>();
-            for (String target: available) {
-                Object o = workLoad.get(target);
-                if (o instanceof Long n) {
-                    load.put(target, n);
-                }
-            }
-            // if new member(s) discovered, reset counts
-            if (load.size() < available.size()) {
-                for (String target: available) {
-                    load.put(target, 0L);
-                }
-            }
-            String selected = available.getFirst();
-            long lowest = load.get(selected);
-            // find the lowest load
-            for (Map.Entry<String, Long> target: load.entrySet()) {
-                if (target.getValue() < lowest) {
-                    lowest = target.getValue();
-                    selected = target.getKey();
-                }
-            }
-            for (String target: available) {
-                long v = load.get(target);
-                // increment count for the selected target
-                workLoad.put(target, target.equals(selected)? v + 1 : v);
-            }
-            return selected;
         }
+        if (available.size() == 1) {
+            return available.getFirst();
+        }
+        return selectByRoundRobin(available);
+    }
+
+    // pick the least-loaded target and increment its load counter (round-robin load balancing)
+    private String selectByRoundRobin(List<String> available) {
+        Map<String, Long> load = new HashMap<>();
+        for (String target: available) {
+            Object o = workLoad.get(target);
+            if (o instanceof Long n) {
+                load.put(target, n);
+            }
+        }
+        // if new member(s) discovered, reset counts
+        if (load.size() < available.size()) {
+            for (String target: available) {
+                load.put(target, 0L);
+            }
+        }
+        String selected = available.getFirst();
+        long lowest = load.get(selected);
+        // find the lowest load
+        for (Map.Entry<String, Long> target: load.entrySet()) {
+            if (target.getValue() < lowest) {
+                lowest = target.getValue();
+                selected = target.getKey();
+            }
+        }
+        for (String target: available) {
+            long v = load.get(target);
+            // increment count for the selected target
+            workLoad.put(target, target.equals(selected)? v + 1 : v);
+        }
+        return selected;
     }
 
 }
