@@ -200,15 +200,20 @@ public class Platform {
      */
     public String getOrigin() {
         if (originId == null) {
-            Utility util = Utility.getInstance();
-            String id = util.getUuid();
-            if (Platform.appId != null) {
-                byte[] hash = crypto.getSHA256(util.getUTF(Platform.appId));
-                id = util.bytes2hex(hash).substring(0, id.length());
-            }
-            originId = util.getDateOnly(new Date(startTime)) + id;
+            initOriginId(startTime);
         }
         return originId;
+    }
+
+    // static so the 'originId' static-field write happens in a static context (S2696)
+    private static void initOriginId(long startTime) {
+        Utility util = Utility.getInstance();
+        String id = util.getUuid();
+        if (Platform.appId != null) {
+            byte[] hash = crypto.getSHA256(util.getUTF(Platform.appId));
+            id = util.bytes2hex(hash).substring(0, id.length());
+        }
+        originId = util.getDateOnly(new Date(startTime)) + id;
     }
 
     public long getStartTime() {
