@@ -35,9 +35,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * P0 benchmark (design: draft-design-specs/elastic_queue_file_fifo_design.md).
  *
- * NOT part of the normal suite — a measurement harness gated on -Dbench.run=true (and the class name
- * does not match surefire's *Test pattern), so `mvn test` never runs it. Run manually:
- *   mvn -pl system/platform-core test -Dtest=ElasticQueueBenchmark -Dbench.run=true \
+ * NOT part of the normal suite — a measurement harness gated on -Dbench.run=true via
+ * @EnabledIfSystemProperty, so `mvn test` skips it (disabled) unless that flag is set. Run manually:
+ *   mvn -pl system/platform-core test -Dtest=ElasticQueueBenchmarkTest -Dbench.run=true \
  *       -Dbench.seconds=120 -Dbench.payload=1024 -Dbench.backlog=10000
  *
  * It sustains a backlog above ElasticQueue.MEMORY_BUFFER so every write/read hits the BDB disk tier,
@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * checkpointer (every 1 min here) and log cleaner run on background threads but contend with the
  * inline put/get for latches, I/O and GC — surfacing as latency spikes.
  */
-class ElasticQueueBenchmark {
+class ElasticQueueBenchmarkTest {
 
     @Test
     @EnabledIfSystemProperty(named = "bench.run", matches = "true")
@@ -150,11 +150,10 @@ class ElasticQueueBenchmark {
         }
     }
 
-    /** Fixed 1-microsecond-resolution histogram up to 1s, with an overflow bucket + true max. */
+    /** Fixed 1-microsecond-resolution histogram up to 1s, with a true max for the >1s tail. */
     private static final class Histogram {
         private static final int BUCKETS = 1_000_000; // 1us .. 1s
         private final long[] us = new long[BUCKETS];
-        private long overflow = 0;
         private long count = 0;
         private long maxNs = 0;
         private long over10 = 0, over50 = 0, over100 = 0;
@@ -170,9 +169,8 @@ class ElasticQueueBenchmark {
             int bucket = (int) (nanos / 1000);
             if (bucket < BUCKETS) {
                 us[bucket]++;
-            } else {
-                overflow++;
             }
+            // events beyond 1s are not bucketed; maxNs (above) still captures the true tail
         }
 
         /** @return percentile latency in milliseconds. */

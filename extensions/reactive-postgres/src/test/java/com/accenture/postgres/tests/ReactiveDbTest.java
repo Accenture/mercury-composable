@@ -268,7 +268,7 @@ class ReactiveDbTest {
         var now = new Date();
         var timestamp = new Timestamp(now.getTime());
         // Except for unit test where the PostOffice is hardcoded.
-        // You should always instantiate a new instance of a PostOffice using "var po = new PostOffice(headers, instance)
+        // You should always instantiate a new instance of a PostOffice using: var po = new PostOffice(headers, instance)
         var po = PostOffice.trackable("unit.test", "200", "TEST /crud");
         var sql = new PgRequest(TIMEOUT);
         var count = sql.update(po, SQL_INSERT, id, name, instance, timestamp, timestamp);
@@ -322,7 +322,7 @@ class ReactiveDbTest {
         var sql = new PgRequest(TIMEOUT);
         var missingPo = assertThrows(AppException.class, () -> sql.query(null, SQL_READ, "x"));
         assertEquals("Missing PostOffice", missingPo.getMessage());
-        var missingSql = assertThrows(AppException.class, () -> sql.query(po, (String) null));
+        var missingSql = assertThrows(AppException.class, () -> sql.query(po, null));
         assertEquals("Missing SQL statement", missingSql.getMessage());
         assertThrows(AppException.class, () -> sql.update(null, SQL_INSERT));
         List<List<Object>> noRows = List.of();
@@ -340,7 +340,7 @@ class ReactiveDbTest {
         var now = new Date();
         var timestamp = new Timestamp(now.getTime());
         // Except for unit test where the PostOffice is hardcoded.
-        // You should always instantiate a new instance of a PostOffice using "var po = new PostOffice(headers, instance)
+        // You should always instantiate a new instance of a PostOffice using: var po = new PostOffice(headers, instance)
         var po = PostOffice.trackable("unit.test", "600", "TEST /mock/db2");
         var sql = new Db2Request(TIMEOUT);
         var data = Map.of("id", id, "app_name", name, "app_instance", instance,

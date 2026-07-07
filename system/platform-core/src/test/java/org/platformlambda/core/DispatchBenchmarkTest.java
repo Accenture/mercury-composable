@@ -39,10 +39,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * (no RPC reply routing) keeps the harness simple and robust.
  *
  * Gated on -Dbench.run=true. Run each mode:
- *   mvn -pl system/platform-core test -Dtest=DispatchBenchmark -Dbench.run=true                          (bdb+loop)
- *   mvn -pl system/platform-core test -Dtest=DispatchBenchmark -Dbench.run=true -Delastic.queue.store=file (file+vthread)
+ *   mvn -pl system/platform-core test -Dtest=DispatchBenchmarkTest -Dbench.run=true                          (bdb+loop)
+ *   mvn -pl system/platform-core test -Dtest=DispatchBenchmarkTest -Dbench.run=true -Delastic.queue.store=file (file+vthread)
  */
-class DispatchBenchmark {
+class DispatchBenchmarkTest {
 
     private static final String ROUTE = "dispatch.bench.sink";
     private static final AtomicLong PROCESSED = new AtomicLong(0);
@@ -54,7 +54,7 @@ class DispatchBenchmark {
 
     @Test
     @EnabledIfSystemProperty(named = "bench.run", matches = "true")
-    void dispatchThroughput() throws Exception {
+    void dispatchThroughput() {
         int warmup = Integer.getInteger("bench.warmup", 20000);
         int iterations = Integer.getInteger("bench.iterations", 500000);
         String store = AppConfigReader.getInstance().getProperty("elastic.queue.store", "bdb");
