@@ -108,18 +108,22 @@ public class MsgPack {
             String key = handler.unpackString();
             MessageFormat mf = handler.getNextFormat();
             ValueType type = mf.getValueType();
-            if (type == ValueType.MAP) {
-                Map<String, Object> submap = new HashMap<>();
-                map.put(key, submap);
-                unpack(handler, submap);
-            } else if (type == ValueType.ARRAY) {
-                List<Object> array = new ArrayList<>();
-                map.put(key, array);
-                unpack(handler, array);
-            } else {
-                Object value = unpackValue(handler, mf);
-                if (supportNulls || value != null) {
-                    map.put(key, value);
+            switch (type) {
+                case MAP -> {
+                    Map<String, Object> submap = new HashMap<>();
+                    map.put(key, submap);
+                    unpack(handler, submap);
+                }
+                case ARRAY -> {
+                    List<Object> array = new ArrayList<>();
+                    map.put(key, array);
+                    unpack(handler, array);
+                }
+                default -> {
+                    Object value = unpackValue(handler, mf);
+                    if (supportNulls || value != null) {
+                        map.put(key, value);
+                    }
                 }
             }
         }
@@ -131,17 +135,19 @@ public class MsgPack {
         for (int i=0; i < len; i++) {
             MessageFormat mf = handler.getNextFormat();
             ValueType type = mf.getValueType();
-            if (type == ValueType.MAP) {
-                Map<String, Object> submap = new HashMap<>();
-                list.add(submap);
-                unpack(handler, submap);
-            } else if (type == ValueType.ARRAY) {
-                List<Object> array = new ArrayList<>();
-                list.add(array);
-                unpack(handler, array);
-            } else {
+            switch (type) {
+                case MAP -> {
+                    Map<String, Object> submap = new HashMap<>();
+                    list.add(submap);
+                    unpack(handler, submap);
+                }
+                case ARRAY -> {
+                    List<Object> array = new ArrayList<>();
+                    list.add(array);
+                    unpack(handler, array);
+                }
                 // null value is allowed to preserve the original sequence of the list
-                list.add(unpackValue(handler, mf));
+                default -> list.add(unpackValue(handler, mf));
             }
         }
         return list;
