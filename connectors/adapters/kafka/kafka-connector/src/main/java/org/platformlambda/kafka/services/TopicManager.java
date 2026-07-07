@@ -162,7 +162,9 @@ public class TopicManager implements LambdaFunction {
                     }
                 }
             }
-        } catch (UnknownTopicOrPartitionException | InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (UnknownTopicOrPartitionException | ExecutionException e) {
             // move on because topic does not exist
         }
         return -1;
@@ -190,7 +192,11 @@ public class TopicManager implements LambdaFunction {
                 replicationFactor = Math.min(factor, nodes.size());
                 log.info("Kafka replication factor set to {}", replicationFactor);
 
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("Unable to read cluster information - {}", e.getMessage());
+                replicationFactor = 1;
+            } catch (ExecutionException e) {
                 log.error("Unable to read cluster information - {}", e.getMessage());
                 replicationFactor = 1;
             }
@@ -216,6 +222,9 @@ public class TopicManager implements LambdaFunction {
                         currentPartitions == 1? "" : "s");
             }
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             log.error("Unable to create {} - {}", topic, e.getMessage());
             throw new IllegalArgumentException(e.getMessage());
         }
@@ -281,7 +290,11 @@ public class TopicManager implements LambdaFunction {
                 } else {
                     log.error("Unable to delete {}", topic);
                 }
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("Unable to delete {} - {}", topic, e.getMessage());
+                stopAdmin();
+            } catch (ExecutionException e) {
                 log.error("Unable to delete {} - {}", topic, e.getMessage());
                 stopAdmin();
             }
@@ -298,7 +311,11 @@ public class TopicManager implements LambdaFunction {
         try {
             processed++;
             return new ArrayList<>(list.names().get());
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Unable to list topics - {}", e.getMessage());
+            stopAdmin();
+        } catch (ExecutionException e) {
             log.error("Unable to list topics - {}", e.getMessage());
             stopAdmin();
         }

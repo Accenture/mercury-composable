@@ -121,12 +121,19 @@ public class PubSubManager implements PubSubProvider {
             }
             totalEvents++;
 
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            // when this happens, it is better to shut down so that it can be restarted by infrastructure automatically
-            log.error("Unable to publish event to {} - {}", virtualTopic, e.getMessage());
-            closeProducer();
-            System.exit(20);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            abortOnPublishFailure(virtualTopic, e);
+        } catch (ExecutionException | TimeoutException e) {
+            abortOnPublishFailure(virtualTopic, e);
         }
+    }
+
+    private void abortOnPublishFailure(String virtualTopic, Exception e) {
+        // when this happens, it is better to shut down so that it can be restarted by infrastructure automatically
+        log.error("Unable to publish event to {} - {}", virtualTopic, e.getMessage());
+        closeProducer();
+        System.exit(20);
     }
 
     @Override
@@ -147,7 +154,10 @@ public class PubSubManager implements PubSubProvider {
             } else {
                 return false;
             }
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (ExecutionException e) {
             return false;
         }
     }
@@ -158,7 +168,9 @@ public class PubSubManager implements PubSubProvider {
         EventEnvelope req = new EventEnvelope().setTo(cloudManager).setHeader(TYPE, DELETE).setHeader(TOPIC, topic);
         try {
             EventEmitter.getInstance().request(req, timeout).get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
             // ok to ignore
         }
     }
@@ -184,7 +196,10 @@ public class PubSubManager implements PubSubProvider {
             } else {
                 return false;
             }
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (ExecutionException e) {
             return false;
         }
     }
@@ -200,7 +215,10 @@ public class PubSubManager implements PubSubProvider {
             } else {
                 return -1;
             }
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return -1;
+        } catch (ExecutionException e) {
             return -1;
         }
     }
@@ -217,7 +235,10 @@ public class PubSubManager implements PubSubProvider {
             } else {
                 return Collections.emptyList();
             }
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Collections.emptyList();
+        } catch (ExecutionException e) {
             return Collections.emptyList();
         }
     }

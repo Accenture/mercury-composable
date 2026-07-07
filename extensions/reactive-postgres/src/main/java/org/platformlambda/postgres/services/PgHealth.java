@@ -128,7 +128,10 @@ public class PgHealth implements LambdaFunction {
             } else if (first) {
                 log.info("No outdated health records found");
             }
-        } catch (ExecutionException | InterruptedException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Unable to remove outdated health records", e);
+        } catch (ExecutionException e) {
             log.error("Unable to remove outdated health records", e);
         }
     }
