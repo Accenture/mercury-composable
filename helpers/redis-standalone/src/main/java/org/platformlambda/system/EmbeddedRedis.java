@@ -52,10 +52,11 @@ public class EmbeddedRedis {
 
     private final int port;
     private RedisServer redisServer;
-    private boolean testMode = false;
+    private boolean testMode;
 
     public EmbeddedRedis(int port) {
         this.port = port;
+        setTestMode(false);
     }
 
     /**
@@ -64,7 +65,7 @@ public class EmbeddedRedis {
      * otherwise fails fast via {@code System.exit(-1)}, which cannot be exercised without terminating the
      * test JVM. Never enabled in production.
      */
-    void setTestMode(boolean testMode) {
+    final void setTestMode(boolean testMode) {
         this.testMode = testMode;
     }
 
