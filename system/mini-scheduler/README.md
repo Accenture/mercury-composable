@@ -69,11 +69,13 @@ the service "hello.world" and the flow "hello-flow" every 10 seconds.
    in the unit test to implement your own state persistence and resolution logic.
 3. Configure a cron.yaml file to schedule your tasks. An example is shown in the unit test's resources folder.
 
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+
 ```xml
 <dependency>
     <groupId>org.platformlambda</groupId>
     <artifactId>mini-scheduler</artifactId>
-    <version>4.6.1</version>
+    <version>x.y.z</version>
 </dependency>
 ```
 

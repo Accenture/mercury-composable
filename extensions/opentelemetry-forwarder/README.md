@@ -13,11 +13,13 @@ API would mint new IDs and break the lineage.
 
 Add the dependency to your application:
 
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+
 ```xml
 <dependency>
     <groupId>org.platformlambda</groupId>
     <artifactId>opentelemetry-forwarder</artifactId>
-    <version>4.6.1</version>
+    <version>x.y.z</version>
 </dependency>
 ```
 
