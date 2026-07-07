@@ -241,9 +241,9 @@ public class MonitorService implements LambdaFunction {
 
     private void onMemberRegister(String route, WsMetadata md, Map<String, Object> info) {
         // tell the connected application instance to proceed
-        PendingConnection pc = pendingConnections.get(route);
+        PendingConnection pc = pendingConnections.computeIfPresent(route,
+                (k, v) -> v.setType(PendingConnection.PendingType.HANDSHAKE));
         if (pc != null) {
-            pendingConnections.put(route, pc.setType(PendingConnection.PendingType.HANDSHAKE));
             log.info("Member registered {} {}", md.origin, info.get(NAME));
             EventEmitter.getInstance().send(MainApp.TOPIC_CONTROLLER, new Kv(TYPE, GET_TOPIC),
                     new Kv(TX_PATH, md.txPath), new Kv(ORIGIN, md.origin));
