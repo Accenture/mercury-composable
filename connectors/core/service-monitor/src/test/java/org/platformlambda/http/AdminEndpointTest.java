@@ -24,6 +24,7 @@ import org.platformlambda.cloud.reporter.PresenceConnector;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.MultiLevelMap;
+import org.platformlambda.core.util.Utility;
 import org.platformlambda.mock.TestBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,11 +68,7 @@ class AdminEndpointTest extends TestBase {
                 ready = true;
                 break;
             }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            Utility.getInstance().sleep(1000);
         }
         if (ready) {
             log.info("Cloud connection ready");

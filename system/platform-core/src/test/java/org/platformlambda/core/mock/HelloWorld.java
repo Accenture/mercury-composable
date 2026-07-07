@@ -50,8 +50,8 @@ public class HelloWorld implements LambdaFunction {
         var counter = Utility.getInstance().str2int(body);
         if (counter % 2 == 0) {
             log.info("{} for {} ms", SIMULATE_DELAY, TIMEOUT);
-            // Simulate slow response. Unlike Thread.sleep in Java, Kotlin's delay API is non-blocking
-            Thread.sleep(TIMEOUT);
+            // Simulate slow response
+            Utility.getInstance().sleep(TIMEOUT);
         }
         if (headers.containsKey(EXCEPTION)) {
             log.info(SIMULATE_EXCEPTION);

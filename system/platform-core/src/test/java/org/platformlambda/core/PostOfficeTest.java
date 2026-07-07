@@ -551,7 +551,7 @@ class PostOfficeTest extends TestBase {
                 break;
             } else {
                 log.info("Waiting for websocket server at port-{} to get ready", port);
-                Thread.sleep(1000);
+                util.sleep(1000);
             }
         }
         PersistentWsClient client = new PersistentWsClient(connector,

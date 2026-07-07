@@ -21,6 +21,7 @@ package org.platformlambda.core;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.util.ManagedCache;
 import org.platformlambda.core.util.SimpleCache;
+import org.platformlambda.core.util.Utility;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -51,7 +52,7 @@ class CacheTest {
         long n = cache1.size();
         assertEquals(1, n);
         // test expiry
-        Thread.sleep(1050);
+        Utility.getInstance().sleep(1050);
         // cached item will disappear in one second
         Object o2 = cache1.get(key);
         assertNull(o2);
@@ -90,10 +91,10 @@ class CacheTest {
         assertFalse(cache2.exists(key));
         cache2.put(key, data);
         assertTrue(cache2.exists(key));
-        Thread.sleep(500);
+        Utility.getInstance().sleep(500);
         // since minimum expiry is 1000 ms, the item should still be there
         assertTrue(cache2.exists(key));
-        Thread.sleep(600);
+        Utility.getInstance().sleep(600);
         // test expiry timer accuracy
         assertFalse(cache2.exists(key));
         // test clean up

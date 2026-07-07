@@ -696,7 +696,7 @@ class FlowTests extends TestBase {
         var message = outputBo.get("message").toString();
         assertTrue(message.startsWith("Service temporarily not available"));
         log.info("Waiting for backoff period to expire");
-        Thread.sleep(2000);
+        Utility.getInstance().sleep(2000);
         // Test alternative path using 'text(401, 403-404) -> reroute'
         // Let exception simulator to throw HTTP-401
         AsyncHttpRequest request1 = new AsyncHttpRequest();

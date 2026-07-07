@@ -195,7 +195,7 @@ class PlaygroundTest {
                 break;
             } else {
                 log.info("Waiting for JSON websocket server at port-{} to get ready", port);
-                Thread.sleep(1000);
+                util.sleep(1000);
             }
         }
         PersistentWsClient client = new PersistentWsClient(connector,
@@ -273,7 +273,7 @@ class PlaygroundTest {
                             received.add(map);
                         }
                         if ("end".equals(map.get("inspect"))) {
-                            Thread.sleep(100);
+                            util.sleep(100);
                             received.add(map);
                             deferredSend(txPath, "delete node root");
                             deferredSend(txPath, "import graph from hello");
@@ -292,7 +292,7 @@ class PlaygroundTest {
                 break;
             } else {
                 log.info("Waiting for GRAPH websocket server at port-{} to get ready", port);
-                Thread.sleep(1000);
+                util.sleep(1000);
             }
         }
         PersistentWsClient client = new PersistentWsClient(connector,
@@ -324,7 +324,7 @@ class PlaygroundTest {
             if (command.startsWith(kv.getKey())) {
                 log.info("{}", kv.getKey());
                 // simulate human operator delay
-                Thread.sleep(100);
+                util.sleep(100);
                 return kv.getValue();
             }
         }
@@ -333,7 +333,7 @@ class PlaygroundTest {
 
     private void deferredSend(String txPath, String message) throws InterruptedException {
         var po = EventEmitter.getInstance();
-        Thread.sleep(100);
+        util.sleep(100);
         po.send(txPath, message);
     }
 

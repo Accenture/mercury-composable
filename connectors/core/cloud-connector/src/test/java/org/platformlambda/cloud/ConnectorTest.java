@@ -26,6 +26,7 @@ import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.ServiceDiscovery;
+import org.platformlambda.core.util.Utility;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.mock.TestBase;
 import org.slf4j.Logger;
@@ -73,11 +74,7 @@ class ConnectorTest extends TestBase {
                 ready = true;
                 break;
             }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            Utility.getInstance().sleep(1000);
         }
         if (ready) {
             log.info("Cloud connection ready");
