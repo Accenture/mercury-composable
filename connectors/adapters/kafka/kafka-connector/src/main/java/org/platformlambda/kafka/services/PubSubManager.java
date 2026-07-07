@@ -232,6 +232,10 @@ public class PubSubManager implements PubSubProvider {
         closeProducer();
     }
 
+    // S2093: 'producer' is a long-lived field, lazily created here and closed later in
+    // closeProducer() (cleanup/shutdown-hook/send-failure). try-with-resources would close
+    // it on method exit and break all publishing. This try/finally guards the SAFETY lock.
+    @SuppressWarnings("java:S2093")
     private void startProducer() {
         SAFETY.lock();
         try {
