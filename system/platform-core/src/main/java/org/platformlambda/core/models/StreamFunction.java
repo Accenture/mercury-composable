@@ -44,6 +44,9 @@ public interface StreamFunction {
      * @param input of an event
      * @throws Exception in case of error
      */
+    // S112: a composable function may throw any checked exception; the event engine catches and reports
+    // it. "throws Exception" is the intended, framework-wide contract - narrowing it would break user code.
+    @SuppressWarnings("java:S112")
     void handleEvent(Map<String, String> headers, Object input) throws Exception;
 
     /**
