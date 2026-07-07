@@ -474,24 +474,15 @@ public class RoutingEntry {
     @SuppressWarnings("unchecked")
     private void loadRestEntry(ConfigReader config, int idx, boolean exact) {
         RouteInfo info = new RouteInfo();
-        Object services = config.get(REST+"["+idx+"]."+SERVICE);
         List<String> methods = (List<String>) config.get(REST+"["+idx+"]."+METHODS);
         String url = config.getProperty(REST+"["+idx+"]."+URL_LABEL).toLowerCase();
         String flowId = config.getProperty(REST+"["+idx+"]."+FLOW);
         if (flowId != null && !flowId.isEmpty()) {
             info.flowId = flowId;
         }
-        try {
-            info.services = validateServiceList(services);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().endsWith("not available")) {
-                log.warn("Skip {} {} - {} ", methods, url, e.getMessage());
-            } else {
-                log.error("Skip {} {} - {} ", methods, url, e.getMessage());
-            }
+        if (!resolveServices(config, idx, info, url, methods)) {
             return;
         }
-        info.primary = info.services.getFirst();
         String upload = config.getProperty(REST+"["+idx+"]."+UPLOAD);
         if (upload != null) {
             info.upload = "true".equalsIgnoreCase(upload);
@@ -512,12 +503,40 @@ public class RoutingEntry {
             url = url.substring(0, url.indexOf('?'));
         }
         info.timeoutSeconds = getDurationInSeconds(config.getProperty(REST+"["+idx+"]."+TIMEOUT));
+        if (!configureTarget(config, info, idx)) {
+            return;
+        }
+        // remove OPTIONS method
+        methods.remove(OPTIONS_METHOD);
+        validateMethods(url, methods, config, info, idx, exact);
+    }
+
+    // validate the service list and set info.services/info.primary; false means skip this entry
+    private boolean resolveServices(ConfigReader config, int idx, RouteInfo info,
+                                    String url, List<String> methods) {
+        Object services = config.get(REST+"["+idx+"]."+SERVICE);
+        try {
+            info.services = validateServiceList(services);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().endsWith("not available")) {
+                log.warn("Skip {} {} - {} ", methods, url, e.getMessage());
+            } else {
+                log.error("Skip {} {} - {} ", methods, url, e.getMessage());
+            }
+            return false;
+        }
+        info.primary = info.services.getFirst();
+        return true;
+    }
+
+    // validate an HTTP(S) target or warn about irrelevant params for a regular service; false means skip
+    private boolean configureTarget(ConfigReader config, RouteInfo info, int idx) {
         if (info.primary.startsWith(HTTP) || info.primary.startsWith(HTTPS)) {
             try {
                 validateHttpTarget(config, info, idx);
             } catch (IllegalArgumentException e) {
                 log.error("Skip invalid entry with HTTP target - {}", e.getMessage());
-                return;
+                return false;
             }
         } else {
             String trustAll = config.getProperty(REST+"["+idx+"]."+TRUST_ALL_CERT);
@@ -525,9 +544,7 @@ public class RoutingEntry {
                 log.warn("{} parameter for {} is not relevant for regular service", TRUST_ALL_CERT, info.primary);
             }
         }
-        // remove OPTIONS method
-        methods.remove(OPTIONS_METHOD);
-        validateMethods(url, methods, config, info, idx, exact);
+        return true;
     }
 
     private void validateMethods(String url, List<String> methods, ConfigReader config, RouteInfo info, int i, boolean exact) {
