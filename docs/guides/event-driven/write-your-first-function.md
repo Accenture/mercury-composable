@@ -133,10 +133,12 @@ thread is parked while waiting, so you get sequential code at reactive throughpu
 Build and start the application (the examples are not part of the top-level reactor build, so build this
 one on its own; adjust the version to match your build):
 
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+
 ```bash
 cd examples/composable-example
 mvn clean package
-java -jar target/composable-example-4.6.1.jar
+java -jar target/composable-example-x.y.z.jar
 ```
 
 Test with `curl`:

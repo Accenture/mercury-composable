@@ -41,7 +41,7 @@ kafka connector and presence monitor. All refactoring is behavior-preserving; th
    (runnable) jar is now `kafka-standalone-<version>-exec.jar` while the main artifact remains a plain
    library jar, so that other modules can use it as a dependency (required by the new kafka-connector
    tests). Local dev scripts should be updated accordingly, e.g.
-   `java -jar target/kafka-standalone-4.6.1-exec.jar`. Docs, guides and the kafka-standalone Dockerfile
+   `java -jar target/kafka-standalone-4.6.2-exec.jar`. Docs, guides and the kafka-standalone Dockerfile
    have been updated to the new name.
 
 ---
