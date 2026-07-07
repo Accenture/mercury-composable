@@ -61,7 +61,7 @@ top-level reactor build, so build each one with `mvn clean package` first (the `
 ```shell
 cd examples/lambda-example
 mvn clean package
-java -jar target/lambda-example-3.1.2.jar
+java -jar target/lambda-example-4.6.1.jar
 ```
 
 Second, build and run the rest-spring-3-example application.
@@ -69,7 +69,7 @@ Second, build and run the rest-spring-3-example application.
 ```shell
 cd examples/rest-spring-3-example
 mvn clean package
-java -jar target/rest-spring-3-example-3.1.2.jar
+java -jar target/rest-spring-3-example-4.6.1.jar
 ```
 
 The rest-spring-3-example application will run as a Spring Boot application in port 8083 and 8086.
