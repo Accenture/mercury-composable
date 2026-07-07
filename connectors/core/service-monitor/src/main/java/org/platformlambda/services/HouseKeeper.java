@@ -42,7 +42,7 @@ public class HouseKeeper implements LambdaFunction {
     private static final String INIT = "init";
     private static final String ORIGIN = "origin";
     private static final String INSTANCE = "instance";
-    private static final long ONE_MINUTE = 60 * 1000;
+    private static final long ONE_MINUTE = 60 * 1000L;
     private static final ConcurrentMap<String, MonitorInstance> monitors = new ConcurrentHashMap<>();
 
     public static Map<String, String> getMonitors() {
@@ -58,7 +58,7 @@ public class HouseKeeper implements LambdaFunction {
     }
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         String myOrigin = Platform.getInstance().getOrigin();
         String type = headers.get(TYPE);
         // when a new presence monitor joins the system
