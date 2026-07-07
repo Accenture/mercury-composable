@@ -331,7 +331,7 @@ public class EventConsumer extends Thread {
             message.setHeader(OFFSET_TAG, rec.offset());
             EventEmitter.getInstance().send(message.setTo(virtualTopic));
         } catch (Exception e) {
-            log.error("Unable to process incoming event for {} - {} {}",
+            log.error("Unable to process incoming raw event for {} - {} {}",
                     topicPartition, e.getClass().getSimpleName(), e.getMessage());
         }
     }
