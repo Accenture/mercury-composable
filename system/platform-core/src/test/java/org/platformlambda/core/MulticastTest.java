@@ -41,7 +41,7 @@ class MulticastTest extends TestBase {
     private static final int WAIT_INTERVAL = 300;
 
     @BeforeAll
-    static void setup() throws InterruptedException {
+    static void setup() {
         // The multicast.yaml configuration will be loaded when the EventEmitter singleton initializes
         EventEmitter po = EventEmitter.getInstance();
         log.info("Multicast ready? {}", po.isMulticastEnabled());

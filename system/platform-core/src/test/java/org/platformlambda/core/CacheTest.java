@@ -31,7 +31,7 @@ class CacheTest {
     private static final SimpleCache cache2 = SimpleCache.createCache("simple.cache", 500);
 
     @Test
-    void cacheBehavior() throws InterruptedException {
+    void cacheBehavior() {
         var expiry = cache1.getExpiry();
         assertEquals(1000L, expiry);
         var defaultMaxItems = cache1.getMaxItems();
@@ -72,7 +72,7 @@ class CacheTest {
      * Please DO NOT use it at application level
      */
     @Test
-    void simpleCacheTest() throws InterruptedException {
+    void simpleCacheTest() {
         String key = "key1";
         String data = "hello";
         long expiry = cache2.getExpiry();

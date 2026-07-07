@@ -45,7 +45,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -310,7 +309,7 @@ class PlaygroundTest {
         }
     }
 
-    private Object getNextCommand(String command) throws InterruptedException {
+    private Object getNextCommand(String command) {
         var result = getFromDialog(dialog2, command);
         if (result != null) {
             return result;
@@ -319,7 +318,7 @@ class PlaygroundTest {
         return result != null? result : getFromDialog(dialog4, command);
     }
 
-    private Object getFromDialog(Map<String, Object> dialog, String command) throws InterruptedException {
+    private Object getFromDialog(Map<String, Object> dialog, String command) {
         for (Map.Entry<String, Object> kv : dialog.entrySet()) {
             if (command.startsWith(kv.getKey())) {
                 log.info("{}", kv.getKey());
@@ -331,7 +330,7 @@ class PlaygroundTest {
         return null;
     }
 
-    private void deferredSend(String txPath, String message) throws InterruptedException {
+    private void deferredSend(String txPath, String message) {
         var po = EventEmitter.getInstance();
         util.sleep(100);
         po.send(txPath, message);

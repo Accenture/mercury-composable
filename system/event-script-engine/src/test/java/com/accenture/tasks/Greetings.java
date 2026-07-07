@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @PreLoad(route="greeting.test", instances=10, isPrivate = false)
@@ -53,7 +52,7 @@ public class Greetings implements TypedLambdaFunction<EventEnvelope, Object> {
     @SuppressWarnings("unchecked")
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope event, int instance)
-            throws InterruptedException, AppException {
+            throws AppException {
         var input = event.getBody() instanceof Map? (Map<String, Object>) event.getBody() : new HashMap<>();
         if (END.equals(headers.get(TYPE))) {
             log.info("Received End of Flow advice {}, cid={}, flow={}, instance={}, traceId={}",

@@ -39,7 +39,7 @@ class ServiceQueueTest {
     }
 
     @Test
-    void fileDispatchMailboxUsesBoundedConfiguredCapacity() throws InterruptedException {
+    void fileDispatchMailboxUsesBoundedConfiguredCapacity() {
         System.setProperty(STORE_PROP, "file");
         System.setProperty(MAILBOX_PROP, "64");
         String route = "service.queue.mailbox." + Utility.getInstance().getUuid();

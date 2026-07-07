@@ -34,7 +34,7 @@ public class ParallelTask implements TypedLambdaFunction<Map<String, Object>, Ma
     public static final AtomicInteger counter = new AtomicInteger(0);
 
     @Override
-    public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) throws InterruptedException {
+    public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         int n = counter.incrementAndGet();
         boolean done = n == 2;
         log.info("Processing {}, counter={}", input, n);
