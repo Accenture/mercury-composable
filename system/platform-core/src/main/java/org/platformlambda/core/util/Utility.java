@@ -603,7 +603,7 @@ public class Utility {
             if (files != null) {
                 cleanFiles(files);
             }
-            if (!keep && dir.delete()) {
+            if (!keep && deleteQuietly(dir)) {
                 log.debug("Folder {} deleted", dir);
             }
         }
@@ -614,10 +614,18 @@ public class Utility {
             if (f.isDirectory()) {
                 cleanupDir(f, false);
             } else {
-                if (f.delete()) {
+                if (deleteQuietly(f)) {
                     log.debug("File {} deleted", f);
                 }
             }
+        }
+    }
+
+    private boolean deleteQuietly(File f) {
+        try {
+            return Files.deleteIfExists(f.toPath());
+        } catch (IOException e) {
+            return false;
         }
     }
 
