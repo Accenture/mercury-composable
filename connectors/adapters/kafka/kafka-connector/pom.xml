@@ -78,6 +78,13 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.platformlambda</groupId>
+            <artifactId>kafka-standalone</artifactId>
+            <version>4.6.1</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

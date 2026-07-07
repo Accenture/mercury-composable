@@ -56,6 +56,6 @@ public class AssignJob implements Job {
         // get an integer between 0 and 9
         var seconds = crypto.nextInt(0, 1000) % 10;
         log.info("Defer execution of {} for {} seconds", name, seconds);
-        return seconds * 1000;
+        return seconds * 1000L;
     }
 }
