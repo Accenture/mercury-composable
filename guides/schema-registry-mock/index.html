@@ -232,11 +232,14 @@ composable function that receives the raw <code>AsyncHttpRequest</code> (no flow
 <pre><code class="language-bash">mvn clean package -f helpers/schema-registry-standalone/pom.xml
 </code></pre>
 <p>Then, run the server:</p>
-<pre><code class="language-bash">java -jar helpers/schema-registry-standalone/target/schema-registry-standalone-4.5.0.jar
+<blockquote>
+<p><strong>Note</strong>: <code>x.y.z</code> denotes the current Mercury version shown in the root <code>pom.xml</code>.</p>
+</blockquote>
+<pre><code class="language-bash">java -jar helpers/schema-registry-standalone/target/schema-registry-standalone-x.y.z.jar
 </code></pre>
 <p>If you need to change the port, provide it as a system property <strong>before</strong> <code>-jar</code> (the built-in HTTP
 server reads <code>rest.server.port</code>):</p>
-<pre><code class="language-bash">java -Drest.server.port=8082 -jar helpers/schema-registry-standalone/target/schema-registry-standalone-4.5.0.jar
+<pre><code class="language-bash">java -Drest.server.port=8082 -jar helpers/schema-registry-standalone/target/schema-registry-standalone-x.y.z.jar
 </code></pre>
 <h2 id="how-to-use-it-in-your-application">How to use it in your application</h2>
 <p>Configure your Kafka producer and consumer properties to point to the local server.</p>
@@ -307,7 +310,7 @@ defaulting to a transient <code>/tmp/schema-registry</code>:</p>
 <p>Point it at a <strong>durable</strong> location to keep ids stable across reboots — for example your home directory —
 and override it at runtime with a JVM flag:</p>
 <pre><code class="language-bash">java -Dschema.registry.data.store=$HOME/schema-registry \
-     -jar helpers/schema-registry-standalone/target/schema-registry-standalone-4.5.0.jar
+     -jar helpers/schema-registry-standalone/target/schema-registry-standalone-x.y.z.jar
 </code></pre>
 <p>Making the path configurable also sidesteps filesystem-permission issues: you choose a directory your
 process can write to.</p>

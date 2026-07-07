@@ -240,13 +240,20 @@ If not, update "rest.yaml" accordingly. The "timeout" value is set to 60 seconds
 to create "ingress" for this purpose.</p>
 <h2 id="test-drive-event-api">Test drive Event API</h2>
 <p>You may now test drive the Event API service.</p>
-<p>First, build and run the lambda-example application in port 8085.</p>
+<p>First, build and run the lambda-example application in port 8085. The examples are not part of the
+top-level reactor build, so build each one with <code>mvn clean package</code> first (the <code>mvn clean install</code> in
+<a href="../getting-started/">Getting Started</a> installs the libraries they depend on).</p>
+<blockquote>
+<p><strong>Note</strong>: <code>x.y.z</code> denotes the current Mercury version shown in the root <code>pom.xml</code>.</p>
+</blockquote>
 <pre><code class="language-shell">cd examples/lambda-example
-java -jar target/lambda-example-3.1.2.jar
+mvn clean package
+java -jar target/lambda-example-x.y.z.jar
 </code></pre>
-<p>Second, build and run the rest-spring-example application.</p>
-<pre><code class="language-shell">cd examples/rest-spring-example-3
-java -jar target/rest-spring-3-example-3.1.2.jar
+<p>Second, build and run the rest-spring-3-example application.</p>
+<pre><code class="language-shell">cd examples/rest-spring-3-example
+mvn clean package
+java -jar target/rest-spring-3-example-x.y.z.jar
 </code></pre>
 <p>The rest-spring-3-example application will run as a Spring Boot application in port 8083 and 8086.</p>
 <p>These two applications will start independently.</p>

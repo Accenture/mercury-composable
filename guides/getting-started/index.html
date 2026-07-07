@@ -256,17 +256,23 @@ can decide how to route user requests to different versions of a function. Appli
 develop, maintain, deploy, and scale.</p>
 <h2 id="quickstart-five-minutes-from-zero-to-a-running-api">Quickstart — five minutes from zero to a running API</h2>
 <p><strong>Prerequisites:</strong> Java 21+ (<code>java --version</code>), Maven 3.9.7+ (<code>mvn --version</code>), and Git.</p>
-<p><strong>1. Clone and build.</strong></p>
+<p><strong>1. Clone and build the libraries.</strong></p>
 <pre><code class="language-shell">git clone https://github.com/Accenture/mercury-composable.git
 cd mercury-composable
 mvn clean install
 </code></pre>
 <blockquote>
-<p>The first build downloads all dependencies and may take a few minutes.</p>
+<p>The first build downloads all dependencies and may take a few minutes. It compiles the Mercury
+Composable libraries and installs them to your local <code>~/.m2</code> repository. The apps under <code>examples/</code>
+are not part of this build — each is built on its own in the next step.</p>
 </blockquote>
-<p><strong>2. Run the example app.</strong></p>
+<p><strong>2. Build and run the example app.</strong></p>
+<blockquote>
+<p><strong>Note</strong>: <code>x.y.z</code> denotes the current Mercury version shown in the root <code>pom.xml</code>.</p>
+</blockquote>
 <pre><code class="language-shell">cd examples/composable-example
-java -jar target/composable-example-4.6.1.jar
+mvn clean package
+java -jar target/composable-example-x.y.z.jar
 </code></pre>
 <p>Look for these lines to confirm it's running:</p>
 <pre><code class="language-log">CompileFlows - Loaded create-profile
@@ -307,7 +313,8 @@ lets a <strong>graph</strong> be the application — nodes execute as the engine
 model, not in code. For a 30-second taste, run the MiniGraph playground (a separate example) and call a
 built-in tutorial graph:</p>
 <pre><code class="language-shell">cd examples/minigraph-playground
-java -jar target/minigraph-playground-4.6.1.jar
+mvn clean package
+java -jar target/minigraph-playground-x.y.z.jar
 </code></pre>
 <pre><code class="language-bash">curl http://127.0.0.1:8085/api/graph/tutorial-1
 # hello world
@@ -417,6 +424,11 @@ mvn clean install
 </code></pre>
 <p>The compiled libraries will be saved to your local ".m2" maven repository. For production, you may publish
 the Mercury Composable libraries into your enterprise artifactory.</p>
+<blockquote>
+<p><em>Note:</em> The sample apps under <code>examples/</code> are not part of this top-level build. Once the libraries are
+installed, build any example on its own with <code>mvn clean package</code> in its project directory
+(e.g. <code>cd examples/composable-example &amp;&amp; mvn clean package</code>).</p>
+</blockquote>
 <p>We use "maven" build scripts. If your organization uses other build tools such as gradle, please convert them
 accordingly.</p>
 <h2 id="things-to-avoid-with-java-21">Things to avoid with Java 21</h2>

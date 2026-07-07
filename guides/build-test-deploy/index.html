@@ -259,9 +259,12 @@ public class MainApp implements EntryPoint {
 <p>The <code>AutoStart.main()</code> statement in the "main" method is used when you want to start your application within the IDE.
 You can "right-click" the main method and select "run".</p>
 <p>You can also build and run the application from command line like this:</p>
+<blockquote>
+<p><strong>Note</strong>: <code>x.y.z</code> denotes the current Mercury version shown in the root <code>pom.xml</code>.</p>
+</blockquote>
 <pre><code class="language-shell">cd sandbox/mercury-composable/examples/lambda-example
 mvn clean package
-java -jar target/lambda-example-4.0.16.jar
+java -jar target/lambda-example-x.y.z.jar
 </code></pre>
 <p>The lambda-example is a sample application that you can use as a template to write your own code. Please review
 the pom.xml and the source directory structure.</p>
@@ -555,8 +558,8 @@ run the application.</p>
 <pre><code class="language-shell">FROM mcr.microsoft.com/openjdk/jdk:21-ubuntu
 EXPOSE 8083
 WORKDIR /app
-COPY target/rest-spring-3-example-4.2.3.jar .
-ENTRYPOINT [&quot;java&quot;,&quot;-jar&quot;,&quot;rest-spring-3-example-4.2.3.jar&quot;]
+COPY target/rest-spring-3-example-x.y.z.jar .
+ENTRYPOINT [&quot;java&quot;,&quot;-jar&quot;,&quot;rest-spring-3-example-x.y.z.jar&quot;]
 </code></pre>
 <h2 id="distributed-tracing">Distributed tracing</h2>
 <blockquote>
@@ -584,7 +587,7 @@ exports them over OTLP/HTTP to a collector (and on to Dynatrace, Splunk, Jaeger,
 <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.platformlambda&lt;/groupId&gt;
     &lt;artifactId&gt;opentelemetry-forwarder&lt;/artifactId&gt;
-    &lt;version&gt;4.6.1&lt;/version&gt;
+    &lt;version&gt;x.y.z&lt;/version&gt;
 &lt;/dependency&gt;
 </code></pre>
 <p>Configure the collector endpoint and service name in <code>application.properties</code>:</p>

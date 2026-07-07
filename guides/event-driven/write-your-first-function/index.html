@@ -311,8 +311,10 @@ var result = response.getBody(); // Map containing {&quot;message&quot;: &quot;H
 thread is parked while waiting, so you get sequential code at reactive throughput.</p>
 <hr />
 <h2 id="4-run-and-test">4. Run and test</h2>
-<p>Start the application (adjust the version to match your build):</p>
+<p>Build and start the application (the examples are not part of the top-level reactor build, so build this
+one on its own; adjust the version to match your build):</p>
 <pre><code class="language-bash">cd examples/composable-example
+mvn clean package
 java -jar target/composable-example-4.6.1.jar
 </code></pre>
 <p>Test with <code>curl</code>:</p>

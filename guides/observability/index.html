@@ -335,10 +335,13 @@ unit-testing an external endpoint with full control over its request headers.</p
 <code>distributed.trace.forwarder</code> that maps each dataset to an OpenTelemetry span — preserving the <strong>exact</strong> W3C
 trace/span/parent-span IDs — and exports it over <strong>OTLP/HTTP</strong> to a collector (and on to Dynatrace, Splunk, Jaeger,
 Tempo, …). Add the dependency and it auto-registers; no code required:</p>
+<blockquote>
+<p><strong>Note</strong>: <code>x.y.z</code> denotes the current Mercury version shown in the root <code>pom.xml</code>.</p>
+</blockquote>
 <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.platformlambda&lt;/groupId&gt;
     &lt;artifactId&gt;opentelemetry-forwarder&lt;/artifactId&gt;
-    &lt;version&gt;4.6.1&lt;/version&gt;
+    &lt;version&gt;x.y.z&lt;/version&gt;
 &lt;/dependency&gt;
 </code></pre>
 <p>Configure it in <code>application.properties</code> (values support <code>${ENV_VAR:default}</code> substitution):</p>
