@@ -313,9 +313,12 @@ thread is parked while waiting, so you get sequential code at reactive throughpu
 <h2 id="4-run-and-test">4. Run and test</h2>
 <p>Build and start the application (the examples are not part of the top-level reactor build, so build this
 one on its own; adjust the version to match your build):</p>
+<blockquote>
+<p><strong>Note</strong>: <code>x.y.z</code> denotes the current Mercury version shown in the root <code>pom.xml</code>.</p>
+</blockquote>
 <pre><code class="language-bash">cd examples/composable-example
 mvn clean package
-java -jar target/composable-example-4.6.1.jar
+java -jar target/composable-example-x.y.z.jar
 </code></pre>
 <p>Test with <code>curl</code>:</p>
 <pre><code class="language-bash"># GET — query parameter mapped automatically
