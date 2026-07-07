@@ -58,51 +58,58 @@ public class HouseKeeper implements LambdaFunction {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
-        EventEmitter po = EventEmitter.getInstance();
         String myOrigin = Platform.getInstance().getOrigin();
         String type = headers.get(TYPE);
         // when a new presence monitor joins the system
         if (INIT.equals(type)) {
-            if (myOrigin.equals(headers.get(ORIGIN))) {
-                if (!monitors.containsKey(myOrigin)) {
-                    String appId = headers.get(INSTANCE);
-                    monitors.put(myOrigin, new MonitorInstance(appId == null ? myOrigin : appId,
-                            System.currentTimeMillis()));
-                    log.info("Registered monitor (me) {}", myOrigin);
-                }
-            } else {
-                po.send(MainApp.PRESENCE_HOUSEKEEPER+MONITOR_PARTITION,
-                        new ArrayList<>(MonitorService.getConnections().keySet()),
-                        new Kv(ORIGIN, myOrigin), new Kv(TYPE, MONITOR_ALIVE));
-            }
+            handleMonitorInit(headers, myOrigin);
         }
         // when a monitor sends keep-alive
         if (MONITOR_ALIVE.equals(type) && headers.containsKey(ORIGIN)) {
-            String origin = headers.get(ORIGIN);
-            String me = Platform.getInstance().getOrigin();
-            if (!monitors.containsKey(origin)) {
-                log.info("Registered monitor {} {}", me.equals(origin) ? "(me)" : "(peer)", origin);
-            }
-            String appId = headers.get(INSTANCE);
-            monitors.put(origin, new MonitorInstance(appId == null ? origin : appId, System.currentTimeMillis()));
-            removeExpiredMonitors();
-            if (input instanceof List) {
-                // compare connection list
-                Map<String, Object> connections = MonitorService.getConnections();
-                List<String> myConnections = new ArrayList<>(connections.keySet());
-                List<String> peerConnections = (List<String>) input;
-                if (!sameList(myConnections, peerConnections)) {
-                    log.debug("Sync up because my list ({}) does not match peer ({})",
-                            myConnections.size(), peerConnections.size());
-                    // download current connections from peers
-                    EventEmitter.getInstance().send(MainApp.PRESENCE_HANDLER+MONITOR_PARTITION,
-                            new Kv(TYPE, DOWNLOAD), new Kv(ORIGIN, me));
-                }
-            }
+            handleMonitorAlive(headers, input);
         }
         return true;
+    }
+
+    private void handleMonitorInit(Map<String, String> headers, String myOrigin) {
+        if (myOrigin.equals(headers.get(ORIGIN))) {
+            if (!monitors.containsKey(myOrigin)) {
+                String appId = headers.get(INSTANCE);
+                monitors.put(myOrigin, new MonitorInstance(appId == null ? myOrigin : appId,
+                        System.currentTimeMillis()));
+                log.info("Registered monitor (me) {}", myOrigin);
+            }
+        } else {
+            EventEmitter.getInstance().send(MainApp.PRESENCE_HOUSEKEEPER+MONITOR_PARTITION,
+                    new ArrayList<>(MonitorService.getConnections().keySet()),
+                    new Kv(ORIGIN, myOrigin), new Kv(TYPE, MONITOR_ALIVE));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void handleMonitorAlive(Map<String, String> headers, Object input) {
+        String origin = headers.get(ORIGIN);
+        String me = Platform.getInstance().getOrigin();
+        if (!monitors.containsKey(origin)) {
+            log.info("Registered monitor {} {}", me.equals(origin) ? "(me)" : "(peer)", origin);
+        }
+        String appId = headers.get(INSTANCE);
+        monitors.put(origin, new MonitorInstance(appId == null ? origin : appId, System.currentTimeMillis()));
+        removeExpiredMonitors();
+        if (input instanceof List) {
+            // compare connection list
+            Map<String, Object> connections = MonitorService.getConnections();
+            List<String> myConnections = new ArrayList<>(connections.keySet());
+            List<String> peerConnections = (List<String>) input;
+            if (!sameList(myConnections, peerConnections)) {
+                log.debug("Sync up because my list ({}) does not match peer ({})",
+                        myConnections.size(), peerConnections.size());
+                // download current connections from peers
+                EventEmitter.getInstance().send(MainApp.PRESENCE_HANDLER+MONITOR_PARTITION,
+                        new Kv(TYPE, DOWNLOAD), new Kv(ORIGIN, me));
+            }
+        }
     }
 
     private boolean sameList(List<String> a, List<String> b) {
