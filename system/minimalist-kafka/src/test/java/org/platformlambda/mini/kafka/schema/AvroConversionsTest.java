@@ -112,11 +112,13 @@ class AvroConversionsTest {
         // 'name' has no default; omitting it must fail rather than silently produce a partial record.
         Map<String, Object> input = Map.of("count", 1, "big", 1, "ratio", 0.0, "active", false,
                 "tags", List.of(), "attrs", Map.of(), "color", "RED", "blob", new byte[0]);
-        assertThrows(RuntimeException.class, () -> AvroConversions.toAvro(input, schema()));
+        var recordSchema = schema();
+        assertThrows(RuntimeException.class, () -> AvroConversions.toAvro(input, recordSchema));
     }
 
     @Test
     void nonMapForRecordIsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> AvroConversions.toAvro("not-a-map", schema()));
+        var recordSchema = schema();
+        assertThrows(IllegalArgumentException.class, () -> AvroConversions.toAvro("not-a-map", recordSchema));
     }
 }

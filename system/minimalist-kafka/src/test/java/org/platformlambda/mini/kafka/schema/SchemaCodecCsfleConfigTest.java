@@ -77,7 +77,7 @@ class SchemaCodecCsfleConfigTest {
         @Override public boolean isEmpty() { return map.isEmpty(); }
         @Override public boolean isBaseConfig() { return false; }
         @Override public Map<String, Object> getMap() { return map; }
-        @Override public Map<String, Object> getCompositeKeyValues() { return map; }
+        @Override public Map<String, Object> getCompositeKeyValues() { return getMap(); }
     }
 
     @Test

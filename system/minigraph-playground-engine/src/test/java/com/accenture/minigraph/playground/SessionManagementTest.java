@@ -376,8 +376,8 @@ class SessionManagementTest {
             assertNotNull(waitForMessage(fx.messagesC(), "Subscribed to " + fx.sessionA(), 5));
             assertNotNull(waitForMessage(fx.messagesA(), fx.sessionC() + " subscribed to your session", 5));
 
-            // touchNode broadcasts a synthetic "update node root" through the primary;
-            // A, B, and C all observe the resulting confirmation message.
+            // touchNode broadcasts a synthetic "update node root" through the primary session
+            // and A, B, and C all observe the resulting confirmation message.
             assertNotNull(waitForMessage(fx.messagesA(), "node root updated", 10));
             assertNotNull(waitForMessage(fx.messagesB(), "node root updated", 10));
             assertNotNull(waitForMessage(fx.messagesC(), "node root updated", 10));
@@ -439,7 +439,7 @@ class SessionManagementTest {
                 break;
             }
             log.info("Waiting for GRAPH websocket server at port-{} to get ready", port);
-            Thread.sleep(1000);
+            util.sleep(1000);
         }
         final BlockingQueue<String> messagesA = new LinkedBlockingQueue<>();
         final BlockingQueue<String> messagesB = new LinkedBlockingQueue<>();
@@ -460,7 +460,7 @@ class SessionManagementTest {
         var deadline = System.currentTimeMillis() + 10_000L;
         while ((txPathA.get() == null || txPathB.get() == null)
                 && System.currentTimeMillis() < deadline) {
-            Thread.sleep(50);
+            util.sleep(50);
         }
         // websocket client emulation in unit test would be influenced by the host computer so we want
         // to make it optional. However, we do want to print out the status for further improvement.
@@ -504,7 +504,7 @@ class SessionManagementTest {
                 break;
             }
             log.info("Waiting for GRAPH websocket server at port-{} to get ready", port);
-            Thread.sleep(1000);
+            util.sleep(1000);
         }
         final BlockingQueue<String> messagesA = new LinkedBlockingQueue<>();
         final BlockingQueue<String> messagesB = new LinkedBlockingQueue<>();
@@ -531,7 +531,7 @@ class SessionManagementTest {
         var deadline = System.currentTimeMillis() + 10_000L;
         while ((txPathA.get() == null || txPathB.get() == null || txPathC.get() == null)
                 && System.currentTimeMillis() < deadline) {
-            Thread.sleep(50);
+            util.sleep(50);
         }
         if (txPathA.get() == null || txPathB.get() == null || txPathC.get() == null) {
             log.info("Session management test skipped - websocket not ready (txA={}, txB={}, txC={})",

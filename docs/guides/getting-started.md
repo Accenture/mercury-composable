@@ -34,7 +34,7 @@ develop, maintain, deploy, and scale.
 
 **Prerequisites:** Java 21+ (`java --version`), Maven 3.9.7+ (`mvn --version`), and Git.
 
-**1. Clone and build.**
+**1. Clone and build the libraries.**
 
 ```shell
 git clone https://github.com/Accenture/mercury-composable.git
@@ -42,13 +42,18 @@ cd mercury-composable
 mvn clean install
 ```
 
-> The first build downloads all dependencies and may take a few minutes.
+> The first build downloads all dependencies and may take a few minutes. It compiles the Mercury
+> Composable libraries and installs them to your local `~/.m2` repository. The apps under `examples/`
+> are not part of this build — each is built on its own in the next step.
 
-**2. Run the example app.**
+**2. Build and run the example app.**
+
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
 
 ```shell
 cd examples/composable-example
-java -jar target/composable-example-4.6.1.jar
+mvn clean package
+java -jar target/composable-example-x.y.z.jar
 ```
 
 Look for these lines to confirm it's running:
@@ -103,7 +108,8 @@ built-in tutorial graph:
 
 ```shell
 cd examples/minigraph-playground
-java -jar target/minigraph-playground-4.6.1.jar
+mvn clean package
+java -jar target/minigraph-playground-x.y.z.jar
 ```
 
 ```bash
@@ -240,6 +246,10 @@ mvn clean install
 
 The compiled libraries will be saved to your local ".m2" maven repository. For production, you may publish
 the Mercury Composable libraries into your enterprise artifactory.
+
+> *Note:* The sample apps under `examples/` are not part of this top-level build. Once the libraries are
+> installed, build any example on its own with `mvn clean package` in its project directory
+> (e.g. `cd examples/composable-example && mvn clean package`).
 
 We use "maven" build scripts. If your organization uses other build tools such as gradle, please convert them
 accordingly.

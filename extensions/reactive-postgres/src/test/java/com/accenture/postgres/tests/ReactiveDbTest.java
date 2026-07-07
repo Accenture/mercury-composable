@@ -26,6 +26,7 @@ import org.platformlambda.postgres.support.PgRequest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import com.accenture.postgres.models.TempTestData;
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.serializers.SimpleMapper;
@@ -267,7 +268,7 @@ class ReactiveDbTest {
         var now = new Date();
         var timestamp = new Timestamp(now.getTime());
         // Except for unit test where the PostOffice is hardcoded.
-        // You should always instantiate a new instance of a PostOffice using "var po = new PostOffice(headers, instance)
+        // You should always instantiate a new instance of a PostOffice using: var po = new PostOffice(headers, instance)
         var po = PostOffice.trackable("unit.test", "200", "TEST /crud");
         var sql = new PgRequest(TIMEOUT);
         var count = sql.update(po, SQL_INSERT, id, name, instance, timestamp, timestamp);
@@ -312,6 +313,25 @@ class ReactiveDbTest {
         assertEquals(0, records.size());
     }
 
+    /**
+     * The PgRequest helper rejects malformed calls before any database round-trip.
+     */
+    @Test
+    void pgRequestValidationGuards() {
+        var po = PostOffice.trackable("unit.test", "700", "TEST /guards");
+        var sql = new PgRequest(TIMEOUT);
+        var missingPo = assertThrows(AppException.class, () -> sql.query(null, SQL_READ, "x"));
+        assertEquals("Missing PostOffice", missingPo.getMessage());
+        var missingSql = assertThrows(AppException.class, () -> sql.query(po, null));
+        assertEquals("Missing SQL statement", missingSql.getMessage());
+        assertThrows(AppException.class, () -> sql.update(null, SQL_INSERT));
+        List<List<Object>> noRows = List.of();
+        var emptyBatch = assertThrows(AppException.class, () -> sql.batch(po, SQL_UPDATE, noRows));
+        assertEquals("Missing list of lists of parameters", emptyBatch.getMessage());
+        var missingStatements = assertThrows(AppException.class, () -> sql.transaction(po, null, null));
+        assertEquals("Missing SQL statements", missingStatements.getMessage());
+    }
+
     @Test
     void db2MockTest() throws ExecutionException, InterruptedException {
         var id = util.getUuid();
@@ -320,7 +340,7 @@ class ReactiveDbTest {
         var now = new Date();
         var timestamp = new Timestamp(now.getTime());
         // Except for unit test where the PostOffice is hardcoded.
-        // You should always instantiate a new instance of a PostOffice using "var po = new PostOffice(headers, instance)
+        // You should always instantiate a new instance of a PostOffice using: var po = new PostOffice(headers, instance)
         var po = PostOffice.trackable("unit.test", "600", "TEST /mock/db2");
         var sql = new Db2Request(TIMEOUT);
         var data = Map.of("id", id, "app_name", name, "app_instance", instance,

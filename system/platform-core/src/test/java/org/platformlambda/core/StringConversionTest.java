@@ -48,7 +48,6 @@ class StringConversionTest {
 
     @Test
     void normalizeUtcTimestamp() {
-        Utility util = Utility.getInstance();
         String expected = "2020-07-09T01:02:03.123Z";
         String timestamp = "2020-07-09T01:02:03.12345678Z";
         assertEquals(expected, util.date2str(util.str2date(timestamp)));

@@ -6,6 +6,8 @@ import java.util.List;
 
 public final class Evaluator {
 
+    private Evaluator() {}
+
     public static double evaluateNumber(String expression, EvalContext ctx) {
         Value v = evaluateValue(expression, ctx);
         return v.asDouble();

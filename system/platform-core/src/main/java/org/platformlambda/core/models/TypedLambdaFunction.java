@@ -30,5 +30,8 @@ import java.util.Map;
  */
 public interface TypedLambdaFunction<I, O> {
 
+    // S112: a composable function may throw any checked exception; the event engine catches and reports
+    // it. "throws Exception" is the intended, framework-wide contract - narrowing it would break user code.
+    @SuppressWarnings("java:S112")
     O handleEvent(Map<String, String> headers, I input, int instance) throws Exception;
 }

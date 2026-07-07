@@ -20,5 +20,8 @@ package org.platformlambda.core.models;
 
 public interface EntryPoint {
 
+    // S112: a main-application entry point may fail for any reason; the runtime catches and reports it.
+    // "throws Exception" is the intended, framework-wide contract - narrowing it would break user code.
+    @SuppressWarnings("java:S112")
     void start(String[] args) throws Exception;
 }

@@ -49,10 +49,12 @@ You can "right-click" the main method and select "run".
 
 You can also build and run the application from command line like this:
 
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+
 ```shell
 cd sandbox/mercury-composable/examples/lambda-example
 mvn clean package
-java -jar target/lambda-example-4.0.16.jar
+java -jar target/lambda-example-x.y.z.jar
 ```
 
 The lambda-example is a sample application that you can use as a template to write your own code. Please review
@@ -392,8 +394,8 @@ A sample Dockerfile for an executable JAR may look like this:
 FROM mcr.microsoft.com/openjdk/jdk:21-ubuntu
 EXPOSE 8083
 WORKDIR /app
-COPY target/rest-spring-3-example-4.2.3.jar .
-ENTRYPOINT ["java","-jar","rest-spring-3-example-4.2.3.jar"]
+COPY target/rest-spring-3-example-x.y.z.jar .
+ENTRYPOINT ["java","-jar","rest-spring-3-example-x.y.z.jar"]
 ```
 
 ## Distributed tracing
@@ -433,7 +435,7 @@ Add the dependency and it auto-registers (no code):
 <dependency>
     <groupId>org.platformlambda</groupId>
     <artifactId>opentelemetry-forwarder</artifactId>
-    <version>4.6.1</version>
+    <version>x.y.z</version>
 </dependency>
 ```
 

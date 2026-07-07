@@ -114,11 +114,13 @@ You do not have to write the forwarder for OpenTelemetry. The **`opentelemetry-f
 trace/span/parent-span IDs — and exports it over **OTLP/HTTP** to a collector (and on to Dynatrace, Splunk, Jaeger,
 Tempo, …). Add the dependency and it auto-registers; no code required:
 
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+
 ```xml
 <dependency>
     <groupId>org.platformlambda</groupId>
     <artifactId>opentelemetry-forwarder</artifactId>
-    <version>4.6.1</version>
+    <version>x.y.z</version>
 </dependency>
 ```
 

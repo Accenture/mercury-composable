@@ -45,7 +45,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -195,7 +194,7 @@ class PlaygroundTest {
                 break;
             } else {
                 log.info("Waiting for JSON websocket server at port-{} to get ready", port);
-                Thread.sleep(1000);
+                util.sleep(1000);
             }
         }
         PersistentWsClient client = new PersistentWsClient(connector,
@@ -273,7 +272,7 @@ class PlaygroundTest {
                             received.add(map);
                         }
                         if ("end".equals(map.get("inspect"))) {
-                            Thread.sleep(100);
+                            util.sleep(100);
                             received.add(map);
                             deferredSend(txPath, "delete node root");
                             deferredSend(txPath, "import graph from hello");
@@ -292,7 +291,7 @@ class PlaygroundTest {
                 break;
             } else {
                 log.info("Waiting for GRAPH websocket server at port-{} to get ready", port);
-                Thread.sleep(1000);
+                util.sleep(1000);
             }
         }
         PersistentWsClient client = new PersistentWsClient(connector,
@@ -310,7 +309,7 @@ class PlaygroundTest {
         }
     }
 
-    private Object getNextCommand(String command) throws InterruptedException {
+    private Object getNextCommand(String command) {
         var result = getFromDialog(dialog2, command);
         if (result != null) {
             return result;
@@ -319,21 +318,21 @@ class PlaygroundTest {
         return result != null? result : getFromDialog(dialog4, command);
     }
 
-    private Object getFromDialog(Map<String, Object> dialog, String command) throws InterruptedException {
+    private Object getFromDialog(Map<String, Object> dialog, String command) {
         for (Map.Entry<String, Object> kv : dialog.entrySet()) {
             if (command.startsWith(kv.getKey())) {
                 log.info("{}", kv.getKey());
                 // simulate human operator delay
-                Thread.sleep(100);
+                util.sleep(100);
                 return kv.getValue();
             }
         }
         return null;
     }
 
-    private void deferredSend(String txPath, String message) throws InterruptedException {
+    private void deferredSend(String txPath, String message) {
         var po = EventEmitter.getInstance();
-        Thread.sleep(100);
+        util.sleep(100);
         po.send(txPath, message);
     }
 

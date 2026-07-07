@@ -18,10 +18,12 @@ for why. See also the guide: [`docs/guides/schema-registry-mock.md`](../../docs/
 
 ## Build and run
 
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+
 ```shell
 cd helpers/schema-registry-standalone
 mvn clean package
-java -jar target/schema-registry-standalone-4.6.1.jar
+java -jar target/schema-registry-standalone-x.y.z.jar
 ```
 
 The server starts on `http://127.0.0.1:8081`. Press `Ctrl-C` to stop.
@@ -122,7 +124,7 @@ Schemas are persisted as **one file per global id** — `<id>.json` (e.g. `1.jso
 Override the store for a durable location:
 
 ```shell
-java -Dschema.registry.data.store="$HOME/schema-registry" -jar target/schema-registry-standalone-4.6.1.jar
+java -Dschema.registry.data.store="$HOME/schema-registry" -jar target/schema-registry-standalone-x.y.z.jar
 ```
 
 ## Choosing a port
@@ -130,7 +132,7 @@ java -Dschema.registry.data.store="$HOME/schema-registry" -jar target/schema-reg
 The port defaults to `8081`. Override it with the `rest.server.port` property:
 
 ```shell
-java -Drest.server.port=8082 -jar target/schema-registry-standalone-4.6.1.jar
+java -Drest.server.port=8082 -jar target/schema-registry-standalone-x.y.z.jar
 ```
 
 ## Prefer Docker / the real registry?

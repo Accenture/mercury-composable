@@ -39,14 +39,14 @@ class ServiceQueueTest {
     }
 
     @Test
-    void fileDispatchMailboxUsesBoundedConfiguredCapacity() throws InterruptedException {
+    void fileDispatchMailboxUsesBoundedConfiguredCapacity() {
         System.setProperty(STORE_PROP, "file");
         System.setProperty(MAILBOX_PROP, "64");
         String route = "service.queue.mailbox." + Utility.getInstance().getUuid();
         TypedLambdaFunction<Object, Object> fn = (headers, input, instance) -> true;
         ServiceQueue queue = new ServiceQueue(new ServiceDef(route, fn));
         try {
-            Thread.sleep(100);
+            Utility.getInstance().sleep(100);
             assertEquals(64, ServiceQueue.dispatchMailboxSize());
             assertEquals(64, queue.getDispatchMailboxRemainingCapacity());
         } finally {

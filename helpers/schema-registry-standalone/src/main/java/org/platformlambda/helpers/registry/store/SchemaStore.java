@@ -113,14 +113,14 @@ public class SchemaStore {
     public int register(String subject, String schema, String schemaType) {
         String type = schemaType == null || schemaType.isEmpty() ? AVRO_TYPE : schemaType;
         String hashKey = getHash(type + ":" + schema);
-        Integer existingId = hashToId.get(hashKey);
-        int id = existingId != null ? existingId : nextFreeId();
+        boolean firstTime = !hashToId.containsKey(hashKey);
+        // content-addressed id: reuse the existing one, or assign (and store) a new one on first sight
+        int id = hashToId.computeIfAbsent(hashKey, k -> nextFreeId());
         int version = assignVersion(subject, id);
-        if (existingId == null) {
+        if (firstTime) {
             // First time this content is seen: store + persist with the registering subject/version.
             SchemaEntry entry = new SchemaEntry(schema, type, subject, version);
             idToSchema.put(id, entry);
-            hashToId.put(hashKey, id);
             saveEntry(id, entry);
         }
         return id;

@@ -23,6 +23,8 @@ import java.util.stream.Stream;
 
 public class SimplePluginUtils {
 
+    private SimplePluginUtils() {}
+
     public static void divideByZeroCheck(Object... input) {
         boolean anyZero = Arrays.stream(input)
                 .map(SimplePluginUtils::promoteNumber)

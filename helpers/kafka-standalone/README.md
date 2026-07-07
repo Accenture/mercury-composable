@@ -27,8 +27,10 @@ dual.servers=true
 
 Alternatively, you can instruct this application to start two Kafka servers using run-time parameter like this:
 
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+
 ```shell
-java -Ddual.servers=true -jar target/kafka-standalone-4.3.5.jar
+java -Ddual.servers=true -jar target/kafka-standalone-x.y.z-exec.jar
 ```
 
 ## Using docker

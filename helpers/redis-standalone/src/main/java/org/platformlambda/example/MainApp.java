@@ -35,6 +35,10 @@ import org.platformlambda.system.EmbeddedRedis;
 @MainApplication
 public class MainApp implements EntryPoint {
 
+    // The embedded server started by this app, retained so an embedding process (or a unit test) can
+    // stop it directly instead of relying solely on the JVM shutdown hook.
+    EmbeddedRedis redis;
+
     public static void main(String[] args) {
         AutoStart.main(args);
     }
@@ -43,6 +47,7 @@ public class MainApp implements EntryPoint {
     public void start(String[] args) {
         AppConfigReader config = AppConfigReader.getInstance();
         int port = Integer.parseInt(config.getProperty("redis.port", "6379"));
-        new EmbeddedRedis(port).start();
+        redis = new EmbeddedRedis(port);
+        redis.start();
     }
 }

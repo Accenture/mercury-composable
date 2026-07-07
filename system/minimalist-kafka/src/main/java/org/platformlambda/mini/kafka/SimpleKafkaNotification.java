@@ -140,7 +140,7 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
     /** Build a W3C traceparent from this function's current trace context (null if tracing is off). */
     private static String currentTraceparent(PostOffice po) {
         TraceInfo trace = po.getTrace();
-        return trace == null ? null : W3cTrace.traceparent(po.getTraceId(), trace.spanId);
+        return trace == null ? null : W3cTrace.format(po.getTraceId(), trace.spanId);
     }
 
     /**

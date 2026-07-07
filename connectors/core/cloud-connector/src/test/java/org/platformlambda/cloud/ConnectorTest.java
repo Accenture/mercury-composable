@@ -26,6 +26,7 @@ import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.ServiceDiscovery;
+import org.platformlambda.core.util.Utility;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.mock.TestBase;
 import org.slf4j.Logger;
@@ -50,7 +51,7 @@ class ConnectorTest extends TestBase {
     private static final AtomicBoolean firstRun = new AtomicBoolean(true);
 
     @BeforeAll
-    public static void waitForMockCloud() throws InterruptedException {
+    static void waitForMockCloud() throws InterruptedException {
         if (firstRun.get()) {
             firstRun.set(false);
             final int WAIT = 20;
@@ -73,11 +74,7 @@ class ConnectorTest extends TestBase {
                 ready = true;
                 break;
             }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            Utility.getInstance().sleep(1000);
         }
         if (ready) {
             log.info("Cloud connection ready");
@@ -94,15 +91,15 @@ class ConnectorTest extends TestBase {
         Platform platform = Platform.getInstance();
         platform.waitForProvider("cloud.connector.health", 10);
         EventEmitter po = EventEmitter.getInstance();
-        String URL = "https://127.0.0.1";
-        String SERVICE_NAME = "CloudConnector";
-        ConnectorConfig.setDisplayUrl(URL);
-        ConnectorConfig.setServiceName(SERVICE_NAME);
+        String targetUrl = "https://127.0.0.1";
+        String serviceName = "CloudConnector";
+        ConnectorConfig.setDisplayUrl(targetUrl);
+        ConnectorConfig.setServiceName(serviceName);
         String url = ConnectorConfig.getDisplayUrl();
         String name = ConnectorConfig.getServiceName();
         Map<String, String> topicSubstitution = ConnectorConfig.getTopicSubstitution();
-        assertEquals(URL, url);
-        assertEquals(SERVICE_NAME, name);
+        assertEquals(targetUrl, url);
+        assertEquals(serviceName, name);
         assertEquals("user.topic.one", topicSubstitution.get("multiplex.0001.0"));
         EventEnvelope req = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_REGISTRY)
                                     .setHeader("type", "join").setHeader("origin", origin)

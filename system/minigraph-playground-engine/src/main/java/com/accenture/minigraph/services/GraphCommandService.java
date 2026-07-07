@@ -1464,12 +1464,13 @@ public class GraphCommandService extends GraphLambdaFunction {
             }
         }
         var n = 0;
-        if (!toBeDeleted.isEmpty()) {
-            for (File file : toBeDeleted) {
-                boolean deleted = file.delete();
-                if (deleted) {
+        for (File file : toBeDeleted) {
+            try {
+                if (Files.deleteIfExists(file.toPath())) {
                     n++;
                 }
+            } catch (IOException e) {
+                // ok to ignore - expired temp graphs are removed in the next housekeeping cycle
             }
         }
         if (n > 0) {

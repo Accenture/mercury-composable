@@ -93,41 +93,45 @@ public class ConnectorConfig {
 
     public static Map<String, String> getTopicSubstitution() {
         if (topicReplacements == null) {
-            Utility util = Utility.getInstance();
             Map<String, String> result = new HashMap<>();
             AppConfigReader config = AppConfigReader.getInstance();
             String useStaticTopics = config.getProperty(TOPIC_SUBSTITUTION, "false");
             if ("true".equalsIgnoreCase(useStaticTopics)) {
-                ConfigReader topicConfig = getConfig("yaml.topic.substitution",
-                        "file:/tmp/config/topic-substitution.yaml,classpath:/topic-substitution.yaml");
-                Map<String, Object> map = topicConfig.getCompositeKeyValues();
-                if (map.isEmpty()) {
-                    log.error("Application cannot start because topic-substitution.yaml is empty");
-                    System.exit(-1);
-                }
-                log.info("Using pre-allocated topics - virtual topic mapping below:");
-                List<String> normalizedTopics = new ArrayList<>();
-                for (var entry : map.entrySet()) {
-                    String t = entry.getKey();
-                    result.put(t, map.get(t).toString());
-                    int dot = t.lastIndexOf(".");
-                    if (dot > 0) {
-                        int partition = util.str2int(t.substring(dot+1));
-                        String vt = t.substring(0, dot) + "-" + util.zeroFill(partition, 999);
-                        normalizedTopics.add(vt + "|" + t);
-                    }
-                }
-                Collections.sort(normalizedTopics);
-                for (String nt : normalizedTopics) {
-                    int sep = nt.lastIndexOf('|');
-                    String vt = nt.substring(0, sep);
-                    String t = nt.substring(sep+1);
-                    log.info("{} -> {}", vt, map.get(t));
-                }
+                loadStaticTopicSubstitution(result);
             }
             topicReplacements = result;
         }
         return topicReplacements;
+    }
+
+    private static void loadStaticTopicSubstitution(Map<String, String> result) {
+        Utility util = Utility.getInstance();
+        ConfigReader topicConfig = getConfig("yaml.topic.substitution",
+                "file:/tmp/config/topic-substitution.yaml,classpath:/topic-substitution.yaml");
+        Map<String, Object> map = topicConfig.getCompositeKeyValues();
+        if (map.isEmpty()) {
+            log.error("Application cannot start because topic-substitution.yaml is empty");
+            System.exit(-1);
+        }
+        log.info("Using pre-allocated topics - virtual topic mapping below:");
+        List<String> normalizedTopics = new ArrayList<>();
+        for (var entry : map.entrySet()) {
+            String t = entry.getKey();
+            result.put(t, map.get(t).toString());
+            int dot = t.lastIndexOf(".");
+            if (dot > 0) {
+                int partition = util.str2int(t.substring(dot+1));
+                String vt = t.substring(0, dot) + "-" + util.zeroFill(partition, 999);
+                normalizedTopics.add(vt + "|" + t);
+            }
+        }
+        Collections.sort(normalizedTopics);
+        for (String nt : normalizedTopics) {
+            int sep = nt.lastIndexOf('|');
+            String vt = nt.substring(0, sep);
+            String t = nt.substring(sep+1);
+            log.info("{} -> {}", vt, map.get(t));
+        }
     }
 
     public static void validateTopicName(String route) {

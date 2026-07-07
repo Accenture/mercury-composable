@@ -831,7 +831,7 @@ public class EventEmitter {
         String eventTraceId = event.getTraceId();
         if (eventTraceId != null) {
             req.setHeader(X_TRACE_ID, eventTraceId);
-            String traceParent = W3cTrace.traceparent(eventTraceId, event.getSpanId());
+            String traceParent = W3cTrace.format(eventTraceId, event.getSpanId());
             if (traceParent != null) {
                 req.setHeader(W3cTrace.TRACEPARENT, traceParent);
             }
@@ -967,7 +967,7 @@ public class EventEmitter {
         String eventTraceId = event.getTraceId();
         if (eventTraceId != null) {
             req.setHeader(X_TRACE_ID, eventTraceId);
-            String traceParent = W3cTrace.traceparent(eventTraceId, event.getSpanId());
+            String traceParent = W3cTrace.format(eventTraceId, event.getSpanId());
             if (traceParent != null) {
                 req.setHeader(W3cTrace.TRACEPARENT, traceParent);
             }

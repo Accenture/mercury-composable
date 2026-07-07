@@ -24,6 +24,7 @@ import org.platformlambda.common.TestBase;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
+import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,13 +41,13 @@ class MulticastTest extends TestBase {
     private static final int WAIT_INTERVAL = 300;
 
     @BeforeAll
-    static void setup() throws InterruptedException {
+    static void setup() {
         // The multicast.yaml configuration will be loaded when the EventEmitter singleton initializes
         EventEmitter po = EventEmitter.getInstance();
         log.info("Multicast ready? {}", po.isMulticastEnabled());
         int n = 0;
         while (!po.isMulticastEnabled()) {
-            Thread.sleep(WAIT_INTERVAL);
+            Utility.getInstance().sleep(WAIT_INTERVAL);
             n++;
             log.info("Waiting for multicast engine to get ready. Elapsed {} ms", n * WAIT_INTERVAL);
         }

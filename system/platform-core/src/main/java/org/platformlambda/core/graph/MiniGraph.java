@@ -682,6 +682,8 @@ public class MiniGraph {
      * @param targetAlias of another node
      * @return 0 to 2 connections
      */
+    // S2234: the swapped argument order is intentional - it looks up the reverse direction
+    @SuppressWarnings("java:S2234")
     public List<SimpleConnection> findBiDirectionalConnection(String sourceAlias, String targetAlias) {
         List<SimpleConnection> bothDirection = new ArrayList<>();
         var forward = findConnection(sourceAlias, targetAlias);

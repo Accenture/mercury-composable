@@ -36,10 +36,13 @@ npm install
 Run each step in its own terminal, from the repo root unless noted.
 
 ### Terminal A — start the local Kafka broker
+
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+
 ```shell
 cd helpers/kafka-standalone
 mvn clean package
-java -jar target/kafka-standalone-4.6.1.jar
+java -jar target/kafka-standalone-x.y.z-exec.jar
 ```
 Wait for it to report the broker is up on `127.0.0.1:9092`.
 
@@ -54,7 +57,7 @@ node create-topics.js
 ```shell
 cd examples/kafka-demo
 mvn clean package
-java -jar target/kafka-demo-4.6.1.jar
+java -jar target/kafka-demo-x.y.z.jar
 ```
 It starts the flow adapter (consuming `demo.inbound`) and the producer.
 

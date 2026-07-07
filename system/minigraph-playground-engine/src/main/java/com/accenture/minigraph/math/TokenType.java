@@ -11,7 +11,7 @@ enum TokenType {
     DOUBLESTAR,      // **
     LTE, GTE,        // <= >=
     EQEQ, BANGEQ,    // == !=
-    AMPAMP, BARBAR,  // && ||
+    AMPAMP, BARBAR,  // logical AND, logical OR
 
     // Literals / identifiers
     NUMBER,          // 123, 3.14, 1e-5

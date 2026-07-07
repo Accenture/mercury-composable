@@ -26,6 +26,7 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
+import org.platformlambda.core.util.Utility;
 import org.platformlambda.core.system.PubSub;
 import org.platformlambda.core.system.ServiceDiscovery;
 import org.platformlambda.mock.TestBase;
@@ -86,11 +87,7 @@ class ConnectorTest extends TestBase {
                 ready = true;
                 break;
             }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            Utility.getInstance().sleep(1000);
         }
         if (ready) {
             log.info("Cloud connection ready");
@@ -107,11 +104,7 @@ class ConnectorTest extends TestBase {
         int n = 0;
         while (!PresenceHandler.isReady() || MonitorService.getConnections().isEmpty() && ++n < 20) {
             log.info("Waiting for member connection... {}", n);
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                // ok to ignore
-            }
+            Utility.getInstance().sleep(5000);
         }
         Map<String, Object> connections = MonitorService.getConnections();
         if (connections.isEmpty()) {
@@ -136,11 +129,7 @@ class ConnectorTest extends TestBase {
             List<String> vtList = (List<String>) vt;
             if (vtList.isEmpty()) {
                 log.info("Waiting for first active member... {}", n);
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    // ok to ignore
-                }
+                Utility.getInstance().sleep(3000);
             } else {
                 assertTrue(vtList.getFirst().startsWith("multiplex.0001-000 (user.topic.one) ->"));
                 po.send(ServiceDiscovery.SERVICE_REGISTRY,

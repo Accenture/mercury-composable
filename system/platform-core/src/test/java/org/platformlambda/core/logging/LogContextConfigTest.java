@@ -101,8 +101,9 @@ class LogContextConfigTest extends TestBase {
 
     @Test
     void rejectsUnknownToken() {
+        Map<String, Object> badSection = Map.of("bad", "$notAValidToken");
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> configFrom(Map.of("bad", "$notAValidToken")));
+                () -> configFrom(badSection));
         assertTrue(ex.getMessage().contains("notAValidToken"));
     }
 

@@ -223,7 +223,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
         @SuppressWarnings("unchecked")
         Map<String, String> headers = (Map<String, String>) dataset.get(HEADER);
         String[] trace = W3cTrace.parse(headers.get(W3cTrace.TRACEPARENT));
-        String traceId = trace != null ? trace[0] : Utility.getInstance().getUuid();
+        String traceId = trace.length > 0 ? trace[0] : Utility.getInstance().getUuid();
         String tracePath = "KAFKA /" + consumerRecord.topic();
         EventEnvelope forward = toFlowRequest(dataset, headers, trace, traceId, tracePath);
         return deliver(consumerRecord, forward, traceId, tracePath);
@@ -242,7 +242,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
                 .setHeader(EventScriptManager.BUSINESS_CORRELATION_ID, businessCorrelationId)
                 .setCorrelationId(businessCorrelationId).setBody(dataset)
                 .setTraceId(traceId).setTracePath(tracePath);
-        if (trace != null) {
+        if (trace.length > 0) {
             forward.setSpanId(trace[1]);   // chain onto the upstream span carried in the Kafka traceparent
         }
         return forward;

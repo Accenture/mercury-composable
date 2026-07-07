@@ -65,7 +65,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var dictionary = getEntries(fetcher.getProperty(DICTIONARY));
         var dictionaryNodes = getDictionaryNodes(dictionary, nodeName, graphInstance);
         var forEach = getEntries(fetcher.getProperty(FOR_EACH));
-        Map<String, List<?>> forEachMapping = getForEachMapping(nodeName, forEach, stateMachine);
+        Map<String, List<Object>> forEachMapping = getForEachMapping(nodeName, forEach, stateMachine);
         if (forEach.isEmpty()) {
             return executeProviders(po, graphInstance, fetcher, dictionaryNodes);
         }

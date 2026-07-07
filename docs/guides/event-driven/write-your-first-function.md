@@ -130,10 +130,12 @@ thread is parked while waiting, so you get sequential code at reactive throughpu
 
 ## 4. Run and test
 
-Start the application (adjust the version to match your build):
+Build and start the application (the examples are not part of the top-level reactor build, so build this
+one on its own; adjust the version to match your build):
 
 ```bash
 cd examples/composable-example
+mvn clean package
 java -jar target/composable-example-4.6.1.jar
 ```
 

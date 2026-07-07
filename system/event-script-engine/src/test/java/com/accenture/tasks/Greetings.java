@@ -24,12 +24,12 @@ import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.PostOffice;
+import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @PreLoad(route="greeting.test", instances=10, isPrivate = false)
@@ -52,7 +52,7 @@ public class Greetings implements TypedLambdaFunction<EventEnvelope, Object> {
     @SuppressWarnings("unchecked")
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope event, int instance)
-            throws InterruptedException, AppException {
+            throws AppException {
         var input = event.getBody() instanceof Map? (Map<String, Object>) event.getBody() : new HashMap<>();
         if (END.equals(headers.get(TYPE))) {
             log.info("Received End of Flow advice {}, cid={}, flow={}, instance={}, traceId={}",
@@ -70,7 +70,7 @@ public class Greetings implements TypedLambdaFunction<EventEnvelope, Object> {
                     flowInstance.setEndFlowListeners("greeting.test");
                     log.info("Set end of flow hook to {}", flowInstance.getEndFlowListeners());
                 }
-                Thread.sleep(2500);
+                Utility.getInstance().sleep(2500);
                 return null;
             } else if (CUSTOM.equals(exceptionTag)) {
                 return new EventEnvelope().setStatus(400).setBody(Map.of("error", "non-standard-format"));

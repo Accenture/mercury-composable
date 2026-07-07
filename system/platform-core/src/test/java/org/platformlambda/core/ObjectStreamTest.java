@@ -221,7 +221,7 @@ class ObjectStreamTest extends TestBase {
     void eventPublisherExpiryTest() throws InterruptedException {
         final long timeToLive = 1000;
         EventPublisher publisher = new EventPublisher(timeToLive);
-        Thread.sleep(1100);
+        Utility.getInstance().sleep(1100);
         final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         final List<Object> messages = new ArrayList<>();
         FluxConsumer<String> fc = new FluxConsumer<>(publisher.getStreamId(), timeToLive);
@@ -246,7 +246,7 @@ class ObjectStreamTest extends TestBase {
             emitter.complete();
         });
         FluxPublisher<String> publisher = new FluxPublisher<>(source, timeToLive);
-        Thread.sleep(1100);
+        Utility.getInstance().sleep(1100);
         String streamId = publisher.publish();
         final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         final List<Object> messages = new ArrayList<>();

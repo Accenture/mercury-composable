@@ -51,87 +51,109 @@ public class PresenceHandler implements LambdaFunction {
         return ready;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Object handleEvent(Map<String, String> headers, Object input, int instance) {
+        if (!headers.containsKey(ORIGIN) || !headers.containsKey(TYPE)) {
+            return false;
+        }
         EventEmitter po = EventEmitter.getInstance();
         String myOrigin = Platform.getInstance().getOrigin();
-        if (headers.containsKey(ORIGIN) && headers.containsKey(TYPE)) {
-            String type = headers.get(TYPE);
-            if (!ready) {
-                if (INIT.equals(type) && myOrigin.equals(headers.get(ORIGIN))) {
-                    MonitorService.setReady();
-                    MonitorAlive.setReady();
-                    // sync up monitor list
-                    po.send(MainApp.PRESENCE_HOUSEKEEPER + MONITOR_PARTITION, new ArrayList<String>(),
-                            new Kv(ORIGIN, myOrigin), new Kv(TYPE, INIT));
-                    // download connection list
-                    po.send(MainApp.PRESENCE_HANDLER + MONITOR_PARTITION,
-                            new Kv(TYPE, DOWNLOAD), new Kv(ORIGIN, myOrigin));
-                    ready = true;
-                } else {
-                    // ignore other event until consumer is initialized
-                    return false;
-                }
-            }
-            if (PUT.equals(type) && headers.containsKey(ORIGIN) && input instanceof Map) {
-                if (headers.containsKey(MULTIPLES)) {
-                    String monitorOrigin = headers.get(ORIGIN);
-                    if (!myOrigin.equals(monitorOrigin)) {
-                        Map<String, Map<String, Object>> connections = (Map<String, Map<String, Object>>) input;
-                        for (var entry: connections.entrySet()) {
-                            String appOrigin = entry.getKey();
-                            Map<String, Object> metadata = entry.getValue();
-                            MonitorService.updateNodeInfo(appOrigin, metadata);
-                            if (metadata.containsKey(TOPIC)) {
-                                po.send(MainApp.TOPIC_CONTROLLER, new Kv(TYPE, ALIVE), new Kv(NAME, metadata.get(NAME)),
-                                        new Kv(TOPIC, metadata.get(TOPIC)), new Kv(ORIGIN, appOrigin));
-                            }
-                        }
-                    }
-                } else {
-                    String appOrigin = headers.get(ORIGIN);
-                    Map<String, Object> metadata = (Map<String, Object>) input;
-                    MonitorService.updateNodeInfo(appOrigin, metadata);
-                    if (metadata.containsKey(TOPIC)) {
-                        po.send(MainApp.TOPIC_CONTROLLER, new Kv(TYPE, ALIVE), new Kv(NAME, metadata.get(NAME)),
-                                new Kv(TOPIC, metadata.get(TOPIC)), new Kv(ORIGIN, appOrigin));
-                    }
-                }
-                return true;
-            }
-            if (DELETE.equals(type)) {
-                String appOrigin = headers.get(ORIGIN);
-                Object appName = MonitorService.getInfo(appOrigin, NAME);
-                Object version = MonitorService.getInfo(appOrigin, VERSION);
-                MonitorService.deleteNodeInfo(appOrigin);
-                po.send(MainApp.TOPIC_CONTROLLER, new Kv(ORIGIN, appOrigin),
-                        new Kv(NAME, appName), new Kv(VERSION, version), new Kv(TYPE, RELEASE_TOPIC));
-                return true;
-            }
-            if (DOWNLOAD.equals(type)) {
-                // download request from a new presence monitor
-                if (!myOrigin.equals(headers.get(ORIGIN))) {
-                    Map<String, Object> connections = MonitorService.getConnections();
-                    if (!connections.isEmpty()) {
-                        List<String> connectionList = new ArrayList<>(connections.keySet());
-                        for (String appOrigin: connectionList) {
-                            Object o = connections.get(appOrigin);
-                            String topic = TopicController.getTopic(appOrigin);
-                            if (topic != null && o instanceof Map) {
-                                Map<String, Object> metadata = (Map<String, Object>) o;
-                                metadata.put(TOPIC, topic);
-                                connections.put(appOrigin, metadata);
-                            }
-                        }
-                        po.send(MainApp.PRESENCE_HANDLER + MONITOR_PARTITION, connections,
-                                new Kv(TYPE, PUT), new Kv(ORIGIN, myOrigin), new Kv(MULTIPLES, true));
-                    }
-                }
-                return true;
+        String type = headers.get(TYPE);
+        if (!ready) {
+            if (INIT.equals(type) && myOrigin.equals(headers.get(ORIGIN))) {
+                markInitialized(po, myOrigin);
+            } else {
+                // ignore other event until consumer is initialized
+                return false;
             }
         }
+        if (PUT.equals(type) && input instanceof Map) {
+            handlePut(headers, input, po, myOrigin);
+            return true;
+        }
+        if (DELETE.equals(type)) {
+            handleDelete(headers, po);
+            return true;
+        }
+        if (DOWNLOAD.equals(type)) {
+            handleDownload(headers, po, myOrigin);
+            return true;
+        }
         return false;
+    }
+
+    // static so the 'ready' static-field write happens in a static context (S2696)
+    private static void markInitialized(EventEmitter po, String myOrigin) {
+        MonitorService.setReady();
+        MonitorAlive.setReady();
+        // sync up monitor list
+        po.send(MainApp.PRESENCE_HOUSEKEEPER + MONITOR_PARTITION, new ArrayList<String>(),
+                new Kv(ORIGIN, myOrigin), new Kv(TYPE, INIT));
+        // download connection list
+        po.send(MainApp.PRESENCE_HANDLER + MONITOR_PARTITION,
+                new Kv(TYPE, DOWNLOAD), new Kv(ORIGIN, myOrigin));
+        ready = true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void handlePut(Map<String, String> headers, Object input, EventEmitter po, String myOrigin) {
+        if (headers.containsKey(MULTIPLES)) {
+            String monitorOrigin = headers.get(ORIGIN);
+            if (!myOrigin.equals(monitorOrigin)) {
+                Map<String, Map<String, Object>> connections = (Map<String, Map<String, Object>>) input;
+                for (var entry: connections.entrySet()) {
+                    String appOrigin = entry.getKey();
+                    Map<String, Object> metadata = entry.getValue();
+                    MonitorService.updateNodeInfo(appOrigin, metadata);
+                    sendAliveIfHasTopic(po, appOrigin, metadata);
+                }
+            }
+        } else {
+            String appOrigin = headers.get(ORIGIN);
+            Map<String, Object> metadata = (Map<String, Object>) input;
+            MonitorService.updateNodeInfo(appOrigin, metadata);
+            sendAliveIfHasTopic(po, appOrigin, metadata);
+        }
+    }
+
+    private void sendAliveIfHasTopic(EventEmitter po, String appOrigin, Map<String, Object> metadata) {
+        if (metadata.containsKey(TOPIC)) {
+            po.send(MainApp.TOPIC_CONTROLLER, new Kv(TYPE, ALIVE), new Kv(NAME, metadata.get(NAME)),
+                    new Kv(TOPIC, metadata.get(TOPIC)), new Kv(ORIGIN, appOrigin));
+        }
+    }
+
+    private void handleDelete(Map<String, String> headers, EventEmitter po) {
+        String appOrigin = headers.get(ORIGIN);
+        Object appName = MonitorService.getInfo(appOrigin, NAME);
+        Object version = MonitorService.getInfo(appOrigin, VERSION);
+        MonitorService.deleteNodeInfo(appOrigin);
+        po.send(MainApp.TOPIC_CONTROLLER, new Kv(ORIGIN, appOrigin),
+                new Kv(NAME, appName), new Kv(VERSION, version), new Kv(TYPE, RELEASE_TOPIC));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void handleDownload(Map<String, String> headers, EventEmitter po, String myOrigin) {
+        // download request from a new presence monitor
+        if (myOrigin.equals(headers.get(ORIGIN))) {
+            return;
+        }
+        Map<String, Object> connections = MonitorService.getConnections();
+        if (connections.isEmpty()) {
+            return;
+        }
+        List<String> connectionList = new ArrayList<>(connections.keySet());
+        for (String appOrigin: connectionList) {
+            Object o = connections.get(appOrigin);
+            String topic = TopicController.getTopic(appOrigin);
+            if (topic != null && o instanceof Map) {
+                Map<String, Object> metadata = (Map<String, Object>) o;
+                metadata.put(TOPIC, topic);
+                connections.put(appOrigin, metadata);
+            }
+        }
+        po.send(MainApp.PRESENCE_HANDLER + MONITOR_PARTITION, connections,
+                new Kv(TYPE, PUT), new Kv(ORIGIN, myOrigin), new Kv(MULTIPLES, true));
     }
 
 }

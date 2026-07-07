@@ -20,6 +20,7 @@ package com.accenture.tasks;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.HashMap;
@@ -33,7 +34,7 @@ public class ParallelTask implements TypedLambdaFunction<Map<String, Object>, Ma
     public static final AtomicInteger counter = new AtomicInteger(0);
 
     @Override
-    public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) throws InterruptedException {
+    public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         int n = counter.incrementAndGet();
         boolean done = n == 2;
         log.info("Processing {}, counter={}", input, n);
@@ -43,7 +44,7 @@ public class ParallelTask implements TypedLambdaFunction<Map<String, Object>, Ma
         // handle the racing condition for parallel tasking
         if (done) {
             log.info("I am the second task. I would like to sleep briefly so the first task can complete");
-            Thread.sleep(200);
+            Utility.getInstance().sleep(200);
             log.info("I have waked up");
         } else {
             log.info("I am the first task");

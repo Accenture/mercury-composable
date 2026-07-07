@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-06 | agent: Claude Code (2026-07-06-190821)
+- **last_session:** 2026-07-06 | agent: Claude Code (2026-07-06-223151)
 - **last_review:** 2026-07-06 | through 2026-07-06-190821.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -340,6 +340,21 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (branch `chore/sonar-quality-gate-4.6.2`, 2026-07-06 Claude Code — pushed, pending field re-scan → 4.6.2)
+  **SonarQube new-code quality gate remediation.** Field Sonar scan of the 4.6.x work failed the gate
+  (coverage 68.9% < 80%, 9 blocker, 5 critical, 29 major). Fixed in one commit on the branch (off `main`,
+  which already has the guava fix): retired `benchmark/benchmark-client`; added root-pom `sonar.exclusions`
+  + `sonar.coverage.exclusions` for non-product tooling (benchmark/examples/helpers/`*Benchmark.java`); added
+  `Utility.sleep(ms)` (blocking-queue) replacing all Thread.sleep/TimeUnit.sleep; fixed all blocker/critical/
+  major in product+core-test code (S1845, S3776, S2093, S1168, S5778, S125, S5785, S4144, S3358, S6213, S1128).
+  Full detail in session [[2026-07-06-220346]] and scratchpad `sonar-catalog.md`. **Verified:** reactor
+  compiles, changed-module tests green. **Could NOT run Sonar locally** — Eric clones the branch, runs the
+  field Sonar + Snyk scan. If green, bundle with the guava fix as **4.6.2** (version bump + CHANGELOG + tag).
+  **Caveats:** exclusions read by `mvn sonar:sonar` (mirror to sonar-scanner CLI if used); `HttpRequestEvent`
+  S1104 minor left by design; if coverage still < 80%, add tests for BdbElasticStore/ServiceQueue.
+  Relates [[thread-guava-failureaccess-field-fix]].
+  <!-- id: thread-sonar-quality-gate-4.6.2 | created: 2026-07-06 | last_used: 2026-07-06 | uses: 1 | tier: working | origin: 2026-07-06-220346 -->
 
 - [ ] (field fix on `main` `b47fac39`, 2026-07-06 Claude Code — pending field-test → 4.6.2) **Guava
   `failureaccess` `NoClassDefFound` in the field build.** v4.6.1 built fine locally + Snyk passed, but the

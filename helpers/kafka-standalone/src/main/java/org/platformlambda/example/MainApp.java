@@ -27,12 +27,18 @@ import org.platformlambda.system.EmbeddedKafka;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
 @MainApplication
 public class MainApp implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(MainApp.class);
+
+    // The broker(s) started by this app, retained so an embedding process (or a unit test) can shut
+    // them down cleanly instead of relying solely on the JVM shutdown hooks.
+    final List<EmbeddedKafka> brokers = new ArrayList<>();
 
     public static void main(String[] args) {
         AutoStart.main(args);
@@ -46,6 +52,7 @@ public class MainApp implements EntryPoint {
             log.info("Starting 1st standalone Kafka server");
             EmbeddedKafka kafka = new EmbeddedKafka(true);
             kafka.start();
+            brokers.add(kafka);
             // wait for first server to be ready
             Properties props = new Properties();
             props.put("bootstrap.servers", "127.0.0.1:9092");
@@ -59,12 +66,14 @@ public class MainApp implements EntryPoint {
                     log.info("Starting 2nd standalone Kafka server");
                     EmbeddedKafka secondKafka = new EmbeddedKafka(false);
                     secondKafka.start();
+                    brokers.add(secondKafka);
                 }
             }
         } else {
             log.info("Starting standalone Kafka server");
             EmbeddedKafka kafka = new EmbeddedKafka(true);
             kafka.start();
+            brokers.add(kafka);
         }
     }
 }

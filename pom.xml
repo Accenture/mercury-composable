@@ -1,7 +1,9 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-	                             https://maven.apache.org/maven-v4_0_0.xsd">
+<project
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+	                             https://maven.apache.org/maven-v4_0_0.xsd"
+>
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.accenture.mercury</groupId>
     <artifactId>parent-mercury</artifactId>
@@ -33,12 +35,12 @@
         <!-- Executables for cloud specific presence monitors -->
         <module>connectors/adapters/kafka/kafka-presence</module>
 
-        <!-- Convenient standalone dev servers (no Docker required) -->
+        <!-- Convenient standalone dev servers (no Docker required)-->
         <module>helpers/kafka-standalone</module>
         <module>helpers/redis-standalone</module>
         <module>helpers/schema-registry-standalone</module>
 
-        <!-- Executables for application examples -->
+        <!-- Executables for application examples
         <module>examples/lambda-example</module>
         <module>examples/rest-spring-3-example</module>
         <module>examples/rest-spring-4-example</module>
@@ -47,12 +49,10 @@
         <module>examples/scheduler-example</module>
         <module>examples/minigraph-playground</module>
         <module>examples/kafka-demo</module>
-        <module>examples/sync-over-async-demo</module>
+        <module>examples/sync-over-async-demo</module>-->
 
-        <!-- Executables for benchmark tests -->
-        <module>benchmark/benchmark-client</module>
-        <module>benchmark/benchmark-reporter</module>
+        <!-- Executable for benchmark tests (benchmark-client retired 4.6.2 — superseded by benchmark-reporter)
+        <module>benchmark/benchmark-reporter</module>-->
     </modules>
 
 </project>
-

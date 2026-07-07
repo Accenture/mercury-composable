@@ -11,9 +11,11 @@ build. You drive it with `curl` or two tiny Node scripts (`.mjs`, using the buil
 
 In a separate terminal, from the repo root:
 
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+
 ```bash
 mvn clean package -f helpers/schema-registry-standalone/pom.xml
-java -jar helpers/schema-registry-standalone/target/schema-registry-standalone-4.5.0.jar
+java -jar helpers/schema-registry-standalone/target/schema-registry-standalone-x.y.z.jar
 ```
 
 It listens on port **8081** (Confluent's default). Override with `-Drest.server.port=…`.
@@ -24,7 +26,7 @@ picked up on the next request. Point it at a durable directory to keep ids stabl
 
 ```bash
 java -Drest.server.port=8081 -Dschema.registry.data.store=$HOME/schema-registry \
-     -jar helpers/schema-registry-standalone/target/schema-registry-standalone-4.5.0.jar
+     -jar helpers/schema-registry-standalone/target/schema-registry-standalone-x.y.z.jar
 ```
 
 ## 2. Register and fetch schemas

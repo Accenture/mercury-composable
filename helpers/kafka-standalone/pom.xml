@@ -197,6 +197,12 @@
                 <!-- AutoStart will find your Main Application(s) -->
                 <configuration>
                     <mainClass>org.platformlambda.core.system.AutoStart</mainClass>
+                    <!--
+                        keep the plain jar as the main artifact so that other modules
+                        (e.g. kafka-connector unit tests) can use this module as a
+                        dependency; the executable jar is published with the -exec suffix
+                    -->
+                    <classifier>exec</classifier>
                 </configuration>
                 <executions>
                     <execution>

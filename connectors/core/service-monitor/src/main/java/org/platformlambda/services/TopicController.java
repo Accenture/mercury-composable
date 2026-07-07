@@ -105,14 +105,22 @@ public class TopicController implements LambdaFunction {
                 topicStore.put(topicPartition, AVAILABLE);
             }
         }
+        indexAllTopics();
+        if (rsvpProcessor == null) {
+            startRsvpProcessor(new RsvpProcessor());
+        }
+    }
+
+    private static void indexAllTopics() {
         if (allTopics == null) {
             allTopics = new ArrayList<>(topicStore.keySet());
             Collections.sort(allTopics);
         }
-        if (rsvpProcessor == null) {
-            rsvpProcessor = new RsvpProcessor();
-            rsvpProcessor.start();
-        }
+    }
+
+    private static void startRsvpProcessor(RsvpProcessor processor) {
+        rsvpProcessor = processor;
+        rsvpProcessor.start();
     }
 
     private String getMonitorType(String origin) {
@@ -138,131 +146,120 @@ public class TopicController implements LambdaFunction {
         }
     }
 
-    private boolean hasRsvpRights() {
-        Utility util = Utility.getInstance();
-        long now = System.currentTimeMillis();
-        String me = Platform.getInstance().getOrigin();
-        // remove expired bids
-        List<String> expired = new ArrayList<>();
-        for (PendingRsvp bidder: bids.values()) {
-            if (now - bidder.lastSeen > RSVP_TIMEOUT) {
-                expired.add(bidder.origin);
-            }
-        }
-        for (String bidder: expired) {
-            bids.remove(bidder);
-            log.warn("RSVP bid from {} expired", bidder);
-        }
-        if (bids.containsKey(me)) {
-            if (bids.size() == 1) {
-                PendingRsvp rsvp = bids.get(me);
-                // provide a grace period to avoid racing condition
-                return now - rsvp.lastSeen > RSVP_GRACE_PERIOD;
-            } else {
-                List<String> rsvpBidders = new ArrayList<>();
-                for (PendingRsvp r: bids.values()) {
-                    rsvpBidders.add(util.getTimestamp(r.created) + "|" + r.origin);
-                }
-                Collections.sort(rsvpBidders);
-                if (!rsvpBidders.isEmpty()) {
-                    String ticket = rsvpBidders.getFirst();
-                    String winner = ticket.substring(ticket.indexOf('|')+1);
-                    return me.equals(winner);
-                }
-            }
-        }
-        return false;
-    }
-
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
-        Utility util = Utility.getInstance();
-        EventEmitter po = EventEmitter.getInstance();
-        String myOrigin = Platform.getInstance().getOrigin();
-        if (headers.containsKey(TYPE)) {
-            String type = headers.get(TYPE);
-            if (ALIVE.equals(type) && headers.containsKey(TOPIC) && headers.containsKey(ORIGIN) &&
-                    headers.containsKey(NAME)) {
-                String topic = headers.get(TOPIC);
-                if (!activeTopics.containsKey(topic)) {
-                    log.info("{} -> {}, {}", headers.get(TOPIC), headers.get(ORIGIN), headers.get(NAME));
-                }
-                activeTopics.put(topic, System.currentTimeMillis());
-                topicStore.put(topic, headers.get(ORIGIN));
-                return true;
-            }
-            if (RSVP.equals(type) && headers.containsKey(MONITOR) && headers.containsKey(RSVP_TIME)) {
-                String bidder = headers.get(MONITOR);
-                long rsvpTime = util.str2date(headers.get(RSVP_TIME)).getTime();
-                rsvpBidding(bidder, rsvpTime);
-                return true;
-            }
-            if (RSVP_START.equals(type) && headers.containsKey(MONITOR)) {
-                String holder = headers.get(MONITOR);
-                if (bids.containsKey(holder)) {
-                    log.info("Monitor ({}) {} starts RSVP", getMonitorType(holder), holder);
-                }
-                return true;
-            }
-            if (RSVP_COMPLETE.equals(type) && headers.containsKey(MONITOR)) {
-                String holder = headers.get(MONITOR);
-                bids.remove(holder);
-                log.info("Monitor ({}) {} finished RSVP", getMonitorType(holder), holder);
-                return true;
-            }
-            if (GET_TOPIC.equals(type) && headers.containsKey(ORIGIN) && headers.containsKey(TX_PATH)) {
-                String appOrigin = headers.get(ORIGIN);
-                pendingRsvp.put(appOrigin, headers.get(TX_PATH));
-                po.send(MainApp.TOPIC_CONTROLLER + MONITOR_PARTITION, new Kv(TYPE, RSVP),
-                        new Kv(RSVP_TIME, util.date2str(new Date())), new Kv(MONITOR, myOrigin));
-                return true;
-            }
-            if (CONFIRM_TOPIC.equals(type) && headers.containsKey(ORIGIN) && headers.containsKey(TOPIC)) {
-                if (headers.containsKey(MONITOR)) {
-                    String monitor = headers.get(MONITOR);
-                    PendingRsvp holder = bids.get(monitor);
-                    if (holder != null) {
-                        bids.put(monitor, holder.touch());
-                    }
-                }
-                String topic = headers.get(TOPIC);
-                String appOrigin = headers.get(ORIGIN);
-                Object appName = MonitorService.getInfo(appOrigin, NAME);
-                Object version = MonitorService.getInfo(appOrigin, VERSION);
-                topicStore.put(topic, appOrigin);
-                activeTopics.put(topic, System.currentTimeMillis());
-                if (appName != null) {
-                    log.info("{} assigned to {}, {}, {}", topic, appOrigin, appName, version);
-                } else {
-                    log.warn("{} reserved by {} but not reachable", topic, appOrigin);
-                }
-                return true;
-            }
-            if (RELEASE_TOPIC.equals(type) && headers.containsKey(ORIGIN)) {
-                String appOrigin = headers.get(ORIGIN);
-                String appName = headers.get(NAME);
-                String version = headers.get(VERSION);
-                String prevTopic = getTopic(appOrigin);
-                if (prevTopic != null && appOrigin.equals(topicStore.get(prevTopic))) {
-                    topicStore.put(prevTopic, AVAILABLE);
-                    activeTopics.remove(prevTopic);
-                    log.info("{} released by {}, {}, {}", prevTopic, appOrigin, appName, version);
-                    return true;
-                }
-            }
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
+        if (!headers.containsKey(TYPE)) {
+            return false;
         }
-        return false;
+        return switch (headers.get(TYPE)) {
+            case ALIVE -> onKeepAlive(headers);
+            case RSVP -> onRsvp(headers);
+            case RSVP_START -> onRsvpStart(headers);
+            case RSVP_COMPLETE -> onRsvpComplete(headers);
+            case GET_TOPIC -> onGetTopic(headers);
+            case CONFIRM_TOPIC -> onConfirmTopic(headers);
+            case RELEASE_TOPIC -> onReleaseTopic(headers);
+            default -> false;
+        };
     }
 
-    private String nextTopic(String appOrigin) {
-        for (String t: allTopics) {
-            String value = topicStore.get(t);
-            if (AVAILABLE.equals(value)) {
-                topicStore.put(t, appOrigin);
-                return t;
-            }
+    private boolean onKeepAlive(Map<String, String> headers) {
+        if (!headers.containsKey(TOPIC) || !headers.containsKey(ORIGIN) || !headers.containsKey(NAME)) {
+            return false;
         }
-        throw new IllegalArgumentException("All virtual topics ("+ maxVirtualTopics +") are busy");
+        String topic = headers.get(TOPIC);
+        String appOrigin = headers.get(ORIGIN);
+        String appName = headers.get(NAME);
+        if (!activeTopics.containsKey(topic)) {
+            log.info("{} -> {}, {}", topic, appOrigin, appName);
+        }
+        activeTopics.put(topic, System.currentTimeMillis());
+        topicStore.put(topic, appOrigin);
+        return true;
+    }
+
+    private boolean onRsvp(Map<String, String> headers) {
+        if (!headers.containsKey(MONITOR) || !headers.containsKey(RSVP_TIME)) {
+            return false;
+        }
+        String bidder = headers.get(MONITOR);
+        long rsvpTime = Utility.getInstance().str2date(headers.get(RSVP_TIME)).getTime();
+        rsvpBidding(bidder, rsvpTime);
+        return true;
+    }
+
+    private boolean onRsvpStart(Map<String, String> headers) {
+        if (!headers.containsKey(MONITOR)) {
+            return false;
+        }
+        String holder = headers.get(MONITOR);
+        if (bids.containsKey(holder)) {
+            String monitorType = getMonitorType(holder);
+            log.info("Monitor ({}) {} starts RSVP", monitorType, holder);
+        }
+        return true;
+    }
+
+    private boolean onRsvpComplete(Map<String, String> headers) {
+        if (!headers.containsKey(MONITOR)) {
+            return false;
+        }
+        String holder = headers.get(MONITOR);
+        bids.remove(holder);
+        String monitorType = getMonitorType(holder);
+        log.info("Monitor ({}) {} finished RSVP", monitorType, holder);
+        return true;
+    }
+
+    private boolean onGetTopic(Map<String, String> headers) {
+        if (!headers.containsKey(ORIGIN) || !headers.containsKey(TX_PATH)) {
+            return false;
+        }
+        Utility util = Utility.getInstance();
+        String appOrigin = headers.get(ORIGIN);
+        pendingRsvp.put(appOrigin, headers.get(TX_PATH));
+        EventEmitter.getInstance().send(MainApp.TOPIC_CONTROLLER + MONITOR_PARTITION, new Kv(TYPE, RSVP),
+                new Kv(RSVP_TIME, util.date2str(new Date())), new Kv(MONITOR, Platform.getInstance().getOrigin()));
+        return true;
+    }
+
+    private boolean onConfirmTopic(Map<String, String> headers) {
+        if (!headers.containsKey(ORIGIN) || !headers.containsKey(TOPIC)) {
+            return false;
+        }
+        if (headers.containsKey(MONITOR)) {
+            String monitor = headers.get(MONITOR);
+            bids.computeIfPresent(monitor, (k, v) -> v.touch());
+        }
+        String topic = headers.get(TOPIC);
+        String appOrigin = headers.get(ORIGIN);
+        Object appName = MonitorService.getInfo(appOrigin, NAME);
+        Object version = MonitorService.getInfo(appOrigin, VERSION);
+        topicStore.put(topic, appOrigin);
+        activeTopics.put(topic, System.currentTimeMillis());
+        if (appName != null) {
+            log.info("{} assigned to {}, {}, {}", topic, appOrigin, appName, version);
+        } else {
+            log.warn("{} reserved by {} but not reachable", topic, appOrigin);
+        }
+        return true;
+    }
+
+    private boolean onReleaseTopic(Map<String, String> headers) {
+        if (!headers.containsKey(ORIGIN)) {
+            return false;
+        }
+        String appOrigin = headers.get(ORIGIN);
+        String appName = headers.get(NAME);
+        String version = headers.get(VERSION);
+        String prevTopic = getTopic(appOrigin);
+        if (prevTopic != null && appOrigin.equals(topicStore.get(prevTopic))) {
+            topicStore.put(prevTopic, AVAILABLE);
+            activeTopics.remove(prevTopic);
+            log.info("{} released by {}, {}, {}", prevTopic, appOrigin, appName, version);
+            return true;
+        }
+        return false;
     }
 
     public static Map<String, String> getAssignedTopics() {
@@ -284,77 +281,135 @@ public class TopicController implements LambdaFunction {
             platform.getVertx().setPeriodic(1000L, t -> rsvpExecutor.submit(this::rsvpLoop));
         }
 
-        private void rsvpLoop() {
-            if (hasRsvpRights()) {
-                List<String> requests = new ArrayList<>(pendingRsvp.keySet());
-                if (requests.isEmpty()) {
-                    return;
-                }
-                Utility util = Utility.getInstance();
-                PubSub ps = PubSub.getInstance();
-                EventEmitter po = EventEmitter.getInstance();
-                String myOrigin = Platform.getInstance().getOrigin();
-                List<String> currentTopics = new ArrayList<>();
-                // start RSVP
-                try {
-                    po.send(MainApp.TOPIC_CONTROLLER + MONITOR_PARTITION,
-                            new Kv(TYPE, RSVP_START), new Kv(MONITOR, myOrigin));
-                } catch (IllegalArgumentException e) {
-                    // ok to ignore
-                }
-                for (String appOrigin: requests) {
-                    String txPath = pendingRsvp.get(appOrigin);
-                    pendingRsvp.remove(appOrigin);
-                    try {
-                        // check if appOrigin has a topic in store
-                        String topicPartition = nextTopic(appOrigin);
-                        int hyphen = topicPartition.lastIndexOf('-');
-                        String topic = topicPartition.substring(0, hyphen);
-                        if (topicSubstitution) {
-                            int partition = util.str2int(topicPartition.substring(hyphen+1));
-                            String virtualTopic = topic + "." + partition;
-                            if (!preAllocatedTopics.containsKey(virtualTopic)) {
-                                throw new IllegalArgumentException("Missing topic substitution for "+virtualTopic);
-                            }
-                        }
-                        if (!currentTopics.contains(topic)) {
-                            if (!topicSubstitution) {
-                                // automatically create topic if not exist
-                                if (ps.exists(topic)) {
-                                    int actualPartitions = ps.partitionCount(topic);
-                                    if (actualPartitions < partitionCount) {
-                                        log.error("Insufficient partitions in {}, Expected: {}, Actual: {}",
-                                                topic, partitionCount, actualPartitions);
-                                        log.error("SYSTEM NOT OPERATIONAL. Please setup topic {} and restart",
-                                                topic);
-                                        throw new IllegalArgumentException("Insufficient partitions in " + topic);
-                                    }
-                                } else {
-                                    ps.createTopic(topic, partitionCount);
-                                }
-                            }
-                            currentTopics.add(topic);
-                        }
-                        po.send(MainApp.TOPIC_CONTROLLER+MONITOR_PARTITION,
-                                new Kv(TYPE, CONFIRM_TOPIC), new Kv(MONITOR, myOrigin),
-                                new Kv(TOPIC, topicPartition), new Kv(ORIGIN, appOrigin));
-                        po.send(txPath, new EventEnvelope().setTo(READY)
-                                .setHeader(TOPIC, topicPartition)
-                                .setHeader(VERSION, util.getVersion()).toBytes());
-                        po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv(TYPE, JOIN),
-                                new Kv(ORIGIN, appOrigin), new Kv(TOPIC, topicPartition));
-                    } catch (IllegalArgumentException e) {
-                        MonitorService.closeConnection(txPath, TRY_AGAIN_LATER, e.getMessage());
-                    }
-                }
-                // finished RSVP
-                try {
-                    po.send(MainApp.TOPIC_CONTROLLER + MONITOR_PARTITION,
-                            new Kv(TYPE, RSVP_COMPLETE), new Kv(MONITOR, myOrigin));
-                } catch (IllegalArgumentException e) {
-                    // ok to ignore
+        private boolean hasRsvpRights() {
+            Utility util = Utility.getInstance();
+            long now = System.currentTimeMillis();
+            String me = Platform.getInstance().getOrigin();
+            // remove expired bids
+            List<String> expired = new ArrayList<>();
+            for (PendingRsvp bidder: bids.values()) {
+                if (now - bidder.lastSeen > RSVP_TIMEOUT) {
+                    expired.add(bidder.origin);
                 }
             }
+            for (String bidder: expired) {
+                bids.remove(bidder);
+                log.warn("RSVP bid from {} expired", bidder);
+            }
+            if (bids.containsKey(me)) {
+                if (bids.size() == 1) {
+                    PendingRsvp rsvp = bids.get(me);
+                    // provide a grace period to avoid racing condition
+                    return now - rsvp.lastSeen > RSVP_GRACE_PERIOD;
+                } else {
+                    List<String> rsvpBidders = new ArrayList<>();
+                    for (PendingRsvp r: bids.values()) {
+                        rsvpBidders.add(util.getTimestamp(r.created) + "|" + r.origin);
+                    }
+                    Collections.sort(rsvpBidders);
+                    if (!rsvpBidders.isEmpty()) {
+                        String ticket = rsvpBidders.getFirst();
+                        String winner = ticket.substring(ticket.indexOf('|')+1);
+                        return me.equals(winner);
+                    }
+                }
+            }
+            return false;
+        }
+
+        private String nextTopic(String appOrigin) {
+            for (String t: allTopics) {
+                String value = topicStore.get(t);
+                if (AVAILABLE.equals(value)) {
+                    topicStore.put(t, appOrigin);
+                    return t;
+                }
+            }
+            throw new IllegalArgumentException("All virtual topics ("+ maxVirtualTopics +") are busy");
+        }
+
+        private void rsvpLoop() {
+            if (!hasRsvpRights()) {
+                return;
+            }
+            List<String> requests = new ArrayList<>(pendingRsvp.keySet());
+            if (requests.isEmpty()) {
+                return;
+            }
+            EventEmitter po = EventEmitter.getInstance();
+            String myOrigin = Platform.getInstance().getOrigin();
+            List<String> currentTopics = new ArrayList<>();
+            // start RSVP
+            sendRsvpSignal(po, RSVP_START, myOrigin);
+            for (String appOrigin: requests) {
+                String txPath = pendingRsvp.get(appOrigin);
+                pendingRsvp.remove(appOrigin);
+                assignTopic(appOrigin, txPath, currentTopics, po, myOrigin);
+            }
+            // finished RSVP
+            sendRsvpSignal(po, RSVP_COMPLETE, myOrigin);
+        }
+
+        // send an RSVP life-cycle signal; delivery failures are safe to ignore
+        private void sendRsvpSignal(EventEmitter po, String signalType, String myOrigin) {
+            try {
+                po.send(MainApp.TOPIC_CONTROLLER + MONITOR_PARTITION,
+                        new Kv(TYPE, signalType), new Kv(MONITOR, myOrigin));
+            } catch (IllegalArgumentException e) {
+                // ok to ignore
+            }
+        }
+
+        private void assignTopic(String appOrigin, String txPath, List<String> currentTopics,
+                                 EventEmitter po, String myOrigin) {
+            Utility util = Utility.getInstance();
+            try {
+                // check if appOrigin has a topic in store
+                String topicPartition = nextTopic(appOrigin);
+                int hyphen = topicPartition.lastIndexOf('-');
+                String topic = topicPartition.substring(0, hyphen);
+                if (topicSubstitution) {
+                    int partition = util.str2int(topicPartition.substring(hyphen+1));
+                    String virtualTopic = topic + "." + partition;
+                    if (!preAllocatedTopics.containsKey(virtualTopic)) {
+                        throw new IllegalArgumentException("Missing topic substitution for "+virtualTopic);
+                    }
+                }
+                ensurePhysicalTopic(topic, currentTopics);
+                po.send(MainApp.TOPIC_CONTROLLER+MONITOR_PARTITION,
+                        new Kv(TYPE, CONFIRM_TOPIC), new Kv(MONITOR, myOrigin),
+                        new Kv(TOPIC, topicPartition), new Kv(ORIGIN, appOrigin));
+                po.send(txPath, new EventEnvelope().setTo(READY)
+                        .setHeader(TOPIC, topicPartition)
+                        .setHeader(VERSION, util.getVersion()).toBytes());
+                po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv(TYPE, JOIN),
+                        new Kv(ORIGIN, appOrigin), new Kv(TOPIC, topicPartition));
+            } catch (IllegalArgumentException e) {
+                MonitorService.closeConnection(txPath, TRY_AGAIN_LATER, e.getMessage());
+            }
+        }
+
+        // create the physical topic on demand (skipped under topic substitution) and record it as handled
+        private void ensurePhysicalTopic(String topic, List<String> currentTopics) {
+            if (currentTopics.contains(topic)) {
+                return;
+            }
+            if (!topicSubstitution) {
+                PubSub ps = PubSub.getInstance();
+                // automatically create topic if not exist
+                if (ps.exists(topic)) {
+                    int actualPartitions = ps.partitionCount(topic);
+                    if (actualPartitions < partitionCount) {
+                        log.error("Insufficient partitions in {}, Expected: {}, Actual: {}",
+                                topic, partitionCount, actualPartitions);
+                        log.error("SYSTEM NOT OPERATIONAL. Please setup topic {} and restart", topic);
+                        throw new IllegalArgumentException("Insufficient partitions in " + topic);
+                    }
+                } else {
+                    ps.createTopic(topic, partitionCount);
+                }
+            }
+            currentTopics.add(topic);
         }
 
         private void checkStalledMembers() {

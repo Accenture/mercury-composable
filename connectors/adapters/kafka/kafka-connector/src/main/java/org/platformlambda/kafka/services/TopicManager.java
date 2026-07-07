@@ -162,7 +162,9 @@ public class TopicManager implements LambdaFunction {
                     }
                 }
             }
-        } catch (UnknownTopicOrPartitionException | InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (UnknownTopicOrPartitionException | ExecutionException e) {
             // move on because topic does not exist
         }
         return -1;
@@ -190,12 +192,19 @@ public class TopicManager implements LambdaFunction {
                 replicationFactor = Math.min(factor, nodes.size());
                 log.info("Kafka replication factor set to {}", replicationFactor);
 
-            } catch (InterruptedException | ExecutionException e) {
-                log.error("Unable to read cluster information - {}", e.getMessage());
-                replicationFactor = 1;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                useDefaultReplication(e);
+            } catch (ExecutionException e) {
+                useDefaultReplication(e);
             }
         }
         return replicationFactor;
+    }
+
+    private void useDefaultReplication(Exception e) {
+        log.error("Unable to read cluster information - {}", e.getMessage());
+        replicationFactor = 1;
     }
 
     private void createTopic(String topic, int partitions) {
@@ -215,10 +224,16 @@ public class TopicManager implements LambdaFunction {
                 log.warn("{} with {} partition{} already exists", topic, currentPartitions,
                         currentPartitions == 1? "" : "s");
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw topicCreationFailure(topic, e);
         } catch (Exception e) {
-            log.error("Unable to create {} - {}", topic, e.getMessage());
-            throw new IllegalArgumentException(e.getMessage());
+            throw topicCreationFailure(topic, e);
         }
+    }
+
+    private static IllegalArgumentException topicCreationFailure(String topic, Exception e) {
+        return new IllegalArgumentException("Unable to create " + topic + " - " + e.getMessage(), e);
     }
 
     private void createTopicPartitions(String topic, int partitions) throws InterruptedException, ExecutionException {
@@ -263,29 +278,40 @@ public class TopicManager implements LambdaFunction {
             try {
                 deleteTask.all().get();
                 processed++;
-                // check if removal is successful
-                // try a few times due to eventual consistency
-                boolean found = false;
-                for (int i = 0; i < 10; i++) {
-                    found = topicExists(topic);
-                    if (found) {
-                        // Thread.sleep is fine because the function will be running in a virtual thread
-                        Thread.sleep(1000);
-                        log.warn("Newly deleted {} still exists. Scanning it again.", topic);
-                    } else {
-                        break;
-                    }
-                }
-                if (!found) {
-                    log.info("Deleted {}", topic);
-                } else {
-                    log.error("Unable to delete {}", topic);
-                }
-            } catch (InterruptedException | ExecutionException e) {
-                log.error("Unable to delete {} - {}", topic, e.getMessage());
-                stopAdmin();
+                confirmTopicRemoval(topic);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                handleDeleteFailure(topic, e);
+            } catch (ExecutionException e) {
+                handleDeleteFailure(topic, e);
             }
         }
+    }
+
+    private void confirmTopicRemoval(String topic) throws InterruptedException {
+        // check if removal is successful
+        // try a few times due to eventual consistency
+        boolean found = false;
+        for (int i = 0; i < 10; i++) {
+            found = topicExists(topic);
+            if (found) {
+                // Thread.sleep is fine because the function will be running in a virtual thread
+                Thread.sleep(1000);
+                log.warn("Newly deleted {} still exists. Scanning it again.", topic);
+            } else {
+                break;
+            }
+        }
+        if (!found) {
+            log.info("Deleted {}", topic);
+        } else {
+            log.error("Unable to delete {}", topic);
+        }
+    }
+
+    private void handleDeleteFailure(String topic, Exception e) {
+        log.error("Unable to delete {} - {}", topic, e.getMessage());
+        stopAdmin();
     }
 
     private List<String> listTopics() {
@@ -298,11 +324,18 @@ public class TopicManager implements LambdaFunction {
         try {
             processed++;
             return new ArrayList<>(list.names().get());
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Unable to list topics - {}", e.getMessage());
-            stopAdmin();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            handleListFailure(e);
+        } catch (ExecutionException e) {
+            handleListFailure(e);
         }
         return result;
+    }
+
+    private void handleListFailure(Exception e) {
+        log.error("Unable to list topics - {}", e.getMessage());
+        stopAdmin();
     }
 
     private class InactivityMonitor {

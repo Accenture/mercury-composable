@@ -94,10 +94,12 @@ You need a Kafka cluster as the network event stream system. For development and
 and run a standalone Kafka server like this. Note that the `mvn clean package` command is optional because
 the executable JAR should be available after the `mvn clean install` command in [Getting Started](getting-started.md).
 
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+
 ```shell
 cd helpers/kafka-standalone
 mvn clean package
-java -jar target/kafka-standalone-3.1.2.jar
+java -jar target/kafka-standalone-x.y.z-exec.jar
 ```
 
 The standalone Kafka server will start at port 9092. You may adjust the "server.properties" in the standalone-kafka
@@ -126,7 +128,7 @@ You will start the presence monitor like this:
 
 ```shell
 cd connectors/adapters/kafka/kafka-presence
-java -jar target/kafka-presence-3.1.2.jar
+java -jar target/kafka-presence-x.y.z.jar
 ```
 
 By default, the kafka-connector will run at port 8080. Partial start-up log is shown below:
@@ -152,18 +154,22 @@ Let's run the rest-spring-3-example and lambda-example applications with Kafka c
 For demo purpose, the rest-spring-3-example and lambda-example are pre-configured with "kafka-connector". 
 If you do not need these libraries, please remove them from the pom.xml built script.
 
-Since kafka-connector is pre-configured, we can start the two demo applications like this:
+Since kafka-connector is pre-configured, we can build and start the two demo applications like this. The
+examples are not part of the top-level reactor build, so build each one with `mvn clean package` first
+(the `mvn clean install` in [Getting Started](getting-started.md) installs the libraries they depend on):
 
 ```text
 cd examples/rest-spring-3-example
+mvn clean package
 java -Dcloud.connector=kafka -Dmandatory.health.dependencies=cloud.connector.health 
-     -jar target/rest-spring-3-example-3.1.2.jar
+     -jar target/rest-spring-3-example-x.y.z.jar
 ```
 
 ```text
 cd examples/lambda-example
+mvn clean package
 java -Dcloud.connector=kafka -Dmandatory.health.dependencies=cloud.connector.health 
-     -jar target/lambda-example-3.1.2.jar
+     -jar target/lambda-example-x.y.z.jar
 ```
 
 The above command uses the "-D" parameters to configure the "cloud.connector" and "mandatory.health.dependencies".
@@ -192,7 +198,7 @@ PresenceConnector:155 - Connected pc.991a2be0.in, 127.0.0.1:8080,
                         /ws/presence/2023032808d82ebe2c0d4e5aa9ca96b3813bdd25
 EventConsumer:160 - Subscribed multiplex.0001.1
 ServiceLifeCycle:73 - multiplex.0001, partition 1 ready
-ServiceRegistry:242 - Peer 202303282583899cf43a49b98f0522492b9ca178 joins (rest-spring-3-example 4.1.8)
+ServiceRegistry:242 - Peer 202303282583899cf43a49b98f0522492b9ca178 joins (rest-spring-3-example x.y.z)
 ServiceRegistry:383 - hello.world (rest-spring-3-example, WEB.202303282583899cf43a49b98f0522492b9ca178) registered
 ```
 
@@ -202,7 +208,7 @@ You notice that the lambda-example has discovered the rest-spring-3-example thro
 At this point, the rest-spring-3-example will find the lambda-example application as well:
 
 ```text
-ServiceRegistry:242 - Peer 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 joins (lambda-example 4.1.8)
+ServiceRegistry:242 - Peer 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 joins (lambda-example x.y.z)
 ServiceRegistry:383 - hello.world (lambda-example, 
                                    APP.2023032808d82ebe2c0d4e5aa9ca96b3813bdd25) registered
 ServiceRegistry:383 - hello.pojo (lambda-example, 
@@ -246,7 +252,7 @@ You can visit http://127.0.0.1:8080/info and it will show something like this:
   "app": {
     "name": "kafka-presence",
     "description": "Presence Monitor",
-    "version": "4.1.8"
+    "version": "x.y.z"
   },
   "personality": "RESOURCES",
   "more": {
@@ -260,8 +266,8 @@ You can visit http://127.0.0.1:8080/info and it will show something like this:
       "service.monitor (11)"
     ],
     "virtual_topics": [
-      "multiplex.0001-000 -> 202303282583899cf43a49b98f0522492b9ca178, rest-spring-3-example v4.1.8",
-      "multiplex.0001-001 -> 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25, lambda-example v4.1.8"
+      "multiplex.0001-000 -> 202303282583899cf43a49b98f0522492b9ca178, rest-spring-3-example vx.y.z",
+      "multiplex.0001-001 -> 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25, lambda-example vx.y.z"
     ],
     "connections": [
       {
@@ -273,7 +279,7 @@ You can visit http://127.0.0.1:8080/info and it will show something like this:
         "monitor": "2023032896b12f9de149459f9c8b71ad8b6b49fa",
         "type": "APP",
         "updated": "2023-03-28T18:08:25Z",
-        "version": "4.1.8",
+        "version": "x.y.z",
         "seq": 65,
         "group": 1
       },
@@ -286,7 +292,7 @@ You can visit http://127.0.0.1:8080/info and it will show something like this:
         "monitor": "2023032896b12f9de149459f9c8b71ad8b6b49fa",
         "type": "WEB",
         "updated": "2023-03-28T18:08:29Z",
-        "version": "4.1.8",
+        "version": "x.y.z",
         "seq": 75,
         "group": 1
       }
@@ -375,7 +381,7 @@ You can press "control-C" to stop an application. Let's stop the lambda-example 
 Once you stopped lamdba-example from the command line, the rest-spring-3-example will detect it:
 
 ```text
-ServiceRegistry:278 - Peer 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 left (lambda-example 4.1.8)
+ServiceRegistry:278 - Peer 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 left (lambda-example x.y.z)
 ServiceRegistry:401 - hello.world 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 unregistered
 ServiceRegistry:401 - hello.pojo 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 unregistered
 ```
@@ -387,7 +393,7 @@ You will also find log messages in the kafka-presence application like this:
 ```text
 MonitorService:120 - Member 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 left
 TopicController:250 - multiplex.0001-001 released by 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25,
-                                                     lambda-example, 4.1.8
+                                                     lambda-example, x.y.z
 ```
 
 When an application instance stops, the presence monitor will detect the event, remove it from the registry and

@@ -53,6 +53,9 @@ public class JsonAppender extends JsonLogger {
     }
 
     @Override
+    // S106: this IS the console log sink (like log4j2's built-in ConsoleAppender); writing the
+    // formatted log line to stdout is its defined purpose, not stray debug output.
+    @SuppressWarnings("java:S106")
     public void append(LogEvent event) {
         if (event != null) {
             var data = getJson(event);

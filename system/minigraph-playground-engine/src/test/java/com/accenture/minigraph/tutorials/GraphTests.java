@@ -142,7 +142,6 @@ class GraphTests {
         var result = runTutorial(6, Map.of("person_id", 100));
         assertInstanceOf(Map.class, result);
         var mm = new MultiLevelMap((Map<String, Object>) result);
-        System.out.println(result);
         assertEquals("Peter", mm.getElement("name"));
         assertEquals("100 World Blvd", mm.getElement("address"));
         assertInstanceOf(List.class, mm.getElement("accounts"));

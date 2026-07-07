@@ -108,8 +108,8 @@ public class EmbeddedKafka extends Thread {
         log.info("Formatted KRaft storage at {} (node.id={})", kafkaLogs, nodeId);
     }
 
-    /** Orderly shutdown; invoked by the JVM shutdown hook and (in tests) directly. */
-    void shutdown() {
+    /** Orderly shutdown; invoked by the JVM shutdown hook and (by an embedding process or test) directly. */
+    public void shutdown() {
         log.info("Shutting down");
         if (kafka != null) {
             kafka.shutdown();

@@ -47,22 +47,22 @@ import java.time.Duration;
  */
 public record RedisConfig(String host, int port, String password, boolean ssl, int database, long timeoutMs) {
 
-    private static final String HOST = "redis.host";
-    private static final String PORT = "redis.port";
-    private static final String PASSWORD = "redis.password";
-    private static final String SSL = "redis.ssl";
-    private static final String DATABASE = "redis.database";
-    private static final String TIMEOUT_MS = "redis.timeout.ms";
+    private static final String HOST_KEY = "redis.host";
+    private static final String PORT_KEY = "redis.port";
+    private static final String PASSWORD_KEY = "redis.password";
+    private static final String SSL_KEY = "redis.ssl";
+    private static final String DATABASE_KEY = "redis.database";
+    private static final String TIMEOUT_MS_KEY = "redis.timeout.ms";
 
     public static RedisConfig from(ConfigBase config) {
         Utility util = Utility.getInstance();
         return new RedisConfig(
-                config.getProperty(HOST, "127.0.0.1"),
-                util.str2int(config.getProperty(PORT, "6379")),
-                config.getProperty(PASSWORD, ""),
-                "true".equalsIgnoreCase(config.getProperty(SSL, "false")),
-                util.str2int(config.getProperty(DATABASE, "0")),
-                util.str2long(config.getProperty(TIMEOUT_MS, "5000")));
+                config.getProperty(HOST_KEY, "127.0.0.1"),
+                util.str2int(config.getProperty(PORT_KEY, "6379")),
+                config.getProperty(PASSWORD_KEY, ""),
+                "true".equalsIgnoreCase(config.getProperty(SSL_KEY, "false")),
+                util.str2int(config.getProperty(DATABASE_KEY, "0")),
+                util.str2long(config.getProperty(TIMEOUT_MS_KEY, "5000")));
     }
 
     /** Map the discrete parameters onto a Lettuce {@link RedisURI}. */

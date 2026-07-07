@@ -85,8 +85,8 @@ public class PresenceConnector implements LambdaFunction {
         monitorTopic = config.getProperty("monitor.topic", "service.monitor");
         begin = Utility.getInstance().getLocalTimestamp();
         // range: 3 to 30
-        int maxGroups = Math.min(30,
-                Math.max(3, util.str2int(config.getProperty("max.closed.user.groups", "10"))));
+        int maxGroups = Math.clamp(
+                util.str2int(config.getProperty("max.closed.user.groups", "10")), 3, 30);
         closedUserGroup = util.str2int(config.getProperty("closed.user.group", "1"));
         if (closedUserGroup < 1 || closedUserGroup > maxGroups) {
             log.error("closed.user.group is invalid. Please select a number from 1 to {}", maxGroups);
@@ -123,73 +123,21 @@ public class PresenceConnector implements LambdaFunction {
         return topicPartition;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Object handleEvent(Map<String, String> headers, Object input, int instance) {
-        Platform platform  = Platform.getInstance();
-        EventEmitter po = EventEmitter.getInstance();
-        String route;
         if (headers.containsKey(TYPE)) {
             switch (headers.get(TYPE)) {
                 case OPEN:
-                    // in case the previous connection was not closed properly
-                    if (topicPartition != null) {
-                        closeConsumers();
-                    }
-                    // the open event contains route, txPath, ip, path, query and token
-                    route = headers.get(ROUTE);
-                    String ip = headers.get(IP);
-                    String path = headers.get(PATH);
-                    monitor = headers.get(TX_PATH);
-                    isReady = false;
-                    state = State.CONNECTED;
-                    sendAppInfo(sequence++, false);
-                    log.info("Connected {}, {}, {}", route, ip, path);
+                    onOpen(headers);
                     break;
                 case CLOSE:
-                    // the close event contains route and token for this websocket
-                    route = headers.get(ROUTE);
-                    monitor = null;
-                    isReady = false;
-                    state = State.DISCONNECTED;
-                    log.info("Disconnected {}", route);
-                    if (topicPartition != null) {
-                        closeConsumers();
-                    }
-                    // tell service registry to clear routing table
-                    po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv(TYPE, LEAVE),
-                            new Kv(ORIGIN, platform.getOrigin()));
+                    onClose(headers);
                     break;
                 case BYTES:
-                    route = headers.get(ROUTE);
-                    EventEnvelope event = new EventEnvelope();
-                    event.load((byte[]) input);
-                    if (READY.equals(event.getTo()) && event.getHeaders().containsKey(VERSION) &&
-                            event.getHeaders().containsKey(TOPIC)) {
-                        isReady = true;
-                        log.info("Activated {}", route);
-                        String platformVersion = event.getHeaders().get(VERSION);
-                        topicPartition = event.getHeaders().get(TOPIC);
-                        startConsumers();
-                        // tell peers that this server has joined
-                        po.send(FAST_KEEP_ALIVE, new Kv(COUNT, 8));
-                        po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv(TYPE, JOIN),
-                                new Kv(VERSION, platformVersion), new Kv(TOPIC, topicPartition),
-                                new Kv(ORIGIN, platform.getOrigin()));
-                        // info presence monitor that this app is activated
-                        sendAppInfo(sequence++, true);
-                    } else {
-                        po.send(event);
-                    }
+                    onBytes(headers, input);
                     break;
                 case MAP:
-                    // periodic keep-alive signal from the PersistentWsClient
-                    if (input instanceof Map) {
-                        Map<String, Object> data = (Map<String, Object>) input;
-                        if (ALIVE.equals(data.get(TYPE))) {
-                            sendAppInfo(sequence++, true);
-                        }
-                    }
+                    onKeepAlive(input);
                     break;
                 case STRING:
                     log.debug("{}", input);
@@ -199,6 +147,72 @@ public class PresenceConnector implements LambdaFunction {
             }
         }
         return null;
+    }
+
+    private void onOpen(Map<String, String> headers) {
+        // in case the previous connection was not closed properly
+        if (topicPartition != null) {
+            closeConsumers();
+        }
+        // the open event contains route, txPath, ip, path, query and token
+        String route = headers.get(ROUTE);
+        String ip = headers.get(IP);
+        String path = headers.get(PATH);
+        monitor = headers.get(TX_PATH);
+        isReady = false;
+        state = State.CONNECTED;
+        sendAppInfo(sequence++, false);
+        log.info("Connected {}, {}, {}", route, ip, path);
+    }
+
+    private void onClose(Map<String, String> headers) {
+        // the close event contains route and token for this websocket
+        String route = headers.get(ROUTE);
+        monitor = null;
+        isReady = false;
+        state = State.DISCONNECTED;
+        log.info("Disconnected {}", route);
+        if (topicPartition != null) {
+            closeConsumers();
+        }
+        // tell service registry to clear routing table
+        EventEmitter.getInstance().send(ServiceDiscovery.SERVICE_REGISTRY, new Kv(TYPE, LEAVE),
+                new Kv(ORIGIN, Platform.getInstance().getOrigin()));
+    }
+
+    private void onBytes(Map<String, String> headers, Object input) {
+        EventEmitter po = EventEmitter.getInstance();
+        String route = headers.get(ROUTE);
+        EventEnvelope event = new EventEnvelope();
+        event.load((byte[]) input);
+        if (READY.equals(event.getTo()) && event.getHeaders().containsKey(VERSION) &&
+                event.getHeaders().containsKey(TOPIC)) {
+            isReady = true;
+            log.info("Activated {}", route);
+            String platformVersion = event.getHeaders().get(VERSION);
+            topicPartition = event.getHeaders().get(TOPIC);
+            startConsumers();
+            // tell peers that this server has joined
+            po.send(FAST_KEEP_ALIVE, new Kv(COUNT, 8));
+            po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv(TYPE, JOIN),
+                    new Kv(VERSION, platformVersion), new Kv(TOPIC, topicPartition),
+                    new Kv(ORIGIN, Platform.getInstance().getOrigin()));
+            // info presence monitor that this app is activated
+            sendAppInfo(sequence++, true);
+        } else {
+            po.send(event);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void onKeepAlive(Object input) {
+        // periodic keep-alive signal from the PersistentWsClient
+        if (input instanceof Map) {
+            Map<String, Object> data = (Map<String, Object>) input;
+            if (ALIVE.equals(data.get(TYPE))) {
+                sendAppInfo(sequence++, true);
+            }
+        }
     }
 
     public boolean isConnected() {
@@ -249,62 +263,72 @@ public class PresenceConnector implements LambdaFunction {
 
     private void startConsumers() {
         if (topicPartition != null && topicPartition.contains("-")) {
-            AppConfigReader config = AppConfigReader.getInstance();
-            Platform platform = Platform.getInstance();
-            EventEmitter po = EventEmitter.getInstance();
-            PubSub ps = PubSub.getInstance();
             Utility util = Utility.getInstance();
             int hyphen = topicPartition.lastIndexOf('-');
             String topic = topicPartition.substring(0, hyphen);
             int partition = util.str2int(topicPartition.substring(hyphen + 1));
-            String groupId = config.getProperty("default.app.group.id", "appGroup");
-            String clientId = platform.getOrigin();
-            // subscribe to closed user group
-            final AtomicBoolean topicPending = new AtomicBoolean(true);
-            LambdaFunction topicControl = (headers, input, instance) -> {
-                if (INIT.equals(input) && INIT.equals(headers.get(TYPE))) {
-                    if (topicPending.get()) {
-                        topicPending.set(false);
-                        po.send(ServiceDiscovery.SERVICE_REGISTRY + APP_GROUP + closedUserGroup,
-                                new Kv(TYPE, JOIN), new Kv(ORIGIN, platform.getOrigin()), new Kv(TOPIC, topicPartition));
-                    }
-                    String initHandler = INIT + "." + monitorTopic + "." + closedUserGroup;
-                    if (platform.hasRoute(initHandler)) {
-                        po.send(initHandler, DONE);
-                    }
-                }
-                return true;
-            };
-            ps.subscribe(monitorTopic, closedUserGroup, topicControl, clientId+"-1", groupId,
-                        String.valueOf(ServiceLifeCycle.INITIALIZE));
-            // subscribe to assigned topic and partition
-            final AtomicBoolean appPending = new AtomicBoolean(true);
-            LambdaFunction appControl = (headers, input, instance) -> {
-                if (LOOP_BACK.equals(input) && headers.containsKey(REPLY_TO) && clientId.equals(headers.get(ORIGIN))) {
-                    po.send(headers.get(REPLY_TO), true);
-                }
-                if (INIT.equals(input) && INIT.equals(headers.get(TYPE))) {
-                    if (appPending.get()) {
-                        appPending.set(false);
-                        log.info("Connected to Closed User Group {}", closedUserGroup);
-                    }
-                    String initHandler = INIT + "." + topic + "." + partition;
-                    if (platform.hasRoute(initHandler)) {
-                        po.send(initHandler, DONE);
-                    }
-                }
-                return true;
-            };
-            ps.subscribe(topic, partition, appControl, clientId+"-2", groupId,
-                            String.valueOf(ServiceLifeCycle.INITIALIZE));
+            String groupId = AppConfigReader.getInstance().getProperty("default.app.group.id", "appGroup");
+            String clientId = Platform.getInstance().getOrigin();
+            subscribeToUserGroup(clientId, groupId);
+            subscribeToAssignedTopic(topic, partition, clientId, groupId);
         }
-        // recovery other consumers
+        // recover other consumers
         Map<String, PubSub> instances = PubSub.getInstances();
         instances.keySet().forEach(domain -> {
             log.info("Restoring {} subscription", domain);
             PubSub ps = instances.get(domain);
             ps.resumeSubscription();
         });
+    }
+
+    // subscribe to the closed-user-group control topic (monitorTopic / closedUserGroup)
+    private void subscribeToUserGroup(String clientId, String groupId) {
+        EventEmitter po = EventEmitter.getInstance();
+        Platform platform = Platform.getInstance();
+        PubSub ps = PubSub.getInstance();
+        final AtomicBoolean topicPending = new AtomicBoolean(true);
+        LambdaFunction topicControl = (headers, input, instance) -> {
+            if (INIT.equals(input) && INIT.equals(headers.get(TYPE))) {
+                if (topicPending.get()) {
+                    topicPending.set(false);
+                    po.send(ServiceDiscovery.SERVICE_REGISTRY + APP_GROUP + closedUserGroup,
+                            new Kv(TYPE, JOIN), new Kv(ORIGIN, platform.getOrigin()), new Kv(TOPIC, topicPartition));
+                }
+                String initHandler = INIT + "." + monitorTopic + "." + closedUserGroup;
+                if (platform.hasRoute(initHandler)) {
+                    po.send(initHandler, DONE);
+                }
+            }
+            return true;
+        };
+        ps.subscribe(monitorTopic, closedUserGroup, topicControl, clientId+"-1", groupId,
+                    String.valueOf(ServiceLifeCycle.INITIALIZE));
+    }
+
+    // subscribe to this instance's assigned topic + partition
+    private void subscribeToAssignedTopic(String topic, int partition, String clientId, String groupId) {
+        EventEmitter po = EventEmitter.getInstance();
+        Platform platform = Platform.getInstance();
+        PubSub ps = PubSub.getInstance();
+        final AtomicBoolean appPending = new AtomicBoolean(true);
+        LambdaFunction appControl = (headers, input, instance) -> {
+            if (LOOP_BACK.equals(input) && headers.containsKey(REPLY_TO) && clientId.equals(headers.get(ORIGIN))) {
+                po.send(headers.get(REPLY_TO), true);
+            }
+            if (INIT.equals(input) && INIT.equals(headers.get(TYPE))) {
+                if (appPending.get()) {
+                    appPending.set(false);
+                    log.info("Connected to Closed User Group {}", closedUserGroup);
+                }
+                String initHandler = INIT + "." + topic + "." + partition;
+                if (platform.hasRoute(initHandler)) {
+                    po.send(initHandler, DONE);
+                }
+            }
+            return true;
+        };
+        ps.subscribe(topic, partition, appControl, clientId+"-2", groupId,
+                        String.valueOf(ServiceLifeCycle.INITIALIZE));
     }
 
     private void closeConsumers() {

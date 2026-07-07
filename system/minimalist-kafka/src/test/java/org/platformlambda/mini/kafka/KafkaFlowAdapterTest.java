@@ -90,7 +90,7 @@ class KafkaFlowAdapterTest {
         // starts the adapter. A non-null adapter is our readiness signal.
         long deadline = System.currentTimeMillis() + 20000;
         while (KafkaRuntime.adapter() == null && System.currentTimeMillis() < deadline) {
-            TimeUnit.MILLISECONDS.sleep(100);
+            Utility.getInstance().sleep(100);
         }
         assertNotNull(KafkaRuntime.adapter(), "Kafka flow adapter should have started");
         assertNotNull(KafkaRuntime.schemaCodec(), "schema codec should have been built from schema.registry.url");

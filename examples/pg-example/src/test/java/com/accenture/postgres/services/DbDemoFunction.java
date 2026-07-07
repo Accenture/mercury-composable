@@ -77,8 +77,8 @@ public class DbDemoFunction implements TypedLambdaFunction<TempTestData, Object>
                 }
             }).first();
         }
-        if (INSERT.equals(type) && input != null) {
-            if (input.id != null && input.name != null && input.address != null && input.created != null) {
+        if (INSERT.equals(type) && input != null &&
+                input.id != null && input.name != null && input.address != null && input.created != null) {
                 // demonstrate use of reactive database client
                 return client.sql(SQL_INSERT)
                         .bind("id", input.id)
@@ -86,7 +86,6 @@ public class DbDemoFunction implements TypedLambdaFunction<TempTestData, Object>
                         .bind("address", input.address)
                         .bind("created", input.created)
                         .fetch().rowsUpdated().map(count -> Map.of("row_updated", count));
-            }
         }
         if (UPDATE.equals(type) && input != null) {
             // IMPORTANT - the repo's default "save()" method cannot be used to insert record.

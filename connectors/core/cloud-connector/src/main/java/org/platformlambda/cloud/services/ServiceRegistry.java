@@ -82,16 +82,16 @@ public class ServiceRegistry implements LambdaFunction {
     private static final ConcurrentMap<String, Boolean> pmSubscribers = new ConcurrentHashMap<>();
     private static final ManagedCache cache = ManagedCache.createCache("member.life.cycle.events", 5000);
     private long lastBroadcastAdd = 0;
-    private static String monitorTopic;
+    private static final String MONITOR_TOPIC = AppConfigReader.getInstance()
+            .getProperty("monitor.topic", "service.monitor");
 
     public ServiceRegistry() {
         Utility util = Utility.getInstance();
         AppConfigReader config = AppConfigReader.getInstance();
         presenceMonitor = "true".equals(config.getProperty("service.monitor", "false"));
-        monitorTopic = config.getProperty("monitor.topic", "service.monitor");
         // range: 3 - 30
-        int maxGroups = Math.min(30,
-                Math.max(3, util.str2int(config.getProperty("max.closed.user.groups", "10"))));
+        int maxGroups = Math.clamp(
+                util.str2int(config.getProperty("max.closed.user.groups", "10")), 3, 30);
         closedUserGroup = util.str2int(config.getProperty("closed.user.group", "1"));
         if (closedUserGroup < 1 || closedUserGroup > maxGroups) {
             log.error("closed.user.group is invalid. Please select a number from 1 to {}", maxGroups);
@@ -138,185 +138,236 @@ public class ServiceRegistry implements LambdaFunction {
     }
 
     public static String getTopic(String dest) {
-        return dest.startsWith(MONITOR)? monitorTopic+"-"+dest.substring(MONITOR.length()) : originTopic.get(dest);
+        return dest.startsWith(MONITOR)? MONITOR_TOPIC +"-"+dest.substring(MONITOR.length()) : originTopic.get(dest);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Object handleEvent(Map<String, String> headers, Object input, int instance) {
-        Platform platform = Platform.getInstance();
-        String myOrigin = platform.getOrigin();
+        String myOrigin = Platform.getInstance().getOrigin();
         String type = headers.get(TYPE);
-        if (SUBSCRIBE_LIFE_CYCLE.equals(type) && headers.containsKey(ROUTE)) {
-            String subscriber = headers.get(ROUTE);
-            if (!subscriber.contains("@") && !lifeCycleSubscribers.containsKey(subscriber)) {
-                lifeCycleSubscribers.put(subscriber, true);
-                log.info("{} subscribed to member life-cycle events", subscriber);
-            }
-        }
-        if (UNSUBSCRIBE_LIFE_CYCLE.equals(type) && headers.containsKey(ROUTE)) {
-            String subscriber = headers.get(ROUTE);
-            if (!subscriber.contains("@") && lifeCycleSubscribers.containsKey(subscriber)) {
-                lifeCycleSubscribers.remove(subscriber);
-                log.info("{} unsubscribed from member life-cycle events", subscriber);
-            }
-        }
-        if (SUBSCRIBE_PM_STATUS.equals(type) && headers.containsKey(ROUTE)) {
-            String subscriber = headers.get(ROUTE);
-            if (!subscriber.contains("@") && !pmSubscribers.containsKey(subscriber)) {
-                pmSubscribers.put(subscriber, true);
-                log.info("{} subscribed to presence monitor connection status", subscriber);
-            }
-        }
-        if (UNSUBSCRIBE_PM_STATUS.equals(type) && headers.containsKey(ROUTE)) {
-            String subscriber = headers.get(ROUTE);
-            if (!subscriber.contains("@") && pmSubscribers.containsKey(subscriber)) {
-                pmSubscribers.remove(subscriber);
-                log.info("{} unsubscribed from presence monitor connection status", subscriber);
-            }
-        }
-        // when a node joins
-        if (JOIN.equals(type) && headers.containsKey(ORIGIN) && headers.containsKey(TOPIC)) {
-            String origin = headers.get(ORIGIN);
-            String topic = headers.get(TOPIC);
-            cloudOrigins.put(origin, System.currentTimeMillis());
-            originTopic.put(origin, topic);
-            if (!presenceMonitor) {
-                if (origin.equals(myOrigin)) {
-                    if (headers.containsKey(VERSION)) {
-                        log.info("Presence monitor v{} detected", headers.get(VERSION));
-                    } else {
-                        notifyLifeCycleSubscribers(new Kv(TYPE, CONNECTED));
-                        notifyPmSubscribers(new Kv(TYPE, CONNECTED));
-                    }
-                    registerMyRoutes();
-
-                } else {
-                    // send routing table of this node to the newly joined node
-                    sendMyRoutes(true);
-                }
-            }
-        }
-        if (ALIVE.equals(type) && headers.containsKey(ORIGIN) && headers.containsKey(TOPIC)) {
-            String origin = headers.get(ORIGIN);
-            String topic = headers.get(TOPIC);
-            String name = headers.get(NAME);
-            String version = headers.get(VERSION);
-            if (!presenceMonitor) {
-                if (myOrigin.equals(origin)) {
-                    removeStalledPeers();
-                } else {
-                    if (!cloudOrigins.containsKey(origin)) {
-                        log.info("Peer {} joins ({} {})", origin, name, version);
-                        po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv(TYPE, JOIN),
-                                new Kv(ORIGIN, origin), new Kv(TOPIC, topic));
-                    }
-                }
-            }
-            cloudOrigins.put(origin, System.currentTimeMillis());
-            originTopic.put(origin, topic);
-            if (!originAppVersion.containsKey(origin) && !myOrigin.equals(origin)) {
-                log.info("Peer {} active ({} {})", origin, name, version);
-            }
-            originAppVersion.put(origin, name+" "+version);
-        }
-        // when a node leaves
-        if (LEAVE.equals(type) && headers.containsKey(ORIGIN)) {
-            String origin = headers.get(ORIGIN);
-            String appVersion = originAppVersion.get(origin);
-            originTopic.remove(origin);
-            originAppVersion.remove(origin);
-            if (presenceMonitor) {
-                cloudOrigins.remove(origin);
-            } else {
-                // remove corresponding entries from routing table
-                if (origin.equals(platform.getOrigin())) {
-                    // this happens when the service-monitor is down
-                    List<String> all = new ArrayList<>(cloudOrigins.keySet());
-                    for (String o : all) {
-                        if (!o.equals(origin)) {
-                            if (appVersion == null) {
-                                log.info("{} disconnected", o);
-                            } else {
-                                log.info("{} disconnected ({})", o, appVersion);
-                            }
-                            removeRoutesFromOrigin(o);
-                            notifyLifeCycleSubscribers(new Kv(TYPE, LEAVE), new Kv(ORIGIN, o));
-                        }
-                    }
-                    notifyLifeCycleSubscribers(new Kv(TYPE, DISCONNECTED));
-                    notifyPmSubscribers(new Kv(TYPE, DISCONNECTED));
-                } else {
-                    if (appVersion == null) {
-                        log.info("Peer {} left", origin);
-                    } else {
-                        log.info("Peer {} left ({})", origin, appVersion);
-                    }
-                    removeRoutesFromOrigin(origin);
-                    notifyLifeCycleSubscribers(new Kv(TYPE, LEAVE), new Kv(ORIGIN, origin));
-                    cache.remove(origin);
-                }
-            }
-        }
-        if (!presenceMonitor) {
-            // add route
-            if (ADD.equals(type) && headers.containsKey(ORIGIN)) {
-                String origin = headers.get(ORIGIN);
-                if (headers.containsKey(ROUTE) && headers.containsKey(PERSONALITY)) {
-                    // add a single route
-                    String route = headers.get(ROUTE);
-                    String personality = headers.get(PERSONALITY);
-                    // add to routing table
-                    addRoute(origin, route, personality);
-                    if (origin.equals(myOrigin) && !headers.containsKey(IS_FINAL)) {
-                        // broadcast to peers
-                        EventEnvelope request = new EventEnvelope();
-                        request.setTo(ServiceDiscovery.SERVICE_REGISTRY + APP_GROUP + closedUserGroup)
-                                .setHeaders(headers).setHeader(IS_FINAL, true);
-                        po.send(request);
-                    }
-
-                } else if (input instanceof Map && !origin.equals(myOrigin)) {
-                    // add a list of routes
-                    Map<String, String> routeMap = (Map<String, String>) input;
-                    int count = routeMap.size();
-                    int n = 0;
-                    for (Map.Entry<String, String> kv : routeMap.entrySet()) {
-                        String personality = kv.getValue();
-                        if (addRoute(origin, kv.getKey(), personality)) n++;
-                    }
-                    if (n > 0) {
-                        log.info("Loaded {} route{} from {}", count, count == 1 ? "" : "s", origin);
-                    }
-                    if (headers.containsKey(TOPIC)) {
-                        originTopic.put(origin, headers.get(TOPIC));
-                    }
-                    if (headers.containsKey(NAME) && !cache.exists(origin)) {
-                        cache.put(origin, true);
-                        notifyLifeCycleSubscribers(new Kv(TYPE, JOIN),
-                                new Kv(ORIGIN, origin), new Kv(NAME, headers.get(NAME)));
-                    }
-                    if (headers.containsKey(EXCHANGE)) {
-                        sendMyRoutes(false);
-                    }
-                }
-            }
-            // clear a route
-            if (UNREGISTER.equals(type) && headers.containsKey(ROUTE) && headers.containsKey(ORIGIN)) {
-                String route = headers.get(ROUTE);
-                String origin = headers.get(ORIGIN);
-                // remove from routing table
-                removeRoute(origin, route);
-                if (origin.equals(myOrigin) && !headers.containsKey(IS_FINAL)) {
-                    // broadcast to peers
-                    EventEnvelope request = new EventEnvelope();
-                    request.setTo(ServiceDiscovery.SERVICE_REGISTRY + APP_GROUP + closedUserGroup)
-                            .setHeaders(headers).setHeader(IS_FINAL, true);
-                    po.send(request);
-                }
+        if (type != null) {
+            switch (type) {
+                case SUBSCRIBE_LIFE_CYCLE -> onSubscribeLifeCycle(headers);
+                case UNSUBSCRIBE_LIFE_CYCLE -> onUnsubscribeLifeCycle(headers);
+                case SUBSCRIBE_PM_STATUS -> onSubscribePmStatus(headers);
+                case UNSUBSCRIBE_PM_STATUS -> onUnsubscribePmStatus(headers);
+                case JOIN -> onJoin(headers, myOrigin);
+                case ALIVE -> onAlive(headers, myOrigin);
+                case LEAVE -> onLeave(headers, myOrigin);
+                case ADD -> onAdd(headers, input, myOrigin);
+                case UNREGISTER -> onUnregister(headers, myOrigin);
+                default -> { /* ignore unknown type */ }
             }
         }
         return true;
+    }
+
+    private void onSubscribeLifeCycle(Map<String, String> headers) {
+        if (!headers.containsKey(ROUTE)) {
+            return;
+        }
+        String subscriber = headers.get(ROUTE);
+        if (!subscriber.contains("@") && lifeCycleSubscribers.putIfAbsent(subscriber, true) == null) {
+            log.info("{} subscribed to member life-cycle events", subscriber);
+        }
+    }
+
+    private void onUnsubscribeLifeCycle(Map<String, String> headers) {
+        if (!headers.containsKey(ROUTE)) {
+            return;
+        }
+        String subscriber = headers.get(ROUTE);
+        if (!subscriber.contains("@") && lifeCycleSubscribers.containsKey(subscriber)) {
+            lifeCycleSubscribers.remove(subscriber);
+            log.info("{} unsubscribed from member life-cycle events", subscriber);
+        }
+    }
+
+    private void onSubscribePmStatus(Map<String, String> headers) {
+        if (!headers.containsKey(ROUTE)) {
+            return;
+        }
+        String subscriber = headers.get(ROUTE);
+        if (!subscriber.contains("@") && pmSubscribers.putIfAbsent(subscriber, true) == null) {
+            log.info("{} subscribed to presence monitor connection status", subscriber);
+        }
+    }
+
+    private void onUnsubscribePmStatus(Map<String, String> headers) {
+        if (!headers.containsKey(ROUTE)) {
+            return;
+        }
+        String subscriber = headers.get(ROUTE);
+        if (!subscriber.contains("@") && pmSubscribers.containsKey(subscriber)) {
+            pmSubscribers.remove(subscriber);
+            log.info("{} unsubscribed from presence monitor connection status", subscriber);
+        }
+    }
+
+    // when a node joins
+    private void onJoin(Map<String, String> headers, String myOrigin) {
+        if (!headers.containsKey(ORIGIN) || !headers.containsKey(TOPIC)) {
+            return;
+        }
+        String origin = headers.get(ORIGIN);
+        String topic = headers.get(TOPIC);
+        cloudOrigins.put(origin, System.currentTimeMillis());
+        originTopic.put(origin, topic);
+        if (presenceMonitor) {
+            return;
+        }
+        if (origin.equals(myOrigin)) {
+            String monitorVersion = headers.get(VERSION);
+            if (monitorVersion != null) {
+                log.info("Presence monitor v{} detected", monitorVersion);
+            } else {
+                notifyLifeCycleSubscribers(new Kv(TYPE, CONNECTED));
+                notifyPmSubscribers(new Kv(TYPE, CONNECTED));
+            }
+            registerMyRoutes();
+        } else {
+            // send routing table of this node to the newly joined node
+            sendMyRoutes(true);
+        }
+    }
+
+    private void onAlive(Map<String, String> headers, String myOrigin) {
+        if (!headers.containsKey(ORIGIN) || !headers.containsKey(TOPIC)) {
+            return;
+        }
+        String origin = headers.get(ORIGIN);
+        String topic = headers.get(TOPIC);
+        String name = headers.get(NAME);
+        String version = headers.get(VERSION);
+        if (!presenceMonitor) {
+            if (myOrigin.equals(origin)) {
+                removeStalledPeers();
+            } else if (!cloudOrigins.containsKey(origin)) {
+                log.info("Peer {} joins ({} {})", origin, name, version);
+                po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv(TYPE, JOIN),
+                        new Kv(ORIGIN, origin), new Kv(TOPIC, topic));
+            }
+        }
+        cloudOrigins.put(origin, System.currentTimeMillis());
+        originTopic.put(origin, topic);
+        if (!originAppVersion.containsKey(origin) && !myOrigin.equals(origin)) {
+            log.info("Peer {} active ({} {})", origin, name, version);
+        }
+        originAppVersion.put(origin, name+" "+version);
+    }
+
+    // when a node leaves
+    private void onLeave(Map<String, String> headers, String myOrigin) {
+        if (!headers.containsKey(ORIGIN)) {
+            return;
+        }
+        String origin = headers.get(ORIGIN);
+        String appVersion = originAppVersion.get(origin);
+        originTopic.remove(origin);
+        originAppVersion.remove(origin);
+        if (presenceMonitor) {
+            cloudOrigins.remove(origin);
+            return;
+        }
+        // remove corresponding entries from routing table
+        if (origin.equals(myOrigin)) {
+            // this happens when the service-monitor is down
+            handleMonitorDown(origin, appVersion);
+        } else {
+            if (appVersion == null) {
+                log.info("Peer {} left", origin);
+            } else {
+                log.info("Peer {} left ({})", origin, appVersion);
+            }
+            removeRoutesFromOrigin(origin);
+            notifyLifeCycleSubscribers(new Kv(TYPE, LEAVE), new Kv(ORIGIN, origin));
+            cache.remove(origin);
+        }
+    }
+
+    private void handleMonitorDown(String origin, String appVersion) {
+        List<String> all = new ArrayList<>(cloudOrigins.keySet());
+        for (String o : all) {
+            if (!o.equals(origin)) {
+                if (appVersion == null) {
+                    log.info("{} disconnected", o);
+                } else {
+                    log.info("{} disconnected ({})", o, appVersion);
+                }
+                removeRoutesFromOrigin(o);
+                notifyLifeCycleSubscribers(new Kv(TYPE, LEAVE), new Kv(ORIGIN, o));
+            }
+        }
+        notifyLifeCycleSubscribers(new Kv(TYPE, DISCONNECTED));
+        notifyPmSubscribers(new Kv(TYPE, DISCONNECTED));
+    }
+
+    // add route(s)
+    private void onAdd(Map<String, String> headers, Object input, String myOrigin) {
+        if (presenceMonitor || !headers.containsKey(ORIGIN)) {
+            return;
+        }
+        String origin = headers.get(ORIGIN);
+        if (headers.containsKey(ROUTE) && headers.containsKey(PERSONALITY)) {
+            // add a single route
+            String route = headers.get(ROUTE);
+            String personality = headers.get(PERSONALITY);
+            // add to routing table
+            addRoute(origin, route, personality);
+            if (origin.equals(myOrigin) && !headers.containsKey(IS_FINAL)) {
+                // broadcast to peers
+                EventEnvelope request = new EventEnvelope();
+                request.setTo(ServiceDiscovery.SERVICE_REGISTRY + APP_GROUP + closedUserGroup)
+                        .setHeaders(headers).setHeader(IS_FINAL, true);
+                po.send(request);
+            }
+        } else if (input instanceof Map && !origin.equals(myOrigin)) {
+            addRouteList(headers, input, origin);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addRouteList(Map<String, String> headers, Object input, String origin) {
+        // add a list of routes
+        Map<String, String> routeMap = (Map<String, String>) input;
+        int count = routeMap.size();
+        int n = 0;
+        for (Map.Entry<String, String> kv : routeMap.entrySet()) {
+            String personality = kv.getValue();
+            if (addRoute(origin, kv.getKey(), personality)) n++;
+        }
+        if (n > 0) {
+            log.info("Loaded {} route{} from {}", count, count == 1 ? "" : "s", origin);
+        }
+        if (headers.containsKey(TOPIC)) {
+            originTopic.put(origin, headers.get(TOPIC));
+        }
+        if (headers.containsKey(NAME) && !cache.exists(origin)) {
+            cache.put(origin, true);
+            notifyLifeCycleSubscribers(new Kv(TYPE, JOIN),
+                    new Kv(ORIGIN, origin), new Kv(NAME, headers.get(NAME)));
+        }
+        if (headers.containsKey(EXCHANGE)) {
+            sendMyRoutes(false);
+        }
+    }
+
+    // clear a route
+    private void onUnregister(Map<String, String> headers, String myOrigin) {
+        if (presenceMonitor || !headers.containsKey(ROUTE) || !headers.containsKey(ORIGIN)) {
+            return;
+        }
+        String route = headers.get(ROUTE);
+        String origin = headers.get(ORIGIN);
+        // remove from routing table
+        removeRoute(origin, route);
+        if (origin.equals(myOrigin) && !headers.containsKey(IS_FINAL)) {
+            // broadcast to peers
+            EventEnvelope request = new EventEnvelope();
+            request.setTo(ServiceDiscovery.SERVICE_REGISTRY + APP_GROUP + closedUserGroup)
+                    .setHeaders(headers).setHeader(IS_FINAL, true);
+            po.send(request);
+        }
     }
 
     private void sendMyRoutes(boolean exchange) {
@@ -347,10 +398,8 @@ public class ServiceRegistry implements LambdaFunction {
     }
 
     private boolean addRoute(String origin, String route, String personality) {
-        if (!cloudRoutes.containsKey(route)) {
-            cloudRoutes.put(route, new ConcurrentHashMap<>());
-        }
-        ConcurrentMap<String, String> originMap = cloudRoutes.get(route);
+        ConcurrentMap<String, String> originMap =
+                cloudRoutes.computeIfAbsent(route, k -> new ConcurrentHashMap<>());
         if (originMap.containsKey(origin)) {
             return false;
         } else {
