@@ -58,10 +58,12 @@ First, build and run the lambda-example application in port 8085. The examples a
 top-level reactor build, so build each one with `mvn clean package` first (the `mvn clean install` in
 [Getting Started](getting-started.md) installs the libraries they depend on).
 
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+
 ```shell
 cd examples/lambda-example
 mvn clean package
-java -jar target/lambda-example-4.6.1.jar
+java -jar target/lambda-example-x.y.z.jar
 ```
 
 Second, build and run the rest-spring-3-example application.
@@ -69,7 +71,7 @@ Second, build and run the rest-spring-3-example application.
 ```shell
 cd examples/rest-spring-3-example
 mvn clean package
-java -jar target/rest-spring-3-example-4.6.1.jar
+java -jar target/rest-spring-3-example-x.y.z.jar
 ```
 
 The rest-spring-3-example application will run as a Spring Boot application in port 8083 and 8086.

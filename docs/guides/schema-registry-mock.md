@@ -30,14 +30,17 @@ mvn clean package -f helpers/schema-registry-standalone/pom.xml
 ```
 
 Then, run the server:
+
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+
 ```bash
-java -jar helpers/schema-registry-standalone/target/schema-registry-standalone-4.6.1.jar
+java -jar helpers/schema-registry-standalone/target/schema-registry-standalone-x.y.z.jar
 ```
 
 If you need to change the port, provide it as a system property **before** `-jar` (the built-in HTTP
 server reads `rest.server.port`):
 ```bash
-java -Drest.server.port=8082 -jar helpers/schema-registry-standalone/target/schema-registry-standalone-4.6.1.jar
+java -Drest.server.port=8082 -jar helpers/schema-registry-standalone/target/schema-registry-standalone-x.y.z.jar
 ```
 
 ## How to use it in your application
@@ -111,7 +114,7 @@ and override it at runtime with a JVM flag:
 
 ```bash
 java -Dschema.registry.data.store=$HOME/schema-registry \
-     -jar helpers/schema-registry-standalone/target/schema-registry-standalone-4.6.1.jar
+     -jar helpers/schema-registry-standalone/target/schema-registry-standalone-x.y.z.jar
 ```
 
 Making the path configurable also sidesteps filesystem-permission issues: you choose a directory your
