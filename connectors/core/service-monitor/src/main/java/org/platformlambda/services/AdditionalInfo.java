@@ -130,7 +130,6 @@ public class AdditionalInfo implements LambdaFunction {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     private List<String> getVirtualTopics(Map<String, Object> connections) {
         Map<String, String> topics = TopicController.getAssignedTopics();
         Map<String, List<String>> members = new HashMap<>();
@@ -152,23 +151,28 @@ public class AdditionalInfo implements LambdaFunction {
         for (var entry: members.entrySet()) {
             String m = entry.getKey();
             String topicList = list2str(entry.getValue());
-            String signature = m;
-            Object c = connections.get(m);
-            if (c instanceof Map) {
-                Map<String, Object> cm = (Map<String, Object>) c;
-                if (cm.containsKey(NAME)) {
-                    signature += ", " + cm.get(NAME);
-                }
-                if (cm.containsKey(VERSION)) {
-                    signature += " v" + cm.get(VERSION);
-                }
-            }
-            vTopics.add(topicList+" -> "+signature);
+            vTopics.add(topicList+" -> "+memberSignature(m, connections));
         }
         if (vTopics.size() > 1) {
             Collections.sort(vTopics);
         }
         return vTopics;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String memberSignature(String member, Map<String, Object> connections) {
+        String signature = member;
+        Object c = connections.get(member);
+        if (c instanceof Map) {
+            Map<String, Object> cm = (Map<String, Object>) c;
+            if (cm.containsKey(NAME)) {
+                signature += ", " + cm.get(NAME);
+            }
+            if (cm.containsKey(VERSION)) {
+                signature += " v" + cm.get(VERSION);
+            }
+        }
+        return signature;
     }
 
     private String list2str(List<String> list) {
@@ -199,7 +203,6 @@ public class AdditionalInfo implements LambdaFunction {
     }
 
     private List<String> getTopics() {
-        Utility util = Utility.getInstance();
         PubSub ps = PubSub.getInstance();
         List<String> topics = ps.list();
         if (topics.size() > 1) {
@@ -208,46 +211,48 @@ public class AdditionalInfo implements LambdaFunction {
         List<String> regularTopics = new ArrayList<>();
         Map<String, Integer> compositeTopics = new HashMap<>();
         List<String> result = new ArrayList<>();
+        Utility util = Utility.getInstance();
         for (String topic: topics) {
             if (ps.isStreamingPubSub() && !ConnectorConfig.topicSubstitutionEnabled()) {
                 result.add(topic + " (" + ps.partitionCount(topic) + ")");
             } else {
-                // simulated topic partitioning
-                if (topic.startsWith(appPrefix) || topic.startsWith(monitorPrefix)) {
-                    List<String> parts = util.split(topic, ".");
-                    if (parts.size() == 3) {
-                        int dot = topic.lastIndexOf('.');
-                        String topicName = topic.substring(0, dot);
-                        String partition = topic.substring(dot+1);
-                        if (util.isDigits(partition)) {
-                            Integer n = compositeTopics.getOrDefault(topicName, 0) + 1;
-                            compositeTopics.put(topicName, n);
-
-                        } else {
-                            regularTopics.add(topic);
-                        }
-                    } else {
-                        regularTopics.add(topic);
-                    }
-
-                } else {
-                    regularTopics.add(topic);
-                }
+                classifySimulatedTopic(topic, util, regularTopics, compositeTopics);
             }
         }
         if (compositeTopics.isEmpty()) {
             return result;
+        }
+        List<String> consolidated = new ArrayList<>();
+        List<String> topicList = new ArrayList<>(compositeTopics.keySet());
+        if (topicList.size() > 1) {
+            Collections.sort(topicList);
+        }
+        for (String t: topicList) {
+            consolidated.add(t+" ("+compositeTopics.get(t)+")");
+        }
+        consolidated.addAll(regularTopics);
+        return consolidated;
+    }
+
+    // classify a topic under simulated (non-streaming) partitioning into the regular or composite bucket
+    private void classifySimulatedTopic(String topic, Utility util,
+                                        List<String> regularTopics, Map<String, Integer> compositeTopics) {
+        if (!topic.startsWith(appPrefix) && !topic.startsWith(monitorPrefix)) {
+            regularTopics.add(topic);
+            return;
+        }
+        List<String> parts = util.split(topic, ".");
+        if (parts.size() != 3) {
+            regularTopics.add(topic);
+            return;
+        }
+        int dot = topic.lastIndexOf('.');
+        String topicName = topic.substring(0, dot);
+        String partition = topic.substring(dot+1);
+        if (util.isDigits(partition)) {
+            compositeTopics.put(topicName, compositeTopics.getOrDefault(topicName, 0) + 1);
         } else {
-            List<String> consolidated = new ArrayList<>();
-            List<String> topicList = new ArrayList<>(compositeTopics.keySet());
-            if (topicList.size() > 1) {
-                Collections.sort(topicList);
-            }
-            for (String t: topicList) {
-                consolidated.add(t+" ("+compositeTopics.get(t)+")");
-            }
-            consolidated.addAll(regularTopics);
-            return consolidated;
+            regularTopics.add(topic);
         }
     }
 
