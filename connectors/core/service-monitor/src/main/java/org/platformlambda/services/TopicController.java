@@ -146,42 +146,6 @@ public class TopicController implements LambdaFunction {
         }
     }
 
-    private boolean hasRsvpRights() {
-        Utility util = Utility.getInstance();
-        long now = System.currentTimeMillis();
-        String me = Platform.getInstance().getOrigin();
-        // remove expired bids
-        List<String> expired = new ArrayList<>();
-        for (PendingRsvp bidder: bids.values()) {
-            if (now - bidder.lastSeen > RSVP_TIMEOUT) {
-                expired.add(bidder.origin);
-            }
-        }
-        for (String bidder: expired) {
-            bids.remove(bidder);
-            log.warn("RSVP bid from {} expired", bidder);
-        }
-        if (bids.containsKey(me)) {
-            if (bids.size() == 1) {
-                PendingRsvp rsvp = bids.get(me);
-                // provide a grace period to avoid racing condition
-                return now - rsvp.lastSeen > RSVP_GRACE_PERIOD;
-            } else {
-                List<String> rsvpBidders = new ArrayList<>();
-                for (PendingRsvp r: bids.values()) {
-                    rsvpBidders.add(util.getTimestamp(r.created) + "|" + r.origin);
-                }
-                Collections.sort(rsvpBidders);
-                if (!rsvpBidders.isEmpty()) {
-                    String ticket = rsvpBidders.getFirst();
-                    String winner = ticket.substring(ticket.indexOf('|')+1);
-                    return me.equals(winner);
-                }
-            }
-        }
-        return false;
-    }
-
     @Override
     public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         if (!headers.containsKey(TYPE)) {
@@ -265,10 +229,7 @@ public class TopicController implements LambdaFunction {
         }
         if (headers.containsKey(MONITOR)) {
             String monitor = headers.get(MONITOR);
-            PendingRsvp holder = bids.get(monitor);
-            if (holder != null) {
-                bids.put(monitor, holder.touch());
-            }
+            bids.computeIfPresent(monitor, (k, v) -> v.touch());
         }
         String topic = headers.get(TOPIC);
         String appOrigin = headers.get(ORIGIN);
@@ -301,17 +262,6 @@ public class TopicController implements LambdaFunction {
         return false;
     }
 
-    private String nextTopic(String appOrigin) {
-        for (String t: allTopics) {
-            String value = topicStore.get(t);
-            if (AVAILABLE.equals(value)) {
-                topicStore.put(t, appOrigin);
-                return t;
-            }
-        }
-        throw new IllegalArgumentException("All virtual topics ("+ maxVirtualTopics +") are busy");
-    }
-
     public static Map<String, String> getAssignedTopics() {
         Map<String, String> assigned = new HashMap<>();
         for (String t: allTopics) {
@@ -329,6 +279,53 @@ public class TopicController implements LambdaFunction {
             Platform platform = Platform.getInstance();
             platform.getVertx().setPeriodic(5 * 1000L, t -> checkStalledMembers());
             platform.getVertx().setPeriodic(1000L, t -> rsvpExecutor.submit(this::rsvpLoop));
+        }
+
+        private boolean hasRsvpRights() {
+            Utility util = Utility.getInstance();
+            long now = System.currentTimeMillis();
+            String me = Platform.getInstance().getOrigin();
+            // remove expired bids
+            List<String> expired = new ArrayList<>();
+            for (PendingRsvp bidder: bids.values()) {
+                if (now - bidder.lastSeen > RSVP_TIMEOUT) {
+                    expired.add(bidder.origin);
+                }
+            }
+            for (String bidder: expired) {
+                bids.remove(bidder);
+                log.warn("RSVP bid from {} expired", bidder);
+            }
+            if (bids.containsKey(me)) {
+                if (bids.size() == 1) {
+                    PendingRsvp rsvp = bids.get(me);
+                    // provide a grace period to avoid racing condition
+                    return now - rsvp.lastSeen > RSVP_GRACE_PERIOD;
+                } else {
+                    List<String> rsvpBidders = new ArrayList<>();
+                    for (PendingRsvp r: bids.values()) {
+                        rsvpBidders.add(util.getTimestamp(r.created) + "|" + r.origin);
+                    }
+                    Collections.sort(rsvpBidders);
+                    if (!rsvpBidders.isEmpty()) {
+                        String ticket = rsvpBidders.getFirst();
+                        String winner = ticket.substring(ticket.indexOf('|')+1);
+                        return me.equals(winner);
+                    }
+                }
+            }
+            return false;
+        }
+
+        private String nextTopic(String appOrigin) {
+            for (String t: allTopics) {
+                String value = topicStore.get(t);
+                if (AVAILABLE.equals(value)) {
+                    topicStore.put(t, appOrigin);
+                    return t;
+                }
+            }
+            throw new IllegalArgumentException("All virtual topics ("+ maxVirtualTopics +") are busy");
         }
 
         private void rsvpLoop() {

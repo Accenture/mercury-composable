@@ -60,7 +60,7 @@ public class CloudHealthCheck implements TypedLambdaFunction<EventEnvelope, Void
     }
 
     @Override
-    public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws Exception {
+    public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
         if (INFO.equals(headers.get(TYPE))) {
             handleInfo(input);
         }
@@ -187,7 +187,7 @@ public class CloudHealthCheck implements TypedLambdaFunction<EventEnvelope, Void
         try {
             EventEmitter.getInstance().send(response);
         } catch (IllegalArgumentException e) {
-            log.error("Unable to deliver response to {} - {}", input.getReplyTo(), e.getMessage());
+            log.error("Unable to deliver error response to {} - {}", input.getReplyTo(), e.getMessage());
         }
     }
 

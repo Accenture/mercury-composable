@@ -60,7 +60,7 @@ public class EventProducer implements LambdaFunction {
     private static final String BROADCAST = MultipartPayload.BROADCAST;
  
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         if (headers.containsKey(TO) && input instanceof byte[] payload) {
             List<String> destinations = getDestinations(headers);
             if (!destinations.isEmpty()) {

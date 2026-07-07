@@ -82,7 +82,7 @@ public class ServiceRegistry implements LambdaFunction {
     private static final ConcurrentMap<String, Boolean> pmSubscribers = new ConcurrentHashMap<>();
     private static final ManagedCache cache = ManagedCache.createCache("member.life.cycle.events", 5000);
     private long lastBroadcastAdd = 0;
-    private static final String monitorTopic = AppConfigReader.getInstance()
+    private static final String MONITOR_TOPIC = AppConfigReader.getInstance()
             .getProperty("monitor.topic", "service.monitor");
 
     public ServiceRegistry() {
@@ -138,7 +138,7 @@ public class ServiceRegistry implements LambdaFunction {
     }
 
     public static String getTopic(String dest) {
-        return dest.startsWith(MONITOR)? monitorTopic+"-"+dest.substring(MONITOR.length()) : originTopic.get(dest);
+        return dest.startsWith(MONITOR)? MONITOR_TOPIC +"-"+dest.substring(MONITOR.length()) : originTopic.get(dest);
     }
 
     @Override
