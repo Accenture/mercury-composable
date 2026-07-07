@@ -196,7 +196,7 @@ PresenceConnector:155 - Connected pc.991a2be0.in, 127.0.0.1:8080,
                         /ws/presence/2023032808d82ebe2c0d4e5aa9ca96b3813bdd25
 EventConsumer:160 - Subscribed multiplex.0001.1
 ServiceLifeCycle:73 - multiplex.0001, partition 1 ready
-ServiceRegistry:242 - Peer 202303282583899cf43a49b98f0522492b9ca178 joins (rest-spring-3-example 4.1.8)
+ServiceRegistry:242 - Peer 202303282583899cf43a49b98f0522492b9ca178 joins (rest-spring-3-example 4.6.1)
 ServiceRegistry:383 - hello.world (rest-spring-3-example, WEB.202303282583899cf43a49b98f0522492b9ca178) registered
 ```
 
@@ -206,7 +206,7 @@ You notice that the lambda-example has discovered the rest-spring-3-example thro
 At this point, the rest-spring-3-example will find the lambda-example application as well:
 
 ```text
-ServiceRegistry:242 - Peer 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 joins (lambda-example 4.1.8)
+ServiceRegistry:242 - Peer 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 joins (lambda-example 4.6.1)
 ServiceRegistry:383 - hello.world (lambda-example, 
                                    APP.2023032808d82ebe2c0d4e5aa9ca96b3813bdd25) registered
 ServiceRegistry:383 - hello.pojo (lambda-example, 
@@ -250,7 +250,7 @@ You can visit http://127.0.0.1:8080/info and it will show something like this:
   "app": {
     "name": "kafka-presence",
     "description": "Presence Monitor",
-    "version": "4.1.8"
+    "version": "4.6.1"
   },
   "personality": "RESOURCES",
   "more": {
@@ -264,8 +264,8 @@ You can visit http://127.0.0.1:8080/info and it will show something like this:
       "service.monitor (11)"
     ],
     "virtual_topics": [
-      "multiplex.0001-000 -> 202303282583899cf43a49b98f0522492b9ca178, rest-spring-3-example v4.1.8",
-      "multiplex.0001-001 -> 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25, lambda-example v4.1.8"
+      "multiplex.0001-000 -> 202303282583899cf43a49b98f0522492b9ca178, rest-spring-3-example v4.6.1",
+      "multiplex.0001-001 -> 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25, lambda-example v4.6.1"
     ],
     "connections": [
       {
@@ -277,7 +277,7 @@ You can visit http://127.0.0.1:8080/info and it will show something like this:
         "monitor": "2023032896b12f9de149459f9c8b71ad8b6b49fa",
         "type": "APP",
         "updated": "2023-03-28T18:08:25Z",
-        "version": "4.1.8",
+        "version": "4.6.1",
         "seq": 65,
         "group": 1
       },
@@ -290,7 +290,7 @@ You can visit http://127.0.0.1:8080/info and it will show something like this:
         "monitor": "2023032896b12f9de149459f9c8b71ad8b6b49fa",
         "type": "WEB",
         "updated": "2023-03-28T18:08:29Z",
-        "version": "4.1.8",
+        "version": "4.6.1",
         "seq": 75,
         "group": 1
       }
@@ -379,7 +379,7 @@ You can press "control-C" to stop an application. Let's stop the lambda-example 
 Once you stopped lamdba-example from the command line, the rest-spring-3-example will detect it:
 
 ```text
-ServiceRegistry:278 - Peer 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 left (lambda-example 4.1.8)
+ServiceRegistry:278 - Peer 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 left (lambda-example 4.6.1)
 ServiceRegistry:401 - hello.world 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 unregistered
 ServiceRegistry:401 - hello.pojo 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 unregistered
 ```
@@ -391,7 +391,7 @@ You will also find log messages in the kafka-presence application like this:
 ```text
 MonitorService:120 - Member 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 left
 TopicController:250 - multiplex.0001-001 released by 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25,
-                                                     lambda-example, 4.1.8
+                                                     lambda-example, 4.6.1
 ```
 
 When an application instance stops, the presence monitor will detect the event, remove it from the registry and
