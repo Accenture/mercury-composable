@@ -175,7 +175,7 @@ public class TopicController implements LambdaFunction {
     }
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         if (!headers.containsKey(TYPE)) {
             return false;
         }
