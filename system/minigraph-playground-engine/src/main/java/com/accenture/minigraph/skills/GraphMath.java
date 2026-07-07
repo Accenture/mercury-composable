@@ -91,7 +91,7 @@ public class GraphMath extends GraphLambdaFunction {
                                   GraphInstance graphInstance) {
         if (!statements.isEmpty()) {
             var stateMachine = graphInstance.stateMachine;
-            Map<String, List<?>> forEachMapping = getForEachMapping(nodeName, forEach, stateMachine);
+            Map<String, List<Object>> forEachMapping = getForEachMapping(nodeName, forEach, stateMachine);
             if (forEachMapping.isEmpty()) {
                 throw new IllegalArgumentException(NODE_NAME + nodeName +
                         " - No data mapping resolved from 'for_each' entries. LHS must be a list.");

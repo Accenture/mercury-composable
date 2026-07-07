@@ -392,9 +392,10 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         request.setBody(wholeBody.isEmpty()? body : wholeBody.getFirst());
     }
 
-    protected Map<String, List<?>> getForEachMapping(String nodeName, List<String> forEach, MultiLevelMap stateMachine) {
+    @SuppressWarnings("unchecked")
+    protected Map<String, List<Object>> getForEachMapping(String nodeName, List<String> forEach, MultiLevelMap stateMachine) {
         int size = -1;
-        Map<String, List<?>> mappings = new HashMap<>();
+        Map<String, List<Object>> mappings = new HashMap<>();
         for (var entry : forEach) {
             var sep = entry.lastIndexOf(MAP_TO);
             var lhs = substituteVarIfAny(entry.substring(0, sep).trim(), stateMachine);
@@ -412,7 +413,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
                     throw new IllegalArgumentException(NODE_NAME + nodeName +
                             " LHS of 'for_each' contains inconsistent array sizes");
                 }
-                mappings.put(rhs, list);
+                mappings.put(rhs, (List<Object>) value);
             } else if (value != null) {
                 stateMachine.setElement(rhs, value);
             } else {
@@ -422,12 +423,12 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         return mappings;
     }
 
-    protected int getModelArraySize(Map<String, List<?>> mappings) {
+    protected int getModelArraySize(Map<String, List<Object>> mappings) {
         var keys = new ArrayList<>(mappings.keySet());
         return mappings.get(keys.getFirst()).size();
     }
 
-    protected Map<String, Object> getNextModelParamSet(Map<String, List<?>> mappings, int i) {
+    protected Map<String, Object> getNextModelParamSet(Map<String, List<Object>> mappings, int i) {
         var result = new HashMap<String, Object>();
         for (var entry : mappings.entrySet()) {
             result.put(entry.getKey(), entry.getValue().get(i));

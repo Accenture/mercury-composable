@@ -67,7 +67,7 @@ public class GraphExtension extends GraphLambdaFunction {
         if (forEach.isEmpty()) {
             return callExtension(po, node, graphInstance, graphId);
         }
-        Map<String, List<?>> forEachMapping = getForEachMapping(nodeName, forEach, stateMachine);
+        Map<String, List<Object>> forEachMapping = getForEachMapping(nodeName, forEach, stateMachine);
         // iterative API requests with an array of parameters
         if (forEachMapping.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName +
