@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @MainApplication
@@ -90,7 +91,6 @@ public class MainApp implements EntryPoint {
         AppConfigReader config = AppConfigReader.getInstance();
         PubSub ps = PubSub.getInstance();
         Platform platform = Platform.getInstance();
-        EventEmitter po = EventEmitter.getInstance();
         // start additional info service
         platform.registerPrivate(ADDITIONAL_INFO, new AdditionalInfo(), 3);
         // broadcast heart beat to presence monitor peers
@@ -106,42 +106,56 @@ public class MainApp implements EntryPoint {
         int maxGroups = Math.min(30,
                 Math.max(3, util.str2int(config.getProperty("max.closed.user.groups", "10"))));
         int requiredPartitions = maxGroups + 1;
-        if (!ConnectorConfig.topicSubstitutionEnabled()) {
-            // automatically create topic if not exist
-            if (ps.exists(monitorTopic)) {
-                int actualPartitions = ps.partitionCount(monitorTopic);
-                if (actualPartitions < requiredPartitions) {
-                    log.error("Insufficient partitions in {}, Expected: {}, Actual: {}",
-                            monitorTopic, requiredPartitions, actualPartitions);
-                    log.error("SYSTEM NOT OPERATIONAL. Please check kafka cluster health.");
-                    return;
-                }
-
-            } else {
-                // one partition for presence monitor and one for routing table distribution
-                ps.createTopic(monitorTopic, requiredPartitions);
-            }
+        if (!ensureMonitorTopic(ps, monitorTopic, requiredPartitions)) {
+            return;
         }
         String clientId = platform.getOrigin();
         final AtomicBoolean pending = new AtomicBoolean(true);
-        LambdaFunction service = (headers, input, instance) -> {
-            if (LOOP_BACK.equals(input) && headers.containsKey(REPLY_TO) && clientId.equals(headers.get(ORIGIN))) {
-                po.send(headers.get(REPLY_TO), true);
-            }
-            if (INIT.equals(input) && INIT.equals(headers.get(TYPE))) {
-                if (pending.get()) {
-                    pending.set(false);
-                    po.send(PRESENCE_HANDLER, new Kv(TYPE, INIT), new Kv(ORIGIN, platform.getOrigin()));
-                }
-                String INIT_HANDLER = INIT + "." + monitorTopic + ".0";
-                if (platform.hasRoute(INIT_HANDLER)) {
-                    po.send(INIT_HANDLER, DONE);
-                }
-            }
-            return true;
-        };
+        LambdaFunction service = (headers, input, instance) ->
+                onMonitorSignal(headers, input, clientId, monitorTopic, pending);
         String groupId = config.getProperty("default.monitor.group.id", "monitorGroup");
         ps.subscribe(monitorTopic, 0, service, clientId, groupId, String.valueOf(ServiceLifeCycle.INITIALIZE));
+    }
+
+    // ensure the monitor topic exists with enough partitions; returns false if setup must abort
+    private boolean ensureMonitorTopic(PubSub ps, String monitorTopic, int requiredPartitions) {
+        if (ConnectorConfig.topicSubstitutionEnabled()) {
+            return true;
+        }
+        // automatically create topic if not exist
+        if (!ps.exists(monitorTopic)) {
+            // one partition for presence monitor and one for routing table distribution
+            ps.createTopic(monitorTopic, requiredPartitions);
+            return true;
+        }
+        int actualPartitions = ps.partitionCount(monitorTopic);
+        if (actualPartitions < requiredPartitions) {
+            log.error("Insufficient partitions in {}, Expected: {}, Actual: {}",
+                    monitorTopic, requiredPartitions, actualPartitions);
+            log.error("SYSTEM NOT OPERATIONAL. Please check kafka cluster health.");
+            return false;
+        }
+        return true;
+    }
+
+    private Object onMonitorSignal(Map<String, String> headers, Object input,
+                                   String clientId, String monitorTopic, AtomicBoolean pending) {
+        EventEmitter po = EventEmitter.getInstance();
+        Platform platform = Platform.getInstance();
+        if (LOOP_BACK.equals(input) && headers.containsKey(REPLY_TO) && clientId.equals(headers.get(ORIGIN))) {
+            po.send(headers.get(REPLY_TO), true);
+        }
+        if (INIT.equals(input) && INIT.equals(headers.get(TYPE))) {
+            if (pending.get()) {
+                pending.set(false);
+                po.send(PRESENCE_HANDLER, new Kv(TYPE, INIT), new Kv(ORIGIN, platform.getOrigin()));
+            }
+            String initHandler = INIT + "." + monitorTopic + ".0";
+            if (platform.hasRoute(initHandler)) {
+                po.send(initHandler, DONE);
+            }
+        }
+        return true;
     }
 
 }
