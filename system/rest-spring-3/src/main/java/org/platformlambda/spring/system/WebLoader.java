@@ -129,12 +129,10 @@ public class WebLoader implements ServletContextInitializer {
     private void loadWebListeners(List<ClassInfo> webListenerEndpoints, ServletContext context, AtomicInteger total) {
         for (ClassInfo info : webListenerEndpoints) {
             final Class<?> cls = getClass("WebListener", info.getName());
-            if (cls != null) {
-                if (Feature.isRequired(cls)) {
-                    context.addListener(cls.getName());
-                    var count = total.incrementAndGet();
-                    log.info("{} registered as WebListener-{}", cls.getName(), count);
-                }
+            if (cls != null && Feature.isRequired(cls)) {
+                context.addListener(cls.getName());
+                var count = total.incrementAndGet();
+                log.info("{} registered as WebListener-{}", cls.getName(), count);
             }
         }
     }

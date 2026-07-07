@@ -376,8 +376,8 @@ class SessionManagementTest {
             assertNotNull(waitForMessage(fx.messagesC(), "Subscribed to " + fx.sessionA(), 5));
             assertNotNull(waitForMessage(fx.messagesA(), fx.sessionC() + " subscribed to your session", 5));
 
-            // touchNode broadcasts a synthetic "update node root" through the primary;
-            // A, B, and C all observe the resulting confirmation message.
+            // touchNode broadcasts a synthetic "update node root" through the primary session
+            // and A, B, and C all observe the resulting confirmation message.
             assertNotNull(waitForMessage(fx.messagesA(), "node root updated", 10));
             assertNotNull(waitForMessage(fx.messagesB(), "node root updated", 10));
             assertNotNull(waitForMessage(fx.messagesC(), "node root updated", 10));

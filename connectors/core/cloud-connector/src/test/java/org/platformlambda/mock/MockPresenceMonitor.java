@@ -128,10 +128,8 @@ public class MockPresenceMonitor implements LambdaFunction {
     public static void updateNodeInfo(String origin, Map<String, Object> info) {
         if (connectionInfo.exists(origin)) {
             Object o = connectionInfo.get(origin);
-            if (o instanceof Map) {
-                if (!info.equals(o)) {
-                    connectionInfo.put(origin, info);
-                }
+            if (o instanceof Map && !info.equals(o)) {
+                connectionInfo.put(origin, info);
             }
         } else {
             connectionInfo.put(origin, info);

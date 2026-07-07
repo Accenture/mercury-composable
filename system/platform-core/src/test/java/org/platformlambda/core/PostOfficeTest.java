@@ -20,6 +20,9 @@ package org.platformlambda.core;
 
 import io.vertx.core.Future;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.common.JacksonSerializer;
 import org.platformlambda.core.models.SimplePoJo;
@@ -48,6 +51,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -697,22 +701,23 @@ class PostOfficeTest extends TestBase {
         assertEquals(platform.getOrigin(), originId);
     }
 
-    @Test
-    void registerInvalidRoute() {
-        Platform platform = Platform.getInstance();
-        LambdaFunction noOp = (headers, input, instance) -> true;
-        var ex = assertThrows(IllegalArgumentException.class, () ->
-                    platform.register("invalidFormat", noOp, 1));
-        assertEquals("Invalid route - use 0-9, a-z, period, hyphen or underscore characters",
-                ex.getMessage());
+    private static Stream<Arguments> invalidRoutes() {
+        return Stream.of(
+                Arguments.of("invalidFormat",
+                        "Invalid route - use 0-9, a-z, period, hyphen or underscore characters"),
+                Arguments.of(null, "Missing service routing path"),
+                Arguments.of("nothing.com", "Invalid route nothing.com which is use a reserved extension"),
+                Arguments.of("thumbs.db", "Invalid route thumbs.db which is a reserved Windows filename"),
+                Arguments.of("", "Invalid route - use 0-9, a-z, period, hyphen or underscore characters"));
     }
 
-    @Test
-    void registerNullRoute() {
+    @ParameterizedTest
+    @MethodSource("invalidRoutes")
+    void registerRouteValidation(String route, String error) {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
-        var ex = assertThrows(IllegalArgumentException.class, () -> platform.register(null, noOp, 1));
-        assertEquals("Missing service routing path", ex.getMessage());
+        var ex = assertThrows(IllegalArgumentException.class, () -> platform.register(route, noOp, 1));
+        assertEquals(error, ex.getMessage());
     }
 
     @Test
@@ -721,24 +726,6 @@ class PostOfficeTest extends TestBase {
         var ex = assertThrows(IllegalArgumentException.class, () ->
                 platform.register("no.service", null, 1));
         assertEquals("Missing LambdaFunction instance", ex.getMessage());
-    }
-
-    @Test
-    void reservedExtensionNotAllowed() {
-        Platform platform = Platform.getInstance();
-        LambdaFunction noOp = (headers, input, instance) -> true;
-        var ex = assertThrows(IllegalArgumentException.class, () ->
-                    platform.register("nothing.com", noOp, 1));
-        assertEquals("Invalid route nothing.com which is use a reserved extension", ex.getMessage());
-    }
-
-    @Test
-    void reservedFilenameNotAllowed() {
-        Platform platform = Platform.getInstance();
-        LambdaFunction noOp = (headers, input, instance) -> true;
-        var ex = assertThrows(IllegalArgumentException.class, () ->
-                    platform.register("thumbs.db", noOp, 1));
-        assertEquals("Invalid route thumbs.db which is a reserved Windows filename", ex.getMessage());
     }
 
     @Test
@@ -765,15 +752,6 @@ class PostOfficeTest extends TestBase {
         // convert to public
         platform.makePublic(service);
         platform.release(service);
-    }
-
-    @Test
-    void emptyRouteNotAllowed() {
-        Platform platform = Platform.getInstance();
-        LambdaFunction noOp = (headers, input, instance) -> true;
-        var ex = assertThrows(IllegalArgumentException.class, () -> platform.register("", noOp, 1));
-        assertEquals("Invalid route - use 0-9, a-z, period, hyphen or underscore characters",
-                ex.getMessage());
     }
 
     @Test
