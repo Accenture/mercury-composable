@@ -77,7 +77,11 @@
   CHANGELOG; (4) kafka-connector's embedded-broker tests rely on kafka-standalone's `@MainApplication`
   (seq 10) owning the broker — never start a second `EmbeddedKafka` in the same JVM (its formatStorage
   wipes `/tmp/kafka-logs` under the running broker → Kafka fatal Exit(1)).
-  <!-- id: release-4-6-2-shipped | created: 2026-07-07 | last_used: 2026-07-07 | uses: 1 | tier: working | origin: 2026-07-07-163607 -->
+  **UPDATE 2026-07-07: v4.6.3 shipped the same day** (tag on merge commit `4c709484`; PRs #143 cleanup +
+  #144 bump) — maintenance on top of 4.6.2: final smell suppressions, model encapsulation,
+  playground `random` → SecureRandom. All caveats above still apply. Field Sonar dashboard: gate PASSED,
+  0 vuln / 0 bugs / smells rating A; only the CryptoApi DSA hotspot awaits "Safe" review in the Sonar UI.
+  <!-- id: release-4-6-2-shipped | created: 2026-07-07 | last_used: 2026-07-08 | uses: 3 | tier: active | origin: 2026-07-07-163607 -->
 
 - **Release 4.6.1 — security + maintenance patch on top of 4.6.0 (2026-07-06, branch `chore/release-4.6.1`,
   Claude Code).** 4.6.0 was already GitHub-released (tag `v4.6.0`, immutable); rather than recall/re-tag it,
