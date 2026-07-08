@@ -131,6 +131,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String FOR_EACH = "for_each";
     protected static final String CONCURRENCY = "concurrency";
     protected static final String PURPOSE = "purpose";
+    protected static final String TASK = "task";
     protected static final String MAPPING_TAG = "mapping:";
     protected static final String COMPUTE_TAG = "compute:";
     protected static final String EXECUTE_TAG = "execute:";
@@ -145,7 +146,8 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String DOT_DECISION = ".decision";
     protected static final String DOT_DELAY = ".delay";
     private static final Set<String> RESERVED_PARAMETERS = Set.of(SKILL, MAPPING, STATEMENT, INPUT, OUTPUT, FEATURE,
-                                    EXCEPTION, EXTENSION, STATUS, ERROR, DICTIONARY, FOR_EACH, CONCURRENCY, PURPOSE);
+                                    EXCEPTION, EXTENSION, STATUS, ERROR, DICTIONARY, FOR_EACH, CONCURRENCY, PURPOSE,
+                                    TASK);
     private static final AtomicLong loopInterval = new AtomicLong(-1);
     private static final AtomicLong highFrequency = new AtomicLong(-1);
 
