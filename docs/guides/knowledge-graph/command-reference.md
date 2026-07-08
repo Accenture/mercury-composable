@@ -183,6 +183,7 @@ and examples; this is the at-a-glance contract.
 | `graph.js` | `statement[]` (same as math) | `for_each[]`, `NEXT:`, `DELAY:` |
 | `graph.api.fetcher` | `dictionary[]`, `input[]`, `output[]` | `for_each[]`, `concurrency` (1–30, def 3), `exception` |
 | `graph.extension` | `extension` (`{graph-id}` or `flow://{flow-id}`), `input[]` | `output[]`, `for_each[]`, `concurrency`, `exception` |
+| `graph.task` | `task` (a composable function's route name) | `input[]`, `output[]`, `for_each[]`, `concurrency`, `exception` |
 | `graph.join` | — | — |
 | `graph.island` | — | — |
 

@@ -186,6 +186,7 @@ You built behavior with one skill. The graph becomes genuinely *active* when nod
 - `graph.math` — inline math and `IF/THEN/ELSE` branching for decisions.
 - `graph.api.fetcher` — call external APIs declaratively via data-dictionary and provider nodes.
 - `graph.extension` — delegate to a sub-graph or an Event Script flow.
+- `graph.task` — invoke a composable function through its route name.
 
 Each of these gets a worked example in the [built-in skills reference](skills-reference.md).
 
