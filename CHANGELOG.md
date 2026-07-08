@@ -8,6 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.6.3, 7/7/2026
+
+Maintenance release: final SonarQube smell cleanup and security-hotspot remediation following the
+quality-gate pass in 4.6.2. No behavior changes and no API changes.
+
+### Changed
+
+1. **Remaining code smells resolved with documented suppressions.** Framework singleton classes carry
+   `@SuppressWarnings("java:S6548")` with an "Intentional singleton" note; public-field transfer models
+   carry `@SuppressWarnings("java:S1104")`. Internal models tightened: `PendingConnection` and
+   `PendingRsvp` fields are encapsulated with accessors and `WsMetadata` is now a record (its
+   `lastAccess` field was write-only). Test hygiene: JUnit 5 lifecycle method visibility, local-variable
+   naming, Java 21 `StringBuilder.repeat`, `assertThrows` lambdas limited to a single throwing call, and
+   the standalone `UtilityTest` merged into `UtilityTests`.
+2. **Security hotspot removed at the source.** The MiniGraph playground `random` expression function now
+   uses `SecureRandom.nextDouble()` instead of `Math.random()` (same `[0,1)` contract). The remaining
+   DSA key-generation hotspot in `CryptoApi` is an intentional legacy-interop API surface with no
+   internal callers; it is reviewed as safe in the SonarQube dashboard rather than changed in code.
+
+---
 ## Version 4.6.2, 7/7/2026
 
 Code quality and test coverage release: remediates all SonarQube quality-gate findings on the overall

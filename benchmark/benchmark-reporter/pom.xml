@@ -5,7 +5,7 @@
 
     <groupId>org.platformlambda</groupId>
     <artifactId>benchmark-reporter</artifactId>
-    <version>4.6.2</version>
+    <version>4.6.3</version>
     <packaging>jar</packaging>
     <name>Benchmark reporter</name>
     <description>Self-contained, single-JVM end-to-end performance harness (callback + RPC) that emits an
@@ -37,7 +37,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.6.2</version>
+            <version>4.6.3</version>
         </dependency>
     </dependencies>
 
