@@ -42,7 +42,7 @@ class CryptoTest {
     private static boolean strongCrypto;
 
     @BeforeAll
-    public static void checkCrypto() {
+    static void checkCrypto() {
         strongCrypto = crypto.strongCryptoSupported();
         if (!strongCrypto) {
             log.warn("Not using Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy");

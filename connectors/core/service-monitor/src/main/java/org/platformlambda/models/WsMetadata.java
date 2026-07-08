@@ -18,21 +18,4 @@
 
 package org.platformlambda.models;
 
-public class WsMetadata {
-
-    public final String origin;
-    public final String session;
-    public final String txPath;
-    public long lastAccess = System.currentTimeMillis();
-
-    public WsMetadata(String session, String txPath, String origin) {
-        this.session = session;
-        this.txPath = txPath;
-        this.origin = origin;
-    }
-
-    public void touch() {
-        lastAccess = System.currentTimeMillis();
-    }
-
-}
+public record WsMetadata(String session, String txPath, String origin) { }

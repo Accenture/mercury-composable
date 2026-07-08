@@ -56,7 +56,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <p>The default lives under {@code /tmp} (cleared by the OS on reboot); override to a durable directory
  * ({@code -Dschema.registry.data.store=$HOME/schema-registry}) to survive reboots.</p>
+ *
+ *  Intentional singleton
  */
+@SuppressWarnings("java:S6548")
 public class SchemaStore {
     private static final Logger log = LoggerFactory.getLogger(SchemaStore.class);
     // Where schemas are persisted. Configurable so a user can choose a transient (/tmp) or a durable

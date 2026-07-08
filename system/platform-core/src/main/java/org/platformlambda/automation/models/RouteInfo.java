@@ -20,6 +20,7 @@ package org.platformlambda.automation.models;
 
 import java.util.*;
 
+@SuppressWarnings("java:S1104")
 public class RouteInfo {
     private final List<String> authHeaders = new ArrayList<>();
     private final Map<String, String> authServices = new HashMap<>();

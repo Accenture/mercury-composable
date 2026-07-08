@@ -27,6 +27,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
+/**
+ * Intentional singleton
+ */
+@SuppressWarnings("java:S6548")
 public class AppConfigReader implements ConfigBase {
     private static final Logger log = LoggerFactory.getLogger(AppConfigReader.class);
     private static final String APP_CONFIG_READER_YML = "app-config-reader.yml";

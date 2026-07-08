@@ -132,7 +132,7 @@ class FlowTests extends TestBase {
         final long timeout = 8000;
         final String traceId = "9002";
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("POST").setHeader("content-type", "application/json");
+        request.setTargetHost(host).setMethod("POST").setHeader("content-type", "application/json");
         if (user != null) {
             request.setBody(Map.of("user", user));
         }
@@ -170,7 +170,7 @@ class FlowTests extends TestBase {
         final long timeout = 8000;
         final String traceId = "9002";
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("POST").setHeader("content-type", "application/json");
+        request.setTargetHost(host).setMethod("POST").setHeader("content-type", "application/json");
         if (user != null) {
             request.setBody(Map.of("user", user));
         }
@@ -198,7 +198,7 @@ class FlowTests extends TestBase {
         Date d = Date.from(instant);
         long ms = d.getTime();
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("POST").setHeader("content-type", "application/json");
+        request.setTargetHost(host).setMethod("POST").setHeader("content-type", "application/json");
         request.setBody(Map.of("date", date));
         request.setUrl("/api/parse-date");
         PostOffice po = new PostOffice("unit.test", traceId, "TEST /parse/date");
@@ -224,7 +224,7 @@ class FlowTests extends TestBase {
         Date d = Date.from(instant);
         long ms = d.getTime();
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("POST").setHeader("content-type", "application/json");
+        request.setTargetHost(host).setMethod("POST").setHeader("content-type", "application/json");
         request.setBody(Map.of("datetime", date));
         request.setUrl("/api/parse-date-time");
         PostOffice po = new PostOffice("unit.test", traceId, "TEST /parse/datetime");
@@ -246,7 +246,7 @@ class FlowTests extends TestBase {
         final long timeout = 8000;
         final String traceId = "90092";
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("POST").setHeader("content-type", "application/json");
+        request.setTargetHost(host).setMethod("POST").setHeader("content-type", "application/json");
         request.setBody(Map.of("text", text));
         request.setUrl("/api/string-util");
         PostOffice po = new PostOffice("unit.test", traceId, "TEST /string/util");
@@ -281,7 +281,7 @@ class FlowTests extends TestBase {
     void httpClientByCodeTest() throws ExecutionException, InterruptedException {
         final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("POST")
+        request.setTargetHost(host).setMethod("POST")
                 .setHeader("accept", "application/json")
                 .setHeader("content-type", "application/json")
                 .setHeader("authorization", "Bearer demo123\r\n\r\n")
@@ -306,7 +306,7 @@ class FlowTests extends TestBase {
     void httpClientByConfigTest() throws ExecutionException, InterruptedException {
         final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("POST")
+        request.setTargetHost(host).setMethod("POST")
                 .setHeader("accept", "application/json")
                 .setHeader("content-type", "application/json")
                 .setUrl("/api/http/client/by/config/test");
@@ -331,7 +331,7 @@ class FlowTests extends TestBase {
     void noSuchFlowTest() throws ExecutionException, InterruptedException {
         final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET")
+        request.setTargetHost(host).setMethod("GET")
                 .setHeader("accept", "application/json")
                 .setUrl("/api/no-such-flow");
         PostOffice po = new PostOffice("unit.test", "2000", "TEST /no/such/flow");
@@ -359,7 +359,7 @@ class FlowTests extends TestBase {
         String placeholder = "test";
         var payload = Map.of("hello", "world");
         AsyncHttpRequest request1 = new AsyncHttpRequest();
-        request1.setTargetHost(HOST).setMethod("PUT").setHeader("accept", "application/json")
+        request1.setTargetHost(host).setMethod("PUT").setHeader("accept", "application/json")
                 .setHeader("content-type", "application/json").setBody(payload);
         request1.setUrl(uriPath+placeholder);
         PostOffice po = new PostOffice("unit.test", traceId, uriPath);
@@ -377,7 +377,7 @@ class FlowTests extends TestBase {
          * so that the GET request will wait until the PUT request is done, thus returning result correctly.
          */
         AsyncHttpRequest request2 = new AsyncHttpRequest();
-        request2.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request2.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request2.setUrl("/api/ext/state/"+placeholder);
         EventEnvelope req2 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request2);
         EventEnvelope res2 = po.request(req2, timeout).get();
@@ -403,7 +403,7 @@ class FlowTests extends TestBase {
         final String B64_TEXT = util.bytesToBase64(helloWorldBytes);
         final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET")
+        request.setTargetHost(host).setMethod("GET")
                 .setHeader("accept", "application/json")
                 .setUrl("/api/type/matching");
         PostOffice po = new PostOffice("unit.test", "2000", "TEST /type/matching");
@@ -497,7 +497,7 @@ class FlowTests extends TestBase {
         Map<String, Object> holder = new HashMap<>();
         holder.put("pojoHolder", pojoBody);
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("POST")
+        request.setTargetHost(host).setMethod("POST")
                 .setHeader("accept", "application/json")
                 .setHeader("content-type", "application/json")
                 .setBody(holder)
@@ -530,7 +530,7 @@ class FlowTests extends TestBase {
                 Map.of("world", "3", "test", "c"));
         var additional = Map.of("more", List.of("X", "Y", "Z"));
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("POST")
+        request.setTargetHost(host).setMethod("POST")
                 .setHeader("accept", "application/json").setHeader("content-type", "application/json")
                 .setBody(Map.of("hello", "world", "list", data, "more", additional))
                 .setUrl("/api/header/test");
@@ -574,7 +574,7 @@ class FlowTests extends TestBase {
         Utility util = Utility.getInstance();
         util.str2file(f1, hello);
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET")
+        request.setTargetHost(host).setMethod("GET")
                 .setHeader("accept", "application/json").setUrl("/api/file/vault");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -619,7 +619,7 @@ class FlowTests extends TestBase {
     void circuitBreakerRetryTest() throws ExecutionException, InterruptedException {
         final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET")
+        request.setTargetHost(host).setMethod("GET")
                 .setHeader("accept", "application/json").setUrl("/api/circuit/breaker/2");
         PostOffice po = new PostOffice("unit.test", "100100", "TEST /circuit/breaker/retry");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -635,7 +635,7 @@ class FlowTests extends TestBase {
     void circuitBreakerAbortTest() throws ExecutionException, InterruptedException {
         final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         // the max_attempt is 2 for the circuit breaker and thus this will break
         request.setUrl("/api/circuit/breaker/3");
         PostOffice po = new PostOffice("unit.test", "100101", "TEST /circuit/breaker/abort");
@@ -666,7 +666,7 @@ class FlowTests extends TestBase {
         final long timeout = 8000;
         // Create condition for backoff by forcing it to throw exception over the backoff_trigger (threshold of 3)
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setUrl("/api/resilience");
+        request.setTargetHost(host).setMethod("GET").setUrl("/api/resilience");
         request.setQueryParameter("exception", 400);
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope first = po.request(req, timeout).get();
@@ -683,7 +683,7 @@ class FlowTests extends TestBase {
         // Let the backoff period expires
         log.info("Making request during backoff period will throw exception 503");
         AsyncHttpRequest requestDuringBackoff = new AsyncHttpRequest();
-        requestDuringBackoff.setTargetHost(HOST).setMethod("GET").setUrl("/api/resilience");
+        requestDuringBackoff.setTargetHost(host).setMethod("GET").setUrl("/api/resilience");
         requestDuringBackoff.setQueryParameter("exception", 400);
         EventEnvelope requestBo = new EventEnvelope().setTo(HTTP_CLIENT).setBody(requestDuringBackoff);
         EventEnvelope resultBo = po.request(requestBo, timeout).get();
@@ -700,7 +700,7 @@ class FlowTests extends TestBase {
         // Test alternative path using 'text(401, 403-404) -> reroute'
         // Let exception simulator to throw HTTP-401
         AsyncHttpRequest request1 = new AsyncHttpRequest();
-        request1.setTargetHost(HOST).setMethod("GET").setUrl("/api/resilience");
+        request1.setTargetHost(host).setMethod("GET").setUrl("/api/resilience");
         request1.setQueryParameter("exception", 401);
         EventEnvelope req1 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request1);
         EventEnvelope result1 = po.request(req1, timeout).get();
@@ -710,7 +710,7 @@ class FlowTests extends TestBase {
         assertEquals(Map.of("path", "alternative"), output1);
         // Try again with HTTP-403
         AsyncHttpRequest request2 = new AsyncHttpRequest();
-        request2.setTargetHost(HOST).setMethod("GET").setUrl("/api/resilience");
+        request2.setTargetHost(host).setMethod("GET").setUrl("/api/resilience");
         request2.setQueryParameter("exception", 403);
         EventEnvelope req2 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request2);
         EventEnvelope result2 = po.request(req2, timeout).get();
@@ -728,7 +728,7 @@ class FlowTests extends TestBase {
         final String traceId = "1001";
         String placeholder = "12345";
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/greetings/"+placeholder);
         PostOffice po = new PostOffice("unit.test", traceId, "TEST /greeting");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -763,7 +763,7 @@ class FlowTests extends TestBase {
         final long timeout = 8000;
         final String correlationId = "client-corr-" + Utility.getInstance().getUuid();
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         // upstream supplies its own X-Correlation-Id; it must thread through to model.cid
         request.setHeader("X-Correlation-Id", correlationId);
         // a hostile/accidental attempt to override the read-only reserved header: the greetings flow relays
@@ -869,7 +869,7 @@ class FlowTests extends TestBase {
         final long timeout = 8000;
         String placeholder = "test";
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/parent-greeting/"+placeholder);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -926,7 +926,7 @@ class FlowTests extends TestBase {
         final long timeout = 8000;
         String placeholder = "test";
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/missing-flow/"+placeholder);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -949,7 +949,7 @@ class FlowTests extends TestBase {
         final long timeout = 8000;
         String placeholder = "test";
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/greetings/"+placeholder).setQueryParameter("ex", "403");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -967,7 +967,7 @@ class FlowTests extends TestBase {
         final long timeout = 8000;
         String placeholder = "test";
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/greetings/"+placeholder).setQueryParameter("ex", "409");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -986,7 +986,7 @@ class FlowTests extends TestBase {
         final long timeout = 8000;
         String placeholder = "test";
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/greetings/"+placeholder).setQueryParameter("ex", "custom");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -1007,7 +1007,7 @@ class FlowTests extends TestBase {
         final long timeout = 8000;
         String placeholder = "test";
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/timeout/"+placeholder).setQueryParameter("ex", "timeout");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -1026,7 +1026,7 @@ class FlowTests extends TestBase {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/decision");
         // setting decision to false will trigger decision.case.two
         request.setQueryParameter("decision", "false");
@@ -1057,7 +1057,7 @@ class FlowTests extends TestBase {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/noop/decision");
         // setting decision to false will trigger decision.case.two
         request.setQueryParameter("decision", "something-else");
@@ -1089,7 +1089,7 @@ class FlowTests extends TestBase {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/numeric-decision");
         // setting decision to 3 will trigger decision.case.three
         request.setQueryParameter("decision", 3);
@@ -1120,7 +1120,7 @@ class FlowTests extends TestBase {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/numeric-decision");
         // setting decision to larger than the number of next tasks will result in invalid decision
         request.setQueryParameter("decision", 100);
@@ -1145,7 +1145,7 @@ class FlowTests extends TestBase {
         String placeholder = "test";
         int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/sequential/"+placeholder).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -1174,7 +1174,7 @@ class FlowTests extends TestBase {
         String placeholder = "test";
         int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/response/"+placeholder).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -1198,7 +1198,7 @@ class FlowTests extends TestBase {
         String placeholder = "test";
         int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/delayed-response/"+placeholder).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -1315,7 +1315,7 @@ class FlowTests extends TestBase {
         String placeholder = "test";
         int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl(apiPath+placeholder).setQueryParameter("seq", seq);
         if (exception) {
             request.setQueryParameter("exception", UNAUTHORIZED);
@@ -1351,7 +1351,7 @@ class FlowTests extends TestBase {
         String placeholder = "test";
         int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/pipeline/"+placeholder).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -1393,7 +1393,7 @@ class FlowTests extends TestBase {
         String placeholder = "test";
         int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/for-loop/"+placeholder).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -1459,7 +1459,7 @@ class FlowTests extends TestBase {
         String placeholder = "test";
         int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/for-loop-single/"+placeholder).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -1520,7 +1520,7 @@ class FlowTests extends TestBase {
         String placeholder = "test";
         int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/for-loop-break/"+placeholder).setQueryParameter("seq", seq).setQueryParameter(type, 2);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -1544,7 +1544,7 @@ class FlowTests extends TestBase {
         String placeholder = "test";
         int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/for-loop-break-single/"+placeholder).setQueryParameter("seq", seq).setQueryParameter("none", 2);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -1587,7 +1587,7 @@ class FlowTests extends TestBase {
         String placeholder = "test";
         int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl(uri+placeholder).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -1611,7 +1611,7 @@ class FlowTests extends TestBase {
         String placeholder = "test";
         int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/pipeline-exception/"+placeholder).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -1629,7 +1629,7 @@ class FlowTests extends TestBase {
     void parallelTest() throws InterruptedException, ExecutionException {
         final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/parallel");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -1724,7 +1724,7 @@ class FlowTests extends TestBase {
     void shouldHandleArithmeticPluggableFunction() throws InterruptedException, ExecutionException {
         final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST)
+        request.setTargetHost(host)
                 .setMethod("GET")
                 .setHeader("accept", "application/json")
                 .setUrl("/api/pluggableFunctions/arithmetic");
@@ -1748,7 +1748,7 @@ class FlowTests extends TestBase {
     void shouldHandleConversionTypesPluggableFunction() throws InterruptedException, ExecutionException {
         final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST)
+        request.setTargetHost(host)
                 .setMethod("GET")
                 .setHeader("accept", "application/json")
                 .setUrl("/api/pluggableFunctions/types");
@@ -1831,7 +1831,7 @@ class FlowTests extends TestBase {
     @Test
     void inputConversionTest() throws ExecutionException, InterruptedException {
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("POST")
+        request.setTargetHost(host).setMethod("POST")
                 .setHeader("accept", "application/json")
                 .setHeader("content-type", "application/json")
                 .setBody(Map.of())
@@ -1875,7 +1875,7 @@ class FlowTests extends TestBase {
         map.put("number", null);
         map.put("hello", "world");
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("POST")
+        request.setTargetHost(host).setMethod("POST")
                 .setHeader("accept", "application/json")
                 .setHeader("content-type", "application/json")
                 .setBody(map)

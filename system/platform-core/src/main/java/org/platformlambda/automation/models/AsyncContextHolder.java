@@ -20,6 +20,7 @@ package org.platformlambda.automation.models;
 
 import io.vertx.core.http.HttpServerRequest;
 
+@SuppressWarnings("java:S1104")
 public class AsyncContextHolder {
 
     public final HttpServerRequest request;

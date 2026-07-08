@@ -25,6 +25,10 @@ import org.platformlambda.core.system.PostOffice;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+/**
+ * Intentional singleton
+ */
+@SuppressWarnings("java:S6548")
 public class FlowExecutor {
 
     private static final String FLOW_ID = "flow_id";

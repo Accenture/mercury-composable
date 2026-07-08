@@ -1,10 +1,12 @@
 package com.accenture.minigraph.math;
 
+import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 public final class EvalContext {
+    private static final SecureRandom RANDOM = new SecureRandom();
     private final Map<String, Object> root = new HashMap<>();
 
     public static EvalContext withDefaults() {
@@ -35,7 +37,7 @@ public final class EvalContext {
         ctx.define("min",  EvalContext::min);
         ctx.define("max",  EvalContext::max);
         ctx.define("pow",  a -> Math.pow(req2(a, "pow"), a[1]));
-        ctx.define("random", a -> { reqN(a, 0, "random"); return Math.random(); });
+        ctx.define("random", a -> { reqN(a, 0, "random"); return RANDOM.nextDouble(); });
 
         return ctx;
     }

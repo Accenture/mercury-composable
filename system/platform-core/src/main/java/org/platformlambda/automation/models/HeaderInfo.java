@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings("java:S1104")
 public class HeaderInfo {
 
     public Map<String, String> additionalHeaders = new HashMap<>();

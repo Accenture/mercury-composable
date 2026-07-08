@@ -27,7 +27,7 @@ public class PendingConnection {
     public final String origin;
     public final String session;
     public final long created = System.currentTimeMillis();
-    public PendingType type;
+    private PendingType type;
 
     public PendingConnection(String origin, String session) {
         this.origin = origin;
@@ -38,5 +38,9 @@ public class PendingConnection {
     public PendingConnection setType(PendingType type) {
         this.type = type;
         return this;
+    }
+
+    public PendingType getType() {
+        return type;
     }
 }

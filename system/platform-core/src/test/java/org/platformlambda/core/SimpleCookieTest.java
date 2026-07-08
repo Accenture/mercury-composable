@@ -56,16 +56,16 @@ class SimpleCookieTest {
         // "Set-Cookie" is the only header that supports multiple values
         event.setHeader(SET_COOKIE, createCookie("key1", "value1"));
         event.setHeader(SET_COOKIE, createCookie("key2", "value2"));
-        String HELLO = "hello";
-        String WORLD = "world";
-        event.setHeader(HELLO, WORLD);
+        String hello = "hello";
+        String world = "world";
+        event.setHeader(hello, world);
         String cookies = event.getHeader(SET_COOKIE);
         assertTrue(cookies.contains("|"));
         List<String> cookieList = Utility.getInstance().split(cookies, "|");
         assertEquals(2, cookieList.size());
         assertTrue(cookieList.get(0).startsWith("key1=value1;"));
         assertTrue(cookieList.get(1).startsWith("key2=value2;"));
-        assertEquals(WORLD, event.getHeader(HELLO));
+        assertEquals(world, event.getHeader(hello));
     }
 
 }

@@ -137,9 +137,10 @@ class KafkaPubSubTest {
     void queueApiIsNotImplemented() {
         PubSub ps = PubSub.getInstance(SYSTEM);
         LambdaFunction noOp = (headers, input, instance) -> true;
+        Map<String, String> headers = new HashMap<>();
         assertThrows(IllegalArgumentException.class, () -> ps.createQueue("demo.queue"));
         assertThrows(IllegalArgumentException.class, () -> ps.deleteQueue("demo.queue"));
-        assertThrows(IllegalArgumentException.class, () -> ps.send("demo.queue", new HashMap<>(), "x"));
+        assertThrows(IllegalArgumentException.class, () -> ps.send("demo.queue", headers, "x"));
         assertThrows(IllegalArgumentException.class, () -> ps.listen("demo.queue", noOp));
     }
 

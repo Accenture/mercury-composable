@@ -39,6 +39,10 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Intentional singleton
+ */
+@SuppressWarnings("java:S6548")
 public class Platform {
     private static final Logger log = LoggerFactory.getLogger(Platform.class);
     private static final CryptoApi crypto = new CryptoApi();

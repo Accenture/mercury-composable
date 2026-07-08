@@ -34,7 +34,10 @@ import java.util.Set;
  * When a colon type qualifier is not recognized or is malformed (e.g. unbalanced brackets), the
  * entry is returned unchanged so that the legacy type matching resolution in DataMappingHelper
  * continues to handle it.
+ * <p>
+ * Intentional singleton
  */
+@SuppressWarnings("java:S6548")
 public class SimpleTypeMatchingConverter {
     private static final SimpleTypeMatchingConverter INSTANCE = new SimpleTypeMatchingConverter();
     private static final Utility util = Utility.getInstance();

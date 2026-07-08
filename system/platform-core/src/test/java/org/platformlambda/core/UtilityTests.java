@@ -40,7 +40,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UtilityTests {
-    private static final Logger log = LoggerFactory.getLogger(Utility.class);
+    private static final Logger log = LoggerFactory.getLogger(UtilityTests.class);
 
     private static final String HELLO_WORLD = "hello.world";
     private static final long ONE_SECOND = 1000;
@@ -62,6 +62,25 @@ class UtilityTests {
         log.info("Reconfigured to COMPACT logging");
         Configurator.reconfigure(URI.create("classpath:log4j2.xml"));
         log.info("Restore to TEXT logging");
+    }
+
+    @Test
+    void sleepBlocksForRoughlyTheRequestedTime() {
+        Utility util = Utility.getInstance();
+        long start = System.currentTimeMillis();
+        util.sleep(60);
+        long elapsed = System.currentTimeMillis() - start;
+        assertTrue(elapsed >= 40, "sleep should block for roughly the requested duration, was " + elapsed);
+    }
+
+    @Test
+    void sleepReturnsImmediatelyForNonPositiveDuration() {
+        Utility util = Utility.getInstance();
+        long start = System.currentTimeMillis();
+        util.sleep(0);
+        util.sleep(-10);
+        long elapsed = System.currentTimeMillis() - start;
+        assertTrue(elapsed < 40, "a zero or negative sleep should return immediately, was " + elapsed);
     }
 
     @Test
@@ -442,12 +461,12 @@ class UtilityTests {
         assertEquals(simpleValue, m2flat.get(nestedPath));
         assertEquals(m2flat.get(nestedPath), m2.getElement(nestedPath));
         // alternate map and list
-        String MIX_PATH = "hello.world[0].headers[0]";
+        String mixPath = "hello.world[0].headers[0]";
         MultiLevelMap m3 = new MultiLevelMap();
-        m3.setElement(MIX_PATH, simpleValue);
+        m3.setElement(mixPath, simpleValue);
         Map<String, Object> m3flat = util.getFlatMap(m3.getMap());
-        assertEquals(simpleValue, m3flat.get(MIX_PATH));
-        assertEquals(m3flat.get(MIX_PATH), m3.getElement(MIX_PATH));
+        assertEquals(simpleValue, m3flat.get(mixPath));
+        assertEquals(m3flat.get(mixPath), m3.getElement(mixPath));
     }
 
     @Test

@@ -27,6 +27,10 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * Intentional singleton
+ */
+@SuppressWarnings("java:S6548")
 public class CustomContentTypeResolver {
     private static final Logger log = LoggerFactory.getLogger(CustomContentTypeResolver.class);
 

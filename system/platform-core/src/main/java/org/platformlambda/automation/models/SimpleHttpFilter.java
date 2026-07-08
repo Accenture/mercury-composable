@@ -20,6 +20,7 @@ package org.platformlambda.automation.models;
 
 import java.util.List;
 
+@SuppressWarnings("java:S1104")
 public class SimpleHttpFilter {
 
     public List<String> pathList;

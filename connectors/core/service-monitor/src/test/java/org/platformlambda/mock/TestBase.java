@@ -37,7 +37,7 @@ public class TestBase {
     protected static int port;
 
     @BeforeAll
-    public static void setup() {
+    static void setup() {
         Utility util = Utility.getInstance();
         AppConfigReader config = AppConfigReader.getInstance();
         port = util.str2int(config.getProperty("server.port", "8080"));

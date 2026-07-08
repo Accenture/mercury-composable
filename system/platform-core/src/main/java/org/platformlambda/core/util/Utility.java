@@ -41,6 +41,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Intentional singleton
+ */
+@SuppressWarnings("java:S6548")
 public class Utility {
     private static final Logger log = LoggerFactory.getLogger(Utility.class);
     public static final String ISO_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";

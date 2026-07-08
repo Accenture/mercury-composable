@@ -29,7 +29,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * This is reserved for system use.
  * DO NOT use this directly in your application code.
+ * <p>
+ * Intentional singleton
  */
+@SuppressWarnings("java:S6548")
 public class SimpleClassScanner {
     private static final String WEB_COMPONENT_SCAN = "web.component.scan";
     private static final String PLATFORM_LAMBDA = "org.platformlambda.";

@@ -32,6 +32,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@SuppressWarnings("java:S6548")
 public class PresenceConnector implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(PresenceConnector.class);
     private static final String APP_GROUP = ServiceRegistry.APP_GROUP;

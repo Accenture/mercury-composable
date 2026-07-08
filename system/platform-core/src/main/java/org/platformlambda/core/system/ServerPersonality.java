@@ -21,6 +21,10 @@ package org.platformlambda.core.system;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Intentional singleton
+ */
+@SuppressWarnings("java:S6548")
 public class ServerPersonality {
     private static final Logger log = LoggerFactory.getLogger(ServerPersonality.class);
     private static final ServerPersonality INSTANCE = new ServerPersonality();
