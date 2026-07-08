@@ -40,6 +40,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * Intentional singleton
+ */
+@SuppressWarnings("java:S6548")
 public class EventEmitter {
     private static final Logger log = LoggerFactory.getLogger(EventEmitter.class);
     public static final int ONE_MILLISECOND = 1000000;

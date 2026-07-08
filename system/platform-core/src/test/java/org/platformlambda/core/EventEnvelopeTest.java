@@ -18,7 +18,6 @@ import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.PoJo;
-import org.platformlambda.core.serializers.PayloadMapper;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.AppConfigReader;
@@ -357,7 +356,7 @@ class EventEnvelopeTest {
         EventEnvelope source = new EventEnvelope().setBody(map);
         EventEnvelope target = new EventEnvelope(source.toBytes());
         assertInstanceOf(Map.class, target.getBody());
-        if (target.getBody() instanceof Map m) {
+        if (target.getBody() instanceof Map<?, ?> m) {
             assertInstanceOf(Float.class, m.get("float"));
             assertInstanceOf(Double.class, m.get("double"));
         }

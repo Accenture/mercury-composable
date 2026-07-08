@@ -23,6 +23,7 @@ import org.springframework.data.relational.core.mapping.Table;
 
 import java.util.Date;
 
+@SuppressWarnings("java:S1104")
 @Table(name = "health_check")
 public class HealthCheck {
 

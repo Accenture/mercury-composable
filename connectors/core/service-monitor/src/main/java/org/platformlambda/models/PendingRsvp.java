@@ -22,7 +22,7 @@ public class PendingRsvp {
 
     public final String origin;
     public final long created;
-    public long lastSeen = System.currentTimeMillis();
+    private long lastSeen = System.currentTimeMillis();
 
     public PendingRsvp(String origin, long created) {
         this.origin = origin;
@@ -32,5 +32,9 @@ public class PendingRsvp {
     public PendingRsvp touch() {
         this.lastSeen = System.currentTimeMillis();
         return this;
+    }
+
+    public long getLastSeen() {
+        return lastSeen;
     }
 }

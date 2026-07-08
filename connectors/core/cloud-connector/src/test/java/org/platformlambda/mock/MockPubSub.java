@@ -113,13 +113,14 @@ public class MockPubSub implements PubSubProvider {
         Platform platform = Platform.getInstance();
         platform.registerPrivate(route, listener, 1);
         subscriptions.put(topic, listener);
+        log.info("Subscribing to topic '{}'", topic);
         if (parameters.length == 3 && parameters[2].equals("-100")) {
             final ServiceLifeCycle initialLoad = new ServiceLifeCycle(topic, partition, UUID.randomUUID().toString());
             initialLoad.start();
             LambdaFunction f = (headers, input, instance) -> {
                 String topicPartition = partition < 0? topic : topic + "." + partition;
-                String INIT_HANDLER =  "init." + topicPartition;
-                po.send(INIT_HANDLER, "done");
+                String initHandler =  "init." + topicPartition;
+                po.send(initHandler, "done");
                 return true;
             };
             platform.registerPrivate(route+".mock", f, 1);
@@ -142,6 +143,9 @@ public class MockPubSub implements PubSubProvider {
     public void unsubscribe(String topic) {
         if (topic.equals("exception")) {
             throw new IllegalArgumentException("demo");
+        }
+        if (subscriptions.containsKey(topic)) {
+            log.info("Unsubscribe from topic '{}'", topic);
         }
         subscriptions.remove(topic);
     }

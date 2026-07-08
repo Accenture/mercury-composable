@@ -31,6 +31,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 
+/**
+ * Intentional singleton
+ */
+@SuppressWarnings("java:S6548")
 public class RoutingEntry {
     private static final Logger log = LoggerFactory.getLogger(RoutingEntry.class);
     private static final String SERVICE_URL = "service URL ";

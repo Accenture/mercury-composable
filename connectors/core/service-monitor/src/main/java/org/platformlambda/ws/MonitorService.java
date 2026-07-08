@@ -138,10 +138,10 @@ public class MonitorService implements LambdaFunction {
         for (String route: pendingList) {
             WsMetadata md = connections.get(route);
             PendingConnection conn = pendingConnections.get(route);
-            if (PendingConnection.PendingType.CONNECTED == conn.type && now - conn.created > STALLED_CONNECTION) {
+            if (PendingConnection.PendingType.CONNECTED == conn.getType() && now - conn.created > STALLED_CONNECTION) {
                 closeStalledConnection(md, "handshake not completed");
             }
-            if (PendingConnection.PendingType.HANDSHAKE == conn.type) {
+            if (PendingConnection.PendingType.HANDSHAKE == conn.getType()) {
                 Map<String, Object> metadata = myConnections.getOrDefault(conn.origin, new HashMap<>());
                 if (metadata.containsKey(TOPIC)) {
                     pendingConnections.remove(route);
@@ -157,9 +157,9 @@ public class MonitorService implements LambdaFunction {
 
     private static void closeStalledConnection(WsMetadata md, String reason) {
         if (md != null) {
-            log.info("Closing connection {} because {}", md.session, reason);
-            pendingConnections.remove(md.session);
-            closeConnection(md.txPath, TRY_AGAIN_LATER, reason);
+            log.info("Closing connection {} because {}", md.session(), reason);
+            pendingConnections.remove(md.session());
+            closeConnection(md.txPath(), TRY_AGAIN_LATER, reason);
         }
     }
 
@@ -213,25 +213,24 @@ public class MonitorService implements LambdaFunction {
         if (md == null) {
             return;
         }
-        md.touch();
         try {
             processCommand(route, md, new EventEnvelope(payload));
         } catch (Exception e) {
-            closeConnection(md.txPath, TRY_AGAIN_LATER, INVALID_PROTOCOL);
+            closeConnection(md.txPath(), TRY_AGAIN_LATER, INVALID_PROTOCOL);
         }
     }
 
     private void processCommand(String route, WsMetadata md, EventEnvelope command) {
         boolean register = INFO.equals(command.getTo());
         boolean alive = ALIVE.equals(command.getTo());
-        if (!myConnections.containsKey(md.origin) || (!register && !alive)) {
+        if (!myConnections.containsKey(md.origin()) || (!register && !alive)) {
             return;
         }
-        Map<String, Object> info = myConnections.get(md.origin);
+        Map<String, Object> info = myConnections.get(md.origin());
         updateInfo(info, command.getHeaders());
         // broadcast to all presence monitors
         EventEmitter.getInstance().send(MainApp.PRESENCE_HANDLER + MONITOR_PARTITION, info,
-                new Kv(TYPE, PUT), new Kv(ORIGIN, md.origin));
+                new Kv(TYPE, PUT), new Kv(ORIGIN, md.origin()));
         if (register) {
             onMemberRegister(route, md, info);
         } else {
@@ -244,18 +243,18 @@ public class MonitorService implements LambdaFunction {
         PendingConnection pc = pendingConnections.computeIfPresent(route,
                 (k, v) -> v.setType(PendingConnection.PendingType.HANDSHAKE));
         if (pc != null) {
-            log.info("Member registered {} {}", md.origin, info.get(NAME));
+            log.info("Member registered {} {}", md.origin(), info.get(NAME));
             EventEmitter.getInstance().send(MainApp.TOPIC_CONTROLLER, new Kv(TYPE, GET_TOPIC),
-                    new Kv(TX_PATH, md.txPath), new Kv(ORIGIN, md.origin));
+                    new Kv(TX_PATH, md.txPath()), new Kv(ORIGIN, md.origin()));
         }
     }
 
     private void onMemberAlive(WsMetadata md, Map<String, Object> info) {
         // this guarantees that a topic is used exclusively by a single app instance
-        if (isTopicAssigned(md.origin, info)) {
-            closeConnection(md.txPath, TRY_AGAIN_LATER, TOPIC_ASSIGNED);
+        if (isTopicAssigned(md.origin(), info)) {
+            closeConnection(md.txPath(), TRY_AGAIN_LATER, TOPIC_ASSIGNED);
         } else {
-            log.debug("Member {} is alive {}", md.origin, info.get(SEQ));
+            log.debug("Member {} is alive {}", md.origin(), info.get(SEQ));
         }
     }
 
@@ -266,19 +265,19 @@ public class MonitorService implements LambdaFunction {
         WsMetadata md = connections.get(route);
         connections.remove(route);
         if (md != null) {
-            myConnections.remove(md.origin);
+            myConnections.remove(md.origin());
             pendingConnections.remove(route);
-            log.info("Session {} closed, {}", route, md.origin);
-            if (connectionInfo.exists(md.origin)) {
-                Object o = connectionInfo.get(md.origin);
+            log.info("Session {} closed, {}", route, md.origin());
+            if (connectionInfo.exists(md.origin())) {
+                Object o = connectionInfo.get(md.origin());
                 if (o instanceof Map) {
                     Map<String, Object> info = (Map<String, Object>) o;
                     if (route.equals(info.get(ID)) && info.get(GROUP) instanceof Integer) {
                         // broadcast to presence monitors
                         po.send(MainApp.PRESENCE_HANDLER + MONITOR_PARTITION,
-                                new Kv(TYPE, DELETE), new Kv(ORIGIN, md.origin));
+                                new Kv(TYPE, DELETE), new Kv(ORIGIN, md.origin()));
                         // tell all nodes to drop this node
-                        leaveGroup(md.origin, (int) info.get(GROUP));
+                        leaveGroup(md.origin(), (int) info.get(GROUP));
                     }
                 }
             }

@@ -28,6 +28,10 @@ import java.math.BigInteger;
 import java.time.*;
 import java.util.*;
 
+/**
+ * Intentional singleton
+ */
+@SuppressWarnings("java:S6548")
 public class SimpleMapper {
     private static final String SNAKE_CASE_SERIALIZATION = "snake.case.serialization";
     private final SimpleObjectMapper mapper;
@@ -166,7 +170,7 @@ public class SimpleMapper {
         return camelMapper;
     }
 
-    /// Custom serializers ///
+    // Custom serializers //
 
     private static class UtcSerializer implements JsonSerializer<Date> {
 

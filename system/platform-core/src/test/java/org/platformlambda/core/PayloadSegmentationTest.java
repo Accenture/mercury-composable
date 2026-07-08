@@ -45,9 +45,20 @@ class PayloadSegmentationTest extends TestBase {
          * (for this test, we generate 500,000 bytes)
          */
         StringBuilder sb = new StringBuilder();
-        sb.append(TEST_STRING.repeat(CYCLE));
+        sb.repeat(TEST_STRING, CYCLE);
         BlockingQueue<Integer> bench = new ArrayBlockingQueue<>(1);
         MultipartPayload multipart = MultipartPayload.getInstance();
+        String receiver = prepareReceiver(multipart, bench, sb);
+        EventEnvelope event = new EventEnvelope();
+        event.setTo(receiver).setBody(Utility.getInstance().getUTF(sb.toString()));
+        multipart.outgoing(receiver, event);
+        // wait for receiver to acknowledge message
+        Integer size = bench.poll(5, TimeUnit.SECONDS);
+        assertNotNull(size);
+        assertEquals((int) size, sb.length());
+    }
+
+    private static String prepareReceiver(MultipartPayload multipart, BlockingQueue<Integer> bench, StringBuilder sb) {
         String receiver = "large.payload.receiver";
         Platform platform = Platform.getInstance();
         // create function to receive large payload
@@ -71,12 +82,6 @@ class PayloadSegmentationTest extends TestBase {
             return true;
         };
         platform.registerPrivate(receiver, f, 1);
-        EventEnvelope event = new EventEnvelope();
-        event.setTo(receiver).setBody(Utility.getInstance().getUTF(sb.toString()));
-        multipart.outgoing(receiver, event);
-        // wait for receiver to acknowledge message
-        Integer size = bench.poll(5, TimeUnit.SECONDS);
-        assertNotNull(size);
-        assertEquals((int) size, sb.length());
+        return receiver;
     }
 }

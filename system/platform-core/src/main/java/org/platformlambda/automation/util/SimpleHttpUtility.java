@@ -34,6 +34,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Intentional singleton
+ */
+@SuppressWarnings("java:S6548")
 public class SimpleHttpUtility {
     private static final SimpleXmlWriter xmlWriter = new SimpleXmlWriter();
     private static final String SET_COOKIE = "set-cookie";

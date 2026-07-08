@@ -288,7 +288,7 @@ public class TopicController implements LambdaFunction {
             // remove expired bids
             List<String> expired = new ArrayList<>();
             for (PendingRsvp bidder: bids.values()) {
-                if (now - bidder.lastSeen > RSVP_TIMEOUT) {
+                if (now - bidder.getLastSeen() > RSVP_TIMEOUT) {
                     expired.add(bidder.origin);
                 }
             }
@@ -300,7 +300,7 @@ public class TopicController implements LambdaFunction {
                 if (bids.size() == 1) {
                     PendingRsvp rsvp = bids.get(me);
                     // provide a grace period to avoid racing condition
-                    return now - rsvp.lastSeen > RSVP_GRACE_PERIOD;
+                    return now - rsvp.getLastSeen() > RSVP_GRACE_PERIOD;
                 } else {
                     List<String> rsvpBidders = new ArrayList<>();
                     for (PendingRsvp r: bids.values()) {

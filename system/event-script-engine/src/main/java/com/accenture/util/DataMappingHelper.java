@@ -32,6 +32,10 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.*;
 
+/**
+ * Intentional singleton
+ */
+@SuppressWarnings("java:S6548")
 public class DataMappingHelper {
     private static final Logger log = LoggerFactory.getLogger(DataMappingHelper.class);
     private static final Utility util = Utility.getInstance();

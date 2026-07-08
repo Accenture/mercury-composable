@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings("java:S1104")
 public class HttpRequestEvent {
 
     private static final String REQUEST_ID = "1";

@@ -32,6 +32,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * Intentional singleton
+ */
+@SuppressWarnings("java:S6548")
 public class LocalPubSub {
     private static final Logger log = LoggerFactory.getLogger(LocalPubSub.class);
 
