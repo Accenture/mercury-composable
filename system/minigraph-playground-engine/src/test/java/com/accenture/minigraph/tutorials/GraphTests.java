@@ -279,18 +279,30 @@ class GraphTests {
     @SuppressWarnings("unchecked")
     @Test
     void tutorial13() throws TimeoutException {
-        var result = runTutorial(13, Map.of("person_id", 100, "exception", true));
+        var result = runTutorial(13, Map.of("name", "world", "amount", 21));
         assertInstanceOf(Map.class, result);
         var mm = new MultiLevelMap((Map<String, Object>) result);
-        assertEquals("Peter", mm.getElement("name"));
-        assertEquals("100 World Blvd", mm.getElement("address"));
+        assertEquals("Hello, world", mm.getElement("greeting"));
+        assertEquals(42.0, mm.getElement("doubled"));
+        assertEquals("minigraph", mm.getElement("app"));
         log.info("Tutorial 13 works");
     }
 
     @SuppressWarnings("unchecked")
     @Test
+    void tutorial113() throws TimeoutException {
+        var result = runTutorial(113, Map.of("person_id", 100, "exception", true));
+        assertInstanceOf(Map.class, result);
+        var mm = new MultiLevelMap((Map<String, Object>) result);
+        assertEquals("Peter", mm.getElement("name"));
+        assertEquals("100 World Blvd", mm.getElement("address"));
+        log.info("Tutorial 113 works");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void highFrequencyCase() throws TimeoutException {
-        var result = runTutorial(14, Map.of("person_id", 100, "exception", true));
+        var result = runTutorial(114, Map.of("person_id", 100, "exception", true));
         assertInstanceOf(Map.class, result);
         var mm = new MultiLevelMap((Map<String, Object>) result);
         assertEquals(400, mm.getElement("status"));
