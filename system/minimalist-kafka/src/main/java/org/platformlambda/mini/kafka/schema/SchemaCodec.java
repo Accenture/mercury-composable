@@ -115,10 +115,6 @@ public class SchemaCodec {
     private final String registryUrl;
     private final Map<String, Object> extraSerdeConfig;
 
-    SchemaCodec(SchemaRegistryClient client, String registryUrl) {
-        this(client, registryUrl, Map.of());
-    }
-
     SchemaCodec(SchemaRegistryClient client, String registryUrl, Map<String, Object> extraSerdeConfig) {
         this.client = client;
         this.registryUrl = registryUrl;

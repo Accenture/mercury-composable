@@ -54,9 +54,7 @@ class SchemaRegistryOAuthTest {
     private String savedAllowList;
 
     /** Minimal, fully-controlled {@link ConfigBase} backed by a flat key-value map. */
-    private static final class MapConfig implements ConfigBase {
-        private final Map<String, Object> map;
-        MapConfig(Map<String, Object> map) { this.map = map; }
+    private record MapConfig(Map<String, Object> map) implements ConfigBase {
         @Override public Object get(String key) { return map.get(key); }
         @Override public Object get(String key, Object defaultValue, String... loop) { return map.getOrDefault(key, defaultValue); }
         @Override public String getProperty(String key) { Object v = map.get(key); return v == null ? null : String.valueOf(v); }
@@ -105,6 +103,7 @@ class SchemaRegistryOAuthTest {
     }
 
     @Test
+    @SuppressWarnings("resource") // the registry client is owned by the shared SchemaCodec, not the test
     void oauthClientCredentialsEndToEnd() throws Exception {
         try (EmbeddedSchemaRegistry registry = new EmbeddedSchemaRegistry(CLIENT_ID, CLIENT_SECRET)) {
             Map<String, Object> appConfig = new HashMap<>();
@@ -130,6 +129,7 @@ class SchemaRegistryOAuthTest {
     }
 
     @Test
+    @SuppressWarnings("resource") // the registry client is owned by the shared SchemaCodec, not the test
     void unauthenticatedClientIsRejectedByOAuthRegistry() throws Exception {
         try (EmbeddedSchemaRegistry registry = new EmbeddedSchemaRegistry(CLIENT_ID, CLIENT_SECRET)) {
             // default (empty) template -> no bearer auth on the client

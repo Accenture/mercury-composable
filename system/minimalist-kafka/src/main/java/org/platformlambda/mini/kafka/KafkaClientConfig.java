@@ -45,7 +45,7 @@ import java.util.Properties;
  * whatever the template says): the {@code String}/{@code byte[]} (de)serializers (the wire contract).
  * The per-topic {@code group.id}, plus the per-binding delivery-mode overlay ({@code enable.auto.commit}
  * and {@code max.poll.records}, driven by each binding's {@code auto-commit}/{@code max-poll-records}), are
- * applied by {@link KafkaFlowAdapter#newConsumer}.</p>
+ * applied by {@code KafkaFlowAdapter.newConsumer}.</p>
  *
  * <p>An OAuth 2.0 token endpoint URL found in any template ({@code sasl.oauthbearer.token.endpoint.url})
  * is auto-registered on the JVM allow-list - see {@link OAuthUrlAllowList}.</p>
@@ -74,7 +74,7 @@ public final class KafkaClientConfig {
 
     /**
      * Base consumer config from the template, with only the wire-contract deserializers pinned. The caller
-     * ({@link KafkaFlowAdapter#newConsumer}) adds a per-topic {@code group.id} and the binding's
+     * ({@code KafkaFlowAdapter.newConsumer}) adds a per-topic {@code group.id} and the binding's
      * delivery-mode overlay ({@code enable.auto.commit} / {@code max.poll.records}).
      */
     public static Properties consumerProperties(ConfigBase appConfig) {

@@ -64,6 +64,7 @@ public final class OAuthUrlAllowList {
         if (url == null || url.isBlank()) {
             return;
         }
+        String trimmed = url.trim();
         LOCK.lock();
         try {
             Set<String> entries = new LinkedHashSet<>();
@@ -71,9 +72,9 @@ public final class OAuthUrlAllowList {
             if (existing != null && !existing.isBlank()) {
                 entries.addAll(Utility.getInstance().split(existing, ", "));
             }
-            if (entries.add(url.trim())) {
+            if (entries.add(trimmed)) {
                 System.setProperty(ALLOWED_URLS_PROPERTY, String.join(",", entries));
-                log.info("OAuth token endpoint allow-listed: {}", url.trim());
+                log.info("OAuth token endpoint allow-listed: {}", trimmed);
             }
         } finally {
             LOCK.unlock();
