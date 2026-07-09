@@ -151,6 +151,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#schema">Schema Registry: typed payloads (opt-in)</a>
         <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#schema-auth">Registry authentication (OAuth 2.0 / basic)</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#schema-produce">Produce: subject-driven</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#csfle">CSFLE (Client-Side Field Level Encryption)</a>
@@ -437,6 +439,8 @@ widely (on-prem, cloud, SaaS, Confluent; SASL/PLAIN, SASL/SCRAM, OAuth2, mTLS):<
 <ul>
 <li><code>kafka-producer.properties</code> — used by the publisher and the dead-letter writer.</li>
 <li><code>kafka-consumer.properties</code> — base config for every adapter consumer.</li>
+<li><code>schema-registry.properties</code> — the Confluent Schema Registry client (see
+  <a href="#schema-auth">registry authentication</a>).</li>
 </ul>
 <p>Each is loaded by <code>ConfigReader</code> from a <strong>file-then-classpath fallback</strong> location (so CI/CD can drop a
 rendered file at <code>/tmp/config</code>), with <code>${ENV_VAR:default}</code> substitution. The library <strong>pins</strong> only the
@@ -470,6 +474,14 @@ parameters its contract depends on and lets the template own everything else:</p
 <p><code>bootstrap.servers</code> is template-only via <code>${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}</code>. The byte[] wire
 contract keeps the building blocks serializer-free; richer encodings layer on top via the
 <a href="#schema">Schema Registry integration</a> (JSON Schema / Avro), opt-in per binding.</p>
+<blockquote>
+<p><strong>OAuth token URLs are allow-listed automatically.</strong> The Kafka client refuses to fetch an OAuth 2.0
+token from a URL that is not on the JVM allow-list (the
+<code>org.apache.kafka.sasl.oauthbearer.allowed.urls</code> <strong>system property</strong>) — applications used to need a
+manual <code>System.setProperty</code> at startup. The library now registers every token endpoint it finds in the
+templates (<code>sasl.oauthbearer.token.endpoint.url</code>, <code>bearer.auth.issuer.endpoint.url</code>) on that allow-list
+before building a client, merging with — never clobbering — anything the operator set by hand.</p>
+</blockquote>
 <h2 id="reliability">Reliability: delivery mode, retry, and dead-letter</h2>
 <h3 id="delivery-mode">Delivery mode</h3>
 <p>By default (<code>auto-commit: false</code>, or omitted) the consumer commits offsets <strong>only after</strong> the flow finishes
@@ -557,6 +569,29 @@ the library keeps its raw <code>byte[]</code> behavior.</p>
 <pre><code class="language-properties">schema.registry.url=${SCHEMA_REGISTRY_URL:http://127.0.0.1:8081}
 schema.registry.cache.ttl=30m                          # TTL for the in-memory schema cache (by id)
 </code></pre>
+<h3 id="schema-auth">Registry authentication (OAuth 2.0 / basic)</h3>
+<p>The registry client's connection and security parameters live in the <strong><code>schema-registry.properties</code>
+template</strong> (same mechanics as the producer/consumer templates: <code>/tmp/config</code> file first, classpath
+fallback, <code>${ENV_VAR:default}</code> substitution, location overridable with the <code>schema.registry.properties</code>
+key). Everything in it is passed <strong>verbatim</strong> to the Confluent Schema Registry client, so any client
+parameter — including optional, installation-specific ones such as <code>bearer.auth.logical.cluster</code> and
+<code>bearer.auth.identity.pool.id</code> — works without a library change.</p>
+<p>OAuth 2.0 client-credentials (e.g. Azure AD / Entra ID):</p>
+<pre><code class="language-properties">bearer.auth.credentials.source=OAUTHBEARER
+bearer.auth.issuer.endpoint.url=${SCHEMA_REGISTRY_OAUTH_TOKEN_URL:}
+bearer.auth.client.id=${SCHEMA_REGISTRY_CLIENT_ID:}
+bearer.auth.client.secret=${SCHEMA_REGISTRY_CLIENT_SECRET:}
+bearer.auth.scope=${SCHEMA_REGISTRY_OAUTH_SCOPE:}
+</code></pre>
+<p>The Confluent client fetches the bearer token from the issuer endpoint with the client id/secret, sends
+it as <code>Authorization: Bearer</code> on every registry request, and <strong>caches it</strong>, refreshing shortly before
+expiry (<code>bearer.auth.cache.expiry.buffer.seconds</code>, default 300). The issuer URL is auto-registered on the
+<a href="#client-config">JVM allow-list</a>, so no manual <code>System.setProperty</code> is needed. Other credential sources
+come free with the pass-through: <code>SASL_OAUTHBEARER_INHERIT</code> (reuse the Kafka transport's SASL OAuth
+settings — one credential for broker and registry), <code>STATIC_TOKEN</code> (dev/test), and
+<code>basic.auth.credentials.source=USER_INFO</code> for basic authentication. Keep secrets in environment
+variables via the <code>${ENV_VAR}</code> substitution; the shipped template is fully commented out, so an
+unauthenticated registry (like the local mock) keeps working with zero configuration.</p>
 <h3 id="schema-produce">Produce: subject-driven</h3>
 <p><code>simple.kafka.notification</code> serializes the body into the wire format when you supply a <code>subject</code> header:</p>
 <table>
@@ -729,6 +764,11 @@ The essentials:</p>
 <td><code>schema.registry.url</code></td>
 <td>—</td>
 <td>Confluent Schema Registry URL; unset = <a href="#schema">schema features</a> off (raw <code>byte[]</code>).</td>
+</tr>
+<tr>
+<td><code>schema.registry.properties</code></td>
+<td><code>file:/tmp/config/schema-registry.properties,classpath:/schema-registry.properties</code></td>
+<td>Registry client template location(s) — auth/SSL parameters passed verbatim to the Confluent client (see <a href="#schema-auth">registry authentication</a>).</td>
 </tr>
 <tr>
 <td><code>schema.registry.cache.ttl</code></td>

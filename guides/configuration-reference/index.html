@@ -1088,6 +1088,12 @@ Kafka. See the <a href="../kafka-flow-adapter/">Kafka Flow Adapter guide</a>. Th
 <td>Confluent Schema Registry URL. Unset = schema features off (raw <code>byte[]</code>); set to enable the <a href="../kafka-flow-adapter/#schema">Schema Registry integration</a> (JSON Schema / Avro — Protobuf is <a href="../kafka-flow-adapter/#schema">not currently supported</a>).</td>
 </tr>
 <tr>
+<td><code>schema.registry.properties</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td><code>file:/tmp/config/schema-registry.properties, classpath:/schema-registry.properties</code></td>
+<td>Registry client template location(s); file path falls back to classpath. Entries pass verbatim to the Confluent client — <a href="../kafka-flow-adapter/#schema-auth">authentication</a> (<code>bearer.auth.*</code> OAuth 2.0, basic auth) and SSL. OAuth token endpoint URLs found in a template are auto-registered on the JVM <code>org.apache.kafka.sasl.oauthbearer.allowed.urls</code> allow-list.</td>
+</tr>
+<tr>
 <td><code>schema.registry.cache.ttl</code></td>
 <td>duration</td>
 <td><code>30m</code></td>
