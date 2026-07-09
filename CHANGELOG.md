@@ -8,6 +8,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.7.1, 7/9/2026
+
+Field-driven update for the minimalist-kafka module: OAuth 2.0 authentication for the Schema Registry
+protocol and automatic allow-listing of OAuth token endpoint URLs, closing the loose ends found during
+the 4.6.3 field deployment. Also resolves the final four SonarQube code smells from the field scan.
+No breaking changes.
+
+### Added
+
+1. **Schema Registry OAuth 2.0 (client credentials).** A new `schema-registry.properties` template
+   carries the Confluent Schema Registry client configuration, making the Kafka configuration set
+   consistent: `kafka-producer.properties` / `kafka-consumer.properties` / `schema-registry.properties`
+   (file-then-classpath fallback, `${ENV_VAR:default}` substitution), while `schema.registry.url` stays
+   in `application.properties` as the feature switch. Template entries pass verbatim to the Confluent
+   client, so bearer auth (`bearer.auth.credentials.source=OAUTHBEARER` with issuer endpoint, client id,
+   client secret and scope), optional installation-specific parameters (`bearer.auth.logical.cluster`,
+   `bearer.auth.identity.pool.id`), `SASL_OAUTHBEARER_INHERIT`, `STATIC_TOKEN`, basic auth and SSL
+   settings work without library changes. The bearer token is cached and refreshed before expiry.
+2. **OAuth token URL allow-list automation.** Token endpoint URLs found in any of the three templates
+   (`sasl.oauthbearer.token.endpoint.url`, `bearer.auth.issuer.endpoint.url`) are registered on the JVM
+   allow-list system property `org.apache.kafka.sasl.oauthbearer.allowed.urls` before client
+   construction - merged and deduplicated, never clobbering an operator-set value - removing the manual
+   `System.setProperty` workaround previously needed by field applications.
+
+### Changed
+
+1. **Final field-scan code smells resolved.** JUnit 5 lifecycle method visibility, `EtagFile` field
+   encapsulation, an intentional-singleton suppression, and IDE-flagged touch ups (`ReentrantLock`
+   instead of `synchronized` for virtual-thread friendliness, conditional log arguments, an unused
+   constructor, an unnecessary null check).
+
+---
 ## Version 4.7.0, 7/8/2026
 
 Feature release: the MiniGraph engine gains the `graph.task` skill, so a graph node can invoke any
