@@ -1,11 +1,11 @@
 ---
 title: Built-in skills reference
-summary: The seven graph.* skills that make graph nodes active — data mapping, math and
-  JavaScript evaluation, API fetching, sub-graph/flow extension, join, and island — with
-  syntax, worked examples, and gotchas.
+summary: The eight graph.* skills that make graph nodes active — data mapping, math and
+  JavaScript evaluation, API fetching, composable-function tasks, sub-graph/flow extension,
+  join, and island — with syntax, worked examples, and gotchas.
 layer: knowledge-graph
 audience: [developer, reference]
-keywords: [graph.data.mapper, graph.math, graph.js, graph.api.fetcher, graph.extension, graph.join, graph.island, skill]
+keywords: [graph.data.mapper, graph.math, graph.js, graph.api.fetcher, graph.task, graph.extension, graph.join, graph.island, skill]
 related:
   - guides/knowledge-graph/index.md
   - guides/knowledge-graph/build-your-first-graph.md
@@ -16,7 +16,7 @@ related:
 
 > **At a glance**
 >
-> - **What** — the seven skills shipped with the engine. Attach one to a node (`skill=<route>`)
+> - **What** — the eight skills shipped with the engine. Attach one to a node (`skill=<route>`)
 >   to make it *active*: it runs when traversal reaches the node.
 > - **They share** — Event Script [data-mapping syntax](../event-script/syntax.md#tasks-and-data-mapping)
 >   (`source -> target`) and the same state-machine namespaces (`input.*`, `model.*`, `output.*`,
@@ -30,6 +30,7 @@ related:
 | [`graph.math`](#math) | compute and branch with fast inline math/boolean |
 | [`graph.js`](#js) | compute/branch with full JavaScript (slower) |
 | [`graph.api.fetcher`](#api-fetcher) | call external HTTP APIs declaratively |
+| [`graph.task`](#task) | invoke a composable function through its route name |
 | [`graph.extension`](#extension) | delegate to a sub-graph or an Event Script flow |
 | [`graph.join`](#join) | synchronize parallel paths |
 | [`graph.island`](#island) | mark an isolated/organizational node |
@@ -158,6 +159,41 @@ output[]=result.sales_performance -> output.body.sales_performance
 
 This is the seam between the semantic layer and the composable layer beneath it — see
 [Composing the layers](composing-the-layers.md#extension).
+
+## graph.task {#task}
+
+Invokes a **composable function** — a `TypedLambdaFunction` registered with `@PreLoad` — through its
+route name. The lightweight way to plug a small piece of custom business logic into a graph: your
+own function becomes, in effect, a custom skill.
+
+```
+skill=graph.task
+task=<function-route>
+input[]=input.body -> *                  # '*' merges the mapped value into the request body
+input[]=text(minigraph) -> header.x-app  # 'header.{name}' sets a request header
+output[]=result -> output.body
+```
+
+Worked example (Tutorial 13):
+
+```
+create node hello-task
+with type Task
+with properties
+skill=graph.task
+task=v1.hello.task
+input[]=input.body -> *
+output[]=result -> output.body
+```
+
+`input[]` entries apply **in order**, so field mappings after a `*` merge into the request body,
+and the body auto-converts when the function declares a PoJo input. The result lands at
+`{node}.result` and response headers at `{node}.header`. Optional `for_each[]` with `concurrency`
+(1–30, default 3) iterates with bounded fork-join; `exception=<node>` routes failures.
+
+**Gotchas:** the `task` route must exist at runtime or the node fails fast; a call is bounded by
+`model.ttl` (default 30 s). For multi-step orchestration, prefer [`graph.extension`](#extension) —
+`graph.task` is for a single function call.
 
 ## graph.join {#join}
 

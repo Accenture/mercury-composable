@@ -102,7 +102,7 @@ for downstream nodes.
 
 ## Built-in skills {#built-in-skills}
 
-Seven skills ship with the engine. Each is a composable function on a `graph.*` route:
+Eight skills ship with the engine. Each is a composable function on a `graph.*` route:
 
 | Skill (route) | What it does |
 |---|---|
@@ -111,6 +111,7 @@ Seven skills ship with the engine. Each is a composable function on a `graph.*` 
 | `graph.js` | Full JavaScript evaluation via GraalVM — more flexible, slower than `graph.math` |
 | `graph.api.fetcher` | Call external HTTP APIs using data-dictionary/provider nodes, with caching and fork-join concurrency |
 | `graph.extension` | Run another graph model **or** an Event Script flow as a sub-routine |
+| `graph.task` | Invoke a composable function through its route name — plug custom logic into the graph |
 | `graph.join` | Synchronization barrier — proceeds only once all upstream paths complete |
 | `graph.island` | Mark an isolated sub-graph (pauses traversal); useful while building |
 
@@ -123,8 +124,9 @@ Seven skills ship with the engine. Each is a composable function on a `graph.*` 
 An Active Knowledge Graph is not an island — it rides on the layers beneath it, without coupling:
 
 - **Down to Event Script & functions** — `graph.extension` runs a **sub-graph** (`extension=<graph-id>`)
-  or an **Event Script flow** (`extension=flow://<flow-id>`), so demanding logic can be delegated to
-  composable modules and back.
+  or an **Event Script flow** (`extension=flow://<flow-id>`), and `graph.task` invokes a single
+  **composable function** by route name, so demanding logic can be delegated to composable modules
+  and back.
 - **Out to external systems** — `graph.api.fetcher` drives HTTP calls declaratively through
   data-dictionary and provider nodes, with response caching and bounded concurrency.
 - **Up to any protocol** — a deployed graph is exposed by the `graph-executor` flow as
@@ -162,7 +164,7 @@ persistence of sessions across restarts. Where this Part describes those, it mar
 ## See also {#see-also}
 
 - [Build your first Active Knowledge Graph](build-your-first-graph.md) — a hands-on walkthrough: model a service, dry-run it, deploy it, and call it over REST.
-- [Built-in skills reference](skills-reference.md) — the seven `graph.*` skills with syntax and worked examples.
+- [Built-in skills reference](skills-reference.md) — the eight `graph.*` skills with syntax and worked examples.
 - [Composing the layers](composing-the-layers.md) — external APIs, sub-graph/flow extension, and REST exposure.
 - [Playground & AI companion](playground-and-companion.md) — the interactive workbench and user–AI collaboration.
 - [Minimalist Property Graph](property-graph.md) — the underlying graph data structures and API.
