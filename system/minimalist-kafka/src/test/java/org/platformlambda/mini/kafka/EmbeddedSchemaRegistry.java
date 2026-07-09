@@ -24,12 +24,17 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,6 +55,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * Any unmatched path is logged + answered 404, so a missing endpoint surfaces loudly during test
  * development. Mirrors the contract of {@code helpers/schema-registry-standalone}.
+ *
+ * <p><b>Optional OAuth 2.0 mode</b> (the two-arg constructor): the registry then enforces
+ * {@code Authorization: Bearer} with a token it issued, and serves a client-credentials token endpoint at
+ * {@code POST /oauth/token} (client id/secret via HTTP Basic or form fields) that mints an HS256-signed
+ * JWT with the {@code sub}/{@code iat}/{@code exp}/{@code scope} claims the Confluent client-side
+ * validator expects. This exercises the full {@code bearer.auth.credentials.source=OAUTHBEARER} flow -
+ * token fetch, caching, and the Authorization header on every registry call - without an external IdP.</p>
  */
 public class EmbeddedSchemaRegistry implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(EmbeddedSchemaRegistry.class);
@@ -60,6 +72,8 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
     private static final int PORT = 18081;
 
     private static final String LATEST = "latest";
+    private static final String TOKEN_PATH = "/oauth/token";
+    private static final long TOKEN_LIFETIME_SECONDS = 3600;
 
     private final HttpServer server;
     private final AtomicInteger idGenerator = new AtomicInteger(1);
@@ -67,16 +81,45 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
     private final ConcurrentMap<Integer, Map<String, Object>> idToSchema = new ConcurrentHashMap<>();
     // subject -> (version -> global id); versions are per-subject, ids are global/content-addressed.
     private final ConcurrentMap<String, ConcurrentMap<Integer, Integer>> subjectVersions = new ConcurrentHashMap<>();
+    // OAuth mode (null clientId = auth off, the original behavior)
+    private final String clientId;
+    private final String clientSecret;
+    private final Set<String> issuedTokens = ConcurrentHashMap.newKeySet();
+    private final AtomicInteger tokenRequests = new AtomicInteger(0);
 
     public EmbeddedSchemaRegistry() throws IOException {
+        this(null, null);
+    }
+
+    /**
+     * Start in OAuth 2.0 mode: registry endpoints require a bearer token issued by this instance's
+     * {@code POST /oauth/token} client-credentials endpoint.
+     *
+     * @param clientId     the only client id the token endpoint accepts
+     * @param clientSecret the matching client secret (also the HS256 signing key)
+     * @throws IOException if the server cannot bind
+     */
+    public EmbeddedSchemaRegistry(String clientId, String clientSecret) throws IOException {
+        this.clientId = clientId;
+        this.clientSecret = clientSecret;
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", PORT), 0);
         server.createContext("/", this::handle);
         server.start();
-        log.info("Embedded schema registry on {}", baseUrl());
+        log.info("Embedded schema registry on {}{}", baseUrl(), clientId == null ? "" : " (OAuth 2.0 enforced)");
     }
 
     public String baseUrl() {
         return "http://127.0.0.1:" + server.getAddress().getPort();
+    }
+
+    /** @return the client-credentials token endpoint URL (OAuth mode) */
+    public String tokenEndpointUrl() {
+        return baseUrl() + TOKEN_PATH;
+    }
+
+    /** @return how many times the token endpoint issued a token (for cache assertions) */
+    public int tokenRequests() {
+        return tokenRequests.get();
     }
 
     @Override
@@ -100,6 +143,14 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
         try {
             String method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();
+            if (clientId != null && TOKEN_PATH.equals(path) && "POST".equals(method)) {
+                issueToken(exchange);
+                return;
+            }
+            if (clientId != null && !bearerTokenAccepted(exchange)) {
+                respond(exchange, 401, Map.of("error_code", 401, "message", "Bearer token required"));
+                return;
+            }
             String[] p = path.split("/");
             if ("POST".equals(method) && p.length == 4 && "subjects".equals(p[1]) && "versions".equals(p[3])) {
                 register(exchange, decode(p[2]));
@@ -209,6 +260,69 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
         respond(exchange, 200, response);
     }
 
+    /**
+     * {@code POST /oauth/token} - the client-credentials token endpoint. Accepts the client id/secret as
+     * HTTP Basic (what Kafka's HTTP JWT retriever sends) or as {@code client_id}/{@code client_secret}
+     * form fields, and answers the standard token response with an HS256-signed JWT.
+     */
+    private void issueToken(com.sun.net.httpserver.HttpExchange exchange) throws IOException {
+        String form = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+        Map<String, String> params = new HashMap<>();
+        for (String pair : form.split("&")) {
+            int eq = pair.indexOf('=');
+            if (eq > 0) {
+                params.put(decode(pair.substring(0, eq)), decode(pair.substring(eq + 1)));
+            }
+        }
+        String id = params.get("client_id");
+        String secret = params.get("client_secret");
+        String basic = exchange.getRequestHeaders().getFirst("Authorization");
+        if (basic != null && basic.startsWith("Basic ")) {
+            String[] credentials = new String(Base64.getDecoder().decode(basic.substring(6)),
+                    StandardCharsets.UTF_8).split(":", 2);
+            if (credentials.length == 2) {
+                id = credentials[0];
+                secret = credentials[1];
+            }
+        }
+        if (!clientId.equals(id) || !clientSecret.equals(secret)) {
+            respond(exchange, 401, Map.of("error", "invalid_client"));
+            return;
+        }
+        String token = mintJwt(params.getOrDefault("scope", "registry"));
+        issuedTokens.add(token);
+        tokenRequests.incrementAndGet();
+        respond(exchange, 200, Map.of("access_token", token, "token_type", "Bearer",
+                "expires_in", TOKEN_LIFETIME_SECONDS), "application/json");
+    }
+
+    /** Mint an HS256 JWT carrying the sub/iat/exp/scope claims the Confluent client validator reads. */
+    private String mintJwt(String scope) {
+        long now = System.currentTimeMillis() / 1000;
+        String header = base64Url("{\"alg\":\"HS256\",\"typ\":\"JWT\"}".getBytes(StandardCharsets.UTF_8));
+        String payload = base64Url(SimpleMapper.getInstance().getCompactGson().toJson(Map.of(
+                "sub", clientId, "iat", now, "exp", now + TOKEN_LIFETIME_SECONDS, "scope", scope))
+                .getBytes(StandardCharsets.UTF_8));
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(clientSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            String signature = base64Url(mac.doFinal((header + "." + payload).getBytes(StandardCharsets.UTF_8)));
+            return header + "." + payload + "." + signature;
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("Unable to sign test JWT", e);
+        }
+    }
+
+    private static String base64Url(byte[] data) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(data);
+    }
+
+    private boolean bearerTokenAccepted(com.sun.net.httpserver.HttpExchange exchange) {
+        String authorization = exchange.getRequestHeaders().getFirst("Authorization");
+        return authorization != null && authorization.startsWith("Bearer ")
+                && issuedTokens.contains(authorization.substring(7));
+    }
+
     @SuppressWarnings("unchecked")
     private static Map<String, Object> readBody(com.sun.net.httpserver.HttpExchange exchange) throws IOException {
         byte[] bytes = exchange.getRequestBody().readAllBytes();
@@ -220,8 +334,13 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
 
     private static void respond(com.sun.net.httpserver.HttpExchange exchange, int status, Map<String, Object> body)
             throws IOException {
+        respond(exchange, status, body, "application/vnd.schemaregistry.v1+json");
+    }
+
+    private static void respond(com.sun.net.httpserver.HttpExchange exchange, int status, Map<String, Object> body,
+                                String contentType) throws IOException {
         byte[] out = SimpleMapper.getInstance().getCompactGson().toJson(body).getBytes(StandardCharsets.UTF_8);
-        exchange.getResponseHeaders().add("content-type", "application/vnd.schemaregistry.v1+json");
+        exchange.getResponseHeaders().add("content-type", contentType);
         exchange.sendResponseHeaders(status, out.length);
         exchange.getResponseBody().write(out);
         exchange.close();

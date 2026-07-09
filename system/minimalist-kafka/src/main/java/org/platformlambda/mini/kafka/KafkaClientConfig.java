@@ -20,6 +20,7 @@ package org.platformlambda.mini.kafka;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -37,22 +38,29 @@ import java.util.Properties;
  * enterprise Kafka installations (on-prem / cloud / SaaS / Confluent; SASL, OAuth2, mTLS) is handled by
  * configuration rather than code. Templates are read via {@link ConfigReader} (which applies
  * {@code ${ENV_VAR:default}} substitution) from a file-then-classpath fallback location, overridable with
- * the {@code kafka.producer.properties} / {@code kafka.consumer.properties} application settings.
+ * the {@code kafka.producer.properties} / {@code kafka.consumer.properties} /
+ * {@code schema.registry.properties} application settings.
  *
  * <p>Only the parameters the library's contract depends on are <b>pinned in code</b> (and override
  * whatever the template says): the {@code String}/{@code byte[]} (de)serializers (the wire contract).
  * The per-topic {@code group.id}, plus the per-binding delivery-mode overlay ({@code enable.auto.commit}
  * and {@code max.poll.records}, driven by each binding's {@code auto-commit}/{@code max-poll-records}), are
  * applied by {@link KafkaFlowAdapter#newConsumer}.</p>
+ *
+ * <p>An OAuth 2.0 token endpoint URL found in any template ({@code sasl.oauthbearer.token.endpoint.url})
+ * is auto-registered on the JVM allow-list - see {@link OAuthUrlAllowList}.</p>
  */
 public final class KafkaClientConfig {
 
     private static final String PRODUCER_LOCATION = "kafka.producer.properties";
     private static final String CONSUMER_LOCATION = "kafka.consumer.properties";
+    private static final String SCHEMA_REGISTRY_LOCATION = "schema.registry.properties";
     private static final String DEFAULT_PRODUCER =
             "file:/tmp/config/kafka-producer.properties,classpath:/kafka-producer.properties";
     private static final String DEFAULT_CONSUMER =
             "file:/tmp/config/kafka-consumer.properties,classpath:/kafka-consumer.properties";
+    private static final String DEFAULT_SCHEMA_REGISTRY =
+            "file:/tmp/config/schema-registry.properties,classpath:/schema-registry.properties";
 
     private KafkaClientConfig() {}
 
@@ -76,11 +84,37 @@ public final class KafkaClientConfig {
         return p;
     }
 
+    /**
+     * Confluent Schema Registry client config from the template, passed through <b>verbatim</b> by
+     * {@code SchemaCodec} so any Confluent client parameter (bearer/basic auth, SSL, optional settings
+     * such as {@code bearer.auth.logical.cluster}) works without a library change. The registry URL
+     * itself stays in {@code application.properties} ({@code schema.registry.url} - the feature switch).
+     *
+     * @param appConfig the application configuration (read for the template location override)
+     * @return the resolved template key-values; empty when the template has no active entries
+     */
+    public static Map<String, Object> schemaRegistryProperties(ConfigBase appConfig) {
+        Map<String, Object> resolved =
+                loadFirst(appConfig.getProperty(SCHEMA_REGISTRY_LOCATION, DEFAULT_SCHEMA_REGISTRY))
+                        .getCompositeKeyValues();
+        registerOAuthTokenUrl(resolved.get("bearer.auth.issuer.endpoint.url"));
+        registerOAuthTokenUrl(resolved.get(SaslConfigs.SASL_OAUTHBEARER_TOKEN_ENDPOINT_URL));
+        return resolved;
+    }
+
     private static Properties load(String locations) {
         Map<String, Object> resolved = loadFirst(locations).getCompositeKeyValues();
         Properties p = new Properties();
         resolved.forEach((key, value) -> p.setProperty(key, String.valueOf(value)));
+        registerOAuthTokenUrl(p.getProperty(SaslConfigs.SASL_OAUTHBEARER_TOKEN_ENDPOINT_URL));
         return p;
+    }
+
+    /** Allow-list an OAuth token endpoint URL found in a template (no-op for null/blank). */
+    private static void registerOAuthTokenUrl(Object url) {
+        if (url instanceof String value) {
+            OAuthUrlAllowList.register(value);
+        }
     }
 
     /** Try each comma-separated location in order (file path then classpath), returning the first found. */
