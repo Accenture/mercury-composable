@@ -25,6 +25,7 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
+import org.platformlambda.mini.kafka.KafkaClientConfig;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ManagedCache;
 import org.platformlambda.core.util.Utility;
@@ -114,10 +115,6 @@ public class SchemaCodec {
     private final String registryUrl;
     private final Map<String, Object> extraSerdeConfig;
 
-    SchemaCodec(SchemaRegistryClient client, String registryUrl) {
-        this(client, registryUrl, Map.of());
-    }
-
     SchemaCodec(SchemaRegistryClient client, String registryUrl, Map<String, Object> extraSerdeConfig) {
         this.client = client;
         this.registryUrl = registryUrl;
@@ -191,7 +188,17 @@ public class SchemaCodec {
         ManagedCache versionCache = ManagedCache.createCache(VERSION_CACHE_NAME, versionTtlMillis, VERSION_CACHE_MAX_ITEMS);
         versionCache.clear();
         // (subject+latest resolutions share the short-TTL id cache above; no separate cache needed.)
-        Map<String, Object> srConfig = new HashMap<>();
+        /*
+         * Start from the schema-registry.properties template (verbatim pass-through), so any Confluent
+         * client parameter - OAuth 2.0 bearer auth, basic auth, SSL, optional installation-specific
+         * settings - reaches the registry REST client without a library change. Loading the template
+         * also auto-registers any OAuth token endpoint URL on the JVM allow-list, which must happen
+         * before the client below is constructed. The library's own contract keys are put after the
+         * template, so they always win: the registry URL comes from application.properties (the feature
+         * switch) and the negative caches stay pinned off.
+         */
+        Map<String, Object> srConfig = new HashMap<>(KafkaClientConfig.schemaRegistryProperties(config));
+        Object bearerAuthSource = srConfig.get(SchemaRegistryClientConfig.BEARER_AUTH_CREDENTIALS_SOURCE);
         srConfig.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
         /*
          * Cache positive results only. Pin Confluent's "missing" (negative) caches to 0 so a not-yet-created
@@ -207,8 +214,9 @@ public class SchemaCodec {
                 List.of(new JsonSchemaProvider(), new AvroSchemaProvider()),
                 srConfig, cache, versionCache);
         Map<String, Object> extraSerdeConfig = extractSerdeConfig(config);
-        log.info("Schema codec ready (registry={}, cache={}, ttlMs={}, types={}, csfle={})",
-                registryUrl, CACHE_NAME, ttlMillis, List.of(SchemaType.values()), !extraSerdeConfig.isEmpty());
+        log.info("Schema codec ready (registry={}, cache={}, ttlMs={}, types={}, csfle={}, auth={})",
+                registryUrl, CACHE_NAME, ttlMillis, List.of(SchemaType.values()), !extraSerdeConfig.isEmpty(),
+                bearerAuthSource == null ? "none" : bearerAuthSource);
         return new SchemaCodec(client, registryUrl, extraSerdeConfig);
     }
 

@@ -327,7 +327,7 @@ public class HttpRouter {
 
     private void sendStaticFile(String requestId, EtagFile file, boolean noCache,
                                 HttpServerRequest request, HttpServerResponse response) {
-        response.putHeader(CONTENT_TYPE, getFileContentType(file.name));
+        response.putHeader(CONTENT_TYPE, getFileContentType(file.getName()));
         if (noCache) {
             response.putHeader("Cache-Control", "no-cache, no-store");
             response.putHeader("Pragma", "no-cache");
@@ -421,7 +421,7 @@ public class HttpRouter {
             result = getLocalFile(relativePath);
         }
         if (result != null) {
-            result.name = filename;
+            result.setName(filename);
         }
         return result;
     }

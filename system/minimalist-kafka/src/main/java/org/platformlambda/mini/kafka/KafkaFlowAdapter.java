@@ -217,7 +217,7 @@ public class KafkaFlowAdapter implements AutoCloseable {
         if (dlqTopic == null) {
             return null;
         }
-        if (topic != null && dlqTopic.equals(topic)) {
+        if (dlqTopic.equals(topic)) {
             throw new IllegalArgumentException("consumer[" + i + "] (" + label
                     + ") 'dlq-topic' must not equal the source 'topic'");
         }

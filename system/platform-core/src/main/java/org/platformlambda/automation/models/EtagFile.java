@@ -26,7 +26,7 @@ public class EtagFile {
 
     public final String eTag;
     public final byte[] content;
-    public String name;
+    private String name;
 
     public EtagFile(String eTag, byte[] content) {
         this.eTag = "\""+ eTag +"\"";
@@ -48,5 +48,13 @@ public class EtagFile {
         } else {
             return this.eTag.equals(eTag);
         }
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }
