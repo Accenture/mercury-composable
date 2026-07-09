@@ -44,7 +44,7 @@ public class OtelForwarderContext {
 
     public static final String INSTRUMENTATION_NAME = "org.platformlambda.opentelemetry-forwarder";
     // OTLP instrumentation-scope version — keep in step with the module/release version.
-    private static final String VERSION = "4.6.3";
+    private static final String VERSION = "4.7.0";
     private static final String SERVICE_NAME_KEY = "service.name";
 
     private final boolean enabled;

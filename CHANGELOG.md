@@ -8,6 +8,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.7.0, 7/8/2026
+
+Feature release: the MiniGraph engine gains the `graph.task` skill, so a graph node can invoke any
+composable function through its route name. This makes composable functions usable as custom skills
+and completes the extension model - built-in skills for zero-code work, `graph.task` for a small
+piece of custom business logic, and `graph.extension` for sub-graph/flow orchestration. No breaking
+changes; all existing graph models and APIs are unchanged.
+
+### Added
+
+1. **MiniGraph `graph.task` skill.** A Task node with `task=<route>` invokes a composable function
+   (a `TypedLambdaFunction` registered with `@PreLoad`) using Event Script style `input[]`/`output[]`
+   data mapping. Input mapping supports `*` (merge the mapped value into the request body, applied in
+   declaration order), `header.{name}` (set a request header) and composite body keys; the request
+   body auto-converts when the function declares a PoJo input. Response body, status and headers land
+   at `{node}.result`, `{node}.status` and `{node}.header`. Optional `for_each[]` with `concurrency`
+   (1-30, default 3) provides iterative fork-join execution and `exception=<node>` routes failures to
+   a handler node; calls are bounded by `model.ttl` (default 30s).
+2. **Tutorial 13.** A deployed graph model (`tutorial-13`) and help topics (`help tutorial 13`,
+   `describe skill graph.task`) demonstrate the new skill end-to-end with the dev-mode demo function
+   `v1.hello.task`.
+
+### Changed
+
+1. **Knowledge-graph documentation and grammar catalog updated for `graph.task`.** The machine-readable
+   `minigraph-commands.json` catalog, the skills reference, the command reference and the guide index
+   now describe the eight built-in skills; the CI anti-drift gate verifies the catalog stays in sync
+   with the shipped help pages.
+2. **MiniGraph playground UI bundle refreshed** from the webapp source.
+
+---
 ## Version 4.6.3, 7/7/2026
 
 Maintenance release: final SonarQube smell cleanup and security-hotspot remediation following the
