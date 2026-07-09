@@ -103,8 +103,8 @@ class AvroConversionsTest {
 
         Object avro = AvroConversions.toAvro(input, schema());
         Map<String, Object> out = (Map<String, Object>) AvroConversions.fromAvro(avro);
-        assertInstanceOf(Map.class, out.get("child"));
-        assertEquals("deep", ((Map<String, Object>) out.get("child")).get("value"));
+        Map<String, Object> child = (Map<String, Object>) assertInstanceOf(Map.class, out.get("child"));
+        assertEquals("deep", child.get("value"));
     }
 
     @Test

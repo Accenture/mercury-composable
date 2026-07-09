@@ -76,7 +76,6 @@ class CsfleLocalRoundTripTest {
     private static final String SECRET = "spike-test-passphrase";
 
     @Test
-    @SuppressWarnings("unchecked")
     void encryptsTaggedFieldOnProduceAndDecryptsOnConsume() throws Exception {
         // Unique scope per run so repeated test executions never share mock:// state.
         String mockUrl = "mock://" + Utility.getInstance().getUuid();
