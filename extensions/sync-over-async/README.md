@@ -7,10 +7,35 @@ payload is stored in Redis (`SETEX`) and a per-pod Pub/Sub channel wakes the ori
 correlation-id. Kafka remains the durable business transport; Redis Pub/Sub is only a low-latency
 wake-up signal.
 
-> **Status: prototype.** The cross-pod return-route engine (Phase 1) and the Kafka request/response
-> legs (Phase 2) are implemented and tested against embedded Redis + Kafka. The synchronous REST facade
-> that ties them together — and registers these pieces as Mercury functions — is the remaining MVP piece
-> (Phase 3).
+> **Status: shipped, opt-in.** The feature is **off by default**; enable it with
+> `sync.over.async.enabled=true` plus the `redis.*` connection settings. The
+> [Sync-over-Async guide](../../docs/guides/sync-over-async.md) is the canonical documentation
+> (pattern, configuration keys, reliability design), and
+> [`examples/sync-over-async-demo`](../../examples/sync-over-async-demo) is a runnable multi-pod
+> demo with captured telemetry.
+
+## What ships in this module
+
+The module contains the Redis return-route engine and the three composable tasks that form the
+synchronous facade. The Kafka legs come from `system/minimalist-kafka`, which this module depends on:
+
+- **`ReturnRouteCoordinator`** — the per-pod engine: `begin` registers the return route,
+  `awaitResponse` blocks with a final Redis read before timeout (a missed notification cannot lose
+  the request), and `deliver` stores the response (`SETEX`, data before signal) then publishes the
+  Pub/Sub wake-up to the originating pod's channel.
+- **`ReturnRouteStore`** — Redis key storage (`request:{cid}` return route, `response:{cid}`
+  payload, short TTLs as the crash safety net) over a single shared [Lettuce](https://lettuce.io/)
+  connection.
+- **`PendingRequests`** — race-safe in-flight registry: each waiting request completes exactly once
+  (duplicate and orphan deliveries are no-ops) under an atomically enforced per-pod ceiling
+  (`sync.max.pending.requests`).
+- **Composable tasks `sync.prepare`, `sync.await` and `soa.reply`** (`SyncPrepareTask`,
+  `SyncAwaitTask`, `SoaReplyTask`) — the building blocks an application wires into its own Event
+  Script flow. The reference wiring lives in this module's test resources (`rest.yaml`,
+  `flows/sync-to-async.yml`, `flows/soa-reply.yml`, `kafka-flow-adapter.yaml`) and in the demo app.
+- **`SyncOverAsyncAutoStart` / `SyncRuntime`** — self-initialization gated by
+  `@OptionalService("sync.over.async.enabled")`, so nothing loads (and no Redis connection is
+  opened) unless the feature is switched on.
 
 ## Threading model & virtual-thread safety
 
@@ -54,20 +79,23 @@ pins** and is verified green on JDK 21 and JDK 26.
 
 ## Request/response legs (Kafka)
 
-Two small classes bracket the asynchronous backend:
+The Kafka legs are the reusable building blocks of `system/minimalist-kafka` (this module's direct
+dependency), not classes of this module:
 
-- **`KafkaRequestPublisher`** (outbound) — publishes the request to the request topic, keyed by
-  correlation-id and carrying `cid` + `traceparent` headers. The send is confirmed (blocking with a
-  timeout) so a publish failure surfaces immediately rather than as a silent timeout later.
-- **`KafkaResponseConsumer`** (inbound "return adapter") — a single-threaded poll loop on the response
-  topic that decodes each record and hands `(cid, payload)` to a `ResponseDelivery`, wired in production
-  to `ReturnRouteCoordinator::deliver`. The Kafka consumer is not thread-safe, so it is owned by one
-  daemon thread and stopped cleanly via `wakeup()`.
+- **Outbound** — `simple.kafka.notification` publishes the request to the request topic with `cid`
+  + `traceparent` headers. It returns a `Mono` that completes on broker acknowledgment, so inside
+  an Event Script flow a publish failure fails the task and routes to the flow's exception handler
+  (fail-fast) instead of surfacing as a silent timeout later.
+- **Inbound** — the Kafka Flow Adapter binds the response topic to a flow (see
+  `src/test/resources/kafka-flow-adapter.yaml`); that flow hands `(cid, payload)` to `soa.reply`,
+  which calls `ReturnRouteCoordinator::deliver`. Consumption is at-least-once with
+  commit-after-process, and the adapter re-parents the flow onto the inbound `traceparent` so the
+  distributed trace stays continuous across both Kafka hops.
 
-Both use `key=String, value=byte[]` to match the platform's Kafka connector. The full path —
-`begin → publish → backend → response topic → deliver → Redis return route → awaitResponse`, with
-`traceparent` preserved throughout — is proven end-to-end in `SyncOverAsyncKafkaIntegrationTest` against
-a real embedded KRaft broker and `redis-server`.
+The full path — `sync.prepare → simple.kafka.notification → backend → response topic → soa.reply →
+Redis return route → sync.await`, with one trace id preserved throughout — is proven end-to-end by
+[`RestFlowMvpTest`](src/test/java/org/platformlambda/async/RestFlowMvpTest.java) against a real
+embedded KRaft broker and `redis-server`.
 
 ## Building
 
