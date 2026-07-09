@@ -63,6 +63,22 @@
 
 ## Key Decisions
 
+- **Release 4.7.0 — SHIPPED 2026-07-08 (tag `v4.7.0` on merge commit `e41a20b7`; PRs #146 feature +
+  #147 bump).** Feature release: **MiniGraph `graph.task` skill** — a Task node invokes any composable
+  function (`@PreLoad` route) with Event Script style `input[]`/`output[]` mapping (`*` whole-body
+  sequential merge, `header.{name}`, PoJo auto-conversion, `for_each[]`+`concurrency` fork-join,
+  `exception=` routing); plus tutorial-13 (deployed graph + help topics) and playground UI bundle
+  refresh. **STRATEGIC (Eric): graph.task is intended to be the LAST built-in skill** — custom logic
+  now enters a graph as a composable function; flows/subgraphs (graph.extension) remain for
+  orchestration. **Durable caveats:** (1) **new-skill/tutorial checklist** — a shipped `help graph-*.md`
+  page MUST have a matching entry in `docs/guides/knowledge-graph/minigraph-commands.json` and the docs
+  mirror (skills-reference, command-reference matrix, index tables — "eight skills" counts); CI's
+  `scripts/check-minigraph-grammar.py` anti-drift gate fails the PR otherwise (caught live on PR #146);
+  (2) `help.md` topic index is hand-maintained — new skills/tutorials must be added there too;
+  (3) test-only tutorial graphs are numbered 1xx (tutorial-113/114) so deployed tutorials own the
+  canonical names. Release-bump surface and prior caveats unchanged — see [[release-4-6-2-shipped]].
+  <!-- id: release-4-7-0-shipped | created: 2026-07-08 | last_used: 2026-07-08 | uses: 1 | tier: active | origin: 2026-07-08-224933 -->
+
 - **Release 4.6.2 — SHIPPED 2026-07-07 (tag `v4.6.2` on merge commit `56ac1067`; PRs #140 remediation +
   #141 bump).** SonarQube quality-gate remediation (1 blocker, 24 criticals, 83 majors, smells — all
   behavior-preserving) + kafka-connector/kafka-presence unit test suites. **Durable caveats carried
