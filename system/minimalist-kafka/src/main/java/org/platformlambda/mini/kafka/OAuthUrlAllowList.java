@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Registers OAuth 2.0 token endpoint URLs on the JVM-wide allow-list that the Kafka client enforces.
@@ -48,6 +49,9 @@ public final class OAuthUrlAllowList {
     /** The system property (not a client config) read by Kafka's OAuth URL validation. */
     public static final String ALLOWED_URLS_PROPERTY = "org.apache.kafka.sasl.oauthbearer.allowed.urls";
 
+    // virtual-thread friendly: a ReentrantLock does not pin the carrier thread like 'synchronized'
+    private static final ReentrantLock LOCK = new ReentrantLock();
+
     private OAuthUrlAllowList() {}
 
     /**
@@ -56,18 +60,23 @@ public final class OAuthUrlAllowList {
      *
      * @param url the OAuth 2.0 token endpoint URL to allow (e.g. an Azure AD {@code /oauth2/v2.0/token})
      */
-    public static synchronized void register(String url) {
+    public static void register(String url) {
         if (url == null || url.isBlank()) {
             return;
         }
-        Set<String> entries = new LinkedHashSet<>();
-        String existing = System.getProperty(ALLOWED_URLS_PROPERTY);
-        if (existing != null && !existing.isBlank()) {
-            entries.addAll(Utility.getInstance().split(existing, ", "));
-        }
-        if (entries.add(url.trim())) {
-            System.setProperty(ALLOWED_URLS_PROPERTY, String.join(",", entries));
-            log.info("OAuth token endpoint allow-listed: {}", url.trim());
+        LOCK.lock();
+        try {
+            Set<String> entries = new LinkedHashSet<>();
+            String existing = System.getProperty(ALLOWED_URLS_PROPERTY);
+            if (existing != null && !existing.isBlank()) {
+                entries.addAll(Utility.getInstance().split(existing, ", "));
+            }
+            if (entries.add(url.trim())) {
+                System.setProperty(ALLOWED_URLS_PROPERTY, String.join(",", entries));
+                log.info("OAuth token endpoint allow-listed: {}", url.trim());
+            }
+        } finally {
+            LOCK.unlock();
         }
     }
 }
