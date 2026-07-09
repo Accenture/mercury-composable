@@ -106,6 +106,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#extension">graph.extension</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#task">graph.task</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#join">graph.join</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#island">graph.island</a>
@@ -211,7 +213,7 @@
 <blockquote>
 <p><strong>At a glance</strong></p>
 <ul>
-<li><strong>What</strong> — the seven skills shipped with the engine. Attach one to a node (<code>skill=&lt;route&gt;</code>)
+<li><strong>What</strong> — the eight skills shipped with the engine. Attach one to a node (<code>skill=&lt;route&gt;</code>)
   to make it <em>active</em>: it runs when traversal reaches the node.</li>
 <li><strong>They share</strong> — Event Script <a href="../../event-script/syntax/#tasks-and-data-mapping">data-mapping syntax</a>
   (<code>source -&gt; target</code>) and the same state-machine namespaces (<code>input.*</code>, <code>model.*</code>, <code>output.*</code>,
@@ -243,6 +245,10 @@
 <tr>
 <td><a href="#api-fetcher"><code>graph.api.fetcher</code></a></td>
 <td>call external HTTP APIs declaratively</td>
+</tr>
+<tr>
+<td><a href="#task"><code>graph.task</code></a></td>
+<td>invoke a composable function through its route name</td>
 </tr>
 <tr>
 <td><a href="#extension"><code>graph.extension</code></a></td>
@@ -371,6 +377,32 @@ output[]=result.sales_performance -&gt; output.body.sales_performance
 </code></pre>
 <p>This is the seam between the semantic layer and the composable layer beneath it — see
 <a href="../composing-the-layers/#extension">Composing the layers</a>.</p>
+<h2 id="task">graph.task</h2>
+<p>Invokes a <strong>composable function</strong> — a <code>TypedLambdaFunction</code> registered with <code>@PreLoad</code> — through its
+route name. The lightweight way to plug a small piece of custom business logic into a graph: your
+own function becomes, in effect, a custom skill.</p>
+<pre><code>skill=graph.task
+task=&lt;function-route&gt;
+input[]=input.body -&gt; *                  # '*' merges the mapped value into the request body
+input[]=text(minigraph) -&gt; header.x-app  # 'header.{name}' sets a request header
+output[]=result -&gt; output.body
+</code></pre>
+<p>Worked example (Tutorial 13):</p>
+<pre><code>create node hello-task
+with type Task
+with properties
+skill=graph.task
+task=v1.hello.task
+input[]=input.body -&gt; *
+output[]=result -&gt; output.body
+</code></pre>
+<p><code>input[]</code> entries apply <strong>in order</strong>, so field mappings after a <code>*</code> merge into the request body,
+and the body auto-converts when the function declares a PoJo input. The result lands at
+<code>{node}.result</code> and response headers at <code>{node}.header</code>. Optional <code>for_each[]</code> with <code>concurrency</code>
+(1–30, default 3) iterates with bounded fork-join; <code>exception=&lt;node&gt;</code> routes failures.</p>
+<p><strong>Gotchas:</strong> the <code>task</code> route must exist at runtime or the node fails fast; a call is bounded by
+<code>model.ttl</code> (default 30 s). For multi-step orchestration, prefer <a href="#extension"><code>graph.extension</code></a> —
+<code>graph.task</code> is for a single function call.</p>
 <h2 id="join">graph.join</h2>
 <p>A synchronization barrier for parallel branches. It returns <code>next</code> <strong>only when all</strong> connected
 upstream nodes have completed, and <code>.sink</code> (pause) until then.</p>

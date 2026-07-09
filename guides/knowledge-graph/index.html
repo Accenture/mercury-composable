@@ -338,7 +338,7 @@ event-driven execution that powers the rest of Mercury powers the graph.</p>
 the state machine via data-mapping (<code>{source} -&gt; {target}</code>); outputs flow back into the state machine
 for downstream nodes.</p>
 <h2 id="built-in-skills">Built-in skills</h2>
-<p>Seven skills ship with the engine. Each is a composable function on a <code>graph.*</code> route:</p>
+<p>Eight skills ship with the engine. Each is a composable function on a <code>graph.*</code> route:</p>
 <table>
 <thead>
 <tr>
@@ -368,6 +368,10 @@ for downstream nodes.</p>
 <td>Run another graph model <strong>or</strong> an Event Script flow as a sub-routine</td>
 </tr>
 <tr>
+<td><code>graph.task</code></td>
+<td>Invoke a composable function through its route name — plug custom logic into the graph</td>
+</tr>
+<tr>
 <td><code>graph.join</code></td>
 <td>Synchronization barrier — proceeds only once all upstream paths complete</td>
 </tr>
@@ -386,8 +390,9 @@ prints the same content.</p>
 <p>An Active Knowledge Graph is not an island — it rides on the layers beneath it, without coupling:</p>
 <ul>
 <li><strong>Down to Event Script &amp; functions</strong> — <code>graph.extension</code> runs a <strong>sub-graph</strong> (<code>extension=&lt;graph-id&gt;</code>)
-  or an <strong>Event Script flow</strong> (<code>extension=flow://&lt;flow-id&gt;</code>), so demanding logic can be delegated to
-  composable modules and back.</li>
+  or an <strong>Event Script flow</strong> (<code>extension=flow://&lt;flow-id&gt;</code>), and <code>graph.task</code> invokes a single
+  <strong>composable function</strong> by route name, so demanding logic can be delegated to composable modules
+  and back.</li>
 <li><strong>Out to external systems</strong> — <code>graph.api.fetcher</code> drives HTTP calls declaratively through
   data-dictionary and provider nodes, with response caching and bounded concurrency.</li>
 <li><strong>Up to any protocol</strong> — a deployed graph is exposed by the <code>graph-executor</code> flow as
@@ -417,7 +422,7 @@ persistence of sessions across restarts. Where this Part describes those, it mar
 <h2 id="see-also">See also</h2>
 <ul>
 <li><a href="build-your-first-graph/">Build your first Active Knowledge Graph</a> — a hands-on walkthrough: model a service, dry-run it, deploy it, and call it over REST.</li>
-<li><a href="skills-reference/">Built-in skills reference</a> — the seven <code>graph.*</code> skills with syntax and worked examples.</li>
+<li><a href="skills-reference/">Built-in skills reference</a> — the eight <code>graph.*</code> skills with syntax and worked examples.</li>
 <li><a href="composing-the-layers/">Composing the layers</a> — external APIs, sub-graph/flow extension, and REST exposure.</li>
 <li><a href="playground-and-companion/">Playground &amp; AI companion</a> — the interactive workbench and user–AI collaboration.</li>
 <li><a href="property-graph/">Minimalist Property Graph</a> — the underlying graph data structures and API.</li>
