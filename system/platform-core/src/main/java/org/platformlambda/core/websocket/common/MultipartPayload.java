@@ -35,6 +35,10 @@ import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Map;
 
+/**
+ * Intentional singleton
+ */
+@SuppressWarnings("java:S6548")
 public class MultipartPayload {
     private static final Logger log = LoggerFactory.getLogger(MultipartPayload.class);
     private static final String DEFAULT_PAYLOAD_SIZE = "65536";
