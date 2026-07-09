@@ -77,7 +77,18 @@
   (2) `help.md` topic index is hand-maintained — new skills/tutorials must be added there too;
   (3) test-only tutorial graphs are numbered 1xx (tutorial-113/114) so deployed tutorials own the
   canonical names. Release-bump surface and prior caveats unchanged — see [[release-4-6-2-shipped]].
-  <!-- id: release-4-7-0-shipped | created: 2026-07-08 | last_used: 2026-07-08 | uses: 1 | tier: active | origin: 2026-07-08-224933 -->
+  **UPDATE 2026-07-09: v4.7.1 shipped the next day** (tag on merge commit `60716bf9`; PRs #150 feature +
+  #151 bump) — **minimalist-kafka Schema Registry OAuth 2.0**, closing the 4.6.3 field loose ends.
+  Durable facts: (1) **`schema-registry.properties` is the third client template** (verbatim pass-through
+  to the Confluent SR client; `schema.registry.url` stays in application.properties as the feature
+  switch — Eric: "layered approach that is a best practice"); (2) **OAuthUrlAllowList auto-registers
+  token endpoint URLs** on the JVM system property `org.apache.kafka.sasl.oauthbearer.allowed.urls`
+  at template-load time (merge/dedupe, never clobber) — BOTH the Kafka transport and the Confluent SR
+  OAuth provider validate against it (Confluent reuses Kafka's ConfigurationUtils.validateUrl);
+  (3) **CODE CONVENTION: prefer `ReentrantLock` over `synchronized`** in framework code
+  (virtual-thread friendly — Eric's review feedback); (4) EmbeddedSchemaRegistry has an opt-in OAuth
+  mode (HS256 token endpoint + Bearer enforcement) for authenticated registry tests.
+  <!-- id: release-4-7-0-shipped | created: 2026-07-08 | last_used: 2026-07-09 | uses: 2 | tier: active | origin: 2026-07-08-224933 -->
 
 - **Release 4.6.2 — SHIPPED 2026-07-07 (tag `v4.6.2` on merge commit `56ac1067`; PRs #140 remediation +
   #141 bump).** SonarQube quality-gate remediation (1 blocker, 24 criticals, 83 majors, smells — all
