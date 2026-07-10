@@ -114,9 +114,9 @@ public class GraphTask extends GraphLambdaFunction {
     @SuppressWarnings("unchecked")
     private Object stageTaskParameter(String nodeName, EventEnvelope request, String rhs, Object value, Object body) {
         if (WHOLE_BODY.equals(rhs)) {
-            // '*' maps the LHS value as the whole request body;
-            // a map is deep copied so that later entries can merge into it without
-            // touching the graph's state machine
+            // The whole-body target maps the LHS value as the entire request body.
+            // A map is deep copied so that later entries can merge into it without
+            // touching the graph's state machine.
             return value instanceof Map? util.deepCopy((Map<String, Object>) value) : value;
         }
         if (rhs.startsWith(HEADER_NAMESPACE)) {
