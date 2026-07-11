@@ -29,7 +29,7 @@ tasks:
 
   - input:
       - 'text(C_PROFILE_RESPONSE) -> header.topic'
-      - 'model.response:binary -> *'
+      - 'f:binary(model.response) -> *'
     process: 'simple.kafka.notification'
     output: []
     description: 'Publish the outcome to the cloud response topic as plain JSON bytes'

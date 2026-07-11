@@ -3,7 +3,7 @@
 #
 # Reached when the PRIMARY Kafka flow adapter routes a message from OP_PROFILE_REQUEST. Because that
 # binding sets schema.enabled, the adapter has already decoded the Confluent-framed value to a Map.
-# The ':binary' type qualifier serializes that Map to its JSON bytes for secondary.kafka.notification
+# The f:binary() function serializes that Map to its JSON bytes for secondary.kafka.notification
 # (which takes byte[]); no 'subject' header, so the cloud cluster receives the plain JSON string.
 #
 # This is the twin-kafka bridging rule in action: decode-and-re-encode, never relay raw framed bytes -
@@ -20,7 +20,7 @@ tasks:
   - input:
       - 'text(C_PROFILE_REQUEST) -> header.topic'
       - 'input.body -> model.payload'
-      - 'model.payload:binary -> *'
+      - 'f:binary(model.payload) -> *'
     process: 'secondary.kafka.notification'
     output: []
     description: 'Publish the decoded request to the cloud request topic as plain JSON bytes'

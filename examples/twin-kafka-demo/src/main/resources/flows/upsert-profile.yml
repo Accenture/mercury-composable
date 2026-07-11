@@ -28,7 +28,7 @@ tasks:
   - input:
       - 'text(OP_PROFILE_REQUEST) -> header.topic'
       - 'text(op-profile-request) -> header.subject'
-      - 'model.request:binary -> *'
+      - 'f:binary(model.request) -> *'
     process: 'simple.kafka.notification'
     output: []
     description: 'Publish the UPSERT request to the on-prem request topic (JSON Schema encoded)'

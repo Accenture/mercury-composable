@@ -177,9 +177,9 @@ The immediate HTTP ack uses `originator: HTTP_REQUEST`; the system-of-record's o
 - **The bridge is pure YAML.** Consuming with `schema.enabled: true` hands the flow a decoded Map;
   publishing with a `subject` header re-encodes. The two bridge flows are just topic-to-topic mappings —
   `bridge-request.yml` and `bridge-response.yml`.
-- **Maps become JSON bytes with `:binary`.** The notification functions take `byte[]`, so wherever a flow
-  holds a Map (a schema-decoded consume, or a task result), the type-qualifier mapping
-  `model.x:binary -> *` serializes it to its JSON bytes — still pure YAML, no conversion task.
+- **Maps become JSON bytes with `f:binary()`.** The notification functions take `byte[]`, so wherever a
+  flow holds a Map (a schema-decoded consume, or a task result), the pluggable-function mapping
+  `f:binary(model.x) -> *` serializes it to its JSON bytes — still pure YAML, no conversion task.
 - **The Confluent frame is JSON-friendly.** After the 5-byte frame (magic byte + schema id), a JSON
   Schema value is the plain UTF-8 JSON string — that is why `listen_response.js` can print it directly
   (an Avro value would be Avro binary).
