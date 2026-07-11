@@ -50,6 +50,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * stamps a {@code traceparent} from its own span; the adapter parses it and chains the sink flow onto
  * that trace, so the sink task observes the same trace-id the caller started with.</p>
  */
+// resource: the adapter, publisher and schema-registry client are process-wide singletons owned by
+// KafkaRuntime for the app lifetime - closed once in shutdown(), never per test
+@SuppressWarnings("resource")
 class KafkaFlowAdapterTest {
 
     private static final String TOPIC = "mini-test-topic";

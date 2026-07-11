@@ -20,7 +20,7 @@ package org.platformlambda.mini.kafka;
 
 /**
  * One validated {@code consumer[]} entry from {@code kafka-flow-adapter.yaml}, resolved by
- * {@link KafkaFlowAdapter#buildConsumer} and handed to {@link KafkaFlowConsumer}. Built via
+ * {@code KafkaFlowAdapter.buildConsumer} and handed to {@link KafkaFlowConsumer}. Built via
  * {@link #builder()} rather than a wide constructor - a 9-parameter constructor trips static-analysis
  * parameter-count rules regardless of how many callers there are, whereas a builder's setters take one
  * argument each.

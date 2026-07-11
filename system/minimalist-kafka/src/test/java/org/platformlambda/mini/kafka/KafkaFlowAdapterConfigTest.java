@@ -47,7 +47,7 @@ class KafkaFlowAdapterConfigTest {
     }
 
     // S2095: the constructor throws during config validation, so no adapter escapes to be closed (and if one ever did, the assertThrows would fail).
-    @SuppressWarnings("java:S2095")
+    @SuppressWarnings({"java:S2095", "resource"})
     private static void build(ConfigReader config) {
         // consumer props are unused: every case here fails validation before any consumer is built
         new KafkaFlowAdapter(new Properties(), config, 1000, POLICY, null);
@@ -62,7 +62,8 @@ class KafkaFlowAdapterConfigTest {
 
     @Test
     void nestedTextReadsNormalizedAndFlatForms() {
-        // ConfigReader normalizes dotted keys into nested maps: trace.id.header -> {trace: {id: {header: v}}}
+        // ConfigReader normalizes a dotted key such as trace.id.header into nested maps
+        // keyed by its segments (trace, then id, then header)
         Map<String, Object> normalized = Map.of("trace", Map.of("id", Map.of("header", "X-Legacy-Trace")));
         assertEquals("X-Legacy-Trace", KafkaFlowAdapter.nestedText(normalized, "trace.id.header"));
         // a flat key (programmatically authored map) is accepted too

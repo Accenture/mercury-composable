@@ -537,18 +537,7 @@ class RestEndpointTest extends TestBase {
         String publishedStreamId1 = getStream(bytes1, 10);
         ByteArrayOutputStream bytes2 = new ByteArrayOutputStream();
         String publishedStreamId2 = getStream(bytes2, 20);
-        AsyncHttpRequest req = new AsyncHttpRequest();
-        req.setMethod("POST");
-        req.setUrl("/api/upload/demo");
-        req.setTargetHost("http://127.0.0.1:"+port);
-        req.setHeader("accept", "application/json");
-        req.setHeader("content-type", MULTIPART_FORM_DATA);
-        // To upload multiple files using multipart/form-data,
-        // file-names, file-content-types and stream-routes must be set.
-        req.setFileNames(List.of("hello1.txt", "hello2.txt"));
-        req.setFileContentTypes(List.of("text/plain", "text/plain"));
-        req.setStreamRoutes(List.of(publishedStreamId1, publishedStreamId2));
-        req.setUploadTags(List.of("file1", "file2"));
+        AsyncHttpRequest req = newMultipartUploadRequest(publishedStreamId1, publishedStreamId2);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::add);
@@ -585,6 +574,23 @@ class RestEndpointTest extends TestBase {
         Boolean done2 = bench2.poll(10, TimeUnit.SECONDS);
         assertEquals(true, done2);
         assertArrayEquals(bytes2.toByteArray(), result2.toByteArray());
+    }
+
+    /** Build the multipart/form-data upload request carrying the two published streams. */
+    private AsyncHttpRequest newMultipartUploadRequest(String streamId1, String streamId2) {
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("POST");
+        req.setUrl("/api/upload/demo");
+        req.setTargetHost("http://127.0.0.1:" + port);
+        req.setHeader("accept", "application/json");
+        req.setHeader("content-type", MULTIPART_FORM_DATA);
+        // To upload multiple files using multipart/form-data,
+        // file-names, file-content-types and stream-routes must be set.
+        req.setFileNames(List.of("hello1.txt", "hello2.txt"));
+        req.setFileContentTypes(List.of("text/plain", "text/plain"));
+        req.setStreamRoutes(List.of(streamId1, streamId2));
+        req.setUploadTags(List.of("file1", "file2"));
+        return req;
     }
 
     @SuppressWarnings("unchecked")

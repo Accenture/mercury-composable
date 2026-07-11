@@ -359,7 +359,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
      */
     // S2095: the publisher is the process-wide shared singleton owned by KafkaRuntime, NOT a resource this
     // method opens - closing it here (try-with-resources) would tear down the shared producer for everyone.
-    @SuppressWarnings("java:S2095")
+    @SuppressWarnings({"java:S2095", "resource"})
     boolean writeToDeadLetter(ConsumerRecord<String, byte[]> consumerRecord, Throwable cause) {
         if (deadLetterTopic == null) {
             log.error("DATA LOSS: no dlq-topic configured; dropping '{}' offset {} after flow failure "

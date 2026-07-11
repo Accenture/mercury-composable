@@ -90,6 +90,9 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
     // one Encoder per worker instance (an instance is single-flight) -> owner-confined Confluent serializers.
     private final ConcurrentMap<Integer, SchemaCodec.Encoder> encoders = new ConcurrentHashMap<>();
 
+    // resource: the publisher is the process-wide shared singleton owned by KafkaRuntime,
+    // not a resource this function opens - closing it here would tear it down for everyone
+    @SuppressWarnings("resource")
     @Override
     public Mono<Void> handleEvent(Map<String, String> headers, byte[] body, int instance) {
         String topic = headers.get(KafkaHeaders.TOPIC);
