@@ -70,11 +70,11 @@ class StateResolverTest {
 
     @Test
     void invalidTypeIsRejected() {
-        assertThrows(IllegalArgumentException.class, () ->
-                resolver.handleEvent(headers("nonsense", JOB), null, 1));
+        Map<String, String> nonsense = headers("nonsense", JOB);
+        assertThrows(IllegalArgumentException.class, () -> resolver.handleEvent(nonsense, null, 1));
         // start/end without a job name falls through to the same rejection
-        assertThrows(IllegalArgumentException.class, () ->
-                resolver.handleEvent(headers("start", null), null, 1));
+        Map<String, String> noJobName = headers("start", null);
+        assertThrows(IllegalArgumentException.class, () -> resolver.handleEvent(noJobName, null, 1));
     }
 
     @Test

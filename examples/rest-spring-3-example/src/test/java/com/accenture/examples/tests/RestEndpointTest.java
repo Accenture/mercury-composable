@@ -20,6 +20,8 @@ package com.accenture.examples.tests;
 
 import com.accenture.examples.common.TestBase;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
@@ -85,24 +87,15 @@ class RestEndpointTest extends TestBase {
         assertEquals("hello world from servlet!", response.getBody());
     }
 
-    @Test
-    void pojoOverHttpFailsFastWhenRemoteIsDown() throws InterruptedException, ExecutionException {
-        // the Event-over-HTTP peer (lambda-example) is not running in a unit test,
-        // exercising the endpoint's error path
-        EventEnvelope response = httpGet("/api/pojo/http/1", null);
-        assertTrue(response.getStatus() >= 400, "expect an error status, got " + response.getStatus());
-    }
-
-    @Test
-    void pojoOverHttpByConfigFailsFastWhenRemoteIsDown() throws InterruptedException, ExecutionException {
-        EventEnvelope response = httpGet("/api/pojo2/http/1", null);
-        assertTrue(response.getStatus() >= 400, "expect an error status, got " + response.getStatus());
-    }
-
-    @Test
-    void pojoServiceMeshFailsFastWithoutTheRemoteService() throws InterruptedException, ExecutionException {
-        // hello.pojo is deployed in lambda-example, not here - exercising the route-not-found path
-        EventEnvelope response = httpGet("/api/pojo/mesh/1", null);
+    /**
+     * The Event-over-HTTP peer (lambda-example) and the hello.pojo service are not deployed in a
+     * unit test, so all three pojo endpoints exercise their fail-fast error paths.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"/api/pojo/http/1", "/api/pojo2/http/1", "/api/pojo/mesh/1"})
+    void pojoEndpointsFailFastWithoutTheRemotePeer(String path)
+            throws InterruptedException, ExecutionException {
+        EventEnvelope response = httpGet(path, null);
         assertTrue(response.getStatus() >= 400, "expect an error status, got " + response.getStatus());
     }
 }
