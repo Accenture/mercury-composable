@@ -16,8 +16,8 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-07 | agent: Claude Code (2026-07-07-163607)
-- **last_review:** 2026-07-07 | through 2026-07-07-163607.md
+- **last_session:** 2026-07-10 | agent: Claude Code (2026-07-11-034954)
+- **last_review:** 2026-07-10 | through 2026-07-11-034954.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -114,7 +114,7 @@
   (3) **CODE CONVENTION: prefer `ReentrantLock` over `synchronized`** in framework code
   (virtual-thread friendly — Eric's review feedback); (4) EmbeddedSchemaRegistry has an opt-in OAuth
   mode (HS256 token endpoint + Bearer enforcement) for authenticated registry tests.
-  <!-- id: release-4-7-0-shipped | created: 2026-07-08 | last_used: 2026-07-09 | uses: 2 | tier: active | origin: 2026-07-08-224933 -->
+  <!-- id: release-4-7-0-shipped | created: 2026-07-08 | last_used: 2026-07-10 | uses: 2 | tier: active | origin: 2026-07-08-224933 -->
 
 - **Release 4.6.2 — SHIPPED 2026-07-07 (tag `v4.6.2` on merge commit `56ac1067`; PRs #140 remediation +
   #141 bump).** SonarQube quality-gate remediation (1 blocker, 24 criticals, 83 majors, smells — all
@@ -134,7 +134,7 @@
   #144 bump) — maintenance on top of 4.6.2: final smell suppressions, model encapsulation,
   playground `random` → SecureRandom. All caveats above still apply. Field Sonar dashboard: gate PASSED,
   0 vuln / 0 bugs / smells rating A; only the CryptoApi DSA hotspot awaits "Safe" review in the Sonar UI.
-  <!-- id: release-4-6-2-shipped | created: 2026-07-07 | last_used: 2026-07-08 | uses: 3 | tier: active | origin: 2026-07-07-163607 -->
+  <!-- id: release-4-6-2-shipped | created: 2026-07-07 | last_used: 2026-07-08 | uses: 4 | tier: archive-candidate | origin: 2026-07-07-163607 -->
 
 - **Release 4.6.1 — security + maintenance patch on top of 4.6.0 (2026-07-06, branch `chore/release-4.6.1`,
   Claude Code).** 4.6.0 was already GitHub-released (tag `v4.6.0`, immutable); rather than recall/re-tag it,
@@ -226,7 +226,10 @@
 
 ## Open Threads
 
-- [ ] (release cut — Claude Code, 2026-07-06, branch `chore/release-4.6.1`, committed + tagged `v4.6.1` locally,
+- [x] (COMPLETED 2026-07-10 review: v4.6.1 released 2026-07-06; field SCA + Snyk re-scans ran and cleared —
+  the follow-on Sonar quality-gate work shipped as 4.6.2/4.6.3, see [[release-4-6-2-shipped]]; only
+  dependabot/28 remains, advisory-only pending Jackson 2.22.1)
+  (release cut — Claude Code, 2026-07-06, branch `chore/release-4.6.1`, committed + tagged `v4.6.1` locally,
   **not pushed**) **4.6.1 security patch → field SCA + Snyk re-scan.** Full detail in the Key Decision
   [[release-4.6.1-security-patch]]. Local build green (opentelemetry-forwarder 22/22; reactor `mvn validate`).
   **Next (Eric):** push branch → PR → merge to `main` (protected, per 4.6.0/#138 flow) → publish GitHub release
@@ -331,7 +334,9 @@
   `minimalist-kafka` — a materially larger test surface than a serializer-library bump.
   <!-- id: thread-kafka-client-version-upgrade | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-230246 -->
 
-- [ ] (implemented, **uncommitted** — Claude Code, 2026-07-02) **minimalist-kafka: Confluent CSFLE wired.**
+- [x] (COMPLETED 2026-07-10 review: CSFLE committed and shipped — CsfleLocalRoundTripTest +
+  SchemaCodecCsfleConfigTest live on main, kafka-flow-adapter guide documents it)
+  (implemented, **uncommitted** — Claude Code, 2026-07-02) **minimalist-kafka: Confluent CSFLE wired.**
   Full detail in the Key Decision [[kafka-csfle-delegation]] and the 2026-07-02-020429 session log. Branch
   `feature/kafka-csfle-field-encryption`, working tree dirty (5 modified + 2 new test files), **nothing
   committed**. All tests green (5 new + full `minimalist-kafka` suite 54, coverage gate met). Design spec
