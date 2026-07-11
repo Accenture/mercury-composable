@@ -63,6 +63,32 @@
 
 ## Key Decisions
 
+- **Release 4.8.0 — SHIPPED 2026-07-10 (tag `v4.8.0` on merge commit `5d9fda45`; PRs #153-#157).**
+  Feature release: **twin-kafka** (dual Kafka cluster bridging), configurable trace-id headers with
+  per-entry overrides, and the hardened model.cid path. **Durable architecture facts:**
+  (1) **twin-kafka is a separate `system/` module depending on minimalist-kafka** — dual-cluster is a
+  special case; single-cluster apps must never carry its weight. Naming: module twin-kafka, artifacts
+  `secondary.*` (plain English; "gemini" rejected — GEMINI.md/Google clash). A bridge is flow YAML:
+  consume via one adapter, publish via the other cluster's notification function; trace + model.cid
+  continuous across both hops. (2) **Reuse seams in minimalist-kafka** (behavior-preserving):
+  KafkaClientConfig location-key overloads; SimpleKafkaNotification protected accessors (publisher/
+  codec/header names/registryUrlKey); SchemaCodec.fromConfig(config, url, keyPrefix) deriving keys,
+  serde prefix, template location AND ManagedCache names from the prefix — **distinct caches per
+  registry are a correctness requirement** (Confluent global schema ids are per-registry; bridging
+  framed payloads = decode-and-re-encode via schema.enabled + subject, NEVER relay raw framed bytes).
+  (3) Registry is optional PER CLUSTER (real-world: on-prem Apache + cloud Confluent); Azure Event
+  Hubs works via the Kafka endpoint (no Confluent registry, pre-provisioned topics). (4) DLQ
+  correctness: RetryPolicy carries the publisher → secondary dead letters land on the secondary
+  cluster. (5) kafka-standalone `dual.servers=true` = broker 9092 + broker 8092; twin templates
+  default to 8092. (6) **Header-name precedence** (both surfaces): per-entry (rest.yaml /
+  kafka-flow-adapter.yaml `trace.id.header`/`correlation.id.header`) > application.properties global
+  (`http/kafka.trace.id.header`, `http/kafka.correlation.id.header`) > built-in default; W3C
+  traceparent always wins for the trace-id. (7) **Flow convention:** map the business correlation-id
+  from `model.cid` (engine-seeded), never from the raw record header; CompileFlows rejects data
+  mappings that overwrite reserved model keys (cid/instance/flow/ttl). See [[release-4-7-0-shipped]]
+  for the release-bump surface and prior caveats.
+  <!-- id: release-4-8-0-shipped | created: 2026-07-10 | last_used: 2026-07-10 | uses: 1 | tier: active | origin: 2026-07-11-031930 -->
+
 - **Release 4.7.0 — SHIPPED 2026-07-08 (tag `v4.7.0` on merge commit `e41a20b7`; PRs #146 feature +
   #147 bump).** Feature release: **MiniGraph `graph.task` skill** — a Task node invokes any composable
   function (`@PreLoad` route) with Event Script style `input[]`/`output[]` mapping (`*` whole-body
