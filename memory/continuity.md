@@ -16,8 +16,8 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-07 | agent: Claude Code (2026-07-07-163607)
-- **last_review:** 2026-07-07 | through 2026-07-07-163607.md
+- **last_session:** 2026-07-10 | agent: Claude Code (2026-07-11-034954)
+- **last_review:** 2026-07-10 | through 2026-07-11-034954.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -63,6 +63,32 @@
 
 ## Key Decisions
 
+- **Release 4.8.0 — SHIPPED 2026-07-10 (tag `v4.8.0` on merge commit `5d9fda45`; PRs #153-#157).**
+  Feature release: **twin-kafka** (dual Kafka cluster bridging), configurable trace-id headers with
+  per-entry overrides, and the hardened model.cid path. **Durable architecture facts:**
+  (1) **twin-kafka is a separate `system/` module depending on minimalist-kafka** — dual-cluster is a
+  special case; single-cluster apps must never carry its weight. Naming: module twin-kafka, artifacts
+  `secondary.*` (plain English; "gemini" rejected — GEMINI.md/Google clash). A bridge is flow YAML:
+  consume via one adapter, publish via the other cluster's notification function; trace + model.cid
+  continuous across both hops. (2) **Reuse seams in minimalist-kafka** (behavior-preserving):
+  KafkaClientConfig location-key overloads; SimpleKafkaNotification protected accessors (publisher/
+  codec/header names/registryUrlKey); SchemaCodec.fromConfig(config, url, keyPrefix) deriving keys,
+  serde prefix, template location AND ManagedCache names from the prefix — **distinct caches per
+  registry are a correctness requirement** (Confluent global schema ids are per-registry; bridging
+  framed payloads = decode-and-re-encode via schema.enabled + subject, NEVER relay raw framed bytes).
+  (3) Registry is optional PER CLUSTER (real-world: on-prem Apache + cloud Confluent); Azure Event
+  Hubs works via the Kafka endpoint (no Confluent registry, pre-provisioned topics). (4) DLQ
+  correctness: RetryPolicy carries the publisher → secondary dead letters land on the secondary
+  cluster. (5) kafka-standalone `dual.servers=true` = broker 9092 + broker 8092; twin templates
+  default to 8092. (6) **Header-name precedence** (both surfaces): per-entry (rest.yaml /
+  kafka-flow-adapter.yaml `trace.id.header`/`correlation.id.header`) > application.properties global
+  (`http/kafka.trace.id.header`, `http/kafka.correlation.id.header`) > built-in default; W3C
+  traceparent always wins for the trace-id. (7) **Flow convention:** map the business correlation-id
+  from `model.cid` (engine-seeded), never from the raw record header; CompileFlows rejects data
+  mappings that overwrite reserved model keys (cid/instance/flow/ttl). See [[release-4-7-0-shipped]]
+  for the release-bump surface and prior caveats.
+  <!-- id: release-4-8-0-shipped | created: 2026-07-10 | last_used: 2026-07-10 | uses: 1 | tier: active | origin: 2026-07-11-031930 -->
+
 - **Release 4.7.0 — SHIPPED 2026-07-08 (tag `v4.7.0` on merge commit `e41a20b7`; PRs #146 feature +
   #147 bump).** Feature release: **MiniGraph `graph.task` skill** — a Task node invokes any composable
   function (`@PreLoad` route) with Event Script style `input[]`/`output[]` mapping (`*` whole-body
@@ -88,7 +114,7 @@
   (3) **CODE CONVENTION: prefer `ReentrantLock` over `synchronized`** in framework code
   (virtual-thread friendly — Eric's review feedback); (4) EmbeddedSchemaRegistry has an opt-in OAuth
   mode (HS256 token endpoint + Bearer enforcement) for authenticated registry tests.
-  <!-- id: release-4-7-0-shipped | created: 2026-07-08 | last_used: 2026-07-09 | uses: 2 | tier: active | origin: 2026-07-08-224933 -->
+  <!-- id: release-4-7-0-shipped | created: 2026-07-08 | last_used: 2026-07-10 | uses: 2 | tier: active | origin: 2026-07-08-224933 -->
 
 - **Release 4.6.2 — SHIPPED 2026-07-07 (tag `v4.6.2` on merge commit `56ac1067`; PRs #140 remediation +
   #141 bump).** SonarQube quality-gate remediation (1 blocker, 24 criticals, 83 majors, smells — all
@@ -108,7 +134,7 @@
   #144 bump) — maintenance on top of 4.6.2: final smell suppressions, model encapsulation,
   playground `random` → SecureRandom. All caveats above still apply. Field Sonar dashboard: gate PASSED,
   0 vuln / 0 bugs / smells rating A; only the CryptoApi DSA hotspot awaits "Safe" review in the Sonar UI.
-  <!-- id: release-4-6-2-shipped | created: 2026-07-07 | last_used: 2026-07-08 | uses: 3 | tier: active | origin: 2026-07-07-163607 -->
+  <!-- id: release-4-6-2-shipped | created: 2026-07-07 | last_used: 2026-07-08 | uses: 4 | tier: archive-candidate | origin: 2026-07-07-163607 -->
 
 - **Release 4.6.1 — security + maintenance patch on top of 4.6.0 (2026-07-06, branch `chore/release-4.6.1`,
   Claude Code).** 4.6.0 was already GitHub-released (tag `v4.6.0`, immutable); rather than recall/re-tag it,
@@ -199,15 +225,6 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
-
-- [ ] (release cut — Claude Code, 2026-07-06, branch `chore/release-4.6.1`, committed + tagged `v4.6.1` locally,
-  **not pushed**) **4.6.1 security patch → field SCA + Snyk re-scan.** Full detail in the Key Decision
-  [[release-4.6.1-security-patch]]. Local build green (opentelemetry-forwarder 22/22; reactor `mvn validate`).
-  **Next (Eric):** push branch → PR → merge to `main` (protected, per 4.6.0/#138 flow) → publish GitHub release
-  tag `v4.6.1` on the merge commit; then run the field static-code-analysis + Snyk scan to confirm the r2dbc/SCRAM
-  + protobuf-removal remediations clear. The local `v4.6.1` tag points at the branch commit — re-tag on the merge
-  commit at release-publish (mirrors how `v4.6.0` was created on publish). Relates [[snyk-oss-dependency-update-2026-07]].
-  <!-- id: thread-release-4.6.1-field-scan | created: 2026-07-06 | last_used: 2026-07-06 | uses: 1 | tier: working | origin: 2026-07-06-164315 -->
 
 - [ ] (P0–P5 code-complete — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; remaining = field canary → P4 retire-BDB) **Replace
   ElasticQueue's Berkeley DB spill tier with a portable file-backed segmented FIFO.** Full detail + rationale
@@ -305,14 +322,6 @@
   `minimalist-kafka` — a materially larger test surface than a serializer-library bump.
   <!-- id: thread-kafka-client-version-upgrade | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-230246 -->
 
-- [ ] (implemented, **uncommitted** — Claude Code, 2026-07-02) **minimalist-kafka: Confluent CSFLE wired.**
-  Full detail in the Key Decision [[kafka-csfle-delegation]] and the 2026-07-02-020429 session log. Branch
-  `feature/kafka-csfle-field-encryption`, working tree dirty (5 modified + 2 new test files), **nothing
-  committed**. All tests green (5 new + full `minimalist-kafka` suite 54, coverage gate met). Design spec
-  `draft-design-specs/kafka_csfle_field_encryption_design.md` (v3.0, gitignored) fully in sync — §10/§11
-  record exactly what shipped. **Next action: Eric's code review, then commit + PR** (same flow as #128/#129).
-  → relates [[minimalist-kafka-schema-registry]], [[kafka-schemaid-from-subject-version]].
-  <!-- id: thread-csfle-field-encryption | created: 2026-07-01 | last_used: 2026-07-04 | uses: 3 | tier: working | origin: 2026-07-02-020429 -->
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
   build for the multi-module project.

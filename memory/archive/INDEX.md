@@ -68,3 +68,5 @@
 - minimalist-kafka-schema-registry — minimalist-kafka Schema Registry support shipped: Confluent serdes as library, subject/version-driven producer — faded - feature shipped (PR #129); described by module code and README — 2026-Q3.md
 - snyk-oss-dependency-update-2026-07 — Repo-wide Snyk OSS dependency update shipped in 4.6.1 (spring-boot 4.1.0/3.5.16, netty 4.2.15, tomcat 11.0.23, vertx 5.1.3) — completed - shipped in 4.6.1 — 2026-Q3.md
 - thread-guava-failureaccess-field-fix — Guava failureaccess field fix completed (b47fac39); CAVEAT preserved: do NOT remove the explicit failureaccess:1.0.3 pins - they guarantee the class under strict field resolution — completed - field builds green through the 4.6.2 scans; v4.6.2 released — 2026-Q3.md
+- thread-release-4.6.1-field-scan — (COMPLETED 2026-07-10 review: v4.6.1 released 2026-07-06; field SCA + Snyk re-scans ran an… — completed and swept (2026-07-10 review): shipped in 4.6.x releases — 2026-Q3.md
+- thread-csfle-field-encryption — (COMPLETED 2026-07-10 review: CSFLE committed and shipped — CsfleLocalRoundTripTest + — completed and swept (2026-07-10 review): shipped in 4.6.x releases — 2026-Q3.md
