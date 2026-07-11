@@ -19,3 +19,13 @@ CREATE TABLE IF NOT EXISTS temp_unit_test_table (
 
 INSERT INTO temp_unit_test_table (id, name, address, created) VALUES ('001', 'Mary', '100 World Blvd', '2024-12-22 10:10:30');
 INSERT INTO temp_unit_test_table (id, name, address, created) VALUES ('002', 'Peter', '200 World Blvd', '2025-01-02 10:20:30');
+
+-- the demo_profile table serves the example's own /api/demo endpoint (DemoRestEndpoint + DemoRepo)
+CREATE TABLE IF NOT EXISTS demo_profile (
+        id VARCHAR(40) PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        address VARCHAR(256) NOT NULL,
+        created TIMESTAMP NOT NULL
+    );
+
+INSERT INTO demo_profile (id, name, address, created) VALUES ('D1', 'Aunt May', '20 Ingram Street', '2025-01-02 10:20:30');
