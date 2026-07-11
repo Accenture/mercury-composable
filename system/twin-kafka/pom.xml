@@ -28,7 +28,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>21</java.version>
         <netty.version>4.2.15.Final</netty.version>
-        <jackson-2-bom.version>2.22.0</jackson-2-bom.version>
+        <jackson-2-bom.version>2.22.1</jackson-2-bom.version>
         <!-- Same pinning rationale as minimalist-kafka: match the embedded test broker. -->
         <kafka.version>4.2.0</kafka.version>
     </properties>

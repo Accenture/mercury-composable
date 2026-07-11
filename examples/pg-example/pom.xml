@@ -17,7 +17,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <tomcat.version>11.0.23</tomcat.version>
         <netty.version>4.2.15.Final</netty.version>
-        <jackson-2-bom.version>2.22.0</jackson-2-bom.version>
+        <jackson-2-bom.version>2.22.1</jackson-2-bom.version>
         <log4j2.version>2.25.4</log4j2.version>
         <kafka.version>4.2.0</kafka.version>
         <gson.version>2.13.2</gson.version>
