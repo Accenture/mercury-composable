@@ -52,6 +52,21 @@ class KafkaClientConfigTest {
     }
 
     @Test
+    void producerDefaultsToSimpleRandomPartitioner() {
+        Properties p = KafkaClientConfig.producerProperties(EMPTY);
+        assertEquals(SimpleRandomPartitioner.class.getName(), p.getProperty("partitioner.class"),
+                "random distribution is the default when the template does not choose a partitioner");
+    }
+
+    @Test
+    void templatePartitionerOverridesTheRandomDefault() {
+        ConfigBase config = new ConfigReader("classpath:/custom-partitioner-config.properties");
+        Properties p = KafkaClientConfig.producerProperties(config);
+        assertEquals("org.apache.kafka.clients.producer.RoundRobinPartitioner",
+                p.getProperty("partitioner.class"), "a template-selected partitioner wins over the default");
+    }
+
+    @Test
     void consumerLoadsTemplateAndPinsDeserializers() {
         Properties p = KafkaClientConfig.consumerProperties(EMPTY);
         assertEquals(StringDeserializer.class.getName(), p.getProperty("key.deserializer"));

@@ -83,6 +83,9 @@ public final class KafkaClientConfig {
         Properties p = load(appConfig.getProperty(locationKey, defaultLocations));
         p.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         p.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
+        // default (not pinned): random distribution instead of Kafka's sticky default, which skews
+        // low-volume traffic onto one partition; a template that sets partitioner.class wins
+        p.putIfAbsent(ProducerConfig.PARTITIONER_CLASS_CONFIG, SimpleRandomPartitioner.class.getName());
         return p;
     }
 

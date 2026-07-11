@@ -189,11 +189,18 @@ parameters its contract depends on and lets the template own everything else:
 |---------|-----------------------|-------------------|
 | Serialization | key=`String`, value=`byte[]` (de)serializers | — |
 | Delivery semantics (consumer) | `enable.auto.commit` / `max.poll.records` — per-binding overlay (see [delivery mode](#delivery-mode)) | `auto.offset.reset` |
+| Partitioning (producer) | `partitioner.class` **defaulted** (not pinned) to `SimpleRandomPartitioner` | any `partitioner.class` set here wins |
 | Connection / security | — | `bootstrap.servers`, `security.protocol`, `sasl.*`, `ssl.*`, `acks` |
 
 `bootstrap.servers` is template-only via `${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}`. The byte[] wire
 contract keeps the building blocks serializer-free; richer encodings layer on top via the
 [Schema Registry integration](#schema) (JSON Schema / Avro), opt-in per binding.
+
+> **Why a random partitioner?** Kafka's default is a *sticky* partitioner — throughput-friendly, but at
+> low volume it lands everything on one partition, leaving a multi-instance consumer group mostly idle.
+> The library's `SimpleRandomPartitioner` is perfectly stateless and distributes keyless records
+> uniformly. Records with an explicit `partition` header bypass it, and keyed records keep Kafka's
+> murmur2 key-hash mapping. Set `partitioner.class` in `kafka-producer.properties` to override.
 
 > **OAuth token URLs are allow-listed automatically.** The Kafka client refuses to fetch an OAuth 2.0
 > token from a URL that is not on the JVM allow-list (the

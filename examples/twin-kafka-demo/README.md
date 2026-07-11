@@ -170,9 +170,10 @@ The immediate HTTP ack uses `originator: HTTP_REQUEST`; the system-of-record's o
 - **Fully asynchronous.** The HTTP request is acknowledged immediately (`execution: response`); the
   outcome is observed on the response topic. No sync-over-async (see the sync-over-async-demo for that
   pattern) and no field encryption (see composable-example).
-- **No ordering assumptions.** The system-of-record runs 5 workers and messages spread across the 10
-  partitions by the producer's default (sticky) partitioner. At demo pace consecutive messages often
-  share a batch and land on the same partition; the spread shows under real load.
+- **No ordering assumptions.** The system-of-record runs 5 workers, and minimalist-kafka's default
+  `SimpleRandomPartitioner` (stateless uniform random - Kafka's sticky default would skew low-volume
+  traffic onto one partition) spreads messages across the 10 partitions - watch the `partition=` value
+  vary in the listener.
 - **The bridge is pure YAML.** Consuming with `schema.enabled: true` hands the flow a decoded Map;
   publishing with a `subject` header re-encodes. The two bridge flows are just topic-to-topic mappings —
   `bridge-request.yml` and `bridge-response.yml`.
