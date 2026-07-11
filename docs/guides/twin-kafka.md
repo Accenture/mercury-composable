@@ -143,7 +143,7 @@ this, so a bridge application runs locally with zero connection configuration.
 
 For a complete runnable walkthrough — an HTTP edge, a pure-YAML bridge, and a system-of-record
 crossing the two emulated clusters with trace/correlation continuity — see the
-[`twin-kafka-demo`](../../examples/twin-kafka-demo/README.md) worked example.
+[`twin-kafka-demo`](https://github.com/Accenture/mercury-composable/tree/main/examples/twin-kafka-demo) worked example.
 
 ## Configuration keys {#config}
 
@@ -166,7 +166,7 @@ impedance-matching overrides.
 
 ## See also {#see-also}
 
-- [twin-kafka-demo](../../examples/twin-kafka-demo/README.md) - runnable worked example of the bridge pattern.
+- [twin-kafka-demo](https://github.com/Accenture/mercury-composable/tree/main/examples/twin-kafka-demo) - runnable worked example of the bridge pattern.
 - [Kafka Flow Adapter](kafka-flow-adapter.md) - the foundation library this module extends.
 - [Configuration Reference](configuration-reference.md#kafka-flow-adapter) - every key in one place.
 - [Reserved names and headers](reserved-names-and-headers.md) - trace/correlation header conventions.
