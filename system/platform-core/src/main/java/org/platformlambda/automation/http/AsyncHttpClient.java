@@ -88,7 +88,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private static final String HEAD = "HEAD";
     private static final String X_STREAM_ID = "x-stream-id";
     private static final String X_TTL = "x-ttl";
-    private static final String TRACE_ID_HEADER = "X-Trace-Id";
     private static final String CONTENT_TYPE = "content-type";
     private static final String CONTENT_LENGTH = "content-length";
     private static final String X_CONTENT_LENGTH = "x-content-length";
@@ -331,7 +330,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         // from the upstream X-Trace-Id/traceparent at ingress, the upstream trace still propagates.
         String traceId = po.getTraceId();
         if (traceId != null) {
-            http.set(TRACE_ID_HEADER, traceId);
+            // use the configured trace-id header name (http.trace.id.header, default X-Trace-Id)
+            http.set(HttpRouter.getTraceIdHeader(), traceId);
         }
         String traceparent = W3cTrace.format(traceId, spanId);
         if (traceparent != null) {

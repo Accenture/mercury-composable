@@ -74,6 +74,32 @@ class RestEndpointTest extends TestBase {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void perEndpointHeaderOverridesCaptureTraceAndCid() throws InterruptedException {
+        // /api/legacy/probe declares 'trace.id.header: X-Legacy-Trace' and
+        // 'correlation.id.header: X-Legacy-Cid' in rest.yaml - the endpoint captures a legacy caller's
+        // custom headers instead of the global X-Trace-Id / X-Correlation-Id names
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        EventEmitter po = EventEmitter.getInstance();
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("GET").setUrl("/api/legacy/probe").setTargetHost("http://127.0.0.1:" + port);
+        req.setHeader("accept", "application/json");
+        req.setHeader("X-Legacy-Trace", "legacy-trace-0001");
+        req.setHeader("X-Legacy-Cid", "legacy-cid-0001");
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
+        po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
+        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        assert response != null;
+        assertEquals(200, response.getStatus());
+        assertInstanceOf(Map.class, response.getBody());
+        Map<String, Object> probe = (Map<String, Object>) response.getBody();
+        assertEquals("legacy-trace-0001", probe.get("traceId"),
+                "trace-id captured from the per-endpoint 'trace.id.header' override");
+        assertEquals("legacy-cid-0001", probe.get("cid"),
+                "business correlation-id captured from the per-endpoint 'correlation.id.header' override");
+    }
+
     @Test
     void optionsMethodTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
@@ -511,18 +537,7 @@ class RestEndpointTest extends TestBase {
         String publishedStreamId1 = getStream(bytes1, 10);
         ByteArrayOutputStream bytes2 = new ByteArrayOutputStream();
         String publishedStreamId2 = getStream(bytes2, 20);
-        AsyncHttpRequest req = new AsyncHttpRequest();
-        req.setMethod("POST");
-        req.setUrl("/api/upload/demo");
-        req.setTargetHost("http://127.0.0.1:"+port);
-        req.setHeader("accept", "application/json");
-        req.setHeader("content-type", MULTIPART_FORM_DATA);
-        // To upload multiple files using multipart/form-data,
-        // file-names, file-content-types and stream-routes must be set.
-        req.setFileNames(List.of("hello1.txt", "hello2.txt"));
-        req.setFileContentTypes(List.of("text/plain", "text/plain"));
-        req.setStreamRoutes(List.of(publishedStreamId1, publishedStreamId2));
-        req.setUploadTags(List.of("file1", "file2"));
+        AsyncHttpRequest req = newMultipartUploadRequest(publishedStreamId1, publishedStreamId2);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::add);
@@ -559,6 +574,23 @@ class RestEndpointTest extends TestBase {
         Boolean done2 = bench2.poll(10, TimeUnit.SECONDS);
         assertEquals(true, done2);
         assertArrayEquals(bytes2.toByteArray(), result2.toByteArray());
+    }
+
+    /** Build the multipart/form-data upload request carrying the two published streams. */
+    private AsyncHttpRequest newMultipartUploadRequest(String streamId1, String streamId2) {
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("POST");
+        req.setUrl("/api/upload/demo");
+        req.setTargetHost("http://127.0.0.1:" + port);
+        req.setHeader("accept", "application/json");
+        req.setHeader("content-type", MULTIPART_FORM_DATA);
+        // To upload multiple files using multipart/form-data,
+        // file-names, file-content-types and stream-routes must be set.
+        req.setFileNames(List.of("hello1.txt", "hello2.txt"));
+        req.setFileContentTypes(List.of("text/plain", "text/plain"));
+        req.setStreamRoutes(List.of(streamId1, streamId2));
+        req.setUploadTags(List.of("file1", "file2"));
+        return req;
     }
 
     @SuppressWarnings("unchecked")

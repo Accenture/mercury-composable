@@ -45,6 +45,9 @@ public class RoutingEntry {
     private static final String AUTHENTICATION = "authentication";
     private static final String UPLOAD = "upload";
     private static final String TRACING = "tracing";
+    // optional per-endpoint overrides of the global http.trace.id.header / http.correlation.id.header
+    private static final String TRACE_ID_HEADER = "trace.id.header";
+    private static final String CORRELATION_ID_HEADER = "correlation.id.header";
     private static final String SERVICE = "service";
     private static final String FLOW = "flow";
     private static final String METHODS = "methods";
@@ -502,6 +505,10 @@ public class RoutingEntry {
         if ("true".equalsIgnoreCase(tracing)) {
             info.tracing = true;
         }
+        // optional per-endpoint header-name overrides; ConfigReader normalizes the dotted keys into
+        // nested maps, so the composite paths below resolve them correctly
+        info.traceIdHeader = config.getProperty(REST+"["+idx+"]."+TRACE_ID_HEADER);
+        info.correlationIdHeader = config.getProperty(REST+"["+idx+"]."+CORRELATION_ID_HEADER);
         // drop query string when parsing URL
         if (url.contains("?")) {
             url = url.substring(0, url.indexOf('?'));

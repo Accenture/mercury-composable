@@ -105,8 +105,9 @@ public class HttpRouter {
     private static final Path SIGNATURE_FOLDER_PATH = SIGNATURE_FOLDER.toPath();
     // requestId -> context
     private static final ConcurrentMap<String, AsyncContextHolder> contexts = new ConcurrentHashMap<>();
-    // The only HTTP trace header the framework recognizes/emits, alongside W3C "traceparent".
-    private static final String TRACE_ID_HEADER = "X-Trace-Id";
+    // Configurable HTTP trace-id header recognized/emitted alongside W3C "traceparent"; default X-Trace-Id.
+    private static final String DEFAULT_TRACE_ID_HEADER = "X-Trace-Id";
+    private static String traceIdHeader = DEFAULT_TRACE_ID_HEADER;
     // Configurable HTTP correlation-id header (enterprise-specific); default X-Correlation-Id.
     private static String businessCorrelationIdHeader;
     // Read-only reserved header exposing the business correlation-id to the target function.
@@ -128,6 +129,8 @@ public class HttpRouter {
                 AppConfigReader config = AppConfigReader.getInstance();
                 businessCorrelationIdHeader = config.getProperty("http.correlation.id.header", "X-Correlation-Id");
                 log.info("Correlation-id HTTP header is '{}'", businessCorrelationIdHeader);
+                traceIdHeader = config.getProperty("http.trace.id.header", DEFAULT_TRACE_ID_HEADER);
+                log.info("Trace-id HTTP header is '{}'", traceIdHeader);
                 String folder = config.getProperty("spring.web.resources.static-locations",
                         config.getProperty("static.html.folder", "classpath:/public"));
                 if (folder.endsWith("/")) {
@@ -162,6 +165,16 @@ public class HttpRouter {
      */
     public static String getCorrelationIdHeader() {
         return businessCorrelationIdHeader;
+    }
+
+    /**
+     * The trace-id header name (default X-Trace-Id, configurable via http.trace.id.header). Used by
+     * AsyncHttpClient to propagate the current trace-id to downstream HTTP calls.
+     *
+     * @return the trace-id header name
+     */
+    public static String getTraceIdHeader() {
+        return traceIdHeader;
     }
 
     public ConcurrentMap<String, AsyncContextHolder> getContexts() {
@@ -471,10 +484,14 @@ public class HttpRouter {
         AsyncHttpRequest req = prepareHttpRequest(request, route, uri);
         // Ensure the request carries a business correlation-id; generate a fresh one at the edge if absent.
         // This is independent of tracing so a correlation-id is always available to flows and functions.
-        String businessCorrelationId = req.getHeader(businessCorrelationIdHeader);
+        // A per-endpoint 'correlation.id.header' in rest.yaml overrides the global name (impedance
+        // matching for an upstream that uses its own header convention).
+        String cidHeaderName = route.info.correlationIdHeader != null
+                ? route.info.correlationIdHeader : businessCorrelationIdHeader;
+        String businessCorrelationId = req.getHeader(cidHeaderName);
         if (businessCorrelationId == null) {
             businessCorrelationId = util.getUuid();
-            req.setHeader(businessCorrelationIdHeader, businessCorrelationId);
+            req.setHeader(cidHeaderName, businessCorrelationId);
         }
         // Distributed tracing required?
         String traceId = null;
@@ -482,7 +499,7 @@ public class HttpRouter {
         String parentSpanId = null;
         // Set trace header if needed
         if (route.info.tracing) {
-            traceId = getTraceId(request);
+            traceId = getTraceId(request, route.info.traceIdHeader);
             tracePath = method + " " + uri;
             if (req.getQueryString() != null) {
                 tracePath += "?" + req.getQueryString();
@@ -892,15 +909,17 @@ public class HttpRouter {
     }
 
     /**
-     * Get the trace ID from the X-Trace-Id HTTP request header if present, otherwise
-     * generate a fresh one. (A well-formed W3C "traceparent" takes precedence over this
-     * at the call site.)
+     * Get the trace ID from the effective trace-id HTTP request header if present, otherwise
+     * generate a fresh one. The endpoint's 'trace.id.header' override wins over the global
+     * http.trace.id.header (default X-Trace-Id). (A well-formed W3C "traceparent" takes
+     * precedence over this at the call site.)
      *
      * @param request HTTP
+     * @param headerOverride the endpoint's trace-id header override, or null for the global name
      * @return the trace ID
      */
-    private String getTraceId(HttpServerRequest request) {
-        String id = request.getHeader(TRACE_ID_HEADER);
+    private String getTraceId(HttpServerRequest request, String headerOverride) {
+        String id = request.getHeader(headerOverride != null ? headerOverride : traceIdHeader);
         return id != null ? id : util.getUuid();
     }
 

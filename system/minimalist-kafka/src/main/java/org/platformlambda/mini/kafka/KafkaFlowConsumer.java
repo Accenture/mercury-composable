@@ -119,9 +119,13 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private static final String METADATA_KEY = "key";
     private static final String DLQ_ERROR_HEADER = "dlq.error";
     private static final String DLQ_ORIGIN_TOPIC_HEADER = "dlq.origin.topic";
-    // Configurable inbound business correlation-id header (default "cid"); its value seeds the flow's model.cid.
-    private static final String BUSINESS_CORRELATION_ID_HEADER = AppConfigReader.getInstance()
+    // Global inbound business correlation-id header (default "cid"); its value seeds the flow's model.cid.
+    private static final String GLOBAL_CORRELATION_ID_HEADER = AppConfigReader.getInstance()
             .getProperty("kafka.correlation.id.header", KafkaHeaders.CORRELATION_ID);
+    // Global inbound trace-id header (unset by default): a fallback trace-id source for an upstream that
+    // does not send a W3C traceparent. A well-formed traceparent always takes precedence.
+    private static final String GLOBAL_TRACE_ID_HEADER = AppConfigReader.getInstance()
+            .getProperty("kafka.trace.id.header");
 
     private final Consumer<String, byte[]> consumer;
     private final KafkaConsumerBinding binding;
@@ -137,6 +141,9 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private final SchemaCodec.Decoder decoder;
     /** The binding's configured {@code dlq-topic}, or {@code null} when none was configured. */
     private final String deadLetterTopic;
+    // Effective inbound header names: per-binding override first, then the application.properties global.
+    private final String correlationIdHeader;
+    private final String traceIdHeader;
     private final ExecutorService loop;
 
     private volatile boolean running;
@@ -150,6 +157,9 @@ public class KafkaFlowConsumer implements AutoCloseable {
         this.compiledPattern = binding.isPattern() ? Pattern.compile(binding.topicOrPattern()) : null;
         this.decoder = schemaCodec == null ? null : schemaCodec.newDecoder();
         this.deadLetterTopic = binding.dlqTopic();
+        this.correlationIdHeader = binding.correlationIdHeader() != null
+                ? binding.correlationIdHeader() : GLOBAL_CORRELATION_ID_HEADER;
+        this.traceIdHeader = binding.traceIdHeader() != null ? binding.traceIdHeader() : GLOBAL_TRACE_ID_HEADER;
         this.loop = Executors.newSingleThreadExecutor(runnable -> {
             Thread thread = new Thread(runnable, "kafka-flow-" + binding.topicOrPattern());
             thread.setDaemon(true);
@@ -223,17 +233,24 @@ public class KafkaFlowConsumer implements AutoCloseable {
         @SuppressWarnings("unchecked")
         Map<String, String> headers = (Map<String, String>) dataset.get(HEADER);
         String[] trace = W3cTrace.parse(headers.get(W3cTrace.TRACEPARENT));
-        String traceId = trace.length > 0 ? trace[0] : Utility.getInstance().getUuid();
+        // trace-id precedence: W3C traceparent > configured trace-id header (legacy upstream) > fresh UUID
+        String traceId = trace.length > 0 ? trace[0] : traceIdFromHeaderOrNew(headers);
         String tracePath = "KAFKA /" + consumerRecord.topic();
         EventEnvelope forward = toFlowRequest(dataset, headers, trace, traceId, tracePath);
         return deliver(consumerRecord, forward, traceId, tracePath);
     }
 
+    /** The inbound trace-id from the effective trace-id header when configured, else a fresh UUID. */
+    private String traceIdFromHeaderOrNew(Map<String, String> headers) {
+        String upstreamTraceId = traceIdHeader == null ? null : headers.get(traceIdHeader);
+        return upstreamTraceId != null ? upstreamTraceId : Utility.getInstance().getUuid();
+    }
+
     /** Build the flow-engine request from the decoded dataset, chaining onto the inbound trace/span. */
     private EventEnvelope toFlowRequest(Map<String, Object> dataset, Map<String, String> headers,
                                         String[] trace, String traceId, String tracePath) {
-        // Capture the upstream business correlation-id from the configured header; generate a fresh one if absent.
-        String businessCorrelationId = headers.get(BUSINESS_CORRELATION_ID_HEADER);
+        // Capture the upstream business correlation-id from the effective header; generate a fresh one if absent.
+        String businessCorrelationId = headers.get(correlationIdHeader);
         if (businessCorrelationId == null) {
             businessCorrelationId = Utility.getInstance().getUuid();
         }
@@ -342,7 +359,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
      */
     // S2095: the publisher is the process-wide shared singleton owned by KafkaRuntime, NOT a resource this
     // method opens - closing it here (try-with-resources) would tear down the shared producer for everyone.
-    @SuppressWarnings("java:S2095")
+    @SuppressWarnings({"java:S2095", "resource"})
     boolean writeToDeadLetter(ConsumerRecord<String, byte[]> consumerRecord, Throwable cause) {
         if (deadLetterTopic == null) {
             log.error("DATA LOSS: no dlq-topic configured; dropping '{}' offset {} after flow failure "

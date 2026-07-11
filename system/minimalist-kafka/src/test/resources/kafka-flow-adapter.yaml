@@ -28,3 +28,11 @@ consumer:
   - topic-pattern: 'events\.[a-z]{2}'
     flow: 'kafka-pattern-sink-flow'
     group: 'region-events-test-group'
+  # Per-binding header-name overrides (impedance matching): this binding accepts a legacy upstream that
+  # publishes 'X-Correlation-ID' and 'X-Legacy-Trace' record headers instead of the global conventions.
+  # A well-formed W3C traceparent still takes precedence over the trace-id header.
+  - topic: 'legacy-test-topic'
+    flow: 'kafka-sink-flow'
+    group: 'legacy-test-group'
+    trace.id.header: 'X-Legacy-Trace'
+    correlation.id.header: 'X-Correlation-ID'
