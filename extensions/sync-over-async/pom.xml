@@ -24,8 +24,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>21</java.version>
-        <netty.version>4.2.15.Final</netty.version>
-        <jackson-2-bom.version>2.22.0</jackson-2-bom.version>
+        <netty.version>4.2.16.Final</netty.version>
+        <jackson-2-bom.version>2.22.1</jackson-2-bom.version>
         <!-- Embedded broker (kafka_2.13) version for tests. Matches the kafka-clients version pinned by
              minimalist-kafka so there is no client/broker protocol skew. -->
         <kafka.version>4.2.0</kafka.version>
