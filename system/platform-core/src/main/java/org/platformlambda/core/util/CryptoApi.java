@@ -41,16 +41,13 @@ public class CryptoApi {
     private static final SecureRandom random = new SecureRandom();
     private static final int BUFFER_SIZE = 1024;
     private static final String RSA = "RSA";
-    private static final String DSA = "DSA";
     private static final String AES = "AES";
     private static final String SHA256 = "SHA-256";
     private static final String SHA512 = "SHA-512";
     private static final String HMAC_SHA256 = "HmacSHA256";
     private static final String HMAC_SHA512 = "HmacSHA512";
     private static final int RSA_2048 = 2048;
-    private static final int DSA_2048 = 2048;
     private static final int[] PUBLIC_KEY_SIZES = {2048, 3072, 4096};
-    private static final String SHA_256_WITH_DSA = "SHA256withDSA";
     private static final String SHA_256_WITH_RSA = "SHA256withRSA";
     private static final String AES_GCM_NO_PADDING = "AES/GCM/NoPadding";
     private static final String RSA_PADDING = "RSA/ECB/OAEPWithSHA1AndMGF1Padding";
@@ -98,7 +95,7 @@ public class CryptoApi {
     /**
      * Get private key bytes
      *
-     * @param keyPair RSA-2048 or DSA-2048 key pair
+     * @param keyPair RSA-2048 key pair
      * @return PKCS-8 encoded byte array
      */
     public byte[] getEncodedPrivateKey(KeyPair keyPair) {
@@ -106,25 +103,17 @@ public class CryptoApi {
     }
 
     public PublicKey getPublic(byte[] publicKey) throws GeneralSecurityException {
-        return getPublic(publicKey, true);
-    }
-
-    public PublicKey getPublic(byte[] publicKey, boolean rsa) throws GeneralSecurityException {
-        return KeyFactory.getInstance(rsa? RSA : DSA).generatePublic(new X509EncodedKeySpec(publicKey));
+        return KeyFactory.getInstance(RSA).generatePublic(new X509EncodedKeySpec(publicKey));
     }
 
     public PrivateKey getPrivate(byte[] privateKey) throws GeneralSecurityException {
-        return getPrivate(privateKey, true);
-    }
-
-    public PrivateKey getPrivate(byte[] privateKey, boolean rsa) throws GeneralSecurityException {
-        return KeyFactory.getInstance(rsa? RSA : DSA).generatePrivate(new PKCS8EncodedKeySpec(privateKey));
+        return KeyFactory.getInstance(RSA).generatePrivate(new PKCS8EncodedKeySpec(privateKey));
     }
 
     /**
      * Get public key bytes
      *
-     * @param keyPair RSA-2048 or DSA-1024 key pair
+     * @param keyPair RSA-2048 key pair
      * @return X509 encoded byte array
      */
     public byte[] getEncodedPublicKey(KeyPair keyPair) {
@@ -132,14 +121,14 @@ public class CryptoApi {
     }
 
     public byte[] rsaEncrypt(byte[] clearText, byte[] publicKey) throws GeneralSecurityException {
-        PublicKey key = getPublic(publicKey, true);
+        PublicKey key = getPublic(publicKey);
         Cipher cipher = Cipher.getInstance(RSA_PADDING);
         cipher.init(Cipher.ENCRYPT_MODE, key);
         return cipher.doFinal(clearText);
     }
 
     public byte[] rsaDecrypt(byte[] cipherText, byte[] privateKey) throws GeneralSecurityException {
-        PrivateKey key = getPrivate(privateKey, true);
+        PrivateKey key = getPrivate(privateKey);
         Cipher cipher = Cipher.getInstance(RSA_PADDING);
         cipher.init(Cipher.DECRYPT_MODE, key);
         return cipher.doFinal(cipherText);
@@ -153,7 +142,7 @@ public class CryptoApi {
      * @throws GeneralSecurityException in case of error
      */
     public byte[] rsaSign(byte[] data, byte[] privateKey) throws GeneralSecurityException {
-        PrivateKey key = getPrivate(privateKey, true);
+        PrivateKey key = getPrivate(privateKey);
         Signature rsa = Signature.getInstance(SHA_256_WITH_RSA);
         rsa.initSign(key);
         rsa.update(data);
@@ -185,65 +174,11 @@ public class CryptoApi {
      * @throws GeneralSecurityException when unable to generate key
      */
     public boolean rsaVerify(byte[] data, byte[] signature, byte[] publicKey) throws GeneralSecurityException {
-        PublicKey key = getPublic(publicKey, true);
+        PublicKey key = getPublic(publicKey);
         Signature rsa = Signature.getInstance(SHA_256_WITH_RSA);
         rsa.initVerify(key);
         rsa.update(data);
         return rsa.verify(signature);
-    }
-
-    public KeyPair generateDsaKey() {
-        return generateDsaKey(DSA_2048);
-    }
-
-    public KeyPair generateDsaKey(int keySize) {
-        if (allowedRsaKeySize(keySize)) {
-            try {
-                KeyPairGenerator kg = KeyPairGenerator.getInstance(DSA);
-                kg.initialize(keySize);
-                return kg.generateKeyPair();
-            } catch (NoSuchAlgorithmException e) {
-                // this does not happen
-                return null;
-            }
-        } else {
-            List<Integer> allowed = new ArrayList<>();
-            for (int size: PUBLIC_KEY_SIZES) {
-                allowed.add(size);
-            }
-            throw new IllegalArgumentException("Key size must be one of "+ allowed);
-        }
-    }
-
-    /**
-     * Create a digital signature using a private key (DSA)
-     * @param data bytes
-     * @param privateKey encoded key
-     * @return signature
-     * @throws GeneralSecurityException in case of error
-     */
-    public byte[] dsaSign(byte[] data, byte[] privateKey) throws GeneralSecurityException {
-        PrivateKey key = getPrivate(privateKey, false);
-        Signature dsa = Signature.getInstance(SHA_256_WITH_DSA);
-        dsa.initSign(key);
-        dsa.update(data);
-        return dsa.sign();
-    }
-
-    /**
-     * Verify a digital signature using a public key (DSA)
-     * @param data bytes
-     * @param signature bytes
-     * @param publicKey encoded public key
-     * @return true if signature is verified
-     * @throws GeneralSecurityException in case of error
-     */
-    public boolean dsaVerify(byte[] data, byte[] signature, byte[] publicKey) throws GeneralSecurityException {
-        PublicKey key = getPublic(publicKey, false);
-        Signature dsa = Signature.getInstance(SHA_256_WITH_DSA);
-        dsa.initVerify(key);
-        dsa.update(data);
-        return dsa.verify(signature);
     }
 
     /**
