@@ -350,6 +350,16 @@ activate the inbound adapter. The outbound <code>simple.kafka.notification</code
 <td>no</td>
 <td>Override the delivery mode's default poll batch size (1 for manual-commit, 500 for auto-commit).</td>
 </tr>
+<tr>
+<td><code>correlation.id.header</code></td>
+<td>no</td>
+<td>Per-binding override of the global <code>kafka.correlation.id.header</code> (default <code>cid</code>) — impedance matching for an upstream that publishes its own correlation-id header name (e.g. <code>X-Correlation-ID</code>).</td>
+</tr>
+<tr>
+<td><code>trace.id.header</code></td>
+<td>no</td>
+<td>Per-binding override of the global <code>kafka.trace.id.header</code> — a fallback trace-id source for an upstream that does not send a W3C <code>traceparent</code> (which always takes precedence).</td>
+</tr>
 </tbody>
 </table>
 <p>The file is read by <code>ConfigReader</code>, so <strong>every value supports <code>${ENV_VAR:default}</code> substitution</strong> — e.g.

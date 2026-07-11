@@ -565,7 +565,9 @@ String businessCorrelationId = po.getMyCorrelationId();   // upstream correlatio
 <p>The trace ID is for end-to-end telemetry. Two header mechanisms are supported, both accepted inbound and
 emitted outbound:</p>
 <ul>
-<li><strong>X-Trace-Id</strong> - carries the trace ID. When absent inbound, a fresh trace ID is generated at the edge.</li>
+<li><strong>X-Trace-Id</strong> - carries the trace ID. When absent inbound, a fresh trace ID is generated at the edge.
+  The header <strong>name</strong> is configurable via <code>http.trace.id.header</code> (HTTP) and <code>kafka.trace.id.header</code>
+  (Kafka; unset by default - traceparent-only), for enterprises with their own convention.</li>
 <li><strong>traceparent</strong> (W3C Trace Context) - carries the trace ID <em>and</em> the caller's span ID. On inbound it
   <strong>takes precedence</strong> over <code>X-Trace-Id</code>: the trace ID segment becomes the Mercury trace ID and the parent
   span ID is adopted, so the trace continues from the upstream caller (span lineage across HTTP boundaries).
@@ -591,6 +593,13 @@ http.correlation.id.header=X-Correlation-Id
 # Kafka: no cross-vendor standard exists, so &quot;cid&quot; is the default
 kafka.correlation.id.header=cid
 </code></pre>
+<blockquote>
+<p><strong>Per-entry overrides (impedance matching).</strong> The keys above (and their trace-id counterparts
+<code>http.trace.id.header</code> / <code>kafka.trace.id.header</code>) are the <strong>global defaults</strong>. A single application often
+integrates with pre-existing or third-party systems that each use their own convention, so an individual
+rest.yaml endpoint or kafka-flow-adapter.yaml binding may override them with the optional
+<code>trace.id.header</code> and <code>correlation.id.header</code> keys - the per-entry value wins over the global one.</p>
+</blockquote>
 <p>Propagation:</p>
 <ul>
 <li><strong>Captured at the edge.</strong> REST automation (HTTP) and the Kafka Flow Adapter read the configured header;

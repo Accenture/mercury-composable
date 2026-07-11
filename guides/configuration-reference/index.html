@@ -667,13 +667,25 @@ below tune it. The <code>otel.*</code> keys are read by the <code>opentelemetry-
 <td><code>http.correlation.id.header</code></td>
 <td><code>String</code></td>
 <td><code>X-Correlation-Id</code></td>
-<td>HTTP header carrying the business correlation-id (enterprise-specific; case-insensitive on inbound). Captured at the edge and preserved end-to-end — exposed to flows as <code>model.cid</code> and to functions via <code>PostOffice.getMyCorrelationId()</code>. A fresh dash-less UUID is generated when the header is absent.</td>
+<td>HTTP header carrying the business correlation-id (enterprise-specific; case-insensitive on inbound). Captured at the edge and preserved end-to-end — exposed to flows as <code>model.cid</code> and to functions via <code>PostOffice.getMyCorrelationId()</code>. A fresh dash-less UUID is generated when the header is absent. Overridable per endpoint with <code>correlation.id.header</code> in a rest.yaml entry (impedance matching for a legacy caller).</td>
+</tr>
+<tr>
+<td><code>http.trace.id.header</code></td>
+<td><code>String</code></td>
+<td><code>X-Trace-Id</code></td>
+<td>HTTP header recognized (inbound, when no W3C <code>traceparent</code> is present) and emitted (outbound by the async HTTP client) as the trace-id. A well-formed <code>traceparent</code> always takes precedence inbound. Overridable per endpoint with <code>trace.id.header</code> in a rest.yaml entry.</td>
 </tr>
 <tr>
 <td><code>kafka.correlation.id.header</code></td>
 <td><code>String</code></td>
 <td><code>cid</code></td>
-<td>Kafka message header carrying the business correlation-id (no cross-vendor standard exists for non-HTTP transport, so it is configurable). Read inbound by the Kafka Flow Adapter and written outbound by <code>simple.kafka.notification</code>; a fresh UUID is generated inbound when absent.</td>
+<td>Kafka message header carrying the business correlation-id (no cross-vendor standard exists for non-HTTP transport, so it is configurable). Read inbound by the Kafka Flow Adapter and written outbound by <code>simple.kafka.notification</code>; a fresh UUID is generated inbound when absent. Overridable per binding with <code>correlation.id.header</code> in a kafka-flow-adapter.yaml entry.</td>
+</tr>
+<tr>
+<td><code>kafka.trace.id.header</code></td>
+<td><code>String</code></td>
+<td>—</td>
+<td>Optional Kafka message header for the trace-id. Inbound: a fallback trace-id source when the upstream sends no W3C <code>traceparent</code> (which always takes precedence). Outbound: <code>simple.kafka.notification</code> stamps the current trace-id under this name alongside <code>traceparent</code>, for legacy downstream consumers. Unset = traceparent-only behavior (unchanged). Overridable per binding with <code>trace.id.header</code> in a kafka-flow-adapter.yaml entry.</td>
 </tr>
 <tr>
 <td><code>otel.trace.forwarder.enabled</code></td>
