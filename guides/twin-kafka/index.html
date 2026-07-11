@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/twin-kafka/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Twin Kafka (dual cluster) - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../css/extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Twin Kafka (dual cluster)";
+        var mkdocs_page_input_path = "guides/twin-kafka.md";
+        var mkdocs_page_url = "/mercury-composable/guides/twin-kafka/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Orientation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Foundations</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../architecture/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../methodology/">Methodology</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ai-developer-guide/">AI Developer Guide</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/write-your-first-function/">Write your first function</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/function-execution/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/ai-agent-guide/">Function AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/rest-grammar/">REST grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/ai-agent-guide/">REST AI agent guide</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 2 — Composable</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/syntax/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/flow-grammar/">Flow grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/ai-agent-guide/">Flow AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../flow-schema-reference/">Flow Configuration Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 3 — Knowledge Graph</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/build-your-first-graph/">Build your first graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/skills-reference/">Built-in skills reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/command-reference/">MiniGraph command grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/ai-agent-guide/">AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/composing-the-layers/">Composing the layers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/playground-and-companion/">Playground & AI companion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/property-graph/">Minimalist Property Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Operate & integrate</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../build-test-deploy/">Build, Test & Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../observability/">Observability</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../spring-boot/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../kafka-flow-adapter/">Kafka Flow Adapter</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Twin Kafka (dual cluster)</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#how">How it works</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#bridge">The bridge pattern</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#asymmetric-registry">Asymmetric Schema Registry</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#topologies">Deployment topologies</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#id-translation">Bridging framed payloads between two registries</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#local-dev">Local development: one helper, two brokers</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#config">Configuration keys</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../schema-registry-mock/">Schema Registry Mock</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sync-over-async/">Sync-over-Async</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../service-mesh/">Minimalist Service Mesh</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/ADR/">Architectural Decision Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api-overview/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../annotations-reference/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../configuration-reference/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-envelope-reference/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../reserved-names-and-headers/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../actuators-and-http-client/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../code-conventions/">Code Conventions</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../documentation-conventions/">Documentation Conventions</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Operate & integrate</li>
+      <li class="breadcrumb-item active">Twin Kafka (dual cluster)</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="twin-kafka-dual-cluster-bridge">Twin Kafka (dual-cluster bridge)</h1>
+<p><em>Guide: connect an application to two Kafka clusters and bridge messages between them with the
+opt-in <code>twin-kafka</code> library.</em></p>
+<blockquote>
+<p><strong>At a glance</strong></p>
+<ul>
+<li><strong>What</strong> - <code>twin-kafka</code> adds a SECOND Kafka cluster to an application built on
+  <a href="../kafka-flow-adapter/">minimalist-kafka</a>: a <strong>secondary notification function</strong>
+  (<code>secondary.kafka.notification</code>), an optional <strong>secondary flow adapter</strong>
+  (<code>yaml.secondary.kafka.flow.adapter</code>), and an optional <strong>secondary Schema Registry</strong> - each the
+  exact counterpart of its primary sibling.</li>
+<li><strong>Why a separate module</strong> - dual-cluster connectivity is a special case (typically a bridge
+  between an on-prem and a cloud cluster). Keeping it out of minimalist-kafka means every ordinary
+  single-cluster application stays on the lightweight library; only the bridge application adds
+  this jar.</li>
+<li><strong>A bridge is just a flow</strong> - consume from one cluster's adapter, publish through the other
+  cluster's notification function. Trace continuity and business correlation-id propagation across
+  both Kafka hops come from the existing machinery.</li>
+<li><strong>For</strong> developers building a bridge (or any app that must speak to two Kafka clusters).</li>
+</ul>
+</blockquote>
+<h2 id="how">How it works</h2>
+<p><code>twin-kafka</code> depends on minimalist-kafka and reuses its machinery through explicit extension seams -
+the flow adapter, publisher, retry/DLQ handling, templates mechanics, and Confluent codec are the
+same classes, instantiated a second time against the second cluster. The two runtimes are fully
+separate: dead letters from a secondary binding are written to the secondary cluster, and each
+cluster's schema-id cache is isolated (Confluent global ids are only unique within one registry).</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Primary cluster (minimalist-kafka)</th>
+<th>Secondary cluster (twin-kafka)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Publish function</td>
+<td><code>simple.kafka.notification</code></td>
+<td><code>secondary.kafka.notification</code></td>
+</tr>
+<tr>
+<td>Inbound bindings</td>
+<td><code>yaml.kafka.flow.adapter</code></td>
+<td><code>yaml.secondary.kafka.flow.adapter</code></td>
+</tr>
+<tr>
+<td>Producer template</td>
+<td><code>kafka-producer.properties</code></td>
+<td><code>secondary-kafka-producer.properties</code></td>
+</tr>
+<tr>
+<td>Consumer template</td>
+<td><code>kafka-consumer.properties</code></td>
+<td><code>secondary-kafka-consumer.properties</code></td>
+</tr>
+<tr>
+<td>Schema Registry (optional)</td>
+<td><code>schema.registry.url</code> + <code>schema-registry.properties</code></td>
+<td><code>secondary.schema.registry.url</code> + <code>secondary-schema-registry.properties</code></td>
+</tr>
+<tr>
+<td>Outbound header names</td>
+<td><code>kafka.correlation.id.header</code> / <code>kafka.trace.id.header</code></td>
+<td><code>secondary.kafka.correlation.id.header</code> / <code>secondary.kafka.trace.id.header</code> (fall back to the globals)</td>
+</tr>
+</tbody>
+</table>
+<p>All secondary templates follow the same mechanics as the primary ones: <code>/tmp/config</code> file first with
+classpath fallback, <code>${ENV_VAR:default}</code> substitution, and OAuth token endpoint URLs auto-registered
+on the JVM allow-list. The default bootstrap is <code>${SECONDARY_KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:8092}</code> -
+matching the <a href="#local-dev">local dual-broker helper</a> below.</p>
+<h2 id="bridge">The bridge pattern</h2>
+<p>Bridge on-prem (primary) to cloud (secondary) with one flow per direction - no bridge code, just
+flow YAML. Inbound bindings on the source cluster:</p>
+<pre><code class="language-yaml"># kafka-flow-adapter.yaml (primary = on-prem)
+consumer:
+  - topic: 'orders.onprem'
+    flow: 'bridge-to-cloud'
+    group: 'bridge-up-group'
+</code></pre>
+<p>The bridge flow republishes through the other cluster's notification function, carrying the business
+correlation-id (<code>model.cid</code>, seeded by the adapter) and stamping a fresh W3C <code>traceparent</code>:</p>
+<pre><code class="language-yaml"># bridge-to-cloud.yml
+first.task: 'secondary.kafka.notification'
+tasks:
+  - input:
+      - 'input.body -&gt; *'
+      - 'text(orders.cloud) -&gt; header.topic'
+      - 'model.cid -&gt; header.cid'
+    process: 'secondary.kafka.notification'
+    output: []
+    description: 'Republish the on-prem message to the cloud cluster'
+    execution: end
+</code></pre>
+<p>The reverse direction mirrors it: a binding in <code>yaml.secondary.kafka.flow.adapter</code> routes the cloud
+topic into a flow that publishes through <code>simple.kafka.notification</code>. Because each hop is a normal
+flow, the bridge is observable (continuous trace across both clusters), governable (per-binding
+retry + dead-letter on the <em>originating</em> cluster), and extensible (enrich/filter/transform tasks can
+sit between consume and republish).</p>
+<h2 id="asymmetric-registry">Asymmetric Schema Registry</h2>
+<p>The Schema Registry is <strong>optional and per-cluster</strong>. A common real-world topology pairs an on-prem
+<strong>Apache Kafka</strong> (no registry, raw byte[]) with a cloud <strong>Confluent</strong> cluster (with a registry):
+leave <code>schema.registry.url</code> unset and set only <code>secondary.schema.registry.url</code>. Subject-driven
+Confluent serialization (<code>subject</code> header on <code>secondary.kafka.notification</code>) and <code>schema.enabled</code>
+decoding on secondary bindings then work against the secondary registry only, while the primary side
+keeps the minimalist raw-byte[] behavior. Each side fails fast with its own config key named in the
+error if a subject is used where no registry is configured.</p>
+<h2 id="topologies">Deployment topologies</h2>
+<p>Because connection/security is entirely template-driven and the registry is independently optional
+per cluster, common dual-cluster pairings are configuration-only:</p>
+<table>
+<thead>
+<tr>
+<th>Topology</th>
+<th>Primary</th>
+<th>Secondary</th>
+<th>Configuration notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Apache + Confluent</strong></td>
+<td>on-prem Apache Kafka (no registry)</td>
+<td>Confluent Kafka with registry</td>
+<td>The <a href="#asymmetric-registry">asymmetric topology</a> above - set only <code>secondary.schema.registry.url</code>. This exact pairing is proven end-to-end by the module's test suite.</td>
+</tr>
+<tr>
+<td><strong>Confluent + Confluent</strong></td>
+<td>Confluent with registry 1</td>
+<td>Confluent with registry 2</td>
+<td>Set both registry URLs. The two registries are fully independent - separate auth templates (even two different OAuth identity providers) and separate schema-id caches. See the <a href="#id-translation">id-translation note</a> below.</td>
+</tr>
+<tr>
+<td><strong>Apache + Azure Event Hubs</strong></td>
+<td>on-prem Apache Kafka</td>
+<td>Event Hubs Kafka endpoint</td>
+<td>Kafka-protocol compatible via the secondary templates: <code>SASL_SSL</code> with <code>PLAIN</code> (<code>$ConnectionString</code>) or <code>OAUTHBEARER</code> (Entra ID - the token URL is auto-allow-listed). Leave <code>secondary.schema.registry.url</code> unset (Azure Schema Registry is not Confluent-protocol compatible) and <strong>pre-provision the event hubs</strong> - Event Hubs does not honor Kafka topic auto-creation. Consumer groups, manual commit-after-process, and record headers (which carry <code>traceparent</code> and the correlation-id) are all supported by the Event Hubs Kafka endpoint.</td>
+</tr>
+</tbody>
+</table>
+<p>The design is symmetric: each pairing also works with the roles swapped - "primary" is simply the
+cluster configured through minimalist-kafka's base templates.</p>
+<h3 id="id-translation">Bridging framed payloads between two registries</h3>
+<p>Confluent global schema ids are only unique <strong>within one registry</strong>, and the bridge does not
+translate ids. To bridge a Confluent-framed message between two registries, let the flow
+decode-and-re-encode: <code>schema.enabled: true</code> on the inbound binding (decode against the source
+registry) and a <code>subject</code> header on the outbound notification (re-frame against the target
+registry's own id for that subject). Do <strong>not</strong> relay the raw framed bytes without <code>schema.enabled</code> -
+the embedded id would be meaningless on the other registry.</p>
+<h2 id="local-dev">Local development: one helper, two brokers</h2>
+<p>The <a href="../kafka-flow-adapter/#client-config"><code>kafka-standalone</code></a> helper can emulate the dual-cluster
+topology in one process - set <code>dual.servers=true</code> (in its <code>application.properties</code> or as
+<code>-Ddual.servers=true</code>) and it starts broker 1 on <code>127.0.0.1:9092</code> and broker 2 on <code>127.0.0.1:8092</code>
+with separate log directories:</p>
+<pre><code class="language-shell">cd helpers/kafka-standalone &amp;&amp; java -Ddual.servers=true -jar target/kafka-standalone-x.y.z-exec.jar
+</code></pre>
+<p>The shipped templates' defaults (<code>127.0.0.1:9092</code> primary, <code>127.0.0.1:8092</code> secondary) line up with
+this, so a bridge application runs locally with zero connection configuration.</p>
+<h2 id="config">Configuration keys</h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>yaml.secondary.kafka.flow.adapter</code></td>
+<td>-</td>
+<td>Secondary adapter config location; unset = secondary inbound adapter off.</td>
+</tr>
+<tr>
+<td><code>secondary.kafka.producer.properties</code></td>
+<td><code>file:/tmp/config/secondary-kafka-producer.properties,classpath:/secondary-kafka-producer.properties</code></td>
+<td>Secondary producer template location(s).</td>
+</tr>
+<tr>
+<td><code>secondary.kafka.consumer.properties</code></td>
+<td><code>file:/tmp/config/secondary-kafka-consumer.properties,classpath:/secondary-kafka-consumer.properties</code></td>
+<td>Secondary consumer template location(s).</td>
+</tr>
+<tr>
+<td><code>secondary.schema.registry.url</code></td>
+<td>-</td>
+<td>Secondary cluster's Schema Registry URL; unset = schema features off on that cluster.</td>
+</tr>
+<tr>
+<td><code>secondary.schema.registry.properties</code></td>
+<td><code>file:/tmp/config/secondary-schema-registry.properties,classpath:/secondary-schema-registry.properties</code></td>
+<td>Secondary registry client template - auth/SSL passed verbatim to the Confluent client.</td>
+</tr>
+<tr>
+<td><code>secondary.schema.registry.cache.ttl</code></td>
+<td><code>30m</code></td>
+<td>Secondary schema cache TTL (the cache is separate from the primary's - schema ids are per-registry).</td>
+</tr>
+<tr>
+<td><code>secondary.kafka.correlation.id.header</code></td>
+<td>falls back to <code>kafka.correlation.id.header</code> (<code>cid</code>)</td>
+<td>Outbound correlation-id header on the secondary cluster.</td>
+</tr>
+<tr>
+<td><code>secondary.kafka.trace.id.header</code></td>
+<td>falls back to <code>kafka.trace.id.header</code> (unset)</td>
+<td>Optional outbound trace-id header on the secondary cluster.</td>
+</tr>
+</tbody>
+</table>
+<p>The retry/dead-letter tuning keys (<code>kafka.dlq.timeout.ms</code>, <code>kafka.flow.max.retries</code>,
+<code>kafka.flow.retry.backoff.ms</code>) are application-level policy shared by both adapters. Per-binding
+options in the secondary adapter YAML are identical to the <a href="../kafka-flow-adapter/#adapter-yaml">primary's</a> -
+including <code>schema.enabled</code>, <code>dlq-topic</code>, and the <code>trace.id.header</code> / <code>correlation.id.header</code>
+impedance-matching overrides.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../kafka-flow-adapter/">Kafka Flow Adapter</a> - the foundation library this module extends.</li>
+<li><a href="../configuration-reference/#kafka-flow-adapter">Configuration Reference</a> - every key in one place.</li>
+<li><a href="../reserved-names-and-headers/">Reserved names and headers</a> - trace/correlation header conventions.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../kafka-flow-adapter/" class="btn btn-neutral float-left" title="Kafka Flow Adapter"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../schema-registry-mock/" class="btn btn-neutral float-right" title="Schema Registry Mock">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../kafka-flow-adapter/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../schema-registry-mock/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

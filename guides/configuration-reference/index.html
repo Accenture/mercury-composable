@@ -119,6 +119,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../kafka-flow-adapter/">Kafka Flow Adapter</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../twin-kafka/">Twin Kafka (dual cluster)</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../schema-registry-mock/">Schema Registry Mock</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../sync-over-async/">Sync-over-Async</a>
@@ -1110,6 +1112,30 @@ Kafka. See the <a href="../kafka-flow-adapter/">Kafka Flow Adapter guide</a>. Th
 <td>duration</td>
 <td><code>30m</code></td>
 <td>Time-to-live for an entry in the in-memory (platform <code>ManagedCache</code>) cache of schemas fetched by id. Positive results only — a not-found id is never cached, so a newly-registered schema is visible immediately. The TTL bounds how long a cached schema is reused before re-fetching; <code>30m</code> lets schema changes be picked up without a pod restart (lengthen it in production where schemas change rarely). Cleared at startup (rebuildable).</td>
+</tr>
+<tr>
+<td><code>yaml.secondary.kafka.flow.adapter</code></td>
+<td><code>String</code> (location)</td>
+<td>—</td>
+<td><a href="../twin-kafka/">twin-kafka</a>: secondary-cluster adapter config location; unset = secondary inbound adapter off.</td>
+</tr>
+<tr>
+<td><code>secondary.kafka.producer.properties</code> / <code>secondary.kafka.consumer.properties</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td><code>file:/tmp/config/secondary-kafka-*.properties, classpath:/secondary-kafka-*.properties</code></td>
+<td><a href="../twin-kafka/">twin-kafka</a>: secondary-cluster client template location(s); same mechanics as the primary templates.</td>
+</tr>
+<tr>
+<td><code>secondary.schema.registry.url</code> / <code>secondary.schema.registry.properties</code></td>
+<td><code>String</code></td>
+<td>—</td>
+<td><a href="../twin-kafka/">twin-kafka</a>: the secondary cluster's own optional Schema Registry (URL = feature switch; template passed verbatim to the Confluent client). Registries and their schema-id caches are per-cluster.</td>
+</tr>
+<tr>
+<td><code>secondary.kafka.correlation.id.header</code> / <code>secondary.kafka.trace.id.header</code></td>
+<td><code>String</code></td>
+<td>fall back to the <code>kafka.*</code> globals</td>
+<td><a href="../twin-kafka/">twin-kafka</a>: outbound header names on the secondary cluster when the two clusters follow different conventions.</td>
 </tr>
 </tbody>
 </table>
