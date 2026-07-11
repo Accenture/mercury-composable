@@ -226,18 +226,6 @@
 
 ## Open Threads
 
-- [x] (COMPLETED 2026-07-10 review: v4.6.1 released 2026-07-06; field SCA + Snyk re-scans ran and cleared —
-  the follow-on Sonar quality-gate work shipped as 4.6.2/4.6.3, see [[release-4-6-2-shipped]]; only
-  dependabot/28 remains, advisory-only pending Jackson 2.22.1)
-  (release cut — Claude Code, 2026-07-06, branch `chore/release-4.6.1`, committed + tagged `v4.6.1` locally,
-  **not pushed**) **4.6.1 security patch → field SCA + Snyk re-scan.** Full detail in the Key Decision
-  [[release-4.6.1-security-patch]]. Local build green (opentelemetry-forwarder 22/22; reactor `mvn validate`).
-  **Next (Eric):** push branch → PR → merge to `main` (protected, per 4.6.0/#138 flow) → publish GitHub release
-  tag `v4.6.1` on the merge commit; then run the field static-code-analysis + Snyk scan to confirm the r2dbc/SCRAM
-  + protobuf-removal remediations clear. The local `v4.6.1` tag points at the branch commit — re-tag on the merge
-  commit at release-publish (mirrors how `v4.6.0` was created on publish). Relates [[snyk-oss-dependency-update-2026-07]].
-  <!-- id: thread-release-4.6.1-field-scan | created: 2026-07-06 | last_used: 2026-07-06 | uses: 1 | tier: working | origin: 2026-07-06-164315 -->
-
 - [ ] (P0–P5 code-complete — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; remaining = field canary → P4 retire-BDB) **Replace
   ElasticQueue's Berkeley DB spill tier with a portable file-backed segmented FIFO.** Full detail + rationale
   (perf/complexity/Rust portability) in the Key Decision [[elastic-queue-file-fifo-plan]] and the design spec
@@ -334,16 +322,6 @@
   `minimalist-kafka` — a materially larger test surface than a serializer-library bump.
   <!-- id: thread-kafka-client-version-upgrade | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-230246 -->
 
-- [x] (COMPLETED 2026-07-10 review: CSFLE committed and shipped — CsfleLocalRoundTripTest +
-  SchemaCodecCsfleConfigTest live on main, kafka-flow-adapter guide documents it)
-  (implemented, **uncommitted** — Claude Code, 2026-07-02) **minimalist-kafka: Confluent CSFLE wired.**
-  Full detail in the Key Decision [[kafka-csfle-delegation]] and the 2026-07-02-020429 session log. Branch
-  `feature/kafka-csfle-field-encryption`, working tree dirty (5 modified + 2 new test files), **nothing
-  committed**. All tests green (5 new + full `minimalist-kafka` suite 54, coverage gate met). Design spec
-  `draft-design-specs/kafka_csfle_field_encryption_design.md` (v3.0, gitignored) fully in sync — §10/§11
-  record exactly what shipped. **Next action: Eric's code review, then commit + PR** (same flow as #128/#129).
-  → relates [[minimalist-kafka-schema-registry]], [[kafka-schemaid-from-subject-version]].
-  <!-- id: thread-csfle-field-encryption | created: 2026-07-01 | last_used: 2026-07-04 | uses: 3 | tier: working | origin: 2026-07-02-020429 -->
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
   build for the multi-module project.
