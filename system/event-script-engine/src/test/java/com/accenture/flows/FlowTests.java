@@ -55,6 +55,27 @@ class FlowTests extends TestBase {
     private static final String HTTP_CLIENT = "async.http.request";
 
     @Test
+    void reservedModelKeysAreProtectedAtCompileTime() {
+        // A data mapping that overwrites reserved metadata (model.cid, model.instance, model.flow,
+        // model.ttl, model.parent, model.root) is rejected by CompileFlows. Consistent with all
+        // other invalid mappings, the offending task is dropped at compile time (with an ERROR log),
+        // so the flow cannot execute it: parser-test-28 writes 'result.user -> model.cid' (output),
+        // parser-test-29 writes 'text(hacked) -> model.instance' (input).
+        var outputViolation = com.accenture.models.Flows.getFlow("parser-test-28");
+        assertNotNull(outputViolation);
+        assertFalse(outputViolation.tasks.containsKey("greeting.test"),
+                "task with an output mapping overwriting model.cid must be dropped");
+        var inputViolation = com.accenture.models.Flows.getFlow("parser-test-29");
+        assertNotNull(inputViolation);
+        assertFalse(inputViolation.tasks.containsKey("greeting.test"),
+                "task with an input mapping overwriting model.instance must be dropped");
+        // positive control: the same task name loads fine in a fixture without reserved-key writes
+        var control = com.accenture.models.Flows.getFlow("greetings");
+        assertNotNull(control, "valid flows still load");
+        assertFalse(control.tasks.isEmpty());
+    }
+
+    @Test
     void inputValidationTest1() throws InterruptedException {
         inputValidationCase(1, "12345", "hello world", false);
     }

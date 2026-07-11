@@ -9,10 +9,11 @@
 # reads, so 'model.cid' carries it here - and every task sees it via PostOffice.getMyCorrelationId() - just
 # like an HTTP-triggered flow. (It is set alongside the envelope correlation-id, which
 # KafkaFlowConsumer.invokeFlow's blocking PostOffice.request(...) rewrites for RPC reply-matching; setting
-# the header too is what keeps model.cid correct - see KafkaFlowConsumer.toFlowRequest.) This flow reads
-# the raw inbound header ('input.header.cid') instead - equivalent for the default header, and the way to
-# read a proprietary upstream header name (e.g. a CloudEvents 'ce-id', or a custom 'x-correlation-id'):
-#   'input.header.x-correlation-id -> header.cid'
+# the header too is what keeps model.cid correct - see KafkaFlowConsumer.toFlowRequest.) This flow maps
+# 'model.cid' - reliable regardless of the actual Kafka header name, which is configurable via
+# 'kafka.correlation.id.header' (e.g. X-Correlation-ID). Reading a raw inbound header directly
+# ('input.header.<name>') remains the way to pick up an additional header that is not the configured
+# correlation-id header (e.g. a CloudEvents 'ce-id').
 #
 flow:
   id: 'avro-sink-flow'
@@ -24,9 +25,9 @@ first.task: 'avro.test.sink'
 tasks:
   - input:
       - 'input.body -> *'
-      - 'input.header.cid -> header.cid'
-      # To use a proprietary upstream header instead, replace the mapping above with, for example:
-      #   'input.header.x-correlation-id -> header.cid'
+      - 'model.cid -> header.cid'
+      # model.cid is seeded by the adapter from the configured 'kafka.correlation.id.header';
+      # to read an additional raw header, add e.g. 'input.header.ce-id -> header.ce-id'
     process: 'avro.test.sink'
     output:
       - 'result -> output.body'
