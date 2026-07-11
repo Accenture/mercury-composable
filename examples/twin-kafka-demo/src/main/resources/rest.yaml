@@ -1,0 +1,29 @@
+#
+# REST automation for the rest role. Each endpoint is backed by an Event Script flow (no controller)
+# via the built-in 'http.flow.adapter' service - the Mercury Composable way.
+#
+# All three flows acknowledge immediately (202) and continue asynchronously: the request travels
+# on-prem Kafka -> bridge -> cloud Kafka -> system-of-record, and the outcome is observed on the
+# on-prem response topic by the node listener.
+#
+rest:
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/profile/{id}"
+    flow: 'get-profile'
+    timeout: 10s
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/profile"
+    flow: 'upsert-profile'
+    timeout: 10s
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['DELETE']
+    url: "/api/profile/{id}"
+    flow: 'delete-profile'
+    timeout: 10s
+    tracing: true

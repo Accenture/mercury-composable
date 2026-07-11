@@ -1,0 +1,8 @@
+#
+# Kafka Flow Adapter for the sor role: bind the cloud request topic to the profile-store flow.
+# The cloud cluster has no Schema Registry, so the value arrives as the raw byte[] of the JSON string.
+#
+consumer:
+  - topic: 'C_PROFILE_REQUEST'
+    flow: 'profile-store'
+    group: '${SOR_GROUP:system-of-record-group}'

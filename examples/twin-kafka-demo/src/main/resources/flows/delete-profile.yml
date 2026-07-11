@@ -1,0 +1,35 @@
+#
+# DELETE flow (rest role) - DELETE /api/profile/{id}
+#
+# Same shape as get-profile: acknowledge immediately (202), then publish the Request to the on-prem
+# request topic (JSON Schema encoded).
+#
+flow:
+  id: 'delete-profile'
+  description: 'DELETE a profile: acknowledge immediately, forward the request to the on-prem cluster'
+  ttl: 10s
+
+first.task: 'v1.api.request'
+
+tasks:
+  - input:
+      - 'text(DELETE) -> header.command'
+      - 'input.path_parameter.id -> id'
+    process: 'v1.api.request'
+    output:
+      - 'int(202) -> output.status'
+      - 'result.ack -> output.body'
+      - 'result.request -> model.request'
+    description: 'Validate the request and acknowledge the caller right away'
+    execution: response
+    next:
+      - 'simple.kafka.notification'
+
+  - input:
+      - 'text(OP_PROFILE_REQUEST) -> header.topic'
+      - 'text(op-profile-request) -> header.subject'
+      - 'model.request:binary -> *'
+    process: 'simple.kafka.notification'
+    output: []
+    description: 'Publish the DELETE request to the on-prem request topic (JSON Schema encoded)'
+    execution: end

@@ -1,0 +1,14 @@
+{
+  "name": "twin-kafka-demo-node",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Node helpers for the twin-kafka worked example (topic admin + response listener)",
+  "type": "module",
+  "scripts": {
+    "create-topics": "node create_topic.js",
+    "listen": "node listen_response.js"
+  },
+  "dependencies": {
+    "kafkajs": "^2.2.4"
+  }
+}

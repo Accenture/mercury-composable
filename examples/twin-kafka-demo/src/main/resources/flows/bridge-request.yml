@@ -1,0 +1,27 @@
+#
+# Bridge request flow (bridge role) - on-prem -> cloud, pure YAML (no Java).
+#
+# Reached when the PRIMARY Kafka flow adapter routes a message from OP_PROFILE_REQUEST. Because that
+# binding sets schema.enabled, the adapter has already decoded the Confluent-framed value to a Map.
+# The ':binary' type qualifier serializes that Map to its JSON bytes for secondary.kafka.notification
+# (which takes byte[]); no 'subject' header, so the cloud cluster receives the plain JSON string.
+#
+# This is the twin-kafka bridging rule in action: decode-and-re-encode, never relay raw framed bytes -
+# a schema id is only meaningful to the registry that issued it.
+#
+flow:
+  id: 'bridge-request'
+  description: 'Forward a profile request from the on-prem cluster to the cloud cluster'
+  ttl: 30s
+
+first.task: 'secondary.kafka.notification'
+
+tasks:
+  - input:
+      - 'text(C_PROFILE_REQUEST) -> header.topic'
+      - 'input.body -> model.payload'
+      - 'model.payload:binary -> *'
+    process: 'secondary.kafka.notification'
+    output: []
+    description: 'Publish the decoded request to the cloud request topic as plain JSON bytes'
+    execution: end

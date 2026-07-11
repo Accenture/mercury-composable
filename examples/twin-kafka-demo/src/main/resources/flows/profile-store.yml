@@ -1,0 +1,36 @@
+#
+# System-of-record flow (sor role).
+#
+# Reached when this app's Kafka flow adapter routes a message from the cloud C_PROFILE_REQUEST topic
+# (raw JSON bytes - the cloud cluster has no Schema Registry).
+#
+#   1. v1.profile.store          - apply READ / UPSERT / DELETE to the temp store /tmp/twin-kafka-demo
+#                                  (5 workers; processing is asynchronous, no ordering assumed).
+#   2. simple.kafka.notification - publish the Response to C_PROFILE_RESPONSE as plain JSON bytes
+#                                  (this app's "primary" IS the cloud broker).
+#
+flow:
+  id: 'profile-store'
+  description: 'Apply the profile command to the system of record and publish the outcome'
+  ttl: 30s
+
+first.task: 'v1.profile.store'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+    process: 'v1.profile.store'
+    output:
+      - 'result -> model.response'
+    description: 'Apply the command to the temp store'
+    execution: sequential
+    next:
+      - 'simple.kafka.notification'
+
+  - input:
+      - 'text(C_PROFILE_RESPONSE) -> header.topic'
+      - 'model.response:binary -> *'
+    process: 'simple.kafka.notification'
+    output: []
+    description: 'Publish the outcome to the cloud response topic as plain JSON bytes'
+    execution: end

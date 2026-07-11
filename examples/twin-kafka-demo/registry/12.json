@@ -1,0 +1,6 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"ProfileResponse\",\"type\":\"object\",\"properties\":{\"command\":{\"type\":\"string\",\"enum\":[\"READ\",\"UPSERT\",\"DELETE\"]},\"id\":{\"type\":\"integer\"},\"profile\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\"},\"name\":{\"type\":\"string\"},\"address\":{\"type\":\"string\"},\"telephone\":{\"type\":\"string\"}},\"additionalProperties\":true},\"originator\":{\"type\":\"string\",\"enum\":[\"HTTP_REQUEST\",\"SYSTEM_OF_RECORDS\"]},\"message\":{\"type\":\"string\"}},\"required\":[\"command\",\"id\",\"originator\"],\"additionalProperties\":true}",
+  "schemaType": "JSON",
+  "subject": "op-profile-response",
+  "version": 1
+}
