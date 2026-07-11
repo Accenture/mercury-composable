@@ -42,6 +42,9 @@ import java.util.Map;
  * <p>Runs with multiple workers ({@code instances=5}) - processing is asynchronous end to end and no
  * message ordering is assumed.</p>
  */
+// S5443 (publicly writable directory): /tmp/twin-kafka-demo IS the demo's simulated database by
+// design - throwaway local data, no confidentiality or integrity requirement
+@SuppressWarnings("java:S5443")
 @PreLoad(route = "v1.profile.store", instances = 5)
 public class ProfileStore implements TypedLambdaFunction<byte[], Map<String, Object>> {
 
