@@ -1,0 +1,11 @@
+#
+# PRIMARY cluster (A) bindings: the A-to-B bridge source, and the sink for messages arriving
+# from the B-to-A direction.
+#
+consumer:
+  - topic: 'bridge.source'
+    flow: 'bridge-a-to-b'
+    group: 'bridge-a-group'
+  - topic: 'reverse.mirror'
+    flow: 'sink-a-flow'
+    group: 'sink-a-group'

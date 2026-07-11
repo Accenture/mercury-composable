@@ -61,6 +61,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * decoding messages produced by stock Confluent serializers (interop with client projects). Also guards
  * that {@link SchemaType#PROTOBUF} - recognized but deliberately unwired, see its Javadoc - fails clearly.
  */
+// resource: the registry client is owned by the shared SchemaCodec for the suite lifetime - tests must not close it
+@SuppressWarnings("resource")
 class SchemaCodecTest {
 
     private static final String TOPIC = "orders";

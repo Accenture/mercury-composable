@@ -66,7 +66,21 @@ public final class KafkaClientConfig {
 
     /** Producer config from the template, with the byte[] wire-contract serializers pinned. */
     public static Properties producerProperties(ConfigBase appConfig) {
-        Properties p = load(appConfig.getProperty(PRODUCER_LOCATION, DEFAULT_PRODUCER));
+        return producerProperties(appConfig, PRODUCER_LOCATION, DEFAULT_PRODUCER);
+    }
+
+    /**
+     * Producer config from a caller-selected template location - the reuse seam for a library (e.g.
+     * twin-kafka) that connects to an additional Kafka cluster with its own template. Same wire-contract
+     * pinning as {@link #producerProperties(ConfigBase)}.
+     *
+     * @param appConfig        the application configuration
+     * @param locationKey      the application property naming the template location(s)
+     * @param defaultLocations the file-then-classpath fallback used when the key is unset
+     * @return the producer properties
+     */
+    public static Properties producerProperties(ConfigBase appConfig, String locationKey, String defaultLocations) {
+        Properties p = load(appConfig.getProperty(locationKey, defaultLocations));
         p.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         p.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         return p;
@@ -78,7 +92,21 @@ public final class KafkaClientConfig {
      * delivery-mode overlay ({@code enable.auto.commit} / {@code max.poll.records}).
      */
     public static Properties consumerProperties(ConfigBase appConfig) {
-        Properties p = load(appConfig.getProperty(CONSUMER_LOCATION, DEFAULT_CONSUMER));
+        return consumerProperties(appConfig, CONSUMER_LOCATION, DEFAULT_CONSUMER);
+    }
+
+    /**
+     * Consumer config from a caller-selected template location - the reuse seam for a library (e.g.
+     * twin-kafka) that connects to an additional Kafka cluster with its own template. Same wire-contract
+     * pinning as {@link #consumerProperties(ConfigBase)}.
+     *
+     * @param appConfig        the application configuration
+     * @param locationKey      the application property naming the template location(s)
+     * @param defaultLocations the file-then-classpath fallback used when the key is unset
+     * @return the base consumer properties
+     */
+    public static Properties consumerProperties(ConfigBase appConfig, String locationKey, String defaultLocations) {
+        Properties p = load(appConfig.getProperty(locationKey, defaultLocations));
         p.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         p.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
         return p;
@@ -94,9 +122,23 @@ public final class KafkaClientConfig {
      * @return the resolved template key-values; empty when the template has no active entries
      */
     public static Map<String, Object> schemaRegistryProperties(ConfigBase appConfig) {
+        return schemaRegistryProperties(appConfig, SCHEMA_REGISTRY_LOCATION, DEFAULT_SCHEMA_REGISTRY);
+    }
+
+    /**
+     * Schema Registry client config from a caller-selected template location - the reuse seam for a
+     * library (e.g. twin-kafka) whose second cluster has its own registry. Same verbatim pass-through
+     * and OAuth allow-list registration as {@link #schemaRegistryProperties(ConfigBase)}.
+     *
+     * @param appConfig        the application configuration
+     * @param locationKey      the application property naming the template location(s)
+     * @param defaultLocations the file-then-classpath fallback used when the key is unset
+     * @return the resolved template key-values; empty when the template has no active entries
+     */
+    public static Map<String, Object> schemaRegistryProperties(ConfigBase appConfig,
+                                                               String locationKey, String defaultLocations) {
         Map<String, Object> resolved =
-                loadFirst(appConfig.getProperty(SCHEMA_REGISTRY_LOCATION, DEFAULT_SCHEMA_REGISTRY))
-                        .getCompositeKeyValues();
+                loadFirst(appConfig.getProperty(locationKey, defaultLocations)).getCompositeKeyValues();
         registerOAuthTokenUrl(resolved.get("bearer.auth.issuer.endpoint.url"));
         registerOAuthTokenUrl(resolved.get(SaslConfigs.SASL_OAUTHBEARER_TOKEN_ENDPOINT_URL));
         return resolved;

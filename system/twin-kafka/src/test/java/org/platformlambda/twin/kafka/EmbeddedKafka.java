@@ -16,7 +16,7 @@
 
  */
 
-package org.platformlambda.mini.kafka;
+package org.platformlambda.twin.kafka;
 
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaRaftServer;
@@ -37,29 +37,27 @@ import java.util.List;
 import java.util.Properties;
 
 /**
- * Embedded single-node KRaft Kafka broker for integration tests. Uses <b>fixed</b> broker/controller ports
- * (predictable: if a port is already in use the test fails fast rather than picking a surprise port) and a
- * private temp log directory ({@code /tmp/mini-kafka}), formatted with the official KRaft {@link Formatter}
- * (the legacy meta.properties format is invalid on Kafka 4.x). Cleaned up on close.
+ * Embedded single-node KRaft Kafka broker for the twin-kafka integration tests - a parameterized
+ * variant of minimalist-kafka's test fixture, so TWO independent brokers (distinct ports and log
+ * directories) run in one JVM to emulate the dual-cluster topology. Fixed ports keep failures
+ * predictable; each broker's storage is formatted fresh and cleaned up on close.
  */
 final class EmbeddedKafka implements AutoCloseable {
 
     private static final int NODE_ID = 1;
-    private static final int BROKER_PORT = 19092;
-    private static final int CONTROLLER_PORT = 19093;
     private static final String CONTROLLER_LISTENER = "CONTROLLER";
-    private static final String LOG_DIR = "/tmp/mini-kafka";
 
     private final KafkaRaftServer server;
     private final String bootstrapServers;
     private final Path logDir;
 
-    EmbeddedKafka() {
+    EmbeddedKafka(int brokerPort, int controllerPort, String logDirPath) {
         try {
-            this.bootstrapServers = "127.0.0.1:" + BROKER_PORT;
-            this.logDir = prepareLogDir();
+            this.bootstrapServers = "127.0.0.1:" + brokerPort;
+            this.logDir = prepareLogDir(logDirPath);
             formatStorage(logDir);
-            this.server = new KafkaRaftServer(new KafkaConfig(brokerConfig(logDir)), Time.SYSTEM);
+            this.server = new KafkaRaftServer(
+                    new KafkaConfig(brokerConfig(brokerPort, controllerPort, logDir)), Time.SYSTEM);
             this.server.startup();
         } catch (IOException e) {
             throw new UncheckedIOException("Unable to start embedded Kafka", e);
@@ -70,21 +68,21 @@ final class EmbeddedKafka implements AutoCloseable {
         return bootstrapServers;
     }
 
-    private static Path prepareLogDir() throws IOException {
-        Path dir = Path.of(LOG_DIR);
+    private static Path prepareLogDir(String logDirPath) throws IOException {
+        Path dir = Path.of(logDirPath);
         cleanup(dir);
         Files.createDirectories(dir);
         return dir;
     }
 
-    private static Properties brokerConfig(Path logDir) {
+    private static Properties brokerConfig(int brokerPort, int controllerPort, Path logDir) {
         Properties p = new Properties();
         p.setProperty("process.roles", "broker,controller");
         p.setProperty("node.id", Integer.toString(NODE_ID));
-        p.setProperty("controller.quorum.voters", NODE_ID + "@127.0.0.1:" + CONTROLLER_PORT);
+        p.setProperty("controller.quorum.voters", NODE_ID + "@127.0.0.1:" + controllerPort);
         p.setProperty("listeners",
-                "PLAINTEXT://127.0.0.1:" + BROKER_PORT + ",CONTROLLER://127.0.0.1:" + CONTROLLER_PORT);
-        p.setProperty("advertised.listeners", "PLAINTEXT://127.0.0.1:" + BROKER_PORT);
+                "PLAINTEXT://127.0.0.1:" + brokerPort + ",CONTROLLER://127.0.0.1:" + controllerPort);
+        p.setProperty("advertised.listeners", "PLAINTEXT://127.0.0.1:" + brokerPort);
         p.setProperty("inter.broker.listener.name", "PLAINTEXT");
         p.setProperty("controller.listener.names", CONTROLLER_LISTENER);
         p.setProperty("listener.security.protocol.map", "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT");

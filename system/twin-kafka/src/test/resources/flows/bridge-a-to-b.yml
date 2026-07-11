@@ -1,0 +1,22 @@
+#
+# The A-to-B bridge: reached when the PRIMARY adapter routes a message from 'bridge.source'
+# (cluster A). Its single task republishes the message to 'bridge.mirror' on cluster B through
+# secondary.kafka.notification - carrying the business correlation-id (model.cid, seeded by the
+# adapter from the configured header) and stamping a fresh traceparent for trace continuity.
+#
+flow:
+  id: 'bridge-a-to-b'
+  description: 'Bridge a message from cluster A to cluster B'
+  ttl: 30s
+
+first.task: 'secondary.kafka.notification'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+      - 'text(bridge.mirror) -> header.topic'
+      - 'model.cid -> header.cid'
+    process: 'secondary.kafka.notification'
+    output: []
+    description: 'Republish the cluster-A message to cluster B'
+    execution: end

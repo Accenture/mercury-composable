@@ -1,0 +1,9 @@
+#
+# Event Script flow manifest for the twin-kafka dual-cluster bridge test.
+#
+flows:
+  - 'bridge-a-to-b.yml'
+  - 'bridge-b-to-a.yml'
+  - 'sink-a-flow.yml'
+  - 'sink-b-flow.yml'
+  - 'schema-sink-flow.yml'

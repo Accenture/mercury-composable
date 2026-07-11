@@ -1,0 +1,19 @@
+#
+# Sink for the schema-enabled binding on the SECONDARY cluster: the adapter has already decoded
+# the Confluent-framed value against the SECONDARY registry, so the body arrives as a Map.
+#
+flow:
+  id: 'schema-sink-flow'
+  description: 'Record a schema-decoded message from cluster B'
+  ttl: 30s
+
+first.task: 'schema.sink.b'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+    process: 'schema.sink.b'
+    output:
+      - 'result -> output.body'
+    description: 'Record the decoded message'
+    execution: end

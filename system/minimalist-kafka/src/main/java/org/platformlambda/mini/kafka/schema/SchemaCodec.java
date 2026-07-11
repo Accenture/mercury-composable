@@ -84,9 +84,7 @@ public class SchemaCodec {
      * entries ⇒ the serdes build exactly as before (plaintext).
      */
     private static final String SERDE_CONFIG_PREFIX = "schema.registry.serde.";
-    private static final String CACHE_TTL = "schema.registry.cache.ttl";
     private static final String DEFAULT_CACHE_TTL = "30m";
-    private static final String VERSION_CACHE_TTL = "schema.registry.version.cache.ttl";
     // A pinned subject+numeric-version is immutable, so it can be cached effectively forever; a long TTL
     // (plus a bounded item count) keeps it fresh enough while removing any unbounded-growth risk.
     private static final String DEFAULT_VERSION_CACHE_TTL = "10d";
@@ -129,10 +127,15 @@ public class SchemaCodec {
      * @return output key (prefix stripped) → value; empty when none are configured
      */
     static Map<String, Object> extractSerdeConfig(ConfigBase config) {
+        return extractSerdeConfig(config, SERDE_CONFIG_PREFIX);
+    }
+
+    /** Prefix-parameterized variant of {@link #extractSerdeConfig(ConfigBase)} for an additional registry. */
+    static Map<String, Object> extractSerdeConfig(ConfigBase config, String serdeConfigPrefix) {
         Map<String, Object> extra = new HashMap<>();
         config.getCompositeKeyValues().forEach((key, value) -> {
-            if (key.startsWith(SERDE_CONFIG_PREFIX)) {
-                extra.put(key.substring(SERDE_CONFIG_PREFIX.length()), value);
+            if (key.startsWith(serdeConfigPrefix)) {
+                extra.put(key.substring(serdeConfigPrefix.length()), value);
             }
         });
         return extra;
@@ -169,35 +172,62 @@ public class SchemaCodec {
      * @return a codec, or {@code null} when {@code registryUrl} is {@code null}/blank
      */
     public static SchemaCodec fromConfig(ConfigBase config, String registryUrl) {
+        return fromConfig(config, registryUrl, CACHE_NAME);
+    }
+
+    /**
+     * Build a codec for an additional registry, with every config key and cache name derived from a
+     * caller-selected prefix - the reuse seam for a library (e.g. twin-kafka) whose second Kafka cluster
+     * has its own Schema Registry. With the default prefix {@code schema.registry}, behavior is identical
+     * to {@link #fromConfig(ConfigBase, String)}. Distinct cache names per prefix are a <b>correctness</b>
+     * requirement, not a tuning nicety: Confluent global schema ids are only unique within one registry,
+     * so two registries must never share an id-keyed cache.
+     *
+     * <p>Derivations from the prefix (example: {@code secondary.schema.registry}):
+     * cache TTL keys {@code <prefix>.cache.ttl} / {@code <prefix>.version.cache.ttl}; serde pass-through
+     * prefix {@code <prefix>.serde.}; ManagedCache names {@code <prefix>} and {@code <prefix>.version};
+     * client template location key {@code <prefix>.properties} with the file-then-classpath default
+     * {@code file:/tmp/config/<prefix-with-dashes>.properties,classpath:/<prefix-with-dashes>.properties}.</p>
+     *
+     * @param config      the application configuration
+     * @param registryUrl the Schema Registry URL; a {@code null}/blank value disables schema features
+     * @param keyPrefix   the config-key and cache-name prefix (default {@code schema.registry})
+     * @return a codec, or {@code null} when {@code registryUrl} is {@code null}/blank
+     */
+    public static SchemaCodec fromConfig(ConfigBase config, String registryUrl, String keyPrefix) {
         if (registryUrl == null || registryUrl.isBlank()) {
             return null;
         }
+        String templateFile = keyPrefix.replace('.', '-') + ".properties";
+        String templateDefaults = "file:/tmp/config/" + templateFile + ",classpath:/" + templateFile;
         long ttlMillis = 1000L * Utility.getInstance()
-                .getDurationInSeconds(config.getProperty(CACHE_TTL, DEFAULT_CACHE_TTL));
+                .getDurationInSeconds(config.getProperty(keyPrefix + ".cache.ttl", DEFAULT_CACHE_TTL));
         /*
          * The schema cache is rebuildable from the registry, so clear it at startup - a stale entry (e.g.
          * after the registry's schemas changed between runs) is never served. It re-populates on demand and
          * TTL-expires within the run. ManagedCache is a JVM-wide singleton by name, so an earlier run in the
          * same JVM (e.g. another test) could have left entries behind; clear() guarantees a clean start.
          */
-        ManagedCache cache = ManagedCache.createCache(CACHE_NAME, ttlMillis);
+        ManagedCache cache = ManagedCache.createCache(keyPrefix, ttlMillis);
         cache.clear();
         // subject+numeric-version → (id,type): immutable, so a long TTL (default 10d), bounded to 3000 items.
         long versionTtlMillis = 1000L * Utility.getInstance()
-                .getDurationInSeconds(config.getProperty(VERSION_CACHE_TTL, DEFAULT_VERSION_CACHE_TTL));
-        ManagedCache versionCache = ManagedCache.createCache(VERSION_CACHE_NAME, versionTtlMillis, VERSION_CACHE_MAX_ITEMS);
+                .getDurationInSeconds(config.getProperty(keyPrefix + ".version.cache.ttl", DEFAULT_VERSION_CACHE_TTL));
+        ManagedCache versionCache = ManagedCache.createCache(keyPrefix + ".version",
+                versionTtlMillis, VERSION_CACHE_MAX_ITEMS);
         versionCache.clear();
         // (subject+latest resolutions share the short-TTL id cache above; no separate cache needed.)
         /*
-         * Start from the schema-registry.properties template (verbatim pass-through), so any Confluent
-         * client parameter - OAuth 2.0 bearer auth, basic auth, SSL, optional installation-specific
+         * Start from the registry client template (verbatim pass-through), so any Confluent client
+         * parameter - OAuth 2.0 bearer auth, basic auth, SSL, optional installation-specific
          * settings - reaches the registry REST client without a library change. Loading the template
          * also auto-registers any OAuth token endpoint URL on the JVM allow-list, which must happen
          * before the client below is constructed. The library's own contract keys are put after the
          * template, so they always win: the registry URL comes from application.properties (the feature
          * switch) and the negative caches stay pinned off.
          */
-        Map<String, Object> srConfig = new HashMap<>(KafkaClientConfig.schemaRegistryProperties(config));
+        Map<String, Object> srConfig = new HashMap<>(
+                KafkaClientConfig.schemaRegistryProperties(config, keyPrefix + ".properties", templateDefaults));
         Object bearerAuthSource = srConfig.get(SchemaRegistryClientConfig.BEARER_AUTH_CREDENTIALS_SOURCE);
         srConfig.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
         /*
@@ -213,9 +243,9 @@ public class SchemaCodec {
                 IDENTITY_MAP_CAPACITY,
                 List.of(new JsonSchemaProvider(), new AvroSchemaProvider()),
                 srConfig, cache, versionCache);
-        Map<String, Object> extraSerdeConfig = extractSerdeConfig(config);
+        Map<String, Object> extraSerdeConfig = extractSerdeConfig(config, keyPrefix + ".serde.");
         log.info("Schema codec ready (registry={}, cache={}, ttlMs={}, types={}, csfle={}, auth={})",
-                registryUrl, CACHE_NAME, ttlMillis, List.of(SchemaType.values()), !extraSerdeConfig.isEmpty(),
+                registryUrl, keyPrefix, ttlMillis, List.of(SchemaType.values()), !extraSerdeConfig.isEmpty(),
                 bearerAuthSource == null ? "none" : bearerAuthSource);
         return new SchemaCodec(client, registryUrl, extraSerdeConfig);
     }
