@@ -61,6 +61,19 @@ class KafkaFlowAdapterConfigTest {
     }
 
     @Test
+    void nestedTextReadsNormalizedAndFlatForms() {
+        // ConfigReader normalizes dotted keys into nested maps: trace.id.header -> {trace: {id: {header: v}}}
+        Map<String, Object> normalized = Map.of("trace", Map.of("id", Map.of("header", "X-Legacy-Trace")));
+        assertEquals("X-Legacy-Trace", KafkaFlowAdapter.nestedText(normalized, "trace.id.header"));
+        // a flat key (programmatically authored map) is accepted too
+        Map<String, Object> flat = Map.of("correlation.id.header", "X-Correlation-ID");
+        assertEquals("X-Correlation-ID", KafkaFlowAdapter.nestedText(flat, "correlation.id.header"));
+        // absent -> null; a non-map intermediate node -> null (not an exception)
+        assertNull(KafkaFlowAdapter.nestedText(Map.of("topic", "t1"), "trace.id.header"));
+        assertNull(KafkaFlowAdapter.nestedText(Map.of("trace", "not-a-map"), "trace.id.header"));
+    }
+
+    @Test
     void rejectsEmptyConsumerList() {
         ConfigReader config = config(List.of());
         assertThrows(IllegalArgumentException.class, () -> build(config));

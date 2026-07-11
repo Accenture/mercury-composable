@@ -36,6 +36,8 @@ public final class KafkaConsumerBinding {
     private final String dlqTopic;
     private final boolean autoCommit;
     private final Integer maxPollRecords;
+    private final String traceIdHeader;
+    private final String correlationIdHeader;
 
     private KafkaConsumerBinding(Builder b) {
         this.topicOrPattern = b.topicOrPattern;
@@ -47,6 +49,8 @@ public final class KafkaConsumerBinding {
         this.dlqTopic = b.dlqTopic;
         this.autoCommit = b.autoCommit;
         this.maxPollRecords = b.maxPollRecords;
+        this.traceIdHeader = b.traceIdHeader;
+        this.correlationIdHeader = b.correlationIdHeader;
     }
 
     /** Literal topic name, or the regex pattern text when {@link #isPattern()} is true. */
@@ -91,6 +95,23 @@ public final class KafkaConsumerBinding {
         return maxPollRecords;
     }
 
+    /**
+     * Per-binding inbound trace-id header override ({@code trace.id.header}), or {@code null} to use the
+     * global {@code kafka.trace.id.header}. Impedance matching for an upstream that does not send a W3C
+     * {@code traceparent} - a well-formed traceparent always takes precedence.
+     */
+    public String traceIdHeader() {
+        return traceIdHeader;
+    }
+
+    /**
+     * Per-binding inbound business correlation-id header override ({@code correlation.id.header}), or
+     * {@code null} to use the global {@code kafka.correlation.id.header} (default {@code cid}).
+     */
+    public String correlationIdHeader() {
+        return correlationIdHeader;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -106,6 +127,8 @@ public final class KafkaConsumerBinding {
         private String dlqTopic;
         private boolean autoCommit;
         private Integer maxPollRecords;
+        private String traceIdHeader;
+        private String correlationIdHeader;
 
         private Builder() {
         }
@@ -154,6 +177,16 @@ public final class KafkaConsumerBinding {
 
         public Builder maxPollRecords(Integer maxPollRecords) {
             this.maxPollRecords = maxPollRecords;
+            return this;
+        }
+
+        public Builder traceIdHeader(String traceIdHeader) {
+            this.traceIdHeader = traceIdHeader;
+            return this;
+        }
+
+        public Builder correlationIdHeader(String correlationIdHeader) {
+            this.correlationIdHeader = correlationIdHeader;
             return this;
         }
 

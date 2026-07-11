@@ -47,6 +47,17 @@ rest:
     # optionally, you can turn on Distributed Tracing
     tracing: true
 
+  # Per-endpoint header-name overrides (impedance matching): this endpoint accepts a legacy caller
+  # that sends 'X-Legacy-Trace' and 'X-Legacy-Cid' instead of the global X-Trace-Id / X-Correlation-Id.
+  # A well-formed W3C traceparent still takes precedence over the trace-id header.
+  - service: "header.probe"
+    methods: ['GET']
+    url: "/api/legacy/probe"
+    timeout: 10s
+    tracing: true
+    trace.id.header: "X-Legacy-Trace"
+    correlation.id.header: "X-Legacy-Cid"
+
   - service: "hello.mock"
     methods: ['POST']
     url: "/api/upload/demo"

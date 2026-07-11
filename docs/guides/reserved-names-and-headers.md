@@ -146,6 +146,8 @@ The trace ID is for end-to-end telemetry. Two header mechanisms are supported, b
 emitted outbound:
 
 - **X-Trace-Id** - carries the trace ID. When absent inbound, a fresh trace ID is generated at the edge.
+  The header **name** is configurable via `http.trace.id.header` (HTTP) and `kafka.trace.id.header`
+  (Kafka; unset by default - traceparent-only), for enterprises with their own convention.
 - **traceparent** (W3C Trace Context) - carries the trace ID *and* the caller's span ID. On inbound it
   **takes precedence** over `X-Trace-Id`: the trace ID segment becomes the Mercury trace ID and the parent
   span ID is adopted, so the trace continues from the upstream caller (span lineage across HTTP boundaries).
@@ -175,6 +177,12 @@ http.correlation.id.header=X-Correlation-Id
 # Kafka: no cross-vendor standard exists, so "cid" is the default
 kafka.correlation.id.header=cid
 ```
+
+> **Per-entry overrides (impedance matching).** The keys above (and their trace-id counterparts
+> `http.trace.id.header` / `kafka.trace.id.header`) are the **global defaults**. A single application often
+> integrates with pre-existing or third-party systems that each use their own convention, so an individual
+> rest.yaml endpoint or kafka-flow-adapter.yaml binding may override them with the optional
+> `trace.id.header` and `correlation.id.header` keys - the per-entry value wins over the global one.
 
 Propagation:
 

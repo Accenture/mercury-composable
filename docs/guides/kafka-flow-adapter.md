@@ -90,6 +90,8 @@ consumer:
 | `dlq-topic` | no | Pre-provisioned topic for exhausted messages (see [reliability](#reliability)). No DLQ if omitted. |
 | `auto-commit` | no | When `true`, use Kafka-native auto-commit instead of the default manual commit-after-process (see [delivery mode](#delivery-mode)). Default `false`. |
 | `max-poll-records` | no | Override the delivery mode's default poll batch size (1 for manual-commit, 500 for auto-commit). |
+| `correlation.id.header` | no | Per-binding override of the global `kafka.correlation.id.header` (default `cid`) — impedance matching for an upstream that publishes its own correlation-id header name (e.g. `X-Correlation-ID`). |
+| `trace.id.header` | no | Per-binding override of the global `kafka.trace.id.header` — a fallback trace-id source for an upstream that does not send a W3C `traceparent` (which always takes precedence). |
 
 The file is read by `ConfigReader`, so **every value supports `${ENV_VAR:default}` substitution** — e.g.
 `group: '${KAFKA_CONSUMER_GROUP:sales-order-group}'`. A malformed entry (missing `topic`/`topic-pattern`/

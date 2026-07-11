@@ -74,6 +74,32 @@ class RestEndpointTest extends TestBase {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void perEndpointHeaderOverridesCaptureTraceAndCid() throws InterruptedException {
+        // /api/legacy/probe declares 'trace.id.header: X-Legacy-Trace' and
+        // 'correlation.id.header: X-Legacy-Cid' in rest.yaml - the endpoint captures a legacy caller's
+        // custom headers instead of the global X-Trace-Id / X-Correlation-Id names
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        EventEmitter po = EventEmitter.getInstance();
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("GET").setUrl("/api/legacy/probe").setTargetHost("http://127.0.0.1:" + port);
+        req.setHeader("accept", "application/json");
+        req.setHeader("X-Legacy-Trace", "legacy-trace-0001");
+        req.setHeader("X-Legacy-Cid", "legacy-cid-0001");
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
+        po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
+        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        assert response != null;
+        assertEquals(200, response.getStatus());
+        assertInstanceOf(Map.class, response.getBody());
+        Map<String, Object> probe = (Map<String, Object>) response.getBody();
+        assertEquals("legacy-trace-0001", probe.get("traceId"),
+                "trace-id captured from the per-endpoint 'trace.id.header' override");
+        assertEquals("legacy-cid-0001", probe.get("cid"),
+                "business correlation-id captured from the per-endpoint 'correlation.id.header' override");
+    }
+
     @Test
     void optionsMethodTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
