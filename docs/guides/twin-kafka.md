@@ -104,6 +104,29 @@ decoding on secondary bindings then work against the secondary registry only, wh
 keeps the minimalist raw-byte[] behavior. Each side fails fast with its own config key named in the
 error if a subject is used where no registry is configured.
 
+## Deployment topologies {#topologies}
+
+Because connection/security is entirely template-driven and the registry is independently optional
+per cluster, common dual-cluster pairings are configuration-only:
+
+| Topology | Primary | Secondary | Configuration notes |
+|---|---|---|---|
+| **Apache + Confluent** | on-prem Apache Kafka (no registry) | Confluent Kafka with registry | The [asymmetric topology](#asymmetric-registry) above - set only `secondary.schema.registry.url`. This exact pairing is proven end-to-end by the module's test suite. |
+| **Confluent + Confluent** | Confluent with registry 1 | Confluent with registry 2 | Set both registry URLs. The two registries are fully independent - separate auth templates (even two different OAuth identity providers) and separate schema-id caches. See the [id-translation note](#id-translation) below. |
+| **Apache + Azure Event Hubs** | on-prem Apache Kafka | Event Hubs Kafka endpoint | Kafka-protocol compatible via the secondary templates: `SASL_SSL` with `PLAIN` (`$ConnectionString`) or `OAUTHBEARER` (Entra ID - the token URL is auto-allow-listed). Leave `secondary.schema.registry.url` unset (Azure Schema Registry is not Confluent-protocol compatible) and **pre-provision the event hubs** - Event Hubs does not honor Kafka topic auto-creation. Consumer groups, manual commit-after-process, and record headers (which carry `traceparent` and the correlation-id) are all supported by the Event Hubs Kafka endpoint. |
+
+The design is symmetric: each pairing also works with the roles swapped - "primary" is simply the
+cluster configured through minimalist-kafka's base templates.
+
+### Bridging framed payloads between two registries {#id-translation}
+
+Confluent global schema ids are only unique **within one registry**, and the bridge does not
+translate ids. To bridge a Confluent-framed message between two registries, let the flow
+decode-and-re-encode: `schema.enabled: true` on the inbound binding (decode against the source
+registry) and a `subject` header on the outbound notification (re-frame against the target
+registry's own id for that subject). Do **not** relay the raw framed bytes without `schema.enabled` -
+the embedded id would be meaningless on the other registry.
+
 ## Local development: one helper, two brokers {#local-dev}
 
 The [`kafka-standalone`](kafka-flow-adapter.md#client-config) helper can emulate the dual-cluster
