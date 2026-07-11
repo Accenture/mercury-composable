@@ -84,9 +84,7 @@ public class SchemaCodec {
      * entries ⇒ the serdes build exactly as before (plaintext).
      */
     private static final String SERDE_CONFIG_PREFIX = "schema.registry.serde.";
-    private static final String CACHE_TTL = "schema.registry.cache.ttl";
     private static final String DEFAULT_CACHE_TTL = "30m";
-    private static final String VERSION_CACHE_TTL = "schema.registry.version.cache.ttl";
     // A pinned subject+numeric-version is immutable, so it can be cached effectively forever; a long TTL
     // (plus a bounded item count) keeps it fresh enough while removing any unbounded-growth risk.
     private static final String DEFAULT_VERSION_CACHE_TTL = "10d";

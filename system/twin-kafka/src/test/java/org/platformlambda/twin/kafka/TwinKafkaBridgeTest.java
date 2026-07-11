@@ -32,10 +32,10 @@ import org.platformlambda.mini.kafka.KafkaHeaders;
 import org.platformlambda.mini.kafka.KafkaRuntime;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -57,6 +57,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Apache Kafka), an embedded Confluent-compatible registry on the secondary (as with a cloud Confluent
  * cluster) - proving each cluster's registry is optional and independent.</p>
  */
+// resource: the adapters, publishers and registry client are process-wide singletons owned by the two
+// runtimes for the app lifetime - closed once in shutdown(), never per test
+@SuppressWarnings("resource")
 class TwinKafkaBridgeTest {
 
     private static final String TRACE_A = "aaaa1111bbbb2222cccc3333dddd4444";
@@ -124,7 +127,7 @@ class TwinKafkaBridgeTest {
         props.put("bootstrap.servers", bootstrapServers);
         props.put("client.id", "twin-admin");
         try (AdminClient admin = AdminClient.create(props)) {
-            admin.createTopics(List.of(topics).stream()
+            admin.createTopics(Stream.of(topics)
                     .map(t -> new NewTopic(t, 1, (short) 1)).toList()).all().get();
         }
     }

@@ -59,8 +59,7 @@ final class EmbeddedKafka implements AutoCloseable {
             this.bootstrapServers = "127.0.0.1:" + BROKER_PORT;
             this.logDir = prepareLogDir();
             formatStorage(logDir);
-            this.server = new KafkaRaftServer(
-                    new KafkaConfig(brokerConfig(BROKER_PORT, CONTROLLER_PORT, logDir)), Time.SYSTEM);
+            this.server = new KafkaRaftServer(new KafkaConfig(brokerConfig(logDir)), Time.SYSTEM);
             this.server.startup();
         } catch (IOException e) {
             throw new UncheckedIOException("Unable to start embedded Kafka", e);
@@ -78,14 +77,14 @@ final class EmbeddedKafka implements AutoCloseable {
         return dir;
     }
 
-    private static Properties brokerConfig(int brokerPort, int controllerPort, Path logDir) {
+    private static Properties brokerConfig(Path logDir) {
         Properties p = new Properties();
         p.setProperty("process.roles", "broker,controller");
         p.setProperty("node.id", Integer.toString(NODE_ID));
-        p.setProperty("controller.quorum.voters", NODE_ID + "@127.0.0.1:" + controllerPort);
+        p.setProperty("controller.quorum.voters", NODE_ID + "@127.0.0.1:" + CONTROLLER_PORT);
         p.setProperty("listeners",
-                "PLAINTEXT://127.0.0.1:" + brokerPort + ",CONTROLLER://127.0.0.1:" + controllerPort);
-        p.setProperty("advertised.listeners", "PLAINTEXT://127.0.0.1:" + brokerPort);
+                "PLAINTEXT://127.0.0.1:" + BROKER_PORT + ",CONTROLLER://127.0.0.1:" + CONTROLLER_PORT);
+        p.setProperty("advertised.listeners", "PLAINTEXT://127.0.0.1:" + BROKER_PORT);
         p.setProperty("inter.broker.listener.name", "PLAINTEXT");
         p.setProperty("controller.listener.names", CONTROLLER_LISTENER);
         p.setProperty("listener.security.protocol.map", "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT");

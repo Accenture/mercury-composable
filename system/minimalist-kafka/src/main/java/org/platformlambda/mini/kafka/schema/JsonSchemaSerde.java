@@ -70,6 +70,9 @@ class JsonSchemaSerde implements SchemaSerde {
         this.deserializer = new KafkaJsonSchemaDeserializer<>(client, cfg);
     }
 
+    // resource: the cached serializer is owner-confined for this serde's lifetime (one per schema id),
+    // not a per-call resource - closing it here would break subsequent serialize calls
+    @SuppressWarnings("resource")
     @Override
     public byte[] serialize(String topic, int schemaId, Object value) {
         /*
