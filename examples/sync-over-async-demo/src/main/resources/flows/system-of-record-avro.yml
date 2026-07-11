@@ -21,12 +21,11 @@ first.task: 'system.of.record.avro'
 tasks:
   - input:
       - 'input.body -> *'
-      - 'input.header.cid -> header.cid'
+      - 'model.cid -> header.cid'
       - 'input.header.traceparent -> header.traceparent'
     process: 'system.of.record.avro'
     output:
       - 'result -> model.payload'
-      - 'header.cid -> model.cid'
     description: 'Process the decoded request'
     execution: sequential
     next:

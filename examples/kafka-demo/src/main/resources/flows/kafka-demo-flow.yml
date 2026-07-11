@@ -15,12 +15,11 @@ first.task: 'demo.processor'
 tasks:
   - input:
       - 'input.body -> *'
-      - 'input.header.cid -> header.cid'
+      - 'model.cid -> header.cid'
       - 'input.header.traceparent -> header.traceparent'
     process: 'demo.processor'
     output:
       - 'result -> model.payload'
-      - 'header.cid -> model.cid'
     description: 'Process the inbound message'
     execution: sequential
     next:

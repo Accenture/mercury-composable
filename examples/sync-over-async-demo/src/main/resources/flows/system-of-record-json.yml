@@ -20,12 +20,11 @@ first.task: 'system.of.record.json'
 tasks:
   - input:
       - 'input.body -> *'
-      - 'input.header.cid -> header.cid'
+      - 'model.cid -> header.cid'
       - 'input.header.traceparent -> header.traceparent'
     process: 'system.of.record.json'
     output:
       - 'result -> model.payload'
-      - 'header.cid -> model.cid'
     description: 'Process the decoded request'
     execution: sequential
     next:

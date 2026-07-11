@@ -15,12 +15,11 @@ first.task: 'system.of.record'
 tasks:
   - input:
       - 'input.body -> *'
-      - 'input.header.cid -> header.cid'
+      - 'model.cid -> header.cid'
       - 'input.header.traceparent -> header.traceparent'
     process: 'system.of.record'
     output:
       - 'result -> model.payload'
-      - 'header.cid -> model.cid'
     description: 'Process the request'
     execution: sequential
     next:

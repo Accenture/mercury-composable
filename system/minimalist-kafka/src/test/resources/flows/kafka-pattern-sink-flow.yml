@@ -13,7 +13,7 @@ first.task: 'kafka.pattern.test.sink'
 tasks:
   - input:
       - 'input.body -> *'
-      - 'input.header.cid -> header.cid'
+      - 'model.cid -> header.cid'
       - 'input.metadata.topic -> header.topic'
       - 'input.metadata.partition -> header.partition'
       - 'input.metadata.offset -> header.offset'
