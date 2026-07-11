@@ -8,7 +8,7 @@
     <groupId>com.accenture.mercury</groupId>
     <artifactId>parent-mercury</artifactId>
     <packaging>pom</packaging>
-    <version>4.7.1</version>
+    <version>4.8.0</version>
     <name>Parent Mercury</name>
 
     <modules>
@@ -52,7 +52,7 @@
         <module>examples/kafka-demo</module>
         <module>examples/sync-over-async-demo</module>-->
 
-        <!-- Executable for benchmark tests (benchmark-client retired 4.7.1 — superseded by benchmark-reporter)
+        <!-- Executable for benchmark tests (benchmark-client retired 4.8.0 — superseded by benchmark-reporter)
         <module>benchmark/benchmark-reporter</module>-->
     </modules>
 
