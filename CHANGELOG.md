@@ -8,6 +8,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.8.0, 7/10/2026
+
+Feature release: the new twin-kafka module for dual Kafka cluster bridging, configurable trace-id
+headers with per-entry overrides for legacy impedance matching, and a hardened business
+correlation-id path (model.cid mappings plus a compile-time guard for reserved metadata model keys).
+No breaking changes; single-cluster applications and existing configurations work unchanged.
+
+### Added
+
+1. **twin-kafka - dual Kafka cluster support for bridge applications.** A new `system/twin-kafka`
+   module on top of minimalist-kafka connects an application to a SECOND Kafka cluster (e.g. on-prem
+   Apache Kafka bridging to cloud Confluent Kafka): `secondary.kafka.notification` (full feature
+   parity with `simple.kafka.notification`), an optional secondary flow adapter
+   (`yaml.secondary.kafka.flow.adapter`), and an optional per-cluster Schema Registry
+   (`secondary.schema.registry.url`) - the registry is independent per cluster, so asymmetric
+   topologies (one side with a registry, one without) and Kafka-protocol-compatible services such as
+   Azure Event Hubs are supported. A bridge is plain flow YAML - consume from one cluster's adapter,
+   publish through the other cluster's notification function - with trace and correlation-id
+   continuity across both hops. Dead letters from secondary bindings land on the secondary cluster.
+   Template defaults align with kafka-standalone's `dual.servers=true` second broker for local
+   dual-cluster development. minimalist-kafka gains behavior-preserving reuse seams (template
+   location overloads, notification extension accessors, key-prefix schema codec with per-registry
+   caches) and remains unchanged for single-cluster use.
+2. **Configurable trace-id headers with per-entry overrides.** New globals `http.trace.id.header`
+   (default `X-Trace-Id`, previously hard-coded) and `kafka.trace.id.header` (unset by default;
+   inbound fallback when no W3C `traceparent` is present, outbound stamped alongside `traceparent`
+   for legacy consumers). A rest.yaml endpoint entry or kafka-flow-adapter.yaml consumer binding may
+   override the header names with the optional `trace.id.header` / `correlation.id.header` keys -
+   impedance matching for pre-existing and third-party systems, with precedence
+   per-entry > global > built-in default. The W3C `traceparent` standard always takes precedence for
+   the trace-id.
+
+### Changed
+
+1. **Reliable business correlation-id in flows.** Shipped flows map the correlation-id from
+   `model.cid` (engine-seeded from the configured header) instead of the raw Kafka record header, so
+   an overridden header name (e.g. `X-Correlation-ID`) propagates correctly; the redundant
+   header-echo re-capture was removed. `CompileFlows` now rejects any data mapping that would
+   overwrite reserved state-machine metadata (`model.cid`, `model.instance`, `model.flow`,
+   `model.ttl`) with a precise startup error.
+2. Final SonarQube code smells resolved, including IDE-flagged touch-ups across the new modules.
+
+---
 ## Version 4.7.1, 7/9/2026
 
 Field-driven update for the minimalist-kafka module: OAuth 2.0 authentication for the Schema Registry
