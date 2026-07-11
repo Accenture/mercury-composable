@@ -67,11 +67,11 @@ public class CompileFlows implements EntryPoint {
     private static final String MODEL_NAMESPACE = "model.";
     /**
      * Metadata keys seeded into each flow instance's state machine by the engine
-     * (see FlowInstance) - a data mapping must never overwrite them. A corrupted
+     * (see FlowInstance). A data mapping must never overwrite them - a corrupted
      * model.cid, for example, would propagate to downstream systems through any
-     * later 'model.cid -> ...' mapping. model.parent / model.root are protected
-     * as whole namespaces by DataMappingHelper.validModel; writing beneath them
-     * (model.parent.*) is the legitimate shared-state mechanism and stays allowed.
+     * later 'model.cid -> ...' mapping. The model.parent and model.root keys are
+     * protected as whole namespaces by DataMappingHelper.validModel; writing
+     * beneath them (model.parent.*) is the shared-state mechanism and stays allowed.
      */
     private static final List<String> RESERVED_MODEL_KEYS =
             List.of("model.cid", "model.instance", "model.flow", "model.ttl", "model.parent", "model.root");
@@ -243,34 +243,38 @@ public class CompileFlows implements EntryPoint {
     private boolean validInputMapping(String name, List<String> inputList, Task task, FlowConfigMetadata md) {
         List<String> filteredInputMapping = filterDataMapping(inputList);
         for (String raw : filteredInputMapping) {
-            // convert deprecated "simple type matching" syntax to "simple plugin" syntax
-            String line = converter.convert(raw);
-            if (!line.equals(raw)) {
-                log.warn("Deprecated input syntax in task {} of {} - '{}' converted to '{}'",
-                        md.uniqueTaskName, name, raw, line);
-            }
-            if (helper.validInput(line)) {
-                int sep = line.lastIndexOf(MAP_TO);
-                String rhs = line.substring(sep + 2).trim();
-                if (rhs.startsWith(INPUT_NAMESPACE) || rhs.equals(INPUT)) {
-                    log.warn("Task {} in {} uses input namespace in right-hand-side - {}",
-                            md.uniqueTaskName, name, line);
-                }
-                String reserved = reservedModelKeyViolation(rhs);
-                if (reserved != null) {
-                    log.error("Skip invalid task {} in {} that overwrites the reserved metadata '{}' - {}",
-                            md.uniqueTaskName, name, reserved, line);
-                    return false;
-                }
-                task.input.add(line);
-                if (line.contains(MODEL_PARENT) || line.contains(MODEL_ROOT)) {
-                    task.enableInputParentRef();
-                }
-            } else {
-                log.error("Skip invalid task {} in {} that has invalid input mapping - {}",
-                        md.uniqueTaskName, name, line);
+            if (!addValidatedInputEntry(name, raw, task, md)) {
                 return false;
             }
+        }
+        return true;
+    }
+
+    /** Validate one input data mapping entry and add it to the task (false = the task must be skipped). */
+    private boolean addValidatedInputEntry(String name, String raw, Task task, FlowConfigMetadata md) {
+        // convert deprecated "simple type matching" syntax to "simple plugin" syntax
+        String line = converter.convert(raw);
+        if (!line.equals(raw)) {
+            log.warn("Deprecated input syntax in task {} of {} - '{}' converted to '{}'",
+                    md.uniqueTaskName, name, raw, line);
+        }
+        if (!helper.validInput(line)) {
+            log.error("Skip invalid task {} in {} that has invalid input mapping - {}",
+                    md.uniqueTaskName, name, line);
+            return false;
+        }
+        int sep = line.lastIndexOf(MAP_TO);
+        String rhs = line.substring(sep + 2).trim();
+        if (rhs.startsWith(INPUT_NAMESPACE) || rhs.equals(INPUT)) {
+            log.warn("Task {} in {} uses input namespace in right-hand-side - {}",
+                    md.uniqueTaskName, name, line);
+        }
+        if (rejectedReservedTarget(INPUT, rhs, name, md, line)) {
+            return false;
+        }
+        task.input.add(line);
+        if (line.contains(MODEL_PARENT) || line.contains(MODEL_ROOT)) {
+            task.enableInputParentRef();
         }
         return true;
     }
@@ -287,10 +291,7 @@ public class CompileFlows implements EntryPoint {
             }
             if (helper.validOutput(line, isDecisionTask)) {
                 String rhs = line.substring(line.lastIndexOf(MAP_TO) + 2).trim();
-                String reserved = reservedModelKeyViolation(rhs);
-                if (reserved != null) {
-                    log.error("Skip invalid task {} in {} that overwrites the reserved metadata '{}' - {}",
-                            md.uniqueTaskName, name, reserved, line);
+                if (rejectedReservedTarget(OUTPUT, rhs, name, md, line)) {
                     return false;
                 }
                 task.output.add(line);
@@ -308,6 +309,18 @@ public class CompileFlows implements EntryPoint {
             return false;
         }
         return true;
+    }
+
+    /** Log and reject a data mapping entry whose target overwrites reserved state-machine metadata. */
+    private boolean rejectedReservedTarget(String direction, String rhs, String name,
+                                           FlowConfigMetadata md, String line) {
+        String reserved = reservedModelKeyViolation(rhs);
+        if (reserved != null) {
+            log.error("Skip invalid task ({}) {} in {} that overwrites the reserved metadata '{}' - {}",
+                    direction, md.uniqueTaskName, name, reserved, line);
+            return true;
+        }
+        return false;
     }
 
     /**
