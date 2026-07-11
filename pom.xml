@@ -20,6 +20,7 @@
         <module>system/minigraph-playground-engine</module>
         <module>system/mini-scheduler</module>
         <module>system/minimalist-kafka</module>
+        <module>system/twin-kafka</module>
 
         <!-- Extensions -->
         <module>extensions/reactive-postgres</module>

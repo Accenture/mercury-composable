@@ -486,6 +486,7 @@ The essentials:
 
 ## See also
 
+- [Twin Kafka](twin-kafka.md) — connect to a SECOND Kafka cluster on top of this library (dual-cluster bridge).
 - [Sync-over-Async](sync-over-async.md) — cross-pod synchronous request/response built on this library plus a Redis return route.
 - [Schema Registry mock](schema-registry-mock.md) — the local Confluent-compatible registry the [schema integration](#schema) talks to.
 - [Configuration Reference](configuration-reference.md#kafka-flow-adapter) — every Kafka flow-adapter key.

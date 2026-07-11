@@ -1,0 +1,21 @@
+#
+# The B-to-A bridge: reached when the SECONDARY adapter routes a message from 'reverse.source'
+# (cluster B). Its single task republishes the message to 'reverse.mirror' on cluster A through
+# the primary simple.kafka.notification.
+#
+flow:
+  id: 'bridge-b-to-a'
+  description: 'Bridge a message from cluster B to cluster A'
+  ttl: 30s
+
+first.task: 'simple.kafka.notification'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+      - 'text(reverse.mirror) -> header.topic'
+      - 'model.cid -> header.cid'
+    process: 'simple.kafka.notification'
+    output: []
+    description: 'Republish the cluster-B message to cluster A'
+    execution: end

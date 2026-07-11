@@ -1,0 +1,16 @@
+#
+# SECONDARY cluster (B) bindings: the sink for messages bridged from A, the B-to-A bridge source,
+# and a schema-enabled binding decoding against the SECONDARY registry (the primary has none -
+# the asymmetric on-prem Apache + cloud Confluent topology).
+#
+consumer:
+  - topic: 'bridge.mirror'
+    flow: 'sink-b-flow'
+    group: 'sink-b-group'
+  - topic: 'reverse.source'
+    flow: 'bridge-b-to-a'
+    group: 'bridge-b-group'
+  - topic: 'schema.mirror'
+    flow: 'schema-sink-flow'
+    group: 'schema-b-group'
+    schema.enabled: true

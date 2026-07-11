@@ -68,6 +68,11 @@ import java.util.concurrent.ConcurrentMap;
  * Kafka publishing is fast and mostly waits on the broker ack, so a handful of single-flight workers sustain
  * high throughput while holding kernel-thread usage down. Raise it only if profiling shows the publish path
  * is genuinely the bottleneck.</p>
+ *
+ * <p><b>Extension seam.</b> The publisher, schema codec, and outbound header names are resolved through
+ * protected accessors, so a library that connects to an additional Kafka cluster (e.g. twin-kafka's
+ * {@code secondary.kafka.notification}) can subclass this function and override only those accessors -
+ * the routing, header propagation, trace stamping, and Confluent serialization logic is shared.</p>
  */
 @KernelThreadRunner
 @PreLoad(route = "simple.kafka.notification", instances = 5)
@@ -90,6 +95,31 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
     // one Encoder per worker instance (an instance is single-flight) -> owner-confined Confluent serializers.
     private final ConcurrentMap<Integer, SchemaCodec.Encoder> encoders = new ConcurrentHashMap<>();
 
+    /** The publisher for the target cluster - twin-kafka overrides this for its secondary cluster. */
+    protected KafkaRequestPublisher publisher() {
+        return KafkaRuntime.publisher();
+    }
+
+    /** The schema codec for the target cluster's registry, or null when schema features are off. */
+    protected SchemaCodec schemaCodec() {
+        return KafkaRuntime.schemaCodec();
+    }
+
+    /** The outbound business correlation-id header name (default from kafka.correlation.id.header). */
+    protected String correlationIdHeader() {
+        return BUSINESS_CORRELATION_ID_HEADER;
+    }
+
+    /** The optional outbound trace-id header name (default from kafka.trace.id.header), or null. */
+    protected String traceIdHeader() {
+        return TRACE_ID_HEADER;
+    }
+
+    /** The registry-url application property named in error messages (for accurate diagnostics). */
+    protected String registryUrlKey() {
+        return "schema.registry.url";
+    }
+
     // resource: the publisher is the process-wide shared singleton owned by KafkaRuntime,
     // not a resource this function opens - closing it here would tear it down for everyone
     @SuppressWarnings("resource")
@@ -108,24 +138,26 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
         });
         // propagate the business correlation-id under the configured header; an explicitly mapped value
         // wins over the flow's correlation-id (model.cid, carried as the my_correlation_id reserved header).
-        String businessCorrelationId = headers.getOrDefault(BUSINESS_CORRELATION_ID_HEADER, headers.get(MY_CORRELATION_ID));
+        String cidHeader = correlationIdHeader();
+        String businessCorrelationId = headers.getOrDefault(cidHeader, headers.get(MY_CORRELATION_ID));
         if (businessCorrelationId != null) {
-            kafkaHeaders.put(BUSINESS_CORRELATION_ID_HEADER, businessCorrelationId.getBytes(StandardCharsets.UTF_8));
+            kafkaHeaders.put(cidHeader, businessCorrelationId.getBytes(StandardCharsets.UTF_8));
         }
         String traceparent = currentTraceparent(new PostOffice(headers, instance));
         if (traceparent != null) {
             kafkaHeaders.put(W3cTrace.TRACEPARENT, traceparent.getBytes(StandardCharsets.UTF_8));
         }
-        // when kafka.trace.id.header is configured, also stamp the trace-id under that name for legacy
+        // when the trace-id header is configured, also stamp the trace-id under that name for legacy
         // downstream consumers; an explicitly mapped value wins over the flow's trace-id (my_trace_id).
-        if (TRACE_ID_HEADER != null) {
-            String traceId = headers.getOrDefault(TRACE_ID_HEADER, headers.get(MY_TRACE_ID));
+        String traceHeader = traceIdHeader();
+        if (traceHeader != null) {
+            String traceId = headers.getOrDefault(traceHeader, headers.get(MY_TRACE_ID));
             if (traceId != null) {
-                kafkaHeaders.put(TRACE_ID_HEADER, traceId.getBytes(StandardCharsets.UTF_8));
+                kafkaHeaders.put(traceHeader, traceId.getBytes(StandardCharsets.UTF_8));
             }
         }
         byte[] payload = encode(topic, headers, body, instance);
-        return KafkaRuntime.publisher().publish(topic, partition, kafkaHeaders, payload);
+        return publisher().publish(topic, partition, kafkaHeaders, payload);
     }
 
     /**
@@ -139,10 +171,10 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
         if (subject == null || subject.isBlank()) {
             return body;
         }
-        SchemaCodec codec = KafkaRuntime.schemaCodec();
+        SchemaCodec codec = schemaCodec();
         if (codec == null) {
-            throw new IllegalStateException("'" + KafkaHeaders.SUBJECT + "' header set but "
-                    + "'schema.registry.url' is not configured");
+            throw new IllegalStateException("'" + KafkaHeaders.SUBJECT + "' header set but '"
+                    + registryUrlKey() + "' is not configured");
         }
         String version = headers.getOrDefault(KafkaHeaders.VERSION, KafkaHeaders.DEFAULT_VERSION);
         // Resolve subject+version -> global id + type (cached); throws IllegalState/IllegalArgument on failure.
@@ -165,14 +197,14 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
      * correlation-id and configured trace-id headers (stamped explicitly from the resolved values), and the
      * framework's read-only reserved headers (my_route / my_trace_id / my_trace_path / my_correlation_id).
      */
-    private static boolean isPropagatableHeader(String key) {
+    private boolean isPropagatableHeader(String key) {
         return !KafkaHeaders.TOPIC.equals(key)
                 && !KafkaHeaders.PARTITION.equals(key)
                 && !KafkaHeaders.SUBJECT.equals(key)
                 && !KafkaHeaders.VERSION.equals(key)
                 && !W3cTrace.TRACEPARENT.equals(key)
-                && !BUSINESS_CORRELATION_ID_HEADER.equals(key)
-                && !key.equals(TRACE_ID_HEADER)
+                && !correlationIdHeader().equals(key)
+                && !key.equals(traceIdHeader())
                 && !MY_ROUTE.equals(key)
                 && !MY_TRACE_ID.equals(key)
                 && !MY_TRACE_PATH.equals(key)

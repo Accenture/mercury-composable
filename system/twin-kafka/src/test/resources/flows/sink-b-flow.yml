@@ -1,0 +1,18 @@
+#
+# Sink on the SECONDARY side: records a message that completed the A-to-B bridge.
+#
+flow:
+  id: 'sink-b-flow'
+  description: 'Record a message bridged from cluster A onto cluster B'
+  ttl: 30s
+
+first.task: 'bridge.sink.b'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+    process: 'bridge.sink.b'
+    output:
+      - 'result -> output.body'
+    description: 'Record the received message'
+    execution: end
