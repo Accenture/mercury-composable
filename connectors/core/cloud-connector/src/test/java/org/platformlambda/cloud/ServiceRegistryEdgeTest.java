@@ -29,6 +29,7 @@ import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.ServiceDiscovery;
+import org.platformlambda.core.util.Utility;
 import org.platformlambda.mock.TestBase;
 
 import java.util.HashMap;
@@ -66,7 +67,7 @@ class ServiceRegistryEdgeTest extends TestBase {
         long deadline = System.currentTimeMillis() + 10000;
         while (System.currentTimeMillis() < deadline
                 && !platform.hasRoute(ServiceDiscovery.SERVICE_REGISTRY)) {
-            org.platformlambda.core.util.Utility.getInstance().sleep(200);
+            Utility.getInstance().sleep(200);
         }
     }
 
@@ -74,7 +75,7 @@ class ServiceRegistryEdgeTest extends TestBase {
         Platform platform = Platform.getInstance();
         if (!platform.hasRoute(WATCHER)) {
             LambdaFunction f = (headers, input, instance) -> {
-                events.offer(new HashMap<>(headers));
+                events.add(new HashMap<>(headers));
                 return true;
             };
             platform.registerPrivate(WATCHER, f, 1);
@@ -93,8 +94,8 @@ class ServiceRegistryEdgeTest extends TestBase {
         po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv(TYPE, "subscribe_life_cycle"));
     }
 
-    private Map<String, String> waitForEvent(String type, long timeoutMs) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + timeoutMs;
+    private Map<String, String> waitForEvent(String type) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + 8000;
         while (System.currentTimeMillis() < deadline) {
             Map<String, String> event = events.poll(500, TimeUnit.MILLISECONDS);
             if (event != null && type.equals(event.get(TYPE))) {
@@ -118,12 +119,12 @@ class ServiceRegistryEdgeTest extends TestBase {
                 .setHeader(TOPIC, "multiplex.0001-005").setHeader("name", "edge-app")
                 .setHeader("exchange", "true");
         po.send(addList);
-        Map<String, String> joined = waitForEvent("join", 8000);
+        Map<String, String> joined = waitForEvent("join");
         assertNotNull(joined, "life-cycle subscriber should see the peer join");
         assertEquals(peer, joined.get(ORIGIN));
         // the peer leaving notifies subscribers and clears its routes
         po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv(TYPE, "leave"), new Kv(ORIGIN, peer));
-        Map<String, String> left = waitForEvent("leave", 8000);
+        Map<String, String> left = waitForEvent("leave");
         assertNotNull(left, "life-cycle subscriber should see the peer leave");
         assertEquals(peer, left.get(ORIGIN));
         assertTrue(ServiceRegistry.getInstances("edge.service.one").isEmpty());
@@ -131,7 +132,7 @@ class ServiceRegistryEdgeTest extends TestBase {
 
     @Order(2)
     @Test
-    void keepAliveRefreshesKnownAndUnknownPeers() throws InterruptedException {
+    void keepAliveRefreshesKnownAndUnknownPeers() {
         EventEmitter po = EventEmitter.getInstance();
         Platform platform = Platform.getInstance();
         String peer = "edge-test-peer-2";
@@ -159,7 +160,7 @@ class ServiceRegistryEdgeTest extends TestBase {
         long deadline = System.currentTimeMillis() + 8000;
         while (System.currentTimeMillis() < deadline
                 && !ServiceRegistry.getAllOrigins().containsKey(peer)) {
-            Thread.sleep(200);
+            Utility.getInstance().sleep(200);
         }
         assertTrue(ServiceRegistry.getAllOrigins().containsKey(peer));
         po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv(TYPE, "leave"), new Kv(ORIGIN, peer));

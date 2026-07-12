@@ -27,6 +27,7 @@ import org.platformlambda.core.system.AutoStart;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PubSub;
+import org.platformlambda.core.util.Utility;
 
 import java.util.List;
 import java.util.Map;
@@ -113,13 +114,13 @@ class KafkaAdminEdgeTest {
         ps.createTopic(topic, 1);
         final BlockingQueue<Object> inbox = new ArrayBlockingQueue<>(10);
         LambdaFunction listener = (headers, input, instance) -> {
-            inbox.offer(input);
+            inbox.add(input);
             return true;
         };
         // subscribe from the latest position (no explicit offset), then publish
         ps.subscribe(topic, 0, listener, "edge-client-1", "edge-group-1");
         // allow the consumer to join the group before publishing
-        Thread.sleep(3000);
+        Utility.getInstance().sleep(3000);
         ps.publish(topic, 0, Map.of("k", "v"), "live message");
         Object delivered = inbox.poll(60, TimeUnit.SECONDS);
         assertEquals("live message", delivered);
@@ -127,7 +128,7 @@ class KafkaAdminEdgeTest {
         // re-subscribe with an explicit numeric offset to replay from the beginning
         final BlockingQueue<Object> replay = new ArrayBlockingQueue<>(10);
         LambdaFunction replayListener = (headers, input, instance) -> {
-            replay.offer(input);
+            replay.add(input);
             return true;
         };
         ps.subscribe(topic, 0, replayListener, "edge-client-2", "edge-group-2", "0");
@@ -148,7 +149,7 @@ class KafkaAdminEdgeTest {
         assertTrue(ps.createTopic(topic, 1));
         final BlockingQueue<Object> inbox = new ArrayBlockingQueue<>(10);
         LambdaFunction listener = (headers, input, instance) -> {
-            inbox.offer(input);
+            inbox.add(input);
             return true;
         };
         ps.subscribe(topic, 0, listener, "edge-client-3", "edge-group-3", "0");
