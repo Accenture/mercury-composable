@@ -1,6 +1,6 @@
 # mercury-composable — Claude Code
 
-Event-driven Java framework (Maven reactor, `com.accenture.mercury` v4.8.0) — self-contained functions wired by YAML event flows.
+Event-driven Java framework (Maven reactor, `com.accenture.mercury` v4.8.1) — self-contained functions wired by YAML event flows.
 
 This project uses the agent-memory shared memory system.
 
