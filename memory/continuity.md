@@ -63,6 +63,30 @@
 
 ## Key Decisions
 
+- **Release 4.8.1 — SHIPPED 2026-07-11 (tag `v4.8.1` on merge commit `3d226c5b`; PRs #159-#161).**
+  Maintenance release: dependency security updates (Jackson 2.22.1 closed dependabot/28; log4j2/
+  netty/tomcat/gson/vertx refreshed), twin-kafka-demo, SimpleRandomPartitioner, DSA retirement and
+  the repo-wide coverage program. **Durable facts:** (1) **SimpleRandomPartitioner is
+  minimalist-kafka's producer DEFAULT** (`putIfAbsent` in KafkaClientConfig — a template's own
+  `partitioner.class` wins; explicit `partition` header bypasses partitioners; keyed records keep
+  murmur2; SecureRandom shared instance — ThreadLocal avoided per repo convention). Kafka's sticky
+  default starves multi-instance consumer groups at low volume — proven in the demo (all-on-one
+  partition before, spread after). (2) **CryptoApi DSA methods REMOVED** (4.8.1) — the SHA256withDSA
+  field-Sonar hotspot is resolved at the source; no UI disposition needed. (3) **Ten example modules
+  build+test inside the reactor** (pg-example standalone: embedded-postgres binary download;
+  benchmark-reporter off) — release-bump sweep is now 32 poms; CI runs ~918 tests. (4) **Coverage
+  aggregate 85.8% line / 80.0% Sonar-combined** — zero margin: field Sonar config should exclude
+  `benchmark/**` (938 untested lines), and pg-example's coverage needs its own `mvn test` in the
+  pipeline. kafka-connector's remaining gap (topic substitution + boot branches) needs a second
+  test-app config — not reachable in one JVM. (5) **Flow-authoring conventions** (learned via
+  twin-kafka-demo, examples/twin-kafka-demo): the engine does NOT auto-convert a Map into a
+  byte[]-typed function — use `f:binary(model.x) -> *` (the `:binary` colon shorthand is
+  DEPRECATED); set `text(application/json) -> output.header.content-type` on flow HTTP responses
+  (platform-core otherwise content-negotiates from the request's accept header). (6) **No version
+  strings in pom comments** — the release sweep mangled a historical "retired 4.8.0" note; history
+  belongs in the CHANGELOG. See [[release-4-8-0-shipped]] for the twin-kafka architecture facts.
+  <!-- id: release-4-8-1-shipped | created: 2026-07-11 | last_used: 2026-07-11 | uses: 1 | tier: active | origin: 2026-07-12-002326 -->
+
 - **Release 4.8.0 — SHIPPED 2026-07-10 (tag `v4.8.0` on merge commit `5d9fda45`; PRs #153-#157).**
   Feature release: **twin-kafka** (dual Kafka cluster bridging), configurable trace-id headers with
   per-entry overrides, and the hardened model.cid path. **Durable architecture facts:**
@@ -114,7 +138,7 @@
   (3) **CODE CONVENTION: prefer `ReentrantLock` over `synchronized`** in framework code
   (virtual-thread friendly — Eric's review feedback); (4) EmbeddedSchemaRegistry has an opt-in OAuth
   mode (HS256 token endpoint + Bearer enforcement) for authenticated registry tests.
-  <!-- id: release-4-7-0-shipped | created: 2026-07-08 | last_used: 2026-07-10 | uses: 2 | tier: active | origin: 2026-07-08-224933 -->
+  <!-- id: release-4-7-0-shipped | created: 2026-07-08 | last_used: 2026-07-10 | uses: 2 | tier: archive-candidate | origin: 2026-07-08-224933 -->
 
 - **Release 4.6.2 — SHIPPED 2026-07-07 (tag `v4.6.2` on merge commit `56ac1067`; PRs #140 remediation +
   #141 bump).** SonarQube quality-gate remediation (1 blocker, 24 criticals, 83 majors, smells — all
