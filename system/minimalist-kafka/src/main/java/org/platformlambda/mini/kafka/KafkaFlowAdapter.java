@@ -121,10 +121,19 @@ public class KafkaFlowAdapter implements AutoCloseable {
 
     private final List<KafkaFlowConsumer> consumers = new ArrayList<>();
     private final Properties consumerProps;
+    // the registry-url application property named in error messages (for accurate diagnostics) -
+    // twin-kafka passes its secondary key so operators are pointed at the right setting
+    private final String registryUrlKey;
 
     public KafkaFlowAdapter(Properties consumerProps, ConfigReader config, long dlqTimeout,
                             RetryPolicy retryPolicy, SchemaCodec schemaCodec) {
+        this(consumerProps, config, dlqTimeout, retryPolicy, schemaCodec, "schema.registry.url");
+    }
+
+    public KafkaFlowAdapter(Properties consumerProps, ConfigReader config, long dlqTimeout,
+                            RetryPolicy retryPolicy, SchemaCodec schemaCodec, String registryUrlKey) {
         this.consumerProps = consumerProps;
+        this.registryUrlKey = registryUrlKey;
         Object entries = config.get(CONSUMER);
         if (!(entries instanceof List<?> list) || list.isEmpty()) {
             throw new IllegalArgumentException("kafka-flow-adapter config must contain a non-empty 'consumer' list");
@@ -169,7 +178,7 @@ public class KafkaFlowAdapter implements AutoCloseable {
         }
         if (schemaEnabled && schemaCodec == null) {
             throw new IllegalArgumentException("consumer[" + i + "] (" + label + ") sets "
-                    + "schema.enabled but 'schema.registry.url' is not configured");
+                    + "schema.enabled but '" + registryUrlKey + "' is not configured");
         }
         KafkaConsumerBinding.Builder builder = KafkaConsumerBinding.builder()
                 .flowId(flowId).groupId(groupId).partition(partition).schemaEnabled(schemaEnabled)

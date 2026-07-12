@@ -14,3 +14,9 @@ consumer:
     flow: 'schema-sink-flow'
     group: 'schema-b-group'
     schema.enabled: true
+  # dead-letter regression: the poison flow always fails, so exhausted retries must land on the
+  # SECONDARY cluster's DLQ topic (RetryPolicy carries the secondary publisher)
+  - topic: 'poison.source'
+    flow: 'poison-flow'
+    group: 'poison-b-group'
+    dlq-topic: 'poison.dlq'

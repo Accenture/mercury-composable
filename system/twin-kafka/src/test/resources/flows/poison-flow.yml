@@ -1,0 +1,18 @@
+#
+# Dead-letter regression flow: its single task always fails, so the secondary adapter's retry
+# policy exhausts and writes the record to the binding's dlq-topic ON THE SECONDARY CLUSTER.
+#
+flow:
+  id: 'poison-flow'
+  description: 'Always fails - drives the secondary dead-letter path'
+  ttl: 10s
+
+first.task: 'poison.task'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+    process: 'poison.task'
+    output: []
+    description: 'Throw on every delivery'
+    execution: end

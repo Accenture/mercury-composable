@@ -90,7 +90,7 @@ public class SecondaryKafkaAutoStart implements EntryPoint {
             RetryPolicy retryPolicy = new RetryPolicy(maxRetries, retryBackoffMs, publisher);
             Properties consumerProps = KafkaClientConfig.consumerProperties(config, CONSUMER_LOCATION, DEFAULT_CONSUMER);
             KafkaFlowAdapter adapter = new KafkaFlowAdapter(consumerProps, new ConfigReader(adapterConfig),
-                    dlqTimeout, retryPolicy, schemaCodec);
+                    dlqTimeout, retryPolicy, schemaCodec, REGISTRY_URL);
             adapter.start();
             SecondaryKafkaRuntime.setAdapter(adapter);
             log.info("Secondary Kafka flow adapter started from {}", adapterConfig);

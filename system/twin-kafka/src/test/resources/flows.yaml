@@ -7,3 +7,4 @@ flows:
   - 'sink-a-flow.yml'
   - 'sink-b-flow.yml'
   - 'schema-sink-flow.yml'
+  - 'poison-flow.yml'
