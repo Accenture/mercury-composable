@@ -133,7 +133,9 @@
   **UPDATE 2026-07-07: v4.6.3 shipped the same day** (tag on merge commit `4c709484`; PRs #143 cleanup +
   #144 bump) — maintenance on top of 4.6.2: final smell suppressions, model encapsulation,
   playground `random` → SecureRandom. All caveats above still apply. Field Sonar dashboard: gate PASSED,
-  0 vuln / 0 bugs / smells rating A; only the CryptoApi DSA hotspot awaits "Safe" review in the Sonar UI.
+  0 vuln / 0 bugs / smells rating A; the CryptoApi DSA hotspot was RESOLVED 2026-07-11 by retiring DSA
+  from CryptoApi entirely (historical, unused in production; commit `56f7e4da` on feature/twin-kafka-demo)
+  — no Sonar UI disposition needed.
   <!-- id: release-4-6-2-shipped | created: 2026-07-07 | last_used: 2026-07-08 | uses: 4 | tier: archive-candidate | origin: 2026-07-07-163607 -->
 
 - **Release 4.6.1 — security + maintenance patch on top of 4.6.0 (2026-07-06, branch `chore/release-4.6.1`,

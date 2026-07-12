@@ -1,0 +1,41 @@
+#
+# READ flow (rest role) - GET /api/profile/{id}
+#
+#   1. v1.api.request           - validate + build the Request; acknowledge the caller immediately (202)
+#                                 while the flow continues (execution: response).
+#   2. simple.kafka.notification - publish the Request to the on-prem request topic in the Confluent
+#                                 JSON Schema wire format (subject op-profile-request, pre-registered).
+#
+# The trace-id and business correlation-id are stamped on the Kafka message automatically under the
+# configured X-Trace-Id / X-Correlation-Id headers - no explicit mapping needed.
+#
+flow:
+  id: 'get-profile'
+  description: 'READ a profile: acknowledge immediately, forward the request to the on-prem cluster'
+  ttl: 10s
+
+first.task: 'v1.api.request'
+
+tasks:
+  - input:
+      - 'text(READ) -> header.command'
+      - 'input.path_parameter.id -> id'
+    process: 'v1.api.request'
+    output:
+      - 'int(202) -> output.status'
+      - 'text(application/json) -> output.header.content-type'
+      - 'result.ack -> output.body'
+      - 'result.request -> model.request'
+    description: 'Validate the request and acknowledge the caller right away'
+    execution: response
+    next:
+      - 'simple.kafka.notification'
+
+  - input:
+      - 'text(OP_PROFILE_REQUEST) -> header.topic'
+      - 'text(op-profile-request) -> header.subject'
+      - 'f:binary(model.request) -> *'
+    process: 'simple.kafka.notification'
+    output: []
+    description: 'Publish the READ request to the on-prem request topic (JSON Schema encoded)'
+    execution: end

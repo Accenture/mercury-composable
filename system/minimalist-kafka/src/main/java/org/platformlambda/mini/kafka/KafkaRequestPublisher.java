@@ -58,7 +58,8 @@ public class KafkaRequestPublisher implements AutoCloseable {
      * failure and can react - the basis for fail-fast on the synchronous request path.
      *
      * @param topic destination topic (required).
-     * @param partition target partition, or {@code null} to let Kafka's default partitioner choose.
+     * @param partition target partition, or {@code null} to let the configured partitioner choose
+     *                  (by default {@link SimpleRandomPartitioner} - uniform random distribution).
      * @param headers Kafka record headers, already byte[]-encoded; may be {@code null}.
      * @param body message body.
      * @return a {@code Mono<Void>} that completes when the broker acknowledges, or errors on failure.

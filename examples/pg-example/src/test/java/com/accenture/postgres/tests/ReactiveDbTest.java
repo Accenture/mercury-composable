@@ -293,6 +293,52 @@ class ReactiveDbTest {
         assertEquals(0, records.size());
     }
 
+    /**
+     * This unit test exercises the example's own /api/demo endpoint (DemoRestEndpoint), which uses
+     * the DemoRepo repository for reads and the reactive DatabaseClient for inserts.
+     *
+     * @throws ExecutionException in case of error
+     * @throws InterruptedException in case of error
+     */
+    @Test
+    void doDemoProfileEndpoint() throws ExecutionException, InterruptedException {
+        var po = new PostOffice("unit.test", "303", "TEST /demo-endpoint");
+        // read the seeded record by id (repository pattern)
+        var byId = new AsyncHttpRequest().setMethod("GET").setTargetHost("http://127.0.0.1:"+getPort())
+                        .setUrl("/api/demo/D1").setHeader("accept", "application/json");
+        var found = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(byId.toMap()), TIMEOUT).get();
+        assertInstanceOf(List.class, found.getBody());
+        var foundRecords = found.getBodyAsListOfPoJo(com.accenture.postgres.models.DemoProfile.class);
+        assertEquals(1, foundRecords.size());
+        var profile = foundRecords.getFirst();
+        assertEquals("D1", profile.id);
+        assertEquals("Aunt May", profile.name);
+        assertEquals("20 Ingram Street", profile.address);
+        // insert a new record (reactive database client)
+        var data = new com.accenture.postgres.models.DemoProfile()
+                        .create("D2", "Peter Parker", "20 Ingram Street");
+        var insert = new AsyncHttpRequest().setMethod("POST").setTargetHost("http://127.0.0.1:"+getPort())
+                        .setUrl("/api/demo").setBody(data).setHeader("content-type", "application/json");
+        var inserted = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(insert.toMap()),
+                        TIMEOUT).get();
+        assertEquals(Map.of("row_updated", 1), inserted.getBody());
+        // find-all now returns both records (repository pattern)
+        var all = new AsyncHttpRequest().setMethod("GET").setTargetHost("http://127.0.0.1:"+getPort())
+                        .setUrl("/api/demo").setHeader("accept", "application/json");
+        var listed = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(all.toMap()), TIMEOUT).get();
+        assertInstanceOf(List.class, listed.getBody());
+        var records = listed.getBodyAsListOfPoJo(com.accenture.postgres.models.DemoProfile.class);
+        assertEquals(2, records.size());
+        log.info("DemoProfile toString - {}", records.getFirst());
+        // an incomplete POST body is rejected
+        var incomplete = new AsyncHttpRequest().setMethod("POST").setTargetHost("http://127.0.0.1:"+getPort())
+                        .setUrl("/api/demo").setBody(Map.of("id", "D3"))
+                        .setHeader("content-type", "application/json");
+        var error = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(incomplete.toMap()),
+                        TIMEOUT).get();
+        assertTrue(error.getStatus() >= 400);
+    }
+
     private int getPort() {
         AppConfigReader config = AppConfigReader.getInstance();
         return util.str2int(config.getProperty("rest.server.port", "8080"));

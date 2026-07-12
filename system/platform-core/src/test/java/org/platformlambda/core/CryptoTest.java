@@ -127,17 +127,6 @@ class CryptoTest {
     }
 
     @Test
-    void dsaSignatureTest() throws GeneralSecurityException {
-        KeyPair kp = crypto.generateDsaKey();
-        byte[] pub = kp.getPublic().getEncoded();
-        byte[] pri = kp.getPrivate().getEncoded();
-        byte[] data = "hello world".getBytes();
-        byte[] signature = crypto.dsaSign(data, pri);
-        boolean result = crypto.dsaVerify(data, signature, pub);
-        assertTrue(result);
-    }
-
-    @Test
     void rsaSignatureTest() throws GeneralSecurityException {
         KeyPair kp = crypto.generateRsaKey();
         byte[] pub = kp.getPublic().getEncoded();

@@ -1,0 +1,7 @@
+#
+# bridge role flows: forward requests on-prem -> cloud and responses cloud -> on-prem.
+# Both are pure YAML - the bridge has no application Java code.
+#
+flows:
+  - 'bridge-request.yml'
+  - 'bridge-response.yml'

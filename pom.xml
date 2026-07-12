@@ -41,7 +41,9 @@
         <module>helpers/redis-standalone</module>
         <module>helpers/schema-registry-standalone</module>
 
-        <!-- Executables for application examples
+        <!-- Executables for application examples (rejoined the reactor in 4.8.x once they
+             gained unit tests; pg-example stays standalone because its tests download an
+             embedded Postgres binary) -->
         <module>examples/lambda-example</module>
         <module>examples/rest-spring-3-example</module>
         <module>examples/rest-spring-4-example</module>
@@ -50,7 +52,7 @@
         <module>examples/scheduler-example</module>
         <module>examples/minigraph-playground</module>
         <module>examples/kafka-demo</module>
-        <module>examples/sync-over-async-demo</module>-->
+        <module>examples/sync-over-async-demo</module>
 
         <!-- Executable for benchmark tests (benchmark-client retired 4.8.0 — superseded by benchmark-reporter)
         <module>benchmark/benchmark-reporter</module>-->

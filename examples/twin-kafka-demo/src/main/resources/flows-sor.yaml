@@ -1,0 +1,5 @@
+#
+# sor role flow: the system-of-record.
+#
+flows:
+  - 'profile-store.yml'

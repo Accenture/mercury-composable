@@ -1,0 +1,9 @@
+#
+# Kafka Flow Adapter for the bridge role, PRIMARY (on-prem) cluster: bind the on-prem request topic to
+# the bridge-request flow. schema.enabled decodes the Confluent-framed value to a Map before routing.
+#
+consumer:
+  - topic: 'OP_PROFILE_REQUEST'
+    flow: 'bridge-request'
+    group: '${BRIDGE_REQUEST_GROUP:bridge-request-group}'
+    schema.enabled: true

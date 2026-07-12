@@ -1,0 +1,36 @@
+#
+# UPSERT flow (rest role) - POST /api/profile with the profile JSON as the request body
+#
+# Same shape as get-profile: acknowledge immediately (202), then publish the Request to the on-prem
+# request topic (JSON Schema encoded). The profile id comes from profile.id in the body.
+#
+flow:
+  id: 'upsert-profile'
+  description: 'CREATE/UPDATE a profile: acknowledge immediately, forward the request to the on-prem cluster'
+  ttl: 10s
+
+first.task: 'v1.api.request'
+
+tasks:
+  - input:
+      - 'text(UPSERT) -> header.command'
+      - 'input.body -> profile'
+    process: 'v1.api.request'
+    output:
+      - 'int(202) -> output.status'
+      - 'text(application/json) -> output.header.content-type'
+      - 'result.ack -> output.body'
+      - 'result.request -> model.request'
+    description: 'Validate the profile and acknowledge the caller right away'
+    execution: response
+    next:
+      - 'simple.kafka.notification'
+
+  - input:
+      - 'text(OP_PROFILE_REQUEST) -> header.topic'
+      - 'text(op-profile-request) -> header.subject'
+      - 'f:binary(model.request) -> *'
+    process: 'simple.kafka.notification'
+    output: []
+    description: 'Publish the UPSERT request to the on-prem request topic (JSON Schema encoded)'
+    execution: end

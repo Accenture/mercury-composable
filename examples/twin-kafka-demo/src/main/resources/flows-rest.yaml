@@ -1,0 +1,7 @@
+#
+# rest role flows: one per REST endpoint (READ / UPSERT / DELETE).
+#
+flows:
+  - 'get-profile.yml'
+  - 'upsert-profile.yml'
+  - 'delete-profile.yml'

@@ -1,0 +1,25 @@
+#
+# Bridge response flow (bridge role) - cloud -> on-prem, pure YAML (no Java).
+#
+# Reached when the SECONDARY Kafka flow adapter routes a message from C_PROFILE_RESPONSE. The cloud
+# cluster has no Schema Registry, so input.body is the raw byte[] of the JSON string. The flow hands it
+# to simple.kafka.notification with subject op-profile-response: the producer parses the JSON payload,
+# resolves the subject to the pre-registered schema id, and publishes to the on-prem response topic in
+# the Confluent JSON Schema wire format.
+#
+flow:
+  id: 'bridge-response'
+  description: 'Forward a profile response from the cloud cluster to the on-prem cluster'
+  ttl: 30s
+
+first.task: 'simple.kafka.notification'
+
+tasks:
+  - input:
+      - 'text(OP_PROFILE_RESPONSE) -> header.topic'
+      - 'text(op-profile-response) -> header.subject'
+      - 'input.body -> *'
+    process: 'simple.kafka.notification'
+    output: []
+    description: 'Publish the response to the on-prem response topic (JSON Schema encoded)'
+    execution: end

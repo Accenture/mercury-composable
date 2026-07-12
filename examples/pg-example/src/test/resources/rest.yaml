@@ -4,6 +4,23 @@
 # for the original URL and path parameters
 #
 rest:
+  - service: "v1.demo.endpoint"
+    # the example's own demo endpoint (DemoRestEndpoint + DemoRepo)
+    methods: ['GET', 'POST']
+    url: "/api/demo"
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "v1.demo.endpoint"
+    methods: ['GET']
+    url: "/api/demo/{id}"
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
   - service: "v1.rest.tests"
     # GET all records
     # POST to create a new record
