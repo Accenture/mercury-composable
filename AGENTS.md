@@ -119,12 +119,24 @@ expected (the decay math counts log files — `DECAY.md` §4).
    so they don't depend on you remembering. (Also run on demand if the user says "review memory".)
 4. Remind the user: `git add memory/ && git commit -m "session YYYY-MM-DD [agent]"`.
    **Commits are deliberate and human-initiated.** When you commit at the human's direction,
-   **identify yourself** the same way you do in session logs — a `Co-Authored-By: <your agent name>`
-   trailer using your **stable agent name** (e.g. `Claude Code`, `Gemini CLI`) — the actual AI
-   collaborator, **not** a model-version string — so the attribution stays one identity across
-   releases and vendors. (If your runtime auto-injects a model-version trailer you can't override,
-   accept it.) On a **squash-merge**, collapse to a **single** `Co-Authored-By:` — GitHub appends a
-   consolidated one after the `---------` line, so trim the redundant inline repeats; one is enough.
+   **identify yourself** the same way you do in session logs — with a `Co-Authored-By:` trailer. But
+   you **co-author the commit message *with* your harness**: many runtimes inject their *own*
+   `Co-Authored-By` (often a **model-version** name like `Claude Opus 4.8`). So treat the message the
+   harness will commit as the **base and reconcile it** — don't blindly append, or you get two lines
+   for one collaborator. **Invariant: at most one `Co-Authored-By` per collaborator, matched on
+   email** — `Claude Code`, `Claude Opus 4.8`, `Gemini CLI`, `Gemini 2.5` … are **one** collaborator
+   at **one** address (`noreply@…`); the *name* varies, the email doesn't. Resolve deterministically:
+   - **Harness injects a trailer you can't suppress** → that **is** your one trailer; add nothing
+     more (accept its model-version name).
+   - **You control the message** → emit **exactly one** trailer using your **stable agent name**
+     (e.g. `Claude Code`, `Gemini CLI` — not a model version) and remove any harness-injected
+     duplicate at the same email.
+   - **Never emit both.** One line per collaborator, keyed on email.
+   On a **squash-merge** the forge compounds this — each squashed commit's inline trailers pile up
+   *and* the forge appends its own consolidated one after the `---------` line. Keep the canonical
+   trailer **once** (in the PR-description footer; omit it from per-commit bodies), then trim inline
+   repeats so exactly one line per collaborator survives. Stable identity keeps attribution as one
+   collaborator across releases and vendors.
    - **Opening a pull request?** Lead the description with two short sections — **What** (the
      change) and **Why** (the intent it serves — the Blueprint gap, decision, or problem behind
      it; substantive intent, *not* a restatement of What) — each 1–2 short paragraphs, drawn from

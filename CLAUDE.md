@@ -9,4 +9,14 @@ This project uses the agent-memory shared memory system.
 2. `memory/continuity.md`
 3. `memory/sessions/` (latest 2–3 files)
 
+The hub and core memory files are imported below, so they are structurally present at
+session start (presence is guaranteed; *attending* to them is still the protocol). Imports
+can't express dynamic paths — still scan the newest 2–3 logs in `memory/sessions/` per the
+protocol.
+
+@AGENTS.md
+@memory/instructions.md
+@memory/continuity.md
+@memory/vision.md
+
 Identify yourself as **Claude Code** in all session logs.
