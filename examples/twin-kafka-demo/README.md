@@ -36,7 +36,7 @@ id is only meaningful to the registry that issued it.
 
 ## Trace and correlation continuity
 
-All roles configure explicit Kafka header names (the 4.8.0 configurable headers):
+All roles configure explicit Kafka header names (the configurable Kafka header names):
 
 ```properties
 kafka.trace.id.header=X-Trace-Id
@@ -183,5 +183,6 @@ The immediate HTTP ack uses `originator: HTTP_REQUEST`; the system-of-record's o
 - **The Confluent frame is JSON-friendly.** After the 5-byte frame (magic byte + schema id), a JSON
   Schema value is the plain UTF-8 JSON string — that is why `listen_response.js` can print it directly
   (an Avro value would be Avro binary).
-- **DLQ stays default-on** but is not demonstrated here; see the twin-kafka guide for the per-cluster
-  dead-letter behavior.
+- **Retry is default-on; a dead-letter topic is opt-in per binding** (`dlq-topic`) and not configured
+  here - without one, exhausted failures are logged and dropped to avoid a redelivery storm. See the
+  twin-kafka guide for the per-cluster dead-letter behavior.

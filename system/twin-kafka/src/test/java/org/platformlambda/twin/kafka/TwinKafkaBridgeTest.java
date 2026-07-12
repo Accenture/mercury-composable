@@ -21,6 +21,9 @@ package org.platformlambda.twin.kafka;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -32,6 +35,8 @@ import org.platformlambda.mini.kafka.KafkaHeaders;
 import org.platformlambda.mini.kafka.KafkaRuntime;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -76,7 +81,8 @@ class TwinKafkaBridgeTest {
         clusterA = new EmbeddedKafka(19092, 19093, "/tmp/twin-kafka-a");
         clusterB = new EmbeddedKafka(18092, 18093, "/tmp/twin-kafka-b");
         createTopics(clusterA.bootstrapServers(), "bridge.source", "reverse.mirror");
-        createTopics(clusterB.bootstrapServers(), "bridge.mirror", "reverse.source", "schema.mirror");
+        createTopics(clusterB.bootstrapServers(), "bridge.mirror", "reverse.source", "schema.mirror",
+                "header.probe", "poison.source", "poison.dlq");
         // registry on the SECONDARY side only (asymmetric topology)
         registryB = new EmbeddedSchemaRegistry();
         System.setProperty("SECONDARY_SCHEMA_REGISTRY_URL", registryB.baseUrl());
@@ -210,5 +216,80 @@ class TwinKafkaBridgeTest {
         assertNotNull(response);
         assertTrue(String.valueOf(response.getError()).contains("schema.registry.url"),
                 "the failure names the primary registry key, got: " + response.getError());
+    }
+
+    /**
+     * The secondary notification must stamp the SECONDARY header-name overrides
+     * (secondary.kafka.correlation.id.header / secondary.kafka.trace.id.header from the test
+     * application.properties) on cluster-B records - observed with a raw consumer on the wire.
+     */
+    @Test
+    void secondaryOutboundHeaderOverrides() throws Exception {
+        String cid = "override-" + Utility.getInstance().getUuid();
+        PostOffice po = PostOffice.trackable("unit.test", TRACE_B, "TEST /secondary/headers");
+        po.send(new EventEnvelope().setTo("secondary.kafka.notification")
+                .setHeader(KafkaHeaders.TOPIC, "header.probe")
+                .setHeader("X-Secondary-Cid", cid)
+                .setBody("{\"hello\":\"header probe\"}".getBytes(StandardCharsets.UTF_8))
+                .setTraceId(TRACE_B).setTracePath("TEST /secondary/headers"));
+        ConsumerRecord<String, byte[]> record = pollOne(clusterB.bootstrapServers(),
+                "header.probe", "header-probe-group");
+        assertNotNull(record, "the probe record should arrive on cluster B");
+        assertEquals(cid, headerValue(record, "X-Secondary-Cid"),
+                "business correlation-id stamped under the SECONDARY override name");
+        assertEquals(TRACE_B, headerValue(record, "X-Secondary-Trace"),
+                "trace-id stamped under the SECONDARY override name");
+        assertTrue(String.valueOf(headerValue(record, "traceparent")).contains(TRACE_B),
+                "W3C traceparent is stamped alongside the legacy trace-id header");
+        assertNull(headerValue(record, "cid"),
+                "the global default name is not used when the secondary override is set");
+    }
+
+    /**
+     * Dead letters from a SECONDARY binding must land on the SECONDARY cluster: the poison flow
+     * always fails, and after exhausted retries the record appears on the binding's dlq-topic on
+     * cluster B (RetryPolicy carries the secondary publisher).
+     */
+    @Test
+    void secondaryDeadLettersLandOnSecondaryCluster() throws Exception {
+        PostOffice po = PostOffice.trackable("unit.test", TRACE_B, "TEST /secondary/dlq");
+        po.send(new EventEnvelope().setTo("secondary.kafka.notification")
+                .setHeader(KafkaHeaders.TOPIC, "poison.source")
+                .setBody("{\"hello\":\"boom\"}".getBytes(StandardCharsets.UTF_8))
+                .setTraceId(TRACE_B).setTracePath("TEST /secondary/dlq"));
+        // 3 retries at 500ms backoff, then the dead-letter write to the secondary cluster
+        ConsumerRecord<String, byte[]> record = pollOne(clusterB.bootstrapServers(),
+                "poison.dlq", "dlq-probe-group");
+        assertNotNull(record, "the exhausted record should land on the secondary cluster's DLQ topic");
+        assertEquals("{\"hello\":\"boom\"}", new String(record.value(), StandardCharsets.UTF_8),
+                "the dead letter carries the original payload");
+    }
+
+    /** Raw wire-level consumer: poll one record from a topic (up to 60s). */
+    private static ConsumerRecord<String, byte[]> pollOne(String bootstrapServers, String topic,
+                                                          String groupId) {
+        Properties props = new Properties();
+        props.put("bootstrap.servers", bootstrapServers);
+        props.put("group.id", groupId);
+        props.put("auto.offset.reset", "earliest");
+        props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        props.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+        try (KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(props)) {
+            consumer.subscribe(List.of(topic));
+            long deadline = System.currentTimeMillis() + 60000;
+            while (System.currentTimeMillis() < deadline) {
+                ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofSeconds(2));
+                for (ConsumerRecord<String, byte[]> r : records) {
+                    return r;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Read a record header as UTF-8 text (null when absent). */
+    private static String headerValue(ConsumerRecord<String, byte[]> record, String name) {
+        var header = record.headers().lastHeader(name);
+        return header == null ? null : new String(header.value(), StandardCharsets.UTF_8);
     }
 }
