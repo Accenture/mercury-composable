@@ -180,12 +180,20 @@ class ServiceRegistryEdgeTest extends TestBase {
         po.asyncRequest(add, 5000).onSuccess(bench::add);
         assertNotNull(bench.poll(10, TimeUnit.SECONDS));
         assertTrue(ServiceRegistry.getInstances("edge.local.route").contains(myOrigin));
-        // and unregistering it broadcasts the removal
+        // and unregistering it broadcasts the removal. The earlier add was broadcast through the
+        // mock cloud, which loops it back as an add (final) event - on a slow runner that loopback
+        // can land AFTER this unregister and momentarily re-add the route, so poll until the
+        // trailing unregister (final) loopback settles the registry to the removed state.
         EventEnvelope remove = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_REGISTRY)
                 .setHeader(TYPE, "unregister").setHeader(ORIGIN, myOrigin)
                 .setHeader(ROUTE, "edge.local.route");
         po.asyncRequest(remove, 5000).onSuccess(bench::add);
         assertNotNull(bench.poll(10, TimeUnit.SECONDS));
+        long deadline = System.currentTimeMillis() + 10000;
+        while (System.currentTimeMillis() < deadline
+                && ServiceRegistry.getInstances("edge.local.route").contains(myOrigin)) {
+            Utility.getInstance().sleep(200);
+        }
         assertFalse(ServiceRegistry.getInstances("edge.local.route").contains(myOrigin));
         // destination checks
         assertTrue(ServiceRegistry.destinationExists(myOrigin));
