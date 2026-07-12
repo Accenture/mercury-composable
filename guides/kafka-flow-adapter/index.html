@@ -477,6 +477,11 @@ parameters its contract depends on and lets the template own everything else:</p
 <td><code>auto.offset.reset</code></td>
 </tr>
 <tr>
+<td>Partitioning (producer)</td>
+<td><code>partitioner.class</code> <strong>defaulted</strong> (not pinned) to <code>SimpleRandomPartitioner</code></td>
+<td>any <code>partitioner.class</code> set here wins</td>
+</tr>
+<tr>
 <td>Connection / security</td>
 <td>—</td>
 <td><code>bootstrap.servers</code>, <code>security.protocol</code>, <code>sasl.*</code>, <code>ssl.*</code>, <code>acks</code></td>
@@ -487,6 +492,11 @@ parameters its contract depends on and lets the template own everything else:</p
 contract keeps the building blocks serializer-free; richer encodings layer on top via the
 <a href="#schema">Schema Registry integration</a> (JSON Schema / Avro), opt-in per binding.</p>
 <blockquote>
+<p><strong>Why a random partitioner?</strong> Kafka's default is a <em>sticky</em> partitioner — throughput-friendly, but at
+low volume it lands everything on one partition, leaving a multi-instance consumer group mostly idle.
+The library's <code>SimpleRandomPartitioner</code> is perfectly stateless and distributes keyless records
+uniformly. Records with an explicit <code>partition</code> header bypass it, and keyed records keep Kafka's
+murmur2 key-hash mapping. Set <code>partitioner.class</code> in <code>kafka-producer.properties</code> to override.</p>
 <p><strong>OAuth token URLs are allow-listed automatically.</strong> The Kafka client refuses to fetch an OAuth 2.0
 token from a URL that is not on the JVM allow-list (the
 <code>org.apache.kafka.sasl.oauthbearer.allowed.urls</code> <strong>system property</strong>) — applications used to need a

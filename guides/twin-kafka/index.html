@@ -370,6 +370,9 @@ with separate log directories:</p>
 </code></pre>
 <p>The shipped templates' defaults (<code>127.0.0.1:9092</code> primary, <code>127.0.0.1:8092</code> secondary) line up with
 this, so a bridge application runs locally with zero connection configuration.</p>
+<p>For a complete runnable walkthrough — an HTTP edge, a pure-YAML bridge, and a system-of-record
+crossing the two emulated clusters with trace/correlation continuity — see the
+<a href="https://github.com/Accenture/mercury-composable/tree/main/examples/twin-kafka-demo"><code>twin-kafka-demo</code></a> worked example.</p>
 <h2 id="config">Configuration keys</h2>
 <table>
 <thead>
@@ -429,6 +432,7 @@ including <code>schema.enabled</code>, <code>dlq-topic</code>, and the <code>tra
 impedance-matching overrides.</p>
 <h2 id="see-also">See also</h2>
 <ul>
+<li><a href="https://github.com/Accenture/mercury-composable/tree/main/examples/twin-kafka-demo">twin-kafka-demo</a> - runnable worked example of the bridge pattern.</li>
 <li><a href="../kafka-flow-adapter/">Kafka Flow Adapter</a> - the foundation library this module extends.</li>
 <li><a href="../configuration-reference/#kafka-flow-adapter">Configuration Reference</a> - every key in one place.</li>
 <li><a href="../reserved-names-and-headers/">Reserved names and headers</a> - trace/correlation header conventions.</li>
