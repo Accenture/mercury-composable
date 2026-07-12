@@ -8,6 +8,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.8.1, 7/11/2026
+
+Maintenance and quality release: dependency security updates (closes the Jackson dependabot
+alert), a stateless random partitioner as the Kafka producer default, the twin-kafka-demo worked
+example, retirement of the unused DSA methods, and a repo-wide test-coverage program that brings
+the example apps back into the maven reactor. No breaking changes.
+
+### Added
+
+1. **twin-kafka-demo - runnable worked example for the twin-kafka module.** A profile management
+   service whose requests enter through HTTP on the on-prem side, cross a dual-cluster bridge
+   (pure flow YAML - no bridge code), and are served by a system-of-record on the cloud side, with
+   trace and business correlation ids continuous across two Kafka clusters and three apps. The
+   topology is deliberately asymmetric - on-prem with a Schema Registry (Confluent JSON Schema
+   wire format), cloud with plain JSON bytes - demonstrating the per-cluster-optional registry and
+   the decode-and-re-encode bridging rule. One jar, three Spring profiles (rest / bridge / sor),
+   with node helpers for topic administration and response observation.
+2. **SimpleRandomPartitioner - stateless random distribution as the producer default.** Kafka's
+   sticky default partitioner skews low-volume traffic onto a single partition, starving
+   multi-instance consumer groups. minimalist-kafka now defaults `partitioner.class` to a perfectly
+   stateless uniform-random partitioner (SecureRandom; no per-thread state - virtual thread
+   friendly). Explicit-partition records and keyed records (murmur2) keep their existing semantics,
+   and a template that sets its own `partitioner.class` wins. The twin-kafka secondary producer and
+   the dead-letter writer inherit the default.
+3. **Unit tests across the example apps** (rest-spring-3/4-example, scheduler-example, kafka-demo,
+   sync-over-async-demo, twin-kafka-demo, lambda-example top-up, pg-example demo-endpoint tests),
+   plus branch-coverage tests for cloud-connector, kafka-connector and service-monitor.
+
+### Changed
+
+1. **Example apps rejoined the maven reactor** (nine modules) now that they carry unit tests -
+   the reactor build compiles and tests them, and each produces a jacoco report for code quality
+   scans. pg-example stays standalone (its tests download an embedded Postgres binary).
+2. **Dependency updates:** Jackson core/databind 2.22.1 (fixes the security vulnerability tracked
+   by dependabot alert 28, previously advisory-only), log4j2 2.26.1, netty 4.2.16.Final,
+   tomcat 11.0.24 (10.1.57 for the Spring Boot 3 line), gson 2.14.0, vertx-core 5.1.4.
+
+### Removed
+
+1. **CryptoApi DSA methods retired** (`generateDsaKey`, `dsaSign`, `dsaVerify`, the DSA-selector
+   `getPublic`/`getPrivate` overloads and DSA constants). DSA support existed for historical
+   reasons and is unused in production; removing it also removes the SHA256withDSA security
+   hotspot at the source. RSA signing/verification and all other crypto functions are unchanged.
+
+---
 ## Version 4.8.0, 7/10/2026
 
 Feature release: the new twin-kafka module for dual Kafka cluster bridging, configurable trace-id
