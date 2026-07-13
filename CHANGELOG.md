@@ -8,6 +8,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.8.4, 7/13/2026
+
+Maintenance release: completes the Kafka health-check story for dual-cluster applications.
+
+### Added
+
+1. **Secondary Kafka health check (`secondary.kafka.health`).** The twin of minimalist-kafka's
+   `kafka.health`, probing the SECONDARY cluster through the secondary consumer template with
+   identical semantics - a single no-ACL Metadata request, a start-up grace period with a
+   placeholder healthy status, and HTTP 503 when unreachable. A dual-cluster bridge is only
+   healthy when both clusters are reachable:
+   ```properties
+   mandatory.health.dependencies=kafka.health, secondary.kafka.health
+   ```
+   The `/health` dependency list distinguishes the clusters by service name (`kafka` vs
+   `secondary.kafka`), each reporting its own `bootstrap.servers`. Tunables follow the twin-kafka
+   fallback convention: `secondary.kafka.health.timeout` / `secondary.kafka.health.startup.grace`
+   fall back to the `kafka.health.*` globals, then to the built-in defaults (5s / 30s).
+
+### Changed
+
+1. **Both Kafka health checks now run with 5 worker instances** (previously 1). The `/health`
+   endpoint is polled concurrently in the field - operations tooling plus the container platform's
+   liveness/readiness probes - so info and placeholder responses now run in parallel; the
+   non-thread-safe KafkaConsumer stays correct because every cluster probe serializes on the
+   function's ReentrantLock. `KafkaConsumer.close(Duration)` (deprecated since Kafka 4.1) replaced
+   with the `CloseOptions` API.
+2. **The "Kafka Flow Adapter" guide is renamed to "Minimalist Kafka"** for module/guide naming
+   consistency with twin-kafka - the page documents the whole library (inbound flow adapter,
+   outbound notification, Schema Registry integration, and the health checks). All cross-references
+   updated; "Kafka Flow Adapter" remains the name of the inbound component, and the
+   `kafka-flow-adapter.yaml` config file is unchanged.
+
+---
 ## Version 4.8.3, 7/13/2026
 
 Security patch: remediates the three transitive OSS vulnerabilities the field security gate
