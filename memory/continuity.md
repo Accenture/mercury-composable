@@ -320,9 +320,10 @@
   DOES emit X-Trace-Id alongside traceparent on every traced outbound call (verified in code + wire-level
   tests on v4.7.1) — the gateway eats both. Fix options: (a) config-only on 4.8.3:
   `http.trace.id.header=X-Correlation-Id` both apps (caveat: cid wins the shared slot when ids diverge);
-  (b) proposed `legacy.trace.id=true` flag = collision-precedence switch (trace id wins the shared header
-  on outbound; default false; self-retiring once the gateway allow-lists traceparent); (c) gateway
-  allow-list change = the real fix. Eric to decide on the flag.**Original checklist below retained.**
+  (b) a proposed `legacy.trace.id` flag — **REJECTED by Eric (2026-07-13): no code change; re-mixing the
+  business correlation-id with the trace id makes things worse — the goal is proper traceId/spanId/
+  parentSpanId propagation**; (c) gateway allow-list change (add `traceparent` + `X-Trace-Id`
+  pass-through) = **THE fix — Eric is taking it to the infra team**.**Original checklist below retained.**
   Trace-propagation report on 4.6.3: confirm the field config fix. Diagnosis + support checklist in
   [[field-trace-propagation-4-6-3-diagnosis]]; the two questions back to the team: is `tracing: true` set
   on every rest.yaml endpoint involved, and is the app-to-app call made through `async.http.request` (vs
