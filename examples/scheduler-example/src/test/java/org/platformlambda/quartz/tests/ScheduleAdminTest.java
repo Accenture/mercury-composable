@@ -82,16 +82,22 @@ class ScheduleAdminTest extends TestBase {
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("Job started", map.getElement("message"));
         assertEquals("demo-task", map.getElement("job"));
-        // the job executor runs asynchronously; the resolver's start record appears shortly after
-        File state = new File("/tmp/scheduler-states", "demo-task");
-        for (int i = 0; i < 30 && !state.exists(); i++) {
+        // The job executor runs asynchronously and the sample state resolver's file write is
+        // truncate-then-write (not atomic), so the state file can EXIST while still empty - both
+        // when the start record is created and again when the end record rewrites it. File
+        // existence is therefore not readiness. Poll the admin endpoint itself until it returns
+        // a readable record (an empty/partial file surfaces as a 200 with no map content).
+        MultiLevelMap detail = null;
+        long deadline = System.currentTimeMillis() + 15000;
+        while (System.currentTimeMillis() < deadline) {
+            EventEnvelope job = adminRequest("GET", "demo-task", null);
+            if (job.getStatus() == 200 && job.getBody() instanceof Map<?, ?> m && m.get("name") != null) {
+                detail = new MultiLevelMap((Map<String, Object>) m);
+                break;
+            }
             Utility.getInstance().sleep(500);
         }
-        assertTrue(state.exists(), "job executor should have recorded the start state");
-        // once the state record exists, the job can be read back by name
-        EventEnvelope job = adminRequest("GET", "demo-task", null);
-        assertEquals(200, job.getStatus());
-        MultiLevelMap detail = new MultiLevelMap((Map<String, Object>) job.getBody());
+        assertNotNull(detail, "job state record should become readable after the manual run");
         assertEquals("demo-task", detail.getElement("name"));
         assertEquals("hello.world", detail.getElement("service"));
     }
