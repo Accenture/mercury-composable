@@ -291,6 +291,29 @@ Rather than forwarding the caller's stale `traceparent`, the notification functi
 span. The result is one continuous distributed trace across the asynchronous Kafka boundary — the two
 notification hops are the bridge spans. See [Observability](observability.md).
 
+## Health check {#health}
+
+The library ships a ready-made health-check function at route **`kafka.health`** (auto-registered when
+the jar is on the classpath). Opt in by listing it as a health dependency in `application.properties`:
+
+```properties
+mandatory.health.dependencies=kafka.health
+# or, when Kafka should be reported but not fail /health:
+# optional.health.dependencies=kafka.health
+```
+
+The probe is deliberately minimal: one Kafka **Metadata** request (`KafkaConsumer.listTopics`) using the
+module's [consumer template](#client-config) - it joins no consumer group, commits no offsets, and needs
+no admin privileges, so it works under the most restrictive ACLs. A reachable cluster reports a status
+map (including the visible topic count); an unreachable one fails `/health` with HTTP 503.
+
+During application start-up the check returns a **placeholder healthy** status while the Kafka client
+warms up in the background - `/health` neither fails nor blocks before the client and the rest of the
+start-up sequence complete. After the first successful probe, or once the grace period expires, every
+check is live. Two keys tune the behavior: `kafka.health.timeout` (default `5s`) and
+`kafka.health.startup.grace` (default `30s`) - see the
+[Configuration Reference](configuration-reference.md#observability).
+
 ## Schema Registry: typed payloads (opt-in) {#schema}
 
 The default wire contract is raw `byte[]`, which keeps the building blocks serializer-free. To interoperate

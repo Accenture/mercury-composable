@@ -32,12 +32,20 @@ flagged against v4.8.2, and hardens distributed-tracing regression coverage.
 
 ### Added
 
-1. **Trace-continuity regression tests.** A new platform-core test drives the
+1. **Kafka health check (`kafka.health`).** minimalist-kafka now ships a ready-made health-check
+   function for the platform's `/health` endpoint - opt in by adding `kafka.health` to
+   `mandatory.health.dependencies` (or the optional list). The probe is a single Kafka Metadata
+   request (`KafkaConsumer.listTopics`) from the module's consumer template: no consumer group, no
+   offsets, no admin privileges. During application start-up it reports a placeholder healthy status
+   while the client warms up in the background (`kafka.health.startup.grace`, default `30s`); after
+   the first successful probe an unreachable cluster fails `/health` with HTTP 503
+   (`kafka.health.timeout`, default `5s`).
+2. **Trace-continuity regression tests.** A new platform-core test drives the
    application-to-application HTTP case end-to-end over the real HTTP stack - a traced app A
    calling app B through `async.http.request` - asserting one continuous W3C trace across both
    hops; outbound `X-Trace-Id` stamping (the carrier for non-W3C trace ids) is now directly
    asserted as well.
-2. **Observability guide - header impedance matching.** New section documenting the configurable
+3. **Observability guide - header impedance matching.** New section documenting the configurable
    trace-id / correlation-id header names: the four `application.properties` globals, per-entry
    overrides (rest.yaml and kafka-flow-adapter.yaml), twin-kafka's `secondary.*` globals, the
    precedence rule (per-entry > global > built-in default; W3C `traceparent` always wins for the
@@ -45,7 +53,15 @@ flagged against v4.8.2, and hardens distributed-tracing regression coverage.
 
 ### Fixed
 
-1. **ScheduleAdminTest CI flake (scheduler-example).** The test treated state-file existence as
+1. **Code-quality touch-up from the field SonarQube scan.** Resolved all reported findings: two
+   bugs (an int-multiplication assigned to `long` in the scheduler sample's StateResolver; a
+   loop-with-one-iteration in a twin-kafka test helper), the new-code smells (assertThrows lambdas
+   with multiple invocations, `record` used as an identifier, superfluous `throws` clauses), the
+   example-app smells (public PoJo fields now have accessors, `HelloException` renamed to
+   `HelloExceptionHandler`, `Thread.sleep` replaced in tests, field naming and unused-field
+   cleanups), and the nine `/tmp` security hotspots in the worked examples (suppressed with
+   justification - throwaway demo data by design).
+2. **ScheduleAdminTest CI flake (scheduler-example).** The test treated state-file existence as
    readiness, but the sample resolver's write is truncate-then-write, so the file exists while
    still empty. The test now polls the schedule-admin endpoint for a readable record instead of
    polling the filesystem.
