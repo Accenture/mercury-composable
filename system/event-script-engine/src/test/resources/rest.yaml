@@ -324,6 +324,19 @@ rest:
     timeout: 10s
     tracing: true
 
+  - service: "trace.recorder.endpoint"
+    methods: ['POST']
+    url: "/api/trace/recorder"
+    timeout: 10s
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/http/sink/trace"
+    flow: 'http-client-sink-trace'
+    timeout: 10s
+    tracing: true
+
   - service: "http.flow.adapter"
     methods: ['GET']
     url: "/api/pluggableFunctions/arithmetic"
