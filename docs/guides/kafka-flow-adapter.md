@@ -181,9 +181,12 @@ widely (on-prem, cloud, SaaS, Confluent; SASL/PLAIN, SASL/SCRAM, OAuth2, mTLS):
 - `schema-registry.properties` — the Confluent Schema Registry client (see
   [registry authentication](#schema-auth)).
 
-Each is loaded by `ConfigReader` from a **file-then-classpath fallback** location (so CI/CD can drop a
-rendered file at `/tmp/config`), with `${ENV_VAR:default}` substitution. The library **pins** only the
-parameters its contract depends on and lets the template own everything else:
+By default, each is loaded by `ConfigReader` from the bundled classpath template. Set
+`kafka.producer.properties`, `kafka.consumer.properties`, or `schema.registry.properties` only when you
+want a different location. A single location is normal; a comma-separated list is an optional fallback
+chain, useful when CI/CD renders an external file into a deployment volume and you still want to fall back
+to the bundled classpath template. All template values support `${ENV_VAR:default}` substitution. The
+library **pins** only the parameters its contract depends on and lets the template own everything else:
 
 | Concern | Pinned by the library | From the template |
 |---------|-----------------------|-------------------|
@@ -317,9 +320,9 @@ schema.registry.cache.ttl=30m                          # TTL for the in-memory s
 ### Registry authentication (OAuth 2.0 / basic) {#schema-auth}
 
 The registry client's connection and security parameters live in the **`schema-registry.properties`
-template** (same mechanics as the producer/consumer templates: `/tmp/config` file first, classpath
-fallback, `${ENV_VAR:default}` substitution, location overridable with the `schema.registry.properties`
-key). Everything in it is passed **verbatim** to the Confluent Schema Registry client, so any client
+template** (same mechanics as the producer/consumer templates: classpath by default, optionally
+overridable with `schema.registry.properties`). Everything in it is passed **verbatim** to the Confluent
+Schema Registry client, so any client
 parameter — including optional, installation-specific ones such as `bearer.auth.logical.cluster` and
 `bearer.auth.identity.pool.id` — works without a library change.
 
@@ -482,13 +485,13 @@ The essentials:
 | Key | Default | Description |
 |-----|---------|-------------|
 | `yaml.kafka.flow.adapter` | — | Adapter config location; unset = inbound adapter off. |
-| `kafka.producer.properties` | `file:/tmp/config/kafka-producer.properties,classpath:/kafka-producer.properties` | Producer template location(s). |
-| `kafka.consumer.properties` | `file:/tmp/config/kafka-consumer.properties,classpath:/kafka-consumer.properties` | Consumer template location(s). |
+| `kafka.producer.properties` | `classpath:/kafka-producer.properties` | Producer template location. Set to an external file path (or explicit fallback list) to externalize. |
+| `kafka.consumer.properties` | `classpath:/kafka-consumer.properties` | Consumer template location. Set to an external file path (or explicit fallback list) to externalize. |
 | `kafka.dlq.timeout.ms` | `10000` | Confirm-write timeout for the dead-letter publish. (Flow processing has no timeout knob — the flow's own `ttl` is the deadline.) |
 | `kafka.flow.max.retries` | `3` | Retry attempts before dead-lettering. |
 | `kafka.flow.retry.backoff.ms` | `500` | Pause between retry attempts. |
 | `schema.registry.url` | — | Confluent Schema Registry URL; unset = [schema features](#schema) off (raw `byte[]`). |
-| `schema.registry.properties` | `file:/tmp/config/schema-registry.properties,classpath:/schema-registry.properties` | Registry client template location(s) — auth/SSL parameters passed verbatim to the Confluent client (see [registry authentication](#schema-auth)). |
+| `schema.registry.properties` | `classpath:/schema-registry.properties` | Registry client template location — auth/SSL parameters passed verbatim to the Confluent client (see [registry authentication](#schema-auth)). Set to an external file path (or explicit fallback list) to externalize. |
 | `schema.registry.cache.ttl` | `30m` | TTL for the in-memory (`ManagedCache`) schema cache (by id); positive results only; cleared at startup. |
 
 ## See also

@@ -154,9 +154,18 @@ class TwinKafkaBridgeTest {
         assertEquals("{\"hello\":\"from cluster A\"}", received.get("body"),
                 "body bridged intact from cluster A to cluster B");
         assertEquals(cid, received.get("myCid"),
-                "business correlation-id survived both Kafka hops (model.cid -> header.cid on the bridge)");
+                "business correlation-id survived both Kafka hops");
         assertEquals(TRACE_A, received.get("traceId"),
                 "trace-id stayed continuous across cluster A, the bridge flow, and cluster B");
+        ConsumerRecord<String, byte[]> record = pollOne(clusterB.bootstrapServers(),
+                "bridge.mirror", "bridge-mirror-wire-" + Utility.getInstance().getUuid());
+        assertNotNull(record, "the bridged record should be visible on cluster B");
+        assertEquals(cid, headerValue(record, "X-Secondary-Cid"),
+                "the bridge stamps the configured secondary correlation-id header");
+        assertEquals(TRACE_A, headerValue(record, "X-Secondary-Trace"),
+                "the bridge stamps the configured secondary trace-id header");
+        assertNull(headerValue(record, "cid"),
+                "the bridge flow must not leak the default correlation-id header name");
     }
 
     @Test
@@ -166,7 +175,7 @@ class TwinKafkaBridgeTest {
         PostOffice po = PostOffice.trackable("unit.test", TRACE_B, "TEST /bridge/b2a");
         po.send(new EventEnvelope().setTo("secondary.kafka.notification")
                 .setHeader(KafkaHeaders.TOPIC, "reverse.source")
-                .setHeader(KafkaHeaders.CORRELATION_ID, cid)
+                .setHeader("X-Secondary-Cid", cid)
                 .setBody("{\"hello\":\"from cluster B\"}".getBytes(StandardCharsets.UTF_8))
                 .setTraceId(TRACE_B).setTracePath("TEST /bridge/b2a"));
 

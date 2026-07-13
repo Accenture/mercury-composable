@@ -6,8 +6,8 @@
 #
 #   1. v1.profile.store          - apply READ / UPSERT / DELETE to the temp store /tmp/twin-kafka-demo
 #                                  (5 workers; processing is asynchronous, no ordering assumed).
-#   2. simple.kafka.notification - publish the Response to C_PROFILE_RESPONSE as plain JSON bytes
-#                                  (this app's "primary" IS the cloud broker).
+#   2. secondary.kafka.notification - publish the Response to C_PROFILE_RESPONSE as plain JSON bytes
+#                                     on the cloud cluster.
 #
 flow:
   id: 'profile-store'
@@ -25,12 +25,13 @@ tasks:
     description: 'Apply the command to the temp store'
     execution: sequential
     next:
-      - 'simple.kafka.notification'
+      - 'secondary.kafka.notification'
 
   - input:
       - 'text(C_PROFILE_RESPONSE) -> header.topic'
+      - 'model.cid -> header.X-Cloud-Correlation-Id'
       - 'f:binary(model.response) -> *'
-    process: 'simple.kafka.notification'
+    process: 'secondary.kafka.notification'
     output: []
     description: 'Publish the outcome to the cloud response topic as plain JSON bytes'
     execution: end

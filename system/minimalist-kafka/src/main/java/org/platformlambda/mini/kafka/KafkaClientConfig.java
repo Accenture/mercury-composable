@@ -37,9 +37,12 @@ import java.util.Properties;
  * Builds Kafka client {@link Properties} from external <b>template</b> files, so the wide variety of
  * enterprise Kafka installations (on-prem / cloud / SaaS / Confluent; SASL, OAuth2, mTLS) is handled by
  * configuration rather than code. Templates are read via {@link ConfigReader} (which applies
- * {@code ${ENV_VAR:default}} substitution) from a file-then-classpath fallback location, overridable with
+ * {@code ${ENV_VAR:default}} substitution) from the bundled classpath template by default, overridable with
  * the {@code kafka.producer.properties} / {@code kafka.consumer.properties} /
  * {@code schema.registry.properties} application settings.
+ *
+ * <p>Normally a template setting names one location. Use a comma-separated list only when you deliberately
+ * want a fallback chain, e.g. a CI/CD-rendered external file first and the classpath template second.</p>
  *
  * <p>Only the parameters the library's contract depends on are <b>pinned in code</b> (and override
  * whatever the template says): the {@code String}/{@code byte[]} (de)serializers (the wire contract).
@@ -55,12 +58,9 @@ public final class KafkaClientConfig {
     private static final String PRODUCER_LOCATION = "kafka.producer.properties";
     private static final String CONSUMER_LOCATION = "kafka.consumer.properties";
     private static final String SCHEMA_REGISTRY_LOCATION = "schema.registry.properties";
-    private static final String DEFAULT_PRODUCER =
-            "file:/tmp/config/kafka-producer.properties,classpath:/kafka-producer.properties";
-    private static final String DEFAULT_CONSUMER =
-            "file:/tmp/config/kafka-consumer.properties,classpath:/kafka-consumer.properties";
-    private static final String DEFAULT_SCHEMA_REGISTRY =
-            "file:/tmp/config/schema-registry.properties,classpath:/schema-registry.properties";
+    private static final String DEFAULT_PRODUCER = "classpath:/kafka-producer.properties";
+    private static final String DEFAULT_CONSUMER = "classpath:/kafka-consumer.properties";
+    private static final String DEFAULT_SCHEMA_REGISTRY = "classpath:/schema-registry.properties";
 
     private KafkaClientConfig() {}
 

@@ -38,16 +38,15 @@ import org.slf4j.LoggerFactory;
  *       JSON bytes via {@code secondary.kafka.notification}; and in the reverse direction consumes
  *       {@code C_PROFILE_RESPONSE} from the cloud and re-encodes it onto the on-prem
  *       {@code OP_PROFILE_RESPONSE} topic with the response schema. Both flows are pure YAML - no Java.</li>
- *   <li><b>sor</b> - the system-of-record on the cloud side. A plain single-cluster consumer whose
- *       "primary" IS the cloud broker: it consumes {@code C_PROFILE_REQUEST}, applies the command to the
- *       temp store {@code /tmp/twin-kafka-demo} (one JSON file per profile id), and publishes the outcome
- *       to {@code C_PROFILE_RESPONSE}.</li>
+ *   <li><b>sor</b> - the system-of-record on the cloud side. It consumes {@code C_PROFILE_REQUEST},
+ *       applies the command to the temp store {@code /tmp/twin-kafka-demo} (one JSON file per profile id),
+ *       and publishes the outcome to {@code C_PROFILE_RESPONSE} through {@code secondary.kafka.notification}
+ *       so the response stays on the cloud cluster until the bridge consumes it.</li>
  * </ul>
  *
- * <p>In a real deployment only the bridge would carry the twin-kafka dependency - the rest and sor roles
- * are plain minimalist-kafka apps. This demo packages all three in one jar for convenience; the secondary
- * flow adapter starts only in the bridge profile because only application-bridge.properties sets
- * {@code yaml.secondary.kafka.flow.adapter}.</p>
+ * <p>This demo packages all three roles in one jar for convenience. The secondary flow adapter starts only
+ * in the bridge profile because only application-bridge.properties sets {@code yaml.secondary.kafka.flow.adapter};
+ * the SOR profile uses only the secondary notification publisher.</p>
  */
 @MainApplication
 public class MainApp implements EntryPoint {

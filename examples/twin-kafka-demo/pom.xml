@@ -56,9 +56,9 @@
 
     <dependencies>
         <!-- twin-kafka brings secondary.kafka.notification + the secondary flow adapter, and transitively
-             minimalist-kafka + event-script + platform-core. Only the bridge role actually uses the
-             secondary cluster; the demo packages all three roles in ONE jar for convenience. In a real
-             deployment the REST and system-of-record apps would depend on minimalist-kafka only. -->
+             minimalist-kafka + event-script + platform-core. The bridge uses both primary+secondary;
+             the SOR role uses the secondary publisher so its response stays on the cloud cluster until
+             bridge-response consumes it. The demo packages all three roles in ONE jar for convenience. -->
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>twin-kafka</artifactId>

@@ -6,3 +6,4 @@ consumer:
   - topic: 'C_PROFILE_REQUEST'
     flow: 'profile-store'
     group: '${SOR_GROUP:system-of-record-group}'
+    correlation.id.header: 'X-Cloud-Correlation-Id'

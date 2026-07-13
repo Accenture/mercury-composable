@@ -187,7 +187,8 @@ public class SchemaCodec {
      * cache TTL keys {@code <prefix>.cache.ttl} / {@code <prefix>.version.cache.ttl}; serde pass-through
      * prefix {@code <prefix>.serde.}; ManagedCache names {@code <prefix>} and {@code <prefix>.version};
      * client template location key {@code <prefix>.properties} with the file-then-classpath default
-     * {@code file:/tmp/config/<prefix-with-dashes>.properties,classpath:/<prefix-with-dashes>.properties}.</p>
+     * {@code classpath:/<prefix-with-dashes>.properties}; set {@code <prefix>.properties} explicitly to
+     * use an external file or a comma-separated fallback chain.</p>
      *
      * @param config      the application configuration
      * @param registryUrl the Schema Registry URL; a {@code null}/blank value disables schema features
@@ -199,7 +200,7 @@ public class SchemaCodec {
             return null;
         }
         String templateFile = keyPrefix.replace('.', '-') + ".properties";
-        String templateDefaults = "file:/tmp/config/" + templateFile + ",classpath:/" + templateFile;
+        String templateDefaults = "classpath:/" + templateFile;
         long ttlMillis = 1000L * Utility.getInstance()
                 .getDurationInSeconds(config.getProperty(keyPrefix + ".cache.ttl", DEFAULT_CACHE_TTL));
         /*

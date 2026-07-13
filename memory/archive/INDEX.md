@@ -70,3 +70,4 @@
 - thread-guava-failureaccess-field-fix — Guava failureaccess field fix completed (b47fac39); CAVEAT preserved: do NOT remove the explicit failureaccess:1.0.3 pins - they guarantee the class under strict field resolution — completed - field builds green through the 4.6.2 scans; v4.6.2 released — 2026-Q3.md
 - thread-release-4.6.1-field-scan — (COMPLETED 2026-07-10 review: v4.6.1 released 2026-07-06; field SCA + Snyk re-scans ran an… — completed and swept (2026-07-10 review): shipped in 4.6.x releases — 2026-Q3.md
 - thread-csfle-field-encryption — (COMPLETED 2026-07-10 review: CSFLE committed and shipped — CsfleLocalRoundTripTest + — completed and swept (2026-07-10 review): shipped in 4.6.x releases — 2026-Q3.md
+- release-4-6-2-shipped — Release 4.6.2 — SHIPPED 2026-07-07 (tag `v4.6.2` on merge commit `56ac1067`; PRs #140 reme… — faded after archive_window during 2026-07-13 review — 2026-Q3.md

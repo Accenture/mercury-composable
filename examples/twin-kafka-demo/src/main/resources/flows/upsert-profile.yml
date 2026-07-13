@@ -29,6 +29,7 @@ tasks:
   - input:
       - 'text(OP_PROFILE_REQUEST) -> header.topic'
       - 'text(op-profile-request) -> header.subject'
+      - 'model.cid -> header.X-Correlation-Id'
       - 'f:binary(model.request) -> *'
     process: 'simple.kafka.notification'
     output: []

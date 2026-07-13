@@ -26,28 +26,33 @@ id is only meaningful to the registry that issued it.
 |---------|------|--------------|-----------------|
 | `rest`  | on-prem | REST edge: `GET`/`POST`/`DELETE /api/profile` → immediate **202** ack, then publishes the Request to `OP_PROFILE_REQUEST` (subject `op-profile-request`) | minimalist-kafka (producer only, with registry) |
 | `bridge` | both | `OP_PROFILE_REQUEST` → decode → `C_PROFILE_REQUEST` (plain JSON); `C_PROFILE_RESPONSE` → re-encode (subject `op-profile-response`) → `OP_PROFILE_RESPONSE`. **Both flows are pure YAML — no Java.** | twin-kafka (primary + secondary) |
-| `sor`  | cloud | System-of-record: applies READ / UPSERT / DELETE to the temp store `/tmp/twin-kafka-demo` (one JSON file per id; 5 workers) and publishes the outcome to `C_PROFILE_RESPONSE`. Errors travel as data — a READ of a missing id replies `not found`. | minimalist-kafka (its "primary" IS the cloud broker — no registry) |
+| `sor`  | cloud | System-of-record: applies READ / UPSERT / DELETE to the temp store `/tmp/twin-kafka-demo` (one JSON file per id; 5 workers) and publishes the outcome to cloud `C_PROFILE_RESPONSE` with `secondary.kafka.notification`. Errors travel as data — a READ of a missing id replies `not found`. | twin-kafka secondary publisher + minimalist-kafka consumer (no registry) |
 
-> **Zero-weight principle.** In a real deployment only the bridge carries the twin-kafka dependency; the
-> rest and sor roles are plain minimalist-kafka apps (the sor's bootstrap simply points at the cloud
-> broker). This demo packages all three roles in ONE jar for convenience — the secondary flow adapter
-> starts only in the bridge profile because only `application-bridge.properties` sets
-> `yaml.secondary.kafka.flow.adapter`.
+> **Zero-weight principle.** In a real deployment, only apps that need two Kafka surfaces carry
+> twin-kafka. This demo packages all three roles in ONE jar for convenience; the bridge uses the
+> secondary flow adapter, while the SOR role uses only the secondary notification publisher so its response
+> stays on the cloud topic until the bridge consumes it.
 
 ## Trace and correlation continuity
 
-All roles configure explicit Kafka header names (the configurable Kafka header names):
+The two Kafka clusters intentionally use different business correlation-id header names:
 
 ```properties
+# common trace header
 kafka.trace.id.header=X-Trace-Id
+
+# on-prem cluster
 kafka.correlation.id.header=X-Correlation-Id
+
+# cloud cluster
+kafka.correlation.id.header=X-Cloud-Correlation-Id
 ```
 
-`simple.kafka.notification` / `secondary.kafka.notification` stamp both automatically on every publish
-(no flow mapping needed), and each flow adapter continues the trace and carries the business
-correlation id (`model.cid`) on consume. The node listener at the end of the chain prints the very ids
-minted at the HTTP edge — send `-H 'X-Correlation-Id: <your id>'` with curl and watch it come back after
-two clusters and three apps.
+This illustrates impedance matching: each adapter reads its cluster's configured header into `model.cid`,
+and each bridge flow maps `model.cid` back out under the next cluster's header name. `X-Trace-Id` stays
+common, stamped from the current trace context. The node listener watches the on-prem response topic, so it
+prints the same `X-Correlation-Id` value minted at the HTTP edge — send `-H 'X-Correlation-Id: <your id>'`
+with curl and watch it come back after two clusters and three apps.
 
 ## Build
 
@@ -145,6 +150,43 @@ Each curl returns the immediate ack (**202**):
 Note the `X-Correlation-Id` you sent from curl and the `X-Trace-Id` minted at the HTTP edge — both
 continuous across the on-prem cluster, the bridge, the cloud cluster, the system of record, and back.
 
+### Trace / span validation example
+
+Mercury logs one telemetry line per span in each Java app terminal as `{trace={...}}`. Use the
+`X-Trace-Id` printed by `listen_response.js` to grep the REST, bridge, and SOR logs. For example, one
+successful UPSERT run with `X-Correlation-Id: sorfix-cid-001` produced:
+
+```text
+listener on OP_PROFILE_RESPONSE:
+  X-Trace-Id=9e4edb39dfb8499f99ec87d0b58c3195
+  X-Correlation-Id=sorfix-cid-001
+
+cloud topic probe:
+  C_PROFILE_REQUEST  X-Cloud-Correlation-Id=sorfix-cid-001  X-Correlation-Id=(none)
+  C_PROFILE_RESPONSE X-Cloud-Correlation-Id=sorfix-cid-001  X-Correlation-Id=(none)
+```
+
+That is the impedance match: on-prem wire headers use `X-Correlation-Id`; cloud wire headers use
+`X-Cloud-Correlation-Id`; the bridge carries the same business id through `model.cid`.
+
+The corresponding app telemetry showed this span chain (ids vary per run):
+
+| App terminal | Span / service | span_id | parent_span_id |
+|--------------|----------------|---------|----------------|
+| REST | `http.flow.adapter` | `b5ed79b793f97332` | `(root)` |
+| REST | `v1.api.request` | `a078f9d8665f32bf` | `b5ed79b793f97332` |
+| REST | `simple.kafka.notification` | `968dedca911de5b3` | `a078f9d8665f32bf` |
+| Bridge | `secondary.kafka.notification` | `a0bf518226e12853` | `968dedca911de5b3` |
+| SOR | `v1.profile.store` | `86ffbc0ba627e145` | `a0bf518226e12853` |
+| SOR | `secondary.kafka.notification` | `918da50ddf54a31b` | `86ffbc0ba627e145` |
+| Bridge | `simple.kafka.notification` | `a0588d764a4095d8` | `918da50ddf54a31b` |
+| Bridge | `task.executor` (`bridge-response`) | `befdd34aec13f5ed` | `918da50ddf54a31b` |
+
+You will also see `task.executor` summary spans and `event.script.manager` round-trip records for each
+flow. The key validation is that each Kafka boundary resumes from the prior publisher span: bridge
+request resumes from the REST publisher span, SOR resumes from the bridge publisher span, and
+`bridge-response` resumes from the SOR secondary publisher span before publishing back to on-prem.
+
 ## Message shapes
 
 **Request** (subject `op-profile-request`, on-prem; plain JSON on the cloud):
@@ -167,6 +209,13 @@ The immediate HTTP ack uses `originator: HTTP_REQUEST`; the system-of-record's o
 
 ## Design notes
 
+- **Profiles are personalities, not a security boundary.** This worked example uses one fat jar and
+  Spring profiles to keep the demo easy to run, so the classpath still contains both Kafka notification
+  functions. The profile config keeps each personality on its intended broker: REST publishes only to
+  on-prem; Bridge has both on-prem and cloud clients; SOR consumes and publishes only to cloud (including
+  the otherwise-unused minimalist-kafka primary publisher, which is deliberately pointed at the cloud
+  template). A real deployment enforces this physically with separate apps/artifacts, credentials, and
+  network policy — do not rely on Spring profiles as network isolation.
 - **Fully asynchronous.** The HTTP request is acknowledged immediately (`execution: response`); the
   outcome is observed on the response topic. No sync-over-async (see the sync-over-async-demo for that
   pattern) and no field encryption (see composable-example).
