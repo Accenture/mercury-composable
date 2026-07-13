@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>sync-over-async</artifactId>
-    <version>4.8.2</version>
+    <version>4.8.3</version>
     <packaging>jar</packaging>
     <name>Sync-over-async (Redis-assisted Kafka request/reply)</name>
     <description>
@@ -71,7 +71,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minimalist-kafka</artifactId>
-            <version>4.8.2</version>
+            <version>4.8.3</version>
         </dependency>
 
         <!-- Guava's failureaccess companion is required at runtime by Confluent's serdes (Guava

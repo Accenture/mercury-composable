@@ -8,6 +8,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.8.3, 7/13/2026
+
+Security patch: remediates the three transitive OSS vulnerabilities the field security gate
+flagged against v4.8.2, and hardens distributed-tracing regression coverage.
+
+### Security
+
+1. **Apache HttpComponents `httpcore5`/`httpcore5-h2` 5.4.2 → 5.4.3** (HIGH, CWE-770 - resource
+   allocation without throttling). Arrives transitively via the Confluent Schema Registry client's
+   `httpclient5`; Spring Boot's `dependencyManagement` pins the vulnerable version and managed
+   versions beat Maven's nearest-wins resolution, so the fix overrides Spring Boot's
+   `httpcore5.version` property in each of the six modules that resolve the chain
+   (minimalist-kafka, twin-kafka, sync-over-async, kafka-demo, twin-kafka-demo,
+   sync-over-async-demo). The override self-retires when Spring Boot's managed version catches up.
+2. **`log4j-api` 2.25.4 → 2.26.1** (MEDIUM, CWE-116 - improper output encoding). Four poms
+   (minimalist-kafka, twin-kafka, sync-over-async, opentelemetry-forwarder) never declared the
+   `log4j2.version` property, so Spring Boot's default applied; the property is now declared
+   everywhere log4j is resolved.
+3. **`reactor-netty-http` 1.3.5 → 1.3.6** (MEDIUM, CWE-319 - cleartext transmission).
+   `reactor-bom` 2025.0.5 → 2025.0.6 across all 28 poms importing it, including the non-reactor
+   api-playground and pg-example subprojects.
+
+### Added
+
+1. **Trace-continuity regression tests.** A new platform-core test drives the
+   application-to-application HTTP case end-to-end over the real HTTP stack - a traced app A
+   calling app B through `async.http.request` - asserting one continuous W3C trace across both
+   hops; outbound `X-Trace-Id` stamping (the carrier for non-W3C trace ids) is now directly
+   asserted as well.
+2. **Observability guide - header impedance matching.** New section documenting the configurable
+   trace-id / correlation-id header names: the four `application.properties` globals, per-entry
+   overrides (rest.yaml and kafka-flow-adapter.yaml), twin-kafka's `secondary.*` globals, the
+   precedence rule (per-entry > global > built-in default; W3C `traceparent` always wins for the
+   trace id), and the two-convention bridging recipe via `model.cid`.
+
+### Fixed
+
+1. **ScheduleAdminTest CI flake (scheduler-example).** The test treated state-file existence as
+   readiness, but the sample resolver's write is truncate-then-write, so the file exists while
+   still empty. The test now polls the schedule-admin endpoint for a readable record instead of
+   polling the filesystem.
+
+---
 ## Version 4.8.2, 7/12/2026
 
 Patch release: the twin-kafka-demo now faithfully demonstrates cross-cluster correlation-id
