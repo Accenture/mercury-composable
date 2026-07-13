@@ -15,7 +15,7 @@ tasks:
   - input:
       - 'input.body -> *'
       - 'text(bridge.mirror) -> header.topic'
-      - 'model.cid -> header.cid'
+      - 'model.cid -> header.X-Secondary-Cid'
     process: 'secondary.kafka.notification'
     output: []
     description: 'Republish the cluster-A message to cluster B'

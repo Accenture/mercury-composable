@@ -7,3 +7,4 @@ consumer:
   - topic: 'C_PROFILE_RESPONSE'
     flow: 'bridge-response'
     group: '${BRIDGE_RESPONSE_GROUP:bridge-response-group}'
+    correlation.id.header: 'X-Cloud-Correlation-Id'

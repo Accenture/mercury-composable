@@ -53,10 +53,13 @@ cluster's schema-id cache is isolated (Confluent global ids are only unique with
 | Schema Registry (optional) | `schema.registry.url` + `schema-registry.properties` | `secondary.schema.registry.url` + `secondary-schema-registry.properties` |
 | Outbound header names | `kafka.correlation.id.header` / `kafka.trace.id.header` | `secondary.kafka.correlation.id.header` / `secondary.kafka.trace.id.header` (fall back to the globals) |
 
-All secondary templates follow the same mechanics as the primary ones: `/tmp/config` file first with
-classpath fallback, `${ENV_VAR:default}` substitution, and OAuth token endpoint URLs auto-registered
-on the JVM allow-list. The default bootstrap is `${SECONDARY_KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:8092}` -
-matching the [local dual-broker helper](#local-dev) below.
+All secondary templates follow the same mechanics as the primary ones: loaded from the bundled
+classpath template by default, `${ENV_VAR:default}` substitution, and OAuth token endpoint URLs
+auto-registered on the JVM allow-list. Externalization of configuration is opt-in - point the
+location key at a file rendered by the devops pipeline (e.g. `file:/tmp/config/...`), optionally
+with a classpath fallback as a comma-separated list. The default bootstrap is
+`${SECONDARY_KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:8092}` - matching the
+[local dual-broker helper](#local-dev) below.
 
 ## The bridge pattern {#bridge}
 
@@ -150,10 +153,10 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 | Key | Default | Description |
 |-----|---------|-------------|
 | `yaml.secondary.kafka.flow.adapter` | - | Secondary adapter config location; unset = secondary inbound adapter off. |
-| `secondary.kafka.producer.properties` | `file:/tmp/config/secondary-kafka-producer.properties,classpath:/secondary-kafka-producer.properties` | Secondary producer template location(s). |
-| `secondary.kafka.consumer.properties` | `file:/tmp/config/secondary-kafka-consumer.properties,classpath:/secondary-kafka-consumer.properties` | Secondary consumer template location(s). |
+| `secondary.kafka.producer.properties` | `classpath:/secondary-kafka-producer.properties` | Secondary producer template location. Set to an external file path (or explicit fallback list) to externalize. |
+| `secondary.kafka.consumer.properties` | `classpath:/secondary-kafka-consumer.properties` | Secondary consumer template location. Set to an external file path (or explicit fallback list) to externalize. |
 | `secondary.schema.registry.url` | - | Secondary cluster's Schema Registry URL; unset = schema features off on that cluster. |
-| `secondary.schema.registry.properties` | `file:/tmp/config/secondary-schema-registry.properties,classpath:/secondary-schema-registry.properties` | Secondary registry client template - auth/SSL passed verbatim to the Confluent client. |
+| `secondary.schema.registry.properties` | `classpath:/secondary-schema-registry.properties` | Secondary registry client template - auth/SSL passed verbatim to the Confluent client. Set to an external file path (or explicit fallback list) to externalize. |
 | `secondary.schema.registry.cache.ttl` | `30m` | Secondary schema cache TTL (the cache is separate from the primary's - schema ids are per-registry). |
 | `secondary.kafka.correlation.id.header` | falls back to `kafka.correlation.id.header` (`cid`) | Outbound correlation-id header on the secondary cluster. |
 | `secondary.kafka.trace.id.header` | falls back to `kafka.trace.id.header` (unset) | Optional outbound trace-id header on the secondary cluster. |

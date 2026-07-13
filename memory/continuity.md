@@ -16,8 +16,8 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-10 | agent: Claude Code (2026-07-11-034954)
-- **last_review:** 2026-07-10 | through 2026-07-11-034954.md
+- **last_session:** 2026-07-13 | agent: GitHub Copilot (2026-07-13-001009)
+- **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -85,7 +85,7 @@
   (platform-core otherwise content-negotiates from the request's accept header). (6) **No version
   strings in pom comments** — the release sweep mangled a historical "retired 4.8.0" note; history
   belongs in the CHANGELOG. See [[release-4-8-0-shipped]] for the twin-kafka architecture facts.
-  <!-- id: release-4-8-1-shipped | created: 2026-07-11 | last_used: 2026-07-11 | uses: 1 | tier: active | origin: 2026-07-12-002326 -->
+  <!-- id: release-4-8-1-shipped | created: 2026-07-11 | last_used: 2026-07-13 | uses: 1 | tier: active | origin: 2026-07-12-002326 -->
 
 - **Release 4.8.0 — SHIPPED 2026-07-10 (tag `v4.8.0` on merge commit `5d9fda45`; PRs #153-#157).**
   Feature release: **twin-kafka** (dual Kafka cluster bridging), configurable trace-id headers with
@@ -111,7 +111,7 @@
   from `model.cid` (engine-seeded), never from the raw record header; CompileFlows rejects data
   mappings that overwrite reserved model keys (cid/instance/flow/ttl). See [[release-4-7-0-shipped]]
   for the release-bump surface and prior caveats.
-  <!-- id: release-4-8-0-shipped | created: 2026-07-10 | last_used: 2026-07-10 | uses: 1 | tier: active | origin: 2026-07-11-031930 -->
+  <!-- id: release-4-8-0-shipped | created: 2026-07-10 | last_used: 2026-07-13 | uses: 1 | tier: active | origin: 2026-07-11-031930 -->
 
 - **Release 4.7.0 — SHIPPED 2026-07-08 (tag `v4.7.0` on merge commit `e41a20b7`; PRs #146 feature +
   #147 bump).** Feature release: **MiniGraph `graph.task` skill** — a Task node invokes any composable
@@ -139,28 +139,6 @@
   (virtual-thread friendly — Eric's review feedback); (4) EmbeddedSchemaRegistry has an opt-in OAuth
   mode (HS256 token endpoint + Bearer enforcement) for authenticated registry tests.
   <!-- id: release-4-7-0-shipped | created: 2026-07-08 | last_used: 2026-07-10 | uses: 2 | tier: archive-candidate | origin: 2026-07-08-224933 -->
-
-- **Release 4.6.2 — SHIPPED 2026-07-07 (tag `v4.6.2` on merge commit `56ac1067`; PRs #140 remediation +
-  #141 bump).** SonarQube quality-gate remediation (1 blocker, 24 criticals, 83 majors, smells — all
-  behavior-preserving) + kafka-connector/kafka-presence unit test suites. **Durable caveats carried
-  forward:** (1) **do NOT remove the explicit `com.google.guava:failureaccess:1.0.3` pins** in
-  minimalist-kafka/sync-over-async (+ Guava 33.5.0 pins in kafka-demo/sync-over-async-demo) — they
-  guarantee the class under strict field dependency resolution (Confluent pulls Guava 32.0.1 nearest-wins;
-  see archived [[thread-guava-failureaccess-field-fix]]); (2) **kafka-standalone runnable jar is
-  `kafka-standalone-<version>-exec.jar`** — the main artifact is a plain library jar so modules can depend
-  on it (kafka-connector tests do); the Dockerfile carries the literal name and must be bumped each release;
-  (3) **docs/guides + all module READMEs use the `x.y.z` version placeholder** — release bumps touch only
-  poms, the kafka-standalone Dockerfile, root CLAUDE/GEMINI headers, OtelForwarderContext.VERSION and the
-  CHANGELOG; (4) kafka-connector's embedded-broker tests rely on kafka-standalone's `@MainApplication`
-  (seq 10) owning the broker — never start a second `EmbeddedKafka` in the same JVM (its formatStorage
-  wipes `/tmp/kafka-logs` under the running broker → Kafka fatal Exit(1)).
-  **UPDATE 2026-07-07: v4.6.3 shipped the same day** (tag on merge commit `4c709484`; PRs #143 cleanup +
-  #144 bump) — maintenance on top of 4.6.2: final smell suppressions, model encapsulation,
-  playground `random` → SecureRandom. All caveats above still apply. Field Sonar dashboard: gate PASSED,
-  0 vuln / 0 bugs / smells rating A; the CryptoApi DSA hotspot was RESOLVED 2026-07-11 by retiring DSA
-  from CryptoApi entirely (historical, unused in production; commit `56f7e4da` on feature/twin-kafka-demo)
-  — no Sonar UI disposition needed.
-  <!-- id: release-4-6-2-shipped | created: 2026-07-07 | last_used: 2026-07-08 | uses: 4 | tier: archive-candidate | origin: 2026-07-07-163607 -->
 
 - **Release 4.6.1 — security + maintenance patch on top of 4.6.0 (2026-07-06, branch `chore/release-4.6.1`,
   Claude Code).** 4.6.0 was already GitHub-released (tag `v4.6.0`, immutable); rather than recall/re-tag it,

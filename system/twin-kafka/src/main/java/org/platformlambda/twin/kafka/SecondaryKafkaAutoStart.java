@@ -59,10 +59,8 @@ public class SecondaryKafkaAutoStart implements EntryPoint {
     private static final String ADAPTER_CONFIG = "yaml.secondary.kafka.flow.adapter";
     private static final String PRODUCER_LOCATION = "secondary.kafka.producer.properties";
     private static final String CONSUMER_LOCATION = "secondary.kafka.consumer.properties";
-    private static final String DEFAULT_PRODUCER =
-            "file:/tmp/config/secondary-kafka-producer.properties,classpath:/secondary-kafka-producer.properties";
-    private static final String DEFAULT_CONSUMER =
-            "file:/tmp/config/secondary-kafka-consumer.properties,classpath:/secondary-kafka-consumer.properties";
+    private static final String DEFAULT_PRODUCER = "classpath:/secondary-kafka-producer.properties";
+    private static final String DEFAULT_CONSUMER = "classpath:/secondary-kafka-consumer.properties";
     private static final String REGISTRY_URL = "secondary.schema.registry.url";
     private static final String REGISTRY_PREFIX = "secondary.schema.registry";
     // application-level retry/DLQ policy, shared with the primary adapter

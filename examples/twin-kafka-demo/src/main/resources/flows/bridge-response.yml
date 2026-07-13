@@ -18,6 +18,7 @@ tasks:
   - input:
       - 'text(OP_PROFILE_RESPONSE) -> header.topic'
       - 'text(op-profile-response) -> header.subject'
+      - 'model.cid -> header.X-Correlation-Id'
       - 'input.body -> *'
     process: 'simple.kafka.notification'
     output: []

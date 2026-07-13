@@ -6,8 +6,8 @@
 #   2. simple.kafka.notification - publish the Request to the on-prem request topic in the Confluent
 #                                 JSON Schema wire format (subject op-profile-request, pre-registered).
 #
-# The trace-id and business correlation-id are stamped on the Kafka message automatically under the
-# configured X-Trace-Id / X-Correlation-Id headers - no explicit mapping needed.
+# The business correlation-id is mapped from model.cid to the configured X-Correlation-Id header;
+# the trace-id is stamped automatically under X-Trace-Id from the current trace context.
 #
 flow:
   id: 'get-profile'
@@ -34,6 +34,7 @@ tasks:
   - input:
       - 'text(OP_PROFILE_REQUEST) -> header.topic'
       - 'text(op-profile-request) -> header.subject'
+      - 'model.cid -> header.X-Correlation-Id'
       - 'f:binary(model.request) -> *'
     process: 'simple.kafka.notification'
     output: []
