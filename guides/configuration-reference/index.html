@@ -117,7 +117,7 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../kafka-flow-adapter/">Kafka Flow Adapter</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../minimalist-kafka/">Minimalist Kafka</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../twin-kafka/">Twin Kafka (dual cluster)</a>
                   </li>
@@ -170,7 +170,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#postgresql-reactive-postgres-extension">PostgreSQL (reactive-postgres extension)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#kafka-flow-adapter">Kafka Flow Adapter (minimalist-kafka library)</a>
+    <li class="toctree-l2"><a class="reference internal" href="#kafka-flow-adapter">Minimalist Kafka library</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#sync-over-async">Sync-over-Async (sync-over-async extension)</a>
     </li>
@@ -1057,9 +1057,9 @@ is on the classpath.</p>
 </tbody>
 </table>
 <hr />
-<h2 id="kafka-flow-adapter">Kafka Flow Adapter (<code>minimalist-kafka</code> library)</h2>
+<h2 id="kafka-flow-adapter">Minimalist Kafka library</h2>
 <p>The opt-in <code>minimalist-kafka</code> library routes Kafka topics into Event Script flows and publishes events to
-Kafka. See the <a href="../kafka-flow-adapter/">Kafka Flow Adapter guide</a>. The inbound adapter starts only when
+Kafka. See the <a href="../minimalist-kafka/">Kafka Flow Adapter guide</a>. The inbound adapter starts only when
 <code>yaml.kafka.flow.adapter</code> is set; the outbound <code>simple.kafka.notification</code> function registers automatically.</p>
 <table>
 <thead>
@@ -1111,13 +1111,13 @@ Kafka. See the <a href="../kafka-flow-adapter/">Kafka Flow Adapter guide</a>. Th
 <td><code>schema.registry.url</code></td>
 <td><code>String</code> (URL)</td>
 <td>—</td>
-<td>Confluent Schema Registry URL. Unset = schema features off (raw <code>byte[]</code>); set to enable the <a href="../kafka-flow-adapter/#schema">Schema Registry integration</a> (JSON Schema / Avro — Protobuf is <a href="../kafka-flow-adapter/#schema">not currently supported</a>).</td>
+<td>Confluent Schema Registry URL. Unset = schema features off (raw <code>byte[]</code>); set to enable the <a href="../minimalist-kafka/#schema">Schema Registry integration</a> (JSON Schema / Avro — Protobuf is <a href="../minimalist-kafka/#schema">not currently supported</a>).</td>
 </tr>
 <tr>
 <td><code>schema.registry.properties</code></td>
 <td><code>String</code> (comma-sep paths)</td>
 <td><code>classpath:/schema-registry.properties</code></td>
-<td>Registry client template location; externalize the same way as the producer template. Entries pass verbatim to the Confluent client — <a href="../kafka-flow-adapter/#schema-auth">authentication</a> (<code>bearer.auth.*</code> OAuth 2.0, basic auth) and SSL. OAuth token endpoint URLs found in a template are auto-registered on the JVM <code>org.apache.kafka.sasl.oauthbearer.allowed.urls</code> allow-list.</td>
+<td>Registry client template location; externalize the same way as the producer template. Entries pass verbatim to the Confluent client — <a href="../minimalist-kafka/#schema-auth">authentication</a> (<code>bearer.auth.*</code> OAuth 2.0, basic auth) and SSL. OAuth token endpoint URLs found in a template are auto-registered on the JVM <code>org.apache.kafka.sasl.oauthbearer.allowed.urls</code> allow-list.</td>
 </tr>
 <tr>
 <td><code>schema.registry.cache.ttl</code></td>
@@ -1144,6 +1144,12 @@ Kafka. See the <a href="../kafka-flow-adapter/">Kafka Flow Adapter guide</a>. Th
 <td><a href="../twin-kafka/">twin-kafka</a>: the secondary cluster's own optional Schema Registry (URL = feature switch; template passed verbatim to the Confluent client). Registries and their schema-id caches are per-cluster.</td>
 </tr>
 <tr>
+<td><code>secondary.kafka.health.timeout</code> / <code>secondary.kafka.health.startup.grace</code></td>
+<td><code>String</code> (duration)</td>
+<td>fall back to the <code>kafka.health.*</code> globals</td>
+<td><a href="../twin-kafka/#health">twin-kafka</a>: tunables for <code>secondary.kafka.health</code>, the secondary cluster's twin of <code>kafka.health</code>. A bridge lists both: <code>mandatory.health.dependencies=kafka.health, secondary.kafka.health</code>.</td>
+</tr>
+<tr>
 <td><code>secondary.kafka.correlation.id.header</code> / <code>secondary.kafka.trace.id.header</code></td>
 <td><code>String</code></td>
 <td>fall back to the <code>kafka.*</code> globals</td>
@@ -1164,11 +1170,11 @@ template setting.</p>
 literal topic, required for <code>topic-pattern</code>); <code>partition</code> (optional; pins one partition via manual
 assignment, mutually exclusive with <code>topic-pattern</code>); <code>schema.enabled</code> (optional <code>boolean</code>, default <code>false</code>;
 when <code>true</code>, decode the Confluent-framed value to a <code>Map</code> before routing — see the
-<a href="../kafka-flow-adapter/#schema">Schema Registry integration</a>); <code>dlq-topic</code> (optional; pre-provisioned
+<a href="../minimalist-kafka/#schema">Schema Registry integration</a>); <code>dlq-topic</code> (optional; pre-provisioned
 dead-letter topic for this binding, used verbatim — no DLQ if omitted); <code>auto-commit</code> (optional <code>boolean</code>,
 default <code>false</code>; <code>true</code> uses Kafka-native auto-commit instead of manual commit-after-process); and
 <code>max-poll-records</code> (optional <code>int</code>; overrides the delivery mode's default of <code>1</code> for manual-commit or <code>500</code>
-for auto-commit). See the <a href="../kafka-flow-adapter/#adapter-yaml">Kafka Flow Adapter guide</a> for the full
+for auto-commit). See the <a href="../minimalist-kafka/#adapter-yaml">Kafka Flow Adapter guide</a> for the full
 per-field rationale and validation rules.</p>
 <hr />
 <h2 id="sync-over-async">Sync-over-Async (<code>sync-over-async</code> extension)</h2>

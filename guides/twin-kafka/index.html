@@ -117,7 +117,7 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../kafka-flow-adapter/">Kafka Flow Adapter</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../minimalist-kafka/">Minimalist Kafka</a>
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Twin Kafka (dual cluster)</a>
     <ul class="current">
@@ -136,6 +136,8 @@
     <li class="toctree-l2"><a class="reference internal" href="#local-dev">Local development: one helper, two brokers</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#config">Configuration keys</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#health">Health check</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
@@ -218,7 +220,7 @@ opt-in <code>twin-kafka</code> library.</em></p>
 <p><strong>At a glance</strong></p>
 <ul>
 <li><strong>What</strong> - <code>twin-kafka</code> adds a SECOND Kafka cluster to an application built on
-  <a href="../kafka-flow-adapter/">minimalist-kafka</a>: a <strong>secondary notification function</strong>
+  <a href="../minimalist-kafka/">minimalist-kafka</a>: a <strong>secondary notification function</strong>
   (<code>secondary.kafka.notification</code>), an optional <strong>secondary flow adapter</strong>
   (<code>yaml.secondary.kafka.flow.adapter</code>), and an optional <strong>secondary Schema Registry</strong> - each the
   exact counterpart of its primary sibling.</li>
@@ -365,7 +367,7 @@ registry) and a <code>subject</code> header on the outbound notification (re-fra
 registry's own id for that subject). Do <strong>not</strong> relay the raw framed bytes without <code>schema.enabled</code> -
 the embedded id would be meaningless on the other registry.</p>
 <h2 id="local-dev">Local development: one helper, two brokers</h2>
-<p>The <a href="../kafka-flow-adapter/#client-config"><code>kafka-standalone</code></a> helper can emulate the dual-cluster
+<p>The <a href="../minimalist-kafka/#client-config"><code>kafka-standalone</code></a> helper can emulate the dual-cluster
 topology in one process - set <code>dual.servers=true</code> (in its <code>application.properties</code> or as
 <code>-Ddual.servers=true</code>) and it starts broker 1 on <code>127.0.0.1:9092</code> and broker 2 on <code>127.0.0.1:8092</code>
 with separate log directories:</p>
@@ -417,6 +419,16 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 <td>Secondary schema cache TTL (the cache is separate from the primary's - schema ids are per-registry).</td>
 </tr>
 <tr>
+<td><code>secondary.kafka.health.timeout</code></td>
+<td>falls back to <code>kafka.health.timeout</code> (<code>5s</code>)</td>
+<td>Probe timeout for <code>secondary.kafka.health</code>.</td>
+</tr>
+<tr>
+<td><code>secondary.kafka.health.startup.grace</code></td>
+<td>falls back to <code>kafka.health.startup.grace</code> (<code>30s</code>)</td>
+<td>Start-up grace for <code>secondary.kafka.health</code> (placeholder healthy status while the client warms up).</td>
+</tr>
+<tr>
 <td><code>secondary.kafka.correlation.id.header</code></td>
 <td>falls back to <code>kafka.correlation.id.header</code> (<code>cid</code>)</td>
 <td>Outbound correlation-id header on the secondary cluster.</td>
@@ -430,13 +442,24 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 </table>
 <p>The retry/dead-letter tuning keys (<code>kafka.dlq.timeout.ms</code>, <code>kafka.flow.max.retries</code>,
 <code>kafka.flow.retry.backoff.ms</code>) are application-level policy shared by both adapters. Per-binding
-options in the secondary adapter YAML are identical to the <a href="../kafka-flow-adapter/#adapter-yaml">primary's</a> -
+options in the secondary adapter YAML are identical to the <a href="../minimalist-kafka/#adapter-yaml">primary's</a> -
 including <code>schema.enabled</code>, <code>dlq-topic</code>, and the <code>trace.id.header</code> / <code>correlation.id.header</code>
 impedance-matching overrides.</p>
+<h2 id="health">Health check</h2>
+<p>The module ships <strong><code>secondary.kafka.health</code></strong> - the twin of minimalist-kafka's
+<a href="../minimalist-kafka/#health"><code>kafka.health</code></a>, probing the secondary cluster through the secondary
+consumer template with the same no-ACL Metadata request, start-up grace, and HTTP 503 semantics.
+A bridge is only healthy when <strong>both</strong> clusters are reachable, so a dual-cluster application lists
+both dependencies:</p>
+<pre><code class="language-properties">mandatory.health.dependencies=kafka.health, secondary.kafka.health
+</code></pre>
+<p>The <code>/health</code> dependency list distinguishes the two by service name (<code>kafka</code> vs <code>secondary.kafka</code>,
+each with its cluster's <code>bootstrap.servers</code> as <code>href</code>). An application that treats the secondary
+cluster as best-effort can move <code>secondary.kafka.health</code> to <code>optional.health.dependencies</code> instead.</p>
 <h2 id="see-also">See also</h2>
 <ul>
 <li><a href="https://github.com/Accenture/mercury-composable/tree/main/examples/twin-kafka-demo">twin-kafka-demo</a> - runnable worked example of the bridge pattern.</li>
-<li><a href="../kafka-flow-adapter/">Kafka Flow Adapter</a> - the foundation library this module extends.</li>
+<li><a href="../minimalist-kafka/">Minimalist Kafka</a> - the foundation library this module extends.</li>
 <li><a href="../configuration-reference/#kafka-flow-adapter">Configuration Reference</a> - every key in one place.</li>
 <li><a href="../reserved-names-and-headers/">Reserved names and headers</a> - trace/correlation header conventions.</li>
 </ul>
@@ -444,7 +467,7 @@ impedance-matching overrides.</p>
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../kafka-flow-adapter/" class="btn btn-neutral float-left" title="Kafka Flow Adapter"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../minimalist-kafka/" class="btn btn-neutral float-left" title="Minimalist Kafka"><span class="icon icon-circle-arrow-left"></span> Previous</a>
         <a href="../schema-registry-mock/" class="btn btn-neutral float-right" title="Schema Registry Mock">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
@@ -468,7 +491,7 @@ impedance-matching overrides.</p>
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../kafka-flow-adapter/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../minimalist-kafka/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
       <span><a href="../schema-registry-mock/" style="color: #fcfcfc">Next &raquo;</a></span>

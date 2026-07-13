@@ -117,7 +117,7 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../kafka-flow-adapter/">Kafka Flow Adapter</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../minimalist-kafka/">Minimalist Kafka</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../twin-kafka/">Twin Kafka (dual cluster)</a>
                   </li>
@@ -222,7 +222,7 @@
 <li><strong>Location:</strong> <code>helpers/schema-registry-standalone</code></li>
 <li><strong>Default Port:</strong> <code>8081</code> (Confluent's default)</li>
 <li><strong>Storage:</strong> In-memory, persisted as one file per schema id (<code>&lt;id&gt;.json</code>, e.g. <code>1.json</code>) under a configurable directory (<code>schema.registry.data.store</code>, default <code>/tmp/schema-registry</code>)</li>
-<li><strong>Supported Types:</strong> Avro (default), JSON Schema, Protobuf — the mock is schema-language-agnostic (it stores/serves an opaque schema string regardless of type), so it can serve any Confluent client, including a Protobuf one. <strong><code>minimalist-kafka</code>'s own client integration only consumes JSON Schema and Avro</strong> — see the <a href="../kafka-flow-adapter/#schema">Kafka Flow Adapter guide</a> for why Protobuf support was removed.</li>
+<li><strong>Supported Types:</strong> Avro (default), JSON Schema, Protobuf — the mock is schema-language-agnostic (it stores/serves an opaque schema string regardless of type), so it can serve any Confluent client, including a Protobuf one. <strong><code>minimalist-kafka</code>'s own client integration only consumes JSON Schema and Avro</strong> — see the <a href="../minimalist-kafka/#schema">Kafka Flow Adapter guide</a> for why Protobuf support was removed.</li>
 </ul>
 <h2 id="why-use-this">Why use this?</h2>
 <p>Confluent's serializers require a real HTTP endpoint to register and retrieve schemas (they cannot easily use a Java-level mock object across pods). Running this standalone application provides that HTTP endpoint locally without the heavy footprint of running Kafka and the full Confluent Schema Registry in Docker.</p>
@@ -322,7 +322,7 @@ drives the server with <code>curl</code> and two tiny zero-dependency Node scrip
 <code>get-schema.mjs</code>) plus copy-and-edit test-data schema files — no application to build.</p>
 <h2 id="see-also">See also</h2>
 <ul>
-<li><a href="../kafka-flow-adapter/">Minimalist Kafka Flow Adapter</a></li>
+<li><a href="../minimalist-kafka/">Minimalist Kafka Flow Adapter</a></li>
 </ul>
               
             </div>

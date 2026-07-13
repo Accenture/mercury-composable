@@ -117,7 +117,7 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../kafka-flow-adapter/">Kafka Flow Adapter</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../minimalist-kafka/">Minimalist Kafka</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../twin-kafka/">Twin Kafka (dual cluster)</a>
                   </li>
@@ -222,7 +222,7 @@ Redis return route.</em></p>
 <p>In a cloud-native deployment the REST caller and the backend that answers may be different pods, and the
 backend is reached <strong>asynchronously</strong> over Kafka. Sync-over-async bridges that gap: the HTTP thread waits
 while the request fans out over Kafka and the answer is routed back — without coupling the two pods beyond a
-shared Redis and topic pair. It builds on the <a href="../kafka-flow-adapter/">Kafka Flow Adapter</a> for the Kafka legs.</p>
+shared Redis and topic pair. It builds on the <a href="../minimalist-kafka/">Minimalist Kafka</a> for the Kafka legs.</p>
 <blockquote>
 <p><strong>Opt-in.</strong> The return-route coordinator eagerly connects to Redis, so it starts only when
 <code>sync.over.async.enabled=true</code>. Leave it off unless you are using the pattern.</p>
@@ -324,11 +324,11 @@ id, from discrete <code>redis.*</code> connection parameters and <code>sync.*</c
 and want a lightweight Redis return path rather than the full Kafka <a href="../service-mesh/">service mesh</a> with
 presence discovery. Like the mesh, it is an advanced opt-in: if your application does not need cross-pod
 synchronous request/response, design it cloud-native and skip this. The Kafka legs use the
-<a href="../kafka-flow-adapter/">Kafka Flow Adapter</a>; the synchronous facade itself is an ordinary composable function
+<a href="../minimalist-kafka/">Minimalist Kafka</a>; the synchronous facade itself is an ordinary composable function
 behind <code>rest.yaml</code>.</p>
 <h2 id="see-also">See also</h2>
 <ul>
-<li><a href="../kafka-flow-adapter/">Kafka Flow Adapter</a> — the inbound/outbound Kafka building blocks this pattern uses.</li>
+<li><a href="../minimalist-kafka/">Minimalist Kafka</a> — the inbound/outbound Kafka building blocks this pattern uses.</li>
 <li><a href="../configuration-reference/#sync-over-async">Configuration Reference</a> — every <code>redis.*</code> / <code>sync.*</code> key.</li>
 <li><a href="../service-mesh/">Minimalist Service Mesh</a> — the heavier <code>cloud.connector=kafka</code> alternative with service discovery.</li>
 <li><a href="../observability/">Observability</a> — tracing the round trip end-to-end.</li>

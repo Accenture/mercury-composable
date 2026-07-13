@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/kafka-flow-adapter/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/minimalist-kafka/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>Kafka Flow Adapter - Composable for Java</title>
+    <title>Minimalist Kafka - Composable for Java</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,9 +13,9 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Kafka Flow Adapter";
-        var mkdocs_page_input_path = "guides/kafka-flow-adapter.md";
-        var mkdocs_page_url = "/mercury-composable/guides/kafka-flow-adapter/";
+        var mkdocs_page_name = "Minimalist Kafka";
+        var mkdocs_page_input_path = "guides/minimalist-kafka.md";
+        var mkdocs_page_url = "/mercury-composable/guides/minimalist-kafka/";
       </script>
     
     <!--[if lt IE 9]>
@@ -117,7 +117,7 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Kafka Flow Adapter</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Minimalist Kafka</a>
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#enable">Enabling the library</a>
     </li>
@@ -234,7 +234,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
           <li class="breadcrumb-item">Operate & integrate</li>
-      <li class="breadcrumb-item active">Kafka Flow Adapter</li>
+      <li class="breadcrumb-item active">Minimalist Kafka</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -243,9 +243,9 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="kafka-flow-adapter">Kafka Flow Adapter</h1>
-<p><em>Guide: route Kafka topics into Event Script flows, and publish events to Kafka, with the opt-in
-<code>minimalist-kafka</code> library.</em></p>
+                <h1 id="minimalist-kafka">Minimalist Kafka</h1>
+<p><em>Guide: the opt-in <code>minimalist-kafka</code> library — route Kafka topics into Event Script flows, publish
+events to Kafka, and health-check the cluster.</em></p>
 <blockquote>
 <p><strong>At a glance</strong></p>
 <ul>
@@ -595,6 +595,8 @@ start-up sequence complete. After the first successful probe, or once the grace 
 check is live. Two keys tune the behavior: <code>kafka.health.timeout</code> (default <code>5s</code>) and
 <code>kafka.health.startup.grace</code> (default <code>30s</code>) - see the
 <a href="../configuration-reference/#observability">Configuration Reference</a>.</p>
+<p>Dual-cluster applications get a twin for the second cluster: <a href="../twin-kafka/#health">twin-kafka</a>
+ships <code>secondary.kafka.health</code>, so a bridge lists both dependencies.</p>
 <h2 id="schema">Schema Registry: typed payloads (opt-in)</h2>
 <p>The default wire contract is raw <code>byte[]</code>, which keeps the building blocks serializer-free. To interoperate
 with existing Confluent client projects, the library can also speak the <strong>Confluent Schema Registry wire
