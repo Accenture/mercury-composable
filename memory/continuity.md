@@ -313,8 +313,17 @@
   delivered. Closure recorded in [[release-4-8-3-shipped]].
   <!-- id: thread-release-4-8-3-tag-deferred | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-142021 -->
 
-- [ ] (field support — 2026-07-13, awaiting field team's response via Eric) **Trace-propagation report on
-  4.6.3: confirm the field config fix.** Diagnosis + support checklist in
+- [ ] (field support — 2026-07-13; ROOT CAUSE FOUND via Eric's devops screen share) **Trace-propagation
+  report: the internal API gateway strips `traceparent` AND `X-Trace-Id` (neither on its allow-list);
+  only `X-Correlation-Id` passes.** 4.4.11 "worked" because `trace.http.header=X-Correlation-Id, X-Trace-Id`
+  made the trace ride the allow-listed first entry. Correction to the field's initial write-up: 4.6.3+
+  DOES emit X-Trace-Id alongside traceparent on every traced outbound call (verified in code + wire-level
+  tests on v4.7.1) — the gateway eats both. Fix options: (a) config-only on 4.8.3:
+  `http.trace.id.header=X-Correlation-Id` both apps (caveat: cid wins the shared slot when ids diverge);
+  (b) proposed `legacy.trace.id=true` flag = collision-precedence switch (trace id wins the shared header
+  on outbound; default false; self-retiring once the gateway allow-lists traceparent); (c) gateway
+  allow-list change = the real fix. Eric to decide on the flag.**Original checklist below retained.**
+  Trace-propagation report on 4.6.3: confirm the field config fix. Diagnosis + support checklist in
   [[field-trace-propagation-4-6-3-diagnosis]]; the two questions back to the team: is `tracing: true` set
   on every rest.yaml endpoint involved, and is the app-to-app call made through `async.http.request` (vs
   a custom/Spring HTTP client that must forward `traceparent` itself)? Regression test + observability
