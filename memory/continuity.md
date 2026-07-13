@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-13 | agent: GitHub Copilot (2026-07-13-001009)
+- **last_session:** 2026-07-13 | agent: Claude Code (2026-07-13-142021)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -62,6 +62,41 @@
   <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-27 | uses: 4 | tier: core -->
 
 ## Key Decisions
+
+- **Field trace-propagation report on 4.6.3 diagnosed (2026-07-13): not a framework bug.** A field team
+  saw the traceId stop propagating between application endpoints after upgrading 4.4.11 → 4.6.3. Root
+  cause: **v4.5.0's documented breaking tracing cleanup** — `trace.http.header` /
+  `trace.http.legacy.header.enabled` removed, so `X-Correlation-Id` no longer doubles as the trace id
+  (the pre-4.5.0 conflation is what made 4.4.x setups appear to propagate); the trace id now travels
+  only as `X-Trace-Id` / W3C `traceparent`, never echoed back. **Support checklist for this symptom:**
+  (1) `tracing: true` on every rest.yaml entry involved (per-endpoint, default FALSE — without it the
+  endpoint ignores inbound trace headers); (2) app-to-app calls must go through `async.http.request`
+  (only the framework HTTP client auto-stamps X-Trace-Id + traceparent; custom/Spring clients must
+  forward `traceparent` manually); (3) trace context is thread-bound (Mono path fixed in 4.6.x —
+  [[trace-thread-keyed-mono-gotcha]]). **Validated**: live sync-over-async-demo (2 JVMs, curl with a
+  caller traceparent → one continuous trace, spans chained onto the caller's span across both Kafka
+  hops) + new regression test `traceContinuesAcrossApplicationToApplicationHttpCall`
+  (branch `test/trace-continuity-http-hop`, `DownstreamCaller` fixture + `/api/chain/probe`) proving
+  traced app-to-app HTTP continuity over the real HTTP stack — a previously untested contract.
+  <!-- id: field-trace-propagation-4-6-3-diagnosis | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-142021 -->
+
+- **Snyk gate rejected v4.8.2 in the field (2026-07-13) — remediated and MERGED (PR #168, merge
+  commit `e21be449`, 30 poms; ships in v4.8.3; the team trials v4.7.1 for the trace fix meanwhile —
+  4.7.1 carries the same three vulnerable transitives, so it is trial-only, not deployable).** Three transitive findings, all
+  reported through org.platformlambda artifacts: httpcore5/-h2 5.4.2→5.4.3 (HIGH CWE-770), log4j-api
+  2.25.4→2.26.1 (MEDIUM CWE-116), reactor-netty-http 1.3.5→1.3.6 via reactor-bom 2025.0.5→2025.0.6
+  (MEDIUM CWE-319). **Durable lessons:** (1) **Spring Boot's `dependencyManagement` beats
+  nearest-wins** — a direct dependency pin does NOT propagate to consumers when SB's parent manages
+  the artifact (why Snyk said "no supported fix"); the correct idiom is overriding the SB *property*
+  (`httpcore5.version`, like `log4j2.version`/`tomcat.version`/`netty.version`) in **every** module
+  that resolves the chain (here: the six Confluent-chain modules). The scram-client direct-pin
+  precedent only worked because no management was in play. (2) **A dependency-version sweep must also
+  find poms *missing* the property** — the 4.8.1 log4j sweep updated only poms that already had
+  `log4j2.version`, leaving four on SB's vulnerable default. (3) Reactor-wide verification =
+  `mvn dependency:tree` grep for the vulnerable versions across all modules **plus** the non-reactor
+  subprojects (api-playground, pg-example, benchmark-reporter — field scans cover them too).
+  Relates [[release-4-8-2-shipped]], [[field-sonar-covers-all-sources]].
+  <!-- id: snyk-4-8-2-remediation | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-135841 -->
 
 - **Release 4.8.2 — SHIPPED 2026-07-12 (tag `v4.8.2` on merge commit `6c024311`; PRs #164-#166).**
   Patch release: twin-kafka-demo correlation-id impedance matching + opt-in template
@@ -253,6 +288,29 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (release in flight — 2026-07-13) **v4.8.3 bumped for field pipeline test; TAG DEFERRED.**
+  Branch `chore/release-4.8.3` (commit `00c3b285`) carries the Snyk remediation (#168), trace
+  regression guard + observability docs (#169), ScheduleAdminTest race fix (#170). Eric syncs main
+  to the field after merge. **Do NOT create the v4.8.3 tag until the field pipeline test passes and
+  publishes to the artifact repository** (Eric's instruction — leaves room for further fixes). When
+  the field passes: tag the merge commit, provide release text, then the memory-closure PR with a
+  [[release-4-8-3-shipped]] fact superseding the in-flight state.
+  <!-- id: thread-release-4-8-3-tag-deferred | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-142021 -->
+
+- [ ] (field support — 2026-07-13, awaiting field team's response via Eric) **Trace-propagation report on
+  4.6.3: confirm the field config fix.** Diagnosis + support checklist in
+  [[field-trace-propagation-4-6-3-diagnosis]]; the two questions back to the team: is `tracing: true` set
+  on every rest.yaml endpoint involved, and is the app-to-app call made through `async.http.request` (vs
+  a custom/Spring HTTP client that must forward `traceparent` itself)? Regression test + observability
+  impedance-matching docs MERGED (PR #169); ScheduleAdminTest race fix MERGED (PR #170 — file existence
+  ≠ readiness when writes are truncate-then-write; poll the consuming API for settled state). The team
+  trials v4.7.1 for the trace behavior while v4.8.3 is prepared. Also answered (2026-07-13): setting
+  `http.trace.id.header` = `http.correlation.id.header` = `X-Correlation-Id` (legacy conflation) is safe
+  when the edge always supplies the header — one value feeds both ids end-to-end; when absent, the two
+  ids diverge by design (trace via traceparent stays continuous; shared-header slot resolves cid-last on
+  HTTP, trace-last on Kafka).
+  <!-- id: thread-field-trace-propagation-4-6-3 | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-142021 -->
 
 - [ ] (P0–P5 code-complete — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; remaining = field canary → P4 retire-BDB) **Replace
   ElasticQueue's Berkeley DB spill tier with a portable file-backed segmented FIFO.** Full detail + rationale
