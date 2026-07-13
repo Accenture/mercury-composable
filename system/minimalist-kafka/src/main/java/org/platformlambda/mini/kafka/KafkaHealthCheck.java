@@ -63,9 +63,10 @@ import java.util.concurrent.locks.ReentrantLock;
  * {@code 30s}) has elapsed - every check is a live probe and an unreachable cluster fails
  * {@code /health} with HTTP 503.
  */
-// single instance by design (the @PreLoad default): KafkaConsumer is not thread-safe, so the probe
-// consumer stays confined to one worker (plus the lock below for the background warm-up thread)
-@PreLoad(route = "kafka.health")
+// multiple workers because /health is polled concurrently (operations tooling plus the container
+// platform's liveness/readiness probes): info and placeholder responses run in parallel, while the
+// non-thread-safe KafkaConsumer stays protected - every probe serializes on the ReentrantLock below
+@PreLoad(route = "kafka.health", instances = 5)
 public class KafkaHealthCheck implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(KafkaHealthCheck.class);
 
