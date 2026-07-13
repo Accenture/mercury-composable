@@ -79,6 +79,10 @@
     <li class="toctree-l2"><a class="reference internal" href="#duplicated-static-content-cors-and-headers-sections">Duplicated static content, cors and headers sections</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#defining-a-rest-endpoint">Defining a REST endpoint</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#per-endpoint-trace-and-correlation-id-header-names">Per-endpoint trace and correlation-id header names</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#cors-section">CORS section</a>
     </li>
@@ -329,6 +333,16 @@ WARN - Duplicated 'headers' in classpath:/duplicated-endpoint.yaml will override
 <td style="text-align: left;">Enable distributed tracing<br>when set to 'true'</td>
 <td style="text-align: left;">default is false</td>
 </tr>
+<tr>
+<td style="text-align: left;">trace.id.header</td>
+<td style="text-align: left;"><em>Optional</em>. Per-endpoint override of the<br>trace-id header name for this entry<br>(global default is <code>http.trace.id.header</code>,<br>normally <code>X-Trace-Id</code>)</td>
+<td style="text-align: left;">'X-Legacy-Trace'</td>
+</tr>
+<tr>
+<td style="text-align: left;">correlation.id.header</td>
+<td style="text-align: left;"><em>Optional</em>. Per-endpoint override of the<br>business correlation-id header name<br>(global default is <code>http.correlation.id.header</code>,<br>normally <code>X-Correlation-Id</code>)</td>
+<td style="text-align: left;">'X-Legacy-Cid'</td>
+</tr>
 </tbody>
 </table>
 <p>When more than one service route name is provided, the first one is the primary service and the system will
@@ -395,6 +409,27 @@ three lines of log from "distributed trace" showing that the HTTP request is pro
           The term "browser" also refers to a caller from an application ("client"). Therefore,
           browser and client can be used interchangeably.</p>
 </blockquote>
+<h3 id="per-endpoint-trace-and-correlation-id-header-names">Per-endpoint trace and correlation-id header names</h3>
+<p>Not every caller uses the platform's default header names (<code>X-Trace-Id</code> for the trace-id,
+<code>X-Correlation-Id</code> for the business correlation-id). When one particular endpoint serves a legacy
+caller with its own convention, add the optional <code>trace.id.header</code> and/or <code>correlation.id.header</code>
+keys to that entry — they override the <code>application.properties</code> globals (<code>http.trace.id.header</code>,
+<code>http.correlation.id.header</code>) for this endpoint only:</p>
+<pre><code class="language-yaml">  - service: &quot;legacy.orders&quot;
+    methods: ['POST']
+    url: &quot;/api/legacy/orders&quot;
+    timeout: 15s
+    tracing: true
+    trace.id.header: 'X-Legacy-Trace'
+    correlation.id.header: 'X-Legacy-Cid'
+</code></pre>
+<p>Header capture is case-insensitive and the precedence is per-entry override, then the global,
+then the built-in default. A well-formed W3C <code>traceparent</code> header always takes precedence for the
+trace-id, so the override never interferes with OpenTelemetry-compliant callers. The correlation-id
+captured here is preserved end-to-end — it becomes the flow's <code>model.cid</code> and is available to every
+function via <code>PostOffice.getMyCorrelationId()</code>. See
+<a href="../observability/#impedance-matching">Observability — header impedance matching</a> for the full
+picture, including the Kafka counterpart and the two-convention bridging pattern.</p>
 <p>The optional <code>cors</code> and <code>headers</code> sections point to the specific CORS and HEADERS sections respectively.</p>
 <h2 id="cors-section">CORS section</h2>
 <p>For ease of development, you can define CORS headers using the CORS section like this.</p>

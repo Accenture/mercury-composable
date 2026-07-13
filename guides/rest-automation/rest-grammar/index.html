@@ -308,6 +308,16 @@
 <td><code>true</code>/<code>false</code> (default false) — enable distributed tracing</td>
 </tr>
 <tr>
+<td><code>trace.id.header</code></td>
+<td>no</td>
+<td>per-endpoint override of the global <code>http.trace.id.header</code> (default <code>X-Trace-Id</code>) — impedance matching for a caller that sends its own trace-id header name; a well-formed W3C <code>traceparent</code> still takes precedence</td>
+</tr>
+<tr>
+<td><code>correlation.id.header</code></td>
+<td>no</td>
+<td>per-endpoint override of the global <code>http.correlation.id.header</code> (default <code>X-Correlation-Id</code>) — impedance matching for a caller that sends its own business correlation-id header name</td>
+</tr>
+<tr>
 <td><code>trust_all_cert</code></td>
 <td>no</td>
 <td><code>true</code>/<code>false</code> — <strong>HTTPS relay only</strong></td>
@@ -319,7 +329,11 @@
 </tr>
 </tbody>
 </table>
-<p>Boolean fields (<code>upload</code>, <code>tracing</code>, <code>trust_all_cert</code>) are written <strong>unquoted</strong>, e.g. <code>tracing: true</code>.</p>
+<p>Boolean fields (<code>upload</code>, <code>tracing</code>, <code>trust_all_cert</code>) are written <strong>unquoted</strong>, e.g. <code>tracing: true</code>.
+The header-override values are header names, written quoted like other strings, e.g.
+<code>trace.id.header: 'X-Legacy-Trace'</code> (header capture is case-insensitive; precedence is
+per-entry &gt; <code>application.properties</code> global &gt; built-in default — see
+<a href="../../observability/#impedance-matching">Observability</a>).</p>
 <h2 id="binding">Binding modes</h2>
 <p>How an endpoint reaches its backend (set by <code>service</code>/<code>flow</code>):</p>
 <table>

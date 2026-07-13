@@ -268,6 +268,19 @@ headers:
     url: '/api/profile/{id}'
     timeout: 10s
 </code></pre>
+<p>A traced endpoint serving a legacy caller that uses its own trace/correlation header names
+(per-endpoint impedance matching — the optional <code>trace.id.header</code> / <code>correlation.id.header</code>
+keys override the global <code>http.trace.id.header</code> / <code>http.correlation.id.header</code> names for
+this entry only; a well-formed W3C <code>traceparent</code> still takes precedence for the trace-id):</p>
+<pre><code class="language-yaml">rest:
+  - service: 'legacy.orders'
+    methods: ['POST']
+    url: '/api/legacy/orders'
+    timeout: 15s
+    tracing: true
+    trace.id.header: 'X-Legacy-Trace'
+    correlation.id.header: 'X-Legacy-Cid'
+</code></pre>
 <h2 id="see-also">See also</h2>
 <ul>
 <li><a href="../rest-grammar/">REST automation grammar</a> + <a href="../rest-automation.json"><code>rest-automation.json</code></a> — the source of truth.</li>
