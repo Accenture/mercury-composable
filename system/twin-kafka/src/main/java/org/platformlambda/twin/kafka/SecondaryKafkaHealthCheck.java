@@ -40,7 +40,8 @@ import java.util.Properties;
  * {@code secondary.kafka.health.startup.grace} fall back to the {@code kafka.health.*}
  * globals, then to the built-in defaults (5s / 30s).
  */
-@PreLoad(route = "secondary.kafka.health", instances = 1)
+// single instance by design (the @PreLoad default) - same KafkaConsumer confinement as kafka.health
+@PreLoad(route = "secondary.kafka.health")
 public class SecondaryKafkaHealthCheck extends KafkaHealthCheck {
 
     private static final String SERVICE_NAME = "secondary.kafka";

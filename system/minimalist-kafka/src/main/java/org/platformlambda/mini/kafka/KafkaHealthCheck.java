@@ -18,6 +18,7 @@
 
 package org.platformlambda.mini.kafka;
 
+import org.apache.kafka.clients.consumer.CloseOptions;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
@@ -62,10 +63,13 @@ import java.util.concurrent.locks.ReentrantLock;
  * {@code 30s}) has elapsed - every check is a live probe and an unreachable cluster fails
  * {@code /health} with HTTP 503.
  */
-@PreLoad(route = "kafka.health", instances = 1)
+// single instance by design (the @PreLoad default): KafkaConsumer is not thread-safe, so the probe
+// consumer stays confined to one worker (plus the lock below for the background warm-up thread)
+@PreLoad(route = "kafka.health")
 public class KafkaHealthCheck implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(KafkaHealthCheck.class);
 
+    private static final String PRIMARY_SERVICE_NAME = "kafka";
     private static final String TYPE = "type";
     private static final String INFO = "info";
     private static final String HEALTH = "health";
@@ -94,9 +98,9 @@ public class KafkaHealthCheck implements LambdaFunction {
     private volatile boolean ready = false;
 
     public KafkaHealthCheck() {
-        this("kafka", KafkaClientConfig.consumerProperties(AppConfigReader.getInstance()),
-             resolveDurationMs(TIMEOUT_KEY, null, DEFAULT_TIMEOUT),
-             resolveDurationMs(GRACE_KEY, null, DEFAULT_GRACE));
+        this(PRIMARY_SERVICE_NAME, KafkaClientConfig.consumerProperties(AppConfigReader.getInstance()),
+             resolveDurationMs(TIMEOUT_KEY, DEFAULT_TIMEOUT),
+             resolveDurationMs(GRACE_KEY, DEFAULT_GRACE));
     }
 
     /**
@@ -106,7 +110,8 @@ public class KafkaHealthCheck implements LambdaFunction {
      * @param graceMs            start-up grace period in milliseconds (0 = probe immediately)
      */
     KafkaHealthCheck(Properties consumerProperties, long graceMs) {
-        this("kafka", consumerProperties, resolveDurationMs(TIMEOUT_KEY, null, DEFAULT_TIMEOUT), graceMs);
+        this(PRIMARY_SERVICE_NAME, consumerProperties,
+             resolveDurationMs(TIMEOUT_KEY, DEFAULT_TIMEOUT), graceMs);
     }
 
     /**
@@ -137,18 +142,29 @@ public class KafkaHealthCheck implements LambdaFunction {
      * @return the resolved duration in milliseconds
      */
     protected static long resolveDurationMs(String key, String fallbackKey, String defaultValue) {
+        var config = AppConfigReader.getInstance();
+        return resolveDurationMs(key, config.getProperty(fallbackKey, defaultValue));
+    }
+
+    /**
+     * Resolve a duration configuration key to milliseconds with a built-in default.
+     *
+     * @param key          the configuration key (e.g. "kafka.health.timeout")
+     * @param defaultValue the built-in default duration (e.g. "5s")
+     * @return the resolved duration in milliseconds
+     */
+    protected static long resolveDurationMs(String key, String defaultValue) {
         var util = Utility.getInstance();
         var config = AppConfigReader.getInstance();
-        String fallback = fallbackKey != null? config.getProperty(fallbackKey, defaultValue) : defaultValue;
-        return util.getDurationInSeconds(config.getProperty(key, fallback)) * 1000L;
+        return util.getDurationInSeconds(config.getProperty(key, defaultValue)) * 1000L;
     }
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         if (INFO.equals(headers.get(TYPE))) {
             Map<String, Object> result = new HashMap<>();
             result.put(SERVICE, serviceName);
-            result.put(HREF, consumerProperties.getProperty(BOOTSTRAP_SERVERS, "kafka"));
+            result.put(HREF, consumerProperties.getProperty(BOOTSTRAP_SERVERS, PRIMARY_SERVICE_NAME));
             return result;
         }
         if (HEALTH.equals(headers.get(TYPE))) {
@@ -180,6 +196,9 @@ public class KafkaHealthCheck implements LambdaFunction {
         }
     }
 
+    // S2093 (try-with-resources): the try/finally releases the ReentrantLock; the KafkaConsumer is
+    // deliberately long-lived - cached across health checks and closed via closeQuietly on failure
+    @SuppressWarnings("java:S2093")
     private Map<String, Object> probe() throws AppException {
         lock.lock();
         try {
@@ -191,7 +210,7 @@ public class KafkaHealthCheck implements LambdaFunction {
             Map<String, Object> result = new HashMap<>();
             result.put(STATUS, REACHABLE);
             result.put(TOPICS, topics.size());
-            result.put(HREF, consumerProperties.getProperty(BOOTSTRAP_SERVERS, "kafka"));
+            result.put(HREF, consumerProperties.getProperty(BOOTSTRAP_SERVERS, PRIMARY_SERVICE_NAME));
             return result;
         } catch (Exception e) {
             closeQuietly();
@@ -204,7 +223,7 @@ public class KafkaHealthCheck implements LambdaFunction {
     private void closeQuietly() {
         if (consumer != null) {
             try {
-                consumer.close(Duration.ofSeconds(2));
+                consumer.close(CloseOptions.timeout(Duration.ofSeconds(2)));
             } catch (Exception e) {
                 log.debug("Ignorable error while closing Kafka health-check consumer - {}", e.getMessage());
             }
