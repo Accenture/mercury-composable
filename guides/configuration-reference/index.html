@@ -690,6 +690,18 @@ below tune it. The <code>otel.*</code> keys are read by the <code>opentelemetry-
 <td>Optional Kafka message header for the trace-id. Inbound: a fallback trace-id source when the upstream sends no W3C <code>traceparent</code> (which always takes precedence). Outbound: <code>simple.kafka.notification</code> stamps the current trace-id under this name alongside <code>traceparent</code>, for legacy downstream consumers. Unset = traceparent-only behavior (unchanged). Overridable per binding with <code>trace.id.header</code> in a kafka-flow-adapter.yaml entry.</td>
 </tr>
 <tr>
+<td><code>kafka.health.timeout</code></td>
+<td><code>String</code> (duration)</td>
+<td><code>5s</code></td>
+<td>Timeout for the <code>kafka.health</code> probe - a single Kafka Metadata request (<code>KafkaConsumer.listTopics</code>) issued from the module's consumer template; no consumer group, no offsets, no admin privileges. Add <code>kafka.health</code> to <code>mandatory.health.dependencies</code> (or the optional list) to include the cluster in <code>/health</code>.</td>
+</tr>
+<tr>
+<td><code>kafka.health.startup.grace</code></td>
+<td><code>String</code> (duration)</td>
+<td><code>30s</code></td>
+<td>Start-up grace period for <code>kafka.health</code>: within it the check reports a placeholder healthy status while the Kafka client warms up in the background, so <code>/health</code> never fails or blocks during application start-up. After the first successful probe (or once the grace expires) every check is live and an unreachable cluster fails <code>/health</code> with 503.</td>
+</tr>
+<tr>
 <td><code>otel.trace.forwarder.enabled</code></td>
 <td><code>boolean</code></td>
 <td><code>true</code></td>

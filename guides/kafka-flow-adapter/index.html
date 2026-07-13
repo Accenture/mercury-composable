@@ -149,6 +149,8 @@
     </li>
         </ul>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#health">Health check</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#schema">Schema Registry: typed payloads (opt-in)</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#schema-auth">Registry authentication (OAuth 2.0 / basic)</a>
@@ -572,6 +574,27 @@ forwarded as a Kafka header.</p>
 <code>traceparent</code> from its own current span; the adapter parses it on the way in and chains the flow onto that
 span. The result is one continuous distributed trace across the asynchronous Kafka boundary — the two
 notification hops are the bridge spans. See <a href="../observability/">Observability</a>.</p>
+<h2 id="health">Health check</h2>
+<p>The library ships a ready-made health-check function at route <strong><code>kafka.health</code></strong> (auto-registered when
+the jar is on the classpath). Opt in by listing it as a health dependency in <code>application.properties</code>:</p>
+<pre><code class="language-properties">mandatory.health.dependencies=kafka.health
+# or, when Kafka should be reported but not fail /health:
+# optional.health.dependencies=kafka.health
+</code></pre>
+<p>The probe is deliberately minimal: one Kafka <strong>Metadata</strong> request (<code>KafkaConsumer.listTopics</code>) using the
+module's <a href="#client-config">consumer template</a> - it joins no consumer group, commits no offsets, and needs
+no admin privileges. The Metadata request itself requires <strong>no ACL</strong>: brokers filter the response to the
+topics the principal may Describe rather than rejecting the request, so under a fully locked-down
+principal the probe still succeeds (with a visible topic count of 0) - the successful round trip proves
+connectivity, TLS/SASL authentication, and a served API request. A reachable cluster reports a status map
+(including the visible topic count, which may be 0 under restrictive ACLs); an unreachable one fails
+<code>/health</code> with HTTP 503.</p>
+<p>During application start-up the check returns a <strong>placeholder healthy</strong> status while the Kafka client
+warms up in the background - <code>/health</code> neither fails nor blocks before the client and the rest of the
+start-up sequence complete. After the first successful probe, or once the grace period expires, every
+check is live. Two keys tune the behavior: <code>kafka.health.timeout</code> (default <code>5s</code>) and
+<code>kafka.health.startup.grace</code> (default <code>30s</code>) - see the
+<a href="../configuration-reference/#observability">Configuration Reference</a>.</p>
 <h2 id="schema">Schema Registry: typed payloads (opt-in)</h2>
 <p>The default wire contract is raw <code>byte[]</code>, which keeps the building blocks serializer-free. To interoperate
 with existing Confluent client projects, the library can also speak the <strong>Confluent Schema Registry wire
