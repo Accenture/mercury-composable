@@ -279,10 +279,13 @@ cluster's schema-id cache is isolated (Confluent global ids are only unique with
 </tr>
 </tbody>
 </table>
-<p>All secondary templates follow the same mechanics as the primary ones: <code>/tmp/config</code> file first with
-classpath fallback, <code>${ENV_VAR:default}</code> substitution, and OAuth token endpoint URLs auto-registered
-on the JVM allow-list. The default bootstrap is <code>${SECONDARY_KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:8092}</code> -
-matching the <a href="#local-dev">local dual-broker helper</a> below.</p>
+<p>All secondary templates follow the same mechanics as the primary ones: loaded from the bundled
+classpath template by default, <code>${ENV_VAR:default}</code> substitution, and OAuth token endpoint URLs
+auto-registered on the JVM allow-list. Externalization of configuration is opt-in - point the
+location key at a file rendered by the devops pipeline (e.g. <code>file:/tmp/config/...</code>), optionally
+with a classpath fallback as a comma-separated list. The default bootstrap is
+<code>${SECONDARY_KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:8092}</code> - matching the
+<a href="#local-dev">local dual-broker helper</a> below.</p>
 <h2 id="bridge">The bridge pattern</h2>
 <p>Bridge on-prem (primary) to cloud (secondary) with one flow per direction - no bridge code, just
 flow YAML. Inbound bindings on the source cluster:</p>
@@ -390,13 +393,13 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 </tr>
 <tr>
 <td><code>secondary.kafka.producer.properties</code></td>
-<td><code>file:/tmp/config/secondary-kafka-producer.properties,classpath:/secondary-kafka-producer.properties</code></td>
-<td>Secondary producer template location(s).</td>
+<td><code>classpath:/secondary-kafka-producer.properties</code></td>
+<td>Secondary producer template location. Set to an external file path (or explicit fallback list) to externalize.</td>
 </tr>
 <tr>
 <td><code>secondary.kafka.consumer.properties</code></td>
-<td><code>file:/tmp/config/secondary-kafka-consumer.properties,classpath:/secondary-kafka-consumer.properties</code></td>
-<td>Secondary consumer template location(s).</td>
+<td><code>classpath:/secondary-kafka-consumer.properties</code></td>
+<td>Secondary consumer template location. Set to an external file path (or explicit fallback list) to externalize.</td>
 </tr>
 <tr>
 <td><code>secondary.schema.registry.url</code></td>
@@ -405,8 +408,8 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 </tr>
 <tr>
 <td><code>secondary.schema.registry.properties</code></td>
-<td><code>file:/tmp/config/secondary-schema-registry.properties,classpath:/secondary-schema-registry.properties</code></td>
-<td>Secondary registry client template - auth/SSL passed verbatim to the Confluent client.</td>
+<td><code>classpath:/secondary-schema-registry.properties</code></td>
+<td>Secondary registry client template - auth/SSL passed verbatim to the Confluent client. Set to an external file path (or explicit fallback list) to externalize.</td>
 </tr>
 <tr>
 <td><code>secondary.schema.registry.cache.ttl</code></td>

@@ -1067,15 +1067,15 @@ Kafka. See the <a href="../kafka-flow-adapter/">Kafka Flow Adapter guide</a>. Th
 </tr>
 <tr>
 <td><code>kafka.producer.properties</code></td>
-<td><code>String</code> (comma-sep paths)</td>
-<td><code>file:/tmp/config/kafka-producer.properties, classpath:/kafka-producer.properties</code></td>
-<td>Producer client config template location(s); file path falls back to classpath.</td>
+<td><code>String</code> (path, or comma-sep fallback list)</td>
+<td><code>classpath:/kafka-producer.properties</code></td>
+<td>Producer client config template location. Externalization of configuration is opt-in: point this at a file rendered by the devops pipeline (e.g. <code>file:/tmp/config/kafka-producer.properties</code>), optionally with a classpath fallback.</td>
 </tr>
 <tr>
 <td><code>kafka.consumer.properties</code></td>
-<td><code>String</code> (comma-sep paths)</td>
-<td><code>file:/tmp/config/kafka-consumer.properties, classpath:/kafka-consumer.properties</code></td>
-<td>Consumer client config template location(s); file path falls back to classpath.</td>
+<td><code>String</code> (path, or comma-sep fallback list)</td>
+<td><code>classpath:/kafka-consumer.properties</code></td>
+<td>Consumer client config template location. Externalize the same way as the producer template.</td>
 </tr>
 <tr>
 <td><code>kafka.dlq.timeout.ms</code></td>
@@ -1104,8 +1104,8 @@ Kafka. See the <a href="../kafka-flow-adapter/">Kafka Flow Adapter guide</a>. Th
 <tr>
 <td><code>schema.registry.properties</code></td>
 <td><code>String</code> (comma-sep paths)</td>
-<td><code>file:/tmp/config/schema-registry.properties, classpath:/schema-registry.properties</code></td>
-<td>Registry client template location(s); file path falls back to classpath. Entries pass verbatim to the Confluent client — <a href="../kafka-flow-adapter/#schema-auth">authentication</a> (<code>bearer.auth.*</code> OAuth 2.0, basic auth) and SSL. OAuth token endpoint URLs found in a template are auto-registered on the JVM <code>org.apache.kafka.sasl.oauthbearer.allowed.urls</code> allow-list.</td>
+<td><code>classpath:/schema-registry.properties</code></td>
+<td>Registry client template location; externalize the same way as the producer template. Entries pass verbatim to the Confluent client — <a href="../kafka-flow-adapter/#schema-auth">authentication</a> (<code>bearer.auth.*</code> OAuth 2.0, basic auth) and SSL. OAuth token endpoint URLs found in a template are auto-registered on the JVM <code>org.apache.kafka.sasl.oauthbearer.allowed.urls</code> allow-list.</td>
 </tr>
 <tr>
 <td><code>schema.registry.cache.ttl</code></td>
@@ -1121,9 +1121,9 @@ Kafka. See the <a href="../kafka-flow-adapter/">Kafka Flow Adapter guide</a>. Th
 </tr>
 <tr>
 <td><code>secondary.kafka.producer.properties</code> / <code>secondary.kafka.consumer.properties</code></td>
-<td><code>String</code> (comma-sep paths)</td>
-<td><code>file:/tmp/config/secondary-kafka-*.properties, classpath:/secondary-kafka-*.properties</code></td>
-<td><a href="../twin-kafka/">twin-kafka</a>: secondary-cluster client template location(s); same mechanics as the primary templates.</td>
+<td><code>String</code> (path, or comma-sep fallback list)</td>
+<td><code>classpath:/secondary-kafka-*.properties</code></td>
+<td><a href="../twin-kafka/">twin-kafka</a>: secondary-cluster client template location; same mechanics as the primary templates.</td>
 </tr>
 <tr>
 <td><code>secondary.schema.registry.url</code> / <code>secondary.schema.registry.properties</code></td>

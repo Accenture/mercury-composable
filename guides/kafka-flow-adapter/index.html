@@ -454,9 +454,12 @@ widely (on-prem, cloud, SaaS, Confluent; SASL/PLAIN, SASL/SCRAM, OAuth2, mTLS):<
 <li><code>schema-registry.properties</code> — the Confluent Schema Registry client (see
   <a href="#schema-auth">registry authentication</a>).</li>
 </ul>
-<p>Each is loaded by <code>ConfigReader</code> from a <strong>file-then-classpath fallback</strong> location (so CI/CD can drop a
-rendered file at <code>/tmp/config</code>), with <code>${ENV_VAR:default}</code> substitution. The library <strong>pins</strong> only the
-parameters its contract depends on and lets the template own everything else:</p>
+<p>By default, each is loaded by <code>ConfigReader</code> from the bundled classpath template. Set
+<code>kafka.producer.properties</code>, <code>kafka.consumer.properties</code>, or <code>schema.registry.properties</code> only when you
+want a different location. A single location is normal; a comma-separated list is an optional fallback
+chain, useful when CI/CD renders an external file into a deployment volume and you still want to fall back
+to the bundled classpath template. All template values support <code>${ENV_VAR:default}</code> substitution. The
+library <strong>pins</strong> only the parameters its contract depends on and lets the template own everything else:</p>
 <table>
 <thead>
 <tr>
@@ -593,9 +596,9 @@ schema.registry.cache.ttl=30m                          # TTL for the in-memory s
 </code></pre>
 <h3 id="schema-auth">Registry authentication (OAuth 2.0 / basic)</h3>
 <p>The registry client's connection and security parameters live in the <strong><code>schema-registry.properties</code>
-template</strong> (same mechanics as the producer/consumer templates: <code>/tmp/config</code> file first, classpath
-fallback, <code>${ENV_VAR:default}</code> substitution, location overridable with the <code>schema.registry.properties</code>
-key). Everything in it is passed <strong>verbatim</strong> to the Confluent Schema Registry client, so any client
+template</strong> (same mechanics as the producer/consumer templates: classpath by default, optionally
+overridable with <code>schema.registry.properties</code>). Everything in it is passed <strong>verbatim</strong> to the Confluent
+Schema Registry client, so any client
 parameter — including optional, installation-specific ones such as <code>bearer.auth.logical.cluster</code> and
 <code>bearer.auth.identity.pool.id</code> — works without a library change.</p>
 <p>OAuth 2.0 client-credentials (e.g. Azure AD / Entra ID):</p>
@@ -759,13 +762,13 @@ The essentials:</p>
 </tr>
 <tr>
 <td><code>kafka.producer.properties</code></td>
-<td><code>file:/tmp/config/kafka-producer.properties,classpath:/kafka-producer.properties</code></td>
-<td>Producer template location(s).</td>
+<td><code>classpath:/kafka-producer.properties</code></td>
+<td>Producer template location. Set to an external file path (or explicit fallback list) to externalize.</td>
 </tr>
 <tr>
 <td><code>kafka.consumer.properties</code></td>
-<td><code>file:/tmp/config/kafka-consumer.properties,classpath:/kafka-consumer.properties</code></td>
-<td>Consumer template location(s).</td>
+<td><code>classpath:/kafka-consumer.properties</code></td>
+<td>Consumer template location. Set to an external file path (or explicit fallback list) to externalize.</td>
 </tr>
 <tr>
 <td><code>kafka.dlq.timeout.ms</code></td>
@@ -789,8 +792,8 @@ The essentials:</p>
 </tr>
 <tr>
 <td><code>schema.registry.properties</code></td>
-<td><code>file:/tmp/config/schema-registry.properties,classpath:/schema-registry.properties</code></td>
-<td>Registry client template location(s) — auth/SSL parameters passed verbatim to the Confluent client (see <a href="#schema-auth">registry authentication</a>).</td>
+<td><code>classpath:/schema-registry.properties</code></td>
+<td>Registry client template location — auth/SSL parameters passed verbatim to the Confluent client (see <a href="#schema-auth">registry authentication</a>). Set to an external file path (or explicit fallback list) to externalize.</td>
 </tr>
 <tr>
 <td><code>schema.registry.cache.ttl</code></td>
