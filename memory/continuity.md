@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-13 | agent: Claude Code (2026-07-13-142021)
+- **last_session:** 2026-07-13 | agent: Claude Code (2026-07-13-170933)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -62,6 +62,24 @@
   <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-27 | uses: 4 | tier: core -->
 
 ## Key Decisions
+
+- **Release 4.8.3 — SHIPPED 2026-07-13 (tag `v4.8.3` on merge commit `6696a76f`; PRs #168-#175).**
+  Security patch + hardening release, validated by the field pipeline (Snyk + Sonar PASSED) BEFORE
+  tagging — the deliberate deferred-tag flow worked as designed. Contents: (1) **Snyk remediation**
+  (#168 — httpcore5 5.4.3 via SB property override, log4j-api 2.26.1, reactor-netty 1.3.6);
+  (2) **trace-continuity regression guards** (#169 HTTP app-to-app, #175 declarative flow task incl.
+  the sink-after-response shape — BOTH verified passing on v4.7.1 too, so the field's declarative
+  report was environmental, not a framework defect); (3) **observability + REST per-entry header docs**
+  (#169/#172); (4) **ScheduleAdminTest + SonarQube touch-up** (#170/#173 — file-existence ≠ readiness;
+  HelloException → HelloExceptionHandler; S5443 suppressions per ProfileStore precedent);
+  (5) **kafka.health** (#174 — `KafkaConsumer.listTopics` Metadata probe needs NO ACL: brokers filter
+  by Topic Describe rather than reject, so it degrades to an empty-but-successful response under
+  locked-down principals; startup grace returns placeholder-healthy while the client warms up on a
+  background virtual thread; `kafka.health.timeout` 5s / `kafka.health.startup.grace` 30s).
+  **Durable lessons:** field screenshots' naming conventions are client-identifiable — paraphrase
+  generically in fixtures/commits/PRs; a flow needs ≥1 `end` task (a `sink` only terminates a side
+  branch). See [[release-4-8-2-shipped]] for the prior cycle.
+  <!-- id: release-4-8-3-shipped | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-170933 -->
 
 - **Field trace-propagation report on 4.6.3 diagnosed (2026-07-13): not a framework bug.** A field team
   saw the traceId stop propagating between application endpoints after upgrading 4.4.11 → 4.6.3. Root
@@ -289,13 +307,10 @@
 
 ## Open Threads
 
-- [ ] (release in flight — 2026-07-13) **v4.8.3 bumped for field pipeline test; TAG DEFERRED.**
-  Branch `chore/release-4.8.3` (commit `00c3b285`) carries the Snyk remediation (#168), trace
-  regression guard + observability docs (#169), ScheduleAdminTest race fix (#170). Eric syncs main
-  to the field after merge. **Do NOT create the v4.8.3 tag until the field pipeline test passes and
-  publishes to the artifact repository** (Eric's instruction — leaves room for further fixes). When
-  the field passes: tag the merge commit, provide release text, then the memory-closure PR with a
-  [[release-4-8-3-shipped]] fact superseding the in-flight state.
+- [x] (release in flight — 2026-07-13; CLOSED same day) **v4.8.3 bumped for field pipeline test; TAG
+  DEFERRED.** The deferred-tag flow completed: field pipeline PASSED (Snyk + Sonar), the touch-up
+  round landed (#172-#175), and `v4.8.3` was tagged on merge commit `6696a76f` with release text
+  delivered. Closure recorded in [[release-4-8-3-shipped]].
   <!-- id: thread-release-4-8-3-tag-deferred | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-142021 -->
 
 - [ ] (field support — 2026-07-13, awaiting field team's response via Eric) **Trace-propagation report on
