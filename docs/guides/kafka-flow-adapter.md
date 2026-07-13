@@ -304,8 +304,12 @@ mandatory.health.dependencies=kafka.health
 
 The probe is deliberately minimal: one Kafka **Metadata** request (`KafkaConsumer.listTopics`) using the
 module's [consumer template](#client-config) - it joins no consumer group, commits no offsets, and needs
-no admin privileges, so it works under the most restrictive ACLs. A reachable cluster reports a status
-map (including the visible topic count); an unreachable one fails `/health` with HTTP 503.
+no admin privileges. The Metadata request itself requires **no ACL**: brokers filter the response to the
+topics the principal may Describe rather than rejecting the request, so under a fully locked-down
+principal the probe still succeeds (with a visible topic count of 0) - the successful round trip proves
+connectivity, TLS/SASL authentication, and a served API request. A reachable cluster reports a status map
+(including the visible topic count, which may be 0 under restrictive ACLs); an unreachable one fails
+`/health` with HTTP 503.
 
 During application start-up the check returns a **placeholder healthy** status while the Kafka client
 warms up in the background - `/health` neither fails nor blocks before the client and the rest of the

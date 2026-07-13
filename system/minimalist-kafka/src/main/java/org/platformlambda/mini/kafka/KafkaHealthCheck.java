@@ -46,7 +46,14 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p>The probe is a single Kafka <b>Metadata</b> request ({@code KafkaConsumer.listTopics})
  * issued from a dedicated consumer built from the module's consumer template - the most
  * lightweight cluster round-trip the client offers. It joins no consumer group, commits no
- * offsets, and needs no admin privileges, so it works under the most restrictive ACLs.
+ * offsets, and needs no admin privileges. The Metadata request itself requires <b>no ACL</b>:
+ * per the KafkaConsumer contract it returns "all topics that the user is authorized to view",
+ * i.e. brokers FILTER the response by Topic Describe grants rather than rejecting the request -
+ * under a fully locked-down principal the call succeeds with an empty topic list (the reported
+ * topic count may be 0), and the successful round trip still proves connectivity, TLS/SASL
+ * authentication, and a served API request. This graceful degradation is why the probe uses
+ * the consumer Metadata API instead of AdminClient.describeCluster (gated by Cluster Describe)
+ * or partitionsFor (throws TopicAuthorizationException without a grant on the named topic).
  *
  * <p>During application start-up the function returns a <b>placeholder healthy</b> status and
  * warms up the client in the background, so {@code /health} does not fail (or block) while the
