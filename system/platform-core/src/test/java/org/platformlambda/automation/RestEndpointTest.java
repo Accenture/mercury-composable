@@ -188,6 +188,37 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
+    void traceContinuesAcrossApplicationToApplicationHttpCall() throws InterruptedException, ExecutionException {
+        // The application-to-application case reported from the field: application A receives a traced
+        // HTTP request and its function calls application B's endpoint through "async.http.request".
+        // AsyncHttpClient stamps the current trace context on the outgoing request (X-Trace-Id plus W3C
+        // "traceparent") and app B's REST automation ("tracing: true" on the endpoint) continues the
+        // SAME trace instead of starting a fresh one. Here /api/chain/probe (downstream.caller) is
+        // app A and /api/legacy/probe (header.probe) is app B - one JVM, but both hops go through the
+        // real HTTP stack, exactly like two separate applications.
+        String w3cTraceId = "4bf92f3577b34da6a3ce929d0e0e4736";
+        String traceparent = "00-" + w3cTraceId + "-00f067aa0ba902b7-01";
+        EventEmitter po = EventEmitter.getInstance();
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("GET").setHeader("accept", "application/json").setHeader("traceparent", traceparent);
+        req.setUrl("/api/chain/probe").setQueryParameter("port", String.valueOf(port));
+        req.setTargetHost("http://127.0.0.1:" + port);
+        EventEnvelope response = po.asyncRequest(new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST)
+                .setBody(req), RPC_TIMEOUT).toCompletionStage().toCompletableFuture().get();
+        assert response != null;
+        assertEquals(200, response.getStatus());
+        assertInstanceOf(Map.class, response.getBody());
+        MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
+        // hop 1: application A adopted the upstream W3C trace context at its HTTP ingress
+        assertEquals(w3cTraceId, map.getElement("caller_trace_id"));
+        // hop 2: application B continued the SAME trace across the app-to-app HTTP call
+        // (its endpoint captures a different legacy trace-id header name, so this also proves the
+        // W3C traceparent stamped by AsyncHttpClient takes precedence regardless of header naming)
+        assertEquals(w3cTraceId, map.getElement("probe_traceId"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void asyncHttpClientForwardsDeveloperSuppliedTraceparent() throws InterruptedException {
         // When this call is not being traced, an explicitly developer-set W3C "traceparent" is an intentional
         // act (e.g. handing a trace context to a 3rd-party system, or forwarding an upstream trace). The
