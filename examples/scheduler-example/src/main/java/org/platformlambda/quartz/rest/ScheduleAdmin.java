@@ -32,6 +32,9 @@ import org.platformlambda.scheduler.services.JobExecutor;
 import java.io.File;
 import java.util.*;
 
+// S5443 (publicly writable directory): /tmp/scheduler-states IS the sample resolver's state store by design -
+// throwaway local data; production resolvers persist to a database or distributed cache
+@SuppressWarnings("java:S5443")
 @PreLoad(route="v1.schedule.admin", instances=10)
 public class ScheduleAdmin implements TypedLambdaFunction<AsyncHttpRequest, EventEnvelope> {
     private static final Utility util = Utility.getInstance();

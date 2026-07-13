@@ -305,7 +305,7 @@ A log line from a traced function then carries the resolved `context` (from the 
     "timestamp": "2026-06-30T21:17:03Z"
   },
   "time": "2026-06-30 14:17:03.575",
-  "source": "com.accenture.demo.tasks.HelloException.handleEvent(HelloException.java:51)",
+  "source": "com.accenture.demo.tasks.HelloExceptionHandler.handleEvent(HelloExceptionHandler.java:51)",
   "thread": 297,
   "message": "User defined exception handler - status=404 error=Profile 100 not found"
 }

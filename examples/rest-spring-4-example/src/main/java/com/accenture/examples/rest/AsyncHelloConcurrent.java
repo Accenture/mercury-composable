@@ -56,7 +56,7 @@ public class AsyncHelloConcurrent {
             event.setHeader("request", "#"+(i+1));
             parallelEvents.add(event);
         }
-        return Mono.create(callback -> {
+        return Mono.create(callback ->
             po.asyncRequest(parallelEvents, 3000)
                 .onSuccess(events -> {
                     Map<String, Object> results = new HashMap<>();
@@ -74,7 +74,6 @@ public class AsyncHelloConcurrent {
                     }
                     callback.success(results);
                 })
-                .onFailure(ex -> callback.error(new AppException(408, ex.getMessage())));
-        });
+                .onFailure(ex -> callback.error(new AppException(408, ex.getMessage()))));
     }
 }

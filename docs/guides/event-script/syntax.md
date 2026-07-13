@@ -1812,7 +1812,7 @@ A top-level exception handler should not throw exception. Otherwise it may go in
 
 Therefore, we recommend that an exception handler should return regular result set in a PoJo or a Map object.
 
-An example of task-level exception handler is shown in the "HelloException.class" in the "task" folder
+An example of task-level exception handler is shown in the "HelloExceptionHandler.class" in the "task" folder
 where it set the status code in the result set so that the system can map the status code
 from the result set to the next task or to the HTTP output status code.
 

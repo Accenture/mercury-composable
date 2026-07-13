@@ -29,6 +29,9 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 
+// S5443 (publicly writable directory): /tmp/store IS the demo's simulated database by design -
+// throwaway local data, no confidentiality or integrity requirement
+@SuppressWarnings("java:S5443")
 @PreLoad(route="v1.delete.profile", instances=10)
 public class DeleteProfile implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
 

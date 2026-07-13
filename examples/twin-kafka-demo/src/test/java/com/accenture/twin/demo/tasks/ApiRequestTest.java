@@ -66,20 +66,29 @@ class ApiRequestTest {
 
     @Test
     void invalidRequestsAreRejected() {
+        // arguments are built OUTSIDE each assertThrows lambda so the single invocation that may
+        // throw is the function under test (java:S5778)
         // missing command header = a broken flow definition
+        Map<String, String> noHeaders = Map.of();
+        Map<String, Object> idOnly = Map.of("id", "1");
         AppException noCommand = assertThrows(AppException.class,
-                () -> api.handleEvent(Map.of(), Map.of("id", "1"), 1));
+                () -> api.handleEvent(noHeaders, idOnly, 1));
         assertEquals(500, noCommand.getStatus());
         // UPSERT without a profile body
+        Map<String, String> upsert = Map.of("command", "UPSERT");
+        Map<String, Object> emptyBody = new HashMap<>();
         AppException noProfile = assertThrows(AppException.class,
-                () -> api.handleEvent(Map.of("command", "UPSERT"), new HashMap<>(), 1));
+                () -> api.handleEvent(upsert, emptyBody, 1));
         assertEquals(400, noProfile.getStatus());
         // non-positive or non-numeric id
+        Map<String, String> read = Map.of("command", "READ");
+        Map<String, Object> nonNumericId = Map.of("id", "zero");
         AppException badId = assertThrows(AppException.class,
-                () -> api.handleEvent(Map.of("command", "READ"), Map.of("id", "zero"), 1));
+                () -> api.handleEvent(read, nonNumericId, 1));
         assertEquals(400, badId.getStatus());
+        Map<String, Object> negativeId = Map.of("id", "-5");
         AppException negative = assertThrows(AppException.class,
-                () -> api.handleEvent(Map.of("command", "READ"), Map.of("id", "-5"), 1));
+                () -> api.handleEvent(read, negativeId, 1));
         assertEquals(400, negative.getStatus());
     }
 }

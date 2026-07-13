@@ -52,6 +52,9 @@ import java.util.Map;
  *      header (type = expires, name = job_name)
  *      return true or false
  */
+// S5443 (publicly writable directory): /tmp/scheduler-states IS the sample resolver's state store by design -
+// throwaway local data; production resolvers persist to a database or distributed cache
+@SuppressWarnings("java:S5443")
 @PreLoad(route="v1.state.resolver")
 public class StateResolver implements TypedLambdaFunction<Map<String, Object>, Boolean> {
     private static final Logger log = LoggerFactory.getLogger(StateResolver.class);
@@ -67,7 +70,7 @@ public class StateResolver implements TypedLambdaFunction<Map<String, Object>, B
     private static final String END = "end";
     private static final String ELAPSED = "elapsed";
     private static final String NONE = "none";
-    private static final long TEN_SECONDS = 10 * 1000;
+    private static final long TEN_SECONDS = 10L * 1000;
 
     public StateResolver() {
         File dir = new File(TEMP_FOLDER);
