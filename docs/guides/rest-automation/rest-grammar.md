@@ -48,10 +48,16 @@ related:
 | `authentication` | no | a service route, or routing specs: `'default: svc'`, `'header: svc'`, `'header: value: svc'` |
 | `upload` | no | `true`/`false` (default false) — enable multipart upload |
 | `tracing` | no | `true`/`false` (default false) — enable distributed tracing |
+| `trace.id.header` | no | per-endpoint override of the global `http.trace.id.header` (default `X-Trace-Id`) — impedance matching for a caller that sends its own trace-id header name; a well-formed W3C `traceparent` still takes precedence |
+| `correlation.id.header` | no | per-endpoint override of the global `http.correlation.id.header` (default `X-Correlation-Id`) — impedance matching for a caller that sends its own business correlation-id header name |
 | `trust_all_cert` | no | `true`/`false` — **HTTPS relay only** |
 | `url_rewrite` | no | a list of **exactly two** strings `[from, to]` — **HTTP(S) relay only** |
 
 Boolean fields (`upload`, `tracing`, `trust_all_cert`) are written **unquoted**, e.g. `tracing: true`.
+The header-override values are header names, written quoted like other strings, e.g.
+`trace.id.header: 'X-Legacy-Trace'` (header capture is case-insensitive; precedence is
+per-entry > `application.properties` global > built-in default — see
+[Observability](../observability.md#impedance-matching)).
 
 ## Binding modes {#binding}
 

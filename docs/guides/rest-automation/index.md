@@ -115,6 +115,8 @@ A REST endpoint may look like this:
 | headers | Reference ID of a HEADERS<br>transformation section | 'header_1' |
 | authentication | *Optional*. Route the HTTP<br>request for authentication<br>is provided. | default is false |
 | tracing | Enable distributed tracing<br>when set to 'true' | default is false |
+| trace.id.header | *Optional*. Per-endpoint override of the<br>trace-id header name for this entry<br>(global default is `http.trace.id.header`,<br>normally `X-Trace-Id`) | 'X-Legacy-Trace' |
+| correlation.id.header | *Optional*. Per-endpoint override of the<br>business correlation-id header name<br>(global default is `http.correlation.id.header`,<br>normally `X-Correlation-Id`) | 'X-Legacy-Cid' |
 
 When more than one service route name is provided, the first one is the primary service and the system will
 deliver its output as HTTP response. The second one is the secondary service for listening to the REST endpoint.
@@ -196,6 +198,32 @@ three lines of log from "distributed trace" showing that the HTTP request is pro
 > *Note*: The "async.http.response" is a built-in function to send the HTTP response to the browser.
           The term "browser" also refers to a caller from an application ("client"). Therefore,
           browser and client can be used interchangeably.
+
+### Per-endpoint trace and correlation-id header names
+
+Not every caller uses the platform's default header names (`X-Trace-Id` for the trace-id,
+`X-Correlation-Id` for the business correlation-id). When one particular endpoint serves a legacy
+caller with its own convention, add the optional `trace.id.header` and/or `correlation.id.header`
+keys to that entry — they override the `application.properties` globals (`http.trace.id.header`,
+`http.correlation.id.header`) for this endpoint only:
+
+```yaml
+  - service: "legacy.orders"
+    methods: ['POST']
+    url: "/api/legacy/orders"
+    timeout: 15s
+    tracing: true
+    trace.id.header: 'X-Legacy-Trace'
+    correlation.id.header: 'X-Legacy-Cid'
+```
+
+Header capture is case-insensitive and the precedence is per-entry override, then the global,
+then the built-in default. A well-formed W3C `traceparent` header always takes precedence for the
+trace-id, so the override never interferes with OpenTelemetry-compliant callers. The correlation-id
+captured here is preserved end-to-end — it becomes the flow's `model.cid` and is available to every
+function via `PostOffice.getMyCorrelationId()`. See
+[Observability — header impedance matching](../observability.md#impedance-matching) for the full
+picture, including the Kafka counterpart and the two-convention bridging pattern.
 
 The optional `cors` and `headers` sections point to the specific CORS and HEADERS sections respectively.
 
