@@ -8,6 +8,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.8.2, 7/12/2026
+
+Patch release: the twin-kafka-demo now faithfully demonstrates cross-cluster correlation-id
+impedance matching, and Kafka client template externalization becomes an explicit opt-in.
+
+### Changed
+
+1. **twin-kafka-demo - correlation-id impedance matching.** The demo's two clusters now use
+   different business correlation-id header names (on-prem `X-Correlation-Id`, cloud
+   `X-Cloud-Correlation-Id`): each flow adapter reads its cluster's configured header into
+   `model.cid` and each bridge flow maps `model.cid` back out under the next cluster's name, so
+   the same correlation value crosses both clusters without leaking either cluster's header name.
+   The system-of-record's response leg now publishes through `secondary.kafka.notification` so the
+   response stays on the cloud cluster until the bridge consumes it. The README adds a trace/span
+   validation walkthrough. twin-kafka's own test suite gains a wire-level assertion that the bridge
+   does not leak the default header name.
+2. **Kafka client template externalization is opt-in.** The template location keys
+   (`kafka.producer.properties`, `kafka.consumer.properties`, `schema.registry.properties` and the
+   `secondary.*` counterparts) now default to the bundled classpath templates only - the
+   `file:/tmp/config/...` prefix is no longer a built-in fallback. A devops pipeline externalizes
+   configuration by pointing the location key at a rendered file, optionally with a classpath
+   fallback as a comma-separated list. **Deployments that relied on the implicit `/tmp/config`
+   fallback must now set the location keys explicitly.** Guides, configuration reference and
+   bundled template comments updated to match.
+
+### Fixed
+
+1. **CI test stability** - settled a mock-cloud loopback race in the cloud-connector
+   ServiceRegistryEdgeTest (test-only; no production code change).
+
+---
 ## Version 4.8.1, 7/11/2026
 
 Maintenance and quality release: dependency security updates (closes the Jackson dependabot
