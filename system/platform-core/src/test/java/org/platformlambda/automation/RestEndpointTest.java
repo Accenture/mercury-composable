@@ -184,6 +184,9 @@ class RestEndpointTest extends TestBase {
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         // AsyncHttpClient forwarded the business correlation-id downstream; the service echoes it back
         assertEquals(correlationId, map.getElement("headers.x-correlation-id"));
+        // ... and stamped the trace id under the default X-Trace-Id header - even for a non-W3C trace id
+        // ("201" is not 32-hex, so no traceparent can be formed and X-Trace-Id is the only carrier)
+        assertEquals("201", map.getElement("headers.x-trace-id"));
     }
 
     @SuppressWarnings("unchecked")
