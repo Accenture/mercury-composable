@@ -63,6 +63,30 @@
 
 ## Key Decisions
 
+- **Release 4.8.2 — SHIPPED 2026-07-12 (tag `v4.8.2` on merge commit `6c024311`; PRs #164-#166).**
+  Patch release: twin-kafka-demo correlation-id impedance matching + opt-in template
+  externalization. Cross-vendor loop precedent: GitHub Copilot authored the patch (its session log
+  2026-07-13-001009), crashed mid-task; Claude Code reviewed all edits, completed the crash gap
+  (twin-kafka.md table, configuration-reference rows, sync-over-async properties) and committed with
+  dual attribution (one Co-Authored-By per collaborator per AGENTS.md). **Durable facts:**
+  (1) **Impedance matching is the demo pattern:** each cluster keeps its own business
+  correlation-id header (on-prem X-Correlation-Id, cloud X-Cloud-Correlation-Id); adapters read the
+  cluster header into model.cid, flows map model.cid back out under the NEXT cluster's name — never
+  leak a cluster's header name across the bridge (twin-kafka tests assert this at the wire level).
+  (2) **Template externalization is OPT-IN** (scope: minimalist-kafka/twin-kafka family only):
+  KafkaClientConfig + SecondaryKafkaAutoStart location defaults are classpath-only; devops
+  pipelines set the location key to a rendered file, optionally with a classpath fallback chain —
+  field migration note in the 4.8.2 CHANGELOG (deployments relying on the implicit /tmp/config
+  fallback must set keys explicitly). Legacy connector stack + mini-scheduler keep their own
+  file-first conventions. (3) **SOR response leg publishes via secondary.kafka.notification** —
+  the demo response stays on the cloud cluster until the bridge consumes it; Spring profiles are
+  logical personalities, not security boundaries (README documents that real isolation needs
+  separate deployment/credentials/network policy). (4) **Release-sweep gotcha:** when the outgoing
+  version is a substring of a dependency version (classgraph 4.8.184 contains "4.8.1"), the perl
+  sweep needs a digit lookahead `(?!\d)` — not every bump is naturally safe.
+  See [[release-4-8-1-shipped]] for the prior cycle's facts.
+  <!-- id: release-4-8-2-shipped | created: 2026-07-12 | last_used: 2026-07-12 | uses: 1 | tier: active | origin: 2026-07-13-014037 -->
+
 - **Release 4.8.1 — SHIPPED 2026-07-11 (tag `v4.8.1` on merge commit `3d226c5b`; PRs #159-#161).**
   Maintenance release: dependency security updates (Jackson 2.22.1 closed dependabot/28; log4j2/
   netty/tomcat/gson/vertx refreshed), twin-kafka-demo, SimpleRandomPartitioner, DSA retirement and
