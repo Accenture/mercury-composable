@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-13 | agent: Claude Code (2026-07-13-221521)
+- **last_session:** 2026-07-13 | agent: Claude Code (2026-07-13-230916)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -315,6 +315,14 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (release in flight — 2026-07-13) **v4.8.4 bumped for field deployment; TAG DEFERRED.** Branch
+  `chore/release-4.8.4` (commit `8a420f42`) carries PR #176 (secondary.kafka.health, 5 health-check
+  workers, Minimalist Kafka guide rename). Same deferred-tag flow as 4.8.3: after merge Eric syncs
+  main to the field; **do NOT tag v4.8.4 until the field pipeline passes**; then tag the merge
+  commit + release text + memory closure superseding this thread.
+  <!-- id: thread-release-4-8-4-tag-deferred | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-230916 -->
+
 
 - [x] (release in flight — 2026-07-13; CLOSED same day) **v4.8.3 bumped for field pipeline test; TAG
   DEFERRED.** The deferred-tag flow completed: field pipeline PASSED (Snyk + Sonar), the touch-up
