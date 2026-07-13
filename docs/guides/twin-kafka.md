@@ -158,6 +158,8 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 | `secondary.schema.registry.url` | - | Secondary cluster's Schema Registry URL; unset = schema features off on that cluster. |
 | `secondary.schema.registry.properties` | `classpath:/secondary-schema-registry.properties` | Secondary registry client template - auth/SSL passed verbatim to the Confluent client. Set to an external file path (or explicit fallback list) to externalize. |
 | `secondary.schema.registry.cache.ttl` | `30m` | Secondary schema cache TTL (the cache is separate from the primary's - schema ids are per-registry). |
+| `secondary.kafka.health.timeout` | falls back to `kafka.health.timeout` (`5s`) | Probe timeout for `secondary.kafka.health`. |
+| `secondary.kafka.health.startup.grace` | falls back to `kafka.health.startup.grace` (`30s`) | Start-up grace for `secondary.kafka.health` (placeholder healthy status while the client warms up). |
 | `secondary.kafka.correlation.id.header` | falls back to `kafka.correlation.id.header` (`cid`) | Outbound correlation-id header on the secondary cluster. |
 | `secondary.kafka.trace.id.header` | falls back to `kafka.trace.id.header` (unset) | Optional outbound trace-id header on the secondary cluster. |
 
@@ -166,6 +168,22 @@ The retry/dead-letter tuning keys (`kafka.dlq.timeout.ms`, `kafka.flow.max.retri
 options in the secondary adapter YAML are identical to the [primary's](kafka-flow-adapter.md#adapter-yaml) -
 including `schema.enabled`, `dlq-topic`, and the `trace.id.header` / `correlation.id.header`
 impedance-matching overrides.
+
+## Health check {#health}
+
+The module ships **`secondary.kafka.health`** - the twin of minimalist-kafka's
+[`kafka.health`](kafka-flow-adapter.md#health), probing the secondary cluster through the secondary
+consumer template with the same no-ACL Metadata request, start-up grace, and HTTP 503 semantics.
+A bridge is only healthy when **both** clusters are reachable, so a dual-cluster application lists
+both dependencies:
+
+```properties
+mandatory.health.dependencies=kafka.health, secondary.kafka.health
+```
+
+The `/health` dependency list distinguishes the two by service name (`kafka` vs `secondary.kafka`,
+each with its cluster's `bootstrap.servers` as `href`). An application that treats the secondary
+cluster as best-effort can move `secondary.kafka.health` to `optional.health.dependencies` instead.
 
 ## See also {#see-also}
 

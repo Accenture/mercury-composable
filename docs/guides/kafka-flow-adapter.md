@@ -318,6 +318,9 @@ check is live. Two keys tune the behavior: `kafka.health.timeout` (default `5s`)
 `kafka.health.startup.grace` (default `30s`) - see the
 [Configuration Reference](configuration-reference.md#observability).
 
+Dual-cluster applications get a twin for the second cluster: [twin-kafka](twin-kafka.md#health)
+ships `secondary.kafka.health`, so a bridge lists both dependencies.
+
 ## Schema Registry: typed payloads (opt-in) {#schema}
 
 The default wire contract is raw `byte[]`, which keeps the building blocks serializer-free. To interoperate
