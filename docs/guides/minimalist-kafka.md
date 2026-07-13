@@ -1,5 +1,5 @@
 ---
-title: Kafka Flow Adapter
+title: Minimalist Kafka
 summary: The opt-in minimalist-kafka library — route Kafka topics into Event Script flows (inbound) and
   publish events to Kafka (outbound), with externalized client config, per-binding consumer groups,
   regex topic subscription, partition pinning, bounded retry plus per-binding dead-letter topics, and a
@@ -15,10 +15,10 @@ keywords: [kafka, flow adapter, minimalist-kafka, consumer, producer, dead lette
   oauth2, bearer auth, client credentials, token endpoint, allowed.urls, schema-registry.properties]
 ---
 
-# Kafka Flow Adapter
+# Minimalist Kafka
 
-*Guide: route Kafka topics into Event Script flows, and publish events to Kafka, with the opt-in
-`minimalist-kafka` library.*
+*Guide: the opt-in `minimalist-kafka` library — route Kafka topics into Event Script flows, publish
+events to Kafka, and health-check the cluster.*
 
 > **At a glance**
 >

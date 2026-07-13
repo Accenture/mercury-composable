@@ -147,7 +147,7 @@ trace continuity — is identical):
 
 | Aspect | How |
 |--------|-----|
-| **Producer is subject-driven** | the flows publish with a `subject: sync-demo-json` header (no explicit `version`, so it defaults to `latest`); `simple.kafka.notification` resolves the global schema id and type from that subject internally, then serializes the body into the Confluent wire format using the **pre-registered** schema. The producer never needs a naming strategy — see [the Kafka Flow Adapter guide](../../docs/guides/kafka-flow-adapter.md). |
+| **Producer is subject-driven** | the flows publish with a `subject: sync-demo-json` header (no explicit `version`, so it defaults to `latest`); `simple.kafka.notification` resolves the global schema id and type from that subject internally, then serializes the body into the Confluent wire format using the **pre-registered** schema. The producer never needs a naming strategy — see [the Minimalist Kafka guide](../../docs/guides/minimalist-kafka.md). |
 | **Schema registered out-of-band** | the registry is seeded from `registry/1.json` (subject `sync-demo-json`, version 1); the producer resolves the subject to an id and the serializer fetches the schema. Mirrors enterprise reality, where schemas are governed artifacts — no runtime registration in the app. |
 | **Consumer decodes by id** | the `json-topic-1` / `json-topic-2` adapter bindings set `schema.enabled: true`, so the adapter reads the embedded id, fetches the schema, and hands the flow a decoded **Map**. |
 | **Map-input task variants** | because the decoded body is a Map, `system.of.record.json` and `soa.reply.json` take a `Map` (vs the byte[] `system.of.record` / `soa.reply`); they reuse the same logic. |
@@ -212,7 +212,7 @@ accepts the residual risk. Until then, `SchemaType.PROTOBUF` is still recognized
 Javadoc) so an attempt to use it fails clearly (`UnsupportedOperationException`), never silently.
 
 We're noting this here rather than quietly dropping it, so anyone evaluating this library knows exactly
-what's supported and why — see also the [kafka-flow-adapter guide](../../docs/guides/kafka-flow-adapter.md#schema-registry-integration).
+what's supported and why — see also the [Minimalist Kafka guide](../../docs/guides/minimalist-kafka.md#schema-registry-integration).
 
 That leaves **two** Confluent wire formats — **JSON Schema and Avro** — over one subject-driven produce +
 `schema.enabled` consume path, differing only by the `subject` header. (For context: industry usage of

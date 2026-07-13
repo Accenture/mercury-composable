@@ -43,7 +43,7 @@ nav:
     - Observability: guides/observability.md
     - Spring Boot Integration: guides/spring-boot.md
     - Event over HTTP: guides/event-over-http.md
-    - Kafka Flow Adapter: guides/kafka-flow-adapter.md
+    - Minimalist Kafka: guides/minimalist-kafka.md
     - Twin Kafka (dual cluster): guides/twin-kafka.md
     - Schema Registry Mock: guides/schema-registry-mock.md
 

@@ -262,10 +262,10 @@ is on the classpath.
 
 ---
 
-## Kafka Flow Adapter (`minimalist-kafka` library) {#kafka-flow-adapter}
+## Minimalist Kafka library {#kafka-flow-adapter}
 
 The opt-in `minimalist-kafka` library routes Kafka topics into Event Script flows and publishes events to
-Kafka. See the [Kafka Flow Adapter guide](kafka-flow-adapter.md). The inbound adapter starts only when
+Kafka. See the [Kafka Flow Adapter guide](minimalist-kafka.md). The inbound adapter starts only when
 `yaml.kafka.flow.adapter` is set; the outbound `simple.kafka.notification` function registers automatically.
 
 | Key | Type | Default | Description |
@@ -276,8 +276,8 @@ Kafka. See the [Kafka Flow Adapter guide](kafka-flow-adapter.md). The inbound ad
 | `kafka.dlq.timeout.ms` | `long` (ms) | `10000` | Confirm-write timeout for the dead-letter publish (broker ack). Flow processing has no timeout knob — the flow's own `ttl` is the deadline (Kafka is asynchronous). |
 | `kafka.flow.max.retries` | `int` | `3` | Retry attempts on a flow-processing failure before dead-lettering. |
 | `kafka.flow.retry.backoff.ms` | `long` (ms) | `500` | Pause between retry attempts. |
-| `schema.registry.url` | `String` (URL) | — | Confluent Schema Registry URL. Unset = schema features off (raw `byte[]`); set to enable the [Schema Registry integration](kafka-flow-adapter.md#schema) (JSON Schema / Avro — Protobuf is [not currently supported](kafka-flow-adapter.md#schema)). |
-| `schema.registry.properties` | `String` (comma-sep paths) | `classpath:/schema-registry.properties` | Registry client template location; externalize the same way as the producer template. Entries pass verbatim to the Confluent client — [authentication](kafka-flow-adapter.md#schema-auth) (`bearer.auth.*` OAuth 2.0, basic auth) and SSL. OAuth token endpoint URLs found in a template are auto-registered on the JVM `org.apache.kafka.sasl.oauthbearer.allowed.urls` allow-list. |
+| `schema.registry.url` | `String` (URL) | — | Confluent Schema Registry URL. Unset = schema features off (raw `byte[]`); set to enable the [Schema Registry integration](minimalist-kafka.md#schema) (JSON Schema / Avro — Protobuf is [not currently supported](minimalist-kafka.md#schema)). |
+| `schema.registry.properties` | `String` (comma-sep paths) | `classpath:/schema-registry.properties` | Registry client template location; externalize the same way as the producer template. Entries pass verbatim to the Confluent client — [authentication](minimalist-kafka.md#schema-auth) (`bearer.auth.*` OAuth 2.0, basic auth) and SSL. OAuth token endpoint URLs found in a template are auto-registered on the JVM `org.apache.kafka.sasl.oauthbearer.allowed.urls` allow-list. |
 | `schema.registry.cache.ttl` | duration | `30m` | Time-to-live for an entry in the in-memory (platform `ManagedCache`) cache of schemas fetched by id. Positive results only — a not-found id is never cached, so a newly-registered schema is visible immediately. The TTL bounds how long a cached schema is reused before re-fetching; `30m` lets schema changes be picked up without a pod restart (lengthen it in production where schemas change rarely). Cleared at startup (rebuildable). |
 | `yaml.secondary.kafka.flow.adapter` | `String` (location) | — | [twin-kafka](twin-kafka.md): secondary-cluster adapter config location; unset = secondary inbound adapter off. |
 | `secondary.kafka.producer.properties` / `secondary.kafka.consumer.properties` | `String` (path, or comma-sep fallback list) | `classpath:/secondary-kafka-*.properties` | [twin-kafka](twin-kafka.md): secondary-cluster client template location; same mechanics as the primary templates. |
@@ -299,11 +299,11 @@ Per-binding fields in `kafka-flow-adapter.yaml` (all `${ENV_VAR:default}`-substi
 literal topic, required for `topic-pattern`); `partition` (optional; pins one partition via manual
 assignment, mutually exclusive with `topic-pattern`); `schema.enabled` (optional `boolean`, default `false`;
 when `true`, decode the Confluent-framed value to a `Map` before routing — see the
-[Schema Registry integration](kafka-flow-adapter.md#schema)); `dlq-topic` (optional; pre-provisioned
+[Schema Registry integration](minimalist-kafka.md#schema)); `dlq-topic` (optional; pre-provisioned
 dead-letter topic for this binding, used verbatim — no DLQ if omitted); `auto-commit` (optional `boolean`,
 default `false`; `true` uses Kafka-native auto-commit instead of manual commit-after-process); and
 `max-poll-records` (optional `int`; overrides the delivery mode's default of `1` for manual-commit or `500`
-for auto-commit). See the [Kafka Flow Adapter guide](kafka-flow-adapter.md#adapter-yaml) for the full
+for auto-commit). See the [Kafka Flow Adapter guide](minimalist-kafka.md#adapter-yaml) for the full
 per-field rationale and validation rules.
 
 ---

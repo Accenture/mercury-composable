@@ -10,7 +10,7 @@ keywords: [twin-kafka, dual cluster, bridge, secondary kafka, secondary.kafka.no
   yaml.secondary.kafka.flow.adapter, secondary-kafka-producer.properties, on-prem, cloud,
   confluent, apache kafka, schema registry, kafka-standalone, dual.servers]
 related:
-  - guides/kafka-flow-adapter.md
+  - guides/minimalist-kafka.md
   - guides/configuration-reference.md
   - guides/reserved-names-and-headers.md
 ---
@@ -23,7 +23,7 @@ opt-in `twin-kafka` library.*
 > **At a glance**
 >
 > - **What** - `twin-kafka` adds a SECOND Kafka cluster to an application built on
->   [minimalist-kafka](kafka-flow-adapter.md): a **secondary notification function**
+>   [minimalist-kafka](minimalist-kafka.md): a **secondary notification function**
 >   (`secondary.kafka.notification`), an optional **secondary flow adapter**
 >   (`yaml.secondary.kafka.flow.adapter`), and an optional **secondary Schema Registry** - each the
 >   exact counterpart of its primary sibling.
@@ -132,7 +132,7 @@ the embedded id would be meaningless on the other registry.
 
 ## Local development: one helper, two brokers {#local-dev}
 
-The [`kafka-standalone`](kafka-flow-adapter.md#client-config) helper can emulate the dual-cluster
+The [`kafka-standalone`](minimalist-kafka.md#client-config) helper can emulate the dual-cluster
 topology in one process - set `dual.servers=true` (in its `application.properties` or as
 `-Ddual.servers=true`) and it starts broker 1 on `127.0.0.1:9092` and broker 2 on `127.0.0.1:8092`
 with separate log directories:
@@ -165,14 +165,14 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 
 The retry/dead-letter tuning keys (`kafka.dlq.timeout.ms`, `kafka.flow.max.retries`,
 `kafka.flow.retry.backoff.ms`) are application-level policy shared by both adapters. Per-binding
-options in the secondary adapter YAML are identical to the [primary's](kafka-flow-adapter.md#adapter-yaml) -
+options in the secondary adapter YAML are identical to the [primary's](minimalist-kafka.md#adapter-yaml) -
 including `schema.enabled`, `dlq-topic`, and the `trace.id.header` / `correlation.id.header`
 impedance-matching overrides.
 
 ## Health check {#health}
 
 The module ships **`secondary.kafka.health`** - the twin of minimalist-kafka's
-[`kafka.health`](kafka-flow-adapter.md#health), probing the secondary cluster through the secondary
+[`kafka.health`](minimalist-kafka.md#health), probing the secondary cluster through the secondary
 consumer template with the same no-ACL Metadata request, start-up grace, and HTTP 503 semantics.
 A bridge is only healthy when **both** clusters are reachable, so a dual-cluster application lists
 both dependencies:
@@ -188,6 +188,6 @@ cluster as best-effort can move `secondary.kafka.health` to `optional.health.dep
 ## See also {#see-also}
 
 - [twin-kafka-demo](https://github.com/Accenture/mercury-composable/tree/main/examples/twin-kafka-demo) - runnable worked example of the bridge pattern.
-- [Kafka Flow Adapter](kafka-flow-adapter.md) - the foundation library this module extends.
+- [Minimalist Kafka](minimalist-kafka.md) - the foundation library this module extends.
 - [Configuration Reference](configuration-reference.md#kafka-flow-adapter) - every key in one place.
 - [Reserved names and headers](reserved-names-and-headers.md) - trace/correlation header conventions.

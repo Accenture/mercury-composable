@@ -126,7 +126,7 @@ Per-entry overrides, for a single application that faces callers with different 
 
 - a **rest.yaml** endpoint entry accepts `trace.id.header` / `correlation.id.header`;
 - a **kafka-flow-adapter.yaml** consumer binding accepts the same two keys
-  ([Kafka Flow Adapter](kafka-flow-adapter.md#adapter-yaml));
+  ([Minimalist Kafka](minimalist-kafka.md#adapter-yaml));
 - [twin-kafka](twin-kafka.md) adds `secondary.kafka.trace.id.header` / `secondary.kafka.correlation.id.header`
   globals when the second Kafka cluster follows its own convention.
 
