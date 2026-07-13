@@ -58,6 +58,15 @@ rest:
     trace.id.header: "X-Legacy-Trace"
     correlation.id.header: "X-Legacy-Cid"
 
+  # Simulates application A in an application-to-application HTTP call: this traced endpoint's
+  # function calls /api/legacy/probe ("application B") through async.http.request, so tests can
+  # assert that one distributed trace continues across the HTTP hop between the two.
+  - service: "downstream.caller"
+    methods: ['GET']
+    url: "/api/chain/probe"
+    timeout: 15s
+    tracing: true
+
   - service: "hello.mock"
     methods: ['POST']
     url: "/api/upload/demo"
