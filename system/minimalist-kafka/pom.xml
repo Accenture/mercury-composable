@@ -26,6 +26,14 @@
         <java.version>21</java.version>
         <netty.version>4.2.16.Final</netty.version>
         <jackson-2-bom.version>2.22.1</jackson-2-bom.version>
+        <log4j2.version>2.26.1</log4j2.version>
+        <!-- Security override: the Confluent registry client pulls httpclient5, whose paired
+             httpcore5/httpcore5-h2 carries a Snyk HIGH (CWE-770, resource allocation without
+             throttling) at Spring Boot's managed 5.4.2. Spring Boot's dependencyManagement pins
+             the version (management beats nearest-wins, so a direct pin here would not reach
+             consumers) - override its property instead. Every module that resolves the Confluent
+             chain needs this same override. Remove when Spring Boot's managed version reaches 5.4.3. -->
+        <httpcore5.version>5.4.3</httpcore5.version>
         <!-- Pin the Kafka client to the same version as the embedded broker used in tests
              (kafka_2.13) to avoid client/broker protocol skew. -->
         <kafka.version>4.2.0</kafka.version>
@@ -44,7 +52,7 @@
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-bom</artifactId>
-                <version>2025.0.5</version>
+                <version>2025.0.6</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

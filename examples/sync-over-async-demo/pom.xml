@@ -22,6 +22,11 @@
         <netty.version>4.2.16.Final</netty.version>
         <jackson-2-bom.version>2.22.1</jackson-2-bom.version>
         <log4j2.version>2.26.1</log4j2.version>
+        <!-- Security override for the transitive httpcore5/httpcore5-h2 (Snyk HIGH, CWE-770) pulled
+             in via minimalist-kafka's Confluent registry client. Spring Boot's dependencyManagement
+             pins the vulnerable 5.4.2 (management beats nearest-wins), so each module resolving the
+             Confluent chain must override the property itself - see minimalist-kafka's pom. -->
+        <httpcore5.version>5.4.3</httpcore5.version>
         <kafka.version>4.2.0</kafka.version>
         <gson.version>2.14.0</gson.version>
         <java.version>21</java.version>
@@ -39,7 +44,7 @@
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-bom</artifactId>
-                <version>2025.0.5</version>
+                <version>2025.0.6</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
