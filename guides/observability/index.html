@@ -125,6 +125,14 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#w3c">W3C Trace Context (OpenTelemetry compliance)</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#impedance-matching">Header impedance matching (trace-id and correlation-id)</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#impedance-config">The configurable names</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#impedance-bridge">Bridging two conventions</a>
+    </li>
+        </ul>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#export">Exporting telemetry</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#forwarder">The forwarder extension point</a>
@@ -316,7 +324,7 @@ standard <code>traceparent</code> header:</p>
 </ul>
 <p>The <code>X-Trace-Id</code> header carries the trace ID for callers not yet on W3C Trace Context. The framework does not
 echo the trace ID back to the HTTP client. (The correlation-id — a separate concern — is documented in
-<a href="../reserved-names-and-headers/#correlation-id-propagation">Reserved Names &amp; Headers</a>.)</p>
+<a href="../reserved-names-and-headers/#reserved-http-header-names">Reserved Names &amp; Headers</a>.)</p>
 <blockquote>
 <p><strong>Let the framework manage trace headers — don't set them yourself.</strong> Inside a traced flow or function the
 platform injects <code>X-Trace-Id</code> and <code>traceparent</code> on every outbound HTTP call from the current trace context,
@@ -326,6 +334,88 @@ endpoint with <code>tracing: false</code>, or a call made outside a trace): ther
 untouched — the intended escape hatch for handing a trace context to a third-party system, or for
 unit-testing an external endpoint with full control over its request headers.</p>
 </blockquote>
+<h2 id="impedance-matching">Header impedance matching (trace-id and correlation-id)</h2>
+<p>Not every caller names its headers the way this framework does. An enterprise gateway may have standardized on
+its own trace header long before W3C Trace Context; a legacy Kafka producer may stamp <code>X-Correlation-ID</code>; and
+two systems bridged by one application rarely agree with each other. Rather than forcing every party to rename,
+the platform <strong>matches the impedance at the edge</strong>: the header <em>names</em> are configuration, while everything
+downstream keeps working with the same two ids —</p>
+<ul>
+<li>the <strong>trace id</strong> (with its W3C <code>traceparent</code> context) drives the distributed tracing on this page;</li>
+<li>the <strong>business correlation-id</strong> is a separate concern — captured at the edge, preserved as the flow's
+  <code>model.cid</code>, and exposed to every function via <code>PostOffice.getMyCorrelationId()</code>
+  (see <a href="../reserved-names-and-headers/#reserved-http-header-names">Reserved Names &amp; Headers</a>).</li>
+</ul>
+<h3 id="impedance-config">The configurable names</h3>
+<p>Global defaults in <code>application.properties</code>:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Key</th>
+<th style="text-align: left;">Default</th>
+<th style="text-align: left;">Where it applies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>http.trace.id.header</code></td>
+<td style="text-align: left;"><code>X-Trace-Id</code></td>
+<td style="text-align: left;">REST automation inbound (when no <code>traceparent</code> is present) and the async HTTP client outbound</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>http.correlation.id.header</code></td>
+<td style="text-align: left;"><code>X-Correlation-Id</code></td>
+<td style="text-align: left;">HTTP edge capture inbound; async HTTP client outbound</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>kafka.trace.id.header</code></td>
+<td style="text-align: left;"><em>(unset)</em></td>
+<td style="text-align: left;">Kafka Flow Adapter inbound fallback; <code>simple.kafka.notification</code> outbound, stamped alongside <code>traceparent</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>kafka.correlation.id.header</code></td>
+<td style="text-align: left;"><code>cid</code></td>
+<td style="text-align: left;">Kafka Flow Adapter inbound; <code>simple.kafka.notification</code> outbound</td>
+</tr>
+</tbody>
+</table>
+<p>Per-entry overrides, for a single application that faces callers with different conventions:</p>
+<ul>
+<li>a <strong>rest.yaml</strong> endpoint entry accepts <code>trace.id.header</code> / <code>correlation.id.header</code>;</li>
+<li>a <strong>kafka-flow-adapter.yaml</strong> consumer binding accepts the same two keys
+  (<a href="../kafka-flow-adapter/#adapter-yaml">Kafka Flow Adapter</a>);</li>
+<li><a href="../twin-kafka/">twin-kafka</a> adds <code>secondary.kafka.trace.id.header</code> / <code>secondary.kafka.correlation.id.header</code>
+  globals when the second Kafka cluster follows its own convention.</li>
+</ul>
+<p><strong>Precedence:</strong> per-entry override &gt; <code>application.properties</code> global &gt; built-in default. A well-formed W3C
+<code>traceparent</code> <strong>always</strong> takes precedence for the trace id, whatever the header naming — so adopting these
+overrides never breaks OpenTelemetry-compliant callers. The full key reference lives in the
+<a href="../configuration-reference/#observability">Configuration Reference</a>.</p>
+<pre><code class="language-yaml"># rest.yaml - one endpoint serves a legacy caller that sends its own header names
+  - service: &quot;legacy.orders&quot;
+    methods: ['POST']
+    url: &quot;/api/legacy/orders&quot;
+    timeout: 15s
+    tracing: true
+    trace.id.header: &quot;X-Legacy-Trace&quot;
+    correlation.id.header: &quot;X-Legacy-Cid&quot;
+</code></pre>
+<h3 id="impedance-bridge">Bridging two conventions</h3>
+<p>When one application connects two systems that each own a correlation-id convention (for example a
+dual-cluster Kafka bridge), keep each system's header name strictly on its own side:</p>
+<ol>
+<li>the <strong>inbound</strong> adapter binding declares that system's <code>correlation.id.header</code>, so the id lands in
+   <code>model.cid</code>;</li>
+<li>the <strong>flow</strong> maps it back out under the <em>next</em> system's name — <code>'model.cid -&gt; header.X-Their-Header'</code> —
+   on the outbound data mapping;</li>
+<li>neither system ever sees the other's header name: the id <em>value</em> is what crosses the bridge, and the trace
+   context (<code>traceparent</code>) rides alongside automatically, keeping one continuous distributed trace end to end.</li>
+</ol>
+<p>The <a href="../twin-kafka/">twin-kafka guide</a> covers this pattern across two Kafka clusters, and the
+<a href="https://github.com/Accenture/mercury-composable/tree/main/examples/twin-kafka-demo"><code>twin-kafka-demo</code></a> worked
+example runs it end to end: an on-prem system's <code>X-Correlation-Id</code> and a cloud system's
+<code>X-Cloud-Correlation-Id</code> carry the same id through one bridged transaction, with each header name confined to
+its own cluster.</p>
 <h2 id="export">Exporting telemetry</h2>
 <h3 id="forwarder">The forwarder extension point</h3>
 <p>By default the trace dataset is logged. To ship it elsewhere, register a function at the reserved route
