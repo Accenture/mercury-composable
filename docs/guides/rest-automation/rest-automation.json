@@ -20,6 +20,8 @@
     { "field": "authentication", "required": false, "meaning": "a service route, or routing specs: 'default: svc' / 'header: svc' / 'header: value: svc'" },
     { "field": "upload", "required": false, "meaning": "true/false (default false) - enable multipart upload" },
     { "field": "tracing", "required": false, "meaning": "true/false (default false) - enable distributed tracing" },
+    { "field": "trace.id.header", "required": false, "meaning": "per-endpoint override of the global http.trace.id.header (default X-Trace-Id) - header name (quoted string) for a caller with its own trace-id header convention; a well-formed W3C traceparent still takes precedence" },
+    { "field": "correlation.id.header", "required": false, "meaning": "per-endpoint override of the global http.correlation.id.header (default X-Correlation-Id) - header name (quoted string) for a caller with its own business correlation-id header convention" },
     { "field": "trust_all_cert", "required": false, "meaning": "true/false - HTTPS relay only" },
     { "field": "url_rewrite", "required": false, "meaning": "list of exactly two strings [from, to] - HTTP(S) relay only" }
   ],
