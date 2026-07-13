@@ -316,11 +316,11 @@
 
 ## Open Threads
 
-- [ ] (release in flight — 2026-07-13) **v4.8.4 bumped for field deployment; TAG DEFERRED.** Branch
-  `chore/release-4.8.4` (commit `8a420f42`) carries PR #176 (secondary.kafka.health, 5 health-check
-  workers, Minimalist Kafka guide rename). Same deferred-tag flow as 4.8.3: after merge Eric syncs
-  main to the field; **do NOT tag v4.8.4 until the field pipeline passes**; then tag the merge
-  commit + release text + memory closure superseding this thread.
+- [ ] (release in flight — 2026-07-13) **v4.8.4 bumped for field deployment; NORMAL release flow.**
+  Branch `chore/release-4.8.4` (commit `8a420f42`, PR #177) carries PR #176 (secondary.kafka.health,
+  5 health-check workers, Minimalist Kafka guide rename). Eric (2026-07-13): the 4.8.3 deferred-tag
+  flow was SPECIFIC to the Snyk rejection — 4.8.4 follows normal procedure: **tag v4.8.4 on the merge
+  commit right after PR #177 merges** + release text + memory closure superseding this thread.
   <!-- id: thread-release-4-8-4-tag-deferred | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-230916 -->
 
 
