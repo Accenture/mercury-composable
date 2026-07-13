@@ -25,6 +25,7 @@ import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.MultiLevelMap;
+import org.platformlambda.core.util.Utility;
 
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -43,7 +44,7 @@ class FlowTest extends TestBase {
         PostOffice po = PostOffice.trackable("unit.test", "1000", "TEST /flow/tests");
         // try to retrieve a non-exist profile will get HTTP-404
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET")
+        request.setTargetHost(host).setMethod("GET")
                 .setHeader("accept", "application/json")
                 .setUrl("/api/profile/no-such-profile");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -56,7 +57,7 @@ class FlowTest extends TestBase {
         // create a profile
         Profile profile = Profile.create(300, "Peter", "100 World Blvd", "888-123-0000");
         AsyncHttpRequest request1 = new AsyncHttpRequest();
-        request1.setTargetHost(HOST).setMethod("POST")
+        request1.setTargetHost(host).setMethod("POST")
                 .setHeader("content-type", "application/json")
                 .setHeader("accept", "application/json")
                 .setBody(profile).setUrl("/api/profile");
@@ -71,10 +72,10 @@ class FlowTest extends TestBase {
         assertEquals("***", mm1.getElement("profile.telephone"));
         assertEquals("CREATE", mm1.getElement("type"));
         // since "create profile" write operation is asynchronous, let's give it a brief moment to complete
-        Thread.sleep(1000);
+        Utility.getInstance().sleep(1000);
         // retrieve the profile
         AsyncHttpRequest request2 = new AsyncHttpRequest()
-                .setTargetHost(HOST).setMethod("GET")
+                .setTargetHost(host).setMethod("GET")
                 .setHeader("accept", "application/json")
                 .setUrl("/api/profile/"+profileId);
         EventEnvelope req2 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request2);
@@ -88,7 +89,7 @@ class FlowTest extends TestBase {
         assertEquals("888-123-0000", mm2.getElement("telephone"));
         // delete the profile
         AsyncHttpRequest request3 = new AsyncHttpRequest()
-                .setTargetHost(HOST).setMethod("DELETE")
+                .setTargetHost(host).setMethod("DELETE")
                 .setHeader("accept", "application/json")
                 .setUrl("/api/profile/"+profileId);
         EventEnvelope req3 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request3);
@@ -107,7 +108,7 @@ class FlowTest extends TestBase {
         PostOffice po = PostOffice.trackable("unit.test", "2000", "TEST /health/check");
         // try to retrieve a non-exist profile will get HTTP-404
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET")
+        request.setTargetHost(host).setMethod("GET")
                 .setHeader("accept", "application/json")
                 .setUrl("/health");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);

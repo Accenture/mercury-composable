@@ -33,14 +33,14 @@ public class TestBase {
     private static final AtomicInteger startCounter = new AtomicInteger(0);
     protected static final CryptoApi crypto = new CryptoApi();
     protected static boolean strongCrypto;
-    protected static String HOST;
+    protected static String host;
 
     @BeforeAll
     static void setup() {
         // execute only once
         if (startCounter.incrementAndGet() == 1) {
             AppConfigReader config = AppConfigReader.getInstance();
-            HOST = "http://127.0.0.1:" + config.getProperty("rest.server.port", "8100");
+            host = "http://127.0.0.1:" + config.getProperty("rest.server.port", "8100");
             AutoStart.main(new String[0]);
             strongCrypto = crypto.strongCryptoSupported();
             if (!strongCrypto) {

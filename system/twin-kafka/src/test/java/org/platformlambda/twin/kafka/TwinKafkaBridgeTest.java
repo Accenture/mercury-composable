@@ -157,14 +157,14 @@ class TwinKafkaBridgeTest {
                 "business correlation-id survived both Kafka hops");
         assertEquals(TRACE_A, received.get("traceId"),
                 "trace-id stayed continuous across cluster A, the bridge flow, and cluster B");
-        ConsumerRecord<String, byte[]> record = pollOne(clusterB.bootstrapServers(),
+        ConsumerRecord<String, byte[]> rec = pollOne(clusterB.bootstrapServers(),
                 "bridge.mirror", "bridge-mirror-wire-" + Utility.getInstance().getUuid());
-        assertNotNull(record, "the bridged record should be visible on cluster B");
-        assertEquals(cid, headerValue(record, "X-Secondary-Cid"),
+        assertNotNull(rec, "the bridged rec should be visible on cluster B");
+        assertEquals(cid, headerValue(rec, "X-Secondary-Cid"),
                 "the bridge stamps the configured secondary correlation-id header");
-        assertEquals(TRACE_A, headerValue(record, "X-Secondary-Trace"),
+        assertEquals(TRACE_A, headerValue(rec, "X-Secondary-Trace"),
                 "the bridge stamps the configured secondary trace-id header");
-        assertNull(headerValue(record, "cid"),
+        assertNull(headerValue(rec, "cid"),
                 "the bridge flow must not leak the default correlation-id header name");
     }
 
@@ -233,7 +233,7 @@ class TwinKafkaBridgeTest {
      * application.properties) on cluster-B records - observed with a raw consumer on the wire.
      */
     @Test
-    void secondaryOutboundHeaderOverrides() throws Exception {
+    void secondaryOutboundHeaderOverrides() {
         String cid = "override-" + Utility.getInstance().getUuid();
         PostOffice po = PostOffice.trackable("unit.test", TRACE_B, "TEST /secondary/headers");
         po.send(new EventEnvelope().setTo("secondary.kafka.notification")
@@ -241,16 +241,16 @@ class TwinKafkaBridgeTest {
                 .setHeader("X-Secondary-Cid", cid)
                 .setBody("{\"hello\":\"header probe\"}".getBytes(StandardCharsets.UTF_8))
                 .setTraceId(TRACE_B).setTracePath("TEST /secondary/headers"));
-        ConsumerRecord<String, byte[]> record = pollOne(clusterB.bootstrapServers(),
+        ConsumerRecord<String, byte[]> rec = pollOne(clusterB.bootstrapServers(),
                 "header.probe", "header-probe-group");
-        assertNotNull(record, "the probe record should arrive on cluster B");
-        assertEquals(cid, headerValue(record, "X-Secondary-Cid"),
+        assertNotNull(rec, "the probe rec should arrive on cluster B");
+        assertEquals(cid, headerValue(rec, "X-Secondary-Cid"),
                 "business correlation-id stamped under the SECONDARY override name");
-        assertEquals(TRACE_B, headerValue(record, "X-Secondary-Trace"),
+        assertEquals(TRACE_B, headerValue(rec, "X-Secondary-Trace"),
                 "trace-id stamped under the SECONDARY override name");
-        assertTrue(String.valueOf(headerValue(record, "traceparent")).contains(TRACE_B),
+        assertTrue(String.valueOf(headerValue(rec, "traceparent")).contains(TRACE_B),
                 "W3C traceparent is stamped alongside the legacy trace-id header");
-        assertNull(headerValue(record, "cid"),
+        assertNull(headerValue(rec, "cid"),
                 "the global default name is not used when the secondary override is set");
     }
 
@@ -260,17 +260,17 @@ class TwinKafkaBridgeTest {
      * cluster B (RetryPolicy carries the secondary publisher).
      */
     @Test
-    void secondaryDeadLettersLandOnSecondaryCluster() throws Exception {
+    void secondaryDeadLettersLandOnSecondaryCluster() {
         PostOffice po = PostOffice.trackable("unit.test", TRACE_B, "TEST /secondary/dlq");
         po.send(new EventEnvelope().setTo("secondary.kafka.notification")
                 .setHeader(KafkaHeaders.TOPIC, "poison.source")
                 .setBody("{\"hello\":\"boom\"}".getBytes(StandardCharsets.UTF_8))
                 .setTraceId(TRACE_B).setTracePath("TEST /secondary/dlq"));
         // 3 retries at 500ms backoff, then the dead-letter write to the secondary cluster
-        ConsumerRecord<String, byte[]> record = pollOne(clusterB.bootstrapServers(),
+        ConsumerRecord<String, byte[]> rec = pollOne(clusterB.bootstrapServers(),
                 "poison.dlq", "dlq-probe-group");
-        assertNotNull(record, "the exhausted record should land on the secondary cluster's DLQ topic");
-        assertEquals("{\"hello\":\"boom\"}", new String(record.value(), StandardCharsets.UTF_8),
+        assertNotNull(rec, "the exhausted rec should land on the secondary cluster's DLQ topic");
+        assertEquals("{\"hello\":\"boom\"}", new String(rec.value(), StandardCharsets.UTF_8),
                 "the dead letter carries the original payload");
     }
 
@@ -288,17 +288,18 @@ class TwinKafkaBridgeTest {
             long deadline = System.currentTimeMillis() + 60000;
             while (System.currentTimeMillis() < deadline) {
                 ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofSeconds(2));
-                for (ConsumerRecord<String, byte[]> r : records) {
-                    return r;
+                var it = records.iterator();
+                if (it.hasNext()) {
+                    return it.next();
                 }
             }
         }
         return null;
     }
 
-    /** Read a record header as UTF-8 text (null when absent). */
-    private static String headerValue(ConsumerRecord<String, byte[]> record, String name) {
-        var header = record.headers().lastHeader(name);
+    /** Read a rec header as UTF-8 text (null when absent). */
+    private static String headerValue(ConsumerRecord<String, byte[]> rec, String name) {
+        var header = rec.headers().lastHeader(name);
         return header == null ? null : new String(header.value(), StandardCharsets.UTF_8);
     }
 }

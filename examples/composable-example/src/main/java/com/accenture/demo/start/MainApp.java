@@ -28,6 +28,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
+// S5443 (publicly writable directory): /tmp/keystore holds a DEMO encryption key generated at startup -
+// throwaway local data for the worked example, no confidentiality requirement
+@SuppressWarnings("java:S5443")
 @MainApplication
 public class MainApp implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(MainApp.class);

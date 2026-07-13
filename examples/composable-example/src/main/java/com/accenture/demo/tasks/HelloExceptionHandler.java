@@ -28,8 +28,8 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 @PreLoad(route="v1.hello.exception", instances=10)
-public class HelloException implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
-    private static final Logger log = LoggerFactory.getLogger(HelloException.class);
+public class HelloExceptionHandler implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
+    private static final Logger log = LoggerFactory.getLogger(HelloExceptionHandler.class);
 
     private static final String TYPE = "type";
     private static final String ERROR = "error";

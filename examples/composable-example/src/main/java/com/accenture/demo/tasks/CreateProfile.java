@@ -45,7 +45,7 @@ public class CreateProfile implements TypedLambdaFunction<Profile, ProfileConfir
      */
     @Override
     public ProfileConfirmation handleEvent(Map<String, String> headers, Profile input, int instance) {
-        if (input.id == null) {
+        if (input.getId() == null) {
             throw new IllegalArgumentException("Missing id");
         }
         String requiredFields = headers.get(REQUIRED_FIELDS);
@@ -70,9 +70,9 @@ public class CreateProfile implements TypedLambdaFunction<Profile, ProfileConfir
             }
         }
         ProfileConfirmation result = new ProfileConfirmation();
-        result.profile = data.getMap();
-        result.type = "CREATE";
-        result.secure = pFields;
+        result.setProfile(data.getMap());
+        result.setType("CREATE");
+        result.setSecure(pFields);
         return result;
     }
 }

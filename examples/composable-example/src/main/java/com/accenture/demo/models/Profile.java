@@ -24,18 +24,50 @@ import java.util.Map;
 
 public class Profile {
 
-    public Integer id;
-    public String name;
-    public String address;
-    public String telephone;
+    private Integer id;
+    private String name;
+    private String address;
+    private String telephone;
 
     public static Profile create(int id, String name, String address, String telephone) {
         var profile = new Profile();
-        profile.id = id;
-        profile.name = name;
-        profile.address = address;
-        profile.telephone = telephone;
+        profile.setId(id);
+        profile.setName(name);
+        profile.setAddress(address);
+        profile.setTelephone(telephone);
         return profile;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getTelephone() {
+        return telephone;
+    }
+
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
     }
 
     @SuppressWarnings("unchecked")

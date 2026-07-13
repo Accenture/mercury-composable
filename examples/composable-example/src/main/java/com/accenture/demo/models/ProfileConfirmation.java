@@ -23,7 +23,31 @@ import java.util.Map;
 
 public class ProfileConfirmation {
 
-    public String type;
-    public Map<String, Object> profile;
-    public List<String> secure;
+    private String type;
+    private Map<String, Object> profile;
+    private List<String> secure;
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public Map<String, Object> getProfile() {
+        return profile;
+    }
+
+    public void setProfile(Map<String, Object> profile) {
+        this.profile = profile;
+    }
+
+    public List<String> getSecure() {
+        return secure;
+    }
+
+    public void setSecure(List<String> secure) {
+        this.secure = secure;
+    }
 }

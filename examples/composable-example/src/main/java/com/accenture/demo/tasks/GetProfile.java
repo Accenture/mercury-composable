@@ -28,6 +28,9 @@ import org.platformlambda.core.util.Utility;
 import java.io.File;
 import java.util.Map;
 
+// S5443 (publicly writable directory): /tmp/store IS the demo's simulated database by design -
+// throwaway local data, no confidentiality or integrity requirement
+@SuppressWarnings("java:S5443")
 @PreLoad(route="v1.get.profile", instances=10)
 public class GetProfile implements TypedLambdaFunction<Map<String, Object>, Profile> {
 
