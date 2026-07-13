@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-13 | agent: Claude Code (2026-07-13-170933)
+- **last_session:** 2026-07-13 | agent: Claude Code (2026-07-13-221521)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -295,6 +295,15 @@
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
+- **Worker-instance count encodes the concurrency pattern** (Eric, 2026-07-13): `instances=1` is the
+  deliberate "singleton" for ASYNCHRONOUS functions — it serializes processing to guarantee message
+  sequencing and lets the event system's back-pressure/overflow buffering absorb bursts. For
+  RPC-style (request-response) functions, seldom use a singleton: a blocked single worker can
+  DEADLOCK (callers await a reply while the only worker itself waits on something that needs another
+  invocation). Shared non-thread-safe resources inside a multi-worker function are guarded by a
+  `ReentrantLock`, not by dropping to one worker (kafka.health precedent: 5 workers, lock-confined
+  KafkaConsumer).
+  <!-- id: conv-instance-count-pattern | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-221521 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 

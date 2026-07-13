@@ -412,7 +412,7 @@ analysis, adds two opt-in OTLP exporter tunables, and removes the `com.google.pr
    security gate. **JSON Schema and Avro are unaffected and fully supported.** This is tracked as a backlog
    item, to be re-wired once Confluent moves to the patched coordinate, or sooner for a specific field
    installation that explicitly needs Protobuf and accepts the residual risk. See the
-   [Kafka Flow Adapter guide](docs/guides/kafka-flow-adapter.md#schema) for detail.
+   [Kafka Flow Adapter guide](docs/guides/minimalist-kafka.md#schema) for detail.
 2. **`trace.http.header` and `trace.http.legacy.header.enabled` configuration parameters were removed.**
    Before OpenTelemetry support, `X-Correlation-Id` was mistakenly allowed to double as a trace ID via
    `trace.http.header`; that conflation is retired. Use `X-Trace-Id` / W3C `traceparent` for the trace ID,

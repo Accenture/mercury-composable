@@ -447,7 +447,7 @@ synchronous and the asynchronous shapes:
 - the **Kafka flow adapter** in the `minimalist-kafka` library — the asynchronous, topic-driven path.
   Its `KafkaFlowAdapter` is a minimal, complete template to model your own adapter on: a source loop that
   maps each event to a dataset and dispatches it to a flow. See the
-  [Kafka Flow Adapter](kafka-flow-adapter.md) guide and the runnable `examples/kafka-demo` worked example.
+  [Minimalist Kafka](minimalist-kafka.md) guide and the runnable `examples/kafka-demo` worked example.
 
 Use whichever is closer to your source as the starting point.
 
