@@ -379,7 +379,9 @@
   business id travels on the shared header alone, which is exactly why this works behind the
   traceparent-stripping gateway. Telemetry confirmed spanId/parentSpanId chain correctly within each
   app under the shared trace id; CROSS-app span parenting still needs traceparent (it carries the
-  caller's span id), so tooling stitches by trace id until the gateway passes traceparent. Field runs this conflation short-term while infra
+  caller's span id), so tooling stitches by trace id until the gateway passes traceparent — positive
+  case VERIFIED live too: with traceparent on the wire (generated 32-hex id), lambda-example's
+  hello.world span parented directly onto the traceparent's span id across the HTTP hop. Field runs this conflation short-term while infra
   allow-lists traceparent + X-Trace-Id at the gateway/Istio.
   <!-- id: thread-field-trace-propagation-4-6-3 | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-142021 -->
 
