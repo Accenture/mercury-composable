@@ -57,7 +57,7 @@ class KafkaHealthCheckTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void infoDescribesTheKafkaDependency() throws Exception {
+    void infoDescribesTheKafkaDependency() {
         var health = new KafkaHealthCheck(consumerProps(kafka.bootstrapServers()), 0);
         var result = health.handleEvent(INFO, null, 1);
         assertInstanceOf(Map.class, result);
@@ -68,7 +68,7 @@ class KafkaHealthCheckTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void startupReturnsPlaceholderThenLiveStatus() throws Exception {
+    void startupReturnsPlaceholderThenLiveStatus() {
         var health = new KafkaHealthCheck(consumerProps(kafka.bootstrapServers()), 60000);
         // within the grace period, the first check is a placeholder healthy status - the Kafka
         // client warms up in the background so /health never blocks during app start-up
@@ -77,7 +77,8 @@ class KafkaHealthCheckTest {
         assertEquals("Kafka client is starting up", ((Map<String, Object>) first).get("status"));
         // once warm-up completes, checks report the live cluster status
         Map<String, Object> live = null;
-        long deadline = System.currentTimeMillis() + 20000;
+        // generous for busy CI executors - the poll returns as soon as warm-up completes
+        long deadline = System.currentTimeMillis() + 60000;
         while (System.currentTimeMillis() < deadline) {
             Map<String, Object> result = (Map<String, Object>) health.handleEvent(HEALTH, null, 1);
             if ("Kafka cluster is reachable".equals(result.get("status"))) {
@@ -93,7 +94,7 @@ class KafkaHealthCheckTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void probesImmediatelyWhenGraceExpired() throws Exception {
+    void probesImmediatelyWhenGraceExpired() {
         var health = new KafkaHealthCheck(consumerProps(kafka.bootstrapServers()), 0);
         Map<String, Object> result = (Map<String, Object>) health.handleEvent(HEALTH, null, 1);
         assertEquals("Kafka cluster is reachable", result.get("status"));

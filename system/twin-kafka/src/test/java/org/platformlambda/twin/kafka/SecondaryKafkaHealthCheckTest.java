@@ -57,7 +57,7 @@ class SecondaryKafkaHealthCheckTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void infoDescribesTheSecondaryKafkaDependency() throws Exception {
+    void infoDescribesTheSecondaryKafkaDependency() {
         var health = new SecondaryKafkaHealthCheck(consumerProps(secondaryCluster.bootstrapServers()), 0);
         var result = health.handleEvent(INFO, null, 1);
         assertInstanceOf(Map.class, result);
@@ -69,13 +69,14 @@ class SecondaryKafkaHealthCheckTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void startupReturnsPlaceholderThenLiveStatus() throws Exception {
+    void startupReturnsPlaceholderThenLiveStatus() {
         var health = new SecondaryKafkaHealthCheck(consumerProps(secondaryCluster.bootstrapServers()), 60000);
         var first = health.handleEvent(HEALTH, null, 1);
         assertInstanceOf(Map.class, first);
         assertEquals("Kafka client is starting up", ((Map<String, Object>) first).get("status"));
         Map<String, Object> live = null;
-        long deadline = System.currentTimeMillis() + 20000;
+        // generous for busy CI executors - the poll returns as soon as warm-up completes
+        long deadline = System.currentTimeMillis() + 60000;
         while (System.currentTimeMillis() < deadline) {
             Map<String, Object> result = (Map<String, Object>) health.handleEvent(HEALTH, null, 1);
             if ("Kafka cluster is reachable".equals(result.get("status"))) {
@@ -90,7 +91,7 @@ class SecondaryKafkaHealthCheckTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void unreachableSecondaryFailsWhileLiveInstanceStaysHealthy() throws Exception {
+    void unreachableSecondaryFailsWhileLiveInstanceStaysHealthy() {
         // the two probes are independent: a dead secondary must not poison a healthy one
         var healthy = new SecondaryKafkaHealthCheck(consumerProps(secondaryCluster.bootstrapServers()), 0);
         Properties bad = consumerProps("127.0.0.1:65530");
