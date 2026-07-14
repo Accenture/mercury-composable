@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-14 | agent: Claude Code (2026-07-14-175501)
+- **last_session:** 2026-07-14 | agent: Claude Code (2026-07-14-183626)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -332,6 +332,14 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (release in flight — 2026-07-14) **v4.8.5 bumped for field deployment; NORMAL flow (tag on
+  merge).** Branch `chore/release-4.8.5` (`de21e108`) pushed, PR pending. Carries #178-#181:
+  conflated-header one-id fix (validated live) + field pipeline build reliability (twin-kafka
+  test-order root cause). Full reactor + pg-example green at 4.8.5. Next: Eric opens PR → CI →
+  merge → tag v4.8.5 → release text.
+  <!-- id: thread-release-4-8-5 | created: 2026-07-14 | last_used: 2026-07-14 | uses: 1 | tier: working | origin: 2026-07-14-183626 -->
+
 
 - [x] (release in flight — 2026-07-13; CLOSED same day) **v4.8.4 SHIPPED via the normal flow** —
   tag `v4.8.4` on merge commit `b1265f18` (PR #177), release text delivered. Carries PR #176
