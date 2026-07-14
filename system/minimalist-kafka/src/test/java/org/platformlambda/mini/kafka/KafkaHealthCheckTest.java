@@ -57,7 +57,7 @@ class KafkaHealthCheckTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void infoDescribesTheKafkaDependency() throws Exception {
+    void infoDescribesTheKafkaDependency() {
         var health = new KafkaHealthCheck(consumerProps(kafka.bootstrapServers()), 0);
         var result = health.handleEvent(INFO, null, 1);
         assertInstanceOf(Map.class, result);
@@ -68,7 +68,7 @@ class KafkaHealthCheckTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void startupReturnsPlaceholderThenLiveStatus() throws Exception {
+    void startupReturnsPlaceholderThenLiveStatus() {
         var health = new KafkaHealthCheck(consumerProps(kafka.bootstrapServers()), 60000);
         // within the grace period, the first check is a placeholder healthy status - the Kafka
         // client warms up in the background so /health never blocks during app start-up
@@ -94,7 +94,7 @@ class KafkaHealthCheckTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void probesImmediatelyWhenGraceExpired() throws Exception {
+    void probesImmediatelyWhenGraceExpired() {
         var health = new KafkaHealthCheck(consumerProps(kafka.bootstrapServers()), 0);
         Map<String, Object> result = (Map<String, Object>) health.handleEvent(HEALTH, null, 1);
         assertEquals("Kafka cluster is reachable", result.get("status"));

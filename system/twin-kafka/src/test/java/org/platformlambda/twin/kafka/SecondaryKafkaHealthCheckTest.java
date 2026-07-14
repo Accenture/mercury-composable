@@ -57,7 +57,7 @@ class SecondaryKafkaHealthCheckTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void infoDescribesTheSecondaryKafkaDependency() throws Exception {
+    void infoDescribesTheSecondaryKafkaDependency() {
         var health = new SecondaryKafkaHealthCheck(consumerProps(secondaryCluster.bootstrapServers()), 0);
         var result = health.handleEvent(INFO, null, 1);
         assertInstanceOf(Map.class, result);
@@ -69,7 +69,7 @@ class SecondaryKafkaHealthCheckTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void startupReturnsPlaceholderThenLiveStatus() throws Exception {
+    void startupReturnsPlaceholderThenLiveStatus() {
         var health = new SecondaryKafkaHealthCheck(consumerProps(secondaryCluster.bootstrapServers()), 60000);
         var first = health.handleEvent(HEALTH, null, 1);
         assertInstanceOf(Map.class, first);
@@ -91,7 +91,7 @@ class SecondaryKafkaHealthCheckTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void unreachableSecondaryFailsWhileLiveInstanceStaysHealthy() throws Exception {
+    void unreachableSecondaryFailsWhileLiveInstanceStaysHealthy() {
         // the two probes are independent: a dead secondary must not poison a healthy one
         var healthy = new SecondaryKafkaHealthCheck(consumerProps(secondaryCluster.bootstrapServers()), 0);
         Properties bad = consumerProps("127.0.0.1:65530");
