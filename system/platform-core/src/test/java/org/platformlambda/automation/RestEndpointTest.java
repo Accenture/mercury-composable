@@ -100,6 +100,70 @@ class RestEndpointTest extends TestBase {
                 "business correlation-id captured from the per-endpoint 'correlation.id.header' override");
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void conflatedHeaderNamesGenerateOneIdForTraceAndCid() throws InterruptedException {
+        // Legacy conflation config (/api/conflated/probe declares the SAME header name for
+        // trace.id.header and correlation.id.header): when the shared header is absent, the edge
+        // must generate ONE id serving both - a divergent pair would make the outbound hop
+        // self-inconsistent (traceparent carrying one id, the shared header another).
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        EventEmitter po = EventEmitter.getInstance();
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("GET").setUrl("/api/conflated/probe").setTargetHost("http://127.0.0.1:" + port);
+        req.setHeader("accept", "application/json");
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
+        po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
+        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        assert response != null;
+        assertEquals(200, response.getStatus());
+        Map<String, Object> probe = (Map<String, Object>) response.getBody();
+        assertInstanceOf(String.class, probe.get("traceId"));
+        String generated = (String) probe.get("traceId");
+        assertEquals(32, generated.length());
+        assertFalse(generated.contains("-"));
+        assertEquals(generated, probe.get("cid"),
+                "the generated trace-id and correlation-id must be ONE id under a shared header name");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void conflatedHeaderSuppliedFeedsBothIds() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        EventEmitter po = EventEmitter.getInstance();
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("GET").setUrl("/api/conflated/probe").setTargetHost("http://127.0.0.1:" + port);
+        req.setHeader("accept", "application/json").setHeader("X-Shared-Id", "shared-0001");
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
+        po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
+        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        assert response != null;
+        Map<String, Object> probe = (Map<String, Object>) response.getBody();
+        assertEquals("shared-0001", probe.get("traceId"));
+        assertEquals("shared-0001", probe.get("cid"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void conflatedHeaderAdoptsTraceparentWhenSharedHeaderAbsent() throws InterruptedException {
+        // when a W3C traceparent arrives but the shared header does not, the trace id from the
+        // traceparent is authoritative and the correlation-id adopts it - one id, end to end
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        String w3cTraceId = "4bf92f3577b34da6a3ce929d0e0e4736";
+        EventEmitter po = EventEmitter.getInstance();
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("GET").setUrl("/api/conflated/probe").setTargetHost("http://127.0.0.1:" + port);
+        req.setHeader("accept", "application/json")
+                .setHeader("traceparent", "00-" + w3cTraceId + "-00f067aa0ba902b7-01");
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
+        po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
+        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        assert response != null;
+        Map<String, Object> probe = (Map<String, Object>) response.getBody();
+        assertEquals(w3cTraceId, probe.get("traceId"));
+        assertEquals(w3cTraceId, probe.get("cid"));
+    }
+
     @Test
     void optionsMethodTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);

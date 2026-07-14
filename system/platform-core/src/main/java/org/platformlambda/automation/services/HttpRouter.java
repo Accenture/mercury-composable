@@ -489,7 +489,8 @@ public class HttpRouter {
         String cidHeaderName = route.info.correlationIdHeader != null
                 ? route.info.correlationIdHeader : businessCorrelationIdHeader;
         String businessCorrelationId = req.getHeader(cidHeaderName);
-        if (businessCorrelationId == null) {
+        final boolean generatedCid = businessCorrelationId == null;
+        if (generatedCid) {
             businessCorrelationId = util.getUuid();
             req.setHeader(cidHeaderName, businessCorrelationId);
         }
@@ -509,6 +510,16 @@ public class HttpRouter {
             if (traceParent.length > 0) {
                 traceId = traceParent[0];
                 parentSpanId = traceParent[1];
+            }
+            // Legacy conflation config: when the trace-id and correlation-id share ONE header name
+            // (e.g. http.trace.id.header=X-Correlation-Id for a gateway that only passes that header),
+            // an absent shared header must yield ONE id, not two - otherwise the generated traceparent
+            // and the shared header would carry different ids on the outbound hop. The trace id (which
+            // also honors an inbound traceparent) is authoritative; the correlation-id adopts it.
+            String traceHeaderName = route.info.traceIdHeader != null ? route.info.traceIdHeader : traceIdHeader;
+            if (generatedCid && traceHeaderName.equalsIgnoreCase(cidHeaderName)) {
+                businessCorrelationId = traceId;
+                req.setHeader(cidHeaderName, traceId);
             }
         }
         final HttpRequestEvent requestEvent = new HttpRequestEvent(requestId, route, authService, traceId, tracePath);

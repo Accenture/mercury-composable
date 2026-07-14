@@ -135,6 +135,14 @@ Per-entry overrides, for a single application that faces callers with different 
 overrides never breaks OpenTelemetry-compliant callers. The full key reference lives in the
 [Configuration Reference](configuration-reference.md#observability).
 
+> **Legacy conflation is supported.** Pointing the trace-id name at the correlation-id header
+> (`http.trace.id.header=X-Correlation-Id`) is a valid backward-compatibility setup for an estate whose
+> gateway only passes that one header. The edge keeps the two ids consistent: a supplied shared header
+> feeds **both** ids, and when the shared header is absent the edge resolves **one** id for both — from
+> the inbound `traceparent` when present, otherwise a single generated id — so the outgoing
+> `traceparent` and the shared header always carry the same trace id. Prefer migrating the gateway to
+> pass `traceparent` (and `X-Trace-Id`), then retiring the conflation.
+
 ```yaml
 # rest.yaml - one endpoint serves a legacy caller that sends its own header names
   - service: "legacy.orders"

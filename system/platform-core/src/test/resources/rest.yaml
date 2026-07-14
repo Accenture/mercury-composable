@@ -58,6 +58,17 @@ rest:
     trace.id.header: "X-Legacy-Trace"
     correlation.id.header: "X-Legacy-Cid"
 
+  # Legacy conflation config: ONE header name carries both the trace-id and the correlation-id
+  # (e.g. a gateway that only passes X-Correlation-Id). When the shared header is absent, the
+  # endpoint must generate ONE id for both - never two.
+  - service: "header.probe"
+    methods: ['GET']
+    url: "/api/conflated/probe"
+    timeout: 10s
+    tracing: true
+    trace.id.header: "X-Shared-Id"
+    correlation.id.header: "X-Shared-Id"
+
   # Simulates application A in an application-to-application HTTP call: this traced endpoint's
   # function calls /api/legacy/probe ("application B") through async.http.request, so tests can
   # assert that one distributed trace continues across the HTTP hop between the two.
