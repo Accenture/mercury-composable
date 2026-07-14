@@ -1280,9 +1280,10 @@ at the "CompileFlows" step and thus there is no impact to the task execution spe
 <p>Please note that the 3-part data mapping format is not supported when the left-hand-side is a text constant.
 It is because a text constant may contain any special characters including the mapping signature <code>-&gt;</code>.</p>
 <h3 id="metadata-for-each-flow-instance">Metadata for each flow instance</h3>
-<p>For each flow instance, the state machine in the "model" namespace provides the following metadata that
-you can use in the input/output data mapping. For example, you can set this for an exception handler to
-log additional information.</p>
+<p>For each flow instance, the state machine in the "model" namespace provides the following READ only metadata
+that you can use as a mapping source in your input and output data mapping statements — the flow compiler
+rejects any data mapping that overwrites these keys. For example, you can set this for an exception handler
+to log additional information.</p>
 <table>
 <thead>
 <tr>

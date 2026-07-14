@@ -1065,18 +1065,28 @@ directly to the output body.</p>
 </tr>
 <tr>
 <td><code>model.trace</code></td>
-<td>Current distributed trace ID</td>
+<td>Current distributed trace ID (read-only metadata)</td>
 <td><code>model.trace -&gt; trace_id</code></td>
 </tr>
 <tr>
 <td><code>model.flow</code></td>
-<td>Current flow instance ID</td>
+<td>ID of the flow configuration (read-only metadata)</td>
 <td><code>model.flow -&gt; flow_id</code></td>
 </tr>
 <tr>
 <td><code>model.instance</code></td>
-<td>Alternate alias for flow instance ID</td>
+<td>ID of this flow instance (read-only metadata)</td>
 <td><code>model.instance -&gt; instance</code></td>
+</tr>
+<tr>
+<td><code>model.cid</code></td>
+<td>Business correlation-id of the inbound request (read-only metadata)</td>
+<td><code>model.cid -&gt; header.cid</code></td>
+</tr>
+<tr>
+<td><code>model.ttl</code></td>
+<td>Flow instance TTL in milliseconds (read-only metadata)</td>
+<td><code>model.ttl -&gt; ttl</code></td>
 </tr>
 <tr>
 <td><code>model.{model.pointer}</code></td>
@@ -1145,7 +1155,7 @@ directly to the output body.</p>
 <tr>
 <td><code>header.&lt;name&gt;</code></td>
 <td>Specific response header</td>
-<td><code>header.x-trace -&gt; model.trace</code></td>
+<td><code>header.x-request-id -&gt; model.request_id</code></td>
 </tr>
 <tr>
 <td><code>datatype</code></td>
@@ -1939,7 +1949,11 @@ To read from it, invoke the external state machine service directly via a <code>
 </blockquote>
 <hr />
 <h2 id="built-in-special-variables">Built-in special variables</h2>
-<p>These <code>model.*</code> variables are set by the framework automatically.</p>
+<p>These <code>model.*</code> variables are set by the framework automatically. The flow-instance metadata
+(<code>model.flow</code>, <code>model.instance</code>, <code>model.trace</code>, <code>model.cid</code>, <code>model.ttl</code>) and the <code>model.none</code>
+null constant are READ only — use them as mapping sources; the flow compiler rejects any data
+mapping that overwrites these reserved keys (and the engine rejects a dynamic
+<code>model.{model.pointer}</code> target that resolves to one at runtime).</p>
 <table>
 <thead>
 <tr>
@@ -1954,15 +1968,23 @@ To read from it, invoke the external state machine service directly via a <code>
 </tr>
 <tr>
 <td><code>model.flow</code></td>
-<td>Unique ID of this flow instance</td>
+<td>ID of the flow configuration</td>
 </tr>
 <tr>
 <td><code>model.instance</code></td>
-<td>Alias for <code>model.flow</code></td>
+<td>Unique ID of this flow instance</td>
+</tr>
+<tr>
+<td><code>model.cid</code></td>
+<td>Business correlation-id of the inbound request</td>
+</tr>
+<tr>
+<td><code>model.ttl</code></td>
+<td>Flow instance TTL in milliseconds</td>
 </tr>
 <tr>
 <td><code>model.none</code></td>
-<td>Always <code>null</code>; use to clear model keys or delete file/ext destinations</td>
+<td>Always <code>null</code> (enforced); use to clear model keys or delete file/ext destinations</td>
 </tr>
 <tr>
 <td><code>model.&lt;source&gt;.ITEM</code></td>
