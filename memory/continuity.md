@@ -373,7 +373,8 @@
   by design only for DISTINCT names. **VALIDATED by Eric 2026-07-14 (merged as PR #179, in the post-#181
   main)**: complete local build + live two-app hop with no header supplied → downstream saw traceparent
   trace-id == x-correlation-id (one generated id). Supplied-header case also validated (abc123 fed both
-  ids across the hop). Support nuance: with conflation, the outbound trace id rides the CONFIGURED header
+  ids across the hop). Demo pair for reproducing: composable-example (8100) -> lambda-example (8085)
+  via /api/cross/app/tracing; traceId confirmed in BOTH apps' trace logs for both cases. Support nuance: with conflation, the outbound trace id rides the CONFIGURED header
   name (X-Correlation-Id), and traceparent is stamped only when the id is W3C-shaped (32-hex) — a short
   business id travels on the shared header alone, which is exactly why this works behind the
   traceparent-stripping gateway. Field runs this conflation short-term while infra
