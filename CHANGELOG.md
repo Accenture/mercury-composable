@@ -8,6 +8,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.8.5, 7/14/2026
+
+Maintenance release: trace/correlation impedance-matching edge case and CI build reliability.
+
+### Fixed
+
+1. **Conflated trace/correlation header names now yield ONE generated id (#179).** When
+   `trace.id.header` and `correlation.id.header` resolve to the same name (the legacy conflation
+   config, e.g. both `X-Correlation-Id` for an API gateway that only passes that header) and the
+   caller supplies no header, both ingress paths - REST automation and the Minimalist Kafka flow
+   adapter - previously generated two unrelated ids. They now yield a single id: the trace id is
+   authoritative (a caller `traceparent` still wins), and the correlation id adopts it. A supplied
+   shared header feeds both ids unchanged, and distinct header names keep their independent
+   semantics. Validated live across a two-app HTTP hop: one trace id end-to-end with correct
+   spanId/parentSpanId chains; W3C-shaped (32-hex) ids additionally stamp `traceparent` outbound,
+   which enables cross-application span parenting.
+
+2. **CI build reliability on busy or differently-ordered executors (#178, #180, #181).**
+   App-boot readiness polls in tests now use generous deadlines (90s boot / 60s health warm-up)
+   sized for the slowest pipeline executor (#178). The twin-kafka bridge test is independent of
+   test-class execution order (#180): the embedded Schema Registry URL is injected as a System
+   property under the exact config key (honored live on every read) instead of a `${ENV_VAR}`
+   reference that `AppConfigReader` freezes at singleton initialization, and the module pins
+   surefire to alphabetical run order so every build environment exercises the same class order -
+   fixes a field pipeline failure that GitHub CI's filesystem-dependent ordering never hit.
+   Test configurations no longer read machine-level environment variables (#181):
+   `REDIS_PASSWORD` and `OTEL_*` references were replaced with plain values so instrumented build
+   agents cannot leak credentials or exporter endpoints into hermetic tests; the embedded
+   PostgreSQL `PG_USER`/`PG_PASSWORD` references are documented as deliberate (surefire-pinned,
+   leak-immune).
+
+---
 ## Version 4.8.4, 7/13/2026
 
 Maintenance release: completes the Kafka health-check story for dual-cluster applications.
