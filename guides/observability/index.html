@@ -391,6 +391,15 @@ downstream keeps working with the same two ids —</p>
 <code>traceparent</code> <strong>always</strong> takes precedence for the trace id, whatever the header naming — so adopting these
 overrides never breaks OpenTelemetry-compliant callers. The full key reference lives in the
 <a href="../configuration-reference/#observability">Configuration Reference</a>.</p>
+<blockquote>
+<p><strong>Legacy conflation is supported.</strong> Pointing the trace-id name at the correlation-id header
+(<code>http.trace.id.header=X-Correlation-Id</code>) is a valid backward-compatibility setup for an estate whose
+gateway only passes that one header. The edge keeps the two ids consistent: a supplied shared header
+feeds <strong>both</strong> ids, and when the shared header is absent the edge resolves <strong>one</strong> id for both — from
+the inbound <code>traceparent</code> when present, otherwise a single generated id — so the outgoing
+<code>traceparent</code> and the shared header always carry the same trace id. Prefer migrating the gateway to
+pass <code>traceparent</code> (and <code>X-Trace-Id</code>), then retiring the conflation.</p>
+</blockquote>
 <pre><code class="language-yaml"># rest.yaml - one endpoint serves a legacy caller that sends its own header names
   - service: &quot;legacy.orders&quot;
     methods: ['POST']
