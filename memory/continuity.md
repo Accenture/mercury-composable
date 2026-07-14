@@ -333,11 +333,11 @@
 
 ## Open Threads
 
-- [ ] (release in flight — 2026-07-14) **v4.8.6 bumped for field deployment; NORMAL flow (tag on
-  merge).** Branch `chore/release-4.8.6` pushed, PR pending. Purpose: deliver #184 reserved-key
-  enforcement as a documented breaking change (field app overwriting model.ttl already known; field
-  agrees with READ-only design) + #183 quality items. Full reactor + pg-example green at 4.8.6.
-  Next: PR → CI → merge → tag v4.8.6 → release text.
+- [x] (release in flight — 2026-07-14; CLOSED same day) **v4.8.6 SHIPPED via the normal flow** —
+  tag `v4.8.6` on merge commit `19916875` (PR #185, CI green), release text delivered. Purpose:
+  deliver #184 reserved-key enforcement as a documented breaking change (field app overwriting
+  model.ttl already known; field agrees with READ-only design) + #183 quality items. The CHANGELOG
+  entry doubles as the field's operational guide (ERROR signature + remedy).
   <!-- id: thread-release-4-8-6 | created: 2026-07-14 | last_used: 2026-07-14 | uses: 1 | tier: working | origin: 2026-07-14-231832 -->
 
 - [x] (release in flight — 2026-07-14; CLOSED same day) **v4.8.5 SHIPPED via the normal flow** —
