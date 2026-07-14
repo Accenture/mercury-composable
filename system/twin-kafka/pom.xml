@@ -184,6 +184,14 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.4</version>
+                <configuration>
+                    <!-- Deterministic class order: surefire's default is filesystem order, which
+                         differs across CI environments. A field Jenkins agent ran the health-check
+                         test before the bridge test and exposed an initialization-order bug that
+                         GitHub CI's ordering never exercised. Alphabetical pins every environment
+                         to that same (adversarial) order so a regression fails everywhere. -->
+                    <runOrder>alphabetical</runOrder>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>

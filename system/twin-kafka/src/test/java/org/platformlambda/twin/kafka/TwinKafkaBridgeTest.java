@@ -85,16 +85,27 @@ class TwinKafkaBridgeTest {
                 "header.probe", "poison.source", "poison.dlq");
         // registry on the SECONDARY side only (asymmetric topology)
         registryB = new EmbeddedSchemaRegistry();
-        System.setProperty("SECONDARY_SCHEMA_REGISTRY_URL", registryB.baseUrl());
-        // point the producer/consumer templates at the two embedded brokers
+        // Inject via the EXACT config key, not the ${SECONDARY_SCHEMA_REGISTRY_URL} reference in
+        // application.properties: AppConfigReader resolves ${VAR} references ONCE when the singleton
+        // first loads, and another test class in this JVM may already have initialized it before this
+        // @BeforeAll runs (surefire's default run order is filesystem-dependent, so class order varies
+        // by CI environment - a field Jenkins build froze the reference to blank and the secondary
+        // adapter failed with "'secondary.schema.registry.url' is not configured" while GitHub CI
+        // passed). ConfigReader.get() checks System.getProperty(<exact key>) live on every read, so
+        // this override is immune to initialization order.
+        System.setProperty("secondary.schema.registry.url", registryB.baseUrl());
+        // point the producer/consumer templates at the two embedded brokers - safe as ${VAR} references
+        // because the templates are loaded fresh by each adapter/publisher AFTER this point
         System.setProperty("KAFKA_BOOTSTRAP_SERVERS", clusterA.bootstrapServers());
         System.setProperty("SECONDARY_KAFKA_BOOTSTRAP_SERVERS", clusterB.bootstrapServers());
         AutoStart.main(new String[0]);
         // both @MainApplication entry points must complete: primary + secondary adapters ready.
         // The deadline is deliberately generous: this boot brings up TWO embedded KRaft brokers,
-        // a schema registry, and the full application - a busy CI executor exceeded 20s in the
-        // field, and the poll returns the moment both adapters are ready, so a large budget
-        // costs nothing on a fast machine.
+        // a schema registry, and the full application - the poll returns the moment both adapters
+        // are ready, so a large budget costs nothing on a fast machine. If this deadline ever
+        // expires, check the log for an AppStarter "Unable to start" ERROR before blaming a slow
+        // executor: a crashed @MainApplication never registers its adapter, and no deadline
+        // extension can fix that.
         long deadline = System.currentTimeMillis() + 90000;
         while ((KafkaRuntime.adapter() == null || SecondaryKafkaRuntime.adapter() == null)
                 && System.currentTimeMillis() < deadline) {
@@ -129,7 +140,7 @@ class TwinKafkaBridgeTest {
         }
         System.clearProperty("KAFKA_BOOTSTRAP_SERVERS");
         System.clearProperty("SECONDARY_KAFKA_BOOTSTRAP_SERVERS");
-        System.clearProperty("SECONDARY_SCHEMA_REGISTRY_URL");
+        System.clearProperty("secondary.schema.registry.url");
     }
 
     private static void createTopics(String bootstrapServers, String... topics) throws Exception {
