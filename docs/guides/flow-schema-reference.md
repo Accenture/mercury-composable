@@ -447,9 +447,11 @@ Append `:qualifier` to any source reference to convert the value before mapping:
 | `model.parent.<key>` | Parent flow's state machine (in subflows) | `model.parent.token -> token` |
 | `model.root.<key>` | Alias for `model.parent.<key>` | `model.root.user -> user` |
 | `model.none` | Null constant (clears the destination) | `model.none -> model.old_key` |
-| `model.trace` | Current distributed trace ID | `model.trace -> trace_id` |
-| `model.flow` | Current flow instance ID | `model.flow -> flow_id` |
-| `model.instance` | Alternate alias for flow instance ID | `model.instance -> instance` |
+| `model.trace` | Current distributed trace ID (read-only metadata) | `model.trace -> trace_id` |
+| `model.flow` | ID of the flow configuration (read-only metadata) | `model.flow -> flow_id` |
+| `model.instance` | ID of this flow instance (read-only metadata) | `model.instance -> instance` |
+| `model.cid` | Business correlation-id of the inbound request (read-only metadata) | `model.cid -> header.cid` |
+| `model.ttl` | Flow instance TTL in milliseconds (read-only metadata) | `model.ttl -> ttl` |
 | `model.{model.pointer}` | Dynamic model key (resolved at runtime) | `model.{model.pointer} -> value` |
 | `error.task` | Route name of the task that threw (exception handlers) | `error.task -> failed_task` |
 | `error.status` | HTTP status code of the error | `error.status -> status` |
@@ -469,7 +471,7 @@ These namespaces are only valid on the left-hand side of `output` mapping rules.
 | `result.<field>` | Specific field from return value | `result.count -> model.n` |
 | `status` | HTTP status code from `EventEnvelope` | `status -> output.status` |
 | `header` | All response headers from `EventEnvelope` | `header -> output.header` |
-| `header.<name>` | Specific response header | `header.x-trace -> model.trace` |
+| `header.<name>` | Specific response header | `header.x-request-id -> model.request_id` |
 | `datatype` | Fully-qualified class name of the result | `datatype -> output.header.x-type` |
 | `model.<key>` | Current state machine variable | `model.cached -> output.body` |
 | `input` | Pass-through of the task's input | `input -> model.saved` |
@@ -860,14 +862,20 @@ flow:
 
 ## Built-in special variables
 
-These `model.*` variables are set by the framework automatically.
+These `model.*` variables are set by the framework automatically. The flow-instance metadata
+(`model.flow`, `model.instance`, `model.trace`, `model.cid`, `model.ttl`) and the `model.none`
+null constant are READ only — use them as mapping sources; the flow compiler rejects any data
+mapping that overwrites these reserved keys (and the engine rejects a dynamic
+`model.{model.pointer}` target that resolves to one at runtime).
 
 | Variable | Description |
 |----------|-------------|
 | `model.trace` | Current distributed trace ID |
-| `model.flow` | Unique ID of this flow instance |
-| `model.instance` | Alias for `model.flow` |
-| `model.none` | Always `null`; use to clear model keys or delete file/ext destinations |
+| `model.flow` | ID of the flow configuration |
+| `model.instance` | Unique ID of this flow instance |
+| `model.cid` | Business correlation-id of the inbound request |
+| `model.ttl` | Flow instance TTL in milliseconds |
+| `model.none` | Always `null` (enforced); use to clear model keys or delete file/ext destinations |
 | `model.<source>.ITEM` | Current item in a dynamic fork iteration |
 | `model.<source>.INDEX` | Zero-based index in a dynamic fork iteration |
 

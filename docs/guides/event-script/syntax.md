@@ -925,9 +925,10 @@ It is because a text constant may contain any special characters including the m
 
 ### Metadata for each flow instance
 
-For each flow instance, the state machine in the "model" namespace provides the following metadata that
-you can use in the input/output data mapping. For example, you can set this for an exception handler to
-log additional information.
+For each flow instance, the state machine in the "model" namespace provides the following READ only metadata
+that you can use as a mapping source in your input and output data mapping statements — the flow compiler
+rejects any data mapping that overwrites these keys. For example, you can set this for an exception handler
+to log additional information.
 
 
 | Type             | Keyword          | Comment                                    |
