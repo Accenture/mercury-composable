@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-14 | agent: Claude Code (2026-07-14-225413)
+- **last_session:** 2026-07-14 | agent: Claude Code (2026-07-14-231832)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -332,6 +332,13 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (release in flight — 2026-07-14) **v4.8.6 bumped for field deployment; NORMAL flow (tag on
+  merge).** Branch `chore/release-4.8.6` pushed, PR pending. Purpose: deliver #184 reserved-key
+  enforcement as a documented breaking change (field app overwriting model.ttl already known; field
+  agrees with READ-only design) + #183 quality items. Full reactor + pg-example green at 4.8.6.
+  Next: PR → CI → merge → tag v4.8.6 → release text.
+  <!-- id: thread-release-4-8-6 | created: 2026-07-14 | last_used: 2026-07-14 | uses: 1 | tier: working | origin: 2026-07-14-231832 -->
 
 - [x] (release in flight — 2026-07-14; CLOSED same day) **v4.8.5 SHIPPED via the normal flow** —
   tag `v4.8.5` on merge commit `a1cc1dec` (PR #182, CI green), release text delivered. Carries
