@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-14 | agent: Claude Code (2026-07-14-183626)
+- **last_session:** 2026-07-14 | agent: Claude Code (2026-07-14-220840)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -388,8 +388,9 @@
   app under the shared trace id; CROSS-app span parenting still needs traceparent (it carries the
   caller's span id), so tooling stitches by trace id until the gateway passes traceparent — positive
   case VERIFIED live too: with traceparent on the wire (generated 32-hex id), lambda-example's
-  hello.world span parented directly onto the traceparent's span id across the HTTP hop. Field runs this conflation short-term while infra
-  allow-lists traceparent + X-Trace-Id at the gateway/Istio.
+  hello.world span parented directly onto the traceparent's span id across the HTTP hop. Field runs this conflation short-term; gateway team has been ASKED (2026-07-14) to
+  allow-list traceparent + X-Trace-Id at the gateway/Istio — Eric updates after the devops team
+  tests in the cloud dev environment.
   <!-- id: thread-field-trace-propagation-4-6-3 | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-142021 -->
 
 - [ ] (P0–P5 code-complete — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; remaining = field canary → P4 retire-BDB) **Replace
