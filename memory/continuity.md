@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-13 | agent: Claude Code (2026-07-13-230916)
+- **last_session:** 2026-07-14 | agent: Claude Code (2026-07-14-165741)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -349,9 +349,12 @@
   ≠ readiness when writes are truncate-then-write; poll the consuming API for settled state). The team
   trials v4.7.1 for the trace behavior while v4.8.3 is prepared. Also answered (2026-07-13): setting
   `http.trace.id.header` = `http.correlation.id.header` = `X-Correlation-Id` (legacy conflation) is safe
-  when the edge always supplies the header — one value feeds both ids end-to-end; when absent, the two
-  ids diverge by design (trace via traceparent stays continuous; shared-header slot resolves cid-last on
-  HTTP, trace-last on Kafka).
+  when the edge always supplies the header — one value feeds both ids end-to-end. **UPDATE 2026-07-14:
+  the absent-header divergence was FIXED** (`fix/conflated-header-id-unification`) — when the resolved
+  trace/cid header names collide and the shared header is absent, both ingress paths (HTTP + Kafka
+  adapter) now yield ONE id (trace authoritative, honors traceparent; cid adopts it). Divergence remains
+  by design only for DISTINCT names. Field runs this conflation short-term while infra allow-lists
+  traceparent + X-Trace-Id at the gateway/Istio.
   <!-- id: thread-field-trace-propagation-4-6-3 | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-142021 -->
 
 - [ ] (P0–P5 code-complete — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; remaining = field canary → P4 retire-BDB) **Replace
