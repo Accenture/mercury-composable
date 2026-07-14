@@ -250,9 +250,13 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private EventEnvelope toFlowRequest(Map<String, Object> dataset, Map<String, String> headers,
                                         String[] trace, String traceId, String tracePath) {
         // Capture the upstream business correlation-id from the effective header; generate a fresh one if absent.
+        // Legacy conflation config: when the trace-id and correlation-id share ONE header name, an absent
+        // shared header must yield ONE id - the resolved trace id (traceparent > shared header > fresh UUID)
+        // is authoritative and the correlation-id adopts it, keeping the outbound hop self-consistent.
         String businessCorrelationId = headers.get(correlationIdHeader);
         if (businessCorrelationId == null) {
-            businessCorrelationId = Utility.getInstance().getUuid();
+            businessCorrelationId = traceIdHeader != null && traceIdHeader.equalsIgnoreCase(correlationIdHeader)
+                    ? traceId : Utility.getInstance().getUuid();
         }
         EventEnvelope forward = new EventEnvelope();
         forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, binding.flowId())
