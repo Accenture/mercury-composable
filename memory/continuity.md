@@ -370,8 +370,10 @@
   the absent-header divergence was FIXED** (`fix/conflated-header-id-unification`) — when the resolved
   trace/cid header names collide and the shared header is absent, both ingress paths (HTTP + Kafka
   adapter) now yield ONE id (trace authoritative, honors traceparent; cid adopts it). Divergence remains
-  by design only for DISTINCT names. Field runs this conflation short-term while infra allow-lists
-  traceparent + X-Trace-Id at the gateway/Istio.
+  by design only for DISTINCT names. **VALIDATED by Eric 2026-07-14 (merged as PR #179, in the post-#181
+  main)**: complete local build + live two-app hop with no header supplied → downstream saw traceparent
+  trace-id == x-correlation-id (one generated id). Field runs this conflation short-term while infra
+  allow-lists traceparent + X-Trace-Id at the gateway/Istio.
   <!-- id: thread-field-trace-propagation-4-6-3 | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-142021 -->
 
 - [ ] (P0–P5 code-complete — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; remaining = field canary → P4 retire-BDB) **Replace
