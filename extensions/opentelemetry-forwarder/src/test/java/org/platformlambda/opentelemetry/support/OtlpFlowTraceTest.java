@@ -61,9 +61,13 @@ class OtlpFlowTraceTest {
                         dataset, util.getUuid(), 8000)
                 .get(8000, TimeUnit.MILLISECONDS);
 
-        // collect this trace's spans by name: task.1, task.2, and the synthetic task.executor summary
+        // collect this trace's spans by name: task.1, task.2, and the synthetic task.executor summary.
+        // The deadline is deliberately generous for busy CI executors (the poll returns the moment all
+        // three spans arrive): the flow-summary record is emitted after the flow future resolves, and
+        // the OTLP HTTP export has its own 10s default timeout - a single slow export attempt on a
+        // cold runner can exceed a 10s window (observed once in CI).
         Map<String, Map<String, Object>> byName = new HashMap<>();
-        long deadline = System.currentTimeMillis() + 10_000;
+        long deadline = System.currentTimeMillis() + 30_000;
         while (!(byName.containsKey("task.1") && byName.containsKey("task.2") && byName.containsKey("task.executor"))
                 && System.currentTimeMillis() < deadline) {
             Map<String, Object> rec = MockOtlpCollector.CAPTURED.poll(

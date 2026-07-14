@@ -467,20 +467,13 @@ public class HttpRouter {
             handleOptionsMethod(requestId, request, route);
             return;
         }
-        HttpServerResponse response = request.response();
-        insertCorsHeaders(response, route);
+        insertCorsHeaders(request.response(), route);
         // check if target service is available
         EventEmitter po = EventEmitter.getInstance();
         if (!po.exists(route.info.primary)) {
             throw new AppException(503, "Service " + route.info.primary + " not reachable");
         }
-        String authService = null;
-        if (route.info.defaultAuthService != null) {
-            authService = getAuthService(request, route);
-            if (!po.exists(authService)) {
-                throw new AppException(503, "Service " + authService + " not reachable");
-            }
-        }
+        String authService = getReachableAuthService(po, request, route);
         AsyncHttpRequest req = prepareHttpRequest(request, route, uri);
         // Ensure the request carries a business correlation-id; generate a fresh one at the edge if absent.
         // This is independent of tracing so a correlation-id is always available to flows and functions.
@@ -494,43 +487,90 @@ public class HttpRouter {
             businessCorrelationId = util.getUuid();
             req.setHeader(cidHeaderName, businessCorrelationId);
         }
-        // Distributed tracing required?
-        String traceId = null;
-        String tracePath = null;
-        String parentSpanId = null;
-        // Set trace header if needed
-        if (route.info.tracing) {
-            traceId = getTraceId(request, route.info.traceIdHeader);
-            tracePath = method + " " + uri;
-            if (req.getQueryString() != null) {
-                tracePath += "?" + req.getQueryString();
-            }
-            // W3C trace context: continue an upstream trace and adopt the caller's span as our parent
-            String[] traceParent = W3cTrace.parse(request.getHeader(W3cTrace.TRACEPARENT));
-            if (traceParent.length > 0) {
-                traceId = traceParent[0];
-                parentSpanId = traceParent[1];
-            }
-            // Legacy conflation config: when the trace-id and correlation-id share ONE header name
-            // (e.g. http.trace.id.header=X-Correlation-Id for a gateway that only passes that header),
-            // an absent shared header must yield ONE id, not two - otherwise the generated traceparent
-            // and the shared header would carry different ids on the outbound hop. The trace id (which
-            // also honors an inbound traceparent) is authoritative; the correlation-id adopts it.
-            String traceHeaderName = route.info.traceIdHeader != null ? route.info.traceIdHeader : traceIdHeader;
-            if (generatedCid && traceHeaderName.equalsIgnoreCase(cidHeaderName)) {
-                businessCorrelationId = traceId;
-                req.setHeader(cidHeaderName, traceId);
-            }
-        }
-        final HttpRequestEvent requestEvent = new HttpRequestEvent(requestId, route, authService, traceId, tracePath);
-        requestEvent.setParentSpanId(parentSpanId);
-        requestEvent.setBusinessCorrelationId(businessCorrelationId);
+        TraceContext trace = resolveTraceContext(request, route, req, uri,
+                                                 cidHeaderName, generatedCid, businessCorrelationId);
+        final HttpRequestEvent requestEvent = new HttpRequestEvent(requestId, route, authService,
+                                                                    trace.traceId(), trace.tracePath());
+        requestEvent.setParentSpanId(trace.parentSpanId());
+        requestEvent.setBusinessCorrelationId(trace.businessCorrelationId());
         // load HTTP body
         if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {
             handlePayload(request, route, requestEvent, req);
         } else {
             sendRequestToService(request, requestEvent.setHttpRequest(req));
         }
+    }
+
+    /**
+     * Resolve the optional authentication service for the endpoint and verify it is reachable.
+     *
+     * @param po event emitter for service discovery
+     * @param request HTTP
+     * @param route the assigned route
+     * @return the authentication service route, or null when the endpoint has none configured
+     */
+    private String getReachableAuthService(EventEmitter po, HttpServerRequest request, AssignedRoute route) {
+        if (route.info.defaultAuthService == null) {
+            return null;
+        }
+        String authService = getAuthService(request, route);
+        if (!po.exists(authService)) {
+            throw new AppException(503, "Service " + authService + " not reachable");
+        }
+        return authService;
+    }
+
+    /**
+     * Distributed trace context resolved at ingress, together with the effective business
+     * correlation-id (which the legacy conflation rule below may align with the trace id).
+     */
+    private record TraceContext(String traceId, String tracePath, String parentSpanId,
+                                String businessCorrelationId) { }
+
+    /**
+     * Resolve the trace context for a traced endpoint: effective trace id (an inbound W3C
+     * "traceparent" wins and contributes the caller's span as our parent), the trace path,
+     * and the effective business correlation-id.
+     * <p>
+     * Legacy conflation config: when the trace-id and correlation-id share ONE header name
+     * (e.g. http.trace.id.header=X-Correlation-Id for a gateway that only passes that header),
+     * an absent shared header must yield ONE id, not two - otherwise the generated traceparent
+     * and the shared header would carry different ids on the outbound hop. The trace id (which
+     * also honors an inbound traceparent) is authoritative; the correlation-id adopts it.
+     *
+     * @param request HTTP
+     * @param route the assigned route
+     * @param req the prepared AsyncHttpRequest to be forwarded to the target service
+     * @param uri decoded request URI
+     * @param cidHeaderName the effective correlation-id header name
+     * @param generatedCid true when the correlation-id was generated at the edge (header absent)
+     * @param businessCorrelationId the correlation-id resolved so far
+     * @return the trace context (all-null trace fields when the endpoint is not traced)
+     */
+    private TraceContext resolveTraceContext(HttpServerRequest request, AssignedRoute route, AsyncHttpRequest req,
+                                             String uri, String cidHeaderName, boolean generatedCid,
+                                             String businessCorrelationId) {
+        if (!route.info.tracing) {
+            return new TraceContext(null, null, null, businessCorrelationId);
+        }
+        String traceId = getTraceId(request, route.info.traceIdHeader);
+        String tracePath = request.method().name() + " " + uri;
+        if (req.getQueryString() != null) {
+            tracePath += "?" + req.getQueryString();
+        }
+        // W3C trace context: continue an upstream trace and adopt the caller's span as our parent
+        String parentSpanId = null;
+        String[] traceParent = W3cTrace.parse(request.getHeader(W3cTrace.TRACEPARENT));
+        if (traceParent.length > 0) {
+            traceId = traceParent[0];
+            parentSpanId = traceParent[1];
+        }
+        String traceHeaderName = route.info.traceIdHeader != null ? route.info.traceIdHeader : traceIdHeader;
+        if (generatedCid && traceHeaderName.equalsIgnoreCase(cidHeaderName)) {
+            businessCorrelationId = traceId;
+            req.setHeader(cidHeaderName, traceId);
+        }
+        return new TraceContext(traceId, tracePath, parentSpanId, businessCorrelationId);
     }
 
     private void handlePayload(HttpServerRequest request, AssignedRoute route,

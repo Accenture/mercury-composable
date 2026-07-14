@@ -27,8 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 @PreLoad(route="v1.hello.exception", instances=5)
-public class HelloException implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
-    private static final Logger log = LoggerFactory.getLogger(HelloException.class);
+public class HelloExceptionHandler implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
+    private static final Logger log = LoggerFactory.getLogger(HelloExceptionHandler.class);
     private static final String TYPE = "type";
     private static final String ERROR = "error";
     private static final String TASK = "task";
