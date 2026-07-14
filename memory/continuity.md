@@ -333,11 +333,10 @@
 
 ## Open Threads
 
-- [ ] (release in flight — 2026-07-14) **v4.8.5 bumped for field deployment; NORMAL flow (tag on
-  merge).** Branch `chore/release-4.8.5` (`de21e108`) pushed, PR pending. Carries #178-#181:
-  conflated-header one-id fix (validated live) + field pipeline build reliability (twin-kafka
-  test-order root cause). Full reactor + pg-example green at 4.8.5. Next: Eric opens PR → CI →
-  merge → tag v4.8.5 → release text.
+- [x] (release in flight — 2026-07-14; CLOSED same day) **v4.8.5 SHIPPED via the normal flow** —
+  tag `v4.8.5` on merge commit `a1cc1dec` (PR #182, CI green), release text delivered. Carries
+  #178-#181: conflated-header one-id fix (validated live) + field pipeline build reliability
+  (twin-kafka test-order root cause + env-leakage hardening).
   <!-- id: thread-release-4-8-5 | created: 2026-07-14 | last_used: 2026-07-14 | uses: 1 | tier: working | origin: 2026-07-14-183626 -->
 
 
