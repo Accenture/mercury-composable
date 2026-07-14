@@ -1259,10 +1259,19 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             while (start < text.length()) {
                 start = scanDynamicIndex(sb, text, source, isRhs, start);
             }
-            return sb.toString();
-        } else {
-            return text;
+            text = sb.toString();
         }
+        // A dynamic RHS (e.g. 'model.{model.pointer}') is resolved only at runtime, so it bypasses
+        // the flow compiler's reserved-key validation - re-check the resolved form here. A static
+        // statement passes through unchanged and was already validated at compile time.
+        if (isRhs && !text.equals(statement)) {
+            String reserved = CompileFlows.reservedModelKeyViolation(text);
+            if (reserved != null) {
+                throw new IllegalArgumentException("Cannot set RHS to the reserved state-machine key '" +
+                        reserved + "' - " + statement);
+            }
+        }
+        return text;
     }
 
     private void validateNumericIndex(StringBuilder sb, String text, String idx, boolean isRhs) {

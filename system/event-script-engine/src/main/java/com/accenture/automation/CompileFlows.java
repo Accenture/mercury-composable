@@ -66,15 +66,22 @@ public class CompileFlows implements EntryPoint {
     private static final String MODEL_ROOT = "model.root.";
     private static final String MODEL_NAMESPACE = "model.";
     /**
-     * Metadata keys seeded into each flow instance's state machine by the engine
-     * (see FlowInstance). A data mapping must never overwrite them - a corrupted
-     * model.cid, for example, would propagate to downstream systems through any
-     * later 'model.cid -> ...' mapping. The model.parent and model.root keys are
-     * protected as whole namespaces by DataMappingHelper.validModel; writing
-     * beneath them (model.parent.*) is the shared-state mechanism and stays allowed.
+     * Reserved state-machine keys that a data mapping must never overwrite:
+     * <ul>
+     * <li>the READ-only metadata seeded into each flow instance by the engine (see FlowInstance) -
+     *     model.cid, model.instance, model.flow, model.ttl and model.trace. A corrupted model.cid,
+     *     for example, would propagate to downstream systems through any later
+     *     'model.cid -> ...' mapping.</li>
+     * <li>the model.none null constant - it works because the 'none' key is never set, so a write
+     *     would silently turn every later 'model.none -> X' clear-operation into a value copy.</li>
+     * </ul>
+     * The model.parent and model.root keys are protected as whole namespaces by
+     * DataMappingHelper.validModel; writing beneath them (model.parent.*) is the shared-state
+     * mechanism and stays allowed.
      */
     private static final List<String> RESERVED_MODEL_KEYS =
-            List.of("model.cid", "model.instance", "model.flow", "model.ttl", "model.parent", "model.root");
+            List.of("model.cid", "model.instance", "model.flow", "model.ttl", "model.trace",
+                    "model.none", "model.parent", "model.root");
     private static final String NEGATE_MODEL = "!model.";
     private static final String EXT_NAMESPACE = "ext:";
     private static final String TEXT_TYPE = "text(";
@@ -311,12 +318,12 @@ public class CompileFlows implements EntryPoint {
         return true;
     }
 
-    /** Log and reject a data mapping entry whose target overwrites reserved state-machine metadata. */
+    /** Log and reject a data mapping entry whose target overwrites a reserved state-machine key. */
     private boolean rejectedReservedTarget(String direction, String rhs, String name,
                                            FlowConfigMetadata md, String line) {
         String reserved = reservedModelKeyViolation(rhs);
         if (reserved != null) {
-            log.error("Skip invalid task ({}) {} in {} that overwrites the reserved metadata '{}' - {}",
+            log.error("Skip invalid task ({}) {} in {} that overwrites the reserved state-machine key '{}' - {}",
                     direction, md.uniqueTaskName, name, reserved, line);
             return true;
         }
@@ -324,16 +331,21 @@ public class CompileFlows implements EntryPoint {
     }
 
     /**
-     * Detect a data mapping target (RHS) that would overwrite a reserved metadata key of the
-     * flow instance's state machine. Exact matches are rejected for all reserved keys; nested
-     * writes (e.g. {@code model.cid.x} or {@code model.cid[0]}) are also rejected for the scalar
-     * metadata keys because they would replace the scalar with a map or list. Nested writes under
-     * {@code model.parent} / {@code model.root} remain valid - that is the shared-state mechanism.
+     * Detect a data mapping target (RHS) that would overwrite a reserved key of the flow
+     * instance's state machine (the READ-only metadata or the model.none null constant).
+     * Exact matches are rejected for all reserved keys; nested writes (e.g. {@code model.cid.x}
+     * or {@code model.cid[0]}) are also rejected for the scalar keys because they would replace
+     * the scalar with a map or list. Nested writes under {@code model.parent} / {@code model.root}
+     * remain valid - that is the shared-state mechanism.
+     * <p>
+     * Package-private static so TaskExecutor can re-run the same check on a dynamic RHS
+     * (e.g. {@code model.{model.pointer}}) after runtime substitution, which the compile-time
+     * validation cannot see.
      *
      * @param rhs the right-hand-side of a data mapping
      * @return the reserved key that would be overwritten, or null if the target is acceptable
      */
-    private String reservedModelKeyViolation(String rhs) {
+    static String reservedModelKeyViolation(String rhs) {
         for (String reserved : RESERVED_MODEL_KEYS) {
             if (rhs.equals(reserved)) {
                 return reserved;

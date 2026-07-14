@@ -69,10 +69,38 @@ class FlowTests extends TestBase {
         assertNotNull(inputViolation);
         assertFalse(inputViolation.tasks.containsKey("greeting.test"),
                 "task with an input mapping overwriting model.instance must be dropped");
+        var traceViolation = com.accenture.models.Flows.getFlow("parser-test-30");
+        assertNotNull(traceViolation);
+        assertFalse(traceViolation.tasks.containsKey("greeting.test"),
+                "task with an output mapping overwriting model.trace must be dropped");
+        var noneViolation = com.accenture.models.Flows.getFlow("parser-test-31");
+        assertNotNull(noneViolation);
+        assertFalse(noneViolation.tasks.containsKey("greeting.test"),
+                "task with an input mapping overwriting the model.none null constant must be dropped");
         // positive control: the same task name loads fine in a fixture without reserved-key writes
         var control = com.accenture.models.Flows.getFlow("greetings");
         assertNotNull(control, "valid flows still load");
         assertFalse(control.tasks.isEmpty());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void dynamicModelTargetResolvingToReservedKeyFailsAtRuntime() throws Exception {
+        // 'dynamic-reserved-key' compiles cleanly because its RHS 'model.{model.pointer}' is only
+        // resolved at runtime; TaskExecutor re-checks the resolved form ('model.none') and aborts
+        // the task, routing the error to the flow's exception handler.
+        Utility util = Utility.getInstance();
+        Map<String, Object> dataset = new HashMap<>();
+        dataset.put("body", Map.of("hello", "world"));
+        dataset.put("header", Map.of());
+        EventEnvelope result = FlowExecutor.getInstance()
+                .request("unit.test", util.getUuid(), "TEST /dynamic/reserved",
+                        "dynamic-reserved-key", dataset, util.getUuid(), 8000).get();
+        assertInstanceOf(Map.class, result.getBody());
+        Map<String, Object> body = (Map<String, Object>) result.getBody();
+        String message = String.valueOf(body.get("message"));
+        assertTrue(message.contains("reserved state-machine key"), "unexpected error: " + body);
+        assertTrue(message.contains("model.none"), "the error should name the reserved key: " + body);
     }
 
     @Test
