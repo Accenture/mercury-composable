@@ -8,6 +8,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.8.6, 7/14/2026
+
+Maintenance release: the flow state-machine's read-only contract is now fully enforced, plus
+code-quality touch-up from the field pipeline scan.
+
+### Changed
+
+1. **BREAKING for misconfigured flows: reserved state-machine keys are fully enforced (#184).**
+   The flow-instance metadata (`model.cid`, `model.instance`, `model.flow`, `model.ttl`,
+   `model.trace`) and the `model.none` null constant are READ only. `model.trace` and
+   `model.none` now join the compile-time enforcement that already covered the other metadata
+   keys, and a **dynamic** mapping target (`x -> model.{model.pointer}`) whose pointer resolves
+   to a reserved key at runtime is now rejected as well - it aborts the task and routes the
+   error to the flow's exception handler.
+
+   **What the field will see:** an Event Script flow that overwrites a reserved key (e.g.
+   `... -> model.ttl`) logs an ERROR at application startup -
+   `Skip invalid task (input|output) <task> in <flow>.yml that overwrites the reserved
+   state-machine key '<key>'` - and the offending task is dropped, so the flow fails when
+   executed. **Remedy:** map the value to a non-reserved model key instead (e.g.
+   `model.my_ttl`). To READ metadata, use it as a mapping source (`model.ttl -> ttl`) - that
+   remains fully supported in both input and output mappings.
+
+2. **HttpRouter ingress refactored for clarity (#183)** - behavior-preserving: the trace-context
+   resolution (including the 4.8.5 conflated-header one-id rule) and the auth-service
+   reachability check are now cohesive helpers, guarded by the existing regression tests.
+
+### Fixed
+
+1. **Documentation corrections for the flow state machine (#184).** The Flow Configuration
+   Schema reference wrongly described `model.flow` (the flow configuration ID) and
+   `model.instance` (the flow instance ID) as aliases, omitted `model.cid`/`model.ttl`, and
+   contained an example that itself wrote to `model.trace`. The Event Script syntax guide now
+   states the metadata's READ-only contract explicitly.
+2. **Test-only quality items (#183):** the last `*Exception`-named non-Throwable test fixture
+   renamed (java:S2166) and a generous span-collection deadline in the OpenTelemetry flow-trace
+   test (same busy-CI-executor convention as the 4.8.5 boot deadlines).
+
+---
 ## Version 4.8.5, 7/14/2026
 
 Maintenance release: trace/correlation impedance-matching edge case and CI build reliability.
