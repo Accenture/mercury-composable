@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-14 | agent: Claude Code (2026-07-14-165741)
+- **last_session:** 2026-07-14 | agent: Claude Code (2026-07-14-173816)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -304,6 +304,23 @@
   `ReentrantLock`, not by dropping to one worker (kafka.health precedent: 5 workers, lock-confined
   KafkaConsumer).
   <!-- id: conv-instance-count-pattern | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-221521 -->
+- **Test config injection: use the EXACT config key as a System property, never a `${VAR}` reference
+  set in `@BeforeAll`** (2026-07-14, from the second field Jenkins twin-kafka failure). Three facts
+  interact: (1) `AppConfigReader` resolves `${VAR}` references ONCE when the singleton first loads;
+  (2) surefire runs a module's test classes in ONE JVM and its default run order is
+  filesystem-dependent (differs per CI environment — GitHub passed, field Jenkins failed);
+  (3) any test class whose constructor chain touches `AppConfigReader.getInstance()` (e.g. a health
+  check's `resolveDurationMs`) freezes every unresolved reference for the whole JVM.
+  `ConfigReader.get()` checks `System.getProperty(<exact key>)` live on EVERY read, so exact-key
+  injection is immune to class order (`KafkaFlowAdapterTest` pattern; `TwinKafkaBridgeTest` fixed to
+  match, + surefire `runOrder=alphabetical` pinned in twin-kafka so all environments run the same
+  adversarial order). Env-style `${VAR}` injection stays safe ONLY for configs loaded fresh after
+  the test sets them (e.g. Kafka client templates). Corollary: a boot-poll deadline expiring usually
+  means a `@MainApplication` CRASHED (check AppStarter "Unable to start" ERROR), not a slow executor
+  — PR #178's deadline extension treated a symptom of this very bug. Relates
+  [[conv-instance-count-pattern]] (the health-check tests that shifted the class order arrived with
+  kafka.health/secondary.kafka.health).
+  <!-- id: test-config-injection-exact-key | created: 2026-07-14 | last_used: 2026-07-14 | uses: 1 | tier: working | origin: 2026-07-14-173816 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
