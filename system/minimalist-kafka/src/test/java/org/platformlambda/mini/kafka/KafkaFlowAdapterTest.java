@@ -97,7 +97,8 @@ class KafkaFlowAdapterTest {
         AutoStart.main(new String[0]);
         // KafkaFlowAutoStart (@MainApplication) runs after the engine is up: it sets the publisher and
         // starts the adapter. A non-null adapter is our readiness signal.
-        long deadline = System.currentTimeMillis() + 20000;
+        // generous for busy CI executors - the poll returns as soon as the adapter is ready
+        long deadline = System.currentTimeMillis() + 90000;
         while (KafkaRuntime.adapter() == null && System.currentTimeMillis() < deadline) {
             Utility.getInstance().sleep(100);
         }

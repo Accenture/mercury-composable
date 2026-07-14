@@ -90,8 +90,12 @@ class TwinKafkaBridgeTest {
         System.setProperty("KAFKA_BOOTSTRAP_SERVERS", clusterA.bootstrapServers());
         System.setProperty("SECONDARY_KAFKA_BOOTSTRAP_SERVERS", clusterB.bootstrapServers());
         AutoStart.main(new String[0]);
-        // both @MainApplication entry points must complete: primary + secondary adapters ready
-        long deadline = System.currentTimeMillis() + 20000;
+        // both @MainApplication entry points must complete: primary + secondary adapters ready.
+        // The deadline is deliberately generous: this boot brings up TWO embedded KRaft brokers,
+        // a schema registry, and the full application - a busy CI executor exceeded 20s in the
+        // field, and the poll returns the moment both adapters are ready, so a large budget
+        // costs nothing on a fast machine.
+        long deadline = System.currentTimeMillis() + 90000;
         while ((KafkaRuntime.adapter() == null || SecondaryKafkaRuntime.adapter() == null)
                 && System.currentTimeMillis() < deadline) {
             Utility.getInstance().sleep(100);
