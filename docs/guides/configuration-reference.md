@@ -163,6 +163,8 @@ below tune it. The `otel.*` keys are read by the `opentelemetry-forwarder` exten
 | `otel.trace.forwarder.enabled` | `boolean` | `true` | Used by the `opentelemetry-forwarder` extension. `false` makes the forwarder a no-op (jar present, no export). |
 | `otel.exporter.otlp.endpoint` | `String` | `http://localhost:4318/v1/traces` | OTLP/HTTP traces endpoint the `opentelemetry-forwarder` extension exports spans to. |
 | `otel.exporter.otlp.timeout` | `int` (ms) | `10000` | OTLP export timeout for the `opentelemetry-forwarder` extension. |
+| `otel.exporter.otlp.connect.timeout` | `int` (ms) | `10000` | TCP/TLS connect timeout for the `opentelemetry-forwarder` extension's OTLP exporter, separate from the export timeout. |
+| `otel.exporter.otlp.compression` | `String` | `none` | OTLP request-body compression for the `opentelemetry-forwarder` extension: `gzip` or `none`. `gzip` cuts egress bandwidth for high trace volumes. |
 | `otel.service.name` | `String` | `application.name` | `service.name` resource attribute the `opentelemetry-forwarder` extension stamps on every exported span. |
 | `otel.exporter.otlp.headers` | `String` (comma-sep `key=value`) | — | Request headers for the `opentelemetry-forwarder` extension — **where backend API credentials go** (e.g. `Authorization=Api-Token …` for Dynatrace, `X-SF-Token=…` for Splunk). Source it from the environment with **no default** — `otel.exporter.otlp.headers=${OTEL_EXPORTER_OTLP_HEADERS}` — so no secret is hard-coded; unset resolves to no headers. |
 
