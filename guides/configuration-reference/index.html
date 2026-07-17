@@ -720,6 +720,18 @@ below tune it. The <code>otel.*</code> keys are read by the <code>opentelemetry-
 <td>OTLP export timeout for the <code>opentelemetry-forwarder</code> extension.</td>
 </tr>
 <tr>
+<td><code>otel.exporter.otlp.connect.timeout</code></td>
+<td><code>int</code> (ms)</td>
+<td><code>10000</code></td>
+<td>TCP/TLS connect timeout for the <code>opentelemetry-forwarder</code> extension's OTLP exporter, separate from the export timeout.</td>
+</tr>
+<tr>
+<td><code>otel.exporter.otlp.compression</code></td>
+<td><code>String</code></td>
+<td><code>none</code></td>
+<td>OTLP request-body compression for the <code>opentelemetry-forwarder</code> extension: <code>gzip</code> or <code>none</code>. <code>gzip</code> cuts egress bandwidth for high trace volumes.</td>
+</tr>
+<tr>
 <td><code>otel.service.name</code></td>
 <td><code>String</code></td>
 <td><code>application.name</code></td>
