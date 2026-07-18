@@ -79,6 +79,11 @@ public class GraphTraveler extends GraphLambdaFunction {
             var error = new EventEnvelope().setTo(event.getReplyTo()).setStatus(rc).setBody(e.getMessage())
                                                 .setCorrelationId(event.getCorrelationId());
             po.send(error);
+            // Uniform end-of-transmission even when the traversal fails before it
+            // starts (no graph instance yet, missing root/end) - no GraphInstance
+            // exists here, so emit the terminal line directly to the reply route.
+            po.send(new EventEnvelope().setTo(event.getReplyTo()).setStatus(400)
+                    .setBody("Graph traversal aborted").setCorrelationId(event.getCorrelationId()));
         }
     }
 
@@ -132,7 +137,7 @@ public class GraphTraveler extends GraphLambdaFunction {
                 var cid = graphInstance.getCorrelationId();
                 var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(errorMap).setStatus(rc);
                 po.send(error);
-                sendError(po, graphInstance, "Graph traversal aborted");
+                emitAborted(po, graphInstance);
             } else if (!graphInstance.complete.get()) {
                 var next = String.valueOf(response.getBody());
                 decideNext(po, node, next, graphInstance);
@@ -266,13 +271,33 @@ public class GraphTraveler extends GraphLambdaFunction {
         var error = new EventEnvelope().setTo(out).setCorrelationId(graphInstance.getCorrelationId())
                                         .setBody(response.getBody()).setStatus(response.getStatus());
         po.send(error);
-        sendError(po, graphInstance, "Graph traversal aborted");
+        emitAborted(po, graphInstance);
     }
 
+    /**
+     * Canonical failure terminal — the mirror of the success terminal in
+     * {@code executionComplete}. Marks the traversal complete and emits the single
+     * end-of-transmission line the synchronous companion endpoint drains on, so
+     * <b>every</b> {@code run} finishes with either "Graph traversal completed in N ms"
+     * or "Graph traversal aborted" — a deterministic signal, never a timeout.
+     */
+    private void emitAborted(PostOffice po, GraphInstance graphInstance) {
+        graphInstance.complete.set(true);
+        po.send(new EventEnvelope().setTo(graphInstance.getReplyTo())
+                .setCorrelationId(graphInstance.getCorrelationId())
+                .setBody("Graph traversal aborted").setStatus(400));
+    }
+
+    /**
+     * Emit a specific failure reason and then the canonical {@link #emitAborted}
+     * terminal, so the human/companion sees <i>why</i> and any watcher (the sync
+     * endpoint included) still gets the uniform end-of-transmission line last.
+     */
     private void sendError(PostOffice po, GraphInstance graphInstance, String message) {
         graphInstance.complete.set(true);
         var error = new EventEnvelope().setTo(graphInstance.getReplyTo())
                             .setCorrelationId(graphInstance.getCorrelationId()).setBody(message).setStatus(400);
         po.send(error);
+        emitAborted(po, graphInstance);
     }
 }

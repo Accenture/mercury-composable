@@ -28,6 +28,7 @@ import org.platformlambda.core.system.AutoStart;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
+import org.platformlambda.core.util.Utility;
 
 import java.util.List;
 import java.util.Map;
@@ -69,7 +70,7 @@ class CompanionSyncTest {
             if (GraphCommandService.hasSession(sid)) {
                 ready = true;
             } else {
-                Thread.sleep(20);
+                Utility.getInstance().sleep(20);
             }
         }
         assertTrue(GraphCommandService.hasSession(sid), "session must exist before a companion command");
@@ -95,13 +96,56 @@ class CompanionSyncTest {
             assertFalse(((List<?>) good.get("output")).isEmpty(), "console output returned in-band");
 
             // 3) the tee: the same output also reached the session's WebSocket .out route
-            Thread.sleep(200);
+            Utility.getInstance().sleep(200);
             var teedText = teed.stream()
                     .filter(String.class::isInstance)
                     .map(Object::toString)
                     .reduce("", (a, b) -> a + "\n" + b);
             assertTrue(teedText.contains("node root created"),
                     "sync output must be teed to the session's WS .out for the live human view: " + teed);
+
+            // 4) a traversal (`run`) is asynchronous - the handler replies before the
+            //    traveler streams its output. The sync response must carry the WHOLE
+            //    traversal, drained on the traveler's terminal line (emitted last), not a
+            //    raced sentinel that truncates it. Build a runnable graph and run it.
+            syncCommand(po, sid, "create node end");
+            syncCommand(po, sid, "create node mapper\nwith type mapper\nwith properties\n"
+                    + "skill=graph.data.mapper\nmapping[]=input.body.id -> output.body");
+            syncCommand(po, sid, "connect root to mapper with first");
+            syncCommand(po, sid, "connect mapper to end with second");
+            var instantiated = syncCommand(po, sid, "instantiate graph\ntext(hello world) -> input.body.id");
+            assertEquals(Boolean.TRUE, instantiated.get("ok"), "instantiate -> ok:true: " + instantiated);
+
+            var ran = syncCommand(po, sid, "run");
+            assertEquals(Boolean.TRUE, ran.get("ok"), "sync run -> ok:true: " + ran);
+            var runOutput = ((List<?>) ran.get("output")).stream().map(String::valueOf).toList();
+            assertTrue(runOutput.stream().anyMatch("Walk to root"::equals),
+                    "sync run captures the traversal start: " + runOutput);
+            assertTrue(runOutput.stream().anyMatch(l -> l.startsWith("Executed mapper with skill graph.data.mapper")),
+                    "sync run captures mid-traversal skill execution: " + runOutput);
+            assertTrue(runOutput.stream().anyMatch(l -> l.startsWith("Graph traversal completed in")),
+                    "sync run must capture the traversal terminal (drain waited for it): " + runOutput);
+            assertNotNull(ran.get("result"), "sync run returns the output.body as structured result: " + ran);
+            assertTrue(String.valueOf(ran.get("result")).contains("hello world"),
+                    "structured result carries the run's output.body: " + ran.get("result"));
+
+            // 5) a failing traversal (run before instantiate, fresh session) still returns
+            //    promptly with the uniform terminal - the drain never hangs to the timeout.
+            var badIn = "ws.990009.2.in";
+            var badId = "ws-990009-2";
+            po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                    .setBody(Map.of("type", "open", "in", badIn)));
+            for (int i = 0; i < 50 && !GraphCommandService.hasSession(badId); i++) {
+                Utility.getInstance().sleep(20);
+            }
+            long started = System.currentTimeMillis();
+            var badRun = syncCommand(po, badId, "run");
+            assertTrue(System.currentTimeMillis() - started < 10000,
+                    "a failed run must drain on the terminal, not the safety timeout");
+            assertEquals(Boolean.FALSE, badRun.get("ok"), "run with no instance -> ok:false: " + badRun);
+            var badRunOutput = ((List<?>) badRun.get("output")).stream().map(String::valueOf).toList();
+            assertTrue(badRunOutput.stream().anyMatch("Graph traversal aborted"::equals),
+                    "every run ends with a terminal, even on early failure: " + badRunOutput);
         } finally {
             platform.release(outRoute);
         }

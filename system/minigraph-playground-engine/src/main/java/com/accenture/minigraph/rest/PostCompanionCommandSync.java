@@ -54,9 +54,15 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * Mechanism: dispatch the command to the singleton command handler over
  * request-response RPC with a private, per-call capture route supplied as the
- * command's {@code out}; the capture route buffers each line (and tees it), then a
- * FIFO sentinel marks the buffer fully drained. The existing endpoint and the
- * WebSocket console are unchanged.
+ * command's {@code out}; the capture route buffers each line (and tees it). The
+ * end-of-transmission signal depends on the command shape: a <b>traversal</b>
+ * ({@code run}) is asynchronous — the handler launches the traveler and replies
+ * immediately, then the traveler streams its output afterwards — so it is drained
+ * on the traveler's <b>terminal line</b> ("Graph traversal completed in N ms" |
+ * "Graph traversal aborted"), always emitted last; every other command emits all
+ * output before it replies, so a <b>FIFO sentinel</b> marks its buffer drained. A
+ * sentinel would race (and usually beat) the traversal tail, truncating the
+ * capture. The existing endpoint and the WebSocket console are unchanged.
  */
 @OptionalService("app.env=dev")
 @PreLoad(route = "post.companion.command.sync", instances = 10)
@@ -95,26 +101,35 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
 
         // A private, per-call capture route: buffer each line for the in-band response and
         // tee it to the session's real WebSocket .out for the live human view.
+        // A traversal (`run`) streams its output after the handler replies; every other
+        // command emits all output before replying. One latch serves both: it fires on
+        // the traveler's terminal line for a traversal, or on the FIFO sentinel otherwise.
+        final var traversal = isTraversalCommand(command);
         List<Object> buffer = new CopyOnWriteArrayList<>();
         CountDownLatch drained = new CountDownLatch(1);
         LambdaFunction capture = (hdr, body, inst) -> {
             if (SYNC_SENTINEL.equals(body)) {
                 drained.countDown();
-            } else {
-                buffer.add(body);
-                try {
-                    emitter.send(new EventEnvelope().setTo(outRoute).setBody(body));
-                } catch (Exception e) {
-                    // best-effort tee: the .out route may have no live WebSocket
-                    log.debug("Tee to {} skipped - {}", outRoute, e.getMessage());
-                }
+                return null;
+            }
+            buffer.add(body);
+            try {
+                emitter.send(new EventEnvelope().setTo(outRoute).setBody(body));
+            } catch (Exception e) {
+                // best-effort tee: the .out route may have no live WebSocket
+                log.debug("Tee to {} skipped - {}", outRoute, e.getMessage());
+            }
+            // A traversal is drained on its terminal line (emitted last), so once seen
+            // every prior line is already buffered - deterministic, no racing sentinel.
+            if (traversal && body instanceof String line && isTraversalTerminal(line)) {
+                drained.countDown();
             }
             return null;
         };
         platform.registerPrivate(captureRoute, capture, 1);
         try {
-            // RPC the singleton handler with the capture route as `out`; its handleEvent
-            // completes (returns) only after all command output has been enqueued.
+            // RPC the singleton handler with the capture route as `out`; handleEvent
+            // returns once the command is dispatched (a traversal is still running).
             po.request(new EventEnvelope()
                     .setTo(GraphCommandService.SINGLETON_COMMAND_HANDLER)
                     .setBody(Map.of(
@@ -123,10 +138,15 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
                             "out", captureRoute,
                             "message", command)),
                     COMMAND_TIMEOUT_MS).get();
-            // The sentinel is enqueued after the command's (FIFO) output, so seeing it means
-            // the buffer is fully drained - deterministic, no arbitrary sleep.
-            po.send(new EventEnvelope().setTo(captureRoute).setBody(SYNC_SENTINEL));
-            if (!drained.await(DRAIN_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+            // Synchronous commands: enqueue the FIFO sentinel to mark the buffer drained.
+            // Traversals: the capture route counts the latch down on the terminal line.
+            if (!traversal) {
+                po.send(new EventEnvelope().setTo(captureRoute).setBody(SYNC_SENTINEL));
+            }
+            // The timeout is only a safety net (matched to the command timeout for a
+            // traversal); correctness comes from the signal, not from a timer.
+            var drainTimeout = traversal ? COMMAND_TIMEOUT_MS : DRAIN_TIMEOUT_MS;
+            if (!drained.await(drainTimeout, TimeUnit.MILLISECONDS)) {
                 log.warn("Companion sync drain timed out for {}", id);
             }
         } finally {
@@ -160,5 +180,24 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
     private static boolean isErrorLine(String line) {
         return line.startsWith("ERROR:") || line.contains("aborted") || line.contains("does not have")
                 || line.startsWith("Invalid") || line.contains("not found") || line.contains("Please try 'help'");
+    }
+
+    /**
+     * The Playground's only <b>asynchronous</b> command: {@code run} launches the
+     * traveler, which streams its output after the command handler has already
+     * replied — so the sentinel drain races the traversal tail. A traversal is
+     * drained on its terminal line instead (see {@link #isTraversalTerminal}).
+     */
+    private static boolean isTraversalCommand(String command) {
+        return "run".equalsIgnoreCase(command);
+    }
+
+    /**
+     * The traveler's end-of-transmission lines. One of these is <b>always</b>
+     * emitted last (success or failure), so the synchronous endpoint drains a
+     * traversal deterministically — no timer, no truncated capture.
+     */
+    private static boolean isTraversalTerminal(String line) {
+        return line.startsWith("Graph traversal completed in") || line.equals("Graph traversal aborted");
     }
 }
