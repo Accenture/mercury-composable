@@ -126,6 +126,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#skill-matrix">Skill → property matrix</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#math-statements">graph.math / graph.js statement grammar</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#invariants">Invariants</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
@@ -551,6 +553,74 @@ and examples; this is the at-a-glance contract.</p>
 </tr>
 </tbody>
 </table>
+<h2 id="math-statements"><code>graph.math</code> / <code>graph.js</code> statement grammar</h2>
+<p>A <code>graph.math</code> node runs an ordered list of <code>statement[]</code> lines. Five statement types:</p>
+<table>
+<thead>
+<tr>
+<th>Statement</th>
+<th>Form</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>COMPUTE</code></td>
+<td><code>COMPUTE: {var} -&gt; {expr}</code></td>
+<td>evaluate a JS-like math/boolean expression; the result is stored in <strong>this node's <code>result</code> namespace</strong> — read it back as <code>{this-node}.result.{var}</code> or move it with <code>MAPPING</code></td>
+</tr>
+<tr>
+<td><code>IF</code></td>
+<td>multi-line (see below)</td>
+<td>a boolean <strong>decision</strong> that redirects traversal to a named node</td>
+</tr>
+<tr>
+<td><code>MAPPING</code></td>
+<td><code>MAPPING: source -&gt; target</code></td>
+<td>data mapping, identical to <code>graph.data.mapper</code> (<strong>no</strong> <code>{}</code> around source/target)</td>
+</tr>
+<tr>
+<td><code>EXECUTE</code></td>
+<td><code>EXECUTE: {node-name}</code></td>
+<td>run another <code>graph.math</code> node inline</td>
+</tr>
+<tr>
+<td><code>RESET</code></td>
+<td><code>RESET: {node-name}</code></td>
+<td>clear a node's run-once guard so it can execute again (advanced)</td>
+</tr>
+</tbody>
+</table>
+<p>Expressions use <code>{namespace.key}</code> substitution (<code>{input.body.a}</code>, <code>{book.price}</code>, <code>{model.x}</code>). A node
+with <strong>only</strong> <code>MAPPING</code> statements is rejected — use <code>graph.data.mapper</code> instead. Statements run in order.</p>
+<p><strong><code>IF</code> is a multi-line statement — this is the decision construct.</strong> An <code>IF</code> <strong>must</strong> be paired with
+<code>THEN:</code> and <code>ELSE:</code>, or the engine aborts the run (<code>node {name} does not have if:, then: or else:</code>):</p>
+<pre><code>IF: &lt;boolean expression&gt;
+THEN: &lt;node-name&gt; | next
+ELSE: &lt;node-name&gt; | next
+</code></pre>
+<ul>
+<li><code>THEN:</code> / <code>ELSE:</code> each name the <strong>node to jump to</strong>, or the keyword <strong><code>next</code></strong> (fall through to the
+  natural graph traversal / next statement).</li>
+<li>Append the whole triad as one multi-line value with <code>'''</code> … <code>'''</code> (see <a href="#lexical">lexical</a>).</li>
+</ul>
+<p>Worked example — compute the sum, then branch on a comparison so each branch fills the response:</p>
+<pre><code>skill=graph.math
+statement[]=COMPUTE: sum -&gt; {input.body.a} + {input.body.b}
+statement[]='''
+IF: {input.body.a} &gt;= {input.body.b}
+THEN: ge-path
+ELSE: lt-path
+'''
+</code></pre>
+<p><strong>Traversal-control keywords</strong> (optional; conventionally placed last):</p>
+<ul>
+<li><code>NEXT: {node-name}</code> — unconditionally jump to a node <strong>by name</strong> (it takes a <em>node name</em>, <strong>not</strong> a
+  connection/relation label).</li>
+<li><code>BEGIN</code> / <code>END</code> — delimit a statement block for <strong><code>for_each[]</code></strong> iterative execution; they are
+  <strong>not</strong> <code>IF</code>-block braces.</li>
+<li><code>DELAY: {milliseconds}</code> — defer completion (e.g. to simulate a slow service).</li>
+</ul>
 <h2 id="invariants">Invariants</h2>
 <p>Hard rules the engine enforces — violate them and generation fails:</p>
 <ol>

@@ -82,7 +82,19 @@
       "example": "skill=graph.data.mapper\nmapping[]=input.body.hr_id -> employee.id" },
     { "route": "graph.math", "help": "help graph-math.md", "required": ["statement[]"], "optional": ["for_each[]", "NEXT:", "DELAY:", "BEGIN", "END"],
       "statement_types": ["COMPUTE", "IF", "MAPPING", "EXECUTE", "RESET"],
-      "example": "skill=graph.math\nstatement[]=COMPUTE: amount -> (1 - {input.body.discount}) * {book.price}" },
+      "statement_syntax": {
+        "COMPUTE": "COMPUTE: {var} -> {expr}   (JS-like; {namespace.key} substitution; result stored in this node's result namespace, read as {this-node}.result.{var})",
+        "IF": "multi-line decision — MUST include THEN and ELSE or the run aborts ('node X does not have if:, then: or else:'):\nIF: <boolean expression>\nTHEN: <node-name> | next\nELSE: <node-name> | next\n(THEN/ELSE name the node to jump to, or the keyword 'next' to fall through; append the triad as one '''...''' multi-line value)",
+        "MAPPING": "MAPPING: source -> target   (identical to graph.data.mapper; no {} braces around source/target)",
+        "EXECUTE": "EXECUTE: {node-name}   (run another graph.math node inline)",
+        "RESET": "RESET: {node-name}   (clear a node's run-once guard; advanced)"
+      },
+      "notes": [
+        "NEXT: takes a NODE NAME (not a connection/relation label) — unconditional jump",
+        "BEGIN/END delimit a statement block for for_each[] iteration — they are NOT IF-block braces",
+        "a node with only MAPPING statements is rejected — use graph.data.mapper instead"
+      ],
+      "example": "skill=graph.math\nstatement[]=COMPUTE: sum -> {input.body.a} + {input.body.b}\nstatement[]='''\nIF: {input.body.a} >= {input.body.b}\nTHEN: ge-path\nELSE: lt-path\n'''" },
     { "route": "graph.js", "help": "help graph-js.md", "required": ["statement[]"], "optional": ["for_each[]", "NEXT:", "DELAY:"],
       "notes": ["full JavaScript via GraalVM; max 50 instances; prefer graph.math for simple math"],
       "example": "skill=graph.js\nstatement[]=COMPUTE: amount -> (1 - {input.body.discount}) * {book.price}" },
