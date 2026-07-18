@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Added
+
+1. **Synchronous AI-companion endpoint (ADR-0008) (#189).** `POST /api/companion/{id}/sync` returns
+   the command outcome in-band as `{ok, output, error, result}` — the existing fire-and-forget
+   `/api/companion/{id}` leaves an AI caller blind (outcome and errors were WebSocket-only). The same
+   output is also teed to the session's WebSocket `.out`, so a watching human — and any
+   `session subscribe`d session — sees it live (real-time human+AI collaboration). Additive; the
+   existing endpoint and the WebSocket console are unchanged.
+
+---
 ## Version 4.8.6, 7/14/2026
 
 Maintenance release: the flow state-machine's read-only contract is now fully enforced, plus
