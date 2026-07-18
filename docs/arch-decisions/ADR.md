@@ -23,8 +23,8 @@ in that ADR's own *Rationale* section.
 ---
 
 ## ADR-0008 — Synchronous AI-companion endpoint: in-band command outcome + live tee {#adr-0008}
-**Status:** Proposed · **Date:** 2026-07-18T18:13:53.000Z · **Serves:** vision-mercury-composable
-<!-- id: adr-0008 | status: proposed -->
+**Status:** Accepted · **Date:** 2026-07-18T18:13:53.000Z · **Serves:** vision-mercury-composable
+<!-- id: adr-0008 | status: accepted -->
 
 **Abstract.** Add an **additive** synchronous companion endpoint —
 `POST /api/companion/{session-id}/sync` — that returns the command's **outcome in-band** as a
@@ -70,7 +70,11 @@ EventEnvelope — the envelope is a Map). **Reference implementation** (Rust por
 (`companion_sync_returns_outcome_in_band`), a design note (`docs/design/ai-companion-sync.md`), and a
 **live multi-party demo** in which a fresh AI companion built + ran a decision graph autonomously via
 `/sync` — self-correcting from in-band errors (including a retired-skill dead end) while an architect
-and a subscribed product owner watched in real time.
+and a subscribed product owner watched in real time. **Now implemented in this Java engine**:
+`PostCompanionCommandSync` (route `post.companion.command.sync`, dev-gated) with `CompanionSyncTest`,
+mirroring the Rust design — a private per-call capture route (`registerPrivate`) supplied as the
+command's `out`, RPC to the singleton command handler, a FIFO sentinel to mark the buffer drained, and
+a best-effort tee to the session's WebSocket `.out`.
 
 ---
 
