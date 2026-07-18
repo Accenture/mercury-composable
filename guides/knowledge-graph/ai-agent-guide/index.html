@@ -281,6 +281,9 @@ human is typing in the same instant; never expose this beyond a trusted dev host
 - [ ] Multi-line commands (<code>create</code>/<code>update</code>/<code>instantiate</code>) are sent as one block; multi-line
       <em>values</em> use <code>'''…'''</code>.
 - [ ] <code>instantiate graph</code> precedes <code>run</code>/<code>execute</code>/<code>inspect</code>.
+- [ ] <code>{…}</code> in a syntax line is a <strong>placeholder</strong> — substitute the value and do <strong>not</strong>
+      type the braces (<code>inspect output.body</code>, not <code>inspect {output.body}</code>; <code>execute fetcher</code>,
+      not <code>execute {node}</code>).
 - [ ] Exactly <strong>one</strong> command per POST.</p>
 </blockquote>
 <h2 id="recipe">Canonical build recipe</h2>
@@ -291,7 +294,8 @@ human is typing in the same instant; never expose this beyond a trusted dev host
    (type <code>End</code>, usually with <code>graph.data.mapper</code> to shape <code>output.body</code>).</li>
 <li><strong>Connect</strong> them so traversal flows root → end, with no orphans.</li>
 <li><strong>Instantiate</strong> with mock input: <code>instantiate graph</code> + <code>{constant} -&gt; input.body.{key}</code> lines.</li>
-<li><strong>Run and inspect:</strong> <code>run</code> (or <code>execute {node}</code>), then <code>inspect {output.body}</code>; iterate.</li>
+<li><strong>Run and inspect:</strong> <code>run</code> (or <code>execute {node}</code>), then <code>inspect output.body</code>; iterate.
+   (<code>{node}</code> is a placeholder — you write e.g. <code>execute fetcher</code>, <code>inspect output.body</code>.)</li>
 <li><strong>Export &amp; deploy:</strong> <code>export graph as {name}</code>, deploy the JSON, then call
    <code>POST /api/graph/{name}</code>.</li>
 </ol>

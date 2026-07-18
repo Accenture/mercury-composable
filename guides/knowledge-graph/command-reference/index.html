@@ -401,9 +401,15 @@ text(application/json) -&gt; input.header.content-type
 execute {node}             # run a single node (after instantiate)
 inspect {namespace.key}    # read a value from the state machine
 </code></pre>
-<pre><code>inspect output                # a whole namespace: input | output | model
-inspect {output.body.name}    # a specific composite key (braced)
+<pre><code>inspect output               # a whole namespace: input | output | model
+inspect output.body.name     # a specific composite key
 </code></pre>
+<blockquote>
+<p><strong>Placeholder convention:</strong> <code>{…}</code> in the syntax lines above (e.g. <code>{node}</code>,
+<code>{namespace.key}</code>) marks a value you substitute — <strong>do not type the braces</strong>.
+Write <code>inspect output.body.name</code>, not <code>inspect {output.body.name}</code> (a literal
+<code>{output.body}</code> is treated as the key <code>{output</code> → <code>body}</code> and resolves to nothing).</p>
+</blockquote>
 <h3 id="describe">describe / list / seen</h3>
 <pre><code>describe graph
 describe node {name}
