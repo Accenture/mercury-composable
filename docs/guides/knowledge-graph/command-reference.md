@@ -121,9 +121,14 @@ inspect {namespace.key}    # read a value from the state machine
 ```
 
 ```
-inspect output                # a whole namespace: input | output | model
-inspect {output.body.name}    # a specific composite key (braced)
+inspect output               # a whole namespace: input | output | model
+inspect output.body.name     # a specific composite key
 ```
+
+> **Placeholder convention:** `{…}` in the syntax lines above (e.g. `{node}`,
+> `{namespace.key}`) marks a value you substitute — **do not type the braces**.
+> Write `inspect output.body.name`, not `inspect {output.body.name}` (a literal
+> `{output.body}` is treated as the key `{output` → `body}` and resolves to nothing).
 
 ### describe / list / seen {#describe}
 

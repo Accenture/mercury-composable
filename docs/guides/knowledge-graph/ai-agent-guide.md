@@ -73,6 +73,9 @@ human is typing in the same instant; never expose this beyond a trusted dev host
 > - [ ] Multi-line commands (`create`/`update`/`instantiate`) are sent as one block; multi-line
 >       *values* use `'''…'''`.
 > - [ ] `instantiate graph` precedes `run`/`execute`/`inspect`.
+> - [ ] `{…}` in a syntax line is a **placeholder** — substitute the value and do **not**
+>       type the braces (`inspect output.body`, not `inspect {output.body}`; `execute fetcher`,
+>       not `execute {node}`).
 > - [ ] Exactly **one** command per POST.
 
 ## Canonical build recipe {#recipe}
@@ -84,7 +87,8 @@ A reliable order for building a graph:
    (type `End`, usually with `graph.data.mapper` to shape `output.body`).
 3. **Connect** them so traversal flows root → end, with no orphans.
 4. **Instantiate** with mock input: `instantiate graph` + `{constant} -> input.body.{key}` lines.
-5. **Run and inspect:** `run` (or `execute {node}`), then `inspect {output.body}`; iterate.
+5. **Run and inspect:** `run` (or `execute {node}`), then `inspect output.body`; iterate.
+   (`{node}` is a placeholder — you write e.g. `execute fetcher`, `inspect output.body`.)
 6. **Export & deploy:** `export graph as {name}`, deploy the JSON, then call
    `POST /api/graph/{name}`.
 
