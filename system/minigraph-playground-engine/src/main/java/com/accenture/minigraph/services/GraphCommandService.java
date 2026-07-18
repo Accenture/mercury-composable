@@ -1297,7 +1297,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             // A Dictionary node's input[] holds parameter declarations
             // ("param" or "param:default"), not "LHS -> RHS" data mappings, so it
             // is exempt from the mapping-syntax validation/conversion below.
-            if ("input".equals(property) && "Dictionary".equals(type)) {
+            if ("input".equals(property) && "Dictionary".equalsIgnoreCase(type)) {
                 continue;
             }
             if (map.get(property) instanceof List<?> entries) {
