@@ -26,7 +26,6 @@ import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 
-import java.util.List;
 import java.util.Map;
 
 @OptionalService("app.env=dev")
@@ -44,10 +43,15 @@ public class InspectStateMachine implements TypedLambdaFunction<AsyncHttpRequest
             throw new IllegalArgumentException("Missing path parameter: key");
         }
         var content = GraphCommandService.downloadContent(id, key);
-        if (content instanceof Map || content instanceof List) {
-            return new EventEnvelope().setHeader("Content-Type", "application/json").setBody(content);
-        } else {
+        if (content == null) {
             throw new AppException(404, "Not found");
         }
+        // Wrap the resolved value in {inspect, outcome} - the same envelope the
+        // "inspect {key}" console command emits (GraphCommandService). Because it
+        // is always a Map, a scalar / primitive / Map / List all serialize as
+        // clean JSON, and the shape matches the command exactly. The composite
+        // key resolves through the MultiLevelMap in downloadContent.
+        return new EventEnvelope().setHeader("Content-Type", "application/json")
+                .setBody(Map.of("inspect", key, "outcome", content));
     }
 }
