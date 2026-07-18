@@ -229,8 +229,8 @@ the source of truth in case of ambiguity. The narrative design reasoning behind 
 in that ADR's own <em>Rationale</em> section.</p>
 <hr />
 <h2 id="adr-0008">ADR-0008 — Synchronous AI-companion endpoint: in-band command outcome + live tee</h2>
-<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-07-18T18:13:53.000Z · <strong>Serves:</strong> vision-mercury-composable</p>
-<!-- id: adr-0008 | status: proposed -->
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-07-18T18:13:53.000Z · <strong>Serves:</strong> vision-mercury-composable</p>
+<!-- id: adr-0008 | status: accepted -->
 
 <p><strong>Abstract.</strong> Add an <strong>additive</strong> synchronous companion endpoint —
 <code>POST /api/companion/{session-id}/sync</code> — that returns the command's <strong>outcome in-band</strong> as a
@@ -275,7 +275,11 @@ EventEnvelope — the envelope is a Map). <strong>Reference implementation</stro
 (<code>companion_sync_returns_outcome_in_band</code>), a design note (<code>docs/design/ai-companion-sync.md</code>), and a
 <strong>live multi-party demo</strong> in which a fresh AI companion built + ran a decision graph autonomously via
 <code>/sync</code> — self-correcting from in-band errors (including a retired-skill dead end) while an architect
-and a subscribed product owner watched in real time.</p>
+and a subscribed product owner watched in real time. <strong>Now implemented in this Java engine</strong>:
+<code>PostCompanionCommandSync</code> (route <code>post.companion.command.sync</code>, dev-gated) with <code>CompanionSyncTest</code>,
+mirroring the Rust design — a private per-call capture route (<code>registerPrivate</code>) supplied as the
+command's <code>out</code>, RPC to the singleton command handler, a FIFO sentinel to mark the buffer drained, and
+a best-effort tee to the session's WebSocket <code>.out</code>.</p>
 <hr />
 <h2 id="adr-0007">ADR-0007 — Event Script configuration is preferred over code for orchestration</h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-06-27T15:45:00.000Z · <strong>Serves:</strong> vision-mercury-composable</p>
