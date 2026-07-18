@@ -19,6 +19,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    `session subscribe`d session — sees it live (real-time human+AI collaboration). Additive; the
    existing endpoint and the WebSocket console are unchanged.
 
+### Fixed
+
+1. **`/api/companion/{id}/sync` now returns the whole `run` outcome (ADR-0008).** `run` is
+   asynchronous — the command handler replies before the traveler streams its `Walk to…` / `Executed…`
+   / `output` / terminal lines — so the FIFO sentinel raced (and usually beat) that tail and truncated
+   the response to just `Walk to root` / `Walk to end`. A traversal is now drained on the traveler's
+   **terminal line** (`Graph traversal completed in N ms` | `Graph traversal aborted`), always emitted
+   last. To make that signal reliable, every `run` now ends with one terminal line: the early-failure
+   paths (no instance yet, missing root/end node) emit their reason *then* the canonical
+   `Graph traversal aborted`, so `run` before `instantiate` returns promptly (`ok:false`) instead of
+   waiting out the timeout. Synchronous commands keep the sentinel drain. This keeps the `/sync` REST
+   contract byte-identical with the Rust port — the companion surface is language-neutral.
+
 ---
 ## Version 4.8.6, 7/14/2026
 

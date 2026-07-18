@@ -74,7 +74,18 @@ and a subscribed product owner watched in real time. **Now implemented in this J
 `PostCompanionCommandSync` (route `post.companion.command.sync`, dev-gated) with `CompanionSyncTest`,
 mirroring the Rust design — a private per-call capture route (`registerPrivate`) supplied as the
 command's `out`, RPC to the singleton command handler, a FIFO sentinel to mark the buffer drained, and
-a best-effort tee to the session's WebSocket `.out`.
+a best-effort tee to the session's WebSocket `.out`. **End-of-transmission refinement (both ports):**
+the sentinel is correct only for *synchronous* commands, which emit all output before the handler
+replies. A traversal (`run`) is *asynchronous* — the handler launches the traveler and replies
+immediately, then the traveler streams its output afterwards — so a post-reply sentinel races (and
+usually beats) that tail and truncates the capture. A traversal is therefore drained on the traveler's
+**terminal line** (`Graph traversal completed in N ms` | `Graph traversal aborted`), which is always
+emitted last. To make that signal reliable, **every `run` now ends with one terminal line**: the
+early-failure paths (no instance yet, missing root/end node) emit their reason *then* the canonical
+`Graph traversal aborted`, so a companion mistake such as `run` before `instantiate` returns promptly
+(`ok:false`) instead of waiting out the timeout. The bounded wait is only a safety net; correctness
+comes from the signal. This keeps the REST contract byte-identical across the Rust and Java engines —
+the companion surface is language-neutral.
 
 ---
 
