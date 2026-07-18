@@ -436,6 +436,13 @@ strategy.</p>
 <p>In a virtual thread, the "Thread" object in the standard library will operate in non-blocking mode. This means
 it is safe to use the Thread.sleep() method. It will release control to the event loop when your function enters
 into sleep, thus freeing CPU resources for other functions.</p>
+<blockquote>
+<p>Alternative: <code>Utility.getInstance().sleep(milliseconds)</code>. If your project's static analysis flags
+<code>Thread.sleep()</code> (for example, SonarQube rule <code>java:S2925</code>), use this platform helper instead. It waits on a
+timed queue poll rather than calling <code>Thread.sleep()</code> directly, so it releases the carrier thread the same way
+while keeping the quality gate green, and it handles the <code>InterruptedException</code> for you. Use whichever your
+team's code standards prefer — both are non-blocking in a virtual thread.</p>
+</blockquote>
 <p>We have added the "request" methods in the PostOffice API to support non-blocking RPC that leverages this
 suspend/resume feature of virtual thread management.</p>
 <pre><code class="language-java">Future&lt;EventEnvelope&gt; future = po.request(requestEvent, timeout);
