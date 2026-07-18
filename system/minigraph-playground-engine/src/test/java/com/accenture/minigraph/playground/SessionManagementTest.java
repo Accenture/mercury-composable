@@ -278,6 +278,45 @@ class SessionManagementTest {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void aiCompanionCreatesDictionaryNodeWithBareInputTest() throws InterruptedException, ExecutionException {
+        SessionFixture fx = createFixture();
+        if (fx == null) {
+            return;
+        }
+        try (fx) {
+            // A Dictionary node's input[] holds an input parameter (with optional
+            // colon-default), NOT a "LHS -> RHS" data mapping. The mapping-syntax
+            // validation must NOT reject a bare input parameter for a Dictionary.
+            var command = """
+                    create node person-name
+                    with type Dictionary
+                    with properties
+                    input[]=person_id
+                    output[]=response.profile.name -> result.name
+                    provider=mdm-profile
+                    purpose=name of a person""";
+            assertEquals(200, postCompanion(fx.sessionA(), command).getStatus());
+            assertNotNull(waitForMessage(fx.messagesA(), "node person-name created", 5),
+                    "A Dictionary with a bare input[] parameter must be accepted, not rejected");
+
+            var live = getLiveGraph(fx.sessionA());
+            assertEquals(200, live.getStatus());
+            var graph = (Map<String, Object>) live.getBody();
+            var nodes = (List<Map<String, Object>>) graph.get("nodes");
+            var dictionary = nodes.stream()
+                    .filter(n -> "person-name".equals(String.valueOf(n.get("alias"))))
+                    .findFirst().orElse(null);
+            assertNotNull(dictionary, "Live graph should contain the 'person-name' Dictionary node");
+            var properties = (Map<String, Object>) dictionary.get("properties");
+            // input[] is stored as the bare parameter list, unchanged
+            assertEquals(List.of("person_id"), properties.get("input"));
+            // output[] is still validated/stored as a data mapping
+            assertEquals(List.of("response.profile.name -> result.name"), properties.get("output"));
+        }
+    }
+
     @Test
     void aiCompanionRejectsUnknownPluginReferenceTest() throws InterruptedException, ExecutionException {
         SessionFixture fx = createFixture();

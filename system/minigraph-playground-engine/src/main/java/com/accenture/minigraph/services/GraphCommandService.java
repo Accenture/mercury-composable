@@ -1218,10 +1218,10 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     private void handleUpdateNode(PostOffice po, String inRoute, String outRoute, String nodeName, List<String> lines) {
         var keyValues = getNodeProperties(lines);
+        var type = getNodeType(lines);
         // reject invalid data mapping syntax and auto-convert deprecated "simple type matching" to
         // "simple plugin" syntax before the properties are stored in the node
-        var deprecationNotice = convertMappingProperties(keyValues);
-        var type = getNodeType(lines);
+        var deprecationNotice = convertMappingProperties(keyValues, type);
         var graph = graphModels.get(inRoute);
         if (graph != null) {
             updateNode(po, graph, outRoute, nodeName, type, keyValues, deprecationNotice);
@@ -1249,10 +1249,10 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     private void handleCreateNode(PostOffice po, String inRoute, String outRoute, String nodeName, List<String> lines) {
         var keyValues = getNodeProperties(lines);
+        var type = getNodeType(lines);
         // reject invalid data mapping syntax and auto-convert deprecated "simple type matching" to
         // "simple plugin" syntax before the properties are stored in the node
-        var deprecationNotice = convertMappingProperties(keyValues);
-        var type = getNodeType(lines);
+        var deprecationNotice = convertMappingProperties(keyValues, type);
         var graph = graphModels.get(inRoute);
         if (graph != null) {
             createNode(po, graph, outRoute, nodeName, type, keyValues, deprecationNotice);
@@ -1290,10 +1290,16 @@ public class GraphCommandService extends GraphLambdaFunction {
      * @return a deprecation notice if any entry was auto-converted, otherwise null
      * @throws IllegalArgumentException when a data mapping entry has invalid syntax
      */
-    private String convertMappingProperties(MultiLevelMap keyValues) {
+    private String convertMappingProperties(MultiLevelMap keyValues, String type) {
         var map = keyValues.getMap();
         List<String> conversions = new ArrayList<>();
         for (String property : MAPPING_PROPERTIES) {
+            // A Dictionary node's input[] holds parameter declarations
+            // ("param" or "param:default"), not "LHS -> RHS" data mappings, so it
+            // is exempt from the mapping-syntax validation/conversion below.
+            if ("input".equals(property) && "Dictionary".equals(type)) {
+                continue;
+            }
             if (map.get(property) instanceof List<?> entries) {
                 List<String> converted = new ArrayList<>();
                 for (Object o : entries) {
