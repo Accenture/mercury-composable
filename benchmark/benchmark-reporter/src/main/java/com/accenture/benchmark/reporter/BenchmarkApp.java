@@ -24,6 +24,7 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
+import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -336,8 +337,7 @@ public class BenchmarkApp implements EntryPoint {
      * is off the event loop (probe stays fast); with bdb+loop it is inline on the shared loop (probe tail
      * inflates). Run under both stores to compare.
      */
-    private WorkloadResult runMixed(EventEmitter po, byte[] payload, int bgInflight, int probeCount, long probePace)
-            throws InterruptedException {
+    private WorkloadResult runMixed(EventEmitter po, byte[] payload, int bgInflight, int probeCount, long probePace) {
         String name = "Latency probe under background flood";
         String desc = "The real production question: a latency-sensitive probe — a paced RPC on a SEPARATE route ("
                 + PROBE + ") — measured WHILE a background callback flood hammers " + WORKER + "'s "
@@ -352,7 +352,7 @@ public class BenchmarkApp implements EntryPoint {
             for (int p = 0; p < 4; p++) {
                 bg.submit(() -> floodProducer(po, payload, permits, stop, bgOps));
             }
-            Thread.sleep(750); // let the backlog build past the memory buffer and start spilling
+            Utility.getInstance().sleep(750); // let the backlog build past the memory buffer and start spilling
 
             Collector probe = new Collector(probeCount);
             long t0 = System.nanoTime();

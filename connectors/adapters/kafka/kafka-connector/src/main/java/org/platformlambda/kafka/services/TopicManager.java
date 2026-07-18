@@ -251,7 +251,7 @@ public class TopicManager implements LambdaFunction {
             if (found) {
                 break;
             } else {
-                Thread.sleep(1000);
+                Utility.getInstance().sleep(1000);
                 log.warn("Newly created {} not found. Scanning it again.", topic);
             }
         }
@@ -288,15 +288,15 @@ public class TopicManager implements LambdaFunction {
         }
     }
 
-    private void confirmTopicRemoval(String topic) throws InterruptedException {
+    private void confirmTopicRemoval(String topic) {
         // check if removal is successful
         // try a few times due to eventual consistency
         boolean found = false;
         for (int i = 0; i < 10; i++) {
             found = topicExists(topic);
             if (found) {
-                // Thread.sleep is fine because the function will be running in a virtual thread
-                Thread.sleep(1000);
+                // a blocking wait is fine here - this runs in a virtual thread
+                Utility.getInstance().sleep(1000);
                 log.warn("Newly deleted {} still exists. Scanning it again.", topic);
             } else {
                 break;
