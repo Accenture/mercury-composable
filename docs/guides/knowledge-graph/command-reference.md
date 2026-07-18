@@ -199,6 +199,54 @@ Configuration nodes used by `graph.api.fetcher` (see [Composing the layers](comp
 | **Provider** | `url`, `method`, `feature[]`, `input[]` (targets: `header.*`, `query.*`, `path_parameter.*`, `body.*`) |
 | **Dictionary** | `provider`, `input[]`, `output[]` (→ `result.*`) |
 
+## `graph.math` / `graph.js` statement grammar {#math-statements}
+
+A `graph.math` node runs an ordered list of `statement[]` lines. Five statement types:
+
+| Statement | Form | Purpose |
+|---|---|---|
+| `COMPUTE` | `COMPUTE: {var} -> {expr}` | evaluate a JS-like math/boolean expression; the result is stored in **this node's `result` namespace** — read it back as `{this-node}.result.{var}` or move it with `MAPPING` |
+| `IF` | multi-line (see below) | a boolean **decision** that redirects traversal to a named node |
+| `MAPPING` | `MAPPING: source -> target` | data mapping, identical to `graph.data.mapper` (**no** `{}` around source/target) |
+| `EXECUTE` | `EXECUTE: {node-name}` | run another `graph.math` node inline |
+| `RESET` | `RESET: {node-name}` | clear a node's run-once guard so it can execute again (advanced) |
+
+Expressions use `{namespace.key}` substitution (`{input.body.a}`, `{book.price}`, `{model.x}`). A node
+with **only** `MAPPING` statements is rejected — use `graph.data.mapper` instead. Statements run in order.
+
+**`IF` is a multi-line statement — this is the decision construct.** An `IF` **must** be paired with
+`THEN:` and `ELSE:`, or the engine aborts the run (`node {name} does not have if:, then: or else:`):
+
+```
+IF: <boolean expression>
+THEN: <node-name> | next
+ELSE: <node-name> | next
+```
+
+- `THEN:` / `ELSE:` each name the **node to jump to**, or the keyword **`next`** (fall through to the
+  natural graph traversal / next statement).
+- Append the whole triad as one multi-line value with `'''` … `'''` (see [lexical](#lexical)).
+
+Worked example — compute the sum, then branch on a comparison so each branch fills the response:
+
+```
+skill=graph.math
+statement[]=COMPUTE: sum -> {input.body.a} + {input.body.b}
+statement[]='''
+IF: {input.body.a} >= {input.body.b}
+THEN: ge-path
+ELSE: lt-path
+'''
+```
+
+**Traversal-control keywords** (optional; conventionally placed last):
+
+- `NEXT: {node-name}` — unconditionally jump to a node **by name** (it takes a *node name*, **not** a
+  connection/relation label).
+- `BEGIN` / `END` — delimit a statement block for **`for_each[]`** iterative execution; they are
+  **not** `IF`-block braces.
+- `DELAY: {milliseconds}` — defer completion (e.g. to simulate a slow service).
+
 ## Invariants {#invariants}
 
 Hard rules the engine enforces — violate them and generation fails:
