@@ -93,6 +93,22 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         var route = id.replace('-', '.');
         var inRoute = route + ".in";
         var outRoute = route + ".out";
+        // Reject session-topology commands before dispatch: only the read-only "session"
+        // status query is available from a companion (a companion is an assistant to the
+        // session in the URL, not a WebSocket session of its own; executed here the
+        // subscribe path would also bind the ephemeral capture route as a subscriber).
+        var topology = GraphCommandService.sessionTopologySubcommand(command);
+        if (topology != null) {
+            var error = GraphCommandService.refuseSessionTopology(outRoute, command, topology);
+            var refused = new HashMap<String, Object>();
+            refused.put("ok", false);
+            refused.put("id", id);
+            refused.put("command", command);
+            refused.put("output", List.of("> " + command, error));
+            refused.put("error", error);
+            refused.put("result", null);
+            return new EventEnvelope().setHeader("Content-Type", "application/json").setBody(refused);
+        }
         var captureRoute = "companion.sync." + Utility.getInstance().getUuid();
 
         var po = new PostOffice(headers, instance);

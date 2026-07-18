@@ -53,6 +53,14 @@ public class PostCompanionCommand implements TypedLambdaFunction<AsyncHttpReques
         var route = id.replace('-', '.');
         var inRoute = route + ".in";
         var outRoute = route + ".out";
+        // Same restriction as the synchronous endpoint: only the read-only "session"
+        // status query is available from a companion (a companion is an assistant to
+        // the session in the URL, not a WebSocket session of its own).
+        var topology = GraphCommandService.sessionTopologySubcommand(command);
+        if (topology != null) {
+            throw new IllegalArgumentException(
+                    GraphCommandService.refuseSessionTopology(outRoute, command, topology));
+        }
         // use the singleton version of the GraphCommandService to eliminate chance of racing condition
         var po = new PostOffice(headers, instance);
         po.send(new EventEnvelope()
