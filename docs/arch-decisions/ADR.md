@@ -22,6 +22,58 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0008 — Synchronous AI-companion endpoint: in-band command outcome + live tee {#adr-0008}
+**Status:** Proposed · **Date:** 2026-07-18T18:13:53.000Z · **Serves:** vision-mercury-composable
+<!-- id: adr-0008 | status: proposed -->
+
+**Abstract.** Add an **additive** synchronous companion endpoint —
+`POST /api/companion/{session-id}/sync` — that returns the command's **outcome in-band** as a
+structured envelope `{ ok, command, output, error, result }`, alongside the existing fire-and-forget
+`POST /api/companion/{session-id}` (which returns only `{status:"accepted"}` and streams the real
+outcome to the WebSocket console). The synchronous handler also **tees** each output line to the
+session's WebSocket `.out`, so a human at the Playground — and, via the command service's existing
+subscriber fan-out, any `session subscribe`d session — sees the same output live. The existing
+endpoint and the human console are unchanged. A **reference implementation is proven in the Rust
+port** (`acn-ericlaw/mercury`); this ADR proposes adopting it in the Java engine.
+
+**Rationale.** The current companion surface is a **write-only command bus**: `PostCompanionCommand`
+dispatches the command fire-and-forget and returns an acknowledgement; the actual result — success
+text *and errors* — reaches only the WebSocket console. An **AI agent** driving the endpoint over HTTP
+is therefore blind to what happened: to learn the effect it must poll `GET /api/graph/session/{id}`
+(shape) and `GET /api/inspect/{id}/{key}` (state), and a *rejected* command leaves the model unchanged
+with no error at all — so polling cannot even distinguish "no-op" from "rejected". This was not
+hypothetical: in an AI-companion validation exercise a capable agent posted an invalid `graph.math`
+node, received HTTP 200, and never saw the engine's `node … does not have if:, then: or else:` →
+*graph traversal aborted*; it only inferred failure from empty inspect state. A true AI companion needs
+**synchronous, self-describing feedback** — send a command, get back what happened — so it can
+**self-correct autonomously** instead of relying on a human to relay the console. The tee makes the
+same endpoint a **real-time human+AI collaboration** surface: an architect and an AI draft a graph on
+one live session while a product owner (subscribed) watches; work suspends/resumes across sprints via
+`export`/`import`. **Mechanism (proven in Rust, mirrorable in Java):** the synchronous handler
+dispatches the command to the command service via **request/response RPC** (Java `po.request` /
+`AsyncInbox`) with a **private capture route** (`platform.register`) supplied as the command's `out`;
+it drains the captured lines, classifies `ok`/`error`, folds a `run`/`inspect` result into `result`,
+and returns the envelope — while fire-and-forget forwarding each line to the session's real `.out` for
+the live view. It reuses existing primitives; the `say()`-based command functions are untouched.
+**Alternatives.** An **MCP tool server** (typed tools) was considered and deferred — heavier, and it
+forks the shared human/AI text surface into an AI-only one; the in-band envelope captures most of the
+value while keeping one surface. Having the command handler **return its transcript** directly (no
+capture route) is cleaner but threads an output sink through every command function; deferred.
+**Consequences.** Additive and backward-compatible (the fire-and-forget route and the console stream
+are unchanged). The **envelope shape is a cross-vendor contract** — the Rust and Java ports should
+agree on it; open points: whether a large `run` `output.body` is inlined or spilled to
+`GET /api/inspect` (mirror the existing large-payload rule), and whether `inspect` results fold the
+same way. Refines the companion surface introduced with the MiniGraph Playground; bounded by ADR-0001
+(decoupled functions — the endpoint is just another route) and ADR-0003 (Map-or-PoJo over
+EventEnvelope — the envelope is a Map). **Reference implementation** (Rust port,
+`acn-ericlaw/mercury`): the endpoint (`post.companion.command.sync`, dev-gated), an integration test
+(`companion_sync_returns_outcome_in_band`), a design note (`docs/design/ai-companion-sync.md`), and a
+**live multi-party demo** in which a fresh AI companion built + ran a decision graph autonomously via
+`/sync` — self-correcting from in-band errors (including a retired-skill dead end) while an architect
+and a subscribed product owner watched in real time.
+
+---
+
 ## ADR-0007 — Event Script configuration is preferred over code for orchestration {#adr-0007}
 **Status:** Accepted · **Date:** 2026-06-27T15:45:00.000Z · **Serves:** vision-mercury-composable
 <!-- id: adr-0007 | status: accepted | formalizes: event-script-over-code -->
