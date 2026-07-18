@@ -279,7 +279,18 @@ and a subscribed product owner watched in real time. <strong>Now implemented in 
 <code>PostCompanionCommandSync</code> (route <code>post.companion.command.sync</code>, dev-gated) with <code>CompanionSyncTest</code>,
 mirroring the Rust design — a private per-call capture route (<code>registerPrivate</code>) supplied as the
 command's <code>out</code>, RPC to the singleton command handler, a FIFO sentinel to mark the buffer drained, and
-a best-effort tee to the session's WebSocket <code>.out</code>.</p>
+a best-effort tee to the session's WebSocket <code>.out</code>. <strong>End-of-transmission refinement (both ports):</strong>
+the sentinel is correct only for <em>synchronous</em> commands, which emit all output before the handler
+replies. A traversal (<code>run</code>) is <em>asynchronous</em> — the handler launches the traveler and replies
+immediately, then the traveler streams its output afterwards — so a post-reply sentinel races (and
+usually beats) that tail and truncates the capture. A traversal is therefore drained on the traveler's
+<strong>terminal line</strong> (<code>Graph traversal completed in N ms</code> | <code>Graph traversal aborted</code>), which is always
+emitted last. To make that signal reliable, <strong>every <code>run</code> now ends with one terminal line</strong>: the
+early-failure paths (no instance yet, missing root/end node) emit their reason <em>then</em> the canonical
+<code>Graph traversal aborted</code>, so a companion mistake such as <code>run</code> before <code>instantiate</code> returns promptly
+(<code>ok:false</code>) instead of waiting out the timeout. The bounded wait is only a safety net; correctness
+comes from the signal. This keeps the REST contract byte-identical across the Rust and Java engines —
+the companion surface is language-neutral.</p>
 <hr />
 <h2 id="adr-0007">ADR-0007 — Event Script configuration is preferred over code for orchestration</h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-06-27T15:45:00.000Z · <strong>Serves:</strong> vision-mercury-composable</p>
