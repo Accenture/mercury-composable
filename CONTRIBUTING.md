@@ -11,7 +11,7 @@ in a pull request.
 
 This project and everyone participating in it is governed by our
 [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
-Please report unacceptable behavior to Kevin Bader, who is the current project maintainer.
+Please report unacceptable behavior to Eric Law, who is the current project maintainer.
 
 ## What should I know before I get started?
 
