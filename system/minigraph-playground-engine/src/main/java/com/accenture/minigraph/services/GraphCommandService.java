@@ -295,6 +295,50 @@ public class GraphCommandService extends GraphLambdaFunction {
         return graphModels.containsKey(inRoute);
     }
 
+    /**
+     * Session-topology subcommands (subscribe/unsubscribe/reset) are a WebSocket-session
+     * privilege on both companion endpoints: a companion is an <b>assistant to</b> the
+     * session named in the URL, not a WebSocket session of its own. On the synchronous
+     * endpoint they would also bind the per-request capture route
+     * ({@code companion.sync.<uuid>}, released when the POST returns) as a durable
+     * subscriber. Only the read-only {@code session} status query is allowed.
+     *
+     * @param command the trimmed command text
+     * @return the offending subcommand, or null when the command is allowed
+     */
+    public static String sessionTopologySubcommand(String command) {
+        var words = command.trim().split("\\s+");
+        if (words.length < 2 || !"session".equalsIgnoreCase(words[0])) {
+            return null;
+        }
+        var sub = words[1].toLowerCase();
+        return switch (sub) {
+            case "subscribe", "unsubscribe", "reset" -> sub;
+            default -> null;
+        };
+    }
+
+    /**
+     * Refuse a session-topology command on a companion endpoint: echo the refusal to the
+     * session's live console (the watching human sees what the AI caller sees) and return
+     * the error text for the endpoint's own reply shape.
+     *
+     * @param outRoute the session's WebSocket output route
+     * @param command the offending command
+     * @param sub the offending subcommand from {@link #sessionTopologySubcommand(String)}
+     * @return the refusal message
+     */
+    public static String refuseSessionTopology(String outRoute, String command, String sub) {
+        var error = "session " + sub + " is not available on the companion endpoint - a companion is an " +
+                "assistant to this session, not a WebSocket session; use the read-only 'session' " +
+                "command here, and manage subscriptions from a WebSocket-connected session";
+        var emitter = EventEmitter.getInstance();
+        for (var line : new String[]{"> " + command, error}) {
+            emitter.send(new EventEnvelope().setTo(outRoute).setBody(line));
+        }
+        return error;
+    }
+
     private void handleCommandPartTwo(PostOffice po, String inRoute, String outRoute, List<String> words) {
         if (words.size() > 2 && words.getFirst().equalsIgnoreCase("connect")) {
             handleConnectCommand(po, inRoute, outRoute, words);

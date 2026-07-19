@@ -151,6 +151,82 @@ class CompanionSyncTest {
         }
     }
 
+    /**
+     * A companion is an <b>assistant to</b> a session, not a WebSocket session of its own —
+     * so both companion endpoints limit the {@code session} command to the read-only status
+     * query: the topology subcommands (subscribe/unsubscribe/reset) are rejected before
+     * dispatch. Executed on the sync path they would durably register the per-request
+     * {@code companion.sync.<uuid>} capture route as a subscriber.
+     */
+    @Test
+    void companionEndpointsLimitSessionCommandToReadOnly() throws Exception {
+        var po = EventEmitter.getInstance();
+        var platform = Platform.getInstance();
+        var sid = "ws-990002-2";
+        var inRoute = "ws.990002.2.in";
+        var outRoute = "ws.990002.2.out";
+
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", inRoute)));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        assertTrue(GraphCommandService.hasSession(sid), "session must exist before a companion command");
+
+        List<Object> teed = new CopyOnWriteArrayList<>();
+        LambdaFunction outTap = (hdr, body, inst) -> {
+            teed.add(body);
+            return null;
+        };
+        platform.registerPrivate(outRoute, outTap, 1);
+        try {
+            // 1) every topology-mutating form is rejected in-band on the sync endpoint
+            for (var command : List.of("session subscribe ws-990001-2", "session unsubscribe", "session reset")) {
+                var refused = syncCommand(po, sid, command);
+                assertEquals(Boolean.FALSE, refused.get("ok"), "rejected: " + refused);
+                assertInstanceOf(String.class, refused.get("error"));
+                assertTrue(((String) refused.get("error")).contains("not available on the companion endpoint"),
+                        "refusal reason returned in-band: " + refused);
+            }
+
+            // 2) nothing was registered: this session's read-only status query still works
+            //    and shows no subscription; no capture route appears anywhere
+            var status = syncCommand(po, sid, "session");
+            assertEquals(Boolean.TRUE, status.get("ok"), "read-only 'session' stays allowed: " + status);
+            var statusText = String.valueOf(status.get("output"));
+            assertFalse(statusText.contains("subscribed to"),
+                    "the rejected subscribe must not mark this session as subscribed: " + status);
+            assertFalse(statusText.contains("companion.sync"),
+                    "no capture-route subscriber may be registered: " + status);
+
+            // 3) the refusal is also teed to the session's WS console for the human
+            Utility.getInstance().sleep(200);
+            assertTrue(teed.stream().filter(String.class::isInstance).map(Object::toString)
+                            .anyMatch(l -> l.contains("not available on the companion endpoint")),
+                    "refusal must be visible on the live console: " + teed);
+
+            // 4) the fire-and-forget endpoint enforces the same restriction with a 400,
+            //    while its read-only 'session' status query still dispatches (accepted)
+            var refusedLegacy = legacyCommand(po, sid, "session subscribe ws-990001-2");
+            assertEquals(400, refusedLegacy.getStatus(), "legacy endpoint refuses with 400");
+            assertTrue(String.valueOf(refusedLegacy.getBody()).contains("not available on the companion endpoint"),
+                    "legacy refusal carries the reason: " + refusedLegacy.getBody());
+            var statusLegacy = legacyCommand(po, sid, "session");
+            assertEquals(200, statusLegacy.getStatus(),
+                    "read-only 'session' stays allowed on the legacy endpoint: " + statusLegacy.getBody());
+        } finally {
+            platform.release(outRoute);
+        }
+    }
+
+    private EventEnvelope legacyCommand(EventEmitter po, String sid, String command) throws Exception {
+        var req = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
+                .setUrl("/api/companion/{id}").setPathParameter("id", sid)
+                .setHeader("Content-Type", "text/plain").setHeader("Accept", "application/json")
+                .setBody(command);
+        return po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(req), 10000).get();
+    }
+
     @SuppressWarnings("unchecked")
     private Map<String, Object> syncCommand(EventEmitter po, String sid, String command) throws Exception {
         var req = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
