@@ -326,6 +326,10 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         var nodes = util.split(command, "[],; ");
         for (var name : nodes) {
             graphInstance.nodeSeen.remove(name);
+            // forget the completion mark too - a join barrier consults skillRun,
+            // so a reset (retrying) node must not satisfy the barrier until it
+            // re-executes successfully
+            graphInstance.skillRun.remove(name);
             var node = graph.findNodeByAlias(name);
             if (node != null) {
                 stateMachine.removeElement(name);

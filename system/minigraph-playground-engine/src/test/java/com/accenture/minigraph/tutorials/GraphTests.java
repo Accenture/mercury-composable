@@ -310,6 +310,38 @@ class GraphTests {
         log.info("High frequency detected");
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void joinBarrierWaitsForRetryingBranch() throws TimeoutException {
+        // Join + RESET interplay: a join barrier must not count a branch whose
+        // skill FAILED into its exception= route (skillRun is success-only), and
+        // RESET clears the completion mark with the guard and state. Branch A
+        // fails on the exception flag and retries through pause (300 ms) ->
+        // recover-a while branch B reaches the join first - before the fix, the
+        // join fired prematurely off the failed-run mark and silently lost
+        // branch A from the output.
+        var result = runGraph("unit-test-join-retry", Map.of("person_id", 100, "exception", true));
+        assertInstanceOf(Map.class, result);
+        var mm = new MultiLevelMap((Map<String, Object>) result);
+        assertEquals("Peter", mm.getElement("a-name"));
+        assertEquals("B", mm.getElement("b"));
+        log.info("Join barrier waits for a retrying branch");
+    }
+
+    private Object runGraph(String graphId, Map<String, Object> input) throws TimeoutException {
+        var request = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
+                .setBody(input).setHeader("Content-Type", "application/json")
+                .setHeader("Accept", "application/json")
+                .setUrl("/api/graph/" + graphId);
+        var event = new EventEnvelope().setTo("async.http.request").setBody(request);
+        var po = PostOffice.trackable("unit.test", String.format("%032x", 999), "TEST /graph/" + graphId);
+        var response = po.asyncRequest(event, TIMEOUT).await(TIMEOUT, TimeUnit.MILLISECONDS);
+        if (response.hasError()) {
+            log.error("HTTP-{} - {}", response.getStatus(), response.getBody());
+        }
+        return response.getBody();
+    }
+
     private Object runTutorial(int chapter, Map<String, Object> input) throws TimeoutException {
         var request = new AsyncHttpRequest().setMethod(input.isEmpty()? "GET" : "POST").setTargetHost(target);
         if (!input.isEmpty()) {
