@@ -22,8 +22,6 @@ import com.accenture.models.SimplePlugin;
 import com.accenture.util.SimplePluginUtils;
 import com.accenture.models.PluginFunction;
 
-import java.util.Arrays;
-
 @SimplePlugin
 public class AddNumbers implements PluginFunction {
 
@@ -35,10 +33,8 @@ public class AddNumbers implements PluginFunction {
     @Override
     public Object calculate(Object... input) {
         if (input.length < 2) {
-            throw new IllegalArgumentException("Expected at least two Whole Numbers to add");
+            throw new IllegalArgumentException("Expected at least two Numbers to add");
         }
-        return SimplePluginUtils.promoteInput(input)
-                .reduce(Long::sum)
-                .orElseThrow(() -> new IllegalArgumentException("Could not add the input: " + Arrays.toString(input)));
+        return SimplePluginUtils.reduceNumbers(Long::sum, Double::sum, input);
     }
 }
