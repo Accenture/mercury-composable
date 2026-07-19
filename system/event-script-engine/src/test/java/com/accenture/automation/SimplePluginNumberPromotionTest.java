@@ -70,6 +70,22 @@ class SimplePluginNumberPromotionTest {
     }
 
     @Test
+    void roundIsHalfUpOnTheDecimalRepresentation() {
+        assertEquals(2.35d, new RoundNumbers().calculate(2.345, 2));
+        // the classic trap: a naive multiply-round-divide yields 1.0
+        assertEquals(1.01d, new RoundNumbers().calculate(1.005, 2));
+        assertEquals(3.0d, new RoundNumbers().calculate(2.5));
+        // ties round away from zero
+        assertEquals(-3.0d, new RoundNumbers().calculate(-2.5));
+        assertEquals(3.142d, new RoundNumbers().calculate(3.14159, 3));
+        assertEquals(2.35d, new RoundNumbers().calculate("2.345", 2));
+        // a whole number is already exact and passes through unchanged
+        assertEquals(5L, new RoundNumbers().calculate(5, 2));
+        assertThrows(IllegalArgumentException.class, () -> new RoundNumbers().calculate(1.5, 1.5));
+        assertThrows(IllegalArgumentException.class, () -> new RoundNumbers().calculate(1.5, -1));
+    }
+
+    @Test
     void errorsStayErrors() {
         // a floating-point zero divisor is still division by zero
         assertThrows(IllegalArgumentException.class, () -> new DivideNumbers().calculate(6, 0.0));

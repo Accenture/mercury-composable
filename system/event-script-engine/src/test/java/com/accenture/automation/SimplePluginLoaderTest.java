@@ -64,6 +64,7 @@ public class SimplePluginLoaderTest {
                 Arguments.of(new MultiplyNumbers(), new Object[]{5,5}),
                 Arguments.of(new DivideNumbers(), new Object[]{10,5}),
                 Arguments.of(new ModulusNumbers(), new Object[]{10,5}),
+                Arguments.of(new RoundNumbers(), new Object[]{2.345, 2}),
                 Arguments.of(new DateGenerator(), new Object[]{}),
                 Arguments.of(new UUIDGenerator(), new Object[]{}),
                 Arguments.of(new EqualsOperator(), new Object[]{5,5}),
