@@ -30,6 +30,7 @@ import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -217,6 +218,54 @@ class CompanionSyncTest {
         } finally {
             platform.release(outRoute);
         }
+    }
+
+    /**
+     * The {@code ok} flag is derived from the console lines with <b>whole-output</b>
+     * context: {@code import graph from {deployed}} legitimately prints
+     * "Graph model not found in /tmp/..." before falling back to the deployed
+     * classpath copy — a benign line that must not mark the command failed. It is
+     * forgiven only when the same output also carries the fallback's success marker;
+     * a genuine miss prints the not-found line alone and stays {@code ok:false}.
+     */
+    @Test
+    void companionSyncImportFallbackReportsOk() throws Exception {
+        var po = EventEmitter.getInstance();
+        var sid = "ws-990003-2";
+        var inRoute = "ws.990003.2.in";
+
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", inRoute)));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        assertTrue(GraphCommandService.hasSession(sid), "session must exist before a companion command");
+
+        // guarantee the fallback path: the graph must exist ONLY as a deployed classpath copy
+        // (tutorial-113 ships in classpath:/graph and no test exports it, but a stale temp
+        // copy from an earlier manual run would short-circuit the fallback)
+        var temp = new File("/tmp/graph", "tutorial-113.json");
+        if (temp.exists()) {
+            assertTrue(temp.delete(), "stale temp copy must be removed to exercise the fallback");
+        }
+
+        // 1) deployed-only graph: the benign not-found line is forgiven -> ok:true
+        var imported = syncCommand(po, sid, "import graph from tutorial-113");
+        var lines = ((List<?>) imported.get("output")).stream().map(String::valueOf).toList();
+        assertTrue(lines.stream().anyMatch(l -> l.startsWith("Graph model not found in")),
+                "the fallback prints the benign not-found line first: " + lines);
+        assertTrue(lines.stream().anyMatch(l -> l.startsWith("Found deployed graph model")),
+                "the deployed copy must be found for this test to be meaningful: " + lines);
+        assertEquals(Boolean.TRUE, imported.get("ok"),
+                "the benign fallback must not be classified an error: " + imported);
+        assertNull(imported.get("error"), "no error on a successful fallback import: " + imported);
+
+        // 2) a genuine miss prints the not-found line alone and stays an error
+        var missed = syncCommand(po, sid, "import graph from no-such-graph-xyz");
+        assertEquals(Boolean.FALSE, missed.get("ok"), "a genuine miss stays ok:false: " + missed);
+        assertInstanceOf(String.class, missed.get("error"));
+        assertTrue(((String) missed.get("error")).contains("not found"),
+                "the genuine miss carries the not-found error in-band: " + missed);
     }
 
     private EventEnvelope legacyCommand(EventEmitter po, String sid, String command) throws Exception {

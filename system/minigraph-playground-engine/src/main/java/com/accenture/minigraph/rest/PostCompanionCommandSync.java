@@ -169,20 +169,18 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
             platform.release(captureRoute);
         }
 
-        // Build the structured outcome from the captured output.
+        // Build the structured outcome from the captured output. Collect the console
+        // lines first, then classify with whole-output context (see firstErrorLine).
         List<String> output = new ArrayList<>();
         List<Object> result = new ArrayList<>();
-        String error = null;
         for (var item : buffer) {
             if (item instanceof String line) {
-                if (error == null && isErrorLine(line)) {
-                    error = line;
-                }
                 output.add(line);
             } else {
                 result.add(item);
             }
         }
+        String error = firstErrorLine(output);
         var body = new HashMap<String, Object>();
         body.put("ok", error == null);
         body.put("id", id);
@@ -196,6 +194,27 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
     private static boolean isErrorLine(String line) {
         return line.startsWith("ERROR:") || line.contains("aborted") || line.contains("does not have")
                 || line.startsWith("Invalid") || line.contains("not found") || line.contains("Please try 'help'");
+    }
+
+    /**
+     * Whole-output-aware error classification. {@code import graph from {deployed}}
+     * legitimately prints "Graph model not found in /tmp/..." before falling back
+     * to the deployed classpath copy — a benign line that must not mark the
+     * command failed. It is forgiven <b>only</b> when the same output also carries
+     * the fallback's success marker; a genuine miss prints the not-found line
+     * alone and stays an error.
+     */
+    private static String firstErrorLine(List<String> lines) {
+        var deployedFallback = lines.stream().anyMatch(l -> l.contains("Found deployed graph model"));
+        for (var line : lines) {
+            if (deployedFallback && line.startsWith("Graph model not found in")) {
+                continue;
+            }
+            if (isErrorLine(line)) {
+                return line;
+            }
+        }
+        return null;
     }
 
     /**
