@@ -62,7 +62,17 @@ public class GraphJoin extends GraphLambdaFunction {
     private boolean nodeCompleted(String predecessor, GraphInstance graphInstance) {
         var graph = graphInstance.graph;
         var node = graph.findNodeByAlias(predecessor);
-        return node.getProperty(SKILL) != null?
-                graphInstance.skillRun.containsKey(predecessor) :graphInstance.nodeSeen.containsKey(predecessor);
+        var skill = node.getProperty(SKILL);
+        if (skill == null) {
+            return graphInstance.nodeSeen.containsKey(predecessor);
+        }
+        // A chained upstream JOIN is complete only when it actually FIRED: its
+        // skill runs (and is marked in skillRun) on every arriving branch,
+        // including evaluations that sink - the outcome it records in nodeSeen
+        // is the truth.
+        if (ROUTE.equals(skill)) {
+            return Boolean.TRUE.equals(graphInstance.nodeSeen.get(predecessor));
+        }
+        return graphInstance.skillRun.containsKey(predecessor);
     }
 }

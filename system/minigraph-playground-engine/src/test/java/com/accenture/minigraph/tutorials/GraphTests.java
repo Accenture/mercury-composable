@@ -328,6 +328,25 @@ class GraphTests {
         log.info("Join barrier waits for a retrying branch");
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void chainedJoinCountsOnlyAFiredUpstreamJoin() throws TimeoutException {
+        // Chained joins: an upstream join that evaluated and SANK is still in
+        // skillRun (its skill ran fine), so the downstream join must judge it
+        // by the OUTCOME it recorded, not the run mark. slow-pre (200 ms) ->
+        // slow-x and fast-y feed j-one; j-one chains into j-two alongside
+        // pace-z (100 ms). fast-y makes j-one evaluate-and-sink at ~1 ms;
+        // pace-z reaches j-two at ~100 ms - before the fix, j-two counted the
+        // sunk j-one off its run mark, fired prematurely, and lost branch X.
+        var result = runGraph("unit-test-join-chain", Map.of("probe", true));
+        assertInstanceOf(Map.class, result);
+        var mm = new MultiLevelMap((Map<String, Object>) result);
+        assertEquals("X", mm.getElement("x"));
+        assertEquals("Y", mm.getElement("y"));
+        assertEquals("Z", mm.getElement("z"));
+        log.info("Chained join counts only a fired upstream join");
+    }
+
     private Object runGraph(String graphId, Map<String, Object> input) throws TimeoutException {
         var request = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
                 .setBody(input).setHeader("Content-Type", "application/json")
