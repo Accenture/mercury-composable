@@ -35,8 +35,12 @@ public class LessThanOperator implements PluginFunction {
         if (input.length != 2) {
             throw new IllegalArgumentException("Input is required to compare using 'Less Than'");
         }
-        Long first = SimplePluginUtils.promoteNumber(input[0]);
-        Long second = SimplePluginUtils.promoteNumber(input[1]);
-        return first < second;
+        Number first = SimplePluginUtils.promoteNumber(input[0]);
+        Number second = SimplePluginUtils.promoteNumber(input[1]);
+        // both whole => exact long comparison; otherwise numeric promotion to double
+        if (first instanceof Long a && second instanceof Long b) {
+            return a < b;
+        }
+        return first.doubleValue() < second.doubleValue();
     }
 }

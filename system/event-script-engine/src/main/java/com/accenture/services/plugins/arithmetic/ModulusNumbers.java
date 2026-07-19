@@ -38,9 +38,6 @@ public class ModulusNumbers implements PluginFunction {
             throw new IllegalArgumentException("Modulus expects only two values but got " + Arrays.toString(input));
         }
         SimplePluginUtils.divideByZeroCheck(input[1]);
-        return SimplePluginUtils.promoteInput(input)
-                .reduce((l1, l2) -> l1 % l2)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("Could not get modulus for the input: " + Arrays.toString(input)));
+        return SimplePluginUtils.reduceNumbers((l1, l2) -> l1 % l2, (d1, d2) -> d1 % d2, input);
     }
 }

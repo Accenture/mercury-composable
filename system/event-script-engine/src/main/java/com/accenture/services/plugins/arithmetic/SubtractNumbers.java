@@ -35,10 +35,8 @@ public class SubtractNumbers implements PluginFunction {
     @Override
     public Object calculate(Object... input) {
         if (input.length < 2) {
-            throw new IllegalArgumentException("Expected at least two Whole Numbers to subtract");
+            throw new IllegalArgumentException("Expected at least two Numbers to subtract");
         }
-        return SimplePluginUtils.promoteInput(input)
-                .reduce((a,b) -> a - b)
-                .orElseThrow(() -> new IllegalArgumentException("Could not subtract the input: " + Arrays.toString(input)));
+        return SimplePluginUtils.reduceNumbers((a, b) -> a - b, (a, b) -> a - b, input);
     }
 }

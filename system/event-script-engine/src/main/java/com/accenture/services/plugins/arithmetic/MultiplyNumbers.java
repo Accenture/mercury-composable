@@ -35,11 +35,9 @@ public class MultiplyNumbers implements PluginFunction {
     @Override
     public Object calculate(Object... input) {
         if (input.length < 2) {
-            throw new IllegalArgumentException("Expected at least two Whole Numbers to multiply");
+            throw new IllegalArgumentException("Expected at least two Numbers to multiply");
         }
-        return SimplePluginUtils.promoteInput(input)
-                .reduce((l1, l2) -> l1 * l2)
-                .orElseThrow(() -> new IllegalArgumentException("Could not multiply the input: " + Arrays.toString(input)));
+        return SimplePluginUtils.reduceNumbers((l1, l2) -> l1 * l2, (d1, d2) -> d1 * d2, input);
     }
 
 }

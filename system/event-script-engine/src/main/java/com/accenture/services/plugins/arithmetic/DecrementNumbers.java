@@ -33,8 +33,9 @@ public class DecrementNumbers implements PluginFunction {
     @Override
     public Object calculate(Object... input) {
         if (input.length == 1) {
-            return SimplePluginUtils.promoteNumber(input[0]) - 1L;
+            Number n = SimplePluginUtils.promoteNumber(input[0]);
+            return n instanceof Double d ? d - 1.0d : n.longValue() - 1L;
         }
-        throw new IllegalArgumentException("Expected exactly one Whole Number to decrement");
+        throw new IllegalArgumentException("Expected exactly one Number to decrement");
     }
 }
