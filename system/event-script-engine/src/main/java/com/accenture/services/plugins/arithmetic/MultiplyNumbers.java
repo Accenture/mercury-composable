@@ -22,8 +22,6 @@ import com.accenture.util.SimplePluginUtils;
 import com.accenture.models.SimplePlugin;
 import com.accenture.models.PluginFunction;
 
-import java.util.Arrays;
-
 @SimplePlugin
 public class MultiplyNumbers implements PluginFunction {
 
