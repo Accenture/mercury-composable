@@ -169,11 +169,17 @@ public class GraphExecutor extends GraphLambdaFunction {
             }
             var graph = graphInstance.graph;
             var node = graph.findNodeByAlias(nodeName);
-            graphInstance.skillRun.put(nodeName, true);
             checkFrequency(po, graphInstance, nodeName, parentSpanId);
             // Skill handler can also set status and error in its node properties instead of throwing exception
             var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
             var resultError = stateMachine.getElement(nodeName + "." + ERROR);
+            // Mark the skill complete only when it did NOT fail (status + error set,
+            // e.g. an exception-routed fetcher): a join barrier consults skillRun,
+            // so a failed branch must not satisfy the barrier while it retries.
+            // GraphTraveler keeps identical semantics.
+            if (!(processStatus instanceof Integer && resultError != null)) {
+                graphInstance.skillRun.put(nodeName, true);
+            }
             // Skill handler would set status and error in its node properties
             // e.g. the HTTP response status code to the API fetcher >= 400
             var errorHandler = node.getProperty(EXCEPTION);
