@@ -71,3 +71,7 @@ A machine-readable map of the whole site lives at [`llms.txt`](llms.txt).
 - **Release notes:** [CHANGELOG](https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md)
 - **Contributing:** [CONTRIBUTING](https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md)
   · [Code of Conduct](https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md)
+- **Rust version:** Mercury is also available as an official Rust implementation — same three
+  layers, same flow YAML, behavior-synced with this engine:
+  [github.com/Accenture/mercury](https://github.com/Accenture/mercury)
+  · [documentation](https://accenture.github.io/mercury/)
