@@ -1492,15 +1492,22 @@ For example:
 
 ### Built-in Plugins
 
+> **Numeric promotion** (arithmetic + `gt`/`lt`): whole numbers and whole-number strings promote
+> to long, decimals (and decimal strings) to double. The result type is decided over **all**
+> arguments before folding — any floating-point argument promotes the whole computation to
+> double; all-integral inputs keep exact 64-bit arithmetic, including integer division. Once a
+> double enters, precision follows IEEE-754 (integers exact to 2^53).
+
 | Type                | Plugin `name`   | Expected Inputs                                                                                                       |
 |:--------------------|:----------------|:----------------------------------------------------------------------------------------------------------------------|
-| **Arithmetic**      | add             | At least two _whole_ numbers                                                                                          |
-| **Arithmetic**      | subtract        | At least two _whole_ numbers                                                                                          |
-| **Arithmetic**      | multiply        | At least two _whole_ numbers                                                                                          |
-| **Arithmetic**      | div             | At least two _whole_ numbers                                                                                          |
-| **Arithmetic**      | mod             | Two individual whole numbers                                                                                          |
-| **Arithmetic**      | increment       | A single _whole_ number                                                                                               |
-| **Arithmetic**      | decrement       | A single _whole_ number                                                                                               |
+| **Arithmetic**      | add             | At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)                                           |
+| **Arithmetic**      | subtract        | At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)                                           |
+| **Arithmetic**      | multiply        | At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)                                           |
+| **Arithmetic**      | div             | At least two numbers (all whole ⇒ integer division; any decimal ⇒ double division)                                   |
+| **Arithmetic**      | mod             | Two individual numbers (all whole ⇒ long; any decimal ⇒ double)                                                      |
+| **Arithmetic**      | increment       | A single number (whole ⇒ long; decimal ⇒ double)                                                                     |
+| **Arithmetic**      | decrement       | A single number (whole ⇒ long; decimal ⇒ double)                                                                     |
+| **Arithmetic**      | round           | A number and optional decimal places (whole ≥ 0, default 0) — half-up rounding on the decimal representation (1.005 → 1.01 at 2 places) |
 | **Generator**       | uuid            | None                                                                                                                  |
 | **Generator**       | dateTime        | None.                                                                                                                 |
 | **Generator**       | now             | text(iso), text(local) or text(ms)                                                                                    |
@@ -1529,9 +1536,9 @@ For example:
 | **Type Conversion** | int             | A list of variables that can evaluate to an integer                                                                   |
 | **Type Conversion** | long            | A list of variables that can evaluate to a long integer                                                               |
 | **Type Conversion** | text            | A list of variables that can evaluate to a String                                                                     |
-| **Type Conversion** | listOfMap       | Convert "a map of lists" to "a list of maps"                                                                          |
+| **Type Conversion** | listOfMap       | Convert "a map of lists" to "a list of maps" — **order-preserving**: list order follows array index order (guaranteed) |
 | **Type Conversion** | updateListOfMap | Update "a list of maps" with "maps of lists"                                                                          |
-| **Type Conversion** | removeKey       | Remove one or more keys from a map or "list of maps"                                                                  |
+| **Type Conversion** | removeKey       | Remove one or more keys from a map or "list of maps". Syntax: `f:removeKey(source, text(key1), text(key2), …)` — see the worked example below. |
 | **Type Conversion** | defaultValue    | If the first argument is null, return the 2nd argument                                                                |
 | **Type Conversion** | parseDate       | Parse a date string to ISO, Local or Milliseconds.                                                                    |
 | **Type Conversion** | parseDateTime   | Parse a date-time string to ISO, Local or Milliseconds.                                                               |
@@ -1697,6 +1704,21 @@ The list of maps may be a prior result of a ListOfMap operation.
 ```
 
 If the list sizes do not match, the plugin will return an empty list.
+
+*removeKey*
+
+The `removeKey(source, key1, key2, ...)` plugin removes one or more keys from a **map** — or from
+**every map element of a list** (non-map elements pass through unchanged). It returns a copy; the
+source is not modified. This is the natural idiom for hiding internal fields when reshaping data
+for external consumption:
+
+```yaml
+# strip the internal "description" field from every account in the list
+- 'f:removeKey(input.body.profile.account, text(description)) -> output.body.account'
+
+# remove several keys at once — one text(...) argument per key
+- 'f:removeKey(model.record, text(internal_id), text(audit_trail)) -> output.body.record'
+```
 
 For details, please refer to configuration example in header-and-json-path-test.yml and the unit test 
 `headerAndJsonPathTest()` in the FlowTests class of the event-script-engine module.
