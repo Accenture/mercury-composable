@@ -4,6 +4,11 @@ A Java framework for building composable, event-driven applications from self-co
 
 > **New here?** [**Getting Started**](https://accenture.github.io/mercury-composable/guides/getting-started/) runs a working app in five minutes. **Building with an AI agent?** Start with the [**AI Developer Guide**](https://accenture.github.io/mercury-composable/guides/ai-developer-guide/).
 
+> **Prefer Rust?** Mercury is also available as an official **Rust implementation** — the same
+> three layers and the same YAML flow syntax (flow files port unchanged), faithfully following
+> this project's behavior: [github.com/Accenture/mercury](https://github.com/Accenture/mercury)
+> · [documentation](https://accenture.github.io/mercury/).
+
 ## What is Mercury Composable?
 
 An application is assembled from **independent functions** — plain Java classes with no knowledge of one another — that communicate only through **events**. The flows that sequence them live in **YAML**, so orchestration is configuration, not code. Everything runs on Java 21 **virtual threads**, so straightforward blocking code performs like reactive, and each function's immutable input/output makes the design equally friendly to human developers and AI code assistants.

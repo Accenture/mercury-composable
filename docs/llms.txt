@@ -55,6 +55,12 @@ These are self-contained; you should not need the engine source or the tutorial 
 - [Sync-over-Async](https://accenture.github.io/mercury-composable/guides/sync-over-async/): opt-in extension exposing synchronous REST request/response over an async cross-pod Kafka backend via a Redis return route keyed by correlation-id (sync.over.async.enabled, redis.* + sync.* config).
 - [Minimalist Service Mesh](https://accenture.github.io/mercury-composable/guides/service-mesh/): Kafka-based service discovery and routing.
 
+## Rust implementation
+- [Mercury for Rust](https://github.com/Accenture/mercury): the official Rust implementation — same
+  three layers, same flow YAML (flow files port unchanged), behavior-synced with this engine; its
+  docs live at [accenture.github.io/mercury](https://accenture.github.io/mercury/) with its own
+  llms.txt map. Building functions in Rust? Start there; the graph/flow DSLs are shared.
+
 ## Reference
 - [API Overview](https://accenture.github.io/mercury-composable/guides/api-overview/): PostOffice, Platform, EventEnvelope, configuration APIs.
 - [Annotations Reference](https://accenture.github.io/mercury-composable/guides/annotations-reference/): @PreLoad, @MainApplication, and the rest.
