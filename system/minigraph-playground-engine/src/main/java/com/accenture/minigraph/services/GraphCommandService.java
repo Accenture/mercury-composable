@@ -666,7 +666,12 @@ public class GraphCommandService extends GraphLambdaFunction {
         if (model.get("nodes") instanceof List<?> nodeList) {
             for (var n : nodeList) {
                 if (n instanceof Map<?, ?> node && node.get("properties") != null) {
-                    var text = String.valueOf(node.get("properties"));
+                    String text;
+                    try {
+                        text = SimpleMapper.getInstance().getMapper().writeValueAsString(node.get("properties"));
+                    } catch (Exception e) {
+                        text = String.valueOf(node.get("properties"));
+                    }
                     collectPathTokens(text, "input.", inputs);
                     collectPathTokens(text, "output.", outputs);
                 }
@@ -740,6 +745,11 @@ public class GraphCommandService extends GraphLambdaFunction {
             }
             var token = text.substring(begin, end);
             while (!token.isEmpty() && (token.endsWith(".") || token.endsWith("-") || token.endsWith("["))) {
+                token = token.substring(0, token.length() - 1);
+            }
+            // Trim a trailing ']' only when there is no matching '[' (unbalanced — can arise
+            // from non-JSON serialization forms where a list's closing bracket is absorbed).
+            while (token.endsWith("]") && token.indexOf('[') == -1) {
                 token = token.substring(0, token.length() - 1);
             }
             if (token.length() > prefix.length()) {
