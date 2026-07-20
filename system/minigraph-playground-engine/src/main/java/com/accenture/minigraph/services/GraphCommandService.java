@@ -624,13 +624,123 @@ public class GraphCommandService extends GraphLambdaFunction {
             var purpose = graphPurpose(id);
             sb.append(purpose == null? id : id + " - " + purpose).append('\n');
         }
-        sb.append("Total ").append(ids.size()).append(ids.size() == 1? " graph model" : " graph models");
+        sb.append("Total ").append(ids.size()).append(ids.size() == 1? " graph model" : " graph models").append('\n');
+        sb.append("Use 'describe graph {graph-id}' for a model's input/output contract");
     }
 
     /**
      * Discovery: the Event Script flows a graph.extension node can call
      * (extension=flow://{flow-id}).
      */
+    /**
+     * Discovery: the CONTRACT view of a deployed graph model - purpose, size,
+     * and the input/output surface derived from the model's node properties -
+     * so an agent can wire extension= delegation without out-of-band
+     * knowledge or trial execution.
+     */
+    private void describeDeployedGraph(PostOffice po, String outRoute, String graphId) {
+        var model = deployedModel(graphId);
+        if (model == null) {
+            po.send(new EventEnvelope().setTo(outRoute).setBody("Graph model '" + graphId + "'" + NOT_FOUND));
+            return;
+        }
+        var nodes = model.get("nodes") instanceof List<?> n? n.size() : 0;
+        var connections = model.get("connections") instanceof List<?> c? c.size() : 0;
+        var sb = new StringBuilder();
+        sb.append("Deployed graph model '").append(graphId).append("'\n");
+        var purpose = graphPurpose(graphId);
+        if (purpose != null) {
+            sb.append("Purpose: ").append(purpose).append('\n');
+        }
+        sb.append("Nodes: ").append(nodes).append(", connections: ").append(connections).append('\n');
+        var inputs = new TreeSet<String>();
+        var outputs = new TreeSet<String>();
+        if (model.get("nodes") instanceof List<?> nodeList) {
+            for (var n : nodeList) {
+                if (n instanceof Map<?, ?> node && node.get("properties") != null) {
+                    var text = String.valueOf(node.get("properties"));
+                    collectPathTokens(text, "input.", inputs);
+                    collectPathTokens(text, "output.", outputs);
+                }
+            }
+        }
+        sb.append("Input surface:\n");
+        if (inputs.isEmpty()) {
+            sb.append("  (none referenced)\n");
+        }
+        for (var path : inputs) {
+            sb.append("  ").append(path).append('\n');
+        }
+        sb.append("Output surface:\n");
+        if (outputs.isEmpty()) {
+            sb.append("  (none referenced)\n");
+        }
+        for (var path : outputs) {
+            sb.append("  ").append(path).append('\n');
+        }
+        sb.append("(derived from the model's data mappings)");
+        po.send(new EventEnvelope().setTo(outRoute).setBody(sb.toString()));
+    }
+
+    /**
+     * A deployed/compiled graph model (compiled registry first, then the
+     * deployed location).
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> deployedModel(String graphId) {
+        Map<String, Object> model = CompiledGraphs.getGraph(graphId);
+        if (model != null) {
+            return model;
+        }
+        var json = getDeployedGraphAsText(graphId);
+        if (json == null) {
+            return null;
+        }
+        try {
+            return SimpleMapper.getInstance().getMapper().readValue(json, Map.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Collect dotted-path tokens starting with the prefix from free text
+     * (mapping entries, plugin args, substitution variables in statements).
+     */
+    private void collectPathTokens(String text, String prefix, TreeSet<String> found) {
+        int start = 0;
+        while (true) {
+            int begin = text.indexOf(prefix, start);
+            if (begin == -1) {
+                return;
+            }
+            if (begin > 0) {
+                char prev = text.charAt(begin - 1);
+                if (Character.isLetterOrDigit(prev) || prev == '_' || prev == '.') {
+                    start = begin + prefix.length();
+                    continue;
+                }
+            }
+            int end = begin + prefix.length();
+            while (end < text.length()) {
+                char c = text.charAt(end);
+                if (Character.isLetterOrDigit(c) || c == '.' || c == '_' || c == '-' || c == '[' || c == ']') {
+                    end++;
+                } else {
+                    break;
+                }
+            }
+            var token = text.substring(begin, end);
+            while (!token.isEmpty() && (token.endsWith(".") || token.endsWith("-") || token.endsWith("["))) {
+                token = token.substring(0, token.length() - 1);
+            }
+            if (token.length() > prefix.length()) {
+                found.add(token);
+            }
+            start = end;
+        }
+    }
+
     private void listFlows(StringBuilder sb) {
         var ids = new ArrayList<>(Flows.getAllFlows());
         if (ids.isEmpty()) {
@@ -678,19 +788,10 @@ public class GraphCommandService extends GraphLambdaFunction {
     /**
      * The root node's "purpose" property of a deployed/compiled graph model.
      */
-    @SuppressWarnings("unchecked")
     private String graphPurpose(String graphId) {
-        Map<String, Object> model = CompiledGraphs.getGraph(graphId);
+        Map<String, Object> model = deployedModel(graphId);
         if (model == null) {
-            var json = getDeployedGraphAsText(graphId);
-            if (json == null) {
-                return null;
-            }
-            try {
-                model = SimpleMapper.getInstance().getMapper().readValue(json, Map.class);
-            } catch (Exception e) {
-                return null;
-            }
+            return null;
         }
         if (model.get("nodes") instanceof List<?> nodes) {
             for (var n : nodes) {
@@ -1244,7 +1345,9 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     private void handleDescribeCommand(PostOffice po, String inRoute, String outRoute, List<String> words)
             throws IOException {
-        if (words.size() > 1 && words.get(1).equalsIgnoreCase(GRAPH)) {
+        if (words.size() == 3 && words.get(1).equalsIgnoreCase(GRAPH)) {
+            describeDeployedGraph(po, outRoute, words.get(2));
+        } else if (words.size() > 1 && words.get(1).equalsIgnoreCase(GRAPH)) {
             describeGraph(po, inRoute, outRoute);
         } else if (words.size() == 3 && words.get(1).equalsIgnoreCase(SKILL)) {
             describeSkill(po, outRoute, words.get(2));

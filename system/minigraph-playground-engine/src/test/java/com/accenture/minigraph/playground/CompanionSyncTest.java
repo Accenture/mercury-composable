@@ -300,6 +300,15 @@ class CompanionSyncTest {
         var flowText = String.valueOf(flows.get("output"));
         assertTrue(flowText.contains("extension=flow://{flow-id} targets"), "flows header: " + flowText);
         assertTrue(flowText.contains("graph-executor"), "the engine's own flow must be listed: " + flowText);
+
+        // the contract view of a deployed model: purpose, size, and the
+        // input/output surface derived from the model's own mappings
+        var contract = syncCommand(po, sid, "describe graph tutorial-3");
+        assertEquals(Boolean.TRUE, contract.get("ok"), "describe graph {id} -> ok:true: " + contract);
+        var contractText = String.valueOf(contract.get("output"));
+        assertTrue(contractText.contains("Deployed graph model 'tutorial-3'"), "header: " + contractText);
+        assertTrue(contractText.contains("input.body.person_id"), "derived input surface: " + contractText);
+        assertTrue(contractText.contains("output.body.name"), "derived output surface: " + contractText);
     }
 
     private EventEnvelope legacyCommand(EventEmitter po, String sid, String command) throws Exception {
