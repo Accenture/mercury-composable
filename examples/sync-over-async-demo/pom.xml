@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>sync-over-async-demo</artifactId>
     <packaging>jar</packaging>
-    <version>4.8.6</version>
+    <version>4.9.0</version>
     <name>Worked example: sync-over-async REST facade over Kafka + Redis</name>
 
     <parent>
@@ -65,7 +65,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>sync-over-async</artifactId>
-            <version>4.8.6</version>
+            <version>4.9.0</version>
         </dependency>
 
         <dependency>
