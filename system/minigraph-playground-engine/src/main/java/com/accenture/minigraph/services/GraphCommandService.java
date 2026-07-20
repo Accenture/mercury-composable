@@ -140,6 +140,9 @@ public class GraphCommandService extends GraphLambdaFunction {
         var out = input.get(OUT);
         var message = input.get(MESSAGE);
         var forwarded = input.get(FORWARDED) instanceof Boolean flag && flag;
+        // "direct" marks a synchronous companion RPC (finding #62): not a flaky
+        // WS client, so the identical-command dedup guard does not apply
+        var direct = input.get(DIRECT) instanceof Boolean d && d;
         if (OPEN.equals(type) && in instanceof String inRoute) {
             sessions.put(inRoute, new GraphSession(inRoute));
             graphModels.put(inRoute, new MiniGraph());
@@ -159,12 +162,13 @@ public class GraphCommandService extends GraphLambdaFunction {
                 message instanceof String text) {
             var command = text.trim();
             if (!command.isEmpty()) {
-                handleCommand(po, command, inRoute, outRoute, forwarded);
+                handleCommand(po, command, inRoute, outRoute, forwarded, direct);
             }
         }
     }
 
-    private void handleCommand(PostOffice po, String command, String inRoute, String outRoute, boolean forwarded)
+    private void handleCommand(PostOffice po, String command, String inRoute, String outRoute,
+                               boolean forwarded, boolean direct)
             throws IOException {
         if (command.startsWith("{") && command.endsWith("}")) {
             handleJsonCommand(po, outRoute, command);
@@ -173,12 +177,16 @@ public class GraphCommandService extends GraphLambdaFunction {
                 singleOrMultiLineCommand(po, command, inRoute, outRoute);
                 return;
             }
-            var cached = cachedMessage.get(inRoute);
-            if (command.equals(cached)) {
-                log.debug("Duplicated message - {} for {}", command, inRoute);
-                return;
+            // the dedup guard protects the WS UI from double-submits; a synchronous
+            // companion RPC ("direct") is a deliberate request - never dropped (#62)
+            if (!direct) {
+                var cached = cachedMessage.get(inRoute);
+                if (command.equals(cached)) {
+                    log.debug("Duplicated message - {} for {}", command, inRoute);
+                    return;
+                }
+                cachedMessage.put(inRoute, command);
             }
-            cachedMessage.put(inRoute, command);
             var me = sessions.get(inRoute);
             if (me.isPrimary()) {
                 singleOrMultiLineCommand(po, command, inRoute, outRoute);

@@ -311,6 +311,84 @@ class CompanionSyncTest {
         assertTrue(contractText.contains("output.body.name"), "derived output surface: " + contractText);
     }
 
+    /**
+     * Findings #62/#63 (HTTPS drive pre-flight): the /sync contract gaps.
+     * #62 - a synchronous companion RPC is a deliberate request: the 1-second
+     * identical-command dedup guard (a WS double-submit protection) must NOT
+     * silently swallow a repeat; the guard stays intact for the WS path.
+     * #63 - a malformed command answered with a "Syntax: ..." usage hint did
+     * nothing: the envelope must say ok:false with the hint as the error.
+     */
+    @Test
+    void companionSyncContractGapsClosed() throws Exception {
+        var po = EventEmitter.getInstance();
+        var platform = Platform.getInstance();
+        var sid = "ws-990005-2";
+        var inRoute = "ws.990005.2.in";
+
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", inRoute)));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        assertTrue(GraphCommandService.hasSession(sid), "session must exist before a companion command");
+
+        // #62 - the same command twice, back-to-back (well inside the 1s window):
+        // both must execute and both envelopes must carry the echo + output
+        var first = syncCommand(po, sid, "list nodes");
+        var second = syncCommand(po, sid, "list nodes");
+        assertEquals(Boolean.TRUE, first.get("ok"), "first repeat must execute: " + first);
+        assertEquals(Boolean.TRUE, second.get("ok"), "second repeat must execute: " + second);
+        assertTrue(String.valueOf(first.get("output")).contains("list nodes"),
+                "first envelope must carry the echo: " + first);
+        assertTrue(String.valueOf(second.get("output")).contains("list nodes"),
+                "second envelope must carry the echo (not silently dropped): " + second);
+
+        // #63 - a malformed command answered with the usage hint is a failed
+        // command: ok:false, the hint in-band as the error
+        var bad = syncCommand(po, sid, "connect a to b with type x");
+        assertEquals(Boolean.FALSE, bad.get("ok"), "usage response must classify as failure: " + bad);
+        assertInstanceOf(String.class, bad.get("error"));
+        assertTrue(((String) bad.get("error")).startsWith("Syntax:"),
+                "the usage hint must be the in-band error: " + bad);
+
+        // the WS-path guard is untouched: two identical NON-direct commands within
+        // the window - the second is dropped, so the console sees exactly one echo
+        var sid2 = "ws-990006-2";
+        var in2 = "ws.990006.2.in";
+        var out2 = "ws.990006.2.out";
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", in2)));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid2); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        List<Object> teed = new CopyOnWriteArrayList<>();
+        LambdaFunction outTap = (hdr, body, inst) -> {
+            teed.add(body);
+            return null;
+        };
+        platform.registerPrivate(out2, outTap, 1);
+        try {
+            // dispatch via the 1-instance singleton (FIFO) so the pair is processed
+            // sequentially - the deterministic path for observing the guard
+            for (int i = 0; i < 2; i++) {
+                po.send(new EventEnvelope().setTo(GraphCommandService.SINGLETON_COMMAND_HANDLER)
+                        .setBody(Map.of("type", "command", "in", in2, "out", out2,
+                                "message", "list nodes")));
+            }
+            Utility.getInstance().sleep(300);
+            var echoes = teed.stream()
+                    .filter(String.class::isInstance)
+                    .map(Object::toString)
+                    .filter(l -> l.contains("list nodes"))
+                    .count();
+            assertEquals(1, echoes,
+                    "WS double-submit guard must still drop the duplicate: " + teed);
+        } finally {
+            platform.release(out2);
+        }
+    }
+
     private EventEnvelope legacyCommand(EventEmitter po, String sid, String command) throws Exception {
         var req = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
                 .setUrl("/api/companion/{id}").setPathParameter("id", sid)

@@ -52,6 +52,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String MESSAGE = "message";
     protected static final String COMMAND = "command";
     protected static final String FORWARDED = "forwarded";
+    protected static final String DIRECT = "direct";
     protected static final String UNTYPED = "untyped";
     protected static final String NAME = "name";
     protected static final String ROOT = "root";

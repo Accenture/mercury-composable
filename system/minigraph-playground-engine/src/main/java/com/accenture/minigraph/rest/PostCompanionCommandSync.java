@@ -146,13 +146,16 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         try {
             // RPC the singleton handler with the capture route as `out`; handleEvent
             // returns once the command is dispatched (a traversal is still running).
+            // "direct" marks a synchronous companion RPC: not a flaky WS client, so
+            // the identical-command dedup guard does not apply (finding #62)
             po.request(new EventEnvelope()
                     .setTo(GraphCommandService.SINGLETON_COMMAND_HANDLER)
                     .setBody(Map.of(
                             "type", "command",
                             "in", inRoute,
                             "out", captureRoute,
-                            "message", command)),
+                            "message", command,
+                            "direct", true)),
                     COMMAND_TIMEOUT_MS).get();
             // Synchronous commands: enqueue the FIFO sentinel to mark the buffer drained.
             // Traversals: the capture route counts the latch down on the terminal line.
@@ -192,8 +195,12 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
     }
 
     private static boolean isErrorLine(String line) {
+        // a "Syntax: ..." usage hint is the engine's rejection of a malformed command —
+        // the command did nothing, so the caller must see ok:false (finding #63;
+        // no help page starts a line with "Syntax:", so no false positive)
         return line.startsWith("ERROR:") || line.contains("aborted") || line.contains("does not have")
-                || line.startsWith("Invalid") || line.contains("not found") || line.contains("Please try 'help'");
+                || line.startsWith("Invalid") || line.contains("not found") || line.contains("Please try 'help'")
+                || line.startsWith("Syntax:");
     }
 
     /**
