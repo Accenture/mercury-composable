@@ -307,8 +307,8 @@ class CompanionSyncTest {
         assertEquals(Boolean.TRUE, contract.get("ok"), "describe graph {id} -> ok:true: " + contract);
         var contractText = String.valueOf(contract.get("output"));
         assertTrue(contractText.contains("Deployed graph model 'tutorial-3'"), "header: " + contractText);
-        assertTrue(contractText.contains("input.body.person_id"), "derived input surface: " + contractText);
-        assertTrue(contractText.contains("output.body.name"), "derived output surface: " + contractText);
+        assertTrue(contractText.contains("  input.body.person_id\n"), "derived input surface (exact line): " + contractText);
+        assertTrue(contractText.contains("  output.body.name\n"), "derived output surface (exact line): " + contractText);
     }
 
     /**
