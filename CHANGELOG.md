@@ -8,20 +8,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Unreleased
+## Version 4.9.0, 7/20/2026
+
+Feature release: the MiniGraph Playground becomes fully operable by AI agents — a synchronous
+companion endpoint with a truthful contract, self-service discovery of deployed graphs and flows,
+and battle-tested AI-agent documentation (hardened by 25 fresh-agent exercises across this engine
+and the Rust port; the last thirteen passed with zero documentation lookups). Also delivers two
+latent join-barrier fixes, numeric promotion for the simple-plugin arithmetic family, and
+cross-links to the official Rust implementation at github.com/Accenture/mercury.
 
 ### Added
 
-1. **Synchronous AI-companion endpoint (ADR-0008) (#189).** `POST /api/companion/{id}/sync` returns
+1. **Synchronous AI-companion endpoint (ADR-0008) (#189, example wiring #190).** `POST /api/companion/{id}/sync` returns
    the command outcome in-band as `{ok, output, error, result}` — the existing fire-and-forget
    `/api/companion/{id}` leaves an AI caller blind (outcome and errors were WebSocket-only). The same
    output is also teed to the session's WebSocket `.out`, so a watching human — and any
    `session subscribe`d session — sees it live (real-time human+AI collaboration). Additive; the
    existing endpoint and the WebSocket console are unchanged.
 
+2. **Discovery commands: `list graphs` and `list flows` (#199).** Read-only enumeration of the
+   deployable graph models (compiled registry ∪ deployed folder, each with its root node's
+   `purpose` — living documentation) and the Event Script flows — so valid `extension=` /
+   `extension=flow://` delegation targets are discoverable without an out-of-band brief, on the
+   console and both companion endpoints. The graph compiler now enforces a non-empty root
+   `purpose` so every listed model is self-describing.
+
+3. **`describe graph {graph-id}` — a deployed model's contract view (#200).** Purpose,
+   node/connection counts, and the `input.*`/`output.*` data surface derived from the model's own
+   mappings — completing self-service delegation: list → contract → delegate, all read-only.
+   Tutorial-3/5 fixture purposes differentiated so purpose-based discovery can tell them apart.
+
+4. **Numeric promotion for simple-plugin arithmetic + new `f:round` (#196).** `add`/`subtract`/
+   `multiply`/`div`/`mod`/`increment`/`decrement` and `gt`/`lt` now accept mixed numbers: whole
+   numbers promote to long (exact 64-bit arithmetic, including integer division), any decimal
+   argument promotes the whole computation to double — strictly widening, no previously-working
+   call changes. New `f:round(number[, places])` rounds half-up on the decimal representation
+   (`1.005` → `1.01` at 2 places; binary error never leaks into the decision).
+
+5. **AI-agent documentation hardening (#187, #203).** The `graph.math`/`graph.js` statement
+   grammar documented (#187); then the full grammar hardening back-ported from the Rust R&D
+   effort (#203): Provider & Dictionary authoring, the constants closed set + `f:`/`$.` source
+   forms, `help {topic}`, fork/join state-safety, iterative fetching with the guaranteed ordered
+   aggregation, the required Island knowledge layer, composite keys + array append, the
+   `graph.extension` delegation contract, failure routing with the canonical bounded-retry
+   pattern, the sync-envelope contract, and more — across `command-reference.md`,
+   `minigraph-commands.json`, `skills-reference.md`, `ai-agent-guide.md`, `llms.txt` (new
+   AI-agent map sections), `event-script/syntax.md`, and `help graph-api-fetcher.md`.
+
+6. **Cross-links to the official Rust implementation (#204).** README, docs home, and `llms.txt`
+   now point at github.com/Accenture/mercury (same three layers, same flow YAML; flow files port
+   unchanged) — the two projects' `llms.txt` maps reference each other.
+
 ### Fixed
 
-1. **`/api/companion/{id}/sync` now returns the whole `run` outcome (ADR-0008).** `run` is
+1. **`/api/companion/{id}/sync` now returns the whole `run` outcome (ADR-0008, #191/#193).** `run` is
    asynchronous — the command handler replies before the traveler streams its `Walk to…` / `Executed…`
    / `output` / terminal lines — so the FIFO sentinel raced (and usually beat) that tail and truncated
    the response to just `Walk to root` / `Walk to end`. A traversal is now drained on the traveler's
@@ -31,6 +71,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    `Graph traversal aborted`, so `run` before `instantiate` returns promptly (`ok:false`) instead of
    waiting out the timeout. Synchronous commands keep the sentinel drain. This keeps the `/sync` REST
    contract byte-identical with the Rust port — the companion surface is language-neutral.
+
+2. **Companion endpoints limit `session` to the read-only status query (#194).** Executed through
+   the sync endpoint, `session subscribe` durably registered the ephemeral per-request capture
+   route as a subscriber (a dangling ghost). A companion is an *assistant to* a session, not a
+   WebSocket session of its own — the topology subcommands (`subscribe`/`unsubscribe`/`reset`)
+   are now rejected before dispatch on both companion endpoints, with the refusal returned
+   in-band and echoed to the live console.
+
+3. **`/sync` `ok` false-negative on import's benign fallback (#195).** `import graph from
+   {deployed}` succeeds via the classpath fallback but reported `ok:false` — the per-line
+   heuristic tripped on the benign "Graph model not found in /tmp/…" line. Classification is now
+   whole-output-aware: the not-found line is forgiven only when the same output carries the
+   fallback's success marker; a genuine miss stays `ok:false`.
+
+4. **Join barrier: only valid completions count (#197, #198).** The barrier's completion mark
+   meant "ran", not "completed" — it was stamped even when a branch failed into its `exception=`
+   route, and `RESET` left the stale mark behind, so a fork whose failing branch retries could
+   fire the join prematurely and silently lose that branch's data. The mark is now success-only
+   and `RESET` clears it (#197); a downstream join judges an upstream join by its recorded
+   outcome, not its run mark, so chained joins can't fire off a sunk barrier (#198). Traveler
+   (dry-run) and executor (deployed) behave identically.
+
+5. **`/sync` contract gaps (#201).** The 1-second identical-command dedup guard (a WebSocket
+   double-submit protection) silently swallowed a repeated command from the sync endpoint —
+   `ok:true` with empty output; `/sync` dispatches are now marked direct and bypass the guard
+   (the WS path keeps it). A malformed command answered with a `Syntax: …` usage hint now
+   classifies `ok:false` with the hint as the in-band error.
+
+6. **`flow-schema-reference.md` documented `error.status`; the engine key is `error.code`
+   (#203).** Doc corrected in all mapping examples (found while source-verifying the Rust
+   port's documentation site).
+
+### Changed
+
+1. **The Playground welcome message no longer prints the companion endpoint (#202).** With the
+   synchronous endpoint in place the line advertised the legacy fire-and-forget form; the
+   session id — the one thing a human shares with an AI agent — remains.
 
 ---
 ## Version 4.8.6, 7/14/2026

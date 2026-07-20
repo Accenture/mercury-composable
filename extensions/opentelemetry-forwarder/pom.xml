@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>opentelemetry-forwarder</artifactId>
-    <version>4.8.6</version>
+    <version>4.9.0</version>
     <packaging>jar</packaging>
     <name>OpenTelemetry trace forwarder extension</name>
     <description>
@@ -51,7 +51,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.8.6</version>
+            <version>4.9.0</version>
         </dependency>
 
         <dependency>
@@ -76,7 +76,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>event-script-engine</artifactId>
-            <version>4.8.6</version>
+            <version>4.9.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
