@@ -184,7 +184,7 @@ public class CompileFlows implements EntryPoint {
          * Flow description is enforced at compile time for documentation purpose.
          * It is not used in flow processing.
          */
-        if (id instanceof String flowId && description instanceof String
+        if (id instanceof String flowId && description instanceof String flowDescription
                 && timeToLive instanceof String ttl && firstTask instanceof String start) {
             if (Flows.flowExists(flowId)) {
                 throw new IllegalArgumentException(String.format("Flow '%s' already exists", flowId));
@@ -193,7 +193,7 @@ public class CompileFlows implements EntryPoint {
             // minimum 1 second for TTL
             long ttlSeconds = Math.max(1, util.getDurationInSeconds(ttl));
             String extState = ext instanceof String es? es : null;
-            Flow entry = new Flow(flowId, start, extState, ttlSeconds * 1000L, unhandledException);
+            Flow entry = new Flow(flowId, flowDescription, start, extState, ttlSeconds * 1000L, unhandledException);
             Object taskList = reader.get(TASKS);
             int taskCount = taskList instanceof List<?> tList? tList.size() : 0;
             if (taskCount == 0) {

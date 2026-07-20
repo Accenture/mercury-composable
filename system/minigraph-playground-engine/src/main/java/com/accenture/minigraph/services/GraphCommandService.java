@@ -640,7 +640,9 @@ public class GraphCommandService extends GraphLambdaFunction {
         Collections.sort(ids);
         sb.append("Event Script flows - extension=flow://{flow-id} targets:\n");
         for (var id : ids) {
-            sb.append(id).append('\n');
+            var flow = Flows.getFlow(id);
+            var description = flow == null? null : flow.description;
+            sb.append(description == null || description.isBlank()? id : id + " - " + description.trim()).append('\n');
         }
         sb.append("Total ").append(ids.size()).append(ids.size() == 1? " flow" : " flows");
     }
