@@ -268,6 +268,40 @@ class CompanionSyncTest {
                 "the genuine miss carries the not-found error in-band: " + missed);
     }
 
+    /**
+     * Discovery commands (read-only): "list graphs" enumerates the deployable
+     * graph models (compiled registry + deployed folder) with each root's
+     * "purpose", and "list flows" the Event Script flows - so an agent can
+     * find extension={graph-id} / extension=flow://{flow-id} targets without
+     * an out-of-band brief.
+     */
+    @Test
+    void discoveryCommandsListDeployedGraphsAndFlows() throws Exception {
+        var po = EventEmitter.getInstance();
+        var sid = "ws-990004-2";
+        var inRoute = "ws.990004.2.in";
+
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", inRoute)));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        assertTrue(GraphCommandService.hasSession(sid), "session must exist before a companion command");
+
+        var graphs = syncCommand(po, sid, "list graphs");
+        assertEquals(Boolean.TRUE, graphs.get("ok"), "list graphs -> ok:true: " + graphs);
+        var graphText = String.valueOf(graphs.get("output"));
+        assertTrue(graphText.contains("extension={graph-id} targets"), "graphs header: " + graphText);
+        assertTrue(graphText.contains("tutorial-1"), "deployed tutorial-1 expected: " + graphText);
+        assertTrue(graphText.contains("unit-test-join-chain"), "manifest fixture expected: " + graphText);
+
+        var flows = syncCommand(po, sid, "list flows");
+        assertEquals(Boolean.TRUE, flows.get("ok"), "list flows -> ok:true: " + flows);
+        var flowText = String.valueOf(flows.get("output"));
+        assertTrue(flowText.contains("extension=flow://{flow-id} targets"), "flows header: " + flowText);
+        assertTrue(flowText.contains("graph-executor"), "the engine's own flow must be listed: " + flowText);
+    }
+
     private EventEnvelope legacyCommand(EventEmitter po, String sid, String command) throws Exception {
         var req = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
                 .setUrl("/api/companion/{id}").setPathParameter("id", sid)

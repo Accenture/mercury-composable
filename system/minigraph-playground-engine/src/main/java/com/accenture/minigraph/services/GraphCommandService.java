@@ -21,8 +21,10 @@ package com.accenture.minigraph.services;
 import com.accenture.automation.SimplePluginLoader;
 import com.accenture.automation.SimpleTypeMatchingConverter;
 import com.accenture.minigraph.common.GraphLambdaFunction;
+import com.accenture.minigraph.models.CompiledGraphs;
 import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.models.GraphSession;
+import com.accenture.models.Flows;
 import com.jayway.jsonpath.InvalidPathException;
 import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
@@ -594,10 +596,110 @@ public class GraphCommandService extends GraphLambdaFunction {
             listNodes(graph, sb);
         } else if ("connections".equalsIgnoreCase(type)) {
             listConnections(graph, sb);
+        } else if ("graphs".equalsIgnoreCase(type)) {
+            listGraphs(sb);
+        } else if ("flows".equalsIgnoreCase(type)) {
+            listFlows(sb);
         } else {
-            sb.append("Please use 'list nodes' or 'list connections'");
+            sb.append("Please use 'list nodes', 'list connections', 'list graphs' or 'list flows'");
         }
         po.send(new EventEnvelope().setTo(outRoute).setBody(sb.toString()));
+    }
+
+    /**
+     * Discovery: the graph models a graph.extension node can delegate to
+     * (extension={graph-id}) - the compiled registry united with the deployed
+     * location's *.json files - each with its root "purpose" so the listing
+     * reads as living documentation.
+     */
+    private void listGraphs(StringBuilder sb) {
+        var ids = new TreeSet<>(CompiledGraphs.getAllGraphs());
+        ids.addAll(deployedGraphIds());
+        if (ids.isEmpty()) {
+            sb.append("No graph models deployed");
+            return;
+        }
+        sb.append("Deployed graph models - extension={graph-id} targets:\n");
+        for (var id : ids) {
+            var purpose = graphPurpose(id);
+            sb.append(purpose == null? id : id + " - " + purpose).append('\n');
+        }
+        sb.append("Total ").append(ids.size()).append(ids.size() == 1? " graph model" : " graph models");
+    }
+
+    /**
+     * Discovery: the Event Script flows a graph.extension node can call
+     * (extension=flow://{flow-id}).
+     */
+    private void listFlows(StringBuilder sb) {
+        var ids = new ArrayList<>(Flows.getAllFlows());
+        if (ids.isEmpty()) {
+            sb.append("No flows deployed");
+            return;
+        }
+        Collections.sort(ids);
+        sb.append("Event Script flows - extension=flow://{flow-id} targets:\n");
+        for (var id : ids) {
+            sb.append(id).append('\n');
+        }
+        sb.append("Total ").append(ids.size()).append(ids.size() == 1? " flow" : " flows");
+    }
+
+    /**
+     * The deployed location as an enumerable directory: a file: location
+     * directly; a classpath: location only when it resolves to an exploded
+     * directory (not enumerable inside a packaged jar - the compiled registry
+     * still lists those models).
+     */
+    private List<String> deployedGraphIds() {
+        var result = new ArrayList<String>();
+        File dir = null;
+        if (deployedGraphLocation.startsWith(FILE_PREFIX)) {
+            dir = new File(deployedGraphLocation.substring(FILE_PREFIX.length()));
+        } else if (deployedGraphLocation.startsWith(CLASSPATH_PREFIX)) {
+            var url = this.getClass().getResource(deployedGraphLocation.substring(CLASSPATH_PREFIX.length()));
+            if (url != null && "file".equals(url.getProtocol())) {
+                dir = new File(url.getPath());
+            }
+        }
+        if (dir != null && dir.isDirectory()) {
+            var files = dir.list((d, name) -> name.endsWith(JSON_EXT));
+            if (files != null) {
+                for (var f : files) {
+                    result.add(f.substring(0, f.length() - JSON_EXT.length()));
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * The root node's "purpose" property of a deployed/compiled graph model.
+     */
+    @SuppressWarnings("unchecked")
+    private String graphPurpose(String graphId) {
+        Map<String, Object> model = CompiledGraphs.getGraph(graphId);
+        if (model == null) {
+            var json = getDeployedGraphAsText(graphId);
+            if (json == null) {
+                return null;
+            }
+            try {
+                model = SimpleMapper.getInstance().getMapper().readValue(json, Map.class);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        if (model.get("nodes") instanceof List<?> nodes) {
+            for (var n : nodes) {
+                if (n instanceof Map<?, ?> node && "root".equals(node.get("alias"))
+                        && node.get("properties") instanceof Map<?, ?> properties
+                        && properties.get("purpose") instanceof String purpose && !purpose.isBlank()) {
+                    return purpose.trim();
+                }
+            }
+        }
+        return null;
     }
 
     private void listNodes(MiniGraph graph, StringBuilder sb) {
