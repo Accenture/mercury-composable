@@ -1733,6 +1733,13 @@ constant as a model variable and apply the model variable as an argument to a pl
     execution: end
 </code></pre>
 <h3 id="built-in-plugins">Built-in Plugins</h3>
+<blockquote>
+<p><strong>Numeric promotion</strong> (arithmetic + <code>gt</code>/<code>lt</code>): whole numbers and whole-number strings promote
+to long, decimals (and decimal strings) to double. The result type is decided over <strong>all</strong>
+arguments before folding — any floating-point argument promotes the whole computation to
+double; all-integral inputs keep exact 64-bit arithmetic, including integer division. Once a
+double enters, precision follows IEEE-754 (integers exact to 2^53).</p>
+</blockquote>
 <table>
 <thead>
 <tr>
@@ -1745,37 +1752,42 @@ constant as a model variable and apply the model variable as an argument to a pl
 <tr>
 <td style="text-align: left;"><strong>Arithmetic</strong></td>
 <td style="text-align: left;">add</td>
-<td style="text-align: left;">At least two <em>whole</em> numbers</td>
+<td style="text-align: left;">At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Arithmetic</strong></td>
 <td style="text-align: left;">subtract</td>
-<td style="text-align: left;">At least two <em>whole</em> numbers</td>
+<td style="text-align: left;">At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Arithmetic</strong></td>
 <td style="text-align: left;">multiply</td>
-<td style="text-align: left;">At least two <em>whole</em> numbers</td>
+<td style="text-align: left;">At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Arithmetic</strong></td>
 <td style="text-align: left;">div</td>
-<td style="text-align: left;">At least two <em>whole</em> numbers</td>
+<td style="text-align: left;">At least two numbers (all whole ⇒ integer division; any decimal ⇒ double division)</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Arithmetic</strong></td>
 <td style="text-align: left;">mod</td>
-<td style="text-align: left;">Two individual whole numbers</td>
+<td style="text-align: left;">Two individual numbers (all whole ⇒ long; any decimal ⇒ double)</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Arithmetic</strong></td>
 <td style="text-align: left;">increment</td>
-<td style="text-align: left;">A single <em>whole</em> number</td>
+<td style="text-align: left;">A single number (whole ⇒ long; decimal ⇒ double)</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Arithmetic</strong></td>
 <td style="text-align: left;">decrement</td>
-<td style="text-align: left;">A single <em>whole</em> number</td>
+<td style="text-align: left;">A single number (whole ⇒ long; decimal ⇒ double)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Arithmetic</strong></td>
+<td style="text-align: left;">round</td>
+<td style="text-align: left;">A number and optional decimal places (whole ≥ 0, default 0) — half-up rounding on the decimal representation (1.005 → 1.01 at 2 places)</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Generator</strong></td>
@@ -1920,7 +1932,7 @@ constant as a model variable and apply the model variable as an argument to a pl
 <tr>
 <td style="text-align: left;"><strong>Type Conversion</strong></td>
 <td style="text-align: left;">listOfMap</td>
-<td style="text-align: left;">Convert "a map of lists" to "a list of maps"</td>
+<td style="text-align: left;">Convert "a map of lists" to "a list of maps" — <strong>order-preserving</strong>: list order follows array index order (guaranteed)</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Type Conversion</strong></td>
@@ -1930,7 +1942,7 @@ constant as a model variable and apply the model variable as an argument to a pl
 <tr>
 <td style="text-align: left;"><strong>Type Conversion</strong></td>
 <td style="text-align: left;">removeKey</td>
-<td style="text-align: left;">Remove one or more keys from a map or "list of maps"</td>
+<td style="text-align: left;">Remove one or more keys from a map or "list of maps". Syntax: <code>f:removeKey(source, text(key1), text(key2), …)</code> — see the worked example below.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Type Conversion</strong></td>
@@ -2088,6 +2100,17 @@ The list of maps may be a prior result of a ListOfMap operation.</p>
 ]
 </code></pre>
 <p>If the list sizes do not match, the plugin will return an empty list.</p>
+<p><em>removeKey</em></p>
+<p>The <code>removeKey(source, key1, key2, ...)</code> plugin removes one or more keys from a <strong>map</strong> — or from
+<strong>every map element of a list</strong> (non-map elements pass through unchanged). It returns a copy; the
+source is not modified. This is the natural idiom for hiding internal fields when reshaping data
+for external consumption:</p>
+<pre><code class="language-yaml"># strip the internal &quot;description&quot; field from every account in the list
+- 'f:removeKey(input.body.profile.account, text(description)) -&gt; output.body.account'
+
+# remove several keys at once — one text(...) argument per key
+- 'f:removeKey(model.record, text(internal_id), text(audit_trail)) -&gt; output.body.record'
+</code></pre>
 <p>For details, please refer to configuration example in header-and-json-path-test.yml and the unit test 
 <code>headerAndJsonPathTest()</code> in the FlowTests class of the event-script-engine module.</p>
 <h3 id="writing-your-own-custom-simple-plugins">Writing your own custom Simple Plugins</h3>

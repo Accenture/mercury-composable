@@ -1099,9 +1099,9 @@ directly to the output body.</p>
 <td><code>error.task -&gt; failed_task</code></td>
 </tr>
 <tr>
-<td><code>error.status</code></td>
+<td><code>error.code</code></td>
 <td>HTTP status code of the error</td>
-<td><code>error.status -&gt; status</code></td>
+<td><code>error.code -&gt; status</code></td>
 </tr>
 <tr>
 <td><code>error.message</code></td>
@@ -1589,7 +1589,7 @@ tasks:
   # ... other tasks ...
 
   - input:
-      - 'error.status -&gt; status'
+      - 'error.code -&gt; status'
       - 'error.message -&gt; message'
       - 'error.stack -&gt; stack'
       - 'error.task -&gt; failed_task'
@@ -1627,7 +1627,7 @@ exception handler combined with a <code>decision</code> execution type:</p>
   exception: 'resilience.handler'
 
 - input:
-    - 'error.status -&gt; status'
+    - 'error.code -&gt; status'
     - 'error.message -&gt; message'
     - 'model.attempt -&gt; attempt'
     - 'int(3) -&gt; max_attempts'
@@ -2075,7 +2075,7 @@ tasks:
 
   # Exception handler task (referenced by flow.exception)
   - input:
-      - 'error.status -&gt; status'         # HTTP status from the thrown exception
+      - 'error.code -&gt; status'         # HTTP status from the thrown exception
       - 'error.message -&gt; message'       # Error message
       - 'error.stack -&gt; stack'           # Stack trace
       - 'error.task -&gt; failed_task'      # Which task failed

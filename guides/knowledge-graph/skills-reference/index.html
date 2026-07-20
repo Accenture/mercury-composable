@@ -217,8 +217,9 @@
 <ul>
 <li><strong>What</strong> — the eight skills shipped with the engine. Attach one to a node (<code>skill=&lt;route&gt;</code>)
   to make it <em>active</em>: it runs when traversal reaches the node.</li>
-<li><strong>They share</strong> — Event Script <a href="../../event-script/syntax/#tasks-and-data-mapping">data-mapping syntax</a>
-  (<code>source -&gt; target</code>) and the same state-machine namespaces (<code>input.*</code>, <code>model.*</code>, <code>output.*</code>,
+<li><strong>They share</strong> — the <code>source -&gt; target</code> mapping syntax with its
+  <a href="../command-reference/#constants">constant set</a>, and the same state-machine
+  <a href="../command-reference/#namespaces">namespaces</a> (<code>input.*</code>, <code>model.*</code>, <code>output.*</code>,
   <code>{node}.result</code>).</li>
 <li><strong>One skill per node.</strong> A node returns a <strong>decision</strong> to the engine — <code>next</code> (follow the
   connection), a <strong>node name</strong> (jump), or <code>.sink</code> (pause this path).</li>
@@ -262,7 +263,7 @@
 </tr>
 <tr>
 <td><a href="#island"><code>graph.island</code></a></td>
-<td>mark an isolated/organizational node</td>
+<td>link the knowledge layer (dictionaries, providers, data entities) — isolated from traversal</td>
 </tr>
 </tbody>
 </table>
@@ -273,16 +274,24 @@ building the response.</p>
 mapping[]=source -&gt; target
 </code></pre>
 <p>Sources/targets use <code>input.*</code>, <code>model.*</code>, <code>output.*</code>, or a node name (its properties); <code>text(...)</code>,
-<code>int(...)</code> etc. inject constants. Example:</p>
+<code>int(...)</code> etc. inject constants. <strong><code>mapping[]</code> entries apply in order</strong> within the node, so a
+later entry may read an earlier entry's target — the chain idiom (ingest → transform → publish
+inside one mapper). Example:</p>
 <pre><code>create node my-mapper
 with properties
 skill=graph.data.mapper
 mapping[]=input.body.hr_id -&gt; employee.id
 mapping[]=input.body.join_date -&gt; employee.join_date
 </code></pre>
+<p>Targets take <strong>numeric list indices</strong> too — the idiom for assembling a JSON list deterministically
+(e.g. an <code>end</code> mapper after a fork/join):</p>
+<pre><code>mapping[]=fetch-one.result.profile -&gt; output.body.profile[0]
+mapping[]=fetch-two.result.profile -&gt; output.body.profile[1]
+</code></pre>
 <h2 id="math">graph.math</h2>
-<p>Fast inline math and boolean evaluation for computation and decision-making. Prefer this over
-<a href="#js"><code>graph.js</code></a> when you only need simple expressions. Statements run in order; five types:</p>
+<p>Fast inline math and boolean evaluation for computation and decision-making. This is <strong>the</strong> skill
+for inline compute/branch (<a href="#js"><code>graph.js</code></a> when you need real JavaScript). Statements run in order;
+five types:</p>
 <table>
 <thead>
 <tr>
@@ -305,11 +314,11 @@ mapping[]=input.body.join_date -&gt; employee.join_date
 </tr>
 <tr>
 <td><code>EXECUTE</code></td>
-<td>run another <code>graph.math</code> node</td>
+<td>run another <code>graph.math</code> node inline — results land on the <strong>caller</strong> (<code>{invoker}.result.*</code>), making this the module-reuse mechanism (<a href="../command-reference/#math-statements">details</a>)</td>
 </tr>
 <tr>
 <td><code>RESET</code></td>
-<td>clear a node's "seen" flag so it can run again</td>
+<td>forget a node completely (guard, completion mark, state) so it can run again</td>
 </tr>
 </tbody>
 </table>
@@ -322,29 +331,52 @@ ELSE: low-price
 '''
 </code></pre>
 <p><code>{variable}</code> resolves a value from <code>input.*</code>, <code>model.*</code>, or a node property into the expression.
-An <code>IF</code> returning a node name <strong>overrides</strong> natural traversal; returning <code>next</code> keeps it. Optional
-<code>for_each[]</code> iterates a statement block; <code>NEXT:</code>/<code>DELAY:</code> control flow and timing.</p>
+An <code>IF</code> returning a node name <strong>overrides</strong> natural traversal; returning <code>next</code> keeps it.
+<code>NEXT:</code>/<code>DELAY:</code> control flow and timing.</p>
+<p><strong>Iterating lists (<code>for_each[]</code>):</strong> each <code>source -&gt; model.{var}</code> entry whose source is a <strong>list</strong>
+becomes an iteration array (parallel lists advance in lockstep and must agree on length; scalars
+bind once; an unresolvable source removes the key). <code>BEGIN</code>/<code>END</code> split the statements into
+pre-block (once) / each-block (per element) / post-block (once) — <strong>without <code>BEGIN</code> the whole
+list is the loop body</strong>. Iteration is strictly sequential in list order, inside one node
+execution; a taken <code>IF</code> jump breaks the loop and skips the post-block. Numeric accumulators work
+with either <code>f:add</code> (numeric promotion: all-whole stays exact long, any decimal promotes to
+double) or a pure-<code>COMPUTE</code> read-back. Full rules + worked example:
+<a href="../command-reference/#math-for-each">for_each</a>.</p>
 <p><strong>Gotchas:</strong> a node runs <strong>once</strong> (guard against loops) unless you <code>RESET</code> it — an advanced,
-use-with-care feature; a node may not contain only <code>MAPPING</code> statements (use the data mapper).</p>
+use-with-care feature; a node may not contain only <code>MAPPING</code> statements (use the data mapper). The
+expression dialect is a <strong>narrow</strong> JS-like subset — arithmetic, comparison and boolean operators
+only: <strong>no bitwise operators, no function calls</strong> (e.g. <code>parseInt(...)</code>), no variables. <code>COMPUTE</code>
+returns a double, so an integer result serializes as e.g. <code>8.0</code> (numerically exact — there is no
+in-grammar integer coercion). For anything richer, use <code>graph.task</code> (a composable function).</p>
 <h2 id="js">graph.js</h2>
-<p>Same statement model as <a href="#math"><code>graph.math</code></a>, but expressions run as full JavaScript on GraalVM —
-more flexible, slower.</p>
+<p>Same statement model as <a href="#math"><code>graph.math</code></a> — the full
+<a href="../command-reference/#math-statements">statement grammar</a> applies — but expressions run as
+<strong>full JavaScript on GraalVM</strong>: more flexible, slower.</p>
 <pre><code>skill=graph.js
 statement[]=COMPUTE: amount -&gt; (1 - {input.body.discount}) * {book.price}
 </code></pre>
 <p><strong>Gotchas:</strong> capped at <strong>50 instances</strong> per deployment (it uses kernel threads); reach for
 <code>graph.math</code> unless you need real JavaScript.</p>
 <h2 id="api-fetcher">graph.api.fetcher</h2>
-<p>Calls external HTTP APIs declaratively, driven by <a href="../composing-the-layers/#data-dictionary">data-dictionary and provider nodes</a>.
-Supports response caching and bounded fork-join concurrency.</p>
+<p>Calls external HTTP APIs declaratively, driven by <strong>Dictionary and Provider config nodes</strong> — the
+full authoring rules (Provider URL <code>{name}</code> placeholders, the Dictionary's bare <code>input[]</code>
+parameters with <code>:default</code>, <code>response.* -&gt; result.*</code> output mapping) are in
+<a href="../command-reference/#provider-dictionary">Provider &amp; Dictionary</a>. Supports response deduplication
+and bounded fork-join concurrency.</p>
 <pre><code>skill=graph.api.fetcher
-dictionary[]=&lt;data-dictionary-node&gt;     # one or more
+dictionary[]=&lt;data-dictionary-node&gt;     # one or more (required)
 input[]=input.body.person_id -&gt; person_id
-output[]=result.name -&gt; output.body.name
-for_each[]=&lt;array&gt; -&gt; model.&lt;var&gt;        # optional: iterate
+output[]=result.name -&gt; output.body.name   # optional: result always lands at {node}.result
+for_each[]=&lt;array-source&gt; -&gt; model.&lt;var&gt;   # optional: iterate a runtime list (see below)
 concurrency=3                            # optional: 1–30, default 3
 exception=&lt;error-handler-node&gt;           # optional
 </code></pre>
+<p><strong>Iterating a runtime list (<code>for_each</code>):</strong> the array source is typically a <strong>prior fetcher's
+result</strong> (<code>{fetcher}.result.{key}</code>); wire the current element into each call with
+<code>input[]=model.&lt;var&gt; -&gt; {dictionary-parameter}</code>. Each iteration's <code>result.{key}</code> values are
+<strong>appended into one array</strong> on this node's result set, and the order <strong>deterministically follows
+the source list</strong> (batches of <code>concurrency</code> run in order; responses join in request order). Full
+rules: <a href="../command-reference/#for-each">Iterative fetching</a>.</p>
 <p>Worked example (fetch a person's name and address):</p>
 <pre><code>create node fetcher
 with type Fetcher
@@ -356,12 +388,26 @@ input[]=input.body.person_id -&gt; person_id
 output[]=result.name -&gt; output.body.name
 output[]=result.address -&gt; output.body.address
 </code></pre>
-<p>The result lands at <code>{node}.result</code>. <strong>Gotcha:</strong> identical requests (same URL + method + input) are
-<strong>deduplicated</strong> into a single HTTP call. See <a href="../composing-the-layers/#data-dictionary">Composing the layers</a>
-for the dictionary/provider setup this skill depends on.</p>
+<p>The result lands at <code>{node}.result</code>. <strong>Gotchas:</strong> identical requests (same provider + input
+parameters) are <strong>deduplicated within the graph instance</strong> — the cache holds <strong>successful
+responses only</strong> (a failed call is never cached, so a retry after <code>RESET:</code> makes a real call;
+an identical <em>successful</em> call reuses the cached response); the <code>input[]</code> targets must <strong>match
+the dictionary parameter names</strong> exactly, or execution fails. The dictionary/provider setup this
+skill depends on is specified in <a href="../command-reference/#provider-dictionary">Provider &amp; Dictionary</a>.</p>
+<p><strong>HTTP semantics:</strong> one Provider call is exactly <strong>one HTTP request</strong> — redirects are never
+followed (a <code>3xx</code> is a non-failure: status and body are captured and traversal proceeds).
+<code>{node}.status</code> <strong>always</strong> carries the HTTP status of the fetch, success included.
+<code>response.*</code> in Dictionary <code>output[]</code> addresses the <strong>body only</strong> (the bare root
+<code>response -&gt; result.{key}</code> captures a whole non-JSON body); response headers are available
+via <code>feature[]=log-response-headers</code> at <code>{node}.header.response.{name}</code>.</p>
+<p><strong>Failure routing:</strong> with <code>exception={handler-node}</code>, a failed call (HTTP ≥ 400) sets
+<code>{node}.status</code>/<code>{node}.error</code>, skips the <code>output[]</code> mappings, and <strong>jumps to the handler</strong>
+instead of aborting — the building block for bounded retry loops
+(<a href="../command-reference/#failure-routing">full pattern</a>). Without it, the run aborts.</p>
 <h2 id="extension">graph.extension</h2>
 <p>Delegates to another <strong>graph model</strong> or an <strong>Event Script flow</strong>, so you can compose larger
-capabilities and reuse logic.</p>
+capabilities and reuse logic. <strong>Discover the valid targets with <code>list graphs</code> / <code>list flows</code></strong>
+(<a href="../command-reference/#describe">discovery commands</a>) — no out-of-band brief needed.</p>
 <pre><code>skill=graph.extension
 extension=&lt;graph-id&gt;          # a sub-graph …
 extension=flow://&lt;flow-id&gt;    # … or an Event Script flow (note the flow:// prefix)
@@ -377,8 +423,24 @@ extension=evaluate-sales-performance
 input[]=input.body.department_id -&gt; id
 output[]=result.sales_performance -&gt; output.body.sales_performance
 </code></pre>
-<p>This is the seam between the semantic layer and the composable layer beneath it — see
-<a href="../composing-the-layers/#extension">Composing the layers</a>.</p>
+<p><strong>The delegation contract (rules, not just the example):</strong></p>
+<ul>
+<li><code>extension={graph-id}</code> resolves among the <strong>deployed graph models</strong> (compiled at startup from
+  the app's <code>resources/graph</code> folder — the same ids callable at <code>POST /api/graph/{graph-id}</code>).
+  A session draft is <strong>not</strong> addressable — export and deploy it first. A missing id fails the
+  node fast at run time.</li>
+<li>Each <code>input[]</code> <strong>target</strong> is a bare key that becomes the sub-graph's <code>input.body.{key}</code> (e.g.
+  <code>input[]=input.body.person_id -&gt; person_id</code> feeds the sub-graph's <code>input.body.person_id</code>).
+  There is <strong>no whole-body <code>*</code> target</strong> on <code>graph.extension</code> — map named keys (the <code>*</code> merge idiom
+  is <a href="#task"><code>graph.task</code></a>-only).</li>
+<li>The node's <strong><code>result.*</code> namespace is the sub-graph's <code>output.body</code></strong>: <code>result</code> (bare) is the
+  whole response body; <code>result.{key}</code> a field of it.</li>
+<li>The same contract applies to a <strong>flow</strong> target (<code>extension=flow://{flow-id}</code>): the named keys
+  feed the flow's <code>input.body</code>, and <code>result.*</code> is the flow's <code>output.body</code>.</li>
+</ul>
+<p>This is the seam between the semantic layer and the composable (Event Script) layer beneath it —
+authoring the target flow: <a href="../../event-script/ai-agent-guide/">Event Script AI agent guide</a> +
+<a href="../../event-script/flow-grammar/">flow grammar</a>.</p>
 <h2 id="task">graph.task</h2>
 <p>Invokes a <strong>composable function</strong> — a <code>TypedLambdaFunction</code> registered with <code>@PreLoad</code> — through its
 route name. The lightweight way to plug a small piece of custom business logic into a graph: your
@@ -389,7 +451,7 @@ input[]=input.body -&gt; *                  # '*' merges the mapped value into t
 input[]=text(minigraph) -&gt; header.x-app  # 'header.{name}' sets a request header
 output[]=result -&gt; output.body
 </code></pre>
-<p>Worked example (Tutorial 13):</p>
+<p>Worked example (invoking a deployed demo function):</p>
 <pre><code>create node hello-task
 with type Task
 with properties
@@ -400,14 +462,23 @@ output[]=result -&gt; output.body
 </code></pre>
 <p><code>input[]</code> entries apply <strong>in order</strong>, so field mappings after a <code>*</code> merge into the request body,
 and the body auto-converts when the function declares a PoJo input. The result lands at
-<code>{node}.result</code> and response headers at <code>{node}.header</code>. Optional <code>for_each[]</code> with <code>concurrency</code>
-(1–30, default 3) iterates with bounded fork-join; <code>exception=&lt;node&gt;</code> routes failures.</p>
+<code>{node}.result</code> and response headers at <code>{node}.header</code> — in <code>output[]</code> mappings, <strong><code>result</code>
+(bare) is the function's whole result</strong> and <code>result.{key}</code> a field of it (same rule as
+<code>graph.extension</code>). Optional <code>for_each[]</code> with <code>concurrency</code>
+(1–30, default 3) iterates with bounded fork-join; <code>exception=&lt;node&gt;</code> routes failures
+(<a href="../command-reference/#failure-routing">failure routing</a>).</p>
 <p><strong>Gotchas:</strong> the <code>task</code> route must exist at runtime or the node fails fast; a call is bounded by
 <code>model.ttl</code> (default 30 s). For multi-step orchestration, prefer <a href="#extension"><code>graph.extension</code></a> —
-<code>graph.task</code> is for a single function call.</p>
+<code>graph.task</code> is for a single function call. Writing the function itself:
+<a href="../../event-driven/ai-agent-guide/">function AI agent guide</a> (<code>#[preload]</code> + <code>ComposableFunction</code>).</p>
 <h2 id="join">graph.join</h2>
 <p>A synchronization barrier for parallel branches. It returns <code>next</code> <strong>only when all</strong> connected
-upstream nodes have completed, and <code>.sink</code> (pause) until then.</p>
+upstream nodes have completed, and <code>.sink</code> (pause) until then. <strong>Completion is success-only and
+current</strong>: a branch that failed into its <code>exception=</code> route does not count while it retries, and
+a <code>RESET</code> node stops counting until it re-executes successfully — so a retry loop feeding a join
+holds the barrier instead of firing it prematurely. A <strong>chained upstream join</strong> counts only once
+it actually <strong>fired</strong> (an evaluation that sank does not count), so multi-stage joins compose
+safely.</p>
 <pre><code>skill=graph.join
 </code></pre>
 <pre><code>connect fetch-name to join with done
@@ -415,22 +486,36 @@ connect fetch-address to join with done
 connect join to combine with proceed
 </code></pre>
 <p><strong>Gotchas:</strong> needs at least two predecessors to be meaningful; it is the explicit fork-join
-mechanism — without it, traversal proceeds as branches complete.</p>
+mechanism — without it, traversal proceeds as branches complete. The fork side needs no special
+node: <strong>multiple outgoing connections from one node run their branches in parallel</strong> (see
+<a href="../command-reference/#connect">connect</a>). Data mapping is thread-safe, but branches should not
+overwrite the <strong>same scalar key</strong> (last writer wins) — use per-branch <code>model.*</code> keys, or the
+race-free <code>[]</code> <strong>list append</strong> (element order then follows completion order; use numeric indices
+after the join when order must be deterministic).</p>
 <h2 id="island">graph.island</h2>
 <p>Marks an <strong>isolated</strong> node: it always returns <code>.sink</code>, so traversal does not continue through it.
-Used to organize non-executable configuration (e.g. grouping data-dictionary and provider nodes)
-or to park a sub-graph that isn't wired in yet.</p>
+That isolation is the point — an island is <strong>not executable, but it is required knowledge
+structure</strong>: linking Dictionary, Provider, and data-entity nodes under it gives the graph its
+<strong>entity-relationship diagram</strong>. The graph is living documentation of enterprise knowledge — a
+new joiner (or an agent) discovers the domain model by reading the connected dictionaries and
+entities, not just the execution path.</p>
+<p><strong>Convention (required): leave no node unconnected</strong> — wire every config node into the island
+structure (see <a href="../command-reference/#island">Island — the knowledge layer</a>):</p>
 <pre><code>skill=graph.island
 </code></pre>
 <pre><code>connect root to dictionary with contains
 connect dictionary to person-name with data
 connect dictionary to person-address with data
+connect person-name to mdm-profile with provider
+connect person-address to mdm-profile with provider
 </code></pre>
 <h2 id="see-also">See also</h2>
 <ul>
-<li><a href="../build-your-first-graph/">Build your first Active Knowledge Graph</a> — <code>graph.data.mapper</code> in a full walkthrough.</li>
-<li><a href="../composing-the-layers/">Composing the layers</a> — the data-dictionary/provider model for <code>graph.api.fetcher</code>, and <code>graph.extension</code> into flows.</li>
-<li><a href="../../event-script/syntax/#tasks-and-data-mapping">Event Script Syntax</a> — the shared data-mapping syntax.</li>
+<li><a href="../command-reference/">MiniGraph command grammar</a> — the full command language, the
+  <a href="../command-reference/#constants">constant set</a>, and
+  <a href="../command-reference/#provider-dictionary">Provider &amp; Dictionary authoring</a>.</li>
+<li><a href="../ai-agent-guide/">AI agent guide</a> — driving the Playground via the companion endpoint.</li>
+<li><a href="../minigraph-commands.json"><code>minigraph-commands.json</code></a> — the machine-readable command catalog.</li>
 </ul>
               
             </div>
