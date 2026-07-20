@@ -26,13 +26,24 @@
 
 ## Layer 2 — Composable orchestration (Event Script)
 - [Composable Orchestration (Overview)](https://accenture.github.io/mercury-composable/guides/event-script/): Layer 2 overview — what Event Script is, the flow mental model, where it sits.
-- [Event Script Syntax](https://accenture.github.io/mercury-composable/guides/event-script/syntax/): the flow DSL — structure, task types, data mapping.
+- [Event Script Syntax](https://accenture.github.io/mercury-composable/guides/event-script/syntax/): the flow DSL — structure, task types, data mapping, Simple Plugins (`f:` functions).
+- [Flow AI agent guide](https://accenture.github.io/mercury-composable/guides/event-script/ai-agent-guide/): authoring flows deterministically — compile contract, pre-write checklist, recipe, worked examples.
+- [Flow grammar](https://accenture.github.io/mercury-composable/guides/event-script/flow-grammar/): the rules — flow structure, task fields, the eight execution types, the data-mapping mini-language.
+- [event-script-flow.json](https://accenture.github.io/mercury-composable/guides/event-script/event-script-flow.json): the machine-readable flow schema; ingest and validate against it.
 - [Flow Configuration Schema](https://accenture.github.io/mercury-composable/guides/flow-schema-reference/): precise flow YAML field reference.
 - [Build, Test and Deploy](https://accenture.github.io/mercury-composable/guides/build-test-deploy/): entry point, unit tests, packaging.
 
 ## Layer 3 — Semantic (Active Knowledge Graph)
 - [Knowledge Graph as Application](https://accenture.github.io/mercury-composable/guides/knowledge-graph/): the paradigm, execution model, node model, built-in skills, layer integration, Playground & AI companion, and maturity.
 - [Minimalist Property Graph](https://accenture.github.io/mercury-composable/guides/knowledge-graph/property-graph/): the in-memory property-graph data model and API the layer builds on.
+
+### Operating the MiniGraph Playground — start here if you are an AI agent
+These are self-contained; you should not need the engine source or the tutorial walkthroughs:
+
+- [AI agent guide](https://accenture.github.io/mercury-composable/guides/knowledge-graph/ai-agent-guide/): the companion-endpoint contract. Use the **synchronous** `POST /api/companion/{session-id}/sync` — it returns the command outcome **in-band** as `{ok, output, error, result}` (self-correct from `error`; no console relay needed) and tees the same output to the human's WebSocket console for real-time human+AI collaboration.
+- [Command grammar](https://accenture.github.io/mercury-composable/guides/knowledge-graph/command-reference/): the rules — lexical, namespaces, the constant set (+ `f:` plugin / `$.` JSONPath source forms), every command's syntax (incl. `help {topic}` and the discovery commands `list graphs` / `list flows` / `describe graph {graph-id}`), node types, parallel fan-out/join traversal, the skill→property matrix, **Provider & Dictionary authoring** (the data-dictionary method), **iterative fetching** (`for_each` with guaranteed ordered aggregation), the **Island knowledge layer** (required — no node left unconnected), failure routing, and the `graph.math`/`graph.js` statement grammar.
+- [minigraph-commands.json](https://accenture.github.io/mercury-composable/guides/knowledge-graph/minigraph-commands.json): the machine-readable command catalog; ingest it and validate commands against it before dispatching.
+- [Built-in skills reference](https://accenture.github.io/mercury-composable/guides/knowledge-graph/skills-reference/): per-skill properties, gotchas, and examples.
 
 ## Operate & integrate
 - [Observability](https://accenture.github.io/mercury-composable/guides/observability/): built-in distributed tracing across the three layers and OpenTelemetry/OTLP export (W3C trace context, the distributed.trace.forwarder hook, the opentelemetry-forwarder extension).

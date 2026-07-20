@@ -146,8 +146,53 @@ and message to the caller.
 If you want to handle the exception in your graph model, you can set the node-name of the error-handler in
 the "exception" property to tell the system to traverse to the error-handler node.
 
+On a failed call (HTTP status >= 400):
+
+- {node}.status and {node}.error are set (the engine's error record)
+- the output[] mappings are SKIPPED
+- with exception={handler-node}, traversal JUMPS to the handler; without
+  it, the run ABORTS and the error is returned to the caller.
+
 To handle an exception, the error-handler node should be a decision-making node using the graph.math or graph.js skill.
-It can evaluate the status code and error in the API fetcher node to determine the next step.
+It can evaluate the status code and error in the API fetcher node to determine the next step. The
+canonical bounded-retry handler:
+
+```
+create node error-handler
+with type Decision
+with properties
+skill=graph.math
+statement[]=RESET: fetcher, error-handler
+statement[]=MAPPING: f:defaultValue(model.attempts, int(0)) -> model.attempts
+statement[]=MAPPING: f:add(model.attempts, int(1)) -> model.attempts
+statement[]='''
+IF: {model.attempts} >= 3
+THEN: recovery-node
+ELSE: next
+'''
+statement[]=NEXT: fetcher
+statement[]=DELAY: 50
+```
+
+RESET comes first among the action statements so it runs on every path (a taken IF jump ends the
+statement list) - the attempt counters live in the "model" namespace, which RESET never touches.
+If the handler also carries a defensive check on the failed node's status, that check must come
+BEFORE the RESET (it reads state the reset wipes). Wire the handler back explicitly (connect
+error-handler to fetcher with retry) - no node left unconnected.
+
+HTTP semantics
+--------------
+- One data-provider call is exactly one HTTP request - redirects are never followed. A 3xx answer
+  is a non-failure: its status and body are captured and traversal proceeds (only >= 400 triggers
+  the exception route). Point the provider url at the redirect target to land on it.
+- {node}.status always carries the HTTP status of the fetch, success included (a 200 or a 301 is
+  readable there, not just failures). The response.* namespace in a dictionary output[] addresses
+  the BODY only; the bare root (response -> result.page) captures a whole non-JSON body such as
+  an HTML page.
+- Deduplication: identical requests (same provider + same input values) within one graph instance
+  are deduplicated into a single HTTP call. Only SUCCESSFUL responses are cached - a failed call
+  is never cached, so a retry after RESET makes a real call, while an identical successful call
+  reuses the cached response.
 
 Caution
 -------

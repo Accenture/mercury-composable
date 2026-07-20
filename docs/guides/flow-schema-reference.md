@@ -454,7 +454,7 @@ Append `:qualifier` to any source reference to convert the value before mapping:
 | `model.ttl` | Flow instance TTL in milliseconds (read-only metadata) | `model.ttl -> ttl` |
 | `model.{model.pointer}` | Dynamic model key (resolved at runtime) | `model.{model.pointer} -> value` |
 | `error.task` | Route name of the task that threw (exception handlers) | `error.task -> failed_task` |
-| `error.status` | HTTP status code of the error | `error.status -> status` |
+| `error.code` | HTTP status code of the error | `error.code -> status` |
 | `error.message` | Error message string | `error.message -> message` |
 | `error.stack` | Stack trace (if available) | `error.stack -> stack` |
 | `$.path` | JSONPath expression | `$.input.body.list[*].id -> ids` |
@@ -675,7 +675,7 @@ tasks:
   # ... other tasks ...
 
   - input:
-      - 'error.status -> status'
+      - 'error.code -> status'
       - 'error.message -> message'
       - 'error.stack -> stack'
       - 'error.task -> failed_task'
@@ -721,7 +721,7 @@ exception handler combined with a `decision` execution type:
   exception: 'resilience.handler'
 
 - input:
-    - 'error.status -> status'
+    - 'error.code -> status'
     - 'error.message -> message'
     - 'model.attempt -> attempt'
     - 'int(3) -> max_attempts'
@@ -945,7 +945,7 @@ tasks:
 
   # Exception handler task (referenced by flow.exception)
   - input:
-      - 'error.status -> status'         # HTTP status from the thrown exception
+      - 'error.code -> status'         # HTTP status from the thrown exception
       - 'error.message -> message'       # Error message
       - 'error.stack -> stack'           # Stack trace
       - 'error.task -> failed_task'      # Which task failed
