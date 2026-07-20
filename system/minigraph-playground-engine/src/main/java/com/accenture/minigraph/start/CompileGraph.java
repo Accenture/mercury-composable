@@ -101,11 +101,28 @@ public class CompileGraph implements EntryPoint {
             convertDataMappingEntries(graphId, model);
             // structural validation - throws IllegalArgumentException for a malformed graph
             new MiniGraph().importGraph(model);
+            // discovery contract: every deployable graph documents itself - the root
+            // node's 'purpose' is what "list graphs" shows as living documentation
+            if (!hasRootPurpose(model)) {
+                throw new IllegalArgumentException("root node must define a non-empty 'purpose' property");
+            }
             CompiledGraphs.addGraph(graphId, model);
             log.info("Compiled graph {}", graphId);
         } catch (IllegalArgumentException e) {
             log.error("Skip invalid graph {} - {}", graphId, e.getMessage());
         }
+    }
+
+    private boolean hasRootPurpose(Map<String, Object> model) {
+        if (model.get(NODES) instanceof List<?> nodes) {
+            for (var n : nodes) {
+                if (n instanceof Map<?, ?> node && "root".equals(node.get("alias"))) {
+                    return node.get("properties") instanceof Map<?, ?> properties
+                            && properties.get("purpose") instanceof String purpose && !purpose.isBlank();
+                }
+            }
+        }
+        return false;
     }
 
     private void convertDataMappingEntries(String graphId, Map<String, Object> model) {

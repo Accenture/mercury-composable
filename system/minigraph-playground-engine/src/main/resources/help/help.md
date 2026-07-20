@@ -26,7 +26,7 @@ For graph model
 - help update (node)
 - help edit (node)
 - help connect (node-A to node-B)
-- help list (node or connection)
+- help list (nodes, connections, graphs, flows)
 - help export
 - help import (graph or node)
 - help describe (graph, node, connection or skill)
