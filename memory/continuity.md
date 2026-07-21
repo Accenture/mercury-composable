@@ -341,12 +341,13 @@
 
 ## Open Threads
 
-- [ ] (release in flight — 2026-07-21) **v4.9.1 patch release prepared** on branch
-  `chore/release-4.9.1`: version sweep 4.9.0→4.9.1 (36 files: 32 poms, CLAUDE.md/GEMINI.md,
-  kafka-standalone Dockerfile, OtelForwarderContext.VERSION), CHANGELOG section (Fixed: #206
-  describe-graph trailing bracket; Changed: #207 docs overhaul — Material theme, mermaid,
-  per-entry reference pages). Full-reactor verification run at 4.9.1. Normal flow: tag on merge.
-  Close when tagged + release text delivered.
+- [x] (release in flight — 2026-07-21; CLOSED same day) **v4.9.1 SHIPPED via the normal flow** —
+  tag `v4.9.1` on merge commit `26a132f9` (PR #208, CI green + local full reactor 942 tests),
+  release text delivered, release published. Patch release: #206 describe-graph trailing-bracket
+  fix + #207 docs overhaul (Material theme, mermaid, per-entry reference pages). Follow-on same
+  day: dependabot HIGH alert #29 (js-yaml 4.2.0, dev-only transitive in the playground webapp
+  lockfile) remediated via PR #209 (`902da23f`, lockfile-only bump to 4.3.0) — landed one commit
+  after the release tag; no artifact impact.
   <!-- id: thread-release-4-9-1 | created: 2026-07-21 | last_used: 2026-07-21 | uses: 1 | tier: working | origin: 2026-07-21-012842 -->
 
 - [x] (release in flight — 2026-07-14; CLOSED same day) **v4.8.6 SHIPPED via the normal flow** —
