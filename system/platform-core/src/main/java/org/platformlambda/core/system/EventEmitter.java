@@ -71,6 +71,10 @@ public class EventEmitter {
     private static final String X_TTL = "x-ttl";
     private static final String X_ASYNC = "x-async";
     private static final String X_TRACE_ID = "x-trace-id";
+    private static final String X_EVENT_FORMAT = "x-event-format";
+    private static final String EVENT_HTTP_FORMAT_PROPERTY = "event.over.http.format";
+    private static final String COMPACT_FORMAT = "compact";
+    private static final String STANDARD_FORMAT = "standard";
     private static final String ROUTE_SUBSTITUTION = "route.substitution";
     private static final String ROUTE_SUBSTITUTION_YAML = "yaml.route.substitution";
     private static final String ROUTE_SUBSTITUTION_FEATURE = "application.feature.route.substitution";
@@ -665,6 +669,36 @@ public class EventEmitter {
         return eventHttpTargets.get(slash == -1? route : route.substring(0, slash));
     }
 
+    /**
+     * Resolve the envelope serialization format for an outgoing Event-over-HTTP
+     * call. A per-call "x-event-format" header (including one declared per target
+     * in yaml.event.over.http) overrides the application default from the
+     * "event.over.http.format" property. The default is the language-neutral
+     * STANDARD format; "compact" selects the classic single-character-key format
+     * as a fallback for peers that have not upgraded yet.
+     */
+    private EventEnvelope.Format httpEventFormat(Map<String, String> headers) {
+        if (headers != null) {
+            for (Map.Entry<String, String> kv : headers.entrySet()) {
+                if (X_EVENT_FORMAT.equalsIgnoreCase(kv.getKey())) {
+                    return parseEventFormat(kv.getValue());
+                }
+            }
+        }
+        return parseEventFormat(AppConfigReader.getInstance()
+                .getProperty(EVENT_HTTP_FORMAT_PROPERTY, STANDARD_FORMAT));
+    }
+
+    private EventEnvelope.Format parseEventFormat(String value) {
+        if (COMPACT_FORMAT.equalsIgnoreCase(value)) {
+            return EventEnvelope.Format.COMPACT;
+        }
+        if (!STANDARD_FORMAT.equalsIgnoreCase(value)) {
+            log.warn("Unknown event envelope format '{}' - using {}", value, STANDARD_FORMAT);
+        }
+        return EventEnvelope.Format.STANDARD;
+    }
+
     public Map<String, String> getEventHttpHeaders(String route) {
         int slash = route.indexOf('@');
         return eventHttpHeaders.get(slash == -1? route : route.substring(0, slash));
@@ -825,10 +859,13 @@ public class EventEmitter {
         if (!rpc) {
             req.setHeader(X_ASYNC, "true");
         }
-        // optional HTTP request headers
+        // optional HTTP request headers ("x-event-format" is a client-side
+        // serialization instruction - consumed here, not sent to the peer)
         if (headers != null) {
             for (Map.Entry<String, String> kv : headers.entrySet()) {
-                req.setHeader(kv.getKey(), kv.getValue());
+                if (!X_EVENT_FORMAT.equalsIgnoreCase(kv.getKey())) {
+                    req.setHeader(kv.getKey(), kv.getValue());
+                }
             }
         }
         // propagate trace context: X-Trace-Id plus W3C "traceparent" (traceId + spanId) if available
@@ -842,7 +879,7 @@ public class EventEmitter {
         }
         req.setUrl(url.getPath());
         req.setTargetHost(getTargetFromUrl(url));
-        byte[] b = event.toBytes();
+        byte[] b = event.toBytes(httpEventFormat(headers));
         req.setBody(b);
         req.setContentLength(b.length);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
@@ -961,10 +998,13 @@ public class EventEmitter {
         if (!rpc) {
             req.setHeader(X_ASYNC, "true");
         }
-        // optional HTTP request headers
+        // optional HTTP request headers ("x-event-format" is a client-side
+        // serialization instruction - consumed here, not sent to the peer)
         if (headers != null) {
             for (Map.Entry<String, String> kv : headers.entrySet()) {
-                req.setHeader(kv.getKey(), kv.getValue());
+                if (!X_EVENT_FORMAT.equalsIgnoreCase(kv.getKey())) {
+                    req.setHeader(kv.getKey(), kv.getValue());
+                }
             }
         }
         // propagate trace context: X-Trace-Id plus W3C "traceparent" (traceId + spanId) if available
@@ -978,7 +1018,7 @@ public class EventEmitter {
         }
         req.setUrl(url.getPath());
         req.setTargetHost(getTargetFromUrl(url));
-        byte[] b = event.toBytes();
+        byte[] b = event.toBytes(httpEventFormat(headers));
         req.setBody(b);
         req.setContentLength(b.length);
         EventEnvelope apiRequest = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);

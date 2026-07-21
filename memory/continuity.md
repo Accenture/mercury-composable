@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-21 | agent: Claude Code (2026-07-21-180843)
+- **last_session:** 2026-07-21 | agent: Claude Code (2026-07-21-215951)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -340,6 +340,38 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (design — 2026-07-21, human gate PENDING) **Common event envelope wire format for
+  cross-language interop (Event over HTTP with the Rust port).** Design DRAFTED at
+  `draft-design-specs/event-envelope-interop-design.md` — standard envelope = MsgPack map
+  with descriptive string keys (the existing `toMap()` form promoted to a wire contract);
+  compact 1-char keys and standard ≥2-char keys are disjoint → decoders sniff both, no
+  negotiation; encode: requester chooses (config + per-call header), responder mirrors;
+  Java `exceptionBytes` (ObjectOutputStream) excluded — portable error = status + message
+  + stack text. Rust port is the interop testbed but is READ-ONLY from this repo's
+  sessions (another session owns Rust edits). Includes draft ADR text. **Design REVIEWED
+  by Eric 2026-07-21: default = `standard` (Event over HTTP is transport, not storage —
+  no serialized data outlives the exchange; upgrade both sides together), `compact` kept
+  as explicit fallback for slow-to-upgrade installations (FIFO-vs-BDB precedent);
+  config `event.over.http.format` + per-request `x-event-format` header CONFIRMED.**
+  **API shape AGREED 2026-07-21:** `enum Format {COMPACT, STANDARD}`; `toMap(Format)` /
+  `toBytes(Format)`; no-arg `toMap()`=STANDARD, no-arg `toBytes()`=COMPACT (both preserve
+  today's behavior — EventEmitter's `of(event.toMap())` clone path depends on the
+  standard no-arg); `load()` sniffs. Outbound format = transport policy (groundwork for
+  Redis/S3 event-to-bytes transports). Mesh investigated: compact on every hop today,
+  Java-only fleet, stays out of v1 scope (MultipartPayload segmentation is a second
+  proprietary layer). **Phase 1 IMPLEMENTED 2026-07-21** on branch
+  `feature/event-envelope-standard-format`: Format enum API, sniffing load +
+  getWireFormat(), EventEmitter format resolution at both encode points, EventApiService
+  response mirroring, 8 new tests incl. golden vectors
+  (`system/platform-core/src/test/resources/envelope-vectors/vectors.json` — share with
+  the Rust session), spec page `docs/guides/event-envelope-wire-format.md`. Spec
+  adjustment from implementation: body is when-set on encode (MsgPack.packMap skips
+  nulls); Rust decoder needs a serde default on `body`. Next: PR review/merge, then
+  Phase 2 (Rust /api/event, OTHER session) + live two-runtime interop test; version
+  number for the carrying release still open. → serves `vision-mercury-composable`
+  (polyglot deployment)
+  <!-- id: thread-event-envelope-interop | created: 2026-07-21 | last_used: 2026-07-21 | uses: 1 | tier: working | origin: 2026-07-21-215951 -->
 
 - [ ] (field support — 2026-07-21) **v4.9.1 REJECTED by the field Sonar quality gate; remediation
   MERGED (PR #210, `7110561c`), v4.9.2 release in flight for the field rescan.** 19 issues

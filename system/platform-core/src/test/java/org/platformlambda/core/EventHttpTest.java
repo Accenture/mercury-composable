@@ -347,4 +347,51 @@ class EventHttpTest extends TestBase {
         assertEquals("demo", map.getElement("headers.user"));
         assertEquals(numberThree, map.getElement("body"));
     }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void standardFormatIsDefaultAndMirrored() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        long timeout = 3000;
+        Map<String, String> securityHeaders = new HashMap<>();
+        securityHeaders.put("Authorization", "demo");
+        PostOffice po = PostOffice.trackable("unit.test", "9001", "TEST /remote/event/standard");
+        EventEnvelope event = new EventEnvelope().setTo("hello.world")
+                .setBody("interop").setHeader("hello", "world");
+        Future<EventEnvelope> response = po.asyncRequest(event, timeout, securityHeaders,
+                "http://127.0.0.1:"+port+"/api/event", true);
+        response.onSuccess(bench::add);
+        EventEnvelope result = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        assertNotNull(result);
+        assertEquals(200, result.getStatus());
+        // the service mirrors the requester's format - with the standard default,
+        // the response envelope arrives in the standard wire format
+        assertEquals(EventEnvelope.Format.STANDARD, result.getWireFormat());
+        MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
+        assertEquals("interop", map.getElement("body"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void compactFallbackByHeaderIsMirrored() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        long timeout = 3000;
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Authorization", "demo");
+        // the per-call serialization instruction - consumed by the client, not sent
+        headers.put("x-event-format", "compact");
+        PostOffice po = PostOffice.trackable("unit.test", "9002", "TEST /remote/event/compact");
+        EventEnvelope event = new EventEnvelope().setTo("hello.world")
+                .setBody("legacy").setHeader("hello", "world");
+        Future<EventEnvelope> response = po.asyncRequest(event, timeout, headers,
+                "http://127.0.0.1:"+port+"/api/event", true);
+        response.onSuccess(bench::add);
+        EventEnvelope result = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        assertNotNull(result);
+        assertEquals(200, result.getStatus());
+        // the compact request is understood (sniffed) and the reply mirrors it
+        assertEquals(EventEnvelope.Format.COMPACT, result.getWireFormat());
+        MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
+        assertEquals("legacy", map.getElement("body"));
+    }
 }

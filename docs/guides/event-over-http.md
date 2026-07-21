@@ -50,6 +50,24 @@ This will expose the Event API endpoint at port 8085 and URL "/api/event".
 In kubernetes, The Event API endpoint of each application is reachable through internal DNS and there is no need
 to create "ingress" for this purpose.
 
+### Wire format and cross-language interoperability
+
+The serialized event envelope rides on the HTTP request body as MsgPack bytes. By default
+it uses the language-neutral **standard** format documented in the
+[Event Envelope Wire Format](event-envelope-wire-format.md) reference, so an application
+built with the official [Rust implementation](https://github.com/Accenture/mercury) (or a
+future language port) can call — and be called by — a Java application with no
+configuration.
+
+Inbound decoding always accepts both the standard and the classic **compact** format
+automatically, and the `/api/event` service replies in whatever format the request
+arrived in. When calling an older Java peer that does not yet understand the standard
+format, select the compact fallback globally with `event.over.http.format=compact`, or
+per call by adding the `x-event-format: compact` header to the optional headers of the
+Event-over-HTTP API (also usable in the `headers` section of a `yaml.event.over.http`
+target). The header is a client-side instruction — it is consumed by the sender, never
+transmitted.
+
 ## Test drive Event API
 
 You may now test drive the Event API service.

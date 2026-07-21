@@ -104,6 +104,23 @@ public class EventEnvelope {
     private Float executionTime;
     private Float roundTrip;
     private boolean exRestored = false;
+    private Format wireFormat;
+
+    /**
+     * Serialized representations of an event envelope.
+     * <p>
+     * COMPACT is the classic wire format using single-character map keys.
+     * STANDARD is the language-neutral interchange format using descriptive
+     * map keys (see the "Event Envelope wire format" reference page) so that
+     * any MsgPack-capable language can encode and decode it.
+     * <p>
+     * Decoding is automatic: {@link #load(byte[])} detects the format because
+     * the two key namespaces are disjoint (compact keys are exactly one
+     * character; standard keys are all longer). Encoding is transport policy:
+     * a transport selects the format explicitly via {@link #toBytes(Format)}
+     * or {@link #toMap(Format)}.
+     */
+    public enum Format { COMPACT, STANDARD }
 
     public static EventEnvelope of() {
         return new EventEnvelope();
@@ -821,12 +838,44 @@ public class EventEnvelope {
             Object o = msgPack.unpack(bytes);
             if (o instanceof Map) {
                 Map<String, Object> message = (Map<String, Object>) o;
-                loadKeyValuePart1(message);
-                loadKeyValuePart2(message);
+                if (isStandardFormat(message)) {
+                    wireFormat = Format.STANDARD;
+                    fromMap(message);
+                } else {
+                    wireFormat = Format.COMPACT;
+                    loadKeyValuePart1(message);
+                    loadKeyValuePart2(message);
+                }
             }
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    /**
+     * The compact and standard key namespaces are disjoint: compact keys are
+     * exactly one character while standard keys are all longer, so the format
+     * of a serialized envelope is detected from its keys without any
+     * out-of-band signal. An empty map decodes as an empty envelope either way.
+     */
+    private static boolean isStandardFormat(Map<String, Object> message) {
+        for (String k : message.keySet()) {
+            if (k.length() > 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The serialization format detected by the most recent {@link #load(byte[])},
+     * or null if this envelope was not created from a serialized form. A
+     * transport that answers a request can mirror the requester's format.
+     *
+     * @return the detected wire format or null
+     */
+    public Format getWireFormat() {
+        return wireFormat;
     }
 
     @SuppressWarnings("unchecked")
@@ -894,15 +943,34 @@ public class EventEnvelope {
     }
 
     /**
-     * Serialize the EventEnvelope as a byte array
+     * Serialize the EventEnvelope as a byte array in the classic compact format.
+     * <p>
+     * This no-argument form is equivalent to {@code toBytes(Format.COMPACT)} and
+     * preserves the historical wire behavior for same-language transports
+     * (service mesh, streams). A transport that needs cross-language
+     * interoperability selects {@link Format#STANDARD} explicitly.
      *
      * @return byte array
      * @throws IllegalArgumentException in case of encoding errors
      */
     public byte[] toBytes() {
-        Map<String, Object> message = packSomeKeyValues();
+        return toBytes(Format.COMPACT);
+    }
+
+    /**
+     * Serialize the EventEnvelope as a byte array in the given format.
+     * <p>
+     * The format is transport policy: the envelope owns both representations
+     * and a transport (Event over HTTP today; other event-to-bytes transports
+     * in the future) decides which one rides on its wire.
+     *
+     * @param format COMPACT (single-character keys) or STANDARD (descriptive keys)
+     * @return byte array
+     * @throws IllegalArgumentException in case of encoding errors
+     */
+    public byte[] toBytes(Format format) {
         try {
-            return msgPack.pack(packMoreKeyValues(message));
+            return msgPack.pack(toMap(format));
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }
@@ -1040,8 +1108,40 @@ public class EventEnvelope {
         }
     }
 
+    /**
+     * Export this envelope as a map with descriptive (standard) keys.
+     * Equivalent to {@code toMap(Format.STANDARD)}.
+     *
+     * @return map of key-values
+     */
     public Map<String, Object> toMap() {
-        return toKeyValuePart2(toKeyValuePart1());
+        return toMap(Format.STANDARD);
+    }
+
+    /**
+     * Export this envelope as a map in the given format.
+     * <p>
+     * The STANDARD map always carries {@code id} and {@code headers} (the
+     * language-neutral wire contract's required fields); {@code body} is
+     * present when set. The COMPACT map is the classic single-character-key
+     * representation used by {@link #toBytes()}.
+     *
+     * @param format COMPACT or STANDARD
+     * @return map of key-values
+     */
+    public Map<String, Object> toMap(Format format) {
+        if (format == Format.COMPACT) {
+            return packMoreKeyValues(packSomeKeyValues());
+        }
+        if (id == null) {
+            // every envelope has an identity - self-heal before export
+            id = util.getUuid();
+        }
+        Map<String, Object> message = toKeyValuePart2(toKeyValuePart1());
+        // "headers" is required-on-encode in the standard wire contract,
+        // so statically-typed decoders need no per-field default plumbing
+        message.put(HEADERS_FIELD, headers);
+        return message;
     }
 
     private Map<String, Object> toKeyValuePart1() {
