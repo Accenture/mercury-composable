@@ -5,7 +5,7 @@
 
     <groupId>com.accenture</groupId>
     <artifactId>minigraph-playground</artifactId>
-    <version>4.9.1</version>
+    <version>4.9.2</version>
     <packaging>jar</packaging>
     <name>MiniGraph Playground</name>
 
@@ -51,7 +51,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minigraph-playground-engine</artifactId>
-            <version>4.9.1</version>
+            <version>4.9.2</version>
         </dependency>
 
         <dependency>

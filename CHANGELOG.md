@@ -8,6 +8,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.9.2, 7/21/2026
+
+Code-quality patch release: resolves all 19 SonarQube findings reported by an enterprise
+quality-gate scan of v4.9.1 (8 HIGH, 11 MEDIUM), all in the 4.9.0/4.9.1 minigraph
+companion/discovery code. Every change is behavior-preserving; no functional changes.
+
+### Changed
+
+1. **Cognitive complexity reduced by extracting focused helpers (#210).**
+   `PostCompanionCommandSync.handleEvent` (20→~5), `GraphCommandService.handleCommand`
+   (17→~8), `describeDeployedGraph` (19→~6), and `collectPathTokens` (25→small, keeping the
+   4.9.1 unbalanced-bracket behavior exactly). The new structure leaves headroom for future
+   changes in methods that sat at the Sonar threshold.
+2. **Duplicated string literals replaced with constants (#210)** — `"command"`, `"Total "`,
+   `"nodes"`, `"properties"`.
+3. **`deployedModel` returns an empty map instead of null (#210)** — internal contract
+   change; both callers updated.
+4. **Test-quality cleanup (#210)** — one invocation per `assertThrows` lambda; the
+   27-assertion companion sync test split at its natural seam; a multi-line command
+   converted to a text block; prose comments that pattern-matched as commented-out code
+   reworded. Regression-verified: HTTP-404 from a downstream service handled correctly by
+   the API fetcher in both dry-run (graph traveler) and deployed execution (graph executor).
+
+---
 ## Version 4.9.1, 7/20/2026
 
 Patch release: a cosmetic fix to the `describe graph` contract view, and a documentation-site
