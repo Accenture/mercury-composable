@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-21 | agent: Claude Code (2026-07-21-012842)
+- **last_session:** 2026-07-21 | agent: Claude Code (2026-07-21-173614)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -340,6 +340,17 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (field support — 2026-07-21) **v4.9.1 REJECTED by the field Sonar quality gate; remediation
+  in flight** on branch `fix/sonar-4-9-1-field-scan`. 19 issues (8 HIGH: S3776 complexity ×4 +
+  S1192 literals ×4; 11 MEDIUM: S5778 ×5, S125 ×2, S1168 ×2, S5961, S6126), all introduced by the
+  4.9.0/4.9.1 minigraph companion/discovery code (field's prior scan was pre-4.9). All 19 fixed
+  via helper extraction, constants, test splits, prose-comment rewording, and the `deployedModel`
+  empty-map contract — see session 2026-07-21-173614 for the per-issue map. Behavior-preserving;
+  71 minigraph + event-script tests green. Next: full reactor → PR → likely v4.9.2 for the field
+  to rescan. Durable lesson recorded: extract-as-you-go when touching methods near the S3776/S5961
+  thresholds.
+  <!-- id: thread-sonar-4-9-1-field-rejection | created: 2026-07-21 | last_used: 2026-07-21 | uses: 1 | tier: working | origin: 2026-07-21-173614 -->
 
 - [x] (release in flight — 2026-07-21; CLOSED same day) **v4.9.1 SHIPPED via the normal flow** —
   tag `v4.9.1` on merge commit `26a132f9` (PR #208, CI green + local full reactor 942 tests),

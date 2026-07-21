@@ -333,11 +333,12 @@ class GraphTests {
     void chainedJoinCountsOnlyAFiredUpstreamJoin() throws TimeoutException {
         // Chained joins: an upstream join that evaluated and SANK is still in
         // skillRun (its skill ran fine), so the downstream join must judge it
-        // by the OUTCOME it recorded, not the run mark. slow-pre (200 ms) ->
-        // slow-x and fast-y feed j-one; j-one chains into j-two alongside
-        // pace-z (100 ms). fast-y makes j-one evaluate-and-sink at ~1 ms;
-        // pace-z reaches j-two at ~100 ms - before the fix, j-two counted the
-        // sunk j-one off its run mark, fired prematurely, and lost branch X.
+        // by the OUTCOME it recorded, not the run mark. Topology: slow-pre at
+        // 200 ms feeds slow-x, and together with fast-y they feed j-one, which
+        // chains into j-two alongside pace-z at 100 ms. Timing: fast-y makes
+        // j-one evaluate-and-sink at about 1 ms while pace-z reaches j-two at
+        // about 100 ms. Before the fix, j-two counted the sunk j-one off its
+        // run mark, fired prematurely, and lost branch X.
         var result = runGraph("unit-test-join-chain", Map.of("probe", true));
         assertInstanceOf(Map.class, result);
         var mm = new MultiLevelMap((Map<String, Object>) result);

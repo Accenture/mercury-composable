@@ -60,6 +60,9 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final String DEFAULT_DEPLOY_DIR = "classpath:/graph";
     private static final String OUTCOME = "outcome";
     private static final String PLAYGROUND = "playground";
+    private static final String NODES = "nodes";
+    private static final String PROPERTIES = "properties";
+    private static final String TOTAL = "Total ";
     private static final String INVALID_GRAPH_NAME = "Invalid filename - must be a-z, A-Z, 0-9 with optional hyphen";
     private static final String SESSION_TAG = "Session ";
     private static final long EXPIRY = 20 * 1000L;
@@ -172,39 +175,55 @@ public class GraphCommandService extends GraphLambdaFunction {
             throws IOException {
         if (command.startsWith("{") && command.endsWith("}")) {
             handleJsonCommand(po, outRoute, command);
-        } else {
-            if (command.startsWith(SESSION) || forwarded) {
-                singleOrMultiLineCommand(po, command, inRoute, outRoute);
-                return;
-            }
-            // the dedup guard protects the WS UI from double-submits; a synchronous
-            // companion RPC ("direct") is a deliberate request - never dropped (#62)
-            if (!direct) {
-                var cached = cachedMessage.get(inRoute);
-                if (command.equals(cached)) {
-                    log.debug("Duplicated message - {} for {}", command, inRoute);
-                    return;
-                }
-                cachedMessage.put(inRoute, command);
-            }
-            var me = sessions.get(inRoute);
-            if (me.isPrimary()) {
-                singleOrMultiLineCommand(po, command, inRoute, outRoute);
-                for (var subOutRoute: me.getSubscribers()) {
-                    var subInRoute = GraphSession.getInRoute(subOutRoute);
-                    var forwardBody = Map.of(TYPE, COMMAND, IN, subInRoute, OUT, subOutRoute,
-                            MESSAGE, command, FORWARDED, true);
-                    po.send(new EventEnvelope().setTo(ROUTE).setBody(forwardBody));
-                }
-            } else {
-                // Except for the session commands, forward request to the primary session.
-                // Override the inRoute and outRoute accordingly.
-                var targetInRoute = GraphSession.getInRoute(me.getTargetId());
-                var targetOutRoute = GraphSession.getOutRoute(me.getTargetId());
-                var forwardBody = Map.of(TYPE, COMMAND, IN, targetInRoute, OUT, targetOutRoute, MESSAGE, command);
-                po.send(new EventEnvelope().setTo(ROUTE).setBody(forwardBody));
-            }
+            return;
         }
+        if (command.startsWith(SESSION) || forwarded) {
+            singleOrMultiLineCommand(po, command, inRoute, outRoute);
+            return;
+        }
+        // the dedup guard protects the WS UI from double-submits; a synchronous
+        // companion RPC ("direct") is a deliberate request - never dropped (#62)
+        if (!direct && isDuplicate(inRoute, command)) {
+            return;
+        }
+        var me = sessions.get(inRoute);
+        if (me.isPrimary()) {
+            runAsPrimary(po, command, inRoute, outRoute, me);
+        } else {
+            forwardToPrimary(po, command, me);
+        }
+    }
+
+    private boolean isDuplicate(String inRoute, String command) {
+        var cached = cachedMessage.get(inRoute);
+        if (command.equals(cached)) {
+            log.debug("Duplicated message - {} for {}", command, inRoute);
+            return true;
+        }
+        cachedMessage.put(inRoute, command);
+        return false;
+    }
+
+    private void runAsPrimary(PostOffice po, String command, String inRoute, String outRoute, GraphSession me)
+            throws IOException {
+        singleOrMultiLineCommand(po, command, inRoute, outRoute);
+        for (var subOutRoute: me.getSubscribers()) {
+            var subInRoute = GraphSession.getInRoute(subOutRoute);
+            var forwardBody = Map.of(TYPE, COMMAND, IN, subInRoute, OUT, subOutRoute,
+                    MESSAGE, command, FORWARDED, true);
+            po.send(new EventEnvelope().setTo(ROUTE).setBody(forwardBody));
+        }
+    }
+
+    /**
+     * Except for the session commands, forward request to the primary session.
+     * Override the inRoute and outRoute accordingly.
+     */
+    private void forwardToPrimary(PostOffice po, String command, GraphSession me) {
+        var targetInRoute = GraphSession.getInRoute(me.getTargetId());
+        var targetOutRoute = GraphSession.getOutRoute(me.getTargetId());
+        var forwardBody = Map.of(TYPE, COMMAND, IN, targetInRoute, OUT, targetOutRoute, MESSAGE, command);
+        po.send(new EventEnvelope().setTo(ROUTE).setBody(forwardBody));
     }
 
     private void singleOrMultiLineCommand(PostOffice po, String command, String inRoute, String outRoute)
@@ -421,7 +440,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             if (root.get()) result.add(ROOT);
             result.addAll(nodes);
             if (end.get()) result.add(END);
-            po.send(new EventEnvelope().setTo(outRoute).setBody("Total "+result.size()+
+            po.send(new EventEnvelope().setTo(outRoute).setBody(TOTAL+result.size()+
                                                 " node"+(result.size() == 1? "" : "s")+" have been seen"));
             po.send(new EventEnvelope().setTo(outRoute).setBody(result));
         }
@@ -600,7 +619,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     private void handleListCommand(PostOffice po, String inRoute, String outRoute, String type) {
         var graph = graphModels.get(inRoute);
         var sb = new StringBuilder();
-        if ("nodes".equalsIgnoreCase(type)) {
+        if (NODES.equalsIgnoreCase(type)) {
             listNodes(graph, sb);
         } else if ("connections".equalsIgnoreCase(type)) {
             listConnections(graph, sb);
@@ -632,15 +651,14 @@ public class GraphCommandService extends GraphLambdaFunction {
             var purpose = graphPurpose(id);
             sb.append(purpose == null? id : id + " - " + purpose).append('\n');
         }
-        sb.append("Total ").append(ids.size()).append(ids.size() == 1? " graph model" : " graph models").append('\n');
+        sb.append(TOTAL).append(ids.size()).append(ids.size() == 1? " graph model" : " graph models").append('\n');
         sb.append("Use 'describe graph {graph-id}' for a model's input/output contract");
     }
 
     /**
      * Discovery: the Event Script flows a graph.extension node can call
      * (extension=flow://{flow-id}).
-     */
-    /**
+     * <p>
      * Discovery: the CONTRACT view of a deployed graph model - purpose, size,
      * and the input/output surface derived from the model's node properties -
      * so an agent can wire extension= delegation without out-of-band
@@ -648,11 +666,11 @@ public class GraphCommandService extends GraphLambdaFunction {
      */
     private void describeDeployedGraph(PostOffice po, String outRoute, String graphId) {
         var model = deployedModel(graphId);
-        if (model == null) {
+        if (model.isEmpty()) {
             po.send(new EventEnvelope().setTo(outRoute).setBody("Graph model '" + graphId + "'" + NOT_FOUND));
             return;
         }
-        var nodes = model.get("nodes") instanceof List<?> n? n.size() : 0;
+        var nodes = model.get(NODES) instanceof List<?> n? n.size() : 0;
         var connections = model.get("connections") instanceof List<?> c? c.size() : 0;
         var sb = new StringBuilder();
         sb.append("Deployed graph model '").append(graphId).append("'\n");
@@ -663,41 +681,55 @@ public class GraphCommandService extends GraphLambdaFunction {
         sb.append("Nodes: ").append(nodes).append(", connections: ").append(connections).append('\n');
         var inputs = new TreeSet<String>();
         var outputs = new TreeSet<String>();
-        if (model.get("nodes") instanceof List<?> nodeList) {
-            for (var n : nodeList) {
-                if (n instanceof Map<?, ?> node && node.get("properties") != null) {
-                    String text;
-                    try {
-                        text = SimpleMapper.getInstance().getMapper().writeValueAsString(node.get("properties"));
-                    } catch (Exception e) {
-                        text = String.valueOf(node.get("properties"));
-                    }
-                    collectPathTokens(text, "input.", inputs);
-                    collectPathTokens(text, "output.", outputs);
-                }
-            }
-        }
-        sb.append("Input surface:\n");
-        if (inputs.isEmpty()) {
-            sb.append("  (none referenced)\n");
-        }
-        for (var path : inputs) {
-            sb.append("  ").append(path).append('\n');
-        }
-        sb.append("Output surface:\n");
-        if (outputs.isEmpty()) {
-            sb.append("  (none referenced)\n");
-        }
-        for (var path : outputs) {
-            sb.append("  ").append(path).append('\n');
-        }
+        collectModelSurface(model, inputs, outputs);
+        appendSurface(sb, "Input surface", inputs);
+        appendSurface(sb, "Output surface", outputs);
         sb.append("(derived from the model's data mappings)");
         po.send(new EventEnvelope().setTo(outRoute).setBody(sb.toString()));
     }
 
     /**
+     * Derive the input/output surface from every node's properties (mapping
+     * entries, plugin args, substitution variables in statements).
+     */
+    private void collectModelSurface(Map<String, Object> model, TreeSet<String> inputs, TreeSet<String> outputs) {
+        if (model.get(NODES) instanceof List<?> nodeList) {
+            for (var n : nodeList) {
+                if (n instanceof Map<?, ?> node && node.get(PROPERTIES) != null) {
+                    var text = propertiesAsText(node.get(PROPERTIES));
+                    collectPathTokens(text, "input.", inputs);
+                    collectPathTokens(text, "output.", outputs);
+                }
+            }
+        }
+    }
+
+    /**
+     * JSON form of a node's properties - the same text shape the Rust engine
+     * scans, so the derived contract stays byte-identical across engines.
+     */
+    private static String propertiesAsText(Object properties) {
+        try {
+            return SimpleMapper.getInstance().getMapper().writeValueAsString(properties);
+        } catch (Exception e) {
+            return String.valueOf(properties);
+        }
+    }
+
+    private static void appendSurface(StringBuilder sb, String title, TreeSet<String> paths) {
+        sb.append(title).append(":\n");
+        if (paths.isEmpty()) {
+            sb.append("  (none referenced)\n");
+        }
+        for (var path : paths) {
+            sb.append("  ").append(path).append('\n');
+        }
+    }
+
+    /**
      * A deployed/compiled graph model (compiled registry first, then the
-     * deployed location).
+     * deployed location). Returns an empty map when the graph id is unknown
+     * or its deployed JSON cannot be parsed.
      */
     @SuppressWarnings("unchecked")
     private Map<String, Object> deployedModel(String graphId) {
@@ -707,12 +739,12 @@ public class GraphCommandService extends GraphLambdaFunction {
         }
         var json = getDeployedGraphAsText(graphId);
         if (json == null) {
-            return null;
+            return Collections.emptyMap();
         }
         try {
             return SimpleMapper.getInstance().getMapper().readValue(json, Map.class);
         } catch (Exception e) {
-            return null;
+            return Collections.emptyMap();
         }
     }
 
@@ -722,41 +754,58 @@ public class GraphCommandService extends GraphLambdaFunction {
      */
     private void collectPathTokens(String text, String prefix, TreeSet<String> found) {
         int start = 0;
-        while (true) {
-            int begin = text.indexOf(prefix, start);
-            if (begin == -1) {
-                return;
-            }
-            if (begin > 0) {
-                char prev = text.charAt(begin - 1);
-                if (Character.isLetterOrDigit(prev) || prev == '_' || prev == '.') {
-                    start = begin + prefix.length();
-                    continue;
-                }
-            }
-            int end = begin + prefix.length();
-            while (end < text.length()) {
-                char c = text.charAt(end);
-                if (Character.isLetterOrDigit(c) || c == '.' || c == '_' || c == '-' || c == '[' || c == ']') {
-                    end++;
-                } else {
-                    break;
-                }
-            }
-            var token = text.substring(begin, end);
-            while (!token.isEmpty() && (token.endsWith(".") || token.endsWith("-") || token.endsWith("["))) {
-                token = token.substring(0, token.length() - 1);
-            }
-            // Trim a trailing ']' only when there is no matching '[' (unbalanced — can arise
-            // from non-JSON serialization forms where a list's closing bracket is absorbed).
-            while (token.endsWith("]") && token.indexOf('[') == -1) {
-                token = token.substring(0, token.length() - 1);
-            }
-            if (token.length() > prefix.length()) {
-                found.add(token);
-            }
-            start = end;
+        while (start != -1) {
+            start = nextPathToken(text, prefix, start, found);
         }
+    }
+
+    /**
+     * Scan one prefix occurrence from the start position, adding a well-formed
+     * token to the collection. Returns the next scan position, or -1 when the
+     * text is exhausted.
+     */
+    private int nextPathToken(String text, String prefix, int start, TreeSet<String> found) {
+        int begin = text.indexOf(prefix, start);
+        if (begin == -1) {
+            return -1;
+        }
+        // a mid-word match is part of a longer identifier, not a path token
+        if (begin > 0 && isWordChar(text.charAt(begin - 1))) {
+            return begin + prefix.length();
+        }
+        int end = begin + prefix.length();
+        while (end < text.length() && isTokenChar(text.charAt(end))) {
+            end++;
+        }
+        var token = trimToken(text.substring(begin, end));
+        if (token.length() > prefix.length()) {
+            found.add(token);
+        }
+        return end;
+    }
+
+    private static boolean isWordChar(char c) {
+        return Character.isLetterOrDigit(c) || c == '_' || c == '.';
+    }
+
+    private static boolean isTokenChar(char c) {
+        return Character.isLetterOrDigit(c) || c == '.' || c == '_' || c == '-' || c == '[' || c == ']';
+    }
+
+    /**
+     * Strip trailing separators, then a trailing ']' when there is no matching
+     * '[' (unbalanced - can arise from non-JSON serialization forms where a
+     * list's closing bracket is absorbed).
+     */
+    private static String trimToken(String token) {
+        var result = token;
+        while (!result.isEmpty() && (result.endsWith(".") || result.endsWith("-") || result.endsWith("["))) {
+            result = result.substring(0, result.length() - 1);
+        }
+        while (result.endsWith("]") && result.indexOf('[') == -1) {
+            result = result.substring(0, result.length() - 1);
+        }
+        return result;
     }
 
     private void listFlows(StringBuilder sb) {
@@ -772,7 +821,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             var description = flow == null? null : flow.description;
             sb.append(description == null || description.isBlank()? id : id + " - " + description.trim()).append('\n');
         }
-        sb.append("Total ").append(ids.size()).append(ids.size() == 1? " flow" : " flows");
+        sb.append(TOTAL).append(ids.size()).append(ids.size() == 1? " flow" : " flows");
     }
 
     /**
@@ -808,13 +857,10 @@ public class GraphCommandService extends GraphLambdaFunction {
      */
     private String graphPurpose(String graphId) {
         Map<String, Object> model = deployedModel(graphId);
-        if (model == null) {
-            return null;
-        }
-        if (model.get("nodes") instanceof List<?> nodes) {
+        if (model.get(NODES) instanceof List<?> nodes) {
             for (var n : nodes) {
                 if (n instanceof Map<?, ?> node && "root".equals(node.get("alias"))
-                        && node.get("properties") instanceof Map<?, ?> properties
+                        && node.get(PROPERTIES) instanceof Map<?, ?> properties
                         && properties.get("purpose") instanceof String purpose && !purpose.isBlank()) {
                     return purpose.trim();
                 }
