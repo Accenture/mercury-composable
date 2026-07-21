@@ -8,6 +8,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.9.1, 7/20/2026
+
+Patch release: a cosmetic fix to the `describe graph` contract view, and a documentation-site
+overhaul — the Material for MkDocs theme with mermaid diagrams replacing all scanned images, and
+the wide reference tables restructured into readable, deep-linkable per-entry sections.
+
+### Fixed
+
+1. **`describe graph {graph-id}` printed a stray trailing `]` on the derived output surface (#206).**
+   The contract view scanned each node's properties via Java's `Map.toString()` form, so a dotted-path
+   token ending a mapping list absorbed the list's closing bracket (`output.body]`). Properties are
+   now serialized to JSON before scanning — restoring byte-identical contract output with the Rust
+   engine — and the tokenizer additionally trims an unbalanced trailing `]`. Test assertions
+   tightened to exact-line matches so a trailing-character regression fails the suite.
+   Found by the Rust-port session while cross-verifying the two engines.
+
+### Changed
+
+2. **Documentation site: Material for MkDocs theme (#207).** Switched from the readthedocs theme —
+   light/dark palettes, navigation tabs, native mermaid rendering. All 10 scanned PNG diagrams are
+   now mermaid flowcharts living in the markdown (editable, theme-aware, reviewable as text), plus a
+   new sequence diagram for the sync-over-async request/response pattern.
+
+3. **Readable reference pages (#207).** Wide tables whose description columns forced horizontal
+   scrolling became per-entry sections (heading + Type/Default mini-table + full-width prose,
+   matching the Rust port's format): configuration-reference (127 keys), flow-schema-reference
+   (24 fields), annotations-reference (18 parameters), event-envelope-reference (58 methods).
+   Long-cell listings (the built-in plugin catalog, three command-reference tables) became
+   definition lists.
+
+4. **Documentation content fixes (#207).** The Distributed Architecture overview now presents
+   Event over HTTP, Minimalist Kafka (recommended for fully asynchronous event-driven
+   architecture), and the service mesh with its two-problem scope (sync-over-Kafka RPC + service
+   discovery). References to the out-of-sync Node.js port removed (a fresh re-port is planned);
+   Rust cross-links kept. The unit-test example now matches the shipped `lambda-example`
+   (`AutoStart` is idempotent — no sequence guard needed). rest.yaml `methods` corrected to
+   "one or more HTTP methods".
+
+---
 ## Version 4.9.0, 7/20/2026
 
 Feature release: the MiniGraph Playground becomes fully operable by AI agents — a synchronous

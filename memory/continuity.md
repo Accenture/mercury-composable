@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-20 | agent: Claude Code (2026-07-20-222709)
+- **last_session:** 2026-07-21 | agent: Claude Code (2026-07-21-012842)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -340,6 +340,14 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (release in flight — 2026-07-21) **v4.9.1 patch release prepared** on branch
+  `chore/release-4.9.1`: version sweep 4.9.0→4.9.1 (36 files: 32 poms, CLAUDE.md/GEMINI.md,
+  kafka-standalone Dockerfile, OtelForwarderContext.VERSION), CHANGELOG section (Fixed: #206
+  describe-graph trailing bracket; Changed: #207 docs overhaul — Material theme, mermaid,
+  per-entry reference pages). Full-reactor verification run at 4.9.1. Normal flow: tag on merge.
+  Close when tagged + release text delivered.
+  <!-- id: thread-release-4-9-1 | created: 2026-07-21 | last_used: 2026-07-21 | uses: 1 | tier: working | origin: 2026-07-21-012842 -->
 
 - [x] (release in flight — 2026-07-14; CLOSED same day) **v4.8.6 SHIPPED via the normal flow** —
   tag `v4.8.6` on merge commit `19916875` (PR #185, CI green), release text delivered. Purpose:

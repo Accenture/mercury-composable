@@ -1,6 +1,6 @@
 # mercury-composable — Gemini CLI
 
-Event-driven Java framework (Maven reactor, `com.accenture.mercury` v4.9.0) — self-contained functions wired by YAML event flows.
+Event-driven Java framework (Maven reactor, `com.accenture.mercury` v4.9.1) — self-contained functions wired by YAML event flows.
 
 This project uses the agent-memory shared memory system. **Read [`AGENTS.md`](./AGENTS.md)
 first** — it is the hub: it carries the memory protocol and what to read under `memory/`.

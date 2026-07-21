@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>twin-kafka-demo</artifactId>
     <packaging>jar</packaging>
-    <version>4.9.0</version>
+    <version>4.9.1</version>
     <name>Worked example: profile management bridged across two Kafka clusters</name>
 
     <parent>
@@ -67,7 +67,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>twin-kafka</artifactId>
-            <version>4.9.0</version>
+            <version>4.9.1</version>
         </dependency>
 
         <dependency>
