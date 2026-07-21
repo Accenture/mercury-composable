@@ -367,10 +367,15 @@
   (`system/platform-core/src/test/resources/envelope-vectors/vectors.json` — share with
   the Rust session), spec page `docs/guides/event-envelope-wire-format.md`. Spec
   adjustment from implementation: body is when-set on encode (MsgPack.packMap skips
-  nulls); Rust decoder needs a serde default on `body`. Next: PR review/merge, then
-  Phase 2 (Rust /api/event, OTHER session) + live two-runtime interop test; version
-  number for the carrying release still open. → serves `vision-mercury-composable`
-  (polyglot deployment)
+  nulls); Rust decoder needs a serde default on `body`. **Phase 1 MERGED 2026-07-21
+  (PR #212, merge commit `2cf2ebdf`; CI green: 951 reactor tests + docs verify; spec page
+  live on the docs site).** Hand-off note
+  for the Rust session: `/tmp/event-envelope-rust-handoff.md` (contract summary, compact
+  decision + flag table, /api/event semantics, vector procedure, interop test plan) —
+  Eric will ask this repo's session to REVIEW the Rust implementation for consistency
+  afterward. Next: PR merge, Phase 2 (Rust, OTHER session), live two-runtime interop
+  test; version number for the carrying release still open. → serves
+  `vision-mercury-composable` (polyglot deployment)
   <!-- id: thread-event-envelope-interop | created: 2026-07-21 | last_used: 2026-07-21 | uses: 1 | tier: working | origin: 2026-07-21-215951 -->
 
 - [ ] (field support — 2026-07-21) **v4.9.1 REJECTED by the field Sonar quality gate; remediation
