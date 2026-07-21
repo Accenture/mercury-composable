@@ -7,7 +7,7 @@ description: A lightweight, standalone Schema Registry mock for local developmen
 
 ## At a glance
 
-The `schema-registry-standalone` module is a lightweight, zero-dependency mock of the Confluent Schema Registry. It runs as a `MainApplication` on the `platform-core` runtime and perfectly mimics the HTTP API required by `KafkaAvroSerializer` and `KafkaJsonSchemaSerializer`.
+The `schema-registry-standalone` module is a lightweight, zero-dependency mock of the Confluent Schema Registry. It runs as a `MainApplication` on the `platform-core` runtime and mimics the HTTP API required by `KafkaAvroSerializer` and `KafkaJsonSchemaSerializer`.
 
 * **Location:** `helpers/schema-registry-standalone`
 * **Default Port:** `8081` (Confluent's default)

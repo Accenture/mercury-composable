@@ -339,18 +339,34 @@ and `application.yml` values via `config.get("my.key")` and `config.getProperty(
 
 ## Distributed Architecture
 
-Mercury scales beyond a single JVM through two complementary mechanisms. **Event over HTTP** allows
+Mercury scales beyond a single JVM through complementary mechanisms.
+
+**Event over HTTP** allows
 functions in separate application instances to communicate by exposing a built-in `POST /api/event`
 endpoint (`event.api.service`). A caller routes an event to a function in a peer instance using
 `po.asyncRequest(event, timeout, headers, "http://peer/api/event", true)` — the same `EventEnvelope`
 serialization crosses the network boundary transparently. In Kubernetes, the event API endpoint is
 reached via internal cluster DNS without requiring an ingress.
 
+**Minimalist Kafka** is the recommended path to a **fully asynchronous event-driven architecture**
+across applications. The opt-in [`minimalist-kafka`](minimalist-kafka.md) library provides two
+composable building blocks: an inbound **Kafka Flow Adapter** that routes each topic (literal or
+regex) into an Event Script flow — the Kafka counterpart of `rest.yaml` — and an outbound
+`simple.kafka.notification` function that publishes an event to a topic. Consumption is
+at-least-once (commit-after-process) with bounded retry and a per-binding dead-letter topic, W3C
+trace context stays continuous across the Kafka hop, and client connection/security lives in
+external properties templates — configured, never coded. Applications stay fully decoupled: they
+share **topics**, not routes.
+
 **Minimalist Service Mesh** uses Kafka as a distributed routing table and event bridge. Setting
 `cloud.connector=kafka` in `application.properties` enables the `cloud.connector` module, which
 publishes public-function routes to the distributed registry and bridges inter-instance events
 through Kafka. Functions with `isPrivate = false` become reachable by any instance in the mesh.
-Calling code uses the same `PostOffice` API whether the target is local or remote.
+Calling code uses the same `PostOffice` API whether the target is local or remote. The mesh is
+designed for exactly two problems — **synchronous request-response across application instances**
+(sync over Kafka) and **service discovery** (presence, leader selection, pod-aware broadcast) — and
+is a deliberate opt-in for those cases. For plain asynchronous eventing between applications,
+prefer `minimalist-kafka` — see [when to use the mesh](service-mesh.md#when-to-use).
 
 ---
 

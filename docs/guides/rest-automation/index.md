@@ -108,7 +108,7 @@ A REST endpoint may look like this:
 | Parameter | Usage | Example |
 |:---|:---|:---|
 | service | List of one or two route names<br>of a service | 'hello.world'<br>['primary.service',<br>'secondary.service'] |
-| methods | List of one or two HTTP methods | ['GET'] |
+| methods | List of one or more HTTP methods | ['GET'] |
 | url | URI path of the service | '/api/hello/world' |
 | timeout | Maximum time to wait<br>for a REST response | Default value is '30s'<br>for 30 seconds<br>("s" for seconds) |
 | cors | Reference ID of a CORS section | 'cors_1' |

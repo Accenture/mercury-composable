@@ -91,15 +91,61 @@ EventEnvelope event = new EventEnvelope()
 The body is the event payload. The framework maps it to the typed `input` argument of
 `handleEvent` and wraps the return value into the response envelope automatically.
 
-| Method | Return type | Description |
-|--------|-------------|-------------|
-| `getBody()` | `Object` | Returns the deserialized body. Type depends on what the sender set. Typically `Map<String,Object>` or a PoJo. |
-| `getBody(Class<T> toValueType)` | `T` | Deserializes the body to the given PoJo class using the framework's registered serializer. |
-| `getBody(Class<T> toValueType, Class<?>... parameterClass)` | `T` | Deserializes a generic type (e.g. `List<Profile>`). Pass the container class and the element class(es). |
-| `getBodyAsListOfPoJo(Class<T> toValueType)` | `List<T>` | Convenience method to deserialize a body that is a JSON array into a typed list. |
-| `getRawBody()` | `Object` | Returns the body before any deserialization. May be a `byte[]`, `Map`, or primitive depending on transport. |
-| `getOriginalBody()` | `Object` | Returns the body exactly as set by the sender, without any intermediate serialization. Useful for debugging. |
-| `setBody(Object body)` | `EventEnvelope` | Sets the body. Accepts any PoJo, `Map<String,Object>`, Java primitive, or `byte[]`. Returns `this`. |
+### `getBody()`
+
+| Return type |
+|---|
+| `Object` |
+
+Returns the deserialized body. Type depends on what the sender set. Typically `Map<String,Object>` or a PoJo.
+
+### `getBody(Class<T> toValueType)`
+
+| Return type |
+|---|
+| `T` |
+
+Deserializes the body to the given PoJo class using the framework's registered serializer.
+
+### `getBody(Class<T> toValueType, Class<?>... parameterClass)`
+
+| Return type |
+|---|
+| `T` |
+
+Deserializes a generic type (e.g. `List<Profile>`). Pass the container class and the element class(es).
+
+### `getBodyAsListOfPoJo(Class<T> toValueType)`
+
+| Return type |
+|---|
+| `List<T>` |
+
+Convenience method to deserialize a body that is a JSON array into a typed list.
+
+### `getRawBody()`
+
+| Return type |
+|---|
+| `Object` |
+
+Returns the body before any deserialization. May be a `byte[]`, `Map`, or primitive depending on transport.
+
+### `getOriginalBody()`
+
+| Return type |
+|---|
+| `Object` |
+
+Returns the body exactly as set by the sender, without any intermediate serialization. Useful for debugging.
+
+### `setBody(Object body)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Sets the body. Accepts any PoJo, `Map<String,Object>`, Java primitive, or `byte[]`. Returns `this`.
 
 ### Declaring EventEnvelope as the input type
 
@@ -132,12 +178,37 @@ Headers are `String → String` parameters attached to an event. They are delive
 to the `headers` argument of `handleEvent` — they are not HTTP headers unless the function
 is a REST endpoint handler.
 
-| Method | Return type | Description |
-|--------|-------------|-------------|
-| `getHeaders()` | `Map<String, String>` | Returns all user-defined headers as an immutable map. |
-| `getHeader(String key)` | `String` | Returns the value for a single header key, or `null` if absent. |
-| `setHeader(String key, Object value)` | `EventEnvelope` | Sets a header. The value is converted to `String` via `toString()`. Returns `this`. |
-| `setHeaders(Map<String, String> headers)` | `EventEnvelope` | Replaces all headers with the provided map. Returns `this`. |
+### `getHeaders()`
+
+| Return type |
+|---|
+| `Map<String, String>` |
+
+Returns all user-defined headers as an immutable map.
+
+### `getHeader(String key)`
+
+| Return type |
+|---|
+| `String` |
+
+Returns the value for a single header key, or `null` if absent.
+
+### `setHeader(String key, Object value)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Sets a header. The value is converted to `String` via `toString()`. Returns `this`.
+
+### `setHeaders(Map<String, String> headers)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Replaces all headers with the provided map. Returns `this`.
 
 ### Reserved internal header names
 
@@ -160,23 +231,125 @@ PostOffice po = PostOffice.trackable(headers, instance);
 
 ## Routing and metadata methods
 
-| Method | Return type | Description |
-|--------|-------------|-------------|
-| `getId()` | `String` | The envelope's unique ID. Assigned automatically on construction (UUID). |
-| `setId(String id)` | `EventEnvelope` | Override the auto-assigned ID. Rarely needed. Returns `this`. |
-| `getTo()` | `String` | The destination route. Set by the sender or by the flow engine. |
-| `setTo(String to)` | `EventEnvelope` | Set the destination route for this event. Returns `this`. |
-| `getFrom()` | `String` | The originating route. Populated automatically by `PostOffice`. |
-| `setFrom(String from)` | `EventEnvelope` | Overrides the sender identity. Returns `this`. |
-| `getReplyTo()` | `String` | The route to which the response should be sent (used in async patterns). |
-| `setReplyTo(String replyTo)` | `EventEnvelope` | Sets the reply-to route. Returns `this`. |
-| `getTraceId()` | `String` | The distributed trace ID. Propagated across all calls in a transaction. |
-| `setTraceId(String traceId)` | `EventEnvelope` | Sets the trace ID. Usually set by the framework. Returns `this`. |
-| `getTracePath()` | `String` | The accumulated path of all routes this event has passed through. |
-| `setTracePath(String tracePath)` | `EventEnvelope` | Sets the trace path. Returns `this`. |
-| `setTrace(String traceId, String tracePath)` | `EventEnvelope` | Sets both trace ID and trace path in one call. Returns `this`. |
-| `getCorrelationId()` | `String` | A caller-assigned **internal correlation-id** for matching responses to requests (reply routing). This is transport plumbing, not the end-to-end business correlation-id — see [Correlation ID propagation](reserved-names-and-headers.md#correlation-id-propagation) for that, exposed via `PostOffice.getMyCorrelationId()` / the flow's `model.cid`. |
-| `setCorrelationId(String cid)` | `EventEnvelope` | Sets the internal correlation ID. Returns `this`. |
+### `getId()`
+
+| Return type |
+|---|
+| `String` |
+
+The envelope's unique ID. Assigned automatically on construction (UUID).
+
+### `setId(String id)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Override the auto-assigned ID. Rarely needed. Returns `this`.
+
+### `getTo()`
+
+| Return type |
+|---|
+| `String` |
+
+The destination route. Set by the sender or by the flow engine.
+
+### `setTo(String to)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Set the destination route for this event. Returns `this`.
+
+### `getFrom()`
+
+| Return type |
+|---|
+| `String` |
+
+The originating route. Populated automatically by `PostOffice`.
+
+### `setFrom(String from)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Overrides the sender identity. Returns `this`.
+
+### `getReplyTo()`
+
+| Return type |
+|---|
+| `String` |
+
+The route to which the response should be sent (used in async patterns).
+
+### `setReplyTo(String replyTo)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Sets the reply-to route. Returns `this`.
+
+### `getTraceId()`
+
+| Return type |
+|---|
+| `String` |
+
+The distributed trace ID. Propagated across all calls in a transaction.
+
+### `setTraceId(String traceId)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Sets the trace ID. Usually set by the framework. Returns `this`.
+
+### `getTracePath()`
+
+| Return type |
+|---|
+| `String` |
+
+The accumulated path of all routes this event has passed through.
+
+### `setTracePath(String tracePath)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Sets the trace path. Returns `this`.
+
+### `setTrace(String traceId, String tracePath)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Sets both trace ID and trace path in one call. Returns `this`.
+
+### `getCorrelationId()`
+
+| Return type |
+|---|
+| `String` |
+
+A caller-assigned **internal correlation-id** for matching responses to requests (reply routing). This is transport plumbing, not the end-to-end business correlation-id — see [Correlation ID propagation](reserved-names-and-headers.md#correlation-id-propagation) for that, exposed via `PostOffice.getMyCorrelationId()` / the flow's `model.cid`.
+
+### `setCorrelationId(String cid)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Sets the internal correlation ID. Returns `this`.
 
 ### Fields set automatically by PostOffice
 
@@ -196,17 +369,77 @@ from the sending function's context. User code should not override them:
 Envelope status codes follow the HTTP convention: 200 means success; 400–599 means error.
 The `AppException` class maps Java exceptions to HTTP-compatible status codes.
 
-| Method | Return type | Description |
-|--------|-------------|-------------|
-| `getStatus()` | `int` | HTTP-compatible status code. Default is `200`. |
-| `setStatus(int status)` | `EventEnvelope` | Override the status code. Returns `this`. |
-| `hasError()` | `boolean` | Returns `true` if `getStatus() >= 400`. |
-| `getError()` | `Object` | Returns the error payload. When set by `setException()`, this is the exception message string. |
-| `getException()` | `Throwable` | Returns the attached exception, or `null` if none. |
-| `setException(Throwable ex)` | `EventEnvelope` | Attaches an exception and sets the status code from it. Returns `this`. |
-| `isException()` | `boolean` | Returns `true` if a stack trace is present in the envelope. |
-| `getStackTrace()` | `String` | Returns the stack trace string, or `null` if none. |
-| `setStackTrace(String trace)` | `EventEnvelope` | Sets the stack trace string. **Reserved for test use only.** Returns `this`. |
+### `getStatus()`
+
+| Return type |
+|---|
+| `int` |
+
+HTTP-compatible status code. Default is `200`.
+
+### `setStatus(int status)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Override the status code. Returns `this`.
+
+### `hasError()`
+
+| Return type |
+|---|
+| `boolean` |
+
+Returns `true` if `getStatus() >= 400`.
+
+### `getError()`
+
+| Return type |
+|---|
+| `Object` |
+
+Returns the error payload. When set by `setException()`, this is the exception message string.
+
+### `getException()`
+
+| Return type |
+|---|
+| `Throwable` |
+
+Returns the attached exception, or `null` if none.
+
+### `setException(Throwable ex)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Attaches an exception and sets the status code from it. Returns `this`.
+
+### `isException()`
+
+| Return type |
+|---|
+| `boolean` |
+
+Returns `true` if a stack trace is present in the envelope.
+
+### `getStackTrace()`
+
+| Return type |
+|---|
+| `String` |
+
+Returns the stack trace string, or `null` if none.
+
+### `setStackTrace(String trace)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Sets the stack trace string. **Reserved for test use only.** Returns `this`.
 
 ### AppException status mapping
 
@@ -244,14 +477,53 @@ Profile profile = response.getBody(Profile.class);
 Tags are `String → String` metadata attached to an event for internal tracking and routing
 decisions. They are distinct from user headers: tags are not delivered to `handleEvent`.
 
-| Method | Return type | Description |
-|--------|-------------|-------------|
-| `getTags()` | `Map<String, String>` | Returns all tags. |
-| `setTags(Map<String, String> tags)` | `EventEnvelope` | Replaces all tags. Returns `this`. |
-| `addTag(String key)` | `EventEnvelope` | Adds a tag with an empty string value. Returns `this`. |
-| `addTag(String key, Object value)` | `EventEnvelope` | Adds a tag. Value is converted to `String`. Returns `this`. |
-| `removeTag(String key)` | `EventEnvelope` | Removes a tag by key. Returns `this`. |
-| `getTag(String key)` | `String` | Returns the value of a single tag, or `null` if absent. |
+### `getTags()`
+
+| Return type |
+|---|
+| `Map<String, String>` |
+
+Returns all tags.
+
+### `setTags(Map<String, String> tags)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Replaces all tags. Returns `this`.
+
+### `addTag(String key)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Adds a tag with an empty string value. Returns `this`.
+
+### `addTag(String key, Object value)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Adds a tag. Value is converted to `String`. Returns `this`.
+
+### `removeTag(String key)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Removes a tag by key. Returns `this`.
+
+### `getTag(String key)`
+
+| Return type |
+|---|
+| `String` |
+
+Returns the value of a single tag, or `null` if absent.
 
 ---
 
@@ -260,11 +532,29 @@ decisions. They are distinct from user headers: tags are not delivered to `handl
 Annotations carry arbitrary `Object` values for advanced routing and framework use cases.
 They are not serialized over the event bus and are not delivered to user functions.
 
-| Method | Return type | Description |
-|--------|-------------|-------------|
-| `getAnnotations()` | `Map<String, Object>` | Returns all annotations. |
-| `setAnnotations(Map<String, Object> annotations)` | `EventEnvelope` | Replaces all annotations. Returns `this`. |
-| `clearAnnotations()` | `EventEnvelope` | Removes all annotations. Returns `this`. |
+### `getAnnotations()`
+
+| Return type |
+|---|
+| `Map<String, Object>` |
+
+Returns all annotations.
+
+### `setAnnotations(Map<String, Object> annotations)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Replaces all annotations. Returns `this`.
+
+### `clearAnnotations()`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Removes all annotations. Returns `this`.
 
 ---
 
@@ -273,18 +563,85 @@ They are not serialized over the event bus and are not delivered to user functio
 These methods expose the body's type information and support low-level serialization. User
 code rarely needs them directly; they are primarily used by the framework and adapters.
 
-| Method | Return type | Description |
-|--------|-------------|-------------|
-| `getType()` | `String` | Fully qualified class name of the body object. |
-| `getSimpleType()` | `String` | Simple class name of the body object (no package). |
-| `setType(String type)` | `EventEnvelope` | Override the recorded type. Returns `this`. |
-| `isBinary()` | `boolean` | Returns `true` if the body is a raw `byte[]`. |
-| `setBinary(boolean binary)` | `EventEnvelope` | Sets the binary flag. Returns `this`. |
-| `isOptional()` | `boolean` | Returns `true` if the body is `null` and the envelope is an intentional empty response. |
-| `toBytes()` | `byte[]` | Serializes the entire envelope to MsgPack bytes for transport. |
-| `load(byte[] bytes)` | `void` | Populates this envelope from a previously serialized byte array in place. |
-| `toMap()` | `Map<String, Object>` | Converts the envelope to a plain Java map. Useful for logging or testing. |
-| `fromMap(Map<String, Object> map)` | `void` | Populates this envelope from a map representation in place. |
+### `getType()`
+
+| Return type |
+|---|
+| `String` |
+
+Fully qualified class name of the body object.
+
+### `getSimpleType()`
+
+| Return type |
+|---|
+| `String` |
+
+Simple class name of the body object (no package).
+
+### `setType(String type)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Override the recorded type. Returns `this`.
+
+### `isBinary()`
+
+| Return type |
+|---|
+| `boolean` |
+
+Returns `true` if the body is a raw `byte[]`.
+
+### `setBinary(boolean binary)`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Sets the binary flag. Returns `this`.
+
+### `isOptional()`
+
+| Return type |
+|---|
+| `boolean` |
+
+Returns `true` if the body is `null` and the envelope is an intentional empty response.
+
+### `toBytes()`
+
+| Return type |
+|---|
+| `byte[]` |
+
+Serializes the entire envelope to MsgPack bytes for transport.
+
+### `load(byte[] bytes)`
+
+| Return type |
+|---|
+| `void` |
+
+Populates this envelope from a previously serialized byte array in place.
+
+### `toMap()`
+
+| Return type |
+|---|
+| `Map<String, Object>` |
+
+Converts the envelope to a plain Java map. Useful for logging or testing.
+
+### `fromMap(Map<String, Object> map)`
+
+| Return type |
+|---|
+| `void` |
+
+Populates this envelope from a map representation in place.
 
 ---
 
@@ -293,19 +650,41 @@ code rarely needs them directly; they are primarily used by the framework and ad
 These fields are populated by the framework after an event is processed. User code should
 read them for observability but must not set them.
 
-| Method | Return type | Description |
-|--------|-------------|-------------|
-| `getExecutionTime()` | `float` | Milliseconds spent executing the target function. Set by the framework after processing. |
-| `getRoundTrip()` | `float` | Total round-trip time in milliseconds from send to response. Set by the framework. |
-| `getBroadcastLevel()` | `int` | Broadcast depth level. Used internally for broadcast routing. |
+### `getExecutionTime()`
+
+| Return type |
+|---|
+| `float` |
+
+Milliseconds spent executing the target function. Set by the framework after processing.
+
+### `getRoundTrip()`
+
+| Return type |
+|---|
+| `float` |
+
+Total round-trip time in milliseconds from send to response. Set by the framework.
+
+### `getBroadcastLevel()`
+
+| Return type |
+|---|
+| `int` |
+
+Broadcast depth level. Used internally for broadcast routing.
 
 ---
 
 ## Utility
 
-| Method | Return type | Description |
-|--------|-------------|-------------|
-| `copy()` | `EventEnvelope` | Creates a deep copy of this envelope, including all headers, body, and metadata. Useful when you need to modify an envelope without affecting the original. |
+### `copy()`
+
+| Return type |
+|---|
+| `EventEnvelope` |
+
+Creates a deep copy of this envelope, including all headers, body, and metadata. Useful when you need to modify an envelope without affecting the original.
 
 ---
 

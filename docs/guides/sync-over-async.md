@@ -34,12 +34,24 @@ shared Redis and topic pair. It builds on the [Minimalist Kafka](minimalist-kafk
 
 ## The pattern {#pattern}
 
-```text
-REST (sync) → service on POD-1
-  → register return route in Redis (key = correlation-id) + publish request to Kafka
-      → backend service on POD-2 (async) processes, publishes response to Kafka
-        → POD-1's reply consumer stores the response in Redis + wakes POD-1 (Pub/Sub)
-          → POD-1's blocked HTTP thread returns the response (or 408 on timeout)
+```mermaid
+sequenceDiagram
+    participant Caller as REST caller
+    participant Pod1 as service (POD-1)
+    participant Redis
+    participant Kafka
+    participant Pod2 as backend service (POD-2)
+
+    Caller->>Pod1: HTTP request (sync)
+    Pod1->>Redis: register return route (key = correlation-id)
+    Pod1->>Kafka: publish request
+    note over Pod1: blocked HTTP thread waits<br>(suspended virtual thread)
+    Kafka->>Pod2: consume request (async)
+    Pod2->>Kafka: publish response
+    Kafka->>Pod1: reply consumer receives response
+    Pod1->>Redis: store response + wake via Pub/Sub
+    Redis-->>Pod1: wake-up (Pub/Sub)
+    Pod1-->>Caller: HTTP response (or 408 on timeout)
 ```
 
 The correlation-id threads the whole round trip. Redis holds two short-lived keys per request: the **route**

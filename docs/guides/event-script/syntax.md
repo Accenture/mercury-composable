@@ -442,7 +442,14 @@ Subsequent override of the "instances" parameter is ignored. i.e. the first prel
 
 As shown in Figure 1, you can run one or more sub-flows inside a primary flow.
 
-![Hierarchy of flows](../diagrams/parent-namespace.png)
+```mermaid
+flowchart LR
+    pds[/"model dataset<br>+ model.parent dataset"/] -.- primary["primary flow"]
+    primary --> sub1["sub-flow"]
+    primary --> sub2["sub-flow"]
+    ds1[/"model dataset<br>+ shared model.parent"/] -.- sub1
+    ds2[/"model dataset<br>+ shared model.parent"/] -.- sub2
+```
 
 > Figure 1 - Hierarchy of flows
 
@@ -1498,51 +1505,139 @@ For example:
 > double; all-integral inputs keep exact 64-bit arithmetic, including integer division. Once a
 > double enters, precision follows IEEE-754 (integers exact to 2^53).
 
-| Type                | Plugin `name`   | Expected Inputs                                                                                                       |
-|:--------------------|:----------------|:----------------------------------------------------------------------------------------------------------------------|
-| **Arithmetic**      | add             | At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)                                           |
-| **Arithmetic**      | subtract        | At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)                                           |
-| **Arithmetic**      | multiply        | At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)                                           |
-| **Arithmetic**      | div             | At least two numbers (all whole ⇒ integer division; any decimal ⇒ double division)                                   |
-| **Arithmetic**      | mod             | Two individual numbers (all whole ⇒ long; any decimal ⇒ double)                                                      |
-| **Arithmetic**      | increment       | A single number (whole ⇒ long; decimal ⇒ double)                                                                     |
-| **Arithmetic**      | decrement       | A single number (whole ⇒ long; decimal ⇒ double)                                                                     |
-| **Arithmetic**      | round           | A number and optional decimal places (whole ≥ 0, default 0) — half-up rounding on the decimal representation (1.005 → 1.01 at 2 places) |
-| **Generator**       | uuid            | None                                                                                                                  |
-| **Generator**       | dateTime        | None.                                                                                                                 |
-| **Generator**       | now             | text(iso), text(local) or text(ms)                                                                                    |
-| **Logical**         | eq              | At least two Objects                                                                                                  |
-| **Logical**         | ne              | At least two Objects                                                                                                  |
-| **Logical**         | isNull          | A single Object                                                                                                       |
-| **Logical**         | notNull         | A single Object                                                                                                       |
-| **Logical**         | ternary         | Three variables, the first variable must evaluate to a Boolean                                                        |
-| **Logical**         | and             | At least two boolean                                                                                                  |
-| **Logical**         | or              | At least two boolean                                                                                                  |
-| **Logical**         | not             | A single boolean                                                                                                      |
-| **Logical**         | not             | A single boolean                                                                                                      |
-| **Logical**         | gt              | Two individual whole numbers                                                                                          |
-| **Logical**         | lt              | Two individual whole numbers                                                                                          |
-| **Logical**         | startsWith      | Two strings, case insensitive.                                                                                        |
-| **Logical**         | endsWith        | Two strings, case insensitive.                                                                                        |
-| **Logical**         | includes        | Two strings, case insensitive OR one list and one string                                                              |
-| **Type Conversion** | b64             | Either a base64 encoded String, OR a byte array.                                                                      |
-| **Type Conversion** | binary          | Either a byte[], Map or String                                                                                        |
-| **Type Conversion** | length          | Either a byte[], List or String                                                                                       |
-| **Type Conversion** | substring       | Two to three variables.<br/>The first must be a String;<br/>the second must be an integer;<br/>the third is optional. |
-| **Type Conversion** | concat          | At least two Strings to be concatenated                                                                               |
-| **Type Conversion** | boolean         | A list of variables that can evaluate to a boolean                                                                    |
-| **Type Conversion** | double          | A list of variables that can evaluate to a double                                                                     |
-| **Type Conversion** | float           | A list of variables that can evaluate to a float                                                                      |
-| **Type Conversion** | int             | A list of variables that can evaluate to an integer                                                                   |
-| **Type Conversion** | long            | A list of variables that can evaluate to a long integer                                                               |
-| **Type Conversion** | text            | A list of variables that can evaluate to a String                                                                     |
-| **Type Conversion** | listOfMap       | Convert "a map of lists" to "a list of maps" — **order-preserving**: list order follows array index order (guaranteed) |
-| **Type Conversion** | updateListOfMap | Update "a list of maps" with "maps of lists"                                                                          |
-| **Type Conversion** | removeKey       | Remove one or more keys from a map or "list of maps". Syntax: `f:removeKey(source, text(key1), text(key2), …)` — see the worked example below. |
-| **Type Conversion** | defaultValue    | If the first argument is null, return the 2nd argument                                                                |
-| **Type Conversion** | parseDate       | Parse a date string to ISO, Local or Milliseconds.                                                                    |
-| **Type Conversion** | parseDateTime   | Parse a date-time string to ISO, Local or Milliseconds.                                                               |
-| **Type Conversion** | validate        | Perform simple field validation. See details below.                                                                   |
+#### Arithmetic
+
+`add`
+:   At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)
+
+`subtract`
+:   At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)
+
+`multiply`
+:   At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)
+
+`div`
+:   At least two numbers (all whole ⇒ integer division; any decimal ⇒ double division)
+
+`mod`
+:   Two individual numbers (all whole ⇒ long; any decimal ⇒ double)
+
+`increment`
+:   A single number (whole ⇒ long; decimal ⇒ double)
+
+`decrement`
+:   A single number (whole ⇒ long; decimal ⇒ double)
+
+`round`
+:   A number and optional decimal places (whole ≥ 0, default 0) — half-up rounding on the decimal representation (1.005 → 1.01 at 2 places)
+
+#### Generator
+
+`uuid`
+:   None
+
+`dateTime`
+:   None.
+
+`now`
+:   text(iso), text(local) or text(ms)
+
+#### Logical
+
+`eq`
+:   At least two Objects
+
+`ne`
+:   At least two Objects
+
+`isNull`
+:   A single Object
+
+`notNull`
+:   A single Object
+
+`ternary`
+:   Three variables, the first variable must evaluate to a Boolean
+
+`and`
+:   At least two boolean
+
+`or`
+:   At least two boolean
+
+`not`
+:   A single boolean
+
+`gt`
+:   Two individual whole numbers
+
+`lt`
+:   Two individual whole numbers
+
+`startsWith`
+:   Two strings, case insensitive.
+
+`endsWith`
+:   Two strings, case insensitive.
+
+`includes`
+:   Two strings, case insensitive OR one list and one string
+
+#### Type Conversion
+
+`b64`
+:   Either a base64 encoded String, OR a byte array.
+
+`binary`
+:   Either a byte[], Map or String
+
+`length`
+:   Either a byte[], List or String
+
+`substring`
+:   Two to three variables. The first must be a String; the second must be an integer; the third is optional.
+
+`concat`
+:   At least two Strings to be concatenated
+
+`boolean`
+:   A list of variables that can evaluate to a boolean
+
+`double`
+:   A list of variables that can evaluate to a double
+
+`float`
+:   A list of variables that can evaluate to a float
+
+`int`
+:   A list of variables that can evaluate to an integer
+
+`long`
+:   A list of variables that can evaluate to a long integer
+
+`text`
+:   A list of variables that can evaluate to a String
+
+`listOfMap`
+:   Convert "a map of lists" to "a list of maps" — **order-preserving**: list order follows array index order (guaranteed)
+
+`updateListOfMap`
+:   Update "a list of maps" with "maps of lists"
+
+`removeKey`
+:   Remove one or more keys from a map or "list of maps". Syntax: `f:removeKey(source, text(key1), text(key2), …)` — see the worked example below.
+
+`defaultValue`
+:   If the first argument is null, return the 2nd argument
+
+`parseDate`
+:   Parse a date string to ISO, Local or Milliseconds.
+
+`parseDateTime`
+:   Parse a date-time string to ISO, Local or Milliseconds.
+
+`validate`
+:   Perform simple field validation. See details below.
 
 *DateTime plugins*
 
@@ -1852,7 +1947,18 @@ Another useful built-in function is a resilience handler with the route name `re
 
 It is a generic resilience handler. It will retry, abort, use an alternative path or exercise a brief backoff.
 
-![Resilience Handler](../diagrams/resilience-handler.png)
+```mermaid
+flowchart LR
+    event[/"event"/] --> fn["user<br>function"]
+    fn --> handler["resilience handler<br>(evaluate alternative path,<br>max attempts and<br>cumulative failures)"]
+    handler --> decision{"decision"}
+    decision -- "1. retry" --> fn
+    decision -- "2. abort with original error code" --> abort["abort"]
+    decision -- "3. alternate path based on<br>configured codes" --> alt["alternative<br>function"]
+    handler -- "enter backoff period<br>after extensive failures" --> backoff{{"backoff<br>period"}}
+    backoff -- "backoff period expired" --> decision
+    backoff -- "abort with status code 503" --> abort
+```
 
 > Figure 2 - Resilience Handler
 
