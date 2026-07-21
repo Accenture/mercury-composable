@@ -121,7 +121,7 @@ Eight skills ship with the engine. Each is a composable function on a `graph.*` 
 
 ## Composing with the lower layers {#layer-integration}
 
-An Active Knowledge Graph is not an island — it rides on the layers beneath it, without coupling:
+An Active Knowledge Graph rides on the layers beneath it, without coupling:
 
 - **Down to Event Script & functions** — `graph.extension` runs a **sub-graph** (`extension=<graph-id>`)
   or an **Event Script flow** (`extension=flow://<flow-id>`), and `graph.task` invokes a single
@@ -133,7 +133,36 @@ An Active Knowledge Graph is not an island — it rides on the layers beneath it
   `POST /api/graph/{graph-id}`, so REST (or, via connectors, Kafka events) can invoke it like any
   other endpoint. Protocol stays decoupled from execution.
 
-![Active Knowledge Graph architecture](../diagrams/active-knowledge-graph.png)
+```mermaid
+flowchart TB
+    dev["Developer / User<br>UI / command line"] --> playground
+    rest["REST API calls"] --> playground
+    events["Event listener"] --> playground
+    subgraph playground["MiniGraph Playground"]
+        direction LR
+        ui["Interactive UI<br>Graph Builder & Console"]
+        subgraph engine["Graph Execution Engine"]
+            direction TB
+            orchestrator["Graph Orchestrator"]
+            sm["State Machine"]
+            skillexec["Skill Executor"]
+            cache["Data Cache"]
+        end
+        ui <--> engine
+    end
+    playground <--> external["External Systems<br>APIs / Databases / Event Streams"]
+    playground <-->|dry run & testing| akg
+    subgraph akg["Active Knowledge Graph"]
+        direction LR
+        entities["Data Entities"]
+        sources["Data Sources"]
+        cskills["Composable Skills"]
+        exts["Extensions"]
+    end
+    akg --- infra["Dev / Test / Prod<br>Cloud or On-Prem"]
+    akg --- custom["Java, JavaScript<br>Custom Skills"]
+    akg --- providers["External APIs<br>Data Providers"]
+```
 
 ## Designing graphs: the Playground & AI companion {#playground}
 

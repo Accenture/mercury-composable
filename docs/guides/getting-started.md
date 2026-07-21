@@ -125,7 +125,22 @@ skill — not from imperative code. Build one yourself in
 
 > Figure 1 - Composable application architecture
 
-![Composable Application Architecture](./diagrams/composable-framework.png)
+```mermaid
+flowchart LR
+    caller[/"Calling<br>application"/]
+    caller -- request --> adapter
+    adapter -. optional response .-> caller
+    subgraph app["Composable Application executable"]
+        direction TB
+        config[/"Event Flow<br>configuration"/] --> manager{{"Event Manager"}}
+        state[/"State<br>Machine"/] --> manager
+        adapter["Flow Adapter"] --> manager
+        manager --> bus["In-memory Low-Latency Event System"]
+        bus --- t1["Task-1"]
+        bus --- t2["Task-2"]
+        bus --- t3["Task-3"]
+    end
+```
 
 As shown in Figure 1, a composable application contains the following:
 
@@ -294,21 +309,51 @@ browse or delete it.
 
 > Figure 2 - Create a profile
 
-![Event Flow Diagram](./diagrams/create-profile.png)
+```mermaid
+flowchart LR
+    user[/"user"/] -- "POST /api/profile" --> adapter["http flow<br>adapter"]
+    adapter -- profile data --> start([Start])
+    start --> create["v1.create.profile"]
+    create -- profile --> encrypt["v1.encrypt.fields"]
+    encrypt -- "encrypted<br>profile" --> save["v1.save.profile"]
+    store[("data<br>store")] --- save
+    save --> fin([End])
+    create -. acknowledgement .-> adapter
+    adapter -. ack .-> user
+```
 
 Figure 2 illustrates an event flow to create a profile. Note that the "create profile" can send acknowledgement
 to the user first. It then encrypts and saves the profile into a data store.
 
 > Figure 3 - Retrieve a profile
 
-![Event Flow Diagram](./diagrams/get-profile.png)
+```mermaid
+flowchart LR
+    user[/"user"/] -- "GET /api/profile/{profile_id}" --> adapter["http flow<br>adapter"]
+    adapter -- profile ID --> start([Start])
+    start --> get["v1.get.profile"]
+    store[("data<br>store")] --- get
+    get -- "encrypted<br>profile" --> decrypt["v1.decrypt.fields"]
+    decrypt --> fin([End])
+    decrypt -. decrypted profile .-> adapter
+    adapter -. profile .-> user
+```
 
 Figure 3 demonstrates the case to retrieve a profile. It retrieves an encrypted profile and then passes it to
 the decryption function to return "clear text" of the profile to the user.
 
 > Figure 4 - Delete a profile
 
-![Event Flow Diagram](./diagrams/delete-profile.png)
+```mermaid
+flowchart LR
+    user[/"user"/] -- "DELETE /api/profile/{profile_id}" --> adapter["http flow<br>adapter"]
+    adapter -- profile ID --> start([Start])
+    start --> del["v1.delete.profile"]
+    store[("data<br>store")] --- del
+    del --> fin([End])
+    del -. acknowledgement .-> adapter
+    adapter -. ack .-> user
+```
 
 Figure 4 shows the case to delete a profile. It deletes a profile using the given profile ID and sends an
 acknowledgement to the user.
@@ -490,9 +535,6 @@ similar to this sample code:
 ```java
 Runtime.getRuntime().addShutdownHook(new Thread(this::stopAdmin));
 ```
-
-> *Note*: In the composable node.js version, there is an "autostop" feature to support graceful shutdown
-          of dependencies since JavaScript does not offer similar life-cycle feature in the standard library.
 
 ## Dependency management
 

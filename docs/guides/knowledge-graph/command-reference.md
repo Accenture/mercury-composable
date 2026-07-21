@@ -94,24 +94,38 @@ exists (in particular, the legacy `:type` suffix — "simple type matching" — 
 generate it. A `:` inside a **Dictionary** node's `input[]` entry is a **default value**, nothing
 else — see [Provider & Dictionary](#provider-dictionary)):
 
-| Form | Produces |
-|---|---|
-| `text(hello world)` | string (verbatim, no quoting needed — spaces are preserved exactly, including leading/trailing ones inside the parentheses: `text(Hello )` keeps its trailing space) |
-| `int(100)` / `long(10000000000)` | integer (non-numeric input → `-1`; a decimal part is dropped) |
-| `float(1.5)` / `double(1.5)` | floating-point number |
-| `boolean(true)` | boolean — `true` only for case-insensitive `true`; anything else is `false` |
-| `map(k1=v1, k2=v2)` | inline map literal (values are strings) |
-| `map(config.key)` | the value of an application-configuration key |
-| `file(text:/tmp/f.txt)` / `file(json:…)` / `file(binary:…)` | file content as text / parsed JSON / bytes — read at **mapping-evaluation time** (each execution), so a changed file is picked up by the next run |
-| `classpath(text:/data/f.txt)` | like `file()`, resolved against the app's resource roots |
+`text(hello world)`
+:   string (verbatim, no quoting needed — spaces are preserved exactly, including leading/trailing ones inside the parentheses: `text(Hello )` keeps its trailing space)
+
+`int(100)` / `long(10000000000)`
+:   integer (non-numeric input → `-1`; a decimal part is dropped)
+
+`float(1.5)` / `double(1.5)`
+:   floating-point number
+
+`boolean(true)`
+:   boolean — `true` only for case-insensitive `true`; anything else is `false`
+
+`map(k1=v1, k2=v2)`
+:   inline map literal (values are strings)
+
+`map(config.key)`
+:   the value of an application-configuration key
+
+`file(text:/tmp/f.txt)` / `file(json:…)` / `file(binary:…)`
+:   file content as text / parsed JSON / bytes — read at **mapping-evaluation time** (each execution), so a changed file is picked up by the next run
+
+`classpath(text:/data/f.txt)`
+:   like `file()`, resolved against the app's resource roots
 
 Beyond constants, two further **non-constant source forms** are valid in mappings (the graph
 skills share Event Script's mapping engine):
 
-| Form | Meaning |
-|---|---|
-| `f:plugin(args…)` | a [simple-plugin](../event-script/syntax.md#simple-plugins) invocation — the modern replacement for the deprecated `:type` suffixes. **Arguments accept any mapping source**: constants and any state-machine path — `model.*`, `input.*`, `output.*`, and node namespaces such as `{node}.result.{key}` (engine-verified). Examples: `f:concat(model.a, text(!))`, generators `f:uuid()` and `f:now(text(local))` (current date-time at execution: `iso`/`local`/`ms`), arithmetic `f:add(...)`, logic `f:ternary(...)`, and **list/map reshapers** `f:removeKey(list, text(key))` (strip fields from every map in a list), `f:listOfMap(...)` (maps-of-lists → list-of-maps, order-preserving) and `f:length(...)` (length by type: list → element count, string → **character** count, bytes → byte count, null → 0). **Full catalog** in the [Event Script syntax page](../event-script/syntax.md#simple-plugins) |
-| `$.…` | a JSONPath expression over the state machine (prefer plain dot-bracket keys; JSONPath only when the query needs it) |
+`f:plugin(args…)`
+:   a [simple-plugin](../event-script/syntax.md#simple-plugins) invocation — the modern replacement for the deprecated `:type` suffixes. **Arguments accept any mapping source**: constants and any state-machine path — `model.*`, `input.*`, `output.*`, and node namespaces such as `{node}.result.{key}` (engine-verified). Examples: `f:concat(model.a, text(!))`, generators `f:uuid()` and `f:now(text(local))` (current date-time at execution: `iso`/`local`/`ms`), arithmetic `f:add(...)`, logic `f:ternary(...)`, and **list/map reshapers** `f:removeKey(list, text(key))` (strip fields from every map in a list), `f:listOfMap(...)` (maps-of-lists → list-of-maps, order-preserving) and `f:length(...)` (length by type: list → element count, string → **character** count, bytes → byte count, null → 0). **Full catalog** in the [Event Script syntax page](../event-script/syntax.md#simple-plugins)
+
+`$.…`
+:   a JSONPath expression over the state machine (prefer plain dot-bracket keys; JSONPath only when the query needs it)
 
 ## Commands {#commands}
 
@@ -560,13 +574,20 @@ unaffected: the island sinks, so the execution path never enters the knowledge l
 
 A `graph.math` node runs an ordered list of `statement[]` lines. Five statement types:
 
-| Statement | Form | Purpose |
-|---|---|---|
-| `COMPUTE` | `COMPUTE: {var} -> {expr}` | evaluate a JS-like math/boolean expression; the result is stored in **this node's `result` namespace** — read it back as `{this-node}.result.{var}` or move it with `MAPPING` |
-| `IF` | multi-line (see below) | a boolean **decision** that redirects traversal to a named node |
-| `MAPPING` | `MAPPING: source -> target` | data mapping, identical to `graph.data.mapper` (**no** `{}` around source/target) |
-| `EXECUTE` | `EXECUTE: {node-name}` | run another `graph.math` node's statements inline, **in the calling node's context** — any `COMPUTE` results land in the **invoking** node's result namespace (`{invoker}.result.{var}`); the executed module's own namespace stays empty. This is the **module-reuse mechanism**: author a formula once in an off-path module node, and any executing node borrows it (see the note below) |
-| `RESET` | `RESET: {node-name}` | forget a node completely — guard, completion mark, state — so it can execute again (advanced; see the rules below) |
+`COMPUTE` — `COMPUTE: {var} -> {expr}`
+:   evaluate a JS-like math/boolean expression; the result is stored in **this node's `result` namespace** — read it back as `{this-node}.result.{var}` or move it with `MAPPING`
+
+`IF` — multi-line (see below)
+:   a boolean **decision** that redirects traversal to a named node
+
+`MAPPING` — `MAPPING: source -> target`
+:   data mapping, identical to `graph.data.mapper` (**no** `{}` around source/target)
+
+`EXECUTE` — `EXECUTE: {node-name}`
+:   run another `graph.math` node's statements inline, **in the calling node's context** — any `COMPUTE` results land in the **invoking** node's result namespace (`{invoker}.result.{var}`); the executed module's own namespace stays empty. This is the **module-reuse mechanism**: author a formula once in an off-path module node, and any executing node borrows it (see the note below)
+
+`RESET` — `RESET: {node-name}`
+:   forget a node completely — guard, completion mark, state — so it can execute again (advanced; see the rules below)
 
 Expressions use `{namespace.key}` substitution (`{input.body.a}`, `{book.price}`, `{model.x}`) —
 the `{…}` substitution syntax is robust to hyphenated names (`{unit-price}` is the value of

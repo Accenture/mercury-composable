@@ -43,7 +43,7 @@ jobs:
         with:
           python-version: '3.x'
       - name: Install MkDocs
-        run: pip install mkdocs
+        run: pip install mkdocs-material
       - name: Check MiniGraph grammar spec is in sync (anti-drift)
         run: python3 scripts/check-minigraph-grammar.py
       - name: Check Event Script grammar spec is in sync (anti-drift)
@@ -73,6 +73,6 @@ jobs:
         with:
           python-version: '3.x'
       - name: Install MkDocs
-        run: pip install mkdocs
+        run: pip install mkdocs-material
       - name: Build (strict) and deploy to gh-pages
         run: mkdocs gh-deploy --force --strict

@@ -62,10 +62,6 @@ Full documentation: **[accenture.github.io/mercury-composable](https://accenture
 | **Operate & integrate** | [Observability](https://accenture.github.io/mercury-composable/guides/observability/) · [Spring Boot](https://accenture.github.io/mercury-composable/guides/spring-boot/) · [Minimalist Kafka](https://accenture.github.io/mercury-composable/guides/minimalist-kafka/) · [Sync-over-Async](https://accenture.github.io/mercury-composable/guides/sync-over-async/) |
 | **Reference** | [API Overview](https://accenture.github.io/mercury-composable/guides/api-overview/) · [Configuration](https://accenture.github.io/mercury-composable/guides/configuration-reference/) · [Annotations](https://accenture.github.io/mercury-composable/guides/annotations-reference/) · [ADRs](https://accenture.github.io/mercury-composable/arch-decisions/ADR/) |
 
-## Also available in Node.js
-
-See [mercury-nodejs](https://github.com/Accenture/mercury-nodejs) for the core library and [mercury-composable-examples](https://github.com/Accenture/mercury-composable-examples) for usage examples.
-
 ## Contributing
 
 Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before opening a pull request.

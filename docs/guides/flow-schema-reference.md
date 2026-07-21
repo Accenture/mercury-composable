@@ -35,10 +35,21 @@ task functions, see the [Annotations Reference](annotations-reference.md).
 The flow list file is an index that tells the engine which flow configuration files to load.
 It is identified by the `yaml.flow.automation` application property.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `flows` | list of strings | Yes | File names of individual flow configuration YAML files to load. |
-| `location` | string | No | Base directory for resolving file names. Default: resources folder root. Example: `classpath:/flows/`. |
+### `flows`
+
+| Type | Required |
+|---|---|
+| list of strings | Yes |
+
+File names of individual flow configuration YAML files to load.
+
+### `location`
+
+| Type | Required |
+|---|---|
+| string | No |
+
+Base directory for resolving file names. Default: resources folder root. Example: `classpath:/flows/`.
 
 Multiple flow list files can be specified as a comma-separated list:
 
@@ -63,15 +74,61 @@ flows:
 
 These fields appear at the root of every individual flow configuration file.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `flow.id` | string | **Yes** | Unique identifier for this flow. Referenced by REST config (`flow` field in `rest.yaml`) and subflow calls (`flow://flow-id`). Must be unique across all loaded flows. |
-| `flow.description` | string | **Yes** | Human-readable description of the flow's purpose. Validated at compile time. |
-| `flow.ttl` | duration | **Yes** | Maximum wall-clock time for the flow to complete. Minimum 1 second. Accepted units: `s` (seconds), `m` (minutes), `h` (hours). Example: `30s`. |
-| `flow.exception` | string | No | Route name of the global exception handler function for this flow. Receives the error dataset when any task throws an unhandled exception. |
-| `first.task` | string | **Yes** | Route name (or task `name`) of the first task to execute when the flow starts. |
-| `external.state.machine` | string | Conditional | Route name (or `flow://flow-id`) of an external state machine service. **Required** when any task uses the `ext:` output namespace. |
-| `tasks` | list | **Yes** | Ordered list of task definitions. See [Task-level fields](#task-level-fields). |
+### `flow.id`
+
+| Type | Required |
+|---|---|
+| string | **Yes** |
+
+Unique identifier for this flow. Referenced by REST config (`flow` field in `rest.yaml`) and subflow calls (`flow://flow-id`). Must be unique across all loaded flows.
+
+### `flow.description`
+
+| Type | Required |
+|---|---|
+| string | **Yes** |
+
+Human-readable description of the flow's purpose. Validated at compile time.
+
+### `flow.ttl`
+
+| Type | Required |
+|---|---|
+| duration | **Yes** |
+
+Maximum wall-clock time for the flow to complete. Minimum 1 second. Accepted units: `s` (seconds), `m` (minutes), `h` (hours). Example: `30s`.
+
+### `flow.exception`
+
+| Type | Required |
+|---|---|
+| string | No |
+
+Route name of the global exception handler function for this flow. Receives the error dataset when any task throws an unhandled exception.
+
+### `first.task`
+
+| Type | Required |
+|---|---|
+| string | **Yes** |
+
+Route name (or task `name`) of the first task to execute when the flow starts.
+
+### `external.state.machine`
+
+| Type | Required |
+|---|---|
+| string | Conditional |
+
+Route name (or `flow://flow-id`) of an external state machine service. **Required** when any task uses the `ext:` output namespace.
+
+### `tasks`
+
+| Type | Required |
+|---|---|
+| list | **Yes** |
+
+Ordered list of task definitions. See [Task-level fields](#task-level-fields).
 
 Minimal valid flow:
 
@@ -100,21 +157,109 @@ tasks:
 
 Each entry in the `tasks` list defines a step in the flow.
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `name` | string | Conditional | value of `process` | Unique task identifier within this flow. **Required** when the same `process` route is used more than once; otherwise the `process` value is used as the name. |
-| `description` | string | **Yes** | — | Human-readable description of what this task does. Validated at compile time. |
-| `input` | list of strings | **Yes** | — | Input data mapping rules. Use `[]` for no input. See [Data mapping syntax](#data-mapping-syntax). |
-| `output` | list of strings | **Yes** | — | Output data mapping rules. Use `[]` for no output. See [Data mapping syntax](#data-mapping-syntax). |
-| `process` | string | Conditional | — | Route name of the composable function to call, or `flow://flow-id` to invoke a subflow. Either `name` or `process` must be present. |
-| `execution` | string | **Yes** | — | Task execution type. See [Execution types](#execution-types). |
-| `next` | list of strings | Conditional | — | Route name(s) of subsequent task(s). Required for `sequential`, `parallel`, `fork`, `pipeline`. Not used for `end` or `sink`. Decision tasks: first entry = `true`/`1`, second = `false`/`2`, then `3`,`4`,… (1-based). |
-| `exception` | string | No | _(flow exception)_ | Route name of a task-level exception handler. Overrides `flow.exception` for this task only. |
-| `delay` | string or int | No | — | Delay before this task executes. Integer = milliseconds; string = model variable path (e.g. `model.wait_ms`). Must be less than `flow.ttl`. |
-| `pipeline` | list of strings | Conditional | — | Ordered list of task route names. **Required** when `execution` is `pipeline`. |
-| `loop` | object | No | — | Loop configuration for pipeline tasks. See [Pipeline configuration](#pipeline-configuration). |
-| `join` | string | Conditional | — | Name of the task that collects fork results. **Required** when `execution` is `fork`. |
-| `source` | string | No | — | Model variable path (e.g. `model.items`) containing a list to iterate over in a dynamic fork. The fork creates one branch per list item. |
+### `name`
+
+| Type | Required | Default |
+|---|---|---|
+| string | Conditional | value of `process` |
+
+Unique task identifier within this flow. **Required** when the same `process` route is used more than once; otherwise the `process` value is used as the name.
+
+### `description`
+
+| Type | Required | Default |
+|---|---|---|
+| string | **Yes** | — |
+
+Human-readable description of what this task does. Validated at compile time.
+
+### `input`
+
+| Type | Required | Default |
+|---|---|---|
+| list of strings | **Yes** | — |
+
+Input data mapping rules. Use `[]` for no input. See [Data mapping syntax](#data-mapping-syntax).
+
+### `output`
+
+| Type | Required | Default |
+|---|---|---|
+| list of strings | **Yes** | — |
+
+Output data mapping rules. Use `[]` for no output. See [Data mapping syntax](#data-mapping-syntax).
+
+### `process`
+
+| Type | Required | Default |
+|---|---|---|
+| string | Conditional | — |
+
+Route name of the composable function to call, or `flow://flow-id` to invoke a subflow. Either `name` or `process` must be present.
+
+### `execution`
+
+| Type | Required | Default |
+|---|---|---|
+| string | **Yes** | — |
+
+Task execution type. See [Execution types](#execution-types).
+
+### `next`
+
+| Type | Required | Default |
+|---|---|---|
+| list of strings | Conditional | — |
+
+Route name(s) of subsequent task(s). Required for `sequential`, `parallel`, `fork`, `pipeline`. Not used for `end` or `sink`. Decision tasks: first entry = `true`/`1`, second = `false`/`2`, then `3`,`4`,… (1-based).
+
+### `exception`
+
+| Type | Required | Default |
+|---|---|---|
+| string | No | _(flow exception)_ |
+
+Route name of a task-level exception handler. Overrides `flow.exception` for this task only.
+
+### `delay`
+
+| Type | Required | Default |
+|---|---|---|
+| string or int | No | — |
+
+Delay before this task executes. Integer = milliseconds; string = model variable path (e.g. `model.wait_ms`). Must be less than `flow.ttl`.
+
+### `pipeline`
+
+| Type | Required | Default |
+|---|---|---|
+| list of strings | Conditional | — |
+
+Ordered list of task route names. **Required** when `execution` is `pipeline`.
+
+### `loop`
+
+| Type | Required | Default |
+|---|---|---|
+| object | No | — |
+
+Loop configuration for pipeline tasks. See [Pipeline configuration](#pipeline-configuration).
+
+### `join`
+
+| Type | Required | Default |
+|---|---|---|
+| string | Conditional | — |
+
+Name of the task that collects fork results. **Required** when `execution` is `fork`.
+
+### `source`
+
+| Type | Required | Default |
+|---|---|---|
+| string | No | — |
+
+Model variable path (e.g. `model.items`) containing a list to iterate over in a dynamic fork. The fork creates one branch per list item.
 
 > `name`, `process`, and `description` are validated: task name must not be empty, and
 > `description` must not be blank.
@@ -570,10 +715,21 @@ When a flow is triggered by an HTTP request, the following fields are available 
 
 The `loop` sub-object controls iteration for `pipeline` tasks.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `loop.statement` | string | **Yes** (if `loop` present) | Loop control statement. Must be `for (...)` or `while (...)`. |
-| `loop.condition` | string or list | No | Break or continue condition(s). One or more `if (model.key) break\|continue` strings. |
+### `loop.statement`
+
+| Type | Required |
+|---|---|
+| string | **Yes** (if `loop` present) |
+
+Loop control statement. Must be `for (...)` or `while (...)`.
+
+### `loop.condition`
+
+| Type | Required |
+|---|---|
+| string or list | No |
+
+Break or continue condition(s). One or more `if (model.key) break\|continue` strings.
 
 ### For loop
 

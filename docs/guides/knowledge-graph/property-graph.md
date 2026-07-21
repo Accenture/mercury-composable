@@ -55,7 +55,13 @@ values or objects as you like.
 
 > Figure 1 - Mini-Graph example
 
-![Mini-Graph example](../diagrams/minigraph.png)
+```mermaid
+flowchart LR
+    n1["node-1<br>alias + properties"] -->|properties| n2["node-2<br>alias + properties"]
+    n2 --> n4["node-4<br>alias + properties"]
+    n2 --> n3["node-3<br>alias + properties"]
+    n3 -->|properties| n5["node-5<br>alias + properties"]
+```
 
 ## Terminology
 

@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-14 | agent: Claude Code (2026-07-14-231832)
+- **last_session:** 2026-07-20 | agent: Claude Code (2026-07-20-222709)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -41,6 +41,14 @@
   <!-- id: stack-messaging-kafka | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - CI: GitHub Actions (`.github/workflows/`)
   <!-- id: stack-ci-gha | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
+- Docs site: **Material for MkDocs** (switched from readthedocs 2026-07-20, mirroring the Rust
+  port's mkdocs.yml). Mermaid renders natively via the `pymdownx.superfences` custom fence — all
+  diagrams are mermaid blocks in the markdown (the scanned PNGs in `docs/guides/diagrams/` were
+  removed). Reference pages (configuration, flow-schema, annotations, event-envelope) present
+  keys/fields/methods as per-entry sections (heading + Type/Default mini-table + prose), not wide
+  tables — same pattern as the Rust port, so the two sites stay structurally aligned. CI installs
+  `mkdocs-material` in `.github/workflows/docs.yml`.
+  <!-- id: docs-site-material-theme | created: 2026-07-20 | last_used: 2026-07-20 | uses: 1 | tier: working | origin: 2026-07-20-222709 -->
 
 ## Architectural Invariants
 

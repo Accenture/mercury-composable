@@ -49,7 +49,17 @@ white boarding discussion among product owners, business domain experts and tech
 
 > Figure 1 - Event Flow Diagram
 
-![Event Flow Diagram](./diagrams/event-flow-diagram.png)
+```mermaid
+flowchart LR
+    user[/"user"/] --> inbound["flow adapter<br>(inbound)"]
+    inbound -.-> start([Start])
+    start --> t1["task-1"]
+    t1 --> d2{"Decision<br>task-2"}
+    d2 -- Yes --> t3["task-3"] --> t4["task-4"] --> fin([End])
+    d2 -- No --> t5["task-5"] --> fin
+    fin -.-> outbound["flow adapter<br>(outbound)"]
+    outbound --> user
+```
 
 As shown in Figure 1, a transaction flow diagram has a start point and an end point. Each processing step is called
 a "task". Some tasks would do calculation and some tasks would make decision to pass to the next steps.
@@ -164,7 +174,22 @@ of the Mercury-Composable framework.
 
 > Figure 2 - Composable Framework
 
-![Composable Framework](./diagrams/composable-framework.png)
+```mermaid
+flowchart LR
+    caller[/"Calling<br>application"/]
+    caller -- request --> adapter
+    adapter -. optional response .-> caller
+    subgraph app["Composable Application executable"]
+        direction TB
+        config[/"Event Flow<br>configuration"/] --> manager{{"Event Manager"}}
+        state[/"State<br>Machine"/] --> manager
+        adapter["Flow Adapter"] --> manager
+        manager --> bus["In-memory Low-Latency Event System"]
+        bus --- t1["Task-1"]
+        bus --- t2["Task-2"]
+        bus --- t3["Task-3"]
+    end
+```
 
 As illustrated in Figure 2, event choreography for an event flow is described as an "Event Flow Configuration".
 An "Event Manager" is implemented as part of a low-latency in-memory event system. Composable functions
@@ -181,16 +206,14 @@ transaction "states" and temporary data objects.
 Sometimes a transaction may be suspended and restarted with different event flows. The in-memory state machine can
 be extended to an external datastore so that transaction states can be monitored and recovered operationally.
 
-> *Note*: In Java, we combine the use of native Java 21 virtual thread management with Eclipse Vertx event bus.
-          In Node.js, we use the EventEmitter event bus from the standard library.
+> *Note*: The framework combines native Java 21 virtual thread management with the Eclipse Vert.x event bus.
 
 ## Event Envelope
 
 We use a standard "Event Envelope" to transport an event over the in-memory event bus. An event envelope contains
 three parts: (1) body, (2) headers and (3) metadata.
 
-Event body is used to transport a business object. In Java, it may be a PoJo or a HashMap. In node.js, it is a JSON
-object.
+Event body is used to transport a business object. It may be a PoJo or a HashMap.
 
 Headers can be used to carry additional parameters to tell the user composable function what to do.
 
@@ -207,8 +230,7 @@ the inbound and outbound flow adapters.
 
 ## Functional isolation
 
-Each function must implement the Composable interface. In Java, it is called "TypedLambdaFunction".
-In Node.js, it is called "Composable".
+Each function must implement the Composable interface, called "TypedLambdaFunction".
 
 The composable interface enforces a single "handleEvent" method where the function can access the event's headers
 and body.
@@ -223,7 +245,7 @@ composable function may use any coding style including object-oriented design, f
 Functional isolation means that you can use any open source or commercial library or framework in your user
 function without concerns about thread safety or unintended side effect.
 
-In Java, a composable function may look like this:
+A composable function may look like this:
 
 ```java
 @PreLoad(route = "my.first.function", instances = 10)
@@ -237,24 +259,7 @@ public class MyFirstFunction implements TypedLambdaFunction<MyPoJo, AnotherPoJo>
 }
 ```
 
-In Node.js, it may look like this:
-
-```java
-export class MyFirstFunction implements Composable {
-
-    @preload('my.first.function', 10)
-    initialize(): Composable {
-        return this;
-    }
-
-    async handleEvent(evt: EventEnvelope) {
-        // your business logic here
-        return result;
-    }
-```
-
-A composable function is declared with a "route name" using the "preload" annotation. While Java
-and Node.js have different syntax for annotation, they use a similar declarative approach.
+A composable function is declared with a "route name" using the "PreLoad" annotation.
 
 > *Note*: the "instance" count for each composable function controls execution concurrency in a single application.
           It can be used with horizontal scaling to optimize use of computing resources.

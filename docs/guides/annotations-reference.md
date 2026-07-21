@@ -59,16 +59,69 @@ most frequently used annotation in Mercury — every composable function require
 
 ### Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `route` | `String` | *(required)* | Route name(s) for this function. Use lowercase with dots (e.g. `"v1.get.profile"`). Comma-separate multiple routes to register the same function under several names. |
-| `instances` | `int` | `1` | Maximum concurrent worker instances. Range 1–1000. Controls how many events this function can handle simultaneously. |
-| `envInstances` | `String` | `""` | Override `instances` from an application property or environment variable. Syntax: `"${SOME_VAR:default}"`. Takes precedence over `instances` when the property is present. |
-| `isPrivate` | `boolean` | `true` | `true` = accessible only within this JVM. `false` = published to the service mesh and reachable from other instances via PostOffice or Event-over-HTTP. |
-| `inputPojoClass` | `Class<?>` | `Void.class` | Hint for deserializing `List<T>` input. Set when the function accepts a list of PoJos and the generic type is erased at runtime (e.g. `inputPojoClass = MyPojo.class`). |
-| `customSerializer` | `Class<?>` | `Void.class` | Custom serializer class implementing `CustomSerializer`. Overrides `inputStrategy`/`outputStrategy` for this function. Use when the default Gson/MsgPack serialization is insufficient for a PoJo type. |
-| `inputStrategy` | `SerializationStrategy` | `DEFAULT` | Input deserialization case convention. `DEFAULT` — inherits global `snake.case.serialization`. `SNAKE` — forces snake_case. `CAMEL` — forces camelCase. |
-| `outputStrategy` | `SerializationStrategy` | `DEFAULT` | Output serialization case convention. Same values as `inputStrategy`. |
+#### `route`
+
+| Type | Default |
+|---|---|
+| `String` | *(required)* |
+
+Route name(s) for this function. Use lowercase with dots (e.g. `"v1.get.profile"`). Comma-separate multiple routes to register the same function under several names.
+
+#### `instances`
+
+| Type | Default |
+|---|---|
+| `int` | `1` |
+
+Maximum concurrent worker instances. Range 1–1000. Controls how many events this function can handle simultaneously.
+
+#### `envInstances`
+
+| Type | Default |
+|---|---|
+| `String` | `""` |
+
+Override `instances` from an application property or environment variable. Syntax: `"${SOME_VAR:default}"`. Takes precedence over `instances` when the property is present.
+
+#### `isPrivate`
+
+| Type | Default |
+|---|---|
+| `boolean` | `true` |
+
+`true` = accessible only within this JVM. `false` = published to the service mesh and reachable from other instances via PostOffice or Event-over-HTTP.
+
+#### `inputPojoClass`
+
+| Type | Default |
+|---|---|
+| `Class<?>` | `Void.class` |
+
+Hint for deserializing `List<T>` input. Set when the function accepts a list of PoJos and the generic type is erased at runtime (e.g. `inputPojoClass = MyPojo.class`).
+
+#### `customSerializer`
+
+| Type | Default |
+|---|---|
+| `Class<?>` | `Void.class` |
+
+Custom serializer class implementing `CustomSerializer`. Overrides `inputStrategy`/`outputStrategy` for this function. Use when the default Gson/MsgPack serialization is insufficient for a PoJo type.
+
+#### `inputStrategy`
+
+| Type | Default |
+|---|---|
+| `SerializationStrategy` | `DEFAULT` |
+
+Input deserialization case convention. `DEFAULT` — inherits global `snake.case.serialization`. `SNAKE` — forces snake_case. `CAMEL` — forces camelCase.
+
+#### `outputStrategy`
+
+| Type | Default |
+|---|---|
+| `SerializationStrategy` | `DEFAULT` |
+
+Output serialization case convention. Same values as `inputStrategy`.
 
 ### Behavior
 
@@ -137,10 +190,21 @@ Registers a class as a WebSocket endpoint handler.
 
 ### Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `value` | `String` | *(required)* | WebSocket endpoint path segment. Combined with `namespace` to form the full URL: `/{namespace}/{value}/{handle}`. |
-| `namespace` | `String` | `"ws"` | URL namespace prefix. Default produces URLs like `/ws/hello/{handle}`. |
+#### `value`
+
+| Type | Default |
+|---|---|
+| `String` | *(required)* |
+
+WebSocket endpoint path segment. Combined with `namespace` to form the full URL: `/{namespace}/{value}/{handle}`.
+
+#### `namespace`
+
+| Type | Default |
+|---|---|
+| `String` | `"ws"` |
+
+URL namespace prefix. Default produces URLs like `/ws/hello/{handle}`.
 
 ### Behavior
 
@@ -193,9 +257,13 @@ system initialises and all `@PreLoad` services are registered.
 
 ### Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `sequence` | `int` | `10` | Execution order when multiple `@MainApplication` classes exist. Range 1–999. Lower values run first. |
+#### `sequence`
+
+| Type | Default |
+|---|---|
+| `int` | `10` |
+
+Execution order when multiple `@MainApplication` classes exist. Range 1–999. Lower values run first.
 
 ### Behavior
 
@@ -250,9 +318,13 @@ generating X.509 certificates before the rest of the application starts.
 
 ### Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `sequence` | `int` | `10` | Execution order. Range 1–999. Sequence 0 is reserved by the framework. |
+#### `sequence`
+
+| Type | Default |
+|---|---|
+| `int` | `10` |
+
+Execution order. Range 1–999. Sequence 0 is reserved by the framework.
 
 ### Behavior
 
@@ -454,9 +526,13 @@ or `application.yml`.
 
 ### Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `value` | `String` | *(required)* | One or more condition expressions, comma-separated (OR logic). See expression syntax below. |
+#### `value`
+
+| Type | Default |
+|---|---|
+| `String` | *(required)* |
+
+One or more condition expressions, comma-separated (OR logic). See expression syntax below.
 
 ### Expression syntax
 
@@ -506,10 +582,21 @@ application, selected by the `cloud.connector` application property.
 
 ### Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `name` | `String` | *(required)* | Connector identifier. Must match the value of `cloud.connector` in application.properties for this connector to be loaded. |
-| `original` | `String` | `""` | When non-empty, this connector wraps the connector named by `original`. Use for the decorator pattern. |
+#### `name`
+
+| Type | Default |
+|---|---|
+| `String` | *(required)* |
+
+Connector identifier. Must match the value of `cloud.connector` in application.properties for this connector to be loaded.
+
+#### `original`
+
+| Type | Default |
+|---|---|
+| `String` | `""` |
+
+When non-empty, this connector wraps the connector named by `original`. Use for the decorator pattern.
 
 ### Behavior
 
@@ -558,10 +645,21 @@ application, selected by the `cloud.services` property.
 
 ### Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `name` | `String` | *(required)* | Service identifier. Must match one entry in the `cloud.services` comma-separated list for this service to be loaded. |
-| `original` | `String` | `""` | When non-empty, this service wraps the service named by `original`. Use for the decorator pattern. |
+#### `name`
+
+| Type | Default |
+|---|---|
+| `String` | *(required)* |
+
+Service identifier. Must match one entry in the `cloud.services` comma-separated list for this service to be loaded.
+
+#### `original`
+
+| Type | Default |
+|---|---|
+| `String` | `""` |
+
+When non-empty, this service wraps the service named by `original`. Use for the decorator pattern.
 
 ### Behavior
 
@@ -681,9 +779,13 @@ registers each by its feature name.
 
 ### Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `value` | `String` | *(required)* | Feature name used to reference this plug-in (e.g. `log-request-headers`). |
+#### `value`
+
+| Type | Default |
+|---|---|
+| `String` | *(required)* |
+
+Feature name used to reference this plug-in (e.g. `log-request-headers`).
 
 ### Required interface
 

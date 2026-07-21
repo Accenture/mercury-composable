@@ -120,23 +120,20 @@ Please refer to "rpcTest" method in the "HelloWorldTest" class in the lambda-exa
 
 In unit test, we want to start the main application so that all the functions are ready for tests.
 
-First, we write a "TestBase" class to use the BeforeClass setup method to start the main application like this:
+First, we write a "TestBase" class to use the BeforeAll setup method to start the main application like this:
 
 ```java
 public class TestBase {
 
-    private static final AtomicInteger seq = new AtomicInteger(0);
-
-    @BeforeClass
-    public static void setup() {
-        if (seq.incrementAndGet() == 1) {
-            AutoStart.main(new String[0]);
-        }
+    @BeforeAll
+    static void setup() {
+        AutoStart.main(new String[0]);
     }
 }
 ```
 
-The atomic integer "seq" is used to ensure the main application entry point is executed only once.
+`AutoStart` is idempotent by design — an internal guard ensures the main application entry point is
+executed only once, so every test class can extend `TestBase` and call it unconditionally.
 
 A typical unit test may look like this:
 

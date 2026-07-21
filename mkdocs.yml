@@ -1,6 +1,102 @@
 site_name: Composable for Java
+site_description: >-
+  Mercury Composable — Accenture's event-driven, composable application
+  platform for Java: platform-core, Event Script, and the active
+  knowledge graph.
 site_url: https://accenture.github.io/mercury-composable/
 docs_dir: docs
+
+repo_name: Accenture/mercury-composable
+repo_url: https://github.com/Accenture/mercury-composable
+edit_uri: edit/main/docs/
+
+copyright: >-
+  Apache-2.0 &middot; mercury-composable also has an official
+  <a href="https://github.com/Accenture/mercury">Rust implementation</a>.
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/atom
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+  # NOTE: pymdownx.emoji is deliberately NOT enabled. These docs are full of
+  # colon-delimited technical patterns (e.g. HH:mm:ss), and the emoji extension
+  # turns ":mm:" into a flag emoji in plain text.
+
+plugins:
+  - search:
+      lang: en
+      separator: '[\s\-\.]+'
+
+# These files live in docs/ but aren't part of the nav on purpose
+# (machine-readable artifacts linked from the AI docs).
+not_in_nav: |
+  llms.txt
+
+validation:
+  nav:
+    omitted_files: info
+  links:
+    not_found: warn
+    absolute_links: ignore
+
+extra_css:
+  - css/extra.css
+
 nav:
   - Home: index.md
 
@@ -65,14 +161,3 @@ nav:
   - Contributing: https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md
   - Code of Conduct: https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md
   - Inclusivity: https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md
-plugins:
-  - search:
-      lang: en
-      separator: '[\s\-\.]+'
-theme: readthedocs
-
-markdown_extensions:
-  - attr_list
-
-extra_css:
-  - css/extra.css
