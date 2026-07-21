@@ -10,31 +10,31 @@
       
       
       
-        <link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/event-driven/write-your-first-function/">
+        <link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/event-envelope-wire-format/">
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../event-envelope-reference/">
       
       
-        <link rel="next" href="../function-execution/">
+        <link rel="next" href="../reserved-names-and-headers/">
       
       
         
       
       
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>Write your first function - Composable for Java</title>
+        <title>Event Envelope Wire Format - Composable for Java</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,9 +53,9 @@
       
     
     
-      <link rel="stylesheet" href="../../../css/extra.css">
+      <link rel="stylesheet" href="../../css/extra.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#write-your-first-function" class="md-skip">
+        <a href="#event-envelope-wire-format" class="md-skip">
           Skip to content
         </a>
       
@@ -94,7 +94,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="Composable for Java" class="md-header__button md-logo" aria-label="Composable for Java" data-md-component="logo">
+    <a href="../.." title="Composable for Java" class="md-header__button md-logo" aria-label="Composable for Java" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 11a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1M4.22 4.22C5.65 2.79 8.75 3.43 12 5.56c3.25-2.13 6.35-2.77 7.78-1.34s.79 4.53-1.34 7.78c2.13 3.25 2.77 6.35 1.34 7.78s-4.53.79-7.78-1.34c-3.25 2.13-6.35 2.77-7.78 1.34S3.43 15.25 5.56 12C3.43 8.75 2.79 5.65 4.22 4.22m11.32 4.24c.61.62 1.17 1.25 1.69 1.88 1.38-2.13 1.88-3.96 1.13-4.7-.74-.75-2.57-.25-4.7 1.13.63.52 1.26 1.08 1.88 1.69m-7.08 7.08c-.61-.62-1.17-1.25-1.69-1.88-1.38 2.13-1.88 3.96-1.13 4.7.74.75 2.57.25 4.7-1.13-.63-.52-1.26-1.08-1.88-1.69m-2.82-9.9c-.75.74-.25 2.57 1.13 4.7.52-.63 1.08-1.26 1.69-1.88.62-.61 1.25-1.17 1.88-1.69-2.13-1.38-3.96-1.88-4.7-1.13m4.24 8.48c.7.7 1.42 1.34 2.12 1.91.7-.57 1.42-1.21 2.12-1.91s1.34-1.42 1.91-2.12c-.57-.7-1.21-1.42-1.91-2.12S12.7 8.54 12 7.97c-.7.57-1.42 1.21-2.12 1.91S8.54 11.3 7.97 12c.57.7 1.21 1.42 1.91 2.12m8.48 4.24c.75-.74.25-2.57-1.13-4.7-.52.63-1.08 1.26-1.69 1.88-.62.61-1.25 1.17-1.88 1.69 2.13 1.38 3.96 1.88 4.7 1.13"/></svg>
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Write your first function
+              Event Envelope Wire Format
             
           </span>
         </div>
@@ -237,7 +237,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../.." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -258,7 +258,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../getting-started/" class="md-tabs__link">
+        <a href="../getting-started/" class="md-tabs__link">
           
   
   
@@ -280,7 +280,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../architecture/" class="md-tabs__link">
+        <a href="../architecture/" class="md-tabs__link">
           
   
   
@@ -298,13 +298,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../event-driven/" class="md-tabs__link">
           
   
   
@@ -326,7 +324,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../event-script/" class="md-tabs__link">
+        <a href="../event-script/" class="md-tabs__link">
           
   
   
@@ -348,7 +346,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../knowledge-graph/" class="md-tabs__link">
+        <a href="../knowledge-graph/" class="md-tabs__link">
           
   
   
@@ -370,7 +368,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../build-test-deploy/" class="md-tabs__link">
+        <a href="../build-test-deploy/" class="md-tabs__link">
           
   
   
@@ -388,11 +386,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../../arch-decisions/ADR/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../arch-decisions/ADR/" class="md-tabs__link">
           
   
   
@@ -412,7 +412,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../code-conventions/" class="md-tabs__link">
+      <a href="../code-conventions/" class="md-tabs__link">
         
   
   
@@ -431,7 +431,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../documentation-conventions/" class="md-tabs__link">
+      <a href="../documentation-conventions/" class="md-tabs__link">
         
   
   
@@ -523,7 +523,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Composable for Java" class="md-nav__button md-logo" aria-label="Composable for Java" data-md-component="logo">
+    <a href="../.." title="Composable for Java" class="md-nav__button md-logo" aria-label="Composable for Java" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 11a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1M4.22 4.22C5.65 2.79 8.75 3.43 12 5.56c3.25-2.13 6.35-2.77 7.78-1.34s.79 4.53-1.34 7.78c2.13 3.25 2.77 6.35 1.34 7.78s-4.53.79-7.78-1.34c-3.25 2.13-6.35 2.77-7.78 1.34S3.43 15.25 5.56 12C3.43 8.75 2.79 5.65 4.22 4.22m11.32 4.24c.61.62 1.17 1.25 1.69 1.88 1.38-2.13 1.88-3.96 1.13-4.7-.74-.75-2.57-.25-4.7 1.13.63.52 1.26 1.08 1.88 1.69m-7.08 7.08c-.61-.62-1.17-1.25-1.69-1.88-1.38 2.13-1.88 3.96-1.13 4.7.74.75 2.57.25 4.7-1.13-.63-.52-1.26-1.08-1.88-1.69m-2.82-9.9c-.75.74-.25 2.57 1.13 4.7.52-.63 1.08-1.26 1.69-1.88.62-.61 1.25-1.17 1.88-1.69-2.13-1.38-3.96-1.88-4.7-1.13m4.24 8.48c.7.7 1.42 1.34 2.12 1.91.7-.57 1.42-1.21 2.12-1.91s1.34-1.42 1.91-2.12c-.57-.7-1.21-1.42-1.91-2.12S12.7 8.54 12 7.97c-.7.57-1.42 1.21-2.12 1.91S8.54 11.3 7.97 12c.57.7 1.21 1.42 1.91 2.12m8.48 4.24c.75-.74.25-2.57-1.13-4.7-.52.63-1.08 1.26-1.69 1.88-.62.61-1.25 1.17-1.88 1.69 2.13 1.38 3.96 1.88 4.7 1.13"/></svg>
@@ -553,7 +553,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -636,7 +636,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/" class="md-nav__link">
+      <a href="../getting-started/" class="md-nav__link">
         
   
   
@@ -731,7 +731,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
+      <a href="../architecture/" class="md-nav__link">
         
   
   
@@ -759,7 +759,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../methodology/" class="md-nav__link">
+      <a href="../methodology/" class="md-nav__link">
         
   
   
@@ -787,7 +787,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ai-developer-guide/" class="md-nav__link">
+      <a href="../ai-developer-guide/" class="md-nav__link">
         
   
   
@@ -819,8 +819,6 @@
       
   
   
-    
-  
   
   
     
@@ -846,23 +844,20 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../event-driven/" class="md-nav__link ">
               
   
   
@@ -880,13 +875,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -903,37 +898,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Write your first function
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../event-driven/write-your-first-function/" class="md-nav__link">
         
   
   
@@ -949,92 +917,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#1-define-the-function" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. Define the function
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2-expose-it-over-http" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Expose it over HTTP
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#3-call-it-from-another-function" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Call it from another function
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#4-run-and-test" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. Run and test
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#5-add-it-to-a-flow-optional-next-step" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        5. Add it to a flow (optional next step)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        See also
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1047,7 +929,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../function-execution/" class="md-nav__link">
+      <a href="../event-driven/function-execution/" class="md-nav__link">
         
   
   
@@ -1075,7 +957,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ai-agent-guide/" class="md-nav__link">
+      <a href="../event-driven/ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -1103,7 +985,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../rest-automation/" class="md-nav__link">
+      <a href="../rest-automation/" class="md-nav__link">
         
   
   
@@ -1131,7 +1013,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../rest-automation/rest-grammar/" class="md-nav__link">
+      <a href="../rest-automation/rest-grammar/" class="md-nav__link">
         
   
   
@@ -1159,7 +1041,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../rest-automation/ai-agent-guide/" class="md-nav__link">
+      <a href="../rest-automation/ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -1225,7 +1107,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../event-script/" class="md-nav__link ">
+            <a href="../event-script/" class="md-nav__link ">
               
   
   
@@ -1269,7 +1151,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../event-script/syntax/" class="md-nav__link">
+      <a href="../event-script/syntax/" class="md-nav__link">
         
   
   
@@ -1297,7 +1179,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../event-script/flow-grammar/" class="md-nav__link">
+      <a href="../event-script/flow-grammar/" class="md-nav__link">
         
   
   
@@ -1325,7 +1207,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../event-script/ai-agent-guide/" class="md-nav__link">
+      <a href="../event-script/ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -1353,7 +1235,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../flow-schema-reference/" class="md-nav__link">
+      <a href="../flow-schema-reference/" class="md-nav__link">
         
   
   
@@ -1425,7 +1307,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../knowledge-graph/" class="md-nav__link ">
+            <a href="../knowledge-graph/" class="md-nav__link ">
               
   
   
@@ -1469,7 +1351,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../knowledge-graph/build-your-first-graph/" class="md-nav__link">
+      <a href="../knowledge-graph/build-your-first-graph/" class="md-nav__link">
         
   
   
@@ -1497,7 +1379,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../knowledge-graph/skills-reference/" class="md-nav__link">
+      <a href="../knowledge-graph/skills-reference/" class="md-nav__link">
         
   
   
@@ -1525,7 +1407,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../knowledge-graph/command-reference/" class="md-nav__link">
+      <a href="../knowledge-graph/command-reference/" class="md-nav__link">
         
   
   
@@ -1553,7 +1435,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../knowledge-graph/ai-agent-guide/" class="md-nav__link">
+      <a href="../knowledge-graph/ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -1581,7 +1463,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../knowledge-graph/composing-the-layers/" class="md-nav__link">
+      <a href="../knowledge-graph/composing-the-layers/" class="md-nav__link">
         
   
   
@@ -1609,7 +1491,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../knowledge-graph/playground-and-companion/" class="md-nav__link">
+      <a href="../knowledge-graph/playground-and-companion/" class="md-nav__link">
         
   
   
@@ -1637,7 +1519,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../knowledge-graph/property-graph/" class="md-nav__link">
+      <a href="../knowledge-graph/property-graph/" class="md-nav__link">
         
   
   
@@ -1744,7 +1626,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../build-test-deploy/" class="md-nav__link">
+      <a href="../build-test-deploy/" class="md-nav__link">
         
   
   
@@ -1772,7 +1654,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../observability/" class="md-nav__link">
+      <a href="../observability/" class="md-nav__link">
         
   
   
@@ -1800,7 +1682,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../spring-boot/" class="md-nav__link">
+      <a href="../spring-boot/" class="md-nav__link">
         
   
   
@@ -1828,7 +1710,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../event-over-http/" class="md-nav__link">
+      <a href="../event-over-http/" class="md-nav__link">
         
   
   
@@ -1856,7 +1738,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../minimalist-kafka/" class="md-nav__link">
+      <a href="../minimalist-kafka/" class="md-nav__link">
         
   
   
@@ -1884,7 +1766,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../twin-kafka/" class="md-nav__link">
+      <a href="../twin-kafka/" class="md-nav__link">
         
   
   
@@ -1912,7 +1794,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../schema-registry-mock/" class="md-nav__link">
+      <a href="../schema-registry-mock/" class="md-nav__link">
         
   
   
@@ -1940,7 +1822,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../sync-over-async/" class="md-nav__link">
+      <a href="../sync-over-async/" class="md-nav__link">
         
   
   
@@ -1968,7 +1850,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../service-mesh/" class="md-nav__link">
+      <a href="../service-mesh/" class="md-nav__link">
         
   
   
@@ -2000,8 +1882,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -2027,19 +1911,22 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
             
   
   
@@ -2057,7 +1944,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2075,7 +1962,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../arch-decisions/ADR/" class="md-nav__link">
+      <a href="../../arch-decisions/ADR/" class="md-nav__link">
         
   
   
@@ -2103,7 +1990,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api-overview/" class="md-nav__link">
+      <a href="../api-overview/" class="md-nav__link">
         
   
   
@@ -2131,7 +2018,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../annotations-reference/" class="md-nav__link">
+      <a href="../annotations-reference/" class="md-nav__link">
         
   
   
@@ -2159,7 +2046,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../configuration-reference/" class="md-nav__link">
+      <a href="../configuration-reference/" class="md-nav__link">
         
   
   
@@ -2187,7 +2074,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../event-envelope-reference/" class="md-nav__link">
+      <a href="../event-envelope-reference/" class="md-nav__link">
         
   
   
@@ -2212,10 +2099,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../event-envelope-wire-format/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Event Envelope Wire Format
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2231,6 +2145,324 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-envelope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The envelope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core fields
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core fields">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#to" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reply_to" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reply_to
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trace_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        trace_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trace_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        trace_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#span_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        span_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        headers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#body" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        body
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec_time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        exec_time
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#round_trip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        round_trip
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extension-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extension fields
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Extension fields">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#annotations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        annotations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#obj_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        obj_type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exception" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        exception
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#encoding-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Encoding rules
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#format-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Format detection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#selecting-the-outbound-format-java" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Selecting the outbound format (Java)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conformance-vectors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformance vectors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2243,7 +2475,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reserved-names-and-headers/" class="md-nav__link">
+      <a href="../reserved-names-and-headers/" class="md-nav__link">
         
   
   
@@ -2271,7 +2503,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../actuators-and-http-client/" class="md-nav__link">
+      <a href="../actuators-and-http-client/" class="md-nav__link">
         
   
   
@@ -2334,7 +2566,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../code-conventions/" class="md-nav__link">
+      <a href="../code-conventions/" class="md-nav__link">
         
   
   
@@ -2361,7 +2593,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documentation-conventions/" class="md-nav__link">
+      <a href="../documentation-conventions/" class="md-nav__link">
         
   
   
@@ -2489,10 +2721,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-define-the-function" class="md-nav__link">
+  <a href="#the-envelope" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Define the function
+        The envelope
       
     </span>
   </a>
@@ -2500,10 +2732,242 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-expose-it-over-http" class="md-nav__link">
+  <a href="#core-fields" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Expose it over HTTP
+        Core fields
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core fields">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#to" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reply_to" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reply_to
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trace_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        trace_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trace_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        trace_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#span_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        span_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        headers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#body" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        body
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exec_time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        exec_time
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#round_trip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        round_trip
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extension-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extension fields
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Extension fields">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#annotations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        annotations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#obj_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        obj_type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exception" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        exception
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#encoding-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Encoding rules
       
     </span>
   </a>
@@ -2511,10 +2975,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-call-it-from-another-function" class="md-nav__link">
+  <a href="#format-detection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Call it from another function
+        Format detection
       
     </span>
   </a>
@@ -2522,10 +2986,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-run-and-test" class="md-nav__link">
+  <a href="#selecting-the-outbound-format-java" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Run and test
+        Selecting the outbound format (Java)
       
     </span>
   </a>
@@ -2533,10 +2997,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-add-it-to-a-flow-optional-next-step" class="md-nav__link">
+  <a href="#conformance-vectors" class="md-nav__link">
     <span class="md-ellipsis">
       
-        5. Add it to a flow (optional next step)
+        Conformance vectors
       
     </span>
   </a>
@@ -2574,160 +3038,370 @@
   
 
 
-<h1 id="write-your-first-function">Write your first function<a class="headerlink" href="#write-your-first-function" title="Permanent link">&para;</a></h1>
-<p><em>Tutorial: build a working composable function from scratch, wire it to HTTP, and call it
-programmatically.</em></p>
+<h1 id="event-envelope-wire-format">Event Envelope Wire Format<a class="headerlink" href="#event-envelope-wire-format" title="Permanent link">&para;</a></h1>
+<p><em>Reference: the serialized event envelope contract shared by every language implementation.</em></p>
 <blockquote>
 <p><strong>At a glance</strong></p>
 <ul>
-<li><strong>What</strong> — write a <code>@PreLoad</code>-annotated class, expose it over HTTP in <code>rest.yaml</code>, and call it
-  from another function via <code>PostOffice</code>.</li>
-<li><strong>Why it matters</strong> — every higher-layer concept (flow task, graph skill) is still this same atom;
-  mastering Layer 1 is the foundation.</li>
-<li><strong>For</strong> developers new to Mercury or building their first composable feature.</li>
+<li><strong>What</strong> — the standard wire format: one MsgPack map with descriptive string keys that
+  any MsgPack-capable language (Java, Rust, Node.js, Python, Go, …) can encode and decode
+  with its idiomatic tooling — no custom codec.</li>
+<li><strong>Why it matters</strong> — it is the interoperability contract for
+  <a href="../event-over-http/">Event over HTTP</a> between different language runtimes, and the
+  template for any future event-to-bytes transport.</li>
+<li><strong>For</strong> developers integrating runtimes across languages, and implementers of new
+  language ports. This page is self-contained: a new implementation needs nothing else.</li>
 </ul>
 </blockquote>
-<p>A composable function is <strong>plain Java</strong> — no framework-specific base class, no dependency injection
-container, no coupling to other functions. You pick the coding style that suits the problem:
-sequential, object-oriented, or reactive. The framework constrains only <em>coupling</em> (functions
-communicate through named routes and <code>EventEnvelope</code>, never by direct call).</p>
-<hr />
-<h2 id="1-define-the-function">1. Define the function<a class="headerlink" href="#1-define-the-function" title="Permanent link">&para;</a></h2>
-<p>Create a class that implements <code>TypedLambdaFunction&lt;I, O&gt;</code> and annotate it with <code>@PreLoad</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">org.platformlambda.core.annotations.PreLoad</span><span class="p">;</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">org.platformlambda.core.models.TypedLambdaFunction</span><span class="p">;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">import</span><span class="w"> </span><span class="nn">java.util.Map</span><span class="p">;</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;hello.function&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">instances</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">HelloFunction</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TypedLambdaFunction</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="nd">@Override</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">handleEvent</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">                                           </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">input</span><span class="p">,</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">                                           </span><span class="kt">int</span><span class="w"> </span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="kd">throws</span><span class="w"> </span><span class="n">Exception</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">input</span><span class="p">.</span><span class="na">getOrDefault</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;world&quot;</span><span class="p">).</span><span class="na">toString</span><span class="p">();</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">Map</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;message&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Hello, &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;!&quot;</span><span class="p">);</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="p">}</span>
-</code></pre></div>
-<p><strong>Three things to notice:</strong></p>
+<p>Two serialized forms exist. The <strong>standard</strong> format on this page is the language-neutral
+contract and the default for Event over HTTP. The <strong>compact</strong> format (single-character map
+keys) is the classic same-language form that remains the default for <code>toBytes()</code> and the
+Kafka service mesh; it is documented here only as far as detection requires.</p>
+<h2 id="the-envelope">The envelope<a class="headerlink" href="#the-envelope" title="Permanent link">&para;</a></h2>
+<p>A serialized envelope is a single <strong>MsgPack map with string keys</strong>. No MsgPack extension
+types are used. The envelope is self-contained — no out-of-band metadata is needed to
+decode it.</p>
+<h2 id="core-fields">Core fields<a class="headerlink" href="#core-fields" title="Permanent link">&para;</a></h2>
+<h3 id="id"><code>id</code><a class="headerlink" href="#id" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Part</th>
-<th style="text-align: left;">What it does</th>
+<th>Type</th>
+<th>Required</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>@PreLoad(route = "hello.function")</code></td>
-<td style="text-align: left;">Registers the function on the event bus under this name. Other components reach it <em>only</em> by this string.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>instances = 10</code></td>
-<td style="text-align: left;">How many concurrent workers the platform starts for this function.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>TypedLambdaFunction&lt;I, O&gt;</code></td>
-<td style="text-align: left;">Typed input/output. Use <code>Map&lt;String, Object&gt;</code> for flexible key-value data, or a PoJo for a strict interface contract.</td>
+<td>str</td>
+<td>always</td>
 </tr>
 </tbody>
 </table>
-<p>For an <strong>untyped</strong> function that works directly with the raw <code>EventEnvelope</code> (useful for
-pass-through or routing logic), implement <code>LambdaFunction</code> instead:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;hello.passthrough&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">instances</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">)</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">HelloPassthrough</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">LambdaFunction</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nd">@Override</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Object</span><span class="w"> </span><span class="nf">handleEvent</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">                              </span><span class="n">Object</span><span class="w"> </span><span class="n">body</span><span class="p">,</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">                              </span><span class="kt">int</span><span class="w"> </span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="kd">throws</span><span class="w"> </span><span class="n">Exception</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">body</span><span class="p">;</span><span class="w"> </span><span class="c1">// echo the raw body back</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="p">}</span>
-</code></pre></div>
-<hr />
-<h2 id="2-expose-it-over-http">2. Expose it over HTTP<a class="headerlink" href="#2-expose-it-over-http" title="Permanent link">&para;</a></h2>
-<p>Open (or create) <code>src/main/resources/rest.yaml</code> and add an entry under the <code>rest:</code> section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">rest</span><span class="p">:</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;hello.function&quot;</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;GET&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;POST&#39;</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/api/hello&quot;</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10s</span>
-</code></pre></div>
-<p>The <code>service:</code> value is the route name from <code>@PreLoad</code>. That string is the <em>only</em> link between
-the HTTP layer and your function — no import, no wiring code.</p>
-<p>Enable REST automation in <code>application.properties</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="na">rest.server.port</span><span class="o">=</span><span class="s">8085</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="na">rest.automation</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="na">yaml.rest.automation</span><span class="o">=</span><span class="s">classpath:/rest.yaml</span>
-</code></pre></div>
-<hr />
-<h2 id="3-call-it-from-another-function">3. Call it from another function<a class="headerlink" href="#3-call-it-from-another-function" title="Permanent link">&para;</a></h2>
-<p>Inside any other function, use <code>PostOffice</code> to send a request to <code>hello.function</code> by route name:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">org.platformlambda.core.system.PostOffice</span><span class="p">;</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">org.platformlambda.core.models.EventEnvelope</span><span class="p">;</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1">// inside handleEvent(...)</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="kd">var</span><span class="w"> </span><span class="n">po</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">PostOffice</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">instance</span><span class="p">);</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">request</span><span class="p">(</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="k">new</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="p">().</span><span class="na">setTo</span><span class="p">(</span><span class="s">&quot;hello.function&quot;</span><span class="p">).</span><span class="na">setBody</span><span class="p">(</span><span class="n">Map</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Mercury&quot;</span><span class="p">)),</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="mi">5000</span><span class="w">   </span><span class="c1">// timeout in ms</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="p">).</span><span class="na">get</span><span class="p">();</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="kd">var</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">response</span><span class="p">.</span><span class="na">getBody</span><span class="p">();</span><span class="w"> </span><span class="c1">// Map containing {&quot;message&quot;: &quot;Hello, Mercury!&quot;}</span>
-</code></pre></div>
-<p><code>po.request(...).get()</code> reads as synchronous but never blocks a platform thread — the virtual
-thread is parked while waiting, so you get sequential code at reactive throughput.</p>
-<hr />
-<h2 id="4-run-and-test">4. Run and test<a class="headerlink" href="#4-run-and-test" title="Permanent link">&para;</a></h2>
-<p>Build and start the application (the examples are not part of the top-level reactor build, so build this
-one on its own; adjust the version to match your build):</p>
-<blockquote>
-<p><strong>Note</strong>: <code>x.y.z</code> denotes the current Mercury version shown in the root <code>pom.xml</code>.</p>
-</blockquote>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">cd</span><span class="w"> </span>examples/composable-example
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>mvn<span class="w"> </span>clean<span class="w"> </span>package
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>java<span class="w"> </span>-jar<span class="w"> </span>target/composable-example-x.y.z.jar
-</code></pre></div>
-<p>Test with <code>curl</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># GET — query parameter mapped automatically</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>curl<span class="w"> </span><span class="s2">&quot;http://127.0.0.1:8085/api/hello?name=World&quot;</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># POST — JSON body</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8085/api/hello<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">     </span>-H<span class="w"> </span><span class="s2">&quot;content-type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">     </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;name&quot;: &quot;Mercury&quot;}&#39;</span>
-</code></pre></div>
-<p>Expected response:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hello, Mercury!&quot;</span><span class="p">}</span>
-</code></pre></div>
-<hr />
-<h2 id="5-add-it-to-a-flow-optional-next-step">5. Add it to a flow (optional next step)<a class="headerlink" href="#5-add-it-to-a-flow-optional-next-step" title="Permanent link">&para;</a></h2>
-<p>Once the function works standalone, you can orchestrate it as a <strong>task</strong> in an Event Script flow
-without changing a single line of its code:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># flows/hello-flow.yml</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nt">tasks</span><span class="p">:</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">greet</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="nt">input</span><span class="p">:</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">input.body.name -&gt; name</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;hello.function&quot;</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">result.message -&gt; model.greeting</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">end</span>
-</code></pre></div>
-<p>The route name <code>hello.function</code> is the only connection. See
-<a href="../../event-script/">Composable Orchestration</a> for the full flow model.</p>
-<hr />
+<p>Unique event instance id — an opaque string (UUID recommended). Encoders always emit it.</p>
+<h3 id="to"><code>to</code><a class="headerlink" href="#to" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>str</td>
+<td>when set</td>
+</tr>
+</tbody>
+</table>
+<p>Target route name, e.g. <code>hello.world</code>.</p>
+<h3 id="from"><code>from</code><a class="headerlink" href="#from" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>str</td>
+<td>when set</td>
+</tr>
+</tbody>
+</table>
+<p>Sender route name, used for observability and reply semantics.</p>
+<h3 id="reply_to"><code>reply_to</code><a class="headerlink" href="#reply_to" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>str</td>
+<td>when set</td>
+</tr>
+</tbody>
+</table>
+<p>Route that should receive the response, when the sender expects one.</p>
+<h3 id="cid"><code>cid</code><a class="headerlink" href="#cid" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>str</td>
+<td>when set</td>
+</tr>
+</tbody>
+</table>
+<p>Business correlation id, preserved end-to-end.</p>
+<h3 id="trace_id"><code>trace_id</code><a class="headerlink" href="#trace_id" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>str</td>
+<td>when set</td>
+</tr>
+</tbody>
+</table>
+<p>Distributed trace id.</p>
+<h3 id="trace_path"><code>trace_path</code><a class="headerlink" href="#trace_path" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>str</td>
+<td>when set</td>
+</tr>
+</tbody>
+</table>
+<p>Trace path, e.g. <code>GET /api/hello</code>.</p>
+<h3 id="span_id"><code>span_id</code><a class="headerlink" href="#span_id" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>str</td>
+<td>when set</td>
+</tr>
+</tbody>
+</table>
+<p>The sender's span id, carried so the receiver knows its own parent span.</p>
+<h3 id="status"><code>status</code><a class="headerlink" href="#status" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>int</td>
+<td>when set (default 200)</td>
+</tr>
+</tbody>
+</table>
+<p>HTTP-style status code. A value ≥ 400 marks the event as an error.</p>
+<h3 id="headers"><code>headers</code><a class="headerlink" href="#headers" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>map of str → str</td>
+<td>always (may be empty)</td>
+</tr>
+</tbody>
+</table>
+<p>User-defined parameters. Encoders always emit this field — an empty map when there are no
+headers — so statically-typed decoders need no per-field default handling.</p>
+<h3 id="body"><code>body</code><a class="headerlink" href="#body" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>any MsgPack value</td>
+<td>when set</td>
+</tr>
+</tbody>
+</table>
+<p>The payload: a map, array, string, integer, float, boolean, binary (<code>bin</code>), or nil.
+An absent <code>body</code> means nil.</p>
+<h3 id="exec_time"><code>exec_time</code><a class="headerlink" href="#exec_time" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>float</td>
+<td>when set</td>
+</tr>
+</tbody>
+</table>
+<p>Function execution time in milliseconds.</p>
+<h3 id="round_trip"><code>round_trip</code><a class="headerlink" href="#round_trip" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>float</td>
+<td>when set</td>
+</tr>
+</tbody>
+</table>
+<p>End-to-end response time in milliseconds.</p>
+<h2 id="extension-fields">Extension fields<a class="headerlink" href="#extension-fields" title="Permanent link">&para;</a></h2>
+<p>Optional fields a receiver MAY use and MAY ignore. Implementations that do not produce
+them remain fully conformant.</p>
+<h3 id="tags"><code>tags</code><a class="headerlink" href="#tags" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>map of str → str</td>
+<td>optional</td>
+</tr>
+</tbody>
+</table>
+<p>Routing metadata (e.g. <code>optional</code>, <code>json</code>, <code>broadcast</code>).</p>
+<h3 id="annotations"><code>annotations</code><a class="headerlink" href="#annotations" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>map of str → any</td>
+<td>optional</td>
+</tr>
+</tbody>
+</table>
+<p>Trace annotations recorded by the sender.</p>
+<h3 id="stack"><code>stack</code><a class="headerlink" href="#stack" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>str</td>
+<td>optional</td>
+</tr>
+</tbody>
+</table>
+<p>Stack-trace text — the <strong>portable</strong> error detail. The portable error contract is
+<code>status</code> (≥ 400) + <code>body</code> (error message) + optional <code>stack</code>.</p>
+<h3 id="obj_type"><code>obj_type</code><a class="headerlink" href="#obj_type" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>str</td>
+<td>optional</td>
+</tr>
+</tbody>
+</table>
+<p>Language-specific payload type hint (a PoJo class name for Java). Advisory only.</p>
+<h3 id="exception"><code>exception</code><a class="headerlink" href="#exception" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bin</td>
+<td>optional</td>
+</tr>
+</tbody>
+</table>
+<p>A language-native serialized exception object (Java only today). Meaningful only to a
+receiver of the same language — cross-language receivers MUST ignore it. Use <code>stack</code> for
+portable diagnostics.</p>
+<h2 id="encoding-rules">Encoding rules<a class="headerlink" href="#encoding-rules" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Map keys are strings</strong> — including all keys inside a map-valued <code>body</code>.</li>
+<li><strong>Optional fields</strong>: encoders SHOULD omit unset fields; encoding nil is equally valid.
+   Decoders MUST treat <em>absent</em> and <em>nil</em> identically.</li>
+<li><strong>Unknown keys MUST be ignored</strong> by decoders (forward compatibility).</li>
+<li><strong>Numbers</strong>: encoders use the smallest natural MsgPack width; decoders MUST accept any
+   integer width for integer fields and float32 or float64 for float fields.</li>
+<li><strong>Binary</strong> values use the MsgPack <code>bin</code> family; strings are UTF-8 <code>str</code>.</li>
+<li><strong>Timestamps</strong> travel as ISO-8601 UTC strings with millisecond precision
+   (e.g. <code>2026-07-21T12:00:00.000Z</code>) — never as MsgPack extension types.</li>
+<li><strong>No byte-identical guarantee</strong>: map ordering is unspecified. Conformance is semantic —
+   decode, compare values.</li>
+</ol>
+<h2 id="format-detection">Format detection<a class="headerlink" href="#format-detection" title="Permanent link">&para;</a></h2>
+<p>The compact format's keys are all exactly <strong>one character</strong>; standard keys are all
+<strong>two or more</strong>. A decoder therefore detects the format from the first map key without any
+negotiation, version field, or content-type variant. The Java implementation accepts both
+formats on every decode path.</p>
+<h2 id="selecting-the-outbound-format-java">Selecting the outbound format (Java)<a class="headerlink" href="#selecting-the-outbound-format-java" title="Permanent link">&para;</a></h2>
+<p>Outbound format is transport policy. For Event over HTTP:</p>
+<ul>
+<li><code>event.over.http.format = standard | compact</code> in application.properties — the
+  application default (<code>standard</code> when unset).</li>
+<li><code>x-event-format: standard | compact</code> in the optional headers of
+  <code>po.request(event, timeout, headers, endpoint, rpc)</code> — a per-call override, also usable
+  per target in the <code>yaml.event.over.http</code> configuration's <code>headers</code> section. The header
+  is consumed by the client and never sent to the peer.</li>
+<li>The <code>/api/event</code> service <strong>mirrors</strong> the requester's format in its response, so callers
+  need no response-side configuration.</li>
+</ul>
+<p>Use <code>compact</code> as a fallback when the peer is an older Java runtime that does not yet
+decode the standard format.</p>
+<h2 id="conformance-vectors">Conformance vectors<a class="headerlink" href="#conformance-vectors" title="Permanent link">&para;</a></h2>
+<p>Golden vectors (MsgPack bytes as base64, with expected decoded values) are maintained at
+<code>system/platform-core/src/test/resources/envelope-vectors/vectors.json</code> and shared with
+the official <a href="https://github.com/Accenture/mercury">Rust implementation</a>. A new
+implementation is conformant when it decodes every vector to the expected values and its
+own encodings round-trip through another implementation.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../function-execution/">Function Execution Strategies</a> — virtual vs. kernel threads, <code>Mono</code>/<code>Flux</code>,
-  authentication functions, serialization.</li>
-<li><a href="../../rest-automation/">REST Automation</a> — full <code>rest.yaml</code> reference: CORS, headers,
-  authentication, static content.</li>
-<li><a href="../../event-script/syntax/">Event Script Syntax</a> — orchestrate this function as a flow task.</li>
-<li><a href="../../api-overview/">API Overview</a> — <code>PostOffice</code>, <code>Platform</code>, <code>EventEnvelope</code> API reference.</li>
+<li><a href="../event-over-http/">Event over HTTP</a> — the transport this contract serves</li>
+<li><a href="../event-envelope-reference/">Event Envelope Reference</a> — the in-memory API</li>
+<li><a href="../configuration-reference/">Configuration Reference</a> — <code>event.over.http.format</code></li>
 </ul>
 
 
@@ -2769,7 +3443,7 @@ without changing a single line of its code:</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Overview">
+          <a href="../event-envelope-reference/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Event Envelope Reference">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2779,20 +3453,20 @@ without changing a single line of its code:</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Overview
+                Event Envelope Reference
               </div>
             </div>
           </a>
         
         
           
-          <a href="../function-execution/" class="md-footer__link md-footer__link--next" aria-label="Next: Function Execution Strategies">
+          <a href="../reserved-names-and-headers/" class="md-footer__link md-footer__link--next" aria-label="Next: Reserved Names &amp; Headers">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Function Execution Strategies
+                Reserved Names & Headers
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -2833,10 +3507,10 @@ without changing a single line of its code:</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

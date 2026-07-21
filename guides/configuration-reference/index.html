@@ -1905,6 +1905,8 @@
       
         
       
+        
+      
     
     
     
@@ -2662,6 +2664,17 @@
     <span class="md-ellipsis">
       
         http.client.connection.timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#eventoverhttpformat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        event.over.http.format
       
     </span>
   </a>
@@ -3889,6 +3902,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../event-envelope-wire-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Event Envelope Wire Format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reserved-names-and-headers/" class="md-nav__link">
         
   
@@ -4693,6 +4734,17 @@
     <span class="md-ellipsis">
       
         http.client.connection.timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#eventoverhttpformat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        event.over.http.format
       
     </span>
   </a>
@@ -6606,6 +6658,28 @@ virtual threads.</p>
 </tbody>
 </table>
 <p>Connection timeout in milliseconds for the built-in async HTTP client.</p>
+<h3 id="eventoverhttpformat"><code>event.over.http.format</code><a class="headerlink" href="#eventoverhttpformat" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code></td>
+<td><code>standard</code></td>
+</tr>
+</tbody>
+</table>
+<p>Serialization format for outbound <a href="../event-over-http/">Event over HTTP</a> calls: <code>standard</code>
+(the language-neutral <a href="../event-envelope-wire-format/">wire format</a>, interoperable with the
+Rust implementation and future ports) or <code>compact</code> (the classic single-character-key
+format — a fallback for peers on older versions). Inbound decoding always accepts both
+formats automatically, and the <code>/api/event</code> service replies in the requester's format.
+Overridable per call (or per target in <code>yaml.event.over.http</code>) with the
+<code>x-event-format</code> header.</p>
 <hr />
 <h2 id="observability">Distributed Tracing &amp; Observability<a class="headerlink" href="#observability" title="Permanent link">&para;</a></h2>
 <p>See the <a href="../observability/">Observability guide</a> for the tracing design and OpenTelemetry/OTLP export; the keys

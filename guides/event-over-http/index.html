@@ -1783,6 +1783,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="The Event API endpoint">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wire-format-and-cross-language-interoperability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wire format and cross-language interoperability
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2038,6 +2055,8 @@
       
         
       
+        
+      
     
     
     
@@ -2210,6 +2229,34 @@
     
   
     Event Envelope Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../event-envelope-wire-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Event Envelope Wire Format
   
 
     
@@ -2484,6 +2531,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="The Event API endpoint">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wire-format-and-cross-language-interoperability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wire format and cross-language interoperability
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2609,6 +2673,21 @@ If not, update "rest.yaml" accordingly. The "timeout" value is set to 60 seconds
 <p>This will expose the Event API endpoint at port 8085 and URL "/api/event". </p>
 <p>In kubernetes, The Event API endpoint of each application is reachable through internal DNS and there is no need
 to create "ingress" for this purpose.</p>
+<h3 id="wire-format-and-cross-language-interoperability">Wire format and cross-language interoperability<a class="headerlink" href="#wire-format-and-cross-language-interoperability" title="Permanent link">&para;</a></h3>
+<p>The serialized event envelope rides on the HTTP request body as MsgPack bytes. By default
+it uses the language-neutral <strong>standard</strong> format documented in the
+<a href="../event-envelope-wire-format/">Event Envelope Wire Format</a> reference, so an application
+built with the official <a href="https://github.com/Accenture/mercury">Rust implementation</a> (or a
+future language port) can call — and be called by — a Java application with no
+configuration.</p>
+<p>Inbound decoding always accepts both the standard and the classic <strong>compact</strong> format
+automatically, and the <code>/api/event</code> service replies in whatever format the request
+arrived in. When calling an older Java peer that does not yet understand the standard
+format, select the compact fallback globally with <code>event.over.http.format=compact</code>, or
+per call by adding the <code>x-event-format: compact</code> header to the optional headers of the
+Event-over-HTTP API (also usable in the <code>headers</code> section of a <code>yaml.event.over.http</code>
+target). The header is a client-side instruction — it is consumed by the sender, never
+transmitted.</p>
 <h2 id="test-drive-event-api">Test drive Event API<a class="headerlink" href="#test-drive-event-api" title="Permanent link">&para;</a></h2>
 <p>You may now test drive the Event API service.</p>
 <p>First, build and run the lambda-example application in port 8085. The examples are not part of the
