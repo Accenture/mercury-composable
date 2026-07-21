@@ -152,6 +152,7 @@ nav:
     - Annotations Reference: guides/annotations-reference.md
     - Configuration Reference: guides/configuration-reference.md
     - Event Envelope Reference: guides/event-envelope-reference.md
+    - Event Envelope Wire Format: guides/event-envelope-wire-format.md
     - Reserved Names & Headers: guides/reserved-names-and-headers.md
     - Actuators & HTTP Client: guides/actuators-and-http-client.md
     - Release Notes: https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md

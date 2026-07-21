@@ -406,6 +406,20 @@ Temporary folder used to buffer large async HTTP response bodies.
 
 Connection timeout in milliseconds for the built-in async HTTP client.
 
+### `event.over.http.format`
+
+| Type | Default |
+|------|---------|
+| `String` | `standard` |
+
+Serialization format for outbound [Event over HTTP](event-over-http.md) calls: `standard`
+(the language-neutral [wire format](event-envelope-wire-format.md), interoperable with the
+Rust implementation and future ports) or `compact` (the classic single-character-key
+format — a fallback for peers on older versions). Inbound decoding always accepts both
+formats automatically, and the `/api/event` service replies in the requester's format.
+Overridable per call (or per target in `yaml.event.over.http`) with the
+`x-event-format` header.
+
 ---
 
 ## Distributed Tracing & Observability {#observability}

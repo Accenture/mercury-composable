@@ -8,6 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Added
+
+1. **Language-neutral event envelope wire format for Event over HTTP interoperability.**
+   The serialized envelope is now, by default, a MsgPack map with descriptive string keys
+   (`id`, `to`, `headers`, `body`, …) that any MsgPack-capable language can encode and
+   decode — documented as a self-contained spec in the new
+   [Event Envelope Wire Format](https://accenture.github.io/mercury-composable/guides/event-envelope-wire-format/)
+   reference, with golden conformance vectors shared with the official Rust implementation.
+   New API: `EventEnvelope.Format {COMPACT, STANDARD}`, `toMap(Format)`, `toBytes(Format)`;
+   the no-argument forms preserve their existing behavior (`toMap()` = standard map,
+   `toBytes()` = classic compact wire), so in-process callers and the Kafka service mesh
+   are untouched. Inbound decoding detects the format automatically (the two key
+   namespaces are disjoint) and the `/api/event` service mirrors the requester's format in
+   its response. Outbound selection: `event.over.http.format` (default `standard`;
+   `compact` is the fallback for peers on older versions) plus a per-call
+   `x-event-format` header.
+
+---
 ## Version 4.9.2, 7/21/2026
 
 Code-quality patch release: resolves all 19 SonarQube findings reported by an enterprise

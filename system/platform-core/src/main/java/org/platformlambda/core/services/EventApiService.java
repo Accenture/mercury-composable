@@ -70,10 +70,12 @@ public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void>
                 try {
                     handleRequest(sessionInfo, headers, instance, b, input, timeout, async);
                 } catch (Exception e) {
-                    sendError(input, 400, e.getMessage());
+                    // the envelope could not be decoded, so its format is unknown -
+                    // fall back to the classic compact format for the error reply
+                    sendError(input, EventEnvelope.Format.COMPACT, 400, e.getMessage());
                 }
             } else {
-                sendError(input, 500, "Invalid event-over-http data format");
+                sendError(input, EventEnvelope.Format.COMPACT, 500, "Invalid event-over-http data format");
             }
         }
         return null;
@@ -83,13 +85,18 @@ public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void>
                                byte[] requestBody, EventEnvelope input,
                                long timeout, boolean async) {
         EventEnvelope request = new EventEnvelope(requestBody);
+        // Mirror the requester's serialization format in the response so a
+        // caller on either wire format (compact or standard) needs no
+        // configuration to read the reply.
+        EventEnvelope.Format format = request.getWireFormat() == null?
+                EventEnvelope.Format.COMPACT : request.getWireFormat();
         // propagate session info if any
         sessionInfo.forEach(request::setHeader);
         PostOffice po = new PostOffice(headers, instance);
         if (request.getTo() != null) {
             if (po.exists(request.getTo())) {
                 if (Platform.getInstance().isPrivate(request.getTo())) {
-                    sendError(input, 403, request.getTo() + PRIVATE_FUNCTION);
+                    sendError(input, format, 403, request.getTo() + PRIVATE_FUNCTION);
                 } else {
                     if (async) {
                         // Drop-n-forget
@@ -99,37 +106,37 @@ public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void>
                         ackBody.put(DELIVERED, true);
                         ackBody.put(TIME, new Date());
                         EventEnvelope pending = new EventEnvelope().setStatus(202).setBody(ackBody);
-                        sendResponse(input, pending);
+                        sendResponse(input, format, pending);
                     } else {
                         // RPC
                         po.asyncRequest(request, timeout)
-                                .onSuccess(result -> sendResponse(input, result))
-                                .onFailure(e -> sendError(input, 408, e.getMessage()));
+                                .onSuccess(result -> sendResponse(input, format, result))
+                                .onFailure(e -> sendError(input, format, 408, e.getMessage()));
                     }
                 }
             } else {
-                sendError(input, 404, ROUTE + request.getTo() + NOT_FOUND);
+                sendError(input, format, 404, ROUTE + request.getTo() + NOT_FOUND);
             }
         } else {
-            sendError(input, 400, MISSING_ROUTING_PATH);
+            sendError(input, format, 400, MISSING_ROUTING_PATH);
         }
     }
 
-    private void sendResponse(EventEnvelope input, EventEnvelope result) {
+    private void sendResponse(EventEnvelope input, EventEnvelope.Format format, EventEnvelope result) {
         try {
             EventEnvelope response = new EventEnvelope().setTo(input.getReplyTo())
                     .setFrom(EVENT_API_SERVICE)
                     .setTrace(input.getTraceId(), input.getTracePath())
                     .setCorrelationId(input.getCorrelationId())
                     .setHeader(CONTENT_TYPE, OCTET_STREAM)
-                    .setBody(result.toBytes());
+                    .setBody(result.toBytes(format));
             EventEmitter.getInstance().send(response);
         } catch (IllegalArgumentException e) {
             log.error("Unable to send response {} -> {} - {}", EVENT_API_SERVICE, input.getReplyTo(), e.getMessage());
         }
     }
 
-    private void sendError(EventEnvelope input, int status, String error) {
+    private void sendError(EventEnvelope input, EventEnvelope.Format format, int status, String error) {
         try {
             EventEnvelope result = new EventEnvelope().setStatus(status).setBody(error);
             EventEnvelope response = new EventEnvelope().setTo(input.getReplyTo())
@@ -138,7 +145,7 @@ public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void>
                     .setCorrelationId(input.getCorrelationId())
                     .setHeader(CONTENT_TYPE, OCTET_STREAM)
                     .setStatus(status)
-                    .setBody(result.toBytes());
+                    .setBody(result.toBytes(format));
             EventEmitter.getInstance().send(response);
         } catch (IllegalArgumentException e) {
             log.error("Unable to send error {} -> {} - {}", EVENT_API_SERVICE, input.getReplyTo(), e.getMessage());

@@ -18,6 +18,7 @@ import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.PoJo;
+import org.platformlambda.core.serializers.MsgPack;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.AppConfigReader;
@@ -26,6 +27,7 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
@@ -413,5 +415,125 @@ class EventEnvelopeTest {
         assertInstanceOf(RuntimeException.class, ex);
         assertEquals(400, target.getStatus());
         assertEquals(message, ex.getMessage());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void standardFormatRoundTrip() throws IOException {
+        EventEnvelope source = fullyLoadedEnvelope();
+        byte[] b = source.toBytes(EventEnvelope.Format.STANDARD);
+        // the wire carries descriptive keys - the language-neutral contract
+        Map<String, Object> raw = (Map<String, Object>) new MsgPack().unpack(b);
+        assertTrue(raw.containsKey("id"));
+        assertTrue(raw.containsKey("to"));
+        assertTrue(raw.containsKey("reply_to"));
+        assertTrue(raw.containsKey("trace_id"));
+        assertTrue(raw.containsKey("headers"));
+        assertTrue(raw.containsKey("body"));
+        for (String k : raw.keySet()) {
+            assertTrue(k.length() > 1, "standard keys are all longer than one character: " + k);
+        }
+        EventEnvelope restored = new EventEnvelope(b);
+        assertEquals(EventEnvelope.Format.STANDARD, restored.getWireFormat());
+        assertEnvelopeEquals(source, restored);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void compactFormatUnchanged() throws IOException {
+        EventEnvelope source = fullyLoadedEnvelope();
+        // the no-argument form remains the classic compact wire format
+        byte[] b = source.toBytes();
+        Map<String, Object> raw = (Map<String, Object>) new MsgPack().unpack(b);
+        for (String k : raw.keySet()) {
+            assertEquals(1, k.length(), "compact keys are single characters: " + k);
+        }
+        EventEnvelope restored = new EventEnvelope(b);
+        assertEquals(EventEnvelope.Format.COMPACT, restored.getWireFormat());
+        assertEnvelopeEquals(source, restored);
+    }
+
+    @Test
+    void loadSniffsBothFormats() {
+        EventEnvelope source = fullyLoadedEnvelope();
+        EventEnvelope fromStandard = new EventEnvelope(source.toBytes(EventEnvelope.Format.STANDARD));
+        EventEnvelope fromCompact = new EventEnvelope(source.toBytes(EventEnvelope.Format.COMPACT));
+        assertEnvelopeEquals(fromStandard, fromCompact);
+        // an envelope not created from bytes has no wire format
+        assertNull(source.getWireFormat());
+    }
+
+    @Test
+    void noArgToMapIsStandardAndClonable() {
+        EventEnvelope source = fullyLoadedEnvelope();
+        Map<String, Object> map = source.toMap();
+        assertTrue(map.containsKey("id"));
+        assertTrue(map.containsKey("headers"));
+        // the in-process clone path (EventEnvelope.of(event.toMap())) must survive
+        EventEnvelope clone = EventEnvelope.of(source.toMap());
+        assertEnvelopeEquals(source, clone);
+    }
+
+    @Test
+    void standardMapAlwaysCarriesIdAndHeaders() {
+        // even a bare envelope satisfies the wire contract's required fields
+        EventEnvelope bare = new EventEnvelope();
+        Map<String, Object> map = bare.toMap(EventEnvelope.Format.STANDARD);
+        assertNotNull(map.get("id"));
+        assertInstanceOf(Map.class, map.get("headers"));
+        assertTrue(((Map<?, ?>) map.get("headers")).isEmpty());
+    }
+
+    private EventEnvelope fullyLoadedEnvelope() {
+        Map<String, Object> nested = new HashMap<>();
+        nested.put("text", "hello world");
+        nested.put("number", 12345);
+        nested.put("unicode", "你好世界");
+        nested.put("list", List.of(1, 2, 3));
+        nested.put("binary", "hello".getBytes());
+        return new EventEnvelope()
+                .setTo("target.route").setFrom("source.route").setReplyTo("reply.route")
+                .setCorrelationId("cid-1001").setTrace("trace-2002", "GET /api/demo")
+                .setHeader("x-demo", "true").setHeader("session", "abc")
+                .setStatus(200).setBody(nested)
+                .setExecutionTime(1.5f).setRoundTrip(2.5f)
+                .addTag("routing", "demo").setAnnotations(Map.of("note", "n1"));
+    }
+
+    private void assertEnvelopeEquals(EventEnvelope expected, EventEnvelope actual) {
+        assertEquals(expected.getId(), actual.getId());
+        assertEquals(expected.getTo(), actual.getTo());
+        assertEquals(expected.getFrom(), actual.getFrom());
+        assertEquals(expected.getReplyTo(), actual.getReplyTo());
+        assertEquals(expected.getCorrelationId(), actual.getCorrelationId());
+        assertEquals(expected.getTraceId(), actual.getTraceId());
+        assertEquals(expected.getTracePath(), actual.getTracePath());
+        assertEquals(expected.getStatus(), actual.getStatus());
+        assertEquals(expected.getHeaders(), actual.getHeaders());
+        assertEquals(normalizeBinary(expected.getBody()), normalizeBinary(actual.getBody()));
+        assertEquals(expected.getTags(), actual.getTags());
+        assertEquals(expected.getAnnotations(), actual.getAnnotations());
+        assertEquals(expected.getExecutionTime(), actual.getExecutionTime());
+        assertEquals(expected.getRoundTrip(), actual.getRoundTrip());
+    }
+
+    /**
+     * byte[] does not implement value equality - render binary values as
+     * base64 strings recursively so nested structures compare semantically.
+     */
+    @SuppressWarnings("unchecked")
+    private Object normalizeBinary(Object value) {
+        if (value instanceof byte[] b) {
+            return Base64.getEncoder().encodeToString(b);
+        }
+        if (value instanceof Map) {
+            Map<String, Object> result = new HashMap<>();
+            ((Map<String, Object>) value).forEach((k, v) -> result.put(k, normalizeBinary(v)));
+            return result;
+        }
+        if (value instanceof List<?> list) {
+            return list.stream().map(this::normalizeBinary).toList();
+        }
+        return value;
     }
 }
