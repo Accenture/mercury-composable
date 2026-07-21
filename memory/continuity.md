@@ -349,9 +349,9 @@
   prose-comment rewording, and the `deployedModel` empty-map contract — see session
   2026-07-21-173614 for the per-issue map + Eric's IDE review round. Behavior-preserving; full
   reactor green; Eric's manual HTTP-404 regression passed (dry-run + deployed execution).
-  Release prep in session 2026-07-21-180843 (branch `chore/release-4.9.2`). Close when the
-  field rescan passes. Durable lesson recorded: extract-as-you-go when touching methods near
-  the S3776/S5961 thresholds.
+  **v4.9.2 SHIPPED 2026-07-21** (tag on merge commit `b574f41e`, PR #211; 943 reactor tests
+  green + Eric's manual HTTP-404 regression). Close when the field rescan passes. Durable
+  lesson recorded: extract-as-you-go when touching methods near the S3776/S5961 thresholds.
   <!-- id: thread-sonar-4-9-1-field-rejection | created: 2026-07-21 | last_used: 2026-07-21 | uses: 1 | tier: working | origin: 2026-07-21-173614 -->
 
 - [x] (release in flight — 2026-07-21; CLOSED same day) **v4.9.1 SHIPPED via the normal flow** —
