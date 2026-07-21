@@ -1,271 +1,3190 @@
-<!DOCTYPE html>
-<html class="writer-html5" lang="en" >
-<head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/api-overview/" />
-      <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>API Overview - Composable for Java</title>
-    <link rel="stylesheet" href="../../css/theme.css" />
-    <link rel="stylesheet" href="../../css/theme_extra.css" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
-        <link href="../../css/extra.css" rel="stylesheet" />
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
     
-      <script>
-        // Current page data
-        var mkdocs_page_name = "API Overview";
-        var mkdocs_page_input_path = "guides/api-overview.md";
-        var mkdocs_page_url = "/mercury-composable/guides/api-overview/";
-      </script>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Mercury Composable — Accenture's event-driven, composable application platform for Java: platform-core, Event Script, and the active knowledge graph.">
+      
+      
+      
+        <link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/api-overview/">
+      
+      
+        <link rel="prev" href="../../arch-decisions/ADR/">
+      
+      
+        <link rel="next" href="../annotations-reference/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
-    <!--[if lt IE 9]>
-      <script src="../../js/html5shiv.min.js"></script>
-    <![endif]-->
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
-      <script>hljs.highlightAll();</script> 
-</head>
+    
+      
+        <title>API Overview - Composable for Java</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
 
-<body class="wy-body-for-nav" role="document">
 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
-    <div class="wy-side-scroll">
-      <div class="wy-side-nav-search">
-          <a href="../.." class="icon icon-home"> Composable for Java
-        </a><div role="search">
-  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
-  </form>
-</div>
-      </div>
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
 
-      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
-                </li>
-              </ul>
-              <p class="caption"><span class="caption-text">Orientation</span></p>
-              <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting Started</a>
-                  </li>
-              </ul>
-              <p class="caption"><span class="caption-text">Foundations</span></p>
-              <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../architecture/">Architecture Overview</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../methodology/">Methodology</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../ai-developer-guide/">AI Developer Guide</a>
-                  </li>
-              </ul>
-              <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
-              <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/">Overview</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/write-your-first-function/">Write your first function</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/function-execution/">Function Execution Strategies</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/ai-agent-guide/">Function AI agent guide</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/">REST Automation</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/rest-grammar/">REST grammar</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/ai-agent-guide/">REST AI agent guide</a>
-                  </li>
-              </ul>
-              <p class="caption"><span class="caption-text">Layer 2 — Composable</span></p>
-              <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-script/">Overview</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-script/syntax/">Event Script Syntax</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-script/flow-grammar/">Flow grammar</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-script/ai-agent-guide/">Flow AI agent guide</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../flow-schema-reference/">Flow Configuration Schema</a>
-                  </li>
-              </ul>
-              <p class="caption"><span class="caption-text">Layer 3 — Knowledge Graph</span></p>
-              <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/">Overview</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/build-your-first-graph/">Build your first graph</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/skills-reference/">Built-in skills reference</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/command-reference/">MiniGraph command grammar</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/ai-agent-guide/">AI agent guide</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/composing-the-layers/">Composing the layers</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/playground-and-companion/">Playground & AI companion</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/property-graph/">Minimalist Property Graph</a>
-                  </li>
-              </ul>
-              <p class="caption"><span class="caption-text">Operate & integrate</span></p>
-              <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../build-test-deploy/">Build, Test & Deploy</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../observability/">Observability</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../spring-boot/">Spring Boot Integration</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../minimalist-kafka/">Minimalist Kafka</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../twin-kafka/">Twin Kafka (dual cluster)</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../schema-registry-mock/">Schema Registry Mock</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../sync-over-async/">Sync-over-Async</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../service-mesh/">Minimalist Service Mesh</a>
-                  </li>
-              </ul>
-              <p class="caption"><span class="caption-text">Reference</span></p>
-              <ul class="current">
-                  <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/ADR/">Architectural Decision Records</a>
-                  </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">API Overview</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#main-application">Main Application</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#setup-before-the-main-application">Setup before the Main Application</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#event-envelope">Event envelope</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#pojo-transport">PoJo transport</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#list-of-pojo-transport">List of Pojo transport</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#pojo-deserialization-hints">PoJo deserialization hints</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#custom-exception-using-appexception">Custom exception using AppException</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#defining-a-user-function-in-java">Defining a user function in Java</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#inspect-event-metadata">Inspect event metadata</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#platform-api">Platform API</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#register-a-function">Register a function</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#what-is-a-public-function">What is a public function?</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#release-a-function">Release a function</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#check-if-a-function-is-available">Check if a function is available</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#wait-for-a-function-to-be-ready">Wait for a function to be ready</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#obtain-the-unique-application-instance-id">Obtain the unique application instance ID</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#set-application-personality">Set application personality</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#postoffice-api">PostOffice API</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#send-an-asynchronous-event-to-a-function">Send an asynchronous event to a function</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#make-an-asynchronous-rpc-call">Make an asynchronous RPC call</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#perform-a-fork-n-join-rpc-call-to-multiple-functions">Perform a fork-n-join RPC call to multiple functions</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#make-a-sequential-non-blocking-rpc-call">Make a sequential non-blocking RPC call</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#check-if-a-function-with-a-named-route-exists">Check if a function with a named route exists</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#retrieve-trace-id-and-path">Retrieve trace ID and path</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#trace-annotation">Trace annotation</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#configuration-api">Configuration API</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#custom-serializer">Custom serializer</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#minimalist-api-design">Minimalist API design</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#event-scripting">Event Scripting</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#co-existence-with-other-development-frameworks">Co-existence with other development frameworks</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#application-template-for-quick-start">Application template for quick start</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#source-code-update-frequency">Source code update frequency</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#technical-support">Technical support</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
-    </li>
-    </ul>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../annotations-reference/">Annotations Reference</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../configuration-reference/">Configuration Reference</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-envelope-reference/">Event Envelope Reference</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../reserved-names-and-headers/">Reserved Names & Headers</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../actuators-and-http-client/">Actuators & HTTP Client</a>
-                  </li>
-                  <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
-                  </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../code-conventions/">Code Conventions</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../documentation-conventions/">Documentation Conventions</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md">Contributing</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md">Inclusivity</a>
-                </li>
-              </ul>
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#api-overview" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Composable for Java" class="md-header__button md-logo" aria-label="Composable for Java" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 11a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1M4.22 4.22C5.65 2.79 8.75 3.43 12 5.56c3.25-2.13 6.35-2.77 7.78-1.34s.79 4.53-1.34 7.78c2.13 3.25 2.77 6.35 1.34 7.78s-4.53.79-7.78-1.34c-3.25 2.13-6.35 2.77-7.78 1.34S3.43 15.25 5.56 12C3.43 8.75 2.79 5.65 4.22 4.22m11.32 4.24c.61.62 1.17 1.25 1.69 1.88 1.38-2.13 1.88-3.96 1.13-4.7-.74-.75-2.57-.25-4.7 1.13.63.52 1.26 1.08 1.88 1.69m-7.08 7.08c-.61-.62-1.17-1.25-1.69-1.88-1.38 2.13-1.88 3.96-1.13 4.7.74.75 2.57.25 4.7-1.13-.63-.52-1.26-1.08-1.88-1.69m-2.82-9.9c-.75.74-.25 2.57 1.13 4.7.52-.63 1.08-1.26 1.69-1.88.62-.61 1.25-1.17 1.88-1.69-2.13-1.38-3.96-1.88-4.7-1.13m4.24 8.48c.7.7 1.42 1.34 2.12 1.91.7-.57 1.42-1.21 2.12-1.91s1.34-1.42 1.91-2.12c-.57-.7-1.21-1.42-1.91-2.12S12.7 8.54 12 7.97c-.7.57-1.42 1.21-2.12 1.91S8.54 11.3 7.97 12c.57.7 1.21 1.42 1.91 2.12m8.48 4.24c.75-.74.25-2.57-1.13-4.7-.52.63-1.08 1.26-1.69 1.88-.62.61-1.25 1.17-1.88 1.69 2.13 1.38 3.96 1.88 4.7 1.13"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Composable for Java
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              API Overview
+            
+          </span>
+        </div>
       </div>
     </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../..">Composable for Java</a>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="cyan"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="cyan"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
         
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
       </nav>
-      <div class="wy-nav-content">
-        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
-  <ul class="wy-breadcrumbs">
-    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
-          <li class="breadcrumb-item">Reference</li>
-      <li class="breadcrumb-item active">API Overview</li>
-    <li class="wy-breadcrumbs-aside">
-    </li>
-  </ul>
-  <hr/>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-            <div class="section" itemprop="articleBody">
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Accenture/mercury-composable" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Accenture/mercury-composable
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../getting-started/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Orientation
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Foundations
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../event-driven/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Layer 1 — Event-driven
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../event-script/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Layer 2 — Composable
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../knowledge-graph/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Layer 3 — Knowledge Graph
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../build-test-deploy/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Operate & integrate
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../arch-decisions/ADR/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../code-conventions/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Code Conventions
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../documentation-conventions/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Documentation Conventions
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contributing
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Code of Conduct
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Inclusivity
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
               
-                <h1 id="api-overview">API Overview</h1>
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Composable for Java" class="md-nav__button md-logo" aria-label="Composable for Java" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 11a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1M4.22 4.22C5.65 2.79 8.75 3.43 12 5.56c3.25-2.13 6.35-2.77 7.78-1.34s.79 4.53-1.34 7.78c2.13 3.25 2.77 6.35 1.34 7.78s-4.53.79-7.78-1.34c-3.25 2.13-6.35 2.77-7.78 1.34S3.43 15.25 5.56 12C3.43 8.75 2.79 5.65 4.22 4.22m11.32 4.24c.61.62 1.17 1.25 1.69 1.88 1.38-2.13 1.88-3.96 1.13-4.7-.74-.75-2.57-.25-4.7 1.13.63.52 1.26 1.08 1.88 1.69m-7.08 7.08c-.61-.62-1.17-1.25-1.69-1.88-1.38 2.13-1.88 3.96-1.13 4.7.74.75 2.57.25 4.7-1.13-.63-.52-1.26-1.08-1.88-1.69m-2.82-9.9c-.75.74-.25 2.57 1.13 4.7.52-.63 1.08-1.26 1.69-1.88.62-.61 1.25-1.17 1.88-1.69-2.13-1.38-3.96-1.88-4.7-1.13m4.24 8.48c.7.7 1.42 1.34 2.12 1.91.7-.57 1.42-1.21 2.12-1.91s1.34-1.42 1.91-2.12c-.57-.7-1.21-1.42-1.91-2.12S12.7 8.54 12 7.97c-.7.57-1.42 1.21-2.12 1.91S8.54 11.3 7.97 12c.57.7 1.21 1.42 1.91 2.12m8.48 4.24c.75-.74.25-2.57-1.13-4.7-.52.63-1.08 1.26-1.69 1.88-.62.61-1.25 1.17-1.88 1.69 2.13 1.38 3.96 1.88 4.7 1.13"/></svg>
+
+    </a>
+    Composable for Java
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Accenture/mercury-composable" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Accenture/mercury-composable
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orientation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Orientation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Foundations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Foundations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../methodology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ai-developer-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Developer Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../event-driven/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Layer 1 — Event-driven
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Layer 1 — Event-driven
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../event-driven/write-your-first-function/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write your first function
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../event-driven/function-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Function Execution Strategies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../event-driven/ai-agent-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Function AI agent guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rest-automation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST Automation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rest-automation/rest-grammar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST grammar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rest-automation/ai-agent-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST AI agent guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../event-script/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Layer 2 — Composable
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Layer 2 — Composable
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../event-script/syntax/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Event Script Syntax
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../event-script/flow-grammar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow grammar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../event-script/ai-agent-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow AI agent guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../flow-schema-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow Configuration Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../knowledge-graph/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Layer 3 — Knowledge Graph
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Layer 3 — Knowledge Graph
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../knowledge-graph/build-your-first-graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build your first graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../knowledge-graph/skills-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Built-in skills reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../knowledge-graph/command-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MiniGraph command grammar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../knowledge-graph/ai-agent-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI agent guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../knowledge-graph/composing-the-layers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Composing the layers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../knowledge-graph/playground-and-companion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Playground & AI companion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../knowledge-graph/property-graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Minimalist Property Graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operate & integrate
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operate & integrate
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build-test-deploy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build, Test & Deploy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../spring-boot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Spring Boot Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../event-over-http/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Event over HTTP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../minimalist-kafka/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Minimalist Kafka
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../twin-kafka/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Twin Kafka (dual cluster)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../schema-registry-mock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema Registry Mock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sync-over-async/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sync-over-Async
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Minimalist Service Mesh
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../arch-decisions/ADR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architectural Decision Records
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Overview
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#main-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Main Application
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setup-before-the-main-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup before the Main Application
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#event-envelope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event envelope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pojo-transport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PoJo transport
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#list-of-pojo-transport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        List of Pojo transport
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pojo-deserialization-hints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PoJo deserialization hints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-exception-using-appexception" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom exception using AppException
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defining-a-user-function-in-java" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Defining a user function in Java
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inspect-event-metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspect event metadata
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#platform-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Platform API
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Platform API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#register-a-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Register a function
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-is-a-public-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is a public function?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#release-a-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release a function
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-if-a-function-is-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check if a function is available
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wait-for-a-function-to-be-ready" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wait for a function to be ready
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#obtain-the-unique-application-instance-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Obtain the unique application instance ID
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-application-personality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Set application personality
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#postoffice-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PostOffice API
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PostOffice API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#send-an-asynchronous-event-to-a-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Send an asynchronous event to a function
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#make-an-asynchronous-rpc-call" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Make an asynchronous RPC call
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#perform-a-fork-n-join-rpc-call-to-multiple-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Perform a fork-n-join RPC call to multiple functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#make-a-sequential-non-blocking-rpc-call" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Make a sequential non-blocking RPC call
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-if-a-function-with-a-named-route-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check if a function with a named route exists
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retrieve-trace-id-and-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retrieve trace ID and path
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trace-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trace annotation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-serializer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom serializer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#minimalist-api-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimalist API design
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#event-scripting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event Scripting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#co-existence-with-other-development-frameworks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Co-existence with other development frameworks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#application-template-for-quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Application template for quick start
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-code-update-frequency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source code update frequency
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technical-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technical support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../annotations-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Annotations Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../event-envelope-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Event Envelope Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reserved-names-and-headers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reserved Names & Headers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../actuators-and-http-client/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Actuators & HTTP Client
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../code-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../documentation-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inclusivity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#main-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Main Application
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setup-before-the-main-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup before the Main Application
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#event-envelope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event envelope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pojo-transport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PoJo transport
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#list-of-pojo-transport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        List of Pojo transport
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pojo-deserialization-hints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PoJo deserialization hints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-exception-using-appexception" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom exception using AppException
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defining-a-user-function-in-java" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Defining a user function in Java
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inspect-event-metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspect event metadata
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#platform-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Platform API
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Platform API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#register-a-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Register a function
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-is-a-public-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is a public function?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#release-a-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release a function
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-if-a-function-is-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check if a function is available
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wait-for-a-function-to-be-ready" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wait for a function to be ready
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#obtain-the-unique-application-instance-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Obtain the unique application instance ID
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-application-personality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Set application personality
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#postoffice-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PostOffice API
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PostOffice API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#send-an-asynchronous-event-to-a-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Send an asynchronous event to a function
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#make-an-asynchronous-rpc-call" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Make an asynchronous RPC call
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#perform-a-fork-n-join-rpc-call-to-multiple-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Perform a fork-n-join RPC call to multiple functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#make-a-sequential-non-blocking-rpc-call" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Make a sequential non-blocking RPC call
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-if-a-function-with-a-named-route-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check if a function with a named route exists
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retrieve-trace-id-and-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retrieve trace ID and path
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trace-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trace annotation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-serializer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom serializer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#minimalist-api-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimalist API design
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#event-scripting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event Scripting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#co-existence-with-other-development-frameworks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Co-existence with other development frameworks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#application-template-for-quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Application template for quick start
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-code-update-frequency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source code update frequency
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technical-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technical support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="api-overview">API Overview<a class="headerlink" href="#api-overview" title="Permanent link">&para;</a></h1>
 <p><em>Reference: PostOffice, Platform, EventEnvelope, and configuration API documentation.</em></p>
 <blockquote>
 <p><strong>At a glance</strong></p>
@@ -275,22 +3194,22 @@
 <li><strong>For</strong> developers reaching below the composable (Event Script) layer.</li>
 </ul>
 </blockquote>
-<h2 id="main-application">Main Application</h2>
+<h2 id="main-application">Main Application<a class="headerlink" href="#main-application" title="Permanent link">&para;</a></h2>
 <p>Each application has an entry point. You may implement an entry point in a main application like this:</p>
-<pre><code class="language-java">@MainApplication
-public class MainApp implements EntryPoint {
-
-   public static void main(String[] args) {
-      AutoStart.main(args);
-   }
-
-   @Override
-   public void start(String[] args) {
-        // your startup logic here
-      log.info(&quot;Started&quot;);
-   }
-}
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@MainApplication</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MainApp</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">EntryPoint</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">   </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">      </span><span class="n">AutoStart</span><span class="p">.</span><span class="na">main</span><span class="p">(</span><span class="n">args</span><span class="p">);</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">   </span><span class="p">}</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">   </span><span class="nd">@Override</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">   </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">        </span><span class="c1">// your startup logic here</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">      </span><span class="n">log</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;Started&quot;</span><span class="p">);</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">   </span><span class="p">}</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="p">}</span>
+</code></pre></div>
 <p>In your main application, you must implement the <code>EntryPoint</code> interface to override the "start" method.
 Typically, a main application is used to initiate some application start up procedure.</p>
 <p>In some case when your application does not need any start up logic, you can just print a message to indicate
@@ -305,25 +3224,25 @@ between 1 and 999.</p>
 <p><em>Note</em>: It is the "start" method of each EntryPoint implementation that follows the execution sequence of the
 <code>MainApplication</code> annotation. The optional "main" method is used only to kick off the application bootstrap and
 it must include only the following statement:</p>
-<pre><code class="language-java">public static void main(String[] args) {
-    AutoStart.main(args);
-}
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="n">AutoStart</span><span class="p">.</span><span class="na">main</span><span class="p">(</span><span class="n">args</span><span class="p">);</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="p">}</span>
+</code></pre></div>
 <p>Therefore, even when the default sequence of the <code>MainApplication</code> annotation is 10 and you invoke the "main"
 method from an IDE, the "start" method of each MainApplication modules will execute orderly.</p>
-<h2 id="setup-before-the-main-application">Setup before the Main Application</h2>
+<h2 id="setup-before-the-main-application">Setup before the Main Application<a class="headerlink" href="#setup-before-the-main-application" title="Permanent link">&para;</a></h2>
 <p>Sometimes, it may be required to set up some environment configuration before your main application starts.
 You can implement a <code>BeforeApplication</code> module. Its syntax is similar to the <code>MainApplication</code>.</p>
-<pre><code class="language-java">@BeforeApplication
-public class EnvSetup implements EntryPoint {
-
-   @Override
-   public void start(String[] args) {
-        // your environment setup logic here
-      log.info(&quot;initialized&quot;);
-   }
-}
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nd">@BeforeApplication</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">EnvSetup</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">EntryPoint</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">   </span><span class="nd">@Override</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">   </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">        </span><span class="c1">// your environment setup logic here</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">      </span><span class="n">log</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;initialized&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">   </span><span class="p">}</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="p">}</span>
+</code></pre></div>
 <p>The <code>BeforeApplication</code> logic will run before your <code>MainApplication</code> module(s). This is useful when you want to do
 special handling of environment variables. For example, decrypt an environment variable secret, construct an X.509
 certificate, and save it in the "/tmp" folder before your main application starts.</p>
@@ -331,7 +3250,7 @@ certificate, and save it in the "/tmp" folder before your main application start
 <p><em>Note</em>: Sequence 0 is reserved by the EssentialServiceLoader and 2 reserved by Event Script.
           Your user functions should use a number between 3 and 999.</p>
 </blockquote>
-<h2 id="event-envelope">Event envelope</h2>
+<h2 id="event-envelope">Event envelope<a class="headerlink" href="#event-envelope" title="Permanent link">&para;</a></h2>
 <p>Mercury is an event engine that encapsulates Eclipse Vertx and Java 21 virtual thread technology.</p>
 <p>A composable application is a collection of functions that communicate with each other in events.
 Each event is transported by an event envelope. Let's examine the envelope.</p>
@@ -365,19 +3284,19 @@ Each event is transported by an event envelope. Let's examine the envelope.</p>
 <blockquote>
 <p><em>Note</em>: Headers and body are optional, but you should provide at least one of them.</p>
 </blockquote>
-<h2 id="pojo-transport">PoJo transport</h2>
+<h2 id="pojo-transport">PoJo transport<a class="headerlink" href="#pojo-transport" title="Permanent link">&para;</a></h2>
 <p>Your function can implement the TypedLambdaFunction interface if you want to use PoJo as input and output
 and the system will restore PoJo payload accordingly.</p>
 <p>However, if you use the EventEnvelope as an input in the TypedLambdaFunction, PoJo payload is mapped as a HashMap
 in the event's body.</p>
 <p>The original class name of the PoJo payload is saved in the event's type attribute.
 You can compare and restore the PoJo like this:</p>
-<pre><code class="language-java">if (SamplePoJo.class.getName().equals(input.getType())) {
-    SamplePoJo pojo = input.getBody(SamplePoJo.class);
-    // do something with your input PoJo
-}
-</code></pre>
-<h2 id="list-of-pojo-transport">List of Pojo transport</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">SamplePoJo</span><span class="p">.</span><span class="na">class</span><span class="p">.</span><span class="na">getName</span><span class="p">().</span><span class="na">equals</span><span class="p">(</span><span class="n">input</span><span class="p">.</span><span class="na">getType</span><span class="p">()))</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="n">SamplePoJo</span><span class="w"> </span><span class="n">pojo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">input</span><span class="p">.</span><span class="na">getBody</span><span class="p">(</span><span class="n">SamplePoJo</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="c1">// do something with your input PoJo</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="list-of-pojo-transport">List of Pojo transport<a class="headerlink" href="#list-of-pojo-transport" title="Permanent link">&para;</a></h2>
 <p>When sending events programmatically, you can send a list of PoJo to a user function. However, the list of pojo
 will be converted as a list of maps as input to the target function.</p>
 <p>Since type information is lost at runtime, you may add the <code>inputPojoClass</code> parameter in the <code>PreLoad</code> annotation
@@ -385,25 +3304,25 @@ of the target function. The system will then render the list of pojo as input to
 <p>This applies to both untyped <code>LambdaFunction</code> and <code>TypedLambdaFunction</code>. In untyped LambdaFunction, the input is
 an object. In TypedLambdaFunction, you should configure the input as list of pojo and add the "inputPojoClass"
 hint in the PreLoad annotation. For example, the following unit test illustrates this:</p>
-<pre><code class="language-java">@PreLoad(route = &quot;input.list.of.pojo.java&quot;, inputPojoClass = PoJo.class)
-public class InputAsListOfPoJo implements TypedLambdaFunction&lt;List&lt;PoJo&gt;, Object&gt; {
-    @Override
-    public Object handleEvent(Map&lt;String, String&gt; headers, List&lt;PoJo&gt; input, int instance) throws Exception {
-        List&lt;String&gt; names = new ArrayList&lt;&gt;();
-        // prove that the list of pojo is correctly deserialized
-        for (PoJo o: input) {
-            if (o != null) {
-                names.add(o.getName());
-            } else {
-                names.add(&quot;null&quot;);
-            }
-        }
-        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();
-        result.put(&quot;names&quot;, names);
-        return result;
-    }
-}
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;input.list.of.pojo.java&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">inputPojoClass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PoJo</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">InputAsListOfPoJo</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TypedLambdaFunction</span><span class="o">&lt;</span><span class="n">List</span><span class="o">&lt;</span><span class="n">PoJo</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Object</span><span class="w"> </span><span class="nf">handleEvent</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">PoJo</span><span class="o">&gt;</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="kd">throws</span><span class="w"> </span><span class="n">Exception</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">        </span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">names</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ArrayList</span><span class="o">&lt;&gt;</span><span class="p">();</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">        </span><span class="c1">// prove that the list of pojo is correctly deserialized</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PoJo</span><span class="w"> </span><span class="n">o</span><span class="p">:</span><span class="w"> </span><span class="n">input</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">o</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">                </span><span class="n">names</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="n">o</span><span class="p">.</span><span class="na">getName</span><span class="p">());</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">                </span><span class="n">names</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="s">&quot;null&quot;</span><span class="p">);</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">        </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">HashMap</span><span class="o">&lt;&gt;</span><span class="p">();</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">        </span><span class="n">result</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">&quot;names&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">names</span><span class="p">);</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="p">}</span>
+</code></pre></div>
 <blockquote>
 <p><em>Note</em>: A <code>List&lt;PoJo&gt;</code> input requires <code>inputPojoClass</code>. <strong>Key-by-key data mapping</strong> in Event Script
           (Layer 2) and the Knowledge Graph (Layer 3) maps fields individually, so a List cannot be
@@ -412,7 +3331,7 @@ public class InputAsListOfPoJo implements TypedLambdaFunction&lt;List&lt;PoJo&gt
           the engine deserializes it into <code>List&lt;PoJo&gt;</code> before invoking the function. Layer 1
           (Platform Core) uses the same mechanism for external JSON-list ingestion.</p>
 </blockquote>
-<h2 id="pojo-deserialization-hints">PoJo deserialization hints</h2>
+<h2 id="pojo-deserialization-hints">PoJo deserialization hints<a class="headerlink" href="#pojo-deserialization-hints" title="Permanent link">&para;</a></h2>
 <p>The PoJo class definition in the TypedLambdaFunction has precedence over the "inputPojoClass" hint
 in the PreLoad annotation.</p>
 <p>For PoJo transport, the "inputPojoClass" parameter in the PreLoad annotation will only be used
@@ -421,27 +3340,27 @@ legacy version 2 and 3 where pojo transport restores pojo as input to user funct
 untyped LambdaFunction.</p>
 <p>The list of pojo is handled differently as a deserialization hint in both the untyped LambdaFunction
 and the TypedLambdaFunction use cases as discussed earlier.</p>
-<h2 id="custom-exception-using-appexception">Custom exception using AppException</h2>
+<h2 id="custom-exception-using-appexception">Custom exception using AppException<a class="headerlink" href="#custom-exception-using-appexception" title="Permanent link">&para;</a></h2>
 <p>To reject an incoming request, you can throw an AppException like this:</p>
-<pre><code class="language-java">// example-1
-throw new AppException(400, &quot;My custom error message&quot;);
-// example-2
-throw new AppException(400, &quot;My custom error message&quot;, ex);
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1">// example-1</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">AppException</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;My custom error message&quot;</span><span class="p">);</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1">// example-2</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">AppException</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;My custom error message&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ex</span><span class="p">);</span>
+</code></pre></div>
 <p>Example-1 - a simple exception with status code (400) and an error message</p>
 <p>Example-2 - includes a nested exception</p>
 <p>As a best practice, we recommend using error codes that are compatible with HTTP status codes.</p>
-<h2 id="defining-a-user-function-in-java">Defining a user function in Java</h2>
+<h2 id="defining-a-user-function-in-java">Defining a user function in Java<a class="headerlink" href="#defining-a-user-function-in-java" title="Permanent link">&para;</a></h2>
 <p>You can write a function in Java like this:</p>
-<pre><code class="language-java">@PreLoad(route = &quot;hello.simple&quot;, instances = 10)
-public class SimpleDemoEndpoint implements TypedLambdaFunction&lt;AsyncHttpRequest, Object&gt; {
-    @Override
-    public Object handleEvent(Map&lt;String, String&gt; headers, AsyncHttpRequest input, int instance) {
-        // business logic here
-        return result;
-    }
-}
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;hello.simple&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">instances</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">SimpleDemoEndpoint</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TypedLambdaFunction</span><span class="o">&lt;</span><span class="n">AsyncHttpRequest</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Object</span><span class="w"> </span><span class="nf">handleEvent</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">AsyncHttpRequest</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">        </span><span class="c1">// business logic here</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="p">}</span>
+</code></pre></div>
 <p>The <code>PreLoad</code> annotation tells the system to preload the function into memory and register it into the event loop.
 You must provide a "route name" and configure the number of concurrent workers ("instances").</p>
 <p>Route name is used by the event loop to find your function in memory. A route name must use lower letters and numbers,
@@ -461,73 +3380,73 @@ following properties:</p>
 <li><code>worker.instances.resilience.handler</code></li>
 <li><code>worker.instances.simple.exception.handler</code></li>
 </ul>
-<h2 id="inspect-event-metadata">Inspect event metadata</h2>
+<h2 id="inspect-event-metadata">Inspect event metadata<a class="headerlink" href="#inspect-event-metadata" title="Permanent link">&para;</a></h2>
 <p>There are some reserved metadata such as route name ("my_route"), trace ID ("my_trace_id") and trace path
 ("my_trace_path") in the "headers" argument. They do not exist in the incoming event envelope. Instead,
 the system automatically insert them as read-only metadata.</p>
 <p>They are used to create a trackable instance of the PostOffice. e.g.</p>
-<pre><code class="language-java">var po = PostOffice.trackable(headers, instance);
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kd">var</span><span class="w"> </span><span class="n">po</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PostOffice</span><span class="p">.</span><span class="na">trackable</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">instance</span><span class="p">);</span>
+</code></pre></div>
 <p>To inspect all metadata, you can declare the input as "EventEnvelope" in a TypedLambdaFunction. The system will
 map the whole event envelope into the "input" argument. You can retrieve the replyTo address and other useful items.</p>
 <blockquote>
 <p><em>Note</em>: The "replyTo" address is optional. It is only required when the caller is making an RPC call.
           If the caller sends an asynchronous request, the "replyTo" value is null.</p>
 </blockquote>
-<h2 id="platform-api">Platform API</h2>
+<h2 id="platform-api">Platform API<a class="headerlink" href="#platform-api" title="Permanent link">&para;</a></h2>
 <p>You can obtain a singleton instance of the Platform object to do the following:</p>
-<h3 id="register-a-function">Register a function</h3>
+<h3 id="register-a-function">Register a function<a class="headerlink" href="#register-a-function" title="Permanent link">&para;</a></h3>
 <p>We recommend using the <code>PreLoad</code> annotation in a class to declare the function route name, number of worker instances
 and whether the function is public or private.</p>
 <p>In some use cases where you want to create and destroy functions on demand, you can register them programmatically.</p>
 <p>In the following example, it registers "my.function" using the MyFunction class as a public function and 
 "another.function" with the AnotherFunction class as a private function.</p>
-<pre><code class="language-java">Platform platform = Platform.getInstance();
-
-// register a public function
-platform.register(&quot;my.function&quot;, new MyFunction(), 10);
-
-// register a private function
-platform.registerPrivate(&quot;another.function&quot;, new AnotherFunction(), 20);
-</code></pre>
-<h3 id="what-is-a-public-function">What is a public function?</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">Platform</span><span class="w"> </span><span class="n">platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Platform</span><span class="p">.</span><span class="na">getInstance</span><span class="p">();</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1">// register a public function</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">platform</span><span class="p">.</span><span class="na">register</span><span class="p">(</span><span class="s">&quot;my.function&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">MyFunction</span><span class="p">(),</span><span class="w"> </span><span class="mi">10</span><span class="p">);</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1">// register a private function</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">platform</span><span class="p">.</span><span class="na">registerPrivate</span><span class="p">(</span><span class="s">&quot;another.function&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">AnotherFunction</span><span class="p">(),</span><span class="w"> </span><span class="mi">20</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="what-is-a-public-function">What is a public function?<a class="headerlink" href="#what-is-a-public-function" title="Permanent link">&para;</a></h3>
 <p>A public function is visible by any application instances in the same network. When a function is declared as
 "public", the function is reachable through the Event-over-HTTP REST endpoint or a service mesh.</p>
 <p>A private function is invisible outside the memory space of the application instance that it resides.
 This allows application to encapsulate business logic according to domain boundary. You can assemble closely
 related functions as a composable application that can be deployed independently.</p>
-<h3 id="release-a-function">Release a function</h3>
+<h3 id="release-a-function">Release a function<a class="headerlink" href="#release-a-function" title="Permanent link">&para;</a></h3>
 <p>In some use cases, you want to release a function on-demand when it is no longer required.</p>
-<pre><code class="language-text">platform.release(&quot;another.function&quot;);
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>platform.release(&quot;another.function&quot;);
+</code></pre></div>
 <p>The above API will unload the function from memory and release it from the "event loop".</p>
-<h3 id="check-if-a-function-is-available">Check if a function is available</h3>
+<h3 id="check-if-a-function-is-available">Check if a function is available<a class="headerlink" href="#check-if-a-function-is-available" title="Permanent link">&para;</a></h3>
 <p>You can check if a function with the named route has been deployed.</p>
-<pre><code class="language-text">if (platform.hasRoute(&quot;another.function&quot;)) {
-    // do something
-}
-</code></pre>
-<h3 id="wait-for-a-function-to-be-ready">Wait for a function to be ready</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>if (platform.hasRoute(&quot;another.function&quot;)) {
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    // do something
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>}
+</code></pre></div>
+<h3 id="wait-for-a-function-to-be-ready">Wait for a function to be ready<a class="headerlink" href="#wait-for-a-function-to-be-ready" title="Permanent link">&para;</a></h3>
 <p>Functions are registered asynchronously. For functions registered using the <code>PreLoad</code> annotation, they are available
 to your application when the MainApplication starts.</p>
 <p>For functions that are registered on-demand, you can wait for the function to get ready like this:</p>
-<pre><code class="language-text">platform.waitForProvider(&quot;cloud.connector&quot;, 10)
-        .onSuccess(ready -&gt; {
-            // business logic when &quot;cloud.connector&quot; is ready 
-        });
-</code></pre>
-<p>Note that the "onFailure" method is not required. The onSuccess will return true or false. In the above example,
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>platform.waitForProvider(&quot;cloud.connector&quot;, 10)
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>        .onSuccess(ready -&gt; {
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>            // business logic when &quot;cloud.connector&quot; is ready 
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>        });
+</code></pre></div>
+Note that the "onFailure" method is not required. The onSuccess will return true or false. In the above example,
 your application waits for up to 10 seconds. If the function (i.e. the "provider") is available, the API will invoke
 the "onSuccess" method immediately.</p>
-<h3 id="obtain-the-unique-application-instance-id">Obtain the unique application instance ID</h3>
+<h3 id="obtain-the-unique-application-instance-id">Obtain the unique application instance ID<a class="headerlink" href="#obtain-the-unique-application-instance-id" title="Permanent link">&para;</a></h3>
 <p>When an application instance starts, a unique ID is generated. We call this the "Origin ID".</p>
-<pre><code class="language-java">var originId = po.getOrigin();
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kd">var</span><span class="w"> </span><span class="n">originId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">getOrigin</span><span class="p">();</span>
+</code></pre></div>
 <p>When running the application in a minimalist service mesh using Kafka or similar network event stream system,
 the origin ID is used to uniquely identify the application instance.</p>
 <p>The origin ID is automatically appended to the "replyTo" address when making a RPC call over a network event stream
 so that the system can send the response event back to the "originator" or "calling" application instance.</p>
-<h3 id="set-application-personality">Set application personality</h3>
+<h3 id="set-application-personality">Set application personality<a class="headerlink" href="#set-application-personality" title="Permanent link">&para;</a></h3>
 <p>An application may have one of the following personality:</p>
 <ol>
 <li>REST - the deployed application is user facing</li>
@@ -535,16 +3454,16 @@ so that the system can send the response event back to the "originator" or "call
 <li>RESOURCES - this is a resource-tier service. e.g. database service, MQ gateway, legacy service proxy, utility, etc.</li>
 </ol>
 <p>You can change the application personality like this:</p>
-<pre><code class="language-text">// the default value is &quot;APP&quot;
-ServerPersonality.getInstance().setType(ServerPersonality.Type.REST);
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>// the default value is &quot;APP&quot;
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>ServerPersonality.getInstance().setType(ServerPersonality.Type.REST);
+</code></pre></div>
 <p>The personality setting is for documentation purpose only. It does not affect the behavior of your application.
 It will appear in the application "/info" endpoint.</p>
-<h2 id="postoffice-api">PostOffice API</h2>
+<h2 id="postoffice-api">PostOffice API<a class="headerlink" href="#postoffice-api" title="Permanent link">&para;</a></h2>
 <p>You can obtain an instance of the PostOffice from the input "headers" and "instance" parameters in the input
 arguments of your function.</p>
-<pre><code class="language-java">var po = PostOffice.trackable(headers, instance);
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kd">var</span><span class="w"> </span><span class="n">po</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PostOffice</span><span class="p">.</span><span class="na">trackable</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">instance</span><span class="p">);</span>
+</code></pre></div>
 <p>The PostOffice is the event manager that you can use to send asynchronous events or to make RPC requests.
 The constructor uses the READ only metadata in the "headers" argument in the "handleEvent" method of your function.</p>
 <p>For end-to-end traceability, please use the PostOffice instance to make requests to a composable library.
@@ -554,27 +3473,27 @@ can propagate the tracing information.</p>
 <p>For Unit Tests, since a test does not start with the handleEvent of a LambdaFunction, you can use the following
 to create a PostOffice with your own traceId. The "myRoute" is the caller's route name. In this case, you can
 set it to "unit.test".</p>
-<pre><code class="language-java">public PostOffice(String myRoute, String myTraceId, String myTracePath);
-</code></pre>
-<h3 id="send-an-asynchronous-event-to-a-function">Send an asynchronous event to a function</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="kd">public</span><span class="w"> </span><span class="nf">PostOffice</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">myRoute</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">myTraceId</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">myTracePath</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="send-an-asynchronous-event-to-a-function">Send an asynchronous event to a function<a class="headerlink" href="#send-an-asynchronous-event-to-a-function" title="Permanent link">&para;</a></h3>
 <p>You can send an asynchronous event like this.</p>
-<pre><code class="language-java">// example-1
-po.send(&quot;another.function&quot;, &quot;test message&quot;);
-
-// example-2
-po.send(&quot;another.function&quot;, new Kv(&quot;some_key&quot;, &quot;some_value&quot;), new kv(&quot;another_key&quot;, &quot;another_value&quot;));
-
-// example-3
-po.send(&quot;another.function&quot;, somePoJo, new Kv(&quot;some_key&quot;, &quot;some_value&quot;));
-
-// example-4
-EventEnvelope event = new EventEnvelope().setTo(&quot;another.function&quot;)
-                            .setHeader(&quot;some_key&quot;, &quot;some_value&quot;).setBody(somePoJo);
-po.send(event)
-
-// example-5
-po.sendLater(event, new Date(System.currentTimeMillis() + 5000));
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1">// example-1</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="n">po</span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="s">&quot;another.function&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;test message&quot;</span><span class="p">);</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="c1">// example-2</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="n">po</span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="s">&quot;another.function&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Kv</span><span class="p">(</span><span class="s">&quot;some_key&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;some_value&quot;</span><span class="p">),</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">kv</span><span class="p">(</span><span class="s">&quot;another_key&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;another_value&quot;</span><span class="p">));</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="c1">// example-3</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="n">po</span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="s">&quot;another.function&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">somePoJo</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Kv</span><span class="p">(</span><span class="s">&quot;some_key&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;some_value&quot;</span><span class="p">));</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="c1">// example-4</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">event</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="p">().</span><span class="na">setTo</span><span class="p">(</span><span class="s">&quot;another.function&quot;</span><span class="p">)</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="w">                            </span><span class="p">.</span><span class="na">setHeader</span><span class="p">(</span><span class="s">&quot;some_key&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;some_value&quot;</span><span class="p">).</span><span class="na">setBody</span><span class="p">(</span><span class="n">somePoJo</span><span class="p">);</span>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="n">po</span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a>
+<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a><span class="c1">// example-5</span>
+<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a><span class="n">po</span><span class="p">.</span><span class="na">sendLater</span><span class="p">(</span><span class="n">event</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Date</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">currentTimeMillis</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">5000</span><span class="p">));</span>
+</code></pre></div>
 <ol>
 <li>Example-1 sends the text string "test message" to the target service named "another.function".</li>
 <li>Example-2 sends two key-values as "headers" parameters to the same service.</li>
@@ -584,113 +3503,113 @@ po.sendLater(event, new Date(System.currentTimeMillis() + 5000));
 </ol>
 <p>The first 3 APIs are convenient methods and the system will automatically create an EventEnvelope to hold the
 target route name, key-values and/or event payload.</p>
-<h3 id="make-an-asynchronous-rpc-call">Make an asynchronous RPC call</h3>
+<h3 id="make-an-asynchronous-rpc-call">Make an asynchronous RPC call<a class="headerlink" href="#make-an-asynchronous-rpc-call" title="Permanent link">&para;</a></h3>
 <p>You can make RPC call like this:</p>
-<pre><code class="language-java">// example-1
-EventEnvelope request = new EventEnvelope().setTo(&quot;another.function&quot;)
-                            .setHeader(&quot;some_key&quot;, &quot;some_value&quot;).setBody(somePoJo);
-Future&lt;EventEnvelope&gt; response = po.asyncRequest(request, 5000);
-response.onSuccess(result -&gt; {
-    // result is the response event
-});
-response.onFailure(e -&gt; {
-    // handle timeout exception
-});
-
-// example-2
-Future&lt;EventEnvelope&gt; response = po.asyncRequest(request, 5000, false);
-response.onSuccess(result -&gt; {
-    // result is the response event
-    // Timeout exception is returned as a response event with status=408
-});
-
-// example-3 with the &quot;rpc&quot; boolean parameter set to true
-Future&lt;EventEnvelope&gt; response = po.asyncRequest(request, 5000, &quot;http://peer/api/event&quot;, true);
-response.onSuccess(result -&gt; {
-    // result is the response event
-});
-response.onFailure(e -&gt; {
-    // handle timeout exception
-});
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1">// example-1</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">request</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="p">().</span><span class="na">setTo</span><span class="p">(</span><span class="s">&quot;another.function&quot;</span><span class="p">)</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">                            </span><span class="p">.</span><span class="na">setHeader</span><span class="p">(</span><span class="s">&quot;some_key&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;some_value&quot;</span><span class="p">).</span><span class="na">setBody</span><span class="p">(</span><span class="n">somePoJo</span><span class="p">);</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="n">Future</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="o">&gt;</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">asyncRequest</span><span class="p">(</span><span class="n">request</span><span class="p">,</span><span class="w"> </span><span class="mi">5000</span><span class="p">);</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="n">response</span><span class="p">.</span><span class="na">onSuccess</span><span class="p">(</span><span class="n">result</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">    </span><span class="c1">// result is the response event</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="p">});</span>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="n">response</span><span class="p">.</span><span class="na">onFailure</span><span class="p">(</span><span class="n">e</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="w">    </span><span class="c1">// handle timeout exception</span>
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="p">});</span>
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="c1">// example-2</span>
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="n">Future</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="o">&gt;</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">asyncRequest</span><span class="p">(</span><span class="n">request</span><span class="p">,</span><span class="w"> </span><span class="mi">5000</span><span class="p">,</span><span class="w"> </span><span class="kc">false</span><span class="p">);</span>
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="n">response</span><span class="p">.</span><span class="na">onSuccess</span><span class="p">(</span><span class="n">result</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a><span class="w">    </span><span class="c1">// result is the response event</span>
+<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="w">    </span><span class="c1">// Timeout exception is returned as a response event with status=408</span>
+<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a><span class="p">});</span>
+<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a>
+<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a><span class="c1">// example-3 with the &quot;rpc&quot; boolean parameter set to true</span>
+<a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a><span class="n">Future</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="o">&gt;</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">asyncRequest</span><span class="p">(</span><span class="n">request</span><span class="p">,</span><span class="w"> </span><span class="mi">5000</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;http://peer/api/event&quot;</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">);</span>
+<a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a><span class="n">response</span><span class="p">.</span><span class="na">onSuccess</span><span class="p">(</span><span class="n">result</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a><span class="w">    </span><span class="c1">// result is the response event</span>
+<a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a><span class="p">});</span>
+<a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a><span class="n">response</span><span class="p">.</span><span class="na">onFailure</span><span class="p">(</span><span class="n">e</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a><span class="w">    </span><span class="c1">// handle timeout exception</span>
+<a id="__codelineno-17-26" name="__codelineno-17-26" href="#__codelineno-17-26"></a><span class="p">});</span>
+</code></pre></div>
 <ol>
 <li>Example-1 makes a RPC call with a 5-second timeout to "another.function".</li>
 <li>Example-2 sets the "timeoutException" to false, telling system to return timeout exception as a regular event.</li>
 <li>Example-3 makes an "event over HTTP" RPC call to "another.function" in another application instance called "peer".</li>
 </ol>
 <p>"Event over HTTP" is an important topic. Please refer to <a href="../event-over-http/">Event over HTTP</a> for more details.</p>
-<h3 id="perform-a-fork-n-join-rpc-call-to-multiple-functions">Perform a fork-n-join RPC call to multiple functions</h3>
+<h3 id="perform-a-fork-n-join-rpc-call-to-multiple-functions">Perform a fork-n-join RPC call to multiple functions<a class="headerlink" href="#perform-a-fork-n-join-rpc-call-to-multiple-functions" title="Permanent link">&para;</a></h3>
 <p>In a similar fashion, you can make a fork-n-join call that sends request events in parallel to more than one function.</p>
-<pre><code class="language-java">// example-1
-EventEnvelope request1 = new EventEnvelope().setTo(&quot;this.function&quot;)
-                            .setHeader(&quot;hello&quot;, &quot;world&quot;).setBody(&quot;test message&quot;);
-EventEnvelope request2 = new EventEnvelope().setTo(&quot;that.function&quot;)
-                            .setHeader(&quot;good&quot;, &quot;day&quot;).setBody(somePoJo);
-List&lt;EventEnvelope&gt; requests = new ArrayList&lt;&gt;();
-requests.add(request1);
-requests.add(request2);
-Future&lt;List&lt;EventEnvelope&gt;&gt; responses = po.asyncRequest(requests, 5000);
-response.onSuccess(results -&gt; {
-    // results contains the response events
-});
-response.onFailure(e -&gt; {
-    // handle timeout exception
-});
-
-// example-2
-Future&lt;List&lt;EventEnvelope&gt;&gt; responses = po.asyncRequest(requests, 5000, false);
-response.onSuccess(results -&gt; {
-    // results contains the response events.
-    // Partial result list is returned if one or more functions did not respond.
-});
-</code></pre>
-<h3 id="make-a-sequential-non-blocking-rpc-call">Make a sequential non-blocking RPC call</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1">// example-1</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">request1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="p">().</span><span class="na">setTo</span><span class="p">(</span><span class="s">&quot;this.function&quot;</span><span class="p">)</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">                            </span><span class="p">.</span><span class="na">setHeader</span><span class="p">(</span><span class="s">&quot;hello&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;world&quot;</span><span class="p">).</span><span class="na">setBody</span><span class="p">(</span><span class="s">&quot;test message&quot;</span><span class="p">);</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">request2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="p">().</span><span class="na">setTo</span><span class="p">(</span><span class="s">&quot;that.function&quot;</span><span class="p">)</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">                            </span><span class="p">.</span><span class="na">setHeader</span><span class="p">(</span><span class="s">&quot;good&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;day&quot;</span><span class="p">).</span><span class="na">setBody</span><span class="p">(</span><span class="n">somePoJo</span><span class="p">);</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="n">List</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="o">&gt;</span><span class="w"> </span><span class="n">requests</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ArrayList</span><span class="o">&lt;&gt;</span><span class="p">();</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="n">requests</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="n">request1</span><span class="p">);</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="n">requests</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="n">request2</span><span class="p">);</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="n">Future</span><span class="o">&lt;</span><span class="n">List</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">responses</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">asyncRequest</span><span class="p">(</span><span class="n">requests</span><span class="p">,</span><span class="w"> </span><span class="mi">5000</span><span class="p">);</span>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="n">response</span><span class="p">.</span><span class="na">onSuccess</span><span class="p">(</span><span class="n">results</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="w">    </span><span class="c1">// results contains the response events</span>
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="p">});</span>
+<a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="n">response</span><span class="p">.</span><span class="na">onFailure</span><span class="p">(</span><span class="n">e</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="w">    </span><span class="c1">// handle timeout exception</span>
+<a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a><span class="p">});</span>
+<a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a>
+<a id="__codelineno-18-17" name="__codelineno-18-17" href="#__codelineno-18-17"></a><span class="c1">// example-2</span>
+<a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a><span class="n">Future</span><span class="o">&lt;</span><span class="n">List</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">responses</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">asyncRequest</span><span class="p">(</span><span class="n">requests</span><span class="p">,</span><span class="w"> </span><span class="mi">5000</span><span class="p">,</span><span class="w"> </span><span class="kc">false</span><span class="p">);</span>
+<a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a><span class="n">response</span><span class="p">.</span><span class="na">onSuccess</span><span class="p">(</span><span class="n">results</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a><span class="w">    </span><span class="c1">// results contains the response events.</span>
+<a id="__codelineno-18-21" name="__codelineno-18-21" href="#__codelineno-18-21"></a><span class="w">    </span><span class="c1">// Partial result list is returned if one or more functions did not respond.</span>
+<a id="__codelineno-18-22" name="__codelineno-18-22" href="#__codelineno-18-22"></a><span class="p">});</span>
+</code></pre></div>
+<h3 id="make-a-sequential-non-blocking-rpc-call">Make a sequential non-blocking RPC call<a class="headerlink" href="#make-a-sequential-non-blocking-rpc-call" title="Permanent link">&para;</a></h3>
 <p>You can make a sequential non-blocking RPC call from one function to another.</p>
 <p>The most convenient method to make a sequential non-blocking RPC call is to use the PostOffice's request API.</p>
-<pre><code class="language-java">// for a single RPC call
-PostOffice po = PostOffice.trackable(headers, instance);
-EventEnvelope result = po.request(requestEvent, timeoutInMills).get();
-
-// for a fork-n-join call
-PostOffice po = PostOffice.trackable(headers, instance);
-List&lt;EventEnvelope&gt; result = po.request(requestEvents, timeoutInMills).get();
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1">// for a single RPC call</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="n">PostOffice</span><span class="w"> </span><span class="n">po</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PostOffice</span><span class="p">.</span><span class="na">trackable</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">instance</span><span class="p">);</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">request</span><span class="p">(</span><span class="n">requestEvent</span><span class="p">,</span><span class="w"> </span><span class="n">timeoutInMills</span><span class="p">).</span><span class="na">get</span><span class="p">();</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="c1">// for a fork-n-join call</span>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="n">PostOffice</span><span class="w"> </span><span class="n">po</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PostOffice</span><span class="p">.</span><span class="na">trackable</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">instance</span><span class="p">);</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="n">List</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="o">&gt;</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">request</span><span class="p">(</span><span class="n">requestEvents</span><span class="p">,</span><span class="w"> </span><span class="n">timeoutInMills</span><span class="p">).</span><span class="na">get</span><span class="p">();</span>
+</code></pre></div>
 <blockquote>
 <p><em>Note</em>: the "eRequest" is a reactive version of the above "request" methods. Its return type is
           a CompletableFuture, thus allowing the use of "thenAccept" method to process result asynchronously.</p>
 </blockquote>
-<h3 id="check-if-a-function-with-a-named-route-exists">Check if a function with a named route exists</h3>
+<h3 id="check-if-a-function-with-a-named-route-exists">Check if a function with a named route exists<a class="headerlink" href="#check-if-a-function-with-a-named-route-exists" title="Permanent link">&para;</a></h3>
 <p>The PostOffice provides the "exists()" method that is similar to the "platform.hasRoute()" command.</p>
 <p>The difference is that the "exists()" method can discover functions of another application instance when running
 in the "service mesh" mode.</p>
 <p>If your application is not deployed in a service mesh, the PostOffice's "exists" and Platform's "hasRoute" APIs
 will provide the same result.</p>
-<pre><code class="language-java">boolean found = po.exists(&quot;another.function&quot;);
-if (found) {
-    // do something
-}
-</code></pre>
-<h3 id="retrieve-trace-id-and-path">Retrieve trace ID and path</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="kt">boolean</span><span class="w"> </span><span class="n">found</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">exists</span><span class="p">(</span><span class="s">&quot;another.function&quot;</span><span class="p">);</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">found</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">    </span><span class="c1">// do something</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="retrieve-trace-id-and-path">Retrieve trace ID and path<a class="headerlink" href="#retrieve-trace-id-and-path" title="Permanent link">&para;</a></h3>
 <p>If you want to know the route name and optional trace ID and path, you can use the following APIs.</p>
 <p>For example, if tracing is enabled, the trace ID will be available. You can put the trace ID in application log
 messages. This would group log messages of the same transaction together when you search the trace ID from 
 a centralized logging dashboard such as Splunk.</p>
-<pre><code class="language-java">String myRoute = po.getRoute();
-String traceId = po.getTraceId();
-String tracePath = po.getTracePath();
-</code></pre>
-<h2 id="trace-annotation">Trace annotation</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="n">String</span><span class="w"> </span><span class="n">myRoute</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">getRoute</span><span class="p">();</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="n">String</span><span class="w"> </span><span class="n">traceId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">getTraceId</span><span class="p">();</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="n">String</span><span class="w"> </span><span class="n">tracePath</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">getTracePath</span><span class="p">();</span>
+</code></pre></div>
+<h2 id="trace-annotation">Trace annotation<a class="headerlink" href="#trace-annotation" title="Permanent link">&para;</a></h2>
 <p>To annotate additional information in the trace of your function, please obtain a trackable PostOffice
 instance using <code>PostOffice.trackable(headers, instance)</code> and follow the following API signatures:</p>
-<pre><code class="language-java">// API signatures
-public PostOffice annotateTrace(String key, String value);
-public PostOffice annotateTrace(String key, Map&lt;String, Object&gt; value);
-public PostOffice annotateTrace(String key, List&lt;Object&gt; value);
-
-// For example,
-var po = PostOffice.trackable(headers, instance);
-po.annotateTrace(&quot;hello&quot;, &quot;world&quot;);
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="c1">// API signatures</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="kd">public</span><span class="w"> </span><span class="n">PostOffice</span><span class="w"> </span><span class="nf">annotateTrace</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">value</span><span class="p">);</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="kd">public</span><span class="w"> </span><span class="n">PostOffice</span><span class="w"> </span><span class="nf">annotateTrace</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">value</span><span class="p">);</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="kd">public</span><span class="w"> </span><span class="n">PostOffice</span><span class="w"> </span><span class="nf">annotateTrace</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">value</span><span class="p">);</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="c1">// For example,</span>
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="kd">var</span><span class="w"> </span><span class="n">po</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PostOffice</span><span class="p">.</span><span class="na">trackable</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">instance</span><span class="p">);</span>
+<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="n">po</span><span class="p">.</span><span class="na">annotateTrace</span><span class="p">(</span><span class="s">&quot;hello&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;world&quot;</span><span class="p">);</span>
+</code></pre></div>
 <p>Annotations of key-values, if any, will be recorded in the trace and they are not accessible by
 another function.</p>
 <p>Please be moderate to attach only <em>small amount of transaction specific information</em> to the
@@ -700,72 +3619,72 @@ performance metrics of your functions.</p>
           the trace is visible in the application log. It may also be forwarded to a centralized
           telemetry dashboard for visualization and analytics.</p>
 </blockquote>
-<h2 id="configuration-api">Configuration API</h2>
+<h2 id="configuration-api">Configuration API<a class="headerlink" href="#configuration-api" title="Permanent link">&para;</a></h2>
 <p>Your function can access the main application configuration from the platform like this:</p>
-<pre><code class="language-java">AppConfigReader config = AppConfigReader.getInstance();
-// the value can be string or a primitive
-Object value = config.get(&quot;my.parameter&quot;);
-// the return value will be converted to a string
-String text = config.getProperty(&quot;my.parameter&quot;);
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="n">AppConfigReader</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AppConfigReader</span><span class="p">.</span><span class="na">getInstance</span><span class="p">();</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="c1">// the value can be string or a primitive</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="n">Object</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;my.parameter&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="c1">// the return value will be converted to a string</span>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="n">String</span><span class="w"> </span><span class="n">text</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">getProperty</span><span class="p">(</span><span class="s">&quot;my.parameter&quot;</span><span class="p">);</span>
+</code></pre></div>
 <p>The system uses the standard dot-bracket format for a parameter name. e.g.</p>
-<pre><code class="language-properties">hello.world
-some.key[2]
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="na">hello.world</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="na">some.key[2]</span>
+</code></pre></div>
 <p>You can override the main application configuration at run-time using the Java argument "-D". e.g.</p>
 <blockquote>
 <p>java -Dserver.port=8080 -jar myApp.jar</p>
 </blockquote>
 <p>Additional configuration files can be added with the <code>ConfigReader</code> constructor like this:</p>
-<pre><code class="language-java">// filePath should have location prefix &quot;classpath:/&quot; or &quot;file:/&quot;
-ConfigReader reader = new ConfigReader(filePath);
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1">// filePath should have location prefix &quot;classpath:/&quot; or &quot;file:/&quot;</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="n">ConfigReader</span><span class="w"> </span><span class="n">reader</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ConfigReader</span><span class="p">(</span><span class="n">filePath</span><span class="p">);</span>
+</code></pre></div>
 <p>The configuration system supports environment variable or reference to the main application configuration
 using the dollar-bracket syntax <code>${reference:default_value}</code>. e.g.</p>
-<pre><code class="language-properties">some.key=${MY_ENV_VARIABLE}
-another.key=${my.key:12345}
-complex.key=first ${FIRST_ENV_VAR}, second ${SECOND_ENV_VAR}
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="na">some.key</span><span class="o">=</span><span class="s">${MY_ENV_VARIABLE}</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="na">another.key</span><span class="o">=</span><span class="s">${my.key:12345}</span>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="na">complex.key</span><span class="o">=</span><span class="s">first ${FIRST_ENV_VAR}, second ${SECOND_ENV_VAR}</span>
+</code></pre></div>
 <p>In the above example, a parameter may contain references to more than one environment variable.</p>
 <p>Default value, if not given, will be assumed to be an empty string.</p>
-<h2 id="custom-serializer">Custom serializer</h2>
+<h2 id="custom-serializer">Custom serializer<a class="headerlink" href="#custom-serializer" title="Permanent link">&para;</a></h2>
 <p>We are using GSON as the underlying serializer to handle common use cases. However, there may be
 situation that you want to use your own custom serialization library.</p>
 <p>To do that, you may write a serializer that implements the CustomSerializer interface:</p>
-<pre><code class="language-java">public interface CustomSerializer {
-
-    public Map&lt;String, Object&gt; toMap(Object obj);
-
-    public &lt;T&gt; T toPoJo(Object obj, Class&lt;T&gt; toValueType);
-
-}
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">CustomSerializer</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">toMap</span><span class="p">(</span><span class="n">Object</span><span class="w"> </span><span class="n">obj</span><span class="p">);</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="nf">toPoJo</span><span class="p">(</span><span class="n">Object</span><span class="w"> </span><span class="n">obj</span><span class="p">,</span><span class="w"> </span><span class="n">Class</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">toValueType</span><span class="p">);</span>
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="p">}</span>
+</code></pre></div>
 <p>You may configure a user function to use a custom serializer by adding the "customSerializer" parameter
 in the <code>PreLoad</code> annotation. For example,</p>
-<pre><code class="language-java">@PreLoad(route=&quot;my.user.function&quot;, customSerializer = JacksonSerializer.class)
-public class MyUserFunction implements TypedLambdaFunction&lt;SimplePoJo, SimplePoJo&gt; {
-    @Override
-    public SimplePoJo handleEvent(Map&lt;String, String&gt; headers, SimplePoJo input, int instance) {
-        return input;
-    }
-}
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="o">=</span><span class="s">&quot;my.user.function&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">customSerializer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">JacksonSerializer</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MyUserFunction</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TypedLambdaFunction</span><span class="o">&lt;</span><span class="n">SimplePoJo</span><span class="p">,</span><span class="w"> </span><span class="n">SimplePoJo</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">SimplePoJo</span><span class="w"> </span><span class="nf">handleEvent</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">SimplePoJo</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">input</span><span class="p">;</span>
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="p">}</span>
+</code></pre></div>
 <p>If you register your function dynamically in code, you can use the following <code>platform API</code> to assign
 a custom serializer.</p>
-<pre><code class="language-java">public void setCustomSerializer(String route, CustomSerializer mapper);
-// e.g.
-// platform.setCustomSerializer(&quot;my.function&quot;, new JacksonSerializer());
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">setCustomSerializer</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">route</span><span class="p">,</span><span class="w"> </span><span class="n">CustomSerializer</span><span class="w"> </span><span class="n">mapper</span><span class="p">);</span>
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="c1">// e.g.</span>
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="c1">// platform.setCustomSerializer(&quot;my.function&quot;, new JacksonSerializer());</span>
+</code></pre></div>
 <p>If you use the PostOffice to programmatically send event or make event RPC call and you need a
 custom serializer, you can create a PostOffice instance like this:</p>
-<pre><code class="language-java">// this should be the first statement in the &quot;handleEvent&quot; method.
-PostOffice po = PostOffice.withSerializer(headers, instance, new MyCustomSerializer());
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="c1">// this should be the first statement in the &quot;handleEvent&quot; method.</span>
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="n">PostOffice</span><span class="w"> </span><span class="n">po</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PostOffice</span><span class="p">.</span><span class="na">withSerializer</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">instance</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">MyCustomSerializer</span><span class="p">());</span>
+</code></pre></div>
 <p>The outgoing event using the PostOffice will use the custom serializer automatically.</p>
 <p>To interpret an event response from a RPC call, you can use the following PostOffice API:</p>
-<pre><code class="language-java">MyPoJo result = po.getEventBodyAsPoJo(responseEvent, MyPoJo.class);
-</code></pre>
-<h2 id="minimalist-api-design">Minimalist API design</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="n">MyPoJo</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">getEventBodyAsPoJo</span><span class="p">(</span><span class="n">responseEvent</span><span class="p">,</span><span class="w"> </span><span class="n">MyPoJo</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+</code></pre></div>
+<h2 id="minimalist-api-design">Minimalist API design<a class="headerlink" href="#minimalist-api-design" title="Permanent link">&para;</a></h2>
 <p>As a best practice, we advocate a minimalist approach in API integration.
 To build powerful composable applications, the above set of APIs is sufficient to perform
 "event orchestration" where you write code to coordinate how the various functions work together as a
@@ -774,10 +3693,10 @@ single "executable". Please refer to <a href="../event-script/syntax/">Event Scr
 <p>Other APIs in the toolkits are used internally to build the engine itself, and they may change from time to time.
 They are mostly convenient methods and utilities. The engine is fully encapsulated and any internal API changes
 are not likely to impact your applications.</p>
-<h2 id="event-scripting">Event Scripting</h2>
+<h2 id="event-scripting">Event Scripting<a class="headerlink" href="#event-scripting" title="Permanent link">&para;</a></h2>
 <p>To further reduce coding effort, you can perform "event choreography" by configuration using "Event Script".
 Please refer to Event Script syntax in <a href="../event-script/syntax/">Event Script Syntax</a></p>
-<h2 id="co-existence-with-other-development-frameworks">Co-existence with other development frameworks</h2>
+<h2 id="co-existence-with-other-development-frameworks">Co-existence with other development frameworks<a class="headerlink" href="#co-existence-with-other-development-frameworks" title="Permanent link">&para;</a></h2>
 <p>Mercury libraries are designed to co-exist with your favorite frameworks and tools. Inside a class implementing
 the <code>LambdaFunction</code> or <code>TypedLambdaFunction</code>, you can use any coding style and frameworks as you like, including
 sequential, object-oriented and reactive programming styles.</p>
@@ -786,73 +3705,137 @@ application server framework with it.</p>
 <p>A sample Spring Boot integration is provided in the "rest-spring-3" project. It is an optional feature, and you can
 decide to use a regular Spring Boot application with Mercury Composable or to pick the customized Spring Boot in the
 "rest-spring-3" library.</p>
-<h2 id="application-template-for-quick-start">Application template for quick start</h2>
+<h2 id="application-template-for-quick-start">Application template for quick start<a class="headerlink" href="#application-template-for-quick-start" title="Permanent link">&para;</a></h2>
 <p>We recommend using the <code>composable-example</code> project as a template to start writing your own Composable applications.
 You can follow the Composable methodology where you draw event flow diagrams to represent various use cases,
 convert them into event scripts that carry out event choreography for your self-contained functions.</p>
 <p>For more information, please refer to Event Script syntax in <a href="../event-script/syntax/">Event Script Syntax</a>.</p>
 <p>If you prefer to do low-level event-driven programming, you can use the <code>lambda-example</code> project as a template.
 It is preconfigured to support kernel threads and virtual threads.</p>
-<h2 id="source-code-update-frequency">Source code update frequency</h2>
+<h2 id="source-code-update-frequency">Source code update frequency<a class="headerlink" href="#source-code-update-frequency" title="Permanent link">&para;</a></h2>
 <p>This project is licensed under the Apache 2.0 open sources license. We will update the public codebase after
 it passes regression tests and meets stability and performance benchmarks in our production systems.</p>
 <p>Mercury Composable is developed as an engine for you to build the latest cloud native applications.</p>
 <p>Composable technology is evolving rapidly. We would exercise best effort to keep the essential internals
 and core APIs stable. Please browse the latest Developer Guide, release notes and Javadoc for any breaking
 API changes.</p>
-<h2 id="technical-support">Technical support</h2>
+<h2 id="technical-support">Technical support<a class="headerlink" href="#technical-support" title="Permanent link">&para;</a></h2>
 <p>For enterprise clients, technical support is available. Please contact your Accenture representative for details.</p>
-<h2 id="see-also">See also</h2>
+<h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../event-envelope-reference/">Event Envelope Reference</a> — the EventEnvelope + PostOffice API in depth.</li>
 <li><a href="../knowledge-graph/property-graph/">Minimalist Property Graph</a> — the in-memory graph API.</li>
 <li><a href="../annotations-reference/">Annotations Reference</a> — <code>@PreLoad</code> and the rest.</li>
 </ul>
-              
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
             </div>
-          </div><footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../../arch-decisions/ADR/" class="btn btn-neutral float-left" title="Architectural Decision Records"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../annotations-reference/" class="btn btn-neutral float-right" title="Annotations Reference">Next <span class="icon icon-circle-arrow-right"></span></a>
-    </div>
-
-  <hr/>
-
-  <div role="contentinfo">
-    <!-- Copyright etc -->
-  </div>
-
-  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
-</footer>
           
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
-      </div>
-
-    </section>
-
-  </div>
-
-  <div class="rst-versions" role="note" aria-label="Versions">
-  <span class="rst-current-version" data-toggle="rst-current-version">
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
     
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../arch-decisions/ADR/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Architectural Decision Records">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Architectural Decision Records
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../annotations-reference/" class="md-footer__link md-footer__link--next" aria-label="Next: Annotations Reference">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Annotations Reference
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
     
-      <span><a href="../../arch-decisions/ADR/" style="color: #fcfcfc">&laquo; Previous</a></span>
-    
-    
-      <span><a href="../annotations-reference/" style="color: #fcfcfc">Next &raquo;</a></span>
-    
-  </span>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Apache-2.0 &middot; mercury-composable also has an official <a href="https://github.com/Accenture/mercury">Rust implementation</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
 </div>
-    <script src="../../js/jquery-3.6.0.min.js"></script>
-    <script>var base_url = "../..";</script>
-    <script src="../../js/theme_extra.js"></script>
-    <script src="../../js/theme.js"></script>
-      <script src="../../search/main.js"></script>
-    <script>
-        jQuery(function () {
-            SphinxRtdTheme.Navigation.enable(true);
-        });
-    </script>
-
-</body>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
 </html>
