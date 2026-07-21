@@ -110,8 +110,12 @@ class CompanionSyncTest {
             //    traversal, drained on the traveler's terminal line (emitted last), not a
             //    raced sentinel that truncates it. Build a runnable graph and run it.
             syncCommand(po, sid, "create node end");
-            syncCommand(po, sid, "create node mapper\nwith type mapper\nwith properties\n"
-                    + "skill=graph.data.mapper\nmapping[]=input.body.id -> output.body");
+            syncCommand(po, sid, """
+                    create node mapper
+                    with type mapper
+                    with properties
+                    skill=graph.data.mapper
+                    mapping[]=input.body.id -> output.body""");
             syncCommand(po, sid, "connect root to mapper with first");
             syncCommand(po, sid, "connect mapper to end with second");
             var instantiated = syncCommand(po, sid, "instantiate graph\ntext(hello world) -> input.body.id");
@@ -129,27 +133,33 @@ class CompanionSyncTest {
             assertNotNull(ran.get("result"), "sync run returns the output.body as structured result: " + ran);
             assertTrue(String.valueOf(ran.get("result")).contains("hello world"),
                     "structured result carries the run's output.body: " + ran.get("result"));
-
-            // 5) a failing traversal (run before instantiate, fresh session) still returns
-            //    promptly with the uniform terminal - the drain never hangs to the timeout.
-            var badIn = "ws.990009.2.in";
-            var badId = "ws-990009-2";
-            po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                    .setBody(Map.of("type", "open", "in", badIn)));
-            for (int i = 0; i < 50 && !GraphCommandService.hasSession(badId); i++) {
-                Utility.getInstance().sleep(20);
-            }
-            long started = System.currentTimeMillis();
-            var badRun = syncCommand(po, badId, "run");
-            assertTrue(System.currentTimeMillis() - started < 10000,
-                    "a failed run must drain on the terminal, not the safety timeout");
-            assertEquals(Boolean.FALSE, badRun.get("ok"), "run with no instance -> ok:false: " + badRun);
-            var badRunOutput = ((List<?>) badRun.get("output")).stream().map(String::valueOf).toList();
-            assertTrue(badRunOutput.stream().anyMatch("Graph traversal aborted"::equals),
-                    "every run ends with a terminal, even on early failure: " + badRunOutput);
         } finally {
             platform.release(outRoute);
         }
+    }
+
+    /**
+     * A failing traversal (run before instantiate, fresh session) still returns
+     * promptly with the uniform terminal - the drain never hangs to the timeout.
+     */
+    @Test
+    void failedRunDrainsOnTerminalNotTimeout() throws Exception {
+        var po = EventEmitter.getInstance();
+        var badIn = "ws.990009.2.in";
+        var badId = "ws-990009-2";
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", badIn)));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(badId); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        long started = System.currentTimeMillis();
+        var badRun = syncCommand(po, badId, "run");
+        assertTrue(System.currentTimeMillis() - started < 10000,
+                "a failed run must drain on the terminal, not the safety timeout");
+        assertEquals(Boolean.FALSE, badRun.get("ok"), "run with no instance -> ok:false: " + badRun);
+        var badRunOutput = ((List<?>) badRun.get("output")).stream().map(String::valueOf).toList();
+        assertTrue(badRunOutput.stream().anyMatch("Graph traversal aborted"::equals),
+                "every run ends with a terminal, even on early failure: " + badRunOutput);
     }
 
     /**
@@ -226,7 +236,7 @@ class CompanionSyncTest {
      * "Graph model not found in /tmp/..." before falling back to the deployed
      * classpath copy — a benign line that must not mark the command failed. It is
      * forgiven only when the same output also carries the fallback's success marker;
-     * a genuine miss prints the not-found line alone and stays {@code ok:false}.
+     * a genuinely missing model prints the not-found line alone and stays {@code ok:false}.
      */
     @Test
     void companionSyncImportFallbackReportsOk() throws Exception {
@@ -260,12 +270,12 @@ class CompanionSyncTest {
                 "the benign fallback must not be classified an error: " + imported);
         assertNull(imported.get("error"), "no error on a successful fallback import: " + imported);
 
-        // 2) a genuine miss prints the not-found line alone and stays an error
+        // 2) a genuinely missing model prints the not-found line alone and stays an error
         var missed = syncCommand(po, sid, "import graph from no-such-graph-xyz");
         assertEquals(Boolean.FALSE, missed.get("ok"), "a genuine miss stays ok:false: " + missed);
         assertInstanceOf(String.class, missed.get("error"));
         assertTrue(((String) missed.get("error")).contains("not found"),
-                "the genuine miss carries the not-found error in-band: " + missed);
+                "the not-found error is returned in-band for a genuine miss: " + missed);
     }
 
     /**

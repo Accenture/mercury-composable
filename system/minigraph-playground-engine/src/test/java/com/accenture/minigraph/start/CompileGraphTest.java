@@ -44,7 +44,6 @@ class CompileGraphTest {
         assertFalse(CompiledGraphs.graphExists("tutorial-99"));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void deprecatedTypeMatchingSyntaxIsConvertedAtCompileTime() {
         Map<String, Object> model = CompiledGraphs.getGraph("hellojs");

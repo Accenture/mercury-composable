@@ -81,16 +81,19 @@ class SimplePluginNumberPromotionTest {
         assertEquals(2.35d, new RoundNumbers().calculate("2.345", 2));
         // a whole number is already exact and passes through unchanged
         assertEquals(5L, new RoundNumbers().calculate(5, 2));
-        assertThrows(IllegalArgumentException.class, () -> new RoundNumbers().calculate(1.5, 1.5));
-        assertThrows(IllegalArgumentException.class, () -> new RoundNumbers().calculate(1.5, -1));
+        var round = new RoundNumbers();
+        assertThrows(IllegalArgumentException.class, () -> round.calculate(1.5, 1.5));
+        assertThrows(IllegalArgumentException.class, () -> round.calculate(1.5, -1));
     }
 
     @Test
     void errorsStayErrors() {
+        var divide = new DivideNumbers();
+        var add = new AddNumbers();
         // a floating-point zero divisor is still division by zero
-        assertThrows(IllegalArgumentException.class, () -> new DivideNumbers().calculate(6, 0.0));
-        assertThrows(IllegalArgumentException.class, () -> new DivideNumbers().calculate(6, 0));
+        assertThrows(IllegalArgumentException.class, () -> divide.calculate(6, 0.0));
+        assertThrows(IllegalArgumentException.class, () -> divide.calculate(6, 0));
         // non-numeric text is still rejected
-        assertThrows(IllegalArgumentException.class, () -> new AddNumbers().calculate(1, "not-a-number"));
+        assertThrows(IllegalArgumentException.class, () -> add.calculate(1, "not-a-number"));
     }
 }

@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -57,7 +58,7 @@ import java.util.concurrent.TimeUnit;
  * command's {@code out}; the capture route buffers each line (and tees it). The
  * end-of-transmission signal depends on the command shape: a <b>traversal</b>
  * ({@code run}) is asynchronous — the handler launches the traveler and replies
- * immediately, then the traveler streams its output afterwards — so it is drained
+ * immediately, then the traveler streams its output afterward — so it is drained
  * on the traveler's <b>terminal line</b> ("Graph traversal completed in N ms" |
  * "Graph traversal aborted"), always emitted last; every other command emits all
  * output before it replies, so a <b>FIFO sentinel</b> marks its buffer drained. A
@@ -70,6 +71,8 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
     private static final Logger log = LoggerFactory.getLogger(PostCompanionCommandSync.class);
 
     private static final String SYNC_SENTINEL = "__companion_sync_done__";
+    private static final String COMMAND = "command";
+    private static final String TEXT_COMMAND_REQUIRED = "Body must be a non-empty text/plain command";
     private static final long COMMAND_TIMEOUT_MS = 30000;
     private static final long DRAIN_TIMEOUT_MS = 5000;
 
@@ -79,13 +82,7 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         if (id == null) {
             throw new IllegalArgumentException("Missing path parameter: id");
         }
-        if (!(input.getBody() instanceof String raw)) {
-            throw new IllegalArgumentException("Body must be a non-empty text/plain command");
-        }
-        var command = raw.trim();
-        if (command.isEmpty()) {
-            throw new IllegalArgumentException("Body must be a non-empty text/plain command");
-        }
+        var command = commandFromBody(input);
         if (!GraphCommandService.hasSession(id)) {
             throw new AppException(404, "No active session for id " + id);
         }
@@ -99,21 +96,11 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         // subscribe path would also bind the ephemeral capture route as a subscriber).
         var topology = GraphCommandService.sessionTopologySubcommand(command);
         if (topology != null) {
-            var error = GraphCommandService.refuseSessionTopology(outRoute, command, topology);
-            var refused = new HashMap<String, Object>();
-            refused.put("ok", false);
-            refused.put("id", id);
-            refused.put("command", command);
-            refused.put("output", List.of("> " + command, error));
-            refused.put("error", error);
-            refused.put("result", null);
-            return new EventEnvelope().setHeader("Content-Type", "application/json").setBody(refused);
+            return refusedResponse(id, command, GraphCommandService.refuseSessionTopology(outRoute, command, topology));
         }
         var captureRoute = "companion.sync." + Utility.getInstance().getUuid();
-
         var po = new PostOffice(headers, instance);
         var platform = Platform.getInstance();
-        var emitter = EventEmitter.getInstance();
 
         // A private, per-call capture route: buffer each line for the in-band response and
         // tee it to the session's real WebSocket .out for the live human view.
@@ -123,7 +110,30 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         final var traversal = isTraversalCommand(command);
         List<Object> buffer = new CopyOnWriteArrayList<>();
         CountDownLatch drained = new CountDownLatch(1);
-        LambdaFunction capture = (hdr, body, inst) -> {
+        platform.registerPrivate(captureRoute, captureFunction(outRoute, traversal, buffer, drained), 1);
+        try {
+            dispatchAndDrain(po, id, command, inRoute, captureRoute, traversal, drained);
+        } finally {
+            platform.release(captureRoute);
+        }
+        return outcomeResponse(id, command, buffer);
+    }
+
+    private static String commandFromBody(AsyncHttpRequest input) {
+        if (!(input.getBody() instanceof String raw)) {
+            throw new IllegalArgumentException(TEXT_COMMAND_REQUIRED);
+        }
+        var command = raw.trim();
+        if (command.isEmpty()) {
+            throw new IllegalArgumentException(TEXT_COMMAND_REQUIRED);
+        }
+        return command;
+    }
+
+    private LambdaFunction captureFunction(String outRoute, boolean traversal,
+                                           List<Object> buffer, CountDownLatch drained) {
+        var emitter = EventEmitter.getInstance();
+        return (hdr, body, inst) -> {
             if (SYNC_SENTINEL.equals(body)) {
                 drained.countDown();
                 return null;
@@ -142,38 +152,53 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
             }
             return null;
         };
-        platform.registerPrivate(captureRoute, capture, 1);
-        try {
-            // RPC the singleton handler with the capture route as `out`; handleEvent
-            // returns once the command is dispatched (a traversal is still running).
-            // "direct" marks a synchronous companion RPC: not a flaky WS client, so
-            // the identical-command dedup guard does not apply (finding #62)
-            po.request(new EventEnvelope()
-                    .setTo(GraphCommandService.SINGLETON_COMMAND_HANDLER)
-                    .setBody(Map.of(
-                            "type", "command",
-                            "in", inRoute,
-                            "out", captureRoute,
-                            "message", command,
-                            "direct", true)),
-                    COMMAND_TIMEOUT_MS).get();
-            // Synchronous commands: enqueue the FIFO sentinel to mark the buffer drained.
-            // Traversals: the capture route counts the latch down on the terminal line.
-            if (!traversal) {
-                po.send(new EventEnvelope().setTo(captureRoute).setBody(SYNC_SENTINEL));
-            }
-            // The timeout is only a safety net (matched to the command timeout for a
-            // traversal); correctness comes from the signal, not from a timer.
-            var drainTimeout = traversal ? COMMAND_TIMEOUT_MS : DRAIN_TIMEOUT_MS;
-            if (!drained.await(drainTimeout, TimeUnit.MILLISECONDS)) {
-                log.warn("Companion sync drain timed out for {}", id);
-            }
-        } finally {
-            platform.release(captureRoute);
-        }
+    }
 
-        // Build the structured outcome from the captured output. Collect the console
-        // lines first, then classify with whole-output context (see firstErrorLine).
+    private void dispatchAndDrain(PostOffice po, String id, String command, String inRoute,
+                                  String captureRoute, boolean traversal, CountDownLatch drained)
+            throws ExecutionException, InterruptedException {
+        // RPC the singleton handler with the capture route as `out`; handleEvent
+        // returns once the command is dispatched (a traversal is still running).
+        // "direct" marks a synchronous companion RPC: not a flaky WS client, so
+        // the identical-command dedup guard does not apply (finding #62)
+        po.request(new EventEnvelope()
+                .setTo(GraphCommandService.SINGLETON_COMMAND_HANDLER)
+                .setBody(Map.of(
+                        "type", COMMAND,
+                        "in", inRoute,
+                        "out", captureRoute,
+                        "message", command,
+                        "direct", true)),
+                COMMAND_TIMEOUT_MS).get();
+        // Synchronous commands: enqueue the FIFO sentinel to mark the buffer drained.
+        // Traversals: the capture route counts the latch down on the terminal line.
+        if (!traversal) {
+            po.send(new EventEnvelope().setTo(captureRoute).setBody(SYNC_SENTINEL));
+        }
+        // The timeout is only a safety net (matched to the command timeout for a
+        // traversal); correctness comes from the signal, not from a timer.
+        var drainTimeout = traversal ? COMMAND_TIMEOUT_MS : DRAIN_TIMEOUT_MS;
+        if (!drained.await(drainTimeout, TimeUnit.MILLISECONDS)) {
+            log.warn("Companion sync drain timed out for {}", id);
+        }
+    }
+
+    private static EventEnvelope refusedResponse(String id, String command, String error) {
+        var refused = new HashMap<String, Object>();
+        refused.put("ok", false);
+        refused.put("id", id);
+        refused.put(COMMAND, command);
+        refused.put("output", List.of("> " + command, error));
+        refused.put("error", error);
+        refused.put("result", null);
+        return new EventEnvelope().setHeader("Content-Type", "application/json").setBody(refused);
+    }
+
+    /**
+     * Build the structured outcome from the captured output. Collect the console
+     * lines first, then classify with whole-output context (see firstErrorLine).
+     */
+    private static EventEnvelope outcomeResponse(String id, String command, List<Object> buffer) {
         List<String> output = new ArrayList<>();
         List<Object> result = new ArrayList<>();
         for (var item : buffer) {
@@ -187,7 +212,7 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         var body = new HashMap<String, Object>();
         body.put("ok", error == null);
         body.put("id", id);
-        body.put("command", command);
+        body.put(COMMAND, command);
         body.put("output", output);
         body.put("error", error);
         body.put("result", result.isEmpty() ? null : result);
@@ -195,9 +220,10 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
     }
 
     private static boolean isErrorLine(String line) {
-        // a "Syntax: ..." usage hint is the engine's rejection of a malformed command —
-        // the command did nothing, so the caller must see ok:false (finding #63;
-        // no help page starts a line with "Syntax:", so no false positive)
+        // A usage hint beginning with the Syntax prefix is the engine's rejection of a
+        // malformed command. The command did nothing, so the caller must see ok=false
+        // per finding 63. No help page starts a line with that prefix, which rules out
+        // a false positive.
         return line.startsWith("ERROR:") || line.contains("aborted") || line.contains("does not have")
                 || line.startsWith("Invalid") || line.contains("not found") || line.contains("Please try 'help'")
                 || line.startsWith("Syntax:");
@@ -208,8 +234,8 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
      * legitimately prints "Graph model not found in /tmp/..." before falling back
      * to the deployed classpath copy — a benign line that must not mark the
      * command failed. It is forgiven <b>only</b> when the same output also carries
-     * the fallback's success marker; a genuine miss prints the not-found line
-     * alone and stays an error.
+     * the fallback's success marker; a genuinely missing model prints the
+     * not-found line alone and stays an error.
      */
     private static String firstErrorLine(List<String> lines) {
         var deployedFallback = lines.stream().anyMatch(l -> l.contains("Found deployed graph model"));
