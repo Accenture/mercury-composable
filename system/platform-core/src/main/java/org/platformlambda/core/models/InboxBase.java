@@ -83,6 +83,15 @@ public abstract class InboxBase {
                 if (md.from != null) {
                     metrics.put("from", trimOrigin(md.from));
                 }
+                // span lineage of the RPC: the reply carries the callee's own span id
+                // and the outbound request carried the caller's span (the callee's parent),
+                // so the round-trip record chains like any worker-emitted trace record
+                if (md.spanId != null) {
+                    metrics.put("span_id", md.spanId);
+                }
+                if (md.parentSpanId != null) {
+                    metrics.put("parent_span_id", md.parentSpanId);
+                }
                 metrics.put("exec_time", md.execTime);
                 metrics.put("round_trip", md.roundTrip);
                 metrics.put("start", md.start);
@@ -127,6 +136,8 @@ public abstract class InboxBase {
         String tracePath;
         String to;
         String from;
+        String spanId;
+        String parentSpanId;
         String start;
         int status;
         Object error;

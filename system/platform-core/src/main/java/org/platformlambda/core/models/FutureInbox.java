@@ -39,6 +39,7 @@ public class FutureInbox extends InboxBase {
     private final String tracePath;
     private final String from;
     private final String to;
+    private final String parentSpan;
     private final String originalCid;
     private final long timeout;
     private final boolean timeoutException;
@@ -50,6 +51,8 @@ public class FutureInbox extends InboxBase {
         this.to = to;
         this.traceId = event.getTraceId();
         this.tracePath = event.getTracePath();
+        // the caller's span rides on the outbound request - it is the callee's parent span
+        this.parentSpan = event.getSpanId();
         this.originalCid = event.getCorrelationId();
         this.timeout = Math.max(100, timeout);
         inboxes.put(cid, this);
@@ -100,6 +103,8 @@ public class FutureInbox extends InboxBase {
                 md.tracePath = holder.tracePath;
                 md.to = to;
                 md.from = holder.from;
+                md.spanId = reply.getSpanId();
+                md.parentSpanId = holder.parentSpan;
                 md.start = start;
                 md.status = reply.getStatus();
                 md.error = reply.getError();

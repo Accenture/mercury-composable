@@ -1280,7 +1280,8 @@ public class EventEmitter {
         String from = first.getFrom();
         String traceId = first.getTraceId();
         String tracePath = first.getTracePath();
-        AsyncMultiInbox inbox = new AsyncMultiInbox(events.size(), from, traceId, tracePath, timeout, timeoutException);
+        AsyncMultiInbox inbox = new AsyncMultiInbox(events.size(), from, traceId, tracePath,
+                first.getSpanId(), timeout, timeoutException);
         String cid = inbox.getCorrelationId();
         Platform platform = Platform.getInstance();
         EventBus system = platform.getEventSystem();
@@ -1380,7 +1381,8 @@ public class EventEmitter {
         String from = first.getFrom();
         String traceId = first.getTraceId();
         String tracePath = first.getTracePath();
-        FutureMultiInbox inbox = new FutureMultiInbox(events.size(), from, traceId, tracePath, timeout, timeoutException);
+        FutureMultiInbox inbox = new FutureMultiInbox(events.size(), from, traceId, tracePath,
+                first.getSpanId(), timeout, timeoutException);
         String cid = inbox.getCorrelationId();
         Platform platform = Platform.getInstance();
         EventBus system = platform.getEventSystem();
