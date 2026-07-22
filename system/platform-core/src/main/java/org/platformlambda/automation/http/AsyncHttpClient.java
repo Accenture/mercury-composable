@@ -188,7 +188,11 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         if (relaxedHeaderSize) {
             client = client.httpResponseDecoder(spec -> spec.maxHeaderSize(16 * 1024));
         }
-        client = client.responseTimeout(Duration.ofSeconds(request.getTimeoutSeconds()));
+        // one extra second of grace over the request TTL so a peer that spends
+        // its whole TTL and then replies (e.g. an Event-over-HTTP 408 sent AT
+        // the deadline) is still readable; the caller's own RPC timeout - not
+        // this wire-level read timeout - governs the user-visible deadline
+        client = client.responseTimeout(Duration.ofSeconds(request.getTimeoutSeconds() + 1L));
         if (request.isSecure()) {
             if (request.isTrustAllCert()) {
                 Http11SslContextSpec http11Context = Http11SslContextSpec.forClient()
