@@ -2662,15 +2662,18 @@ in the application.properties file:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">rest.server.port</span><span class="o">=</span><span class="s">8085</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="na">rest.automation</span><span class="o">=</span><span class="s">true</span>
 </code></pre></div>
-<p>and then check if the following entry is configured in the "rest.yaml" endpoint definition file. 
-If not, update "rest.yaml" accordingly. The "timeout" value is set to 60 seconds to fit common use cases.</p>
+<p>The Event API endpoint is one of the <strong>default system endpoints</strong> (alongside the actuator
+endpoints): when REST automation starts, the following entry is merged into your "rest.yaml"
+automatically if you have not defined <code>POST /api/event</code> yourself — no configuration is needed.
+Define it explicitly only to customize the entry, for example to change the 60-second default
+timeout or to attach an authentication service (shown later in this page).</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">&quot;event.api.service&quot;</span><span class="w"> </span><span class="p p-Indicator">]</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">&#39;POST&#39;</span><span class="w"> </span><span class="p p-Indicator">]</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/api/event&quot;</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60s</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
-<p>This will expose the Event API endpoint at port 8085 and URL "/api/event". </p>
+<p>This exposes the Event API endpoint at port 8085 and URL "/api/event". </p>
 <p>In kubernetes, The Event API endpoint of each application is reachable through internal DNS and there is no need
 to create "ingress" for this purpose.</p>
 <h3 id="wire-format-and-cross-language-interoperability">Wire format and cross-language interoperability<a class="headerlink" href="#wire-format-and-cross-language-interoperability" title="Permanent link">&para;</a></h3>
