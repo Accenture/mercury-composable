@@ -34,8 +34,11 @@ rest.server.port=8085
 rest.automation=true
 ```
 
-and then check if the following entry is configured in the "rest.yaml" endpoint definition file. 
-If not, update "rest.yaml" accordingly. The "timeout" value is set to 60 seconds to fit common use cases.
+The Event API endpoint is one of the **default system endpoints** (alongside the actuator
+endpoints): when REST automation starts, the following entry is merged into your "rest.yaml"
+automatically if you have not defined `POST /api/event` yourself — no configuration is needed.
+Define it explicitly only to customize the entry, for example to change the 60-second default
+timeout or to attach an authentication service (shown later in this page).
 
 ```yaml
   - service: [ "event.api.service" ]
@@ -45,7 +48,7 @@ If not, update "rest.yaml" accordingly. The "timeout" value is set to 60 seconds
     tracing: true
 ```
 
-This will expose the Event API endpoint at port 8085 and URL "/api/event". 
+This exposes the Event API endpoint at port 8085 and URL "/api/event". 
 
 In kubernetes, The Event API endpoint of each application is reachable through internal DNS and there is no need
 to create "ingress" for this purpose.
