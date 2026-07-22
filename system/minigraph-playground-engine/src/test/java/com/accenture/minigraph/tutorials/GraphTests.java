@@ -379,7 +379,7 @@ class GraphTests {
         var po = PostOffice.trackable("unit.test", String.format("%032x", 999), "TEST /graph/" + graphId);
         var response = po.asyncRequest(event, TIMEOUT).await(TIMEOUT, TimeUnit.MILLISECONDS);
         if (response.hasError()) {
-            log.error("HTTP-{} - {}", response.getStatus(), response.getBody());
+            log.error("RunGraph HTTP-{} - {}", response.getStatus(), response.getBody());
         }
         return response.getBody();
     }
@@ -398,7 +398,7 @@ class GraphTests {
         var po = PostOffice.trackable("unit.test", traceId, "TEST /chapter/"+chapter);
         var response = po.asyncRequest(event, TIMEOUT).await(TIMEOUT, TimeUnit.MILLISECONDS);
         if (response.hasError()) {
-            log.error("HTTP-{} - {}", response.getStatus(), response.getBody());
+            log.error("RunTutorial HTTP-{} - {}", response.getStatus(), response.getBody());
         }
         return response.getBody();
     }

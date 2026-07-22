@@ -2,5 +2,6 @@ flows:
   - 'get-profile.yml'
   - 'create-profile.yml'
   - 'delete-profile.yml'
+  - 'event-over-http-demo.yml'
 
 location: 'classpath:/flows/'
