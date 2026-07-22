@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-21 | agent: Claude Code (2026-07-21-215951)
+- **last_session:** 2026-07-22 | agent: Claude Code (2026-07-22-004243)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -373,8 +373,14 @@
   for the Rust session: `/tmp/event-envelope-rust-handoff.md` (contract summary, compact
   decision + flag table, /api/event semantics, vector procedure, interop test plan) —
   Eric will ask this repo's session to REVIEW the Rust implementation for consistency
-  afterward. Next: PR merge, Phase 2 (Rust, OTHER session), live two-runtime interop
-  test; version number for the carrying release still open. → serves
+  afterward. **Phase 2 IMPLEMENTED in the Rust session (mercury increments 59-61, PRs
+  #163-#165) and REVIEWED for consistency 2026-07-22: high fidelity, no blockers** —
+  vectors byte-identical, envelope/service/client semantics match (see session
+  2026-07-22-004243 for the asymmetry list). Review follow-up: new additive golden vector
+  `standard-trace-context` (span_id coverage, their finding) on branch
+  `test/fetcher-cache-key-guard`; Rust re-syncs vectors.json + bumps its count assertion
+  (note: `/tmp/event-envelope-vectors-update.md`). Next: live two-runtime interop test;
+  version number for the carrying release still open. → serves
   `vision-mercury-composable` (polyglot deployment)
   <!-- id: thread-event-envelope-interop | created: 2026-07-21 | last_used: 2026-07-21 | uses: 1 | tier: working | origin: 2026-07-21-215951 -->
 

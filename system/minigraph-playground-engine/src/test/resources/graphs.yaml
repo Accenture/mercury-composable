@@ -27,3 +27,4 @@ graphs:
   - 'unit-test-task-5'
   - 'unit-test-join-retry'
   - 'unit-test-join-chain'
+  - 'unit-test-cache-key'

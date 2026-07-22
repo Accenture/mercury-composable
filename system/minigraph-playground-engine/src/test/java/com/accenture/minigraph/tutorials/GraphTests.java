@@ -348,6 +348,28 @@ class GraphTests {
         log.info("Chained join counts only a fired upstream join");
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void fetcherCacheKeyUsesDictionaryDeclaredInputsOnly() throws TimeoutException {
+        // Parity guard (finding F6, mirrored in the Rust port): the provider cache key
+        // is built from the DICTIONARY-DECLARED inputs only. Two fetchers call the same
+        // provider through different dictionaries that declare the same input
+        // (person_id) while each fetcher stages a different undeclared parameter
+        // (extra=alpha vs extra=beta). Correct behavior: one provider call, second
+        // fetch served from cache. A regression to keying on the whole staged fetch
+        // map would make it two calls.
+        long before = com.accenture.minigraph.mock.CacheCounter.current();
+        var result = runGraph("unit-test-cache-key", Map.of("person_id", 100));
+        assertInstanceOf(Map.class, result);
+        var mm = new MultiLevelMap((Map<String, Object>) result);
+        long after = com.accenture.minigraph.mock.CacheCounter.current();
+        assertEquals(1, after - before,
+                "the provider must be called exactly once - the second fetch reads the cache");
+        assertEquals(mm.getElement("count1"), mm.getElement("count2"),
+                "both fetches must see the same cached response");
+        log.info("Fetcher cache key is scoped to dictionary-declared inputs");
+    }
+
     private Object runGraph(String graphId, Map<String, Object> input) throws TimeoutException {
         var request = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
                 .setBody(input).setHeader("Content-Type", "application/json")
