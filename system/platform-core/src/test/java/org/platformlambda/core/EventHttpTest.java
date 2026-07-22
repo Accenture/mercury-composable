@@ -348,6 +348,33 @@ class EventHttpTest extends TestBase {
         assertEquals(numberThree, map.getElement("body"));
     }
 
+    @Test
+    void remoteTimeoutArrivesInBand() throws InterruptedException {
+        // Regression: the HTTP client's wire-level read timeout must outlive the
+        // request TTL. A peer that spends its whole TTL and replies with its own
+        // in-band 408 AT the deadline (~ttl + a few ms) was previously killed by a
+        // ReadTimeoutException at floor(ttl/1000) seconds - a misplaced parenthesis
+        // in AsyncHttpRequest.getTimeoutSeconds() (max(1, ms)/1000 instead of
+        // max(1, ms/1000) with ceiling), surfacing as status=500 with a null body.
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        long timeout = 1500;
+        Map<String, String> securityHeaders = new HashMap<>();
+        securityHeaders.put("Authorization", "demo");
+        PostOffice po = PostOffice.trackable("unit.test", "9003", "TEST /remote/event/timeout");
+        EventEnvelope event = new EventEnvelope().setTo(HELLO_SLEEPER)
+                .setBody(Map.of("sleep_ms", 3000));
+        Future<EventEnvelope> response = po.asyncRequest(event, timeout, securityHeaders,
+                "http://127.0.0.1:"+port+"/api/event", true);
+        response.onSuccess(bench::add);
+        EventEnvelope result = bench.poll(timeout + 2000, TimeUnit.MILLISECONDS);
+        assertNotNull(result);
+        assertEquals(408, result.getStatus(),
+                "the remote's own timeout must arrive in-band, not die on the wire: " + result.getBody());
+        assertInstanceOf(String.class, result.getBody());
+        assertTrue(String.valueOf(result.getBody()).contains("1500"),
+                "the remote reports the TTL it enforced: " + result.getBody());
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void standardFormatIsDefaultAndMirrored() throws InterruptedException {

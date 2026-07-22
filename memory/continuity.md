@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-22 | agent: Claude Code (2026-07-22-004243)
+- **last_session:** 2026-07-22 | agent: Claude Code (2026-07-22-015924)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -379,8 +379,20 @@
   2026-07-22-004243 for the asymmetry list). Review follow-up: new additive golden vector
   `standard-trace-context` (span_id coverage, their finding) on branch
   `test/fetcher-cache-key-guard`; Rust re-syncs vectors.json + bumps its count assertion
-  (note: `/tmp/event-envelope-vectors-update.md`). Next: live two-runtime interop test;
-  version number for the carrying release still open. → serves
+  (note: `/tmp/event-envelope-vectors-update.md`). **LIVE BIDIRECTIONAL INTEROP TEST
+  PASSED 2026-07-22** (report `/tmp/event-over-http-interop-test-report.md`; session
+  2026-07-22-015924): Java→Rust 7/7, Rust→Java 6/7 (last case blocked only by the Rust
+  client's mirror of defect D1 — flagged to the Rust repo), trace continuity both ways.
+  Drive found+fixed a REAL pre-existing Java bug (D1: getTimeoutSeconds floor-division →
+  1s HTTP read timeout; fixed on branch `fix/http-client-response-timeout` with
+  regression test — NEEDS PR). **UPDATE same day: Rust→Java also 7/7 — D2 fixed in the
+  Rust working tree (div_ceil + grace, regression test, 162/162) and the blocked case
+  re-verified live; D3 (example echo binary drop) fixed; declarative
+  `yaml.event.over.http` routing implemented for parity (increment 62, live zero-code
+  cross-language proof verified in Java telemetry).** All Rust work uncommitted on
+  `feature/interop-test-service` awaiting Eric; a redundant D2 task-chip session on the
+  Rust side needs standing down. Next: PR the Java D1 fix; Eric reviews/commits the Rust
+  branch; version number for the carrying release still open. → serves
   `vision-mercury-composable` (polyglot deployment)
   <!-- id: thread-event-envelope-interop | created: 2026-07-21 | last_used: 2026-07-21 | uses: 1 | tier: working | origin: 2026-07-21-215951 -->
 

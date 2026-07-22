@@ -61,6 +61,7 @@ public class TestBase {
     protected static final String HELLO_WORLD = "hello.world";
     protected static final String HELLO_MOCK = "hello.mock";
     protected static final String HELLO_LIST = "hello.list";
+    protected static final String HELLO_SLEEPER = "hello.sleeper";
     protected static final String CLOUD_CONNECTOR_HEALTH = "cloud.connector.health";
     protected static final String APP_ID = Utility.getInstance().getDateUuid()+"-"+System.getProperty("user.name");
     private static final String HTTPS_SERVICE_LOADED = "https.service.loaded";
@@ -96,6 +97,16 @@ public class TestBase {
             platform.registerPrivate(HELLO_LIST, (headers, input, instance) ->
                     Collections.singletonList(input), 5);
             platform.makePublic(HELLO_MOCK);
+            // a public function that can exhaust its caller's whole TTL - the regression
+            // target for the Event-over-HTTP remote-timeout path (a peer that replies
+            // with its own 408 AT the deadline must still be readable by the caller)
+            platform.registerPrivate(HELLO_SLEEPER, (headers, input, instance) -> {
+                if (input instanceof Map<?, ?> map && map.get("sleep_ms") != null) {
+                    util.sleep(Math.min(10000, util.str2long(String.valueOf(map.get("sleep_ms")))));
+                }
+                return input;
+            }, 5);
+            platform.makePublic(HELLO_SLEEPER);
             if (generatePrivateKeyAndCert()) {
                 System.setProperty("rest.server.ssl.cert", "file:%s".formatted(CERTIFICATE_PATH));
                 System.setProperty("rest.server.ssl.key", "file:%s".formatted(PRIVATE_KEY_PATH));
