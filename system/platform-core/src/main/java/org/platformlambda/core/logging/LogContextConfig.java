@@ -27,12 +27,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Loads the optional {@code app-log-context.yaml} and resolves the log-context template.
+ * Resolves the log-context template. The feature is ON by default: platform-core ships a built-in
+ * {@code default-log-context.yaml} carrying the standard trace context (cid, traceId, tracePath,
+ * spanId, parentSpanId, service, timestamp).
  * <p>
- * If the file is present on the classpath, the application log-context feature is enabled and the
- * JSON appenders ({@code JsonAppender}, {@code CompactAppender}) will add a {@code context} block to
- * each structured log line. If the file is absent, the feature stays off and the appenders behave
- * exactly as before.
+ * An application may replace the template by providing its own {@code app-log-context.yaml} on the
+ * classpath, or opt out entirely with {@code app.log.context=false} in application.properties.
+ * When enabled, the JSON appenders ({@code JsonAppender}, {@code CompactAppender}) add a
+ * {@code context} block to each structured log line.
  * <p>
  * The template maps an output key to either:
  * <ul>
@@ -51,6 +53,8 @@ import java.util.Map;
 public class LogContextConfig {
     private static final Logger log = LoggerFactory.getLogger(LogContextConfig.class);
     private static final String CONFIG_FILE = "classpath:/app-log-context.yaml";
+    private static final String DEFAULT_CONFIG_FILE = "classpath:/default-log-context.yaml";
+    private static final String FEATURE_FLAG = "app.log.context";
     private static final String CONTEXT = "context";
     private static final String TOKEN_PREFIX = "$";
     private static final String ENV_PREFIX = "${";
@@ -105,14 +109,22 @@ public class LogContextConfig {
     }
 
     private static ConfigReader loadConfigFile() {
+        // ensure the base config is registered so ${ENV:default} substitution works regardless of timing
+        AppConfigReader config = AppConfigReader.getInstance();
+        if ("false".equals(config.getProperty(FEATURE_FLAG, "true"))) {
+            log.info("Application log context disabled by {}=false", FEATURE_FLAG);
+            return null;
+        }
         try {
-            // ensure the base config is registered so ${ENV:default} substitution works regardless of timing
-            AppConfigReader.getInstance();
             return new ConfigReader(CONFIG_FILE);
         } catch (IllegalArgumentException notFound) {
-            // optional config file absent - feature stays off
-            log.debug("Optional {} not found - log context feature disabled", CONFIG_FILE);
-            return null;
+            // no application override - fall back to the built-in default so the feature is on out of the box
+            try {
+                return new ConfigReader(DEFAULT_CONFIG_FILE);
+            } catch (IllegalArgumentException missing) {
+                log.warn("Built-in {} missing - log context feature disabled", DEFAULT_CONFIG_FILE);
+                return null;
+            }
         }
     }
 

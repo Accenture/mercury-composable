@@ -20,8 +20,8 @@ keywords: [observability, distributed tracing, opentelemetry, otlp, telemetry, w
 > - **Built-in** — distributed tracing is part of the platform; you turn it on per endpoint/flow and the
 >   spans propagate without code.
 > - **For** developers and operators wiring Mercury to Dynatrace, Splunk, Jaeger, Tempo, or an OpenTelemetry Collector.
-> - **Logs too** — an opt-in [application log context](#log-context) stamps the same correlation/trace ids (plus your
->   own key-values) into structured log lines, so logs and spans join up in your backend.
+> - **Logs too** — a default-on [application log context](#log-context) stamps the same correlation/trace ids (plus
+>   your own key-values) into structured log lines, so logs and spans join up in your backend.
 
 In an event-driven, composable system a single request fans out across **decoupled** functions, flows, and graph
 nodes that never call each other directly. Observability is therefore not optional — it is the only way to see the
@@ -241,12 +241,21 @@ It deliberately **avoids the ThreadLocal / Log4j MDC** pattern (heavy for a virt
 rides the same per-request mechanism as the trace itself, keyed to the worker thread and torn down when the
 function returns.
 
-### Turning it on {#log-context-enable}
+### On by default {#log-context-enable}
 
-The feature is **opt-in** and activates only when an optional `app-log-context.yaml` is on the classpath
-(`src/main/resources/`). It applies to the two **structured JSON appenders** — select one via the log4j2
+The feature is **on by default**: platform-core ships a built-in `default-log-context.yaml` that emits the
+standard trace context (`cid`, `traceId`, `tracePath`, `spanId`, `parentSpanId`, `service`, `timestamp`) on
+every structured log line. You can adjust it in two ways:
+
+- **Customize** — provide your own `app-log-context.yaml` on the classpath (`src/main/resources/`); it
+  replaces the built-in template entirely.
+- **Opt out** — set `app.log.context=false` in `application.properties`.
+
+It applies to the two **structured JSON appenders** — select one via the log4j2
 configuration (`log4j2-json.xml` for pretty output, `log4j2-compact.xml` for single-line); the plain `Console`
 appender is unaffected.
+
+A custom template looks like this:
 
 ```yaml
 # src/main/resources/app-log-context.yaml
@@ -328,7 +337,7 @@ keys on display.)
 - The `context` block appears **only** when a request is traced and a `traceId` is present. Framework boot logs and
   logs emitted from a `Mono`/`Flux` completion that runs **after** the worker returns (on a different thread) carry
   no context — the same boundary distributed tracing has.
-- Feature **off** (no `app-log-context.yaml`) costs one boolean check per log line and nothing else.
+- Feature **off** (`app.log.context=false`) costs one boolean check per log line and nothing else.
 
 ## See also {#see-also}
 
