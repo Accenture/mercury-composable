@@ -385,14 +385,16 @@
   client's mirror of defect D1 — flagged to the Rust repo), trace continuity both ways.
   Drive found+fixed a REAL pre-existing Java bug (D1: getTimeoutSeconds floor-division →
   1s HTTP read timeout; fixed on branch `fix/http-client-response-timeout` with
-  regression test — NEEDS PR). **UPDATE same day: Rust→Java also 7/7 — D2 fixed in the
-  Rust working tree (div_ceil + grace, regression test, 162/162) and the blocked case
-  re-verified live; D3 (example echo binary drop) fixed; declarative
-  `yaml.event.over.http` routing implemented for parity (increment 62, live zero-code
-  cross-language proof verified in Java telemetry).** All Rust work uncommitted on
-  `feature/interop-test-service` awaiting Eric; a redundant D2 task-chip session on the
-  Rust side needs standing down. Next: PR the Java D1 fix; Eric reviews/commits the Rust
-  branch; version number for the carrying release still open. → serves
+  regression test). **UPDATE same day: Rust→Java also 7/7 — D2 fixed (div_ceil + grace,
+  regression test) and the blocked case re-verified live; D3 (example echo binary drop)
+  fixed; declarative `yaml.event.over.http` routing implemented for parity (increment 62,
+  live zero-code cross-language proof verified in Java telemetry). ALL MERGED 2026-07-22:
+  Java D1 fix = PR #214 (merge `2b5504a0`); Rust D2+D3+test-service+declarative = mercury
+  PR #166 (merge `e36e5dc5`, commits f62a69bf/230ee55b/258f3578). The "redundant D2 chip
+  session" turned out not to exist (session list + transcript search clean); repo memory
+  protocol protects against late arrivals anyway. Interop test processes stopped.**
+  REMAINING: cut the Java release carrying the wire format + D1 fix (version number
+  open — 4.10.0 suggested; it is a feature release). → serves
   `vision-mercury-composable` (polyglot deployment)
   <!-- id: thread-event-envelope-interop | created: 2026-07-21 | last_used: 2026-07-21 | uses: 1 | tier: working | origin: 2026-07-21-215951 -->
 
