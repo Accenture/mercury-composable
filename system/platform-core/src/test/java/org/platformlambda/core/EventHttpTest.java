@@ -421,4 +421,70 @@ class EventHttpTest extends TestBase {
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
         assertEquals("legacy", map.getElement("body"));
     }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void eventApiServiceIsAVisibleSpanInTheTrace() throws InterruptedException {
+        // Regression: the "/api/event" edge must connect to the span tree - the
+        // event.api.service span parents onto the remote caller's span (carried by the
+        // inbound trace headers), and the target function parents onto event.api.service.
+        // This is the reference behavior for other language implementations.
+        String traceForwarder = "distributed.trace.forwarder";
+        BlockingQueue<Map<String, Object>> records = new ArrayBlockingQueue<>(20);
+        Platform platform = Platform.getInstance();
+        String traceId = Utility.getInstance().getUuid();
+        String callerFunction = "event.api.span.caller";
+        LambdaFunction collector = (headers, input, instance) -> {
+            Map<String, Object> trace = (Map<String, Object>) input;
+            MultiLevelMap m = new MultiLevelMap(trace);
+            if (traceId.equals(m.getElement("trace.id"))) {
+                records.add(trace);
+            }
+            return null;
+        };
+        LambdaFunction caller = (headers, input, instance) -> {
+            // a traced function making a remote Event-over-HTTP RPC - its own span is
+            // the parent of the event.api.service span on the (loopback) remote side
+            PostOffice po = new PostOffice(headers, instance);
+            Map<String, String> securityHeaders = Map.of("Authorization", "demo");
+            EventEnvelope event = new EventEnvelope().setTo("hello.world").setBody(input);
+            return po.request(event, 8000, securityHeaders,
+                    "http://127.0.0.1:"+port+"/api/event", true).get().getBody();
+        };
+        platform.registerPrivate(traceForwarder, collector, 1);
+        platform.registerPrivate(callerFunction, caller, 1);
+        PostOffice po = new PostOffice("unit.test", traceId, "TEST /event/api/span");
+        po.asyncRequest(new EventEnvelope().setTo(callerFunction).setBody("start"), 8000)
+                .onSuccess(response -> assertEquals(200, response.getStatus()));
+        MultiLevelMap callerRecord = null;
+        MultiLevelMap eventApiRecord = null;
+        MultiLevelMap targetRecord = null;
+        long deadline = System.currentTimeMillis() + 10000;
+        while ((callerRecord == null || eventApiRecord == null || targetRecord == null)
+                && System.currentTimeMillis() < deadline) {
+            Map<String, Object> item = records.poll(2, TimeUnit.SECONDS);
+            if (item != null) {
+                MultiLevelMap m = new MultiLevelMap(item);
+                Object service = m.getElement("trace.service");
+                if (callerFunction.equals(service)) {
+                    callerRecord = m;
+                } else if ("event.api.service".equals(service)) {
+                    eventApiRecord = m;
+                } else if ("hello.world".equals(service)) {
+                    targetRecord = m;
+                }
+            }
+        }
+        platform.release(traceForwarder);
+        platform.release(callerFunction);
+        assertNotNull(callerRecord, "expect a trace record for the calling function");
+        assertNotNull(eventApiRecord, "expect a trace record for event.api.service");
+        assertNotNull(targetRecord, "expect a trace record for the target function");
+        assertEquals(callerRecord.getElement("trace.span_id"),
+                eventApiRecord.getElement("trace.parent_span_id"),
+                "event.api.service must parent onto the remote caller's span");
+        assertEquals(eventApiRecord.getElement("trace.span_id"),
+                targetRecord.getElement("trace.parent_span_id"),
+                "the target function must parent onto the event.api.service span");
+    }
 }

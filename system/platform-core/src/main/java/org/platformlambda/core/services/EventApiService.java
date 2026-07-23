@@ -20,9 +20,9 @@ package org.platformlambda.core.services;
 
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.models.TraceInfo;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.EventEmitter;
@@ -38,8 +38,12 @@ import java.util.Map;
 /**
  * This is reserved for system use.
  * DO NOT use this directly in your application code.
+ * <p>
+ * This service is traced so the "/api/event" edge is visible in the span tree:
+ * its span parents onto the remote caller's span (carried by the inbound trace
+ * headers), the relayed local event carries this service's span so the target
+ * function parents onto it, and the HTTP response leg does the same.
  */
-@ZeroTracing
 @EventInterceptor
 @PreLoad(route=EventApiService.EVENT_API_SERVICE, instances=250)
 public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void> {
@@ -66,22 +70,28 @@ public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void>
             Map<String, String> sessionInfo = request.getSessionInfo();
             long timeout = Math.max(1000, util.str2long(request.getHeader(X_TTL)));
             boolean async = "true".equals(request.getHeader(X_ASYNC));
+            PostOffice po = new PostOffice(headers, instance);
+            // capture this service's span on the worker thread - the trace context is
+            // thread-keyed and torn down when the worker returns, so the async RPC
+            // callbacks below cannot look it up later
+            TraceInfo trace = po.getTrace();
+            String spanId = trace == null? null : trace.spanId;
             if (request.getBody() instanceof byte[] b) {
                 try {
-                    handleRequest(sessionInfo, headers, instance, b, input, timeout, async);
+                    handleRequest(sessionInfo, po, spanId, b, input, timeout, async);
                 } catch (Exception e) {
                     // the envelope could not be decoded, so its format is unknown -
                     // fall back to the classic compact format for the error reply
-                    sendError(input, EventEnvelope.Format.COMPACT, 400, e.getMessage());
+                    sendError(input, spanId, EventEnvelope.Format.COMPACT, 400, e.getMessage());
                 }
             } else {
-                sendError(input, EventEnvelope.Format.COMPACT, 500, "Invalid event-over-http data format");
+                sendError(input, spanId, EventEnvelope.Format.COMPACT, 500, "Invalid event-over-http data format");
             }
         }
         return null;
     }
 
-    private void handleRequest(Map<String, String> sessionInfo, Map<String, String> headers, int instance,
+    private void handleRequest(Map<String, String> sessionInfo, PostOffice po, String spanId,
                                byte[] requestBody, EventEnvelope input,
                                long timeout, boolean async) {
         EventEnvelope request = new EventEnvelope(requestBody);
@@ -92,11 +102,10 @@ public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void>
                 EventEnvelope.Format.COMPACT : request.getWireFormat();
         // propagate session info if any
         sessionInfo.forEach(request::setHeader);
-        PostOffice po = new PostOffice(headers, instance);
         if (request.getTo() != null) {
             if (po.exists(request.getTo())) {
                 if (Platform.getInstance().isPrivate(request.getTo())) {
-                    sendError(input, format, 403, request.getTo() + PRIVATE_FUNCTION);
+                    sendError(input, spanId, format, 403, request.getTo() + PRIVATE_FUNCTION);
                 } else {
                     if (async) {
                         // Drop-n-forget
@@ -106,27 +115,29 @@ public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void>
                         ackBody.put(DELIVERED, true);
                         ackBody.put(TIME, new Date());
                         EventEnvelope pending = new EventEnvelope().setStatus(202).setBody(ackBody);
-                        sendResponse(input, format, pending);
+                        sendResponse(input, spanId, format, pending);
                     } else {
-                        // RPC
+                        // RPC - po.asyncRequest stamps this service's span on the relayed
+                        // event (worker thread), so the target function parents onto it
                         po.asyncRequest(request, timeout)
-                                .onSuccess(result -> sendResponse(input, format, result))
-                                .onFailure(e -> sendError(input, format, 408, e.getMessage()));
+                                .onSuccess(result -> sendResponse(input, spanId, format, result))
+                                .onFailure(e -> sendError(input, spanId, format, 408, e.getMessage()));
                     }
                 }
             } else {
-                sendError(input, format, 404, ROUTE + request.getTo() + NOT_FOUND);
+                sendError(input, spanId, format, 404, ROUTE + request.getTo() + NOT_FOUND);
             }
         } else {
-            sendError(input, format, 400, MISSING_ROUTING_PATH);
+            sendError(input, spanId, format, 400, MISSING_ROUTING_PATH);
         }
     }
 
-    private void sendResponse(EventEnvelope input, EventEnvelope.Format format, EventEnvelope result) {
+    private void sendResponse(EventEnvelope input, String spanId, EventEnvelope.Format format, EventEnvelope result) {
         try {
             EventEnvelope response = new EventEnvelope().setTo(input.getReplyTo())
                     .setFrom(EVENT_API_SERVICE)
                     .setTrace(input.getTraceId(), input.getTracePath())
+                    .setSpanId(spanId)
                     .setCorrelationId(input.getCorrelationId())
                     .setHeader(CONTENT_TYPE, OCTET_STREAM)
                     .setBody(result.toBytes(format));
@@ -136,12 +147,13 @@ public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void>
         }
     }
 
-    private void sendError(EventEnvelope input, EventEnvelope.Format format, int status, String error) {
+    private void sendError(EventEnvelope input, String spanId, EventEnvelope.Format format, int status, String error) {
         try {
             EventEnvelope result = new EventEnvelope().setStatus(status).setBody(error);
             EventEnvelope response = new EventEnvelope().setTo(input.getReplyTo())
                     .setFrom(EVENT_API_SERVICE)
                     .setTrace(input.getTraceId(), input.getTracePath())
+                    .setSpanId(spanId)
                     .setCorrelationId(input.getCorrelationId())
                     .setHeader(CONTENT_TYPE, OCTET_STREAM)
                     .setStatus(status)

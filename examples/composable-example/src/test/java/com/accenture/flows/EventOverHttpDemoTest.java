@@ -85,7 +85,7 @@ class EventOverHttpDemoTest extends TestBase {
 
     @Test
     void declarativeEventOverHttpDemo() throws ExecutionException, InterruptedException {
-        var response = new MultiLevelMap(invokeDemoEndpoint("/api/event/http/demo"));
+        var response = new MultiLevelMap(invokeDemoEndpoint("/api/event/http/declarative"));
         assertEquals("world", response.getElement("body.hello"));
         assertEquals(Platform.getInstance().getOrigin(), response.getElement("origin"));
     }
