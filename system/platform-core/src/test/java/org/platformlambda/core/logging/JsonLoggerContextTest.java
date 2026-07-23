@@ -48,7 +48,7 @@ class JsonLoggerContextTest extends TestBase {
     @AfterEach
     void cleanup() {
         LogContextManager.remove(threadId);
-        LogContextConfig.setInstanceForTest(null);   // next getInstance() reloads (feature absent -> disabled)
+        LogContextConfig.setInstanceForTest(null);   // next getInstance() reloads from the config files
     }
 
     private void enableFeature() {

@@ -37,6 +37,43 @@ class LogContextConfigTest extends TestBase {
     }
 
     @Test
+    void builtInDefaultProvidesFullTraceContext() {
+        // the default template shipped in platform-core's main/resources
+        LogContextConfig config = new LogContextConfig(new ConfigReader("classpath:/default-log-context.yaml"));
+        assertTrue(config.isEnabled());
+
+        TraceInfo trace = new TraceInfo("my.func", "trace-1", "GET /api/x", "parent-span-1");
+        Map<String, Object> out = config.render(new LogContext(trace, "cid-9"), 1_751_252_588_000L);
+        assertEquals("cid-9", out.get("cid"));
+        assertEquals("trace-1", out.get("traceId"));
+        assertEquals("GET /api/x", out.get("tracePath"));
+        assertEquals(trace.spanId, out.get("spanId"));
+        assertEquals("parent-span-1", out.get("parentSpanId"));
+        assertEquals("my.func", out.get("service"));
+        assertNotNull(out.get("timestamp"));
+    }
+
+    @Test
+    void enabledByDefaultWhenAppFileAbsent() {
+        // this module's test classpath has no app-log-context.yaml, so a reload
+        // falls back to the built-in default and the feature is on out of the box
+        LogContextConfig.setInstanceForTest(null);
+        assertTrue(LogContextConfig.getInstance().isEnabled());
+    }
+
+    @Test
+    void optOutFlagDisablesFeature() {
+        System.setProperty("app.log.context", "false");
+        try {
+            LogContextConfig.setInstanceForTest(null);
+            assertFalse(LogContextConfig.getInstance().isEnabled());
+        } finally {
+            System.clearProperty("app.log.context");
+            LogContextConfig.setInstanceForTest(null);
+        }
+    }
+
+    @Test
     void disabledWhenReaderIsNull() {
         LogContextConfig config = new LogContextConfig(null);
         assertFalse(config.isEnabled());

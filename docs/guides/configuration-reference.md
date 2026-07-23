@@ -427,6 +427,18 @@ Overridable per call (or per target in `yaml.event.over.http`) with the
 See the [Observability guide](observability.md) for the tracing design and OpenTelemetry/OTLP export; the keys
 below tune it. The `otel.*` keys are read by the `opentelemetry-forwarder` extension.
 
+### `app.log.context`
+
+| Type | Default |
+|------|---------|
+| `boolean` | `true` |
+
+Turns the [application log context](observability.md#log-context) on or off. When on (the default), the
+structured JSON appenders (`log.format=json` or `compact`) stamp a `context` block — correlation id,
+trace/span ids, service name — into every log line a traced function emits, using the built-in
+`default-log-context.yaml` template. Provide your own `app-log-context.yaml` on the classpath to replace
+the template, or set this key to `false` to opt out.
+
 ### `log.format`
 
 | Type | Default |

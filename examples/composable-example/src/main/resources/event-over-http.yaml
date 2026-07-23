@@ -1,0 +1,3 @@
+event.http:
+  - route: 'hello.declarative'
+    target: 'http://${peer.demo.host:127.0.0.1}:${peer.demo.port}/api/event'

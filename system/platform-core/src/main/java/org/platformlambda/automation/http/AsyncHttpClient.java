@@ -330,7 +330,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         // this call is not being traced: an explicitly developer-set trace header is an intentional act (e.g.
         // handing a trace context to a 3rd-party system, or forwarding an upstream trace) and must propagate.
         // When this call IS traced, the framework's own current trace context takes precedence below so the
-        // downstream span chains to this caller's span - and since a traced request's context is itself adopted
+        // downstream span chains to this caller's span. Since a traced request's context is itself adopted
         // from the upstream X-Trace-Id/traceparent at ingress, the upstream trace still propagates.
         String traceId = po.getTraceId();
         if (traceId != null) {

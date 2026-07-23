@@ -1013,6 +1013,64 @@ class PostOfficeTest extends TestBase {
         assertEquals(world, multi.getElement("annotations.hello"));
         // round trip latency is available because RPC metrics are delivered to the caller
         assertTrue(multi.exists("trace.round_trip"));
+        // the RPC record carries the callee's own span id (regression: it was absent)
+        assertTrue(multi.exists("trace.span_id"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void rpcTelemetryCarriesSpanLineage() throws InterruptedException {
+        // Regression: the RPC trace record (the one with round_trip) must chain like a
+        // worker-emitted record - span_id is the callee's own span (carried on the RPC
+        // reply) and parent_span_id is the caller's span (carried on the outbound
+        // request). Previously both were absent, breaking the span tree for every
+        // RPC-invoked function, e.g. a declarative Event-over-HTTP call.
+        String traceForwarder = "distributed.trace.forwarder";
+        BlockingQueue<Map<String, Object>> records = new ArrayBlockingQueue<>(10);
+        Platform platform = Platform.getInstance();
+        String traceId = util.getUuid();
+        String parentFunction = "span.lineage.parent";
+        String leafFunction = "span.lineage.leaf";
+        LambdaFunction collector = (headers, input, instance) -> {
+            Map<String, Object> trace = (Map<String, Object>) input;
+            MultiLevelMap map = new MultiLevelMap(trace);
+            if (traceId.equals(map.getElement("trace.id"))) {
+                records.add(trace);
+            }
+            return null;
+        };
+        LambdaFunction leaf = (headers, input, instance) -> "ok";
+        LambdaFunction intermediate = (headers, input, instance) -> {
+            // a traced function making an RPC - its own span is the leaf's parent
+            PostOffice po = new PostOffice(headers, instance);
+            return po.request(new EventEnvelope().setTo(leafFunction).setBody("x"), 8000).get().getBody();
+        };
+        platform.registerPrivate(traceForwarder, collector, 1);
+        platform.registerPrivate(parentFunction, intermediate, 1);
+        platform.registerPrivate(leafFunction, leaf, 1);
+        PostOffice po = new PostOffice("unit.test", traceId, "GET /api/span/lineage");
+        po.asyncRequest(new EventEnvelope().setTo(parentFunction).setBody("start"), 8000)
+                .onSuccess(response -> assertEquals("ok", response.getBody()));
+        // collect trace records until the leaf's RPC record (with round_trip) arrives
+        MultiLevelMap leafRecord = null;
+        long deadline = System.currentTimeMillis() + 10000;
+        while (leafRecord == null && System.currentTimeMillis() < deadline) {
+            Map<String, Object> item = records.poll(2, TimeUnit.SECONDS);
+            if (item != null) {
+                MultiLevelMap m = new MultiLevelMap(item);
+                if (leafFunction.equals(m.getElement("trace.service")) && m.exists("trace.round_trip")) {
+                    leafRecord = m;
+                }
+            }
+        }
+        platform.release(traceForwarder);
+        platform.release(parentFunction);
+        platform.release(leafFunction);
+        assertNotNull(leafRecord, "the RPC trace record for the leaf must arrive");
+        assertNotNull(leafRecord.getElement("trace.span_id"),
+                "the RPC record carries the callee's own span");
+        assertNotNull(leafRecord.getElement("trace.parent_span_id"),
+                "the RPC record chains onto the caller's span");
     }
 
     @Test

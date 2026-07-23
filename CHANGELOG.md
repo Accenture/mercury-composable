@@ -26,6 +26,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    its response. Outbound selection: `event.over.http.format` (default `standard`;
    `compact` is the fallback for peers on older versions) plus a per-call
    `x-event-format` header.
+2. **Application log context is now on by default.** platform-core ships a built-in
+   `default-log-context.yaml` so the structured JSON appenders (`log.format=json` or
+   `compact`) stamp the standard trace context (`cid`, `traceId`, `tracePath`, `spanId`,
+   `parentSpanId`, `service`, `timestamp`) into every log line a traced function emits —
+   no setup required. An application can replace the template with its own
+   `app-log-context.yaml`, or opt out with the new `app.log.context=false` key in
+   application.properties. Applications already providing an `app-log-context.yaml` are
+   unaffected. Plain-text logging (`log.format=text`, the default) is unaffected.
+3. **RPC telemetry now records span lineage.** The `round_trip` record a caller emits for
+   each RPC response carries `span_id` (the callee's span) and `parent_span_id` (the
+   caller's span), so trace visualizers can chain RPC round-trips into the span tree —
+   including across Event-over-HTTP hops.
+4. **Ready-to-run Event-over-HTTP demo in the examples — both patterns.** The
+   lambda-example exposes a public `hello.world` echo with a `hello.declarative` alias.
+   The composable-example's `POST /api/event/http/demo` endpoint runs a flow whose task is
+   that foreign alias route — resolved through `event-over-http.yaml` with zero
+   orchestration code — while its `POST /api/event/http/programmatic` twin reaches the same
+   peer function by passing the Event API endpoint URL directly to the PostOffice request
+   API. The same demo doubles as a cross-language interop demo against the official Rust
+   implementation's counterpart examples — see the step-by-step walk-through in the
+   [Event over HTTP](https://accenture.github.io/mercury-composable/guides/event-over-http/)
+   guide.
+
+### Removed
+
+1. **Retired the rest-spring-example Event-over-HTTP demo.** The `HelloPoJoEventOverHttp` /
+   `HelloPoJoEventOverHttpByConfig` controllers, their `event-over-http.yaml`, and the
+   `lambda.example.port` / `yaml.event.over.http` keys are removed from both
+   rest-spring-3-example and rest-spring-4-example, and the `hello.pojo2` alias is removed
+   from the lambda-example. The composable-example's programmatic + declarative demo
+   endpoints (see Added) supersede them as the canonical Event-over-HTTP walk-through; the
+   rest-spring examples stay focused on Spring Boot integration.
+
+### Fixed
+
+1. **HTTP client read timeout no longer truncates a sub-second TTL to 1 second (#214).**
+   `AsyncHttpRequest.getTimeoutSeconds()` now rounds the TTL up and the underlying HTTP
+   client adds a one-second grace period, so a remote Event-over-HTTP call with a TTL
+   that is not a whole number of seconds gets its in-band 408 from the remote side
+   instead of a transport-level read timeout.
+2. **Logger recursion warning on startup eliminated.** The log-context configuration is
+   initialized before log4j2 reconfigures to the JSON/compact appenders, so its first
+   log lines no longer re-enter an appender that is still initializing
+   ("Recursive call to appender").
 
 ---
 ## Version 4.9.2, 7/21/2026

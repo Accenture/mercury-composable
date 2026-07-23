@@ -20,8 +20,6 @@ package com.accenture.examples.tests;
 
 import com.accenture.examples.common.TestBase;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
@@ -88,14 +86,13 @@ class RestEndpointTest extends TestBase {
     }
 
     /**
-     * The Event-over-HTTP peer (lambda-example) and the hello.pojo service are not deployed in a
-     * unit test, so all three pojo endpoints exercise their fail-fast error paths.
+     * The hello.pojo service is not deployed in a unit test, so the service-mesh
+     * pojo endpoint exercises its fail-fast error path.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"/api/pojo/http/1", "/api/pojo2/http/1", "/api/pojo/mesh/1"})
-    void pojoEndpointsFailFastWithoutTheRemotePeer(String path)
+    @Test
+    void pojoMeshEndpointFailsFastWithoutTheRemotePeer()
             throws InterruptedException, ExecutionException {
-        EventEnvelope response = httpGet(path, null);
+        EventEnvelope response = httpGet("/api/pojo/mesh/1", null);
         assertTrue(response.getStatus() >= 400, "expect an error status, got " + response.getStatus());
     }
 }

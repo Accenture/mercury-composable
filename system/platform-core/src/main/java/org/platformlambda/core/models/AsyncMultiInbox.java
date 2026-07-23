@@ -42,6 +42,7 @@ public class AsyncMultiInbox extends InboxBase {
     private final String traceId;
     private final String tracePath;
     private final String from;
+    private final String parentSpan;
     private final long timeout;
     private final boolean timeoutException;
     private final long timer;
@@ -49,12 +50,14 @@ public class AsyncMultiInbox extends InboxBase {
     private Promise<List<EventEnvelope>> promise;
     private final ConcurrentMap<String, EventEnvelope> replies = new ConcurrentHashMap<>();
 
-    public AsyncMultiInbox(int n, String from, String traceId, String tracePath, long timeout,
-                           boolean timeoutException) {
+    public AsyncMultiInbox(int n, String from, String traceId, String tracePath, String parentSpan,
+                           long timeout, boolean timeoutException) {
         this.timeoutException = timeoutException;
         this.from = from == null? "unknown" : from;
         this.traceId = traceId;
         this.tracePath = tracePath;
+        // the caller's span rides on the outbound requests - it is each callee's parent span
+        this.parentSpan = parentSpan;
         this.total.set(Math.max(1, n));
         this.timeout = Math.max(100, timeout);
         this.future = Future.future(p -> {
@@ -125,6 +128,8 @@ public class AsyncMultiInbox extends InboxBase {
                     md.tracePath = holder.tracePath;
                     md.to = correlation.to();
                     md.from = holder.from;
+                    md.spanId = holder.spanIdFromResponder(correlation.to(), reply);
+                    md.parentSpanId = holder.parentSpan;
                     md.start = start;
                     md.status = reply.getStatus();
                     md.error = reply.getError();

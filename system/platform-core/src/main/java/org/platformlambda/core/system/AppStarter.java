@@ -34,6 +34,7 @@ import org.platformlambda.automation.services.HttpRouter;
 import org.platformlambda.automation.services.AsyncHttpResponse;
 import org.platformlambda.automation.util.SimpleHttpUtility;
 import org.platformlambda.core.annotations.BeforeApplication;
+import org.platformlambda.core.logging.LogContextConfig;
 import org.platformlambda.core.annotations.MainApplication;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.annotations.WebSocketService;
@@ -139,6 +140,12 @@ public class AppStarter {
         String xmlFile = json? JSON_LOG4J : COMPACT_LOG4J;
         try (InputStream res = Utility.class.getResourceAsStream("/"+ xmlFile)) {
             if (res != null) {
+                // Initialize the log-context feature BEFORE swapping in the JSON/compact
+                // configuration. Its one-time announcement must ride the current logger:
+                // initializing lazily inside the structured appender's first append would
+                // re-enter the appender on the same thread, tripping log4j2's recursion
+                // guard ("Recursive call to appender ...") and losing the announcement.
+                LogContextConfig.getInstance();
                 String classPath = CLASSPATH + xmlFile;
                 Configurator.reconfigure(URI.create(classPath));
                 log.info("Logger reconfigured in {} mode", json? JSON : COMPACT);

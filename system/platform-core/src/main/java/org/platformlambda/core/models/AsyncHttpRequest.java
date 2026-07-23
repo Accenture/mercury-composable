@@ -332,7 +332,7 @@ public class AsyncHttpRequest {
      * Please use setFileNames(fileNames)
      * <p>
      * this API is or backward compatibility only
-     * @param fileName for multi-part upload
+     * @param fileName for multipart upload
      * @return this
      */
     public AsyncHttpRequest setFileName(String fileName) {

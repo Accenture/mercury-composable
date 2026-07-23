@@ -1,0 +1,19 @@
+#
+# Sample application log context configuration to demonstrate application context logging
+# (The presence of this file activates the Application Log Context feature when log.format is json or compact.
+#  For simplicity, Log context feature is not enabled when log.format=text)
+#
+# Left side  = output key name (your choice)
+# Right side = a reserved $token (resolved per log line) or a ${ENV:default} substitution.
+#
+# Reserved tokens: $cid $traceId $tracePath $spanId $parentSpanId $service $utc
+#
+context:
+  cid: $cid
+  traceId: $traceId
+  tracePath: $tracePath
+  spanId: $spanId
+  parentSpanId: $parentSpanId
+  service: $service
+  timestamp: $utc
+  environment: '${ENV_NAME:dev}'
