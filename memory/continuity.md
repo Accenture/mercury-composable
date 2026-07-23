@@ -310,6 +310,18 @@
   <!-- id: event-script-over-code | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
 ## Conventions
 
+- **Telemetry/log presentation parity across language engines is a field requirement (Eric,
+  2026-07-23).** Rationale: even after the Rust engine is accepted into the field, installations
+  will be POLYGLOT for a long time — DevSecOps teams see both engines' telemetry and logs in one
+  aggregation, and any presentation difference (record shapes, span topology, context-block
+  gating, header hygiene) is a support burden they will flag. Operating rule: the Java engine is
+  the REFERENCE implementation; a same-language interop run (java-to-java vs rust-to-rust) must
+  be an exact structural replica after normalizing volatile fields — then cross-language runs are
+  symmetric by construction. Reference signature procedure established 2026-07-23
+  (normalized record set: service names, symbolic parent edges, round_trip vs exec-only kind,
+  paths, one-record-per-span, no dangling parents, my_*-free response headers, context-gating).
+  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-23-145132 -->
+
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -352,6 +364,30 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (release in flight — 2026-07-23) **v4.10.1 release prep on `chore/release-4.10.1`
+  (Java repo).** Patch release in lock-step with the Rust engine's v4.10.1 (its branch
+  `chore/release-4.10.1`, commit `44658df5`, pushed): telemetry presentation parity. Content:
+  PR #217 (/api/event visible span, declarative rename, event.api.auth demo, interop report
+  parity outcome + future-ports playbook). Sweep done (32 poms + CLAUDE/GEMINI +
+  instructions.md), CHANGELOG dated 7/23/2026. Close when tagged + release published.
+  <!-- id: thread-release-4-10-1 | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-23-145132 -->
+
+- [ ] (in flight — 2026-07-23) **Post-4.10.0 telemetry presentation parity + auth demo (Eric's
+  manual-test findings).** Java reference branch `feature/event-api-span-and-auth` (2 commits,
+  NOT pushed): /api/event edge is now a visible span (EventApiService no longer @ZeroTracing;
+  worker-thread span capture for async callbacks; regression eventApiServiceIsAVisibleSpanInThe
+  Trace), demo→declarative rename, event.api.auth demo (${DEMO_PEER_TOKEN:demo} env secret,
+  session-info proof, 3 tests). Rust branch of the same name (2 commits, NOT pushed): callback-
+  dispatch refactor + async.http.response service, request-scoped context gating, my_* strip,
+  rename+auth mirror (session-info forwarding implemented). **Four-way verification COMPLETE:
+  java-to-java, rust-to-rust, java-to-rust, rust-to-java all EMPTY DIFF against the normalized
+  reference signature** (/tmp/java-to-java-reference-signature.md; per-pattern 8+9 records).
+  **UPDATE: both PRs MERGED 2026-07-23** — Java #217 (merge `d3c2f853`, CI green 6m29s) and
+  Rust #169 (merge `ecec21c5`, CI green); both repos' docs carry the extended interop test
+  report (parity drive + four-way empty-diff + future-ports playbook). Remaining: the two
+  v4.10.1 releases (both branches in flight). Relates [[conv-telemetry-presentation-parity]].
+  <!-- id: thread-telemetry-parity-auth | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-23-145132 -->
 
 - [x] (release in flight — 2026-07-22; CLOSED same day) **v4.10.0 SHIPPED via the normal flow** —
   tag `v4.10.0` on merge commit `af21e6f6` (PR #216, CI green + local full reactor), release

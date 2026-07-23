@@ -25,19 +25,18 @@ import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
  * Demonstrates the PROGRAMMATIC Event-over-HTTP pattern - the counterpart of the
- * declarative demo in flows/event-over-http-demo.yml.<p>
+ * declarative demo in flows/event-over-http-declarative.yml.<p>
  *
  * This task calls the peer's "hello.world" function by passing the peer's Event API
  * endpoint URL directly to the PostOffice request API. Because the target address is
  * given programmatically, "hello.world" does NOT appear in event-over-http.yaml -
  * compare with "hello.declarative" (an alias of the same peer function), which is
  * resolved through that configuration file instead. The two REST endpoints
- * "/api/event/http/programmatic" and "/api/event/http/demo" therefore hit the same
+ * "/api/event/http/programmatic" and "/api/event/http/declarative" therefore hit the same
  * peer function through the two different patterns.<p>
  *
  * Since this function runs in a virtual thread, future.get() suspends the virtual
@@ -49,6 +48,7 @@ public class EventOverHttpRpc implements LambdaFunction {
     private static final String HELLO_WORLD = "hello.world";
     private static final String PEER_HOST = "peer.demo.host";
     private static final String PEER_PORT = "peer.demo.port";
+    private static final String DEMO_TOKEN_KEY = "demo.peer.token";
 
     @Override
     public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
@@ -57,9 +57,13 @@ public class EventOverHttpRpc implements LambdaFunction {
         String host = config.getProperty(PEER_HOST, "127.0.0.1");
         String port = config.getProperty(PEER_PORT, "8085");
         String eventEndpoint = "http://" + host + ":" + port + "/api/event";
+        // the peer's /api/event endpoint is protected by the event.api.auth demo -
+        // present the shared token (resolved from the DEMO_PEER_TOKEN environment
+        // variable) as a security header on the HTTP request
+        Map<String, String> securityHeaders = Map.of("authorization", config.getProperty(DEMO_TOKEN_KEY, "demo"));
         EventEnvelope req = new EventEnvelope().setTo(HELLO_WORLD).setBody(input);
         headers.forEach(req::setHeader);
-        EventEnvelope response = po.request(req, 10000, Collections.emptyMap(), eventEndpoint, true).get();
+        EventEnvelope response = po.request(req, 10000, securityHeaders, eventEndpoint, true).get();
         if (response.getStatus() != 200) {
             throw new AppException(response.getStatus(), String.valueOf(response.getError()));
         }

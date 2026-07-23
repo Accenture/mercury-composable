@@ -167,7 +167,7 @@ sequenceDiagram
     participant U as curl
     participant C as composable-example (8100)
     participant L as lambda-example (8085)
-    U->>C: POST /api/event/http/demo
+    U->>C: POST /api/event/http/declarative
     Note over C: flow task "hello.declarative"<br/>route is not local — resolved<br/>via event-over-http.yaml
     C->>L: POST /api/event<br/>(MsgPack envelope + trace context)
     Note over L: hello.declarative echo<br/>(alias of hello.world)
@@ -202,12 +202,12 @@ event.http:
     target: 'http://${peer.demo.host:127.0.0.1}:${peer.demo.port}/api/event'
 ```
 
-and the REST endpoint `GET/POST /api/event/http/demo` (see `rest.yaml`) runs the flow
-`event-over-http-demo` whose task simply names the route:
+and the REST endpoint `GET/POST /api/event/http/declarative` (see `rest.yaml`) runs the flow
+`event-over-http-declarative` whose task simply names the route:
 
 ```yaml
 tasks:
-  - name: 'event-over-http-demo'
+  - name: 'event-over-http-declarative'
     input:
       - 'input.header -> header'
       - 'input.body -> *'
@@ -241,7 +241,7 @@ tasks:
 
     ```shell
     curl -s -X POST -H "content-type: application/json" \
-         -d '{"hello": "world"}' http://127.0.0.1:8100/api/event/http/demo
+         -d '{"hello": "world"}' http://127.0.0.1:8100/api/event/http/declarative
     ```
 
 4. The lambda-example's echo function replies through the same path in reverse — the response
@@ -251,9 +251,9 @@ tasks:
     {
       "body": { "hello": "world" },
       "headers": {
-        "x-flow-id": "event-over-http-demo",
+        "x-flow-id": "event-over-http-declarative",
         "my_trace_id": "51fb9a95cb6b47169dd83771283aebc2",
-        "my_trace_path": "POST /api/event/http/demo",
+        "my_trace_path": "POST /api/event/http/declarative",
         "...": "..."
       },
       "instance": 4,
@@ -297,6 +297,51 @@ the primary route `hello.world`, the declarative endpoint calls the alias
 (and therefore which pattern) served the call.
 Choose declarative when the target address is deployment configuration (the usual case);
 choose programmatic when the code must compute or vary the target at runtime.
+
+### Authentication: the event.api.auth demo
+
+The demo pair also shows how to protect the Event API endpoint. The lambda-example
+overrides the default `/api/event` entry in its `rest.yaml` to attach an authentication
+service:
+
+```yaml
+  - service: "event.api.service"
+    methods: ['POST']
+    url: "/api/event"
+    timeout: 60s
+    authentication: 'event.api.auth'
+    tracing: true
+```
+
+The `event.api.auth` function (class `EventApiAuth`) validates the caller's
+`authorization` header against a shared secret that **both peers resolve from the
+environment** — never hard-code a real credential in source or configuration files:
+
+```properties
+# application.properties on both sides - "demo" is the local-development fallback
+demo.peer.token=${DEMO_PEER_TOKEN:demo}
+```
+
+On the calling side, the declarative route presents the token as a security header in
+`event-over-http.yaml`:
+
+```yaml
+event.http:
+  - route: 'hello.declarative'
+    target: 'http://${peer.demo.host:127.0.0.1}:${peer.demo.port}/api/event'
+    # security headers (optional. Added for this demo only)
+    headers:
+      authorization: '${DEMO_PEER_TOKEN:demo}'
+```
+
+and the programmatic task passes the same token in the `headers` argument of the request
+API. A wrong or missing token gets an HTTP-401 without ever reaching the target function.
+
+When authentication passes, headers returned by the auth service become **session info**
+that rides to the target function as read-only headers — the demo's auth service adds
+`user: demo`, so you can see it echoed in the response body as proof that the request went
+through authentication. Replace the demo class with your own OAuth 2.0 bearer-token
+validation for production use.
 
 ### Same demo, different language
 
@@ -347,7 +392,8 @@ The following configuration adds authentication service to the Event API endpoin
 
 This enforces every incoming request to the Event API endpoint to be authenticated by the "v1.api.auth" service
 before passing to the Event API service. You can plug in your own authentication service such as OAuth 2.0 
-"bearer token" validation.
+"bearer token" validation. A complete working example is the
+[event.api.auth demo](#authentication-the-eventapiauth-demo) above.
 
 Please refer to [REST Automation](rest-automation/index.md) for details.
 ## See also
