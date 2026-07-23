@@ -1,7 +1,8 @@
 ---
 title: Interop Test Report — Event over HTTP, Java ⇄ Rust
 summary: Permanent record of the live bidirectional interoperability validation between the
-  Java and Rust implementations, covering the programmatic and declarative patterns.
+  Java and Rust implementations - wire format, calling patterns, and telemetry presentation
+  parity - kept as a playbook for future language ports.
 layer: reference
 audience: [developer, architect]
 keywords: [interop, event over http, rust, wire format, test report, tracing]
@@ -11,13 +12,16 @@ keywords: [interop, event over http, rust, wire format, test report, tracing]
 
 *Live bidirectional interoperability validation between the Java engine
 ([mercury-composable](https://github.com/Accenture/mercury-composable)) and the official
-Rust implementation ([mercury](https://github.com/Accenture/mercury)), conducted
-2026-07-22 as the release gate for the v4.10 line.*
+Rust implementation ([mercury](https://github.com/Accenture/mercury)): the wire-format and
+calling-pattern drives conducted 2026-07-22 as the release gate for the v4.10 line, and the
+telemetry presentation-parity drive conducted 2026-07-23.*
 
 This report is a permanent record. It documents what was tested, the evidence collected,
 and — in the interest of honest engineering — the defects the drives surfaced and how each
 was fixed and re-verified. Everything here is reproducible from the shipped examples by
 following the [Event over HTTP](../guides/event-over-http.md#zero-code-demo) walk-through.
+It is also kept as a **playbook for future language ports** (e.g. Python) — see the
+learnings section at the end.
 
 ## Background: the wire-format validation drive
 
@@ -121,3 +125,118 @@ span-accurate across the language boundary in both directions. The shipped examp
 drop-in cross-language counterparts, and the walk-through in the
 [Event over HTTP guide](../guides/event-over-http.md#zero-code-demo) reproduces this
 validation with a single `curl`.
+
+## The presentation-parity drive (2026-07-23)
+
+After v4.10.0 shipped, a manual review of all four direction combinations
+(java-to-java, rust-to-rust, java-to-rust, rust-to-java) side by side — the way a
+DevSecOps operator reads an aggregated log stream — raised the bar from "trace continuity
+works" to a stronger requirement:
+
+> **Field installations stay polyglot for a long time. Operators aggregate both engines'
+> telemetry and logs in one place, and any presentation difference is a support burden.
+> The same-language logs of the two engines must be exact structural replicas of each
+> other — then cross-language runs are symmetric by construction.**
+
+That review surfaced loose ends the per-direction drives had not:
+
+- **Java:** the `/api/event` edge connected to no span — `event.api.service` was a
+  zero-tracing relay, so the remote target function parented onto a span from another
+  application with nothing in between, and the HTTP response leg floated unparented.
+- **Rust:** an incomplete application log-context block (constants only) appeared on
+  telemetry and system lines that carry no request trace; the first-leg
+  `http.flow.adapter` span was never recorded (its RPC-style dispatch suppressed the
+  worker record), leaving `parent_span_id` values that pointed at spans no record
+  reported; and reserved `my_*` metadata could leak into HTTP response headers.
+
+### Method: a normalized reference signature
+
+The Java engine is the reference implementation. After fixing the Java `/api/event` edge
+(the service is now traced: its span parents onto the remote caller's span, the target
+function parents onto it, and both response legs chain onto real spans), a live
+java-to-java run was distilled into a **normalized trace signature**: per calling pattern,
+the exact set of telemetry records — service name, parent edge (expressed symbolically so
+span-id values don't matter), record kind (`round_trip` for RPC-served spans vs
+`exec-only` for callback-served worker records), and path. Volatile fields (ids, origins,
+timestamps, durations, thread/instance numbers, ordering) are exempt; everything else must
+match record-for-record.
+
+**Declarative pattern — 8 records:**
+
+| side | service | parent (span owner) | kind | path |
+|------|---------|---------------------|------|------|
+| caller | http.flow.adapter | (root) | exec-only | POST /api/event/http/declarative |
+| caller | task.executor | http.flow.adapter@caller | exec-only | POST /api/event/http/declarative |
+| callee | event.api.auth | http.flow.adapter@caller | round_trip | POST /api/event |
+| callee | event.api.service | http.flow.adapter@caller | exec-only | POST /api/event |
+| callee | hello.declarative | event.api.service@callee | round_trip | POST /api/event/http/declarative |
+| callee | hello.pojo | hello.declarative@callee | exec-only | POST /api/event/http/declarative |
+| callee | async.http.response | event.api.service@callee | exec-only | POST /api/event |
+| caller | async.http.response | hello.declarative@callee | exec-only | POST /api/event/http/declarative |
+
+**Programmatic pattern — 9 records:** identical shape with the caller's
+`v1.event.over.http.rpc` task span between the flow adapter and the callee (the callee's
+`event.api.auth` / `event.api.service` parent onto it), the callee function being
+`hello.world`, and one deliberate asymmetry: the caller's `async.http.response` parents
+onto the **callee's function span** in the declarative pattern (the flow task's reply *is*
+the remote reply) but onto the **local task span** in the programmatic one (the flow's
+reply is produced locally by that task).
+
+The signature also pins the invariants: one record per span, no dangling parents, HTTP
+response headers free of reserved `my_*` metadata, and the log-context gating rule — a
+`context` block appears **only** on log lines emitted inside a traced function execution;
+telemetry and system lines carry none at all.
+
+### Reaching the bar required refactoring, not patching
+
+Matching the signature exposed genuine low-level variance in the Rust port's RPC
+implementation, resolved structurally: its REST automation now dispatches endpoint
+services as **callbacks** through a registered `async.http.response` service (the Java
+twin) instead of RPC through a oneshot inbox — which is what made the first-leg and
+response-leg spans real — and the business correlation-id moved to the reserved
+envelope-header channel for exact `PostOffice` parity. The log context was re-gated to
+render only inside a traced, non-zero-traced worker execution. The same drive added the
+`event.api.auth` authentication demo to both engines (a shared token resolved from the
+`DEMO_PEER_TOKEN` environment variable — authentication appears in the trace as a real
+span, and its session info rides to the target function as proof).
+
+### Result: empty diff in all four directions
+
+| Direction | Declarative (8 records) | Programmatic (9 records) |
+|-----------|-------------------------|--------------------------|
+| java → java (reference) | — | — |
+| rust → rust | **empty diff** | **empty diff** |
+| java → rust | **empty diff** | **empty diff** |
+| rust → java | **empty diff** | **empty diff** |
+
+Exactly as predicted: once the same-language logs were replicas, the cross-language runs
+were symmetric with no additional work. Authentication verified in every direction
+(session proof in the echo; wrong or missing token → HTTP-401), response headers clean,
+and zero context blocks on untraced lines in either engine.
+
+## Learnings for future language ports
+
+This validation arc is the playbook for bringing the next language (e.g. Python) into the
+family:
+
+1. **Golden conformance vectors first.** The wire format is proven byte-identically with
+   vectors shared verbatim between repositories — no prose interpretation.
+2. **Same-language baseline before cross-language testing.** Distill a live run of the
+   reference engine (java-to-java) into a normalized trace signature; the new port must
+   produce an **empty diff** on its own same-language run. Cross-language symmetry then
+   follows by construction — do not chase cross-language differences directly.
+3. **The signature is more than topology.** It pins record kinds (round_trip vs
+   exec-only), path values, one-record-per-span, no dangling parents, log-context gating,
+   and transport-header hygiene — the things an operator actually sees in an aggregated
+   view. Presentation parity is a standing invariant, not a one-off acceptance test:
+   polyglot installations put both engines' output in front of the same DevSecOps team.
+4. **Expect refactoring, not configuration.** Matching the signature will surface genuine
+   low-level differences (RPC vs callback dispatch, context scoping). Fix the structure;
+   telemetry-layer workarounds recreate the drift later.
+5. **The demo pair is the reusable test vehicle.** A new port implements the hello-world /
+   hello-flow counterparts on the same ports and route names, and every drive in this
+   report — functionality, trace continuity, authentication, signature diff — runs against
+   it unchanged, with zero configuration.
+6. **Live drives find what unit tests do not.** Every drive in this story surfaced real
+   defects (timeout truncation, span misattribution, context leakage, an invisible relay
+   edge) that per-repository test suites had not caught.
