@@ -660,6 +660,10 @@ export function transformGraphData(
     return {
       id:       n.alias,
       type:     n.types[0] ?? 'default',
+      // React Flow otherwise consumes Shift+pointer events on nodes as the
+      // start of a pane selection box. This class keeps Shift+click available
+      // for node toggling while Shift+drag from empty canvas still box-selects.
+      className: 'nokey',
       position: positions.get(n.alias) ?? { x: 0, y: 0 },
       width:  NODE_WIDTH,
       height: nodeHeight,
