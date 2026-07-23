@@ -6,11 +6,11 @@ import com.accenture.models.SimplePlugin;
 import java.util.List;
 
 @SimplePlugin
-public class GetLastItemOperator implements PluginFunction {
+public class GetLastOperator implements PluginFunction {
 
     @Override
     public String getName() {
-        return "getLastItem";
+        return "getLast";
     }
 
     @Override

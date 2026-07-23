@@ -11,9 +11,9 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class GetLastItemOperatorTest {
+class GetLastOperatorTest {
 
-    private final GetLastItemOperator operator = new GetLastItemOperator();
+    private final GetLastOperator operator = new GetLastOperator();
 
     static Stream<Arguments> validInputs() {
         return Stream.of(
@@ -26,16 +26,6 @@ class GetLastItemOperatorTest {
     @MethodSource("validInputs")
     void shouldReturnLastItemFromList(Object input, Object expected) {
         assertEquals(expected, operator.calculate(input));
-    }
-
-    @ParameterizedTest
-    @MethodSource("invalidInputs")
-    void shouldThrowExceptionForInvalidInput(Object[] input, String expectedMessage) {
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> operator.calculate(input));
-
-        assertEquals(expectedMessage, exception.getMessage());
     }
 
     static Stream<Arguments> invalidInputs() {
@@ -60,5 +50,15 @@ class GetLastItemOperatorTest {
                         new Object[]{42},
                         "Input must be a list to get last item"
                 ));
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidInputs")
+    void shouldThrowExceptionForInvalidInput(Object[] input, String expectedMessage) {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> operator.calculate(input));
+
+        assertEquals(expectedMessage, exception.getMessage());
     }
 }

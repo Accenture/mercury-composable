@@ -20,7 +20,9 @@ package com.accenture.automation;
 
 import com.accenture.models.PluginFunction;
 import com.accenture.services.plugins.arithmetic.*;
-import com.accenture.services.plugins.collection.GetLastItemOperator;
+import com.accenture.services.plugins.collection.GetFirstOperator;
+import com.accenture.services.plugins.collection.GetLastOperator;
+import com.accenture.services.plugins.collection.IsEmptyOperator;
 import com.accenture.services.plugins.generators.DateGenerator;
 import com.accenture.services.plugins.generators.Now;
 import com.accenture.services.plugins.generators.UUIDGenerator;
@@ -113,7 +115,8 @@ public class SimplePluginLoaderTest {
                 Arguments.of(new IsEmptyOperator(), new Object[]{Map.of()}),
                 Arguments.of(new IsEmptyOperator(), new Object[]{""}),
                 Arguments.of(new IsEmptyOperator(), new Object[]{new String[]{}}),
-                Arguments.of(new GetLastItemOperator(), new Object[]{List.of("foo", "bar")})
+                Arguments.of(new GetFirstOperator(), new Object[]{List.of("foo", "bar")}),
+                Arguments.of(new GetLastOperator(), new Object[]{List.of("foo", "bar")})
         );
     }
 

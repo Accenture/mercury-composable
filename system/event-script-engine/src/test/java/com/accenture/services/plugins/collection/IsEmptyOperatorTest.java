@@ -1,4 +1,4 @@
-package com.accenture.services.plugins.logical;
+package com.accenture.services.plugins.collection;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -34,16 +34,6 @@ class IsEmptyOperatorTest {
         assertEquals(expected, operator.calculate(input));
     }
 
-    @ParameterizedTest
-    @MethodSource("invalidInputs")
-    void shouldThrowExceptionForInvalidInput(Object[] input, String expectedMessage) {
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> operator.calculate(input));
-
-        assertEquals(expectedMessage, exception.getMessage());
-    }
-
     static Stream<Arguments> invalidInputs() {
         return Stream.of(
                 Arguments.of(
@@ -58,5 +48,15 @@ class IsEmptyOperatorTest {
                 Arguments.of(
                         new Object[]{123},
                         "Unsupported input type to check if value is empty: java.lang.Integer"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidInputs")
+    void shouldThrowExceptionForInvalidInput(Object[] input, String expectedMessage) {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> operator.calculate(input));
+
+        assertEquals(expectedMessage, exception.getMessage());
     }
 }
