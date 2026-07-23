@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-22 | agent: Claude Code (2026-07-22-234845)
+- **last_session:** 2026-07-22 | agent: Claude Code (2026-07-23-015717)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -353,6 +353,16 @@
 
 ## Open Threads
 
+- [ ] (release in flight — 2026-07-22) **v4.10.0 release prep on `chore/release-4.10.0`.**
+  Feature release: wire format (#212/#213), D1 timeout fix (#214), demo pair + default-on log
+  context + RPC span lineage (#215). Both gates passed before the branch was cut: Java PR #215
+  merged (`9d8ae12a`, CI green ×3 rounds) and Rust mercury PR #167 merged (`c64d0683` — parity
+  batch + I1/I2/I3 telemetry fixes); live bidirectional interop drives PASSED in full (both
+  patterns, both directions, span-accurate — permanent record:
+  `docs/test-reports/event-over-http-interop.md`). Sweep done (32 poms + CLAUDE/GEMINI +
+  instructions.md coordinates), CHANGELOG dated 7/22/2026. Close when tagged + release published.
+  <!-- id: thread-release-4-10-0 | created: 2026-07-22 | last_used: 2026-07-22 | uses: 1 | tier: working | origin: 2026-07-23-015717 -->
+
 - [ ] (design — 2026-07-21, human gate PENDING) **Common event envelope wire format for
   cross-language interop (Event over HTTP with the Rust port).** Design DRAFTED at
   `draft-design-specs/event-envelope-interop-design.md` — standard envelope = MsgPack map
@@ -405,9 +415,13 @@
   PR #166 (merge `e36e5dc5`, commits f62a69bf/230ee55b/258f3578). The "redundant D2 chip
   session" turned out not to exist (session list + transcript search clean); repo memory
   protocol protects against late arrivals anyway. Interop test processes stopped.**
-  REMAINING: cut the Java release carrying the wire format + D1 fix (version number
-  open — 4.10.0 suggested; it is a feature release). → serves
-  `vision-mercury-composable` (polyglot deployment)
+  **UPDATE 2026-07-22 (evening): the full release-gate cycle completed** — Java PR #215
+  (demo pair, default-on log context, RPC span lineage + the spanIdFromResponder
+  refinement) and Rust mercury PR #167 (parity batch + I1/I2/I3 telemetry fixes) BOTH
+  merged; live bidirectional pattern drives (programmatic + declarative) PASSED in full
+  with span-accurate telemetry; permanent record at
+  `docs/test-reports/event-over-http-interop.md`. REMAINING: the v4.10.0 release itself —
+  see [[thread-release-4-10-0]]. → serves `vision-mercury-composable` (polyglot deployment)
   <!-- id: thread-event-envelope-interop | created: 2026-07-21 | last_used: 2026-07-21 | uses: 1 | tier: working | origin: 2026-07-21-215951 -->
 
 - [ ] (field support — 2026-07-21) **v4.9.1 REJECTED by the field Sonar quality gate; remediation
