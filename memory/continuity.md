@@ -353,18 +353,22 @@
 
 ## Open Threads
 
-- [ ] (release in flight — 2026-07-22) **v4.10.0 release prep on `chore/release-4.10.0`.**
+- [x] (release in flight — 2026-07-22; CLOSED same day) **v4.10.0 SHIPPED via the normal flow** —
+  tag `v4.10.0` on merge commit `af21e6f6` (PR #216, CI green + local full reactor), release
+  text delivered, release published.
   Feature release: wire format (#212/#213), D1 timeout fix (#214), demo pair + default-on log
   context + RPC span lineage (#215). Both gates passed before the branch was cut: Java PR #215
   merged (`9d8ae12a`, CI green ×3 rounds) and Rust mercury PR #167 merged (`c64d0683` — parity
   batch + I1/I2/I3 telemetry fixes); live bidirectional interop drives PASSED in full (both
   patterns, both directions, span-accurate — permanent record:
   `docs/test-reports/event-over-http-interop.md`). Sweep done (32 poms + CLAUDE/GEMINI +
-  instructions.md coordinates), CHANGELOG dated 7/22/2026. Close when tagged + release published.
+  instructions.md coordinates), CHANGELOG dated 7/22/2026. **PR #216 merged (`af21e6f6`, CI
+  green); tag `v4.10.0` pushed on the merge commit; release notes delivered.** Close when the
+  GitHub release is published.
   <!-- id: thread-release-4-10-0 | created: 2026-07-22 | last_used: 2026-07-22 | uses: 1 | tier: working | origin: 2026-07-23-015717 -->
 
-- [ ] (design — 2026-07-21, human gate PENDING) **Common event envelope wire format for
-  cross-language interop (Event over HTTP with the Rust port).** Design DRAFTED at
+- [x] (design — 2026-07-21; COMPLETED 2026-07-22 with the v4.10.0 release) **Common event
+  envelope wire format for cross-language interop (Event over HTTP with the Rust port).** Design DRAFTED at
   `draft-design-specs/event-envelope-interop-design.md` — standard envelope = MsgPack map
   with descriptive string keys (the existing `toMap()` form promoted to a wire contract);
   compact 1-char keys and standard ≥2-char keys are disjoint → decoders sniff both, no
@@ -420,8 +424,10 @@
   refinement) and Rust mercury PR #167 (parity batch + I1/I2/I3 telemetry fixes) BOTH
   merged; live bidirectional pattern drives (programmatic + declarative) PASSED in full
   with span-accurate telemetry; permanent record at
-  `docs/test-reports/event-over-http-interop.md`. REMAINING: the v4.10.0 release itself —
-  see [[thread-release-4-10-0]]. → serves `vision-mercury-composable` (polyglot deployment)
+  `docs/test-reports/event-over-http-interop.md`. **v4.10.0 SHIPPED AND PUBLISHED 2026-07-22
+  ([[thread-release-4-10-0]]) — this thread is COMPLETE: design → implementation → parity →
+  live interop → release, both engines in lock-step.** → serves `vision-mercury-composable`
+  (polyglot deployment)
   <!-- id: thread-event-envelope-interop | created: 2026-07-21 | last_used: 2026-07-21 | uses: 1 | tier: working | origin: 2026-07-21-215951 -->
 
 - [ ] (field support — 2026-07-21) **v4.9.1 REJECTED by the field Sonar quality gate; remediation
