@@ -8,11 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Unreleased
+## Version 4.10.0, 7/22/2026
+
+Feature release: cross-language Event-over-HTTP interoperability with the official
+[Rust implementation](https://github.com/Accenture/mercury) — language-neutral wire format,
+a ready-to-run demo pair covering both calling patterns, application log context on by
+default, and RPC span-lineage telemetry. Validated by live bidirectional Java ⇄ Rust
+interop drives — see the
+[Interop Test Report](https://accenture.github.io/mercury-composable/test-reports/event-over-http-interop/).
 
 ### Added
 
-1. **Language-neutral event envelope wire format for Event over HTTP interoperability.**
+1. **Language-neutral event envelope wire format for Event over HTTP interoperability
+   (#212, #213).**
    The serialized envelope is now, by default, a MsgPack map with descriptive string keys
    (`id`, `to`, `headers`, `body`, …) that any MsgPack-capable language can encode and
    decode — documented as a self-contained spec in the new
@@ -26,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    its response. Outbound selection: `event.over.http.format` (default `standard`;
    `compact` is the fallback for peers on older versions) plus a per-call
    `x-event-format` header.
-2. **Application log context is now on by default.** platform-core ships a built-in
+2. **Application log context is now on by default (#215).** platform-core ships a built-in
    `default-log-context.yaml` so the structured JSON appenders (`log.format=json` or
    `compact`) stamp the standard trace context (`cid`, `traceId`, `tracePath`, `spanId`,
    `parentSpanId`, `service`, `timestamp`) into every log line a traced function emits —
@@ -34,11 +42,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    `app-log-context.yaml`, or opt out with the new `app.log.context=false` key in
    application.properties. Applications already providing an `app-log-context.yaml` are
    unaffected. Plain-text logging (`log.format=text`, the default) is unaffected.
-3. **RPC telemetry now records span lineage.** The `round_trip` record a caller emits for
+3. **RPC telemetry now records span lineage (#215).** The `round_trip` record a caller emits for
    each RPC response carries `span_id` (the callee's span) and `parent_span_id` (the
    caller's span), so trace visualizers can chain RPC round-trips into the span tree —
-   including across Event-over-HTTP hops.
-4. **Ready-to-run Event-over-HTTP demo in the examples — both patterns.** The
+   including across Event-over-HTTP hops. The span id is adopted only from a direct
+   responder; a relayed reply (e.g. an event flow answering on behalf of the flow adapter)
+   keeps `parent_span_id` without claiming another function's span.
+4. **Ready-to-run Event-over-HTTP demo in the examples — both patterns (#215).** The
    lambda-example exposes a public `hello.world` echo with a `hello.declarative` alias.
    The composable-example's `POST /api/event/http/demo` endpoint runs a flow whose task is
    that foreign alias route — resolved through `event-over-http.yaml` with zero
@@ -51,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-1. **Retired the rest-spring-example Event-over-HTTP demo.** The `HelloPoJoEventOverHttp` /
+1. **Retired the rest-spring-example Event-over-HTTP demo (#215).** The `HelloPoJoEventOverHttp` /
    `HelloPoJoEventOverHttpByConfig` controllers, their `event-over-http.yaml`, and the
    `lambda.example.port` / `yaml.event.over.http` keys are removed from both
    rest-spring-3-example and rest-spring-4-example, and the `hello.pojo2` alias is removed
@@ -66,7 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    client adds a one-second grace period, so a remote Event-over-HTTP call with a TTL
    that is not a whole number of seconds gets its in-band 408 from the remote side
    instead of a transport-level read timeout.
-2. **Logger recursion warning on startup eliminated.** The log-context configuration is
+2. **Logger recursion warning on startup eliminated (#215).** The log-context configuration is
    initialized before log4j2 reconfigures to the JSON/compact appenders, so its first
    log lines no longer re-enter an appender that is still initializing
    ("Recursive call to appender").
