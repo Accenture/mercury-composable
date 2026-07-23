@@ -50,6 +50,10 @@ public class EventEmitter {
     public static final String CLOUD_CONNECTOR = "cloud.connector";
     public static final String CLOUD_SERVICES = "cloud.services";
     public static final String RPC = "rpc";
+    // Engine-managed envelope tag carrying the business correlation-id across touch points and
+    // Event-over-HTTP hops. Metadata is never transported as envelope headers - the worker injects
+    // the my_correlation_id key into the function's input header copy from this tag at delivery.
+    public static final String BUSINESS_CID_TAG = "my_cid";
     private static final String MISSING_ROUTING_PATH = "Missing routing path";
     private static final String MISSING_EVENT = "Missing outgoing event";
     private static final long ASYNC_EVENT_HTTP_TIMEOUT = 60 * 1000L; // assume 60 seconds

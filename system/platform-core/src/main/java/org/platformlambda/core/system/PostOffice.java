@@ -713,10 +713,11 @@ public class PostOffice {
         if (event.getTracePath() == null) {
             event.setTracePath(myTracePath);
         }
-        // propagate the business correlation-id to the next touch point, readable via getMyCorrelationId
-        // carried as a read-only reserved header so it reaches any function, HTTP client, or Kafka producer
-        if (businessCorrelationId != null && event.getHeader(MY_CORRELATION_ID) == null) {
-            event.setHeader(MY_CORRELATION_ID, businessCorrelationId);
+        // propagate the business correlation-id to the next touch point, readable via getMyCorrelationId.
+        // It rides an engine-managed envelope tag - never an envelope header - and the worker injects
+        // it into the receiving function's input header copy at delivery.
+        if (businessCorrelationId != null && event.getTag(EventEmitter.BUSINESS_CID_TAG) == null) {
+            event.addTag(EventEmitter.BUSINESS_CID_TAG, businessCorrelationId);
         }
         // carry this function's spanId so the receiver can store it as its parentSpanId
         TraceInfo trace = getTrace();

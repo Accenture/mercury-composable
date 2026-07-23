@@ -77,6 +77,11 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
             if (holder != null) {
                 holder.touch();
                 HttpServerResponse response = holder.request.response();
+                // echo the request's business correlation-id (inbound or edge-generated) so the
+                // caller can correlate; a function-provided response header of the same name wins
+                if (holder.cidHeaderName != null && holder.businessCorrelationId != null) {
+                    response.putHeader(holder.cidHeaderName, holder.businessCorrelationId);
+                }
                 boolean isHeadMethod = HEAD.equals(holder.method);
                 var md = new HttpResMetadata();
                 md.contentType = isHeadMethod? "?" : null;

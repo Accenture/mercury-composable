@@ -489,6 +489,8 @@ public class HttpRouter {
         }
         TraceContext trace = resolveTraceContext(request, route, req, uri,
                                                  cidHeaderName, generatedCid, businessCorrelationId);
+        // remember the resolved correlation-id so the response writer echoes it back to the caller
+        holder.setCorrelation(cidHeaderName, trace.businessCorrelationId());
         final HttpRequestEvent requestEvent = new HttpRequestEvent(requestId, route, authService,
                                                                     trace.traceId(), trace.tracePath());
         requestEvent.setParentSpanId(trace.parentSpanId());
@@ -887,9 +889,10 @@ public class HttpRouter {
             event.setTo(requestEvent.primary).setFrom(HTTP_REQUEST)
                     .setCorrelationId(requestEvent.requestId).setBody(requestEvent.httpRequest)
                     .setReplyTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
-            // expose the business correlation-id to the target function (and downstream via PostOffice)
+            // carry the business correlation-id on the engine-managed envelope tag (never a header);
+            // the worker injects my_correlation_id into the target function's input copy at delivery
             if (requestEvent.getBusinessCorrelationId() != null) {
-                event.setHeader(MY_CORRELATION_ID, requestEvent.getBusinessCorrelationId());
+                event.addTag(EventEmitter.BUSINESS_CID_TAG, requestEvent.getBusinessCorrelationId());
             }
             // enable distributed tracing if needed
             if (requestEvent.tracing) {
@@ -922,7 +925,7 @@ public class HttpRouter {
         EventEnvelope copy = new EventEnvelope().setTo(secondary).setFrom(HTTP_REQUEST)
                 .setBody(requestEvent.httpRequest);
         if (requestEvent.getBusinessCorrelationId() != null) {
-            copy.setHeader(MY_CORRELATION_ID, requestEvent.getBusinessCorrelationId());
+            copy.addTag(EventEmitter.BUSINESS_CID_TAG, requestEvent.getBusinessCorrelationId());
         }
         if (requestEvent.tracing) {
             copy.setTrace(requestEvent.traceId, requestEvent.tracePath);

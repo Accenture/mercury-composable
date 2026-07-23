@@ -89,7 +89,8 @@ class EventHttpTest extends TestBase {
     void eventOverHttpPropagatesTraceAndCorrelationId() throws InterruptedException {
         // The whole EventEnvelope is serialized into the HTTP body over the "event over HTTP" hop, so the
         // peer's target function continues the same trace (traceId exposed as my_trace_id) and receives the
-        // caller's business correlation-id (carried as the my_correlation_id reserved header by touch()).
+        // caller's business correlation-id (carried by the engine-managed envelope tag, injected as the
+        // my_correlation_id read-only key at delivery).
         final BlockingQueue<Map<String, String>> captured = new ArrayBlockingQueue<>(1);
         final String captureRoute = "event.http.trace.capture";
         TypedLambdaFunction<EventEnvelope, Object> capture = (headers, event, instance) -> {
@@ -420,6 +421,54 @@ class EventHttpTest extends TestBase {
         assertEquals(EventEnvelope.Format.COMPACT, result.getWireFormat());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
         assertEquals("legacy", map.getElement("body"));
+    }
+
+    @Test
+    void metadataIsNeverTransportedInTheEvent() throws InterruptedException {
+        // The my_* metadata keys are injected into the function's input header COPY at
+        // delivery - they must never exist as envelope headers. The business correlation-id
+        // crosses touch points (and the Event-over-HTTP wire) as an engine-managed tag.
+        final BlockingQueue<Map<String, String>> captured = new ArrayBlockingQueue<>(1);
+        final String captureRoute = "metadata.transport.capture";
+        TypedLambdaFunction<EventEnvelope, Object> capture = (headers, event, instance) -> {
+            Map<String, String> seen = new HashMap<>();
+            seen.put("injected_cid", headers.get("my_correlation_id"));
+            seen.put("injected_route", headers.get("my_route"));
+            seen.put("envelope_cid_header", event.getHeader("my_correlation_id"));
+            seen.put("envelope_event_api_header", event.getHeader("x-event-api"));
+            seen.put("delivered_event_api", headers.get("x-event-api"));
+            // engine metadata (routing target, tags) is not visible to a user function
+            seen.put("visible_tags", String.valueOf(event.getTags()));
+            captured.add(seen);
+            return null;
+        };
+        Platform.getInstance().register(captureRoute, capture, 1);
+        try {
+            String correlationId = "corr-" + Utility.getInstance().getUuid();
+            Map<String, String> callerContext = new HashMap<>();
+            callerContext.put("my_route", "unit.test");
+            callerContext.put("my_trace_id", "trace-" + Utility.getInstance().getUuid());
+            callerContext.put("my_trace_path", "TEST /metadata/transport");
+            callerContext.put("my_correlation_id", correlationId);
+            PostOffice po = PostOffice.trackable(callerContext, 1);
+            // remote hop through the loopback /api/event exercises the wire + relay too
+            Map<String, String> securityHeaders = Map.of("Authorization", "demo");
+            po.asyncRequest(new EventEnvelope().setTo(captureRoute).setBody("ping"), 5000,
+                    securityHeaders, "http://127.0.0.1:" + port + "/api/event", false);
+            Map<String, String> seen = captured.poll(10, TimeUnit.SECONDS);
+            assertNotNull(seen);
+            // injected metadata reaches the function's header copy
+            assertEquals(correlationId, seen.get("injected_cid"));
+            assertEquals(captureRoute, seen.get("injected_route"));
+            // but the envelope itself never carries metadata or engine-internal keys
+            assertNull(seen.get("envelope_cid_header"), "my_correlation_id must not be an envelope header");
+            assertNull(seen.get("delivered_event_api"), "x-event-api must not reach a user function");
+            // the tag channel is engine-managed - not even visible to the function's envelope view
+            // (the injected value above arriving intact across the wire proves the tag carried it)
+            assertEquals("{}", seen.get("visible_tags"));
+        } finally {
+            Platform.getInstance().release(captureRoute);
+        }
     }
 
     @SuppressWarnings("unchecked")
