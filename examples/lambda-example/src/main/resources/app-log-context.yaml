@@ -17,5 +17,3 @@ context:
   service: $service
   timestamp: $utc
   environment: '${ENV_NAME:dev}'
-  # this is just for demo - you don't need hard coded key-values
-  hello: 'world'

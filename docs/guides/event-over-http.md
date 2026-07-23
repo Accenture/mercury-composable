@@ -257,6 +257,153 @@ public class HelloPoJoEventOverHttpByConfig {
 > *Note*: The target function must declare itself as PUBLIC in the preload annotation. Otherwise, you will get
           a HTTP-403 exception.
 
+## Zero-code demo: composable-example to lambda-example
+
+The two example applications ship with a working declarative demo. The composable-example
+(port 8100) has a REST endpoint wired to an Event Script flow whose only task is the route
+`hello.declarative` — a route that does **not** exist in the composable-example. The
+`event-over-http.yaml` configuration tells the system where that route lives, and the event
+manager makes the Event-over-HTTP call automatically. There is no orchestration or HTTP
+client code anywhere: the caller side is a flow definition plus two configuration entries,
+and the callee side is an ordinary public function.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as curl
+    participant C as composable-example (8100)
+    participant L as lambda-example (8085)
+    U->>C: POST /api/event/http/demo
+    Note over C: flow task "hello.declarative"<br/>route is not local — resolved<br/>via event-over-http.yaml
+    C->>L: POST /api/event<br/>(MsgPack envelope + trace context)
+    Note over L: hello.declarative echo<br/>(alias of hello.world)
+    L-->>C: result (body, headers, instance, origin)
+    C-->>U: HTTP 200 (JSON)
+```
+
+The moving parts:
+
+**Callee — lambda-example (port 8085).** The `HelloWorld` echo function is public and
+registers two route names; the second is an alias created for this demo:
+
+```java
+@PreLoad(route="hello.world, hello.declarative", instances=10, isPrivate = false)
+public class HelloWorld implements LambdaFunction {
+```
+
+**Caller — composable-example (port 8100).** In `application.properties`, the declarative
+routing file is turned on and the peer address is externalized:
+
+```properties
+yaml.event.over.http=classpath:/event-over-http.yaml
+peer.demo.host=127.0.0.1
+peer.demo.port=8085
+```
+
+`event-over-http.yaml` maps the foreign route to the peer's Event API endpoint:
+
+```yaml
+event.http:
+  - route: 'hello.declarative'
+    target: 'http://${peer.demo.host:127.0.0.1}:${peer.demo.port}/api/event'
+```
+
+and the REST endpoint `GET/POST /api/event/http/demo` (see `rest.yaml`) runs the flow
+`event-over-http-demo` whose task simply names the route:
+
+```yaml
+tasks:
+  - name: 'event-over-http-demo'
+    input:
+      - 'input.header -> header'
+      - 'input.body -> *'
+    process: 'hello.declarative'
+    output:
+      - 'text(application/json) -> output.body.content-type'
+      - 'result -> output.body'
+    description: 'Make an Event-over-Http call using the event-over-http.yaml configuration'
+    execution: end
+```
+
+### Step by step
+
+1. Build and start the callee in one terminal (`x.y.z` is the current version in the root `pom.xml`):
+
+    ```shell
+    cd examples/lambda-example
+    mvn clean package
+    java -jar target/lambda-example-x.y.z.jar
+    ```
+
+2. Build and start the caller in a second terminal:
+
+    ```shell
+    cd examples/composable-example
+    mvn clean package
+    java -jar target/composable-example-x.y.z.jar
+    ```
+
+3. Hit the demo endpoint:
+
+    ```shell
+    curl -s -X POST -H "content-type: application/json" \
+         -d '{"hello": "world"}' http://127.0.0.1:8100/api/event/http/demo
+    ```
+
+4. The lambda-example's echo function replies through the same path in reverse — the response
+   arrives as regular JSON:
+
+    ```json
+    {
+      "body": { "hello": "world" },
+      "headers": {
+        "x-flow-id": "event-over-http-demo",
+        "my_trace_id": "51fb9a95cb6b47169dd83771283aebc2",
+        "my_trace_path": "POST /api/event/http/demo",
+        "...": "..."
+      },
+      "instance": 4,
+      "origin": "20260722ec4dc39307f94178be2e87a5620fb4ec"
+    }
+    ```
+
+    The `origin` identifies the application instance that actually executed the function —
+    the lambda-example, not the app you called.
+
+5. Look at both applications' logs: the trace context propagated across the HTTP hop
+   automatically. Both apps log telemetry under the **same trace id**, the
+   `hello.declarative` record carries `span_id` and `parent_span_id` chaining it onto the
+   caller's flow, and — with the default-on
+   [application log context](observability.md#log-context) — every structured log line on
+   both sides is stamped with that trace id.
+
+### Same demo, different language
+
+The official [Rust implementation](https://github.com/Accenture/mercury) ships counterpart
+examples: **hello-world** is the parallel of the lambda-example (same port 8085, same public
+`hello.world` / `hello.declarative` echo), and **hello-flow** is the parallel of the
+composable-example. That makes the demo above a cross-language demo with **zero changes**:
+
+1. Stop the lambda-example.
+2. Start the Rust hello-world from a clone of the Rust repository:
+
+    ```shell
+    cargo run -p hello-world
+    ```
+
+3. Run the same `curl` command again.
+
+The response has the same shape — only the `origin` now identifies the Rust application.
+The composable-example neither knows nor cares which language serves the route: it addresses
+a route name, the envelope travels in the language-neutral
+[standard wire format](event-envelope-wire-format.md), and the trace context continues across
+the language boundary.
+
+The mirror direction works the same way: the Rust hello-flow (port 8100) declares
+`hello.declarative` in its own `event-over-http.yaml` and can call the Java lambda-example —
+or the Rust hello-world — interchangeably. Point `peer.demo.host` / `peer.demo.port` at any
+peer that exposes the route.
+
 ## Advantages
 
 The Event API exposes all public functions of an application instance to the network using a single REST endpoint.

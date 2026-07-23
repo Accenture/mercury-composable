@@ -38,6 +38,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    each RPC response carries `span_id` (the callee's span) and `parent_span_id` (the
    caller's span), so trace visualizers can chain RPC round-trips into the span tree —
    including across Event-over-HTTP hops.
+4. **Ready-to-run declarative Event-over-HTTP demo in the examples.** The lambda-example
+   exposes a public `hello.world` echo with a `hello.declarative` alias, and the
+   composable-example's `POST /api/event/http/demo` endpoint runs a flow whose task is that
+   foreign route — resolved through `event-over-http.yaml` with zero orchestration code.
+   The same demo doubles as a cross-language interop demo against the official Rust
+   implementation's counterpart examples — see the step-by-step walk-through in the
+   [Event over HTTP](https://accenture.github.io/mercury-composable/guides/event-over-http/)
+   guide.
 
 ### Fixed
 
