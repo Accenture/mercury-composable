@@ -2257,6 +2257,67 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#the-presentation-parity-drive-2026-07-23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The presentation-parity drive (2026-07-23)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The presentation-parity drive (2026-07-23)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#method-a-normalized-reference-signature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method: a normalized reference signature
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reaching-the-bar-required-refactoring-not-patching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reaching the bar required refactoring, not patching
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#result-empty-diff-in-all-four-directions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Result: empty diff in all four directions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#learnings-for-future-language-ports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Learnings for future language ports
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2584,6 +2645,67 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#the-presentation-parity-drive-2026-07-23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The presentation-parity drive (2026-07-23)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The presentation-parity drive (2026-07-23)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#method-a-normalized-reference-signature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method: a normalized reference signature
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reaching-the-bar-required-refactoring-not-patching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reaching the bar required refactoring, not patching
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#result-empty-diff-in-all-four-directions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Result: empty diff in all four directions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#learnings-for-future-language-ports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Learnings for future language ports
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2607,12 +2729,15 @@
 <h1 id="interop-test-report-event-over-http-java-rust">Interop Test Report — Event over HTTP, Java ⇄ Rust<a class="headerlink" href="#interop-test-report-event-over-http-java-rust" title="Permanent link">&para;</a></h1>
 <p><em>Live bidirectional interoperability validation between the Java engine
 (<a href="https://github.com/Accenture/mercury-composable">mercury-composable</a>) and the official
-Rust implementation (<a href="https://github.com/Accenture/mercury">mercury</a>), conducted
-2026-07-22 as the release gate for the v4.10 line.</em></p>
+Rust implementation (<a href="https://github.com/Accenture/mercury">mercury</a>): the wire-format and
+calling-pattern drives conducted 2026-07-22 as the release gate for the v4.10 line, and the
+telemetry presentation-parity drive conducted 2026-07-23.</em></p>
 <p>This report is a permanent record. It documents what was tested, the evidence collected,
 and — in the interest of honest engineering — the defects the drives surfaced and how each
 was fixed and re-verified. Everything here is reproducible from the shipped examples by
-following the <a href="../../guides/event-over-http/#zero-code-demo">Event over HTTP</a> walk-through.</p>
+following the <a href="../../guides/event-over-http/#zero-code-demo">Event over HTTP</a> walk-through.
+It is also kept as a <strong>playbook for future language ports</strong> (e.g. Python) — see the
+learnings section at the end.</p>
 <h2 id="background-the-wire-format-validation-drive">Background: the wire-format validation drive<a class="headerlink" href="#background-the-wire-format-validation-drive" title="Permanent link">&para;</a></h2>
 <p>The first interop drive (2026-07-22, morning) validated the language-neutral
 <a href="../../guides/event-envelope-wire-format/">standard event envelope wire format</a> end-to-end:
@@ -2650,8 +2775,9 @@ applications as-is.</p>
 </tr>
 </tbody>
 </table>
-<p>Endpoints exercised on each caller: <code>POST /api/event/http/demo</code> (declarative),
-<code>POST /api/event/http/programmatic</code>, and <code>GET /api/event/http/demo</code>. <strong>Zero configuration
+<p>Endpoints exercised on each caller: <code>POST /api/event/http/demo</code> (declarative; renamed to
+<code>/api/event/http/declarative</code> after v4.10.0), <code>POST /api/event/http/programmatic</code>, and
+<code>GET /api/event/http/demo</code>. <strong>Zero configuration
 changes between drives</strong> — the callees are drop-in counterparts of each other (same port,
 same public routes <code>hello.world</code> / <code>hello.declarative</code>), which is the point of the demo.</p>
 <p><strong>Versions under test:</strong> Java at
@@ -2716,6 +2842,192 @@ span-accurate across the language boundary in both directions. The shipped examp
 drop-in cross-language counterparts, and the walk-through in the
 <a href="../../guides/event-over-http/#zero-code-demo">Event over HTTP guide</a> reproduces this
 validation with a single <code>curl</code>.</p>
+<h2 id="the-presentation-parity-drive-2026-07-23">The presentation-parity drive (2026-07-23)<a class="headerlink" href="#the-presentation-parity-drive-2026-07-23" title="Permanent link">&para;</a></h2>
+<p>After v4.10.0 shipped, a manual review of all four direction combinations
+(java-to-java, rust-to-rust, java-to-rust, rust-to-java) side by side — the way a
+DevSecOps operator reads an aggregated log stream — raised the bar from "trace continuity
+works" to a stronger requirement:</p>
+<blockquote>
+<p><strong>Field installations stay polyglot for a long time. Operators aggregate both engines'
+telemetry and logs in one place, and any presentation difference is a support burden.
+The same-language logs of the two engines must be exact structural replicas of each
+other — then cross-language runs are symmetric by construction.</strong></p>
+</blockquote>
+<p>That review surfaced loose ends the per-direction drives had not:</p>
+<ul>
+<li><strong>Java:</strong> the <code>/api/event</code> edge connected to no span — <code>event.api.service</code> was a
+  zero-tracing relay, so the remote target function parented onto a span from another
+  application with nothing in between, and the HTTP response leg floated unparented.</li>
+<li><strong>Rust:</strong> an incomplete application log-context block (constants only) appeared on
+  telemetry and system lines that carry no request trace; the first-leg
+  <code>http.flow.adapter</code> span was never recorded (its RPC-style dispatch suppressed the
+  worker record), leaving <code>parent_span_id</code> values that pointed at spans no record
+  reported; and reserved <code>my_*</code> metadata could leak into HTTP response headers.</li>
+</ul>
+<h3 id="method-a-normalized-reference-signature">Method: a normalized reference signature<a class="headerlink" href="#method-a-normalized-reference-signature" title="Permanent link">&para;</a></h3>
+<p>The Java engine is the reference implementation. After fixing the Java <code>/api/event</code> edge
+(the service is now traced: its span parents onto the remote caller's span, the target
+function parents onto it, and both response legs chain onto real spans), a live
+java-to-java run was distilled into a <strong>normalized trace signature</strong>: per calling pattern,
+the exact set of telemetry records — service name, parent edge (expressed symbolically so
+span-id values don't matter), record kind (<code>round_trip</code> for RPC-served spans vs
+<code>exec-only</code> for callback-served worker records), and path. Volatile fields (ids, origins,
+timestamps, durations, thread/instance numbers, ordering) are exempt; everything else must
+match record-for-record.</p>
+<p><strong>Declarative pattern — 8 records:</strong></p>
+<table>
+<thead>
+<tr>
+<th>side</th>
+<th>service</th>
+<th>parent (span owner)</th>
+<th>kind</th>
+<th>path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>caller</td>
+<td>http.flow.adapter</td>
+<td>(root)</td>
+<td>exec-only</td>
+<td>POST /api/event/http/declarative</td>
+</tr>
+<tr>
+<td>caller</td>
+<td>task.executor</td>
+<td>http.flow.adapter@caller</td>
+<td>exec-only</td>
+<td>POST /api/event/http/declarative</td>
+</tr>
+<tr>
+<td>callee</td>
+<td>event.api.auth</td>
+<td>http.flow.adapter@caller</td>
+<td>round_trip</td>
+<td>POST /api/event</td>
+</tr>
+<tr>
+<td>callee</td>
+<td>event.api.service</td>
+<td>http.flow.adapter@caller</td>
+<td>exec-only</td>
+<td>POST /api/event</td>
+</tr>
+<tr>
+<td>callee</td>
+<td>hello.declarative</td>
+<td>event.api.service@callee</td>
+<td>round_trip</td>
+<td>POST /api/event/http/declarative</td>
+</tr>
+<tr>
+<td>callee</td>
+<td>hello.pojo</td>
+<td>hello.declarative@callee</td>
+<td>exec-only</td>
+<td>POST /api/event/http/declarative</td>
+</tr>
+<tr>
+<td>callee</td>
+<td>async.http.response</td>
+<td>event.api.service@callee</td>
+<td>exec-only</td>
+<td>POST /api/event</td>
+</tr>
+<tr>
+<td>caller</td>
+<td>async.http.response</td>
+<td>hello.declarative@callee</td>
+<td>exec-only</td>
+<td>POST /api/event/http/declarative</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Programmatic pattern — 9 records:</strong> identical shape with the caller's
+<code>v1.event.over.http.rpc</code> task span between the flow adapter and the callee (the callee's
+<code>event.api.auth</code> / <code>event.api.service</code> parent onto it), the callee function being
+<code>hello.world</code>, and one deliberate asymmetry: the caller's <code>async.http.response</code> parents
+onto the <strong>callee's function span</strong> in the declarative pattern (the flow task's reply <em>is</em>
+the remote reply) but onto the <strong>local task span</strong> in the programmatic one (the flow's
+reply is produced locally by that task).</p>
+<p>The signature also pins the invariants: one record per span, no dangling parents, HTTP
+response headers free of reserved <code>my_*</code> metadata, and the log-context gating rule — a
+<code>context</code> block appears <strong>only</strong> on log lines emitted inside a traced function execution;
+telemetry and system lines carry none at all.</p>
+<h3 id="reaching-the-bar-required-refactoring-not-patching">Reaching the bar required refactoring, not patching<a class="headerlink" href="#reaching-the-bar-required-refactoring-not-patching" title="Permanent link">&para;</a></h3>
+<p>Matching the signature exposed genuine low-level variance in the Rust port's RPC
+implementation, resolved structurally: its REST automation now dispatches endpoint
+services as <strong>callbacks</strong> through a registered <code>async.http.response</code> service (the Java
+twin) instead of RPC through a oneshot inbox — which is what made the first-leg and
+response-leg spans real — and the business correlation-id moved to the reserved
+envelope-header channel for exact <code>PostOffice</code> parity. The log context was re-gated to
+render only inside a traced, non-zero-traced worker execution. The same drive added the
+<code>event.api.auth</code> authentication demo to both engines (a shared token resolved from the
+<code>DEMO_PEER_TOKEN</code> environment variable — authentication appears in the trace as a real
+span, and its session info rides to the target function as proof).</p>
+<h3 id="result-empty-diff-in-all-four-directions">Result: empty diff in all four directions<a class="headerlink" href="#result-empty-diff-in-all-four-directions" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Direction</th>
+<th>Declarative (8 records)</th>
+<th>Programmatic (9 records)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>java → java (reference)</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>rust → rust</td>
+<td><strong>empty diff</strong></td>
+<td><strong>empty diff</strong></td>
+</tr>
+<tr>
+<td>java → rust</td>
+<td><strong>empty diff</strong></td>
+<td><strong>empty diff</strong></td>
+</tr>
+<tr>
+<td>rust → java</td>
+<td><strong>empty diff</strong></td>
+<td><strong>empty diff</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Exactly as predicted: once the same-language logs were replicas, the cross-language runs
+were symmetric with no additional work. Authentication verified in every direction
+(session proof in the echo; wrong or missing token → HTTP-401), response headers clean,
+and zero context blocks on untraced lines in either engine.</p>
+<h2 id="learnings-for-future-language-ports">Learnings for future language ports<a class="headerlink" href="#learnings-for-future-language-ports" title="Permanent link">&para;</a></h2>
+<p>This validation arc is the playbook for bringing the next language (e.g. Python) into the
+family:</p>
+<ol>
+<li><strong>Golden conformance vectors first.</strong> The wire format is proven byte-identically with
+   vectors shared verbatim between repositories — no prose interpretation.</li>
+<li><strong>Same-language baseline before cross-language testing.</strong> Distill a live run of the
+   reference engine (java-to-java) into a normalized trace signature; the new port must
+   produce an <strong>empty diff</strong> on its own same-language run. Cross-language symmetry then
+   follows by construction — do not chase cross-language differences directly.</li>
+<li><strong>The signature is more than topology.</strong> It pins record kinds (round_trip vs
+   exec-only), path values, one-record-per-span, no dangling parents, log-context gating,
+   and transport-header hygiene — the things an operator actually sees in an aggregated
+   view. Presentation parity is a standing invariant, not a one-off acceptance test:
+   polyglot installations put both engines' output in front of the same DevSecOps team.</li>
+<li><strong>Expect refactoring, not configuration.</strong> Matching the signature will surface genuine
+   low-level differences (RPC vs callback dispatch, context scoping). Fix the structure;
+   telemetry-layer workarounds recreate the drift later.</li>
+<li><strong>The demo pair is the reusable test vehicle.</strong> A new port implements the hello-world /
+   hello-flow counterparts on the same ports and route names, and every drive in this
+   report — functionality, trace continuity, authentication, signature diff — runs against
+   it unchanged, with zero configuration.</li>
+<li><strong>Live drives find what unit tests do not.</strong> Every drive in this story surfaced real
+   defects (timeout truncation, span misattribution, context leakage, an invisible relay
+   edge) that per-repository test suites had not caught.</li>
+</ol>
 
 
 

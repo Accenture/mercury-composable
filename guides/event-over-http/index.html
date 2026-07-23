@@ -1887,6 +1887,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#authentication-the-eventapiauth-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication: the event.api.auth demo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#same-demo-different-language" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2715,6 +2726,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#authentication-the-eventapiauth-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication: the event.api.auth demo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#same-demo-different-language" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2891,7 +2913,7 @@ and the callee side is an ordinary public function.</p>
     participant U as curl
     participant C as composable-example (8100)
     participant L as lambda-example (8085)
-    U-&gt;&gt;C: POST /api/event/http/demo
+    U-&gt;&gt;C: POST /api/event/http/declarative
     Note over C: flow task "hello.declarative"&lt;br/&gt;route is not local — resolved&lt;br/&gt;via event-over-http.yaml
     C-&gt;&gt;L: POST /api/event&lt;br/&gt;(MsgPack envelope + trace context)
     Note over L: hello.declarative echo&lt;br/&gt;(alias of hello.world)
@@ -2914,10 +2936,10 @@ routing file is turned on and the peer address is externalized:</p>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">route</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;hello.declarative&#39;</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://${peer.demo.host:127.0.0.1}:${peer.demo.port}/api/event&#39;</span>
 </code></pre></div>
-<p>and the REST endpoint <code>GET/POST /api/event/http/demo</code> (see <code>rest.yaml</code>) runs the flow
-<code>event-over-http-demo</code> whose task simply names the route:</p>
+<p>and the REST endpoint <code>GET/POST /api/event/http/declarative</code> (see <code>rest.yaml</code>) runs the flow
+<code>event-over-http-declarative</code> whose task simply names the route:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">tasks</span><span class="p">:</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;event-over-http-demo&#39;</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;event-over-http-declarative&#39;</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="nt">input</span><span class="p">:</span>
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;input.header</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header&#39;</span>
 <a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;input.body</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">*&#39;</span>
@@ -2947,7 +2969,7 @@ routing file is turned on and the peer address is externalized:</p>
 <li>
 <p>Hit the demo endpoint:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;content-type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">     </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;hello&quot;: &quot;world&quot;}&#39;</span><span class="w"> </span>http://127.0.0.1:8100/api/event/http/demo
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">     </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;hello&quot;: &quot;world&quot;}&#39;</span><span class="w"> </span>http://127.0.0.1:8100/api/event/http/declarative
 </code></pre></div>
 </li>
 <li>
@@ -2956,9 +2978,9 @@ routing file is turned on and the peer address is externalized:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="p">{</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="nt">&quot;body&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;hello&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;world&quot;</span><span class="w"> </span><span class="p">},</span>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="nt">&quot;headers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span><span class="nt">&quot;x-flow-id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;event-over-http-demo&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span><span class="nt">&quot;x-flow-id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;event-over-http-declarative&quot;</span><span class="p">,</span>
 <a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">    </span><span class="nt">&quot;my_trace_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;51fb9a95cb6b47169dd83771283aebc2&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">    </span><span class="nt">&quot;my_trace_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;POST /api/event/http/demo&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">    </span><span class="nt">&quot;my_trace_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;POST /api/event/http/declarative&quot;</span><span class="p">,</span>
 <a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">    </span><span class="nt">&quot;...&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span>
 <a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">  </span><span class="p">},</span>
 <a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">  </span><span class="nt">&quot;instance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
@@ -2997,6 +3019,39 @@ the primary route <code>hello.world</code>, the declarative endpoint calls the a
 (and therefore which pattern) served the call.
 Choose declarative when the target address is deployment configuration (the usual case);
 choose programmatic when the code must compute or vary the target at runtime.</p>
+<h3 id="authentication-the-eventapiauth-demo">Authentication: the event.api.auth demo<a class="headerlink" href="#authentication-the-eventapiauth-demo" title="Permanent link">&para;</a></h3>
+<p>The demo pair also shows how to protect the Event API endpoint. The lambda-example
+overrides the default <code>/api/event</code> entry in its <code>rest.yaml</code> to attach an authentication
+service:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;event.api.service&quot;</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;POST&#39;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/api/event&quot;</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60s</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">    </span><span class="nt">authentication</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;event.api.auth&#39;</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</code></pre></div>
+<p>The <code>event.api.auth</code> function (class <code>EventApiAuth</code>) validates the caller's
+<code>authorization</code> header against a shared secret that <strong>both peers resolve from the
+environment</strong> — never hard-code a real credential in source or configuration files:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># application.properties on both sides - &quot;demo&quot; is the local-development fallback</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="na">demo.peer.token</span><span class="o">=</span><span class="s">${DEMO_PEER_TOKEN:demo}</span>
+</code></pre></div>
+<p>On the calling side, the declarative route presents the token as a security header in
+<code>event-over-http.yaml</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nt">event.http</span><span class="p">:</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">route</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;hello.declarative&#39;</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://${peer.demo.host:127.0.0.1}:${peer.demo.port}/api/event&#39;</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span><span class="c1"># security headers (optional. Added for this demo only)</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">    </span><span class="nt">headers</span><span class="p">:</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">      </span><span class="nt">authorization</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;${DEMO_PEER_TOKEN:demo}&#39;</span>
+</code></pre></div>
+<p>and the programmatic task passes the same token in the <code>headers</code> argument of the request
+API. A wrong or missing token gets an HTTP-401 without ever reaching the target function.</p>
+<p>When authentication passes, headers returned by the auth service become <strong>session info</strong>
+that rides to the target function as read-only headers — the demo's auth service adds
+<code>user: demo</code>, so you can see it echoed in the response body as proof that the request went
+through authentication. Replace the demo class with your own OAuth 2.0 bearer-token
+validation for production use.</p>
 <h3 id="same-demo-different-language">Same demo, different language<a class="headerlink" href="#same-demo-different-language" title="Permanent link">&para;</a></h3>
 <p>The official <a href="https://github.com/Accenture/mercury">Rust implementation</a> ships counterpart
 examples: <strong>hello-world</strong> is the parallel of the lambda-example (same port 8085, same public
@@ -3006,7 +3061,7 @@ composable-example. That makes the demo above a cross-language demo with <strong
 <li>Stop the lambda-example.</li>
 <li>
 <p>Start the Rust hello-world from a clone of the Rust repository:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>cargo<span class="w"> </span>run<span class="w"> </span>-p<span class="w"> </span>hello-world
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>cargo<span class="w"> </span>run<span class="w"> </span>-p<span class="w"> </span>hello-world
 </code></pre></div>
 </li>
 <li>
@@ -3031,16 +3086,17 @@ peer that exposes the route.</p>
 <li>Secure - you can protect the Event API endpoint with an authentication service</li>
 </ol>
 <p>The following configuration adds authentication service to the Event API endpoint:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">&quot;event.api.service&quot;</span><span class="w"> </span><span class="p p-Indicator">]</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">&#39;POST&#39;</span><span class="w"> </span><span class="p p-Indicator">]</span>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/api/event&quot;</span>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60s</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">    </span><span class="nt">authentication</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;v1.api.auth&quot;</span>
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">&quot;event.api.service&quot;</span><span class="w"> </span><span class="p p-Indicator">]</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">&#39;POST&#39;</span><span class="w"> </span><span class="p p-Indicator">]</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/api/event&quot;</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60s</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">    </span><span class="nt">authentication</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;v1.api.auth&quot;</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div></p>
 <p>This enforces every incoming request to the Event API endpoint to be authenticated by the "v1.api.auth" service
 before passing to the Event API service. You can plug in your own authentication service such as OAuth 2.0 
-"bearer token" validation.</p>
+"bearer token" validation. A complete working example is the
+<a href="#authentication-the-eventapiauth-demo">event.api.auth demo</a> above.</p>
 <p>Please refer to <a href="../rest-automation/">REST Automation</a> for details.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
