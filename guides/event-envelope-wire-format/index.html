@@ -3320,7 +3320,18 @@ them remain fully conformant.</p>
 </tr>
 </tbody>
 </table>
-<p>Routing metadata (e.g. <code>optional</code>, <code>json</code>, <code>broadcast</code>).</p>
+<p>Engine-managed metadata (e.g. <code>optional</code>, <code>json</code>, <code>broadcast</code>). Tags are never visible to a
+user function - the engine consumes them at delivery. Two tag names are reserved with
+cross-language semantics that a conforming implementation must honor:</p>
+<ul>
+<li><strong><code>rpc</code></strong> - marks an RPC request (value = timeout in ms). The serving engine suppresses the
+  worker-side trace record for an RPC-served execution; the caller's round-trip record is the
+  single record for that span.</li>
+<li><strong><code>my_cid</code></strong> - carries the business correlation-id across touch points and Event-over-HTTP
+  hops. Metadata is never transported as envelope headers; the receiving engine injects the
+  read-only <code>my_correlation_id</code> key into the function's input header copy from this tag at
+  delivery.</li>
+</ul>
 <h3 id="annotations"><code>annotations</code><a class="headerlink" href="#annotations" title="Permanent link">&para;</a></h3>
 <table>
 <thead>

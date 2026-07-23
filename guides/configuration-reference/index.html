@@ -6851,7 +6851,7 @@ the template, or set this key to <code>false</code> to opt out.</p>
 </tr>
 </tbody>
 </table>
-<p>HTTP header carrying the business correlation-id (enterprise-specific; case-insensitive on inbound). Captured at the edge and preserved end-to-end — exposed to flows as <code>model.cid</code> and to functions via <code>PostOffice.getMyCorrelationId()</code>. A fresh dash-less UUID is generated when the header is absent. Overridable per endpoint with <code>correlation.id.header</code> in a rest.yaml entry (impedance matching for a legacy caller).</p>
+<p>HTTP header carrying the business correlation-id (enterprise-specific; case-insensitive on inbound). Captured at the edge and preserved end-to-end — exposed to flows as <code>model.cid</code> and to functions via <code>PostOffice.getMyCorrelationId()</code>. A fresh dash-less UUID is generated when the header is absent, and the resolved value is <strong>echoed on every HTTP response</strong> under the same header name so an edge caller can correlate without parsing the body (a response header of the same name set by the function takes precedence). Overridable per endpoint with <code>correlation.id.header</code> in a rest.yaml entry (impedance matching for a legacy caller).</p>
 <h3 id="httptraceidheader"><code>http.trace.id.header</code><a class="headerlink" href="#httptraceidheader" title="Permanent link">&para;</a></h3>
 <table>
 <thead>

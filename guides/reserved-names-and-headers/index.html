@@ -3100,10 +3100,16 @@ rest.yaml endpoint or kafka-flow-adapter.yaml binding may override them with the
   plumbing invisible to application code; the business one is the durable, end-to-end identifier.</li>
 <li><strong>Preserved in the flow</strong> as <code>model.cid</code>, and exposed to every function task as the read-only
   <code>my_correlation_id</code> header (<code>PostOffice.getMyCorrelationId()</code>).</li>
-<li><strong>Carried to any touch point.</strong> Every <code>PostOffice</code> send/RPC/broadcast stamps <code>my_correlation_id</code> on the
-  outgoing event (the same way the trace context is carried), so the correlation-id follows the call graph
-  automatically — across in-memory calls, the cross-instance <strong>event-over-HTTP</strong> hop (it rides in the
-  serialized envelope and the peer target reads it via <code>getMyCorrelationId()</code>), and into downstream systems.</li>
+<li><strong>Carried to any touch point.</strong> Every <code>PostOffice</code> send/RPC/broadcast carries the business
+  correlation-id on an <strong>engine-managed envelope tag</strong> — never as an envelope header — so the
+  correlation-id follows the call graph automatically: across in-memory calls, the cross-instance
+  <strong>event-over-HTTP</strong> hop (the tag rides in the serialized envelope and the peer's engine injects
+  <code>my_correlation_id</code> at delivery for <code>getMyCorrelationId()</code>), and into downstream systems. Metadata is
+  never transported as envelope headers; the <code>my_*</code> keys exist only in the injected input-header copy.</li>
+<li><strong>Echoed on the HTTP response.</strong> REST automation returns the request's business correlation-id
+  (inbound or edge-generated) on the response under the configured header name (default
+  <code>X-Correlation-Id</code>), so an edge caller can correlate without parsing the body. A response header of
+  the same name set by the function takes precedence.</li>
 <li><strong>Handed downstream.</strong> <code>simple.kafka.notification</code> stamps it on the outbound Kafka message (under
   <code>kafka.correlation.id.header</code>), and <code>AsyncHttpClient</code> emits it as the configured HTTP header
   (<code>http.correlation.id.header</code>) on downstream calls — in both cases an explicitly set header (e.g. a flow

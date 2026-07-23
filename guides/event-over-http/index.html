@@ -2898,6 +2898,10 @@ the event manager will make the "Event over HTTP" call to the target service.</p
 <blockquote>
 <p><em>Note</em>: The target function must declare itself as PUBLIC in the preload annotation. Otherwise, you will get
           a HTTP-403 exception.</p>
+<p><em>Engine internals</em>: the relay stamps a reserved <code>x-event-api</code> header on the forwarded envelope as a
+recursion guard (so the receiving engine does not re-relay the event through its own declarative map).
+It is engine-internal — the worker removes it from a function's input header copy and filters it from
+returned response headers, so application code never sees or emits it.</p>
 </blockquote>
 <p>The demo below is a complete working example of this service abstraction.</p>
 <h2 id="zero-code-demo">Zero-code demo: composable-example to lambda-example<a class="headerlink" href="#zero-code-demo" title="Permanent link">&para;</a></h2>
