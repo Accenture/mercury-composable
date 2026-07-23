@@ -39,6 +39,15 @@ rest:
     cors: cors_1
     headers: header_1
     tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET', 'POST']
+    url: "/api/event/http/programmatic"
+    flow: 'event-over-http-programmatic'
+    timeout: 15s
+    cors: cors_1
+    headers: header_1
+    tracing: true
 #
 # CORS HEADERS for pre-flight (HTTP OPTIONS) and normal responses
 #

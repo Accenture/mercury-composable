@@ -377,6 +377,32 @@ tasks:
    [application log context](observability.md#log-context) — every structured log line on
    both sides is stamped with that trace id.
 
+### The programmatic twin
+
+The composable-example has a second endpoint, `/api/event/http/programmatic`, that reaches
+the **same peer function** through the programmatic pattern. Its flow task
+(`v1.event.over.http.rpc`, class `EventOverHttpRpc`) builds the peer's Event API endpoint
+URL from the same `peer.demo.host` / `peer.demo.port` properties and passes it directly to
+the PostOffice request API — so `hello.world` needs **no entry** in `event-over-http.yaml`:
+
+```java
+String eventEndpoint = "http://" + host + ":" + port + "/api/event";
+EventEnvelope req = new EventEnvelope().setTo("hello.world").setBody(input);
+EventEnvelope response = po.request(req, 10000, Collections.emptyMap(), eventEndpoint, true).get();
+```
+
+```shell
+curl -s -X POST -H "content-type: application/json" \
+     -d '{"hello": "world"}' http://127.0.0.1:8100/api/event/http/programmatic
+```
+
+The response has the same echo shape, and the trace continues across the hop the same way.
+This is why the echo function registers **two route names**: the programmatic endpoint calls
+the primary route `hello.world`, the declarative endpoint calls the alias
+`hello.declarative` — the echoed `my_route` header tells you which pattern served the call.
+Choose declarative when the target address is deployment configuration (the usual case);
+choose programmatic when the code must compute or vary the target at runtime.
+
 ### Same demo, different language
 
 The official [Rust implementation](https://github.com/Accenture/mercury) ships counterpart
