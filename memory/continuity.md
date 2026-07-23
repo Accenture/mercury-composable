@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-22 | agent: Claude Code (2026-07-22-015924)
+- **last_session:** 2026-07-22 | agent: Claude Code (2026-07-22-234845)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -249,6 +249,18 @@
   instrumentation-scope constant still reads `4.5.0` (was not bumped for 4.6.0 either — out of release scope; flagged).
   See [[thread-release-4.6.1-field-scan]] and the earlier [[snyk-oss-dependency-update-2026-07]].
   <!-- id: release-4.6.1-security-patch | created: 2026-07-06 | last_used: 2026-07-06 | uses: 1 | tier: working | origin: 2026-07-06-164315 -->
+
+- **Application log context is ON by default (2026-07-22, Eric via leadership request; branch
+  `feature/lambda-example-interop-echo`, ships in the next release).** platform-core carries a built-in
+  `default-log-context.yaml` (cid/traceId/tracePath/spanId/parentSpanId/service/timestamp); when json/compact
+  logging is active, every traced function's log line gets the `context` block with zero setup. Override =
+  the app's own `app-log-context.yaml` (replaces the template entirely); opt-out = `app.log.context=false`
+  (default true). **Design note:** the built-in uses a DISTINCT filename + explicit code fallback in
+  `LogContextConfig.loadConfigFile()` (the `default-rest.yaml` precedent) — never ship a same-named resource
+  in a library jar, because classpath shadowing across jars is classloader-order-dependent. Companion fixes
+  in the same branch: eager `LogContextConfig` init in `AppStarter.reConfigLogger` (kills the "Recursive call
+  to appender" warning) and RPC `round_trip` telemetry now carrying span_id/parent_span_id (inbox family).
+  <!-- id: log-context-on-by-default | created: 2026-07-22 | last_used: 2026-07-22 | uses: 1 | tier: working | origin: 2026-07-22-234845 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
