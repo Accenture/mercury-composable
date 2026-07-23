@@ -1583,6 +1583,18 @@ For example:
 `includes`
 :   Two strings, case insensitive OR one list and one string
 
+#### Collection
+
+`isEmpty`
+:   A single Collection, Map, String or array — true when it has no elements. Use `isNull` /
+    `notNull` for null checks; a null or unsupported input is an error.
+
+`getFirst`
+:   A single non-empty List — returns its first element.
+
+`getLast`
+:   A single non-empty List — returns its last element.
+
 #### Type Conversion
 
 `b64`
