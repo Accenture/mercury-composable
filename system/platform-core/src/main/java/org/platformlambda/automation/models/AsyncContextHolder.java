@@ -30,6 +30,8 @@ public class AsyncContextHolder {
     public String resHeaderId;
     public String accept;
     public String method;
+    public String cidHeaderName;
+    public String businessCorrelationId;
 
     public AsyncContextHolder(HttpServerRequest request) {
         this.request = request;
@@ -59,6 +61,12 @@ public class AsyncContextHolder {
 
     public AsyncContextHolder setAccept(String accept) {
         this.accept = accept;
+        return this;
+    }
+
+    public AsyncContextHolder setCorrelation(String cidHeaderName, String businessCorrelationId) {
+        this.cidHeaderName = cidHeaderName;
+        this.businessCorrelationId = businessCorrelationId;
         return this;
     }
 

@@ -485,7 +485,7 @@ Maximum stack-trace lines embedded in an `EventEnvelope` when an exception occur
 |------|---------|
 | `String` | `X-Correlation-Id` |
 
-HTTP header carrying the business correlation-id (enterprise-specific; case-insensitive on inbound). Captured at the edge and preserved end-to-end — exposed to flows as `model.cid` and to functions via `PostOffice.getMyCorrelationId()`. A fresh dash-less UUID is generated when the header is absent. Overridable per endpoint with `correlation.id.header` in a rest.yaml entry (impedance matching for a legacy caller).
+HTTP header carrying the business correlation-id (enterprise-specific; case-insensitive on inbound). Captured at the edge and preserved end-to-end — exposed to flows as `model.cid` and to functions via `PostOffice.getMyCorrelationId()`. A fresh dash-less UUID is generated when the header is absent, and the resolved value is **echoed on every HTTP response** under the same header name so an edge caller can correlate without parsing the body (a response header of the same name set by the function takes precedence). Overridable per endpoint with `correlation.id.header` in a rest.yaml entry (impedance matching for a legacy caller).
 
 ### `http.trace.id.header`
 

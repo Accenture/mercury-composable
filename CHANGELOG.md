@@ -8,6 +8,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Added
+
+1. **The HTTP response echoes the business correlation-id.** REST automation returns the
+   request's correlation-id (inbound or edge-generated) on the response under the
+   configured header name (default `X-Correlation-Id`), so an edge caller can correlate
+   without parsing the body. A response header of the same name set by the function takes
+   precedence.
+
+### Fixed
+
+1. **Protected metadata is never transported in the event.** The business correlation-id
+   now rides an engine-managed envelope tag instead of a `my_correlation_id` envelope
+   header, and the worker injects the `my_*` read-only keys into the function's input
+   header copy at delivery - so reserved metadata can no longer leak across the
+   Event-over-HTTP wire, into relayed events, or through flow header mappings. The
+   engine-internal `x-event-api` relay guard is likewise removed from the function's view.
+   A callee still honors the legacy header from a pre-4.10.2 peer (injected, then
+   stripped), but no longer sends it - business-cid continuity in mixed fleets requires
+   both sides on this version, the same upgrade-together posture as the wire format.
+
+---
 ## Version 4.10.1, 7/23/2026
 
 Patch release in lock-step with the Rust engine's v4.10.1: telemetry presentation parity.

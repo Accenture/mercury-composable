@@ -151,7 +151,17 @@ them remain fully conformant.
 |------|----------|
 | map of str → str | optional |
 
-Routing metadata (e.g. `optional`, `json`, `broadcast`).
+Engine-managed metadata (e.g. `optional`, `json`, `broadcast`). Tags are never visible to a
+user function - the engine consumes them at delivery. Two tag names are reserved with
+cross-language semantics that a conforming implementation must honor:
+
+- **`rpc`** - marks an RPC request (value = timeout in ms). The serving engine suppresses the
+  worker-side trace record for an RPC-served execution; the caller's round-trip record is the
+  single record for that span.
+- **`my_cid`** - carries the business correlation-id across touch points and Event-over-HTTP
+  hops. Metadata is never transported as envelope headers; the receiving engine injects the
+  read-only `my_correlation_id` key into the function's input header copy from this tag at
+  delivery.
 
 ### `annotations`
 

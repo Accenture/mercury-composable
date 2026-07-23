@@ -193,10 +193,16 @@ Propagation:
   plumbing invisible to application code; the business one is the durable, end-to-end identifier.
 - **Preserved in the flow** as `model.cid`, and exposed to every function task as the read-only
   `my_correlation_id` header (`PostOffice.getMyCorrelationId()`).
-- **Carried to any touch point.** Every `PostOffice` send/RPC/broadcast stamps `my_correlation_id` on the
-  outgoing event (the same way the trace context is carried), so the correlation-id follows the call graph
-  automatically — across in-memory calls, the cross-instance **event-over-HTTP** hop (it rides in the
-  serialized envelope and the peer target reads it via `getMyCorrelationId()`), and into downstream systems.
+- **Carried to any touch point.** Every `PostOffice` send/RPC/broadcast carries the business
+  correlation-id on an **engine-managed envelope tag** — never as an envelope header — so the
+  correlation-id follows the call graph automatically: across in-memory calls, the cross-instance
+  **event-over-HTTP** hop (the tag rides in the serialized envelope and the peer's engine injects
+  `my_correlation_id` at delivery for `getMyCorrelationId()`), and into downstream systems. Metadata is
+  never transported as envelope headers; the `my_*` keys exist only in the injected input-header copy.
+- **Echoed on the HTTP response.** REST automation returns the request's business correlation-id
+  (inbound or edge-generated) on the response under the configured header name (default
+  `X-Correlation-Id`), so an edge caller can correlate without parsing the body. A response header of
+  the same name set by the function takes precedence.
 - **Handed downstream.** `simple.kafka.notification` stamps it on the outbound Kafka message (under
   `kafka.correlation.id.header`), and `AsyncHttpClient` emits it as the configured HTTP header
   (`http.correlation.id.header`) on downstream calls — in both cases an explicitly set header (e.g. a flow

@@ -190,6 +190,39 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings(value = "unchecked")
     @Test
+    void responseEchoesInboundCorrelationId() throws InterruptedException, ExecutionException {
+        // the edge echoes the request's business correlation-id on the HTTP response so the
+        // caller can correlate without parsing the body
+        var po = PostOffice.trackable("unit.test", "310", "GET /api/hello/world");
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("GET").setUrl("/api/hello/world").setTargetHost("http://127.0.0.1:" + port);
+        req.setHeader("accept", "application/json");
+        req.setHeader("X-Correlation-Id", "cid-echo-0101");
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
+        EventEnvelope response = po.eRequest(request, RPC_TIMEOUT).get();
+        assert response != null;
+        assertEquals(200, response.getStatus());
+        assertEquals("cid-echo-0101", response.getHeader("x-correlation-id"));
+    }
+
+    @Test
+    void responseCarriesGeneratedCorrelationIdWhenAbsent() throws InterruptedException, ExecutionException {
+        // when the caller does not provide one, the edge generates a correlation-id and
+        // still returns it on the response
+        var po = PostOffice.trackable("unit.test", "311", "GET /api/hello/world");
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("GET").setUrl("/api/hello/world").setTargetHost("http://127.0.0.1:" + port);
+        req.setHeader("accept", "application/json");
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
+        EventEnvelope response = po.eRequest(request, RPC_TIMEOUT).get();
+        assert response != null;
+        assertEquals(200, response.getStatus());
+        String cid = response.getHeader("x-correlation-id");
+        assertNotNull(cid, "the generated correlation-id must be echoed on the response");
+        assertFalse(cid.isEmpty());
+    }
+
+    @Test
     void serviceTest() throws InterruptedException, ExecutionException {
         final int TTL_SECONDS = 7;
         var po = PostOffice.trackable("unit.test", "101", "/HELLO");
@@ -948,8 +981,8 @@ class RestEndpointTest extends TestBase {
         // HTTP head response may include custom headers and content-length
         assertEquals("HEAD request received", response.getHeader("X-Response"));
         assertEquals("100", response.getHeader("Content-Length"));
-        // the trace/correlation header is NOT echoed back to the caller (legacy echo-back removed)
-        assertNull(response.getHeader("X-Correlation-Id"));
+        // the business correlation-id IS echoed back to the caller; the trace header is not
+        assertEquals(traceId, response.getHeader("X-Correlation-Id"));
         assertNull(response.getHeader("X-Trace-Id"));
         // multiple "set-cookie" headers are consolidated into one composite value
         assertEquals("first=cookie|second=one", response.getHeader("set-cookie"));

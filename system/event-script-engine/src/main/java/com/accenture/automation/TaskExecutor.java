@@ -966,9 +966,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                                             .setBody(unwrapBodyIfWildcard(md))
                                             .setSpanId(parentSpanId);
             md.optionalHeaders.forEach(event::setHeader);
-            // expose the flow's business correlation-id (model.cid) as a read-only reserved header - stamped
-            // last so a mapped optional header named my_correlation_id cannot override the framework value
-            event.setHeader(MY_CORRELATION_ID, flowInstance.businessCorrelationId);
+            // carry the flow's business correlation-id (model.cid) on the engine-managed envelope tag -
+            // never as an envelope header - so the worker injects my_correlation_id at delivery and a
+            // mapped optional header cannot collide with the framework value
+            event.addTag(EventEmitter.BUSINESS_CID_TAG, flowInstance.businessCorrelationId);
             // execute task by sending event
             if (deferred > 0) {
                 po.sendLater(event, new Date(System.currentTimeMillis() + deferred));

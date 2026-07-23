@@ -73,6 +73,7 @@ public class WorkerHandler {
     private static final String MY_TRACE_ID = "my_trace_id";
     private static final String MY_TRACE_PATH = "my_trace_path";
     private static final String MY_CORRELATION_ID = "my_correlation_id";
+    private static final String X_EVENT_API = "x-event-api";
     private static final String X_STREAM_ID = "x-stream-id";
     private static final String X_TTL = "x-ttl";
     private static final String READY = "ready:";
@@ -203,14 +204,27 @@ public class WorkerHandler {
         final long begin = System.nanoTime();
         try {
             final Object body = prepareInputBody(event);
-            // Insert READ only metadata into function input headers
+            /*
+             * A user function receives a COPY of the envelope headers with read-only metadata
+             * injected at delivery time. Metadata is never transported in the event itself:
+             * engine-internal keys are removed from the copy, and the my_* keys below are
+             * derived from envelope fields, the business-cid tag and worker context.
+             */
             Map<String, String> parameters = new HashMap<>(event.getHeaders());
+            parameters.remove(X_EVENT_API);
+            // a legacy peer (pre-4.10.2) transported the business correlation-id as an envelope header
+            String legacyBusinessCid = parameters.remove(MY_CORRELATION_ID);
             parameters.put(MY_ROUTE, parentRoute);
             if (event.getTraceId() != null) {
                 parameters.put(MY_TRACE_ID, event.getTraceId());
             }
             if (event.getTracePath() != null) {
                 parameters.put(MY_TRACE_PATH, event.getTracePath());
+            }
+            String businessCid = event.getTag(EventEmitter.BUSINESS_CID_TAG) != null?
+                    event.getTag(EventEmitter.BUSINESS_CID_TAG) : legacyBusinessCid;
+            if (businessCid != null) {
+                parameters.put(MY_CORRELATION_ID, businessCid);
             }
             Object result = invokeFunction(f, parameters, body, event);
             md.diff = getExecTime(begin);
@@ -558,10 +572,12 @@ public class WorkerHandler {
     }
 
     private void copyResponseHeaders(Map<String, String> headers, EventEnvelope response) {
+        // exit-side sanitization, symmetric with the entry-side injection: the read-only
+        // metadata keys and engine-internal keys never leave a function as response headers
         for (Map.Entry<String, String> kv: headers.entrySet()) {
             String k = kv.getKey();
             if (!MY_ROUTE.equals(k) && !MY_TRACE_ID.equals(k) && !MY_TRACE_PATH.equals(k)
-                    && !MY_CORRELATION_ID.equals(k)) {
+                    && !MY_CORRELATION_ID.equals(k) && !X_EVENT_API.equals(k)) {
                 response.setHeader(k, kv.getValue());
             }
         }

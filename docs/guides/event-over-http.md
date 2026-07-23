@@ -149,6 +149,11 @@ You may also add environment variable or base configuration references to the ta
 > *Note*: The target function must declare itself as PUBLIC in the preload annotation. Otherwise, you will get
           a HTTP-403 exception.
 
+> *Engine internals*: the relay stamps a reserved `x-event-api` header on the forwarded envelope as a
+> recursion guard (so the receiving engine does not re-relay the event through its own declarative map).
+> It is engine-internal — the worker removes it from a function's input header copy and filters it from
+> returned response headers, so application code never sees or emits it.
+
 The demo below is a complete working example of this service abstraction.
 
 ## Zero-code demo: composable-example to lambda-example {#zero-code-demo}

@@ -1019,6 +1019,43 @@ class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
+    void accidentalMetadataEchoIsSanitizedAtExit() throws InterruptedException, ExecutionException {
+        // Eric's scenario: a function accidentally copies its input headers - including the
+        // injected read-only metadata - onto a returned EventEnvelope. The exit-side
+        // sanitization must filter the protected keys while keeping ordinary headers.
+        String echoAllHeaders = "echo.all.headers";
+        LambdaFunction f = (headers, input, instance) -> {
+            EventEnvelope result = new EventEnvelope().setBody("ok");
+            headers.forEach(result::setHeader);         // the accidental copy
+            result.setHeader("x-event-api", "spoofed"); // deliberate engine-internal key
+            return result;
+        };
+        Platform.getInstance().registerPrivate(echoAllHeaders, f, 1);
+        try {
+            Map<String, String> ctx = new HashMap<>();
+            ctx.put("my_route", "unit.test");
+            ctx.put("my_trace_id", "trace-sanitize-1");
+            ctx.put("my_trace_path", "TEST /exit/sanitization");
+            ctx.put("my_correlation_id", "cid-sanitize-1");
+            PostOffice po = PostOffice.trackable(ctx, 1);
+            EventEnvelope req = new EventEnvelope().setTo(echoAllHeaders)
+                    .setBody("x").setHeader("hello", "world");
+            EventEnvelope reply = po.request(req, 8000).get();
+            assertEquals("ok", reply.getBody());
+            // ordinary headers survive
+            assertEquals("world", reply.getHeader("hello"));
+            // protected metadata and engine-internal keys are filtered out at exit
+            assertNull(reply.getHeader("my_route"));
+            assertNull(reply.getHeader("my_trace_id"));
+            assertNull(reply.getHeader("my_trace_path"));
+            assertNull(reply.getHeader("my_correlation_id"));
+            assertNull(reply.getHeader("x-event-api"));
+        } finally {
+            Platform.getInstance().release(echoAllHeaders);
+        }
+    }
+
+    @Test
     void rpcTelemetryCarriesSpanLineage() throws InterruptedException {
         // Regression: the RPC trace record (the one with round_trip) must chain like a
         // worker-emitted record - span_id is the callee's own span (carried on the RPC
