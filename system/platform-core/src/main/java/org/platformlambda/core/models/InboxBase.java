@@ -83,9 +83,10 @@ public abstract class InboxBase {
                 if (md.from != null) {
                     metrics.put("from", trimOrigin(md.from));
                 }
-                // span lineage of the RPC: the reply carries the callee's own span id
-                // and the outbound request carried the caller's span (the callee's parent),
-                // so the round-trip record chains like any worker-emitted trace record
+                // span lineage of the RPC: span_id is the responder's own span (present only
+                // for a direct RPC - see spanIdFromResponder) and parent_span_id is the
+                // caller's span carried on the outbound request, so the round-trip record
+                // chains like any worker-emitted trace record
                 if (md.spanId != null) {
                     metrics.put("span_id", md.spanId);
                 }
@@ -129,6 +130,27 @@ public abstract class InboxBase {
 
     private String trimOrigin(String route) {
         return route.contains("@")? route.substring(0, route.indexOf('@')) : route;
+    }
+
+    /**
+     * Resolve the span id for a RPC round-trip trace record.
+     * <p>
+     * The reply's span id is adopted only when the reply was produced by the requested
+     * route itself (a direct RPC - the responder suppresses its own trace record, so the
+     * round-trip record is the single record for that span). A relayed reply - e.g. an
+     * event flow responding on behalf of "event.script.manager" - carries the span of a
+     * different function that reports its own trace record; adopting it here would
+     * misattribute that span to the requested service and duplicate it in the trace.
+     *
+     * @param to the requested route (may carry an @origin suffix)
+     * @param reply the RPC response event
+     * @return the responder's span id, or null when the reply was relayed
+     */
+    protected String spanIdFromResponder(String to, EventEnvelope reply) {
+        if (to != null && reply.getFrom() != null && trimOrigin(to).equals(reply.getFrom())) {
+            return reply.getSpanId();
+        }
+        return null;
     }
 
     protected static class InboxMetadata {

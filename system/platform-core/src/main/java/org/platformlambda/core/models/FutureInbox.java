@@ -103,7 +103,7 @@ public class FutureInbox extends InboxBase {
                 md.tracePath = holder.tracePath;
                 md.to = to;
                 md.from = holder.from;
-                md.spanId = reply.getSpanId();
+                md.spanId = spanIdFromResponder(to, reply);
                 md.parentSpanId = holder.parentSpan;
                 md.start = start;
                 md.status = reply.getStatus();

@@ -225,8 +225,11 @@ class SpanPropagationTest extends TestBase {
         List<Span> spans = new ArrayList<>();
         for (Map<String, Object> dataset : datasets) {
             Map<String, Object> metrics = (Map<String, Object>) dataset.get(TRACE);
-            // Skip RPC round-trip client traces (identified by "round_trip"): they are the caller's
-            // own measurement of a call and carry no span_id, so they are not nodes in the span tree.
+            // Skip records without a span_id: a RPC round-trip record adopts the responder's
+            // span id only on a direct RPC - a flow reply is relayed on behalf of
+            // event.script.manager by a task that reports its own span, so the caller's
+            // round-trip measurement carries parent_span_id but no span_id and is not a
+            // node in the span tree.
             if (metrics.get(SPAN_ID) == null) {
                 continue;
             }

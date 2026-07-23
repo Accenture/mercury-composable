@@ -119,7 +119,7 @@ public class FutureMultiInbox extends InboxBase {
                     md.tracePath = holder.tracePath;
                     md.to = correlation.to();
                     md.from = holder.from;
-                    md.spanId = reply.getSpanId();
+                    md.spanId = holder.spanIdFromResponder(correlation.to(), reply);
                     md.parentSpanId = holder.parentSpan;
                     md.start = start;
                     md.status = reply.getStatus();
