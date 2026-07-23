@@ -370,18 +370,28 @@
 
 ## Open Threads
 
-- [ ] (release in flight — 2026-07-23) **v4.10.2 release prep on `chore/release-4.10.2` (Java).**
+- [x] (release in flight — 2026-07-23; CLOSED same day) **v4.10.2 SHIPPED AND PUBLISHED in
+  lock-step (both repos).** Java: PR #222, tag `v4.10.2` on `61ddb772`, published. Rust:
+  PR #172, tag on merge `6a39bccc`, published — after the CI race fix `0d09154d` (the latent
+  parallel-test config-freeze flake from #171's essential sequencing; deterministic Once fix,
+  0/80 under load). Third lock-step release of the arc: 4.10.0 interop → 4.10.1 presentation
+  parity → 4.10.2 boundary demarcation + community plugins.
   Patch release in lock-step with Rust: metadata contract (#221), temporary.inbox alignment
   (Rust #171), + PR #220 (team-contributed collection plugins isEmpty/getFirst/getLast —
   REVIEWED by Claude Code at Eric's request: correct + convention-consistent; polish commit
   `a38bb181` added license headers ×6 + syntax-guide Collection docs; CHANGELOG entry deferred
   to release prep to avoid branch conflict; formal GitHub review API blocked for EMU accounts —
   review delivered in-session). Sweep 4.10.1→4.10.2 done; CHANGELOG dated 7/23/2026 with the
-  boundary-demarcation summary. Close when tagged + published both repos.
+  boundary-demarcation summary. **Java HALF DONE: PR #222 merged, tag `v4.10.2` on `61ddb772`
+  (first tag landed on the wrong commit — pull raced the merge; deleted + re-tagged within a
+  minute, lesson: verify what the tag landed on), RELEASE PUBLISHED.** Rust half BLOCKED on a
+  CI failure in PR #172: flows_run_end_to_end_like_java panics "Flow dynamic-reserved-key not
+  found" (green locally, fails on slower CI — suspected timing/ordering race; agent diagnosing
+  with deterministic-fix-over-retry guidance). Close when Rust tagged + published.
   <!-- id: thread-release-4-10-2 | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-23-211728 -->
 
-- [ ] (in flight — 2026-07-23) **Metadata injection/sanitization hardening (Eric's 3rd interop
-  round).** Design ruling: function inputs = headers/body/instance; headers = envelope-header
+- [x] (in flight — 2026-07-23; COMPLETE same day, released in v4.10.2) **Metadata
+  injection/sanitization hardening (Eric's 3rd interop round).** Design ruling: function inputs = headers/body/instance; headers = envelope-header
   COPY + metadata INJECTED at entry, SANITIZED at exit; metadata NEVER transported in the event.
   Java reference DONE on `feature/metadata-injection-hardening` (1 commit, NOT pushed): business
   cid → engine tag `my_cid` (EventEmitter.BUSINESS_CID_TAG; tags wire field, no spec change;
