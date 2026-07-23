@@ -106,7 +106,12 @@ public class SimplePluginLoaderTest {
                 Arguments.of(new UniqueSet(), new Object[]{List.of("a", "b", "a", "c", "b")}),
                 Arguments.of(new UpdateListOfMap(), new Object[]{
                         List.of(Map.of("world", 1), Map.of("world", 2)),
-                        Map.of("more", List.of("X", "Y"))})
+                        Map.of("more", List.of("X", "Y"))}),
+                Arguments.of(new IsEmptyOperator(), new Object[]{List.of()}),
+                Arguments.of(new IsEmptyOperator(), new Object[]{List.of("foo")}),
+                Arguments.of(new IsEmptyOperator(), new Object[]{Map.of()}),
+                Arguments.of(new IsEmptyOperator(), new Object[]{""}),
+                Arguments.of(new IsEmptyOperator(), new Object[]{new String[]{}})
         );
     }
 
