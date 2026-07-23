@@ -8,6 +8,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Added
+
+1. **Event-over-HTTP authentication demo.** The lambda-example overrides the default
+   `/api/event` endpoint with a demo authentication service (`event.api.auth`) that
+   validates the caller's `authorization` header against a shared secret resolved from the
+   environment (`demo.peer.token=${DEMO_PEER_TOKEN:demo}` on both peers - no hard-coded
+   credential). The composable-example presents the token declaratively (a `headers` block
+   in `event-over-http.yaml`) and programmatically (the request API's security headers),
+   and session info injected by the auth service rides to the target function.
+
+### Changed
+
+1. **The declarative demo endpoint is renamed for symmetry with its programmatic twin:**
+   `/api/event/http/demo` → `/api/event/http/declarative` and flow id
+   `event-over-http-demo` → `event-over-http-declarative` in the composable-example.
+
+### Fixed
+
+1. **The "/api/event" edge is now a visible span in the trace.** `event.api.service` was
+   zero-tracing, so the target function of a remote call parented onto a span from another
+   application with nothing in between, and the HTTP response leg floated with no parent.
+   The service is now traced: its span parents onto the remote caller's span, the target
+   function parents onto it, and the response leg chains onto it as well. This is the
+   reference behavior for other language implementations.
+
+---
 ## Version 4.10.0, 7/22/2026
 
 Feature release: cross-language Event-over-HTTP interoperability with the official

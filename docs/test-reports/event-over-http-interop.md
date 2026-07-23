@@ -44,8 +44,9 @@ applications as-is.
 | Caller (port 8100) | Java composable-example | Rust hello-flow |
 | Callee (port 8085) | Rust hello-world | Java lambda-example |
 
-Endpoints exercised on each caller: `POST /api/event/http/demo` (declarative),
-`POST /api/event/http/programmatic`, and `GET /api/event/http/demo`. **Zero configuration
+Endpoints exercised on each caller: `POST /api/event/http/demo` (declarative; renamed to
+`/api/event/http/declarative` after v4.10.0), `POST /api/event/http/programmatic`, and
+`GET /api/event/http/demo`. **Zero configuration
 changes between drives** — the callees are drop-in counterparts of each other (same port,
 same public routes `hello.world` / `hello.declarative`), which is the point of the demo.
 

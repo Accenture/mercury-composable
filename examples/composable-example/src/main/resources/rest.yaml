@@ -33,8 +33,8 @@ rest:
 
   - service: "http.flow.adapter"
     methods: ['GET', 'POST']
-    url: "/api/event/http/demo"
-    flow: 'event-over-http-demo'
+    url: "/api/event/http/declarative"
+    flow: 'event-over-http-declarative'
     timeout: 15s
     cors: cors_1
     headers: header_1
