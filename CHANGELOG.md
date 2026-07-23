@@ -8,11 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Unreleased
+## Version 4.10.2, 7/23/2026
+
+Patch release in lock-step with the Rust engine's v4.10.2: the metadata contract and the
+RPC reply path. A composable function's three inputs are headers, body and instance - the
+headers are a copy of the envelope headers with read-only metadata injected by the worker
+at entry and sanitized at exit; metadata is never transported in the event itself. The
+`inbox.*` route namespace is confirmed to belong to applications (the Rust port aligned to
+the single reserved `temporary.inbox` route). Cross-language interop re-verified in all
+four direction combinations with the trace signature at empty diff - see the updated
+[Interop Test Report](https://accenture.github.io/mercury-composable/test-reports/event-over-http-interop/).
+Also ships three community-contributed collection plugins for Event Script.
 
 ### Added
 
-1. **The HTTP response echoes the business correlation-id.** REST automation returns the
+1. **Three collection plugins for Event Script data mapping (#220).** `isEmpty`
+   (Collection, Map, String or array), `getFirst` and `getLast` (non-empty List) join the
+   built-in simple plugins as the new `collection` category - documented in the syntax
+   guide's Built-in Plugins section.
+2. **The HTTP response echoes the business correlation-id (#221).** REST automation returns the
    request's correlation-id (inbound or edge-generated) on the response under the
    configured header name (default `X-Correlation-Id`), so an edge caller can correlate
    without parsing the body. A response header of the same name set by the function takes
@@ -20,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-1. **Protected metadata is never transported in the event.** The business correlation-id
+1. **Protected metadata is never transported in the event (#221).** The business correlation-id
    now rides an engine-managed envelope tag instead of a `my_correlation_id` envelope
    header, and the worker injects the `my_*` read-only keys into the function's input
    header copy at delivery - so reserved metadata can no longer leak across the
