@@ -352,6 +352,8 @@ before passing to the Event API service. You can plug in your own authentication
 Please refer to [REST Automation](rest-automation/index.md) for details.
 ## See also
 
+- [Interop Test Report (Java ⇄ Rust)](../test-reports/event-over-http-interop.md) — the live
+  bidirectional validation of both patterns, with span-level trace evidence.
 - [Spring Boot Integration](spring-boot.md) — run Mercury in Spring Boot.
 - [Minimalist Service Mesh](service-mesh.md) — Kafka-based service discovery & routing.
 - [REST Automation](rest-automation/index.md) — declarative HTTP endpoints, no controllers.
