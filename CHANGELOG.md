@@ -49,6 +49,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    [Event over HTTP](https://accenture.github.io/mercury-composable/guides/event-over-http/)
    guide.
 
+### Removed
+
+1. **Retired the rest-spring-example Event-over-HTTP demo.** The `HelloPoJoEventOverHttp` /
+   `HelloPoJoEventOverHttpByConfig` controllers, their `event-over-http.yaml`, and the
+   `lambda.example.port` / `yaml.event.over.http` keys are removed from both
+   rest-spring-3-example and rest-spring-4-example, and the `hello.pojo2` alias is removed
+   from the lambda-example. The composable-example's programmatic + declarative demo
+   endpoints (see Added) supersede them as the canonical Event-over-HTTP walk-through; the
+   rest-spring examples stay focused on Spring Boot integration.
+
 ### Fixed
 
 1. **HTTP client read timeout no longer truncates a sub-second TTL to 1 second (#214).**

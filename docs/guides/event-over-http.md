@@ -73,82 +73,13 @@ transmitted.
 
 ## Test drive Event API
 
-You may now test drive the Event API service.
+The fastest test drive is the ready-to-run
+[demo below](#zero-code-demo): the composable-example ships two REST endpoints that exercise
+both Event-over-HTTP patterns against the same peer function in the lambda-example —
+**programmatic** (the PostOffice request API with an explicit Event API endpoint URL) and
+**declarative** (a foreign route resolved through `event-over-http.yaml`).
 
-First, build and run the lambda-example application in port 8085. The examples are not part of the
-top-level reactor build, so build each one with `mvn clean package` first (the `mvn clean install` in
-[Getting Started](getting-started.md) installs the libraries they depend on).
-
-> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
-
-```shell
-cd examples/lambda-example
-mvn clean package
-java -jar target/lambda-example-x.y.z.jar
-```
-
-Second, build and run the rest-spring-3-example application.
-
-```shell
-cd examples/rest-spring-3-example
-mvn clean package
-java -jar target/rest-spring-3-example-x.y.z.jar
-```
-
-The rest-spring-3-example application will run as a Spring Boot application in port 8083 and 8086.
-
-These two applications will start independently.
-
-You may point your browser to http://127.0.0.1:8083/api/pojo/http/1 to invoke the `HelloPojoEventOverHttp` 
-endpoint service that will in turn makes an Event API call to the lambda-example's "hello.pojo" service.
-
-You will see the following response in the browser. This means the rest-spring-example application has successfully
-made an event API call to the lambda-example application using the Event API endpoint.
-
-```json
-{
-  "id": 1,
-  "name": "Simple PoJo class",
-  "address": "100 World Blvd, Planet Earth",
-  "date": "2023-03-27T23:17:19.257Z",
-  "instance": 6,
-  "seq": 66,
-  "origin": "2023032791b6938a47614cf48779b1cf02fc89c4"
-}
-```
-
-To examine how the application makes the Event API call, please refer to the `HelloPojoEventOverHttp` class
-in the rest-spring-example. The class is extracted below:
-
-```java
-@RestController
-public class HelloPoJoEventOverHttp {
-
-    @GetMapping("/api/pojo/http/{id}")
-    public Mono<SamplePoJo> getPoJo(@PathVariable("id") Integer id) {
-        AppConfigReader config = AppConfigReader.getInstance();
-        String remotePort = config.getProperty("lambda.example.port", "8085");
-        String remoteEndpoint = "http://127.0.0.1:"+remotePort+"/api/event";
-        String traceId = Utility.getInstance().getUuid();
-        PostOffice po = new PostOffice("hello.pojo.endpoint", traceId, "GET /api/pojo/http");
-        EventEnvelope req = new EventEnvelope().setTo("hello.pojo").setHeader("id", id);
-        return Mono.create(callback -> {
-            try {
-                EventEnvelope response = po.request(req, 3000, Collections.emptyMap(), remoteEndpoint, true).get();
-                if (response.getBody() instanceof SamplePoJo result) {
-                    callback.success(result);
-                } else {
-                    callback.error(new AppException(response.getStatus(), String.valueOf(response.getError())));
-                }
-            } catch (ExecutionException | InterruptedException e) {
-                callback.error(e);
-            }
-        });
-    }
-}
-```
-
-The method signatures of the Event API is shown as follows:
+The method signatures of the programmatic Event API are shown as follows:
 
 ### Asynchronous API (Java)
 
@@ -195,69 +126,32 @@ and then create the configuration file "event-over-http.yaml" like this:
 ```yaml
 event:
   http:
-  - route: 'hello.pojo2'
-    target: 'http://127.0.0.1:${lambda.example.port}/api/event'
-  - route: 'event.http.test'
+  - route: 'hello.declarative'
+    target: 'http://127.0.0.1:${peer.demo.port}/api/event'
+  - route: 'event.save.get'
     target: 'http://127.0.0.1:${server.port}/api/event'
     # optional security headers
     headers:
       authorization: 'demo'
-  - route: 'event.save.get'
-    target: 'http://127.0.0.1:${server.port}/api/event'
-    headers:
-      authorization: 'demo'
 ```
 
-In the above example, there are three routes (hello.pojo2, event.http.test and event.save.get) with target URLs.
+In the above example, there are two routes (hello.declarative and event.save.get) with target URLs.
 If additional authentication is required for the peer's "/api/event" endpoint, you may add a set of security
 headers in each route.
 
-When you send asynchronous event or make a RPC call to "event.save.get" service, it will be forwarded to the
+When you send an asynchronous event or make a RPC call to one of these routes, it will be forwarded to the
 peer's "event-over-HTTP" endpoint (`/api/event`) accordingly. If the route is a task in an event flow,
-the event manager will make the "Event over HTTP" to the target service.
+the event manager will make the "Event over HTTP" call to the target service.
 
-You may also add environment variable or base configuration references to the application.yaml file, such as
-"server.port" in this example.
-
-An example in the rest-spring-3-example subproject is shown below to illustrate this service abstraction.
-In this example, the remote Event-over-HTTP endpoint address is resolved from the event-over-http.yaml
-configuration.
-
-```java
-@RestController
-public class HelloPoJoEventOverHttpByConfig {
-
-    @GetMapping("/api/pojo2/http/{id}")
-    public Mono<SamplePoJo> getPoJo(@PathVariable("id") Integer id) {
-        String traceId = Utility.getInstance().getUuid();
-        PostOffice po = new PostOffice("hello.pojo.endpoint", traceId, "GET /api/pojo2/http");
-        /*
-         * "hello.pojo2" resides in the lambda-example and is reachable by "Event-over-HTTP".
-         * In HelloPojoEventOverHttp.java, it demonstrates the use of Event-over-HTTP API.
-         * In this example, it illustrates the use of the "Event-over-HTTP by configuration" feature.
-         * Please see application.properties and event-over-http.yaml files for more details.
-         */
-        EventEnvelope req = new EventEnvelope().setTo("hello.pojo2").setHeader("id", id);
-        return Mono.create(callback -> {
-            try {
-                EventEnvelope response = po.request(req, 3000, false).get();
-                if (response.getBody() instanceof SamplePoJo result) {
-                    callback.success(result);
-                } else {
-                    callback.error(new AppException(response.getStatus(), String.valueOf(response.getError())));
-                }
-            } catch (ExecutionException | InterruptedException e) {
-                callback.error(e);
-            }
-        });
-    }
-}
-```
+You may also add environment variable or base configuration references to the target URLs, such as
+"peer.demo.port" and "server.port" in this example.
 
 > *Note*: The target function must declare itself as PUBLIC in the preload annotation. Otherwise, you will get
           a HTTP-403 exception.
 
-## Zero-code demo: composable-example to lambda-example
+The demo below is a complete working example of this service abstraction.
+
+## Zero-code demo: composable-example to lambda-example {#zero-code-demo}
 
 The two example applications ship with a working declarative demo. The composable-example
 (port 8100) has a REST endpoint wired to an Event Script flow whose only task is the route
