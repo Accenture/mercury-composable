@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-22 | agent: Claude Code (2026-07-23-015717)
+- **last_session:** 2026-07-23 | agent: Claude Code (2026-07-23-211728)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -320,6 +320,11 @@
   symmetric by construction. Reference signature procedure established 2026-07-23
   (normalized record set: service names, symbolic parent edges, round_trip vs exec-only kind,
   paths, one-record-per-span, no dangling parents, my_*-free response headers, context-gating).
+  **Scope extension (Eric, 2026-07-23): the Event Script surface is part of the cross-engine
+  contract** — flows are engine-portable YAML, so any new built-in simple plugin ships in
+  lock-step on both engines (with closely matching error messages — presentation parity extends
+  to error text), or flows stop being portable. Precedent: the #220 collection plugins mirrored
+  into the Rust v4.10.2.
   <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-23-145132 -->
 
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
@@ -365,16 +370,59 @@
 
 ## Open Threads
 
-- [ ] (release in flight — 2026-07-23) **v4.10.1 release prep on `chore/release-4.10.1`
-  (Java repo).** Patch release in lock-step with the Rust engine's v4.10.1 (its branch
+- [ ] (release in flight — 2026-07-23) **v4.10.2 release prep on `chore/release-4.10.2` (Java).**
+  Patch release in lock-step with Rust: metadata contract (#221), temporary.inbox alignment
+  (Rust #171), + PR #220 (team-contributed collection plugins isEmpty/getFirst/getLast —
+  REVIEWED by Claude Code at Eric's request: correct + convention-consistent; polish commit
+  `a38bb181` added license headers ×6 + syntax-guide Collection docs; CHANGELOG entry deferred
+  to release prep to avoid branch conflict; formal GitHub review API blocked for EMU accounts —
+  review delivered in-session). Sweep 4.10.1→4.10.2 done; CHANGELOG dated 7/23/2026 with the
+  boundary-demarcation summary. Close when tagged + published both repos.
+  <!-- id: thread-release-4-10-2 | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-23-211728 -->
+
+- [ ] (in flight — 2026-07-23) **Metadata injection/sanitization hardening (Eric's 3rd interop
+  round).** Design ruling: function inputs = headers/body/instance; headers = envelope-header
+  COPY + metadata INJECTED at entry, SANITIZED at exit; metadata NEVER transported in the event.
+  Java reference DONE on `feature/metadata-injection-hardening` (1 commit, NOT pushed): business
+  cid → engine tag `my_cid` (EventEmitter.BUSINESS_CID_TAG; tags wire field, no spec change;
+  three stamping sites converted), worker entry injection (4 my_* keys + legacy-header compat +
+  x-event-api strip), symmetric exit filter (copyResponseHeaders + x-event-api), HTTP response
+  X-Correlation-Id echo (AsyncContextHolder + AsyncHttpResponse; function-set header wins).
+  Full reactor green; platform-core 415 (4 new regressions); live verification passed (cid echo
+  inbound+generated; function view: 4 injected my_*, business cid intact, no x-event-api).
+  Tracing signature UNCHANGED (all four directions re-verified against the reference before the
+  fix). **Rust mirror COMPLETE (`794fb287`, 249 tests green) and four-way re-verification
+  PASSED with the extended invariants** — identical injected my_* key set on both callees,
+  end-to-end cid identity across the language boundary (response header == callee-injected
+  my_correlation_id), x-event-api absent everywhere, span signature empty-diff in all four
+  combinations. **+ Second item (Eric): Rust RPC-reply design gap — the "inbox." prefix
+  pseudo-routes reserve the whole inbox.* namespace (collides with workflow-app route names
+  like inbox.approval); Rust session aligning to Java's single reserved private route
+  `temporary.inbox` (@ZeroTracing @EventInterceptor, 500 instances, cid-keyed registry,
+  composite cid-seq split) as a 2nd commit on the same branch; CRITICAL sub-item: the Rust
+  one-record-per-span suppression gate keyed off the "inbox." prefix must re-key (prefer the
+  rpc tag, Java's real mechanism).** **Rust 2nd commit DONE (`698de3c4`, 250 tests; gate
+  re-keyed to the rpc TAG; essential sequencing + @origin never-emit per Eric's hints; found a
+  genuine AsyncHttpClientService global-platform bug) and the INTEROP RE-TEST PASSED in full**
+  (cross-language both directions: functionality, auth, cid echo + generated-identity, my_*
+  parity, x-event-api-free, signature empty-diff ×2×2 — the inbox refactor is observably
+  invisible, validating Eric's robustness hypothesis). **BOTH PRs MERGED 2026-07-23: Java #221
+  (merge `a25d95d5`) + Rust #171 (merge `f86fbec2`), CI green both.** Remaining: the v4.10.2
+  lock-step releases ([[thread-release-4-10-2]]). Relates [[conv-telemetry-presentation-parity]].
+  <!-- id: thread-metadata-injection-hardening | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-23-211728 -->
+
+- [x] (release in flight — 2026-07-23; CLOSED same day) **v4.10.1 SHIPPED via the normal
+  flow (Java repo)** — tag `v4.10.1` on merge commit `9ae666df` (PR #218, CI green + local
+  full reactor), release notes delivered, release published. Rust shipped in lock-step the
+  same day (tag on `2c4e4066`, PR #170). Patch release in lock-step with the Rust engine's v4.10.1 (its branch
   `chore/release-4.10.1`, commit `44658df5`, pushed): telemetry presentation parity. Content:
   PR #217 (/api/event visible span, declarative rename, event.api.auth demo, interop report
   parity outcome + future-ports playbook). Sweep done (32 poms + CLAUDE/GEMINI +
   instructions.md), CHANGELOG dated 7/23/2026. Close when tagged + release published.
   <!-- id: thread-release-4-10-1 | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-23-145132 -->
 
-- [ ] (in flight — 2026-07-23) **Post-4.10.0 telemetry presentation parity + auth demo (Eric's
-  manual-test findings).** Java reference branch `feature/event-api-span-and-auth` (2 commits,
+- [x] (in flight — 2026-07-23; COMPLETE same day) **Post-4.10.0 telemetry presentation parity +
+  auth demo (Eric's manual-test findings).** Java reference branch `feature/event-api-span-and-auth` (2 commits,
   NOT pushed): /api/event edge is now a visible span (EventApiService no longer @ZeroTracing;
   worker-thread span capture for async callbacks; regression eventApiServiceIsAVisibleSpanInThe
   Trace), demo→declarative rename, event.api.auth demo (${DEMO_PEER_TOKEN:demo} env secret,
@@ -385,8 +433,10 @@
   reference signature** (/tmp/java-to-java-reference-signature.md; per-pattern 8+9 records).
   **UPDATE: both PRs MERGED 2026-07-23** — Java #217 (merge `d3c2f853`, CI green 6m29s) and
   Rust #169 (merge `ecec21c5`, CI green); both repos' docs carry the extended interop test
-  report (parity drive + four-way empty-diff + future-ports playbook). Remaining: the two
-  v4.10.1 releases (both branches in flight). Relates [[conv-telemetry-presentation-parity]].
+  report (parity drive + four-way empty-diff + future-ports playbook). **COMPLETE: both
+  v4.10.1 releases published 2026-07-23 ([[thread-release-4-10-1]]) — the parity arc closed
+  end to end: reference implementation → refactor → four-way empty diff → lock-step release.**
+  Relates [[conv-telemetry-presentation-parity]].
   <!-- id: thread-telemetry-parity-auth | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-23-145132 -->
 
 - [x] (release in flight — 2026-07-22; CLOSED same day) **v4.10.0 SHIPPED via the normal flow** —

@@ -13,7 +13,7 @@ readers to it (docs/README references were removed 2026-07-20).
 
 **Type:** Multi-module framework / SDK (Maven reactor)
 **Primary language:** Java 21 (one Kotlin example module)
-**Coordinates:** `com.accenture.mercury:parent-mercury` (currently `4.10.1`)
+**Coordinates:** `com.accenture.mercury:parent-mercury` (currently `4.10.2`)
 **Build:** Maven 3.9.7+ — `pom.xml` source of truth for the version
 **Upstream:** github.com/Accenture/mercury-composable · docs: accenture.github.io/mercury-composable
 
