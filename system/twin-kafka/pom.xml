@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>twin-kafka</artifactId>
-    <version>4.10.0</version>
+    <version>4.10.1</version>
     <packaging>jar</packaging>
     <name>Twin Kafka (secondary cluster for dual-cluster bridging)</name>
     <description>
@@ -59,7 +59,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minimalist-kafka</artifactId>
-            <version>4.10.0</version>
+            <version>4.10.1</version>
         </dependency>
 
         <!-- Embedded Kafka (real KRaft broker) for integration tests - two brokers in one JVM with
