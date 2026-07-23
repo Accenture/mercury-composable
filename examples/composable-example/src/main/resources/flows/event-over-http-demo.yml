@@ -13,7 +13,7 @@ tasks:
       - 'input.body -> *'
     process: 'hello.declarative'
     output:
-      - 'text(application/json) -> output.body.content-type'
+      - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
     description: 'Make an Event-over-Http call using the event-over-http.yaml configuration'
     execution: end

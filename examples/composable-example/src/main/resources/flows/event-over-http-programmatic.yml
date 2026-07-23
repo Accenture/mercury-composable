@@ -12,7 +12,7 @@ tasks:
       - 'input.body -> *'
     process: 'v1.event.over.http.rpc'
     output:
-      - 'text(application/json) -> output.body.content-type'
+      - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
     description: 'Make an Event-over-Http call using the PostOffice request API'
     execution: end

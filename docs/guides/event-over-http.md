@@ -213,7 +213,7 @@ tasks:
       - 'input.body -> *'
     process: 'hello.declarative'
     output:
-      - 'text(application/json) -> output.body.content-type'
+      - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
     description: 'Make an Event-over-Http call using the event-over-http.yaml configuration'
     execution: end
@@ -293,7 +293,8 @@ curl -s -X POST -H "content-type: application/json" \
 The response has the same echo shape, and the trace continues across the hop the same way.
 This is why the echo function registers **two route names**: the programmatic endpoint calls
 the primary route `hello.world`, the declarative endpoint calls the alias
-`hello.declarative` — the echoed `my_route` header tells you which pattern served the call.
+`hello.declarative` — against a Java callee, the echoed `my_route` header shows which route
+(and therefore which pattern) served the call.
 Choose declarative when the target address is deployment configuration (the usual case);
 choose programmatic when the code must compute or vary the target at runtime.
 
