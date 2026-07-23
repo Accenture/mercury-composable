@@ -1884,7 +1884,7 @@
   <a href="#log-context-enable" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Turning it on
+        On by default
       
     </span>
   </a>
@@ -2179,6 +2179,8 @@
       
         
       
+        
+      
     
     
     
@@ -2379,6 +2381,34 @@
     
   
     Event Envelope Wire Format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../test-reports/event-over-http-interop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interop Test Report (Java ⇄ Rust)
   
 
     
@@ -2810,7 +2840,7 @@
   <a href="#log-context-enable" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Turning it on
+        On by default
       
     </span>
   </a>
@@ -2896,8 +2926,8 @@
 <li><strong>Built-in</strong> — distributed tracing is part of the platform; you turn it on per endpoint/flow and the
   spans propagate without code.</li>
 <li><strong>For</strong> developers and operators wiring Mercury to Dynatrace, Splunk, Jaeger, Tempo, or an OpenTelemetry Collector.</li>
-<li><strong>Logs too</strong> — an opt-in <a href="#log-context">application log context</a> stamps the same correlation/trace ids (plus your
-  own key-values) into structured log lines, so logs and spans join up in your backend.</li>
+<li><strong>Logs too</strong> — a default-on <a href="#log-context">application log context</a> stamps the same correlation/trace ids (plus
+  your own key-values) into structured log lines, so logs and spans join up in your backend.</li>
 </ul>
 </blockquote>
 <p>In an event-driven, composable system a single request fans out across <strong>decoupled</strong> functions, flows, and graph
@@ -3125,11 +3155,19 @@ exact log entries that belong to it.</p>
 <p>It deliberately <strong>avoids the ThreadLocal / Log4j MDC</strong> pattern (heavy for a virtual-thread runtime). The context
 rides the same per-request mechanism as the trace itself, keyed to the worker thread and torn down when the
 function returns.</p>
-<h3 id="log-context-enable">Turning it on<a class="headerlink" href="#log-context-enable" title="Permanent link">&para;</a></h3>
-<p>The feature is <strong>opt-in</strong> and activates only when an optional <code>app-log-context.yaml</code> is on the classpath
-(<code>src/main/resources/</code>). It applies to the two <strong>structured JSON appenders</strong> — select one via the log4j2
+<h3 id="log-context-enable">On by default<a class="headerlink" href="#log-context-enable" title="Permanent link">&para;</a></h3>
+<p>The feature is <strong>on by default</strong>: platform-core ships a built-in <code>default-log-context.yaml</code> that emits the
+standard trace context (<code>cid</code>, <code>traceId</code>, <code>tracePath</code>, <code>spanId</code>, <code>parentSpanId</code>, <code>service</code>, <code>timestamp</code>) on
+every structured log line. You can adjust it in two ways:</p>
+<ul>
+<li><strong>Customize</strong> — provide your own <code>app-log-context.yaml</code> on the classpath (<code>src/main/resources/</code>); it
+  replaces the built-in template entirely.</li>
+<li><strong>Opt out</strong> — set <code>app.log.context=false</code> in <code>application.properties</code>.</li>
+</ul>
+<p>It applies to the two <strong>structured JSON appenders</strong> — select one via the log4j2
 configuration (<code>log4j2-json.xml</code> for pretty output, <code>log4j2-compact.xml</code> for single-line); the plain <code>Console</code>
 appender is unaffected.</p>
+<p>A custom template looks like this:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># src/main/resources/app-log-context.yaml</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nt">context</span><span class="p">:</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">cid</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$cid</span>
@@ -3217,7 +3255,7 @@ keys on display.)</p>
 <li>The <code>context</code> block appears <strong>only</strong> when a request is traced and a <code>traceId</code> is present. Framework boot logs and
   logs emitted from a <code>Mono</code>/<code>Flux</code> completion that runs <strong>after</strong> the worker returns (on a different thread) carry
   no context — the same boundary distributed tracing has.</li>
-<li>Feature <strong>off</strong> (no <code>app-log-context.yaml</code>) costs one boolean check per log line and nothing else.</li>
+<li>Feature <strong>off</strong> (<code>app.log.context=false</code>) costs one boolean check per log line and nothing else.</li>
 </ul>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>

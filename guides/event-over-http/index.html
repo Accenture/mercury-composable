@@ -1853,6 +1853,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#zero-code-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zero-code demo: composable-example to lambda-example
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Zero-code demo: composable-example to lambda-example">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-by-step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step by step
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-programmatic-twin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The programmatic twin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#same-demo-different-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Same demo, different language
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#advantages" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2038,6 +2088,8 @@
   
     
     
+      
+        
       
         
       
@@ -2257,6 +2309,34 @@
     
   
     Event Envelope Wire Format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../test-reports/event-over-http-interop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interop Test Report (Java ⇄ Rust)
   
 
     
@@ -2601,6 +2681,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#zero-code-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zero-code demo: composable-example to lambda-example
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Zero-code demo: composable-example to lambda-example">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-by-step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step by step
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-programmatic-twin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The programmatic twin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#same-demo-different-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Same demo, different language
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#advantages" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2692,78 +2822,23 @@ Event-over-HTTP API (also usable in the <code>headers</code> section of a <code>
 target). The header is a client-side instruction — it is consumed by the sender, never
 transmitted.</p>
 <h2 id="test-drive-event-api">Test drive Event API<a class="headerlink" href="#test-drive-event-api" title="Permanent link">&para;</a></h2>
-<p>You may now test drive the Event API service.</p>
-<p>First, build and run the lambda-example application in port 8085. The examples are not part of the
-top-level reactor build, so build each one with <code>mvn clean package</code> first (the <code>mvn clean install</code> in
-<a href="../getting-started/">Getting Started</a> installs the libraries they depend on).</p>
-<blockquote>
-<p><strong>Note</strong>: <code>x.y.z</code> denotes the current Mercury version shown in the root <code>pom.xml</code>.</p>
-</blockquote>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">cd</span><span class="w"> </span>examples/lambda-example
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>mvn<span class="w"> </span>clean<span class="w"> </span>package
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>java<span class="w"> </span>-jar<span class="w"> </span>target/lambda-example-x.y.z.jar
-</code></pre></div>
-<p>Second, build and run the rest-spring-3-example application.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">cd</span><span class="w"> </span>examples/rest-spring-3-example
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>mvn<span class="w"> </span>clean<span class="w"> </span>package
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>java<span class="w"> </span>-jar<span class="w"> </span>target/rest-spring-3-example-x.y.z.jar
-</code></pre></div>
-<p>The rest-spring-3-example application will run as a Spring Boot application in port 8083 and 8086.</p>
-<p>These two applications will start independently.</p>
-<p>You may point your browser to http://127.0.0.1:8083/api/pojo/http/1 to invoke the <code>HelloPojoEventOverHttp</code> 
-endpoint service that will in turn makes an Event API call to the lambda-example's "hello.pojo" service.</p>
-<p>You will see the following response in the browser. This means the rest-spring-example application has successfully
-made an event API call to the lambda-example application using the Event API endpoint.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Simple PoJo class&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">&quot;address&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;100 World Blvd, Planet Earth&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="nt">&quot;date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2023-03-27T23:17:19.257Z&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="nt">&quot;instance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="nt">&quot;seq&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">66</span><span class="p">,</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="nt">&quot;origin&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2023032791b6938a47614cf48779b1cf02fc89c4&quot;</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="p">}</span>
-</code></pre></div>
-<p>To examine how the application makes the Event API call, please refer to the <code>HelloPojoEventOverHttp</code> class
-in the rest-spring-example. The class is extracted below:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nd">@RestController</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">HelloPoJoEventOverHttp</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="nd">@GetMapping</span><span class="p">(</span><span class="s">&quot;/api/pojo/http/{id}&quot;</span><span class="p">)</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Mono</span><span class="o">&lt;</span><span class="n">SamplePoJo</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">getPoJo</span><span class="p">(</span><span class="nd">@PathVariable</span><span class="p">(</span><span class="s">&quot;id&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">Integer</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">        </span><span class="n">AppConfigReader</span><span class="w"> </span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AppConfigReader</span><span class="p">.</span><span class="na">getInstance</span><span class="p">();</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">        </span><span class="n">String</span><span class="w"> </span><span class="n">remotePort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">.</span><span class="na">getProperty</span><span class="p">(</span><span class="s">&quot;lambda.example.port&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;8085&quot;</span><span class="p">);</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">        </span><span class="n">String</span><span class="w"> </span><span class="n">remoteEndpoint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;http://127.0.0.1:&quot;</span><span class="o">+</span><span class="n">remotePort</span><span class="o">+</span><span class="s">&quot;/api/event&quot;</span><span class="p">;</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">        </span><span class="n">String</span><span class="w"> </span><span class="n">traceId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Utility</span><span class="p">.</span><span class="na">getInstance</span><span class="p">().</span><span class="na">getUuid</span><span class="p">();</span>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">        </span><span class="n">PostOffice</span><span class="w"> </span><span class="n">po</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">PostOffice</span><span class="p">(</span><span class="s">&quot;hello.pojo.endpoint&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">traceId</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;GET /api/pojo/http&quot;</span><span class="p">);</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">        </span><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">req</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="p">().</span><span class="na">setTo</span><span class="p">(</span><span class="s">&quot;hello.pojo&quot;</span><span class="p">).</span><span class="na">setHeader</span><span class="p">(</span><span class="s">&quot;id&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
-<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">Mono</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="n">callback</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">            </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">                </span><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span><span class="w"> </span><span class="mi">3000</span><span class="p">,</span><span class="w"> </span><span class="n">Collections</span><span class="p">.</span><span class="na">emptyMap</span><span class="p">(),</span><span class="w"> </span><span class="n">remoteEndpoint</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">).</span><span class="na">get</span><span class="p">();</span>
-<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getBody</span><span class="p">()</span><span class="w"> </span><span class="k">instanceof</span><span class="w"> </span><span class="n">SamplePoJo</span><span class="w"> </span><span class="n">result</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="w">                    </span><span class="n">callback</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
-<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="w">                </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="w">                    </span><span class="n">callback</span><span class="p">.</span><span class="na">error</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">AppException</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getStatus</span><span class="p">(),</span><span class="w"> </span><span class="n">String</span><span class="p">.</span><span class="na">valueOf</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getError</span><span class="p">())));</span>
-<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="w">                </span><span class="p">}</span>
-<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="n">ExecutionException</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">InterruptedException</span><span class="w"> </span><span class="n">e</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="w">                </span><span class="n">callback</span><span class="p">.</span><span class="na">error</span><span class="p">(</span><span class="n">e</span><span class="p">);</span>
-<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="w">            </span><span class="p">}</span>
-<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="w">        </span><span class="p">});</span>
-<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="p">}</span>
-</code></pre></div>
-<p>The method signatures of the Event API is shown as follows:</p>
+<p>The fastest test drive is the ready-to-run
+<a href="#zero-code-demo">demo below</a>: the composable-example ships two REST endpoints that exercise
+both Event-over-HTTP patterns against the same peer function in the lambda-example —
+<strong>programmatic</strong> (the PostOffice request API with an explicit Event API endpoint URL) and
+<strong>declarative</strong> (a foreign route resolved through <code>event-over-http.yaml</code>).</p>
+<p>The method signatures of the programmatic Event API are shown as follows:</p>
 <h3 id="asynchronous-api-java">Asynchronous API (Java)<a class="headerlink" href="#asynchronous-api-java" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">// io.vertx.core.Future</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kd">public</span><span class="w"> </span><span class="n">Future</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">asyncRequest</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">event</span><span class="p">,</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">timeout</span><span class="p">,</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">                                          </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">                                          </span><span class="n">String</span><span class="w"> </span><span class="n">eventEndpoint</span><span class="p">,</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="n">rpc</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// io.vertx.core.Future</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kd">public</span><span class="w"> </span><span class="n">Future</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">asyncRequest</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">event</span><span class="p">,</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">timeout</span><span class="p">,</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">                                          </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">                                          </span><span class="n">String</span><span class="w"> </span><span class="n">eventEndpoint</span><span class="p">,</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="n">rpc</span><span class="p">);</span>
 </code></pre></div>
 <h3 id="sequential-non-blocking-api-virtual-thread-function">Sequential non-blocking API (virtual thread function)<a class="headerlink" href="#sequential-non-blocking-api-virtual-thread-function" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1">// java.util.concurrent.Future</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="kd">public</span><span class="w"> </span><span class="n">Future</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">request</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">event</span><span class="p">,</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">timeout</span><span class="p">,</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">                                          </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">                                          </span><span class="n">String</span><span class="w"> </span><span class="n">eventEndpoint</span><span class="p">,</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="n">rpc</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// java.util.concurrent.Future</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kd">public</span><span class="w"> </span><span class="n">Future</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">request</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">event</span><span class="p">,</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">timeout</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">                                          </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">                                          </span><span class="n">String</span><span class="w"> </span><span class="n">eventEndpoint</span><span class="p">,</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="n">rpc</span><span class="p">);</span>
 </code></pre></div>
 <p>Optionally, you may add security headers in the "headers" argument. e.g. the "Authorization" header.</p>
 <p>The eventEndpoint is a fully qualified URL. e.g. <code>http://peer/api/event</code></p>
@@ -2774,70 +2849,179 @@ an HTTP-202 response.</p>
 <p>While you can call the "Event-over-HTTP" APIs programmatically, it would be more convenient to automate it with a
 configuration. This service abstraction means that user applications do not need to know where the target services are.</p>
 <p>You can enable Event-over-HTTP configuration by adding this parameter in application.properties:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>#
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a># Optional event-over-http target maps
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>#
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>yaml.event.over.http=classpath:/event-over-http.yaml
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>#
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a># Optional event-over-http target maps
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>#
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>yaml.event.over.http=classpath:/event-over-http.yaml
 </code></pre></div>
 <p>and then create the configuration file "event-over-http.yaml" like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">event</span><span class="p">:</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">http</span><span class="p">:</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">route</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;hello.pojo2&#39;</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://127.0.0.1:${lambda.example.port}/api/event&#39;</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">route</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;event.http.test&#39;</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://127.0.0.1:${server.port}/api/event&#39;</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">    </span><span class="c1"># optional security headers</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">    </span><span class="nt">headers</span><span class="p">:</span>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">      </span><span class="nt">authorization</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;demo&#39;</span>
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">route</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;event.save.get&#39;</span>
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://127.0.0.1:${server.port}/api/event&#39;</span>
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">    </span><span class="nt">headers</span><span class="p">:</span>
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">      </span><span class="nt">authorization</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;demo&#39;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">event</span><span class="p">:</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">http</span><span class="p">:</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">route</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;hello.declarative&#39;</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://127.0.0.1:${peer.demo.port}/api/event&#39;</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">route</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;event.save.get&#39;</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://127.0.0.1:${server.port}/api/event&#39;</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">    </span><span class="c1"># optional security headers</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span><span class="nt">headers</span><span class="p">:</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">      </span><span class="nt">authorization</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;demo&#39;</span>
 </code></pre></div>
-<p>In the above example, there are three routes (hello.pojo2, event.http.test and event.save.get) with target URLs.
+<p>In the above example, there are two routes (hello.declarative and event.save.get) with target URLs.
 If additional authentication is required for the peer's "/api/event" endpoint, you may add a set of security
 headers in each route.</p>
-<p>When you send asynchronous event or make a RPC call to "event.save.get" service, it will be forwarded to the
+<p>When you send an asynchronous event or make a RPC call to one of these routes, it will be forwarded to the
 peer's "event-over-HTTP" endpoint (<code>/api/event</code>) accordingly. If the route is a task in an event flow,
-the event manager will make the "Event over HTTP" to the target service.</p>
-<p>You may also add environment variable or base configuration references to the application.yaml file, such as
-"server.port" in this example.</p>
-<p>An example in the rest-spring-3-example subproject is shown below to illustrate this service abstraction.
-In this example, the remote Event-over-HTTP endpoint address is resolved from the event-over-http.yaml
-configuration.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nd">@RestController</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">HelloPoJoEventOverHttpByConfig</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">    </span><span class="nd">@GetMapping</span><span class="p">(</span><span class="s">&quot;/api/pojo2/http/{id}&quot;</span><span class="p">)</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Mono</span><span class="o">&lt;</span><span class="n">SamplePoJo</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">getPoJo</span><span class="p">(</span><span class="nd">@PathVariable</span><span class="p">(</span><span class="s">&quot;id&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">Integer</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">        </span><span class="n">String</span><span class="w"> </span><span class="n">traceId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Utility</span><span class="p">.</span><span class="na">getInstance</span><span class="p">().</span><span class="na">getUuid</span><span class="p">();</span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">        </span><span class="n">PostOffice</span><span class="w"> </span><span class="n">po</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">PostOffice</span><span class="p">(</span><span class="s">&quot;hello.pojo.endpoint&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">traceId</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;GET /api/pojo2/http&quot;</span><span class="p">);</span>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">        </span><span class="cm">/*</span>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="cm">         * &quot;hello.pojo2&quot; resides in the lambda-example and is reachable by &quot;Event-over-HTTP&quot;.</span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="cm">         * In HelloPojoEventOverHttp.java, it demonstrates the use of Event-over-HTTP API.</span>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="cm">         * In this example, it illustrates the use of the &quot;Event-over-HTTP by configuration&quot; feature.</span>
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="cm">         * Please see application.properties and event-over-http.yaml files for more details.</span>
-<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="cm">         */</span>
-<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="w">        </span><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">req</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="p">().</span><span class="na">setTo</span><span class="p">(</span><span class="s">&quot;hello.pojo2&quot;</span><span class="p">).</span><span class="na">setHeader</span><span class="p">(</span><span class="s">&quot;id&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
-<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">Mono</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="n">callback</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="w">            </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="w">                </span><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span><span class="w"> </span><span class="mi">3000</span><span class="p">,</span><span class="w"> </span><span class="kc">false</span><span class="p">).</span><span class="na">get</span><span class="p">();</span>
-<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getBody</span><span class="p">()</span><span class="w"> </span><span class="k">instanceof</span><span class="w"> </span><span class="n">SamplePoJo</span><span class="w"> </span><span class="n">result</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="w">                    </span><span class="n">callback</span><span class="p">.</span><span class="na">success</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
-<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="w">                </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="w">                    </span><span class="n">callback</span><span class="p">.</span><span class="na">error</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">AppException</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getStatus</span><span class="p">(),</span><span class="w"> </span><span class="n">String</span><span class="p">.</span><span class="na">valueOf</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getError</span><span class="p">())));</span>
-<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a><span class="w">                </span><span class="p">}</span>
-<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="n">ExecutionException</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">InterruptedException</span><span class="w"> </span><span class="n">e</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a><span class="w">                </span><span class="n">callback</span><span class="p">.</span><span class="na">error</span><span class="p">(</span><span class="n">e</span><span class="p">);</span>
-<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a><span class="w">            </span><span class="p">}</span>
-<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a><span class="w">        </span><span class="p">});</span>
-<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a><span class="p">}</span>
-</code></pre></div>
+the event manager will make the "Event over HTTP" call to the target service.</p>
+<p>You may also add environment variable or base configuration references to the target URLs, such as
+"peer.demo.port" and "server.port" in this example.</p>
 <blockquote>
 <p><em>Note</em>: The target function must declare itself as PUBLIC in the preload annotation. Otherwise, you will get
           a HTTP-403 exception.</p>
 </blockquote>
+<p>The demo below is a complete working example of this service abstraction.</p>
+<h2 id="zero-code-demo">Zero-code demo: composable-example to lambda-example<a class="headerlink" href="#zero-code-demo" title="Permanent link">&para;</a></h2>
+<p>The two example applications ship with a working declarative demo. The composable-example
+(port 8100) has a REST endpoint wired to an Event Script flow whose only task is the route
+<code>hello.declarative</code> — a route that does <strong>not</strong> exist in the composable-example. The
+<code>event-over-http.yaml</code> configuration tells the system where that route lives, and the event
+manager makes the Event-over-HTTP call automatically. There is no orchestration or HTTP
+client code anywhere: the caller side is a flow definition plus two configuration entries,
+and the callee side is an ordinary public function.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    autonumber
+    participant U as curl
+    participant C as composable-example (8100)
+    participant L as lambda-example (8085)
+    U-&gt;&gt;C: POST /api/event/http/demo
+    Note over C: flow task "hello.declarative"&lt;br/&gt;route is not local — resolved&lt;br/&gt;via event-over-http.yaml
+    C-&gt;&gt;L: POST /api/event&lt;br/&gt;(MsgPack envelope + trace context)
+    Note over L: hello.declarative echo&lt;br/&gt;(alias of hello.world)
+    L--&gt;&gt;C: result (body, headers, instance, origin)
+    C--&gt;&gt;U: HTTP 200 (JSON)</code></pre>
+<p>The moving parts:</p>
+<p><strong>Callee — lambda-example (port 8085).</strong> The <code>HelloWorld</code> echo function is public and
+registers two route names; the second is an alias created for this demo:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="o">=</span><span class="s">&quot;hello.world, hello.declarative&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">instances</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="n">isPrivate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">)</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">HelloWorld</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">LambdaFunction</span><span class="w"> </span><span class="p">{</span>
+</code></pre></div>
+<p><strong>Caller — composable-example (port 8100).</strong> In <code>application.properties</code>, the declarative
+routing file is turned on and the peer address is externalized:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="na">yaml.event.over.http</span><span class="o">=</span><span class="s">classpath:/event-over-http.yaml</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="na">peer.demo.host</span><span class="o">=</span><span class="s">127.0.0.1</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="na">peer.demo.port</span><span class="o">=</span><span class="s">8085</span>
+</code></pre></div>
+<p><code>event-over-http.yaml</code> maps the foreign route to the peer's Event API endpoint:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">event.http</span><span class="p">:</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">route</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;hello.declarative&#39;</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://${peer.demo.host:127.0.0.1}:${peer.demo.port}/api/event&#39;</span>
+</code></pre></div>
+<p>and the REST endpoint <code>GET/POST /api/event/http/demo</code> (see <code>rest.yaml</code>) runs the flow
+<code>event-over-http-demo</code> whose task simply names the route:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">tasks</span><span class="p">:</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;event-over-http-demo&#39;</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="nt">input</span><span class="p">:</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;input.header</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header&#39;</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;input.body</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">*&#39;</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;hello.declarative&#39;</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;text(application/json)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.header.content-type&#39;</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;result</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.body&#39;</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Make</span><span class="nv"> </span><span class="s">an</span><span class="nv"> </span><span class="s">Event-over-Http</span><span class="nv"> </span><span class="s">call</span><span class="nv"> </span><span class="s">using</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">event-over-http.yaml</span><span class="nv"> </span><span class="s">configuration&#39;</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">end</span>
+</code></pre></div>
+<h3 id="step-by-step">Step by step<a class="headerlink" href="#step-by-step" title="Permanent link">&para;</a></h3>
+<ol>
+<li>
+<p>Build and start the callee in one terminal (<code>x.y.z</code> is the current version in the root <code>pom.xml</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">cd</span><span class="w"> </span>examples/lambda-example
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>mvn<span class="w"> </span>clean<span class="w"> </span>package
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>java<span class="w"> </span>-jar<span class="w"> </span>target/lambda-example-x.y.z.jar
+</code></pre></div>
+</li>
+<li>
+<p>Build and start the caller in a second terminal:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">cd</span><span class="w"> </span>examples/composable-example
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>mvn<span class="w"> </span>clean<span class="w"> </span>package
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>java<span class="w"> </span>-jar<span class="w"> </span>target/composable-example-x.y.z.jar
+</code></pre></div>
+</li>
+<li>
+<p>Hit the demo endpoint:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;content-type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">     </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;hello&quot;: &quot;world&quot;}&#39;</span><span class="w"> </span>http://127.0.0.1:8100/api/event/http/demo
+</code></pre></div>
+</li>
+<li>
+<p>The lambda-example's echo function replies through the same path in reverse — the response
+   arrives as regular JSON:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="p">{</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="nt">&quot;body&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;hello&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;world&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="nt">&quot;headers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span><span class="nt">&quot;x-flow-id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;event-over-http-demo&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">    </span><span class="nt">&quot;my_trace_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;51fb9a95cb6b47169dd83771283aebc2&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">    </span><span class="nt">&quot;my_trace_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;POST /api/event/http/demo&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">    </span><span class="nt">&quot;...&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">  </span><span class="nt">&quot;instance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="w">  </span><span class="nt">&quot;origin&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20260722ec4dc39307f94178be2e87a5620fb4ec&quot;</span>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="p">}</span>
+</code></pre></div>
+<p>The <code>origin</code> identifies the application instance that actually executed the function —
+the lambda-example, not the app you called.</p>
+</li>
+<li>
+<p>Look at both applications' logs: the trace context propagated across the HTTP hop
+   automatically. Both apps log telemetry under the <strong>same trace id</strong>, the
+   <code>hello.declarative</code> record carries <code>span_id</code> and <code>parent_span_id</code> chaining it onto the
+   caller's flow, and — with the default-on
+   <a href="../observability/#log-context">application log context</a> — every structured log line on
+   both sides is stamped with that trace id.</p>
+</li>
+</ol>
+<h3 id="the-programmatic-twin">The programmatic twin<a class="headerlink" href="#the-programmatic-twin" title="Permanent link">&para;</a></h3>
+<p>The composable-example has a second endpoint, <code>/api/event/http/programmatic</code>, that reaches
+the <strong>same peer function</strong> through the programmatic pattern. Its flow task
+(<code>v1.event.over.http.rpc</code>, class <code>EventOverHttpRpc</code>) builds the peer's Event API endpoint
+URL from the same <code>peer.demo.host</code> / <code>peer.demo.port</code> properties and passes it directly to
+the PostOffice request API — so <code>hello.world</code> needs <strong>no entry</strong> in <code>event-over-http.yaml</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">String</span><span class="w"> </span><span class="n">eventEndpoint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;http://&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">host</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;:&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">port</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;/api/event&quot;</span><span class="p">;</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">req</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="p">().</span><span class="na">setTo</span><span class="p">(</span><span class="s">&quot;hello.world&quot;</span><span class="p">).</span><span class="na">setBody</span><span class="p">(</span><span class="n">input</span><span class="p">);</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span><span class="w"> </span><span class="mi">10000</span><span class="p">,</span><span class="w"> </span><span class="n">Collections</span><span class="p">.</span><span class="na">emptyMap</span><span class="p">(),</span><span class="w"> </span><span class="n">eventEndpoint</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">).</span><span class="na">get</span><span class="p">();</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;content-type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">     </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;hello&quot;: &quot;world&quot;}&#39;</span><span class="w"> </span>http://127.0.0.1:8100/api/event/http/programmatic
+</code></pre></div>
+<p>The response has the same echo shape, and the trace continues across the hop the same way.
+This is why the echo function registers <strong>two route names</strong>: the programmatic endpoint calls
+the primary route <code>hello.world</code>, the declarative endpoint calls the alias
+<code>hello.declarative</code> — against a Java callee, the echoed <code>my_route</code> header shows which route
+(and therefore which pattern) served the call.
+Choose declarative when the target address is deployment configuration (the usual case);
+choose programmatic when the code must compute or vary the target at runtime.</p>
+<h3 id="same-demo-different-language">Same demo, different language<a class="headerlink" href="#same-demo-different-language" title="Permanent link">&para;</a></h3>
+<p>The official <a href="https://github.com/Accenture/mercury">Rust implementation</a> ships counterpart
+examples: <strong>hello-world</strong> is the parallel of the lambda-example (same port 8085, same public
+<code>hello.world</code> / <code>hello.declarative</code> echo), and <strong>hello-flow</strong> is the parallel of the
+composable-example. That makes the demo above a cross-language demo with <strong>zero changes</strong>:</p>
+<ol>
+<li>Stop the lambda-example.</li>
+<li>
+<p>Start the Rust hello-world from a clone of the Rust repository:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>cargo<span class="w"> </span>run<span class="w"> </span>-p<span class="w"> </span>hello-world
+</code></pre></div>
+</li>
+<li>
+<p>Run the same <code>curl</code> command again.</p>
+</li>
+</ol>
+<p>The response has the same shape — only the <code>origin</code> now identifies the Rust application.
+The composable-example neither knows nor cares which language serves the route: it addresses
+a route name, the envelope travels in the language-neutral
+<a href="../event-envelope-wire-format/">standard wire format</a>, and the trace context continues across
+the language boundary.</p>
+<p>The mirror direction works the same way: the Rust hello-flow (port 8100) declares
+<code>hello.declarative</code> in its own <code>event-over-http.yaml</code> and can call the Java lambda-example —
+or the Rust hello-world — interchangeably. Point <code>peer.demo.host</code> / <code>peer.demo.port</code> at any
+peer that exposes the route.</p>
 <h2 id="advantages">Advantages<a class="headerlink" href="#advantages" title="Permanent link">&para;</a></h2>
 <p>The Event API exposes all public functions of an application instance to the network using a single REST endpoint.</p>
 <p>The advantages of Event API includes:</p>
@@ -2847,12 +3031,12 @@ configuration.</p>
 <li>Secure - you can protect the Event API endpoint with an authentication service</li>
 </ol>
 <p>The following configuration adds authentication service to the Event API endpoint:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">&quot;event.api.service&quot;</span><span class="w"> </span><span class="p p-Indicator">]</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">&#39;POST&#39;</span><span class="w"> </span><span class="p p-Indicator">]</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/api/event&quot;</span>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60s</span>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">    </span><span class="nt">authentication</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;v1.api.auth&quot;</span>
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">&quot;event.api.service&quot;</span><span class="w"> </span><span class="p p-Indicator">]</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">&#39;POST&#39;</span><span class="w"> </span><span class="p p-Indicator">]</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/api/event&quot;</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60s</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">    </span><span class="nt">authentication</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;v1.api.auth&quot;</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div></p>
 <p>This enforces every incoming request to the Event API endpoint to be authenticated by the "v1.api.auth" service
 before passing to the Event API service. You can plug in your own authentication service such as OAuth 2.0 
@@ -2860,6 +3044,8 @@ before passing to the Event API service. You can plug in your own authentication
 <p>Please refer to <a href="../rest-automation/">REST Automation</a> for details.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
+<li><a href="../../test-reports/event-over-http-interop/">Interop Test Report (Java ⇄ Rust)</a> — the live
+  bidirectional validation of both patterns, with span-level trace evidence.</li>
 <li><a href="../spring-boot/">Spring Boot Integration</a> — run Mercury in Spring Boot.</li>
 <li><a href="../service-mesh/">Minimalist Service Mesh</a> — Kafka-based service discovery &amp; routing.</li>
 <li><a href="../rest-automation/">REST Automation</a> — declarative HTTP endpoints, no controllers.</li>

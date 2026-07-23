@@ -1907,6 +1907,8 @@
       
         
       
+        
+      
     
     
     
@@ -2697,6 +2699,17 @@
   
     <nav class="md-nav" aria-label="Distributed Tracing &amp; Observability">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#applogcontext" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        app.log.context
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#logformat" class="md-nav__link">
@@ -3930,6 +3943,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../test-reports/event-over-http-interop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interop Test Report (Java ⇄ Rust)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reserved-names-and-headers/" class="md-nav__link">
         
   
@@ -4767,6 +4808,17 @@
   
     <nav class="md-nav" aria-label="Distributed Tracing &amp; Observability">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#applogcontext" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        app.log.context
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#logformat" class="md-nav__link">
@@ -6684,6 +6736,26 @@ Overridable per call (or per target in <code>yaml.event.over.http</code>) with t
 <h2 id="observability">Distributed Tracing &amp; Observability<a class="headerlink" href="#observability" title="Permanent link">&para;</a></h2>
 <p>See the <a href="../observability/">Observability guide</a> for the tracing design and OpenTelemetry/OTLP export; the keys
 below tune it. The <code>otel.*</code> keys are read by the <code>opentelemetry-forwarder</code> extension.</p>
+<h3 id="applogcontext"><code>app.log.context</code><a class="headerlink" href="#applogcontext" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<p>Turns the <a href="../observability/#log-context">application log context</a> on or off. When on (the default), the
+structured JSON appenders (<code>log.format=json</code> or <code>compact</code>) stamp a <code>context</code> block — correlation id,
+trace/span ids, service name — into every log line a traced function emits, using the built-in
+<code>default-log-context.yaml</code> template. Provide your own <code>app-log-context.yaml</code> on the classpath to replace
+the template, or set this key to <code>false</code> to opt out.</p>
 <h3 id="logformat"><code>log.format</code><a class="headerlink" href="#logformat" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
