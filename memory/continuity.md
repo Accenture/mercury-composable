@@ -370,12 +370,17 @@
 
 ## Open Threads
 
-- [ ] (release in flight — 2026-07-23) **v4.10.3 release prep — field-deployment roll-up (both
-  repos, lock-step).** Releases are immutable (Eric), so the post-4.10.2 fixes ship as a new
-  patch for the field pipeline: demo clean-echo (#225/Rust #175) + npm webapp refresh
-  (#224/Rust #174); no engine behavior changes. Java `chore/release-4.10.3`: sweep + CHANGELOG
-  dated 7/23/2026 with the field-consolidation summary; full reactor gate running. Rust prep
-  delegated in parallel. Close when tagged + published both repos.
+- [x] (release in flight — 2026-07-23; CLOSED same day) **v4.10.3 SHIPPED AND PUBLISHED in
+  lock-step (both repos) — field-deployment roll-up.** Releases are immutable (Eric), so the
+  post-4.10.2 fixes shipped as a new patch for the field pipeline: demo clean-echo
+  (#225/Rust #175) + npm webapp refresh (#224/Rust #174); no engine behavior changes — the
+  release consolidates the whole 4.10 line (wire format, presentation parity, metadata
+  contract, reserved inbox, collection plugins) for field quality gates. Java: PR #226, tag
+  `v4.10.3` on squash commit `bd7e909d` (verified before tagging — the 4.10.2 tag-race
+  lesson), CI 7m24s green + clean local reactor 4:49 (first gate run failed only from Eric's
+  concurrent build on the same tree). Rust: PR #176, tag on merge `b3804a67`, CI green
+  (252 tests). Fourth lock-step release of the arc: 4.10.0 interop → 4.10.1 presentation
+  parity → 4.10.2 boundary demarcation → 4.10.3 field roll-up.
   <!-- id: thread-release-4-10-3 | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-24-023859 -->
 
 - [x] (release in flight — 2026-07-23; CLOSED same day) **v4.10.2 SHIPPED AND PUBLISHED in
