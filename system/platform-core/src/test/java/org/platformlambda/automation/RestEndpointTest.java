@@ -167,8 +167,8 @@ class RestEndpointTest extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void customTraceparentHeaderNameCarriesTheTraceContext() throws InterruptedException {
-        // http.traceparent.header=X-Trace-Context in this test suite: an intermediary that strips
-        // the standard W3C "traceparent" can still deliver the trace context under the custom name
+        // http.traceparent.header=X-Trace-Context in this test suite: when the standard W3C
+        // "traceparent" is absent (an intermediary stripped it), the custom name delivers the context
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String w3cTraceId = "1af92f3577b34da6a3ce929d0e0e4701";
         EventEmitter po = EventEmitter.getInstance();
@@ -188,31 +188,31 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void customTraceparentNameWinsOverInjectedStandardHeader() throws InterruptedException {
-        // an intermediary (e.g. a service-mesh sidecar) may inject its OWN standard traceparent;
-        // the peer's context under the deliberately configured custom name must not be overridden
+    void standardTraceparentWinsOverCustomHeaderName() throws InterruptedException {
+        // the standards position: a well-formed standard traceparent means the caller already
+        // speaks W3C/OTel - a proprietary header alongside it is residual and safely ignored
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        String peerTraceId = "2af92f3577b34da6a3ce929d0e0e4702";
-        String injectedTraceId = "3af92f3577b34da6a3ce929d0e0e4703";
+        String residualTraceId = "2af92f3577b34da6a3ce929d0e0e4702";
+        String standardTraceId = "3af92f3577b34da6a3ce929d0e0e4703";
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET").setUrl("/api/legacy/probe").setTargetHost("http://127.0.0.1:" + port);
         req.setHeader("accept", "application/json")
-                .setHeader("X-Trace-Context", "00-" + peerTraceId + "-00f067aa0ba902b7-01")
-                .setHeader("traceparent", "00-" + injectedTraceId + "-00f067aa0ba902b8-01");
+                .setHeader("X-Trace-Context", "00-" + residualTraceId + "-00f067aa0ba902b7-01")
+                .setHeader("traceparent", "00-" + standardTraceId + "-00f067aa0ba902b8-01");
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         Map<String, Object> probe = (Map<String, Object>) response.getBody();
-        assertEquals(peerTraceId, probe.get("traceId"),
-                "a well-formed value under the custom traceparent name wins over the standard header");
+        assertEquals(standardTraceId, probe.get("traceId"),
+                "the standard W3C traceparent wins; the custom name is a fallback only");
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    void standardTraceparentRemainsFallbackUnderCustomName() throws InterruptedException {
-        // a standards-compliant caller that only sends the standard header still propagates,
+    void standardTraceparentIsAuthoritativeUnderCustomName() throws InterruptedException {
+        // a standards-compliant caller that only sends the standard header propagates normally,
         // even though this application is configured with a custom traceparent name
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String w3cTraceId = "4af92f3577b34da6a3ce929d0e0e4704";
@@ -233,7 +233,8 @@ class RestEndpointTest extends TestBase {
     @Test
     void perEndpointTraceparentOverrideBeatsGlobalName() throws InterruptedException {
         // /api/renamed/traceparent/probe declares 'traceparent.header: X-Endpoint-Trace' in rest.yaml,
-        // which replaces the global custom name (X-Trace-Context) for that endpoint
+        // which replaces the global custom name (X-Trace-Context) for that endpoint. The standard
+        // traceparent is absent here, so the effective custom name is the fallback source.
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String endpointTraceId = "5af92f3577b34da6a3ce929d0e0e4705";
         String globalNameTraceId = "6af92f3577b34da6a3ce929d0e0e4706";

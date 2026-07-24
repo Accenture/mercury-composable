@@ -119,10 +119,10 @@ Global defaults in `application.properties`:
 |:----|:--------|:-----------------|
 | `http.trace.id.header` | `X-Trace-Id` | REST automation inbound (when no `traceparent` is present) and the async HTTP client outbound |
 | `http.correlation.id.header` | `X-Correlation-Id` | HTTP edge capture inbound; async HTTP client outbound |
-| `http.traceparent.header` | `traceparent` | The header carrying the full W3C trace context; REST automation inbound (custom name first, standard fallback) and HTTP client / Event-over-HTTP outbound (stamped under **both** names) |
+| `http.traceparent.header` | `traceparent` | The header carrying the full W3C trace context; REST automation inbound (standard `traceparent` first, custom name only when the standard is absent) and HTTP client / Event-over-HTTP outbound (stamped under **both** names) |
 | `kafka.trace.id.header` | *(unset)* | Kafka Flow Adapter inbound fallback; `simple.kafka.notification` outbound, stamped alongside `traceparent` |
 | `kafka.correlation.id.header` | `cid` | Kafka Flow Adapter inbound; `simple.kafka.notification` outbound |
-| `kafka.traceparent.header` | `traceparent` | Kafka twin of `http.traceparent.header`: adapter inbound (custom name first, standard fallback); notification outbound (stamped under **both** names) |
+| `kafka.traceparent.header` | `traceparent` | Kafka twin of `http.traceparent.header`: adapter inbound (standard first, custom name only when the standard is absent); notification outbound (stamped under **both** names) |
 
 Per-entry overrides, for a single application that faces callers with different conventions:
 
@@ -146,16 +146,24 @@ overrides never breaks OpenTelemetry-compliant callers. The full key reference l
 > `traceparent` and the shared header always carry the same trace id. Prefer migrating the gateway to
 > pass `traceparent` (and `X-Trace-Id`), then retiring the conflation.
 
-> **A renamed traceparent beats conflation for the gateway case.** The conflation above carries only
-> the trace **id**, so spans in different applications can be stitched by id but not **parented** across
-> the hop. Renaming the traceparent carrier (`http.traceparent.header=X-Trace-Context`) moves the *full*
-> W3C context — trace-id, parent span-id and flags — through the gateway under an allow-listed name, so
-> cross-application span parenting survives. Outbound calls stamp the same value under both the custom
-> and the standard name; inbound, a well-formed value under the custom name wins (an intermediary that
-> injects its own fresh `traceparent` cannot break the caller's chain) and the standard header remains a
-> fallback for standards-compliant callers. **The trade-off:** a renamed traceparent is invisible to
-> OpenTelemetry SDKs, service meshes and APM agents — treat it as an escape hatch for an intermediary
-> you cannot fix, configure both ends alike, and prefer fixing the gateway allow-list.
+> **The standard W3C `traceparent` is our position — use it.** It is the header OpenTelemetry
+> and the wider observability ecosystem interoperate on, and the framework implements it as the
+> default with zero configuration. The optional `traceparent.header` family below exists for
+> **backward compatibility with legacy systems only**; departure from the standard is
+> discouraged, because a renamed carrier is invisible to OpenTelemetry SDKs, service meshes and
+> APM agents, and every participant must be configured alike. Treat a custom name as a
+> temporary bridge and plan the migration back to the standard header.
+>
+> Within that constraint, **a renamed traceparent beats conflation for the gateway case.** The
+> conflation above carries only the trace **id**, so spans in different applications can be
+> stitched by id but not **parented** across the hop. Renaming the traceparent carrier
+> (`http.traceparent.header=X-Trace-Context`) moves the *full* W3C context — trace-id, parent
+> span-id and flags — through the gateway under an allow-listed name, so cross-application span
+> parenting survives. Outbound calls stamp the same value under both the custom and the
+> standard name; inbound, the **standard `traceparent` always wins** and the custom name is
+> read only when the standard is absent — a well-formed standard traceparent means the caller
+> already speaks W3C/OTel, so a residual proprietary header alongside it is safely ignored.
+> The durable fix is always the gateway allow-list — retire the custom name once it lands.
 
 ```yaml
 # rest.yaml - one endpoint serves a legacy caller that sends its own header names

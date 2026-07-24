@@ -151,7 +151,8 @@ You may also add environment variable or base configuration references to the ta
 
 > *Engine internals*: the relay stamps a reserved `x-event-api` header on the forwarded envelope as a
 > recursion guard (so the receiving engine does not re-relay the event through its own declarative map).
-> It is engine-internal — the worker removes it from a function's input header copy and filters it from
+> It is engine-internal — the worker removes it (together with any transported `my_*` key) from a
+> function's input header copy *and* from the delivered envelope's own header view, and filters it from
 > returned response headers, so application code never sees or emits it.
 
 The demo below is a complete working example of this service abstraction.

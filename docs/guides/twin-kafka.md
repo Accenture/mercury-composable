@@ -162,7 +162,7 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 | `secondary.kafka.health.startup.grace` | falls back to `kafka.health.startup.grace` (`30s`) | Start-up grace for `secondary.kafka.health` (placeholder healthy status while the client warms up). |
 | `secondary.kafka.correlation.id.header` | falls back to `kafka.correlation.id.header` (`cid`) | Outbound correlation-id header on the secondary cluster. |
 | `secondary.kafka.trace.id.header` | falls back to `kafka.trace.id.header` (unset) | Optional outbound trace-id header on the secondary cluster. |
-| `secondary.kafka.traceparent.header` | falls back to `kafka.traceparent.header` (`traceparent`) | Header name carrying the full W3C trace context on the secondary cluster; when customized, the notification stamps the same value under both this and the standard name. |
+| `secondary.kafka.traceparent.header` | falls back to `kafka.traceparent.header` (`traceparent`) | Header name carrying the full W3C trace context on the secondary cluster — for backward compatibility with a legacy convention only (prefer the standard `traceparent`); when customized, the notification stamps the same value under both this and the standard name. |
 
 The retry/dead-letter tuning keys (`kafka.dlq.timeout.ms`, `kafka.flow.max.retries`,
 `kafka.flow.retry.backoff.ms`) are application-level policy shared by both adapters. Per-binding

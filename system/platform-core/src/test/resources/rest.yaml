@@ -69,9 +69,9 @@ rest:
     trace.id.header: "X-Shared-Id"
     correlation.id.header: "X-Shared-Id"
 
-  # Per-endpoint traceparent header-name override: this endpoint reads the W3C trace context from
-  # 'X-Endpoint-Trace', taking precedence over the global http.traceparent.header (X-Trace-Context
-  # in this test suite) and the standard 'traceparent' (which remains a fallback when absent).
+  # Per-endpoint traceparent header-name override: when the standard 'traceparent' is absent
+  # (it always wins when present), this endpoint falls back to 'X-Endpoint-Trace' - the per-entry
+  # name replaces the global http.traceparent.header (X-Trace-Context in this test suite).
   - service: "header.probe"
     methods: ['GET']
     url: "/api/renamed/traceparent/probe"

@@ -277,7 +277,8 @@ class KafkaFlowConsumerTest {
 
     @Test
     void perBindingTraceparentOverrideAdoptsCustomHeaderName() {
-        // the binding's 'traceparent.header' override reads the W3C trace context from a custom name
+        // the binding's 'traceparent.header' override reads the W3C trace context from a custom
+        // name when the standard traceparent is absent (the custom name is a fallback only)
         EventEnvelope[] captured = new EventEnvelope[1];
         RetryPolicy policy = new RetryPolicy(0, 0, null);
         KafkaConsumerBinding custom = binding().traceparentHeader("X-Bridge-Trace").build();
@@ -301,9 +302,9 @@ class KafkaFlowConsumerTest {
     }
 
     @Test
-    void customTraceparentNameWinsOverStandardHeader() {
-        // an intermediary may inject its own standard traceparent; the deliberately configured
-        // custom name must not be overridden by it
+    void standardTraceparentWinsOverCustomHeaderName() {
+        // the standards position: a well-formed standard traceparent means the upstream already
+        // speaks W3C/OTel - a proprietary header alongside it is residual and safely ignored
         EventEnvelope[] captured = new EventEnvelope[1];
         RetryPolicy policy = new RetryPolicy(0, 0, null);
         KafkaConsumerBinding custom = binding().traceparentHeader("X-Bridge-Trace").build();
@@ -322,13 +323,13 @@ class KafkaFlowConsumerTest {
 
         consumer.routeToFlow(r);
 
-        assertEquals("1af7651916cd43dd8448eb211c80319c", captured[0].getTraceId(),
-                "a well-formed value under the custom traceparent name wins over the standard header");
+        assertEquals("2af7651916cd43dd8448eb211c80319c", captured[0].getTraceId(),
+                "the standard W3C traceparent wins; the custom name is a fallback only");
     }
 
     @Test
-    void standardTraceparentRemainsFallbackUnderCustomName() {
-        // a standards-compliant upstream that only sends the standard header still propagates,
+    void standardTraceparentIsAuthoritativeUnderCustomName() {
+        // a standards-compliant upstream that only sends the standard header propagates normally,
         // even though the binding is configured with a custom traceparent name
         EventEnvelope[] captured = new EventEnvelope[1];
         RetryPolicy policy = new RetryPolicy(0, 0, null);
@@ -347,7 +348,7 @@ class KafkaFlowConsumerTest {
         consumer.routeToFlow(r);
 
         assertEquals("3af7651916cd43dd8448eb211c80319c", captured[0].getTraceId(),
-                "the standard traceparent remains a fallback when the custom name is absent");
+                "the standard traceparent is authoritative whatever custom name is configured");
     }
 
     @Test

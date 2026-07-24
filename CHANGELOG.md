@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
+### Fixed
+
+1. **The delivered envelope view is scrubbed of engine metadata (interop hygiene round).**
+   The pre-release `ce_traceparent` interop drive's four-combination matrix (see
+   `docs/test-reports/event-over-http-interop.md`) found that a peer-transported or
+   edge-merged `my_*` / `x-event-api` header could surface in a function's input
+   **envelope** header view (the injected input copy was already clean). The worker now
+   scrubs the five engine keys from the delivered envelope for non-interceptor functions —
+   whatever a peer transported can never masquerade as application data — while the legacy
+   `my_correlation_id` compat carrier remains honored into the injected view before the
+   scrub, and event interceptors keep raw transport fidelity. Two regressions added
+   (entry-side twins of the exit sanitization).
+2. **The programmatic Event-over-HTTP demo no longer copies its injected metadata onto the
+   outgoing event.** `EventOverHttpRpc` forwards business headers only — the injected
+   `my_*` view describes the local function's own context and is never transported.
+
 ### Added
 
 1. **Configurable traceparent header name (field request).** A new header-name family completes
@@ -20,13 +36,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    an intermediary (e.g. an API-gateway header allow-list) that strips the standard W3C header:
    outbound calls (async HTTP client, Event-over-HTTP, `simple.kafka.notification` and its
    secondary twin) stamp the same W3C value under **both** names, and inbound resolution (REST
-   automation, Kafka Flow Adapter) reads the custom name first — a well-formed value under it
-   wins, so an intermediary-injected standard `traceparent` cannot override the peer's context —
-   with the standard header as fallback for standards-compliant callers. Unlike the trace-id
+   automation, Kafka Flow Adapter) honors the **standard `traceparent` first** — the custom
+   name is read only when the standard header is absent, because a well-formed standard
+   traceparent means the caller already speaks W3C/OTel and a residual proprietary header is
+   safely ignored. Unlike the trace-id
    conflation workaround, the full W3C context (trace-id, parent span-id, flags) crosses the
    intermediary, so cross-application **span parenting** survives. Default behavior unchanged
-   (`traceparent`); a renamed carrier is invisible to OpenTelemetry-compliant tooling, so keep
-   the default unless an unfixable intermediary forces the rename.
+   (`traceparent`). **The standard W3C/OpenTelemetry `traceparent` remains the project's
+   position** — the optional family is for backward compatibility with legacy systems only,
+   and departure from the standard is discouraged (a renamed carrier is invisible to
+   OTel-compliant tooling); treat a custom name as a temporary bridge and plan the migration
+   back to the standard header.
 
 ---
 ## Version 4.10.3, 7/23/2026

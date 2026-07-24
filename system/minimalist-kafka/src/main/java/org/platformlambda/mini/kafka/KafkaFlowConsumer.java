@@ -127,8 +127,8 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private static final String GLOBAL_TRACE_ID_HEADER = AppConfigReader.getInstance()
             .getProperty("kafka.trace.id.header");
     // Global inbound traceparent header name (default "traceparent"): impedance matching for an upstream
-    // that carries W3C trace context under its own header name. A well-formed value under the effective
-    // name wins; the standard header remains a fallback.
+    // that carries W3C trace context under its own header name. The standard traceparent always wins;
+    // the custom name is read only when the standard header is absent.
     private static final String GLOBAL_TRACEPARENT_HEADER = AppConfigReader.getInstance()
             .getProperty("kafka.traceparent.header", W3cTrace.TRACEPARENT);
 
@@ -249,15 +249,16 @@ public class KafkaFlowConsumer implements AutoCloseable {
     }
 
     /**
-     * Parse the inbound W3C trace context from the effective traceparent header name (per-binding
-     * 'traceparent.header', else the global kafka.traceparent.header, default "traceparent"). A
-     * well-formed value under the custom name wins; the standard header remains a fallback so a
-     * standards-compliant upstream still propagates.
+     * Parse the inbound W3C trace context. The standard "traceparent" header always wins; the
+     * effective custom name (per-binding 'traceparent.header', else the global
+     * kafka.traceparent.header) is read only when the standard header is absent or malformed.
+     * Rationale: a well-formed standard traceparent means the upstream already speaks the
+     * W3C/OpenTelemetry standard - a proprietary header alongside it is residual and safely ignored.
      */
     private String[] parseInboundTraceparent(Map<String, String> headers) {
-        String[] parsed = W3cTrace.parse(headers.get(traceparentHeader));
+        String[] parsed = W3cTrace.parse(headers.get(W3cTrace.TRACEPARENT));
         if (parsed.length == 0 && !W3cTrace.TRACEPARENT.equalsIgnoreCase(traceparentHeader)) {
-            parsed = W3cTrace.parse(headers.get(W3cTrace.TRACEPARENT));
+            parsed = W3cTrace.parse(headers.get(traceparentHeader));
         }
         return parsed;
     }

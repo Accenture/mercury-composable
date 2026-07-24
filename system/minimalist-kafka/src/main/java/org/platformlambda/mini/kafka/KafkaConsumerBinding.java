@@ -117,8 +117,8 @@ public final class KafkaConsumerBinding {
     /**
      * Per-binding inbound traceparent header override ({@code traceparent.header}), or {@code null} to
      * use the global {@code kafka.traceparent.header} (default {@code traceparent}). Impedance matching
-     * for an upstream that carries W3C trace context under its own header name - a well-formed value
-     * under the effective name wins, with the standard {@code traceparent} as fallback.
+     * for an upstream that carries W3C trace context under its own header name - the standard
+     * {@code traceparent} always wins, and the custom name is read only when the standard is absent.
      */
     public String traceparentHeader() {
         return traceparentHeader;

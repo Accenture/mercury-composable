@@ -391,8 +391,34 @@
   twin-kafka 9 (wire-level secondary→primary fallback assert). Docs: config-reference 3 new
   keys, observability table + "renamed traceparent beats conflation" note, rest-grammar +
   rest-automation.json + ai-agent-guide, minimalist/twin-kafka guides, reserved-names,
-  CHANGELOG Unreleased. Remaining: full reactor gate, Rust lock-step mirror
-  ([[conv-telemetry-presentation-parity]] — identical keys/precedence/log text), PR + release.
+  CHANGELOG Unreleased. **BOTH PRs MERGED 2026-07-24 (Java #227 merge `47e948ef`, CI 7m40s;
+  Rust #177 merge `e99013cb`, 257 tests) and the pre-release ce_traceparent interop drive
+  PASSED in full** (gateway simulation: W3C value supplied ONLY under the custom name; edge
+  adoption + cross-language span parenting both directions; wire-level dual stamp both
+  engines; report round appended to docs/test-reports/event-over-http-interop.md in both
+  repos). **Findings queued for a follow-up hygiene round (pre-existing, not the feature):**
+  both programmatic demo tasks transport their injected my_* view (accidental-copy
+  anti-pattern, request side); the engines sanitize different subsets at the /api/event door
+  (Java delivers my_correlation_id / strips route+trace keys, Rust the inverse + strips
+  x-event-api); Rust wire nits (duplicate trace headers, x-correlation-id on /api/event,
+  missing traceparent-name startup log). **Hygiene round COMPLETE 2026-07-24 (Eric directed;
+  ships in v4.10.4):** both engines scrub the 5 engine keys from the delivered ENVELOPE view
+  (non-interceptor; legacy my_correlation_id honored-then-scrubbed; interceptors keep raw
+  fidelity — the Rust fix also RESTORED interceptor fidelity its partial scrub violated);
+  both demos forward business headers only; Rust wire aligned to the Java reference (single
+  stamps, no x-correlation-id on the event-over-HTTP leg, accept + x-small-payload-as-bytes,
+  startup header-name log lines); x-ttl ingress alignment (Java represents the route timeout
+  as the request's x-ttl header, caller-sent wins — AsyncHttpRequest.setTimeoutSeconds; Rust
+  ingress now mirrors). **Final matrix: ALL EIGHT ECHOES IDENTICAL after normalization** —
+  report Resolution subsection in both repos. Java branch fix/interop-header-hygiene
+  (stacked on the report branch); Rust same-name branch (33fba853 + 7e22af9a, 260 tests).
+  **Standards position stated in all docs (Eric's ruling): W3C/OTel traceparent is the
+  position; traceparent.header = backward compat with legacy systems ONLY; departure
+  discouraged. Final ruling (SUPERSEDES design point 2): inbound precedence = STANDARD
+  traceparent always wins, custom name read only when standard absent (presence of the
+  standard means the legacy system already upgraded; proprietary value is residual). Both
+  engines flipped in lock-step, regressions inverted, report carries the refinement note.**
+  Remaining: v4.10.4 release prep both repos (Eric gates).
   <!-- id: thread-traceparent-header-config | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: working | origin: 2026-07-24-154543 -->
 
 - [x] (release in flight — 2026-07-23; CLOSED same day) **v4.10.3 SHIPPED AND PUBLISHED in
