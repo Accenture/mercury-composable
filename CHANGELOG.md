@@ -8,7 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Unreleased
+## Version 4.10.4, 7/24/2026
+
+Patch release in lock-step with the Rust engine's v4.10.4. Two themes, both validated by a
+live cross-language interop drive whose four-combination echo matrix ended in an exact
+replica (all eight runs identical after normalizing volatile fields — see
+`docs/test-reports/event-over-http-interop.md`):
+
+- **Configurable traceparent carrier (field request), standards-first.** The optional
+  `traceparent.header` family bridges legacy intermediaries that strip the standard W3C
+  header; the standard `traceparent` remains the project's position, wins inbound, and
+  needs no configuration.
+- **Interop header hygiene.** The delivered envelope view is scrubbed of engine metadata on
+  both engines, the demos transport business headers only, and the engines' wire and
+  flow-input header surfaces are now byte-for-byte aligned.
 
 ### Fixed
 
