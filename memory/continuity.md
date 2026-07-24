@@ -370,6 +370,20 @@
 
 ## Open Threads
 
+- [ ] (release in flight — 2026-07-24) **v4.10.4 release prep — traceparent carrier +
+  hygiene round (both repos, lock-step).** Both PRs merged (Java #228 squash `fcd4fbc1`
+  carrying report + envelope scrub + resolution + standards position + precedence flip;
+  Rust #178). PR-branch lesson: Eric created the PRs from the stacked report branches
+  (docs/interop-ce-traceparent) while the fix commits sat on fix/interop-header-hygiene —
+  resolved by fast-forwarding the PR branches (strict descendants), then deleting the
+  redundant fix refs; VERIFY which branch a PR points at before assuming pushed commits
+  appear in it. Java prep: branch `chore/release-4.10.4`, sweep 35 files (32 poms +
+  CLAUDE/GEMINI + instructions.md, digit-lookahead safe), CHANGELOG dated 7/24/2026 with
+  the two-theme summary (standards-first traceparent carrier + interop header hygiene, both
+  validated by the eight-identical-echoes matrix). Rust prep delegated. Close when tagged +
+  published both repos.
+  <!-- id: thread-release-4-10-4 | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: working | origin: 2026-07-24-154543 -->
+
 - [ ] (feature in flight — 2026-07-24) **Configurable traceparent header name (field request).**
   Field wants `http.traceparent.header` / `kafka.traceparent.header` /
   `secondary.kafka.traceparent.header` (secondary → primary fallback) alongside the existing
