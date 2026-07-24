@@ -370,21 +370,22 @@
 
 ## Open Threads
 
-- [ ] (release in flight — 2026-07-24) **v4.10.4 release prep — traceparent carrier +
-  hygiene round (both repos, lock-step).** Both PRs merged (Java #228 squash `fcd4fbc1`
-  carrying report + envelope scrub + resolution + standards position + precedence flip;
-  Rust #178). PR-branch lesson: Eric created the PRs from the stacked report branches
-  (docs/interop-ce-traceparent) while the fix commits sat on fix/interop-header-hygiene —
-  resolved by fast-forwarding the PR branches (strict descendants), then deleting the
-  redundant fix refs; VERIFY which branch a PR points at before assuming pushed commits
-  appear in it. Java prep: branch `chore/release-4.10.4`, sweep 35 files (32 poms +
-  CLAUDE/GEMINI + instructions.md, digit-lookahead safe), CHANGELOG dated 7/24/2026 with
-  the two-theme summary (standards-first traceparent carrier + interop header hygiene, both
-  validated by the eight-identical-echoes matrix). Rust prep delegated. Close when tagged +
-  published both repos.
+- [x] (release in flight — 2026-07-24; CLOSED same day) **v4.10.4 SHIPPED AND PUBLISHED in
+  lock-step (both repos) — standards-first traceparent carrier + interop header hygiene.**
+  Java: PR #229, tag `v4.10.4` on squash commit `0125c17b` (verified before tagging), CI
+  7m29s green + local reactor 5:06 on the release version. Rust: PR #179, tag on merge
+  `03424582`, CI green (260 tests). Both PRs' content merged earlier as Java #228 (squash
+  `fcd4fbc1`: report + envelope scrub + resolution + standards position + precedence flip)
+  and Rust #178. Both releases validated by the ce_traceparent four-way drive — all eight
+  echoes identical. PR-branch lesson retained: Eric created the fix PRs from the stacked
+  report branches while the fix commits sat on a second branch — resolved by
+  fast-forwarding the PR branches (strict descendants); VERIFY which branch a PR points at
+  before assuming pushed commits appear in it. Fifth lock-step release of the 4.10 arc:
+  4.10.0 interop → 4.10.1 presentation parity → 4.10.2 boundary demarcation → 4.10.3 field
+  roll-up → 4.10.4 standards-first traceparent + hygiene.
   <!-- id: thread-release-4-10-4 | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: working | origin: 2026-07-24-154543 -->
 
-- [ ] (feature in flight — 2026-07-24) **Configurable traceparent header name (field request).**
+- [x] (feature in flight — 2026-07-24; CLOSED same day — RELEASED in v4.10.4) **Configurable traceparent header name (field request).**
   Field wants `http.traceparent.header` / `kafka.traceparent.header` /
   `secondary.kafka.traceparent.header` (secondary → primary fallback) alongside the existing
   trace-id/correlation-id families. Assessment AGREED (design-clean, unlike the rejected
@@ -432,7 +433,9 @@
   traceparent always wins, custom name read only when standard absent (presence of the
   standard means the legacy system already upgraded; proprietary value is residual). Both
   engines flipped in lock-step, regressions inverted, report carries the refinement note.**
-  Remaining: v4.10.4 release prep both repos (Eric gates).
+  **RELEASED 2026-07-24 in v4.10.4 both repos ([[thread-release-4-10-4]]) — the full arc
+  closed: field request → design ruling → lock-step implementation → ce_traceparent live
+  interop → hygiene round → standards position → release.**
   <!-- id: thread-traceparent-header-config | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: working | origin: 2026-07-24-154543 -->
 
 - [x] (release in flight — 2026-07-23; CLOSED same day) **v4.10.3 SHIPPED AND PUBLISHED in
