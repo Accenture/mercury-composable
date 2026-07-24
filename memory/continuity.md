@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-23 | agent: Claude Code (2026-07-23-211728)
+- **last_session:** 2026-07-23 | agent: Claude Code (2026-07-24-023859)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -369,6 +369,14 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (release in flight — 2026-07-23) **v4.10.3 release prep — field-deployment roll-up (both
+  repos, lock-step).** Releases are immutable (Eric), so the post-4.10.2 fixes ship as a new
+  patch for the field pipeline: demo clean-echo (#225/Rust #175) + npm webapp refresh
+  (#224/Rust #174); no engine behavior changes. Java `chore/release-4.10.3`: sweep + CHANGELOG
+  dated 7/23/2026 with the field-consolidation summary; full reactor gate running. Rust prep
+  delegated in parallel. Close when tagged + published both repos.
+  <!-- id: thread-release-4-10-3 | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-24-023859 -->
 
 - [x] (release in flight — 2026-07-23; CLOSED same day) **v4.10.2 SHIPPED AND PUBLISHED in
   lock-step (both repos).** Java: PR #222, tag `v4.10.2` on `61ddb772`, published. Rust:
