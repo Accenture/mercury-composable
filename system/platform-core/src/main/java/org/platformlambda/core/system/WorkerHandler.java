@@ -226,6 +226,19 @@ public class WorkerHandler {
             if (businessCid != null) {
                 parameters.put(MY_CORRELATION_ID, businessCid);
             }
+            /*
+             * The delivered envelope view is scrubbed of the same engine keys: a peer that
+             * transported my_* headers (e.g. a function that copied its injected input view onto an
+             * outgoing event) or an edge that merged them must never surface engine metadata as
+             * application data. Safe to mutate - each delivery deserializes its own envelope copy
+             * (WorkerDispatcher). Event interceptors are exempt: they relay raw envelopes and need
+             * transport fidelity (e.g. the x-event-api relay guard).
+             */
+            if (!interceptor) {
+                event.getHeaders().keySet()
+                        .removeIf(k -> X_EVENT_API.equals(k) || MY_ROUTE.equals(k) || MY_TRACE_ID.equals(k)
+                                || MY_TRACE_PATH.equals(k) || MY_CORRELATION_ID.equals(k));
+            }
             Object result = invokeFunction(f, parameters, body, event);
             md.diff = getExecTime(begin);
             String replyTo = event.getReplyTo();

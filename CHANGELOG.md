@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
+### Fixed
+
+1. **The delivered envelope view is scrubbed of engine metadata (interop hygiene round).**
+   The pre-release `ce_traceparent` interop drive's four-combination matrix (see
+   `docs/test-reports/event-over-http-interop.md`) found that a peer-transported or
+   edge-merged `my_*` / `x-event-api` header could surface in a function's input
+   **envelope** header view (the injected input copy was already clean). The worker now
+   scrubs the five engine keys from the delivered envelope for non-interceptor functions —
+   whatever a peer transported can never masquerade as application data — while the legacy
+   `my_correlation_id` compat carrier remains honored into the injected view before the
+   scrub, and event interceptors keep raw transport fidelity. Two regressions added
+   (entry-side twins of the exit sanitization).
+2. **The programmatic Event-over-HTTP demo no longer copies its injected metadata onto the
+   outgoing event.** `EventOverHttpRpc` forwards business headers only — the injected
+   `my_*` view describes the local function's own context and is never transported.
+
 ### Added
 
 1. **Configurable traceparent header name (field request).** A new header-name family completes

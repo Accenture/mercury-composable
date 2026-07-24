@@ -26,6 +26,7 @@ import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Demonstrates the PROGRAMMATIC Event-over-HTTP pattern - the counterpart of the
@@ -49,6 +50,11 @@ public class EventOverHttpRpc implements LambdaFunction {
     private static final String PEER_HOST = "peer.demo.host";
     private static final String PEER_PORT = "peer.demo.port";
     private static final String DEMO_TOKEN_KEY = "demo.peer.token";
+    // The engine injects these read-only metadata keys into this function's input header copy.
+    // They describe THIS function's own context and are never transported in an event - so they
+    // must not be copied onto the outgoing request (metadata is injected, not forwarded).
+    private static final Set<String> INJECTED_METADATA =
+            Set.of("my_route", "my_trace_id", "my_trace_path", "my_correlation_id");
 
     @Override
     public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
@@ -62,7 +68,12 @@ public class EventOverHttpRpc implements LambdaFunction {
         // variable) as a security header on the HTTP request
         Map<String, String> securityHeaders = Map.of("authorization", config.getProperty(DEMO_TOKEN_KEY, "demo"));
         EventEnvelope req = new EventEnvelope().setTo(HELLO_WORLD).setBody(input);
-        headers.forEach(req::setHeader);
+        // forward the business headers only - the injected my_* view stays local
+        headers.forEach((k, v) -> {
+            if (!INJECTED_METADATA.contains(k)) {
+                req.setHeader(k, v);
+            }
+        });
         EventEnvelope response = po.request(req, 10000, securityHeaders, eventEndpoint, true).get();
         if (response.getStatus() != 200) {
             throw new AppException(response.getStatus(), String.valueOf(response.getError()));

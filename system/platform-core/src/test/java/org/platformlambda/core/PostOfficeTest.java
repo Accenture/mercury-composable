@@ -1055,6 +1055,61 @@ class PostOfficeTest extends TestBase {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void transportedMetadataIsScrubbedFromTheDeliveredEnvelopeView() throws InterruptedException, ExecutionException {
+        // The entry-side twin of the exit sanitization above: a peer transports the engine's
+        // reserved keys as ordinary envelope headers (e.g. a function that copied its injected
+        // input view onto an outgoing event, or a spoofing caller). The worker must scrub them
+        // from the delivered envelope view - a function's input envelope never surfaces engine
+        // metadata as application data - while ordinary headers survive and the injected view
+        // still carries the real context.
+        Map<String, String> ctx = new HashMap<>();
+        ctx.put("my_route", "unit.test");
+        ctx.put("my_trace_id", "trace-entry-scrub-1");
+        ctx.put("my_trace_path", "TEST /entry/scrub");
+        PostOffice po = PostOffice.trackable(ctx, 1);
+        EventEnvelope req = new EventEnvelope().setTo("clean.envelope.echo")
+                .setBody("x").setHeader("hello", "clean")
+                .setHeader("my_route", "spoofed.route")
+                .setHeader("my_trace_id", "spoofed-trace")
+                .setHeader("my_trace_path", "SPOOF /path")
+                .setHeader("x-event-api", "spoofed");
+        EventEnvelope reply = po.request(req, 8000).get();
+        assertInstanceOf(Map.class, reply.getBody());
+        Map<String, Object> result = (Map<String, Object>) reply.getBody();
+        Map<String, String> envelopeView = (Map<String, String>) result.get("envelope_headers");
+        // ordinary headers survive in the envelope view
+        assertEquals("clean", envelopeView.get("hello"));
+        // the transported engine keys are scrubbed from the delivered envelope
+        assertFalse(envelopeView.containsKey("my_route"));
+        assertFalse(envelopeView.containsKey("my_trace_id"));
+        assertFalse(envelopeView.containsKey("my_trace_path"));
+        assertFalse(envelopeView.containsKey("my_correlation_id"));
+        assertFalse(envelopeView.containsKey("x-event-api"));
+        // the injected view is unaffected: real context, not the spoofed values
+        assertEquals("clean.envelope.echo", result.get("injected_route"));
+    }
+
+    @Test
+    void legacyCorrelationIdHeaderIsHonoredThenScrubbed() throws InterruptedException, ExecutionException {
+        // a pre-4.10.2 peer transports the business correlation-id as the my_correlation_id
+        // envelope header (no my_cid tag): the worker must still honor it - the function reads
+        // it via getMyCorrelationId() - while the delivered envelope view stays clean
+        EventEnvelope req = new EventEnvelope().setTo("clean.envelope.echo")
+                .setBody("x").setHeader("my_correlation_id", "legacy-cid-0042");
+        EventEnvelope reply = EventEmitter.getInstance().request(req, 8000).get();
+        assertInstanceOf(Map.class, reply.getBody());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = (Map<String, Object>) reply.getBody();
+        assertEquals("legacy-cid-0042", result.get("injected_cid"),
+                "the legacy header is honored into the injected view");
+        @SuppressWarnings("unchecked")
+        Map<String, String> envelopeView = (Map<String, String>) result.get("envelope_headers");
+        assertFalse(envelopeView.containsKey("my_correlation_id"),
+                "the legacy carrier is scrubbed from the delivered envelope view");
+    }
+
     @Test
     void rpcTelemetryCarriesSpanLineage() throws InterruptedException {
         // Regression: the RPC trace record (the one with round_trip) must chain like a
