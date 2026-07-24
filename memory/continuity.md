@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-23 | agent: Claude Code (2026-07-24-023859)
+- **last_session:** 2026-07-24 | agent: Claude Code (2026-07-24-154543)
 - **last_review:** 2026-07-13 | through 2026-07-13-001009.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -48,7 +48,7 @@
   keys/fields/methods as per-entry sections (heading + Type/Default mini-table + prose), not wide
   tables — same pattern as the Rust port, so the two sites stay structurally aligned. CI installs
   `mkdocs-material` in `.github/workflows/docs.yml`.
-  <!-- id: docs-site-material-theme | created: 2026-07-20 | last_used: 2026-07-20 | uses: 1 | tier: working | origin: 2026-07-20-222709 -->
+  <!-- id: docs-site-material-theme | created: 2026-07-20 | last_used: 2026-07-21 | uses: 2 | tier: archive-candidate | origin: 2026-07-20-222709 -->
 
 ## Architectural Invariants
 
@@ -87,7 +87,7 @@
   **Durable lessons:** field screenshots' naming conventions are client-identifiable — paraphrase
   generically in fixtures/commits/PRs; a flow needs ≥1 `end` task (a `sink` only terminates a side
   branch). See [[release-4-8-2-shipped]] for the prior cycle.
-  <!-- id: release-4-8-3-shipped | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-170933 -->
+  <!-- id: release-4-8-3-shipped | created: 2026-07-13 | last_used: 2026-07-21 | uses: 9 | tier: active | origin: 2026-07-13-170933 -->
 
 - **Field trace-propagation report on 4.6.3 diagnosed (2026-07-13): not a framework bug.** A field team
   saw the traceId stop propagating between application endpoints after upgrading 4.4.11 → 4.6.3. Root
@@ -104,7 +104,7 @@
   hops) + new regression test `traceContinuesAcrossApplicationToApplicationHttpCall`
   (branch `test/trace-continuity-http-hop`, `DownstreamCaller` fixture + `/api/chain/probe`) proving
   traced app-to-app HTTP continuity over the real HTTP stack — a previously untested contract.
-  <!-- id: field-trace-propagation-4-6-3-diagnosis | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-142021 -->
+  <!-- id: field-trace-propagation-4-6-3-diagnosis | created: 2026-07-13 | last_used: 2026-07-22 | uses: 3 | tier: active | origin: 2026-07-13-142021 -->
 
 - **Snyk gate rejected v4.8.2 in the field (2026-07-13) — remediated and MERGED (PR #168, merge
   commit `e21be449`, 30 poms; ships in v4.8.3; the team trials v4.7.1 for the trace fix meanwhile —
@@ -146,7 +146,7 @@
   version is a substring of a dependency version (classgraph 4.8.184 contains "4.8.1"), the perl
   sweep needs a digit lookahead `(?!\d)` — not every bump is naturally safe.
   See [[release-4-8-1-shipped]] for the prior cycle's facts.
-  <!-- id: release-4-8-2-shipped | created: 2026-07-12 | last_used: 2026-07-12 | uses: 1 | tier: active | origin: 2026-07-13-014037 -->
+  <!-- id: release-4-8-2-shipped | created: 2026-07-12 | last_used: 2026-07-21 | uses: 3 | tier: archive-candidate | origin: 2026-07-13-014037 -->
 
 - **Release 4.8.1 — SHIPPED 2026-07-11 (tag `v4.8.1` on merge commit `3d226c5b`; PRs #159-#161).**
   Maintenance release: dependency security updates (Jackson 2.22.1 closed dependabot/28; log4j2/
@@ -170,7 +170,7 @@
   (platform-core otherwise content-negotiates from the request's accept header). (6) **No version
   strings in pom comments** — the release sweep mangled a historical "retired 4.8.0" note; history
   belongs in the CHANGELOG. See [[release-4-8-0-shipped]] for the twin-kafka architecture facts.
-  <!-- id: release-4-8-1-shipped | created: 2026-07-11 | last_used: 2026-07-13 | uses: 1 | tier: active | origin: 2026-07-12-002326 -->
+  <!-- id: release-4-8-1-shipped | created: 2026-07-11 | last_used: 2026-07-23 | uses: 6 | tier: active | origin: 2026-07-12-002326 -->
 
 - **Release 4.8.0 — SHIPPED 2026-07-10 (tag `v4.8.0` on merge commit `5d9fda45`; PRs #153-#157).**
   Feature release: **twin-kafka** (dual Kafka cluster bridging), configurable trace-id headers with
@@ -196,7 +196,7 @@
   from `model.cid` (engine-seeded), never from the raw record header; CompileFlows rejects data
   mappings that overwrite reserved model keys (cid/instance/flow/ttl). See [[release-4-7-0-shipped]]
   for the release-bump surface and prior caveats.
-  <!-- id: release-4-8-0-shipped | created: 2026-07-10 | last_used: 2026-07-13 | uses: 1 | tier: active | origin: 2026-07-11-031930 -->
+  <!-- id: release-4-8-0-shipped | created: 2026-07-10 | last_used: 2026-07-14 | uses: 6 | tier: archive-candidate | origin: 2026-07-11-031930 -->
 
 - **Release 4.7.0 — SHIPPED 2026-07-08 (tag `v4.7.0` on merge commit `e41a20b7`; PRs #146 feature +
   #147 bump).** Feature release: **MiniGraph `graph.task` skill** — a Task node invokes any composable
@@ -260,7 +260,7 @@
   in a library jar, because classpath shadowing across jars is classloader-order-dependent. Companion fixes
   in the same branch: eager `LogContextConfig` init in `AppStarter.reConfigLogger` (kills the "Recursive call
   to appender" warning) and RPC `round_trip` telemetry now carrying span_id/parent_span_id (inbox family).
-  <!-- id: log-context-on-by-default | created: 2026-07-22 | last_used: 2026-07-22 | uses: 1 | tier: working | origin: 2026-07-22-234845 -->
+  <!-- id: log-context-on-by-default | created: 2026-07-22 | last_used: 2026-07-23 | uses: 3 | tier: active | origin: 2026-07-22-234845 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -325,7 +325,7 @@
   lock-step on both engines (with closely matching error messages — presentation parity extends
   to error text), or flows stop being portable. Precedent: the #220 collection plugins mirrored
   into the Rust v4.10.2.
-  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-23-145132 -->
+  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-07-24 | uses: 2 | tier: active | origin: 2026-07-23-145132 -->
 
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
@@ -340,7 +340,7 @@
   invocation). Shared non-thread-safe resources inside a multi-worker function are guarded by a
   `ReentrantLock`, not by dropping to one worker (kafka.health precedent: 5 workers, lock-confined
   KafkaConsumer).
-  <!-- id: conv-instance-count-pattern | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-221521 -->
+  <!-- id: conv-instance-count-pattern | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: archive-candidate | origin: 2026-07-13-221521 -->
 - **Test config injection: use the EXACT config key as a System property, never a `${VAR}` reference
   set in `@BeforeAll`** (2026-07-14, from the second field Jenkins twin-kafka failure). Three facts
   interact: (1) `AppConfigReader` resolves `${VAR}` references ONCE when the singleton first loads;
@@ -357,7 +357,7 @@
   — PR #178's deadline extension treated a symptom of this very bug. Relates
   [[conv-instance-count-pattern]] (the health-check tests that shifted the class order arrived with
   kafka.health/secondary.kafka.health).
-  <!-- id: test-config-injection-exact-key | created: 2026-07-14 | last_used: 2026-07-14 | uses: 1 | tier: working | origin: 2026-07-14-173816 -->
+  <!-- id: test-config-injection-exact-key | created: 2026-07-14 | last_used: 2026-07-14 | uses: 3 | tier: archive-candidate | origin: 2026-07-14-173816 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
@@ -370,6 +370,31 @@
 
 ## Open Threads
 
+- [ ] (feature in flight — 2026-07-24) **Configurable traceparent header name (field request).**
+  Field wants `http.traceparent.header` / `kafka.traceparent.header` /
+  `secondary.kafka.traceparent.header` (secondary → primary fallback) alongside the existing
+  trace-id/correlation-id families. Assessment AGREED (design-clean, unlike the rejected
+  `legacy.trace.id` conflation flag: renames the CARRIER, not the semantics — full W3C context
+  crosses a header-stripping gateway, so cross-app span parenting survives; fixes the known
+  limitation in [[thread-field-trace-propagation-4-6-3]]). Eric ratified the 3 design points
+  2026-07-24: (2) inbound = configured name wins when well-formed (sidecar-injected standard
+  traceparent cannot override the peer's context), standard header as fallback; (3) outbound =
+  stamp BOTH names (the "alongside" precedent); (4) per-entry overrides included
+  (rest.yaml + kafka-flow-adapter.yaml `traceparent.header`) for a symmetric surface. Default
+  stays `traceparent`; docs carry the standards-deviation warning (renamed carrier invisible to
+  OTel/Istio/APM). Java reference IMPLEMENTED on `feature/configurable-traceparent-header`:
+  platform-core (HttpRouter class-load static + per-entry, dual stamp in AsyncHttpClient +
+  EventEmitter setTraceHeaders helper), minimalist-kafka (notification dual stamp +
+  isPropagatableHeader exclusion, consumer custom-first parse, per-binding key), twin-kafka
+  (secondaryOrGlobal). Tests: platform-core 420 green (5 new; suite runs WITH the global custom
+  name active = additive proof), minimalist-kafka 101 (5 new incl. wire-level dual-stamp e2e),
+  twin-kafka 9 (wire-level secondary→primary fallback assert). Docs: config-reference 3 new
+  keys, observability table + "renamed traceparent beats conflation" note, rest-grammar +
+  rest-automation.json + ai-agent-guide, minimalist/twin-kafka guides, reserved-names,
+  CHANGELOG Unreleased. Remaining: full reactor gate, Rust lock-step mirror
+  ([[conv-telemetry-presentation-parity]] — identical keys/precedence/log text), PR + release.
+  <!-- id: thread-traceparent-header-config | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: working | origin: 2026-07-24-154543 -->
+
 - [x] (release in flight — 2026-07-23; CLOSED same day) **v4.10.3 SHIPPED AND PUBLISHED in
   lock-step (both repos) — field-deployment roll-up.** Releases are immutable (Eric), so the
   post-4.10.2 fixes shipped as a new patch for the field pipeline: demo clean-echo
@@ -381,7 +406,7 @@
   concurrent build on the same tree). Rust: PR #176, tag on merge `b3804a67`, CI green
   (252 tests). Fourth lock-step release of the arc: 4.10.0 interop → 4.10.1 presentation
   parity → 4.10.2 boundary demarcation → 4.10.3 field roll-up.
-  <!-- id: thread-release-4-10-3 | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-24-023859 -->
+  <!-- id: thread-release-4-10-3 | created: 2026-07-23 | last_used: 2026-07-24 | uses: 1 | tier: working | origin: 2026-07-24-023859 -->
 
 - [x] (release in flight — 2026-07-23; CLOSED same day) **v4.10.2 SHIPPED AND PUBLISHED in
   lock-step (both repos).** Java: PR #222, tag `v4.10.2` on `61ddb772`, published. Rust:
@@ -432,7 +457,7 @@
   invisible, validating Eric's robustness hypothesis). **BOTH PRs MERGED 2026-07-23: Java #221
   (merge `a25d95d5`) + Rust #171 (merge `f86fbec2`), CI green both.** Remaining: the v4.10.2
   lock-step releases ([[thread-release-4-10-2]]). Relates [[conv-telemetry-presentation-parity]].
-  <!-- id: thread-metadata-injection-hardening | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-23-211728 -->
+  <!-- id: thread-metadata-injection-hardening | created: 2026-07-23 | last_used: 2026-07-24 | uses: 1 | tier: working | origin: 2026-07-23-211728 -->
 
 - [x] (release in flight — 2026-07-23; CLOSED same day) **v4.10.1 SHIPPED via the normal
   flow (Java repo)** — tag `v4.10.1` on merge commit `9ae666df` (PR #218, CI green + local
@@ -474,7 +499,7 @@
   instructions.md coordinates), CHANGELOG dated 7/22/2026. **PR #216 merged (`af21e6f6`, CI
   green); tag `v4.10.0` pushed on the merge commit; release notes delivered.** Close when the
   GitHub release is published.
-  <!-- id: thread-release-4-10-0 | created: 2026-07-22 | last_used: 2026-07-22 | uses: 1 | tier: working | origin: 2026-07-23-015717 -->
+  <!-- id: thread-release-4-10-0 | created: 2026-07-22 | last_used: 2026-07-23 | uses: 1 | tier: active | origin: 2026-07-23-015717 -->
 
 - [x] (design — 2026-07-21; COMPLETED 2026-07-22 with the v4.10.0 release) **Common event
   envelope wire format for cross-language interop (Event over HTTP with the Rust port).** Design DRAFTED at
@@ -537,7 +562,7 @@
   ([[thread-release-4-10-0]]) — this thread is COMPLETE: design → implementation → parity →
   live interop → release, both engines in lock-step.** → serves `vision-mercury-composable`
   (polyglot deployment)
-  <!-- id: thread-event-envelope-interop | created: 2026-07-21 | last_used: 2026-07-21 | uses: 1 | tier: working | origin: 2026-07-21-215951 -->
+  <!-- id: thread-event-envelope-interop | created: 2026-07-21 | last_used: 2026-07-23 | uses: 5 | tier: active | origin: 2026-07-21-215951 -->
 
 - [ ] (field support — 2026-07-21) **v4.9.1 REJECTED by the field Sonar quality gate; remediation
   MERGED (PR #210, `7110561c`), v4.9.2 release in flight for the field rescan.** 19 issues
@@ -559,7 +584,7 @@
   day: dependabot HIGH alert #29 (js-yaml 4.2.0, dev-only transitive in the playground webapp
   lockfile) remediated via PR #209 (`902da23f`, lockfile-only bump to 4.3.0) — landed one commit
   after the release tag; no artifact impact.
-  <!-- id: thread-release-4-9-1 | created: 2026-07-21 | last_used: 2026-07-21 | uses: 1 | tier: working | origin: 2026-07-21-012842 -->
+  <!-- id: thread-release-4-9-1 | created: 2026-07-21 | last_used: 2026-07-21 | uses: 2 | tier: archive-candidate | origin: 2026-07-21-012842 -->
 
 - [x] (release in flight — 2026-07-14; CLOSED same day) **v4.8.6 SHIPPED via the normal flow** —
   tag `v4.8.6` on merge commit `19916875` (PR #185, CI green), release text delivered. Purpose:
@@ -572,7 +597,7 @@
   tag `v4.8.5` on merge commit `a1cc1dec` (PR #182, CI green), release text delivered. Carries
   #178-#181: conflated-header one-id fix (validated live) + field pipeline build reliability
   (twin-kafka test-order root cause + env-leakage hardening).
-  <!-- id: thread-release-4-8-5 | created: 2026-07-14 | last_used: 2026-07-14 | uses: 1 | tier: working | origin: 2026-07-14-183626 -->
+  <!-- id: thread-release-4-8-5 | created: 2026-07-14 | last_used: 2026-07-14 | uses: 1 | tier: archive-candidate | origin: 2026-07-14-183626 -->
 
 
 - [x] (release in flight — 2026-07-13; CLOSED same day) **v4.8.4 SHIPPED via the normal flow** —
@@ -580,14 +605,14 @@
   (secondary.kafka.health, 5 health-check workers, Minimalist Kafka guide rename). Eric's ruling
   retained for the record: the 4.8.3 deferred-tag flow was SPECIFIC to the Snyk rejection; normal
   releases tag immediately on merge.
-  <!-- id: thread-release-4-8-4-tag-deferred | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-230916 -->
+  <!-- id: thread-release-4-8-4-tag-deferred | created: 2026-07-13 | last_used: 2026-07-21 | uses: 3 | tier: archive-candidate | origin: 2026-07-13-230916 -->
 
 
 - [x] (release in flight — 2026-07-13; CLOSED same day) **v4.8.3 bumped for field pipeline test; TAG
   DEFERRED.** The deferred-tag flow completed: field pipeline PASSED (Snyk + Sonar), the touch-up
   round landed (#172-#175), and `v4.8.3` was tagged on merge commit `6696a76f` with release text
   delivered. Closure recorded in [[release-4-8-3-shipped]].
-  <!-- id: thread-release-4-8-3-tag-deferred | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-142021 -->
+  <!-- id: thread-release-4-8-3-tag-deferred | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: archive-candidate | origin: 2026-07-13-142021 -->
 
 - [ ] (field support — 2026-07-13; ROOT CAUSE FOUND via Eric's devops screen share) **Trace-propagation
   report: the internal API gateway strips `traceparent` AND `X-Trace-Id` (neither on its allow-list);
@@ -626,7 +651,7 @@
   hello.world span parented directly onto the traceparent's span id across the HTTP hop. Field runs this conflation short-term; gateway team has been ASKED (2026-07-14) to
   allow-list traceparent + X-Trace-Id at the gateway/Istio — Eric updates after the devops team
   tests in the cloud dev environment.
-  <!-- id: thread-field-trace-propagation-4-6-3 | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: working | origin: 2026-07-13-142021 -->
+  <!-- id: thread-field-trace-propagation-4-6-3 | created: 2026-07-13 | last_used: 2026-07-14 | uses: 5 | tier: working | origin: 2026-07-13-142021 -->
 
 - [ ] (P0–P5 code-complete — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; remaining = field canary → P4 retire-BDB) **Replace
   ElasticQueue's Berkeley DB spill tier with a portable file-backed segmented FIFO.** Full detail + rationale
@@ -712,7 +737,7 @@
   checks?), and should it reuse or diverge from `event-script-engine`'s own `validInput`/`validOutput`
   validation (already confirmed to diverge in places — minigraph's per-skill namespace rules, e.g. fetcher
   input/output/dictionary, don't match event-script's).
-  <!-- id: thread-compilegraph-syntax-validation | created: 2026-07-02 | last_used: 2026-07-02 | uses: 1 | tier: working | origin: 2026-07-02-004606 -->
+  <!-- id: thread-compilegraph-syntax-validation | created: 2026-07-02 | last_used: 2026-07-22 | uses: 2 | tier: working | origin: 2026-07-02-004606 -->
 
 - [ ] (planned — backlog, no ETA, no CVE driver) **Upgrade `kafka.version` (4.2.0 → 4.3.x) across the 24
   pom.xml files that pin it.** Deliberately deferred alongside the `confluent.version` 8.2.0→8.3.0 bump — see
@@ -767,7 +792,7 @@
   - **Surface the machine-readable catalogs in `llms.txt`** (the DSL `*.json` files) as first-class entries, and add
     "build & test an app" + "author an extension" entries so an agent doesn't discover them only by reading prose.
   → serves `vision-mercury-composable`.
-  <!-- id: thread-docs-improvement-backlog | created: 2026-06-24 | last_used: 2026-06-24 | uses: 1 | tier: working -->
+  <!-- id: thread-docs-improvement-backlog | created: 2026-06-24 | last_used: 2026-07-20 | uses: 4 | tier: working -->
 - [ ] (next iteration — Eric, 2026-06-24; **design + implement**) **Cross-pod request-response via Redis
   Pub/Sub RPC + Kafka.** A distributed sync-over-async pattern (an advanced opt-in use case, cf.
   `kafka-mesh-opt-in`): `REST sync request-response → Composable service (POD-1) → Redis Pub/Sub RPC + Kafka

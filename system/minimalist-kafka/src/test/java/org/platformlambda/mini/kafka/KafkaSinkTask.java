@@ -46,6 +46,9 @@ public class KafkaSinkTask implements TypedLambdaFunction<byte[], Map<String, Ob
         // inbound Kafka cid as the flow's correlation-id, which survives the RPC hop as this header)
         entry.put("myCid", po.getMyCorrelationId());
         entry.put("traceId", po.getTraceId());
+        // raw trace headers from the Kafka record (mapped by the flow) - for the dual-stamp assertion
+        entry.put("traceparent", headers.get("traceparent"));
+        entry.put("customTraceparent", headers.get("x-kafka-trace"));
         entry.put("body", new String(input, StandardCharsets.UTF_8));
         RECEIVED.add(entry);
         return Map.of("status", "received");

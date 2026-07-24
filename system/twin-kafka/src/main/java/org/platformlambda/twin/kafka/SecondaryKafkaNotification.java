@@ -21,6 +21,7 @@ package org.platformlambda.twin.kafka;
 import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.util.AppConfigReader;
+import org.platformlambda.core.util.W3cTrace;
 import org.platformlambda.mini.kafka.KafkaRequestPublisher;
 import org.platformlambda.mini.kafka.SimpleKafkaNotification;
 import org.platformlambda.mini.kafka.schema.SchemaCodec;
@@ -31,10 +32,11 @@ import org.platformlambda.mini.kafka.schema.SchemaCodec;
  * the SECOND Kafka cluster through {@link SecondaryKafkaRuntime}. A flow task bridges two clusters by
  * consuming from one adapter and publishing through the other cluster's notification function.
  *
- * <p>Outbound header names may be tuned per cluster: {@code secondary.kafka.correlation.id.header}
- * and {@code secondary.kafka.trace.id.header} override the shared globals
- * ({@code kafka.correlation.id.header}, default {@code cid} / {@code kafka.trace.id.header}, unset)
- * when the two clusters follow different conventions.</p>
+ * <p>Outbound header names may be tuned per cluster: {@code secondary.kafka.correlation.id.header},
+ * {@code secondary.kafka.trace.id.header} and {@code secondary.kafka.traceparent.header} override the
+ * shared globals ({@code kafka.correlation.id.header}, default {@code cid} /
+ * {@code kafka.trace.id.header}, unset / {@code kafka.traceparent.header}, default
+ * {@code traceparent}) when the two clusters follow different conventions.</p>
  *
  * <p>Same threading model as the base class: {@code @KernelThreadRunner} with a small single-flight
  * worker pool (see {@link SimpleKafkaNotification} for the full rationale).</p>
@@ -48,6 +50,8 @@ public class SecondaryKafkaNotification extends SimpleKafkaNotification {
             secondaryOrGlobal("secondary.kafka.correlation.id.header", "kafka.correlation.id.header", "cid");
     private static final String TRACE_ID_HEADER =
             secondaryOrGlobal("secondary.kafka.trace.id.header", "kafka.trace.id.header", null);
+    private static final String TRACEPARENT_HEADER = secondaryOrGlobal(
+            "secondary.kafka.traceparent.header", "kafka.traceparent.header", W3cTrace.TRACEPARENT);
 
     /** The secondary-cluster key when set, else the global key, else the hard default (may be null). */
     private static String secondaryOrGlobal(String secondaryKey, String globalKey, String hardDefault) {
@@ -77,6 +81,11 @@ public class SecondaryKafkaNotification extends SimpleKafkaNotification {
     @Override
     protected String traceIdHeader() {
         return TRACE_ID_HEADER;
+    }
+
+    @Override
+    protected String traceparentHeader() {
+        return TRACEPARENT_HEADER;
     }
 
     @Override

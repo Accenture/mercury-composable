@@ -8,6 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Added
+
+1. **Configurable traceparent header name (field request).** A new header-name family completes
+   the observability impedance-matching surface: `http.traceparent.header`,
+   `kafka.traceparent.header` and `secondary.kafka.traceparent.header` (secondary falls back to
+   primary, then to the standard `traceparent`), plus per-entry overrides — `traceparent.header`
+   in a rest.yaml endpoint and in a kafka-flow-adapter.yaml consumer binding. An escape hatch for
+   an intermediary (e.g. an API-gateway header allow-list) that strips the standard W3C header:
+   outbound calls (async HTTP client, Event-over-HTTP, `simple.kafka.notification` and its
+   secondary twin) stamp the same W3C value under **both** names, and inbound resolution (REST
+   automation, Kafka Flow Adapter) reads the custom name first — a well-formed value under it
+   wins, so an intermediary-injected standard `traceparent` cannot override the peer's context —
+   with the standard header as fallback for standards-compliant callers. Unlike the trace-id
+   conflation workaround, the full W3C context (trace-id, parent span-id, flags) crosses the
+   intermediary, so cross-application **span parenting** survives. Default behavior unchanged
+   (`traceparent`); a renamed carrier is invisible to OpenTelemetry-compliant tooling, so keep
+   the default unless an unfixable intermediary forces the rename.
+
+---
 ## Version 4.10.3, 7/23/2026
 
 Patch release for field deployment, in lock-step with the Rust engine's v4.10.3. No engine

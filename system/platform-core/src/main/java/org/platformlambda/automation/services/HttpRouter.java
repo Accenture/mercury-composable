@@ -110,6 +110,13 @@ public class HttpRouter {
     private static String traceIdHeader = DEFAULT_TRACE_ID_HEADER;
     // Configurable HTTP correlation-id header (enterprise-specific); default X-Correlation-Id.
     private static String businessCorrelationIdHeader;
+    // Configurable traceparent header name (http.traceparent.header): an escape hatch for an
+    // intermediary (e.g. an API gateway) that strips the standard W3C "traceparent" header. When
+    // customized, the same W3C-format value travels under BOTH names on outbound calls, and inbound
+    // resolution reads the custom name first with the standard header as fallback. Read at class-load
+    // so a client-only application (no rest-automation server) resolves the same name.
+    private static String traceparentHeader = AppConfigReader.getInstance()
+            .getProperty("http.traceparent.header", W3cTrace.TRACEPARENT);
     // Read-only reserved header exposing the business correlation-id to the target function.
     // Package-private so the HttpAuth handler (same package) can stamp it on the post-auth forward.
     static final String MY_CORRELATION_ID = "my_correlation_id";
@@ -131,6 +138,8 @@ public class HttpRouter {
                 log.info("Correlation-id HTTP header is '{}'", businessCorrelationIdHeader);
                 traceIdHeader = config.getProperty("http.trace.id.header", DEFAULT_TRACE_ID_HEADER);
                 log.info("Trace-id HTTP header is '{}'", traceIdHeader);
+                traceparentHeader = config.getProperty("http.traceparent.header", W3cTrace.TRACEPARENT);
+                log.info("Traceparent HTTP header is '{}'", traceparentHeader);
                 String folder = config.getProperty("spring.web.resources.static-locations",
                         config.getProperty("static.html.folder", "classpath:/public"));
                 if (folder.endsWith("/")) {
@@ -175,6 +184,17 @@ public class HttpRouter {
      */
     public static String getTraceIdHeader() {
         return traceIdHeader;
+    }
+
+    /**
+     * The traceparent header name (default "traceparent", configurable via http.traceparent.header).
+     * When customized, outbound HTTP calls stamp the W3C trace context under this name in addition
+     * to the standard header, so the context survives an intermediary that strips "traceparent".
+     *
+     * @return the traceparent header name
+     */
+    public static String getTraceparentHeader() {
+        return traceparentHeader;
     }
 
     public ConcurrentMap<String, AsyncContextHolder> getContexts() {
@@ -562,7 +582,7 @@ public class HttpRouter {
         }
         // W3C trace context: continue an upstream trace and adopt the caller's span as our parent
         String parentSpanId = null;
-        String[] traceParent = W3cTrace.parse(request.getHeader(W3cTrace.TRACEPARENT));
+        String[] traceParent = parseInboundTraceparent(request, route);
         if (traceParent.length > 0) {
             traceId = traceParent[0];
             parentSpanId = traceParent[1];
@@ -573,6 +593,26 @@ public class HttpRouter {
             req.setHeader(cidHeaderName, traceId);
         }
         return new TraceContext(traceId, tracePath, parentSpanId, businessCorrelationId);
+    }
+
+    /**
+     * Parse the inbound W3C trace context from the effective traceparent header name (per-endpoint
+     * 'traceparent.header' in rest.yaml, else the global http.traceparent.header, default "traceparent").
+     * A well-formed value under the custom name wins - an intermediary may inject its own standard
+     * traceparent, which must not override the peer's context - while the standard header remains a
+     * fallback so standards-compliant callers still propagate.
+     *
+     * @param request HTTP
+     * @param route the assigned route
+     * @return a 2-element array of {trace-id, parent-span-id}, or an empty array when absent/invalid
+     */
+    private String[] parseInboundTraceparent(HttpServerRequest request, AssignedRoute route) {
+        String name = route.info.traceparentHeader != null ? route.info.traceparentHeader : traceparentHeader;
+        String[] parsed = W3cTrace.parse(request.getHeader(name));
+        if (parsed.length == 0 && !W3cTrace.TRACEPARENT.equalsIgnoreCase(name)) {
+            parsed = W3cTrace.parse(request.getHeader(W3cTrace.TRACEPARENT));
+        }
+        return parsed;
     }
 
     private void handlePayload(HttpServerRequest request, AssignedRoute route,

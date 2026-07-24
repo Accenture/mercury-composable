@@ -126,6 +126,11 @@ public class KafkaFlowConsumer implements AutoCloseable {
     // does not send a W3C traceparent. A well-formed traceparent always takes precedence.
     private static final String GLOBAL_TRACE_ID_HEADER = AppConfigReader.getInstance()
             .getProperty("kafka.trace.id.header");
+    // Global inbound traceparent header name (default "traceparent"): impedance matching for an upstream
+    // that carries W3C trace context under its own header name. A well-formed value under the effective
+    // name wins; the standard header remains a fallback.
+    private static final String GLOBAL_TRACEPARENT_HEADER = AppConfigReader.getInstance()
+            .getProperty("kafka.traceparent.header", W3cTrace.TRACEPARENT);
 
     private final Consumer<String, byte[]> consumer;
     private final KafkaConsumerBinding binding;
@@ -144,6 +149,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
     // Effective inbound header names: per-binding override first, then the application.properties global.
     private final String correlationIdHeader;
     private final String traceIdHeader;
+    private final String traceparentHeader;
     private final ExecutorService loop;
 
     private volatile boolean running;
@@ -160,6 +166,8 @@ public class KafkaFlowConsumer implements AutoCloseable {
         this.correlationIdHeader = binding.correlationIdHeader() != null
                 ? binding.correlationIdHeader() : GLOBAL_CORRELATION_ID_HEADER;
         this.traceIdHeader = binding.traceIdHeader() != null ? binding.traceIdHeader() : GLOBAL_TRACE_ID_HEADER;
+        this.traceparentHeader = binding.traceparentHeader() != null
+                ? binding.traceparentHeader() : GLOBAL_TRACEPARENT_HEADER;
         this.loop = Executors.newSingleThreadExecutor(runnable -> {
             Thread thread = new Thread(runnable, "kafka-flow-" + binding.topicOrPattern());
             thread.setDaemon(true);
@@ -232,12 +240,26 @@ public class KafkaFlowConsumer implements AutoCloseable {
         }
         @SuppressWarnings("unchecked")
         Map<String, String> headers = (Map<String, String>) dataset.get(HEADER);
-        String[] trace = W3cTrace.parse(headers.get(W3cTrace.TRACEPARENT));
+        String[] trace = parseInboundTraceparent(headers);
         // trace-id precedence: W3C traceparent > configured trace-id header (legacy upstream) > fresh UUID
         String traceId = trace.length > 0 ? trace[0] : traceIdFromHeaderOrNew(headers);
         String tracePath = "KAFKA /" + consumerRecord.topic();
         EventEnvelope forward = toFlowRequest(dataset, headers, trace, traceId, tracePath);
         return deliver(consumerRecord, forward, traceId, tracePath);
+    }
+
+    /**
+     * Parse the inbound W3C trace context from the effective traceparent header name (per-binding
+     * 'traceparent.header', else the global kafka.traceparent.header, default "traceparent"). A
+     * well-formed value under the custom name wins; the standard header remains a fallback so a
+     * standards-compliant upstream still propagates.
+     */
+    private String[] parseInboundTraceparent(Map<String, String> headers) {
+        String[] parsed = W3cTrace.parse(headers.get(traceparentHeader));
+        if (parsed.length == 0 && !W3cTrace.TRACEPARENT.equalsIgnoreCase(traceparentHeader)) {
+            parsed = W3cTrace.parse(headers.get(W3cTrace.TRACEPARENT));
+        }
+        return parsed;
     }
 
     /** The inbound trace-id from the effective trace-id header when configured, else a fresh UUID. */

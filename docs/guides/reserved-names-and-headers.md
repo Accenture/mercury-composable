@@ -152,6 +152,10 @@ emitted outbound:
   **takes precedence** over `X-Trace-Id`: the trace ID segment becomes the Mercury trace ID and the parent
   span ID is adopted, so the trace continues from the upstream caller (span lineage across HTTP boundaries).
   On outbound the system emits `traceparent` built from this hop's own span, alongside `X-Trace-Id`.
+  The carrier **name** is configurable via `http.traceparent.header` / `kafka.traceparent.header`
+  (default `traceparent`) - an escape hatch for an intermediary that strips the standard header: the same
+  W3C value then travels under **both** names, and a well-formed value under the custom name wins inbound
+  (see [Observability](observability.md#impedance-config)).
 
 The framework does **not** echo the trace ID (or the correlation-id) back to the HTTP client.
 
