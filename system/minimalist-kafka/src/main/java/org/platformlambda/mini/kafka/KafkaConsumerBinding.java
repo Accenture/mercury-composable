@@ -38,6 +38,7 @@ public final class KafkaConsumerBinding {
     private final Integer maxPollRecords;
     private final String traceIdHeader;
     private final String correlationIdHeader;
+    private final String traceparentHeader;
 
     private KafkaConsumerBinding(Builder b) {
         this.topicOrPattern = b.topicOrPattern;
@@ -51,6 +52,7 @@ public final class KafkaConsumerBinding {
         this.maxPollRecords = b.maxPollRecords;
         this.traceIdHeader = b.traceIdHeader;
         this.correlationIdHeader = b.correlationIdHeader;
+        this.traceparentHeader = b.traceparentHeader;
     }
 
     /** Literal topic name, or the regex pattern text when {@link #isPattern()} is true. */
@@ -112,6 +114,16 @@ public final class KafkaConsumerBinding {
         return correlationIdHeader;
     }
 
+    /**
+     * Per-binding inbound traceparent header override ({@code traceparent.header}), or {@code null} to
+     * use the global {@code kafka.traceparent.header} (default {@code traceparent}). Impedance matching
+     * for an upstream that carries W3C trace context under its own header name - a well-formed value
+     * under the effective name wins, with the standard {@code traceparent} as fallback.
+     */
+    public String traceparentHeader() {
+        return traceparentHeader;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -129,6 +141,7 @@ public final class KafkaConsumerBinding {
         private Integer maxPollRecords;
         private String traceIdHeader;
         private String correlationIdHeader;
+        private String traceparentHeader;
 
         private Builder() {
         }
@@ -187,6 +200,11 @@ public final class KafkaConsumerBinding {
 
         public Builder correlationIdHeader(String correlationIdHeader) {
             this.correlationIdHeader = correlationIdHeader;
+            return this;
+        }
+
+        public Builder traceparentHeader(String traceparentHeader) {
+            this.traceparentHeader = traceparentHeader;
             return this;
         }
 

@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Standalone end-to-end proof of the minimalist-kafka building blocks (no Redis, no REST):
@@ -144,6 +145,51 @@ class KafkaFlowAdapterTest {
                 "business cid surfaced to the task as model.cid / getMyCorrelationId() through the flow engine");
         assertEquals("{\"hello\":\"kafka\"}", received.get("body"), "body round-tripped through Kafka");
         assertEquals(TRACE_ID, received.get("traceId"), "trace-id stayed continuous across the Kafka hop");
+    }
+
+    @Test
+    void notificationStampsTraceContextUnderBothNames() throws Exception {
+        KafkaSinkTask.RECEIVED.clear();
+        // kafka.traceparent.header=x-kafka-trace in this test suite: the notification stamps the SAME
+        // W3C value under both the standard "traceparent" and the custom name, so the context survives
+        // middleware that mishandles the standard header while compliant consumers keep working
+        String cid = Utility.getInstance().getUuid();
+        PostOffice po = PostOffice.trackable("unit.test", TRACE_ID, "TEST /dual/stamp");
+        po.send(new EventEnvelope().setTo("simple.kafka.notification")
+                .setHeader(KafkaHeaders.TOPIC, TOPIC)
+                .setHeader(KafkaHeaders.CORRELATION_ID, cid)
+                .setBody("{\"hello\":\"dual\"}".getBytes(StandardCharsets.UTF_8))
+                .setTraceId(TRACE_ID).setTracePath("TEST /dual/stamp"));
+
+        Map<String, Object> received = KafkaSinkTask.RECEIVED.poll(25, TimeUnit.SECONDS);
+        assertNotNull(received, "the sink flow should receive the message");
+        String standard = (String) received.get("traceparent");
+        assertNotNull(standard, "the standard traceparent header is stamped");
+        assertTrue(standard.contains(TRACE_ID), "the stamped traceparent continues the caller's trace");
+        assertEquals(standard, received.get("customTraceparent"),
+                "the same W3C value must be stamped under the custom kafka.traceparent.header name");
+    }
+
+    @Test
+    void adapterAdoptsTraceContextFromCustomHeaderName() throws Exception {
+        KafkaSinkTask.RECEIVED.clear();
+        // inbound impedance matching: an upstream carries W3C trace context ONLY under the custom
+        // name (middleware stripped the standard header); the adapter adopts it - and when an
+        // intermediary injects its own standard traceparent, the custom name still wins
+        String customTraceId = "aaaa2222333344445555666677778888";
+        String injectedTraceId = "bbbb2222333344445555666677778888";
+        Map<String, byte[]> recordHeaders = new HashMap<>();
+        recordHeaders.put("x-kafka-trace",
+                W3cTrace.format(customTraceId, "aaaabbbbccccdddd").getBytes(StandardCharsets.UTF_8));
+        recordHeaders.put(W3cTrace.TRACEPARENT,
+                W3cTrace.format(injectedTraceId, "ddddccccbbbbaaaa").getBytes(StandardCharsets.UTF_8));
+        KafkaRuntime.publisher().publishSync(TOPIC, null, recordHeaders,
+                "{\"hello\":\"custom\"}".getBytes(StandardCharsets.UTF_8), 10000);
+
+        Map<String, Object> received = KafkaSinkTask.RECEIVED.poll(25, TimeUnit.SECONDS);
+        assertNotNull(received, "the sink flow should receive the message");
+        assertEquals(customTraceId, received.get("traceId"),
+                "a well-formed value under the custom traceparent name wins over the standard header");
     }
 
     @Test

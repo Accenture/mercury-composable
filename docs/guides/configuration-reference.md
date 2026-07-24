@@ -495,6 +495,14 @@ HTTP header carrying the business correlation-id (enterprise-specific; case-inse
 
 HTTP header recognized (inbound, when no W3C `traceparent` is present) and emitted (outbound by the async HTTP client) as the trace-id. A well-formed `traceparent` always takes precedence inbound. Overridable per endpoint with `trace.id.header` in a rest.yaml entry.
 
+### `http.traceparent.header`
+
+| Type | Default |
+|------|---------|
+| `String` | `traceparent` |
+
+HTTP header name carrying the **W3C trace context** (the full `traceparent` value: trace-id, parent span-id and flags). An **escape hatch** for an intermediary — typically an API gateway with a header allow-list — that strips the standard `traceparent` header and cannot be fixed promptly. When customized, outbound HTTP calls (the async HTTP client and Event-over-HTTP) stamp the same W3C value under **both** names, and inbound resolution reads the custom name first (a well-formed value under it wins, so an intermediary-injected standard `traceparent` cannot override the peer's context) with the standard header as fallback. Overridable per endpoint with `traceparent.header` in a rest.yaml entry. **Caution:** a renamed traceparent is invisible to standards-compliant tooling (OpenTelemetry SDKs, service meshes, APM agents) — keep the default unless an unfixable intermediary forces the rename, and configure both ends alike.
+
 ### `kafka.correlation.id.header`
 
 | Type | Default |
@@ -510,6 +518,14 @@ Kafka message header carrying the business correlation-id (no cross-vendor stand
 | `String` | — |
 
 Optional Kafka message header for the trace-id. Inbound: a fallback trace-id source when the upstream sends no W3C `traceparent` (which always takes precedence). Outbound: `simple.kafka.notification` stamps the current trace-id under this name alongside `traceparent`, for legacy downstream consumers. Unset = traceparent-only behavior (unchanged). Overridable per binding with `trace.id.header` in a kafka-flow-adapter.yaml entry.
+
+### `kafka.traceparent.header`
+
+| Type | Default |
+|------|---------|
+| `String` | `traceparent` |
+
+Kafka message header name carrying the **W3C trace context** — the Kafka twin of `http.traceparent.header`, for middleware or an upstream convention that carries the W3C value under its own header name. When customized, `simple.kafka.notification` stamps the same value under **both** names, and the Kafka Flow Adapter reads the custom name first (a well-formed value under it wins) with the standard `traceparent` as fallback. Overridable per binding with `traceparent.header` in a kafka-flow-adapter.yaml entry.
 
 ### `kafka.health.timeout`
 
@@ -1037,13 +1053,13 @@ Time-to-live for an entry in the in-memory (platform `ManagedCache`) cache of sc
 
 [twin-kafka](twin-kafka.md#health): tunables for `secondary.kafka.health`, the secondary cluster's twin of `kafka.health`. A bridge lists both: `mandatory.health.dependencies=kafka.health, secondary.kafka.health`.
 
-### `secondary.kafka.correlation.id.header` / `secondary.kafka.trace.id.header`
+### `secondary.kafka.correlation.id.header` / `secondary.kafka.trace.id.header` / `secondary.kafka.traceparent.header`
 
 | Type | Default |
 |------|---------|
 | `String` | fall back to the `kafka.*` globals |
 
-[twin-kafka](twin-kafka.md): outbound header names on the secondary cluster when the two clusters follow different conventions.
+[twin-kafka](twin-kafka.md): outbound header names on the secondary cluster when the two clusters follow different conventions. Each key falls back to its primary `kafka.*` setting when unset (`secondary.kafka.traceparent.header` → `kafka.traceparent.header` → `traceparent`).
 
 The Kafka **connection and security** settings (`bootstrap.servers`, `security.protocol`, `sasl.*`, `ssl.*`,
 `acks`, `auto.offset.reset`) live in the `kafka-producer.properties` / `kafka-consumer.properties` template

@@ -26,6 +26,10 @@ tasks:
       - 'model.cid -> header.cid'
       # model.cid is seeded by the adapter from the configured 'kafka.correlation.id.header';
       # to read an additional raw header, add e.g. 'input.header.ce-id -> header.ce-id'
+      # raw trace headers surfaced so the test can assert the notification's dual traceparent stamp
+      # (standard 'traceparent' plus the custom 'kafka.traceparent.header' name)
+      - 'input.header.traceparent -> header.traceparent'
+      - 'input.header.x-kafka-trace -> header.x-kafka-trace'
     process: 'kafka.test.sink'
     output:
       - 'result -> output.body'

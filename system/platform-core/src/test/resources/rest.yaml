@@ -69,12 +69,30 @@ rest:
     trace.id.header: "X-Shared-Id"
     correlation.id.header: "X-Shared-Id"
 
+  # Per-endpoint traceparent header-name override: this endpoint reads the W3C trace context from
+  # 'X-Endpoint-Trace', taking precedence over the global http.traceparent.header (X-Trace-Context
+  # in this test suite) and the standard 'traceparent' (which remains a fallback when absent).
+  - service: "header.probe"
+    methods: ['GET']
+    url: "/api/renamed/traceparent/probe"
+    timeout: 10s
+    tracing: true
+    traceparent.header: "X-Endpoint-Trace"
+
   # Simulates application A in an application-to-application HTTP call: this traced endpoint's
   # function calls /api/legacy/probe ("application B") through async.http.request, so tests can
   # assert that one distributed trace continues across the HTTP hop between the two.
   - service: "downstream.caller"
     methods: ['GET']
     url: "/api/chain/probe"
+    timeout: 15s
+    tracing: true
+
+  # A traced caller whose downstream target is the /api/hello/world echo, so tests can inspect
+  # the raw headers AsyncHttpClient stamped on the outgoing hop (e.g. the custom traceparent name).
+  - service: "echo.chain.caller"
+    methods: ['GET']
+    url: "/api/echo/chain"
     timeout: 15s
     tracing: true
 

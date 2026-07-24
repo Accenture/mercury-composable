@@ -40,10 +40,11 @@ public class RouteInfo {
     public String flowId;
     public boolean trustAllCert = false;
     public List<String> urlRewrite;
-    // optional per-endpoint overrides of http.trace.id.header / http.correlation.id.header,
-    // for impedance matching with an upstream that uses its own header convention
+    // optional per-endpoint overrides of http.trace.id.header / http.correlation.id.header /
+    // http.traceparent.header, for impedance matching with an upstream that uses its own header convention
     public String traceIdHeader;
     public String correlationIdHeader;
+    public String traceparentHeader;
 
     public String getAuthService(String headerKey) {
         return getAuthService(headerKey, "*");

@@ -91,6 +91,11 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
     // proprietary trace-id header instead of parsing traceparent.
     private static final String TRACE_ID_HEADER = AppConfigReader.getInstance()
             .getProperty("kafka.trace.id.header");
+    // Configurable traceparent header name (default "traceparent"): when customized, the W3C trace
+    // context is stamped under BOTH names, for an intermediary or downstream convention that does not
+    // handle the standard header.
+    private static final String TRACEPARENT_HEADER = AppConfigReader.getInstance()
+            .getProperty("kafka.traceparent.header", W3cTrace.TRACEPARENT);
 
     // one Encoder per worker instance (an instance is single-flight) -> owner-confined Confluent serializers.
     private final ConcurrentMap<Integer, SchemaCodec.Encoder> encoders = new ConcurrentHashMap<>();
@@ -113,6 +118,11 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
     /** The optional outbound trace-id header name (default from kafka.trace.id.header), or null. */
     protected String traceIdHeader() {
         return TRACE_ID_HEADER;
+    }
+
+    /** The traceparent header name (default "traceparent", from kafka.traceparent.header). */
+    protected String traceparentHeader() {
+        return TRACEPARENT_HEADER;
     }
 
     /** The registry-url application property named in error messages (for accurate diagnostics). */
@@ -146,6 +156,12 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
         String traceparent = currentTraceparent(new PostOffice(headers, instance));
         if (traceparent != null) {
             kafkaHeaders.put(W3cTrace.TRACEPARENT, traceparent.getBytes(StandardCharsets.UTF_8));
+            // when a custom traceparent header name is configured, stamp the same value under that
+            // name too, for an intermediary or downstream convention that does not handle the standard
+            String customTraceparent = traceparentHeader();
+            if (!W3cTrace.TRACEPARENT.equalsIgnoreCase(customTraceparent)) {
+                kafkaHeaders.put(customTraceparent, traceparent.getBytes(StandardCharsets.UTF_8));
+            }
         }
         // when the trace-id header is configured, also stamp the trace-id under that name for legacy
         // downstream consumers; an explicitly mapped value wins over the flow's trace-id (my_trace_id).
@@ -193,9 +209,10 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
 
     /**
      * Whether an event header is forwarded verbatim as a Kafka header. Excludes routing/encoding directives
-     * (topic/partition/subject/version), the inbound traceparent (replaced with this hop's own span), the
-     * correlation-id and configured trace-id headers (stamped explicitly from the resolved values), and the
-     * framework's read-only reserved headers (my_route / my_trace_id / my_trace_path / my_correlation_id).
+     * (topic/partition/subject/version), the inbound traceparent under the standard or configured name
+     * (replaced with this hop's own span), the correlation-id and configured trace-id headers (stamped
+     * explicitly from the resolved values), and the framework's read-only reserved headers
+     * (my_route / my_trace_id / my_trace_path / my_correlation_id).
      */
     private boolean isPropagatableHeader(String key) {
         return !KafkaHeaders.TOPIC.equals(key)
@@ -203,6 +220,7 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
                 && !KafkaHeaders.SUBJECT.equals(key)
                 && !KafkaHeaders.VERSION.equals(key)
                 && !W3cTrace.TRACEPARENT.equals(key)
+                && !traceparentHeader().equals(key)
                 && !correlationIdHeader().equals(key)
                 && !key.equals(traceIdHeader())
                 && !MY_ROUTE.equals(key)

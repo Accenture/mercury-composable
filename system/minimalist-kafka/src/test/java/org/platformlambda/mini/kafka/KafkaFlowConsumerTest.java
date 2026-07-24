@@ -276,6 +276,81 @@ class KafkaFlowConsumerTest {
     }
 
     @Test
+    void perBindingTraceparentOverrideAdoptsCustomHeaderName() {
+        // the binding's 'traceparent.header' override reads the W3C trace context from a custom name
+        EventEnvelope[] captured = new EventEnvelope[1];
+        RetryPolicy policy = new RetryPolicy(0, 0, null);
+        KafkaConsumerBinding custom = binding().traceparentHeader("X-Bridge-Trace").build();
+        KafkaFlowConsumer consumer = new KafkaFlowConsumer(null, custom, 1000, policy, null) {
+            @Override
+            EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath) {
+                captured[0] = forward;
+                return new EventEnvelope().setStatus(200);
+            }
+        };
+        ConsumerRecord<String, byte[]> r = new ConsumerRecord<>("orders", 0, 7L, "k", "payload".getBytes(UTF_8));
+        r.headers().add("X-Bridge-Trace",
+                "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01".getBytes(UTF_8));
+
+        consumer.routeToFlow(r);
+
+        assertEquals("0af7651916cd43dd8448eb211c80319c", captured[0].getTraceId(),
+                "trace-id adopted from the custom traceparent header name");
+        assertEquals("b7ad6b7169203331", captured[0].getSpanId(),
+                "the flow chains onto the upstream span carried under the custom name");
+    }
+
+    @Test
+    void customTraceparentNameWinsOverStandardHeader() {
+        // an intermediary may inject its own standard traceparent; the deliberately configured
+        // custom name must not be overridden by it
+        EventEnvelope[] captured = new EventEnvelope[1];
+        RetryPolicy policy = new RetryPolicy(0, 0, null);
+        KafkaConsumerBinding custom = binding().traceparentHeader("X-Bridge-Trace").build();
+        KafkaFlowConsumer consumer = new KafkaFlowConsumer(null, custom, 1000, policy, null) {
+            @Override
+            EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath) {
+                captured[0] = forward;
+                return new EventEnvelope().setStatus(200);
+            }
+        };
+        ConsumerRecord<String, byte[]> r = new ConsumerRecord<>("orders", 0, 7L, "k", "payload".getBytes(UTF_8));
+        r.headers().add("X-Bridge-Trace",
+                "00-1af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01".getBytes(UTF_8));
+        r.headers().add("traceparent",
+                "00-2af7651916cd43dd8448eb211c80319c-c7ad6b7169203332-01".getBytes(UTF_8));
+
+        consumer.routeToFlow(r);
+
+        assertEquals("1af7651916cd43dd8448eb211c80319c", captured[0].getTraceId(),
+                "a well-formed value under the custom traceparent name wins over the standard header");
+    }
+
+    @Test
+    void standardTraceparentRemainsFallbackUnderCustomName() {
+        // a standards-compliant upstream that only sends the standard header still propagates,
+        // even though the binding is configured with a custom traceparent name
+        EventEnvelope[] captured = new EventEnvelope[1];
+        RetryPolicy policy = new RetryPolicy(0, 0, null);
+        KafkaConsumerBinding custom = binding().traceparentHeader("X-Bridge-Trace").build();
+        KafkaFlowConsumer consumer = new KafkaFlowConsumer(null, custom, 1000, policy, null) {
+            @Override
+            EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath) {
+                captured[0] = forward;
+                return new EventEnvelope().setStatus(200);
+            }
+        };
+        ConsumerRecord<String, byte[]> r = new ConsumerRecord<>("orders", 0, 7L, "k", "payload".getBytes(UTF_8));
+        r.headers().add("traceparent",
+                "00-3af7651916cd43dd8448eb211c80319c-d7ad6b7169203333-01".getBytes(UTF_8));
+
+        consumer.routeToFlow(r);
+
+        assertEquals("3af7651916cd43dd8448eb211c80319c", captured[0].getTraceId(),
+                "the standard traceparent remains a fallback when the custom name is absent");
+    }
+
+    @Test
     void subscribesWithPatternWhenConfigured() {
         MockConsumer<String, byte[]> mock = new MockConsumer<>("earliest");
         mock.updatePartitions("orders-1", List.of(new PartitionInfo("orders-1", 0, null, new Node[0], new Node[0])));

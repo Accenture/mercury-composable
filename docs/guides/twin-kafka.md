@@ -51,7 +51,7 @@ cluster's schema-id cache is isolated (Confluent global ids are only unique with
 | Producer template | `kafka-producer.properties` | `secondary-kafka-producer.properties` |
 | Consumer template | `kafka-consumer.properties` | `secondary-kafka-consumer.properties` |
 | Schema Registry (optional) | `schema.registry.url` + `schema-registry.properties` | `secondary.schema.registry.url` + `secondary-schema-registry.properties` |
-| Outbound header names | `kafka.correlation.id.header` / `kafka.trace.id.header` | `secondary.kafka.correlation.id.header` / `secondary.kafka.trace.id.header` (fall back to the globals) |
+| Outbound header names | `kafka.correlation.id.header` / `kafka.trace.id.header` / `kafka.traceparent.header` | `secondary.kafka.correlation.id.header` / `secondary.kafka.trace.id.header` / `secondary.kafka.traceparent.header` (fall back to the globals) |
 
 All secondary templates follow the same mechanics as the primary ones: loaded from the bundled
 classpath template by default, `${ENV_VAR:default}` substitution, and OAuth token endpoint URLs
@@ -162,12 +162,13 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 | `secondary.kafka.health.startup.grace` | falls back to `kafka.health.startup.grace` (`30s`) | Start-up grace for `secondary.kafka.health` (placeholder healthy status while the client warms up). |
 | `secondary.kafka.correlation.id.header` | falls back to `kafka.correlation.id.header` (`cid`) | Outbound correlation-id header on the secondary cluster. |
 | `secondary.kafka.trace.id.header` | falls back to `kafka.trace.id.header` (unset) | Optional outbound trace-id header on the secondary cluster. |
+| `secondary.kafka.traceparent.header` | falls back to `kafka.traceparent.header` (`traceparent`) | Header name carrying the full W3C trace context on the secondary cluster; when customized, the notification stamps the same value under both this and the standard name. |
 
 The retry/dead-letter tuning keys (`kafka.dlq.timeout.ms`, `kafka.flow.max.retries`,
 `kafka.flow.retry.backoff.ms`) are application-level policy shared by both adapters. Per-binding
 options in the secondary adapter YAML are identical to the [primary's](minimalist-kafka.md#adapter-yaml) -
-including `schema.enabled`, `dlq-topic`, and the `trace.id.header` / `correlation.id.header`
-impedance-matching overrides.
+including `schema.enabled`, `dlq-topic`, and the `trace.id.header` / `correlation.id.header` /
+`traceparent.header` impedance-matching overrides.
 
 ## Health check {#health}
 

@@ -340,6 +340,13 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         String traceparent = W3cTrace.format(traceId, spanId);
         if (traceparent != null) {
             http.set(W3cTrace.TRACEPARENT, traceparent);
+            // when a custom traceparent header name is configured (http.traceparent.header), stamp the
+            // same value under that name too, so the W3C trace context survives an intermediary that
+            // strips the standard header
+            String customTraceparent = HttpRouter.getTraceparentHeader();
+            if (!W3cTrace.TRACEPARENT.equalsIgnoreCase(customTraceparent)) {
+                http.set(customTraceparent, traceparent);
+            }
         }
         // propagate the business correlation-id downstream (unless the caller set the header explicitly)
         String businessCorrelationId = po.getMyCorrelationId();

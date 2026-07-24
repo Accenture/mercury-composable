@@ -948,7 +948,7 @@ in user code when operating at the HTTP boundary:
 | `X-Stream-Id` | Stream ID for Flux streaming responses |
 | `X-TTL` | Time-to-live for Flux stream consumers |
 | `X-Trace-Id` | Distributed trace identifier (default header name; configurable via `http.trace.id.header`) |
-| `traceparent` | W3C Trace Context (trace ID + parent span ID); takes precedence over `X-Trace-Id` inbound |
+| `traceparent` | W3C Trace Context (trace ID + parent span ID); takes precedence over `X-Trace-Id` inbound (default header name; configurable via `http.traceparent.header`) |
 | `X-Correlation-Id` | Business correlation-id (default header name; configurable via `http.correlation.id.header`) |
 | `X-Flow-Id` | Active flow ID |
 | `X-App-Instance` | Target application instance for Event-over-HTTP |

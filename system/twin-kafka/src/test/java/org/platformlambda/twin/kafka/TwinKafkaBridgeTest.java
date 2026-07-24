@@ -265,6 +265,9 @@ class TwinKafkaBridgeTest {
                 "trace-id stamped under the SECONDARY override name");
         assertTrue(String.valueOf(headerValue(rec, "traceparent")).contains(TRACE_B),
                 "W3C traceparent is stamped alongside the legacy trace-id header");
+        assertEquals(headerValue(rec, "traceparent"), headerValue(rec, "X-Global-Traceparent"),
+                "secondary.kafka.traceparent.header is unset, so the secondary notification falls back "
+                        + "to the primary kafka.traceparent.header and stamps the same W3C value under it");
         assertNull(headerValue(rec, "cid"),
                 "the global default name is not used when the secondary override is set");
     }

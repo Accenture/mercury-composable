@@ -46,8 +46,10 @@ public class RoutingEntry {
     private static final String UPLOAD = "upload";
     private static final String TRACING = "tracing";
     // optional per-endpoint overrides of the global http.trace.id.header / http.correlation.id.header
+    // / http.traceparent.header
     private static final String TRACE_ID_HEADER = "trace.id.header";
     private static final String CORRELATION_ID_HEADER = "correlation.id.header";
+    private static final String TRACEPARENT_HEADER = "traceparent.header";
     private static final String SERVICE = "service";
     private static final String FLOW = "flow";
     private static final String METHODS = "methods";
@@ -509,6 +511,7 @@ public class RoutingEntry {
         // nested maps, so the composite paths below resolve them correctly
         info.traceIdHeader = config.getProperty(REST+"["+idx+"]."+TRACE_ID_HEADER);
         info.correlationIdHeader = config.getProperty(REST+"["+idx+"]."+CORRELATION_ID_HEADER);
+        info.traceparentHeader = config.getProperty(REST+"["+idx+"]."+TRACEPARENT_HEADER);
         // drop query string when parsing URL
         if (url.contains("?")) {
             url = url.substring(0, url.indexOf('?'));

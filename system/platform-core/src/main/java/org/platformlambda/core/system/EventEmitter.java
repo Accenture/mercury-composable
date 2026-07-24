@@ -23,6 +23,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import org.platformlambda.automation.http.AsyncHttpClient;
+import org.platformlambda.automation.services.HttpRouter;
 import org.platformlambda.core.models.*;
 import org.platformlambda.core.services.TemporaryInbox;
 import org.platformlambda.core.util.AppConfigReader;
@@ -872,15 +873,7 @@ public class EventEmitter {
                 }
             }
         }
-        // propagate trace context: X-Trace-Id plus W3C "traceparent" (traceId + spanId) if available
-        String eventTraceId = event.getTraceId();
-        if (eventTraceId != null) {
-            req.setHeader(X_TRACE_ID, eventTraceId);
-            String traceParent = W3cTrace.format(eventTraceId, event.getSpanId());
-            if (traceParent != null) {
-                req.setHeader(W3cTrace.TRACEPARENT, traceParent);
-            }
-        }
+        setTraceHeaders(req, event);
         req.setUrl(url.getPath());
         req.setTargetHost(getTargetFromUrl(url));
         byte[] b = event.toBytes(httpEventFormat(headers));
@@ -897,6 +890,30 @@ public class EventEmitter {
             request.setTracePath(event.getTracePath());
         }
         return Future.future(promise -> submitAsyncRequest(promise, request, timeout));
+    }
+
+    /**
+     * Propagate the trace context of an event-over-HTTP call: X-Trace-Id plus the W3C "traceparent"
+     * (traceId + spanId) if available. When a custom traceparent header name is configured
+     * (http.traceparent.header), the same value is stamped under that name too, so the trace context
+     * survives an intermediary that strips the standard header.
+     *
+     * @param req the HTTP request to the peer's /api/event endpoint
+     * @param event the outgoing event carrying the current trace context
+     */
+    private void setTraceHeaders(AsyncHttpRequest req, EventEnvelope event) {
+        String eventTraceId = event.getTraceId();
+        if (eventTraceId != null) {
+            req.setHeader(X_TRACE_ID, eventTraceId);
+            String traceParent = W3cTrace.format(eventTraceId, event.getSpanId());
+            if (traceParent != null) {
+                req.setHeader(W3cTrace.TRACEPARENT, traceParent);
+                String customTraceparent = HttpRouter.getTraceparentHeader();
+                if (!W3cTrace.TRACEPARENT.equalsIgnoreCase(customTraceparent)) {
+                    req.setHeader(customTraceparent, traceParent);
+                }
+            }
+        }
     }
 
     private void submitAsyncRequest(Promise<EventEnvelope> promise, EventEnvelope request, long timeout) {
@@ -1011,15 +1028,7 @@ public class EventEmitter {
                 }
             }
         }
-        // propagate trace context: X-Trace-Id plus W3C "traceparent" (traceId + spanId) if available
-        String eventTraceId = event.getTraceId();
-        if (eventTraceId != null) {
-            req.setHeader(X_TRACE_ID, eventTraceId);
-            String traceParent = W3cTrace.format(eventTraceId, event.getSpanId());
-            if (traceParent != null) {
-                req.setHeader(W3cTrace.TRACEPARENT, traceParent);
-            }
-        }
+        setTraceHeaders(req, event);
         req.setUrl(url.getPath());
         req.setTargetHost(getTargetFromUrl(url));
         byte[] b = event.toBytes(httpEventFormat(headers));

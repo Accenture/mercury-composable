@@ -108,10 +108,11 @@ public class KafkaFlowAdapter implements AutoCloseable {
     private static final String SCHEMA = "schema";
     private static final String SCHEMA_ENABLED_FLAT = "schema.enabled";
     private static final String ENABLED = "enabled";
-    // Optional per-binding overrides of the global kafka.trace.id.header / kafka.correlation.id.header,
-    // for impedance matching with an upstream that uses its own header convention.
+    // Optional per-binding overrides of the global kafka.trace.id.header / kafka.correlation.id.header
+    // / kafka.traceparent.header, for impedance matching with an upstream that uses its own header convention.
     private static final String TRACE_ID_HEADER_FLAT = "trace.id.header";
     private static final String CORRELATION_ID_HEADER_FLAT = "correlation.id.header";
+    private static final String TRACEPARENT_HEADER_FLAT = "traceparent.header";
     private static final String DLQ_TOPIC = "dlq-topic";
     private static final String AUTO_COMMIT = "auto-commit";
     private static final String MAX_POLL_RECORDS = "max-poll-records";
@@ -184,7 +185,8 @@ public class KafkaFlowAdapter implements AutoCloseable {
                 .flowId(flowId).groupId(groupId).partition(partition).schemaEnabled(schemaEnabled)
                 .dlqTopic(dlqTopic).autoCommit(autoCommit).maxPollRecords(maxPollRecords)
                 .traceIdHeader(nestedText(entry, TRACE_ID_HEADER_FLAT))
-                .correlationIdHeader(nestedText(entry, CORRELATION_ID_HEADER_FLAT));
+                .correlationIdHeader(nestedText(entry, CORRELATION_ID_HEADER_FLAT))
+                .traceparentHeader(nestedText(entry, TRACEPARENT_HEADER_FLAT));
         KafkaConsumerBinding binding = (topicPattern != null ? builder.topicPattern(topicPattern)
                 : builder.topic(topic)).build();
         logBinding(label, binding);
@@ -238,7 +240,7 @@ public class KafkaFlowAdapter implements AutoCloseable {
 
     /** Log a one-line summary of a resolved consumer binding. */
     private void logBinding(String label, KafkaConsumerBinding binding) {
-        log.info("Kafka flow adapter binding: {} -> flow '{}' (consumer group '{}'{}{}{}{}{}{})",
+        log.info("Kafka flow adapter binding: {} -> flow '{}' (consumer group '{}'{}{}{}{}{}{}{})",
                 label, binding.flowId(), binding.groupId(),
                 binding.partition() != null ? ", pinned to partition " + binding.partition() : "",
                 binding.schemaEnabled() ? ", schema decode on" : "",
@@ -246,7 +248,9 @@ public class KafkaFlowAdapter implements AutoCloseable {
                 binding.autoCommit() ? ", auto-commit on" : "",
                 binding.traceIdHeader() != null ? ", trace-id header '" + binding.traceIdHeader() + "'" : "",
                 binding.correlationIdHeader() != null
-                        ? ", correlation-id header '" + binding.correlationIdHeader() + "'" : "");
+                        ? ", correlation-id header '" + binding.correlationIdHeader() + "'" : "",
+                binding.traceparentHeader() != null
+                        ? ", traceparent header '" + binding.traceparentHeader() + "'" : "");
     }
 
     /**
