@@ -370,18 +370,22 @@
 
 ## Open Threads
 
-- [ ] (release in flight — 2026-07-24) **v4.10.5 security patch — react-router CVE
-  remediation (both repos, lock-step).** Dependabot #16 on the Rust repo (react-router
-  7.18.1 RSC Mode CSRF Bypass, follow-up to CVE-2026-22030, patched 8.3.0; the Java twin
-  webapp carries the identical exposure). Remediation: react-router-dom is RETIRED upstream
-  at 7.18.1 (pins the vulnerable react-router exactly — why dependabot could not auto-fix);
-  v8 consolidated into the single react-router package, so both webapps now depend on
+- [x] (release in flight — 2026-07-24; CLOSED same day) **v4.10.5 security patch SHIPPED
+  AND PUBLISHED in lock-step (both repos) — react-router CVE remediation.** Dependabot #16
+  on the Rust repo (react-router 7.18.1 RSC Mode CSRF Bypass, follow-up to CVE-2026-22030,
+  patched 8.3.0; the Java twin webapp carried the identical exposure) — Eric CONFIRMED the
+  alert closed on release. Remediation: react-router-dom is RETIRED upstream at 7.18.1
+  (pins the vulnerable react-router exactly — why dependabot could not auto-fix); v8
+  consolidated into the single react-router package, so both webapps now depend on
   `react-router ^8.3.0` directly with import specifiers updated in 4 files (six stable
   declarative exports; React 19.2.8 already satisfies the >= 19.2.7 peer). Validation both
   webapps: npm audit 0, lockfile registry+integrity clean, 124 tests, resources/public
-  rebuilt via npm run release (Eric's instruction). Java branch chore/release-4.10.5
-  (fix `fb3c6efb` + bump), Rust same-name branch (fix `a2fcb26b`, prep delegated). Close
-  when tagged + published both repos.
+  rebuilt via npm run release (Eric's instruction). Java: PR #230, tag `v4.10.5` on squash
+  commit `4c82eae0` (verified before tagging), CI 7m14s + reactor 5:33. Rust: PR #180,
+  tag on merge `5ae307c2`, CI green (260 tests). Operational notes: a transient
+  GitHub web-UI 500 delayed PR creation (API was healthy; status page lagged); EMU
+  accounts CANNOT create PRs via API either (GraphQL + REST both 403) — web UI is the only
+  PR path. Sixth lock-step release of the 4.10 arc.
   <!-- id: thread-release-4-10-5 | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: working | origin: 2026-07-24-154543 -->
 
 - [x] (release in flight — 2026-07-24; CLOSED same day) **v4.10.4 SHIPPED AND PUBLISHED in
