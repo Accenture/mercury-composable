@@ -146,16 +146,24 @@ overrides never breaks OpenTelemetry-compliant callers. The full key reference l
 > `traceparent` and the shared header always carry the same trace id. Prefer migrating the gateway to
 > pass `traceparent` (and `X-Trace-Id`), then retiring the conflation.
 
-> **A renamed traceparent beats conflation for the gateway case.** The conflation above carries only
-> the trace **id**, so spans in different applications can be stitched by id but not **parented** across
-> the hop. Renaming the traceparent carrier (`http.traceparent.header=X-Trace-Context`) moves the *full*
-> W3C context — trace-id, parent span-id and flags — through the gateway under an allow-listed name, so
-> cross-application span parenting survives. Outbound calls stamp the same value under both the custom
-> and the standard name; inbound, a well-formed value under the custom name wins (an intermediary that
-> injects its own fresh `traceparent` cannot break the caller's chain) and the standard header remains a
-> fallback for standards-compliant callers. **The trade-off:** a renamed traceparent is invisible to
-> OpenTelemetry SDKs, service meshes and APM agents — treat it as an escape hatch for an intermediary
-> you cannot fix, configure both ends alike, and prefer fixing the gateway allow-list.
+> **The standard W3C `traceparent` is our position — use it.** It is the header OpenTelemetry
+> and the wider observability ecosystem interoperate on, and the framework implements it as the
+> default with zero configuration. The optional `traceparent.header` family below exists for
+> **backward compatibility with legacy systems only**; departure from the standard is
+> discouraged, because a renamed carrier is invisible to OpenTelemetry SDKs, service meshes and
+> APM agents, and every participant must be configured alike. Treat a custom name as a
+> temporary bridge and plan the migration back to the standard header.
+>
+> Within that constraint, **a renamed traceparent beats conflation for the gateway case.** The
+> conflation above carries only the trace **id**, so spans in different applications can be
+> stitched by id but not **parented** across the hop. Renaming the traceparent carrier
+> (`http.traceparent.header=X-Trace-Context`) moves the *full* W3C context — trace-id, parent
+> span-id and flags — through the gateway under an allow-listed name, so cross-application span
+> parenting survives. Outbound calls stamp the same value under both the custom and the
+> standard name; inbound, a well-formed value under the custom name wins (an intermediary that
+> injects its own fresh `traceparent` cannot break the caller's chain) and the standard header
+> remains a fallback for standards-compliant callers. The durable fix is always the gateway
+> allow-list — retire the custom name once it lands.
 
 ```yaml
 # rest.yaml - one endpoint serves a legacy caller that sends its own header names

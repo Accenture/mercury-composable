@@ -22,7 +22,7 @@
     { "field": "tracing", "required": false, "meaning": "true/false (default false) - enable distributed tracing" },
     { "field": "trace.id.header", "required": false, "meaning": "per-endpoint override of the global http.trace.id.header (default X-Trace-Id) - header name (quoted string) for a caller with its own trace-id header convention; a well-formed W3C traceparent still takes precedence" },
     { "field": "correlation.id.header", "required": false, "meaning": "per-endpoint override of the global http.correlation.id.header (default X-Correlation-Id) - header name (quoted string) for a caller with its own business correlation-id header convention" },
-    { "field": "traceparent.header", "required": false, "meaning": "per-endpoint override of the global http.traceparent.header (default traceparent) - header name (quoted string) carrying the full W3C trace context, for an intermediary that strips the standard name; a well-formed value under the custom name wins, standard traceparent remains a fallback" },
+    { "field": "traceparent.header", "required": false, "meaning": "per-endpoint override of the global http.traceparent.header (default traceparent) - header name (quoted string) carrying the full W3C trace context, for backward compatibility with a legacy intermediary ONLY (departure from the W3C/OTel standard is discouraged); a well-formed value under the custom name wins, standard traceparent remains a fallback" },
     { "field": "trust_all_cert", "required": false, "meaning": "true/false - HTTPS relay only" },
     { "field": "url_rewrite", "required": false, "meaning": "list of exactly two strings [from, to] - HTTP(S) relay only" }
   ],

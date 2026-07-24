@@ -92,7 +92,7 @@ consumer:
 | `max-poll-records` | no | Override the delivery mode's default poll batch size (1 for manual-commit, 500 for auto-commit). |
 | `correlation.id.header` | no | Per-binding override of the global `kafka.correlation.id.header` (default `cid`) — impedance matching for an upstream that publishes its own correlation-id header name (e.g. `X-Correlation-ID`). |
 | `trace.id.header` | no | Per-binding override of the global `kafka.trace.id.header` — a fallback trace-id source for an upstream that does not send a W3C `traceparent` (which always takes precedence). |
-| `traceparent.header` | no | Per-binding override of the global `kafka.traceparent.header` (default `traceparent`) — the header carrying the **full W3C trace context** for an upstream that uses its own name. A well-formed value under the custom name wins; the standard `traceparent` remains a fallback. |
+| `traceparent.header` | no | Per-binding override of the global `kafka.traceparent.header` (default `traceparent`) — the header carrying the **full W3C trace context**, for **backward compatibility with a legacy upstream only** (departure from the W3C/OTel standard is discouraged). A well-formed value under the custom name wins; the standard `traceparent` remains a fallback. |
 
 The file is read by `ConfigReader`, so **every value supports `${ENV_VAR:default}` substitution** — e.g.
 `group: '${KAFKA_CONSUMER_GROUP:sales-order-group}'`. A malformed entry (missing `topic`/`topic-pattern`/

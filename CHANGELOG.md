@@ -41,8 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    with the standard header as fallback for standards-compliant callers. Unlike the trace-id
    conflation workaround, the full W3C context (trace-id, parent span-id, flags) crosses the
    intermediary, so cross-application **span parenting** survives. Default behavior unchanged
-   (`traceparent`); a renamed carrier is invisible to OpenTelemetry-compliant tooling, so keep
-   the default unless an unfixable intermediary forces the rename.
+   (`traceparent`). **The standard W3C/OpenTelemetry `traceparent` remains the project's
+   position** — the optional family is for backward compatibility with legacy systems only,
+   and departure from the standard is discouraged (a renamed carrier is invisible to
+   OTel-compliant tooling); treat a custom name as a temporary bridge and plan the migration
+   back to the standard header.
 
 ---
 ## Version 4.10.3, 7/23/2026

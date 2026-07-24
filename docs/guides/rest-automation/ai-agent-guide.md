@@ -90,7 +90,9 @@ A traced endpoint serving a legacy caller that uses its own trace/correlation he
 `traceparent.header` keys override the global `http.trace.id.header` / `http.correlation.id.header` /
 `http.traceparent.header` names for this entry only; a well-formed W3C `traceparent` still takes
 precedence for the trace-id, and a well-formed value under a custom `traceparent.header` name wins
-with the standard `traceparent` as fallback):
+with the standard `traceparent` as fallback. These overrides are for backward compatibility with
+legacy systems only — the standard W3C/OTel `traceparent` needs no configuration and departing
+from it is discouraged):
 
 ```yaml
 rest:
