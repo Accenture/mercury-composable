@@ -2910,7 +2910,7 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 <tr>
 <td><code>secondary.kafka.traceparent.header</code></td>
 <td>falls back to <code>kafka.traceparent.header</code> (<code>traceparent</code>)</td>
-<td>Header name carrying the full W3C trace context on the secondary cluster; when customized, the notification stamps the same value under both this and the standard name.</td>
+<td>Header name carrying the full W3C trace context on the secondary cluster — for backward compatibility with a legacy convention only (prefer the standard <code>traceparent</code>); when customized, the notification stamps the same value under both this and the standard name.</td>
 </tr>
 </tbody>
 </table>

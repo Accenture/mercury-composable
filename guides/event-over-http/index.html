@@ -2900,7 +2900,8 @@ the event manager will make the "Event over HTTP" call to the target service.</p
           a HTTP-403 exception.</p>
 <p><em>Engine internals</em>: the relay stamps a reserved <code>x-event-api</code> header on the forwarded envelope as a
 recursion guard (so the receiving engine does not re-relay the event through its own declarative map).
-It is engine-internal — the worker removes it from a function's input header copy and filters it from
+It is engine-internal — the worker removes it (together with any transported <code>my_*</code> key) from a
+function's input header copy <em>and</em> from the delivered envelope's own header view, and filters it from
 returned response headers, so application code never sees or emits it.</p>
 </blockquote>
 <p>The demo below is a complete working example of this service abstraction.</p>

@@ -3106,7 +3106,7 @@ activate the inbound adapter. The outbound <code>simple.kafka.notification</code
 <tr>
 <td><code>traceparent.header</code></td>
 <td>no</td>
-<td>Per-binding override of the global <code>kafka.traceparent.header</code> (default <code>traceparent</code>) — the header carrying the <strong>full W3C trace context</strong> for an upstream that uses its own name. A well-formed value under the custom name wins; the standard <code>traceparent</code> remains a fallback.</td>
+<td>Per-binding override of the global <code>kafka.traceparent.header</code> (default <code>traceparent</code>) — the header carrying the <strong>full W3C trace context</strong>, for <strong>backward compatibility with a legacy upstream only</strong> (departure from the W3C/OTel standard is discouraged). The standard <code>traceparent</code> always wins; the custom name is read only when the standard is absent.</td>
 </tr>
 </tbody>
 </table>

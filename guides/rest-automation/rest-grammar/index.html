@@ -2739,7 +2739,7 @@
 <tr>
 <td><code>traceparent.header</code></td>
 <td>no</td>
-<td>per-endpoint override of the global <code>http.traceparent.header</code> (default <code>traceparent</code>) — the header carrying the full W3C trace context, for an intermediary that strips the standard name; a well-formed value under the custom name wins, with the standard <code>traceparent</code> as fallback</td>
+<td>per-endpoint override of the global <code>http.traceparent.header</code> (default <code>traceparent</code>) — the header carrying the full W3C trace context, for <strong>backward compatibility with a legacy intermediary only</strong> (departure from the W3C/OTel standard is discouraged); the standard <code>traceparent</code> always wins, and the custom name is read only when the standard is absent</td>
 </tr>
 <tr>
 <td><code>trust_all_cert</code></td>

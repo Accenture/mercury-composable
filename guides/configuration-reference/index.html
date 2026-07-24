@@ -6927,7 +6927,18 @@ the template, or set this key to <code>false</code> to opt out.</p>
 </tr>
 </tbody>
 </table>
-<p>HTTP header name carrying the <strong>W3C trace context</strong> (the full <code>traceparent</code> value: trace-id, parent span-id and flags). An <strong>escape hatch</strong> for an intermediary — typically an API gateway with a header allow-list — that strips the standard <code>traceparent</code> header and cannot be fixed promptly. When customized, outbound HTTP calls (the async HTTP client and Event-over-HTTP) stamp the same W3C value under <strong>both</strong> names, and inbound resolution reads the custom name first (a well-formed value under it wins, so an intermediary-injected standard <code>traceparent</code> cannot override the peer's context) with the standard header as fallback. Overridable per endpoint with <code>traceparent.header</code> in a rest.yaml entry. <strong>Caution:</strong> a renamed traceparent is invisible to standards-compliant tooling (OpenTelemetry SDKs, service meshes, APM agents) — keep the default unless an unfixable intermediary forces the rename, and configure both ends alike.</p>
+<p>HTTP header name carrying the <strong>W3C trace context</strong> (the full <code>traceparent</code> value: trace-id, parent span-id and flags). When customized, outbound HTTP calls (the async HTTP client and Event-over-HTTP) stamp the same W3C value under <strong>both</strong> names. Inbound, the <strong>standard <code>traceparent</code> always wins</strong> — the custom name is read only when the standard header is absent: a well-formed standard traceparent means the caller already speaks W3C/OTel, so a proprietary header alongside it is residual and safely ignored. Overridable per endpoint with <code>traceparent.header</code> in a rest.yaml entry.</p>
+<blockquote>
+<p><strong>Our position: use the standard.</strong> <code>traceparent</code> is the W3C Trace Context header that
+OpenTelemetry and the wider observability ecosystem interoperate on, and the framework
+implements it as the default with zero configuration. This optional setting exists for
+<strong>backward compatibility with legacy systems only</strong> — an intermediary (typically an API
+gateway with a header allow-list) or an upstream convention that cannot be fixed promptly.
+<strong>Departure from the standard is discouraged:</strong> a renamed carrier is invisible to
+standards-compliant tooling (OpenTelemetry SDKs, service meshes, APM agents) and every
+participant must be configured alike. Treat a custom name as a temporary bridge, and plan
+the migration back to the standard header (e.g. fixing the gateway allow-list).</p>
+</blockquote>
 <h3 id="kafkacorrelationidheader"><code>kafka.correlation.id.header</code><a class="headerlink" href="#kafkacorrelationidheader" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -6975,7 +6986,7 @@ the template, or set this key to <code>false</code> to opt out.</p>
 </tr>
 </tbody>
 </table>
-<p>Kafka message header name carrying the <strong>W3C trace context</strong> — the Kafka twin of <code>http.traceparent.header</code>, for middleware or an upstream convention that carries the W3C value under its own header name. When customized, <code>simple.kafka.notification</code> stamps the same value under <strong>both</strong> names, and the Kafka Flow Adapter reads the custom name first (a well-formed value under it wins) with the standard <code>traceparent</code> as fallback. Overridable per binding with <code>traceparent.header</code> in a kafka-flow-adapter.yaml entry.</p>
+<p>Kafka message header name carrying the <strong>W3C trace context</strong> — the Kafka twin of <code>http.traceparent.header</code>, for <strong>backward compatibility with legacy middleware or an upstream convention only</strong> (see the standards position under <code>http.traceparent.header</code> — departure from the standard <code>traceparent</code> name is discouraged). When customized, <code>simple.kafka.notification</code> stamps the same value under <strong>both</strong> names, and the Kafka Flow Adapter honors the <strong>standard <code>traceparent</code> first</strong> — the custom name is read only when the standard header is absent. Overridable per binding with <code>traceparent.header</code> in a kafka-flow-adapter.yaml entry.</p>
 <h3 id="kafkahealthtimeout"><code>kafka.health.timeout</code><a class="headerlink" href="#kafkahealthtimeout" title="Permanent link">&para;</a></h3>
 <table>
 <thead>

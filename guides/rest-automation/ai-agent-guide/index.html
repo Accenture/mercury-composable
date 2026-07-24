@@ -2630,9 +2630,10 @@
 <p>A traced endpoint serving a legacy caller that uses its own trace/correlation header names
 (per-endpoint impedance matching — the optional <code>trace.id.header</code> / <code>correlation.id.header</code> /
 <code>traceparent.header</code> keys override the global <code>http.trace.id.header</code> / <code>http.correlation.id.header</code> /
-<code>http.traceparent.header</code> names for this entry only; a well-formed W3C <code>traceparent</code> still takes
-precedence for the trace-id, and a well-formed value under a custom <code>traceparent.header</code> name wins
-with the standard <code>traceparent</code> as fallback):</p>
+<code>http.traceparent.header</code> names for this entry only; the standard W3C <code>traceparent</code> always takes
+precedence, and a custom <code>traceparent.header</code> name is read only when the standard header is
+absent. These overrides are for backward compatibility with legacy systems only — the standard
+W3C/OTel <code>traceparent</code> needs no configuration and departing from it is discouraged):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">rest</span><span class="p">:</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;legacy.orders&#39;</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;POST&#39;</span><span class="p p-Indicator">]</span>

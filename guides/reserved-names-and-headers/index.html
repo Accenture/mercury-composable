@@ -3064,9 +3064,12 @@ emitted outbound:</p>
   span ID is adopted, so the trace continues from the upstream caller (span lineage across HTTP boundaries).
   On outbound the system emits <code>traceparent</code> built from this hop's own span, alongside <code>X-Trace-Id</code>.
   The carrier <strong>name</strong> is configurable via <code>http.traceparent.header</code> / <code>kafka.traceparent.header</code>
-  (default <code>traceparent</code>) - an escape hatch for an intermediary that strips the standard header: the same
-  W3C value then travels under <strong>both</strong> names, and a well-formed value under the custom name wins inbound
-  (see <a href="../observability/#impedance-config">Observability</a>).</li>
+  (default <code>traceparent</code>) - for <strong>backward compatibility with legacy systems only</strong>, e.g. an intermediary
+  that strips the standard header: the same W3C value then travels under <strong>both</strong> names. Inbound, the
+  standard <code>traceparent</code> always wins; the custom name is read only when the standard is absent (its
+  presence means the caller already upgraded to the standard - a residual proprietary value is safely
+  ignored). Departure from the W3C/OpenTelemetry standard is discouraged - treat a custom name as a
+  temporary bridge (see <a href="../observability/#impedance-config">Observability</a>).</li>
 </ul>
 <p>The framework does <strong>not</strong> echo the trace ID (or the correlation-id) back to the HTTP client.</p>
 <blockquote>
