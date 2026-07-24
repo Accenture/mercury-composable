@@ -3062,7 +3062,11 @@ emitted outbound:</p>
 <li><strong>traceparent</strong> (W3C Trace Context) - carries the trace ID <em>and</em> the caller's span ID. On inbound it
   <strong>takes precedence</strong> over <code>X-Trace-Id</code>: the trace ID segment becomes the Mercury trace ID and the parent
   span ID is adopted, so the trace continues from the upstream caller (span lineage across HTTP boundaries).
-  On outbound the system emits <code>traceparent</code> built from this hop's own span, alongside <code>X-Trace-Id</code>.</li>
+  On outbound the system emits <code>traceparent</code> built from this hop's own span, alongside <code>X-Trace-Id</code>.
+  The carrier <strong>name</strong> is configurable via <code>http.traceparent.header</code> / <code>kafka.traceparent.header</code>
+  (default <code>traceparent</code>) - an escape hatch for an intermediary that strips the standard header: the same
+  W3C value then travels under <strong>both</strong> names, and a well-formed value under the custom name wins inbound
+  (see <a href="../observability/#impedance-config">Observability</a>).</li>
 </ul>
 <p>The framework does <strong>not</strong> echo the trace ID (or the correlation-id) back to the HTTP client.</p>
 <blockquote>

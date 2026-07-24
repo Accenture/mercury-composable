@@ -3103,6 +3103,11 @@ activate the inbound adapter. The outbound <code>simple.kafka.notification</code
 <td>no</td>
 <td>Per-binding override of the global <code>kafka.trace.id.header</code> — a fallback trace-id source for an upstream that does not send a W3C <code>traceparent</code> (which always takes precedence).</td>
 </tr>
+<tr>
+<td><code>traceparent.header</code></td>
+<td>no</td>
+<td>Per-binding override of the global <code>kafka.traceparent.header</code> (default <code>traceparent</code>) — the header carrying the <strong>full W3C trace context</strong> for an upstream that uses its own name. A well-formed value under the custom name wins; the standard <code>traceparent</code> remains a fallback.</td>
+</tr>
 </tbody>
 </table>
 <p>The file is read by <code>ConfigReader</code>, so <strong>every value supports <code>${ENV_VAR:default}</code> substitution</strong> — e.g.

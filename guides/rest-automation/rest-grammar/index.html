@@ -2737,6 +2737,11 @@
 <td>per-endpoint override of the global <code>http.correlation.id.header</code> (default <code>X-Correlation-Id</code>) — impedance matching for a caller that sends its own business correlation-id header name</td>
 </tr>
 <tr>
+<td><code>traceparent.header</code></td>
+<td>no</td>
+<td>per-endpoint override of the global <code>http.traceparent.header</code> (default <code>traceparent</code>) — the header carrying the full W3C trace context, for an intermediary that strips the standard name; a well-formed value under the custom name wins, with the standard <code>traceparent</code> as fallback</td>
+</tr>
+<tr>
 <td><code>trust_all_cert</code></td>
 <td>no</td>
 <td><code>true</code>/<code>false</code> — <strong>HTTPS relay only</strong></td>

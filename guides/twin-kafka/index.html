@@ -2745,8 +2745,8 @@ cluster's schema-id cache is isolated (Confluent global ids are only unique with
 </tr>
 <tr>
 <td>Outbound header names</td>
-<td><code>kafka.correlation.id.header</code> / <code>kafka.trace.id.header</code></td>
-<td><code>secondary.kafka.correlation.id.header</code> / <code>secondary.kafka.trace.id.header</code> (fall back to the globals)</td>
+<td><code>kafka.correlation.id.header</code> / <code>kafka.trace.id.header</code> / <code>kafka.traceparent.header</code></td>
+<td><code>secondary.kafka.correlation.id.header</code> / <code>secondary.kafka.trace.id.header</code> / <code>secondary.kafka.traceparent.header</code> (fall back to the globals)</td>
 </tr>
 </tbody>
 </table>
@@ -2907,13 +2907,18 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 <td>falls back to <code>kafka.trace.id.header</code> (unset)</td>
 <td>Optional outbound trace-id header on the secondary cluster.</td>
 </tr>
+<tr>
+<td><code>secondary.kafka.traceparent.header</code></td>
+<td>falls back to <code>kafka.traceparent.header</code> (<code>traceparent</code>)</td>
+<td>Header name carrying the full W3C trace context on the secondary cluster; when customized, the notification stamps the same value under both this and the standard name.</td>
+</tr>
 </tbody>
 </table>
 <p>The retry/dead-letter tuning keys (<code>kafka.dlq.timeout.ms</code>, <code>kafka.flow.max.retries</code>,
 <code>kafka.flow.retry.backoff.ms</code>) are application-level policy shared by both adapters. Per-binding
 options in the secondary adapter YAML are identical to the <a href="../minimalist-kafka/#adapter-yaml">primary's</a> -
-including <code>schema.enabled</code>, <code>dlq-topic</code>, and the <code>trace.id.header</code> / <code>correlation.id.header</code>
-impedance-matching overrides.</p>
+including <code>schema.enabled</code>, <code>dlq-topic</code>, and the <code>trace.id.header</code> / <code>correlation.id.header</code> /
+<code>traceparent.header</code> impedance-matching overrides.</p>
 <h2 id="health">Health check<a class="headerlink" href="#health" title="Permanent link">&para;</a></h2>
 <p>The module ships <strong><code>secondary.kafka.health</code></strong> - the twin of minimalist-kafka's
 <a href="../minimalist-kafka/#health"><code>kafka.health</code></a>, probing the secondary cluster through the secondary

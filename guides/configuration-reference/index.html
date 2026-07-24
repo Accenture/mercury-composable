@@ -2789,6 +2789,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#httptraceparentheader" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        http.traceparent.header
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#kafkacorrelationidheader" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2804,6 +2815,17 @@
     <span class="md-ellipsis">
       
         kafka.trace.id.header
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kafkatraceparentheader" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        kafka.traceparent.header
       
     </span>
   </a>
@@ -3607,10 +3629,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#secondarykafkacorrelationidheader-secondarykafkatraceidheader" class="md-nav__link">
+  <a href="#secondarykafkacorrelationidheader-secondarykafkatraceidheader-secondarykafkatraceparentheader" class="md-nav__link">
     <span class="md-ellipsis">
       
-        secondary.kafka.correlation.id.header / secondary.kafka.trace.id.header
+        secondary.kafka.correlation.id.header / secondary.kafka.trace.id.header / secondary.kafka.traceparent.header
       
     </span>
   </a>
@@ -4898,6 +4920,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#httptraceparentheader" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        http.traceparent.header
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#kafkacorrelationidheader" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4913,6 +4946,17 @@
     <span class="md-ellipsis">
       
         kafka.trace.id.header
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kafkatraceparentheader" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        kafka.traceparent.header
       
     </span>
   </a>
@@ -5716,10 +5760,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#secondarykafkacorrelationidheader-secondarykafkatraceidheader" class="md-nav__link">
+  <a href="#secondarykafkacorrelationidheader-secondarykafkatraceidheader-secondarykafkatraceparentheader" class="md-nav__link">
     <span class="md-ellipsis">
       
-        secondary.kafka.correlation.id.header / secondary.kafka.trace.id.header
+        secondary.kafka.correlation.id.header / secondary.kafka.trace.id.header / secondary.kafka.traceparent.header
       
     </span>
   </a>
@@ -6868,6 +6912,22 @@ the template, or set this key to <code>false</code> to opt out.</p>
 </tbody>
 </table>
 <p>HTTP header recognized (inbound, when no W3C <code>traceparent</code> is present) and emitted (outbound by the async HTTP client) as the trace-id. A well-formed <code>traceparent</code> always takes precedence inbound. Overridable per endpoint with <code>trace.id.header</code> in a rest.yaml entry.</p>
+<h3 id="httptraceparentheader"><code>http.traceparent.header</code><a class="headerlink" href="#httptraceparentheader" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code></td>
+<td><code>traceparent</code></td>
+</tr>
+</tbody>
+</table>
+<p>HTTP header name carrying the <strong>W3C trace context</strong> (the full <code>traceparent</code> value: trace-id, parent span-id and flags). An <strong>escape hatch</strong> for an intermediary — typically an API gateway with a header allow-list — that strips the standard <code>traceparent</code> header and cannot be fixed promptly. When customized, outbound HTTP calls (the async HTTP client and Event-over-HTTP) stamp the same W3C value under <strong>both</strong> names, and inbound resolution reads the custom name first (a well-formed value under it wins, so an intermediary-injected standard <code>traceparent</code> cannot override the peer's context) with the standard header as fallback. Overridable per endpoint with <code>traceparent.header</code> in a rest.yaml entry. <strong>Caution:</strong> a renamed traceparent is invisible to standards-compliant tooling (OpenTelemetry SDKs, service meshes, APM agents) — keep the default unless an unfixable intermediary forces the rename, and configure both ends alike.</p>
 <h3 id="kafkacorrelationidheader"><code>kafka.correlation.id.header</code><a class="headerlink" href="#kafkacorrelationidheader" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -6900,6 +6960,22 @@ the template, or set this key to <code>false</code> to opt out.</p>
 </tbody>
 </table>
 <p>Optional Kafka message header for the trace-id. Inbound: a fallback trace-id source when the upstream sends no W3C <code>traceparent</code> (which always takes precedence). Outbound: <code>simple.kafka.notification</code> stamps the current trace-id under this name alongside <code>traceparent</code>, for legacy downstream consumers. Unset = traceparent-only behavior (unchanged). Overridable per binding with <code>trace.id.header</code> in a kafka-flow-adapter.yaml entry.</p>
+<h3 id="kafkatraceparentheader"><code>kafka.traceparent.header</code><a class="headerlink" href="#kafkatraceparentheader" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code></td>
+<td><code>traceparent</code></td>
+</tr>
+</tbody>
+</table>
+<p>Kafka message header name carrying the <strong>W3C trace context</strong> — the Kafka twin of <code>http.traceparent.header</code>, for middleware or an upstream convention that carries the W3C value under its own header name. When customized, <code>simple.kafka.notification</code> stamps the same value under <strong>both</strong> names, and the Kafka Flow Adapter reads the custom name first (a well-formed value under it wins) with the standard <code>traceparent</code> as fallback. Overridable per binding with <code>traceparent.header</code> in a kafka-flow-adapter.yaml entry.</p>
 <h3 id="kafkahealthtimeout"><code>kafka.health.timeout</code><a class="headerlink" href="#kafkahealthtimeout" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -7888,7 +7964,7 @@ Kafka. See the <a href="../minimalist-kafka/">Kafka Flow Adapter guide</a>. The 
 </tbody>
 </table>
 <p><a href="../twin-kafka/#health">twin-kafka</a>: tunables for <code>secondary.kafka.health</code>, the secondary cluster's twin of <code>kafka.health</code>. A bridge lists both: <code>mandatory.health.dependencies=kafka.health, secondary.kafka.health</code>.</p>
-<h3 id="secondarykafkacorrelationidheader-secondarykafkatraceidheader"><code>secondary.kafka.correlation.id.header</code> / <code>secondary.kafka.trace.id.header</code><a class="headerlink" href="#secondarykafkacorrelationidheader-secondarykafkatraceidheader" title="Permanent link">&para;</a></h3>
+<h3 id="secondarykafkacorrelationidheader-secondarykafkatraceidheader-secondarykafkatraceparentheader"><code>secondary.kafka.correlation.id.header</code> / <code>secondary.kafka.trace.id.header</code> / <code>secondary.kafka.traceparent.header</code><a class="headerlink" href="#secondarykafkacorrelationidheader-secondarykafkatraceidheader-secondarykafkatraceparentheader" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -7903,7 +7979,7 @@ Kafka. See the <a href="../minimalist-kafka/">Kafka Flow Adapter guide</a>. The 
 </tr>
 </tbody>
 </table>
-<p><a href="../twin-kafka/">twin-kafka</a>: outbound header names on the secondary cluster when the two clusters follow different conventions.</p>
+<p><a href="../twin-kafka/">twin-kafka</a>: outbound header names on the secondary cluster when the two clusters follow different conventions. Each key falls back to its primary <code>kafka.*</code> setting when unset (<code>secondary.kafka.traceparent.header</code> → <code>kafka.traceparent.header</code> → <code>traceparent</code>).</p>
 <p>The Kafka <strong>connection and security</strong> settings (<code>bootstrap.servers</code>, <code>security.protocol</code>, <code>sasl.*</code>, <code>ssl.*</code>,
 <code>acks</code>, <code>auto.offset.reset</code>) live in the <code>kafka-producer.properties</code> / <code>kafka-consumer.properties</code> template
 files — not as <code>application.properties</code> keys — so any enterprise installation is configured by editing or
