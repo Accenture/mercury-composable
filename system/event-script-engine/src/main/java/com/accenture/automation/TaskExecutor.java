@@ -75,8 +75,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String OUTPUT_BODY = "output.body";
     private static final String OUTPUT_HEADER = "output.header";
     private static final String MODEL = "model";
-    // Read-only reserved header exposing the flow's correlation-id (model.cid) to every function task.
-    private static final String MY_CORRELATION_ID = "my_correlation_id";
     private static final String RESULT = "result";
     private static final String DATA_TYPE = "datatype";
     private static final String HEADER = "header";

@@ -257,8 +257,8 @@ tasks:
       "body": { "hello": "world" },
       "headers": {
         "x-flow-id": "event-over-http-declarative",
-        "my_trace_id": "51fb9a95cb6b47169dd83771283aebc2",
-        "my_trace_path": "POST /api/event/http/declarative",
+        "X-Correlation-Id": "51fb9a95cb6b47169dd83771283aebc2",
+        "user": "demo",
         "...": "..."
       },
       "instance": 4,
@@ -267,7 +267,12 @@ tasks:
     ```
 
     The `origin` identifies the application instance that actually executed the function —
-    the lambda-example, not the app you called.
+    the lambda-example, not the app you called. The echoed `headers` map is the clean
+    envelope-header view (`input.getHeaders()` on the `EventEnvelope`): the engine never
+    transports its read-only `my_*` metadata in the event, so none appears here — the
+    function reads that metadata from its injected input headers instead (the
+    `PostOffice` bootstrap). The `user` entry is session info added by the authentication
+    demo shown below.
 
 5. Look at both applications' logs: the trace context propagated across the HTTP hop
    automatically. Both apps log telemetry under the **same trace id**, the
@@ -298,8 +303,7 @@ curl -s -X POST -H "content-type: application/json" \
 The response has the same echo shape, and the trace continues across the hop the same way.
 This is why the echo function registers **two route names**: the programmatic endpoint calls
 the primary route `hello.world`, the declarative endpoint calls the alias
-`hello.declarative` — against a Java callee, the echoed `my_route` header shows which route
-(and therefore which pattern) served the call.
+`hello.declarative`.
 Choose declarative when the target address is deployment configuration (the usual case);
 choose programmatic when the code must compute or vary the target at runtime.
 

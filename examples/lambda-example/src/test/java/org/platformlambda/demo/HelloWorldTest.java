@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HelloWorldTest extends TestBase {
 
@@ -53,6 +54,20 @@ class HelloWorldTest extends TestBase {
         assertEquals(address, map.getElement("body.address"));
         assertEquals(telephone, map.getElement("body.telephone"));
         assertEquals(util.date2str(pojo.time), map.getElement("body.time"));
+    }
+
+    @Test
+    void sleepMsDelaysTheEcho() throws InterruptedException, ExecutionException {
+        // regression: the optional sleep_ms body key must actually delay the reply
+        // (it reads the envelope BODY - a silent no-op here once broke the timeout drives)
+        PostOffice po = new PostOffice("unit.test", "12346", "POST /api/hello/world");
+        EventEnvelope request = new EventEnvelope().setTo("hello.world")
+                .setBody(Map.of("sleep_ms", 1200));
+        long begin = System.currentTimeMillis();
+        EventEnvelope response = po.request(request, 8000).get();
+        long elapsed = System.currentTimeMillis() - begin;
+        assertEquals(200, response.getStatus());
+        assertTrue(elapsed >= 1100, "sleep_ms must delay the echo, elapsed=" + elapsed);
     }
 
     private static class DemoPoJo {

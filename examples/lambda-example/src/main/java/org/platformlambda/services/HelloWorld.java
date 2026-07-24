@@ -19,9 +19,8 @@
 package org.platformlambda.services;
 
 import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
-import org.platformlambda.core.models.LambdaFunction;
+import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
@@ -55,20 +54,24 @@ import java.util.Map;
  * The default settings are "peer.demo.host=127.0.0.1" and "peer.demo.port={$rest.server.port}"
  */
 @PreLoad(route="hello.world, hello.declarative", instances=10, isPrivate = false)
-public class HelloWorld implements LambdaFunction {
+public class HelloWorld implements TypedLambdaFunction<EventEnvelope, Map<String, Object>> {
     private static final Logger log = LoggerFactory.getLogger(HelloWorld.class);
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws AppException {
+    public Map<String, Object> handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
         var po = new PostOffice(headers, instance);
         log.info("echo #{} got a request", instance);
-        if (input instanceof Map<?, ?> map && map.get("sleep_ms") != null) {
+        if (input.getBody() instanceof Map<?, ?> map && map.get("sleep_ms") != null) {
             long ms = Utility.getInstance().str2long(String.valueOf(map.get("sleep_ms")));
             Utility.getInstance().sleep(Math.min(ms, 10000));
         }
         Map<String, Object> result = new HashMap<>();
-        result.put("body", input);
-        result.put("headers", headers);
+        // echo back the input payload
+        result.put("body", input.getBody());
+        // Note that 'headers' = input.getHeaders() plus metadata for tracing
+        // (metadata: my_route, my_trace_id, my_trace_path and my_correlation_id).
+        // Since we want to echo back the original request headers, we use the input.getHeaders() method.
+        result.put("headers", input.getHeaders());
         result.put("instance", instance);
         result.put("origin", Platform.getInstance().getOrigin());
         // forward event to hello.pojo so we can see the span-id of "hello.world" propagated to "hello.pojo"
