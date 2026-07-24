@@ -8,6 +8,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.10.3, 7/23/2026
+
+Patch release for field deployment, in lock-step with the Rust engine's v4.10.3. No engine
+behavior changes: demo hygiene and refreshed web assets on top of v4.10.2, consolidating
+the 4.10 line - the language-neutral wire format, telemetry presentation parity, the
+boundary-demarcation metadata contract, and the collection plugins - for the field's
+quality-gate pipeline.
+
+### Changed
+
+1. **The demo echo displays the clean envelope-header view (#225).** The lambda-example
+   echo consumes the EventEnvelope and echoes `input.getHeaders()` - a live proof that the
+   engine never transports its read-only `my_*` metadata in the event - while the injected
+   view remains available for PostOffice bootstrapping. The `sleep_ms` option is repaired
+   with a regression test asserting the delay, and the guide's sample responses reflect
+   the clean-echo shape.
+2. **Playground webapp dependencies refreshed from npm (#224).** Fresh registry resolution
+   within the existing semver ranges (69 minor/patch updates; react 19.2.8, vite 8.1.5,
+   vitest 4.1.10); npm audit clean, all 280 lockfile entries resolve to registry.npmjs.org
+   with integrity hashes; bundle rebuilt and redeployed.
+
+---
 ## Version 4.10.2, 7/23/2026
 
 Patch release in lock-step with the Rust engine's v4.10.2: the metadata contract and the

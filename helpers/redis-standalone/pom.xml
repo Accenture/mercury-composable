@@ -9,7 +9,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>redis-standalone</artifactId>
     <packaging>jar</packaging>
-    <version>4.10.2</version>
+    <version>4.10.3</version>
     <name>Standalone redis server for dev</name>
 
     <parent>
@@ -52,7 +52,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.10.2</version>
+            <version>4.10.3</version>
         </dependency>
 
         <!-- Bundles a real redis-server binary (macOS/Linux, arm64+amd64) and runs it as a subprocess,
