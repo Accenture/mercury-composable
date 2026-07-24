@@ -15,7 +15,7 @@
 - review_every:         10   # run a review this many sessions after the last one
 - continuity_max_facts:  30  # ...or when continuity.md holds more than this many decaying facts/threads
                              #    (the PRIMARY lean signal — a count, immune to verbosity & session velocity)
-- continuity_max_lines: 600  # ...or this many lines (a coarse backstop; raised from 300 in v4.24.0 — a mature,
+- continuity_max_lines: 1000 # ...or this many lines (a coarse backstop; raised from 300 in v4.24.0 — a mature,
                              #    actively-developed layer legitimately sits ~450–600 lines even when healthy).
                              #    Meant to be raised for a legitimately large/complex repo — a 29-module
                              #    reactor with many dense, active Key Decisions can sit well above 600 with

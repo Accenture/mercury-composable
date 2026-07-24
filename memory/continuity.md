@@ -16,8 +16,8 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-24 | agent: Claude Code (2026-07-24-154543)
-- **last_review:** 2026-07-13 | through 2026-07-13-001009.md
+- **last_session:** 2026-07-24 | agent: GitHub Copilot (2026-07-24-232712)
+- **last_review:** 2026-07-24 | through 2026-07-24-154543.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -87,7 +87,7 @@
   **Durable lessons:** field screenshots' naming conventions are client-identifiable — paraphrase
   generically in fixtures/commits/PRs; a flow needs ≥1 `end` task (a `sink` only terminates a side
   branch). See [[release-4-8-2-shipped]] for the prior cycle.
-  <!-- id: release-4-8-3-shipped | created: 2026-07-13 | last_used: 2026-07-21 | uses: 9 | tier: active | origin: 2026-07-13-170933 -->
+  <!-- id: release-4-8-3-shipped | created: 2026-07-13 | last_used: 2026-07-24 | uses: 10 | tier: active | origin: 2026-07-13-170933 -->
 
 - **Field trace-propagation report on 4.6.3 diagnosed (2026-07-13): not a framework bug.** A field team
   saw the traceId stop propagating between application endpoints after upgrading 4.4.11 → 4.6.3. Root
@@ -104,7 +104,7 @@
   hops) + new regression test `traceContinuesAcrossApplicationToApplicationHttpCall`
   (branch `test/trace-continuity-http-hop`, `DownstreamCaller` fixture + `/api/chain/probe`) proving
   traced app-to-app HTTP continuity over the real HTTP stack — a previously untested contract.
-  <!-- id: field-trace-propagation-4-6-3-diagnosis | created: 2026-07-13 | last_used: 2026-07-22 | uses: 3 | tier: active | origin: 2026-07-13-142021 -->
+  <!-- id: field-trace-propagation-4-6-3-diagnosis | created: 2026-07-13 | last_used: 2026-07-24 | uses: 5 | tier: active | origin: 2026-07-13-142021 -->
 
 - **Snyk gate rejected v4.8.2 in the field (2026-07-13) — remediated and MERGED (PR #168, merge
   commit `e21be449`, 30 poms; ships in v4.8.3; the team trials v4.7.1 for the trace fix meanwhile —
@@ -146,7 +146,7 @@
   version is a substring of a dependency version (classgraph 4.8.184 contains "4.8.1"), the perl
   sweep needs a digit lookahead `(?!\d)` — not every bump is naturally safe.
   See [[release-4-8-1-shipped]] for the prior cycle's facts.
-  <!-- id: release-4-8-2-shipped | created: 2026-07-12 | last_used: 2026-07-21 | uses: 3 | tier: archive-candidate | origin: 2026-07-13-014037 -->
+  <!-- id: release-4-8-2-shipped | created: 2026-07-12 | last_used: 2026-07-24 | uses: 5 | tier: active | origin: 2026-07-13-014037 -->
 
 - **Release 4.8.1 — SHIPPED 2026-07-11 (tag `v4.8.1` on merge commit `3d226c5b`; PRs #159-#161).**
   Maintenance release: dependency security updates (Jackson 2.22.1 closed dependabot/28; log4j2/
@@ -196,34 +196,7 @@
   from `model.cid` (engine-seeded), never from the raw record header; CompileFlows rejects data
   mappings that overwrite reserved model keys (cid/instance/flow/ttl). See [[release-4-7-0-shipped]]
   for the release-bump surface and prior caveats.
-  <!-- id: release-4-8-0-shipped | created: 2026-07-10 | last_used: 2026-07-14 | uses: 6 | tier: archive-candidate | origin: 2026-07-11-031930 -->
-
-- **Release 4.7.0 — SHIPPED 2026-07-08 (tag `v4.7.0` on merge commit `e41a20b7`; PRs #146 feature +
-  #147 bump).** Feature release: **MiniGraph `graph.task` skill** — a Task node invokes any composable
-  function (`@PreLoad` route) with Event Script style `input[]`/`output[]` mapping (`*` whole-body
-  sequential merge, `header.{name}`, PoJo auto-conversion, `for_each[]`+`concurrency` fork-join,
-  `exception=` routing); plus tutorial-13 (deployed graph + help topics) and playground UI bundle
-  refresh. **STRATEGIC (Eric): graph.task is intended to be the LAST built-in skill** — custom logic
-  now enters a graph as a composable function; flows/subgraphs (graph.extension) remain for
-  orchestration. **Durable caveats:** (1) **new-skill/tutorial checklist** — a shipped `help graph-*.md`
-  page MUST have a matching entry in `docs/guides/knowledge-graph/minigraph-commands.json` and the docs
-  mirror (skills-reference, command-reference matrix, index tables — "eight skills" counts); CI's
-  `scripts/check-minigraph-grammar.py` anti-drift gate fails the PR otherwise (caught live on PR #146);
-  (2) `help.md` topic index is hand-maintained — new skills/tutorials must be added there too;
-  (3) test-only tutorial graphs are numbered 1xx (tutorial-113/114) so deployed tutorials own the
-  canonical names. Release-bump surface and prior caveats unchanged — see [[release-4-6-2-shipped]].
-  **UPDATE 2026-07-09: v4.7.1 shipped the next day** (tag on merge commit `60716bf9`; PRs #150 feature +
-  #151 bump) — **minimalist-kafka Schema Registry OAuth 2.0**, closing the 4.6.3 field loose ends.
-  Durable facts: (1) **`schema-registry.properties` is the third client template** (verbatim pass-through
-  to the Confluent SR client; `schema.registry.url` stays in application.properties as the feature
-  switch — Eric: "layered approach that is a best practice"); (2) **OAuthUrlAllowList auto-registers
-  token endpoint URLs** on the JVM system property `org.apache.kafka.sasl.oauthbearer.allowed.urls`
-  at template-load time (merge/dedupe, never clobber) — BOTH the Kafka transport and the Confluent SR
-  OAuth provider validate against it (Confluent reuses Kafka's ConfigurationUtils.validateUrl);
-  (3) **CODE CONVENTION: prefer `ReentrantLock` over `synchronized`** in framework code
-  (virtual-thread friendly — Eric's review feedback); (4) EmbeddedSchemaRegistry has an opt-in OAuth
-  mode (HS256 token endpoint + Bearer enforcement) for authenticated registry tests.
-  <!-- id: release-4-7-0-shipped | created: 2026-07-08 | last_used: 2026-07-10 | uses: 2 | tier: archive-candidate | origin: 2026-07-08-224933 -->
+  <!-- id: release-4-8-0-shipped | created: 2026-07-10 | last_used: 2026-07-24 | uses: 8 | tier: active | origin: 2026-07-11-031930 -->
 
 - **Release 4.6.1 — security + maintenance patch on top of 4.6.0 (2026-07-06, branch `chore/release-4.6.1`,
   Claude Code).** 4.6.0 was already GitHub-released (tag `v4.6.0`, immutable); rather than recall/re-tag it,
@@ -325,22 +298,13 @@
   lock-step on both engines (with closely matching error messages — presentation parity extends
   to error text), or flows stop being portable. Precedent: the #220 collection plugins mirrored
   into the Rust v4.10.2.
-  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-07-24 | uses: 2 | tier: active | origin: 2026-07-23-145132 -->
+  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-07-24 | uses: 4 | tier: active | origin: 2026-07-23-145132 -->
 
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
-- **Worker-instance count encodes the concurrency pattern** (Eric, 2026-07-13): `instances=1` is the
-  deliberate "singleton" for ASYNCHRONOUS functions — it serializes processing to guarantee message
-  sequencing and lets the event system's back-pressure/overflow buffering absorb bursts. For
-  RPC-style (request-response) functions, seldom use a singleton: a blocked single worker can
-  DEADLOCK (callers await a reply while the only worker itself waits on something that needs another
-  invocation). Shared non-thread-safe resources inside a multi-worker function are guarded by a
-  `ReentrantLock`, not by dropping to one worker (kafka.health precedent: 5 workers, lock-confined
-  KafkaConsumer).
-  <!-- id: conv-instance-count-pattern | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: archive-candidate | origin: 2026-07-13-221521 -->
 - **Test config injection: use the EXACT config key as a System property, never a `${VAR}` reference
   set in `@BeforeAll`** (2026-07-14, from the second field Jenkins twin-kafka failure). Three facts
   interact: (1) `AppConfigReader` resolves `${VAR}` references ONCE when the singleton first loads;
@@ -467,7 +431,7 @@
   concurrent build on the same tree). Rust: PR #176, tag on merge `b3804a67`, CI green
   (252 tests). Fourth lock-step release of the arc: 4.10.0 interop → 4.10.1 presentation
   parity → 4.10.2 boundary demarcation → 4.10.3 field roll-up.
-  <!-- id: thread-release-4-10-3 | created: 2026-07-23 | last_used: 2026-07-24 | uses: 1 | tier: working | origin: 2026-07-24-023859 -->
+  <!-- id: thread-release-4-10-3 | created: 2026-07-23 | last_used: 2026-07-24 | uses: 1 | tier: active | origin: 2026-07-24-023859 -->
 
 - [x] (release in flight — 2026-07-23; CLOSED same day) **v4.10.2 SHIPPED AND PUBLISHED in
   lock-step (both repos).** Java: PR #222, tag `v4.10.2` on `61ddb772`, published. Rust:
@@ -518,7 +482,7 @@
   invisible, validating Eric's robustness hypothesis). **BOTH PRs MERGED 2026-07-23: Java #221
   (merge `a25d95d5`) + Rust #171 (merge `f86fbec2`), CI green both.** Remaining: the v4.10.2
   lock-step releases ([[thread-release-4-10-2]]). Relates [[conv-telemetry-presentation-parity]].
-  <!-- id: thread-metadata-injection-hardening | created: 2026-07-23 | last_used: 2026-07-24 | uses: 1 | tier: working | origin: 2026-07-23-211728 -->
+  <!-- id: thread-metadata-injection-hardening | created: 2026-07-23 | last_used: 2026-07-24 | uses: 1 | tier: active | origin: 2026-07-23-211728 -->
 
 - [x] (release in flight — 2026-07-23; CLOSED same day) **v4.10.1 SHIPPED via the normal
   flow (Java repo)** — tag `v4.10.1` on merge commit `9ae666df` (PR #218, CI green + local
@@ -546,7 +510,7 @@
   v4.10.1 releases published 2026-07-23 ([[thread-release-4-10-1]]) — the parity arc closed
   end to end: reference implementation → refactor → four-way empty diff → lock-step release.**
   Relates [[conv-telemetry-presentation-parity]].
-  <!-- id: thread-telemetry-parity-auth | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-23-145132 -->
+  <!-- id: thread-telemetry-parity-auth | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: active | origin: 2026-07-23-145132 -->
 
 - [x] (release in flight — 2026-07-22; CLOSED same day) **v4.10.0 SHIPPED via the normal flow** —
   tag `v4.10.0` on merge commit `af21e6f6` (PR #216, CI green + local full reactor), release
@@ -669,12 +633,6 @@
   <!-- id: thread-release-4-8-4-tag-deferred | created: 2026-07-13 | last_used: 2026-07-21 | uses: 3 | tier: archive-candidate | origin: 2026-07-13-230916 -->
 
 
-- [x] (release in flight — 2026-07-13; CLOSED same day) **v4.8.3 bumped for field pipeline test; TAG
-  DEFERRED.** The deferred-tag flow completed: field pipeline PASSED (Snyk + Sonar), the touch-up
-  round landed (#172-#175), and `v4.8.3` was tagged on merge commit `6696a76f` with release text
-  delivered. Closure recorded in [[release-4-8-3-shipped]].
-  <!-- id: thread-release-4-8-3-tag-deferred | created: 2026-07-13 | last_used: 2026-07-13 | uses: 1 | tier: archive-candidate | origin: 2026-07-13-142021 -->
-
 - [ ] (field support — 2026-07-13; ROOT CAUSE FOUND via Eric's devops screen share) **Trace-propagation
   report: the internal API gateway strips `traceparent` AND `X-Trace-Id` (neither on its allow-list);
   only `X-Correlation-Id` passes.** 4.4.11 "worked" because `trace.http.header=X-Correlation-Id, X-Trace-Id`
@@ -712,7 +670,7 @@
   hello.world span parented directly onto the traceparent's span id across the HTTP hop. Field runs this conflation short-term; gateway team has been ASKED (2026-07-14) to
   allow-list traceparent + X-Trace-Id at the gateway/Istio — Eric updates after the devops team
   tests in the cloud dev environment.
-  <!-- id: thread-field-trace-propagation-4-6-3 | created: 2026-07-13 | last_used: 2026-07-14 | uses: 5 | tier: working | origin: 2026-07-13-142021 -->
+  <!-- id: thread-field-trace-propagation-4-6-3 | created: 2026-07-13 | last_used: 2026-07-24 | uses: 7 | tier: working | origin: 2026-07-13-142021 -->
 
 - [ ] (P0–P5 code-complete — Claude Code, 2026-07-05, branch `feature/elastic-queue-file-fifo`; remaining = field canary → P4 retire-BDB) **Replace
   ElasticQueue's Berkeley DB spill tier with a portable file-backed segmented FIFO.** Full detail + rationale

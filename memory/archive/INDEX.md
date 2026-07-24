@@ -71,3 +71,6 @@
 - thread-release-4.6.1-field-scan — (COMPLETED 2026-07-10 review: v4.6.1 released 2026-07-06; field SCA + Snyk re-scans ran an… — completed and swept (2026-07-10 review): shipped in 4.6.x releases — 2026-Q3.md
 - thread-csfle-field-encryption — (COMPLETED 2026-07-10 review: CSFLE committed and shipped — CsfleLocalRoundTripTest + — completed and swept (2026-07-10 review): shipped in 4.6.x releases — 2026-Q3.md
 - release-4-6-2-shipped — Release 4.6.2 — SHIPPED 2026-07-07 (tag `v4.6.2` on merge commit `56ac1067`; PRs #140 reme… — faded after archive_window during 2026-07-13 review — 2026-Q3.md
+- release-4-7-0-shipped — Release 4.7.0 — SHIPPED 2026-07-08 (tag `v4.7.0` on merge commit `e41a20b7`; PRs #146 feat… — faded — 2026-Q3.md
+- conv-instance-count-pattern — Worker-instance count encodes the concurrency pattern (Eric, 2026-07-13): `instances=1` is… — faded — 2026-Q3.md
+- thread-release-4-8-3-tag-deferred — (release in flight — 2026-07-13; CLOSED same day) v4.8.3 bumped for field pipeline test; T… — faded — 2026-Q3.md
