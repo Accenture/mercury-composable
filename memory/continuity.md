@@ -391,8 +391,17 @@
   twin-kafka 9 (wire-level secondary→primary fallback assert). Docs: config-reference 3 new
   keys, observability table + "renamed traceparent beats conflation" note, rest-grammar +
   rest-automation.json + ai-agent-guide, minimalist/twin-kafka guides, reserved-names,
-  CHANGELOG Unreleased. Remaining: full reactor gate, Rust lock-step mirror
-  ([[conv-telemetry-presentation-parity]] — identical keys/precedence/log text), PR + release.
+  CHANGELOG Unreleased. **BOTH PRs MERGED 2026-07-24 (Java #227 merge `47e948ef`, CI 7m40s;
+  Rust #177 merge `e99013cb`, 257 tests) and the pre-release ce_traceparent interop drive
+  PASSED in full** (gateway simulation: W3C value supplied ONLY under the custom name; edge
+  adoption + cross-language span parenting both directions; wire-level dual stamp both
+  engines; report round appended to docs/test-reports/event-over-http-interop.md in both
+  repos). **Findings queued for a follow-up hygiene round (pre-existing, not the feature):**
+  both programmatic demo tasks transport their injected my_* view (accidental-copy
+  anti-pattern, request side); the engines sanitize different subsets at the /api/event door
+  (Java delivers my_correlation_id / strips route+trace keys, Rust the inverse + strips
+  x-event-api); Rust wire nits (duplicate trace headers, x-correlation-id on /api/event,
+  missing traceparent-name startup log). Remaining: release (Eric gates; feature = minor bump).
   <!-- id: thread-traceparent-header-config | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: working | origin: 2026-07-24-154543 -->
 
 - [x] (release in flight — 2026-07-23; CLOSED same day) **v4.10.3 SHIPPED AND PUBLISHED in
