@@ -412,6 +412,12 @@
   ingress now mirrors). **Final matrix: ALL EIGHT ECHOES IDENTICAL after normalization** —
   report Resolution subsection in both repos. Java branch fix/interop-header-hygiene
   (stacked on the report branch); Rust same-name branch (33fba853 + 7e22af9a, 260 tests).
+  **Standards position stated in all docs (Eric's ruling): W3C/OTel traceparent is the
+  position; traceparent.header = backward compat with legacy systems ONLY; departure
+  discouraged. Final ruling (SUPERSEDES design point 2): inbound precedence = STANDARD
+  traceparent always wins, custom name read only when standard absent (presence of the
+  standard means the legacy system already upgraded; proprietary value is residual). Both
+  engines flipped in lock-step, regressions inverted, report carries the refinement note.**
   Remaining: v4.10.4 release prep both repos (Eric gates).
   <!-- id: thread-traceparent-header-config | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: working | origin: 2026-07-24-154543 -->
 

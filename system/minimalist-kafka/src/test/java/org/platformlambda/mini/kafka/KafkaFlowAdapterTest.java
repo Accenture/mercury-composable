@@ -174,22 +174,39 @@ class KafkaFlowAdapterTest {
     void adapterAdoptsTraceContextFromCustomHeaderName() throws Exception {
         KafkaSinkTask.RECEIVED.clear();
         // inbound impedance matching: an upstream carries W3C trace context ONLY under the custom
-        // name (middleware stripped the standard header); the adapter adopts it - and when an
-        // intermediary injects its own standard traceparent, the custom name still wins
+        // name (legacy middleware stripped the standard header); the adapter falls back to it
         String customTraceId = "aaaa2222333344445555666677778888";
-        String injectedTraceId = "bbbb2222333344445555666677778888";
         Map<String, byte[]> recordHeaders = new HashMap<>();
         recordHeaders.put("x-kafka-trace",
                 W3cTrace.format(customTraceId, "aaaabbbbccccdddd").getBytes(StandardCharsets.UTF_8));
-        recordHeaders.put(W3cTrace.TRACEPARENT,
-                W3cTrace.format(injectedTraceId, "ddddccccbbbbaaaa").getBytes(StandardCharsets.UTF_8));
         KafkaRuntime.publisher().publishSync(TOPIC, null, recordHeaders,
                 "{\"hello\":\"custom\"}".getBytes(StandardCharsets.UTF_8), 10000);
 
         Map<String, Object> received = KafkaSinkTask.RECEIVED.poll(25, TimeUnit.SECONDS);
         assertNotNull(received, "the sink flow should receive the message");
         assertEquals(customTraceId, received.get("traceId"),
-                "a well-formed value under the custom traceparent name wins over the standard header");
+                "the custom traceparent name delivers the context when the standard header is absent");
+    }
+
+    @Test
+    void standardTraceparentWinsOverCustomHeaderName() throws Exception {
+        KafkaSinkTask.RECEIVED.clear();
+        // the standards position: a well-formed standard traceparent means the upstream already
+        // speaks W3C/OTel - a residual proprietary header alongside it is safely ignored
+        String residualTraceId = "aaaa3333444455556666777788889999";
+        String standardTraceId = "bbbb3333444455556666777788889999";
+        Map<String, byte[]> recordHeaders = new HashMap<>();
+        recordHeaders.put("x-kafka-trace",
+                W3cTrace.format(residualTraceId, "aaaabbbbccccdddd").getBytes(StandardCharsets.UTF_8));
+        recordHeaders.put(W3cTrace.TRACEPARENT,
+                W3cTrace.format(standardTraceId, "ddddccccbbbbaaaa").getBytes(StandardCharsets.UTF_8));
+        KafkaRuntime.publisher().publishSync(TOPIC, null, recordHeaders,
+                "{\"hello\":\"standard\"}".getBytes(StandardCharsets.UTF_8), 10000);
+
+        Map<String, Object> received = KafkaSinkTask.RECEIVED.poll(25, TimeUnit.SECONDS);
+        assertNotNull(received, "the sink flow should receive the message");
+        assertEquals(standardTraceId, received.get("traceId"),
+                "the standard W3C traceparent wins; the custom name is a fallback only");
     }
 
     @Test

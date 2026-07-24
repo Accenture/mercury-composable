@@ -36,9 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    an intermediary (e.g. an API-gateway header allow-list) that strips the standard W3C header:
    outbound calls (async HTTP client, Event-over-HTTP, `simple.kafka.notification` and its
    secondary twin) stamp the same W3C value under **both** names, and inbound resolution (REST
-   automation, Kafka Flow Adapter) reads the custom name first — a well-formed value under it
-   wins, so an intermediary-injected standard `traceparent` cannot override the peer's context —
-   with the standard header as fallback for standards-compliant callers. Unlike the trace-id
+   automation, Kafka Flow Adapter) honors the **standard `traceparent` first** — the custom
+   name is read only when the standard header is absent, because a well-formed standard
+   traceparent means the caller already speaks W3C/OTel and a residual proprietary header is
+   safely ignored. Unlike the trace-id
    conflation workaround, the full W3C context (trace-id, parent span-id, flags) crosses the
    intermediary, so cross-application **span parenting** survives. Default behavior unchanged
    (`traceparent`). **The standard W3C/OpenTelemetry `traceparent` remains the project's

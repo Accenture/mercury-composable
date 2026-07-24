@@ -88,11 +88,10 @@ rest:
 A traced endpoint serving a legacy caller that uses its own trace/correlation header names
 (per-endpoint impedance matching — the optional `trace.id.header` / `correlation.id.header` /
 `traceparent.header` keys override the global `http.trace.id.header` / `http.correlation.id.header` /
-`http.traceparent.header` names for this entry only; a well-formed W3C `traceparent` still takes
-precedence for the trace-id, and a well-formed value under a custom `traceparent.header` name wins
-with the standard `traceparent` as fallback. These overrides are for backward compatibility with
-legacy systems only — the standard W3C/OTel `traceparent` needs no configuration and departing
-from it is discouraged):
+`http.traceparent.header` names for this entry only; the standard W3C `traceparent` always takes
+precedence, and a custom `traceparent.header` name is read only when the standard header is
+absent. These overrides are for backward compatibility with legacy systems only — the standard
+W3C/OTel `traceparent` needs no configuration and departing from it is discouraged):
 
 ```yaml
 rest:

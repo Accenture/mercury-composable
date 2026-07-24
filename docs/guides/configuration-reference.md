@@ -501,7 +501,7 @@ HTTP header recognized (inbound, when no W3C `traceparent` is present) and emitt
 |------|---------|
 | `String` | `traceparent` |
 
-HTTP header name carrying the **W3C trace context** (the full `traceparent` value: trace-id, parent span-id and flags). When customized, outbound HTTP calls (the async HTTP client and Event-over-HTTP) stamp the same W3C value under **both** names, and inbound resolution reads the custom name first (a well-formed value under it wins, so an intermediary-injected standard `traceparent` cannot override the peer's context) with the standard header as fallback. Overridable per endpoint with `traceparent.header` in a rest.yaml entry.
+HTTP header name carrying the **W3C trace context** (the full `traceparent` value: trace-id, parent span-id and flags). When customized, outbound HTTP calls (the async HTTP client and Event-over-HTTP) stamp the same W3C value under **both** names. Inbound, the **standard `traceparent` always wins** — the custom name is read only when the standard header is absent: a well-formed standard traceparent means the caller already speaks W3C/OTel, so a proprietary header alongside it is residual and safely ignored. Overridable per endpoint with `traceparent.header` in a rest.yaml entry.
 
 > **Our position: use the standard.** `traceparent` is the W3C Trace Context header that
 > OpenTelemetry and the wider observability ecosystem interoperate on, and the framework
@@ -535,7 +535,7 @@ Optional Kafka message header for the trace-id. Inbound: a fallback trace-id sou
 |------|---------|
 | `String` | `traceparent` |
 
-Kafka message header name carrying the **W3C trace context** — the Kafka twin of `http.traceparent.header`, for **backward compatibility with legacy middleware or an upstream convention only** (see the standards position under `http.traceparent.header` — departure from the standard `traceparent` name is discouraged). When customized, `simple.kafka.notification` stamps the same value under **both** names, and the Kafka Flow Adapter reads the custom name first (a well-formed value under it wins) with the standard `traceparent` as fallback. Overridable per binding with `traceparent.header` in a kafka-flow-adapter.yaml entry.
+Kafka message header name carrying the **W3C trace context** — the Kafka twin of `http.traceparent.header`, for **backward compatibility with legacy middleware or an upstream convention only** (see the standards position under `http.traceparent.header` — departure from the standard `traceparent` name is discouraged). When customized, `simple.kafka.notification` stamps the same value under **both** names, and the Kafka Flow Adapter honors the **standard `traceparent` first** — the custom name is read only when the standard header is absent. Overridable per binding with `traceparent.header` in a kafka-flow-adapter.yaml entry.
 
 ### `kafka.health.timeout`
 

@@ -596,21 +596,23 @@ public class HttpRouter {
     }
 
     /**
-     * Parse the inbound W3C trace context from the effective traceparent header name (per-endpoint
-     * 'traceparent.header' in rest.yaml, else the global http.traceparent.header, default "traceparent").
-     * A well-formed value under the custom name wins - an intermediary may inject its own standard
-     * traceparent, which must not override the peer's context - while the standard header remains a
-     * fallback so standards-compliant callers still propagate.
+     * Parse the inbound W3C trace context. The standard "traceparent" header always wins; the
+     * custom name (per-endpoint 'traceparent.header' in rest.yaml, else the global
+     * http.traceparent.header) is read only when the standard header is absent or malformed.
+     * Rationale: a well-formed standard traceparent means the caller already speaks the
+     * W3C/OpenTelemetry standard - a proprietary header alongside it is residual and safely ignored.
      *
      * @param request HTTP
      * @param route the assigned route
      * @return a 2-element array of {trace-id, parent-span-id}, or an empty array when absent/invalid
      */
     private String[] parseInboundTraceparent(HttpServerRequest request, AssignedRoute route) {
-        String name = route.info.traceparentHeader != null ? route.info.traceparentHeader : traceparentHeader;
-        String[] parsed = W3cTrace.parse(request.getHeader(name));
-        if (parsed.length == 0 && !W3cTrace.TRACEPARENT.equalsIgnoreCase(name)) {
-            parsed = W3cTrace.parse(request.getHeader(W3cTrace.TRACEPARENT));
+        String[] parsed = W3cTrace.parse(request.getHeader(W3cTrace.TRACEPARENT));
+        if (parsed.length == 0) {
+            String name = route.info.traceparentHeader != null ? route.info.traceparentHeader : traceparentHeader;
+            if (!W3cTrace.TRACEPARENT.equalsIgnoreCase(name)) {
+                parsed = W3cTrace.parse(request.getHeader(name));
+            }
         }
         return parsed;
     }
