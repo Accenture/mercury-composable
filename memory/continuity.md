@@ -370,6 +370,20 @@
 
 ## Open Threads
 
+- [ ] (release in flight — 2026-07-24) **v4.10.5 security patch — react-router CVE
+  remediation (both repos, lock-step).** Dependabot #16 on the Rust repo (react-router
+  7.18.1 RSC Mode CSRF Bypass, follow-up to CVE-2026-22030, patched 8.3.0; the Java twin
+  webapp carries the identical exposure). Remediation: react-router-dom is RETIRED upstream
+  at 7.18.1 (pins the vulnerable react-router exactly — why dependabot could not auto-fix);
+  v8 consolidated into the single react-router package, so both webapps now depend on
+  `react-router ^8.3.0` directly with import specifiers updated in 4 files (six stable
+  declarative exports; React 19.2.8 already satisfies the >= 19.2.7 peer). Validation both
+  webapps: npm audit 0, lockfile registry+integrity clean, 124 tests, resources/public
+  rebuilt via npm run release (Eric's instruction). Java branch chore/release-4.10.5
+  (fix `fb3c6efb` + bump), Rust same-name branch (fix `a2fcb26b`, prep delegated). Close
+  when tagged + published both repos.
+  <!-- id: thread-release-4-10-5 | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: working | origin: 2026-07-24-154543 -->
+
 - [x] (release in flight — 2026-07-24; CLOSED same day) **v4.10.4 SHIPPED AND PUBLISHED in
   lock-step (both repos) — standards-first traceparent carrier + interop header hygiene.**
   Java: PR #229, tag `v4.10.4` on squash commit `0125c17b` (verified before tagging), CI

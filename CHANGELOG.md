@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.10.5, 7/24/2026
+
+Security patch in lock-step with the Rust engine's v4.10.5.
+
+### Security
+
+1. **Playground webapp migrated to react-router 8.3.0.** Dependabot flagged the transitive
+   `react-router` 7.18.1 (RSC Mode CSRF Bypass, a follow-up to CVE-2026-22030; affected
+   `>= 7.12.0, < 8.3.0`). `react-router-dom` was retired by upstream at 7.18.1 — it pins
+   the vulnerable version exactly — so the remediation is React Router's v8 package
+   consolidation: the webapp now depends on `react-router` directly, with the import
+   specifier updated in four source files (the named exports are the stable declarative
+   core, unchanged). Validation: `npm audit` reports 0 vulnerabilities; all lockfile
+   entries resolve to registry.npmjs.org with integrity hashes; all 124 webapp tests pass;
+   the production bundle was rebuilt and redeployed.
+
+---
 ## Version 4.10.4, 7/24/2026
 
 Patch release in lock-step with the Rust engine's v4.10.4. Two themes, both validated by a
