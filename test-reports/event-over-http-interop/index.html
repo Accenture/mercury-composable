@@ -2846,7 +2846,9 @@ Rust at <a href="https://github.com/Accenture/mercury/pull/167">PR #167</a>.</p>
   application instance that actually executed the function — in the other language.</li>
 <li>Java callee: the echoed <code>my_route</code> header discriminates the pattern —
   <code>hello.declarative</code> (declarative) vs <code>hello.world</code> (programmatic) — demonstrating why
-  the echo function registers two route names.</li>
+  the echo function registers two route names. (The demo echo has since been changed to
+  display the clean envelope-header view, so the injected metadata no longer appears in
+  its output; the two route names remain.)</li>
 </ul>
 <h2 id="results-trace-continuity">Results — trace continuity<a class="headerlink" href="#results-trace-continuity" title="Permanent link">&para;</a></h2>
 <p>Distributed traces were inspected at the individual span level in both applications' logs.</p>

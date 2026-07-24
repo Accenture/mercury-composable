@@ -2983,8 +2983,8 @@ routing file is turned on and the peer address is externalized:</p>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="nt">&quot;body&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;hello&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;world&quot;</span><span class="w"> </span><span class="p">},</span>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="nt">&quot;headers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span><span class="nt">&quot;x-flow-id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;event-over-http-declarative&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">    </span><span class="nt">&quot;my_trace_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;51fb9a95cb6b47169dd83771283aebc2&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">    </span><span class="nt">&quot;my_trace_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;POST /api/event/http/declarative&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">    </span><span class="nt">&quot;X-Correlation-Id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;51fb9a95cb6b47169dd83771283aebc2&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">    </span><span class="nt">&quot;user&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;demo&quot;</span><span class="p">,</span>
 <a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">    </span><span class="nt">&quot;...&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span>
 <a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">  </span><span class="p">},</span>
 <a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">  </span><span class="nt">&quot;instance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
@@ -2992,7 +2992,12 @@ routing file is turned on and the peer address is externalized:</p>
 <a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="p">}</span>
 </code></pre></div>
 <p>The <code>origin</code> identifies the application instance that actually executed the function —
-the lambda-example, not the app you called.</p>
+the lambda-example, not the app you called. The echoed <code>headers</code> map is the clean
+envelope-header view (<code>input.getHeaders()</code> on the <code>EventEnvelope</code>): the engine never
+transports its read-only <code>my_*</code> metadata in the event, so none appears here — the
+function reads that metadata from its injected input headers instead (the
+<code>PostOffice</code> bootstrap). The <code>user</code> entry is session info added by the authentication
+demo shown below.</p>
 </li>
 <li>
 <p>Look at both applications' logs: the trace context propagated across the HTTP hop
@@ -3019,8 +3024,7 @@ the PostOffice request API — so <code>hello.world</code> needs <strong>no entr
 <p>The response has the same echo shape, and the trace continues across the hop the same way.
 This is why the echo function registers <strong>two route names</strong>: the programmatic endpoint calls
 the primary route <code>hello.world</code>, the declarative endpoint calls the alias
-<code>hello.declarative</code> — against a Java callee, the echoed <code>my_route</code> header shows which route
-(and therefore which pattern) served the call.
+<code>hello.declarative</code>.
 Choose declarative when the target address is deployment configuration (the usual case);
 choose programmatic when the code must compute or vary the target at runtime.</p>
 <h3 id="authentication-the-eventapiauth-demo">Authentication: the event.api.auth demo<a class="headerlink" href="#authentication-the-eventapiauth-demo" title="Permanent link">&para;</a></h3>
