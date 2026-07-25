@@ -8,6 +8,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.10.6, 7/24/2026
+
+Code-quality patch release: resolves all 5 SonarQube findings reported by an enterprise
+quality-gate scan of v4.10.4 (2 MEDIUM, 3 HIGH). Every change is behavior-preserving; no
+functional changes.
+
+### Changed
+
+1. **Prose comments reworded so they no longer pattern-match as commented-out code (#231).**
+   `HttpRouter.java` and `KafkaFlowConsumer.java` each carried a comment ending in a stray
+   trailing semicolon — a copy-edit leftover that Sonar's heuristic (java:S125) mistakes
+   for a disabled line of code. Both reworded as plain sentences; no code changed.
+2. **Cognitive complexity reduced by extracting focused helpers (#231).**
+   `InboxBase.recordTrace` (17→15, split into `getTraceMetrics` + `setTraceStatus` with an
+   early-return guard clause), `AsyncHttpResponse.handleEvent` (17→15, guard-clause early
+   returns replacing nested `if` blocks, plus an extracted `setBusinessCorrelationIdHeader`),
+   and `AsyncHttpClient.updateHttpHeaders` (16→15, split into five single-purpose helpers:
+   `setContentLengthHeader`, `applyRequestAndSessionHeaders`, `applyTraceHeaders`,
+   `applyBusinessCorrelationId`, `setCookies`). Regression-verified: full reactor build
+   green, plus a live Java-to-Java Event-over-HTTP interop drive (both the declarative and
+   programmatic calling patterns) confirming distributed-trace span propagation and
+   business correlation-id echo are unchanged — zero duplicate spans, zero dangling
+   `parent_span_id`s across 17 span records.
+
+---
 ## Version 4.10.5, 7/24/2026
 
 Security patch in lock-step with the Rust engine's v4.10.5.
