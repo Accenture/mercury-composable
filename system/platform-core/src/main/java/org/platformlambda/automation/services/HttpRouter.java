@@ -931,7 +931,7 @@ public class HttpRouter {
             event.setTo(requestEvent.primary).setFrom(HTTP_REQUEST)
                     .setCorrelationId(requestEvent.requestId).setBody(requestEvent.httpRequest)
                     .setReplyTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
-            // carry the business correlation-id on the engine-managed envelope tag (never a header);
+            // Business correlation-id is carried on the engine-managed envelope tag, never as a header.
             // the worker injects my_correlation_id into the target function's input copy at delivery
             if (requestEvent.getBusinessCorrelationId() != null) {
                 event.addTag(EventEmitter.BUSINESS_CID_TAG, requestEvent.getBusinessCorrelationId());

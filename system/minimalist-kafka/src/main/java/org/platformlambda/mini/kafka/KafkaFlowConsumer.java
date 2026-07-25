@@ -127,8 +127,8 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private static final String GLOBAL_TRACE_ID_HEADER = AppConfigReader.getInstance()
             .getProperty("kafka.trace.id.header");
     // Global inbound traceparent header name (default "traceparent"): impedance matching for an upstream
-    // that carries W3C trace context under its own header name. The standard traceparent always wins;
-    // the custom name is read only when the standard header is absent.
+    // that carries W3C trace context under its own header name. The standard traceparent always wins
+    // and the custom name is read only when the standard header is absent.
     private static final String GLOBAL_TRACEPARENT_HEADER = AppConfigReader.getInstance()
             .getProperty("kafka.traceparent.header", W3cTrace.TRACEPARENT);
 

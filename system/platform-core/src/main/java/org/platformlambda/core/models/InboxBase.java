@@ -73,47 +73,57 @@ public abstract class InboxBase {
 
     protected void recordTrace(InboxMetadata md) {
         var service = trimOrigin(md.to);
-        if (!getSkipTracing().contains(service)) {
-            try {
-                Map<String, Object> payload = new HashMap<>();
-                Map<String, Object> metrics = new HashMap<>();
-                metrics.put("origin", Platform.getInstance().getOrigin());
-                metrics.put("id", md.traceId);
-                metrics.put("service", service);
-                if (md.from != null) {
-                    metrics.put("from", trimOrigin(md.from));
-                }
-                // span lineage of the RPC: span_id is the responder's own span (present only
-                // for a direct RPC - see spanIdFromResponder) and parent_span_id is the
-                // caller's span carried on the outbound request, so the round-trip record
-                // chains like any worker-emitted trace record
-                if (md.spanId != null) {
-                    metrics.put("span_id", md.spanId);
-                }
-                if (md.parentSpanId != null) {
-                    metrics.put("parent_span_id", md.parentSpanId);
-                }
-                metrics.put("exec_time", md.execTime);
-                metrics.put("round_trip", md.roundTrip);
-                metrics.put("start", md.start);
-                metrics.put("path", md.tracePath);
-                payload.put("trace", metrics);
-                if (!md.annotations.isEmpty()) {
-                    payload.put(ANNOTATIONS, md.annotations);
-                }
-                metrics.put("status", md.status);
-                if (md.status >= 400) {
-                    metrics.put("success", false);
-                    // for data privacy, only shown error message from recognized standard error dataset format
-                    metrics.put("exception", md.error instanceof String message? message : "***");
-                } else {
-                    metrics.put("success", true);
-                }
-                EventEnvelope dt = new EventEnvelope().setTo(Telemetry.DISTRIBUTED_TRACING);
-                EventEmitter.getInstance().send(dt.setBody(payload));
-            } catch (Exception e) {
-                log.error("Unable to send to {}", Telemetry.DISTRIBUTED_TRACING, e);
+        if (getSkipTracing().contains(service)) {
+            return;
+        }
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            Map<String, Object> metrics = getTraceMetrics(md, service);
+            payload.put("trace", metrics);
+            if (!md.annotations.isEmpty()) {
+                payload.put(ANNOTATIONS, md.annotations);
             }
+            setTraceStatus(md, metrics);
+            EventEnvelope dt = new EventEnvelope().setTo(Telemetry.DISTRIBUTED_TRACING);
+            EventEmitter.getInstance().send(dt.setBody(payload));
+        } catch (Exception e) {
+            log.error("Unable to send to {}", Telemetry.DISTRIBUTED_TRACING, e);
+        }
+    }
+
+    private Map<String, Object> getTraceMetrics(InboxMetadata md, String service) {
+        Map<String, Object> metrics = new HashMap<>();
+        metrics.put("origin", Platform.getInstance().getOrigin());
+        metrics.put("id", md.traceId);
+        metrics.put("service", service);
+        if (md.from != null) {
+            metrics.put("from", trimOrigin(md.from));
+        }
+        // span lineage of the RPC: span_id is the responder's own span (present only
+        // for a direct RPC - see spanIdFromResponder) and parent_span_id is the
+        // caller's span carried on the outbound request, so the round-trip record
+        // chains like any worker-emitted trace record
+        if (md.spanId != null) {
+            metrics.put("span_id", md.spanId);
+        }
+        if (md.parentSpanId != null) {
+            metrics.put("parent_span_id", md.parentSpanId);
+        }
+        metrics.put("exec_time", md.execTime);
+        metrics.put("round_trip", md.roundTrip);
+        metrics.put("start", md.start);
+        metrics.put("path", md.tracePath);
+        return metrics;
+    }
+
+    private void setTraceStatus(InboxMetadata md, Map<String, Object> metrics) {
+        metrics.put("status", md.status);
+        if (md.status >= 400) {
+            metrics.put("success", false);
+            // for data privacy, only shown error message from recognized standard error dataset format
+            metrics.put("exception", md.error instanceof String message? message : "***");
+        } else {
+            metrics.put("success", true);
         }
     }
 
