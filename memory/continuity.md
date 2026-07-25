@@ -334,23 +334,26 @@
 
 ## Open Threads
 
-- [ ] (field support — 2026-07-25; PR open) **v4.10.4 failed the field Sonar quality gate —
-  5 findings, fix reviewed + verified, [PR #231](https://github.com/Accenture/mercury-composable/pull/231)
-  open on `feature/sonar-quality-fixes`.** GitHub Copilot authored the fix (commit
-  `ac36ec4f`); Claude Code independently reviewed all 5 diffs line-by-line and verified.
-  Findings: 2× S125 (commented-out code — both were prose comments ending in a stray
-  semicolon, which Sonar's heuristic mistakes for commented-out code, in `HttpRouter.java`
-  and `KafkaFlowConsumer.java`) + 3× S3776 (Cognitive Complexity >15 in
-  `InboxBase.recordTrace`, `AsyncHttpResponse.handleEvent`, `AsyncHttpClient.updateHttpHeaders`
-  — fixed via helper-method extraction / guard-clause early returns, confirmed
-  behavior-preserving). **Verification:** full reactor `mvn clean install` (29 modules)
-  BUILD SUCCESS; live Java-to-Java Event-over-HTTP interop drive (composable-example ⇄
-  lambda-example, both declarative + programmatic patterns) as a targeted regression test
-  of the three refactored trace/cid-propagation classes — 17 span records, zero
-  duplicates, zero dangling `parent_span_id`s, correct cross-process span parenting in
-  both patterns (programmatic pattern's non-adoption of a foreign span confirmed
-  consistent with the I2 fix behavior in [[thread-event-envelope-interop]]). Close when
-  merged, tagged, and the field rescan passes (precedent:
+- [ ] (field support — 2026-07-25; PR MERGED, release pending) **v4.10.4 failed the field
+  Sonar quality gate — 5 findings, fix reviewed + verified, MERGED to main as
+  [PR #231](https://github.com/Accenture/mercury-composable/pull/231) (merge commit
+  `c7d05d83`, CI green: Build & Unit Tests 7m1s + memory + verify all pass).** GitHub
+  Copilot authored the fix (commit `ac36ec4f`); Claude Code independently reviewed all 5
+  diffs line-by-line and verified. Findings: 2× S125 (commented-out code — both were prose
+  comments ending in a stray semicolon, which Sonar's heuristic mistakes for
+  commented-out code, in `HttpRouter.java` and `KafkaFlowConsumer.java`) + 3× S3776
+  (Cognitive Complexity >15 in `InboxBase.recordTrace`, `AsyncHttpResponse.handleEvent`,
+  `AsyncHttpClient.updateHttpHeaders` — fixed via helper-method extraction / guard-clause
+  early returns, confirmed behavior-preserving). **Verification:** full reactor
+  `mvn clean install` (29 modules) BUILD SUCCESS; live Java-to-Java Event-over-HTTP
+  interop drive (composable-example ⇄ lambda-example, both declarative + programmatic
+  patterns) as a targeted regression test of the three refactored trace/cid-propagation
+  classes — 17 span records, zero duplicates, zero dangling `parent_span_id`s, correct
+  cross-process span parenting in both patterns (programmatic pattern's non-adoption of a
+  foreign span confirmed consistent with the I2 fix behavior in
+  [[thread-event-envelope-interop]]). **Remaining:** no release/tag yet — this fix ships
+  whenever the next patch version is cut; close this thread when a version is tagged and
+  the field rescan confirms the gate passes (precedent:
   [[thread-sonar-4-9-1-field-rejection]]).
   <!-- id: thread-sonar-4-10-4-field-rejection | created: 2026-07-25 | last_used: 2026-07-25 | uses: 1 | tier: working | origin: 2026-07-25-005125 -->
 
