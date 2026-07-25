@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-24 | agent: GitHub Copilot (2026-07-24-232712)
+- **last_session:** 2026-07-25 | agent: Claude Code (2026-07-25-005125)
 - **last_review:** 2026-07-24 | through 2026-07-24-154543.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -333,6 +333,26 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (field support — 2026-07-25; PR open) **v4.10.4 failed the field Sonar quality gate —
+  5 findings, fix reviewed + verified, [PR #231](https://github.com/Accenture/mercury-composable/pull/231)
+  open on `feature/sonar-quality-fixes`.** GitHub Copilot authored the fix (commit
+  `ac36ec4f`); Claude Code independently reviewed all 5 diffs line-by-line and verified.
+  Findings: 2× S125 (commented-out code — both were prose comments ending in a stray
+  semicolon, which Sonar's heuristic mistakes for commented-out code, in `HttpRouter.java`
+  and `KafkaFlowConsumer.java`) + 3× S3776 (Cognitive Complexity >15 in
+  `InboxBase.recordTrace`, `AsyncHttpResponse.handleEvent`, `AsyncHttpClient.updateHttpHeaders`
+  — fixed via helper-method extraction / guard-clause early returns, confirmed
+  behavior-preserving). **Verification:** full reactor `mvn clean install` (29 modules)
+  BUILD SUCCESS; live Java-to-Java Event-over-HTTP interop drive (composable-example ⇄
+  lambda-example, both declarative + programmatic patterns) as a targeted regression test
+  of the three refactored trace/cid-propagation classes — 17 span records, zero
+  duplicates, zero dangling `parent_span_id`s, correct cross-process span parenting in
+  both patterns (programmatic pattern's non-adoption of a foreign span confirmed
+  consistent with the I2 fix behavior in [[thread-event-envelope-interop]]). Close when
+  merged, tagged, and the field rescan passes (precedent:
+  [[thread-sonar-4-9-1-field-rejection]]).
+  <!-- id: thread-sonar-4-10-4-field-rejection | created: 2026-07-25 | last_used: 2026-07-25 | uses: 1 | tier: working | origin: 2026-07-25-005125 -->
 
 - [x] (release in flight — 2026-07-24; CLOSED same day) **v4.10.5 security patch SHIPPED
   AND PUBLISHED in lock-step (both repos) — react-router CVE remediation.** Dependabot #16
