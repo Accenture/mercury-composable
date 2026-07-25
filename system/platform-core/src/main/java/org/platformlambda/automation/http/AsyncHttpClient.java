@@ -311,21 +311,34 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private void updateHttpHeaders(PostOffice po, AsyncHttpRequest request, HttpHeaders http, String spanId) {
         // set user-agent for this HTTP client
         http.set(USER_AGENT, USER_AGENT_NAME);
+        setContentLengthHeader(request, http);
+        applyRequestAndSessionHeaders(request, http);
+        applyTraceHeaders(po, http, spanId);
+        applyBusinessCorrelationId(po, request, http);
+        setCookies(request, http);
+    }
+
+    private void setContentLengthHeader(AsyncHttpRequest request, HttpHeaders http) {
         // set content-length, including zero, if needed
         var method = request.getMethod();
         if (request.isContentLengthDefined() && request.getStreamRoutes().isEmpty() &&
                 (POST.equals(method) || PUT.equals(method) || PATCH.equals(method))) {
             http.set(CONTENT_LENGTH, request.getContentLength());
         }
+    }
+
+    private void applyRequestAndSessionHeaders(AsyncHttpRequest request, HttpHeaders http) {
         Map<String, String> reqHeaders = request.getHeaders();
         // convert authentication session info into HTTP request headers
-        Map<String, String> sessionInfo = request.getSessionInfo();
-        reqHeaders.putAll(sessionInfo);
+        reqHeaders.putAll(request.getSessionInfo());
         for (Map.Entry<String, String> kv: reqHeaders.entrySet()) {
             if (permittedHttpHeader(kv.getKey())) {
                 http.set(kv.getKey(), kv.getValue());
             }
         }
+    }
+
+    private void applyTraceHeaders(PostOffice po, HttpHeaders http, String spanId) {
         // Trace headers (X-Trace-Id / W3C "traceparent") copied from the request above are left intact when
         // this call is not being traced: an explicitly developer-set trace header is an intentional act (e.g.
         // handing a trace context to a 3rd-party system, or forwarding an upstream trace) and must propagate.
@@ -348,6 +361,9 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 http.set(customTraceparent, traceparent);
             }
         }
+    }
+
+    private void applyBusinessCorrelationId(PostOffice po, AsyncHttpRequest request, HttpHeaders http) {
         // propagate the business correlation-id downstream (unless the caller set the header explicitly)
         String businessCorrelationId = po.getMyCorrelationId();
         if (businessCorrelationId != null) {
@@ -356,6 +372,9 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 http.set(cidHeader, businessCorrelationId);
             }
         }
+    }
+
+    private void setCookies(AsyncHttpRequest request, HttpHeaders http) {
         // set cookies if any
         Map<String, String> cookies  = request.getCookies();
         StringBuilder sb = new StringBuilder();

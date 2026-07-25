@@ -72,33 +72,39 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
         String requestId = event.getCorrelationId();
-        if (requestId != null) {
-            AsyncContextHolder holder = contexts.get(requestId);
-            if (holder != null) {
-                holder.touch();
-                HttpServerResponse response = holder.request.response();
-                // echo the request's business correlation-id (inbound or edge-generated) so the
-                // caller can correlate; a function-provided response header of the same name wins
-                if (holder.cidHeaderName != null && holder.businessCorrelationId != null) {
-                    response.putHeader(holder.cidHeaderName, holder.businessCorrelationId);
-                }
-                boolean isHeadMethod = HEAD.equals(holder.method);
-                var md = new HttpResMetadata();
-                md.contentType = isHeadMethod? "?" : null;
-                updateHeadersAndContentType(response, holder, event, md, isHeadMethod);
-                // is this an exception?
-                if (handleException(requestId, holder, event)) {
-                    return null;
-                }
-                // Except HEAD method, HTTP response may have a body
-                if (!isHeadMethod && handleContent(requestId, response, event, holder, md)) {
-                    return null;
-                }
-                HttpRouter.closeContext(requestId);
-                response.end();
-            }
+        if (requestId == null) {
+            return null;
         }
+        AsyncContextHolder holder = contexts.get(requestId);
+        if (holder == null) {
+            return null;
+        }
+        holder.touch();
+        HttpServerResponse response = holder.request.response();
+        setBusinessCorrelationIdHeader(response, holder);
+        boolean isHeadMethod = HEAD.equals(holder.method);
+        var md = new HttpResMetadata();
+        md.contentType = isHeadMethod? "?" : null;
+        updateHeadersAndContentType(response, holder, event, md, isHeadMethod);
+        // is this an exception?
+        if (handleException(requestId, holder, event)) {
+            return null;
+        }
+        // Except HEAD method, HTTP response may have a body
+        if (!isHeadMethod && handleContent(requestId, response, event, holder, md)) {
+            return null;
+        }
+        HttpRouter.closeContext(requestId);
+        response.end();
         return null;
+    }
+
+    private void setBusinessCorrelationIdHeader(HttpServerResponse response, AsyncContextHolder holder) {
+        // echo the request's business correlation-id (inbound or edge-generated) so the
+        // caller can correlate; a function-provided response header of the same name wins
+        if (holder.cidHeaderName != null && holder.businessCorrelationId != null) {
+            response.putHeader(holder.cidHeaderName, holder.businessCorrelationId);
+        }
     }
 
     private long getReadTimeout(String timeoutOverride, long contextTimeout) {
