@@ -25,6 +25,7 @@ import io.opentelemetry.sdk.common.InstrumentationScopeInfo;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
+import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,8 +44,6 @@ public class OtelForwarderContext {
     private static final Logger log = LoggerFactory.getLogger(OtelForwarderContext.class);
 
     public static final String INSTRUMENTATION_NAME = "org.platformlambda.opentelemetry-forwarder";
-    // OTLP instrumentation-scope version — keep in step with the module/release version.
-    private static final String VERSION = "4.9.2";
     private static final String SERVICE_NAME_KEY = "service.name";
 
     private final boolean enabled;
@@ -56,7 +55,12 @@ public class OtelForwarderContext {
         this.enabled = enabled;
         this.exporter = exporter;
         this.resource = Resource.create(Attributes.builder().put(SERVICE_NAME_KEY, serviceName).build());
-        this.scope = InstrumentationScopeInfo.builder(INSTRUMENTATION_NAME).setVersion(VERSION).build();
+        // The instrumentation-scope version is resolved at runtime from the running application
+        // (jar manifest, else the info.app.version parameter), so it can never go stale the way
+        // a hard-coded constant did across releases.
+        var util = Utility.getInstance();
+        this.scope = InstrumentationScopeInfo.builder(INSTRUMENTATION_NAME)
+                                             .setVersion(util.getVersion()).build();
     }
 
     public boolean isEnabled() {

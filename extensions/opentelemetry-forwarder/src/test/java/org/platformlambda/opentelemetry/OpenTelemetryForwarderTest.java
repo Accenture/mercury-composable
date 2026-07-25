@@ -21,6 +21,7 @@ package org.platformlambda.opentelemetry;
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import org.junit.jupiter.api.Test;
+import org.platformlambda.core.util.Utility;
 import org.platformlambda.opentelemetry.support.OtelForwarderContext;
 
 import java.util.HashMap;
@@ -62,6 +63,21 @@ class OpenTelemetryForwarderTest {
     void contextReportsEnabledFlag() {
         assertTrue(new OtelForwarderContext(true, InMemorySpanExporter.create(), "x").isEnabled());
         assertFalse(new OtelForwarderContext(false, null, "x").isEnabled());
+    }
+
+    @Test
+    void instrumentationScopeVersionTracksTheRunningApplication() {
+        // the scope version is resolved at runtime (jar manifest, else info.app.version) instead of
+        // a hard-coded constant, so it can never go stale across releases - this pins the contract
+        InMemorySpanExporter mem = InMemorySpanExporter.create();
+        new OtelForwarderContext(true, mem, "x").forward(dataset());
+        List<SpanData> spans = mem.getFinishedSpanItems();
+        assertEquals(1, spans.size());
+        var scope = spans.getFirst().getInstrumentationScopeInfo();
+        assertEquals(OtelForwarderContext.INSTRUMENTATION_NAME, scope.getName());
+        assertEquals(Utility.getInstance().getVersion(), scope.getVersion());
+        assertNotNull(scope.getVersion());
+        assertFalse(scope.getVersion().isBlank());
     }
 
     @Test
