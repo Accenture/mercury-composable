@@ -283,6 +283,19 @@
   <!-- id: event-script-over-code | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
 ## Conventions
 
+- **Registration metadata is a cross-language contract; carriers are per-language idioms.
+  (ADR-0009)** One canonical model + fixed semantics for @PreLoad and family (boot-time
+  envInstances resolution; OptionalService OR/!/= grammar; order-free marker stacking; one
+  conflict policy — explicit > declarative, duplicates WARN + last-wins; extension-point
+  naming: explicit positional name or same-name derivation from idiomatic declarations;
+  plugins = flow vocabulary never gated, features honor gating; discover → register →
+  override → resolve → validate → route table; loud-failure discovery; misuse is a tested
+  error surface). Spec: docs/guides/registration-metadata-contract.md. Conformance:
+  golden vectors shared verbatim (registration-vectors/{core,plugin,feature}.json) — the
+  wire-format golden-vector method applied to the declaration surface. New ports pass the
+  three vector suites before their declaration surface is done.
+  <!-- id: registration-metadata-contract | created: 2026-07-26 | last_used: 2026-07-26 | uses: 1 | tier: working | origin: 2026-07-25-235904 -->
+
 - **Telemetry/log presentation parity across language engines is a field requirement (Eric,
   2026-07-23).** Rationale: even after the Rust engine is accepted into the field, installations
   will be POLYGLOT for a long time — DevSecOps teams see both engines' telemetry and logs in one

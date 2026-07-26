@@ -954,6 +954,14 @@ Arguments can be model variables, constant types, or nested plugin calls.
 | `f:substring(str, start, end)` | Substring range | `f:substring(model.text, int(0), int(5)) -> head` |
 | `f:length(a)` | Length of string or list | `f:length(model.items) -> count` |
 
+> **Cross-engine note (portable flows):** string length and substring indexes count
+> UTF-16 code units in this Java engine (`String.length()` — a JVM legacy) and **Unicode
+> scalar values** in the Rust engine and future ports (the
+> [contract rule](registration-metadata-contract.md#capabilities)). Identical for all
+> Basic-Multilingual-Plane text — English, Chinese, JSON keys, typical enterprise
+> payloads; only supplementary-plane characters (e.g. emoji) differ: 2 code units here,
+> 1 scalar value in the ports.
+
 ### Collection operations
 
 | Function | Description | Example |

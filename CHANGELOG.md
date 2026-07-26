@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
+### Added
+
+1. **Registration Metadata Contract (annotation-macro consistency arc, P2).** A new
+   reference page — `docs/guides/registration-metadata-contract.md` — fixes the
+   cross-language contract behind `@PreLoad` and its family: one canonical metadata model
+   with fixed semantics (boot-time resolution, optional-service grammar, order-free marker
+   stacking, one conflict policy, extension-point naming rules, the boot sequence and
+   loud-failure discovery), carried by per-language idioms. Conformance is proven by
+   **golden vectors shared verbatim** between engine repositories
+   (`registration-vectors/core.json`, `plugin.json`, `feature.json`) with a conformance
+   test per kind — the same golden-vector method that guards the event envelope wire
+   format. Formalized as ADR-0009.
+
 ### Fixed
 
 1. **Registration conflict policy documented truthfully (annotation-macro consistency
