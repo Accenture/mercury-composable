@@ -69,6 +69,10 @@ public class PlaygroundLoader implements EntryPoint {
                     Class<?> featureClass = Class.forName(info.getName());
                     Object o = featureClass.getDeclaredConstructor().newInstance();
                     if (o instanceof FeatureRunner runner) {
+                        if (features.containsKey(feature.value())) {
+                            log.warn("Reloading FetchFeature {} - please check duplicated feature name",
+                                        feature.value());
+                        }
                         features.put(feature.value(), new FeatureDef(runner));
                         log.info("Class {} loaded as API fetcher feature {}", o.getClass().getName(), feature.value());
                     } else {

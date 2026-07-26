@@ -375,11 +375,14 @@ public class Platform {
     /**
      * Register a public lambda function with one or more concurrent instances.
      * Its routing path will be published to the global service registry.
+     * <p>
+     * Registering a route that already exists RELOADS it: the existing function is
+     * released and the new one takes its place, with a warning in the application log.
      *
      * @param route path
      * @param lambda function must be written in Java that implements the TypedLambdaFunction interface
      * @param instances for concurrent processing of events
-     * @throws IllegalArgumentException in case of duplicated registration
+     * @throws IllegalArgumentException in case of routing error
      */
     public void register(String route, TypedLambdaFunction<?, ?> lambda, int instances) {
         register(route, lambda, false, instances);
@@ -389,11 +392,14 @@ public class Platform {
      * Register a private lambda function with one or more concurrent instances.
      * Private function is only visible within a single execution unit.
      * Its routing path will not be published to the global service registry.
+     * <p>
+     * Registering a route that already exists RELOADS it: the existing function is
+     * released and the new one takes its place, with a warning in the application log.
      *
      * @param route path
      * @param lambda function must be written in Java that implements the TypedLambdaFunction interface
      * @param instances for concurrent processing of events
-     * @throws IllegalArgumentException in case of duplicated registration
+     * @throws IllegalArgumentException in case of routing error
      */
     public void registerPrivate(String route, TypedLambdaFunction<?, ?> lambda, int instances) {
         register(route, lambda, true, instances);
