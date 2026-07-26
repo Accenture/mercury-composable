@@ -347,9 +347,24 @@
 
 ## Open Threads
 
-- [ ] (feature in flight — 2026-07-25) **Annotation → macro consistency arc (Eric's
-  initiative; design RATIFIED — see session 2026-07-25-235904 + the full spec at
-  draft-design-specs/annotation-macro-interop-design.md).** Goals: (1) Rust macro surface
+- [x] (feature in flight — 2026-07-25; ARC COMPLETE 2026-07-26 — P1 AND P2 merged both
+  repos) **Annotation → macro consistency arc (Eric's initiative; design RATIFIED — see
+  session 2026-07-25-235904 + the full spec at
+  draft-design-specs/annotation-macro-interop-design.md).** **P2 MERGED: Java PR #235
+  (squash `84c4957f`) + Rust PR #182 — delivering D4 (yaml.preload.override ported with
+  Java's exact merge/application semantics, 7-scenario suite) and D5 (the Registration
+  Metadata Contract: docs/guides/registration-metadata-contract.md + ADR-0009/ADR-0008
+  pair + golden vectors registration-vectors/{core,plugin,feature}.json shared VERBATIM +
+  one conformance suite per kind in both engines — see [[registration-metadata-contract]]).
+  The P2 round also carried: the Rust invariant re-verification (all five confirmed, code
+  drifts fixed, cadence reset), the AI-companion-test.md move to docs/test-reports
+  (published in nav), and Eric's string-semantics ruling (Unicode scalar values in all
+  ports; Java's UTF-16 = documented JVM legacy, bounded to supplementary-plane chars —
+  the F20 UTF-16 retrofit REVERTED in Rust with emoji+CJK evidence; anti-re-retrofit
+  guard recorded). Ratified dispositions: D3b (plugin gating) + D6 (executionHint)
+  deferred by design; tests/ui fixtures = test resources, no license headers (Eric,
+  2026-07-26). The full ratified scope is DELIVERED; future ports (Python/Node) start
+  from the contract page + vectors. No release scheduled — rides the next patch.** Goals: (1) Rust macro surface
   reads like the Java annotation surface (decoupled; runtime classpath scan vs link-time
   inventory is mechanics, not style); (2) the Rust port becomes the best-practice template
   for future Python/Node ports. Verified ground truth: Java dogfoods its extension points
