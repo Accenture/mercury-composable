@@ -356,7 +356,18 @@
   minimalist-kafka/sync-over-async port. Bonus fixes: two stale Rust docs (syntax.md
   single-route claim; api-overview public/private claim). Branches:
   feature/annotation-macro-consistency both repos (Java = javadoc+WARN lock-step; Rust =
-  the refinement round, delegated).
+  the refinement round, delegated). **P1 MERGED 2026-07-25 (Java PR #234 squash
+  `265f295d`, CI 6m37s; Rust PR #181 merge, CI 2m26s incl. the first trybuild run —
+  .stderr files matched CI's stable toolchain first try).** Landed beyond the original
+  ratification (three mid-round refinements by Eric): positional #[simple_plugin("name")]
+  grammar (46 built-ins flipped; name= alias kept), order-insensitive marker stacking
+  (#[zero_tracing]/#[event_interceptor] as real proc-macros via the optional_service
+  self-reattachment pattern — "Java does not require stack order"), and the trybuild
+  compile-fail guards upgraded from P2 into the round (11 fixtures, 3 tests/ui suites in
+  the runtime crates; Rust workspace 265 tests). **Remaining = P2: D4 port
+  yaml.preload.override to Rust; D5 registration-metadata contract spec page (real
+  schema; golden-JSON conformance per the wire-format precedent) + ADR pair
+  (Java ADR-0009 / Rust ADR-0008).** No release scheduled yet — rides a future patch.
   <!-- id: thread-annotation-macro-consistency | created: 2026-07-25 | last_used: 2026-07-25 | uses: 1 | tier: working | origin: 2026-07-25-235904 -->
 
 - [ ] (field support — 2026-07-25; v4.10.6 SHIPPED, field rescan pending) **v4.10.4 failed
