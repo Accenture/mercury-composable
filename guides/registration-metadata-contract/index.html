@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/sync-over-async/">
+        <link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/registration-metadata-contract/">
       
       
-        <link rel="prev" href="../schema-registry-mock/">
+        <link rel="prev" href="../event-envelope-wire-format/">
       
       
-        <link rel="next" href="../service-mesh/">
+        <link rel="next" href="../../test-reports/event-over-http-interop/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Sync-over-Async - Composable for Java</title>
+        <title>Registration Metadata Contract - Composable for Java</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#sync-over-async" class="md-skip">
+        <a href="#registration-metadata-contract" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Sync-over-Async
+              Registration Metadata Contract
             
           </span>
         </div>
@@ -364,12 +364,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href="../build-test-deploy/" class="md-tabs__link">
           
   
@@ -388,10 +386,12 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
+      <li class="md-tabs__item md-tabs__item--active">
         <a href="../../arch-decisions/ADR/" class="md-tabs__link">
           
   
@@ -1551,10 +1551,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -1580,22 +1578,19 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -1613,7 +1608,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1824,37 +1819,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Sync-over-Async
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../sync-over-async/" class="md-nav__link">
         
   
   
@@ -1870,81 +1838,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#pattern" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The pattern
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#config" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Enabling and configuring
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reliability" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reliability cornerstones
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#when" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        When to use it
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        See also
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1989,8 +1882,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -2020,19 +1915,22 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
             
   
   
@@ -2050,7 +1948,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2233,10 +2131,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../registration-metadata-contract/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registration Metadata Contract
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2252,6 +2177,109 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One model, many carriers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The canonical metadata model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The canonical metadata model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#capabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Capability fields (per-language applicability)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed semantics — every port MUST
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conformance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformance — the golden vectors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#porting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Porting order (the playbook)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2538,10 +2566,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pattern" class="md-nav__link">
+  <a href="#model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The pattern
+        One model, many carriers
       
     </span>
   </a>
@@ -2549,10 +2577,38 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#config" class="md-nav__link">
+  <a href="#schema" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Enabling and configuring
+        The canonical metadata model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The canonical metadata model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#capabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Capability fields (per-language applicability)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed semantics — every port MUST
       
     </span>
   </a>
@@ -2560,10 +2616,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reliability" class="md-nav__link">
+  <a href="#conformance" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reliability cornerstones
+        Conformance — the golden vectors
       
     </span>
   </a>
@@ -2571,10 +2627,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#when" class="md-nav__link">
+  <a href="#porting" class="md-nav__link">
     <span class="md-ellipsis">
       
-        When to use it
+        Porting order (the playbook)
       
     </span>
   </a>
@@ -2612,146 +2668,217 @@
   
 
 
-<h1 id="sync-over-async">Sync-over-Async<a class="headerlink" href="#sync-over-async" title="Permanent link">&para;</a></h1>
-<p><em>Guide: turn an asynchronous Kafka backend into a synchronous REST request/response across pods, with a
-Redis return route.</em></p>
+<h1 id="registration-metadata-contract">Registration Metadata Contract<a class="headerlink" href="#registration-metadata-contract" title="Permanent link">&para;</a></h1>
 <blockquote>
-<p><strong>At a glance</strong></p>
-<ul>
-<li><strong>What</strong> — a caller makes a normal synchronous REST call; behind it the request travels over Kafka to an
-  asynchronous backend (possibly on another pod) and the response is routed back through <strong>Redis</strong> to the
-  exact pod holding the open HTTP connection.</li>
-<li><strong>How</strong> — a <strong>correlation-id</strong> is the return-path key. The originating pod registers a return route in
-  Redis and blocks; the responder stores the response in Redis and wakes the originator via Pub/Sub.</li>
-<li><strong>Advanced &amp; opt-in</strong> — a distributed pattern for specific use cases; off by default (it eagerly connects
-  to Redis). Cf. the <a href="../service-mesh/">service mesh</a> — this is a deliberately lighter, Redis-based return path.</li>
-<li><strong>For</strong> developers exposing a cloud-native synchronous facade over an event-driven backend.</li>
-</ul>
+<p><strong>At a glance</strong> — Functions, entry points, websocket services, Event Script plugins and
+graph fetch features all register <strong>declaratively</strong>: metadata attached at the definition
+site, discovered and resolved by the engine at boot. This page fixes the metadata model
+and its semantics <strong>across languages</strong>. How each language attaches the metadata —
+a Java annotation, a Rust attribute macro, a Python or TypeScript decorator — is an
+idiom; everything else on this page is the contract, and the
+<a href="#conformance">golden vectors</a> prove an engine honors it.</p>
 </blockquote>
-<p>In a cloud-native deployment the REST caller and the backend that answers may be different pods, and the
-backend is reached <strong>asynchronously</strong> over Kafka. Sync-over-async bridges that gap: the HTTP thread waits
-while the request fans out over Kafka and the answer is routed back — without coupling the two pods beyond a
-shared Redis and topic pair. It builds on the <a href="../minimalist-kafka/">Minimalist Kafka</a> for the Kafka legs.</p>
-<blockquote>
-<p><strong>Opt-in.</strong> The return-route coordinator eagerly connects to Redis, so it starts only when
-<code>sync.over.async.enabled=true</code>. Leave it off unless you are using the pattern.</p>
-</blockquote>
-<h2 id="pattern">The pattern<a class="headerlink" href="#pattern" title="Permanent link">&para;</a></h2>
-<pre class="mermaid"><code>sequenceDiagram
-    participant Caller as REST caller
-    participant Pod1 as service (POD-1)
-    participant Redis
-    participant Kafka
-    participant Pod2 as backend service (POD-2)
-
-    Caller-&gt;&gt;Pod1: HTTP request (sync)
-    Pod1-&gt;&gt;Redis: register return route (key = correlation-id)
-    Pod1-&gt;&gt;Kafka: publish request
-    note over Pod1: blocked HTTP thread waits&lt;br&gt;(suspended virtual thread)
-    Kafka-&gt;&gt;Pod2: consume request (async)
-    Pod2-&gt;&gt;Kafka: publish response
-    Kafka-&gt;&gt;Pod1: reply consumer receives response
-    Pod1-&gt;&gt;Redis: store response + wake via Pub/Sub
-    Redis--&gt;&gt;Pod1: wake-up (Pub/Sub)
-    Pod1--&gt;&gt;Caller: HTTP response (or 408 on timeout)</code></pre>
-<p>The correlation-id threads the whole round trip. Redis holds two short-lived keys per request: the <strong>route</strong>
-(which pod's channel to wake) and the <strong>response</strong> payload.</p>
-<h2 id="config">Enabling and configuring<a class="headerlink" href="#config" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">sync.over.async.enabled</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="na">redis.host</span><span class="o">=</span><span class="s">${REDIS_HOST:127.0.0.1}</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="na">redis.port</span><span class="o">=</span><span class="s">${REDIS_PORT:6379}</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="na">redis.password</span><span class="o">=</span><span class="s">${REDIS_PASSWORD:}     # blank = no auth; keep secrets in the environment</span>
+<p>The Java engine is the reference implementation; the
+<a href="../annotations-reference/">Annotations Reference</a> documents its carrier surface in full.
+The Rust engine implements this contract today (its
+<a href="https://accenture.github.io/mercury/guides/macros-reference/">Macros Reference</a> is the
+carrier twin of the annotations page). Python and Node.js ports implement it next.</p>
+<h2 id="model">One model, many carriers<a class="headerlink" href="#model" title="Permanent link">&para;</a></h2>
+<p>The same declaration in the four languages:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1">// Java - runtime classpath scan</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;hello.world&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">instances</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">HelloWorld</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TypedLambdaFunction</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
 </code></pre></div>
-<p>On startup the extension builds a Redis client and the return-route coordinator, keyed by this pod's origin
-id, from discrete <code>redis.*</code> connection parameters and <code>sync.*</code> engine tunables. See the
-<a href="../configuration-reference/#sync-over-async">Configuration Reference</a> for the full list; the essentials:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">// Rust - link-time inventory</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="cp">#[preload(route = </span><span class="s">&quot;hello.world&quot;</span><span class="cp">, instances = 10, typed)]</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">struct</span><span class="w"> </span><span class="nc">HelloWorld</span><span class="p">;</span><span class="w">   </span><span class="c1">// + impl TypedFunction&lt;I, O&gt;</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Python (future) - decorator + explicit package walk</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nd">@pre_load</span><span class="p">(</span><span class="n">route</span><span class="o">=</span><span class="s2">&quot;hello.world&quot;</span><span class="p">,</span> <span class="n">instances</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">HelloWorld</span><span class="p">(</span><span class="n">TypedLambdaFunction</span><span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// Node/TypeScript (future) - decorator + explicit module glob</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kd">@PreLoad</span><span class="p">({</span><span class="w"> </span><span class="nx">route</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;hello.world&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">instances</span><span class="o">:</span><span class="w"> </span><span class="kt">10</span><span class="w"> </span><span class="p">})</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="kd">class</span><span class="w"> </span><span class="nx">HelloWorld</span><span class="w"> </span><span class="k">implements</span><span class="w"> </span><span class="nx">TypedLambdaFunction</span><span class="o">&lt;</span><span class="nx">EventEnvelope</span><span class="p">,</span><span class="w"> </span><span class="nx">unknown</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<p>The discovery mechanics differ by necessity — only the JVM scans a classpath at runtime —
+but the developer-visible style, the metadata model and the boot-time semantics must not.</p>
+<h2 id="schema">The canonical metadata model<a class="headerlink" href="#schema" title="Permanent link">&para;</a></h2>
+<p>Every registration resolves to one canonical record. Wire form for tooling and
+conformance: JSON, camelCase keys, enums as strings (never ordinals).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;function | websocket | entrypoint-before | entrypoint-main | plugin | feature&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">&quot;routes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;array of route names - function kind; comma-separated aliases in the carrier&quot;</span><span class="p">],</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string - websocket / plugin / feature kinds&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="nt">&quot;namespace&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string - websocket kind, default \&quot;ws\&quot;&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="nt">&quot;sequence&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer - entrypoint kinds, default 10 (0 is framework-reserved)&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="nt">&quot;declaredInstances&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer, default 1&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="nt">&quot;envInstances&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string configuration KEY, default \&quot;\&quot; - carried for audit&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span><span class="nt">&quot;resolvedInstances&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer - the boot-resolved effective value, clamped 1..1000&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">  </span><span class="nt">&quot;isPrivate&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;boolean, default true&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">  </span><span class="nt">&quot;zeroTracing&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;boolean marker, default false&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">  </span><span class="nt">&quot;eventInterceptor&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;boolean marker, default false&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">  </span><span class="nt">&quot;optionalService&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string | null - an OR-list of key, !key, key=value conditions&quot;</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="capabilities">Capability fields (per-language applicability)<a class="headerlink" href="#capabilities" title="Permanent link">&para;</a></h3>
+<p>Some Java <code>@PreLoad</code> fields are capabilities of a runtime family, not universal contract:</p>
 <table>
 <thead>
 <tr>
-<th>Key</th>
-<th>Default</th>
-<th>Description</th>
+<th>Field</th>
+<th>Java</th>
+<th>Rust</th>
+<th>Python / Node guidance</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>sync.over.async.enabled</code></td>
-<td><code>false</code></td>
-<td>Master switch; <code>true</code> starts the return-route coordinator.</td>
+<td><code>customSerializer</code></td>
+<td>runtime ObjectMapper swap per route</td>
+<td><strong>N/A</strong> — serde is the single compile-time serializer; per-type attributes cover the use cases</td>
+<td>applicable — both have runtime serialization hooks; carry as a type-name string</td>
 </tr>
 <tr>
-<td><code>redis.host</code> / <code>redis.port</code></td>
-<td><code>127.0.0.1</code> / <code>6379</code></td>
-<td>Redis connection.</td>
+<td><code>inputPojoClass</code></td>
+<td>defeats JVM type erasure; enables <code>List&lt;PoJo&gt;</code></td>
+<td><strong>N/A</strong> — <code>TypedFunction&lt;I, O&gt;</code> is monomorphized; <code>body_as::&lt;Vec&lt;T&gt;&gt;()</code> carries the element type</td>
+<td>Python: type hints suffice; Node: applicable as a class reference</td>
 </tr>
 <tr>
-<td><code>redis.password</code></td>
-<td>— (blank)</td>
-<td>Auth password; source from the environment.</td>
+<td><code>inputStrategy</code> / <code>outputStrategy</code></td>
+<td>SNAKE / CAMEL / DEFAULT, flippable at runtime (<code>snake.case.serialization</code>)</td>
+<td><strong>N/A at runtime</strong> — <code>#[serde(rename_all)]</code> fixes case at compile time (the one genuine capability difference)</td>
+<td>applicable — runtime case mapping is natural in both</td>
 </tr>
 <tr>
-<td><code>redis.ssl</code></td>
-<td><code>false</code></td>
-<td>Use TLS (<code>rediss://</code>).</td>
+<td><code>executionHint</code> (reserved)</td>
+<td><code>@KernelThreadRunner</code> → kernel thread pool</td>
+<td>reserved, unimplemented — every function is a tokio task; revisit if a field workload needs <code>spawn_blocking</code></td>
+<td>Python: relevant (GIL / thread pool); Node: worker_threads — design when porting</td>
 </tr>
 <tr>
-<td><code>redis.database</code></td>
-<td><code>0</code></td>
-<td>Logical database index.</td>
-</tr>
-<tr>
-<td><code>redis.timeout.ms</code></td>
-<td><code>5000</code></td>
-<td>Default command timeout.</td>
-</tr>
-<tr>
-<td><code>sync.return.channel.prefix</code></td>
-<td><code>svc-return</code></td>
-<td>Prefix for the per-pod Pub/Sub return channel.</td>
-</tr>
-<tr>
-<td><code>sync.route.ttl.seconds</code></td>
-<td><code>90</code></td>
-<td>TTL for the return-route key (cover the REST timeout + buffer).</td>
-</tr>
-<tr>
-<td><code>sync.response.ttl.seconds</code></td>
-<td><code>30</code></td>
-<td>TTL for the response key (short rendezvous window).</td>
-</tr>
-<tr>
-<td><code>sync.max.pending.requests</code></td>
-<td><code>10000</code></td>
-<td>Per-pod ceiling on in-flight synchronous requests (backpressure).</td>
+<td>string length/index semantics (plugin catalog: <code>length</code>, <code>substring</code>)</td>
+<td>UTF-16 code units (<code>String.length()</code> — JVM legacy, retained)</td>
+<td><strong>Unicode scalar values</strong> (<code>chars()</code>) — the ports rule</td>
+<td>Python <code>len()</code> and Go <code>RuneCountInString</code> are scalar-native; Node uses <code>[...str].length</code>, NOT the UTF-16 <code>.length</code> — never retrofit the JVM legacy</td>
 </tr>
 </tbody>
 </table>
-<h2 id="reliability">Reliability cornerstones<a class="headerlink" href="#reliability" title="Permanent link">&para;</a></h2>
-<p>The design is correct independent of Pub/Sub timing:</p>
-<ul>
-<li><strong>Redis is the source of truth.</strong> The responder writes the response to Redis (<code>SETEX</code>) <strong>before</strong> sending
-  the Pub/Sub wake-up, so a signal can never arrive before the data.</li>
-<li><strong>Final read before timeout.</strong> If the wake-up is missed, the waiting pod does one last Redis read before
-  giving up — so a dropped notification still resolves the request rather than failing it.</li>
-<li><strong>Exactly-once completion.</strong> The pending-request registry completes each waiting future once, whichever of
-  the wake-up path and the timeout path wins; duplicates and orphans are no-ops.</li>
-<li><strong>Bounded growth.</strong> <code>sync.max.pending.requests</code> caps in-flight requests to protect a pod under load.</li>
-<li><strong>Timeout → 408.</strong> A request with no answer in its budget returns HTTP 408, and its Redis keys are cleaned
-  up (TTLs are the safety net for crashes).</li>
-</ul>
-<h2 id="when">When to use it<a class="headerlink" href="#when" title="Permanent link">&para;</a></h2>
-<p>Reach for sync-over-async when you need a <strong>synchronous REST facade over an asynchronous, cross-pod backend</strong>
-and want a lightweight Redis return path rather than the full Kafka <a href="../service-mesh/">service mesh</a> with
-presence discovery. Like the mesh, it is an advanced opt-in: if your application does not need cross-pod
-synchronous request/response, design it cloud-native and skip this. The Kafka legs use the
-<a href="../minimalist-kafka/">Minimalist Kafka</a>; the synchronous facade itself is an ordinary composable function
-behind <code>rest.yaml</code>.</p>
+<p>A port documents each N/A explicitly (the Rust docs' <code>!!! note "Rust port"</code> convention);
+silence is not a disposition. The string-semantics row is a <strong>bounded, deliberate
+divergence</strong> (maintainer ruling, 2026-07-26): identical for all Basic-Multilingual-Plane
+text — English, Chinese, JSON keys, typical enterprise payloads — and differing only for
+supplementary-plane characters (emoji, historical scripts), which Java counts as 2 code
+units and every port counts as 1 scalar value.</p>
+<h2 id="semantics">Fixed semantics — every port MUST<a class="headerlink" href="#semantics" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Attach at definition, resolve at boot.</strong> <code>envInstances</code> names a configuration KEY
+   (which may itself hold <code>${ENV_VAR:default}</code>); the value is read at framework boot —
+   never at decoration, macro-expansion or import time. A numeric value wins; anything
+   else falls back to <code>declaredInstances</code>. Effective instances clamp to 1..1000.</li>
+<li><strong>Optional-service grammar</strong> is exactly the Java <code>Feature</code> evaluator: comma-separated
+   conditions are OR-ed; <code>!</code> negates; <code>key=value</code> matches case-insensitively; a bare
+   <code>key</code> means <code>key=true</code>; no annotation means always required. Evaluated at boot against
+   the application configuration; a false condition skips registration with a
+   "Skip optional" log line.</li>
+<li><strong>Marker stacking is order-free.</strong> <code>@ZeroTracing</code> / <code>@EventInterceptor</code> /
+   <code>@OptionalService</code> combine with the primary annotation in any order, as Java
+   annotations always have. Where a language's mechanism is order-sensitive by nature
+   (Rust attribute macros expand outside-in; Python decorators apply bottom-up), the port
+   owes the engineering to hide it — the Rust engine's markers re-attach themselves so
+   either order works.</li>
+<li><strong>One conflict policy.</strong> Explicit programmatic registration wins over declarative
+   (it runs later and replaces). Within any registry, a duplicate name is a WARNING
+   ("Reloading ... please check duplicated ... name") and the later registration wins —
+   never a silent replace, never an error. Registration order among declaratively
+   discovered items is not guaranteed (classpath scan order, link order, import order);
+   do not rely on it.</li>
+<li><strong>Extension-point naming.</strong> A plugin or feature name is the positional string on the
+   carrier — <code>@FetchFeature("log-request-headers")</code>, <code>#[simple_plugin("getFirst")]</code>,
+   <code>@simple_plugin("getFirst")</code>. For plugins only, omitting the name derives it from the
+   declaration: Java lowercases the first letter of the class simple name; Rust
+   camelCases the snake_case fn name — <strong>idiomatic declarations in every language yield
+   the same registered name</strong>. Plugins are Event Script capabilities (flow vocabulary):
+   they take no optional-service gating and are never conditionally on/off. Features are
+   runtime behaviors: they honor optional-service gating.</li>
+<li><strong>Boot sequence</strong>: discover → register → <strong>override</strong> (<code>yaml.preload.override</code>:
+   configuration-driven route rename / fan-out / instance re-tuning, applied to the
+   collected function set before registration) → resolve (<code>envInstances</code>) → validate
+   (route uniqueness warnings, non-empty registries where built-ins are expected) →
+   route table. Lifecycle anchors: plugins load before flow compilation; features load
+   before graph execution; entry points run in ascending sequence with 0 reserved for
+   the framework.</li>
+<li><strong>Discovery is explicit and fails loudly.</strong> Java: classpath scan over the base
+   packages plus <code>web.component.scan</code> (free). Rust: link-time <code>inventory</code> collection —
+   plus a startup assertion on expected built-in counts, because a crate that is never
+   linked contributes nothing, silently. Python: a package walk (<code>pkgutil.walk_packages</code>)
+   importing every module under the services packages <strong>before</strong> resolution — an
+   unimported module's decorator never runs. Node: a directory glob + dynamic <code>import()</code>
+   with the same failure mode. Both future ports must fail loudly on an empty registry
+   that should not be empty.</li>
+<li><strong>Misuse is a first-class contract.</strong> Invalid declarations fail at the earliest
+   possible stage with a helpful message — unknown parameters name the valid set, a
+   marker without a primary points at the correct form. Where the failure is
+   compile-time (Rust), compile-fail tests guard the messages (<code>trybuild</code>); where it is
+   import/boot-time (Java, Python, Node), unit tests do.</li>
+</ol>
+<h2 id="conformance">Conformance — the golden vectors<a class="headerlink" href="#conformance" title="Permanent link">&para;</a></h2>
+<p>The contract is proven the same way the
+<a href="../event-envelope-wire-format/">event envelope wire format</a> is: <strong>golden vectors shared
+verbatim between repositories</strong>. Three files, one per metadata-rich kind:</p>
+<table>
+<thead>
+<tr>
+<th>Vectors file</th>
+<th>Kind</th>
+<th>Java module</th>
+<th>Rust crate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>registration-vectors/core.json</code></td>
+<td>function</td>
+<td>platform-core</td>
+<td>platform-core</td>
+</tr>
+<tr>
+<td><code>registration-vectors/plugin.json</code></td>
+<td>plugin</td>
+<td>event-script-engine</td>
+<td>event-script</td>
+</tr>
+<tr>
+<td><code>registration-vectors/feature.json</code></td>
+<td>feature</td>
+<td>minigraph-playground-engine</td>
+<td>knowledge-graph</td>
+</tr>
+</tbody>
+</table>
+<p>Each engine declares the same small fixture set through <strong>its own carrier</strong> (annotation /
+macro / decorator), boots, and asserts that the resolved registrations match the golden
+entries exactly — including boot-time <code>envInstances</code> resolution against the vectors'
+<code>assumedConfig</code>, marker effects, name derivation, and the <strong>absence</strong> of every <code>gatedOut</code>
+fixture. A new port passes the contract when all three vector suites pass against files
+byte-identical to these.</p>
+<p>The websocket and entry-point kinds carry little metadata beyond a name/namespace or a
+sequence; they are pinned by each engine's own registration tests rather than shared
+vectors.</p>
+<h2 id="porting">Porting order (the playbook)<a class="headerlink" href="#porting" title="Permanent link">&para;</a></h2>
+<p>For a new language port, in order: (1) implement the carrier + local registry + boot
+resolver for the function kind; (2) pass <code>core.json</code>; (3) add the extension points and
+pass <code>plugin.json</code> / <code>feature.json</code>; (4) document every capability-field disposition and
+intentionally unported carrier; (5) adopt the discovery-failure assertions. The
+<a href="../../test-reports/event-over-http-interop/">future-ports playbook</a> covers the runtime
+side (wire format, telemetry parity) — this page covers the declaration side; together
+they are the port-acceptance bar.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../minimalist-kafka/">Minimalist Kafka</a> — the inbound/outbound Kafka building blocks this pattern uses.</li>
-<li><a href="../configuration-reference/#sync-over-async">Configuration Reference</a> — every <code>redis.*</code> / <code>sync.*</code> key.</li>
-<li><a href="../service-mesh/">Minimalist Service Mesh</a> — the heavier <code>cloud.connector=kafka</code> alternative with service discovery.</li>
-<li><a href="../observability/">Observability</a> — tracing the round trip end-to-end.</li>
+<li><a href="../annotations-reference/">Annotations Reference</a> — the Java carrier surface (source of truth)</li>
+<li><a href="../event-envelope-wire-format/">Event Envelope Wire Format</a> — the sibling contract + golden-vector precedent</li>
+<li>ADR-0009 in <code>docs/arch-decisions/ADR.md</code> — the decision record behind this contract</li>
 </ul>
 
 
@@ -2793,7 +2920,7 @@ behind <code>rest.yaml</code>.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../schema-registry-mock/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Schema Registry Mock">
+          <a href="../event-envelope-wire-format/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Event Envelope Wire Format">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2803,20 +2930,20 @@ behind <code>rest.yaml</code>.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Schema Registry Mock
+                Event Envelope Wire Format
               </div>
             </div>
           </a>
         
         
           
-          <a href="../service-mesh/" class="md-footer__link md-footer__link--next" aria-label="Next: Minimalist Service Mesh">
+          <a href="../../test-reports/event-over-http-interop/" class="md-footer__link md-footer__link--next" aria-label="Next: Interop Test Report (Java ⇄ Rust)">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Minimalist Service Mesh
+                Interop Test Report (Java ⇄ Rust)
               </div>
             </div>
             <div class="md-footer__button md-icon">

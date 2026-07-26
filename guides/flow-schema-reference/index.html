@@ -2744,6 +2744,8 @@
       
         
       
+        
+      
     
     
     
@@ -2944,6 +2946,34 @@
     
   
     Event Envelope Wire Format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../registration-metadata-contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registration Metadata Contract
   
 
     
@@ -5794,6 +5824,15 @@ their arguments and place it at the destination.</p>
 </tr>
 </tbody>
 </table>
+<blockquote>
+<p><strong>Cross-engine note (portable flows):</strong> string length and substring indexes count
+UTF-16 code units in this Java engine (<code>String.length()</code> — a JVM legacy) and <strong>Unicode
+scalar values</strong> in the Rust engine and future ports (the
+<a href="../registration-metadata-contract/#capabilities">contract rule</a>). Identical for all
+Basic-Multilingual-Plane text — English, Chinese, JSON keys, typical enterprise
+payloads; only supplementary-plane characters (e.g. emoji) differ: 2 code units here,
+1 scalar value in the ports.</p>
+</blockquote>
 <h3 id="collection-operations">Collection operations<a class="headerlink" href="#collection-operations" title="Permanent link">&para;</a></h3>
 <table>
 <thead>

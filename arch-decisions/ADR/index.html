@@ -1909,6 +1909,8 @@
       
         
       
+        
+      
     
     
     
@@ -2022,6 +2024,17 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#adr-0009" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0009 — Registration metadata is a cross-language contract; carriers are per-language idioms
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#adr-0008" class="md-nav__link">
@@ -2247,6 +2260,34 @@
     
   
     Event Envelope Wire Format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/registration-metadata-contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registration Metadata Contract
   
 
     
@@ -2541,6 +2582,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0009" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0009 — Registration metadata is a cross-language contract; carriers are per-language idioms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0008" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2666,6 +2718,56 @@ governing the codebase — verified against the source (<code>platform-core</cod
 <code>event-script-engine</code>, <code>minigraph-playground-engine</code>) and the published guides, which are
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
+<hr />
+<h2 id="adr-0009">ADR-0009 — Registration metadata is a cross-language contract; carriers are per-language idioms<a class="headerlink" href="#adr-0009" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-07-26T01:40:00.000Z · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> registration-metadata-contract</p>
+<!-- id: adr-0009 | status: accepted -->
+
+<p><strong>Abstract.</strong> Declarative registration — <code>@PreLoad</code> and its family (entry points, websocket
+services, Event Script plugins, graph fetch features) — is governed by <strong>one canonical
+metadata model with fixed semantics</strong>, specified in
+<code>docs/guides/registration-metadata-contract.md</code> and proven by <strong>golden vectors shared
+verbatim</strong> between engine repositories. How each language <em>carries</em> the metadata is an
+idiom — Java annotations discovered by runtime classpath scan, Rust attribute macros
+collected by link-time inventory, Python/Node decorators discovered by explicit
+package/module walks — but the model and its semantics are the contract: attach at
+definition / resolve at boot (<code>envInstances</code>); the <code>OptionalService</code> condition grammar;
+order-free marker stacking; one conflict policy (explicit wins over declarative;
+duplicates WARN + last-wins); extension-point naming (an explicit positional name, or
+derivation from the declaration such that idiomatic declarations in every language yield
+the same registered name); plugins are Event Script capabilities (flow vocabulary) and are
+never conditionally gated, while features honor gating; the boot sequence
+(discover → register → override → resolve → validate → route table); explicit
+loud-failure discovery; and misuse as a first-class, tested error surface.</p>
+<p><strong>Rationale.</strong> The Rust port's first annotation pass proved that porting the <em>mechanism</em>
+without fixing the <em>semantics</em> produces drift invisible to any single repository: built-ins
+bypassing the extension points they exemplify, conflict policies diverging (skip-first-wins
+vs last-wins), gating support absent where the reference has it, and an attribute
+stack-order requirement Java never had. Each was individually small; together they meant a
+developer — or an AI agent — could not transfer knowledge between engines, and every future
+port would re-diverge independently. The same problem was already solved once for the wire
+format (ADR-referenced spec + golden vectors, v4.10.0): fixing the contract in a
+language-neutral artifact with executable conformance is what made the four-way interop
+matrix provable. This ADR applies that method to the declaration surface. The maintainer's
+two governing directives are part of the decision: developers must see <strong>consistent,
+decoupled</strong> registration in every language, and the Rust port is the <strong>best-practice
+template</strong> for the Python and Node ports.</p>
+<p><strong>Alternatives.</strong> (a) <em>Per-port judgment calls documented in each repo</em> — rejected: that is
+the drift this ADR eliminates; N-of-1 documentation cannot be conformance-tested.
+(b) <em>A shared runtime registry service</em> (as the original external blueprint's open item
+suggested for multi-process parity) — rejected: registration is process-local by design in
+a self-contained composable application; cross-process discovery is the service mesh's
+concern and stays opt-in. (c) <em>Exporting the full live registry for byte comparison</em> —
+rejected in favor of a fixed fixture set: engines legitimately differ in framework
+built-ins (no Spring in Rust, no Kafka mesh), so whole-registry comparison would pin
+incidental surface, not contract.</p>
+<p><strong>Consequences.</strong> New ports implement the carrier idiomatically, then pass the three
+golden-vector suites (<code>registration-vectors/core.json</code>, <code>plugin.json</code>, <code>feature.json</code>)
+before their declaration surface is considered done; every capability field a port cannot
+honor is documented as N/A where developers would meet it, never silently dropped. The
+engines accept a small ongoing cost: vector files are maintained verbatim in every
+repository, and semantic changes to registration must update the contract page, the
+vectors, and all engines in lock-step — which is precisely the point.</p>
 <hr />
 <h2 id="adr-0008">ADR-0008 — Synchronous AI-companion endpoint: in-band command outcome + live tee<a class="headerlink" href="#adr-0008" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-07-18T18:13:53.000Z · <strong>Serves:</strong> vision-mercury-composable</p>
