@@ -334,6 +334,31 @@
 
 ## Open Threads
 
+- [ ] (feature in flight — 2026-07-25) **Annotation → macro consistency arc (Eric's
+  initiative; design RATIFIED — see session 2026-07-25-235904 + the full spec at
+  draft-design-specs/annotation-macro-interop-design.md).** Goals: (1) Rust macro surface
+  reads like the Java annotation surface (decoupled; runtime classpath scan vs link-time
+  inventory is mechanics, not style); (2) the Rust port becomes the best-practice template
+  for future Python/Node ports. Verified ground truth: Java dogfoods its extension points
+  (47 @SimplePlugin built-ins, 2 @FetchFeature built-ins) while Rust hard-codes all of them
+  with zero production macro usage; #[fetch_feature] can't accept optional_service; conflict
+  semantics diverge AND Java itself is inconsistent (Platform.register javadoc claims
+  throws-on-duplicate but warn+reloads; PlaygroundLoader replaces silently). Ratified:
+  D1 convert Rust built-ins to declarative macros (explicit names where camelCase
+  derivation mismatches/keyword-collides; exact Java error-message parity); D2 ONE conflict
+  policy both engines (explicit register() > declarative; duplicate = WARN both sources +
+  last-wins; Java lock-step javadoc/log fixes); D3a fetch_feature + stacked
+  #[optional_service] (Java parity); D3b DEFERRED with Eric's principle: **plugins are
+  Event Script capabilities (flow vocabulary) — never conditionally on/off**; D4 (P2) port
+  yaml.preload.override to Rust; D5 (P2) registration-metadata contract spec page (real
+  schema; golden-JSON conformance per the wire-format precedent) + ADR pair; D6 DEFERRED
+  executionHint:blocking. Kafka annotations (@CloudConnector/@CloudService) ride the future
+  minimalist-kafka/sync-over-async port. Bonus fixes: two stale Rust docs (syntax.md
+  single-route claim; api-overview public/private claim). Branches:
+  feature/annotation-macro-consistency both repos (Java = javadoc+WARN lock-step; Rust =
+  the refinement round, delegated).
+  <!-- id: thread-annotation-macro-consistency | created: 2026-07-25 | last_used: 2026-07-25 | uses: 1 | tier: working | origin: 2026-07-25-235904 -->
+
 - [ ] (field support — 2026-07-25; v4.10.6 SHIPPED, field rescan pending) **v4.10.4 failed
   the field Sonar quality gate — 5 findings, fix reviewed + verified, MERGED as
   [PR #231](https://github.com/Accenture/mercury-composable/pull/231) (merge commit

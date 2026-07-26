@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Fixed
+
+1. **Registration conflict policy documented truthfully (annotation-macro consistency
+   round, in lock-step with the Rust engine).** `Platform.register` / `registerPrivate`
+   javadoc claimed an `IllegalArgumentException` on duplicated registration; the actual
+   (and long-standing) behavior is a warn-and-reload — the existing function is released
+   and the new one takes its place. The javadoc now states the reload semantics. The
+   minigraph `PlaygroundLoader` also gains the same duplicate-name warning that
+   `SimplePluginLoader` already emits, so every registry reports duplicates consistently:
+   WARN + last-wins.
+
+---
 ## Version 4.10.6, 7/24/2026
 
 Code-quality patch release: resolves all 5 SonarQube findings reported by an enterprise
