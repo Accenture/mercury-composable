@@ -85,9 +85,14 @@ Some Java `@PreLoad` fields are capabilities of a runtime family, not universal 
 | `inputPojoClass` | defeats JVM type erasure; enables `List<PoJo>` | **N/A** — `TypedFunction<I, O>` is monomorphized; `body_as::<Vec<T>>()` carries the element type | Python: type hints suffice; Node: applicable as a class reference |
 | `inputStrategy` / `outputStrategy` | SNAKE / CAMEL / DEFAULT, flippable at runtime (`snake.case.serialization`) | **N/A at runtime** — `#[serde(rename_all)]` fixes case at compile time (the one genuine capability difference) | applicable — runtime case mapping is natural in both |
 | `executionHint` (reserved) | `@KernelThreadRunner` → kernel thread pool | reserved, unimplemented — every function is a tokio task; revisit if a field workload needs `spawn_blocking` | Python: relevant (GIL / thread pool); Node: worker_threads — design when porting |
+| string length/index semantics (plugin catalog: `length`, `substring`) | UTF-16 code units (`String.length()` — JVM legacy, retained) | **Unicode scalar values** (`chars()`) — the ports rule | Python `len()` and Go `RuneCountInString` are scalar-native; Node uses `[...str].length`, NOT the UTF-16 `.length` — never retrofit the JVM legacy |
 
 A port documents each N/A explicitly (the Rust docs' `!!! note "Rust port"` convention);
-silence is not a disposition.
+silence is not a disposition. The string-semantics row is a **bounded, deliberate
+divergence** (maintainer ruling, 2026-07-26): identical for all Basic-Multilingual-Plane
+text — English, Chinese, JSON keys, typical enterprise payloads — and differing only for
+supplementary-plane characters (emoji, historical scripts), which Java counts as 2 code
+units and every port counts as 1 scalar value.
 
 ## Fixed semantics — every port MUST {#semantics}
 
