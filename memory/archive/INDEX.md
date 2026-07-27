@@ -74,3 +74,8 @@
 - release-4-7-0-shipped — Release 4.7.0 — SHIPPED 2026-07-08 (tag `v4.7.0` on merge commit `e41a20b7`; PRs #146 feat… — faded — 2026-Q3.md
 - conv-instance-count-pattern — Worker-instance count encodes the concurrency pattern (Eric, 2026-07-13): `instances=1` is… — faded — 2026-Q3.md
 - thread-release-4-8-3-tag-deferred — (release in flight — 2026-07-13; CLOSED same day) v4.8.3 bumped for field pipeline test; T… — faded — 2026-Q3.md
+- snyk-4-8-2-remediation — Snyk gate rejected v4.8.2 in the field (2026-07-13) — remediated and MERGED (PR #168, merg… — faded — 2026-Q3.md
+- release-4.6.1-security-patch — Release 4.6.1 — security + maintenance patch on top of 4.6.0 (2026-07-06, branch `chore/re… — faded — 2026-Q3.md
+- test-config-injection-exact-key — Test config injection: use the EXACT config key as a System property, never a `${VAR}` ref… — faded — 2026-Q3.md
+- thread-release-4-8-6 — (release in flight — 2026-07-14; CLOSED same day) v4.8.6 SHIPPED via the normal flow — — faded — 2026-Q3.md
+- thread-release-4-8-5 — (release in flight — 2026-07-14; CLOSED same day) v4.8.5 SHIPPED via the normal flow — — faded — 2026-Q3.md

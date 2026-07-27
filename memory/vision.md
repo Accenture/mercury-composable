@@ -1,6 +1,7 @@
 # Vision — mercury-composable
 
-> Confirmed by maintainer (Eric Law) on 2026-06-20. North star for the VBDI loop;
+> Confirmed by maintainer (Eric Law) on 2026-06-20; re-confirmed 2026-07-27 (invariant
+> re-verification walkthrough). North star for the VBDI loop;
 > tier `core`, re-confirmed on the invariant-verification cadence. The Blueprint
 > (gap from Current State to here) lives as `(blueprint)` Open Threads in continuity.md.
 >
@@ -35,7 +36,8 @@ the one below:
   LLM backend is integrated in-repo yet; today the "AI" is an external session following a
   documented prompt.
 
-**Type:** Multi-module Java 21 framework / SDK (Maven reactor, `com.accenture.mercury` v4.6.1).
+**Type:** Multi-module Java 21 framework / SDK (Maven reactor, `com.accenture.mercury` v4.10.6;
+official Rust port in lock-step at the same version).
 
 ## What it should become  *(TARGET)*
 
