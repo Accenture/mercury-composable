@@ -347,8 +347,12 @@
 
 ## Open Threads
 
-- [ ] (feature in flight — 2026-07-26) **Ops-tunable worker instances, both engines (Eric's
-  /info/routes review round).** Context: the Rust typed-AsyncHttpRequest arc shipped
+- [x] (feature in flight — 2026-07-26; CLOSED 2026-07-26 — BOTH PRs MERGED same day:
+  Java [PR #236](https://github.com/Accenture/mercury-composable/pull/236) squash
+  `6ed481e1`, CI 6m51s; Rust PR #183 — the shared family key
+  `worker.instances.actuator.services` is now live on both engines. Rust v4.10.6 release
+  in flight on the back of the merged arc.) **Ops-tunable worker instances, both engines
+  (Eric's /info/routes review round).** Context: the Rust typed-AsyncHttpRequest arc shipped
   `/info/routes` (Rust branch `feature/typed-async-http-request`, unpushed), Eric reviewed
   the live output and ruled: actuators → 5 instances, Rust demo `http.request.filter` → 20,
   `event.api.auth` → 30 (real-world = OAuth2 bearer-token verification, I/O-bound), and the
