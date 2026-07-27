@@ -357,7 +357,33 @@ Size of the kernel thread pool for `@KernelThreadRunner` functions. The framewor
 |------|---------|
 | `int` | _(from `@PreLoad`)_ |
 
-Override the concurrency instance count for any named route at startup. Example: `worker.instances.my.service=50`.
+Override the concurrency instance count of a function whose `@PreLoad` declares this key as its
+`envInstances` parameter. Declared instance counts are rules of thumb — this key is what lets an
+operations team tune a function's concurrency in QA and Perf environments before promoting to
+Production, without a rebuild. The built-ins below all follow the `worker.instances.<route>`
+naming convention; your own functions opt in the same way, e.g.
+`@PreLoad(route="my.service", instances=50, envInstances="worker.instances.my.service")`.
+To override the instance count of a function that does not declare `envInstances`, use
+[`yaml.preload.override`](#yamlpreloadoverride) instead.
+
+### `worker.instances.actuator.services`
+
+| Type | Default |
+|------|---------|
+| `int` | `5` |
+
+One knob for the whole actuator family — `actuator.services` and its aliases
+(`info.actuator.service`, `routes.actuator.service`, `env.actuator.service`,
+`health.actuator.service`, `liveness.actuator.service`, `lib.actuator.service`) share a
+single worker pool size.
+
+### `worker.instances.http.flow.adapter`
+
+| Type | Default |
+|------|---------|
+| `int` | `200` |
+
+Instance count for the built-in `http.flow.adapter` (Event Script's HTTP-to-flow adapter).
 
 ### `worker.instances.no.op`
 
@@ -383,8 +409,8 @@ Instance count for the built-in `resilience.handler`.
 
 Instance count for the built-in `simple.exception.handler`.
 
-> The `worker.instances.<route>` pattern accepts any registered route name with dots preserved:
-> `worker.instances.v1.get.profile=100`.
+> Keys keep the route's dots as-is: a function declared with
+> `envInstances = "worker.instances.v1.get.profile"` is tuned by `worker.instances.v1.get.profile=100`.
 
 ---
 

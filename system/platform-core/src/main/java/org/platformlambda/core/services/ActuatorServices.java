@@ -18,7 +18,9 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@PreLoad(route=ActuatorServices.SERVICE_NAMES, instances=30)
+import static org.platformlambda.core.util.common.PlatformConstants.ENV_INSTANCES_PREFIX;
+
+@PreLoad(route=ActuatorServices.SERVICE_NAMES, instances=5, envInstances = ActuatorServices.ENV_INSTANCE_PROPERTY)
 public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Object> {
     public static final String ACTUATOR_SERVICES = "actuator.services";
     public static final String INFO_ACTUATOR = "info.actuator.service";
@@ -30,6 +32,8 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
     public static final String SERVICE_NAMES = ACTUATOR_SERVICES + "," + INFO_ACTUATOR + "," + ENV_ACTUATOR + "," +
                                                 ROUTES_ACTUATOR_SERVICE + "," + LIB_ACTUATOR + "," +
                                                 HEALTH_ACTUATOR + "," + LIVENESS_ACTUATOR;
+    // one knob tunes the whole actuator family - all route aliases share this class's worker pool size
+    public static final String ENV_INSTANCE_PROPERTY = ENV_INSTANCES_PREFIX + ACTUATOR_SERVICES;
     private static final Logger log = LoggerFactory.getLogger(ActuatorServices.class);
     private static final Utility util = Utility.getInstance();
     private static final SimpleCache cache = SimpleCache.createCache("health.info", 5000);
