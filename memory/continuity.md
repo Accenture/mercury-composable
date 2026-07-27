@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-27 | agent: Claude Code (2026-07-27-005415)
+- **last_session:** 2026-07-27 | agent: Claude Code (2026-07-27-012548)
 - **last_review:** 2026-07-24 | through 2026-07-24-154543.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -350,8 +350,10 @@
 - [x] (feature in flight — 2026-07-26; CLOSED 2026-07-26 — BOTH PRs MERGED same day:
   Java [PR #236](https://github.com/Accenture/mercury-composable/pull/236) squash
   `6ed481e1`, CI 6m51s; Rust PR #183 — the shared family key
-  `worker.instances.actuator.services` is now live on both engines. Rust v4.10.6 release
-  in flight on the back of the merged arc.) **Ops-tunable worker instances, both engines
+  `worker.instances.actuator.services` is now live on both engines. Rust v4.10.6 RELEASED
+  same day on the back of the merged arc — tag on merge `9732799e`, published; Eric
+  confirmed the pretty-print parity also improved the MiniGraph /api/graph output, live
+  proof of the single-render-path design.) **Ops-tunable worker instances, both engines
   (Eric's /info/routes review round).** Context: the Rust typed-AsyncHttpRequest arc shipped
   `/info/routes` (Rust branch `feature/typed-async-http-request`, unpushed), Eric reviewed
   the live output and ruled: actuators → 5 instances, Rust demo `http.request.filter` → 20,
@@ -423,7 +425,11 @@
   (Java ADR-0009 / Rust ADR-0008).** No release scheduled yet — rides a future patch.
   <!-- id: thread-annotation-macro-consistency | created: 2026-07-25 | last_used: 2026-07-25 | uses: 1 | tier: working | origin: 2026-07-25-235904 -->
 
-- [ ] (field support — 2026-07-25; v4.10.6 SHIPPED, field rescan pending) **v4.10.4 failed
+- [x] (field support — 2026-07-25; CLOSED 2026-07-26 — **field rescan of v4.10.6 PASSED
+  the Sonar quality gate with a perfect Overall-Code score**: 0 vulnerabilities / 0 bugs /
+  0 code smells / 0 hotspots, coverage 80.5% ≥ the 60% requirement — Eric shared the field
+  dashboard 2026-07-26; arc complete: rejection → fix #231 → release v4.10.6 #232 → clean
+  rescan, the [[thread-sonar-4-9-1-field-rejection]] shape) **v4.10.4 failed
   the field Sonar quality gate — 5 findings, fix reviewed + verified, MERGED as
   [PR #231](https://github.com/Accenture/mercury-composable/pull/231) (merge commit
   `c7d05d83`), then released as
