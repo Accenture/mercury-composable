@@ -21,6 +21,7 @@
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.common.TestBase;
+import org.platformlambda.core.services.ActuatorServices;
 import org.platformlambda.core.services.NoOpFunction;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.ServiceDef;
@@ -58,6 +59,15 @@ class EnvInstanceOverrideTest extends TestBase {
                 Integer.parseInt(reader.getProperty(NoOpFunction.ENV_INSTANCE_PROPERTY)),
                 routeToInstancesMap.get(NoOpFunction.ROUTE)
         );
+    }
+
+    @Test
+    void actuatorFamilySharesOneEnvInstanceKey() {
+        int expected = Integer.parseInt(reader.getProperty(ActuatorServices.ENV_INSTANCE_PROPERTY));
+        for (String route : ActuatorServices.SERVICE_NAMES.split(",")) {
+            assertEquals(expected, routeToInstancesMap.get(route.trim()),
+                    route + " should honor " + ActuatorServices.ENV_INSTANCE_PROPERTY);
+        }
     }
 
 }

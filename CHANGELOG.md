@@ -23,6 +23,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    test per kind — the same golden-vector method that guards the event envelope wire
    format. Formalized as ADR-0009.
 
+### Changed
+
+1. **Actuator worker instances: rule-of-thumb default + operations knob.** The actuator
+   family (`actuator.services` and its aliases serving `/info`, `/info/routes`,
+   `/info/lib`, `/env`, `/health`, `/livenessprobe`) now defaults to **5** worker
+   instances (was 30) and is tunable at deployment time via the new
+   `worker.instances.actuator.services` parameter — one knob for the whole family,
+   following the same `envInstances` convention as `no.op` and the Event Script
+   built-ins. Declared instance counts are rules of thumb; the knob is what lets an
+   operations team tune concurrency in QA and Perf environments before promoting to
+   Production. The lambda-example `event.api.auth` demo likewise moves to 30 instances
+   (a real deployment verifies bearer tokens against an OAuth 2.0 security authority —
+   an I/O-bound call) with `worker.instances.event.api.auth`, modeling the same
+   practice.
+
 ### Fixed
 
 1. **Registration conflict policy documented truthfully (annotation-macro consistency
@@ -33,6 +48,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    minigraph `PlaygroundLoader` also gains the same duplicate-name warning that
    `SimplePluginLoader` already emits, so every registry reports duplicates consistently:
    WARN + last-wins.
+
+2. **`worker.instances.<route>` documented truthfully.** The configuration reference
+   claimed the pattern overrides the instance count of *any* registered route; it
+   actually applies only to functions whose `@PreLoad` declares the key via
+   `envInstances` (overriding an arbitrary function's count is `yaml.preload.override`'s
+   job). The page now states the real mechanism and adds the previously undocumented
+   `worker.instances.http.flow.adapter` key.
 
 ---
 ## Version 4.10.6, 7/24/2026

@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-25 | agent: Claude Code (2026-07-25-005125)
+- **last_session:** 2026-07-27 | agent: Claude Code (2026-07-27-005415)
 - **last_review:** 2026-07-24 | through 2026-07-24-154543.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -346,6 +346,27 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (feature in flight — 2026-07-26) **Ops-tunable worker instances, both engines (Eric's
+  /info/routes review round).** Context: the Rust typed-AsyncHttpRequest arc shipped
+  `/info/routes` (Rust branch `feature/typed-async-http-request`, unpushed), Eric reviewed
+  the live output and ruled: actuators → 5 instances, Rust demo `http.request.filter` → 20,
+  `event.api.auth` → 30 (real-world = OAuth2 bearer-token verification, I/O-bound), and the
+  ops-tunability principle: **declared counts are rules of thumb; operations teams tune in
+  QA/Perf via config before promoting to Production.** Java commit `6f0f03df` on
+  `feature/ops-tunable-instances` (NOT pushed): ActuatorServices 30 → 5 + NEW
+  `worker.instances.actuator.services` (one knob, 7 aliases); lambda-example event.api.auth
+  10 → 30 + `worker.instances.event.api.auth`; **doc bug fixed** — configuration-reference
+  claimed `worker.instances.<route>` overrides ANY route, but code (AppStarter.
+  getInstancesFromEnv + Platform.register) only honors it where `@PreLoad` declares
+  `envInstances` (any-route override = `yaml.preload.override`); added missing
+  `worker.instances.http.flow.adapter` section. Proof: platform-core 424 green WITH the
+  actuator key active (=8) + `actuatorFamilySharesOneEnvInstanceKey`; lambda-example 14.
+  **Cross-engine key parity decision: the Rust port's five per-endpoint actuator services
+  share the SAME key name `worker.instances.actuator.services`** (its actuator.services
+  route is unported; one runbook line tunes both engines). Rust half in flight in the agent
+  session (same branch/commit as the typed-request arc). Close when both PRs merge.
+  <!-- id: thread-ops-tunable-instances | created: 2026-07-26 | last_used: 2026-07-26 | uses: 1 | tier: working | origin: 2026-07-27-005415 -->
 
 - [x] (feature in flight — 2026-07-25; ARC COMPLETE 2026-07-26 — P1 AND P2 merged both
   repos) **Annotation → macro consistency arc (Eric's initiative; design RATIFIED — see

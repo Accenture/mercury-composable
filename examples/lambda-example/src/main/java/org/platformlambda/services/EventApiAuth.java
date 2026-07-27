@@ -43,9 +43,14 @@ import java.util.Map;
  * headers on the envelope become session info that rides to the target
  * function as read-only headers - the "user" header in this demo.
  * Replace this class with your own OAuth 2.0 bearer-token validation for
- * production use.
+ * production use.<p>
+ *
+ * A real deployment verifies the bearer token against an OAuth 2.0 security
+ * authority - an I/O-bound call - hence the higher instance count. The
+ * default is a rule of thumb; the envInstances key lets an operations team
+ * tune it in QA and Perf environments before promoting to Production.
  */
-@PreLoad(route="event.api.auth", instances=10)
+@PreLoad(route="event.api.auth", instances=30, envInstances = "worker.instances.event.api.auth")
 public class EventApiAuth implements TypedLambdaFunction<AsyncHttpRequest, Object> {
     private static final Logger log = LoggerFactory.getLogger(EventApiAuth.class);
 
