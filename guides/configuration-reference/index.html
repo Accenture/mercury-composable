@@ -2603,6 +2603,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#workerinstancesactuatorservices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        worker.instances.actuator.services
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workerinstanceshttpflowadapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        worker.instances.http.flow.adapter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#workerinstancesnoop" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4762,6 +4784,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#workerinstancesactuatorservices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        worker.instances.actuator.services
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workerinstanceshttpflowadapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        worker.instances.http.flow.adapter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#workerinstancesnoop" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6697,7 +6741,49 @@ virtual threads.</p>
 </tr>
 </tbody>
 </table>
-<p>Override the concurrency instance count for any named route at startup. Example: <code>worker.instances.my.service=50</code>.</p>
+<p>Override the concurrency instance count of a function whose <code>@PreLoad</code> declares this key as its
+<code>envInstances</code> parameter. Declared instance counts are rules of thumb — this key is what lets an
+operations team tune a function's concurrency in QA and Perf environments before promoting to
+Production, without a rebuild. The built-ins below all follow the <code>worker.instances.&lt;route&gt;</code>
+naming convention; your own functions opt in the same way, e.g.
+<code>@PreLoad(route="my.service", instances=50, envInstances="worker.instances.my.service")</code>.
+To override the instance count of a function that does not declare <code>envInstances</code>, use
+<a href="#yamlpreloadoverride"><code>yaml.preload.override</code></a> instead.</p>
+<h3 id="workerinstancesactuatorservices"><code>worker.instances.actuator.services</code><a class="headerlink" href="#workerinstancesactuatorservices" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int</code></td>
+<td><code>5</code></td>
+</tr>
+</tbody>
+</table>
+<p>One knob for the whole actuator family — <code>actuator.services</code> and its aliases
+(<code>info.actuator.service</code>, <code>routes.actuator.service</code>, <code>env.actuator.service</code>,
+<code>health.actuator.service</code>, <code>liveness.actuator.service</code>, <code>lib.actuator.service</code>) share a
+single worker pool size.</p>
+<h3 id="workerinstanceshttpflowadapter"><code>worker.instances.http.flow.adapter</code><a class="headerlink" href="#workerinstanceshttpflowadapter" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int</code></td>
+<td><code>200</code></td>
+</tr>
+</tbody>
+</table>
+<p>Instance count for the built-in <code>http.flow.adapter</code> (Event Script's HTTP-to-flow adapter).</p>
 <h3 id="workerinstancesnoop"><code>worker.instances.no.op</code><a class="headerlink" href="#workerinstancesnoop" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -6747,8 +6833,8 @@ virtual threads.</p>
 </table>
 <p>Instance count for the built-in <code>simple.exception.handler</code>.</p>
 <blockquote>
-<p>The <code>worker.instances.&lt;route&gt;</code> pattern accepts any registered route name with dots preserved:
-<code>worker.instances.v1.get.profile=100</code>.</p>
+<p>Keys keep the route's dots as-is: a function declared with
+<code>envInstances = "worker.instances.v1.get.profile"</code> is tuned by <code>worker.instances.v1.get.profile=100</code>.</p>
 </blockquote>
 <hr />
 <h2 id="http-client">HTTP Client<a class="headerlink" href="#http-client" title="Permanent link">&para;</a></h2>
