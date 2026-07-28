@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-27 | agent: Claude Code (2026-07-27-215011)
+- **last_session:** 2026-07-28 | agent: Claude Code (2026-07-28-005814)
 - **last_review:** 2026-07-27 | through 2026-07-27-214357.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -180,6 +180,24 @@
   for the release-bump surface and prior caveats.
   <!-- id: release-4-8-0-shipped | created: 2026-07-10 | last_used: 2026-07-24 | uses: 8 | tier: active | origin: 2026-07-11-031930 -->
 
+- **ManagedCache eviction: Java accepts + documents non-determinism; Rust is strict LRU —
+  a deliberate cross-engine asymmetry (Eric, 2026-07-27).** Java's `ManagedCache` keeps
+  Caffeine (3.2.4) W-TinyLFU: under `maxItems` pressure eviction is approximate and
+  non-deterministic (frequency-based admission + anti-HashDoS jitter admitting 1/128
+  losing candidates at random + lossy read buffers; no policy knob exists in the builder).
+  Javadoc on both `createCache` overloads + CHANGELOG state it; callers must never rely on
+  which entry survives nor assert eviction victims. The Rust port's ManagedCache is moka
+  `EvictionPolicy::lru()` (deterministic; increment 71, Rust PR #185) per Eric's
+  "deterministic eviction" ruling there. Eviction is internal state, NOT a presentation
+  surface — [[conv-telemetry-presentation-parity]] does not require closing this gap.
+  **"Frequency aging" is NOT a determinism remediation** (investigated vs the pinned jar:
+  `FrequencySketch.reset()` already ages counters; aging fixes stale popularity, not
+  reproducibility). Revisit trigger: the first consumer that truly runs at capacity
+  (schema-registry caches are the candidate); today every caller uses the 2-arg form
+  (default maxItems 2000, nothing close). Full handoff + options record:
+  the Rust repo's docs/design/managed-cache-port.md.
+  <!-- id: managed-cache-eviction-determinism | created: 2026-07-28 | last_used: 2026-07-28 | uses: 1 | tier: working | origin: 2026-07-28-005814 -->
+
 - **Application log context is ON by default (2026-07-22, Eric via leadership request; branch
   `feature/lambda-example-interop-echo`, ships in the next release).** platform-core carries a built-in
   `default-log-context.yaml` (cid/traceId/tracePath/spanId/parentSpanId/service/timestamp); when json/compact
@@ -268,7 +286,7 @@
   lock-step on both engines (with closely matching error messages — presentation parity extends
   to error text), or flows stop being portable. Precedent: the #220 collection plugins mirrored
   into the Rust v4.10.2.
-  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-07-27 | uses: 6 | tier: active | origin: 2026-07-23-145132 -->
+  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-07-28 | uses: 7 | tier: active | origin: 2026-07-23-145132 -->
 
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
@@ -412,7 +430,7 @@
   GitHub web-UI 500 delayed PR creation (API was healthy; status page lagged); EMU
   accounts CANNOT create PRs via API either (GraphQL + REST both 403) — web UI is the only
   PR path. Sixth lock-step release of the 4.10 arc.
-  <!-- id: thread-release-4-10-5 | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: active | origin: 2026-07-24-154543 -->
+  <!-- id: thread-release-4-10-5 | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: archive-candidate | origin: 2026-07-24-154543 -->
 
 - [x] (release in flight — 2026-07-24; CLOSED same day) **v4.10.4 SHIPPED AND PUBLISHED in
   lock-step (both repos) — standards-first traceparent carrier + interop header hygiene.**
@@ -427,7 +445,7 @@
   before assuming pushed commits appear in it. Fifth lock-step release of the 4.10 arc:
   4.10.0 interop → 4.10.1 presentation parity → 4.10.2 boundary demarcation → 4.10.3 field
   roll-up → 4.10.4 standards-first traceparent + hygiene.
-  <!-- id: thread-release-4-10-4 | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: active | origin: 2026-07-24-154543 -->
+  <!-- id: thread-release-4-10-4 | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: archive-candidate | origin: 2026-07-24-154543 -->
 
 - [x] (feature in flight — 2026-07-24; CLOSED same day — RELEASED in v4.10.4) **Configurable traceparent header name (field request).**
   Field wants `http.traceparent.header` / `kafka.traceparent.header` /
@@ -480,7 +498,7 @@
   **RELEASED 2026-07-24 in v4.10.4 both repos ([[thread-release-4-10-4]]) — the full arc
   closed: field request → design ruling → lock-step implementation → ce_traceparent live
   interop → hygiene round → standards position → release.**
-  <!-- id: thread-traceparent-header-config | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: active | origin: 2026-07-24-154543 -->
+  <!-- id: thread-traceparent-header-config | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: archive-candidate | origin: 2026-07-24-154543 -->
 
 - [x] (release in flight — 2026-07-23; CLOSED same day) **v4.10.3 SHIPPED AND PUBLISHED in
   lock-step (both repos) — field-deployment roll-up.** Releases are immutable (Eric), so the
