@@ -49,7 +49,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    `SimplePluginLoader` already emits, so every registry reports duplicates consistently:
    WARN + last-wins.
 
-2. **`worker.instances.<route>` documented truthfully.** The configuration reference
+2. **`ManagedCache` eviction behavior documented truthfully.** Under `maxItems` capacity
+   pressure, eviction is approximate and non-deterministic (Caffeine W-TinyLFU admission
+   with randomized anti-HashDoS jitter) — callers must not rely on which entry survives.
+   Entry expiry remains exact. The javadoc now states this, and notes the deliberate
+   cross-engine asymmetry: the Rust port's `ManagedCache` uses strict, deterministic LRU
+   (moka). No behavior change; no in-repo consumer runs near its capacity bound.
+
+3. **`worker.instances.<route>` documented truthfully.** The configuration reference
    claimed the pattern overrides the instance count of *any* registered route; it
    actually applies only to functions whose `@PreLoad` declares the key via
    `envInstances` (overriding an arbitrary function's count is `yaml.preload.override`'s
