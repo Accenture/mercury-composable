@@ -39,9 +39,10 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * End-to-end drive of the tutorial-14 approval workflow against a real (embedded) Redis:
- * the first request suspends at the human checkpoint and the second request, carrying the
- * same X-Correlation-Id, resumes and completes with the state captured in the first run.
+ * End-to-end drive of the tutorial-14 purchase workflow against a real (embedded) Redis:
+ * three human checkpoints (order, approval, delivery release) expressed as four short
+ * graph runs sharing one X-Correlation-Id - each run resumes past the previous
+ * checkpoint and the final response carries the state captured across all of them.
  */
 class SuspendResumeTutorialTest {
     private static final Logger log = LoggerFactory.getLogger(SuspendResumeTutorialTest.class);
@@ -75,24 +76,37 @@ class SuspendResumeTutorialTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void approvalWorkflowSuspendsAndResumes() throws TimeoutException {
+    void purchaseWorkflowWithThreeCheckpoints() throws TimeoutException {
         var cid = Utility.getInstance().getUuid();
-        // step 1: submit the request - the workflow captures it and suspends for approval
-        var submitted = runGraph(cid, Map.of("item", "laptop", "amount", 2000));
-        assertEquals(200, submitted.getStatus());
-        var first = new MultiLevelMap((Map<String, Object>) submitted.getBody());
-        assertEquals("suspended", first.getElement("type"));
-        assertEquals(cid, first.getElement("cid"));
-        // step 2: the approver decides - same correlation ID resumes the workflow
-        var approved = runGraph(cid, Map.of("decision", "approved"));
-        assertEquals(200, approved.getStatus());
-        var completed = new MultiLevelMap((Map<String, Object>) approved.getBody());
-        assertEquals("completed", completed.getElement("stage"));
-        assertEquals("approved", completed.getElement("decision"));
-        // the original request from run 1 crossed the suspension into run 2
-        assertEquals("laptop", completed.getElement("request.item"));
-        assertEquals(2000, completed.getElement("request.amount"));
-        log.info("tutorial-14 approval workflow completed for cid {}", cid);
+        // run 1: the customer orders a laptop - suspend for the store manager
+        var ordered = stage(runGraph(cid, Map.of("item", "laptop", "amount", 2000)), cid);
+        assertTrue(String.valueOf(ordered.getElement("stage")).startsWith("order-submitted"));
+        // run 2: the store manager approves - suspend for the delivery department
+        var approved = stage(runGraph(cid, Map.of("decision", "approved", "manager", "store-88")), cid);
+        assertTrue(String.valueOf(approved.getElement("stage")).startsWith("approved"));
+        // run 3: the delivery department releases the shipment - suspend for confirmation
+        var released = stage(runGraph(cid, Map.of("release", true, "courier", "express")), cid);
+        assertTrue(String.valueOf(released.getElement("stage")).startsWith("released"));
+        // run 4: shipment confirmation - the workflow completes with the full history
+        var shipped = stage(runGraph(cid, Map.of("tracking", "TRK-12345")), cid);
+        assertEquals("shipped", shipped.getElement("stage"));
+        // state captured across all four runs survived every suspension
+        assertEquals("laptop", shipped.getElement("order.item"));
+        assertEquals(2000, shipped.getElement("order.amount"));
+        assertEquals("approved", shipped.getElement("approval.decision"));
+        assertEquals("store-88", shipped.getElement("approval.manager"));
+        assertEquals(true, shipped.getElement("delivery.release"));
+        assertEquals("express", shipped.getElement("delivery.courier"));
+        assertEquals("TRK-12345", shipped.getElement("shipment.tracking"));
+        log.info("tutorial-14 purchase workflow shipped for cid {}", cid);
+    }
+
+    @SuppressWarnings("unchecked")
+    private MultiLevelMap stage(EventEnvelope response, String cid) {
+        assertEquals(200, response.getStatus());
+        var body = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals(cid, body.getElement("cid"));
+        return body;
     }
 
     @SuppressWarnings("unchecked")
@@ -102,7 +116,7 @@ class SuspendResumeTutorialTest {
         var response = runGraph(Utility.getInstance().getUuid(), Map.of("item", "mouse"));
         assertEquals(200, response.getStatus());
         var body = new MultiLevelMap((Map<String, Object>) response.getBody());
-        assertEquals("suspended", body.getElement("type"));
+        assertTrue(String.valueOf(body.getElement("stage")).startsWith("order-submitted"));
     }
 
     @SuppressWarnings("unchecked")
@@ -114,7 +128,7 @@ class SuspendResumeTutorialTest {
         assertEquals(404, response.getStatus());
         var body = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("rejected", body.getElement("type"));
-        assertTrue(String.valueOf(body.getElement("message")).contains("Submit the request"),
+        assertTrue(String.valueOf(body.getElement("message")).contains("Submit the order"),
                 "unexpected rejection message: " + response.getBody());
     }
 

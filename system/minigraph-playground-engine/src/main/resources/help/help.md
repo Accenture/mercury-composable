@@ -70,4 +70,4 @@ Tutorials
 - help tutorial 11 (flow extension)
 - help tutorial 12 (custom error handling)
 - help tutorial 13 (invoking a composable function with the task skill)
-- help tutorial 14 (workflow suspension - suspend and resume with a human checkpoint)
+- help tutorial 14 (workflow suspension - a purchase workflow with three human checkpoints)

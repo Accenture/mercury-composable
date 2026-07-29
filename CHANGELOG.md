@@ -36,9 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
      minigraph-playground example app now does); lazy connection, `redis.*` config keys
      shared with sync-over-async. Any composable function honoring the documented store
      contract can replace it.
-   - New tutorial **`tutorial-14`** (approval workflow, shipped with the engine) with
-     end-to-end tests against embedded Redis — including input validation: a decision
-     without a prior submission is rejected with HTTP 404 (a null-safe presence check via
+   - New tutorial **`tutorial-14`** (a purchase workflow with THREE human checkpoints —
+     order, approval, delivery release — as four short runs, shipped with the engine)
+     with end-to-end tests against embedded Redis — including input validation: a
+     later-stage request without a suspended record is rejected with HTTP 404 (a null-safe presence check via
      `{var}` substitution inside a `text()` constant). The **Workflow Suspension** guide
      chapter (incl. the state-store contract), skills-reference entries, `help.md` +
      `help tutorial 14.md` Playground pages, and Playground node types

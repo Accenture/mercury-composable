@@ -85,13 +85,21 @@ task=v1.redis.retrieve.model
 Types (`Suspend`, `Resume`, `Suspensible`) are **visual convention** — they pick the node
 colors in the Playground; the skill defines the behavior.
 
-## Walkthrough: the approval workflow (tutorial-14)
+## Walkthrough: the purchase workflow (tutorial-14)
 
 `tutorial-14` (shipped with the engine, runnable in the `minigraph-playground` example
-app) is the complete pattern:
-`root → resume → check-fresh → record-request (suspend=true) → {suspend | approve} → end`,
-plus a rejection path for invalid input. Run it with Redis (e.g.
-`helpers/redis-standalone`) and drive it with two requests sharing one correlation ID:
+app) is the complete multi-checkpoint pattern — **three human checkpoints, four short
+runs, one correlation ID**:
+
+```text
+root → resume → order (suspend=true) → approval (suspend=true) → delivery (suspend=true) → ship → end
+```
+
+A customer orders, the store manager approves, the delivery department releases the
+shipment, and the parcel ships — one `suspend` node serves every checkpoint, and each
+suspensible node captures its actor's input into the model and stages its own
+stage-specific reply (overriding the default `suspended` response). Run it with Redis
+(e.g. `helpers/redis-standalone`) and drive the four runs with one correlation ID:
 
 ```bash
 curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
@@ -100,34 +108,42 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
 ```
 
 ```json
-{"type": "suspended", "cid": "order-1001"}
+{"stage": "order-submitted; waiting for store manager approval", "cid": "order-1001"}
 ```
 
-The workflow captured the request into `model.request` and suspended. When the approver
-decides:
+Then, with the same `x-correlation-id`, the store manager approves
+(`{"decision": "approved", "manager": "store-88"}` → `"stage": "approved; …"`), the
+delivery department releases (`{"release": true, "courier": "express"}` →
+`"stage": "released; …"`), and shipment confirmation completes the workflow:
 
 ```bash
 curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
   -H 'content-type: application/json' -H 'x-correlation-id: order-1001' \
-  -d '{"decision": "approved"}'
+  -d '{"tracking": "TRK-12345"}'
 ```
 
 ```json
-{"stage": "completed", "decision": "approved", "request": {"item": "laptop", "amount": 2000}}
+{
+  "stage": "shipped",
+  "order": {"item": "laptop", "amount": 2000},
+  "approval": {"decision": "approved", "manager": "store-88"},
+  "delivery": {"release": true, "courier": "express"},
+  "shipment": {"tracking": "TRK-12345"},
+  "cid": "order-1001"
+}
 ```
 
-The original request crossed the suspension: run 2 restored `model.request` from the
-store, skipped `record-request` (it already ran), and completed through `approve`. The
-caller of the suspended run decides what "suspended" looks like — stage your own
-`output.*` before the suspend node to override the default reply.
+Every stage's input crossed every suspension — the model accumulated `order`, `approval`
+and `delivery` across four separate runs, and a later checkpoint simply re-persisted the
+grown state under the same correlation ID.
 
-The tutorial also validates its input: a decision for a correlation ID that never
-submitted (or has expired) is **rejected with HTTP 404** — the submission must come first.
-Two techniques worth stealing from its model:
+The tutorial also validates its input: a request that is not an order submission, for a
+correlation ID with no suspended record, is **rejected with HTTP 404** — the order must
+come first. Two techniques worth stealing from its model:
 
 - **Null-safe presence check.** The math expression engine has no null literal, but `{var}`
   substitution inside a `text()` constant is null-safe:
-  `MAPPING: text(={input.body.decision}) -> model.decision_probe` always yields a present
+  `MAPPING: text(={input.body.item}) -> model.order_probe` always yields a present
   string (`=null` when the field is absent), which an `IF` can compare safely.
 - **Declarative response status.** A graph may stage its own HTTP status —
   `int(404) -> output.status` in the rejection node. A non-2xx status routes through the
@@ -142,7 +158,7 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
 ```
 
 ```json
-{"type": "rejected", "message": "Transaction not found. Submit the request before sending a decision", "status": 404}
+{"type": "rejected", "message": "Transaction not found. Submit the order first", "status": 404}
 ```
 
 ## Design rules
