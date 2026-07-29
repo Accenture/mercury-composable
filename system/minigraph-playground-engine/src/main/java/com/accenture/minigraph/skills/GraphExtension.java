@@ -220,8 +220,12 @@ public class GraphExtension extends GraphLambdaFunction {
         }
         // clean up working area
         stateMachine.removeElement(nodeName + FETCH);
+        // issue the request on the worker thread so the outbound event carries this span
+        // as the delegated call's parent (the trace context is thread-keyed and would be
+        // gone inside the Mono callback)
+        var delegated = po.eRequest(forward, ttl, false);
         return Mono.create(sink ->
-            po.eRequest(forward, ttl, false).thenAccept(response -> {
+            delegated.thenAccept(response -> {
                 stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());
                 if (!response.getHeaders().isEmpty()) {
                     stateMachine.setElement(nodeName + "." + HEADER, response.getHeaders());

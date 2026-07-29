@@ -56,6 +56,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - **Declarative response status**: a graph can stage its HTTP status
      (e.g. `int(404) -> output.status`); `graph.executor` applies it to the graph's reply
      at completion.
+   - **Span lineage for skill-delegated calls**: `graph.suspend`, `graph.resume`,
+     `graph.task` and `graph.extension` now issue their outbound request on the worker
+     thread, so the called function's span chains onto the skill span instead of floating
+     parentless in the trace (the per-function trace context is thread-keyed and is gone
+     inside a `Mono` callback).
 
 2. **Registration Metadata Contract (annotation-macro consistency arc, P2).** A new
    reference page — `docs/guides/registration-metadata-contract.md` — fixes the

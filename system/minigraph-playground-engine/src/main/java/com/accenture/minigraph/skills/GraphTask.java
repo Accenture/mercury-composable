@@ -146,8 +146,12 @@ public class GraphTask extends GraphLambdaFunction {
         var nodeName = node.getAlias();
         var stateMachine = graphInstance.stateMachine;
         stateMachine.setElement(nodeName + "." + TARGET, route);
+        // issue the request on the worker thread so the outbound event carries this span
+        // as the task call's parent (the trace context is thread-keyed and would be gone
+        // inside the Mono callback)
+        var invoked = po.eRequest(request, ttl, false);
         return Mono.create(sink ->
-            po.eRequest(request, ttl, false).thenAccept(response -> {
+            invoked.thenAccept(response -> {
                 stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());
                 if (!response.getHeaders().isEmpty()) {
                     stateMachine.setElement(nodeName + "." + HEADER, response.getHeaders());
