@@ -319,17 +319,19 @@
 
 ## Open Threads
 
-- [ ] (feature — design RATIFIED 2026-07-28; **P1 engine core IMPLEMENTED 2026-07-28** on
-  branch `feature/graph-suspend-resume`, NOT pushed: both skills + walker changes +
-  10-test e2e suite green (85 module tests incl. P2 compile checks, full reactor green); temp-file mock
-  store proves the whole loop with zero engine store deps; one design-trace bug fixed
-  pre-run (suspend node's own marks excluded from restore, else re-suspension at a second
-  checkpoint deadlocks — multi-checkpoint test pins it). Remaining: P5 Rust lock-step arc.
-  P2 done (CompileGraph checks + webapp theme); P3 done (extensions/minigraph-state-redis,
-  GETDEL consume, playground app wired, 7 tests vs embedded Redis); P4 done (tutorial-14 +
-  e2e vs embedded Redis, workflow-suspension.md guide incl. store contract,
-  skills-reference + reserved-names + CHANGELOG, ADR-0010 PROPOSED on the branch +
-  [[graph-suspend-resume-design]] Key Decision fact).)
+- [ ] (feature — **P1-P4 MERGED 2026-07-28 as
+  [PR #238](https://github.com/Accenture/mercury-composable/pull/238), squash `168527ff`;
+  ADR-0010 thereby ACCEPTED (the merge was the ledger gate). Eric drove three manual-test
+  refinement rounds before merging: business-cid fidelity (walkers stamp the my_cid tag
+  from model.cid; log-context $cid in PLATFORM-CORE now business-first), tutorial-14 as a
+  THREE-checkpoint purchase workflow (order/approval/delivery, 4 runs, order-first input
+  validation via the null-safe text() probe + declarative output.status), and span
+  lineage (the four Mono-wrapped skills issue eRequest on the worker thread — store/task/
+  extension calls chain onto their skill spans; no-re-execution now visible in trace
+  topology). Final validation log: perfect score on traceId/spanId/parentSpanId/business
+  cid. Remaining: **P5 Rust lock-step arc** — mirrors engine core + compile checks +
+  store crate (Redis crate choice = Rust session) + tutorial fixture verbatim + the
+  log-context $cid and span-lineage presentation changes.)
   **Graph suspend/resume: workflow suspension for the Active Knowledge Graph.** A graph run
   persists model + suspension node at a human checkpoint via `skill=graph.suspend`
   (reserved ALIAS `suspend` — the root/end special-alias pattern, jump-by-name routing;
