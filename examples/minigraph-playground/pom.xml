@@ -54,6 +54,25 @@
             <version>4.10.6</version>
         </dependency>
 
+        <!-- Redis state store for graph suspend/resume: including this jar registers
+             v1.redis.persist.model and v1.redis.retrieve.model automatically (PreLoad
+             classpath scan) - the connection is lazy, so the app runs normally without
+             Redis until a graph actually suspends or resumes. -->
+        <dependency>
+            <groupId>org.platformlambda</groupId>
+            <artifactId>minigraph-state-redis</artifactId>
+            <version>4.10.6</version>
+        </dependency>
+
+        <!-- Embedded Redis (real redis-server binary, incl. arm64 macOS) for the
+             tutorial-14 suspend/resume end-to-end test -->
+        <dependency>
+            <groupId>com.github.codemonstur</groupId>
+            <artifactId>embedded-redis</artifactId>
+            <version>1.4.3</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.junit</groupId>
             <artifactId>junit-bom</artifactId>

@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.platformlambda.common.TestBase;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
+import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.ConfigReader;
@@ -100,6 +101,37 @@ class WorkerLogContextTest extends TestBase {
                 Utility.getInstance().sleep(50);
             }
             assertNull(LogContextManager.get(tid), "log context must be removed after the worker returns");
+        } finally {
+            platform.release(route);
+            LogContextConfig.setInstanceForTest(null);
+        }
+    }
+
+    @Test
+    void businessCorrelationIdWinsInLogContext() throws InterruptedException {
+        // the log context 'cid' is the business correlation-id (the engine my_cid tag) when
+        // present - the envelope correlation-id is internal routing metadata (e.g. the graph
+        // engine's composite skill-callback ids) and is only a fallback
+        Platform platform = Platform.getInstance();
+        String route = "log.context.business.cid.function";
+        String traceId = util.getUuid();
+        String internalCid = "internal-" + util.getUuid();
+        String businessCid = "order-" + util.getUuid();
+        BlockingQueue<Map<String, Object>> bench = new ArrayBlockingQueue<>(1);
+        LambdaFunction f = (headers, input, instance) -> {
+            LogContext ctx = LogContextManager.get(Thread.currentThread().threadId());
+            bench.add(LogContextConfig.getInstance().render(ctx, System.currentTimeMillis()));
+            return "ok";
+        };
+        platform.registerPrivate(route, f, 1);
+        LogContextConfig.setInstanceForTest(enabledConfig());
+        try {
+            PostOffice po = new PostOffice("unit.test", traceId, "GET /api/log/business/cid");
+            po.send(new EventEnvelope().setTo(route).setBody("x").setCorrelationId(internalCid)
+                    .addTag(EventEmitter.BUSINESS_CID_TAG, businessCid));
+            Map<String, Object> rendered = bench.poll(10, TimeUnit.SECONDS);
+            assertNotNull(rendered, "function should have rendered the log context");
+            assertEquals(businessCid, rendered.get("cid"), "the business correlation-id must win");
         } finally {
             platform.release(route);
             LogContextConfig.setInstanceForTest(null);

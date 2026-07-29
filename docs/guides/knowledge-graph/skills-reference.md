@@ -267,6 +267,56 @@ and the body auto-converts when the function declares a PoJo input. The result l
 `graph.task` is for a single function call. Writing the function itself:
 [function AI agent guide](../event-driven/ai-agent-guide.md) (`#[preload]` + `ComposableFunction`).
 
+## graph.suspend {#suspend}
+
+Persists the workflow state of the running graph to an external state store and lets the run
+complete — the transaction resumes later through [`graph.resume`](#resume) with the same business
+correlation ID. A **superset of `graph.task`**: the `task` property names the pluggable store
+function, but the persistence envelope (`{cid, node, ttl, model, seen, run}`) is assembled by the
+skill itself — **no input/output mapping on the node**.
+
+```
+skill=graph.suspend
+task=v1.redis.persist.model
+ttl=2d
+```
+
+The node carrying this skill **must be named `suspend`** — a reserved alias like `root`/`end`,
+because traversal jumps to it by name: a node with the `suspend=true` property routes here after
+its skill completes, and a plain edge into `suspend` is an unconditional suspension point. `ttl`
+is **mandatory with no default** (duration syntax `20s/5m/2h/2d`) — it becomes the store record's
+expiry. Unless the graph staged its own `output.*`, the caller of the suspended run receives
+`{"type": "suspended", "cid": ...}`.
+
+**Gotchas:** the store must acknowledge (2xx) before the graph completes — a failed persist fails
+the node (`exception=` routes it); a suspension point must be the sole active branch (never
+between a fan-out and its join); only `model.*` survives — map what later steps need into the
+model **before** the checkpoint. Full story: [Workflow Suspension](workflow-suspension.md).
+
+## graph.resume {#resume}
+
+Restores the workflow state persisted by [`graph.suspend`](#suspend) and continues traversal from
+the recorded suspension point **without re-executing it**. Also a superset of `graph.task` — the
+`task` property names the store function (`type=get`, body `{cid}`), restoration is encapsulated,
+no mapping on the node.
+
+```
+skill=graph.resume
+task=v1.redis.retrieve.model
+```
+
+Place it early — conventionally named `resume`, right after `root` or after setup nodes. Found:
+the persisted model merges into the state machine (the current run's reserved keys always win),
+traversal bookkeeping is restored (downstream joins still see pre-suspension branches), and the
+walker jumps past the checkpoint onto its normal path. Not found — a **fresh transaction (the
+normal first-run case)** or an expired record: traversal continues along the node's own forward
+path, or jumps to the optional `missing=<node>` handler for workflows where an expired approval
+needs its own response.
+
+**Gotchas:** the record is consumed on retrieval (a duplicate resume behaves as a fresh run, never
+a double execution); `model.cid` is the retrieval key, so resume-bearing endpoints deserve
+rest.yaml `authentication`. Full story: [Workflow Suspension](workflow-suspension.md).
+
 ## graph.join {#join}
 
 A synchronization barrier for parallel branches. It returns `next` **only when all** connected

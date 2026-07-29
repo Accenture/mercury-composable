@@ -127,6 +127,7 @@ nav:
   - Layer 3 — Knowledge Graph:
     - Overview: guides/knowledge-graph/index.md
     - Build your first graph: guides/knowledge-graph/build-your-first-graph.md
+    - Workflow suspension: guides/knowledge-graph/workflow-suspension.md
     - Built-in skills reference: guides/knowledge-graph/skills-reference.md
     - MiniGraph command grammar: guides/knowledge-graph/command-reference.md
     - AI agent guide: guides/knowledge-graph/ai-agent-guide.md

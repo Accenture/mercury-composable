@@ -45,6 +45,27 @@ class CompileGraphTest {
     }
 
     @Test
+    void validSuspendResumeGraphsAreCompiled() {
+        assertTrue(CompiledGraphs.graphExists("unit-test-suspend-1"));
+        assertTrue(CompiledGraphs.graphExists("unit-test-suspend-2"));
+        assertTrue(CompiledGraphs.graphExists("unit-test-suspend-3"));
+        assertTrue(CompiledGraphs.graphExists("unit-test-suspend-4"));
+    }
+
+    @Test
+    void invalidSuspendResumeGraphsAreRejectedAtCompileTime() {
+        // err1 graph.suspend node not named 'suspend'; err2 suspend=true on graph.math;
+        // err3 suspensible node without a suspend node; err4 suspend node without ttl;
+        // err5 suspensible node without a drawn edge to 'suspend'; err6 resume 'missing'
+        // target that does not exist - all six are listed in graphs.yaml and must be
+        // rejected by the static checks (the runtime guards remain the enforcement floor)
+        for (var id : List.of("unit-test-suspend-err1", "unit-test-suspend-err2", "unit-test-suspend-err3",
+                              "unit-test-suspend-err4", "unit-test-suspend-err5", "unit-test-suspend-err6")) {
+            assertFalse(CompiledGraphs.graphExists(id), id + " must be rejected at compile time");
+        }
+    }
+
+    @Test
     void deprecatedTypeMatchingSyntaxIsConvertedAtCompileTime() {
         Map<String, Object> model = CompiledGraphs.getGraph("hellojs");
         assertNotNull(model);

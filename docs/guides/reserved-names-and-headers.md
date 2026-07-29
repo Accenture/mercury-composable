@@ -65,12 +65,20 @@ to avoid breaking the system unintentionally.
 | simple.kafka.notification    | Publish an event to a Kafka topic (drop-n-forget / fail-fast) | minimalist-kafka |
 | sync.prepare                 | Sync-over-async facade: register the return route + serialize the request | sync-over-async  |
 | sync.await                   | Sync-over-async facade: block for the asynchronous response   | sync-over-async  |
+| graph.suspend                | Persist workflow state at a graph suspension point            | minigraph        |
+| graph.resume                 | Restore workflow state and continue past the suspension point | minigraph        |
+| v1.redis.persist.model       | Redis store for graph suspend (SETEX with native expiry)      | minigraph-state-redis |
+| v1.redis.retrieve.model      | Redis store for graph resume (atomic GETDEL consume)          | minigraph-state-redis |
 
-Routes from the last three rows belong to **opt-in extension modules** (`minimalist-kafka`,
-`sync-over-async`): they are reserved only when that module is on the classpath. `sync.prepare` and
-`sync.await` are the ready-made facade tasks an application wires into its own `sync-to-async` flow (see
+Routes from the last rows belong to **opt-in extension modules** (`minimalist-kafka`,
+`sync-over-async`, `minigraph-state-redis`) and the knowledge graph engine: they are reserved only
+when that module is on the classpath. `sync.prepare` and `sync.await` are the ready-made facade
+tasks an application wires into its own `sync-to-async` flow (see
 [Event Script Syntax](event-script/syntax.md)); like every reserved route, do not register your own
-function under these names.
+function under these names. The knowledge graph additionally reserves the node **alias**
+`suspend` (bound to the `graph.suspend` skill — traversal jumps to it by name, the `root`/`end`
+pattern) and the node **properties** `suspend` and `missing` — see
+[Workflow Suspension](knowledge-graph/workflow-suspension.md).
 
 ## Optional user defined functions
 

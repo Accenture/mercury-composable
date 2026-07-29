@@ -164,7 +164,47 @@ class GraphSpanPropagationTest {
                 "the graph response must chain to a graph node");
     }
 
+    @Test
+    void suspendResumeStoreCallsChainToTheirSkillSpans() throws TimeoutException {
+        // the suspend/resume skills issue their store request on the worker thread, so the
+        // pluggable store function's span chains onto the skill span instead of floating
+        // parentless in the trace (the trace context is thread-keyed - an eRequest inside
+        // the Mono callback would miss the stamp)
+        var cid = "span-" + Utility.getInstance().getUuid();
+        // run 1: fresh transaction - retrieve (miss), then suspend + persist
+        List<Span> run1 = runSuspendGraph(cid);
+        assertSpanInvariants(run1);
+        Span resume1 = findFirst(run1, "graph.resume", GRAPH_EXECUTOR);
+        Span suspend = findFirst(run1, "graph.suspend", GRAPH_EXECUTOR);
+        Span retrieve1 = findFirst(run1, "v1.file.state.store", "graph.resume");
+        Span persist = findFirst(run1, "v1.file.state.store", "graph.suspend");
+        assertEquals(resume1.spanId, retrieve1.parentSpanId, "the retrieve call must chain to graph.resume");
+        assertEquals(suspend.spanId, persist.parentSpanId, "the persist call must chain to graph.suspend");
+        // run 2: restore and continue - the retrieve chains to the new resume span and the
+        // suspension point is not re-executed, so no suspend span exists at all
+        List<Span> run2 = runSuspendGraph(cid);
+        assertSpanInvariants(run2);
+        Span resume2 = findFirst(run2, "graph.resume", GRAPH_EXECUTOR);
+        Span retrieve2 = findFirst(run2, "v1.file.state.store", "graph.resume");
+        assertEquals(resume2.spanId, retrieve2.parentSpanId, "the restore call must chain to graph.resume");
+        assertTrue(run2.stream().noneMatch(s -> "graph.suspend".equals(s.service)),
+                "a resumed run that completes must not suspend again");
+    }
+
     // ----- helpers -----
+
+    private List<Span> runSuspendGraph(String cid) throws TimeoutException {
+        String traceId = Utility.getInstance().getUuid();
+        CAPTURED.remove(traceId);
+        var request = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
+                .setBody(Map.of("probe", true)).setHeader("Content-Type", "application/json")
+                .setHeader("Accept", "application/json").setHeader("X-Correlation-Id", cid)
+                .setUrl("/api/graph/unit-test-suspend-1");
+        var event = new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(request);
+        var po = PostOffice.trackable("unit.test", traceId, "TEST /span/suspend");
+        po.asyncRequest(event, TIMEOUT).await(TIMEOUT, TimeUnit.MILLISECONDS);
+        return toSpans(awaitStableCapture(traceId));
+    }
 
     private List<Span> runGraph(int chapter, Map<String, Object> input) throws TimeoutException {
         String traceId = Utility.getInstance().getUuid();
