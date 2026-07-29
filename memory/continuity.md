@@ -306,8 +306,8 @@
   10-test e2e suite green (85 module tests incl. P2 compile checks, full reactor green); temp-file mock
   store proves the whole loop with zero engine store deps; one design-trace bug fixed
   pre-run (suspend node's own marks excluded from restore, else re-suspension at a second
-  checkpoint deadlocks — multi-checkpoint test pins it). Remaining: P3 Redis extension + contract page,
-  P4 tutorial/docs/ADR, P5 Rust arc. P2 also done: CompileGraph static checks + webapp type theme.)
+  checkpoint deadlocks — multi-checkpoint test pins it). Remaining: P4 tutorial/docs/contract-page/ADR,
+  P5 Rust arc. P2 done (CompileGraph checks + webapp theme); P3 done (extensions/minigraph-state-redis, GETDEL consume, playground app wired, 7 tests vs embedded Redis).)
   **Graph suspend/resume: workflow suspension for the Active Knowledge Graph.** A graph run
   persists model + suspension node at a human checkpoint via `skill=graph.suspend`
   (reserved ALIAS `suspend` — the root/end special-alias pattern, jump-by-name routing;
