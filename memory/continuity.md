@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-29 | agent: Claude Code (2026-07-29-010343)
+- **last_session:** 2026-07-29 | agent: Claude Code (2026-07-29-190328)
 - **last_review:** 2026-07-27 | through 2026-07-27-214357.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -179,8 +179,17 @@
   skills are supersets of graph.task invoking a pluggable store function (`task=`) with a
   fixed put/get contract — zero node data mapping. `suspend` = reserved node ALIAS
   (root/end pattern, jump-by-name, one per graph, alias⇔skill enforced, drawn checkpoint
-  edge required); `suspend=true`/`missing` = reserved properties; `ttl` = mandatory task
+  edge required); `suspend=true` = reserved property; `ttl` = mandatory task
   parameter, no default; types are visual convention (skill defines behavior).
+  **Production-polish refinement (Eric's field code review, 2026-07-29):** the optional
+  `missing=<node>` property was ELIMINATED — with multiple suspension points one fallback
+  node is ambiguous; absent and expired records look the same by design, and handling the
+  condition is application logic on the resume node's forward path (graph.math
+  IF-THEN-ELSE / graph.task), documented not framework-solved. Instead `graph.resume`
+  sets the engine-managed flag **`model.run` = `resume` | `fresh`** (after the model
+  merge so a stale persisted value can never resurrect it; excluded from persistence)
+  so the graph advises the UI or jumps to recovery — tutorial-14 stages it into every
+  reply.
   Consume-on-retrieve (Redis GETDEL) = at-most-once resume. Constraints: sole active
   branch; model is the workflow's durable memory ({node}.result does not survive); cid =
   resume capability (auth resume endpoints); no graph.extension crossing. Store: Redis =
@@ -188,6 +197,29 @@
   temp-file store. Delivered by [[thread-graph-suspend-resume]] (P1-P4); serves
   [[bp-graph-workflow-suspension]].
   <!-- id: graph-suspend-resume-design | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-010343 -->
+
+- **CompileGraph is the MANDATORY deployment gate for graph models — CompileFlows parity
+  (Eric's rulings, 2026-07-29, production-polish round; ADR-0011 ACCEPTED via the
+  PR #240 merge, squash `4348b0da`).** A deployed graph is executable at `POST /api/graph/{graph-id}` only when
+  listed in the manifest (`graph.model.automation`) AND passing the gate; failed or
+  unlisted = HTTP-404 as if nonexistent; lazy per-request loading DELETED (a rejected-graph
+  registry was built then superseded — "compiled or 404" is the whole rule). The manifest
+  carries its own `location` (default `classpath:/graph`, the flows.yaml convention) —
+  `location.graph.deployed` retired (obsolete-key startup warning; GraphCommandService
+  reads the resolved location from CompiledGraphs). **Two-lane validation:** production =
+  models → CompileGraph → deployed → GraphExecutor (trusts the gate; keeps only
+  data-driven guards — store-record checks, dynamic jump targets, loop breaker,
+  po.exists); dry-run = /tmp/graph drafts → UI CLI validation at node create/update →
+  GraphTraveler with FULL runtime validation (the CLI validates zero suspend/resume
+  semantics — verified by inventory). Gate rules absorbed from the executor: mandatory
+  `end` node; continuation edge on every suspension point; plus mapping-entry rejection
+  (property-aware: bare `input` entries are fetcher vocabulary, never rejected).
+  Whole-graph rules modularized in `GraphModelValidator` (common), reused by the
+  playground `run` command as a pre-run check ("Unable to run - <reason>" + the uniform
+  aborted terminal; partial drafts stay allowed at authoring time) — also the landing pad
+  for [[thread-compilegraph-syntax-validation]]. Hot-dropping JSON into the deploy folder
+  no longer executes (deployment = explicit act, per the governance lifecycle).
+  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-190328 -->
 
 - **ManagedCache eviction: Java accepts + documents non-determinism; Rust is strict LRU —
   a deliberate cross-engine asymmetry (Eric, 2026-07-27).** Java's `ManagedCache` keeps
@@ -329,9 +361,25 @@
   lineage (the four Mono-wrapped skills issue eRequest on the worker thread — store/task/
   extension calls chain onto their skill spans; no-re-execution now visible in trace
   topology). Final validation log: perfect score on traceId/spanId/parentSpanId/business
-  cid. Remaining: **P5 Rust lock-step arc** — mirrors engine core + compile checks +
-  store crate (Redis crate choice = Rust session) + tutorial fixture verbatim + the
-  log-context $cid and span-lineage presentation changes.)
+  cid. **Production-polish round MERGED 2026-07-29 as
+  [PR #240](https://github.com/Accenture/mercury-composable/pull/240), squash
+  `4348b0da`; ADR-0011 thereby ACCEPTED (the merge was the ledger gate). Eric's IDE
+  review + SonarQube scan PASSED before the PR:** `missing=<node>` eliminated + engine-managed `model.run` flag; a four-lens
+  adversarially-verified sweep (15 confirmed findings fixed incl. the reserved-key strip
+  on restore — a forged store record can no longer overwrite model.cid); Eric's four
+  rulings (mapping-entry compile rejection with the fetcher-vocabulary nuance; suspend
+  outgoing edge; ttl long-math overflow guard; constant consolidation); and the big one —
+  **CompileGraph as the mandatory deployment gate** ([[compilegraph-mandatory-gate]],
+  ADR-0011 proposed, PR merge = ledger gate) with the two-lane validation architecture,
+  manifest-carried `location`, executor streamline, and `GraphModelValidator` reused by
+  the playground `run` pre-run check. Docs caught up (ten-skill at-a-glance tables,
+  deployment recipe, CHANGELOG migration note; `model.run` also joined the reserved
+  flow-metadata family — CompileFlows + runtime guard reject overwrites). Engine 88 /
+  app 16 / reactor green. Remaining: **P5 Rust lock-step arc** — mirrors engine core + compile
+  checks + store crate (Redis crate choice = Rust session) + tutorial fixture verbatim +
+  the log-context $cid and span-lineage presentation changes + the FINAL surface (no
+  `missing`, with `model.run`, mandatory gate + compiled-or-404 + manifest location,
+  validator modularization + pre-run check, walker atomicity + restore-strip fixes).)
   **Graph suspend/resume: workflow suspension for the Active Knowledge Graph.** A graph run
   persists model + suspension node at a human checkpoint via `skill=graph.suspend`
   (reserved ALIAS `suspend` — the root/end special-alias pattern, jump-by-name routing;

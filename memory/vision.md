@@ -27,9 +27,11 @@ the one below:
   functions; orchestration is ~50% config / 50% code.
 - **Semantic — Active Knowledge Graph (MiniGraph).** Graph models that *execute* behavior via
   skills embedded on nodes during traversal — zero imperative code for the common case.
-  Realized today: the `graph.executor` engine, 7 built-in skills (`graph.math`,
-  `graph.data.mapper`, `graph.js`, `graph.api.fetcher`, `graph.extension`, `graph.island`,
-  `graph.join`), REST execution at `/api/graph/{graph-id}`, a React/Vite Playground UI, and a
+  Realized today: the `graph.executor` engine, 10 built-in skills (`graph.math`,
+  `graph.data.mapper`, `graph.js`, `graph.api.fetcher`, `graph.task`, `graph.extension`,
+  `graph.suspend`, `graph.resume`, `graph.island`, `graph.join` — incl. workflow suspension
+  with pluggable external state stores), gated REST execution at `/api/graph/{graph-id}`
+  (CompileGraph manifest = the deployment quality gate), a React/Vite Playground UI, and a
   WebSocket session model.
 - **Collaboration — AI companion (early).** A dev-only `POST /api/companion/{id}` endpoint lets
   an external agent (incl. a Claude session) drive Playground commands into a live session. No
