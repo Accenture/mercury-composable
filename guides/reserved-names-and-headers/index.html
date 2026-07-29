@@ -1290,6 +1290,8 @@
       
         
       
+        
+      
     
     
     
@@ -1359,6 +1361,34 @@
     
   
     Build your first graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../knowledge-graph/workflow-suspension/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflow suspension
   
 
     
@@ -2944,13 +2974,37 @@ to avoid breaking the system unintentionally.</p>
 <td style="text-align: left;">Sync-over-async facade: block for the asynchronous response</td>
 <td style="text-align: left;">sync-over-async</td>
 </tr>
+<tr>
+<td style="text-align: left;">graph.suspend</td>
+<td style="text-align: left;">Persist workflow state at a graph suspension point</td>
+<td style="text-align: left;">minigraph</td>
+</tr>
+<tr>
+<td style="text-align: left;">graph.resume</td>
+<td style="text-align: left;">Restore workflow state and continue past the suspension point</td>
+<td style="text-align: left;">minigraph</td>
+</tr>
+<tr>
+<td style="text-align: left;">v1.redis.persist.model</td>
+<td style="text-align: left;">Redis store for graph suspend (SETEX with native expiry)</td>
+<td style="text-align: left;">minigraph-state-redis</td>
+</tr>
+<tr>
+<td style="text-align: left;">v1.redis.retrieve.model</td>
+<td style="text-align: left;">Redis store for graph resume (atomic GETDEL consume)</td>
+<td style="text-align: left;">minigraph-state-redis</td>
+</tr>
 </tbody>
 </table>
-<p>Routes from the last three rows belong to <strong>opt-in extension modules</strong> (<code>minimalist-kafka</code>,
-<code>sync-over-async</code>): they are reserved only when that module is on the classpath. <code>sync.prepare</code> and
-<code>sync.await</code> are the ready-made facade tasks an application wires into its own <code>sync-to-async</code> flow (see
+<p>Routes from the last rows belong to <strong>opt-in extension modules</strong> (<code>minimalist-kafka</code>,
+<code>sync-over-async</code>, <code>minigraph-state-redis</code>) and the knowledge graph engine: they are reserved only
+when that module is on the classpath. <code>sync.prepare</code> and <code>sync.await</code> are the ready-made facade
+tasks an application wires into its own <code>sync-to-async</code> flow (see
 <a href="../event-script/syntax/">Event Script Syntax</a>); like every reserved route, do not register your own
-function under these names.</p>
+function under these names. The knowledge graph additionally reserves the node <strong>alias</strong>
+<code>suspend</code> (bound to the <code>graph.suspend</code> skill — traversal jumps to it by name, the <code>root</code>/<code>end</code>
+pattern) and the node <strong>properties</strong> <code>suspend</code> and <code>missing</code> — see
+<a href="../knowledge-graph/workflow-suspension/">Workflow Suspension</a>.</p>
 <h2 id="optional-user-defined-functions">Optional user defined functions<a class="headerlink" href="#optional-user-defined-functions" title="Permanent link">&para;</a></h2>
 <p>The following optional route names will be detected by the system for additional user defined features.</p>
 <table>

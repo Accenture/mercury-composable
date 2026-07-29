@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/knowledge-graph/skills-reference/">
       
       
-        <link rel="prev" href="../build-your-first-graph/">
+        <link rel="prev" href="../workflow-suspension/">
       
       
         <link rel="next" href="../command-reference/">
@@ -1292,6 +1292,8 @@
       
         
       
+        
+      
     
     
     
@@ -1364,6 +1366,34 @@
     
   
     Build your first graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../workflow-suspension/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflow suspension
   
 
     
@@ -1503,6 +1533,28 @@
     <span class="md-ellipsis">
       
         graph.task
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#suspend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.suspend
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resume" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.resume
       
     </span>
   </a>
@@ -2648,6 +2700,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#suspend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.suspend
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resume" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.resume
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#join" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2960,6 +3034,44 @@ and the body auto-converts when the function declares a PoJo input. The result l
 <code>model.ttl</code> (default 30 s). For multi-step orchestration, prefer <a href="#extension"><code>graph.extension</code></a> —
 <code>graph.task</code> is for a single function call. Writing the function itself:
 <a href="../../event-driven/ai-agent-guide/">function AI agent guide</a> (<code>#[preload]</code> + <code>ComposableFunction</code>).</p>
+<h2 id="suspend">graph.suspend<a class="headerlink" href="#suspend" title="Permanent link">&para;</a></h2>
+<p>Persists the workflow state of the running graph to an external state store and lets the run
+complete — the transaction resumes later through <a href="#resume"><code>graph.resume</code></a> with the same business
+correlation ID. A <strong>superset of <code>graph.task</code></strong>: the <code>task</code> property names the pluggable store
+function, but the persistence envelope (<code>{cid, node, ttl, model, seen, run}</code>) is assembled by the
+skill itself — <strong>no input/output mapping on the node</strong>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>skill=graph.suspend
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>task=v1.redis.persist.model
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>ttl=2d
+</code></pre></div>
+<p>The node carrying this skill <strong>must be named <code>suspend</code></strong> — a reserved alias like <code>root</code>/<code>end</code>,
+because traversal jumps to it by name: a node with the <code>suspend=true</code> property routes here after
+its skill completes, and a plain edge into <code>suspend</code> is an unconditional suspension point. <code>ttl</code>
+is <strong>mandatory with no default</strong> (duration syntax <code>20s/5m/2h/2d</code>) — it becomes the store record's
+expiry. Unless the graph staged its own <code>output.*</code>, the caller of the suspended run receives
+<code>{"type": "suspended", "cid": ...}</code>.</p>
+<p><strong>Gotchas:</strong> the store must acknowledge (2xx) before the graph completes — a failed persist fails
+the node (<code>exception=</code> routes it); a suspension point must be the sole active branch (never
+between a fan-out and its join); only <code>model.*</code> survives — map what later steps need into the
+model <strong>before</strong> the checkpoint. Full story: <a href="../workflow-suspension/">Workflow Suspension</a>.</p>
+<h2 id="resume">graph.resume<a class="headerlink" href="#resume" title="Permanent link">&para;</a></h2>
+<p>Restores the workflow state persisted by <a href="#suspend"><code>graph.suspend</code></a> and continues traversal from
+the recorded suspension point <strong>without re-executing it</strong>. Also a superset of <code>graph.task</code> — the
+<code>task</code> property names the store function (<code>type=get</code>, body <code>{cid}</code>), restoration is encapsulated,
+no mapping on the node.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>skill=graph.resume
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>task=v1.redis.retrieve.model
+</code></pre></div>
+<p>Place it early — conventionally named <code>resume</code>, right after <code>root</code> or after setup nodes. Found:
+the persisted model merges into the state machine (the current run's reserved keys always win),
+traversal bookkeeping is restored (downstream joins still see pre-suspension branches), and the
+walker jumps past the checkpoint onto its normal path. Not found — a <strong>fresh transaction (the
+normal first-run case)</strong> or an expired record: traversal continues along the node's own forward
+path, or jumps to the optional <code>missing=&lt;node&gt;</code> handler for workflows where an expired approval
+needs its own response.</p>
+<p><strong>Gotchas:</strong> the record is consumed on retrieval (a duplicate resume behaves as a fresh run, never
+a double execution); <code>model.cid</code> is the retrieval key, so resume-bearing endpoints deserve
+rest.yaml <code>authentication</code>. Full story: <a href="../workflow-suspension/">Workflow Suspension</a>.</p>
 <h2 id="join">graph.join<a class="headerlink" href="#join" title="Permanent link">&para;</a></h2>
 <p>A synchronization barrier for parallel branches. It returns <code>next</code> <strong>only when all</strong> connected
 upstream nodes have completed, and <code>.sink</code> (pause) until then. <strong>Completion is success-only and
@@ -2968,11 +3080,11 @@ a <code>RESET</code> node stops counting until it re-executes successfully — s
 holds the barrier instead of firing it prematurely. A <strong>chained upstream join</strong> counts only once
 it actually <strong>fired</strong> (an evaluation that sank does not count), so multi-stage joins compose
 safely.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>skill=graph.join
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>skill=graph.join
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>connect fetch-name to join with done
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>connect fetch-address to join with done
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>connect join to combine with proceed
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>connect fetch-name to join with done
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>connect fetch-address to join with done
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>connect join to combine with proceed
 </code></pre></div>
 <p><strong>Gotchas:</strong> needs at least two predecessors to be meaningful; it is the explicit fork-join
 mechanism — without it, traversal proceeds as branches complete. The fork side needs no special
@@ -2990,13 +3102,13 @@ new joiner (or an agent) discovers the domain model by reading the connected dic
 entities, not just the execution path.</p>
 <p><strong>Convention (required): leave no node unconnected</strong> — wire every config node into the island
 structure (see <a href="../command-reference/#island">Island — the knowledge layer</a>):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>skill=graph.island
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>skill=graph.island
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>connect root to dictionary with contains
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>connect dictionary to person-name with data
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>connect dictionary to person-address with data
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>connect person-name to mdm-profile with provider
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>connect person-address to mdm-profile with provider
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>connect root to dictionary with contains
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>connect dictionary to person-name with data
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>connect dictionary to person-address with data
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>connect person-name to mdm-profile with provider
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>connect person-address to mdm-profile with provider
 </code></pre></div>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
@@ -3046,7 +3158,7 @@ structure (see <a href="../command-reference/#island">Island — the knowledge l
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../build-your-first-graph/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Build your first graph">
+          <a href="../workflow-suspension/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Workflow suspension">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3056,7 +3168,7 @@ structure (see <a href="../command-reference/#island">Island — the knowledge l
                 Previous
               </span>
               <div class="md-ellipsis">
-                Build your first graph
+                Workflow suspension
               </div>
             </div>
           </a>
