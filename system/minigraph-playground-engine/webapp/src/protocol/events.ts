@@ -125,6 +125,35 @@ export interface SessionResetEvent extends ProtocolEventBase {
   kind: 'session.reset';
 }
 
+export interface SessionStartedEvent extends ProtocolEventBase {
+  kind: 'minigraph.session.started';
+  sessionId: string;
+  companionEndpoint: string | null;
+}
+
+export interface SessionStatusEvent extends ProtocolEventBase {
+  kind: 'minigraph.session.status';
+  sessionId: string;
+  startedSince: string;
+  subscribedTo: string | null;
+  subscribers: string[];
+}
+
+export interface SessionCommandResultEvent extends ProtocolEventBase {
+  kind: 'minigraph.session.commandResult';
+  command: 'subscribe' | 'unsubscribe' | 'show' | 'unknown';
+  status: 'accepted' | 'rejected' | 'info';
+  sessionId: string | null;
+  message: string;
+}
+
+export interface SessionNotificationEvent extends ProtocolEventBase {
+  kind: 'minigraph.session.notification';
+  type: 'subscriber-joined' | 'subscriber-left' | 'host-closed';
+  sessionId: string;
+  message: string;
+}
+
 // ── Discriminated union ────────────────────────────────────────────────────
 
 export type ProtocolEvent =
@@ -144,7 +173,11 @@ export type ProtocolEvent =
   | JsonResponseEvent
   | LifecycleEvent
   | UnclassifiedEvent
-  | SessionResetEvent;
+  | SessionResetEvent
+  | SessionStartedEvent
+  | SessionStatusEvent
+  | SessionCommandResultEvent
+  | SessionNotificationEvent;
 
 /** The `kind` string literal union — all possible discriminator values. */
 export type ProtocolEventKind = ProtocolEvent['kind'];

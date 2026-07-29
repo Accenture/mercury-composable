@@ -30,6 +30,7 @@ import LeftPanel from './LeftPanel/LeftPanel';
 import { MockUploadModal } from './MockUploadModal/MockUploadModal';
 import GraphAuthoringModals from './GraphAuthoring/GraphAuthoringModals';
 import { useGraphAuthoring } from './GraphAuthoring/useGraphAuthoring';
+import { useSessionCollaboration } from '../session/useSessionCollaboration';
 import ClipboardSidebar from './ClipboardSidebar/ClipboardSidebar';
 import HelpBrowser from './HelpBrowser/HelpBrowser';
 import { ClipboardDuplicateDialog } from './ClipboardSidebar/ClipboardDuplicateDialog';
@@ -49,7 +50,7 @@ interface PlaygroundProps {
 }
 
 export default function Playground({ config }: PlaygroundProps) {
-  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, supportsClipboard, supportsHelp, supportsAuthoring, tabs } = config;
+  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, supportsClipboard, supportsHelp, supportsAuthoring, supportsSessionCollaboration, tabs } = config;
 
   const navigate = useNavigate();
 
@@ -374,6 +375,18 @@ export default function Playground({ config }: PlaygroundProps) {
     onUserMessage: addToast,
   });
 
+  // ── Session collaboration ────────────────────────────────────────────────
+  // The Session dropdown is rendered from Navigation, but this hook is created
+  // here because Playground owns the Minigraph ProtocolBus and classification map.
+  const sessionCollaboration = useSessionCollaboration({
+    enabled: supportsSessionCollaboration === true,
+    bus,
+    classificationMap,
+    connected: ws.connected,
+    sendRawText: ws.sendRawText,
+    addToast,
+  });
+
   // ── Saved graph workflow ──────────────────────────────────────────────────
   // Note: must be called AFTER useAutoGraphRefresh — both listen on graph.link
   // and ProtocolBus fires listeners in insertion order.
@@ -476,7 +489,10 @@ export default function Playground({ config }: PlaygroundProps) {
               Workspace{clipboardCtx.items.length > 0 ? ` (${clipboardCtx.items.length})` : ''}
             </button>
           )}
-          <Navigation addToast={addToast} />
+          <Navigation
+            addToast={addToast}
+            sessionCollaboration={supportsSessionCollaboration ? sessionCollaboration : null}
+          />
           {supportsHelp && (
             <div className={styles.helpButtonWrapper}>
               <button
