@@ -50,9 +50,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
      so every skill and store function sees the business ID — not internal routing IDs —
      in `my_correlation_id`; the suspend/resume skills also annotate their trace spans
      with `cid`. In the same spirit, the application log context's `$cid` token
-     (platform-core) now resolves to the **business** correlation-id whenever the
-     delivered event carries one — internal correlation-ids (RPC inbox references,
-     skill-callback composites) are routing metadata and appear only as a fallback.
+     (platform-core) now resolves to the **business** correlation-id only — when the
+     delivered event carries no business context the key is omitted; internal
+     correlation-ids (RPC inbox references, skill-callback composites) are routing
+     metadata and never appear under the `cid` label. Since every edge guarantees a
+     business correlation-id, a missing `cid` on a traced log line signals a propagation
+     defect. The Playground's `instantiate graph` command is the dry-run's edge and now
+     auto-creates `model.cid` (with a reminder) when the initial data mapping does not
+     supply one.
    - **Declarative response status**: a graph can stage its HTTP status
      (e.g. `int(404) -> output.status`); `graph.executor` applies it to the graph's reply
      at completion.

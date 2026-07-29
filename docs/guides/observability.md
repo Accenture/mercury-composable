@@ -306,10 +306,12 @@ function's route), and `$utc` (the log line's UTC timestamp). A token (or env va
 **omitted** from the block rather than printed as `null` — so a root span simply has no `parentSpanId` key.
 
 `$cid` is the **business correlation ID** — the value received from the external source or created at the
-edge, the same one `PostOffice.getMyCorrelationId()` returns — whenever the delivered event carries one.
-Internal correlation IDs (routing metadata such as RPC inbox references or the graph engine's skill-callback
-IDs) appear only as a fallback when no business context exists, so log aggregation correlates on the ID your
-callers know.
+edge, the same one `PostOffice.getMyCorrelationId()` returns. When the delivered event carries no business
+context, the key is simply **omitted**: internal correlation IDs (routing metadata such as RPC inbox
+references or the graph engine's skill-callback IDs) never appear under the `cid` label, so log aggregation
+always correlates on the ID your callers know — or on nothing, never on something misleading. Because every
+edge guarantees a business correlation ID (a fresh one is generated when the caller supplies none), **a
+missing `cid` on a traced log line indicates a propagation defect worth fixing**, not a normal condition.
 
 ### Adding your own key-values {#log-context-custom}
 

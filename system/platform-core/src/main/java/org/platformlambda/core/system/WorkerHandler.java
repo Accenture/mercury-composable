@@ -115,13 +115,14 @@ public class WorkerHandler {
             // traceId is available (trace.id != null), per the log-context contract.
             TraceInfo logTrace = po.getTrace(parentRoute, instance);
             if (logTrace != null && logTrace.id != null) {
-                // the log context 'cid' is the BUSINESS correlation-id when the event carries
-                // one (the engine's my_cid tag - the same source as the injected
-                // my_correlation_id); the envelope correlation-id is internal routing metadata
-                // and is only a fallback when no business context exists
-                String businessCid = event.getTag(EventEmitter.BUSINESS_CID_TAG);
-                LogContextManager.register(threadId, new LogContext(logTrace,
-                        businessCid != null? businessCid : event.getCorrelationId()));
+                // the log context 'cid' is the BUSINESS correlation-id only, resolved exactly
+                // like the injected my_correlation_id: the engine's my_cid tag, else a legacy
+                // pre-4.10.2 peer's transported header. When no business context exists the
+                // token stays unset and the context block omits it - an internal routing id
+                // under the 'cid' label would mislead log aggregation
+                String businessCid = event.getTag(EventEmitter.BUSINESS_CID_TAG) != null?
+                        event.getTag(EventEmitter.BUSINESS_CID_TAG) : event.getHeaders().get(MY_CORRELATION_ID);
+                LogContextManager.register(threadId, new LogContext(logTrace, businessCid));
             }
         }
         ProcessStatus ps = processEvent(event, rpc);
