@@ -313,6 +313,11 @@
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
+- **MiniGraph webapp has scoped memory.** UI/frontend implementation facts, tactical bug
+  fixes, and webapp architecture review notes live in
+  `system/minigraph-playground-engine/webapp/memory/`; root memory records only framework,
+  engine, and cross-boundary contracts that affect the Mercury repo as a whole.
+  <!-- id: minigraph-webapp-scoped-memory | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-160756 -->
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`

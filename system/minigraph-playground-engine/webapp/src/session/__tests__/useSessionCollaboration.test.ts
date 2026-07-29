@@ -50,6 +50,34 @@ describe('useSessionCollaboration', () => {
     });
   });
 
+  it('does not repeat the mount status request when the sender identity changes during rerenders', async () => {
+    const bus = new ProtocolBus();
+    const addToast = vi.fn();
+    const sendRawText = vi.fn(() => true);
+    renderHook(() => useSessionCollaboration({
+      enabled: true,
+      connected: true,
+      bus,
+      classificationMap: new Map(),
+      sendRawText: (text: string) => sendRawText(text),
+      addToast,
+    }));
+
+    await waitFor(() => expect(sendRawText).toHaveBeenCalledTimes(1));
+
+    emit(bus, {
+      kind: 'minigraph.session.status',
+      msgId: 202,
+      raw: '',
+      sessionId: 'ws-123456-1',
+      startedSince: '2026-07-29 10:00:00.000',
+      subscribedTo: null,
+      subscribers: [],
+    });
+
+    await waitFor(() => expect(sendRawText).toHaveBeenCalledTimes(1));
+  });
+
   it('invalidates the old start time and refreshes after session reset', async () => {
     const { bus, result, sendRawText } = renderController();
     await waitFor(() => expect(sendRawText).toHaveBeenCalledTimes(1));

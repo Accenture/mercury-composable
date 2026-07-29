@@ -48,6 +48,11 @@ export function useSessionCollaboration({
   const [state, setState] = useState<SessionUiState>(EMPTY_STATE);
   const processedEventKeysRef = useRef(new Set<string>());
   const backlogWatermarkRef = useRef(0);
+  const sendRawTextRef = useRef(sendRawText);
+  const addToastRef = useRef(addToast);
+
+  useEffect(() => { sendRawTextRef.current = sendRawText; }, [sendRawText]);
+  useEffect(() => { addToastRef.current = addToast; }, [addToast]);
 
   const refreshSession = useCallback((): boolean => {
     if (!enabled || !connected) return false;
@@ -59,14 +64,14 @@ export function useSessionCollaboration({
       error: null,
       lastInfo: null,
     }));
-    const sent = sendRawText('session');
+    const sent = sendRawTextRef.current('session');
     if (!sent) {
       const message = 'Could not load session details because the WebSocket is not open.';
       setState(prev => ({ ...prev, loading: false, pendingCommand: null, error: message }));
-      addToast(message, 'error');
+      addToastRef.current(message, 'error');
     }
     return sent;
-  }, [addToast, connected, enabled, sendRawText]);
+  }, [connected, enabled]);
 
   // The same WebSocket message can be observed through the live ProtocolBus and
   // the classified console backlog. Deduping by kind+msgId prevents duplicate
