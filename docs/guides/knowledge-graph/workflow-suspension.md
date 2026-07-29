@@ -195,8 +195,10 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
   propagate into delegated sub-graphs or flows today — design resumable workflows as
   top-level graphs.
 - Reserved model keys (`model.cid`, `model.instance`, `model.flow`, `model.ttl`,
-  `model.trace`) and the engine-managed `model.run` flag are never persisted — the
-  resumed run's own identity is authoritative.
+  `model.trace`, `model.run`) are never persisted — the resumed run's own identity is
+  authoritative. `model.run` is part of the read-only flow metadata family: `graph.resume`
+  is its only writer, and the flow compiler rejects any data mapping that targets it
+  (like the other reserved keys).
 
 ## The state store contract {#state-store-contract}
 

@@ -74,6 +74,9 @@ public class CompileFlows implements EntryPoint {
      *     'model.cid -> ...' mapping.</li>
      * <li>the model.none null constant - it works because the 'none' key is never set, so a write
      *     would silently turn every later 'model.none -> X' clear-operation into a value copy.</li>
+     * <li>the model.run flag - engine-managed flow metadata written only by the knowledge
+     *     graph's graph.resume skill ('resume' | 'fresh'); application logic reads it to react
+     *     to a resumed-vs-fresh condition, so an overwrite would lie to that logic.</li>
      * </ul>
      * The model.parent and model.root keys are protected as whole namespaces by
      * DataMappingHelper.validModel; writing beneath them (model.parent.*) is the shared-state
@@ -81,7 +84,7 @@ public class CompileFlows implements EntryPoint {
      */
     private static final List<String> RESERVED_MODEL_KEYS =
             List.of("model.cid", "model.instance", "model.flow", "model.ttl", "model.trace",
-                    "model.none", "model.parent", "model.root");
+                    "model.none", "model.parent", "model.root", "model.run");
     private static final String NEGATE_MODEL = "!model.";
     private static final String EXT_NAMESPACE = "ext:";
     private static final String TEXT_TYPE = "text(";

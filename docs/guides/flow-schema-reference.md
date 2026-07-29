@@ -1027,9 +1027,9 @@ flow:
 ## Built-in special variables
 
 These `model.*` variables are set by the framework automatically. The flow-instance metadata
-(`model.flow`, `model.instance`, `model.trace`, `model.cid`, `model.ttl`) and the `model.none`
-null constant are READ only — use them as mapping sources; the flow compiler rejects any data
-mapping that overwrites these reserved keys (and the engine rejects a dynamic
+(`model.flow`, `model.instance`, `model.trace`, `model.cid`, `model.ttl`, `model.run`) and the
+`model.none` null constant are READ only — use them as mapping sources; the flow compiler rejects
+any data mapping that overwrites these reserved keys (and the engine rejects a dynamic
 `model.{model.pointer}` target that resolves to one at runtime).
 
 | Variable | Description |
@@ -1039,6 +1039,7 @@ mapping that overwrites these reserved keys (and the engine rejects a dynamic
 | `model.instance` | Unique ID of this flow instance |
 | `model.cid` | Business correlation-id of the inbound request |
 | `model.ttl` | Flow instance TTL in milliseconds |
+| `model.run` | Run condition set by the knowledge graph's `graph.resume` skill: `resume` when a suspended workflow record was restored, `fresh` when none existed — absent outside suspend/resume graphs |
 | `model.none` | Always `null` (enforced); use to clear model keys or delete file/ext destinations |
 | `model.<source>.ITEM` | Current item in a dynamic fork iteration |
 | `model.<source>.INDEX` | Zero-based index in a dynamic fork iteration |

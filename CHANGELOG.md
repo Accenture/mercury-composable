@@ -25,7 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
      routes there after executing. `graph.resume` records the run condition in
      **`model.run`** (`resume` | `fresh`) so the graph's own logic decides how a
      fresh-or-expired request is handled — the engine deliberately does not distinguish
-     absent from expired. The suspend node's **`ttl`** is mandatory with no default
+     absent from expired. `model.run` joins the read-only flow-metadata family
+     (`model.cid`/`instance`/`flow`/`ttl`/`trace`): the flow compiler and the runtime
+     dynamic-target guard reject any data mapping that overwrites it. The suspend node's **`ttl`** is mandatory with no default
      (duration syntax, e.g. `2d`).
    - Traversal bookkeeping is persisted and restored, so a `graph.join` after resume
      still sees branches completed before suspension. Reserved model keys never persist.
