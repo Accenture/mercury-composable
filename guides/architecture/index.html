@@ -3120,7 +3120,8 @@ integration too. From <code>AutoStart.main()</code> — the universal entry poin
    where platform machinery does its validation/compilation work before anything is registered or served
    — for example, <code>event-script-engine</code>'s <code>CompileFlows</code> (<code>sequence=5</code>) parses and validates every flow
    YAML, and <code>minigraph-playground-engine</code>'s <code>CompileGraph</code> (<code>sequence=6</code>, deliberately placed right after
-   <code>CompileFlows</code> because it reuses the same deprecated-syntax converter) validates opt-in graph models.
+   <code>CompileFlows</code> because it reuses the same deprecated-syntax converter) compiles the deployed
+   graph manifest — only graphs that pass it are executable, the <code>CompileFlows</code> model.
    <code>0</code> is reserved for <code>EssentialServiceLoader</code>; user code should use <code>3</code>–<code>999</code> (or <code>1</code> to run before all
    framework modules — see <a href="../annotations-reference/#beforeapplication"><code>@BeforeApplication</code></a>).</li>
 <li><strong><code>@PreLoad</code></strong> composable functions are registered next — every function annotated with <code>@PreLoad</code> is

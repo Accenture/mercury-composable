@@ -5976,9 +5976,9 @@ To read from it, invoke the external state machine service directly via a <code>
 <hr />
 <h2 id="built-in-special-variables">Built-in special variables<a class="headerlink" href="#built-in-special-variables" title="Permanent link">&para;</a></h2>
 <p>These <code>model.*</code> variables are set by the framework automatically. The flow-instance metadata
-(<code>model.flow</code>, <code>model.instance</code>, <code>model.trace</code>, <code>model.cid</code>, <code>model.ttl</code>) and the <code>model.none</code>
-null constant are READ only — use them as mapping sources; the flow compiler rejects any data
-mapping that overwrites these reserved keys (and the engine rejects a dynamic
+(<code>model.flow</code>, <code>model.instance</code>, <code>model.trace</code>, <code>model.cid</code>, <code>model.ttl</code>, <code>model.run</code>) and the
+<code>model.none</code> null constant are READ only — use them as mapping sources; the flow compiler rejects
+any data mapping that overwrites these reserved keys (and the engine rejects a dynamic
 <code>model.{model.pointer}</code> target that resolves to one at runtime).</p>
 <table>
 <thead>
@@ -6007,6 +6007,10 @@ mapping that overwrites these reserved keys (and the engine rejects a dynamic
 <tr>
 <td><code>model.ttl</code></td>
 <td>Flow instance TTL in milliseconds</td>
+</tr>
+<tr>
+<td><code>model.run</code></td>
+<td>Run condition set by the knowledge graph's <code>graph.resume</code> skill: <code>resume</code> when a suspended workflow record was restored, <code>fresh</code> when none existed — absent outside suspend/resume graphs</td>
 </tr>
 <tr>
 <td><code>model.none</code></td>

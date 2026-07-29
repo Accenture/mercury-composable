@@ -2865,7 +2865,7 @@ on how it is wired:</p>
 </tr>
 <tr>
 <td style="text-align: left;"><code>src/main/resources/application.properties</code></td>
-<td style="text-align: left;">Port, <code>rest.automation</code>, <code>yaml.rest.automation</code>, <code>yaml.flows</code>, <code>location.graph.deployed</code></td>
+<td style="text-align: left;">Port, <code>rest.automation</code>, <code>yaml.rest.automation</code>, <code>yaml.flows</code>, <code>graph.model.automation</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>@PreLoad</code> (grep)</td>
@@ -2883,7 +2883,7 @@ on how it is wired:</p>
 <li>Read <code>flows.yaml</code> — know which flows are active and where they live.</li>
 <li>Read <code>rest.yaml</code> — trace each endpoint to its handler (function route or flow id).</li>
 <li>Open each flow YAML — understand the orchestration: task order, process names, data mapping.</li>
-<li>Check <code>application.properties</code> for <code>location.graph.deployed</code> — if present, read those JSON files for the Knowledge Graph.</li>
+<li>Check <code>application.properties</code> for <code>graph.model.automation</code> — if present, read the manifest (graph IDs + their <code>location</code>, default <code>classpath:/graph</code>) and those JSON files for the Knowledge Graph; only manifest-listed IDs are executable.</li>
 </ol>
 <hr />
 <h2 id="layer-choice">Choosing the right layer<a class="headerlink" href="#layer-choice" title="Permanent link">&para;</a></h2>

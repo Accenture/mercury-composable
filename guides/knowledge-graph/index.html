@@ -2713,7 +2713,7 @@ event-driven execution that powers the rest of Mercury powers the graph.</p>
 the state machine via data-mapping (<code>{source} -&gt; {target}</code>); outputs flow back into the state machine
 for downstream nodes.</p>
 <h2 id="built-in-skills">Built-in skills<a class="headerlink" href="#built-in-skills" title="Permanent link">&para;</a></h2>
-<p>Eight skills ship with the engine. Each is a composable function on a <code>graph.*</code> route:</p>
+<p>Ten skills ship with the engine. Each is a composable function on a <code>graph.*</code> route:</p>
 <table>
 <thead>
 <tr>
@@ -2745,6 +2745,14 @@ for downstream nodes.</p>
 <tr>
 <td><code>graph.task</code></td>
 <td>Invoke a composable function through its route name — plug custom logic into the graph</td>
+</tr>
+<tr>
+<td><code>graph.suspend</code></td>
+<td>Persist workflow state to a pluggable external store at a human checkpoint — the run completes and resumes later</td>
+</tr>
+<tr>
+<td><code>graph.resume</code></td>
+<td>Restore persisted state by business correlation ID and continue past the checkpoint without re-executing it</td>
 </tr>
 <tr>
 <td><code>graph.join</code></td>

@@ -5201,9 +5201,9 @@ registered.</p>
 <ul>
 <li><strong>Reserved sequences</strong>: <code>0</code> is used by <code>EssentialServiceLoader</code>; <code>5</code> is used by
   <code>event-script-engine</code>'s <code>CompileFlows</code> (flow YAML compile-time validation); <code>6</code> is used
-  by <code>minigraph-playground-engine</code>'s <code>CompileGraph</code> (opt-in graph-model validation,
-  deliberately placed right after <code>CompileFlows</code> since it reuses the same syntax
-  converter). User code should use sequences 3–999 (or 1 if it must run before all
+  by <code>minigraph-playground-engine</code>'s <code>CompileGraph</code> (the deployed graph-model quality
+  gate — only manifest graphs that pass it are executable — deliberately placed right
+  after <code>CompileFlows</code> since it reuses the same syntax converter). User code should use sequences 3–999 (or 1 if it must run before all
   framework modules).</li>
 <li>Execution order: <code>@BeforeApplication</code> → <code>@PreLoad</code> registration → HTTP server startup →
   <code>@MainApplication</code> — see <a href="../architecture/#application-lifecycle">Application Lifecycle</a>

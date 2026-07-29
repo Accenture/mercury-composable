@@ -2798,24 +2798,37 @@ constant <code>it works</code> into <code>input.body.message</code>:</p>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>Graph exported to /tmp/graph/my-first-graph.json
 </code></pre></div>
 <h2 id="deploy">Step 4 — deploy it<a class="headerlink" href="#deploy" title="Permanent link">&para;</a></h2>
-<p>Deployment is a file copy: move the exported JSON into your project's deployed-graph folder. The
-relevant <code>application.properties</code> keys:</p>
+<p>Deployment is a file copy plus a manifest entry. The relevant <code>application.properties</code> keys:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># temp working location (must be file:/ — read/write)</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="na">location.graph.temp</span><span class="o">=</span><span class="s">file:/tmp/graph</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1"># deployed model location (file:/ or classpath:/ — read-only)</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="na">location.graph.deployed</span><span class="o">=</span><span class="s">classpath:/graph</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1"># the graph manifest - the quality gate and the only door to deployed execution</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="na">graph.model.automation</span><span class="o">=</span><span class="s">classpath:/graphs.yaml</span>
 </code></pre></div>
-<p>So copy the model into the classpath graph folder and restart the app to load it:</p>
+<p>Copy the model into the deployed-graph folder <strong>and list its ID in the manifest</strong>
+(<code>graphs.yaml</code>), then restart the app:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>cp /tmp/graph/my-first-graph.json src/main/resources/graph/
 </code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nt">graphs</span><span class="p">:</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;my-first-graph&#39;</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="nt">location</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;classpath:/graph&#39;</span>
+</code></pre></div>
+<p>Like <code>flows.yaml</code>, the manifest carries the location of its own models: the optional
+<code>location</code> entry points at the deployed-graph folder (<code>file:/</code> or <code>classpath:/</code> — it is
+read-only) and defaults to <code>classpath:/graph</code>, so most projects can omit it.</p>
+<p>At startup, <code>CompileGraph</code> validates every manifest graph once — structure, the root node's
+<code>purpose</code>, data-mapping syntax, and the suspend/resume contract — and only graphs that pass
+become executable. A graph that fails the gate, or is not listed, answers <strong>HTTP-404</strong> as if
+it does not exist, exactly like an invalid flow under <code>CompileFlows</code>. The startup log tells
+you why a graph was rejected (<code>Rejected graph &lt;id&gt; - &lt;reason&gt;</code>).</p>
 <h2 id="call-over-rest">Step 5 — call it over REST<a class="headerlink" href="#call-over-rest" title="Permanent link">&para;</a></h2>
 <p>A deployed graph is reachable at the generic endpoint <code>POST /api/graph/{graph-id}</code>, where the id is
 the name you exported. Send it some input:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>curl -X POST http://127.0.0.1:8085/api/graph/my-first-graph \
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  -H &quot;Content-Type: application/json&quot; \
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>  -d &#39;{&quot;message&quot;: &quot;it is a wonderful day&quot;}&#39;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>curl -X POST http://127.0.0.1:8085/api/graph/my-first-graph \
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  -H &quot;Content-Type: application/json&quot; \
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>  -d &#39;{&quot;message&quot;: &quot;it is a wonderful day&quot;}&#39;
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="p">{</span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;it is a wonderful day&quot;</span><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;it is a wonderful day&quot;</span><span class="p">}</span>
 </code></pre></div>
 <p>(The port follows your app's configuration; <code>8085</code> is illustrative.)</p>
 <h2 id="how-it-ran">What just happened<a class="headerlink" href="#how-it-ran" title="Permanent link">&para;</a></h2>

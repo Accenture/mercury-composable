@@ -2778,7 +2778,7 @@
 <blockquote>
 <p><strong>At a glance</strong></p>
 <ul>
-<li><strong>What</strong> — the eight skills shipped with the engine. Attach one to a node (<code>skill=&lt;route&gt;</code>)
+<li><strong>What</strong> — the ten skills shipped with the engine. Attach one to a node (<code>skill=&lt;route&gt;</code>)
   to make it <em>active</em>: it runs when traversal reaches the node.</li>
 <li><strong>They share</strong> — the <code>source -&gt; target</code> mapping syntax with its
   <a href="../command-reference/#constants">constant set</a>, and the same state-machine
@@ -2819,6 +2819,14 @@
 <tr>
 <td><a href="#extension"><code>graph.extension</code></a></td>
 <td>delegate to a sub-graph or an Event Script flow</td>
+</tr>
+<tr>
+<td><a href="#suspend"><code>graph.suspend</code></a></td>
+<td>persist workflow state at a human checkpoint and complete the run</td>
+</tr>
+<tr>
+<td><a href="#resume"><code>graph.resume</code></a></td>
+<td>restore persisted state and continue past the checkpoint without re-executing it</td>
 </tr>
 <tr>
 <td><a href="#join"><code>graph.join</code></a></td>
@@ -3067,8 +3075,10 @@ the persisted model merges into the state machine (the current run's reserved ke
 traversal bookkeeping is restored (downstream joins still see pre-suspension branches), and the
 walker jumps past the checkpoint onto its normal path. Not found — a <strong>fresh transaction (the
 normal first-run case)</strong> or an expired record: traversal continues along the node's own forward
-path, or jumps to the optional <code>missing=&lt;node&gt;</code> handler for workflows where an expired approval
-needs its own response.</p>
+path. Either way the skill sets <strong><code>model.run</code></strong> to <code>resume</code> or <code>fresh</code>; the engine does not
+distinguish absent from expired, so handling that condition is application logic — gate the
+forward path with a <code>graph.math</code> IF-THEN-ELSE on <code>model.run</code> (or a <code>graph.task</code>) to reject,
+advise the UI, or jump to a recovery node.</p>
 <p><strong>Gotchas:</strong> the record is consumed on retrieval (a duplicate resume behaves as a fresh run, never
 a double execution); <code>model.cid</code> is the retrieval key, so resume-bearing endpoints deserve
 rest.yaml <code>authentication</code>. Full story: <a href="../workflow-suspension/">Workflow Suspension</a>.</p>
