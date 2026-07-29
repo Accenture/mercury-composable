@@ -12,7 +12,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-1. **Registration Metadata Contract (annotation-macro consistency arc, P2).** A new
+1. **Workflow suspension for the Active Knowledge Graph (suspend/resume).** A graph run
+   can suspend at a human checkpoint — approval, intervention, inbox notification — and
+   resume later with the same business correlation ID, without re-executing completed
+   steps. A long-running business process becomes a sequence of short runs; nothing stays
+   in memory between them.
+   - New skills **`graph.suspend`** / **`graph.resume`** (supersets of `graph.task`: the
+     `task` property names a pluggable state-store function; envelope assembly and
+     restoration are fully encapsulated — no node data mapping). The node alias
+     **`suspend`** is reserved (the `root`/`end` pattern — traversal jumps to it by
+     name); a skilled node marked with the new reserved property **`suspend=true`**
+     routes there after executing; the optional **`missing=<node>`** property on a resume
+     node handles absent/expired records. The suspend node's **`ttl`** is mandatory with
+     no default (duration syntax, e.g. `2d`).
+   - Traversal bookkeeping is persisted and restored, so a `graph.join` after resume
+     still sees branches completed before suspension. Reserved model keys never persist.
+     CompileGraph validates the static contract for manifest graphs (alias⇔skill binding,
+     no suspension on routing skills, the drawn checkpoint edge, mandatory `ttl`); the
+     runtime guards remain the enforcement floor.
+   - New optional extension **`extensions/minigraph-state-redis`**: `v1.redis.persist.model`
+     (SETEX, native expiry) and `v1.redis.retrieve.model` (atomic GETDEL consume,
+     Redis 6.2+) register automatically when the jar is included (the
+     minigraph-playground example app now does); lazy connection, `redis.*` config keys
+     shared with sync-over-async. Any composable function honoring the documented store
+     contract can replace it.
+   - New tutorial **`tutorial-14`** (approval workflow) with an end-to-end test against
+     embedded Redis, the **Workflow Suspension** guide chapter (incl. the state-store
+     contract), skills-reference entries, and Playground node types
+     `Suspend`/`Resume`/`Suspensible` (visual convention — the skill defines behavior).
+
+2. **Registration Metadata Contract (annotation-macro consistency arc, P2).** A new
    reference page — `docs/guides/registration-metadata-contract.md` — fixes the
    cross-language contract behind `@PreLoad` and its family: one canonical metadata model
    with fixed semantics (boot-time resolution, optional-service grammar, order-free marker

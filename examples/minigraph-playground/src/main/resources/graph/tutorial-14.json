@@ -1,0 +1,136 @@
+{
+  "nodes": [
+    {
+      "alias": "root",
+      "types": [
+        "Root"
+      ],
+      "properties": {
+        "purpose": "Approval workflow: submit a request, suspend at the human checkpoint, resume with the same correlation ID to complete",
+        "name": "tutorial-14"
+      }
+    },
+    {
+      "alias": "resume",
+      "types": [
+        "Resume"
+      ],
+      "properties": {
+        "skill": "graph.resume",
+        "task": "v1.redis.retrieve.model",
+        "purpose": "Restore workflow state if this transaction was suspended earlier"
+      }
+    },
+    {
+      "alias": "record-request",
+      "types": [
+        "Suspensible"
+      ],
+      "properties": {
+        "skill": "graph.data.mapper",
+        "suspend": true,
+        "mapping": [
+          "input.body -> model.request",
+          "text(pending-approval) -> model.stage"
+        ],
+        "purpose": "Capture the submitted request, then suspend for approval"
+      }
+    },
+    {
+      "alias": "suspend",
+      "types": [
+        "Suspend"
+      ],
+      "properties": {
+        "skill": "graph.suspend",
+        "task": "v1.redis.persist.model",
+        "ttl": "1h",
+        "purpose": "Persist workflow state to Redis and wait for the approver"
+      }
+    },
+    {
+      "alias": "approve",
+      "types": [
+        "mapper"
+      ],
+      "properties": {
+        "skill": "graph.data.mapper",
+        "mapping": [
+          "model.request -> output.body.request",
+          "input.body.decision -> output.body.decision",
+          "text(completed) -> output.body.stage"
+        ],
+        "purpose": "Complete the workflow with the approver decision and the original request"
+      }
+    },
+    {
+      "alias": "end",
+      "types": [
+        "End"
+      ],
+      "properties": {}
+    }
+  ],
+  "connections": [
+    {
+      "source": "root",
+      "target": "resume",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "resume",
+      "target": "record-request",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "record-request",
+      "target": "suspend",
+      "relations": [
+        {
+          "type": "checkpoint",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "record-request",
+      "target": "approve",
+      "relations": [
+        {
+          "type": "approved",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "suspend",
+      "target": "end",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "approve",
+      "target": "end",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    }
+  ]
+}

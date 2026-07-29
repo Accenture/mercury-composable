@@ -22,6 +22,46 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0010 — Graph workflow suspension: short runs + an external state store, encapsulated in skills {#adr-0010}
+**Status:** Accepted · **Date:** 2026-07-29T02:00:00.000Z · **Serves:** vision-mercury-composable · **Formalizes:** graph-suspend-resume-design
+<!-- id: adr-0010 | status: accepted -->
+
+**Abstract.** A long-running business process with human checkpoints (approval,
+intervention, inbox notification) is expressed as a **sequence of short graph runs**: at a
+suspension point the run persists its workflow state — the `model` namespace plus
+traversal bookkeeping — to an **external state store** keyed by the business correlation
+ID with a designer-chosen TTL, then completes normally; a later request with the same
+correlation ID restores that state and continues past the checkpoint without re-executing
+it. The mechanics are **encapsulated in two skills** — `graph.suspend` and `graph.resume`,
+supersets of `graph.task` that invoke a pluggable store function named by the node's
+`task` property with a fixed put/get contract — so suspension nodes carry **no data
+mapping**. The node alias `suspend` is **reserved** (the `root`/`end` pattern): traversal
+routes to it by name when a node marked with the reserved property `suspend=true`
+completes; node *types* (`Suspend`/`Resume`/`Suspensible`) remain visual convention —
+**the skill defines behavior**. Store retrieval **consumes the record atomically**
+(at-most-once resume); reserved model keys never persist; a suspension point must be the
+sole active branch.
+
+**Rationale.** Parking a live graph instance for a multi-day approval would pin memory,
+defeat the flow ttl, and not survive a restart — the short-run model keeps the engine's
+in-memory instance lifecycle untouched and makes cross-instance resume free (any pod
+sharing the store can continue the workflow). Skill encapsulation was chosen over
+node-level data mapping because the mapping variant required special-casing the mapping
+grammar per node type and left the resume jump-target with no channel; a fixed store
+contract also makes the persistence seam documentable and replaceable (Redis ships as an
+optional extension module — never an engine dependency; engine tests use a temp-file
+store). The reserved-alias routing reuses the existing jump-by-name directive vocabulary
+instead of introducing edge classification, at the accepted cost of one suspend node per
+graph. Consume-on-retrieve was preferred over keep-until-TTL so a duplicate resume cannot
+double-execute a continuation; workflows needing stronger crash guarantees may implement
+keep-until-ack semantics in a custom store. Alternatives rejected: engine-managed timers
+or parked instances (memory + restart fragility); reusing the Event Script `ext:`
+fire-and-forget external-state contract (durability requires a synchronous
+acknowledgement); persisting `{node}.result` scratch (the model is the workflow's single
+durable memory — an explicit, teachable rule).
+
+---
+
 ## ADR-0009 — Registration metadata is a cross-language contract; carriers are per-language idioms {#adr-0009}
 **Status:** Accepted · **Date:** 2026-07-26T01:40:00.000Z · **Serves:** vision-mercury-composable · **Formalizes:** registration-metadata-contract
 <!-- id: adr-0009 | status: accepted -->
