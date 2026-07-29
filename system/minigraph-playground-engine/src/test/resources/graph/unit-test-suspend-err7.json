@@ -6,8 +6,8 @@
         "UnitTest"
       ],
       "properties": {
-        "purpose": "the suspend node must have an outgoing connection",
-        "name": "unit-test-suspend-err6"
+        "purpose": "a suspension point needs a continuation edge",
+        "name": "unit-test-suspend-err7"
       }
     },
     {
@@ -20,7 +20,7 @@
         "task": "v1.counting.step",
         "suspend": true,
         "input": [
-          "text(dead-end) -> step",
+          "text(no-continuation) -> step",
           "model.cid -> cid"
         ]
       }
@@ -67,11 +67,11 @@
       ]
     },
     {
-      "source": "step-1",
+      "source": "suspend",
       "target": "end",
       "relations": [
         {
-          "type": "approved",
+          "type": "test",
           "properties": {}
         }
       ]

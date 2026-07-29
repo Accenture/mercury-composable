@@ -55,7 +55,9 @@ ttl=2d
 
 `ttl` is **mandatory with no default** — a checkpoint may wait a minute or days, and only
 the workflow designer knows. It uses duration syntax (`20s`, `5m`, `2h`, `2d`) and becomes
-the store record's expiry.
+the store record's expiry. The `suspend` node also needs an **outgoing connection**
+(normally to `end`): without one, the record would persist and the run would then stall
+instead of completing — the compiler rejects the graph.
 
 **2. A suspensible node** — any skilled node marked `suspend=true`. After its skill
 completes and its output mapping runs, traversal routes to the `suspend` node instead of
@@ -69,9 +71,15 @@ after setup nodes). When the store has a record for `model.cid`, it restores the
 re-arms the traversal bookkeeping (a downstream `graph.join` still sees branches that
 completed before suspension), and jumps past the checkpoint. When there is no record —
 a fresh transaction, the normal first-run case, or an expired one — traversal simply
-continues along the resume node's own forward path. The optional `missing=<node>`
-property jumps to a designated handler instead, for workflows where an expired approval
-needs its own response.
+continues along the resume node's own forward path.
+
+Either way, the skill records the outcome in **`model.run`** — `resume` when a record was
+restored, `fresh` when there was none. The engine deliberately does not distinguish
+absent from expired (with several checkpoints in one graph, no single fallback node could
+be right for all of them): whether an expired approval needs its own response is
+**application logic**. Gate the resume node's forward path with a `graph.math`
+IF-THEN-ELSE — on `model.run` or on the request shape, exactly as tutorial-14 does — to
+reject the request, advise the UI, or jump to a recovery node.
 
 ```text
 create node resume
@@ -108,7 +116,7 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
 ```
 
 ```json
-{"stage": "order-submitted; waiting for store manager approval", "cid": "order-1001"}
+{"stage": "order-submitted; waiting for store manager approval", "run": "fresh", "cid": "order-1001"}
 ```
 
 Then, with the same `x-correlation-id`, the store manager approves
@@ -125,6 +133,7 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
 ```json
 {
   "stage": "shipped",
+  "run": "resume",
   "order": {"item": "laptop", "amount": 2000},
   "approval": {"decision": "approved", "manager": "store-88"},
   "delivery": {"release": true, "courier": "express"},
@@ -139,12 +148,17 @@ grown state under the same correlation ID.
 
 The tutorial also validates its input: a request that is not an order submission, for a
 correlation ID with no suspended record, is **rejected with HTTP 404** — the order must
-come first. Two techniques worth stealing from its model:
+come first. Three techniques worth stealing from its model:
 
 - **Null-safe presence check.** The math expression engine has no null literal, but `{var}`
   substitution inside a `text()` constant is null-safe:
   `MAPPING: text(={input.body.item}) -> model.order_probe` always yields a present
   string (`=null` when the field is absent), which an `IF` can compare safely.
+- **The run flag.** `graph.resume` sets `model.run` to `fresh` or `resume`, and the
+  tutorial stages it into every reply (`model.run -> output.body.run`) — so the UI always
+  knows whether it is looking at a new transaction or a resumed continuation, and a
+  rejected later-stage request tells the caller *why* (`"run": "fresh"` on a
+  decision-shaped body means the record expired or never existed).
 - **Declarative response status.** A graph may stage its own HTTP status —
   `int(404) -> output.status` in the rejection node. A non-2xx status routes through the
   surrounding flow's exception handler, which passes a staged map body through (minus any
@@ -158,7 +172,7 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
 ```
 
 ```json
-{"type": "rejected", "message": "Transaction not found. Submit the order first", "status": 404}
+{"type": "rejected", "message": "Transaction not found. Submit the order first", "run": "fresh", "status": 404}
 ```
 
 ## Design rules
@@ -181,7 +195,10 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
   propagate into delegated sub-graphs or flows today — design resumable workflows as
   top-level graphs.
 - Reserved model keys (`model.cid`, `model.instance`, `model.flow`, `model.ttl`,
-  `model.trace`) are never persisted — the resumed run's own identity is authoritative.
+  `model.trace`, `model.run`) are never persisted — the resumed run's own identity is
+  authoritative. `model.run` is part of the read-only flow metadata family: `graph.resume`
+  is its only writer, and the flow compiler rejects any data mapping that targets it
+  (like the other reserved keys).
 
 ## The state store contract {#state-store-contract}
 

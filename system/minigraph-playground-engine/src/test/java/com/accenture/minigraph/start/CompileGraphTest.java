@@ -18,9 +18,12 @@
 
 package com.accenture.minigraph.start;
 
+import com.accenture.minigraph.common.GraphModelValidator;
 import com.accenture.minigraph.models.CompiledGraphs;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.platformlambda.core.graph.MiniGraph;
+import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
 
 import java.util.List;
@@ -39,8 +42,8 @@ class CompileGraphTest {
     void manifestListedGraphsAreCompiled() {
         assertTrue(CompiledGraphs.graphExists("hellojs"));
         assertTrue(CompiledGraphs.graphExists("tutorial-1"));
-        // a graph ID that is not listed in graphs.yaml must not be compiled -
-        // GraphExecutor falls back to lazy loading for it
+        // a graph ID that is not listed in graphs.yaml is not compiled and
+        // therefore not executable - GraphExecutor answers 404 for it
         assertFalse(CompiledGraphs.graphExists("tutorial-99"));
     }
 
@@ -53,15 +56,42 @@ class CompileGraphTest {
     }
 
     @Test
-    void invalidSuspendResumeGraphsAreRejectedAtCompileTime() {
+    void invalidManifestGraphsAreNotCompiled() {
+        // every deliberately invalid manifest graph must fail the gate; deployed
+        // execution is served exclusively from the compiled registry, so a rejected
+        // graph answers 404 as if it does not exist (CompileFlows parity) -
+        // err1-err7 break the suspend/resume contract, unit-test-no-end has no
+        // 'end' node (a run could never complete)
+        for (var id : List.of("unit-test-suspend-err1", "unit-test-suspend-err2", "unit-test-suspend-err3",
+                              "unit-test-suspend-err4", "unit-test-suspend-err5", "unit-test-suspend-err6",
+                              "unit-test-suspend-err7", "unit-test-no-end")) {
+            assertFalse(CompiledGraphs.graphExists(id), id + " must be rejected by the quality gate");
+        }
+    }
+
+    @Test
+    void manifestLocationDefaultsToClasspathGraph() {
+        // the engine's test manifest declares no 'location' - the CompileFlows-style
+        // default applies (the playground example app's manifest sets it explicitly)
+        assertEquals("classpath:/graph", CompiledGraphs.getDeployedLocation());
+    }
+
+    @Test
+    void staticValidatorRejectsEveryInvalidSuspendResumeShape() {
+        // direct coverage of every static rule, independent of the manifest:
         // err1 graph.suspend node not named 'suspend'; err2 suspend=true on graph.math;
         // err3 suspensible node without a suspend node; err4 suspend node without ttl;
-        // err5 suspensible node without a drawn edge to 'suspend'; err6 resume 'missing'
-        // target that does not exist - all six are listed in graphs.yaml and must be
-        // rejected by the static checks (the runtime guards remain the enforcement floor)
+        // err5 suspensible node without a drawn edge to 'suspend'; err6 suspend node
+        // without an outgoing connection; err7 suspension point without a
+        // continuation edge (a resumed run could not continue)
         for (var id : List.of("unit-test-suspend-err1", "unit-test-suspend-err2", "unit-test-suspend-err3",
-                              "unit-test-suspend-err4", "unit-test-suspend-err5", "unit-test-suspend-err6")) {
-            assertFalse(CompiledGraphs.graphExists(id), id + " must be rejected at compile time");
+                              "unit-test-suspend-err4", "unit-test-suspend-err5", "unit-test-suspend-err6",
+                              "unit-test-suspend-err7")) {
+            var reader = new ConfigReader("classpath:/graph/" + id + ".json");
+            var graph = new MiniGraph();
+            graph.importGraph(reader.getMap());
+            assertThrows(IllegalArgumentException.class, () -> GraphModelValidator.validateSuspendResume(graph),
+                    id + " must fail the static validator");
         }
     }
 

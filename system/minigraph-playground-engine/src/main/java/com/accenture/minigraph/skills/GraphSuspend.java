@@ -21,18 +21,16 @@ package com.accenture.minigraph.skills;
 import com.accenture.minigraph.models.GraphInstance;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
-import org.platformlambda.core.models.SimpleNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
- * The graph.suspend skill persists the workflow state of a graph instance to an external
- * state store so the transaction can resume later (see graph.resume). It is a superset of
+ * The 'graph.suspend' skill persists the workflow state of a graph instance to an external
+ * state store so the transaction can resume later (see 'graph.resume'). It is a superset of
  * graph.task: the "task" property names the pluggable store function, but the persistence
  * envelope is assembled by the skill itself - the node needs no input/output data mapping.
  * <p>
@@ -58,9 +56,6 @@ import java.util.Set;
 public class GraphSuspend extends GraphStateSkill {
     private static final Logger log = LoggerFactory.getLogger(GraphSuspend.class);
     public static final String ROUTE = "graph.suspend";
-    // per-run engine metadata never persists: the resumed run's own values are authoritative
-    private static final Set<String> NON_PERSISTED_MODEL_KEYS =
-            Set.of("cid", "instance", "flow", "ttl", "trace", "parent", "root", "none");
 
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
@@ -78,13 +73,13 @@ public class GraphSuspend extends GraphStateSkill {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " - suspension point unknown; the '" +
                     SUSPEND + "' node must be reached from another node");
         }
-        var ttlSeconds = getTtlSeconds(node);
+        var ttlSeconds = getValidTtlSeconds(node.getProperty(TTL), nodeName);
         warnIfBranchesInFlight(graphInstance, from);
         var stateMachine = graphInstance.stateMachine;
         var timeout = getModelTtl(graphInstance);
         var request = new EventEnvelope().setTo(ctx.route()).setCorrelationId(util.getUuid())
                 .setHeader(TYPE, PUT).setBody(getPersistenceEnvelope(graphInstance, cid, from, ttlSeconds));
-        log.info("Suspend at '{}', store={}, ttl={}s", from, ctx.route(), ttlSeconds);
+        log.debug("Suspend at '{}' for cid {}, store={}, ttl={}s", from, cid, ctx.route(), ttlSeconds);
         ctx.po().annotateTrace(TASK, ctx.route());
         ctx.po().annotateTrace(CID, cid);
         // issue the request on the worker thread so the outbound event carries this span
@@ -107,16 +102,41 @@ public class GraphSuspend extends GraphStateSkill {
             }));
     }
 
-    private int getTtlSeconds(SimpleNode node) {
-        var ttl = node.getProperty(TTL);
+    /**
+     * Parse and validate a checkpoint ttl - the single implementation shared by this
+     * skill and CompileGraph's static check.
+     * <p>
+     * Mirrors Utility.getDurationInSeconds (20s/5m/2h/2d) but computes in long
+     * arithmetic: the int computation wraps for absurd values (e.g. a huge day
+     * count), which could pass a naive "&lt; 1" guard and silently expire the
+     * record far earlier than modeled.
+     *
+     * @param ttl the node's ttl property value
+     * @param nodeAlias for the error message
+     * @return the validated ttl in seconds
+     */
+    public static int getValidTtlSeconds(Object ttl, String nodeAlias) {
         if (ttl == null || String.valueOf(ttl).isBlank()) {
-            throw new IllegalArgumentException(NODE_NAME + node.getAlias() + " does not have a 'ttl' property");
+            throw new IllegalArgumentException(NODE_NAME + nodeAlias + " does not have a 'ttl' property");
         }
-        var seconds = util.getDurationInSeconds(String.valueOf(ttl).trim());
-        if (seconds < 1) {
-            throw new IllegalArgumentException(NODE_NAME + node.getAlias() + " - invalid ttl '" + ttl + "'");
+        var text = String.valueOf(ttl).trim();
+        long multiplier = 1;
+        var digits = text;
+        var suffix = text.charAt(text.length() - 1);
+        if (suffix == 's' || suffix == 'm' || suffix == 'h' || suffix == 'd') {
+            digits = text.substring(0, text.length() - 1).trim();
+            multiplier = switch (suffix) {
+                case 'm' -> 60;
+                case 'h' -> 3600;
+                case 'd' -> 86400;
+                default -> 1;
+            };
         }
-        return seconds;
+        var seconds = util.str2long(digits) * multiplier;
+        if (seconds < 1 || seconds > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(NODE_NAME + nodeAlias + " - invalid ttl '" + ttl + "'");
+        }
+        return (int) seconds;
     }
 
     @SuppressWarnings("unchecked")

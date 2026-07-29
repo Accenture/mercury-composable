@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * In-memory registry of graph models that have been validated and converted at startup by CompileGraph.
@@ -30,11 +31,16 @@ import java.util.concurrent.ConcurrentMap;
  * This mirrors the role of {@code com.accenture.models.Flows} in event-script-engine: a graph model
  * registered here has already been structurally validated (via MiniGraph.importGraph) and had its data
  * mapping entries converted from the deprecated "simple type matching" syntax to "simple plugin" syntax.
- * GraphExecutor consults this registry first and falls back to lazy, per-request loading for any
- * graph ID that was not declared in the graph manifest.
+ * GraphExecutor serves deployed graph execution EXCLUSIVELY from this registry: a deployed graph
+ * model is executable only when it is listed in the graph manifest (graph.model.automation) AND
+ * passed the CompileGraph quality gate. A graph ID that is not here answers HTTP-404 as if the
+ * model does not exist - the CompileFlows precedent, where an invalid flow never becomes
+ * executable. There is no lazy loading of deployed models. (The playground's dry-run workspace
+ * is a separate surface and is not affected.)
  */
 public class CompiledGraphs {
     private static final ConcurrentMap<String, Map<String, Object>> COMPILED_GRAPHS = new ConcurrentHashMap<>();
+    private static final AtomicReference<String> DEPLOYED_LOCATION = new AtomicReference<>("classpath:/graph");
 
     private CompiledGraphs() {}
 
@@ -69,6 +75,29 @@ public class CompiledGraphs {
      */
     public static void addGraph(String graphId, Map<String, Object> model) {
         COMPILED_GRAPHS.put(graphId, model);
+    }
+
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     * <p>
+     * Set by CompileGraph from the graph manifest's 'location' entry
+     * (default classpath:/graph - the CompileFlows convention).
+     *
+     * @param location of the deployed graph models (file:/ or classpath:/)
+     */
+    public static void setDeployedLocation(String location) {
+        DEPLOYED_LOCATION.set(location);
+    }
+
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @return the deployed graph model location
+     */
+    public static String getDeployedLocation() {
+        return DEPLOYED_LOCATION.get();
     }
 
     /**

@@ -18,7 +18,6 @@
       "properties": {
         "skill": "graph.resume",
         "task": "v1.redis.retrieve.model",
-        "missing": "check-fresh",
         "purpose": "Restore workflow state if this transaction was suspended earlier"
       }
     },
@@ -47,6 +46,7 @@
         "mapping": [
           "input.body -> model.order",
           "text(order-submitted; waiting for store manager approval) -> output.body.stage",
+          "model.run -> output.body.run",
           "model.cid -> output.body.cid"
         ],
         "purpose": "Capture the order step, then suspend for the next actor"
@@ -63,6 +63,7 @@
         "mapping": [
           "input.body -> model.approval",
           "text(approved; waiting for the delivery department to release the shipment) -> output.body.stage",
+          "model.run -> output.body.run",
           "model.cid -> output.body.cid"
         ],
         "purpose": "Capture the approval step, then suspend for the next actor"
@@ -79,6 +80,7 @@
         "mapping": [
           "input.body -> model.delivery",
           "text(released; waiting for shipment confirmation) -> output.body.stage",
+          "model.run -> output.body.run",
           "model.cid -> output.body.cid"
         ],
         "purpose": "Capture the delivery step, then suspend for the next actor"
@@ -93,6 +95,7 @@
         "skill": "graph.data.mapper",
         "mapping": [
           "text(shipped) -> output.body.stage",
+          "model.run -> output.body.run",
           "model.order -> output.body.order",
           "model.approval -> output.body.approval",
           "model.delivery -> output.body.delivery",
@@ -112,7 +115,8 @@
         "mapping": [
           "int(404) -> output.status",
           "text(rejected) -> output.body.type",
-          "text(Transaction not found. Submit the order first) -> output.body.message"
+          "text(Transaction not found. Submit the order first) -> output.body.message",
+          "model.run -> output.body.run"
         ],
         "purpose": "Reject a request that has no suspended transaction and is not an order submission"
       }

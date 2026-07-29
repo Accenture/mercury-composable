@@ -22,6 +22,47 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0011 — CompileGraph is the mandatory deployment gate for graph models (CompileFlows parity) {#adr-0011}
+**Status:** Accepted · **Date:** 2026-07-29T19:03:28.000Z · **Serves:** vision-mercury-composable · **Formalizes:** compilegraph-mandatory-gate
+<!-- id: adr-0011 | status: accepted -->
+
+**Abstract.** A deployed graph model is executable at `POST /api/graph/{graph-id}` **only**
+when it is listed in the graph manifest (`graph.model.automation`) **and** passes the
+CompileGraph quality gate at startup — a graph that fails the gate, or is not listed,
+answers **HTTP-404 as if the model does not exist**, and the lazy, per-request loading of
+deployed models is removed. Like `flows.yaml`, the manifest carries the location of its
+own models (an optional `location` entry, default `classpath:/graph`) — there is no
+separate application property. Validation follows **two explicit lanes**: *production* =
+models → CompileGraph → deployed graphs → GraphExecutor, which **trusts the gate** and
+drops per-request re-validation of gate-guaranteed rules, keeping only data-driven runtime
+guards (store-record contents, dynamic jump targets, loop detection); *dry-run* = drafts
+in the temp workspace → UI CLI input validation at node create/update → GraphTraveler with
+full runtime validation. The gate's whole-graph rules live in a reusable
+`GraphModelValidator`, which the playground's `run` command also invokes as a **pre-run
+quality check** — draft authoring deliberately allows partial models, but the moment the
+author asks to run, the contract must hold.
+
+**Rationale.** This is the `CompileFlows` precedent applied to Layer 3: an invalid flow
+never becomes executable, and the graph engine now gives the same guarantee — previously a
+manifest graph that *failed* validation could still be resurrected by the lazy-load
+fallback and executed unvalidated, which is untenable for field production. Compiled-or-404
+(identical for failed and unlisted models) leaks nothing about why a model is absent, and
+turning the deploy folder into a pure data directory removes it as a direct execution
+vector. Startup-time rejection converts an entire class of runtime stalls and mid-run
+errors (missing `end` node, checkpoint without a continuation edge, dead-end suspend node)
+into immediate, logged deployment failures — while the same rules surface to graph authors
+at dry-run `run` time, so the deployment contract is learned in the playground, not
+discovered in the field. The consequences are accepted deliberately: the manifest is now a
+**requirement** (a one-line migration for installations that relied on lazy loading, with
+the `classpath:/graph` default preserving existing layouts and an obsolete-key warning for
+the retired `location.graph.deployed` property), hot-dropping a JSON file into the deploy
+folder no longer works (deployment is an explicit, restart-scoped act — consistent with
+the governance lifecycle the Vision calls for), and the walkers' suspend/resume guards are
+now exercised end-to-end only on the dry-run lane (the static validator carries the
+per-rule coverage).
+
+---
+
 ## ADR-0010 — Graph workflow suspension: short runs + an external state store, encapsulated in skills {#adr-0010}
 **Status:** Accepted · **Date:** 2026-07-29T02:00:00.000Z · **Serves:** vision-mercury-composable · **Formalizes:** graph-suspend-resume-design
 <!-- id: adr-0010 | status: accepted -->

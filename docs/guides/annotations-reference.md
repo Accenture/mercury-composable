@@ -354,9 +354,9 @@ public class EnvSetup implements EntryPoint {
 
 - **Reserved sequences**: `0` is used by `EssentialServiceLoader`; `5` is used by
   `event-script-engine`'s `CompileFlows` (flow YAML compile-time validation); `6` is used
-  by `minigraph-playground-engine`'s `CompileGraph` (opt-in graph-model validation,
-  deliberately placed right after `CompileFlows` since it reuses the same syntax
-  converter). User code should use sequences 3–999 (or 1 if it must run before all
+  by `minigraph-playground-engine`'s `CompileGraph` (the deployed graph-model quality
+  gate — only manifest graphs that pass it are executable — deliberately placed right
+  after `CompileFlows` since it reuses the same syntax converter). User code should use sequences 3–999 (or 1 if it must run before all
   framework modules).
 - Execution order: `@BeforeApplication` → `@PreLoad` registration → HTTP server startup →
   `@MainApplication` — see [Application Lifecycle](architecture.md#application-lifecycle)

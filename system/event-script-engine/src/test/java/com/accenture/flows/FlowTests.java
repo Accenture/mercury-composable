@@ -77,6 +77,10 @@ class FlowTests extends TestBase {
         assertNotNull(noneViolation);
         assertFalse(noneViolation.tasks.containsKey("greeting.test"),
                 "task with an input mapping overwriting the model.none null constant must be dropped");
+        var runViolation = com.accenture.models.Flows.getFlow("parser-test-32");
+        assertNotNull(runViolation);
+        assertFalse(runViolation.tasks.containsKey("greeting.test"),
+                "task with an output mapping overwriting the model.run flag must be dropped");
         // positive control: the same task name loads fine in a fixture without reserved-key writes
         var control = com.accenture.models.Flows.getFlow("greetings");
         assertNotNull(control, "valid flows still load");

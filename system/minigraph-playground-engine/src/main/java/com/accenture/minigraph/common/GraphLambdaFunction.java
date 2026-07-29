@@ -87,9 +87,8 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String QUERY_NAMESPACE = "query.";
     protected static final String PATH_PARAMETER = "path_parameter";
     protected static final String PATH_PARAMETER_NAMESPACE = "path_parameter.";
-    protected static final String INPUT_BODY_NAMESPACE = "input.body";
+    protected static final String INPUT_BODY = "input.body";
     protected static final String INPUT_HEADER_NAMESPACE = "input.header";
-    protected static final String OUTPUT_BODY_NAMESPACE = "output.body";
     protected static final String OUTPUT_HEADER_NAMESPACE = "output.header";
     protected static final String MODEL = "model";
     protected static final String MODEL_NAMESPACE = "model.";
@@ -125,7 +124,6 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     // as suspensible; 'resume:<node>' is the walker directive that continues traversal
     // after that node without re-executing it
     protected static final String SUSPEND = "suspend";
-    protected static final String MISSING = "missing";
     protected static final String FROM = "from";
     protected static final String RESUME_PREFIX = "resume:";
     protected static final String SUSPENDED = "suspended";
@@ -137,7 +135,6 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String HEADER = "header";
     protected static final String ERROR = "error";
     protected static final String EXCEPTION = "exception";
-    protected static final String CONTINUE = "continue";
     protected static final String INSTANTIATE = "instantiate";
     protected static final String DELETE = "delete";
     protected static final String START = "start";
@@ -165,7 +162,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     // with nothing else
     private static final Set<String> RESERVED_PARAMETERS = Set.of(SKILL, MAPPING, STATEMENT, INPUT, OUTPUT, FEATURE,
                                     EXCEPTION, EXTENSION, STATUS, ERROR, DICTIONARY, FOR_EACH, CONCURRENCY, PURPOSE,
-                                    TASK, SUSPEND, MISSING);
+                                    TASK, SUSPEND);
     private static final AtomicLong loopInterval = new AtomicLong(-1);
     private static final AtomicLong highFrequency = new AtomicLong(-1);
 
@@ -667,12 +664,10 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
 
     protected String getNext(MiniGraph graph, String statement) {
         if (!NEXT.equalsIgnoreCase(statement)) {
-            var nextNode = getNode(statement, graph);
-            if (nextNode == null) {
-                throw new IllegalArgumentException(NODE_NAME + statement + NOT_FOUND);
-            } else {
-                return statement;
-            }
+            // getNode throws when the alias does not exist - existence check
+            // and error message are owned there
+            getNode(statement, graph);
+            return statement;
         }
         return null;
     }

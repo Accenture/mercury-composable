@@ -73,6 +73,7 @@ public class GraphTraveler extends GraphLambdaFunction {
             graphInstance.setReplyTo(event.getReplyTo());
             graphInstance.nodeSeen.clear();
             graphInstance.skillRun.clear();
+            graphInstance.hits.clear();
             graphInstance.complete.set(false);
             graphInstance.resetStartTime();
             // clean output for idempotent behavior because the traveler may be invoked multiple times by the operator
@@ -116,8 +117,8 @@ public class GraphTraveler extends GraphLambdaFunction {
             // Unrecoverable error from the node itself
             if (response.hasError()) {
                 if (target != null) {
-                    var eMap = getErrorMap(stateMachine.getElement(OUTPUT_BODY_NAMESPACE), target);
-                    stateMachine.setElement(OUTPUT_BODY_NAMESPACE, eMap);
+                    var eMap = getErrorMap(stateMachine.getElement(OUTPUT_BODY), target);
+                    stateMachine.setElement(OUTPUT_BODY, eMap);
                 }
                 handleErrorResponse(po, graphInstance, response);
                 return;
@@ -156,7 +157,7 @@ public class GraphTraveler extends GraphLambdaFunction {
     }
 
     private void checkFrequency(PostOffice po, GraphInstance graphInstance, String nodeName) {
-        var frequency = graphInstance.hits.getOrDefault(nodeName, new Visits());
+        var frequency = graphInstance.hits.computeIfAbsent(nodeName, k -> new Visits());
         var now = System.currentTimeMillis();
         var last = frequency.lastVisit.get();
         if (now - last > getLoopInterval()) {
@@ -164,7 +165,6 @@ public class GraphTraveler extends GraphLambdaFunction {
             frequency.hits.set(0);
         }
         var total = frequency.hits.incrementAndGet();
-        graphInstance.hits.put(nodeName, frequency);
         if (total > getHighFrequency()) {
             log.error("Looping detected - {} hits in {} ms for {} in {}",
                     total, now - last, nodeName, graphInstance.graphId);
@@ -187,10 +187,13 @@ public class GraphTraveler extends GraphLambdaFunction {
         if (!graphInstance.complete.get()) {
             var nodeName = node.getAlias();
             String skill = node.getProperty(SKILL) != null ? String.valueOf(node.getProperty(SKILL)) : null;
-            var seen = !GraphJoin.ROUTE.equals(skill) && graphInstance.nodeSeen.get(nodeName) != null;
+            // atomic mark-and-test: concurrent branches converging on the same
+            // non-join node must not dispatch it twice (a join always evaluates -
+            // its barrier logic owns the dedup)
+            var isJoin = GraphJoin.ROUTE.equals(skill);
+            var seen = graphInstance.nodeSeen.putIfAbsent(nodeName, true) != null;
             var out = graphInstance.getReplyTo();
-            if (!seen) {
-                graphInstance.nodeSeen.put(nodeName, true);
+            if (isJoin || !seen) {
                 po.send(new EventEnvelope().setTo(out).setBody("Walk to " + nodeName));
                 walkTo(po, skill, graphInstance, node, from);
             }

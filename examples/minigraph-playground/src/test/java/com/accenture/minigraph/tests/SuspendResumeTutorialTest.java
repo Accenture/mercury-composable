@@ -81,6 +81,7 @@ class SuspendResumeTutorialTest {
         // run 1: the customer orders a laptop - suspend for the store manager
         var ordered = stage(runGraph(cid, Map.of("item", "laptop", "amount", 2000)), cid);
         assertTrue(String.valueOf(ordered.getElement("stage")).startsWith("order-submitted"));
+        assertEquals("fresh", ordered.getElement("run"), "run 1 is a fresh transaction");
         // run 2: the store manager approves - suspend for the delivery department
         var approved = stage(runGraph(cid, Map.of("decision", "approved", "manager", "store-88")), cid);
         assertTrue(String.valueOf(approved.getElement("stage")).startsWith("approved"));
@@ -90,6 +91,7 @@ class SuspendResumeTutorialTest {
         // run 4: shipment confirmation - the workflow completes with the full history
         var shipped = stage(runGraph(cid, Map.of("tracking", "TRK-12345")), cid);
         assertEquals("shipped", shipped.getElement("stage"));
+        assertEquals("resume", shipped.getElement("run"), "runs 2-4 are resumed continuations");
         // state captured across all four runs survived every suspension
         assertEquals("laptop", shipped.getElement("order.item"));
         assertEquals(2000, shipped.getElement("order.amount"));
@@ -128,6 +130,7 @@ class SuspendResumeTutorialTest {
         assertEquals(404, response.getStatus());
         var body = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("rejected", body.getElement("type"));
+        assertEquals("fresh", body.getElement("run"), "the rejection advises the UI of the fresh condition");
         assertTrue(String.valueOf(body.getElement("message")).contains("Submit the order"),
                 "unexpected rejection message: " + response.getBody());
     }

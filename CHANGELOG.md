@@ -22,14 +22,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
      restoration are fully encapsulated — no node data mapping). The node alias
      **`suspend`** is reserved (the `root`/`end` pattern — traversal jumps to it by
      name); a skilled node marked with the new reserved property **`suspend=true`**
-     routes there after executing; the optional **`missing=<node>`** property on a resume
-     node handles absent/expired records. The suspend node's **`ttl`** is mandatory with
-     no default (duration syntax, e.g. `2d`).
+     routes there after executing. `graph.resume` records the run condition in
+     **`model.run`** (`resume` | `fresh`) so the graph's own logic decides how a
+     fresh-or-expired request is handled — the engine deliberately does not distinguish
+     absent from expired. `model.run` joins the read-only flow-metadata family
+     (`model.cid`/`instance`/`flow`/`ttl`/`trace`): the flow compiler and the runtime
+     dynamic-target guard reject any data mapping that overwrites it. The suspend node's **`ttl`** is mandatory with no default
+     (duration syntax, e.g. `2d`).
    - Traversal bookkeeping is persisted and restored, so a `graph.join` after resume
      still sees branches completed before suspension. Reserved model keys never persist.
      CompileGraph validates the static contract for manifest graphs (alias⇔skill binding,
-     no suspension on routing skills, the drawn checkpoint edge, mandatory `ttl`); the
-     runtime guards remain the enforcement floor.
+     no suspension on routing skills, the drawn checkpoint edge, a continuation edge on
+     every suspension point, mandatory `ttl` with an overflow-guarded parser, an outgoing
+     connection from the suspend node, a mandatory `end` node, and rejection of
+     data-mapping entries missing `->` — an `input` entry without `->` remains valid
+     skill vocabulary, e.g. the fetcher's dictionary parameter names); the runtime guards
+     remain the enforcement floor for the playground dry-run surface.
    - New optional extension **`extensions/minigraph-state-redis`**: `v1.redis.persist.model`
      (SETEX, native expiry) and `v1.redis.retrieve.model` (atomic GETDEL consume,
      Redis 6.2+) register automatically when the jar is included (the
@@ -40,7 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
      order, approval, delivery release — as four short runs, shipped with the engine)
      with end-to-end tests against embedded Redis — including input validation: a
      later-stage request without a suspended record is rejected with HTTP 404 (a null-safe presence check via
-     `{var}` substitution inside a `text()` constant). The **Workflow Suspension** guide
+     `{var}` substitution inside a `text()` constant) — and every stage reply carries the
+     `run` flag. The **Workflow Suspension** guide
      chapter (incl. the state-store contract), skills-reference entries, `help.md` +
      `help tutorial 14.md` Playground pages, and Playground node types
      `Suspend`/`Resume`/`Suspensible` (visual convention — the skill defines behavior).
@@ -80,7 +89,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-1. **Actuator worker instances: rule-of-thumb default + operations knob.** The actuator
+1. **CompileGraph is now the deployment gate for graph models (CompileFlows parity).**
+   A deployed graph model is executable at `POST /api/graph/{graph-id}` only when it is
+   listed in the graph manifest (`graph.model.automation`, e.g. `classpath:/graphs.yaml`)
+   AND passes the CompileGraph quality gate at startup. A graph that fails the gate, or
+   is not listed, answers **HTTP-404** as if the model does not exist — the lazy,
+   per-request loading of deployed models is removed, so an unvalidated JSON file in
+   `location.graph.deployed` can no longer be executed. This mirrors CompileFlows, where
+   an invalid flow never becomes executable. The playground dry-run workspace
+   (`location.graph.temp`) is a separate surface and is unaffected. Completing the
+   CompileFlows symmetry, the manifest now carries the location of its own models:
+   the optional **`location`** entry in `graphs.yaml` (default `classpath:/graph`)
+   replaces the `location.graph.deployed` application property, exactly like the
+   `location` entry in `flows.yaml` — the default preserves existing deployed-folder
+   layouts, and a leftover `location.graph.deployed` property logs an obsolete-key
+   warning at startup.
+   With the gate mandatory, `GraphExecutor` no longer re-validates gate-guaranteed
+   rules per request (root/end existence, the suspend-node contract) — a mild
+   per-request gain on top of the compiled-registry reuse; data-driven runtime guards
+   (store-record contents, dynamic jump targets, loop detection) remain. The two
+   lanes are now explicit: production = models → CompileGraph → deployed graphs →
+   GraphExecutor; dry-run = drafts in the temp workspace → UI CLI validation at node
+   create/update → GraphTraveler with full runtime validation. The gate's whole-graph
+   rules are modularized (`GraphModelValidator`) and reused by the playground's `run`
+   command as a pre-run quality check: draft authoring still allows partial models,
+   but the moment the author asks to run, the suspend/resume contract must hold —
+   a violation reports `Unable to run - <reason>` before traversal starts.
+   **Migration:** applications that relied on lazy loading must set
+   `graph.model.automation` and list their deployed graph IDs in the manifest — the
+   shipped examples already do; set the manifest's `location` only if your deployed
+   folder is not `classpath:/graph`.
+
+2. **Actuator worker instances: rule-of-thumb default + operations knob.** The actuator
    family (`actuator.services` and its aliases serving `/info`, `/info/routes`,
    `/info/lib`, `/env`, `/health`, `/livenessprobe`) now defaults to **5** worker
    instances (was 30) and is tunable at deployment time via the new

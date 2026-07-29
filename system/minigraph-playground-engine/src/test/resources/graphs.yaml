@@ -33,11 +33,15 @@ graphs:
   - 'unit-test-suspend-3'
   - 'unit-test-suspend-4'
   - 'unit-test-suspend-5'
-  # the suspend-err graphs are deliberately invalid: CompileGraph must reject them at
-  # startup (they remain lazy-loadable so the runtime error guards are also tested)
+  # the suspend-err graphs are deliberately invalid: CompileGraph must reject every
+  # one of them, and a request to a rejected graph answers 404 as if it does not
+  # exist - deployed execution is served exclusively from the compiled registry
+  # (CompileFlows parity; the static validator covers each rule in CompileGraphTest)
   - 'unit-test-suspend-err1'
   - 'unit-test-suspend-err2'
   - 'unit-test-suspend-err3'
   - 'unit-test-suspend-err4'
   - 'unit-test-suspend-err5'
   - 'unit-test-suspend-err6'
+  - 'unit-test-suspend-err7'
+  - 'unit-test-no-end'

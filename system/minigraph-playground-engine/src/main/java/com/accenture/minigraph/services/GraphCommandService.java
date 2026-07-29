@@ -21,6 +21,7 @@ package com.accenture.minigraph.services;
 import com.accenture.automation.SimplePluginLoader;
 import com.accenture.automation.SimpleTypeMatchingConverter;
 import com.accenture.minigraph.common.GraphLambdaFunction;
+import com.accenture.minigraph.common.GraphModelValidator;
 import com.accenture.minigraph.models.CompiledGraphs;
 import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.models.GraphSession;
@@ -57,7 +58,6 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(GraphCommandService.class);
     private static final ManagedCache cachedMessage = ManagedCache.createCache("last.ws.message", 1000);
     private static final String DEFAULT_TEMP_DIR = "/tmp/graph";
-    private static final String DEFAULT_DEPLOY_DIR = "classpath:/graph";
     private static final String OUTCOME = "outcome";
     private static final String PLAYGROUND = "playground";
     private static final String NODES = "nodes";
@@ -101,15 +101,10 @@ public class GraphCommandService extends GraphLambdaFunction {
             }
         }
         log.info("Playground temp folder (location.graph.temp) - {}", location);
-        // load deploy graph location
-        var deployLocation = config.getProperty("location.graph.deployed", DEFAULT_DEPLOY_DIR);
-        if (deployLocation.startsWith(FILE_PREFIX) || deployLocation.startsWith(CLASSPATH_PREFIX)) {
-            this.deployedGraphLocation = deployLocation;
-        } else {
-            log.error("location.graph.temp must start with file:/ or classpath:/. Fallback to {}", DEFAULT_DEPLOY_DIR);
-            this.deployedGraphLocation = DEFAULT_DEPLOY_DIR;
-        }
-        log.info("Deployed graph model folder (location.graph.deployed) - {}", this.deployedGraphLocation);
+        // resolved and validated by CompileGraph from the graph manifest's 'location'
+        // entry - @BeforeApplication runs before functions are preloaded, so the
+        // registry is already populated when this constructor executes
+        this.deployedGraphLocation = CompiledGraphs.getDeployedLocation();
         // initial housekeeping to remove expired temp graph from previous session
         housekeeping();
         // schedule housekeeping for ongoing clean up of expired temp graphs
@@ -295,7 +290,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             return false;
         } else {
             var stateMachine = instance.stateMachine;
-            stateMachine.setElement(INPUT_BODY_NAMESPACE, content);
+            stateMachine.setElement(INPUT_BODY, content);
             var po = EventEmitter.getInstance();
             po.send(outRoute, "Mock data loaded into 'input.body' namespace");
             return true;
@@ -407,16 +402,33 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase(EXECUTE)) {
             handleExecuteCommand(inRoute, outRoute, words);
         } else if (words.size() == 1 && words.getFirst().equalsIgnoreCase(RUN)) {
-            handleRunCommand(inRoute, outRoute);
+            handleRunCommand(po, inRoute, outRoute);
         } else {
             po.send(new EventEnvelope().setTo(outRoute).setBody(TRY_HELP));
         }
     }
 
-    private void handleRunCommand(String inRoute, String outRoute) {
+    private void handleRunCommand(PostOffice po, String inRoute, String outRoute) {
+        // pre-run quality check, reusing the deployment gate's whole-graph rules:
+        // draft authoring deliberately allows partial models, but the moment the
+        // author asks to run, the suspend/resume contract must hold - the same
+        // rules CompileGraph enforces for deployed graphs
+        var graphInstance = graphInstances.get(inRoute);
+        if (graphInstance != null) {
+            try {
+                GraphModelValidator.validateSuspendResume(graphInstance.graph);
+            } catch (IllegalArgumentException e) {
+                po.send(new EventEnvelope().setTo(outRoute).setBody("Unable to run - " + e.getMessage()));
+                // the uniform end-of-transmission line, matching the traveler's
+                // failure shape so the sync companion's drain stays deterministic
+                po.send(new EventEnvelope().setTo(outRoute).setStatus(400)
+                        .setBody("Graph traversal aborted"));
+                return;
+            }
+        }
         var cid = util.getUuid();
-        var po = PostOffice.trackable("minigraph.playground", cid, "/graph/playground");
-        po.send(new EventEnvelope().setTo(GraphTraveler.ROUTE).setHeader(IN, inRoute)
+        var tpo = PostOffice.trackable("minigraph.playground", cid, "/graph/playground");
+        tpo.send(new EventEnvelope().setTo(GraphTraveler.ROUTE).setHeader(IN, inRoute)
                 .setReplyTo(outRoute).setCorrelationId(cid));
     }
 
@@ -1364,8 +1376,8 @@ public class GraphCommandService extends GraphLambdaFunction {
                 }
             }
             var stateMachine = graphInstance.stateMachine;
-            if (!stateMachine.exists(INPUT_BODY_NAMESPACE)) {
-                stateMachine.setElement(INPUT_BODY_NAMESPACE, new HashMap<>());
+            if (!stateMachine.exists(INPUT_BODY)) {
+                stateMachine.setElement(INPUT_BODY, new HashMap<>());
             }
             stateMachine.setElement(OUTPUT, new HashMap<>());
             // the instantiate command is the dry-run's edge: like the REST edge, it
@@ -1403,7 +1415,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         var rhs = line.substring(sep + MAP_TO.length()).trim();
         var constant = helper.getConstantValue(lhs);
         if (constant != null) {
-            if (rhs.startsWith(INPUT_HEADER_NAMESPACE) || rhs.startsWith(INPUT_BODY_NAMESPACE) ||
+            if (rhs.startsWith(INPUT_HEADER_NAMESPACE) || rhs.startsWith(INPUT_BODY) ||
                     rhs.startsWith(MODEL_NAMESPACE)) {
                 instance.stateMachine.setElement(rhs, constant);
                 count.incrementAndGet();

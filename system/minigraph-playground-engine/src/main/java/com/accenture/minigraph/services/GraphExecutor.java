@@ -23,9 +23,6 @@ import com.accenture.minigraph.models.CompiledGraphs;
 import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.models.Visits;
 import com.accenture.minigraph.skills.GraphJoin;
-import com.accenture.minigraph.skills.GraphJs;
-import com.accenture.minigraph.skills.GraphMath;
-import com.accenture.minigraph.skills.GraphSuspend;
 import com.accenture.models.FlowInstance;
 import com.accenture.models.Flows;
 import org.platformlambda.core.annotations.EventInterceptor;
@@ -37,7 +34,6 @@ import org.platformlambda.core.models.SimpleNode;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
-import org.platformlambda.core.util.ConfigReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,22 +46,12 @@ import java.util.Map;
 public class GraphExecutor extends GraphLambdaFunction {
     public static final String ROUTE = "graph.executor";
     private static final Logger log = LoggerFactory.getLogger(GraphExecutor.class);
-    private static final String DEFAULT_DEPLOY_DIR = "classpath:/graph";
     private static final String INSTANCE = "instance";
-    private final String deployedGraphLocation;
     private final boolean isDevEnv;
 
     public GraphExecutor() {
         var config = AppConfigReader.getInstance();
         this.isDevEnv = "dev".equals(config.getProperty("app.env", "dev"));
-        var deployLocation = config.getProperty("location.graph.deployed", DEFAULT_DEPLOY_DIR);
-        if (deployLocation.startsWith(FILE_PREFIX) || deployLocation.startsWith(CLASSPATH_PREFIX)) {
-            this.deployedGraphLocation = deployLocation;
-        } else {
-            log.error("location.graph.temp must start with file:/ or classpath:/. Fallback to {}", DEFAULT_DEPLOY_DIR);
-            this.deployedGraphLocation = DEFAULT_DEPLOY_DIR;
-        }
-        log.info("Deployed graph model folder (location.graph.deployed) - {}", this.deployedGraphLocation);
     }
 
     @Override
@@ -114,9 +100,6 @@ public class GraphExecutor extends GraphLambdaFunction {
         }
         flowInstance.setEndFlowListeners(GraphHousekeeper.ROUTE);
         var map = getGraphModel(graphId);
-        if (map.isEmpty()) {
-            throw new IllegalArgumentException("Unable to load graph model '"+graphId+"' - missing or invalid");
-        }
         GraphInstance graphInstance = new GraphInstance(graphId);
         graphInstance.setFlowInstanceId(flowInstanceId);
         graphInstance.setCorrelationId(cid);
@@ -138,15 +121,11 @@ public class GraphExecutor extends GraphLambdaFunction {
         stateMachine.setElement(MODEL, modelCopy);
         // map node properties to state machine
         initializeWithNodeProperties(graphInstance);
-        var root = graph.getRootNode();
-        if (root == null) {
-            throw new IllegalArgumentException("Root node does not exist");
-        }
-        var end = graph.getEndNode();
-        if (end == null) {
-            throw new IllegalArgumentException("End node does not exist");
-        }
-        walk(po, graphInstance, root, null, parentSpanId);
+        // a compiled model is guaranteed to have root and end nodes (the CompileGraph
+        // quality gate is the only door to deployed execution) - no per-request
+        // structural re-validation; the dry-run walker keeps its own checks because
+        // playground drafts never pass the gate
+        walk(po, graphInstance, graph.getRootNode(), null, parentSpanId);
     }
 
     private void handleSkillResponse(PostOffice po, EventEnvelope response) {
@@ -165,8 +144,8 @@ public class GraphExecutor extends GraphLambdaFunction {
             // Unrecoverable error from the node itself
             if (response.hasError()) {
                 if (target != null) {
-                    var eMap = getErrorMap(stateMachine.getElement(OUTPUT_BODY_NAMESPACE), target);
-                    stateMachine.setElement(OUTPUT_BODY_NAMESPACE, eMap);
+                    var eMap = getErrorMap(stateMachine.getElement(OUTPUT_BODY), target);
+                    stateMachine.setElement(OUTPUT_BODY, eMap);
                 }
                 handleErrorResponse(po, graphInstance, response, parentSpanId);
                 return;
@@ -234,9 +213,12 @@ public class GraphExecutor extends GraphLambdaFunction {
         if (!graphInstance.complete.get()) {
             var nodeName = node.getAlias();
             String skill = node.getProperty(SKILL) != null ? String.valueOf(node.getProperty(SKILL)) : null;
-            var seen = !GraphJoin.ROUTE.equals(skill) && graphInstance.nodeSeen.get(nodeName) != null;
-            if (!seen) {
-                graphInstance.nodeSeen.put(nodeName, true);
+            // atomic mark-and-test: concurrent branches converging on the same
+            // non-join node must not dispatch it twice (a join always evaluates -
+            // its barrier logic owns the dedup)
+            var isJoin = GraphJoin.ROUTE.equals(skill);
+            var seen = graphInstance.nodeSeen.putIfAbsent(nodeName, true) != null;
+            if (isJoin || !seen) {
                 walkTo(po, skill, graphInstance, node, from, parentSpanId);
             }
         }
@@ -265,7 +247,7 @@ public class GraphExecutor extends GraphLambdaFunction {
 
     @SuppressWarnings("unchecked")
     private void executionComplete(PostOffice po, GraphInstance graphInstance, String parentSpanId) {
-        var body = graphInstance.stateMachine.getElement(OUTPUT_BODY_NAMESPACE);
+        var body = graphInstance.stateMachine.getElement(OUTPUT_BODY);
         var hdr = graphInstance.stateMachine.getElement(OUTPUT_HEADER_NAMESPACE);
         var headers = hdr instanceof Map ? (Map<String, Object>) hdr : new HashMap<String, Object>();
         var response = new EventEnvelope().setTo(graphInstance.getReplyTo())
@@ -297,8 +279,8 @@ public class GraphExecutor extends GraphLambdaFunction {
                 event.setHeader(FROM, from);
             }
             // The walker is an event interceptor, so the business correlation-id is not
-            // auto-propagated by PostOffice - stamp it from the graph's own model.cid so
-            // every skill (and its downstream calls) sees the business id in its
+            // auto-propagated by PostOffice. Stamp it from the graph's own model.cid so
+            // every skill (and its downstream calls) sees the business id in the
             // my_correlation_id and application log context.
             if (graphInstance.stateMachine.getElement(MODEL_CID) instanceof String businessCid
                     && !businessCid.isBlank()) {
@@ -333,22 +315,10 @@ public class GraphExecutor extends GraphLambdaFunction {
     }
 
     private void walkToSuspendNode(PostOffice po, GraphInstance graphInstance, SimpleNode node, String parentSpanId) {
-        var skill = node.getProperty(SKILL);
-        if (GraphMath.ROUTE.equals(skill) || GraphJs.ROUTE.equals(skill)) {
-            sendError(po, graphInstance, "Node '" + node.getAlias() +
-                    "' cannot use 'suspend=true' with skill " + skill, parentSpanId);
-            return;
-        }
-        var suspendNode = graphInstance.graph.findNodeByAlias(SUSPEND);
-        if (suspendNode == null) {
-            sendError(po, graphInstance, "Node '" + node.getAlias() +
-                    "' is suspensible but the graph has no '" + SUSPEND + "' node", parentSpanId);
-        } else if (!GraphSuspend.ROUTE.equals(suspendNode.getProperty(SKILL))) {
-            sendError(po, graphInstance, "The '" + SUSPEND + "' node must use skill " +
-                    GraphSuspend.ROUTE, parentSpanId);
-        } else {
-            walk(po, graphInstance, suspendNode, node.getAlias(), parentSpanId);
-        }
+        // the quality gate already rejected suspension on routing skills, a missing
+        // 'suspend' node and a mis-skilled one - a compiled model needs no re-check
+        // (GraphTraveler keeps these guards: playground drafts never pass the gate)
+        walk(po, graphInstance, graphInstance.graph.findNodeByAlias(SUSPEND), node.getAlias(), parentSpanId);
     }
 
     private void resumeTraversal(PostOffice po, GraphInstance graphInstance, String alias, String parentSpanId) {
@@ -388,23 +358,15 @@ public class GraphExecutor extends GraphLambdaFunction {
         if (graphId.startsWith("tutorial") && !isDevEnv) {
             throw new IllegalArgumentException("tutorial graph models not allowed");
         }
-        // graphs validated and converted at startup by CompileGraph are reused as-is to avoid
-        // re-parsing the JSON file and re-resolving deprecated syntax on every request
+        // deployed graph execution is served exclusively from the compiled registry:
+        // a model is executable only when it is listed in the graph manifest and
+        // passed the CompileGraph quality gate (the CompileFlows precedent) - a
+        // failed or unlisted graph answers 404 as if it does not exist
         var compiled = CompiledGraphs.getGraph(graphId);
-        if (compiled != null) {
-            return util.deepCopy(compiled);
+        if (compiled == null) {
+            throw new AppException(404, graphId + " not found");
         }
-        // use config reader to resolve environment variables
-        try {
-            var reader = new ConfigReader(getNormalizedPath(deployedGraphLocation, graphId));
-            return reader.getMap();
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().endsWith("not found")) {
-                throw new IllegalArgumentException(graphId + " not found");
-            } else {
-                throw e;
-            }
-        }
+        return util.deepCopy(compiled);
     }
 
     private void handleErrorResponse(PostOffice po, GraphInstance graphInstance, EventEnvelope response, String parentSpanId) {
