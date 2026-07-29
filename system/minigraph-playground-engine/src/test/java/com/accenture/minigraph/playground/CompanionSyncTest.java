@@ -120,6 +120,19 @@ class CompanionSyncTest {
             syncCommand(po, sid, "connect mapper to end with second");
             var instantiated = syncCommand(po, sid, "instantiate graph\ntext(hello world) -> input.body.id");
             assertEquals(Boolean.TRUE, instantiated.get("ok"), "instantiate -> ok:true: " + instantiated);
+            // the instantiate command is the dry-run's edge: it guarantees a business
+            // correlation ID like the REST edge does, with a reminder when auto-created
+            var initOutput = ((List<?>) instantiated.get("output")).stream().map(String::valueOf).toList();
+            assertTrue(initOutput.stream().anyMatch(
+                            l -> l.startsWith("No business correlation ID given - this dry-run created model.cid = ")),
+                    "the dry-run edge must auto-create model.cid with a reminder: " + initOutput);
+            // an explicitly mapped model.cid is honored without the reminder
+            var withCid = syncCommand(po, sid,
+                    "instantiate graph\ntext(hello world) -> input.body.id\ntext(dry-run-77) -> model.cid");
+            assertEquals(Boolean.TRUE, withCid.get("ok"), "instantiate with cid -> ok:true: " + withCid);
+            var withCidOutput = ((List<?>) withCid.get("output")).stream().map(String::valueOf).toList();
+            assertTrue(withCidOutput.stream().noneMatch(l -> l.contains("created model.cid")),
+                    "a supplied model.cid must be honored without the reminder: " + withCidOutput);
 
             var ran = syncCommand(po, sid, "run");
             assertEquals(Boolean.TRUE, ran.get("ok"), "sync run -> ok:true: " + ran);

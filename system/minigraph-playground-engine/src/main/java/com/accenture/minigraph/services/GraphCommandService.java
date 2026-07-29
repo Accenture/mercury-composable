@@ -1368,6 +1368,15 @@ public class GraphCommandService extends GraphLambdaFunction {
                 stateMachine.setElement(INPUT_BODY_NAMESPACE, new HashMap<>());
             }
             stateMachine.setElement(OUTPUT, new HashMap<>());
+            // the instantiate command is the dry-run's edge: like the REST edge, it
+            // guarantees a business correlation ID - auto-created when the initial data
+            // mapping did not supply one, with a reminder so the user knows
+            if (!(stateMachine.getElement(MODEL_CID) instanceof String cid) || cid.isBlank()) {
+                var generated = util.getUuid();
+                stateMachine.setElement(MODEL_CID, generated);
+                po.send(new EventEnvelope().setTo(outRoute).setBody(
+                        "No business correlation ID given - this dry-run created model.cid = " + generated));
+            }
             var timeout = getModelTtl(graphInstance);
             log.info("Instantiate graph with {} nodes, model.ttl = {} ms", nodeCount, timeout);
             graphInstances.put(inRoute, graphInstance);

@@ -85,7 +85,8 @@ class WorkerLogContextTest extends TestBase {
         LogContextConfig.setInstanceForTest(enabledConfig());
         try {
             PostOffice po = new PostOffice("unit.test", traceId, "GET /api/log/ctx");
-            po.send(new EventEnvelope().setTo(route).setBody("x").setCorrelationId(cid));
+            po.send(new EventEnvelope().setTo(route).setBody("x")
+                    .addTag(EventEmitter.BUSINESS_CID_TAG, cid));
 
             Map<String, Object> rendered = bench.poll(10, TimeUnit.SECONDS);
             assertNotNull(rendered, "function should have rendered the log context");
@@ -108,15 +109,16 @@ class WorkerLogContextTest extends TestBase {
     }
 
     @Test
-    void businessCorrelationIdWinsInLogContext() throws InterruptedException {
-        // the log context 'cid' is the business correlation-id (the engine my_cid tag) when
-        // present - the envelope correlation-id is internal routing metadata (e.g. the graph
-        // engine's composite skill-callback ids) and is only a fallback
+    void logContextCidIsTheBusinessCorrelationIdOnly() throws InterruptedException {
+        // the log context 'cid' resolves exactly like the injected my_correlation_id:
+        // the engine my_cid tag, else a legacy peer's transported header, else UNSET -
+        // an internal routing id (an envelope correlation-id such as the graph engine's
+        // composite skill-callback ids) must never appear under the 'cid' label
         Platform platform = Platform.getInstance();
         String route = "log.context.business.cid.function";
-        String traceId = util.getUuid();
         String internalCid = "internal-" + util.getUuid();
         String businessCid = "order-" + util.getUuid();
+        String legacyCid = "legacy-" + util.getUuid();
         BlockingQueue<Map<String, Object>> bench = new ArrayBlockingQueue<>(1);
         LambdaFunction f = (headers, input, instance) -> {
             LogContext ctx = LogContextManager.get(Thread.currentThread().threadId());
@@ -126,12 +128,25 @@ class WorkerLogContextTest extends TestBase {
         platform.registerPrivate(route, f, 1);
         LogContextConfig.setInstanceForTest(enabledConfig());
         try {
-            PostOffice po = new PostOffice("unit.test", traceId, "GET /api/log/business/cid");
+            PostOffice po = new PostOffice("unit.test", util.getUuid(), "GET /api/log/business/cid");
+            // 1. the business tag wins over the envelope correlation-id
             po.send(new EventEnvelope().setTo(route).setBody("x").setCorrelationId(internalCid)
                     .addTag(EventEmitter.BUSINESS_CID_TAG, businessCid));
-            Map<String, Object> rendered = bench.poll(10, TimeUnit.SECONDS);
-            assertNotNull(rendered, "function should have rendered the log context");
-            assertEquals(businessCid, rendered.get("cid"), "the business correlation-id must win");
+            Map<String, Object> tagged = bench.poll(10, TimeUnit.SECONDS);
+            assertNotNull(tagged, "function should have rendered the log context");
+            assertEquals(businessCid, tagged.get("cid"), "the business correlation-id must win");
+            // 2. a legacy pre-4.10.2 peer's transported header is honored
+            po.send(new EventEnvelope().setTo(route).setBody("x").setCorrelationId(internalCid)
+                    .setHeader("my_correlation_id", legacyCid));
+            Map<String, Object> legacy = bench.poll(10, TimeUnit.SECONDS);
+            assertNotNull(legacy, "function should have rendered the log context");
+            assertEquals(legacyCid, legacy.get("cid"), "a legacy peer's business cid must be honored");
+            // 3. no business context: the key is OMITTED - never the internal correlation-id
+            po.send(new EventEnvelope().setTo(route).setBody("x").setCorrelationId(internalCid));
+            Map<String, Object> unset = bench.poll(10, TimeUnit.SECONDS);
+            assertNotNull(unset, "function should have rendered the log context");
+            assertFalse(unset.containsKey("cid"),
+                    "an unresolved business correlation-id must be omitted, not substituted: " + unset);
         } finally {
             platform.release(route);
             LogContextConfig.setInstanceForTest(null);
