@@ -20,9 +20,14 @@ package com.accenture.minigraph.start;
 
 import com.accenture.automation.SimpleTypeMatchingConverter;
 import com.accenture.minigraph.models.CompiledGraphs;
+import com.accenture.minigraph.skills.GraphJs;
+import com.accenture.minigraph.skills.GraphMath;
+import com.accenture.minigraph.skills.GraphResume;
+import com.accenture.minigraph.skills.GraphSuspend;
 import org.platformlambda.core.annotations.BeforeApplication;
 import org.platformlambda.core.graph.MiniGraph;
 import org.platformlambda.core.models.EntryPoint;
+import org.platformlambda.core.models.SimpleNode;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
@@ -69,6 +74,11 @@ public class CompileGraph implements EntryPoint {
     private static final String GRAPHS = "graphs";
     private static final String NODES = "nodes";
     private static final String PROPERTIES_SUFFIX = "].properties.";
+    private static final String SKILL = "skill";
+    private static final String TASK = "task";
+    private static final String TTL = "ttl";
+    private static final String SUSPEND = "suspend";
+    private static final String MISSING = "missing";
 
     @Override
     public void start(String[] args) {
@@ -100,17 +110,105 @@ public class CompileGraph implements EntryPoint {
             Map<String, Object> model = reader.getMap();
             convertDataMappingEntries(graphId, model);
             // structural validation - throws IllegalArgumentException for a malformed graph
-            new MiniGraph().importGraph(model);
+            var graph = new MiniGraph();
+            graph.importGraph(model);
             // discovery contract: every deployable graph documents itself - the root
             // node's 'purpose' is what "list graphs" shows as living documentation
             if (!hasRootPurpose(model)) {
                 throw new IllegalArgumentException("root node must define a non-empty 'purpose' property");
             }
+            validateSuspendResume(graph);
             CompiledGraphs.addGraph(graphId, model);
             log.info("Compiled graph {}", graphId);
         } catch (IllegalArgumentException e) {
             log.error("Skip invalid graph {} - {}", graphId, e.getMessage());
         }
+    }
+
+    /**
+     * Static half of the suspend/resume contract - the runtime checks in the walkers and
+     * the graph.suspend/graph.resume skills remain the enforcement floor for graphs that
+     * are not in the manifest.
+     * <p>
+     * Rules: 'suspend' is a reserved node alias bound to the graph.suspend skill in both
+     * directions; a suspensible node (suspend=true) must not use a routing skill
+     * (graph.math/graph.js), requires the suspend node, and must draw its checkpoint edge
+     * to it (traversal jumps by name, but the diagram documents the suspension path);
+     * the suspend node needs 'task' and a valid 'ttl'; a resume node needs 'task' and,
+     * when 'missing' is set, an existing jump target.
+     */
+    private void validateSuspendResume(MiniGraph graph) {
+        var suspendNode = graph.findNodeByAlias(SUSPEND);
+        if (suspendNode != null) {
+            validateSuspendNode(suspendNode);
+        }
+        for (SimpleNode node : graph.getNodes()) {
+            var alias = node.getAlias();
+            var skill = node.getProperty(SKILL);
+            if (GraphSuspend.ROUTE.equals(skill) && !SUSPEND.equals(alias)) {
+                throw new IllegalArgumentException("node " + alias +
+                        " - a node with skill " + GraphSuspend.ROUTE + " must be named '" + SUSPEND + "'");
+            }
+            if (GraphResume.ROUTE.equals(skill)) {
+                validateResumeNode(graph, node);
+            }
+            if ("true".equalsIgnoreCase(String.valueOf(node.getProperty(SUSPEND)))) {
+                validateSuspensibleNode(graph, node, suspendNode);
+            }
+        }
+    }
+
+    private void validateSuspendNode(SimpleNode suspendNode) {
+        if (!GraphSuspend.ROUTE.equals(suspendNode.getProperty(SKILL))) {
+            throw new IllegalArgumentException("the '" + SUSPEND + "' node must use skill " + GraphSuspend.ROUTE);
+        }
+        if (!hasText(suspendNode.getProperty(TASK))) {
+            throw new IllegalArgumentException("node " + SUSPEND + " does not have a 'task' route");
+        }
+        var ttl = suspendNode.getProperty(TTL);
+        if (!hasText(ttl)) {
+            throw new IllegalArgumentException("node " + SUSPEND + " does not have a 'ttl' property");
+        }
+        if (util.getDurationInSeconds(String.valueOf(ttl).trim()) < 1) {
+            throw new IllegalArgumentException("node " + SUSPEND + " - invalid ttl '" + ttl + "'");
+        }
+    }
+
+    private void validateResumeNode(MiniGraph graph, SimpleNode node) {
+        var alias = node.getAlias();
+        if (!hasText(node.getProperty(TASK))) {
+            throw new IllegalArgumentException("node " + alias + " does not have a 'task' route");
+        }
+        var missing = node.getProperty(MISSING);
+        if (missing != null && graph.findNodeByAlias(String.valueOf(missing).trim()) == null) {
+            throw new IllegalArgumentException("node " + alias + " - 'missing' target '" +
+                    missing + "' does not exist");
+        }
+    }
+
+    private void validateSuspensibleNode(MiniGraph graph, SimpleNode node, SimpleNode suspendNode) {
+        var alias = node.getAlias();
+        var skill = node.getProperty(SKILL);
+        if (GraphMath.ROUTE.equals(skill) || GraphJs.ROUTE.equals(skill)) {
+            throw new IllegalArgumentException("node " + alias +
+                    " cannot use 'suspend=true' with skill " + skill);
+        }
+        if (suspendNode == null) {
+            throw new IllegalArgumentException("node " + alias +
+                    " is suspensible but the graph has no '" + SUSPEND + "' node");
+        }
+        for (SimpleNode next : graph.getForwardLinks(alias)) {
+            if (SUSPEND.equals(next.getAlias())) {
+                return;
+            }
+        }
+        throw new IllegalArgumentException("node " + alias +
+                " is suspensible but has no connection to the '" + SUSPEND +
+                "' node - the diagram must show the suspension path");
+    }
+
+    private boolean hasText(Object value) {
+        return value instanceof String text && !text.isBlank();
     }
 
     private boolean hasRootPurpose(Map<String, Object> model) {

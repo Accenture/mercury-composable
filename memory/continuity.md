@@ -303,11 +303,11 @@
 
 - [ ] (feature — design RATIFIED 2026-07-28; **P1 engine core IMPLEMENTED 2026-07-28** on
   branch `feature/graph-suspend-resume`, NOT pushed: both skills + walker changes +
-  9-test e2e suite green first run (82 module tests, full reactor green); temp-file mock
+  10-test e2e suite green (85 module tests incl. P2 compile checks, full reactor green); temp-file mock
   store proves the whole loop with zero engine store deps; one design-trace bug fixed
   pre-run (suspend node's own marks excluded from restore, else re-suspension at a second
-  checkpoint deadlocks — multi-checkpoint test pins it). Remaining: P2 CompileGraph/
-  Playground, P3 Redis extension + contract page, P4 tutorial/docs/ADR, P5 Rust arc.)
+  checkpoint deadlocks — multi-checkpoint test pins it). Remaining: P3 Redis extension + contract page,
+  P4 tutorial/docs/ADR, P5 Rust arc. P2 also done: CompileGraph static checks + webapp type theme.)
   **Graph suspend/resume: workflow suspension for the Active Knowledge Graph.** A graph run
   persists model + suspension node at a human checkpoint via `skill=graph.suspend`
   (reserved ALIAS `suspend` — the root/end special-alias pattern, jump-by-name routing;
