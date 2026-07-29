@@ -18,7 +18,9 @@ import { useGraphSaveName } from '../hooks/useGraphSaveName';
 import { useSavedGraphWorkflow } from '../hooks/useSavedGraphWorkflow';
 import { usePinnedGraphPath } from '../hooks/usePinnedGraphPath';
 import { buildClipboardPastePlan } from '../clipboard/paste';
+import { buildBatchClipToast } from '../clipboard/batchClipSummary';
 import { createGraphAuthoringExecutor } from '../graphActions/graphAuthoringExecutor';
+import { MAX_BATCH_NODE_ACTIONS } from '../graphActions/batchNodeActions';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
 import GraphSaveButton from './GraphSaveButton/GraphSaveButton';
@@ -40,6 +42,7 @@ import { useProtocolKernel } from '../protocol/useProtocolKernel';
 import type { GraphLinkEvent } from '../protocol/events';
 import type { ClipboardItemRecord } from '../clipboard/db';
 import type { MinigraphNode, MinigraphConnection } from '../utils/graphTypes';
+import type { GraphClipItem } from './GraphView/selectionTargets';
 
 interface PlaygroundProps {
   config: PlaygroundConfig;
@@ -293,6 +296,39 @@ export default function Playground({ config }: PlaygroundProps) {
     }
   }, [clipboardCtx, wsPath, config.label, addToast]);
 
+  const handleClipNodes = useCallback(async (items: GraphClipItem[]) => {
+    if (items.length === 0) {
+      addToast('No selected nodes are available to clip.', 'info');
+      return;
+    }
+    if (items.length > MAX_BATCH_NODE_ACTIONS) {
+      addToast('Select 100 or fewer nodes to clip at once.', 'error');
+      return;
+    }
+
+    const summary = { added: 0, duplicates: 0, failed: 0 };
+    for (const item of items) {
+      if (!item.node?.alias?.trim()) {
+        summary.failed += 1;
+        continue;
+      }
+      try {
+        const result = await clipboardCtx.clipNode(item.node, item.connections, {
+          sourceWsPath: wsPath,
+          sourceLabel: config.label,
+        });
+        if (result.status === 'added') summary.added += 1;
+        if (result.status === 'duplicate') summary.duplicates += 1;
+        if (result.status === 'error') summary.failed += 1;
+      } catch {
+        summary.failed += 1;
+      }
+    }
+
+    const toast = buildBatchClipToast(summary);
+    addToast(toast.message, toast.type);
+  }, [addToast, clipboardCtx, config.label, wsPath]);
+
   // ── Saved graphs (localStorage snapshots) ────────────────────────────────
   // Only instantiated when the playground config provides a storage key so
   // playgrounds that don't use this feature have zero overhead.
@@ -533,12 +569,14 @@ export default function Playground({ config }: PlaygroundProps) {
             onGraphDataCopyError={() => addToast('Copy failed', 'error')}
             isGraphRefreshing={isRefreshing}
             onClipNode={supportsClipboard ? handleClipNode : undefined}
+            onClipNodes={supportsClipboard ? handleClipNodes : undefined}
             onClipboardDrop={supportsClipboard ? handleClipboardDrop : undefined}
             isConnected={ws.connected}
             supportsAuthoring={supportsAuthoring}
             onCreateNode={supportsAuthoring ? graphAuthoring.openCreateNode : undefined}
             onEditNode={supportsAuthoring ? graphAuthoring.openEditNode : undefined}
             onDeleteNode={supportsAuthoring ? graphAuthoring.deleteNode : undefined}
+            onDeleteNodes={supportsAuthoring ? graphAuthoring.deleteNodes : undefined}
             helpPanel={supportsHelp && helpOpen ? (
               (onToggleMaximize: () => void, isMaximized: boolean) => (
                 <HelpBrowser

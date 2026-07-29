@@ -660,6 +660,10 @@ export function transformGraphData(
     return {
       id:       n.alias,
       type:     n.types[0] ?? 'default',
+      // React Flow otherwise consumes selection-key pointer events on nodes as
+      // the start of a pane selection box. This class keeps modifier-click
+      // node toggling available while Shift+drag from empty canvas box-selects.
+      className: 'nokey',
       position: positions.get(n.alias) ?? { x: 0, y: 0 },
       width:  NODE_WIDTH,
       height: nodeHeight,
