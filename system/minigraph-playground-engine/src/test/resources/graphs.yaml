@@ -28,3 +28,8 @@ graphs:
   - 'unit-test-join-retry'
   - 'unit-test-join-chain'
   - 'unit-test-cache-key'
+  - 'unit-test-suspend-1'
+  - 'unit-test-suspend-2'
+  - 'unit-test-suspend-3'
+  - 'unit-test-suspend-4'
+  - 'unit-test-suspend-5'

@@ -23,6 +23,9 @@ import com.accenture.minigraph.models.CompiledGraphs;
 import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.models.Visits;
 import com.accenture.minigraph.skills.GraphJoin;
+import com.accenture.minigraph.skills.GraphJs;
+import com.accenture.minigraph.skills.GraphMath;
+import com.accenture.minigraph.skills.GraphSuspend;
 import com.accenture.models.FlowInstance;
 import com.accenture.models.Flows;
 import org.platformlambda.core.annotations.EventInterceptor;
@@ -142,7 +145,7 @@ public class GraphExecutor extends GraphLambdaFunction {
         if (end == null) {
             throw new IllegalArgumentException("End node does not exist");
         }
-        walk(po, graphInstance, root, parentSpanId);
+        walk(po, graphInstance, root, null, parentSpanId);
     }
 
     private void handleSkillResponse(PostOffice po, EventEnvelope response) {
@@ -226,32 +229,35 @@ public class GraphExecutor extends GraphLambdaFunction {
         }
     }
 
-    private void walk(PostOffice po, GraphInstance graphInstance, SimpleNode node, String parentSpanId) {
+    private void walk(PostOffice po, GraphInstance graphInstance, SimpleNode node, String from, String parentSpanId) {
         if (!graphInstance.complete.get()) {
             var nodeName = node.getAlias();
             String skill = node.getProperty(SKILL) != null ? String.valueOf(node.getProperty(SKILL)) : null;
             var seen = !GraphJoin.ROUTE.equals(skill) && graphInstance.nodeSeen.get(nodeName) != null;
             if (!seen) {
                 graphInstance.nodeSeen.put(nodeName, true);
-                walkTo(po, skill, graphInstance, node, parentSpanId);
+                walkTo(po, skill, graphInstance, node, from, parentSpanId);
             }
         }
     }
 
-    private void walkTo(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node, String parentSpanId) {
+    private void walkTo(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node,
+                        String from, String parentSpanId) {
         var graph = graphInstance.graph;
         var endNode = graph.getEndNode();
         if (endNode.getId().equals(node.getId())) {
             if (skill != null) {
-                executeSkill(po, skill, graphInstance, node, parentSpanId);
+                executeSkill(po, skill, graphInstance, node, from, parentSpanId);
             } else {
                 executionComplete(po, graphInstance, parentSpanId);
             }
         } else {
             if (skill != null) {
-                executeSkill(po, skill, graphInstance, node, parentSpanId);
+                executeSkill(po, skill, graphInstance, node, from, parentSpanId);
+            } else if (isSuspensible(node)) {
+                walkToSuspendNode(po, graphInstance, node, parentSpanId);
             } else {
-                walkNext(po, graphInstance, node, parentSpanId);
+                walkNext(po, graphInstance, node, parentSpanId, false);
             }
         }
     }
@@ -270,14 +276,19 @@ public class GraphExecutor extends GraphLambdaFunction {
         graphInstance.complete.set(true);
     }
 
-    private void executeSkill(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node, String parentSpanId) {
+    private void executeSkill(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node,
+                              String from, String parentSpanId) {
         if (po.exists(skill)) {
             var flowInstanceId = graphInstance.getFlowInstanceId();
             var nodeName = node.getAlias();
             var compositeId = flowInstanceId + "@" + nodeName;
-            po.send(new EventEnvelope().setTo(skill).setHeader(IN, flowInstanceId)
+            var event = new EventEnvelope().setTo(skill).setHeader(IN, flowInstanceId)
                     .setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName)
-                    .setReplyTo(GraphExecutor.ROUTE).setCorrelationId(compositeId).setSpanId(parentSpanId));
+                    .setReplyTo(GraphExecutor.ROUTE).setCorrelationId(compositeId).setSpanId(parentSpanId);
+            if (from != null) {
+                event.setHeader(FROM, from);
+            }
+            po.send(event);
         } else {
             sendError(po, graphInstance, "Skill " + skill + " does not exist", parentSpanId);
         }
@@ -286,12 +297,18 @@ public class GraphExecutor extends GraphLambdaFunction {
     private void nextOrJump(PostOffice po, GraphInstance graphInstance, SimpleNode node, String next, String parentSpanId) {
         if (!SINK.equals(next)) {
             var graph = graphInstance.graph;
-            if (NEXT.equals(next)) {
-                walkNext(po, graphInstance, node, parentSpanId);
+            if (next.startsWith(RESUME_PREFIX)) {
+                resumeTraversal(po, graphInstance, next.substring(RESUME_PREFIX.length()), parentSpanId);
+            } else if (NEXT.equals(next)) {
+                if (isSuspensible(node)) {
+                    walkToSuspendNode(po, graphInstance, node, parentSpanId);
+                } else {
+                    walkNext(po, graphInstance, node, parentSpanId, false);
+                }
             } else {
                 var nextNode = graph.findNodeByAlias(next);
                 if (nextNode != null) {
-                    walk(po, graphInstance, nextNode, parentSpanId);
+                    walk(po, graphInstance, nextNode, node.getAlias(), parentSpanId);
                 } else {
                     sendError(po, graphInstance, "Next node '" + next + "' does not exist", parentSpanId);
                 }
@@ -299,12 +316,54 @@ public class GraphExecutor extends GraphLambdaFunction {
         }
     }
 
-    private void walkNext(PostOffice po, GraphInstance graphInstance, SimpleNode node, String parentSpanId) {
+    private void walkToSuspendNode(PostOffice po, GraphInstance graphInstance, SimpleNode node, String parentSpanId) {
+        var skill = node.getProperty(SKILL);
+        if (GraphMath.ROUTE.equals(skill) || GraphJs.ROUTE.equals(skill)) {
+            sendError(po, graphInstance, "Node '" + node.getAlias() +
+                    "' cannot use 'suspend=true' with skill " + skill, parentSpanId);
+            return;
+        }
+        var suspendNode = graphInstance.graph.findNodeByAlias(SUSPEND);
+        if (suspendNode == null) {
+            sendError(po, graphInstance, "Node '" + node.getAlias() +
+                    "' is suspensible but the graph has no '" + SUSPEND + "' node", parentSpanId);
+        } else if (!GraphSuspend.ROUTE.equals(suspendNode.getProperty(SKILL))) {
+            sendError(po, graphInstance, "The '" + SUSPEND + "' node must use skill " +
+                    GraphSuspend.ROUTE, parentSpanId);
+        } else {
+            walk(po, graphInstance, suspendNode, node.getAlias(), parentSpanId);
+        }
+    }
+
+    private void resumeTraversal(PostOffice po, GraphInstance graphInstance, String alias, String parentSpanId) {
+        var resumedNode = graphInstance.graph.findNodeByAlias(alias);
+        if (resumedNode == null) {
+            sendError(po, graphInstance, "Resumed node '" + alias + "' does not exist", parentSpanId);
+        } else {
+            // the suspension point already ran before suspension - do not re-execute it
+            graphInstance.nodeSeen.put(alias, true);
+            graphInstance.skillRun.put(alias, true);
+            walkNext(po, graphInstance, resumedNode, parentSpanId, true);
+        }
+    }
+
+    private void walkNext(PostOffice po, GraphInstance graphInstance, SimpleNode node,
+                          String parentSpanId, boolean afterResume) {
         if (!graphInstance.complete.get()) {
             var graph = graphInstance.graph;
             var nodes = graph.getForwardLinks(node.getAlias());
+            var deadEnd = true;
             for (SimpleNode next : nodes) {
-                walk(po, graphInstance, next, parentSpanId);
+                // a resumed traversal continues along the normal path, never back into suspension
+                if (afterResume && SUSPEND.equals(next.getAlias())) {
+                    continue;
+                }
+                deadEnd = false;
+                walk(po, graphInstance, next, node.getAlias(), parentSpanId);
+            }
+            if (afterResume && deadEnd) {
+                sendError(po, graphInstance, "Resumed node '" + node.getAlias() +
+                        "' has no forward path to continue", parentSpanId);
             }
         }
     }

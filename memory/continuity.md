@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-29 | agent: Claude Code (2026-07-29-003528)
+- **last_session:** 2026-07-29 | agent: Claude Code (2026-07-29-010343)
 - **last_review:** 2026-07-27 | through 2026-07-27-214357.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -292,11 +292,23 @@
 - [ ] (blueprint) **Enterprise governance lifecycle** for graph models (dry-run → certify → stage →
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
+- [ ] (blueprint — RATIFIED by Eric 2026-07-28) **Workflow suspension for the Active Knowledge
+  Graph** — human-in-the-loop checkpoints (approval, intervention, inbox notification) as
+  first-class graph vocabulary: suspend/resume via pluggable external state stores, so a graph
+  model expresses a long-running business process as a sequence of short runs. Realized by
+  [[thread-graph-suspend-resume]]. → serves: vision-mercury-composable
+  <!-- id: bp-graph-workflow-suspension | created: 2026-07-28 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-003528 -->
 
 ## Open Threads
 
-- [ ] (feature — design RATIFIED 2026-07-28; implementation pending Eric's go) **Graph
-  suspend/resume: workflow suspension for the Active Knowledge Graph.** A graph run
+- [ ] (feature — design RATIFIED 2026-07-28; **P1 engine core IMPLEMENTED 2026-07-28** on
+  branch `feature/graph-suspend-resume`, NOT pushed: both skills + walker changes +
+  9-test e2e suite green first run (82 module tests, full reactor green); temp-file mock
+  store proves the whole loop with zero engine store deps; one design-trace bug fixed
+  pre-run (suspend node's own marks excluded from restore, else re-suspension at a second
+  checkpoint deadlocks — multi-checkpoint test pins it). Remaining: P2 CompileGraph/
+  Playground, P3 Redis extension + contract page, P4 tutorial/docs/ADR, P5 Rust arc.)
+  **Graph suspend/resume: workflow suspension for the Active Knowledge Graph.** A graph run
   persists model + suspension node at a human checkpoint via `skill=graph.suspend`
   (reserved ALIAS `suspend` — the root/end special-alias pattern, jump-by-name routing;
   one per graph; alias⇔skill enforced; drawn edge required), completes as a short run
@@ -318,7 +330,7 @@
   contract page → P4 tutorial + e2e + docs + ADR proposal → P5 Rust lock-step arc
   (supersedes its "session persistence out-of-scope" line). Blueprint thread + ADR
   proposed, human-gated, NOT yet ratified. → would serve `vision-mercury-composable`
-  <!-- id: thread-graph-suspend-resume | created: 2026-07-28 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-003528 -->
+  <!-- id: thread-graph-suspend-resume | created: 2026-07-28 | last_used: 2026-07-29 | uses: 2 | tier: working | origin: 2026-07-29-003528 -->
 
 - [x] (feature in flight — 2026-07-26; CLOSED 2026-07-26 — BOTH PRs MERGED same day:
   Java [PR #236](https://github.com/Accenture/mercury-composable/pull/236) squash

@@ -22,6 +22,9 @@ import com.accenture.minigraph.common.GraphLambdaFunction;
 import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.models.Visits;
 import com.accenture.minigraph.skills.GraphJoin;
+import com.accenture.minigraph.skills.GraphJs;
+import com.accenture.minigraph.skills.GraphMath;
+import com.accenture.minigraph.skills.GraphSuspend;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
@@ -97,7 +100,7 @@ public class GraphTraveler extends GraphLambdaFunction {
         if (end == null) {
             throw new IllegalArgumentException("End node does not exist");
         }
-        walk(po, graphInstance, root);
+        walk(po, graphInstance, root, null);
     }
 
     private void handleSkillResponse(PostOffice po, EventEnvelope response) {
@@ -179,7 +182,7 @@ public class GraphTraveler extends GraphLambdaFunction {
         }
     }
 
-    private void walk(PostOffice po, GraphInstance graphInstance, SimpleNode node) {
+    private void walk(PostOffice po, GraphInstance graphInstance, SimpleNode node, String from) {
         if (!graphInstance.complete.get()) {
             var nodeName = node.getAlias();
             String skill = node.getProperty(SKILL) != null ? String.valueOf(node.getProperty(SKILL)) : null;
@@ -188,25 +191,27 @@ public class GraphTraveler extends GraphLambdaFunction {
             if (!seen) {
                 graphInstance.nodeSeen.put(nodeName, true);
                 po.send(new EventEnvelope().setTo(out).setBody("Walk to " + nodeName));
-                walkTo(po, skill, graphInstance, node);
+                walkTo(po, skill, graphInstance, node, from);
             }
         }
     }
 
-    private void walkTo(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node) {
+    private void walkTo(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node, String from) {
         var graph = graphInstance.graph;
         var endNode = graph.getEndNode();
         if (endNode.getId().equals(node.getId())) {
             if (skill != null) {
-                executeSkill(po, skill, graphInstance, node);
+                executeSkill(po, skill, graphInstance, node, from);
             } else {
                 executionComplete(po, graphInstance);
             }
         } else {
             if (skill != null) {
-                executeSkill(po, skill, graphInstance, node);
+                executeSkill(po, skill, graphInstance, node, from);
+            } else if (isSuspensible(node)) {
+                walkToSuspendNode(po, graphInstance, node);
             } else {
-                walkNext(po, graphInstance, node);
+                walkNext(po, graphInstance, node, false);
             }
         }
     }
@@ -233,14 +238,18 @@ public class GraphTraveler extends GraphLambdaFunction {
         po.send(new EventEnvelope().setTo(out).setBody("Graph traversal completed in " + elapsed + " ms"));
     }
 
-    private void executeSkill(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node) {
+    private void executeSkill(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node, String from) {
         if (po.exists(skill)) {
             var wsInstanceId = graphInstance.getWsInstance();
             var nodeName = node.getAlias();
             var compositeId = wsInstanceId + "@" + nodeName;
-            po.send(new EventEnvelope().setTo(skill).setHeader(IN, wsInstanceId)
+            var event = new EventEnvelope().setTo(skill).setHeader(IN, wsInstanceId)
                     .setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName)
-                    .setReplyTo(GraphTraveler.ROUTE).setCorrelationId(compositeId));
+                    .setReplyTo(GraphTraveler.ROUTE).setCorrelationId(compositeId);
+            if (from != null) {
+                event.setHeader(FROM, from);
+            }
+            po.send(event);
         } else {
             sendError(po, graphInstance, "Skill " + skill + " does not exist");
         }
@@ -249,12 +258,18 @@ public class GraphTraveler extends GraphLambdaFunction {
     private void nextOrJump(PostOffice po, GraphInstance graphInstance, SimpleNode node, String next) {
         if (!SINK.equals(next)) {
             var graph = graphInstance.graph;
-            if (NEXT.equals(next)) {
-                walkNext(po, graphInstance, node);
+            if (next.startsWith(RESUME_PREFIX)) {
+                resumeTraversal(po, graphInstance, next.substring(RESUME_PREFIX.length()));
+            } else if (NEXT.equals(next)) {
+                if (isSuspensible(node)) {
+                    walkToSuspendNode(po, graphInstance, node);
+                } else {
+                    walkNext(po, graphInstance, node, false);
+                }
             } else {
                 var nextNode = graph.findNodeByAlias(next);
                 if (nextNode != null) {
-                    walk(po, graphInstance, nextNode);
+                    walk(po, graphInstance, nextNode, node.getAlias());
                 } else {
                     sendError(po, graphInstance, "Next node '" + next + "' does not exist");
                 }
@@ -262,12 +277,52 @@ public class GraphTraveler extends GraphLambdaFunction {
         }
     }
 
-    private void walkNext(PostOffice po, GraphInstance graphInstance, SimpleNode node) {
+    private void walkToSuspendNode(PostOffice po, GraphInstance graphInstance, SimpleNode node) {
+        var skill = node.getProperty(SKILL);
+        if (GraphMath.ROUTE.equals(skill) || GraphJs.ROUTE.equals(skill)) {
+            sendError(po, graphInstance, "Node '" + node.getAlias() +
+                    "' cannot use 'suspend=true' with skill " + skill);
+            return;
+        }
+        var suspendNode = graphInstance.graph.findNodeByAlias(SUSPEND);
+        if (suspendNode == null) {
+            sendError(po, graphInstance, "Node '" + node.getAlias() +
+                    "' is suspensible but the graph has no '" + SUSPEND + "' node");
+        } else if (!GraphSuspend.ROUTE.equals(suspendNode.getProperty(SKILL))) {
+            sendError(po, graphInstance, "The '" + SUSPEND + "' node must use skill " + GraphSuspend.ROUTE);
+        } else {
+            walk(po, graphInstance, suspendNode, node.getAlias());
+        }
+    }
+
+    private void resumeTraversal(PostOffice po, GraphInstance graphInstance, String alias) {
+        var resumedNode = graphInstance.graph.findNodeByAlias(alias);
+        if (resumedNode == null) {
+            sendError(po, graphInstance, "Resumed node '" + alias + "' does not exist");
+        } else {
+            // the suspension point already ran before suspension - do not re-execute it
+            graphInstance.nodeSeen.put(alias, true);
+            graphInstance.skillRun.put(alias, true);
+            walkNext(po, graphInstance, resumedNode, true);
+        }
+    }
+
+    private void walkNext(PostOffice po, GraphInstance graphInstance, SimpleNode node, boolean afterResume) {
         if (!graphInstance.complete.get()) {
             var graph = graphInstance.graph;
             var nodes = graph.getForwardLinks(node.getAlias());
+            var deadEnd = true;
             for (SimpleNode next : nodes) {
-                walk(po, graphInstance, next);
+                // a resumed traversal continues along the normal path, never back into suspension
+                if (afterResume && SUSPEND.equals(next.getAlias())) {
+                    continue;
+                }
+                deadEnd = false;
+                walk(po, graphInstance, next, node.getAlias());
+            }
+            if (afterResume && deadEnd) {
+                sendError(po, graphInstance, "Resumed node '" + node.getAlias() +
+                        "' has no forward path to continue");
             }
         }
     }
