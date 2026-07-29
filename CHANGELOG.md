@@ -22,9 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
      restoration are fully encapsulated — no node data mapping). The node alias
      **`suspend`** is reserved (the `root`/`end` pattern — traversal jumps to it by
      name); a skilled node marked with the new reserved property **`suspend=true`**
-     routes there after executing; the optional **`missing=<node>`** property on a resume
-     node handles absent/expired records. The suspend node's **`ttl`** is mandatory with
-     no default (duration syntax, e.g. `2d`).
+     routes there after executing. `graph.resume` records the run condition in
+     **`model.run`** (`resume` | `fresh`) so the graph's own logic decides how a
+     fresh-or-expired request is handled — the engine deliberately does not distinguish
+     absent from expired. The suspend node's **`ttl`** is mandatory with no default
+     (duration syntax, e.g. `2d`).
    - Traversal bookkeeping is persisted and restored, so a `graph.join` after resume
      still sees branches completed before suspension. Reserved model keys never persist.
      CompileGraph validates the static contract for manifest graphs (alias⇔skill binding,
@@ -40,7 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
      order, approval, delivery release — as four short runs, shipped with the engine)
      with end-to-end tests against embedded Redis — including input validation: a
      later-stage request without a suspended record is rejected with HTTP 404 (a null-safe presence check via
-     `{var}` substitution inside a `text()` constant). The **Workflow Suspension** guide
+     `{var}` substitution inside a `text()` constant) — and every stage reply carries the
+     `run` flag. The **Workflow Suspension** guide
      chapter (incl. the state-store contract), skills-reference entries, `help.md` +
      `help tutorial 14.md` Playground pages, and Playground node types
      `Suspend`/`Resume`/`Suspensible` (visual convention — the skill defines behavior).

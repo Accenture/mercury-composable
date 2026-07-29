@@ -77,7 +77,7 @@ tasks an application wires into its own `sync-to-async` flow (see
 [Event Script Syntax](event-script/syntax.md)); like every reserved route, do not register your own
 function under these names. The knowledge graph additionally reserves the node **alias**
 `suspend` (bound to the `graph.suspend` skill — traversal jumps to it by name, the `root`/`end`
-pattern) and the node **properties** `suspend` and `missing` — see
+pattern), the node **property** `suspend`, and the engine-managed state key `model.run` — see
 [Workflow Suspension](knowledge-graph/workflow-suspension.md).
 
 ## Optional user defined functions

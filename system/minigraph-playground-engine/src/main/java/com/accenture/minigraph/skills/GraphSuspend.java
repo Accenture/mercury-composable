@@ -58,9 +58,11 @@ import java.util.Set;
 public class GraphSuspend extends GraphStateSkill {
     private static final Logger log = LoggerFactory.getLogger(GraphSuspend.class);
     public static final String ROUTE = "graph.suspend";
-    // per-run engine metadata never persists: the resumed run's own values are authoritative
+    // per-run engine metadata never persists: the resumed run's own values are
+    // authoritative ('run' is the fresh/resume flag set by graph.resume - embalming it
+    // would let a later resume read a stale condition)
     private static final Set<String> NON_PERSISTED_MODEL_KEYS =
-            Set.of("cid", "instance", "flow", "ttl", "trace", "parent", "root", "none");
+            Set.of("cid", "instance", "flow", "ttl", "trace", "parent", "root", "none", "run");
 
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {

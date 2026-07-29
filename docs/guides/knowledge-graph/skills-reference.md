@@ -310,8 +310,10 @@ the persisted model merges into the state machine (the current run's reserved ke
 traversal bookkeeping is restored (downstream joins still see pre-suspension branches), and the
 walker jumps past the checkpoint onto its normal path. Not found — a **fresh transaction (the
 normal first-run case)** or an expired record: traversal continues along the node's own forward
-path, or jumps to the optional `missing=<node>` handler for workflows where an expired approval
-needs its own response.
+path. Either way the skill sets **`model.run`** to `resume` or `fresh`; the engine does not
+distinguish absent from expired, so handling that condition is application logic — gate the
+forward path with a `graph.math` IF-THEN-ELSE on `model.run` (or a `graph.task`) to reject,
+advise the UI, or jump to a recovery node.
 
 **Gotchas:** the record is consumed on retrieval (a duplicate resume behaves as a fresh run, never
 a double execution); `model.cid` is the retrieval key, so resume-bearing endpoints deserve

@@ -69,6 +69,12 @@
       "meaning": "intermediate working state"
     },
     {
+      "name": "model.run",
+      "read": true,
+      "write": "by graph.resume",
+      "meaning": "run-condition flag set by graph.resume: 'resume' when a suspended record was restored, 'fresh' when none existed (absent or expired look the same); set after the model merge and never persisted across suspensions"
+    },
+    {
       "name": "output.body",
       "read": true,
       "write": true,
@@ -583,13 +589,12 @@
         "task"
       ],
       "optional": [
-        "missing",
         "exception"
       ],
       "notes": [
         "restores the model + traversal bookkeeping persisted by graph.suspend for model.cid and jumps past the suspension point WITHOUT re-executing it (downstream joins still see pre-suspension branches)",
         "superset of graph.task with NO input/output mapping: invokes the task= store function (type=get, body {cid})",
-        "no record = the NORMAL fresh-transaction case: traversal continues along the node's own forward path, or jumps to missing=<node> when set",
+        "no record = the NORMAL fresh-transaction case: traversal continues along the node's own forward path; either way the skill sets model.run to 'resume' or 'fresh' - the engine does not distinguish absent from expired, so fresh-vs-expired handling is application logic (e.g. a graph.math IF-THEN-ELSE on the forward path)",
         "the shipped stores consume the record atomically on retrieval - a duplicate resume behaves as a fresh run, never a double execution",
         "reserved model keys are never restored - the current run's identity is authoritative"
       ],
@@ -647,6 +652,6 @@
     "Dictionary/Provider config nodes are referenced by name and not traversed - but the required convention is NO NODE LEFT UNCONNECTED: wire them under a graph.island (root -[contains]-> island -[data]-> dictionary -[provider]-> provider), the graph's entity-relationship knowledge layer",
     "a node is executed once per run (a graph.math RESET statement is the only escape)",
     "instantiate graph must precede run/execute/inspect",
-    "a node with skill=graph.suspend must be named 'suspend' (reserved alias, jump-by-name; one per graph); a suspend=true node must draw its checkpoint edge to it and must not use graph.math/graph.js; 'suspend' and 'missing' are reserved node properties"
+    "a node with skill=graph.suspend must be named 'suspend' (reserved alias, jump-by-name; one per graph); a suspend=true node must draw its checkpoint edge to it and must not use graph.math/graph.js; 'suspend' is a reserved node property and model.run is an engine-managed state key"
   ]
 }

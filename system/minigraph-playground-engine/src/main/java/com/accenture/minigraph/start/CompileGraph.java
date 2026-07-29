@@ -78,7 +78,6 @@ public class CompileGraph implements EntryPoint {
     private static final String TASK = "task";
     private static final String TTL = "ttl";
     private static final String SUSPEND = "suspend";
-    private static final String MISSING = "missing";
 
     @Override
     public void start(String[] args) {
@@ -134,8 +133,7 @@ public class CompileGraph implements EntryPoint {
      * directions; a suspensible node (suspend=true) must not use a routing skill
      * (graph.math/graph.js), requires the suspend node, and must draw its checkpoint edge
      * to it (traversal jumps by name, but the diagram documents the suspension path);
-     * the suspend node needs 'task' and a valid 'ttl'; a resume node needs 'task' and,
-     * when 'missing' is set, an existing jump target.
+     * the suspend node needs 'task' and a valid 'ttl'; a resume node needs 'task'.
      */
     private void validateSuspendResume(MiniGraph graph) {
         var suspendNode = graph.findNodeByAlias(SUSPEND);
@@ -150,7 +148,7 @@ public class CompileGraph implements EntryPoint {
                         " - a node with skill " + GraphSuspend.ROUTE + " must be named '" + SUSPEND + "'");
             }
             if (GraphResume.ROUTE.equals(skill)) {
-                validateResumeNode(graph, node);
+                validateResumeNode(node);
             }
             if ("true".equalsIgnoreCase(String.valueOf(node.getProperty(SUSPEND)))) {
                 validateSuspensibleNode(graph, node, suspendNode);
@@ -174,15 +172,9 @@ public class CompileGraph implements EntryPoint {
         }
     }
 
-    private void validateResumeNode(MiniGraph graph, SimpleNode node) {
-        var alias = node.getAlias();
+    private void validateResumeNode(SimpleNode node) {
         if (!hasText(node.getProperty(TASK))) {
-            throw new IllegalArgumentException("node " + alias + " does not have a 'task' route");
-        }
-        var missing = node.getProperty(MISSING);
-        if (missing != null && graph.findNodeByAlias(String.valueOf(missing).trim()) == null) {
-            throw new IllegalArgumentException("node " + alias + " - 'missing' target '" +
-                    missing + "' does not exist");
+            throw new IllegalArgumentException("node " + node.getAlias() + " does not have a 'task' route");
         }
     }
 

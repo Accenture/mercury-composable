@@ -65,7 +65,8 @@
           "model.step1_count -> prior"
         ],
         "output": [
-          "result -> output.body"
+          "result -> output.body",
+          "model.run -> output.header.x-run"
         ]
       }
     },

@@ -24,8 +24,8 @@ continues past the checkpoint without re-executing it. Three vocabulary pieces m
 2. a suspensible node - any skilled node with the "suspend=true" property; it routes to the
    suspend node after its skill completes
 3. the resume node - the "graph.resume" skill placed right after root; it restores a persisted
-   record and jumps past the LAST checkpoint, or lets a fresh transaction flow through (the
-   optional "missing" property names a node to handle the no-record case)
+   record and jumps past the LAST checkpoint, or lets a fresh transaction flow through - either
+   way it sets "model.run" to "resume" or "fresh" so the graph's own logic can react
 
 The graph navigation is:
 
@@ -48,8 +48,9 @@ purpose=Purchase workflow with three human checkpoints
 name=tutorial-14
 ```
 
-Create the resume node. A fresh transaction (no suspended record) jumps to the "check-fresh"
-validation gate:
+Create the resume node. A resumed run jumps past its last checkpoint; a fresh transaction
+(no record - never suspended, or expired) continues along the forward path into the
+"check-fresh" validation gate with "model.run" set to "fresh":
 
 ```
 create node resume
@@ -58,7 +59,6 @@ with properties
 purpose=Restore workflow state if this transaction was suspended earlier
 skill=graph.resume
 task=v1.redis.retrieve.model
-missing=check-fresh
 ```
 
 Create the input validation gate. The variable substitution inside the text() constant is
@@ -90,6 +90,7 @@ skill=graph.data.mapper
 suspend=true
 mapping[]=input.body -> model.order
 mapping[]=text(order-submitted; waiting for store manager approval) -> output.body.stage
+mapping[]=model.run -> output.body.run
 mapping[]=model.cid -> output.body.cid
 ```
 
@@ -102,6 +103,7 @@ skill=graph.data.mapper
 suspend=true
 mapping[]=input.body -> model.approval
 mapping[]=text(approved; waiting for the delivery department to release the shipment) -> output.body.stage
+mapping[]=model.run -> output.body.run
 mapping[]=model.cid -> output.body.cid
 ```
 
@@ -114,6 +116,7 @@ skill=graph.data.mapper
 suspend=true
 mapping[]=input.body -> model.delivery
 mapping[]=text(released; waiting for shipment confirmation) -> output.body.stage
+mapping[]=model.run -> output.body.run
 mapping[]=model.cid -> output.body.cid
 ```
 
@@ -126,6 +129,7 @@ with properties
 purpose=Ship to the customer with the full order history
 skill=graph.data.mapper
 mapping[]=text(shipped) -> output.body.stage
+mapping[]=model.run -> output.body.run
 mapping[]=model.order -> output.body.order
 mapping[]=model.approval -> output.body.approval
 mapping[]=model.delivery -> output.body.delivery
@@ -142,6 +146,7 @@ skill=graph.data.mapper
 mapping[]=int(404) -> output.status
 mapping[]=text(rejected) -> output.body.type
 mapping[]=text(Transaction not found. Submit the order first) -> output.body.message
+mapping[]=model.run -> output.body.run
 ```
 
 ```
@@ -190,8 +195,10 @@ curl -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
   -d '{"item": "laptop", "amount": 2000}'
 ```
 
-The reply is {"stage": "order-submitted; waiting for store manager approval", "cid": "order-1001"}
-and the run is over - nothing stays in memory. Run 2 - the store manager approves:
+The reply is {"stage": "order-submitted; waiting for store manager approval", "run": "fresh",
+"cid": "order-1001"} and the run is over - nothing stays in memory. Every stage reply carries
+the "run" flag ("fresh" on run 1, "resume" on runs 2 to 4) so the caller always knows whether
+it is looking at a new transaction or a resumed continuation. Run 2 - the store manager approves:
 
 ```
 curl -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
@@ -229,7 +236,8 @@ curl -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
   -d '{"decision": "approved"}'
 ```
 
-The workflow rejects it with HTTP-404 - the order must come first. Each record is consumed on
+The workflow rejects it with HTTP-404 - the order must come first - and the reply's
+"run": "fresh" tells the UI why: the record expired or never existed. Each record is consumed on
 resume, so a duplicated request at any stage behaves like a fresh transaction instead of
 executing that stage twice.
 
@@ -238,7 +246,8 @@ Summary
 In this session, we expressed a purchase workflow with three human checkpoints as four short
 graph runs keyed by one business correlation ID: one reserved "suspend" node served every
 checkpoint, each suspensible node captured its actor's input into the model and staged its own
-stage response, and input validation enforced the order-before-decision sequence.
+stage response, input validation enforced the order-before-decision sequence, and the
+engine-managed "model.run" flag told every reply whether the run was fresh or resumed.
 
 Why suspend and resume?
 -----------------------

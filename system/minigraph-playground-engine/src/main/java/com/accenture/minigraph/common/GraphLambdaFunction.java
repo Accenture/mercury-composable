@@ -125,7 +125,6 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     // as suspensible; 'resume:<node>' is the walker directive that continues traversal
     // after that node without re-executing it
     protected static final String SUSPEND = "suspend";
-    protected static final String MISSING = "missing";
     protected static final String FROM = "from";
     protected static final String RESUME_PREFIX = "resume:";
     protected static final String SUSPENDED = "suspended";
@@ -165,7 +164,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     // with nothing else
     private static final Set<String> RESERVED_PARAMETERS = Set.of(SKILL, MAPPING, STATEMENT, INPUT, OUTPUT, FEATURE,
                                     EXCEPTION, EXTENSION, STATUS, ERROR, DICTIONARY, FOR_EACH, CONCURRENCY, PURPOSE,
-                                    TASK, SUSPEND, MISSING);
+                                    TASK, SUSPEND);
     private static final AtomicLong loopInterval = new AtomicLong(-1);
     private static final AtomicLong highFrequency = new AtomicLong(-1);
 

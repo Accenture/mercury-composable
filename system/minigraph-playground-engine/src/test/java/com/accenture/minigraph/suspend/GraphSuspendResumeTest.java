@@ -87,6 +87,7 @@ class GraphSuspendResumeTest {
         assertNull(record.getElement("data.model.instance"), "reserved model keys must not persist");
         assertNull(record.getElement("data.model.flow"), "reserved model keys must not persist");
         assertNull(record.getElement("data.model.trace"), "reserved model keys must not persist");
+        assertNull(record.getElement("data.model.run"), "the fresh/resume run flag must not persist");
         assertEquals(true, record.getElement("data.run.step-1"));
         // run 2 with the same correlation ID: resume continues past the checkpoint
         var second = runGraph("unit-test-suspend-1", cid);
@@ -96,6 +97,7 @@ class GraphSuspendResumeTest {
         assertEquals(1, completed.getElement("prior"), "restored model.step1_count must reach step-2");
         assertEquals(1, CountingStepTask.getCount("one", cid), "the suspension point must not re-execute");
         assertEquals(1, CountingStepTask.getCount("two", cid));
+        assertEquals("resume", second.getHeader("x-run"), "graph.resume must flag the resumed condition");
         assertFalse(storedFile(cid).exists(), "the record must be consumed on resume");
         log.info("suspend -> resume continuation verified for cid {}", cid);
     }
@@ -138,17 +140,23 @@ class GraphSuspendResumeTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void missingTargetHandlesFreshCorrelationId() throws TimeoutException {
+    void freshVsExpiredIsApplicationLogicOnTheResumePath() throws TimeoutException {
+        // absent and expired records are indistinguishable to the engine: graph.resume
+        // continues along its forward path with model.run=fresh and the graph's own gate
+        // decides - here an invalid fresh request is rejected with a declaratively
+        // staged 404 (a graph can set the response status via output.status)
         var cid = Utility.getInstance().getUuid();
-        var response = runGraph("unit-test-suspend-4", cid);
-        // the handler node staged 'int(404) -> output.status' - a graph can set the
-        // response status declaratively
+        var response = runGraph("unit-test-suspend-4", cid, Map.of("noise", true));
         assertEquals(404, response.getStatus());
         var body = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("no-record", body.getElement("reason"));
+        assertEquals("fresh", body.getElement("run"), "graph.resume must flag the fresh condition");
         assertEquals(404, body.getElement("status"));
-        assertEquals(0, CountingStepTask.getCount("x", cid), "the normal path must not run on a missing jump");
-        log.info("resume 'missing' jump verified for cid {}", cid);
+        assertEquals(0, CountingStepTask.getCount("x", cid), "the gate must not run the normal path");
+        // a valid fresh request passes the same gate
+        var accepted = runGraph("unit-test-suspend-4", Utility.getInstance().getUuid(), Map.of("start", true));
+        assertEquals(200, accepted.getStatus());
+        log.info("fresh-path gate verified for cid {}", cid);
     }
 
     @SuppressWarnings("unchecked")
@@ -209,9 +217,13 @@ class GraphSuspendResumeTest {
     }
 
     private EventEnvelope runGraph(String graphId, String cid) throws TimeoutException {
+        return runGraph(graphId, cid, Map.of("start", true));
+    }
+
+    private EventEnvelope runGraph(String graphId, String cid, Map<String, Object> body) throws TimeoutException {
         var request = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
                 .setUrl("/api/graph/" + graphId)
-                .setBody(Map.of("start", true))
+                .setBody(body)
                 .setHeader("Content-Type", "application/json")
                 .setHeader("Accept", "application/json")
                 .setHeader("X-Correlation-Id", cid);

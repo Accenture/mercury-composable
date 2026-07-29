@@ -46,13 +46,22 @@ import java.util.concurrent.ConcurrentMap;
  * <p>
  * When there is no record - a fresh transaction (the normal first-run case) or an
  * expired one - traversal simply continues along the resume node's own forward path.
- * The optional "missing" property names a node to jump to instead, for workflows where
- * an absent record needs distinct handling (e.g. an expired-approval response).
+ * <p>
+ * Either way, the skill sets the engine-managed model key "model.run" to "fresh" or
+ * "resume" so the graph's own logic (a graph.math gate, a response mapping) can make the
+ * application aware of the condition - e.g. advise the UI, or jump to a recovery node.
+ * Distinguishing an expired record from a first-time transaction is application logic:
+ * only the product owner knows which requests may start fresh, so validate on the resume
+ * node's forward path (see the workflow-suspension guide).
  */
 @PreLoad(route = GraphResume.ROUTE, instances = 300)
 public class GraphResume extends GraphStateSkill {
     private static final Logger log = LoggerFactory.getLogger(GraphResume.class);
     public static final String ROUTE = "graph.resume";
+    // the engine-managed run flag: this skill is its only writer
+    private static final String MODEL_RUN = "model.run";
+    private static final String FRESH = "fresh";
+    private static final String RESUMED = "resume";
 
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
@@ -79,12 +88,11 @@ public class GraphResume extends GraphStateSkill {
                 } else if (response.getBody() instanceof Map<?, ?> received && !received.isEmpty()) {
                     sink.success(restoreAndJump(graphInstance, node, cid, received));
                 } else {
-                    // no suspension record: a fresh transaction is the normal case
-                    var missing = node.getProperty(MISSING);
-                    var target = missing instanceof String value && !value.isBlank()? value.trim() : null;
-                    log.info("No suspension record for cid {} - {}", cid,
-                            target == null? "fresh start" : "jump to '" + target + "'");
-                    sink.success(target == null? NEXT : target);
+                    // no suspension record: a fresh transaction is the normal case -
+                    // the run flag lets the graph's own logic react to the condition
+                    stateMachine.setElement(MODEL_RUN, FRESH);
+                    log.info("No suspension record for cid {} - fresh start", cid);
+                    sink.success(NEXT);
                 }
             }));
     }
@@ -107,6 +115,9 @@ public class GraphResume extends GraphStateSkill {
             // reserved keys survive because graph.suspend never persists them
             ((Map<String, Object>) current).putAll((Map<String, Object>) persisted);
         }
+        // set AFTER the merge so a record written by an older build can never
+        // resurrect a stale run flag
+        stateMachine.setElement(MODEL_RUN, RESUMED);
         restoreMarks(record.get(SEEN), graphInstance.nodeSeen);
         restoreMarks(record.get(RUN), graphInstance.skillRun);
         log.info("Resume at '{}' for cid {}", suspendedAt, cid);

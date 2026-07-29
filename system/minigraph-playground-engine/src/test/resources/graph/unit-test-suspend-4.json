@@ -6,7 +6,7 @@
         "UnitTest"
       ],
       "properties": {
-        "purpose": "resume with a 'missing' target jumps when no record exists",
+        "purpose": "fresh-vs-expired handling is application logic on the resume forward path",
         "name": "unit-test-suspend-4"
       }
     },
@@ -18,8 +18,21 @@
       "properties": {
         "skill": "graph.resume",
         "task": "v1.file.state.store",
-        "purpose": "Restore workflow state if a suspension record exists",
-        "missing": "no-record"
+        "purpose": "Restore workflow state if a suspension record exists"
+      }
+    },
+    {
+      "alias": "gate",
+      "types": [
+        "Decision"
+      ],
+      "properties": {
+        "skill": "graph.math",
+        "statement": [
+          "MAPPING: text(={input.body.start}) -> model.start_probe",
+          "IF: {model.start_probe} == '=null'\nTHEN: no-record\nELSE: step-x"
+        ],
+        "purpose": "A fresh transaction must carry the start field - anything else has no active record"
       }
     },
     {
@@ -48,7 +61,8 @@
         "skill": "graph.data.mapper",
         "mapping": [
           "int(404) -> output.status",
-          "text(no-record) -> output.body.reason"
+          "text(no-record) -> output.body.reason",
+          "model.run -> output.body.run"
         ]
       }
     },
@@ -73,10 +87,30 @@
     },
     {
       "source": "resume",
+      "target": "gate",
+      "relations": [
+        {
+          "type": "fresh",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "gate",
       "target": "step-x",
       "relations": [
         {
-          "type": "test",
+          "type": "valid",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "gate",
+      "target": "no-record",
+      "relations": [
+        {
+          "type": "invalid",
           "properties": {}
         }
       ]
