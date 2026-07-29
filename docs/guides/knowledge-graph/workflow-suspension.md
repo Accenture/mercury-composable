@@ -93,7 +93,7 @@ Redis (e.g. `helpers/redis-standalone`) and drive it with two requests sharing o
 correlation ID:
 
 ```bash
-curl -s -X POST http://127.0.0.1:8600/api/graph/tutorial-14 \
+curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
   -H 'content-type: application/json' -H 'x-correlation-id: order-1001' \
   -d '{"item": "laptop", "amount": 2000}'
 ```
@@ -106,7 +106,7 @@ The workflow captured the request into `model.request` and suspended. When the a
 decides:
 
 ```bash
-curl -s -X POST http://127.0.0.1:8600/api/graph/tutorial-14 \
+curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
   -H 'content-type: application/json' -H 'x-correlation-id: order-1001' \
   -d '{"decision": "approved"}'
 ```
