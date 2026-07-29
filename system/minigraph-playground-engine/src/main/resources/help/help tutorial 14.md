@@ -184,8 +184,113 @@ connect suspend to end with then
 
 For your convenience, this graph model is preloaded as "tutorial-14".
 
-Test the workflow
------------------
+Dry-run the workflow interactively
+----------------------------------
+You can exercise all three checkpoints without leaving the playground. Two things to
+remember: each graph instance runs once, so instantiate before every run; and the SAME
+model.cid must be supplied each time - it is the resume key. Redis must be running.
+
+Import the deployed model as a draft:
+
+```
+import graph from tutorial-14
+```
+
+Run 1 - the customer orders a laptop:
+
+```
+instantiate graph
+text(order-1001) -> model.cid
+text(laptop) -> input.body.item
+int(2000) -> input.body.amount
+```
+
+```
+run
+```
+
+The traversal walks root -> resume -> check-fresh -> order -> suspend -> end and the run
+completes normally - the workflow state now lives in Redis, not in memory. Inspect the
+staged reply:
+
+```
+inspect output.body
+```
+
+It shows stage=order-submitted..., run=fresh (a new transaction) and cid=order-1001.
+
+Run 2 - the store manager approves. Instantiate again with the same correlation ID and
+the manager's input:
+
+```
+instantiate graph
+text(order-1001) -> model.cid
+text(approved) -> input.body.decision
+text(store-88) -> input.body.manager
+```
+
+```
+run
+```
+
+Watch the console: the resume node restores the persisted state and the traversal
+continues at the approval node - the order checkpoint is NOT re-executed. Now
+"inspect output.body" shows stage=approved... and run=resume, and the "seen" command
+lists the order node as visited even though this run never executed it - that is the
+restored traversal bookkeeping.
+
+Run 3 - the delivery department releases the shipment:
+
+```
+instantiate graph
+text(order-1001) -> model.cid
+boolean(true) -> input.body.release
+text(express) -> input.body.courier
+```
+
+```
+run
+```
+
+Run 4 - shipment confirmation completes the workflow:
+
+```
+instantiate graph
+text(order-1001) -> model.cid
+text(TRK-12345) -> input.body.tracking
+```
+
+```
+run
+```
+
+Inspect the final reply - the model accumulated state across all four short runs:
+
+```
+inspect output.body
+```
+
+It shows stage=shipped, run=resume, and the full history: order (laptop/2000), approval
+(approved/store-88), delivery (release/express) and shipment (TRK-12345).
+
+To see the input validation, start over with a correlation ID that never ordered:
+
+```
+instantiate graph
+text(order-9999) -> model.cid
+text(approved) -> input.body.decision
+```
+
+```
+run
+```
+
+"inspect output" shows status=404 with type=rejected and run=fresh - the order must come
+first, and the run flag tells the caller why. Each record is consumed on resume, so
+repeating any middle run behaves the same way: no record means a fresh transaction.
+
+Test the workflow over REST
+---------------------------
 Run 1 - the customer orders a laptop:
 
 ```

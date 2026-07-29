@@ -107,7 +107,10 @@ A customer orders, the store manager approves, the delivery department releases 
 shipment, and the parcel ships — one `suspend` node serves every checkpoint, and each
 suspensible node captures its actor's input into the model and stages its own
 stage-specific reply (overriding the default `suspended` response). Run it with Redis
-(e.g. `helpers/redis-standalone`) and drive the four runs with one correlation ID:
+(e.g. `helpers/redis-standalone`) and drive the four runs with one correlation ID.
+
+Run 1 — the customer orders a laptop; the run suspends at the `order` checkpoint and
+replies with `"run": "fresh"` (a new transaction):
 
 ```bash
 curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
@@ -119,10 +122,33 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
 {"stage": "order-submitted; waiting for store manager approval", "run": "fresh", "cid": "order-1001"}
 ```
 
-Then, with the same `x-correlation-id`, the store manager approves
-(`{"decision": "approved", "manager": "store-88"}` → `"stage": "approved; …"`), the
-delivery department releases (`{"release": true, "courier": "express"}` →
-`"stage": "released; …"`), and shipment confirmation completes the workflow:
+Run 2 — with the same `x-correlation-id`, the store manager approves. The `resume` node
+restores the persisted state and continues past the `order` checkpoint without
+re-executing it — every reply from here on carries `"run": "resume"`:
+
+```bash
+curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
+  -H 'content-type: application/json' -H 'x-correlation-id: order-1001' \
+  -d '{"decision": "approved", "manager": "store-88"}'
+```
+
+```json
+{"stage": "approved; waiting for the delivery department to release the shipment", "run": "resume", "cid": "order-1001"}
+```
+
+Run 3 — the delivery department releases the shipment:
+
+```bash
+curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
+  -H 'content-type: application/json' -H 'x-correlation-id: order-1001' \
+  -d '{"release": true, "courier": "express"}'
+```
+
+```json
+{"stage": "released; waiting for shipment confirmation", "run": "resume", "cid": "order-1001"}
+```
+
+Run 4 — shipment confirmation completes the workflow:
 
 ```bash
 curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
