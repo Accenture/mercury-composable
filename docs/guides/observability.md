@@ -305,6 +305,12 @@ The reserved tokens are `$cid`, `$traceId`, `$tracePath`, `$spanId`, `$parentSpa
 function's route), and `$utc` (the log line's UTC timestamp). A token (or env value) that resolves to nothing is
 **omitted** from the block rather than printed as `null` — so a root span simply has no `parentSpanId` key.
 
+`$cid` is the **business correlation ID** — the value received from the external source or created at the
+edge, the same one `PostOffice.getMyCorrelationId()` returns — whenever the delivered event carries one.
+Internal correlation IDs (routing metadata such as RPC inbox references or the graph engine's skill-callback
+IDs) appear only as a fallback when no business context exists, so log aggregation correlates on the ID your
+callers know.
+
 ### Adding your own key-values {#log-context-custom}
 
 Inside a function, add business context with `PostOffice.updateContext(key, value)`:

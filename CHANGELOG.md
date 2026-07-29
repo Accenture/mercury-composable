@@ -48,8 +48,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
      stamp the engine's business-cid tag from the graph's `model.cid` on every skill
      invocation (walkers are event interceptors, so PostOffice does not auto-propagate it),
      so every skill and store function sees the business ID — not internal routing IDs —
-     in `my_correlation_id` and the application log context; the suspend/resume skills
-     also annotate their trace spans with `cid`.
+     in `my_correlation_id`; the suspend/resume skills also annotate their trace spans
+     with `cid`. In the same spirit, the application log context's `$cid` token
+     (platform-core) now resolves to the **business** correlation-id whenever the
+     delivered event carries one — internal correlation-ids (RPC inbox references,
+     skill-callback composites) are routing metadata and appear only as a fallback.
    - **Declarative response status**: a graph can stage its HTTP status
      (e.g. `int(404) -> output.status`); `graph.executor` applies it to the graph's reply
      at completion.
