@@ -36,10 +36,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
      minigraph-playground example app now does); lazy connection, `redis.*` config keys
      shared with sync-over-async. Any composable function honoring the documented store
      contract can replace it.
-   - New tutorial **`tutorial-14`** (approval workflow) with an end-to-end test against
-     embedded Redis, the **Workflow Suspension** guide chapter (incl. the state-store
-     contract), skills-reference entries, and Playground node types
+   - New tutorial **`tutorial-14`** (approval workflow, shipped with the engine) with
+     end-to-end tests against embedded Redis — including input validation: a decision
+     without a prior submission is rejected with HTTP 404 (a null-safe presence check via
+     `{var}` substitution inside a `text()` constant). The **Workflow Suspension** guide
+     chapter (incl. the state-store contract), skills-reference entries, `help.md` +
+     `help tutorial 14.md` Playground pages, and Playground node types
      `Suspend`/`Resume`/`Suspensible` (visual convention — the skill defines behavior).
+   - **Business correlation-id fidelity in graph telemetry and logs**: the graph walkers
+     stamp the engine's business-cid tag from the graph's `model.cid` on every skill
+     invocation (walkers are event interceptors, so PostOffice does not auto-propagate it),
+     so every skill and store function sees the business ID — not internal routing IDs —
+     in `my_correlation_id` and the application log context; the suspend/resume skills
+     also annotate their trace spans with `cid`.
+   - **Declarative response status**: a graph can stage its HTTP status
+     (e.g. `int(404) -> output.status`); `graph.executor` applies it to the graph's reply
+     at completion.
 
 2. **Registration Metadata Contract (annotation-macro consistency arc, P2).** A new
    reference page — `docs/guides/registration-metadata-contract.md` — fixes the

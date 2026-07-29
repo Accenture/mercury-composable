@@ -33,6 +33,7 @@ import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleNode;
 import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.PostOffice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -248,6 +249,11 @@ public class GraphTraveler extends GraphLambdaFunction {
                     .setReplyTo(GraphTraveler.ROUTE).setCorrelationId(compositeId);
             if (from != null) {
                 event.setHeader(FROM, from);
+            }
+            // same business correlation-id propagation as GraphExecutor
+            if (graphInstance.stateMachine.getElement(MODEL_CID) instanceof String businessCid
+                    && !businessCid.isBlank()) {
+                event.addTag(EventEmitter.BUSINESS_CID_TAG, businessCid);
             }
             po.send(event);
         } else {

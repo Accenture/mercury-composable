@@ -87,10 +87,11 @@ colors in the Playground; the skill defines the behavior.
 
 ## Walkthrough: the approval workflow (tutorial-14)
 
-`tutorial-14` in the `minigraph-playground` example app is the complete pattern:
-`root → resume → record-request (suspend=true) → {suspend | approve} → end`. Run it with
-Redis (e.g. `helpers/redis-standalone`) and drive it with two requests sharing one
-correlation ID:
+`tutorial-14` (shipped with the engine, runnable in the `minigraph-playground` example
+app) is the complete pattern:
+`root → resume → check-fresh → record-request (suspend=true) → {suspend | approve} → end`,
+plus a rejection path for invalid input. Run it with Redis (e.g.
+`helpers/redis-standalone`) and drive it with two requests sharing one correlation ID:
 
 ```bash
 curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
@@ -119,6 +120,30 @@ The original request crossed the suspension: run 2 restored `model.request` from
 store, skipped `record-request` (it already ran), and completed through `approve`. The
 caller of the suspended run decides what "suspended" looks like — stage your own
 `output.*` before the suspend node to override the default reply.
+
+The tutorial also validates its input: a decision for a correlation ID that never
+submitted (or has expired) is **rejected with HTTP 404** — the submission must come first.
+Two techniques worth stealing from its model:
+
+- **Null-safe presence check.** The math expression engine has no null literal, but `{var}`
+  substitution inside a `text()` constant is null-safe:
+  `MAPPING: text(={input.body.decision}) -> model.decision_probe` always yields a present
+  string (`=null` when the field is absent), which an `IF` can compare safely.
+- **Declarative response status.** A graph may stage its own HTTP status —
+  `int(404) -> output.status` in the rejection node. A non-2xx status routes through the
+  surrounding flow's exception handler, which passes a staged map body through (minus any
+  `stack` key, with its `status` key corrected) — so give your rejection fields names other
+  than `status`.
+
+```bash
+curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
+  -H 'content-type: application/json' -H 'x-correlation-id: order-9999' \
+  -d '{"decision": "approved"}'
+```
+
+```json
+{"type": "rejected", "message": "Transaction not found. Submit the request before sending a decision", "status": 404}
+```
 
 ## Design rules
 

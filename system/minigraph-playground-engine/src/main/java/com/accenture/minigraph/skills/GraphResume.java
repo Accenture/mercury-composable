@@ -66,6 +66,7 @@ public class GraphResume extends GraphStateSkill {
         var request = new EventEnvelope().setTo(ctx.route()).setCorrelationId(util.getUuid())
                 .setHeader(TYPE, GET).setBody(Map.of(CID, cid));
         ctx.po().annotateTrace(TASK, ctx.route());
+        ctx.po().annotateTrace(CID, cid);
         return Mono.create(sink ->
             ctx.po().eRequest(request, timeout, false).thenAccept(response -> {
                 stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());

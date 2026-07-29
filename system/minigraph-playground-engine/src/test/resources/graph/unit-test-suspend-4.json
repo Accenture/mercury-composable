@@ -47,7 +47,8 @@
       "properties": {
         "skill": "graph.data.mapper",
         "mapping": [
-          "text(no-record) -> output.body.status"
+          "int(404) -> output.status",
+          "text(no-record) -> output.body.reason"
         ]
       }
     },

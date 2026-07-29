@@ -86,6 +86,7 @@ public class GraphSuspend extends GraphStateSkill {
                 .setHeader(TYPE, PUT).setBody(getPersistenceEnvelope(graphInstance, cid, from, ttlSeconds));
         log.info("Suspend at '{}', store={}, ttl={}s", from, ctx.route(), ttlSeconds);
         ctx.po().annotateTrace(TASK, ctx.route());
+        ctx.po().annotateTrace(CID, cid);
         return Mono.create(sink ->
             ctx.po().eRequest(request, timeout, false).thenAccept(response -> {
                 stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());

@@ -105,6 +105,19 @@ class SuspendResumeTutorialTest {
         assertEquals("suspended", body.getElement("type"));
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void decisionWithoutSubmissionIsRejected() throws TimeoutException {
+        // input validation: an approval decision for a transaction that was never
+        // submitted (or has expired) must be rejected - the submission comes first
+        var response = runGraph(Utility.getInstance().getUuid(), Map.of("decision", "approved"));
+        assertEquals(404, response.getStatus());
+        var body = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals("rejected", body.getElement("type"));
+        assertTrue(String.valueOf(body.getElement("message")).contains("Submit the request"),
+                "unexpected rejection message: " + response.getBody());
+    }
+
     private EventEnvelope runGraph(String cid, Map<String, Object> body) throws TimeoutException {
         var request = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
                 .setUrl("/api/graph/tutorial-14")

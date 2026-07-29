@@ -81,6 +81,12 @@
       "meaning": "response headers"
     },
     {
+      "name": "output.status",
+      "read": true,
+      "write": true,
+      "meaning": "response HTTP status staged declaratively (e.g. 'int(404) -> output.status' in a rejection node); a non-2xx routes through the surrounding flow's exception handler, which preserves a map body minus 'stack' and corrects its 'status' key"
+    },
+    {
       "name": "{node}",
       "read": true,
       "write": true,

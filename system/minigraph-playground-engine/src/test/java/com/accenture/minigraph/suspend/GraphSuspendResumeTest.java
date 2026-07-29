@@ -75,6 +75,9 @@ class GraphSuspendResumeTest {
         assertEquals(cid, suspended.getElement("cid"));
         assertEquals(1, CountingStepTask.getCount("one", cid));
         assertEquals(0, CountingStepTask.getCount("two", cid));
+        // the business correlation ID propagates through the walker's internal events
+        // into every skill and task - not the engine's internal callback IDs
+        assertEquals(cid, CountingStepTask.getBusinessCid("one", cid));
         // the persisted record has the documented envelope shape and no reserved model keys
         var record = readStoredRecord(cid);
         assertEquals("step-1", record.getElement("data.node"));
@@ -138,9 +141,12 @@ class GraphSuspendResumeTest {
     void missingTargetHandlesFreshCorrelationId() throws TimeoutException {
         var cid = Utility.getInstance().getUuid();
         var response = runGraph("unit-test-suspend-4", cid);
-        assertEquals(200, response.getStatus());
+        // the handler node staged 'int(404) -> output.status' - a graph can set the
+        // response status declaratively
+        assertEquals(404, response.getStatus());
         var body = new MultiLevelMap((Map<String, Object>) response.getBody());
-        assertEquals("no-record", body.getElement("status"));
+        assertEquals("no-record", body.getElement("reason"));
+        assertEquals(404, body.getElement("status"));
         assertEquals(0, CountingStepTask.getCount("x", cid), "the normal path must not run on a missing jump");
         log.info("resume 'missing' jump verified for cid {}", cid);
     }

@@ -35,16 +35,27 @@ import java.util.concurrent.atomic.AtomicInteger;
 @PreLoad(route = "v1.counting.step", instances = 10)
 public class CountingStepTask implements TypedLambdaFunction<Map<String, Object>, Object> {
     private static final ConcurrentMap<String, AtomicInteger> COUNTERS = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, String> BUSINESS_CIDS = new ConcurrentHashMap<>();
 
     public static int getCount(String step, String cid) {
         var counter = COUNTERS.get(step + ":" + cid);
         return counter == null? 0 : counter.get();
     }
 
+    public static String getBusinessCid(String step, String cid) {
+        return BUSINESS_CIDS.get(step + ":" + cid);
+    }
+
     @Override
     public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         var step = String.valueOf(input.get("step"));
         var cid = String.valueOf(input.get("cid"));
+        // the business correlation ID injected by the platform at delivery -
+        // the suspend/resume tests assert it matches the caller's X-Correlation-Id
+        var myCid = headers.get("my_correlation_id");
+        if (myCid != null) {
+            BUSINESS_CIDS.put(step + ":" + cid, myCid);
+        }
         var count = COUNTERS.computeIfAbsent(step + ":" + cid, k -> new AtomicInteger()).incrementAndGet();
         var result = new HashMap<String, Object>();
         result.put("step", step);

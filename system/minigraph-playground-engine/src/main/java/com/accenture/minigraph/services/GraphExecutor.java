@@ -34,6 +34,7 @@ import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleNode;
+import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
@@ -269,6 +270,13 @@ public class GraphExecutor extends GraphLambdaFunction {
         var headers = hdr instanceof Map ? (Map<String, Object>) hdr : new HashMap<String, Object>();
         var response = new EventEnvelope().setTo(graphInstance.getReplyTo())
                 .setCorrelationId(graphInstance.getCorrelationId()).setSpanId(parentSpanId);
+        // a graph may stage its own HTTP status declaratively, e.g. 'int(404) -> output.status'
+        // in a rejection node - the surrounding flow's 'status -> output.status' mapping then
+        // carries it to the caller
+        var status = graphInstance.stateMachine.getElement(OUTPUT_NAMESPACE + STATUS);
+        if (status != null && util.isDigits(String.valueOf(status))) {
+            response.setStatus(util.str2int(String.valueOf(status)));
+        }
         for (Map.Entry<String, Object> kv : headers.entrySet()) {
             response.setHeader(kv.getKey(), kv.getValue());
         }
@@ -287,6 +295,14 @@ public class GraphExecutor extends GraphLambdaFunction {
                     .setReplyTo(GraphExecutor.ROUTE).setCorrelationId(compositeId).setSpanId(parentSpanId);
             if (from != null) {
                 event.setHeader(FROM, from);
+            }
+            // The walker is an event interceptor, so the business correlation-id is not
+            // auto-propagated by PostOffice - stamp it from the graph's own model.cid so
+            // every skill (and its downstream calls) sees the business id in its
+            // my_correlation_id and application log context.
+            if (graphInstance.stateMachine.getElement(MODEL_CID) instanceof String businessCid
+                    && !businessCid.isBlank()) {
+                event.addTag(EventEmitter.BUSINESS_CID_TAG, businessCid);
             }
             po.send(event);
         } else {

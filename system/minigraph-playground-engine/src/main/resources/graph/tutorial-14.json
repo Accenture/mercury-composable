@@ -6,7 +6,7 @@
         "Root"
       ],
       "properties": {
-        "purpose": "Approval workflow: submit a request, suspend at the human checkpoint, resume with the same correlation ID to complete",
+        "purpose": "Approval workflow: submit a request, suspend at the human checkpoint, resume with the same correlation ID to complete; a decision without a prior submission is rejected",
         "name": "tutorial-14"
       }
     },
@@ -18,7 +18,22 @@
       "properties": {
         "skill": "graph.resume",
         "task": "v1.redis.retrieve.model",
+        "missing": "check-fresh",
         "purpose": "Restore workflow state if this transaction was suspended earlier"
+      }
+    },
+    {
+      "alias": "check-fresh",
+      "types": [
+        "Decision"
+      ],
+      "properties": {
+        "skill": "graph.math",
+        "statement": [
+          "MAPPING: text(={input.body.decision}) -> model.decision_probe",
+          "IF: {model.decision_probe} == '=null'\nTHEN: record-request\nELSE: reject"
+        ],
+        "purpose": "Input validation: a fresh transaction must be a submission - a decision without a suspended record is rejected"
       }
     },
     {
@@ -64,6 +79,21 @@
       }
     },
     {
+      "alias": "reject",
+      "types": [
+        "mapper"
+      ],
+      "properties": {
+        "skill": "graph.data.mapper",
+        "mapping": [
+          "int(404) -> output.status",
+          "text(rejected) -> output.body.type",
+          "text(Transaction not found. Submit the request before sending a decision) -> output.body.message"
+        ],
+        "purpose": "Reject a decision that has no suspended transaction"
+      }
+    },
+    {
       "alias": "end",
       "types": [
         "End"
@@ -84,10 +114,30 @@
     },
     {
       "source": "resume",
+      "target": "check-fresh",
+      "relations": [
+        {
+          "type": "fresh",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "check-fresh",
       "target": "record-request",
       "relations": [
         {
-          "type": "then",
+          "type": "submission",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "check-fresh",
+      "target": "reject",
+      "relations": [
+        {
+          "type": "no-transaction",
           "properties": {}
         }
       ]
@@ -124,6 +174,16 @@
     },
     {
       "source": "approve",
+      "target": "end",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "reject",
       "target": "end",
       "relations": [
         {
