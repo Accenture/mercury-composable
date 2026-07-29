@@ -3299,10 +3299,12 @@ appender is unaffected.</p>
 function's route), and <code>$utc</code> (the log line's UTC timestamp). A token (or env value) that resolves to nothing is
 <strong>omitted</strong> from the block rather than printed as <code>null</code> — so a root span simply has no <code>parentSpanId</code> key.</p>
 <p><code>$cid</code> is the <strong>business correlation ID</strong> — the value received from the external source or created at the
-edge, the same one <code>PostOffice.getMyCorrelationId()</code> returns — whenever the delivered event carries one.
-Internal correlation IDs (routing metadata such as RPC inbox references or the graph engine's skill-callback
-IDs) appear only as a fallback when no business context exists, so log aggregation correlates on the ID your
-callers know.</p>
+edge, the same one <code>PostOffice.getMyCorrelationId()</code> returns. When the delivered event carries no business
+context, the key is simply <strong>omitted</strong>: internal correlation IDs (routing metadata such as RPC inbox
+references or the graph engine's skill-callback IDs) never appear under the <code>cid</code> label, so log aggregation
+always correlates on the ID your callers know — or on nothing, never on something misleading. Because every
+edge guarantees a business correlation ID (a fresh one is generated when the caller supplies none), <strong>a
+missing <code>cid</code> on a traced log line indicates a propagation defect worth fixing</strong>, not a normal condition.</p>
 <h3 id="log-context-custom">Adding your own key-values<a class="headerlink" href="#log-context-custom" title="Permanent link">&para;</a></h3>
 <p>Inside a function, add business context with <code>PostOffice.updateContext(key, value)</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kd">var</span><span class="w"> </span><span class="n">po</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">PostOffice</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">instance</span><span class="p">);</span>
