@@ -57,7 +57,7 @@ Start with the config files — they are the application's surface area:
 | `src/main/resources/rest.yaml` | Every HTTP endpoint: method, path, handler (route name or flow id) |
 | `src/main/resources/flows.yaml` | Every active flow file (by filename under `classpath:/flows/`) |
 | `src/main/resources/flows/*.yml` | Each flow's tasks, process names, and data mappings |
-| `src/main/resources/application.properties` | Port, `rest.automation`, `yaml.rest.automation`, `yaml.flows`, `location.graph.deployed` |
+| `src/main/resources/application.properties` | Port, `rest.automation`, `yaml.rest.automation`, `yaml.flows`, `graph.model.automation` |
 | `@PreLoad` (grep) | Every registered function: route name, concurrency (`instances`), class location |
 | `src/main/resources/graph/*.json` | Deployed Knowledge Graph definitions (present if Layer 3 is used) |
 
@@ -67,7 +67,7 @@ Start with the config files — they are the application's surface area:
 2. Read `flows.yaml` — know which flows are active and where they live.
 3. Read `rest.yaml` — trace each endpoint to its handler (function route or flow id).
 4. Open each flow YAML — understand the orchestration: task order, process names, data mapping.
-5. Check `application.properties` for `location.graph.deployed` — if present, read those JSON files for the Knowledge Graph.
+5. Check `application.properties` for `graph.model.automation` — if present, read the manifest (graph IDs + their `location`, default `classpath:/graph`) and those JSON files for the Knowledge Graph; only manifest-listed IDs are executable.
 
 ---
 

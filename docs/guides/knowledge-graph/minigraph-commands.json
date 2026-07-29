@@ -196,7 +196,8 @@
       "help": "help run.md",
       "syntax": "run",
       "notes": [
-        "traverse from root to end"
+        "traverse from root to end",
+        "pre-run quality check: the suspend/resume contract (the same whole-graph rules the CompileGraph deployment gate enforces) is validated before traversal - a violation reports 'Unable to run - <reason>' and aborts with the uniform terminal line"
       ],
       "example": "run"
     },
@@ -652,6 +653,6 @@
     "Dictionary/Provider config nodes are referenced by name and not traversed - but the required convention is NO NODE LEFT UNCONNECTED: wire them under a graph.island (root -[contains]-> island -[data]-> dictionary -[provider]-> provider), the graph's entity-relationship knowledge layer",
     "a node is executed once per run (a graph.math RESET statement is the only escape)",
     "instantiate graph must precede run/execute/inspect",
-    "a node with skill=graph.suspend must be named 'suspend' (reserved alias, jump-by-name; one per graph); a suspend=true node must draw its checkpoint edge to it and must not use graph.math/graph.js; 'suspend' is a reserved node property and model.run is an engine-managed state key"
+    "a node with skill=graph.suspend must be named 'suspend' (reserved alias, jump-by-name; one per graph) and needs an outgoing connection so the run completes after the checkpoint; a suspend=true node must draw its checkpoint edge to it, keep a continuation edge, and must not use graph.math/graph.js; 'suspend' is a reserved node property and model.run is an engine-managed state key"
   ]
 }

@@ -1,11 +1,11 @@
 ---
 title: Built-in skills reference
-summary: The eight graph.* skills that make graph nodes active — data mapping, math and
+summary: The ten graph.* skills that make graph nodes active — data mapping, math and
   JavaScript evaluation, API fetching, composable-function tasks, sub-graph/flow extension,
-  join, and island — with syntax, worked examples, and gotchas.
+  workflow suspend/resume, join, and island — with syntax, worked examples, and gotchas.
 layer: knowledge-graph
 audience: [developer, reference]
-keywords: [graph.data.mapper, graph.math, graph.js, graph.api.fetcher, graph.task, graph.extension, graph.join, graph.island, skill]
+keywords: [graph.data.mapper, graph.math, graph.js, graph.api.fetcher, graph.task, graph.extension, graph.suspend, graph.resume, graph.join, graph.island, skill]
 related:
   - guides/knowledge-graph/command-reference.md
   - guides/knowledge-graph/ai-agent-guide.md
@@ -16,7 +16,7 @@ related:
 
 > **At a glance**
 >
-> - **What** — the eight skills shipped with the engine. Attach one to a node (`skill=<route>`)
+> - **What** — the ten skills shipped with the engine. Attach one to a node (`skill=<route>`)
 >   to make it *active*: it runs when traversal reaches the node.
 > - **They share** — the `source -> target` mapping syntax with its
 >   [constant set](command-reference.md#constants), and the same state-machine
@@ -33,6 +33,8 @@ related:
 | [`graph.api.fetcher`](#api-fetcher) | call external HTTP APIs declaratively |
 | [`graph.task`](#task) | invoke a composable function through its route name |
 | [`graph.extension`](#extension) | delegate to a sub-graph or an Event Script flow |
+| [`graph.suspend`](#suspend) | persist workflow state at a human checkpoint and complete the run |
+| [`graph.resume`](#resume) | restore persisted state and continue past the checkpoint without re-executing it |
 | [`graph.join`](#join) | synchronize parallel paths |
 | [`graph.island`](#island) | link the knowledge layer (dictionaries, providers, data entities) — isolated from traversal |
 

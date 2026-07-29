@@ -26,32 +26,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * The graph.resume skill restores the workflow state persisted by graph.suspend and
+ * The 'graph.resume' skill restores the workflow state persisted by 'graph.suspend' and
  * continues traversal from the recorded suspension point without re-executing it. It is
  * a superset of graph.task: the "task" property names the pluggable store function
  * (headers type=get, body {cid}), but restoration is encapsulated by the skill - the
  * node needs no input/output data mapping.
  * <p>
- * Place the resume node early in the traversal (conventionally named "resume", right
+ * Place the 'resume' node early in the traversal (conventionally named "resume", right
  * after root, or after setup nodes). When the store has a record for the business
  * correlation ID (model.cid), the skill merges the persisted model key-values into the
- * state machine - the current run's reserved keys (model.cid/instance/flow/ttl/trace)
- * always win because graph.suspend never persists them - restores the traversal
- * bookkeeping so downstream join barriers still see pre-suspension branches, and jumps
- * past the suspension point.
+ * state machine. The current run's reserved keys (model.cid/instance/flow/ttl/trace)
+ * always win because 'graph.suspend' never persists them. The skill then restores the
+ * traversal bookkeeping so downstream join barriers still see pre-suspension branches,
+ * and jumps past the suspension point.
  * <p>
  * When there is no record - a fresh transaction (the normal first-run case) or an
- * expired one - traversal simply continues along the resume node's own forward path.
+ * expired one - traversal simply continues along the 'resume' node's own forward path.
  * <p>
  * Either way, the skill sets the engine-managed model key "model.run" to "fresh" or
- * "resume" so the graph's own logic (a graph.math gate, a response mapping) can make the
+ * "resume" so the graph's own logic (a 'graph.math' gate, a response mapping) can make the
  * application aware of the condition - e.g. advise the UI, or jump to a recovery node.
  * Distinguishing an expired record from a first-time transaction is application logic:
- * only the product owner knows which requests may start fresh, so validate on the resume
+ * only the product owner knows which requests may start fresh, so validate on the 'resume'
  * node's forward path (see the workflow-suspension guide).
  */
 @PreLoad(route = GraphResume.ROUTE, instances = 300)
@@ -91,7 +92,7 @@ public class GraphResume extends GraphStateSkill {
                     // no suspension record: a fresh transaction is the normal case -
                     // the run flag lets the graph's own logic react to the condition
                     stateMachine.setElement(MODEL_RUN, FRESH);
-                    log.info("No suspension record for cid {} - fresh start", cid);
+                    log.debug("No suspension record for cid {} - fresh start", cid);
                     sink.success(NEXT);
                 }
             }));
@@ -99,28 +100,32 @@ public class GraphResume extends GraphStateSkill {
 
     @SuppressWarnings("unchecked")
     private String restoreAndJump(GraphInstance graphInstance, SimpleNode node, String cid, Map<?, ?> received) {
-        var record = (Map<String, Object>) received;
+        var restored = (Map<String, Object>) received;
         var stateMachine = graphInstance.stateMachine;
-        var suspendedAt = record.get(NODE) instanceof String value && !value.isBlank()? value.trim() : null;
+        var suspendedAt = restored.get(NODE) instanceof String value && !value.isBlank()? value.trim() : null;
         if (suspendedAt == null) {
-            return recordFailure(stateMachine, node, 500, "Corrupted suspension record - missing 'node'");
+            return recordFailure(stateMachine, node, "Corrupted suspension record - missing 'node'");
         }
         if (graphInstance.graph.findNodeByAlias(suspendedAt) == null) {
-            return recordFailure(stateMachine, node, 500, "Suspension record refers to unknown node '" +
+            return recordFailure(stateMachine, node, "Suspension record refers to unknown node '" +
                     suspendedAt + "' - the graph model may have changed");
         }
-        if (record.get(MODEL) instanceof Map<?, ?> persisted &&
+        if (restored.get(MODEL) instanceof Map<?, ?> persisted &&
                 stateMachine.getElement(MODEL) instanceof Map<?, ?> current) {
-            // persisted keys are authoritative for the workflow; the current run's
-            // reserved keys survive because graph.suspend never persists them
-            ((Map<String, Object>) current).putAll((Map<String, Object>) persisted);
+            // persisted keys are authoritative for the workflow, but never the per-run
+            // reserved keys: graph.suspend does not persist them, and the store is
+            // pluggable - a record from a foreign writer or an older build must not
+            // override the current run's identity (model.cid is a capability)
+            var incoming = new HashMap<>((Map<String, Object>) persisted);
+            NON_PERSISTED_MODEL_KEYS.forEach(incoming::remove);
+            ((Map<String, Object>) current).putAll(incoming);
         }
         // set AFTER the merge so a record written by an older build can never
         // resurrect a stale run flag
         stateMachine.setElement(MODEL_RUN, RESUMED);
-        restoreMarks(record.get(SEEN), graphInstance.nodeSeen);
-        restoreMarks(record.get(RUN), graphInstance.skillRun);
-        log.info("Resume at '{}' for cid {}", suspendedAt, cid);
+        restoreMarks(restored.get(SEEN), graphInstance.nodeSeen);
+        restoreMarks(restored.get(RUN), graphInstance.skillRun);
+        log.debug("Resume at '{}' for cid {}", suspendedAt, cid);
         return RESUME_PREFIX + suspendedAt;
     }
 

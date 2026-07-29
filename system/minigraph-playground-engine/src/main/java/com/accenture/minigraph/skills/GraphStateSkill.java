@@ -26,15 +26,24 @@ import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.MultiLevelMap;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
- * Common plumbing for the graph.suspend and graph.resume skills.
+ * Common plumbing for the 'graph.suspend' and 'graph.resume' skills.
  * <p>
  * Both skills are a superset of graph.task: they invoke an attached composable function
  * (the "task" property - the pluggable state-store function) but encapsulate the
  * request/response mapping entirely, so the node needs no input/output data mapping.
  */
 abstract class GraphStateSkill extends GraphLambdaFunction {
+    private static final int INTERNAL_SERVER_ERROR = 500;
+    // per-run engine metadata never crosses a suspension in either direction: graph.suspend
+    // excludes these keys from the persistence envelope and graph.resume strips them from a
+    // restored record - the resumed run's own values are authoritative ('run' is the
+    // fresh/resume flag set by graph.resume; embalming it would let a later resume read a
+    // stale condition, and the store is pluggable so a record is external input)
+    protected static final Set<String> NON_PERSISTED_MODEL_KEYS =
+            Set.of("cid", "instance", "flow", "ttl", "trace", "parent", "root", "none", "run");
 
     protected record SkillContext(PostOffice po, GraphInstance graphInstance, SimpleNode node, String route) {}
 
@@ -89,10 +98,12 @@ abstract class GraphStateSkill extends GraphLambdaFunction {
         }
     }
 
-    protected String recordFailure(MultiLevelMap stateMachine, SimpleNode node, int status, String message) {
+    protected String recordFailure(MultiLevelMap stateMachine, SimpleNode node, String message) {
         // an invalid or corrupted store record fails the node so the walker's error
-        // handling (or the node's exception handler) takes over
-        stateMachine.setElement(node.getAlias() + "." + STATUS, status);
-        return setError(stateMachine, node, new EventEnvelope().setStatus(status).setBody(message));
+        // handling (or the node's exception handler) takes over - always an
+        // internal server error because the record is engine-managed state
+        stateMachine.setElement(node.getAlias() + "." + STATUS, INTERNAL_SERVER_ERROR);
+        return setError(stateMachine, node,
+                new EventEnvelope().setStatus(INTERNAL_SERVER_ERROR).setBody(message));
     }
 }

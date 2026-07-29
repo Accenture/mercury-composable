@@ -176,6 +176,41 @@ class CompanionSyncTest {
     }
 
     /**
+     * The playground's "run" command reuses the deployment gate's whole-graph rules
+     * just before dispatching the traveler: draft authoring allows partial models,
+     * but a runnable graph must honor the suspend/resume contract - here a suspend
+     * node without a ttl is rejected pre-run with the same message CompileGraph
+     * would log at deployment time, and the uniform terminal line keeps the sync
+     * drain deterministic.
+     */
+    @Test
+    void preRunCheckRejectsBrokenSuspendContract() throws Exception {
+        var po = EventEmitter.getInstance();
+        var inRoute = "ws.990011.3.in";
+        var sid = "ws-990011-3";
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", inRoute)));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        syncCommand(po, sid, "create node root\nwith type Root");
+        syncCommand(po, sid, "create node end\nwith type End");
+        syncCommand(po, sid,
+                "create node suspend\nwith type Suspend\nwith properties\nskill=graph.suspend\ntask=v1.file.state.store");
+        syncCommand(po, sid, "connect root to suspend with then");
+        syncCommand(po, sid, "connect suspend to end with then");
+        var instantiated = syncCommand(po, sid, "instantiate graph");
+        assertEquals(Boolean.TRUE, instantiated.get("ok"), "instantiate must succeed: " + instantiated);
+        var run = syncCommand(po, sid, "run");
+        assertEquals(Boolean.FALSE, run.get("ok"), "run must be rejected pre-run: " + run);
+        var output = ((List<?>) run.get("output")).stream().map(String::valueOf).toList();
+        assertTrue(output.stream().anyMatch(l -> l.contains("Unable to run - node suspend does not have a 'ttl'")),
+                "the gate's rule message must reach the author: " + output);
+        assertTrue(output.stream().anyMatch("Graph traversal aborted"::equals),
+                "pre-run rejection must still emit the uniform terminal: " + output);
+    }
+
+    /**
      * A companion is an <b>assistant to</b> a session, not a WebSocket session of its own —
      * so both companion endpoints limit the {@code session} command to the read-only status
      * query: the topology subcommands (subscribe/unsubscribe/reset) are rejected before

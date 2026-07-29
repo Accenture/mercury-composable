@@ -55,7 +55,9 @@ ttl=2d
 
 `ttl` is **mandatory with no default** — a checkpoint may wait a minute or days, and only
 the workflow designer knows. It uses duration syntax (`20s`, `5m`, `2h`, `2d`) and becomes
-the store record's expiry.
+the store record's expiry. The `suspend` node also needs an **outgoing connection**
+(normally to `end`): without one, the record would persist and the run would then stall
+instead of completing — the compiler rejects the graph.
 
 **2. A suspensible node** — any skilled node marked `suspend=true`. After its skill
 completes and its output mapping runs, traversal routes to the `suspend` node instead of

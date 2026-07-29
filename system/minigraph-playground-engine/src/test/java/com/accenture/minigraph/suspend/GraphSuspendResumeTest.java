@@ -19,6 +19,7 @@
 package com.accenture.minigraph.suspend;
 
 import com.accenture.minigraph.mock.CountingStepTask;
+import com.accenture.minigraph.skills.GraphSuspend;
 import com.accenture.minigraph.start.PlaygroundLoader;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -174,38 +176,68 @@ class GraphSuspendResumeTest {
         log.info("ttl expiry fallback verified for cid {}", cid);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
-    void suspendSkillRequiresTheReservedAlias() throws TimeoutException {
-        var response = runGraph("unit-test-suspend-err1", Utility.getInstance().getUuid());
-        assertNotEquals(200, response.getStatus());
-        assertTrue(String.valueOf(response.getBody()).contains("must be named 'suspend'"),
-                "unexpected error response: " + response.getBody());
+    void restoredRecordCannotOverrideReservedModelKeys() throws TimeoutException, IOException {
+        var cid = Utility.getInstance().getUuid();
+        var first = runGraph("unit-test-suspend-1", cid);
+        assertEquals(200, first.getStatus());
+        // forge the persisted record: the store is pluggable, so a record is external
+        // input - inject reserved keys into its model as a hostile writer would
+        var file = storedFile(cid);
+        var msgPack = new MsgPack();
+        var wrapper = (Map<String, Object>) msgPack.unpack(Files.readAllBytes(file.toPath()));
+        var forged = new MultiLevelMap(wrapper);
+        forged.setElement("data.model.cid", "forged-cid");
+        forged.setElement("data.model.instance", "forged-instance");
+        forged.setElement("data.model.run", "resume");
+        Files.write(file.toPath(), msgPack.pack(forged.getMap()));
+        // resume with the real correlation ID: the workflow continues, but none of the
+        // forged reserved keys may reach the state machine - model.cid is a capability
+        var second = runGraph("unit-test-suspend-1", cid);
+        assertEquals(200, second.getStatus());
+        var completed = new MultiLevelMap((Map<String, Object>) second.getBody());
+        assertEquals("two", completed.getElement("step"));
+        assertEquals(cid, CountingStepTask.getBusinessCid("two", cid),
+                "the current run's model.cid must survive a forged record");
+        log.info("reserved-key strip on restore verified for cid {}", cid);
     }
 
     @Test
-    void routingSkillCannotBeSuspensible() throws TimeoutException {
-        var response = runGraph("unit-test-suspend-err2", Utility.getInstance().getUuid());
-        assertNotEquals(200, response.getStatus());
-        assertTrue(String.valueOf(response.getBody()).contains("cannot use 'suspend=true'"),
-                "unexpected error response: " + response.getBody());
+    void rejectedDeployedGraphIsNotExecutable() throws TimeoutException {
+        // every suspend-err graph failed the CompileGraph quality gate, so a request
+        // answers 404 as if the model does not exist - deployed execution is served
+        // exclusively from the compiled registry (CompileFlows parity). Notably err6
+        // (suspend node without an outgoing connection) would otherwise persist the
+        // record and stall the run until the HTTP timeout; the runtime guards remain
+        // the enforcement floor for the playground dry-run surface only.
+        for (var id : List.of("unit-test-suspend-err1", "unit-test-suspend-err2", "unit-test-suspend-err3",
+                              "unit-test-suspend-err4", "unit-test-suspend-err5", "unit-test-suspend-err6",
+                              "unit-test-suspend-err7", "unit-test-no-end")) {
+            var response = runGraph(id, Utility.getInstance().getUuid());
+            assertEquals(404, response.getStatus(), id + " must be rejected as not found");
+            assertTrue(String.valueOf(response.getBody()).contains("not found"),
+                    "unexpected error response: " + response.getBody());
+        }
     }
 
     @Test
-    void ttlIsMandatoryWithNoDefault() throws TimeoutException {
+    void ttlIsMandatoryAndOverflowIsRejected() {
         // only the workflow designer knows whether a checkpoint waits a minute or days -
-        // a default expiry would silently discard someone's workflow
-        var response = runGraph("unit-test-suspend-err4", Utility.getInstance().getUuid());
-        assertNotEquals(200, response.getStatus());
-        assertTrue(String.valueOf(response.getBody()).contains("does not have a 'ttl'"),
-                "unexpected error response: " + response.getBody());
-    }
-
-    @Test
-    void suspensibleNodeRequiresSuspendNode() throws TimeoutException {
-        var response = runGraph("unit-test-suspend-err3", Utility.getInstance().getUuid());
-        assertNotEquals(200, response.getStatus());
-        assertTrue(String.valueOf(response.getBody()).contains("has no 'suspend' node"),
-                "unexpected error response: " + response.getBody());
+        // a default expiry would silently discard someone's workflow; and the int
+        // computation in Utility.getDurationInSeconds wraps for absurd values, so the
+        // shared long-math parser must reject them instead of silently expiring early
+        assertThrows(IllegalArgumentException.class,
+                () -> GraphSuspend.getValidTtlSeconds(null, "suspend"));
+        assertThrows(IllegalArgumentException.class,
+                () -> GraphSuspend.getValidTtlSeconds("  ", "suspend"));
+        assertThrows(IllegalArgumentException.class,
+                () -> GraphSuspend.getValidTtlSeconds("25000000d", "suspend"));
+        assertThrows(IllegalArgumentException.class,
+                () -> GraphSuspend.getValidTtlSeconds("0s", "suspend"));
+        assertEquals(172800, GraphSuspend.getValidTtlSeconds("2d", "suspend"));
+        assertEquals(300, GraphSuspend.getValidTtlSeconds("5m", "suspend"));
+        assertEquals(20, GraphSuspend.getValidTtlSeconds("20", "suspend"));
     }
 
     @Test

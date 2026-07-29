@@ -87,9 +87,8 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String QUERY_NAMESPACE = "query.";
     protected static final String PATH_PARAMETER = "path_parameter";
     protected static final String PATH_PARAMETER_NAMESPACE = "path_parameter.";
-    protected static final String INPUT_BODY_NAMESPACE = "input.body";
+    protected static final String INPUT_BODY = "input.body";
     protected static final String INPUT_HEADER_NAMESPACE = "input.header";
-    protected static final String OUTPUT_BODY_NAMESPACE = "output.body";
     protected static final String OUTPUT_HEADER_NAMESPACE = "output.header";
     protected static final String MODEL = "model";
     protected static final String MODEL_NAMESPACE = "model.";
@@ -136,7 +135,6 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String HEADER = "header";
     protected static final String ERROR = "error";
     protected static final String EXCEPTION = "exception";
-    protected static final String CONTINUE = "continue";
     protected static final String INSTANTIATE = "instantiate";
     protected static final String DELETE = "delete";
     protected static final String START = "start";
@@ -666,12 +664,10 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
 
     protected String getNext(MiniGraph graph, String statement) {
         if (!NEXT.equalsIgnoreCase(statement)) {
-            var nextNode = getNode(statement, graph);
-            if (nextNode == null) {
-                throw new IllegalArgumentException(NODE_NAME + statement + NOT_FOUND);
-            } else {
-                return statement;
-            }
+            // getNode throws when the alias does not exist - existence check
+            // and error message are owned there
+            getNode(statement, graph);
+            return statement;
         }
         return null;
     }

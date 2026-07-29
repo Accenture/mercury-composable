@@ -12,3 +12,5 @@ graphs:
   - 'tutorial-11'
   - 'tutorial-12'
   - 'tutorial-14'
+
+location: 'classpath:/graph'

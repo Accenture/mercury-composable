@@ -102,7 +102,7 @@ for downstream nodes.
 
 ## Built-in skills {#built-in-skills}
 
-Eight skills ship with the engine. Each is a composable function on a `graph.*` route:
+Ten skills ship with the engine. Each is a composable function on a `graph.*` route:
 
 | Skill (route) | What it does |
 |---|---|
@@ -112,6 +112,8 @@ Eight skills ship with the engine. Each is a composable function on a `graph.*` 
 | `graph.api.fetcher` | Call external HTTP APIs using data-dictionary/provider nodes, with caching and fork-join concurrency |
 | `graph.extension` | Run another graph model **or** an Event Script flow as a sub-routine |
 | `graph.task` | Invoke a composable function through its route name — plug custom logic into the graph |
+| `graph.suspend` | Persist workflow state to a pluggable external store at a human checkpoint — the run completes and resumes later |
+| `graph.resume` | Restore persisted state by business correlation ID and continue past the checkpoint without re-executing it |
 | `graph.join` | Synchronization barrier — proceeds only once all upstream paths complete |
 | `graph.island` | Mark an isolated sub-graph (pauses traversal); useful while building |
 
