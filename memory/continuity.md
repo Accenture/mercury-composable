@@ -16,8 +16,8 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-29 | agent: Claude Code (2026-07-29-010343)
-- **last_review:** 2026-07-27 | through 2026-07-27-214357.md
+- **last_session:** 2026-07-29 | agent: GitHub Copilot (2026-07-29-145051)
+- **last_review:** 2026-07-29 | through 2026-07-29-145051.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -61,6 +61,17 @@
   <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-27 | uses: 4 | tier: core -->
 
 ## Key Decisions
+
+- **MiniGraph UI PR stack normalized on `feature/ui-merges` (2026-07-29).** The three
+  long-open fork PRs were stacked on stale snapshots, so they were integrated as ordered,
+  independently validated feature commits instead of merged wholesale: #108 multi-select
+  (`60d76474`) → #116 sorting-only delta (`f156908c`) → #121 session collaboration
+  (`963f7fde`). The session controller now treats backend status as authoritative: silently
+  sends `session` on connected mount and after reset, clears the old `startedSince` before
+  refresh, and uses a backlog watermark instead of sorting/replaying all retained messages.
+  Hook lifecycle tests use Testing Library + Happy DOM; the checked-in runtime bundle was
+  rebuilt. Validation: webapp 163/163; MiniGraph 86/86 in a green three-module reactor.
+  <!-- id: minigraph-ui-pr-integration | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-145051 -->
 
 - **Release 4.8.3 — SHIPPED 2026-07-13 (tag `v4.8.3` on merge commit `6696a76f`; PRs #168-#175).**
   Security patch + hardening release, validated by the field pipeline (Snyk + Sonar PASSED) BEFORE
@@ -318,6 +329,11 @@
   <!-- id: bp-graph-workflow-suspension | created: 2026-07-28 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-003528 -->
 
 ## Open Threads
+
+- [ ] Review and land `feature/ui-merges`; after merge, close superseded PRs #108, #116,
+  and #121 with links to the ordered integration commits. Confirm the Session menu manually
+  across route navigation and reset before landing.
+  <!-- id: thread-land-ui-pr-integration | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-145051 -->
 
 - [ ] (feature — **P1-P4 MERGED 2026-07-28 as
   [PR #238](https://github.com/Accenture/mercury-composable/pull/238), squash `168527ff`;
@@ -737,15 +753,6 @@
   green + Eric's manual HTTP-404 regression). Close when the field rescan passes. Durable
   lesson recorded: extract-as-you-go when touching methods near the S3776/S5961 thresholds.
   <!-- id: thread-sonar-4-9-1-field-rejection | created: 2026-07-21 | last_used: 2026-07-27 | uses: 4 | tier: active | origin: 2026-07-21-173614 -->
-
-- [x] (release in flight — 2026-07-21; CLOSED same day) **v4.9.1 SHIPPED via the normal flow** —
-  tag `v4.9.1` on merge commit `26a132f9` (PR #208, CI green + local full reactor 942 tests),
-  release text delivered, release published. Patch release: #206 describe-graph trailing-bracket
-  fix + #207 docs overhaul (Material theme, mermaid, per-entry reference pages). Follow-on same
-  day: dependabot HIGH alert #29 (js-yaml 4.2.0, dev-only transitive in the playground webapp
-  lockfile) remediated via PR #209 (`902da23f`, lockfile-only bump to 4.3.0) — landed one commit
-  after the release tag; no artifact impact.
-  <!-- id: thread-release-4-9-1 | created: 2026-07-21 | last_used: 2026-07-21 | uses: 2 | tier: archive-candidate | origin: 2026-07-21-012842 -->
 
 
 
