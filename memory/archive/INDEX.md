@@ -79,3 +79,5 @@
 - test-config-injection-exact-key — Test config injection: use the EXACT config key as a System property, never a `${VAR}` ref… — faded — 2026-Q3.md
 - thread-release-4-8-6 — (release in flight — 2026-07-14; CLOSED same day) v4.8.6 SHIPPED via the normal flow — — faded — 2026-Q3.md
 - thread-release-4-8-5 — (release in flight — 2026-07-14; CLOSED same day) v4.8.5 SHIPPED via the normal flow — — faded — 2026-Q3.md
+- thread-release-4-8-4-tag-deferred — (release in flight — 2026-07-13; CLOSED same day) v4.8.4 SHIPPED via the normal flow — — faded — 2026-Q3.md
+- docs-site-material-theme — Docs site: Material for MkDocs (switched from readthedocs 2026-07-20, mirroring the Rust — faded — 2026-Q3.md

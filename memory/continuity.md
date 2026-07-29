@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-28 | agent: Claude Code (2026-07-28-005814)
+- **last_session:** 2026-07-29 | agent: Claude Code (2026-07-29-003528)
 - **last_review:** 2026-07-27 | through 2026-07-27-214357.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -41,15 +41,6 @@
   <!-- id: stack-messaging-kafka | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - CI: GitHub Actions (`.github/workflows/`)
   <!-- id: stack-ci-gha | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
-- Docs site: **Material for MkDocs** (switched from readthedocs 2026-07-20, mirroring the Rust
-  port's mkdocs.yml). Mermaid renders natively via the `pymdownx.superfences` custom fence — all
-  diagrams are mermaid blocks in the markdown (the scanned PNGs in `docs/guides/diagrams/` were
-  removed). Reference pages (configuration, flow-schema, annotations, event-envelope) present
-  keys/fields/methods as per-entry sections (heading + Type/Default mini-table + prose), not wide
-  tables — same pattern as the Rust port, so the two sites stay structurally aligned. CI installs
-  `mkdocs-material` in `.github/workflows/docs.yml`.
-  <!-- id: docs-site-material-theme | created: 2026-07-20 | last_used: 2026-07-21 | uses: 2 | tier: archive-candidate | origin: 2026-07-20-222709 -->
-
 ## Architectural Invariants
 
 > Hard constraints that must never change. These never decay (`core`).
@@ -87,7 +78,7 @@
   **Durable lessons:** field screenshots' naming conventions are client-identifiable — paraphrase
   generically in fixtures/commits/PRs; a flow needs ≥1 `end` task (a `sink` only terminates a side
   branch). See [[release-4-8-2-shipped]] for the prior cycle.
-  <!-- id: release-4-8-3-shipped | created: 2026-07-13 | last_used: 2026-07-24 | uses: 10 | tier: active | origin: 2026-07-13-170933 -->
+  <!-- id: release-4-8-3-shipped | created: 2026-07-13 | last_used: 2026-07-24 | uses: 10 | tier: archive-candidate | origin: 2026-07-13-170933 -->
 
 - **Field trace-propagation report on 4.6.3 diagnosed (2026-07-13): not a framework bug.** A field team
   saw the traceId stop propagating between application endpoints after upgrading 4.4.11 → 4.6.3. Root
@@ -104,7 +95,7 @@
   hops) + new regression test `traceContinuesAcrossApplicationToApplicationHttpCall`
   (branch `test/trace-continuity-http-hop`, `DownstreamCaller` fixture + `/api/chain/probe`) proving
   traced app-to-app HTTP continuity over the real HTTP stack — a previously untested contract.
-  <!-- id: field-trace-propagation-4-6-3-diagnosis | created: 2026-07-13 | last_used: 2026-07-24 | uses: 5 | tier: active | origin: 2026-07-13-142021 -->
+  <!-- id: field-trace-propagation-4-6-3-diagnosis | created: 2026-07-13 | last_used: 2026-07-24 | uses: 5 | tier: archive-candidate | origin: 2026-07-13-142021 -->
 
 - **Release 4.8.2 — SHIPPED 2026-07-12 (tag `v4.8.2` on merge commit `6c024311`; PRs #164-#166).**
   Patch release: twin-kafka-demo correlation-id impedance matching + opt-in template
@@ -128,7 +119,7 @@
   version is a substring of a dependency version (classgraph 4.8.184 contains "4.8.1"), the perl
   sweep needs a digit lookahead `(?!\d)` — not every bump is naturally safe.
   See [[release-4-8-1-shipped]] for the prior cycle's facts.
-  <!-- id: release-4-8-2-shipped | created: 2026-07-12 | last_used: 2026-07-24 | uses: 5 | tier: active | origin: 2026-07-13-014037 -->
+  <!-- id: release-4-8-2-shipped | created: 2026-07-12 | last_used: 2026-07-24 | uses: 5 | tier: archive-candidate | origin: 2026-07-13-014037 -->
 
 - **Release 4.8.1 — SHIPPED 2026-07-11 (tag `v4.8.1` on merge commit `3d226c5b`; PRs #159-#161).**
   Maintenance release: dependency security updates (Jackson 2.22.1 closed dependabot/28; log4j2/
@@ -178,7 +169,7 @@
   from `model.cid` (engine-seeded), never from the raw record header; CompileFlows rejects data
   mappings that overwrite reserved model keys (cid/instance/flow/ttl). See [[release-4-7-0-shipped]]
   for the release-bump surface and prior caveats.
-  <!-- id: release-4-8-0-shipped | created: 2026-07-10 | last_used: 2026-07-24 | uses: 8 | tier: active | origin: 2026-07-11-031930 -->
+  <!-- id: release-4-8-0-shipped | created: 2026-07-10 | last_used: 2026-07-24 | uses: 8 | tier: archive-candidate | origin: 2026-07-11-031930 -->
 
 - **ManagedCache eviction: Java accepts + documents non-determinism; Rust is strict LRU —
   a deliberate cross-engine asymmetry (Eric, 2026-07-27).** Java's `ManagedCache` keeps
@@ -269,7 +260,7 @@
   golden vectors shared verbatim (registration-vectors/{core,plugin,feature}.json) — the
   wire-format golden-vector method applied to the declaration surface. New ports pass the
   three vector suites before their declaration surface is done.
-  <!-- id: registration-metadata-contract | created: 2026-07-26 | last_used: 2026-07-27 | uses: 2 | tier: active | origin: 2026-07-25-235904 -->
+  <!-- id: registration-metadata-contract | created: 2026-07-26 | last_used: 2026-07-29 | uses: 3 | tier: active | origin: 2026-07-25-235904 -->
 
 - **Telemetry/log presentation parity across language engines is a field requirement (Eric,
   2026-07-23).** Rationale: even after the Rust engine is accepted into the field, installations
@@ -286,7 +277,7 @@
   lock-step on both engines (with closely matching error messages — presentation parity extends
   to error text), or flows stop being portable. Precedent: the #220 collection plugins mirrored
   into the Rust v4.10.2.
-  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-07-28 | uses: 7 | tier: active | origin: 2026-07-23-145132 -->
+  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-07-29 | uses: 8 | tier: active | origin: 2026-07-23-145132 -->
 
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
@@ -303,6 +294,31 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [ ] (feature — design RATIFIED 2026-07-28; implementation pending Eric's go) **Graph
+  suspend/resume: workflow suspension for the Active Knowledge Graph.** A graph run
+  persists model + suspension node at a human checkpoint via `skill=graph.suspend`
+  (reserved ALIAS `suspend` — the root/end special-alias pattern, jump-by-name routing;
+  one per graph; alias⇔skill enforced; drawn edge required), completes as a short run
+  (default response `{"type":"suspended","cid":…}`), and resumes via `skill=graph.resume`
+  (same business cid; restores model + nodeSeen/skillRun, new `resume:<alias>` directive
+  jumps WITHOUT re-executing; not-found = normal first run → next; optional
+  `missing=<alias>`). Suspensibility of a skilled node = reserved property `suspend=true`
+  (types Suspend/Resume/Suspensible are visual convention — skill defines behavior).
+  Store contract: put {cid,node,ttl,model,seen,run} / get {cid}, synchronous ack,
+  consume-on-retrieve (Redis GETDEL); ttl = getDurationInSeconds format. Redis module =
+  imported by the playground example app, NEVER the engine (both repos); engine tests use
+  a temp-file mock store at /tmp/suspend-resume. Constraints (documented): suspension
+  point must be the sole active branch (no suspend between fan-out and join);
+  `<node>.result` scratch does not survive — model is the workflow's durable memory;
+  cid = resume capability (auth on resume endpoints); cid does not cross graph.extension.
+  Full plan (file:line anchors, 5-phase):
+  draft-design-specs/graph-suspend-resume-implementation-plan.md (gitignored). Phases:
+  P1 engine core → P2 CompileGraph/Playground → P3 extensions/minigraph-state-redis +
+  contract page → P4 tutorial + e2e + docs + ADR proposal → P5 Rust lock-step arc
+  (supersedes its "session persistence out-of-scope" line). Blueprint thread + ADR
+  proposed, human-gated, NOT yet ratified. → would serve `vision-mercury-composable`
+  <!-- id: thread-graph-suspend-resume | created: 2026-07-28 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-003528 -->
 
 - [x] (feature in flight — 2026-07-26; CLOSED 2026-07-26 — BOTH PRs MERGED same day:
   Java [PR #236](https://github.com/Accenture/mercury-composable/pull/236) squash
@@ -696,13 +712,6 @@
   <!-- id: thread-release-4-9-1 | created: 2026-07-21 | last_used: 2026-07-21 | uses: 2 | tier: archive-candidate | origin: 2026-07-21-012842 -->
 
 
-- [x] (release in flight — 2026-07-13; CLOSED same day) **v4.8.4 SHIPPED via the normal flow** —
-  tag `v4.8.4` on merge commit `b1265f18` (PR #177), release text delivered. Carries PR #176
-  (secondary.kafka.health, 5 health-check workers, Minimalist Kafka guide rename). Eric's ruling
-  retained for the record: the 4.8.3 deferred-tag flow was SPECIFIC to the Snyk rejection; normal
-  releases tag immediately on merge.
-  <!-- id: thread-release-4-8-4-tag-deferred | created: 2026-07-13 | last_used: 2026-07-21 | uses: 3 | tier: archive-candidate | origin: 2026-07-13-230916 -->
-
 
 - [ ] (field support — 2026-07-13; ROOT CAUSE FOUND via Eric's devops screen share) **Trace-propagation
   report: the internal API gateway strips `traceparent` AND `X-Trace-Id` (neither on its allow-list);
@@ -827,7 +836,7 @@
   checks?), and should it reuse or diverge from `event-script-engine`'s own `validInput`/`validOutput`
   validation (already confirmed to diverge in places — minigraph's per-skill namespace rules, e.g. fetcher
   input/output/dictionary, don't match event-script's).
-  <!-- id: thread-compilegraph-syntax-validation | created: 2026-07-02 | last_used: 2026-07-22 | uses: 2 | tier: working | origin: 2026-07-02-004606 -->
+  <!-- id: thread-compilegraph-syntax-validation | created: 2026-07-02 | last_used: 2026-07-29 | uses: 3 | tier: working | origin: 2026-07-02-004606 -->
 
 - [ ] (planned — backlog, no ETA, no CVE driver) **Upgrade `kafka.version` (4.2.0 → 4.3.x) across the 24
   pom.xml files that pin it.** Deliberately deferred alongside the `confluent.version` 8.2.0→8.3.0 bump — see
