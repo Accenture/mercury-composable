@@ -159,10 +159,9 @@ nav:
     - Interop Test Report — Suspend/Resume: test-reports/suspend-resume-interop.md
     - Reserved Names & Headers: guides/reserved-names-and-headers.md
     - Actuators & HTTP Client: guides/actuators-and-http-client.md
+    - Code Conventions: guides/code-conventions.md
+    - Documentation Conventions: guides/documentation-conventions.md
     - Release Notes: https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md
-
-  - Code Conventions: guides/code-conventions.md
-  - Documentation Conventions: guides/documentation-conventions.md
   - Contributing: https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md
   - Code of Conduct: https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md
   - Inclusivity: https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md
