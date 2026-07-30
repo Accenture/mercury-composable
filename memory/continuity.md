@@ -350,7 +350,12 @@
 - [ ] (blueprint) **Enterprise governance lifecycle** for graph models (dry-run → certify → stage →
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
-- [ ] (blueprint — RATIFIED by Eric 2026-07-28) **Workflow suspension for the Active Knowledge
+- [x] (blueprint — RATIFIED by Eric 2026-07-28; **CLOSED by Eric's gate 2026-07-30** —
+  realized on BOTH engines and published in v4.11.0: first-class vocabulary
+  (graph.suspend/graph.resume, reserved alias, suspend=true, model.run), pluggable
+  stores with the shipped Redis module, the mandatory CompileGraph gate it prompted
+  (ADR-0011), validated across a mixed Java/Rust fleet, and per Eric CORE functionality
+  for a few field installations) **Workflow suspension for the Active Knowledge
   Graph** — human-in-the-loop checkpoints (approval, intervention, inbox notification) as
   first-class graph vocabulary: suspend/resume via pluggable external state stores, so a graph
   model expresses a long-running business process as a sequence of short runs. Realized by
