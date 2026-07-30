@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-29 | agent: Claude Code (2026-07-29-190328)
+- **last_session:** 2026-07-30 | agent: Claude Code (2026-07-30-030533)
 - **last_review:** 2026-07-27 | through 2026-07-27-214357.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -329,6 +329,14 @@
   into the Rust v4.10.2.
   <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-07-29 | uses: 8 | tier: active | origin: 2026-07-23-145132 -->
 
+- **The `helpers/` standalone servers exist for Docker-less developer machines and are
+  the standard local test servers for Rust ports (Eric, 2026-07-29).** They embed REAL
+  redis/kafka servers as plain `java -jar` apps because many field developers work on
+  Windows — especially VDI environments with no virtualization system, where Docker/
+  Testcontainers are unavailable. Usage convention: redis-standalone serves the Rust
+  minigraph-playground (suspend/resume live drives); kafka-standalone + the
+  schema-registry mock will serve the future minimalist-kafka Rust port.
+  <!-- id: conv-helpers-docker-less | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-190328 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -351,7 +359,15 @@
 
 ## Open Threads
 
-- [ ] (feature — **P1-P4 MERGED 2026-07-28 as
+- [x] (feature — COMPLETE: **P5 Rust lock-step arc MERGED 2026-07-30 as mercury PR #186**
+  (five commits `304fc5a0`→`9326cf55`; 296 tests/clippy 0; Rust ADR twins accepted via the
+  merge; Java-side 5-lens consistency review confirmed 22 findings incl. 4 blockers — the
+  composite-path forged-record bypass, the missing instantiate auto-cid edge, the walker
+  seen-marking race, RESERVED_PARAMETERS missing 'suspend' — all fixed; live drive vs the
+  real redis-standalone helper matched the Java reply contract byte-for-byte with correct
+  cid/span presentation. Reciprocal Java pin: branch `test/pin-restore-putall-immunity`
+  commit `198869b3`, awaiting Eric's PR-or-release-prep call. Both engines now carry the
+  IDENTICAL suspend/resume surface — the whole P1-P5 arc is done.) **P1-P4 MERGED 2026-07-28 as
   [PR #238](https://github.com/Accenture/mercury-composable/pull/238), squash `168527ff`;
   ADR-0010 thereby ACCEPTED (the merge was the ledger gate). Eric drove three manual-test
   refinement rounds before merging: business-cid fidelity (walkers stamp the my_cid tag
