@@ -77,8 +77,11 @@ abstract class GraphStateSkill extends GraphLambdaFunction {
     }
 
     protected String getRequiredCorrelationId(GraphInstance graphInstance, String nodeName) {
+        // trim: a business correlation ID (e.g. an order number) may be entered by an
+        // operator in a web UI - padding would otherwise split the store key space;
+        // both engines trim identically so the mixed-fleet key stays one key
         if (graphInstance.stateMachine.getElement(MODEL_CID) instanceof String value && !value.isBlank()) {
-            return value;
+            return value.trim();
         }
         throw new IllegalArgumentException(NODE_NAME + nodeName + " requires model.cid - " +
                 "supply a business correlation ID (e.g. X-Correlation-Id header) or set model.cid");
