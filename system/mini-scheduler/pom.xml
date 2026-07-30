@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>mini-scheduler</artifactId>
     <packaging>jar</packaging>
-    <version>4.10.6</version>
+    <version>4.11.0</version>
     <name>Minimalist Scheduler</name>
 
     <parent>
@@ -50,7 +50,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>event-script-engine</artifactId>
-            <version>4.10.6</version>
+            <version>4.11.0</version>
         </dependency>
 
         <dependency>
@@ -139,9 +139,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.3</version>
-                <configuration>
-                    <skipTests>false</skipTests>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>

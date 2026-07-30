@@ -6,7 +6,7 @@
     <groupId>com.accenture</groupId>
     <artifactId>api-playground</artifactId>
     <packaging>jar</packaging>
-    <version>4.10.6</version>
+    <version>4.11.0</version>
     <name>API playground using OpenAPI</name>
 
     <parent>
@@ -50,7 +50,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>rest-spring-4</artifactId>
-            <version>4.10.6</version>
+            <version>4.11.0</version>
         </dependency>
 
         <dependency>
@@ -135,9 +135,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.3</version>
-                <configuration>
-                    <skipTests>false</skipTests>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
