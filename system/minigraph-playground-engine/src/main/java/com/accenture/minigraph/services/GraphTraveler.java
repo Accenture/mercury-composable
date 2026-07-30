@@ -256,7 +256,7 @@ public class GraphTraveler extends GraphLambdaFunction {
             // same business correlation-id propagation as GraphExecutor
             if (graphInstance.stateMachine.getElement(MODEL_CID) instanceof String businessCid
                     && !businessCid.isBlank()) {
-                event.addTag(EventEmitter.BUSINESS_CID_TAG, businessCid);
+                event.addTag(EventEmitter.BUSINESS_CID_TAG, businessCid.trim());
             }
             po.send(event);
         } else {
