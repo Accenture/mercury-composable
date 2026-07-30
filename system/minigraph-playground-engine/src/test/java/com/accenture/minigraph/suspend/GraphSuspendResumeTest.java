@@ -191,6 +191,15 @@ class GraphSuspendResumeTest {
         forged.setElement("data.model.cid", "forged-cid");
         forged.setElement("data.model.instance", "forged-instance");
         forged.setElement("data.model.run", "resume");
+        // composite-path vectors, injected as LITERAL record keys: the restore merge
+        // must treat persisted keys literally (putAll) - a path-interpreting write
+        // would let "cid.x" descend into and replace model.cid (the trap the Rust
+        // port's consistency review caught; this pins the Java immunity)
+        if (forged.getElement("data.model") instanceof Map<?, ?> forgedModel) {
+            var literal = (Map<String, Object>) forgedModel;
+            literal.put("cid.x", "forged-nested");
+            literal.put("ttl[0]", "forged-indexed");
+        }
         Files.write(file.toPath(), msgPack.pack(forged.getMap()));
         // resume with the real correlation ID: the workflow continues, but none of the
         // forged reserved keys may reach the state machine - model.cid is a capability
