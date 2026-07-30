@@ -359,16 +359,19 @@
 
 ## Open Threads
 
-- [ ] (release planned — Eric, 2026-07-30, for 2026-07-31) **v4.11.0 lock-step release,
-  both repos** — the suspend/resume feature release (Java #238-#243; Rust #186-#187:
-  engine core, model.run, the mandatory CompileGraph gate + manifest `location`,
-  minigraph-state-redis, tutorial-14, cid trim, port sync, the cross-engine interop
-  report as release evidence). Eric's manual interop regression PASSED 2026-07-30
-  ("everything works as advertised") — the release precondition is met.
-  Prep on the day: version sweep (32 poms + CLAUDE.md/GEMINI.md/instructions.md),
-  CHANGELOG dating, release notes both repos, Rust bump via the agent session; also
-  propose closing [[bp-graph-workflow-suspension]] (realized on both engines) at the
-  release closeout — human gate.
+- [x] (release — SHIPPED AND PUBLISHED 2026-07-30, both repos in lock-step)
+  **v4.11.0 — the suspend/resume feature release.** Java: PR #245, squash `3a870951`,
+  tag `v4.11.0` on the verified merge commit, published. Rust: PR #189 merge
+  `cc529071`, then the docs-parity fix PR #190 → tag MOVED pre-publication onto the
+  docs-inclusive merge `167484bd` (verified before/after; Eric's ruling: release tags
+  must include the updated docs; a tag never moves after publication), published.
+  Also shipped: the skipTests fix (hardcoded `<skipTests>false</skipTests>` silently
+  overrode `-DskipTests` in all 26 poms — removed; quick reactor build now ~34s),
+  33-pom sweep, docs-nav consolidation both sites (#244/Rust #188/#190).
+  Evidence stack: both engine suites at the release version, the 50/50 cross-engine
+  drive, Eric's manual regression, the permanent interop report. **Field note (Eric):
+  suspend/resume is CORE functionality for a few installations — this surface is
+  regression-critical on both engines.**
   <!-- id: thread-release-4-11-0 | created: 2026-07-30 | last_used: 2026-07-30 | uses: 1 | tier: working | origin: 2026-07-30-030533 -->
 
 - [x] (feature — COMPLETE: **P5 Rust lock-step arc MERGED 2026-07-30 as mercury PR #186**
