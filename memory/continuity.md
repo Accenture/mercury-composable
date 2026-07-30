@@ -359,6 +359,18 @@
 
 ## Open Threads
 
+- [ ] (release planned — Eric, 2026-07-30, for 2026-07-31) **v4.11.0 lock-step release,
+  both repos** — the suspend/resume feature release (Java #238-#243; Rust #186-#187:
+  engine core, model.run, the mandatory CompileGraph gate + manifest `location`,
+  minigraph-state-redis, tutorial-14, cid trim, port sync, the cross-engine interop
+  report as release evidence). Eric's manual interop regression PASSED 2026-07-30
+  ("everything works as advertised") — the release precondition is met.
+  Prep on the day: version sweep (32 poms + CLAUDE.md/GEMINI.md/instructions.md),
+  CHANGELOG dating, release notes both repos, Rust bump via the agent session; also
+  propose closing [[bp-graph-workflow-suspension]] (realized on both engines) at the
+  release closeout — human gate.
+  <!-- id: thread-release-4-11-0 | created: 2026-07-30 | last_used: 2026-07-30 | uses: 1 | tier: working | origin: 2026-07-30-030533 -->
+
 - [x] (feature — COMPLETE: **P5 Rust lock-step arc MERGED 2026-07-30 as mercury PR #186**
   (five commits `304fc5a0`→`9326cf55`; 296 tests/clippy 0; Rust ADR twins accepted via the
   merge; Java-side 5-lens consistency review confirmed 22 findings incl. 4 blockers — the
