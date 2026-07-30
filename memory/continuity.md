@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-30 | agent: Claude Code (2026-07-30-030533)
+- **last_session:** 2026-07-30 | agent: Claude Code (2026-07-30-233623)
 - **last_review:** 2026-07-27 | through 2026-07-27-214357.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -363,6 +363,48 @@
   <!-- id: bp-graph-workflow-suspension | created: 2026-07-28 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-003528 -->
 
 ## Open Threads
+
+- [ ] (feature — design RATIFIED by Eric 2026-07-30; implementation awaiting his go)
+  **Second-level routing for the kafka-flow-adapter.** Optional per-binding `flows:`
+  rule list replaces `flow:` (mutually exclusive, startup-validated — the topic XOR
+  topic-pattern precedent). Rules `<selector>(<matcher>) -> <target>` inspect a record
+  header or payload key per record; mandatory `default`. Ratified grammar: selectors
+  `input.header.<name>` (case-INSENSITIVE name lookup — Kafka preserves wire casing)
+  and `input.body.<key>` (composite paths, Map bodies only); three matcher modes —
+  exact `key(value)`, wildcard `key(val*)` (presence of `*`), explicit
+  `key(regex: <expr>)` ("regex is the exception, not the norm" — Eric); **first match
+  wins in declaration order**; a non-match never errors → `default`. Targets:
+  `flow://<flow-id>` (existing dispatch) and `task://<route>` (direct function
+  invocation — copy headers + whole payload, trace/cid stamping like the flow path,
+  per-binding `ttl` default 30s; explicit prefix deliberately diverges from internal
+  bare-route convention). **`serializer: 'json'` ratified into v1** (Eric): per-binding
+  registry-less deserialization via the default SimpleMapper, open-ended for later
+  extension; object→Map, array/scalar parsed-but-non-match, exclusive with
+  schema.enabled, benefits plain `flow:` bindings too. Viability confirmed against the
+  v4.11.0 adapter: flow_id is already a per-request header → ZERO engine changes;
+  commit-after-success/retry/DLQ envelope unchanged for both targets. Spec (fine-tuned
+  from Eric's ideation draft, at his direction):
+  draft-design-specs/second-level-routing-kafka-flow-adapter.md (gitignored).
+  Parse-failure semantics CONFIRMED by Eric: raw byte[] passes into the selected
+  flow/task input as-is; a target expecting something else throws, so the exception
+  rides the existing retry→DLQ path — zero special handling in the adapter loop.
+  Design fully ratified; pending only the implementation go. No Rust
+  lock-step constraint — minimalist-kafka has no Rust port yet; the grammar becomes
+  part of that future port's contract. Relates [[thread-redis-kafka-rpc]].
+  <!-- id: thread-kafka-2nd-level-routing | created: 2026-07-30 | last_used: 2026-07-30 | uses: 1 | tier: working | origin: 2026-07-30-233623 -->
+
+- [ ] (observation — surfaced 2026-07-30 by the second-level-routing code study;
+  pre-existing, separate from that feature) **Header-casing mismatch: mixed-case Kafka
+  headers are unreachable in Event Script data mapping.** Event Script lowercases
+  `input.header.*` references (TaskExecutor — matches the HTTP adapter, which ingests
+  headers lowercased), but the Kafka flow adapter delivers record headers in original
+  wire casing. A producer-sent `Content-Type` Kafka header can never be addressed by
+  any `input.header.*` mapping today. Needs a ruling: lowercase at the Kafka adapter
+  (HTTP parity — likely a breaking change for flows matching exact casing via `*`
+  passthrough) vs case-insensitive header lookup in the engine. The routing feature
+  itself dodges the trap (its header-name lookup is case-insensitive by design).
+  Relates [[thread-kafka-2nd-level-routing]].
+  <!-- id: thread-kafka-header-casing-mismatch | created: 2026-07-30 | last_used: 2026-07-30 | uses: 1 | tier: working | origin: 2026-07-30-233623 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-07-30, both repos in lock-step)
   **v4.11.0 — the suspend/resume feature release.** Java: PR #245, squash `3a870951`,
