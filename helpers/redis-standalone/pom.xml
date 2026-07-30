@@ -9,7 +9,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>redis-standalone</artifactId>
     <packaging>jar</packaging>
-    <version>4.10.6</version>
+    <version>4.11.0</version>
     <name>Standalone redis server for dev</name>
 
     <parent>
@@ -52,7 +52,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.10.6</version>
+            <version>4.11.0</version>
         </dependency>
 
         <!-- Bundles a real redis-server binary (macOS/Linux, arm64+amd64) and runs it as a subprocess,
@@ -145,9 +145,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.3</version>
-                <configuration>
-                    <skipTests>false</skipTests>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

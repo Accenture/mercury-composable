@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Unreleased
+## Version 4.11.0, 7/30/2026
 
 ### Added
 
@@ -66,7 +66,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
      business correlation-id, a missing `cid` on a traced log line signals a propagation
      defect. The Playground's `instantiate graph` command is the dry-run's edge and now
      auto-creates `model.cid` (with a reminder) when the initial data mapping does not
-     supply one.
+     supply one. The business correlation-id is **trimmed at the graph boundary** on both
+     engines — an operator-entered order number may carry accidental padding, which would
+     otherwise split the store key space.
+   - **Cross-engine validation**: workflow suspension is proven across a mixed Java/Rust
+     fleet sharing one Redis — two interleavings of the tutorial-14 runs alternating
+     between engines, with every record restore decoding a record the other engine
+     persisted. Permanent record: `docs/test-reports/suspend-resume-interop.md`.
    - **Declarative response status**: a graph can stage its HTTP status
      (e.g. `int(404) -> output.status`); `graph.executor` applies it to the graph's reply
      at completion.
@@ -135,7 +141,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-1. **Registration conflict policy documented truthfully (annotation-macro consistency
+1. **`mvn -DskipTests` works again — the hardcoded surefire override is removed.** Every
+   module's pom carried `<skipTests>false</skipTests>` in its surefire configuration,
+   which silently overrides the command-line property — a developer's
+   `mvn clean install -DskipTests` still ran the full test suite. The hardcoded element
+   is removed from all 26 poms (the surefire 3.5.3 version pin stays), restoring the
+   standard `${skipTests}` binding: a full quick build of the 29-module reactor now
+   takes ~34 seconds instead of several minutes. CI is unaffected (it runs `mvn verify`
+   without the flag), and no module used the element to disable its tests.
+
+2. **Registration conflict policy documented truthfully (annotation-macro consistency
    round, in lock-step with the Rust engine).** `Platform.register` / `registerPrivate`
    javadoc claimed an `IllegalArgumentException` on duplicated registration; the actual
    (and long-standing) behavior is a warn-and-reload — the existing function is released
@@ -144,14 +159,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    `SimplePluginLoader` already emits, so every registry reports duplicates consistently:
    WARN + last-wins.
 
-2. **`ManagedCache` eviction behavior documented truthfully.** Under `maxItems` capacity
+3. **`ManagedCache` eviction behavior documented truthfully.** Under `maxItems` capacity
    pressure, eviction is approximate and non-deterministic (Caffeine W-TinyLFU admission
    with randomized anti-HashDoS jitter) — callers must not rely on which entry survives.
    Entry expiry remains exact. The javadoc now states this, and notes the deliberate
    cross-engine asymmetry: the Rust port's `ManagedCache` uses strict, deterministic LRU
    (moka). No behavior change; no in-repo consumer runs near its capacity bound.
 
-3. **`worker.instances.<route>` documented truthfully.** The configuration reference
+4. **`worker.instances.<route>` documented truthfully.** The configuration reference
    claimed the pattern overrides the instance count of *any* registered route; it
    actually applies only to functions whose `@PreLoad` declares the key via
    `envInstances` (overriding an arbitrary function's count is `yaml.preload.override`'s
