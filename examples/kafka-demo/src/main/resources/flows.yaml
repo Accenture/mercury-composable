@@ -3,3 +3,5 @@
 #
 flows:
   - 'kafka-demo-flow.yml'
+  - 'demo-order-flow.yml'
+  - 'demo-catch-all-flow.yml'

@@ -3,7 +3,8 @@
 
 export default {
   brokers: (process.env.KAFKA_BOOTSTRAP_SERVERS || '127.0.0.1:9092').split(','),
-  inboundTopic: 'demo.inbound',   // node publisher -> here -> kafka-demo Java app
+  inboundTopic: 'demo.inbound',   // node publisher -> here -> kafka-demo Java app (direct routing)
+  ordersTopic: 'demo.orders',     // node publisher -> here -> kafka-demo Java app (second-level routing)
   outboundTopic: 'demo.outbound', // kafka-demo Java app -> here -> node listener
   partitions: 10,
   // ISO-8601 timestamp for simple, sortable console logging
