@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-31 | agent: Claude Code (2026-07-31-162554)
+- **last_session:** 2026-07-31 | agent: Claude Code (2026-07-31-180131)
 - **last_review:** 2026-07-31 | through 2026-07-31-001057.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -273,6 +273,28 @@
   <!-- id: bp-graph-workflow-suspension | created: 2026-07-28 | last_used: 2026-07-30 | uses: 5 | tier: active | origin: 2026-07-29-003528 -->
 
 ## Open Threads
+
+- [ ] (field support — 2026-07-31; **Java half MERGED as
+  [PR #248](https://github.com/Accenture/mercury-composable/pull/248), squash `5b73b140`,
+  CI green; field member validates on Windows VDI 2026-07-31** — remaining: the Rust
+  lock-step half, handoff ready) **Graph state store fails with `ERR unknown command
+  GETDEL` on Redis < 6.2 — fixed with a version-aware consume strategy.** Field report: Windows VDI +
+  redis-standalone + tutorial-14 (the embedded-redis library bundles Redis 6.2.x for
+  macOS/Linux but only **5.0.14 for Windows** — the community port stopped there).
+  **Eric's ruling: version-aware (deployed envs are Linux, but enterprise managed Redis —
+  AWS for one field installation, also Azure/GCP — is outside our control).** Fix on
+  branch `fix/redis-getdel-compat` (commit `d2b49beb`): detect `redis_version` from
+  `INFO server` once per connection (stated in the startup log); ≥ 6.2 → native GETDEL,
+  older → **atomic MULTI/EXEC GET+DEL** (at-most-once resume per ADR-0010 holds on both
+  paths; plain sequential GET→DEL would open a double-resume race); undetectable version →
+  the transactional fallback (works everywhere). Tests 10/10 incl. the fallback exercised
+  for real via forced strategy; docs updated (workflow-suspension guide, reserved-names,
+  EmbeddedRedis javadoc, CHANGELOG Fixed); the permanent interop report untouched.
+  **Remaining: Eric's PR gate; then the Rust lock-step half (identical exposure at
+  lib.rs:131; handoff ready at /tmp/redis-getdel-compat-rust-handoff.md) — the
+  suspend/resume surface is regression-critical field-core on both engines.**
+  Relates [[graph-suspend-resume-design]], [[conv-helpers-docker-less]].
+  <!-- id: thread-redis-getdel-compat | created: 2026-07-31 | last_used: 2026-07-31 | uses: 1 | tier: working | origin: 2026-07-31-180131 -->
 
 - [x] (feature — design RATIFIED 2026-07-30; **MERGED same day as
   [PR #246](https://github.com/Accenture/mercury-composable/pull/246), squash `268e5ff6`, CI
