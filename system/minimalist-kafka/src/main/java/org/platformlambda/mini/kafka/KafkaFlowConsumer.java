@@ -396,6 +396,11 @@ public class KafkaFlowConsumer implements AutoCloseable {
                 return false;   // do not commit a message that was interrupted mid-processing
             } catch (ExecutionException e) {
                 cause = e.getCause() != null ? e.getCause() : e;
+            } catch (RuntimeException e) {
+                // a synchronous dispatch error - e.g. a task route released AFTER startup validation
+                // ("Route X not found") - joins the same retry/DLQ envelope instead of escaping to the
+                // poll loop, which would kill the consumer thread and stall the binding permanently
+                cause = e;
             }
             if (attempt >= retryPolicy.maxRetries()) {
                 log.warn("{} failed for a '{}' message after {} attempt(s); routing to {}",
@@ -425,12 +430,25 @@ public class KafkaFlowConsumer implements AutoCloseable {
     EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath)
             throws InterruptedException, ExecutionException {
         PostOffice po = PostOffice.trackable(ADAPTER_ROUTE, traceId, tracePath);
-        // flow targets carry the per-record flow id in the flow_id header (second-level routing may
-        // select a different flow per message); anything else is a task:// function invocation
-        long ttl = EventScriptManager.SERVICE_NAME.equals(forward.getTo())
-                ? Flows.getFlow(forward.getHeader(FLOW_ID)).ttl
-                : taskTtl();
-        return po.request(forward, ttl).get();
+        return po.request(forward, resolveTtl(forward)).get();
+    }
+
+    /**
+     * Flow targets carry the per-record flow id in the {@code flow_id} header (second-level routing may
+     * select a different flow per message) and use that flow's own ttl; anything else is a {@code task://}
+     * function invocation on the binding's task ttl. Null-safe by design: an envelope addressed to the
+     * flow engine without a resolvable flow (unreachable - the adapter builds flow requests itself and
+     * startup validation rejects {@code task://event.script.manager}) degrades to the task ttl rather
+     * than tearing down the poll thread.
+     */
+    private long resolveTtl(EventEnvelope forward) {
+        if (EventScriptManager.SERVICE_NAME.equals(forward.getTo())) {
+            var flow = Flows.getFlow(forward.getHeader(FLOW_ID));
+            if (flow != null) {
+                return flow.ttl;
+            }
+        }
+        return taskTtl();
     }
 
     /** The binding's {@code ttl} for {@code task://} targets, or the 30s default when not configured. */

@@ -18,13 +18,13 @@
 
 package org.platformlambda.mini.kafka;
 
+import com.accenture.automation.EventScriptManager;
 import com.accenture.models.Flows;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.ConfigReader;
-import org.platformlambda.core.util.Utility;
 import org.platformlambda.mini.kafka.schema.SchemaCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -303,6 +303,13 @@ public class KafkaFlowAdapter implements AutoCloseable {
     private static void validateRoutingTargets(int i, String label, RoutingRuleSet routing) {
         for (RoutingRuleSet.Target target : routing.allTargets()) {
             if (target.task()) {
+                // the flow engine is a registered route, but addressing it as a bare task would bypass
+                // the flow-launch contract (no flow_id) - flows are dispatched with flow:// only
+                if (EventScriptManager.SERVICE_NAME.equals(target.destination())) {
+                    throw new IllegalArgumentException("consumer[" + i + "] (" + label + ") 'task://"
+                            + EventScriptManager.SERVICE_NAME
+                            + "' is not allowed - use 'flow://<flow-id>' to dispatch to the flow engine");
+                }
                 // Platform is touched only when a task:// target exists (flow-only rule sets stay
                 // platform-free, which also keeps config-validation unit tests lightweight)
                 if (!Platform.getInstance().hasRoute(target.destination())) {
@@ -343,6 +350,9 @@ public class KafkaFlowAdapter implements AutoCloseable {
      * milliseconds - the deadline for a {@code task://} invocation, which has no flow ttl of its own.
      * {@code null} when absent (the consumer applies its 30s default). Visible for testing.
      *
+     * <p>Long arithmetic throughout - an absurd-but-accepted duration must be rejected or honored as
+     * written, never silently wrapped to a different positive value (the ttl overflow-guard precedent).</p>
+     *
      * @throws IllegalArgumentException if present but not a positive duration
      */
     static Long parseTaskTtl(Object value) {
@@ -350,12 +360,40 @@ public class KafkaFlowAdapter implements AutoCloseable {
         if (text == null) {
             return null;
         }
-        int seconds = Utility.getInstance().getDurationInSeconds(text);
+        long seconds = durationSeconds(text);
         if (seconds <= 0) {
             throw new IllegalArgumentException(
                     "consumer 'ttl' must be a positive duration (e.g. '30s'), got '" + text + "'");
         }
         return seconds * 1000L;
+    }
+
+    /**
+     * Long-math twin of {@code Utility.getDurationInSeconds} (suffixes s/m/h/d; no suffix = seconds),
+     * immune to int wrap-around on pathological inputs. Returns -1 on anything malformed.
+     */
+    private static long durationSeconds(String duration) {
+        long multiplier = 1;
+        String number = duration;
+        char last = duration.charAt(duration.length() - 1);
+        if (!Character.isDigit(last)) {
+            multiplier = switch (Character.toLowerCase(last)) {
+                case 's' -> 1;
+                case 'm' -> 60;
+                case 'h' -> 3600;
+                case 'd' -> 86400;
+                default -> -1;
+            };
+            number = duration.substring(0, duration.length() - 1).trim();
+        }
+        if (multiplier < 0 || number.isEmpty()) {
+            return -1;
+        }
+        try {
+            return Long.parseLong(number) * multiplier;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     /** Validate the topic/topic-pattern selector (exactly one is set, valid regex) and return a display label. */

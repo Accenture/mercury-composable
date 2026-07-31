@@ -347,6 +347,24 @@ class KafkaFlowAdapterConfigTest {
     }
 
     @Test
+    void taskTtlUsesLongMathWithNoSilentWrap() {
+        // int arithmetic would wrap '50000d' (4.32e9 seconds) to a silently WRONG positive value;
+        // long math honors an absurd-but-accepted duration exactly as written
+        assertEquals(50000L * 86400 * 1000, KafkaFlowAdapter.parseTaskTtl("50000d"));
+        assertEquals(86400000L, KafkaFlowAdapter.parseTaskTtl("1d"));
+        assertEquals(3600000L, KafkaFlowAdapter.parseTaskTtl("1h"));
+    }
+
+    @Test
+    void rejectsFlowEngineAsTaskRoute() {
+        // the flow engine is a registered route, but a bare task envelope carries no flow_id -
+        // flows are dispatched with flow:// only (rejected before any Platform lookup)
+        ConfigReader config = config(List.of(Map.of("topic", "orders",
+                "flows", List.of("default -> task://event.script.manager"))));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
     void resolveRoutingReturnsNullForDirectFlowBinding() {
         assertNull(KafkaFlowAdapter.resolveRouting(0, "topic 'x'", Map.of("topic", "x", "flow", "f"), "f"));
     }

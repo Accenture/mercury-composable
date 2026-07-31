@@ -19,6 +19,8 @@
 package org.platformlambda.mini.kafka;
 
 import org.platformlambda.core.util.MultiLevelMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,6 +67,7 @@ import java.util.regex.PatternSyntaxException;
  */
 public final class RoutingRuleSet {
 
+    private static final Logger log = LoggerFactory.getLogger(RoutingRuleSet.class);
     private static final String HEADER_SELECTOR = "input.header.";
     private static final String BODY_SELECTOR = "input.body.";
     private static final String DEFAULT_RULE = "default";
@@ -169,6 +172,14 @@ public final class RoutingRuleSet {
         if (key.isEmpty()) {
             throw new IllegalArgumentException(ROUTING_RULE + raw + "' is missing a header name or body key");
         }
+        // The routing grammar is composite paths only. MultiLevelMap evaluates a '$'-prefixed path as a
+        // JsonPath expression, whose parser can THROW on a malformed expression at record time - rejecting
+        // the prefix here keeps rule evaluation inside the never-throws contract (and the grammar honest).
+        if (type == SelectorType.BODY && key.startsWith("$")) {
+            throw new IllegalArgumentException(ROUTING_RULE + raw
+                    + "' body key must be a composite path such as 'event.kind' - JsonPath '$' expressions "
+                    + "are not supported");
+        }
         if (matcher.isEmpty()) {
             throw new IllegalArgumentException(ROUTING_RULE + raw + "' is missing a matcher value");
         }
@@ -210,7 +221,8 @@ public final class RoutingRuleSet {
         if (start < wildcard.length()) {
             sb.append(Pattern.quote(wildcard.substring(start)));
         }
-        return Pattern.compile(sb.toString());
+        // DOTALL: '*' matches ANY run of characters, including line breaks inside a free-text body value
+        return Pattern.compile(sb.toString(), Pattern.DOTALL);
     }
 
     /** Parse a rule's {@code flow://<flow-id>} or {@code task://<route>} target. */
@@ -236,8 +248,16 @@ public final class RoutingRuleSet {
     public Target select(Map<String, String> headers, Object body) {
         MultiLevelMap bodyMap = body instanceof Map ? toMultiLevelMap(body) : null;
         for (Rule rule : rules) {
-            String value = rule.selector() == SelectorType.HEADER
-                    ? headerValue(headers, rule.key()) : bodyValue(bodyMap, rule.key());
+            final String value;
+            try {
+                value = rule.selector() == SelectorType.HEADER
+                        ? headerValue(headers, rule.key()) : bodyValue(bodyMap, rule.key());
+            } catch (RuntimeException e) {
+                // the never-throws contract: a failed lookup is a non-match, never an error - this
+                // safety net protects the poll thread from any surprise in a path/value evaluation
+                log.debug("Routing rule lookup for '{}' failed; treated as a non-match", rule.key(), e);
+                continue;
+            }
             if (value != null && rule.matches(value)) {
                 return rule.target();
             }

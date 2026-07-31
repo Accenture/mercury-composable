@@ -50,3 +50,11 @@ consumer:
       - 'input.header.type(bulk-*) -> flow://routed-order-flow'
       - 'input.body.event.kind(refund) -> task://routed.task.sink'
       - 'default -> task://routed.task.sink'
+  # Second-level routing on a schema-enabled binding: the Confluent decode yields the Map that
+  # input.body rules match on (a decode failure still dead-letters before any rule runs).
+  - topic: 'routed-schema-topic'
+    group: 'routed-schema-group'
+    schema.enabled: true
+    flows:
+      - 'input.body.hello(routed) -> flow://json-sink-flow'
+      - 'default -> task://routed.task.sink'

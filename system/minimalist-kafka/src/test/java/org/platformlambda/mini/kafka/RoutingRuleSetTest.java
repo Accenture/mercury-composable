@@ -216,6 +216,24 @@ class RoutingRuleSetTest {
     }
 
     @Test
+    void rejectsJsonPathStyleBodyKeys() {
+        // MultiLevelMap evaluates '$'-prefixed paths as JsonPath, whose parser can THROW on a malformed
+        // expression at record time - the grammar is composite paths only, rejected fail-fast at startup
+        assertThrows(IllegalArgumentException.class,
+                () -> compile("input.body.$[(refund) -> flow://x", CATCH_ALL));
+        assertThrows(IllegalArgumentException.class,
+                () -> compile("input.body.$.event.kind(refund) -> flow://x", CATCH_ALL));
+    }
+
+    @Test
+    void wildcardMatchesAcrossLineBreaks() {
+        // '*' matches ANY run of characters - including newlines inside a free-text body value (DOTALL)
+        RoutingRuleSet rules = compile("input.body.note(urgent*) -> flow://urgent-flow", CATCH_ALL);
+        assertEquals(flow("urgent-flow"),
+                rules.select(Map.of(), Map.of("note", "urgent\nsecond line")));
+    }
+
+    @Test
     void rejectsInvalidOrEmptyRegex() {
         assertThrows(IllegalArgumentException.class,
                 () -> compile("input.header.type(regex: [a-) -> flow://order-flow", CATCH_ALL));

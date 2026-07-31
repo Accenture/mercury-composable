@@ -44,6 +44,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * best-effort decode, and task-failure dead-lettering - all through the invokeFlow seam, so no
  * running engine is needed (the end-to-end proof lives in {@link KafkaFlowAdapterTest}).
  */
+// resource: these KafkaFlowConsumer fixtures are never start()ed, so the single-thread poll-loop
+// executor never submits a task and never spawns a thread - there is no live resource to close.
+// The MockProducer in the dead-letter tests is an in-memory fake owned by the test method.
 @SuppressWarnings({"resource", "java:S2095"})
 class KafkaFlowRoutingConsumerTest {
 
@@ -180,5 +183,28 @@ class KafkaFlowRoutingConsumerTest {
         String dlqError = new String(dlq.history().get(0).headers().lastHeader("dlq.error").value(),
                 StandardCharsets.UTF_8);
         assertTrue(dlqError.contains("task 'always.failing'"), dlqError);
+    }
+
+    @Test
+    void synchronousDispatchErrorJoinsTheRetryDlqEnvelope() {
+        // a task route released AFTER startup validation makes po.request throw SYNCHRONOUSLY
+        // ("Route X not found") - it must dead-letter like any other failure, not kill the poll thread
+        MockProducer<String, byte[]> dlq =
+                new MockProducer<>(true, null, new StringSerializer(), new ByteArraySerializer());
+        RetryPolicy policy = new RetryPolicy(0, 0, new KafkaRequestPublisher(dlq));
+        KafkaConsumerBinding binding = KafkaConsumerBinding.builder().topic("mixed").dlqTopic("mixed-dlq")
+                .routingRules(RoutingRuleSet.compile(List.of("default -> task://vanished.route"))).build();
+        KafkaFlowConsumer consumer = new KafkaFlowConsumer(null, binding, 200, policy, null) {
+            @Override
+            EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath) {
+                throw new IllegalArgumentException("Route vanished.route not found");
+            }
+        };
+        assertTrue(consumer.routeToFlow(inbound("x".getBytes(StandardCharsets.UTF_8), Map.of())),
+                "a durably dead-lettered message must allow the commit");
+        assertEquals(1, dlq.history().size());
+        String dlqError = new String(dlq.history().get(0).headers().lastHeader("dlq.error").value(),
+                StandardCharsets.UTF_8);
+        assertTrue(dlqError.contains("Route vanished.route not found"), dlqError);
     }
 }

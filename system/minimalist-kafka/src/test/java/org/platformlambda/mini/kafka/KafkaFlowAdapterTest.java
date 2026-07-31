@@ -73,6 +73,8 @@ class KafkaFlowAdapterTest {
     private static final String PATTERN_TOPIC = "events.de";
     // second-level routing binding ('flows' rule list + serializer: 'json' + task ttl)
     private static final String ROUTED_TOPIC = "routed-test-topic";
+    // second-level routing on a schema-enabled binding (input.body rules on the Confluent-decoded Map)
+    private static final String ROUTED_SCHEMA_TOPIC = "routed-schema-topic";
     private static final String JSON_SCHEMA =
             "{\"type\":\"object\",\"properties\":{\"hello\":{\"type\":\"string\"}},\"additionalProperties\":true}";
     private static final String AVRO_SCHEMA =
@@ -94,6 +96,7 @@ class KafkaFlowAdapterTest {
         // the topics above - avoids a race against the adapter's first metadata fetch.
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), PATTERN_TOPIC, 2);
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), ROUTED_TOPIC);
+        KafkaTestSupport.createTopic(kafka.bootstrapServers(), ROUTED_SCHEMA_TOPIC);
         // self-contained, in-JVM Confluent-compatible registry on a random port. Set the exact config key
         // as a system property (ConfigReader consults system properties before the file, at get-time) so it
         // wins regardless of when AppConfigReader was first loaded by other tests. The id->schema cache is
@@ -401,6 +404,31 @@ class KafkaFlowAdapterTest {
         assertEquals(TRACE_ID, received.get("traceId"), "trace-id stayed continuous into the direct task");
         Map<String, String> taskHeaders = (Map<String, String>) received.get("headers");
         assertEquals(cid, taskHeaders.get("cid"), "inbound record headers are copied verbatim to the task");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void bodyRuleRoutesOnSchemaDecodedRecord() throws Exception {
+        JsonSinkTask.RECEIVED.clear();
+        // on a schema-enabled binding, input.body rules match on the Confluent-decoded Map -
+        // the decode happens before rule evaluation, exactly as on the direct-routing path
+        String subject = ROUTED_SCHEMA_TOPIC + "-value";
+        KafkaRuntime.schemaCodec().client().register(subject, new JsonSchema(JSON_SCHEMA));
+        String cid = Utility.getInstance().getUuid();
+        PostOffice po = PostOffice.trackable("unit.test", TRACE_ID, "TEST /routed/schema");
+        po.send(new EventEnvelope().setTo("simple.kafka.notification")
+                .setHeader(KafkaHeaders.TOPIC, ROUTED_SCHEMA_TOPIC)
+                .setHeader(KafkaHeaders.CORRELATION_ID, cid)
+                .setHeader(KafkaHeaders.SUBJECT, subject)
+                .setBody("{\"hello\":\"routed\"}".getBytes(StandardCharsets.UTF_8))
+                .setTraceId(TRACE_ID).setTracePath("TEST /routed/schema"));
+
+        Map<String, Object> received = JsonSinkTask.RECEIVED.poll(25, TimeUnit.SECONDS);
+        assertNotNull(received, "the input.body rule should match the schema-decoded Map");
+        assertEquals(cid, received.get("myCid"),
+                "business cid surfaced as model.cid through the rule-selected flow");
+        assertEquals("routed", ((Map<String, Object>) received.get("body")).get("hello"),
+                "the rule-selected flow received the decoded Map");
     }
 
     @Test

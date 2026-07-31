@@ -8,6 +8,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Added
+
+1. **Second-level routing for the Kafka Flow Adapter.** A binding may replace its single
+   `flow` with a `flows` rule list that inspects a key-value of each inbound record and picks
+   the target per message — the common Kafka pattern of one topic carrying mixed event types.
+   Rules are `<selector>(<matcher>) -> <target>`: selectors `input.header.<name>`
+   (case-insensitive header-name lookup) and `input.body.<key>` (composite paths, Map bodies);
+   three matcher modes — exact, wildcard (the presence of `*`), and explicit
+   `regex: <expression>`; **first match wins in declaration order**, a non-match never errors,
+   and a mandatory `default` catches the rest. Targets are `flow://<flow-id>` (identical to
+   direct routing) and `task://<route>` — direct invocation of a registered function with all
+   record headers and the whole payload copied, full trace/correlation-id continuity, and a
+   per-binding `ttl` deadline (default 30s). Both targets keep the unchanged
+   commit-after-success, retry and dead-letter envelope. All rules and targets are validated
+   fail-fast at startup.
+2. **Registry-less JSON deserialization for the Kafka Flow Adapter (`serializer: 'json'`).**
+   An optional per-binding parameter for non-schema topics: the adapter tries deserializing
+   each record value with the default SimpleMapper before routing — a JSON object becomes a
+   `Map` (enabling `input.body.*` routing rules and Map delivery to the flow or task), a JSON
+   array becomes a `List`, and anything else keeps the raw `byte[]`, which simply passes to
+   the selected target (best-effort by design; no special poison handling — a target that
+   cannot digest the bytes fails normally into the retry/DLQ path). Mutually exclusive with
+   `schema.enabled`; also useful on plain `flow` bindings. The parameter is open-ended for
+   later extension.
+
+---
 ## Version 4.11.0, 7/30/2026
 
 ### Added

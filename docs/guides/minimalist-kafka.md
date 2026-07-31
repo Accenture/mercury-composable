@@ -2,14 +2,16 @@
 title: Minimalist Kafka
 summary: The opt-in minimalist-kafka library — route Kafka topics into Event Script flows (inbound) and
   publish events to Kafka (outbound), with externalized client config, per-binding consumer groups,
-  regex topic subscription, partition pinning, bounded retry plus per-binding dead-letter topics, and a
-  choice of at-least-once or auto-commit delivery.
+  regex topic subscription, partition pinning, second-level routing (pick the target flow or function
+  per record), bounded retry plus per-binding dead-letter topics, and a choice of at-least-once or
+  auto-commit delivery.
 layer: operate
 audience: [developer, ai-agent]
 keywords: [kafka, flow adapter, minimalist-kafka, consumer, producer, dead letter queue, dlq, dlq-topic,
   topic-pattern, regex subscription, partition, consumer group, kafka-flow-adapter.yaml,
   simple.kafka.notification, at-least-once, auto-commit, max-poll-records, traceparent,
   metadata, input.metadata, offset, message key,
+  second-level routing, flows, routing rules, serializer, task, ttl, wildcard, first match wins,
   schema registry, confluent, avro, json schema, subject, version, schema.enabled, csfle,
   field level encryption, kms, aws kms, azure key vault, gcp kms,
   oauth2, bearer auth, client credentials, token endpoint, allowed.urls, schema-registry.properties]
@@ -77,16 +79,25 @@ consumer:
     flow: 'ingest-clickstream'
     auto-commit: true                 # optional; trades pod-death redelivery for throughput
     max-poll-records: 500             # optional; only meaningful with auto-commit
+  - topic: 'mixed-events'             # second-level routing: pick the target per record
+    serializer: 'json'                # optional; best-effort JSON decode on a non-schema topic
+    flows:
+      - 'input.header.type(order) -> flow://order-flow'
+      - 'input.body.event.kind(refund) -> task://v1.refund.processor'
+      - 'default -> flow://catch-all-flow'
 ```
 
 | Field | Required | Description |
 |-------|----------|-------------|
 | `topic` | one of `topic`/`topic-pattern` | Literal source Kafka topic. |
 | `topic-pattern` | one of `topic`/`topic-pattern` | Regex subscription instead of a literal topic (see [pattern subscription](#pattern)). |
-| `flow` | yes | Event Script flow id each message is routed into. |
+| `flow` | one of `flow`/`flows` | Event Script flow id every message of this binding is routed into (direct routing). |
+| `flows` | one of `flow`/`flows` | Second-level routing rule list — inspect a key-value of each record to pick the target flow or function per message (see [second-level routing](#routing)). |
 | `group` | no (required for `topic-pattern`) | Consumer group id (see [consumer group](#group)). Defaults to `kafka-flow-adapter.<topic>` for a literal topic; no default exists for a pattern. |
 | `partition` | no | Pins a single partition (see [partition pinning](#pinning)). Omit for group-managed assignment. Cannot be combined with `topic-pattern`. |
 | `schema.enabled` | no | When `true`, decode the Confluent-framed value into a `Map` before routing it into the flow (see [Schema Registry](#schema)). Default `false` (raw `byte[]`). |
+| `serializer` | no | `'json'` = best-effort SimpleMapper decode of the record value on a non-schema topic (see [payload prerequisites](#routing-payload)). Mutually exclusive with `schema.enabled`. |
+| `ttl` | no | Deadline for `task://` routing targets (duration syntax, e.g. `30s`, `5m`; default 30s) — a bare function has no flow ttl. Flow targets always use their own flow `ttl`. |
 | `dlq-topic` | no | Pre-provisioned topic for exhausted messages (see [reliability](#reliability)). No DLQ if omitted. |
 | `auto-commit` | no | When `true`, use Kafka-native auto-commit instead of the default manual commit-after-process (see [delivery mode](#delivery-mode)). Default `false`. |
 | `max-poll-records` | no | Override the delivery mode's default poll batch size (1 for manual-commit, 500 for auto-commit). |
@@ -95,9 +106,10 @@ consumer:
 | `traceparent.header` | no | Per-binding override of the global `kafka.traceparent.header` (default `traceparent`) — the header carrying the **full W3C trace context**, for **backward compatibility with a legacy upstream only** (departure from the W3C/OTel standard is discouraged). The standard `traceparent` always wins; the custom name is read only when the standard is absent. |
 
 The file is read by `ConfigReader`, so **every value supports `${ENV_VAR:default}` substitution** — e.g.
-`group: '${KAFKA_CONSUMER_GROUP:sales-order-group}'`. A malformed entry (missing `topic`/`topic-pattern`/
-`flow`, both `topic` and `topic-pattern` set, an invalid regex, a `dlq-topic` that equals or matches its own
-source, etc.) fails startup fast and loud rather than being silently skipped.
+`group: '${KAFKA_CONSUMER_GROUP:sales-order-group}'`. A malformed entry (missing `topic`/`topic-pattern`,
+missing or duplicated `flow`/`flows`, a malformed routing rule or one referencing an unknown flow or task
+route, `serializer` combined with `schema.enabled`, an invalid regex, a `dlq-topic` that equals or matches
+its own source, etc.) fails startup fast and loud rather than being silently skipped.
 
 ### Message dataset {#dataset}
 
@@ -106,7 +118,7 @@ Every message hands the flow a `Map` with three top-level objects — `input.bod
 
 | Field | Type | Description |
 |-------|------|--------------|
-| `body` | `byte[]` or `Map` | The message payload; a `Map` when [`schema.enabled`](#schema) decodes a Confluent-framed value, raw `byte[]` otherwise. |
+| `body` | `byte[]` or `Map` | The message payload; a `Map` when [`schema.enabled`](#schema) decodes a Confluent-framed value or [`serializer: 'json'`](#routing-payload) parses a JSON object, raw `byte[]` otherwise. |
 | `header` | `Map<String,String>` | The record's Kafka headers, including `traceparent` (consumed for [trace continuity](#tracing)) and `cid` (correlation id) when the producer set them. |
 | `metadata` | `Map<String,Object>` | The record's own envelope facts — `topic`, `partition`, `offset`, `timestamp`, and `key` (omitted when the record carries no key). |
 
@@ -135,6 +147,96 @@ process: 'topic.aware.dispatcher'
 
 `model.*` is only needed when a *later* task (not the one receiving the message) needs the value — store it
 once (`'input.metadata.topic -> model.source_topic'`) and reference `model.source_topic` from there on.
+
+### Second-level routing {#routing}
+
+Direct routing sends every record of a binding to one flow. When one topic carries mixed event types
+(a common Kafka pattern — e.g. a `type` header distinguishing orders from shipments), **second-level
+routing** picks the target per record instead: replace `flow` with a `flows` rule list (exactly one of
+the two, never both):
+
+```yaml
+consumer:
+  - topic: 'mixed-events'
+    serializer: 'json'                 # optional; enables the input.body rule below
+    ttl: '30s'                         # optional; deadline for task:// targets (default 30s)
+    flows:
+      - 'input.header.type(order) -> flow://order-flow'
+      - 'input.header.type(order-*) -> flow://order-variant-flow'
+      - 'input.header.type(regex: ^shipment-(eu|us)$) -> flow://shipment-flow'
+      - 'input.body.event.kind(refund) -> task://v1.refund.processor'
+      - 'default -> flow://catch-all-flow'
+```
+
+Each rule is `<selector>(<matcher>) -> <target>`, plus the **mandatory** `default -> <target>` fallback.
+
+**Selectors** inspect one key-value of the inbound record:
+
+- `input.header.<name>` — a Kafka record header. The header **name** lookup is case-insensitive
+  (Kafka preserves the producer's wire casing, so a rule must not depend on it); the value comparison
+  stays case-sensitive.
+- `input.body.<key>` — a payload key; composite paths (`input.body.order.type`) are supported. Body
+  rules match only when the body is a `Map` — see [payload prerequisites](#routing-payload) below.
+
+**Matchers** — three modes, explicit over sniffing:
+
+| Form | Mode | Notes |
+|------|------|-------|
+| `type(order)` | exact | case-sensitive value comparison |
+| `type(order-*)` | wildcard | the presence of `*` makes it one; each `*` matches any run of characters |
+| `type(regex: <expr>)` | regex | always explicit — the exception, not the norm |
+
+Wildcard and regex matchers use **full-string** matching (the `topic-pattern` precedent), so
+`regex: shipment` does not match `my-shipment-1`.
+
+**Evaluation.** Order matters: the **first matching rule wins**, in declaration order — put the most
+specific rule first. A missing header/key, a non-`Map` body for an `input.body` rule, or a non-`String`
+value is a **non-match, never an error**; when no rule matches, `default` decides.
+
+**Targets:**
+
+- `flow://<flow-id>` — dispatch to an Event Script flow exactly as direct routing does: same
+  [dataset](#dataset), same `model.cid` seeding, same [trace continuity](#tracing), same flow `ttl`.
+- `task://<route>` — invoke a registered composable function **directly**, for processing simple enough
+  that a flow is overweight. No input/output data mapping: all inbound record headers are copied to the
+  function's input headers, the whole payload (`byte[]` or decoded `Map`) is the body, and trace context
+  plus the business correlation-id propagate exactly as on the flow path (the function reads
+  `PostOffice.getMyCorrelationId()` as usual). There is no `metadata` map on this path — a function that
+  needs the record's envelope facts should be fronted by a flow instead. A bare function has no flow
+  `ttl`, so the binding's optional `ttl` (duration syntax: `30s`, `5m`; default 30s) is the invocation
+  deadline.
+
+Both target kinds sit in the **unchanged reliability envelope**: unless `auto-commit` is on, the offset
+commits only after the selected flow or task finishes successfully, and a failure follows the same
+bounded-retry-then-[`dlq-topic`](#reliability) path. A routing non-match is not a failure — it selects
+`default`.
+
+All rules are validated at startup, fail-fast: every rule must parse (regexes compile; body keys are
+composite paths — JsonPath `$` expressions are rejected), exactly one `default` is required, every
+`flow://` target must be a compiled flow, and every `task://` target must be a registered route
+(functions preload before the adapter starts) other than the flow engine itself — dispatch flows with
+`flow://`, never `task://event.script.manager`.
+
+#### Payload prerequisites and `serializer: 'json'` {#routing-payload}
+
+`input.body.*` rules need a `Map` body. On a [`schema.enabled`](#schema) binding the Confluent decode
+already yields one. For a registry-less topic (not every installation uses a schema registry), the
+optional per-binding `serializer: 'json'` tells the adapter to **try** deserializing each record value
+with the default `SimpleMapper` before routing:
+
+- a JSON **object** becomes a `Map` — `input.body.*` rules match, and the selected flow/task receives
+  the decoded Map;
+- a JSON **array** becomes a `List` (delivered as decoded, but a non-match for body rules);
+- anything else — a scalar, or **malformed text** — keeps the **raw `byte[]`**, which simply passes to
+  the selected target. There is no special poison handling in the adapter: a target that cannot digest
+  the bytes fails normally into the retry/DLQ path, while a `default` target designed for raw bytes
+  handles them directly.
+
+`serializer` is mutually exclusive with `schema.enabled` (the registry owns that decode) and is useful
+on a plain `flow` binding too — the flow receives a `Map` body without a schema registry. The parameter
+is open-ended for later extension; `json` is the only supported value today. Numeric values follow the
+customized-Gson semantics (integers arrive as `Long` — use `util.str2int`/`util.str2long` in a flow when
+a specific width matters).
 
 ### Consumer group {#group}
 
