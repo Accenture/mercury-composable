@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-31 | agent: Claude Code (2026-07-31-001057)
+- **last_session:** 2026-07-31 | agent: Claude Code (2026-07-31-162554)
 - **last_review:** 2026-07-31 | through 2026-07-31-001057.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -297,7 +297,14 @@
   both adapters; secondary dead letters ride the secondary publisher. No Rust lock-step constraint
   — the grammar becomes the future minimalist-kafka port's contract. Spec:
   draft-design-specs/second-level-routing-kafka-flow-adapter.md (gitignored). Full detail:
-  sessions 2026-07-30-233623 + 2026-07-31-001057. Relates [[thread-redis-kafka-rpc]].
+  sessions 2026-07-30-233623 + 2026-07-31-001057. **Demo/migration template (Eric's
+  direction — the feature replaces a proprietary field implementation): MERGED
+  2026-07-31 as [PR #247](https://github.com/Accenture/mercury-composable/pull/247),
+  squash `929a87b9`, CI green — examples/kafka-demo gained a demo.orders binding
+  exercising every grammar element beside the direct-routing binding, driven by the
+  new publish-orders.js (works piped for scripted regression); smoke-driven live
+  end-to-end; README doubles as the manual-regression procedure** (session
+  2026-07-31-162554). Relates [[thread-redis-kafka-rpc]].
   <!-- id: thread-kafka-2nd-level-routing | created: 2026-07-30 | last_used: 2026-07-31 | uses: 2 | tier: active | origin: 2026-07-30-233623 -->
 
 - [ ] (observation — surfaced 2026-07-30 by the second-level-routing code study;
