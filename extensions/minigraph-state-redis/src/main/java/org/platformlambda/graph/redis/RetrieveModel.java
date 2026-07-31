@@ -36,8 +36,10 @@ import static org.platformlambda.graph.redis.RedisStateConnection.KEY_PREFIX;
  * <p>
  * Contract: headers type=get; body {cid}. Returns the persisted record, or an empty map
  * when absent-or-expired (a fresh transaction is the normal case, not an error). The
- * record is CONSUMED atomically on retrieval (Redis GETDEL), so a duplicate resume
- * request cannot execute the continuation twice. Requires Redis 6.2 or later.
+ * record is CONSUMED atomically on retrieval, so a duplicate resume request cannot
+ * execute the continuation twice - via native GETDEL on Redis 6.2+, or a MULTI/EXEC
+ * GET+DEL transaction on older servers (the strategy is detected per connection, since
+ * enterprise deployments rarely control their managed Redis version).
  */
 @PreLoad(route = "v1.redis.retrieve.model", instances = 50,
          envInstances = "worker.instances.v1.redis.retrieve.model")
@@ -58,7 +60,7 @@ public class RetrieveModel implements TypedLambdaFunction<Map<String, Object>, O
         if (cid == null) {
             throw new IllegalArgumentException("Missing cid");
         }
-        var data = RedisStateConnection.commands().getdel(KEY_PREFIX + cid);
+        var data = RedisStateConnection.consume(KEY_PREFIX + cid);
         if (data == null) {
             return new HashMap<String, Object>();
         }

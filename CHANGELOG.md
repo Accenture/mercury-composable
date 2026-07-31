@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
+### Fixed
+
+1. **Graph state store works on Redis servers older than 6.2 (field report).** The
+   suspend/resume Redis store consumed records with `GETDEL`, a Redis 6.2+ command —
+   unavailable on older managed enterprise servers and on the community Windows binary
+   (5.0.14) bundled by `redis-standalone`, where a resume failed with
+   `ERR unknown command GETDEL`. The consume strategy is now **version-aware**: the store
+   reads the server version from `INFO server` once per connection (stated in the startup
+   log) and uses native `GETDEL` on 6.2+ or an equally atomic `MULTI/EXEC` `GET`+`DEL`
+   transaction on older servers — the at-most-once resume guarantee holds on both paths,
+   and an undetectable version selects the transactional fallback, which works everywhere.
+
 ### Added
 
 1. **Second-level routing for the Kafka Flow Adapter.** A binding may replace its single

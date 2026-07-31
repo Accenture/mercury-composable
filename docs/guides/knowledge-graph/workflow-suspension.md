@@ -211,8 +211,10 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
   suspend *after* the join instead. Joins whose predecessors completed before suspension
   work: their completion marks are part of the persisted state.
 - **One resume per transaction.** The shipped stores consume the record atomically on
-  retrieval (Redis `GETDEL`), so a duplicate resume — a double click, a retried message —
-  finds nothing and behaves as a fresh run instead of double-executing the continuation.
+  retrieval (Redis `GETDEL` on 6.2+, or a `MULTI/EXEC` `GET`+`DEL` transaction on older
+  servers — detected automatically), so a duplicate resume — a double click, a retried
+  message — finds nothing and behaves as a fresh run instead of double-executing the
+  continuation.
   A later checkpoint in the resumed run simply persists a new record under the same ID.
 - **The correlation ID is a resume capability.** Whoever presents it continues the
   workflow: protect resume-bearing endpoints with rest.yaml `authentication`, and use
@@ -262,9 +264,14 @@ store of ~60 lines (`FileStateStore` in the minigraph test sources).
 ## The Redis store module
 
 `extensions/minigraph-state-redis` ships `v1.redis.persist.model` (SETEX, native expiry)
-and `v1.redis.retrieve.model` (atomic `GETDEL` — Redis 6.2+). Include the jar and the two
-functions register automatically; the connection is lazy, so the application boots
-normally without Redis until a workflow actually suspends. Configuration uses the same
+and `v1.redis.retrieve.model` (atomic consume-on-retrieve). The consume strategy is
+**version-aware**: native `GETDEL` on Redis 6.2+, or an equally atomic `MULTI/EXEC`
+`GET`+`DEL` transaction on older servers — detected once per connection from
+`INFO server` and stated in the startup log, since enterprise deployments rarely control
+their managed Redis version (and the community Windows binary used by `redis-standalone`
+is 5.0.14). Include the jar and the two functions register automatically; the connection
+is lazy, so the application boots normally without Redis until a workflow actually
+suspends. Configuration uses the same
 `redis.*` keys as the sync-over-async extension (`redis.host`, `redis.port`,
 `redis.password`, `redis.ssl`, `redis.database`, `redis.timeout.ms`), and the worker
 counts are ops-tunable via `worker.instances.v1.redis.persist.model` /
