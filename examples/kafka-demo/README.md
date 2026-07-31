@@ -1,9 +1,9 @@
 # kafka-demo — minimalist-kafka worked example
 
-A hands-on, end-to-end demonstration of the **minimalist-kafka** consumer + producer pattern. You publish a
-message from a terminal, it travels through Kafka into a composable Java app, gets processed, is published
-to another topic, and shows up in a second terminal — with the whole path visible in the Java app's
-telemetry log.
+A hands-on, end-to-end demonstration of the **minimalist-kafka** consumer + producer pattern — including
+both **routing styles** of the Kafka flow adapter, side by side. You publish a message from a terminal, it
+travels through Kafka into a composable Java app, gets processed, is published to another topic, and shows
+up in a second terminal — with the whole path visible in the Java app's telemetry log.
 
 ```
   publish-inbound.js  --(demo.inbound)-->  kafka-demo (Java)  --(demo.outbound)-->  listen-outbound.js
@@ -11,12 +11,21 @@ telemetry log.
                                             |  -> demo.processor       |
                                             |  -> simple.kafka.notification
                                             +--------------------------+
+
+  publish-orders.js   --(demo.orders)--->  kafka-demo (Java)  --(demo.outbound)-->  listen-outbound.js
+   (program-3, you type)                    |  flow adapter: SECOND-LEVEL ROUTING (per-record rules)
+                                            |  -> flow://demo-order-flow       (type=order / order-*)
+                                            |  -> task://demo.refund.processor (body event.kind=refund)
+                                            |  -> flow://demo-catch-all-flow   (default)
 ```
 
 The Java app is pure minimalist-kafka: the **Kafka flow adapter** binds `demo.inbound` to the
-`kafka-demo-flow`, whose `demo.processor` task wraps the message with processing metadata, and
-`simple.kafka.notification` publishes the result to `demo.outbound`. No code wires those steps together —
-the [flow YAML](src/main/resources/flows/kafka-demo-flow.yml) does (see ADR-0007).
+`kafka-demo-flow` (**direct routing** — every message goes to one flow), whose `demo.processor` task wraps
+the message with processing metadata, and `simple.kafka.notification` publishes the result to
+`demo.outbound`. The `demo.orders` binding uses **[second-level
+routing](../../docs/guides/minimalist-kafka.md#routing)** instead — a rule list inspects each record and
+picks the target per message. No code wires any of those steps together — the flow YAML does (see
+ADR-0007).
 
 ## Prerequisites
 
@@ -50,7 +59,7 @@ Wait for it to report the broker is up on `127.0.0.1:9092`.
 ```shell
 cd examples/kafka-demo/node
 node create-topics.js
-# -> created (10 partitions each): demo.inbound, demo.outbound
+# -> created (10 partitions each): demo.inbound, demo.orders, demo.outbound
 ```
 
 ### Terminal C — start the kafka-demo Java app
@@ -100,19 +109,69 @@ telemetry, and at the listener — proof the trace stays continuous across both 
 new `span_id`; `simple.kafka.notification`'s span becomes the parent of the next hop, while the trace-id is
 carried unchanged.) If the publisher sends no `traceparent`, the flow simply starts a fresh trace instead.
 
+## Second-level routing — one topic, many targets
+
+The `demo.orders` binding shows the adapter's **second-level routing**: instead of one `flow`, a `flows`
+rule list inspects a key-value of each record and picks the target per message — the common Kafka pattern
+of one topic carrying mixed event types. See the rule grammar in
+[`kafka-flow-adapter.yaml`](src/main/resources/kafka-flow-adapter.yaml); the first matching rule wins, in
+declaration order, and the mandatory `default` catches the rest. `serializer: 'json'` decodes each JSON
+record to a `Map` before routing, so the `input.body` rule can match — a non-JSON record keeps its raw
+`byte[]` and falls through to the default.
+
+### Terminal F — publish mixed events (program-3)
+```shell
+cd examples/kafka-demo/node
+node publish-orders.js
+```
+One command per routing rule (an optional trailing JSON overrides the canned payload):
+
+| You type | Record shape | Rule that fires | Target |
+|----------|--------------|-----------------|--------|
+| `order` | `type: order` header + JSON body | `input.header.type(order)` — exact | `flow://demo-order-flow` |
+| `order-42` | `type: order-42` header + JSON body | `input.header.type(order-*)` — wildcard | `flow://demo-order-flow` |
+| `refund` | no `type` header, `{"event":{"kind":"refund"},...}` body | `input.body.event.kind(refund)` — body path | `task://demo.refund.processor` |
+| `hello world` | raw text (not JSON) | none — falls through | `default` → `flow://demo-catch-all-flow` |
+
+**What you should see per command:**
+
+- `order` / `order-42` — the Java log shows `OrderProcessor - Order event routed by rule type(...)`, and
+  **Terminal D** receives the processed order on `demo.outbound` with `"routedBy"` naming the matched key.
+  The flow publishes the processor's `Map` straight through `simple.kafka.notification`, which
+  **auto-serializes it to JSON bytes** — the outbound symmetry of `serializer: 'json'` (`Map` in the
+  function, JSON on the wire).
+- `refund` — the **Java log** shows `RefundProcessor - Refund routed by rule input.body.event.kind(refund)`
+  with the same `cid`/`traceId` the publisher printed. Nothing arrives on `demo.outbound`: a `task://`
+  target invokes the function **directly** — all record headers copied verbatim, the whole payload as the
+  body, no flow and no data mapping. Use it for processing simple enough that a flow is overweight;
+  anything needing orchestration (like publishing onward) belongs in a `flow://` target.
+- anything else — **Terminal D** receives the annotated record from `demo-catch-all-flow` with
+  `"routedBy": "default"` and a `"shape"` field showing whether the body arrived as a decoded `Map`/`List`
+  or as raw bytes (`serializer: 'json'` is best-effort: an unparseable record passes through unchanged,
+  and the default handler deals with it — the pattern a production catch-all should follow).
+
+Each published record carries its own `traceparent`, so every routed message — flow or task — shows full
+trace continuity in the telemetry log, exactly like the direct-routing path.
+
 ## How it maps to minimalist-kafka
 
 | Piece | What it shows |
 |-------|---------------|
-| [`kafka-flow-adapter.yaml`](src/main/resources/kafka-flow-adapter.yaml) | the **consumer** side: bind a topic to a flow, with a consumer group |
+| [`kafka-flow-adapter.yaml`](src/main/resources/kafka-flow-adapter.yaml) | the **consumer** side, both styles: direct routing (`flow`) and second-level routing (`flows` + `serializer` + `ttl`) |
 | [`kafka-demo-flow.yml`](src/main/resources/flows/kafka-demo-flow.yml) | orchestration as config: `demo.processor` → `simple.kafka.notification` |
+| [`demo-order-flow.yml`](src/main/resources/flows/demo-order-flow.yml) | a rule-selected **specific flow**; publishes a `Map` that `simple.kafka.notification` auto-serializes |
+| [`demo-catch-all-flow.yml`](src/main/resources/flows/demo-catch-all-flow.yml) | the mandatory **default** flow; its task handles both body shapes (Map or raw bytes) |
 | [`DemoProcessor.java`](src/main/java/com/accenture/kafka/demo/tasks/DemoProcessor.java) | a self-contained function (the unit of work), in a `tasks` package per the [Code Conventions](../../docs/guides/code-conventions.md) |
+| [`RefundProcessor.java`](src/main/java/com/accenture/kafka/demo/tasks/RefundProcessor.java) | a **`task://` routing target**: invoked directly by the adapter — headers copied verbatim, payload as body, no flow |
 | `simple.kafka.notification` | the **producer** side: publish to a topic via data mapping (`text(demo.outbound) -> header.topic`) |
 
 ## Notes
 
 - Point at a different broker with `export KAFKA_BOOTSTRAP_SERVERS=host:port` (both the Java app and the
   Node programs honor it).
-- On repeated processing failure, a message is dead-lettered to `demo.inbound.dlq` (the binding's configured
-  `dlq-topic` in `kafka-flow-adapter.yaml`); pre-create that topic if you want to exercise the failure path.
-  The happy path never touches it.
+- On repeated processing failure, a message is dead-lettered to the binding's configured `dlq-topic`
+  (`demo.inbound.dlq` / `demo.orders.dlq` in `kafka-flow-adapter.yaml`); pre-create those topics if you
+  want to exercise the failure path — it applies identically to `flow://` and `task://` targets. The happy
+  path never touches them.
+- The second-level routing rule grammar (selectors, the three matcher modes, targets, `serializer`,
+  `ttl`) is documented in the [Minimalist Kafka guide](../../docs/guides/minimalist-kafka.md#routing).

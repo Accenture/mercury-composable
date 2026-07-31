@@ -41,6 +41,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    writes a Map, the wire carries JSON, and a consuming `serializer: 'json'` binding hands
    its flow a Map again. Non-schema-registry topics only: with a `subject` header the body
    contract stays a byte[] JSON document, unchanged.
+3. **Worked example: second-level routing in `examples/kafka-demo`.** A new `demo.orders`
+   topic sits beside the direct-routing `demo.inbound`, so one `kafka-flow-adapter.yaml`
+   shows both routing styles side by side. The rule list exercises every grammar element —
+   exact and wildcard header rules to a specific flow (whose Map response demonstrates the
+   outbound auto-serialization), a body-path rule to a `task://` function, and the
+   mandatory default flow handling both Map and raw-byte[] bodies — driven from a new
+   `publish-orders.js` console program with one keyword per routing rule.
 
 ---
 ## Version 4.11.0, 7/30/2026
