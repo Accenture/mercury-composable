@@ -26,18 +26,22 @@ import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.AutoStart;
 import org.platformlambda.core.system.PostOffice;
+import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.Utility;
 
 import org.platformlambda.core.util.W3cTrace;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -67,6 +71,8 @@ class KafkaFlowAdapterTest {
     // matches the topic-pattern binding 'events\.[a-z]{2}'; 2 partitions so an explicit-partition publish
     // (see topicPatternRoutesConcreteTopicMetadataThroughFlow) actually exercises partition selection.
     private static final String PATTERN_TOPIC = "events.de";
+    // second-level routing binding ('flows' rule list + serializer: 'json' + task ttl)
+    private static final String ROUTED_TOPIC = "routed-test-topic";
     private static final String JSON_SCHEMA =
             "{\"type\":\"object\",\"properties\":{\"hello\":{\"type\":\"string\"}},\"additionalProperties\":true}";
     private static final String AVRO_SCHEMA =
@@ -87,6 +93,7 @@ class KafkaFlowAdapterTest {
         // created before AutoStart.main() starts the topic-pattern consumer's subscribe(Pattern), same as
         // the topics above - avoids a race against the adapter's first metadata fetch.
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), PATTERN_TOPIC, 2);
+        KafkaTestSupport.createTopic(kafka.bootstrapServers(), ROUTED_TOPIC);
         // self-contained, in-JVM Confluent-compatible registry on a random port. Set the exact config key
         // as a system property (ConfigReader consults system properties before the file, at get-time) so it
         // wins regardless of when AppConfigReader was first loaded by other tests. The id->schema cache is
@@ -333,6 +340,95 @@ class KafkaFlowAdapterTest {
                 "metadata.topic is the record's actual topic, not the binding's configured regex");
         assertEquals(1, received.get("partition"), "metadata.partition is the record's actual partition");
         assertNotNull(received.get("offset"), "metadata.offset is present");
+    }
+
+    @Test
+    void routingRuleSelectsFlowByHeader() throws Exception {
+        RoutedOrderSinkTask.RECEIVED.clear();
+        String cid = Utility.getInstance().getUuid();
+        Map<String, byte[]> recordHeaders = new HashMap<>();
+        recordHeaders.put("type", "order".getBytes(StandardCharsets.UTF_8));
+        recordHeaders.put("cid", cid.getBytes(StandardCharsets.UTF_8));
+        recordHeaders.put(W3cTrace.TRACEPARENT,
+                W3cTrace.format(TRACE_ID, "aaaabbbbccccdddd").getBytes(StandardCharsets.UTF_8));
+        KafkaRuntime.publisher().publishSync(ROUTED_TOPIC, null, recordHeaders,
+                "{\"hello\":\"routed\"}".getBytes(StandardCharsets.UTF_8), 10000);
+
+        Map<String, Object> received = RoutedOrderSinkTask.RECEIVED.poll(25, TimeUnit.SECONDS);
+        assertNotNull(received, "the exact-match rule should select the order flow");
+        assertEquals("order", received.get("type"), "the routing key the rule matched on");
+        assertEquals(cid, received.get("myCid"), "business cid surfaced as model.cid through the flow engine");
+        assertEquals(TRACE_ID, received.get("traceId"), "trace-id stayed continuous across the Kafka hop");
+        assertInstanceOf(Map.class, received.get("body"),
+                "serializer 'json' delivered a decoded Map to the selected flow");
+    }
+
+    @Test
+    void wildcardRuleSelectsFlowByHeader() throws Exception {
+        RoutedOrderSinkTask.RECEIVED.clear();
+        String cid = Utility.getInstance().getUuid();
+        Map<String, byte[]> recordHeaders = new HashMap<>();
+        recordHeaders.put("type", "bulk-7".getBytes(StandardCharsets.UTF_8));
+        recordHeaders.put("cid", cid.getBytes(StandardCharsets.UTF_8));
+        KafkaRuntime.publisher().publishSync(ROUTED_TOPIC, null, recordHeaders,
+                "{\"hello\":\"bulk\"}".getBytes(StandardCharsets.UTF_8), 10000);
+
+        Map<String, Object> received = RoutedOrderSinkTask.RECEIVED.poll(25, TimeUnit.SECONDS);
+        assertNotNull(received, "the 'bulk-*' wildcard rule should select the order flow");
+        assertEquals("bulk-7", received.get("type"), "the wildcard-matched routing key");
+        assertEquals(cid, received.get("myCid"), "business cid surfaced as model.cid through the flow engine");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void bodyRuleRoutesToTaskTarget() throws Exception {
+        RoutedTaskSink.RECEIVED.clear();
+        String cid = Utility.getInstance().getUuid();
+        Map<String, byte[]> recordHeaders = new HashMap<>();
+        recordHeaders.put("cid", cid.getBytes(StandardCharsets.UTF_8));
+        recordHeaders.put(W3cTrace.TRACEPARENT,
+                W3cTrace.format(TRACE_ID, "aaaabbbbccccdddd").getBytes(StandardCharsets.UTF_8));
+        KafkaRuntime.publisher().publishSync(ROUTED_TOPIC, null, recordHeaders,
+                "{\"event\":{\"kind\":\"refund\"},\"amount\":10}".getBytes(StandardCharsets.UTF_8), 10000);
+
+        Map<String, Object> received = RoutedTaskSink.RECEIVED.poll(25, TimeUnit.SECONDS);
+        assertNotNull(received, "the input.body rule should route the record to the task:// target");
+        Map<String, Object> body = (Map<String, Object>) assertInstanceOf(Map.class, received.get("body"),
+                "the task received the decoded Map as its whole body (no dataset wrapper)");
+        assertEquals("refund", ((Map<String, Object>) body.get("event")).get("kind"));
+        assertEquals(cid, received.get("myCid"),
+                "business cid injected as my_correlation_id via the engine-managed my_cid tag");
+        assertEquals(TRACE_ID, received.get("traceId"), "trace-id stayed continuous into the direct task");
+        Map<String, String> taskHeaders = (Map<String, String>) received.get("headers");
+        assertEquals(cid, taskHeaders.get("cid"), "inbound record headers are copied verbatim to the task");
+    }
+
+    @Test
+    void nonJsonRecordFallsThroughToDefaultTargetWithRawBytes() throws Exception {
+        RoutedTaskSink.RECEIVED.clear();
+        // best-effort serializer contract: an unparseable record keeps its raw byte[] body, every
+        // input.body rule is a non-match, and the raw bytes simply pass to the default target
+        KafkaRuntime.publisher().publishSync(ROUTED_TOPIC, null, Map.of(),
+                "not-json-payload".getBytes(StandardCharsets.UTF_8), 10000);
+
+        Map<String, Object> received = RoutedTaskSink.RECEIVED.poll(25, TimeUnit.SECONDS);
+        assertNotNull(received, "the default rule should catch the unmatched record");
+        byte[] body = assertInstanceOf(byte[].class, received.get("body"),
+                "the raw byte[] passes to the default target unchanged");
+        assertEquals("not-json-payload", new String(body, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void rejectsUnknownTaskRouteAtStartup() {
+        // a task:// target must exist in the platform registry when the adapter starts (functions
+        // preload before the @MainApplication), the same fail-fast contract as an unknown flow
+        ConfigReader reader = new ConfigReader();
+        reader.load(Map.of("consumer", List.of(Map.of("topic", "orders",
+                "flows", List.of("default -> task://no.such.route")))));
+        RetryPolicy policy = new RetryPolicy(0, 0, null);
+        Properties props = new Properties();
+        assertThrows(IllegalArgumentException.class,
+                () -> new KafkaFlowAdapter(props, reader, 1000, policy, null));
     }
 
 }

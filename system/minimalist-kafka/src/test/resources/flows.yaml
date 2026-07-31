@@ -6,3 +6,4 @@ flows:
   - 'json-sink-flow.yml'
   - 'avro-sink-flow.yml'
   - 'kafka-pattern-sink-flow.yml'
+  - 'routed-order-flow.yml'
