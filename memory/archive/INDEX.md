@@ -81,3 +81,6 @@
 - thread-release-4-8-5 — (release in flight — 2026-07-14; CLOSED same day) v4.8.5 SHIPPED via the normal flow — — faded — 2026-Q3.md
 - thread-release-4-8-4-tag-deferred — (release in flight — 2026-07-13; CLOSED same day) v4.8.4 SHIPPED via the normal flow — — faded — 2026-Q3.md
 - docs-site-material-theme — Docs site: Material for MkDocs (switched from readthedocs 2026-07-20, mirroring the Rust — faded — 2026-Q3.md
+- log-context-on-by-default — Application log context is ON by default (2026-07-22, Eric via leadership request; branch — faded (sslu 21 > archive_window 20; shipped in v4.10.0, docs carry the surface) — 2026-Q3.md
+- thread-release-4-10-0 — (release in flight — 2026-07-22; CLOSED same day) v4.10.0 SHIPPED via the normal flow — — swept completed thread (shipped 2026-07-22; sslu 22 > archive_window 20) — 2026-Q3.md
+- thread-release-4-9-1 — (release in flight — 2026-07-21; CLOSED same day) v4.9.1 SHIPPED via the normal flow — — swept completed thread (shipped 2026-07-21; sslu 28 > archive_window 20) — 2026-Q3.md
