@@ -2793,8 +2793,10 @@ come first. Three techniques worth stealing from its model:</p>
   suspend <em>after</em> the join instead. Joins whose predecessors completed before suspension
   work: their completion marks are part of the persisted state.</li>
 <li><strong>One resume per transaction.</strong> The shipped stores consume the record atomically on
-  retrieval (Redis <code>GETDEL</code>), so a duplicate resume — a double click, a retried message —
-  finds nothing and behaves as a fresh run instead of double-executing the continuation.
+  retrieval (Redis <code>GETDEL</code> on 6.2+, or a <code>MULTI/EXEC</code> <code>GET</code>+<code>DEL</code> transaction on older
+  servers — detected automatically), so a duplicate resume — a double click, a retried
+  message — finds nothing and behaves as a fresh run instead of double-executing the
+  continuation.
   A later checkpoint in the resumed run simply persists a new record under the same ID.</li>
 <li><strong>The correlation ID is a resume capability.</strong> Whoever presents it continues the
   workflow: protect resume-bearing endpoints with rest.yaml <code>authentication</code>, and use
@@ -2835,9 +2837,14 @@ TTL, implement record expiry yourself.</p>
 store of ~60 lines (<code>FileStateStore</code> in the minigraph test sources).</p>
 <h2 id="the-redis-store-module">The Redis store module<a class="headerlink" href="#the-redis-store-module" title="Permanent link">&para;</a></h2>
 <p><code>extensions/minigraph-state-redis</code> ships <code>v1.redis.persist.model</code> (SETEX, native expiry)
-and <code>v1.redis.retrieve.model</code> (atomic <code>GETDEL</code> — Redis 6.2+). Include the jar and the two
-functions register automatically; the connection is lazy, so the application boots
-normally without Redis until a workflow actually suspends. Configuration uses the same
+and <code>v1.redis.retrieve.model</code> (atomic consume-on-retrieve). The consume strategy is
+<strong>version-aware</strong>: native <code>GETDEL</code> on Redis 6.2+, or an equally atomic <code>MULTI/EXEC</code>
+<code>GET</code>+<code>DEL</code> transaction on older servers — detected once per connection from
+<code>INFO server</code> and stated in the startup log, since enterprise deployments rarely control
+their managed Redis version (and the community Windows binary used by <code>redis-standalone</code>
+is 5.0.14). Include the jar and the two functions register automatically; the connection
+is lazy, so the application boots normally without Redis until a workflow actually
+suspends. Configuration uses the same
 <code>redis.*</code> keys as the sync-over-async extension (<code>redis.host</code>, <code>redis.port</code>,
 <code>redis.password</code>, <code>redis.ssl</code>, <code>redis.database</code>, <code>redis.timeout.ms</code>), and the worker
 counts are ops-tunable via <code>worker.instances.v1.redis.persist.model</code> /
