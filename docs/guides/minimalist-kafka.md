@@ -175,8 +175,10 @@ Each rule is `<selector>(<matcher>) -> <target>`, plus the **mandatory** `defaul
 - `input.header.<name>` — a Kafka record header. The header **name** lookup is case-insensitive
   (Kafka preserves the producer's wire casing, so a rule must not depend on it); the value comparison
   stays case-sensitive.
-- `input.body.<key>` — a payload key; composite paths (`input.body.order.type`) are supported. Body
-  rules match only when the body is a `Map` — see [payload prerequisites](#routing-payload) below.
+- `input.body` followed by a dot-bracket composite path — a `Map` body via `input.body.order.type`, a
+  **top-level `List` body** via `input.body[0].type`, and any nesting of the two
+  (`input.body.items[1].kind`). Body rules match only when the body is a `Map` or `List` — see
+  [payload prerequisites](#routing-payload) below.
 
 **Matchers** — three modes, explicit over sniffing:
 
@@ -211,11 +213,11 @@ commits only after the selected flow or task finishes successfully, and a failur
 bounded-retry-then-[`dlq-topic`](#reliability) path. A routing non-match is not a failure — it selects
 `default`.
 
-All rules are validated at startup, fail-fast: every rule must parse (regexes compile; body keys are
-composite paths — JsonPath `$` expressions are rejected), exactly one `default` is required, every
-`flow://` target must be a compiled flow, and every `task://` target must be a registered route
-(functions preload before the adapter starts) other than the flow engine itself — dispatch flows with
-`flow://`, never `task://event.script.manager`.
+All rules are validated at startup, fail-fast: every rule must parse (regexes compile; body keys use
+the dot-bracket composite-path convention), exactly one `default` is required, every `flow://` target
+must be a compiled flow, and every `task://` target must be a registered route (functions preload
+before the adapter starts) other than the flow engine itself — dispatch flows with `flow://`, never
+`task://event.script.manager`.
 
 #### Payload prerequisites and `serializer: 'json'` {#routing-payload}
 
@@ -224,9 +226,10 @@ already yields one. For a registry-less topic (not every installation uses a sch
 optional per-binding `serializer: 'json'` tells the adapter to **try** deserializing each record value
 with the default `SimpleMapper` before routing:
 
-- a JSON **object** becomes a `Map` — `input.body.*` rules match, and the selected flow/task receives
-  the decoded Map;
-- a JSON **array** becomes a `List` (delivered as decoded, but a non-match for body rules);
+- a JSON **object** becomes a `Map` — `input.body.<key>` rules match, and the selected flow/task
+  receives the decoded Map;
+- a JSON **array** becomes a `List` — addressable by bracket rules (`input.body[0].type(order)`) and
+  delivered as decoded;
 - anything else — a scalar, or **malformed text** — keeps the **raw `byte[]`**, which simply passes to
   the selected target. There is no special poison handling in the adapter: a target that cannot digest
   the bytes fails normally into the retry/DLQ path, while a `default` target designed for raw bytes
@@ -370,7 +373,7 @@ scope: the library guarantees durable capture (when a `dlq-topic` is configured 
 ## Outbound: publishing to Kafka {#outbound}
 
 `simple.kafka.notification` is a composable function that publishes an event to a topic. Send it an
-`EventEnvelope` with a `topic` header (required), an optional `partition` header, a `byte[]` body, and any
+`EventEnvelope` with a `topic` header (required), an optional `partition` header, a body, and any
 other headers (forwarded as Kafka headers):
 
 ```java
@@ -380,12 +383,19 @@ po.send(new EventEnvelope().setTo("simple.kafka.notification")
         .setBody(payloadBytes));
 ```
 
+The body is `byte[]` (published verbatim — the minimalist default), or a **`Map`/`List`, automatically
+serialized to JSON bytes** — the outbound symmetry of the inbound
+[`serializer: 'json'`](#routing-payload): the producing application writes a Map, the wire carries JSON
+bytes, and a consuming binding with `serializer: 'json'` hands its flow a Map again. This JSON
+convenience applies to **non-schema-registry topics only**; `null` stays `null` (a Kafka tombstone).
+
 Publishing is **drop-n-forget** (Kafka's commit log is the durable buffer), but async delivery failures are
 logged rather than silently masked.
 
 One header opts a publish into the Confluent wire format instead of raw `byte[]`: `subject` (with an optional
 `version`; see [Schema Registry](#schema)). It is an encoding directive — consumed by the function, not
-forwarded as a Kafka header.
+forwarded as a Kafka header. On this schema path the body contract stays a `byte[]` JSON document —
+the Map/List auto-serialization above does not apply.
 
 ### Trace continuity across Kafka {#tracing}
 

@@ -46,16 +46,19 @@ import java.util.regex.PatternSyntaxException;
  * <p><b>Rule syntax.</b> {@code <selector>(<matcher>) -> <target>} plus the mandatory
  * {@code default -> <target>} fallback. The selector is {@code input.header.<name>} (a Kafka record
  * header; the header <i>name</i> lookup is case-insensitive because Kafka preserves the producer's
- * wire casing) or {@code input.body.<key>} (a payload key; composite paths like
- * {@code input.body.order.type} are supported and match only when the body is a Map). The matcher has
- * three modes: exact ({@code type(order)}, case-sensitive), wildcard when the value contains {@code *}
- * ({@code type(order-*)}), and regex only via the explicit {@code regex:} prefix
- * ({@code type(regex: ^a|b$)}) - regex is the exception, not the norm. Wildcard and regex matchers use
- * full-string matching (the {@code topic-pattern} precedent).</p>
+ * wire casing) or {@code input.body} followed by a dot-bracket composite path - a Map body via
+ * {@code input.body.order.type}, a TOP-LEVEL List body via {@code input.body[0].type}, and any nesting
+ * of the two. The matcher has three modes: exact ({@code type(order)}, case-sensitive), wildcard when
+ * the value contains {@code *} ({@code type(order-*)}), and regex only via the explicit {@code regex:}
+ * prefix ({@code type(regex: ^a|b$)}) - regex is the exception, not the norm. Wildcard and regex
+ * matchers use full-string matching (the {@code topic-pattern} precedent).</p>
  *
  * <p><b>Evaluation.</b> Order matters: the first matching rule wins, in declaration order. A missing
- * header/key, a non-Map body for an {@code input.body} rule, or a non-String value is a non-match -
- * never an error. When no rule matches, the {@code default} target is used.</p>
+ * header/key, a byte[] body for an {@code input.body} rule, or a non-String value is a non-match -
+ * never an error. When no rule matches, the {@code default} target is used. Body lookups run under a
+ * synthetic {@code body} root (see {@link #bodyPath}), which both makes a top-level List addressable
+ * and keeps MultiLevelMap's {@code $}-JsonPath escape hatch (whose parser can throw) structurally
+ * unreachable - '{@code $}'-prefixed keys are ordinary literal segments here.</p>
  *
  * <p><b>Targets.</b> {@code flow://<flow-id>} dispatches to an Event Script flow exactly as direct
  * {@code flow} routing does; {@code task://<route>} invokes a registered function directly (see
@@ -69,7 +72,12 @@ public final class RoutingRuleSet {
 
     private static final Logger log = LoggerFactory.getLogger(RoutingRuleSet.class);
     private static final String HEADER_SELECTOR = "input.header.";
-    private static final String BODY_SELECTOR = "input.body.";
+    private static final String BODY_PREFIX = "input.body";
+    private static final String BODY_SELECTOR = BODY_PREFIX + ".";
+    private static final String BODY_INDEX_SELECTOR = BODY_PREFIX + "[";
+    // synthetic root the record body is evaluated under - makes a top-level List addressable and keeps
+    // every lookup path away from MultiLevelMap's '$'-JsonPath dispatch (full-path prefix check only)
+    private static final String BODY_ROOT = "body";
     private static final String DEFAULT_RULE = "default";
     private static final String ARROW = "->";
     private static final String REGEX_PREFIX = "regex:";
@@ -95,7 +103,11 @@ public final class RoutingRuleSet {
 
     private enum SelectorType { HEADER, BODY }
 
-    /** One compiled rule: {@code pattern} is null in exact mode, {@code exact} is null in pattern mode. */
+    /**
+     * One compiled rule: {@code pattern} is null in exact mode, {@code exact} is null in pattern mode.
+     * {@code key} is the header name (HEADER) or the precomputed lookup path under the synthetic
+     * {@code body} root (BODY), e.g. {@code body.event.kind} / {@code body[0].type}.
+     */
     private record Rule(SelectorType selector, String key, String exact, Pattern pattern, Target target) {
 
         boolean matches(String value) {
@@ -162,28 +174,36 @@ public final class RoutingRuleSet {
         if (selector.startsWith(HEADER_SELECTOR)) {
             type = SelectorType.HEADER;
             key = selector.substring(HEADER_SELECTOR.length());
-        } else if (selector.startsWith(BODY_SELECTOR)) {
+            if (key.isEmpty()) {
+                throw new IllegalArgumentException(ROUTING_RULE + raw + "' is missing a header name");
+            }
+        } else if (selector.startsWith(BODY_SELECTOR) || selector.startsWith(BODY_INDEX_SELECTOR)) {
             type = SelectorType.BODY;
-            key = selector.substring(BODY_SELECTOR.length());
+            key = bodyPath(selector, raw);
         } else {
-            throw new IllegalArgumentException(ROUTING_RULE + raw
-                    + "' selector must start with 'input.header.' or 'input.body.'");
-        }
-        if (key.isEmpty()) {
-            throw new IllegalArgumentException(ROUTING_RULE + raw + "' is missing a header name or body key");
-        }
-        // The routing grammar is composite paths only. MultiLevelMap evaluates a '$'-prefixed path as a
-        // JsonPath expression, whose parser can THROW on a malformed expression at record time - rejecting
-        // the prefix here keeps rule evaluation inside the never-throws contract (and the grammar honest).
-        if (type == SelectorType.BODY && key.startsWith("$")) {
-            throw new IllegalArgumentException(ROUTING_RULE + raw
-                    + "' body key must be a composite path such as 'event.kind' - JsonPath '$' expressions "
-                    + "are not supported");
+            throw new IllegalArgumentException(ROUTING_RULE + raw + "' selector must be "
+                    + "'input.header.<name>', 'input.body.<key>' or 'input.body[<index>]...'");
         }
         if (matcher.isEmpty()) {
             throw new IllegalArgumentException(ROUTING_RULE + raw + "' is missing a matcher value");
         }
         return newRule(type, key, matcher, target, raw);
+    }
+
+    /**
+     * Precompute a body rule's lookup path: the record body (Map or List) is evaluated under the
+     * synthetic {@code body} root, so a top-level List is addressable with the same dot-bracket
+     * convention ({@code input.body[0].type} -> {@code body[0].type}, {@code input.body.event.kind} ->
+     * {@code body.event.kind}) - and no lookup path can start with {@code $}, which is what keeps
+     * MultiLevelMap's JsonPath escape hatch (whose parser can throw at record time) out of reach.
+     */
+    private static String bodyPath(String selector, String raw) {
+        // the remainder starts with '.' or '[' by construction of the caller's prefix checks
+        String relative = selector.substring(BODY_PREFIX.length());
+        if (relative.length() < 2) {
+            throw new IllegalArgumentException(ROUTING_RULE + raw + "' is missing a body key");
+        }
+        return BODY_ROOT + relative;
     }
 
     /** Resolve the matcher mode: explicit {@code regex:} prefix > wildcard (contains {@code *}) > exact. */
@@ -246,7 +266,8 @@ public final class RoutingRuleSet {
      * @return the selected target (never null - the default is mandatory)
      */
     public Target select(Map<String, String> headers, Object body) {
-        MultiLevelMap bodyMap = body instanceof Map ? toMultiLevelMap(body) : null;
+        MultiLevelMap bodyMap = body instanceof Map || body instanceof List
+                ? new MultiLevelMap(Map.of(BODY_ROOT, body)) : null;
         for (Rule rule : rules) {
             final String value;
             try {
@@ -265,11 +286,6 @@ public final class RoutingRuleSet {
         return defaultTarget;
     }
 
-    @SuppressWarnings("unchecked")
-    private static MultiLevelMap toMultiLevelMap(Object body) {
-        return new MultiLevelMap((Map<String, Object>) body);
-    }
-
     /**
      * Case-insensitive header NAME lookup - Kafka preserves the producer's wire casing, so a rule must
      * not depend on it. Header VALUES stay case-sensitive.
@@ -283,7 +299,7 @@ public final class RoutingRuleSet {
         return null;
     }
 
-    /** A byte[]/non-Map body or a non-String value is a non-match by design (route on headers instead). */
+    /** A byte[] body or a non-String value is a non-match by design (route on headers instead). */
     private static String bodyValue(MultiLevelMap body, String path) {
         return body != null && body.getElement(path) instanceof String s ? s : null;
     }

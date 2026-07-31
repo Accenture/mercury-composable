@@ -32,6 +32,7 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -39,16 +40,20 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Kafka Notification Function - a minimalist composable function that publishes a Post Office event to a
  * Kafka topic. It reads the {@code topic} header (required) and the optional {@code partition} header
- * for routing, forwards every other event header as a Kafka header (byte[]), and uses the event body
- * (byte[]) as the Kafka message body. It wraps the shared, thread-safe {@link KafkaRequestPublisher}
- * singleton, and is drop-n-forget because Kafka is asynchronous.
+ * for routing, forwards every other event header as a Kafka header (byte[]), and uses the event body as
+ * the Kafka message body - byte[] verbatim, or a Map/List automatically serialized to JSON bytes (see
+ * {@link #toBytes}, the outbound symmetry of the flow adapter's inbound {@code serializer: 'json'};
+ * NON-schema topics only - the schema-registry path keeps its byte[] JSON-document contract).
+ * It wraps the shared, thread-safe {@link KafkaRequestPublisher} singleton, and is drop-n-forget
+ * because Kafka is asynchronous.
  *
  * <p><b>Trace propagation.</b> Rather than forwarding the caller's (now-stale) traceparent, it stamps a
  * fresh W3C {@code traceparent} built from this function's <i>own</i> current span, so the consuming side
  * adopts this span as the parent of the next hop - keeping the trace continuous across the Kafka boundary.</p>
  *
- * <p>byte[] is used for headers and body so no custom serializer/deserializer is needed. This is the
- * minimalist building block; richer encodings (e.g. a Confluent Schema Registry) layer on top.</p>
+ * <p>byte[] is the wire form for headers and body so no custom Kafka serializer/deserializer is needed.
+ * This is the minimalist building block; richer encodings (e.g. a Confluent Schema Registry) layer on
+ * top, and the Map/List JSON convenience above is plain SimpleMapper - not a Kafka serde.</p>
  *
  * <p>It returns the {@code Mono<Void>} from the publisher: the platform-core worker subscribes to it,
  * deferring the function's completion until the broker acknowledges. A caller using {@code po.request}
@@ -76,7 +81,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 @KernelThreadRunner
 @PreLoad(route = "simple.kafka.notification", instances = 5)
-public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono<Void>> {
+public class SimpleKafkaNotification implements TypedLambdaFunction<Object, Mono<Void>> {
 
     // Read-only reserved headers injected by the framework; never forwarded to Kafka as raw headers.
     private static final String MY_ROUTE = "my_route";
@@ -134,7 +139,7 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
     // not a resource this function opens - closing it here would tear it down for everyone
     @SuppressWarnings("resource")
     @Override
-    public Mono<Void> handleEvent(Map<String, String> headers, byte[] body, int instance) {
+    public Mono<Void> handleEvent(Map<String, String> headers, Object body, int instance) {
         String topic = headers.get(KafkaHeaders.TOPIC);
         if (topic == null) {
             throw new IllegalArgumentException("Missing '" + KafkaHeaders.TOPIC + "' header");
@@ -177,15 +182,41 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
     }
 
     /**
+     * Outbound symmetry with the flow adapter's inbound {@code serializer: 'json'} - NON-SCHEMA topics
+     * only (the caller of {@link #encode} applies this on the raw path exclusively): a Map or List body
+     * from the calling application is automatically serialized to JSON bytes with the default
+     * SimpleMapper. byte[] passes through verbatim (the minimalist default) and null stays null (a
+     * Kafka tombstone). Anything else is rejected loudly rather than published in a surprising shape.
+     * Visible for testing.
+     */
+    static byte[] toBytes(Object body) {
+        return switch (body) {
+            case null -> null;
+            case byte[] bytes -> bytes;
+            case Map<?, ?> map -> SimpleMapper.getInstance().getMapper().writeValueAsBytes(map);
+            case List<?> list -> SimpleMapper.getInstance().getMapper().writeValueAsBytes(list);
+            default -> throw new IllegalArgumentException(
+                    "body must be byte[], Map or List, got " + body.getClass().getSimpleName());
+        };
+    }
+
+    /**
      * When a {@code subject} header is present, serialize the body into the Confluent wire format via this
      * instance's own {@link SchemaCodec.Encoder}: the {@code subject} + {@code version} (default
-     * {@code latest}) are resolved to a global schema id and type, and the body is framed with that id.
-     * Otherwise the body is published as raw byte[] - the default minimalist behavior.
+     * {@code latest}) are resolved to a global schema id and type, and the body is framed with that id -
+     * the schema-path body contract stays byte[] (a JSON document), unchanged. Otherwise (a NON-schema
+     * topic) the body is published as raw byte[], with a Map/List auto-serialized to JSON bytes first
+     * (see {@link #toBytes}) - the JSON convenience applies to non-schema-registry topics only.
      */
-    private byte[] encode(String topic, Map<String, String> headers, byte[] body, int instance) {
+    private byte[] encode(String topic, Map<String, String> headers, Object body, int instance) {
         String subject = headers.get(KafkaHeaders.SUBJECT);
         if (subject == null || subject.isBlank()) {
-            return body;
+            return toBytes(body);
+        }
+        if (!(body instanceof byte[] document)) {
+            throw new IllegalArgumentException("body must be byte[] (a JSON document) when '"
+                    + KafkaHeaders.SUBJECT + "' is set, got "
+                    + (body == null ? "null" : body.getClass().getSimpleName()));
         }
         SchemaCodec codec = schemaCodec();
         if (codec == null) {
@@ -196,7 +227,7 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
         // Resolve subject+version -> global id + type (cached); throws IllegalState/IllegalArgument on failure.
         ResolvedSchema resolved = codec.resolve(subject, version);
         // The body is the structured value to encode (for JSON, a JSON document); parse it for the serializer.
-        Object value = SimpleMapper.getInstance().getMapper().readValue(body, Object.class);
+        Object value = SimpleMapper.getInstance().getMapper().readValue(document, Object.class);
         SchemaCodec.Encoder encoder = encoders.computeIfAbsent(instance, i -> codec.newEncoder());
         return encoder.serialize(topic, resolved.type(), resolved.id(), value);
     }

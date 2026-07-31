@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class RoutingRuleSetTest {
 
-    /** Any non-Map body: every {@code input.body} rule must be a non-match against it. */
+    /** A byte[] body: every {@code input.body} rule must be a non-match against it. */
     private static final byte[] RAW = "raw-bytes".getBytes(StandardCharsets.UTF_8);
     private static final String CATCH_ALL = "default -> flow://catch-all";
 
@@ -111,12 +111,40 @@ class RoutingRuleSetTest {
     }
 
     @Test
-    void bodyRuleNeverMatchesNonMapBody() {
+    void bodyRuleNeverMatchesBytesOrNullOrAMismatchedShape() {
         RoutingRuleSet rules = compile(
                 "input.body.event.kind(refund) -> task://v1.refund.processor", CATCH_ALL);
-        assertEquals(flow("catch-all"), rules.select(Map.of(), RAW));               // raw byte[]
-        assertEquals(flow("catch-all"), rules.select(Map.of(), List.of("refund"))); // JSON array body
+        assertEquals(flow("catch-all"), rules.select(Map.of(), RAW));   // raw byte[]
         assertEquals(flow("catch-all"), rules.select(Map.of(), null));
+        // a List body is addressable (see the bracket-path test) but never by a Map-shaped path
+        assertEquals(flow("catch-all"), rules.select(Map.of(), List.of("refund")));
+    }
+
+    @Test
+    void bodyRulesAddressListBodiesWithBracketPaths() {
+        RoutingRuleSet rules = compile(
+                "input.body[0].type(order) -> flow://order-processing",
+                "input.body.items[1].kind(refund) -> task://v1.refund.processor",
+                CATCH_ALL);
+        // a TOP-LEVEL JSON array body: the first element's type drives the routing
+        assertEquals(flow("order-processing"),
+                rules.select(Map.of(), List.of(Map.of("type", "order"))));
+        // a nested list inside a Map body
+        assertEquals(task("v1.refund.processor"), rules.select(Map.of(),
+                Map.of("items", List.of(Map.of("kind", "sale"), Map.of("kind", "refund")))));
+        // an out-of-range index is a non-match, never an error
+        assertEquals(flow("catch-all"), rules.select(Map.of(), List.of()));
+    }
+
+    @Test
+    void dollarPrefixedBodyKeysAreLiteralSegmentsNeverJsonPath() {
+        // the body is evaluated under a synthetic root, so MultiLevelMap's '$'-JsonPath escape hatch
+        // (whose parser can throw at record time) is structurally unreachable - a '$'-prefixed key is
+        // an ordinary literal segment, and a JsonPath-looking key is a plain non-match, never an error
+        RoutingRuleSet literal = compile("input.body.$kind(refund) -> flow://refund-flow", CATCH_ALL);
+        assertEquals(flow("refund-flow"), literal.select(Map.of(), Map.of("$kind", "refund")));
+        RoutingRuleSet jsonPathLike = compile("input.body.$[(refund) -> flow://never-selected", CATCH_ALL);
+        assertEquals(flow("catch-all"), jsonPathLike.select(Map.of(), Map.of("kind", "refund")));
     }
 
     @Test
@@ -213,16 +241,6 @@ class RoutingRuleSetTest {
     void requiresADefaultRule() {
         assertThrows(IllegalArgumentException.class,
                 () -> compile("input.header.type(order) -> flow://order-flow"));
-    }
-
-    @Test
-    void rejectsJsonPathStyleBodyKeys() {
-        // MultiLevelMap evaluates '$'-prefixed paths as JsonPath, whose parser can THROW on a malformed
-        // expression at record time - the grammar is composite paths only, rejected fail-fast at startup
-        assertThrows(IllegalArgumentException.class,
-                () -> compile("input.body.$[(refund) -> flow://x", CATCH_ALL));
-        assertThrows(IllegalArgumentException.class,
-                () -> compile("input.body.$.event.kind(refund) -> flow://x", CATCH_ALL));
     }
 
     @Test

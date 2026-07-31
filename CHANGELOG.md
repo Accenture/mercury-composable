@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    `flow` with a `flows` rule list that inspects a key-value of each inbound record and picks
    the target per message — the common Kafka pattern of one topic carrying mixed event types.
    Rules are `<selector>(<matcher>) -> <target>`: selectors `input.header.<name>`
-   (case-insensitive header-name lookup) and `input.body.<key>` (composite paths, Map bodies);
+   (case-insensitive header-name lookup) and `input.body` dot-bracket composite paths
+   (Map and List bodies — a top-level JSON array is addressable via `input.body[0].type`);
    three matcher modes — exact, wildcard (the presence of `*`), and explicit
    `regex: <expression>`; **first match wins in declaration order**, a non-match never errors,
    and a mandatory `default` catches the rest. Targets are `flow://<flow-id>` (identical to
@@ -25,15 +26,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    per-binding `ttl` deadline (default 30s). Both targets keep the unchanged
    commit-after-success, retry and dead-letter envelope. All rules and targets are validated
    fail-fast at startup.
-2. **Registry-less JSON deserialization for the Kafka Flow Adapter (`serializer: 'json'`).**
-   An optional per-binding parameter for non-schema topics: the adapter tries deserializing
-   each record value with the default SimpleMapper before routing — a JSON object becomes a
-   `Map` (enabling `input.body.*` routing rules and Map delivery to the flow or task), a JSON
-   array becomes a `List`, and anything else keeps the raw `byte[]`, which simply passes to
-   the selected target (best-effort by design; no special poison handling — a target that
-   cannot digest the bytes fails normally into the retry/DLQ path). Mutually exclusive with
-   `schema.enabled`; also useful on plain `flow` bindings. The parameter is open-ended for
-   later extension.
+2. **Registry-less JSON serialization for Kafka, symmetric in both directions.** Inbound
+   (`serializer: 'json'`, an optional per-binding parameter for non-schema topics): the
+   adapter tries deserializing each record value with the default SimpleMapper before
+   routing — a JSON object becomes a `Map` (enabling `input.body.<key>` routing rules and
+   Map delivery to the flow or task), a JSON array becomes a `List` (addressable by
+   bracket rules such as `input.body[0].type`), and anything else keeps the raw `byte[]`,
+   which simply passes to the selected target (best-effort by design; no special poison
+   handling — a target that cannot digest the bytes fails normally into the retry/DLQ
+   path). Mutually exclusive with `schema.enabled`; also useful on plain `flow` bindings;
+   open-ended for later extension. Outbound (the symmetric half):
+   `simple.kafka.notification` and `secondary.kafka.notification` now accept a **Map or
+   List body** and automatically serialize it to JSON bytes — the producing application
+   writes a Map, the wire carries JSON, and a consuming `serializer: 'json'` binding hands
+   its flow a Map again. Non-schema-registry topics only: with a `subject` header the body
+   contract stays a byte[] JSON document, unchanged.
 
 ---
 ## Version 4.11.0, 7/30/2026

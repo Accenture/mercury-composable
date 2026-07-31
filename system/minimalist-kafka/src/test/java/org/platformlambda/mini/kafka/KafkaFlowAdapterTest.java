@@ -432,6 +432,46 @@ class KafkaFlowAdapterTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void listBodyRuleRoutesTopLevelJsonArray() throws Exception {
+        RoutedTaskSink.RECEIVED.clear();
+        // a top-level JSON array decodes to a List and is addressable by an input.body[0] bracket rule
+        // (target selection between the list rule and the default is pinned at unit level - this proves
+        // the wire-to-List decode and List delivery end-to-end through the real pipeline)
+        KafkaRuntime.publisher().publishSync(ROUTED_TOPIC, null, Map.of(),
+                "[{\"type\":\"batch-order\"},{\"type\":\"noise\"}]".getBytes(StandardCharsets.UTF_8), 10000);
+
+        Map<String, Object> received = RoutedTaskSink.RECEIVED.poll(25, TimeUnit.SECONDS);
+        assertNotNull(received, "the JSON-array record should reach the task target");
+        List<Object> body = (List<Object>) assertInstanceOf(List.class, received.get("body"),
+                "serializer 'json' delivered the decoded List as the task's whole body");
+        assertEquals("batch-order", ((Map<String, Object>) body.get(0)).get("type"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void notificationAutoSerializesMapBodyForOutboundSymmetry() throws Exception {
+        RoutedOrderSinkTask.RECEIVED.clear();
+        // full symmetry circle: a Map body in the producing app -> auto-serialized JSON bytes on the
+        // wire -> serializer: 'json' decodes it back to a Map in the rule-selected consuming flow
+        String cid = Utility.getInstance().getUuid();
+        PostOffice po = PostOffice.trackable("unit.test", TRACE_ID, "TEST /outbound/map");
+        po.send(new EventEnvelope().setTo("simple.kafka.notification")
+                .setHeader(KafkaHeaders.TOPIC, ROUTED_TOPIC)
+                .setHeader(KafkaHeaders.CORRELATION_ID, cid)
+                .setHeader("type", "order")
+                .setBody(Map.of("hello", "from-map"))
+                .setTraceId(TRACE_ID).setTracePath("TEST /outbound/map"));
+
+        Map<String, Object> received = RoutedOrderSinkTask.RECEIVED.poll(25, TimeUnit.SECONDS);
+        assertNotNull(received, "the auto-serialized Map should be routed by the forwarded 'type' header");
+        assertEquals("order", received.get("type"));
+        assertEquals(cid, received.get("myCid"), "business cid propagated across the outbound-inbound loop");
+        assertEquals("from-map", ((Map<String, Object>) received.get("body")).get("hello"),
+                "Map in the producer, Map in the consumer - JSON bytes only on the wire");
+    }
+
+    @Test
     void nonJsonRecordFallsThroughToDefaultTargetWithRawBytes() throws Exception {
         RoutedTaskSink.RECEIVED.clear();
         // best-effort serializer contract: an unparseable record keeps its raw byte[] body, every
