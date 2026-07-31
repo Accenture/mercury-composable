@@ -68,7 +68,7 @@ to avoid breaking the system unintentionally.
 | graph.suspend                | Persist workflow state at a graph suspension point            | minigraph        |
 | graph.resume                 | Restore workflow state and continue past the suspension point | minigraph        |
 | v1.redis.persist.model       | Redis store for graph suspend (SETEX with native expiry)      | minigraph-state-redis |
-| v1.redis.retrieve.model      | Redis store for graph resume (atomic GETDEL consume)          | minigraph-state-redis |
+| v1.redis.retrieve.model      | Redis store for graph resume (atomic consume-on-retrieve)     | minigraph-state-redis |
 
 Routes from the last rows belong to **opt-in extension modules** (`minimalist-kafka`,
 `sync-over-async`, `minigraph-state-redis`) and the knowledge graph engine: they are reserved only

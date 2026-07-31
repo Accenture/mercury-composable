@@ -28,8 +28,11 @@ import java.io.IOException;
 
 /**
  * Thin lifecycle wrapper around the {@code embedded-redis} server. The library bundles a real
- * {@code redis-server} binary (macOS/Linux, arm64 + amd64) and runs it as a subprocess, so a developer
- * can spin up a standalone Redis for local development and testing with <b>no Docker image</b>.
+ * {@code redis-server} binary and runs it as a subprocess, so a developer can spin up a standalone
+ * Redis for local development and testing with <b>no Docker image</b>. Bundled versions differ by
+ * platform: Redis 6.2.x on macOS/Linux (arm64 + amd64), but <b>5.0.14 on Windows</b> (the community
+ * Windows port stopped there) - consumers must not assume 6.2+ commands; the graph state store
+ * detects the server version and adapts (see minigraph-state-redis).
  *
  * <p>Like the {@code kafka-standalone} helper, this is for development and testing only - not production.
  * A single server is started on the configured port (default 6379).</p>
