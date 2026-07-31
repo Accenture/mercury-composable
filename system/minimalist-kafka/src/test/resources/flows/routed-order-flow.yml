@@ -1,0 +1,26 @@
+#
+# Sink flow for the second-level routing e2e case ('routed-test-topic'). The binding's 'flows' rule list
+# selects this flow when the record's 'type' header matches ('order' exact, or the 'bulk-*' wildcard);
+# other records go to the task:// target or the default. The binding also sets serializer: 'json', so a
+# JSON-object record arrives here as a decoded Map in input.body (a non-JSON record would keep byte[]).
+#
+# The 'type' header is mapped from the raw record header so the test can assert WHICH rule matched.
+# model.cid carries the business correlation-id exactly as in the other sink flows.
+#
+flow:
+  id: 'routed-order-flow'
+  description: 'Record a Kafka message selected by a second-level routing rule'
+  ttl: 30s
+
+first.task: 'routed.order.sink'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+      - 'model.cid -> header.cid'
+      - 'input.header.type -> header.type'
+    process: 'routed.order.sink'
+    output:
+      - 'result -> output.body'
+    description: 'Record the routed message'
+    execution: end

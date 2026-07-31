@@ -1106,17 +1106,25 @@ defaults to `${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}`. The library pins the (d
 template setting.
 
 Per-binding fields in `kafka-flow-adapter.yaml` (all `${ENV_VAR:default}`-substitutable): exactly one of
-`topic` (literal) or `topic-pattern` (regex, subscribed via `subscribe(Pattern)`) is required; `flow`
-(required); `group` (optional consumer group, used verbatim; default `kafka-flow-adapter.<topic>` for a
-literal topic, required for `topic-pattern`); `partition` (optional; pins one partition via manual
-assignment, mutually exclusive with `topic-pattern`); `schema.enabled` (optional `boolean`, default `false`;
-when `true`, decode the Confluent-framed value to a `Map` before routing — see the
-[Schema Registry integration](minimalist-kafka.md#schema)); `dlq-topic` (optional; pre-provisioned
-dead-letter topic for this binding, used verbatim — no DLQ if omitted); `auto-commit` (optional `boolean`,
-default `false`; `true` uses Kafka-native auto-commit instead of manual commit-after-process); and
-`max-poll-records` (optional `int`; overrides the delivery mode's default of `1` for manual-commit or `500`
-for auto-commit). See the [Kafka Flow Adapter guide](minimalist-kafka.md#adapter-yaml) for the full
-per-field rationale and validation rules.
+`topic` (literal) or `topic-pattern` (regex, subscribed via `subscribe(Pattern)`) is required; exactly one
+of `flow` (direct routing: one flow id for every record) or `flows` (second-level routing: a rule list
+`<selector>(<matcher>) -> <target>` picking the target `flow://<flow-id>` or `task://<route>` per record,
+first match wins, mandatory `default` — see
+[second-level routing](minimalist-kafka.md#routing)); `group` (optional consumer group, used verbatim;
+default `kafka-flow-adapter.<topic>` for a literal topic, required for `topic-pattern`); `partition`
+(optional; pins one partition via manual assignment, mutually exclusive with `topic-pattern`);
+`schema.enabled` (optional `boolean`, default `false`; when `true`, decode the Confluent-framed value to a
+`Map` before routing — see the [Schema Registry integration](minimalist-kafka.md#schema)); `serializer`
+(optional; `'json'` = best-effort SimpleMapper decode of the record value on a non-schema topic, raw
+`byte[]` kept when parsing fails — mutually exclusive with `schema.enabled`, see
+[payload prerequisites](minimalist-kafka.md#routing-payload)); `ttl` (optional duration, default `30s`;
+the deadline for `task://` routing targets — flow targets use their own flow ttl); `dlq-topic` (optional;
+pre-provisioned dead-letter topic for this binding, used verbatim — no DLQ if omitted); `auto-commit`
+(optional `boolean`, default `false`; `true` uses Kafka-native auto-commit instead of manual
+commit-after-process); and `max-poll-records` (optional `int`; overrides the delivery mode's default of
+`1` for manual-commit or `500` for auto-commit). See the
+[Kafka Flow Adapter guide](minimalist-kafka.md#adapter-yaml) for the full per-field rationale and
+validation rules.
 
 ---
 

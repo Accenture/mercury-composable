@@ -18,10 +18,12 @@
 
 package org.platformlambda.mini.kafka;
 
+import com.accenture.automation.EventScriptManager;
 import com.accenture.models.Flows;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.mini.kafka.schema.SchemaCodec;
 import org.slf4j.Logger;
@@ -56,12 +58,40 @@ import java.util.regex.PatternSyntaxException;
  *     flow: 'ingest-clickstream'
  *     auto-commit: true            # optional; trades pod-death redelivery for throughput
  *     max-poll-records: 500        # optional; only meaningful with auto-commit
+ *   - topic: 'mixed-events'        # second-level routing: pick the target per record
+ *     serializer: 'json'           # optional; best-effort JSON decode on a non-schema topic
+ *     ttl: '30s'                   # optional; deadline for task:// targets (default 30s)
+ *     flows:
+ *       - 'input.header.type(order) -> flow://order-flow'
+ *       - 'input.body.event.kind(refund) -> task://v1.refund.processor'
+ *       - 'default -> flow://catch-all-flow'
  * </pre>
  *
  * <p>Exactly one of {@code topic} (a literal name) or {@code topic-pattern} (a {@link Pattern} regex,
  * subscribed via {@code subscribe(Pattern)} so newly-matching topics join automatically) must be set.
  * {@code topic-pattern} cannot be combined with {@code partition} (manual assignment needs concrete
  * topic-partitions up front) and requires an explicit {@code group} - see below.</p>
+ *
+ * <p><b>Second-level routing (opt-in).</b> Exactly one of {@code flow} (every record goes to one flow)
+ * or {@code flows} (a rule list inspecting one key-value of each record to pick the target per message)
+ * must be set. See {@link RoutingRuleSet} for the rule grammar (selectors, the three matcher modes,
+ * first-match-wins evaluation, the mandatory {@code default}) and {@link KafkaFlowConsumer} for the
+ * {@code task://} dispatch contract. All rule targets are validated at startup: a {@code flow://} target
+ * must be a compiled flow and a {@code task://} target must be a registered route (functions preload
+ * before this adapter starts).</p>
+ *
+ * <p>{@code serializer: 'json'} (optional, non-schema bindings only) makes the consumer TRY deserializing
+ * each record value with the default SimpleMapper before routing: a JSON object becomes a {@code Map}
+ * (enabling {@code input.body.*} rules and Map delivery), a JSON array becomes a {@code List}, and
+ * anything else - malformed text included - keeps the raw byte[] and simply passes it to the selected
+ * target (best-effort by design: no special poison handling; a target that cannot digest the bytes fails
+ * normally into the retry/DLQ path). Mutually exclusive with {@code schema.enabled}, which remains the
+ * strict decode-before-routing contract. The parameter is open-ended for later extension; {@code json}
+ * is the only supported value today.</p>
+ *
+ * <p>{@code ttl} (optional, duration syntax like {@code 30s}/{@code 5m}) is the deadline for a
+ * {@code task://} invocation - a bare function has no flow ttl of its own (default 30s). Flow targets
+ * always use their own flow ttl.</p>
  *
  * <p>{@code group} (within the {@code consumer} section) is the Kafka consumer group id, used <b>exactly</b>
  * as given - enterprise DevSecOps teams typically create topics, ACLs and consumer groups administratively,
@@ -103,6 +133,10 @@ public class KafkaFlowAdapter implements AutoCloseable {
     private static final String TOPIC = "topic";
     private static final String TOPIC_PATTERN = "topic-pattern";
     private static final String FLOW = "flow";
+    private static final String FLOWS = "flows";
+    private static final String SERIALIZER = "serializer";
+    private static final String SERIALIZER_JSON = "json";
+    private static final String TTL = "ttl";
     private static final String GROUP = "group";
     private static final String PARTITION = "partition";
     private static final String SCHEMA = "schema";
@@ -156,10 +190,10 @@ public class KafkaFlowAdapter implements AutoCloseable {
         String topicPattern = text(entry.get(TOPIC_PATTERN));
         String label = validateTopicSelector(i, topic, topicPattern);
         String flowId = text(entry.get(FLOW));
-        if (flowId == null) {
-            throw new IllegalArgumentException("consumer[" + i + "] (" + label + ") is missing a 'flow'");
-        }
+        RoutingRuleSet routing = resolveRouting(i, label, entry, flowId);
         boolean schemaEnabled = isSchemaEnabled(entry);
+        boolean jsonSerializer = isJsonSerializer(entry, i, label, schemaEnabled);
+        Long taskTtlMs = parseTaskTtl(entry.get(TTL));
         Integer partition = parsePartition(entry.get(PARTITION));
         if (topicPattern != null && partition != null) {
             throw new IllegalArgumentException("consumer[" + i + "] (" + label + ") cannot combine "
@@ -169,11 +203,14 @@ public class KafkaFlowAdapter implements AutoCloseable {
         String dlqTopic = resolveDlqTopic(entry, i, label, topic, topicPattern);
         boolean autoCommit = isAutoCommit(entry);
         Integer maxPollRecords = parseMaxPollRecords(entry.get(MAX_POLL_RECORDS));
-        // Cross-reference checks last: they depend on external wiring (compiled flows, schema registry),
-        // whereas everything above is self-contained validation of this one config entry's own shape.
-        // fail fast if the binding names a flow that was never compiled (CompileFlows runs before this
+        // Cross-reference checks last: they depend on external wiring (compiled flows, the platform
+        // registry, schema registry), whereas everything above is self-contained validation of this one
+        // config entry's own shape. Fail fast if the binding names a flow that was never compiled or a
+        // task route that was never registered (CompileFlows and function preload both run before this
         // @MainApplication), rather than failing every message at runtime.
-        if (Flows.getFlow(flowId) == null) {
+        if (routing != null) {
+            validateRoutingTargets(i, label, routing);
+        } else if (Flows.getFlow(flowId) == null) {
             throw new IllegalArgumentException("consumer[" + i + "] (" + label
                     + ") references unknown flow '" + flowId + "'");
         }
@@ -182,7 +219,8 @@ public class KafkaFlowAdapter implements AutoCloseable {
                     + "schema.enabled but '" + registryUrlKey + "' is not configured");
         }
         KafkaConsumerBinding.Builder builder = KafkaConsumerBinding.builder()
-                .flowId(flowId).groupId(groupId).partition(partition).schemaEnabled(schemaEnabled)
+                .flowId(flowId).routingRules(routing).groupId(groupId).partition(partition)
+                .schemaEnabled(schemaEnabled).jsonSerializer(jsonSerializer).taskTtlMs(taskTtlMs)
                 .dlqTopic(dlqTopic).autoCommit(autoCommit).maxPollRecords(maxPollRecords)
                 .traceIdHeader(nestedText(entry, TRACE_ID_HEADER_FLAT))
                 .correlationIdHeader(nestedText(entry, CORRELATION_ID_HEADER_FLAT))
@@ -218,6 +256,146 @@ public class KafkaFlowAdapter implements AutoCloseable {
         return text(node);
     }
 
+    /**
+     * Resolve the binding's routing: exactly one of {@code flow} (direct routing) or {@code flows}
+     * (second-level routing rules) must be set. Returns the compiled rule set for {@code flows}, or
+     * {@code null} for direct {@code flow} routing. Visible for testing.
+     */
+    static RoutingRuleSet resolveRouting(int i, String label, Map<?, ?> entry, String flowId) {
+        Object flowsValue = entry.get(FLOWS);
+        if (flowId != null && flowsValue != null) {
+            throw new IllegalArgumentException("consumer[" + i + "] (" + label
+                    + ") cannot set both 'flow' and 'flows' - use 'flow' for direct routing or "
+                    + "'flows' for second-level routing");
+        }
+        if (flowId == null && flowsValue == null) {
+            throw new IllegalArgumentException("consumer[" + i + "] (" + label
+                    + ") is missing a 'flow' or 'flows'");
+        }
+        if (flowsValue == null) {
+            return null;
+        }
+        if (!(flowsValue instanceof List<?> list) || list.isEmpty()) {
+            throw new IllegalArgumentException("consumer[" + i + "] (" + label
+                    + ") 'flows' must be a non-empty list of routing rules");
+        }
+        List<String> ruleStrings = new ArrayList<>();
+        for (Object item : list) {
+            String rule = text(item);
+            if (rule == null) {
+                throw new IllegalArgumentException("consumer[" + i + "] (" + label
+                        + ") 'flows' contains an empty routing rule");
+            }
+            ruleStrings.add(rule);
+        }
+        try {
+            return RoutingRuleSet.compile(ruleStrings);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("consumer[" + i + "] (" + label + ") " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Fail fast when a routing rule names a flow that was never compiled or a task route that is not in
+     * the platform registry - functions preload before this {@code @MainApplication} adapter starts, so
+     * target existence is checkable here rather than failing every matching message at runtime.
+     */
+    private static void validateRoutingTargets(int i, String label, RoutingRuleSet routing) {
+        for (RoutingRuleSet.Target target : routing.allTargets()) {
+            if (target.task()) {
+                // the flow engine is a registered route, but addressing it as a bare task would bypass
+                // the flow-launch contract (no flow_id) - flows are dispatched with flow:// only
+                if (EventScriptManager.SERVICE_NAME.equals(target.destination())) {
+                    throw new IllegalArgumentException("consumer[" + i + "] (" + label + ") 'task://"
+                            + EventScriptManager.SERVICE_NAME
+                            + "' is not allowed - use 'flow://<flow-id>' to dispatch to the flow engine");
+                }
+                // Platform is touched only when a task:// target exists (flow-only rule sets stay
+                // platform-free, which also keeps config-validation unit tests lightweight)
+                if (!Platform.getInstance().hasRoute(target.destination())) {
+                    throw new IllegalArgumentException("consumer[" + i + "] (" + label
+                            + ") references unknown task route '" + target.destination() + "'");
+                }
+            } else if (Flows.getFlow(target.destination()) == null) {
+                throw new IllegalArgumentException("consumer[" + i + "] (" + label
+                        + ") references unknown flow '" + target.destination() + "'");
+            }
+        }
+    }
+
+    /**
+     * Whether the binding opts into best-effort JSON deserialization on a non-schema topic
+     * ({@code serializer: 'json'}). The parameter is open-ended for later extension, so any other value
+     * is rejected loudly rather than silently ignored. Visible for testing.
+     */
+    static boolean isJsonSerializer(Map<?, ?> entry, int i, String label, boolean schemaEnabled) {
+        String serializer = text(entry.get(SERIALIZER));
+        if (serializer == null) {
+            return false;
+        }
+        if (!SERIALIZER_JSON.equalsIgnoreCase(serializer)) {
+            throw new IllegalArgumentException("consumer[" + i + "] (" + label
+                    + ") unsupported 'serializer' '" + serializer + "' - only 'json' is supported");
+        }
+        if (schemaEnabled) {
+            throw new IllegalArgumentException("consumer[" + i + "] (" + label
+                    + ") cannot combine 'serializer' with schema.enabled - the schema registry "
+                    + "already owns the decode");
+        }
+        return true;
+    }
+
+    /**
+     * Parse the optional per-binding {@code ttl} (duration syntax, e.g. {@code 30s}, {@code 5m}) into
+     * milliseconds - the deadline for a {@code task://} invocation, which has no flow ttl of its own.
+     * {@code null} when absent (the consumer applies its 30s default). Visible for testing.
+     *
+     * <p>Long arithmetic throughout - an absurd-but-accepted duration must be rejected or honored as
+     * written, never silently wrapped to a different positive value (the ttl overflow-guard precedent).</p>
+     *
+     * @throws IllegalArgumentException if present but not a positive duration
+     */
+    static Long parseTaskTtl(Object value) {
+        String text = text(value);
+        if (text == null) {
+            return null;
+        }
+        long seconds = durationSeconds(text);
+        if (seconds <= 0) {
+            throw new IllegalArgumentException(
+                    "consumer 'ttl' must be a positive duration (e.g. '30s'), got '" + text + "'");
+        }
+        return seconds * 1000L;
+    }
+
+    /**
+     * Long-math twin of {@code Utility.getDurationInSeconds} (suffixes s/m/h/d; no suffix = seconds),
+     * immune to int wrap-around on pathological inputs. Returns -1 on anything malformed.
+     */
+    private static long durationSeconds(String duration) {
+        long multiplier = 1;
+        String number = duration;
+        char last = duration.charAt(duration.length() - 1);
+        if (!Character.isDigit(last)) {
+            multiplier = switch (Character.toLowerCase(last)) {
+                case 's' -> 1;
+                case 'm' -> 60;
+                case 'h' -> 3600;
+                case 'd' -> 86400;
+                default -> -1;
+            };
+            number = duration.substring(0, duration.length() - 1).trim();
+        }
+        if (multiplier < 0 || number.isEmpty()) {
+            return -1;
+        }
+        try {
+            return Long.parseLong(number) * multiplier;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
     /** Validate the topic/topic-pattern selector (exactly one is set, valid regex) and return a display label. */
     private String validateTopicSelector(int i, String topic, String topicPattern) {
         if (topic == null && topicPattern == null) {
@@ -240,10 +418,16 @@ public class KafkaFlowAdapter implements AutoCloseable {
 
     /** Log a one-line summary of a resolved consumer binding. */
     private void logBinding(String label, KafkaConsumerBinding binding) {
-        log.info("Kafka flow adapter binding: {} -> flow '{}' (consumer group '{}'{}{}{}{}{}{}{})",
-                label, binding.flowId(), binding.groupId(),
+        log.info("Kafka flow adapter binding: {} -> {} (consumer group '{}'{}{}{}{}{}{}{}{}{})",
+                label,
+                binding.routingRules() != null
+                        ? "second-level routing (" + binding.routingRules().size() + " rules + default)"
+                        : "flow '" + binding.flowId() + "'",
+                binding.groupId(),
                 binding.partition() != null ? ", pinned to partition " + binding.partition() : "",
                 binding.schemaEnabled() ? ", schema decode on" : "",
+                binding.jsonSerializer() ? ", serializer 'json'" : "",
+                binding.taskTtlMs() != null ? ", task ttl " + (binding.taskTtlMs() / 1000) + "s" : "",
                 binding.dlqTopic() != null ? ", dlq-topic '" + binding.dlqTopic() + "'" : "",
                 binding.autoCommit() ? ", auto-commit on" : "",
                 binding.traceIdHeader() != null ? ", trace-id header '" + binding.traceIdHeader() + "'" : "",

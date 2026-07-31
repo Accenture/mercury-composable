@@ -27,6 +27,8 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
@@ -66,6 +68,24 @@ import java.util.regex.Pattern;
  * metadata.topic} is the record's actual topic, not the binding's configured {@code topic}/
  * {@code topic-pattern} - the only way a {@code topic-pattern} flow (or a reprocessing flow reading a
  * {@code dlq-topic}) recovers which concrete topic a message came from.</p>
+ *
+ * <p><b>Best-effort JSON deserialization (opt-in).</b> When the binding sets {@code serializer: 'json'}
+ * (a non-schema topic), the consumer TRIES deserializing the record value with the default SimpleMapper
+ * before routing - see {@link #bestEffortJson}: a JSON object becomes a {@code Map}, a JSON array a
+ * {@code List}, and anything else (a scalar, or malformed text) keeps the raw byte[]. A parse failure
+ * needs no special handling here: the raw bytes simply pass to the selected target, and a target that
+ * expects something else fails normally into the retry/DLQ path.</p>
+ *
+ * <p><b>Second-level routing (opt-in).</b> When the binding carries a {@link RoutingRuleSet}
+ * ({@code flows} instead of {@code flow}), each record's target is selected per message: the first
+ * matching rule wins, else the mandatory default. A {@code flow://} target dispatches exactly like
+ * direct routing. A {@code task://} target invokes a registered function directly, mirroring
+ * TaskExecutor's bare-route dispatch contract - see {@link #toTaskRequest}: all inbound Kafka record
+ * headers are copied onto the envelope headers, the whole payload becomes the body (no {@code metadata}
+ * map - a task needing the record envelope facts should be fronted by a flow instead), and the business
+ * correlation-id rides the engine-managed {@code my_cid} tag so the worker injects
+ * {@code my_correlation_id} at delivery. The deadline for a task invocation is the binding's {@code ttl}
+ * (default {@value #DEFAULT_TASK_TTL_MS} ms), since a bare function has no flow ttl of its own.</p>
  *
  * <p><b>Delivery mode.</b> By default ({@link KafkaConsumerBinding#autoCommit()} false), offsets are
  * committed manually, only AFTER the flow finishes processing a message (the request blocks the poll
@@ -119,6 +139,8 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private static final String METADATA_KEY = "key";
     private static final String DLQ_ERROR_HEADER = "dlq.error";
     private static final String DLQ_ORIGIN_TOPIC_HEADER = "dlq.origin.topic";
+    // deadline for a task:// invocation when the binding sets no 'ttl' (a bare function has no flow ttl)
+    private static final long DEFAULT_TASK_TTL_MS = 30000;
     // Global inbound business correlation-id header (default "cid"); its value seeds the flow's model.cid.
     private static final String GLOBAL_CORRELATION_ID_HEADER = AppConfigReader.getInstance()
             .getProperty("kafka.correlation.id.header", KafkaHeaders.CORRELATION_ID);
@@ -237,15 +259,44 @@ public class KafkaFlowConsumer implements AutoCloseable {
                         consumerRecord.topic(), deadLetterTopic, e);
                 return writeToDeadLetter(consumerRecord, e);
             }
+        } else if (binding.jsonSerializer()) {
+            dataset.put(BODY, bestEffortJson(consumerRecord.value()));
         }
         @SuppressWarnings("unchecked")
         Map<String, String> headers = (Map<String, String>) dataset.get(HEADER);
+        RoutingRuleSet.Target target = binding.routingRules() != null
+                ? binding.routingRules().select(headers, dataset.get(BODY))
+                : RoutingRuleSet.Target.flow(binding.flowId());
         String[] trace = parseInboundTraceparent(headers);
         // trace-id precedence: W3C traceparent > configured trace-id header (legacy upstream) > fresh UUID
         String traceId = trace.length > 0 ? trace[0] : traceIdFromHeaderOrNew(headers);
         String tracePath = "KAFKA /" + consumerRecord.topic();
-        EventEnvelope forward = toFlowRequest(dataset, headers, trace, traceId, tracePath);
-        return deliver(consumerRecord, forward, traceId, tracePath);
+        EventEnvelope forward = target.task()
+                ? toTaskRequest(target.destination(), dataset, headers, trace, traceId, tracePath)
+                : toFlowRequest(target.destination(), dataset, headers, trace, traceId, tracePath);
+        return deliver(consumerRecord, forward, target.label(), traceId, tracePath);
+    }
+
+    /**
+     * Best-effort JSON deserialization for a {@code serializer: 'json'} binding: a JSON object becomes a
+     * {@code Map}, a JSON array a {@code List}, and anything else - a scalar, or malformed text - keeps
+     * the raw byte[] unchanged (it simply passes to the selected target, which fails normally into the
+     * retry/DLQ path if it cannot digest the bytes). The shape sniff + try/catch fallback is the same
+     * idiom platform-core uses for JSON HTTP content. Visible for testing.
+     */
+    static Object bestEffortJson(byte[] value) {
+        String text = Utility.getInstance().getUTF(value).trim();
+        try {
+            if (text.startsWith("{") && text.endsWith("}")) {
+                return SimpleMapper.getInstance().getMapper().readValue(text, Map.class);
+            }
+            if (text.startsWith("[") && text.endsWith("]")) {
+                return SimpleMapper.getInstance().getMapper().readValue(text, List.class);
+            }
+        } catch (RuntimeException e) {
+            // malformed JSON: fall through to the raw bytes (best-effort by design)
+        }
+        return value;
     }
 
     /**
@@ -270,19 +321,11 @@ public class KafkaFlowConsumer implements AutoCloseable {
     }
 
     /** Build the flow-engine request from the decoded dataset, chaining onto the inbound trace/span. */
-    private EventEnvelope toFlowRequest(Map<String, Object> dataset, Map<String, String> headers,
+    private EventEnvelope toFlowRequest(String flowId, Map<String, Object> dataset, Map<String, String> headers,
                                         String[] trace, String traceId, String tracePath) {
-        // Capture the upstream business correlation-id from the effective header; generate a fresh one if absent.
-        // Legacy conflation config: when the trace-id and correlation-id share ONE header name, an absent
-        // shared header must yield ONE id - the resolved trace id (traceparent > shared header > fresh UUID)
-        // is authoritative and the correlation-id adopts it, keeping the outbound hop self-consistent.
-        String businessCorrelationId = headers.get(correlationIdHeader);
-        if (businessCorrelationId == null) {
-            businessCorrelationId = traceIdHeader != null && traceIdHeader.equalsIgnoreCase(correlationIdHeader)
-                    ? traceId : Utility.getInstance().getUuid();
-        }
+        String businessCorrelationId = resolveBusinessCorrelationId(headers, traceId);
         EventEnvelope forward = new EventEnvelope();
-        forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, binding.flowId())
+        forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, flowId)
                 .setHeader(EventScriptManager.BUSINESS_CORRELATION_ID, businessCorrelationId)
                 .setCorrelationId(businessCorrelationId).setBody(dataset)
                 .setTraceId(traceId).setTracePath(tracePath);
@@ -293,38 +336,80 @@ public class KafkaFlowConsumer implements AutoCloseable {
     }
 
     /**
-     * Invoke the flow with bounded retry, then dead-letter. A failure is a 4xx/5xx reply or a thrown
-     * exception (flow/transport error, or a timeout when the flow does not reply within its ttl).
+     * Build a direct function invocation for a {@code task://} routing target. The dispatch contract
+     * mirrors TaskExecutor's bare-route dispatch: copy all inbound Kafka record headers onto the
+     * envelope, pass the whole payload (byte[], or a decoded Map/List) as the body, and carry the
+     * business correlation-id on the engine-managed {@code my_cid} tag - never an envelope header - so
+     * the worker injects {@code my_correlation_id} at delivery (the RPC inbox owns the envelope's own
+     * correlation-id field).
+     */
+    private EventEnvelope toTaskRequest(String route, Map<String, Object> dataset, Map<String, String> headers,
+                                        String[] trace, String traceId, String tracePath) {
+        EventEnvelope forward = new EventEnvelope().setTo(route)
+                .setBody(dataset.get(BODY))
+                .setTraceId(traceId).setTracePath(tracePath);
+        headers.forEach(forward::setHeader);
+        forward.addTag(EventEmitter.BUSINESS_CID_TAG, resolveBusinessCorrelationId(headers, traceId));
+        if (trace.length > 0) {
+            forward.setSpanId(trace[1]);   // chain onto the upstream span carried in the Kafka traceparent
+        }
+        return forward;
+    }
+
+    /**
+     * The upstream business correlation-id from the effective header; a fresh one when absent.
+     * Legacy conflation config: when the trace-id and correlation-id share ONE header name, an absent
+     * shared header must yield ONE id - the resolved trace id (traceparent > shared header > fresh UUID)
+     * is authoritative and the correlation-id adopts it, keeping the outbound hop self-consistent.
+     */
+    private String resolveBusinessCorrelationId(Map<String, String> headers, String traceId) {
+        String businessCorrelationId = headers.get(correlationIdHeader);
+        if (businessCorrelationId == null) {
+            return traceIdHeader != null && traceIdHeader.equalsIgnoreCase(correlationIdHeader)
+                    ? traceId : Utility.getInstance().getUuid();
+        }
+        return businessCorrelationId;
+    }
+
+    /**
+     * Invoke the target (flow or task) with bounded retry, then dead-letter. A failure is a 4xx/5xx
+     * reply or a thrown exception (flow/transport error, or a timeout when the target does not reply
+     * within its ttl).
      *
      * @return whether the offset may be committed (see {@link #writeToDeadLetter}); false only on shutdown.
      */
     private boolean deliver(ConsumerRecord<String, byte[]> consumerRecord, EventEnvelope forward,
-                            String traceId, String tracePath) {
+                            String targetLabel, String traceId, String tracePath) {
         int attempt = 0;
         while (true) {
             Throwable cause;
             try {
                 EventEnvelope response = invokeFlow(forward, traceId, tracePath);
                 if (response.getStatus() < 400) {
-                    return true;   // the flow finished normally (2xx/3xx) -> acknowledge (commit) and move on
+                    return true;   // the target finished normally (2xx/3xx) -> acknowledge (commit) and move on
                 }
                 cause = new IllegalStateException(
-                        "flow " + binding.flowId() + " returned status " + response.getStatus());
+                        targetLabel + " returned status " + response.getStatus());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 running = false;
                 return false;   // do not commit a message that was interrupted mid-processing
             } catch (ExecutionException e) {
                 cause = e.getCause() != null ? e.getCause() : e;
+            } catch (RuntimeException e) {
+                // a synchronous dispatch error - e.g. a task route released AFTER startup validation
+                // ("Route X not found") - joins the same retry/DLQ envelope instead of escaping to the
+                // poll loop, which would kill the consumer thread and stall the binding permanently
+                cause = e;
             }
             if (attempt >= retryPolicy.maxRetries()) {
-                log.warn("Flow {} failed for a '{}' message after {} attempt(s); routing to {}",
-                        binding.flowId(), consumerRecord.topic(), attempt + 1, deadLetterTopic, cause);
+                log.warn("{} failed for a '{}' message after {} attempt(s); routing to {}",
+                        targetLabel, consumerRecord.topic(), attempt + 1, deadLetterTopic, cause);
                 return writeToDeadLetter(consumerRecord, cause);
             }
             attempt++;
-            log.warn("Flow {} failed for a '{}' message (attempt {}/{}); retrying",
-                    binding.flowId(), consumerRecord.topic(), attempt, retryPolicy.maxRetries(), cause);
+            log.warn("{} failed for a '{}' message (attempt {}/{}); retrying",
+                    targetLabel, consumerRecord.topic(), attempt, retryPolicy.maxRetries(), cause);
             if (!backoff()) {
                 return false;   // interrupted during backoff -> redeliver, do not commit
             }
@@ -332,20 +417,43 @@ public class KafkaFlowConsumer implements AutoCloseable {
     }
 
     /**
-     * Send the event into the flow engine, blocking until it replies, and return that reply. Visible
-     * (package-private and non-final) so the retry/dead-letter orchestration can be unit-tested without a
-     * running engine.
+     * Send the event into the flow engine (or directly to a {@code task://} function), blocking until it
+     * replies, and return that reply. Visible (package-private and non-final) so the retry/dead-letter
+     * orchestration can be unit-tested without a running engine.
      *
-     * <p>The deadline is the flow's own {@code ttl} - Kafka is asynchronous, so unlike an HTTP entry it has
-     * no inherent request timeout; the flow's {@code ttl} is the authoritative deadline. If the flow does
-     * not reply within {@code ttl}, {@code po.request} throws (the 2-arg overload uses timeout-as-exception
-     * semantics), which the caller treats as a failure.</p>
+     * <p>The deadline for a flow is the flow's own {@code ttl} - Kafka is asynchronous, so unlike an HTTP
+     * entry it has no inherent request timeout; the flow's {@code ttl} is the authoritative deadline. A
+     * task has no flow ttl, so the binding's {@code ttl} applies (default {@value #DEFAULT_TASK_TTL_MS}
+     * ms). If the target does not reply within the deadline, {@code po.request} throws (the 2-arg
+     * overload uses timeout-as-exception semantics), which the caller treats as a failure.</p>
      */
     EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath)
             throws InterruptedException, ExecutionException {
         PostOffice po = PostOffice.trackable(ADAPTER_ROUTE, traceId, tracePath);
-        long ttl = Flows.getFlow(binding.flowId()).ttl;
-        return po.request(forward, ttl).get();
+        return po.request(forward, resolveTtl(forward)).get();
+    }
+
+    /**
+     * Flow targets carry the per-record flow id in the {@code flow_id} header (second-level routing may
+     * select a different flow per message) and use that flow's own ttl; anything else is a {@code task://}
+     * function invocation on the binding's task ttl. Null-safe by design: an envelope addressed to the
+     * flow engine without a resolvable flow (unreachable - the adapter builds flow requests itself and
+     * startup validation rejects {@code task://event.script.manager}) degrades to the task ttl rather
+     * than tearing down the poll thread.
+     */
+    private long resolveTtl(EventEnvelope forward) {
+        if (EventScriptManager.SERVICE_NAME.equals(forward.getTo())) {
+            var flow = Flows.getFlow(forward.getHeader(FLOW_ID));
+            if (flow != null) {
+                return flow.ttl;
+            }
+        }
+        return taskTtl();
+    }
+
+    /** The binding's {@code ttl} for {@code task://} targets, or the 30s default when not configured. */
+    private long taskTtl() {
+        return binding.taskTtlMs() != null ? binding.taskTtlMs() : DEFAULT_TASK_TTL_MS;
     }
 
     /** Pause between retry attempts. @return false if interrupted while waiting (caller must not commit). */

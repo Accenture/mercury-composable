@@ -27,6 +27,7 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -266,5 +267,114 @@ class KafkaFlowAdapterConfigTest {
     @Test
     void rejectsNegativePartition() {
         assertThrows(IllegalArgumentException.class, () -> KafkaFlowAdapter.parsePartition("-1"));
+    }
+
+    @Test
+    void rejectsBothFlowAndFlows() {
+        ConfigReader config = config(List.of(Map.of("topic", "orders", "flow", "f",
+                "flows", List.of("default -> flow://f"))));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
+    void rejectsFlowsThatIsNotAList() {
+        ConfigReader config = config(List.of(Map.of("topic", "orders", "flows", "default -> flow://f")));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
+    void rejectsEmptyFlowsList() {
+        ConfigReader config = config(List.of(Map.of("topic", "orders", "flows", List.of())));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
+    void rejectsMalformedRoutingRule() {
+        ConfigReader config = config(List.of(Map.of("topic", "orders",
+                "flows", List.of("this is not a rule", "default -> flow://f"))));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
+    void rejectsFlowsWithoutDefault() {
+        ConfigReader config = config(List.of(Map.of("topic", "orders",
+                "flows", List.of("input.header.type(order) -> flow://order-flow"))));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
+    void rejectsRoutingRuleReferencingUnknownFlow() {
+        // no flow is compiled in this test JVM, so any flow:// target fails the cross-reference check
+        ConfigReader config = config(List.of(Map.of("topic", "orders",
+                "flows", List.of("default -> flow://no-such-flow"))));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
+    void rejectsUnsupportedSerializer() {
+        ConfigReader config = config(List.of(Map.of("topic", "orders", "flow", "f", "serializer", "xml")));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
+    void rejectsSerializerCombinedWithSchemaDecoding() {
+        ConfigReader config = config(List.of(Map.of("topic", "orders", "flow", "f",
+                "serializer", "json", "schema.enabled", "true")));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
+    void isJsonSerializerParsesTheFlag() {
+        assertTrue(KafkaFlowAdapter.isJsonSerializer(Map.of("serializer", "json"), 0, "topic 'x'", false));
+        assertTrue(KafkaFlowAdapter.isJsonSerializer(Map.of("serializer", "JSON"), 0, "topic 'x'", false));
+        assertFalse(KafkaFlowAdapter.isJsonSerializer(Map.of(), 0, "topic 'x'", false));
+    }
+
+    @Test
+    void parseTaskTtlAcceptsDurationSyntax() {
+        assertEquals(30000L, KafkaFlowAdapter.parseTaskTtl("30s"));
+        assertEquals(300000L, KafkaFlowAdapter.parseTaskTtl("5m"));
+        assertEquals(20000L, KafkaFlowAdapter.parseTaskTtl(20));   // bare number = seconds
+        assertNull(KafkaFlowAdapter.parseTaskTtl(null));
+        assertNull(KafkaFlowAdapter.parseTaskTtl("  "));
+    }
+
+    @Test
+    void rejectsNonPositiveOrMalformedTaskTtl() {
+        assertThrows(IllegalArgumentException.class, () -> KafkaFlowAdapter.parseTaskTtl("0"));
+        assertThrows(IllegalArgumentException.class, () -> KafkaFlowAdapter.parseTaskTtl("abc"));
+        assertThrows(IllegalArgumentException.class, () -> KafkaFlowAdapter.parseTaskTtl("-5s"));
+    }
+
+    @Test
+    void taskTtlUsesLongMathWithNoSilentWrap() {
+        // int arithmetic would wrap '50000d' (4.32e9 seconds) to a silently WRONG positive value;
+        // long math honors an absurd-but-accepted duration exactly as written
+        assertEquals(50000L * 86400 * 1000, KafkaFlowAdapter.parseTaskTtl("50000d"));
+        assertEquals(86400000L, KafkaFlowAdapter.parseTaskTtl("1d"));
+        assertEquals(3600000L, KafkaFlowAdapter.parseTaskTtl("1h"));
+    }
+
+    @Test
+    void rejectsFlowEngineAsTaskRoute() {
+        // the flow engine is a registered route, but a bare task envelope carries no flow_id -
+        // flows are dispatched with flow:// only (rejected before any Platform lookup)
+        ConfigReader config = config(List.of(Map.of("topic", "orders",
+                "flows", List.of("default -> task://event.script.manager"))));
+        assertThrows(IllegalArgumentException.class, () -> build(config));
+    }
+
+    @Test
+    void resolveRoutingReturnsNullForDirectFlowBinding() {
+        assertNull(KafkaFlowAdapter.resolveRouting(0, "topic 'x'", Map.of("topic", "x", "flow", "f"), "f"));
+    }
+
+    @Test
+    void resolveRoutingCompilesTheRuleList() {
+        RoutingRuleSet rules = KafkaFlowAdapter.resolveRouting(0, "topic 'x'",
+                Map.of("flows", List.of("input.header.type(a) -> flow://a-flow", "default -> flow://d-flow")),
+                null);
+        assertNotNull(rules);
+        assertEquals(1, rules.size());
     }
 }

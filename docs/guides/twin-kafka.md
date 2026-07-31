@@ -167,8 +167,14 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 The retry/dead-letter tuning keys (`kafka.dlq.timeout.ms`, `kafka.flow.max.retries`,
 `kafka.flow.retry.backoff.ms`) are application-level policy shared by both adapters. Per-binding
 options in the secondary adapter YAML are identical to the [primary's](minimalist-kafka.md#adapter-yaml) -
-including `schema.enabled`, `dlq-topic`, and the `trace.id.header` / `correlation.id.header` /
-`traceparent.header` impedance-matching overrides.
+including `topic-pattern`, `schema.enabled`, `dlq-topic`,
+[second-level routing](minimalist-kafka.md#routing) (`flows` with `flow://` and `task://` targets,
+`serializer: 'json'`, `ttl`), and the `trace.id.header` / `correlation.id.header` /
+`traceparent.header` impedance-matching overrides. Dead letters from a secondary binding - whichever
+target kind failed - are published through the secondary cluster's own publisher. Likewise on the
+outbound side, `secondary.kafka.notification` inherits the primary publish function's body handling:
+byte[] verbatim, or a Map/List [auto-serialized to JSON bytes](minimalist-kafka.md#outbound) on
+non-schema publishes.
 
 ## Health check {#health}
 

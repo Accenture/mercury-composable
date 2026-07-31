@@ -30,9 +30,12 @@ public final class KafkaConsumerBinding {
     private final String topicOrPattern;
     private final boolean pattern;
     private final String flowId;
+    private final RoutingRuleSet routingRules;
     private final String groupId;
     private final Integer partition;
     private final boolean schemaEnabled;
+    private final boolean jsonSerializer;
+    private final Long taskTtlMs;
     private final String dlqTopic;
     private final boolean autoCommit;
     private final Integer maxPollRecords;
@@ -44,9 +47,12 @@ public final class KafkaConsumerBinding {
         this.topicOrPattern = b.topicOrPattern;
         this.pattern = b.pattern;
         this.flowId = b.flowId;
+        this.routingRules = b.routingRules;
         this.groupId = b.groupId;
         this.partition = b.partition;
         this.schemaEnabled = b.schemaEnabled;
+        this.jsonSerializer = b.jsonSerializer;
+        this.taskTtlMs = b.taskTtlMs;
         this.dlqTopic = b.dlqTopic;
         this.autoCommit = b.autoCommit;
         this.maxPollRecords = b.maxPollRecords;
@@ -65,8 +71,18 @@ public final class KafkaConsumerBinding {
         return pattern;
     }
 
+    /** The direct-routing flow id, or {@code null} when this binding uses second-level routing ({@code flows}). */
     public String flowId() {
         return flowId;
+    }
+
+    /**
+     * The compiled second-level routing rules ({@code flows}), or {@code null} for a direct {@code flow}
+     * binding. Exactly one of {@link #flowId()} / this is set - {@code KafkaFlowAdapter} validates the
+     * mutual exclusion at startup.
+     */
+    public RoutingRuleSet routingRules() {
+        return routingRules;
     }
 
     public String groupId() {
@@ -80,6 +96,23 @@ public final class KafkaConsumerBinding {
 
     public boolean schemaEnabled() {
         return schemaEnabled;
+    }
+
+    /**
+     * True when the binding sets {@code serializer: 'json'} - best-effort SimpleMapper deserialization
+     * of the record value on a non-schema topic (mutually exclusive with {@link #schemaEnabled()}).
+     */
+    public boolean jsonSerializer() {
+        return jsonSerializer;
+    }
+
+    /**
+     * The per-binding {@code ttl} in milliseconds - the deadline for a {@code task://} routing target,
+     * which has no flow ttl of its own - or {@code null} to use {@code KafkaFlowConsumer}'s 30s default.
+     * Flow targets always use their own flow ttl.
+     */
+    public Long taskTtlMs() {
+        return taskTtlMs;
     }
 
     /** The binding's dead-letter topic, or {@code null} when no {@code dlq-topic} was configured. */
@@ -133,9 +166,12 @@ public final class KafkaConsumerBinding {
         private String topicOrPattern;
         private boolean pattern;
         private String flowId;
+        private RoutingRuleSet routingRules;
         private String groupId;
         private Integer partition;
         private boolean schemaEnabled;
+        private boolean jsonSerializer;
+        private Long taskTtlMs;
         private String dlqTopic;
         private boolean autoCommit;
         private Integer maxPollRecords;
@@ -163,6 +199,11 @@ public final class KafkaConsumerBinding {
             return this;
         }
 
+        public Builder routingRules(RoutingRuleSet routingRules) {
+            this.routingRules = routingRules;
+            return this;
+        }
+
         public Builder groupId(String groupId) {
             this.groupId = groupId;
             return this;
@@ -175,6 +216,16 @@ public final class KafkaConsumerBinding {
 
         public Builder schemaEnabled(boolean schemaEnabled) {
             this.schemaEnabled = schemaEnabled;
+            return this;
+        }
+
+        public Builder jsonSerializer(boolean jsonSerializer) {
+            this.jsonSerializer = jsonSerializer;
+            return this;
+        }
+
+        public Builder taskTtlMs(Long taskTtlMs) {
+            this.taskTtlMs = taskTtlMs;
             return this;
         }
 

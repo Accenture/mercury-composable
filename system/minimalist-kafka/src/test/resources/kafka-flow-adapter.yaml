@@ -36,3 +36,26 @@ consumer:
     group: 'legacy-test-group'
     trace.id.header: 'X-Legacy-Trace'
     correlation.id.header: 'X-Correlation-ID'
+  # Second-level routing: 'flows' (instead of 'flow') inspects a key-value of each record to pick the
+  # target per message - first match wins, the mandatory 'default' catches the rest. serializer: 'json'
+  # tries a SimpleMapper decode on this non-schema topic (enabling the input.body rule); a record that is
+  # not a JSON object/array keeps its raw byte[] and simply passes to the selected target. 'ttl' is the
+  # deadline for the task:// targets (a bare function has no flow ttl; default 30s when omitted).
+  - topic: 'routed-test-topic'
+    group: 'routed-test-group'
+    serializer: 'json'
+    ttl: '10s'
+    flows:
+      - 'input.header.type(order) -> flow://routed-order-flow'
+      - 'input.header.type(bulk-*) -> flow://routed-order-flow'
+      - 'input.body.event.kind(refund) -> task://routed.task.sink'
+      - 'input.body[0].type(batch-order) -> task://routed.task.sink'
+      - 'default -> task://routed.task.sink'
+  # Second-level routing on a schema-enabled binding: the Confluent decode yields the Map that
+  # input.body rules match on (a decode failure still dead-letters before any rule runs).
+  - topic: 'routed-schema-topic'
+    group: 'routed-schema-group'
+    schema.enabled: true
+    flows:
+      - 'input.body.hello(routed) -> flow://json-sink-flow'
+      - 'default -> task://routed.task.sink'

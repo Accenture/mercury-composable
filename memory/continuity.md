@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-30 | agent: Claude Code (2026-07-30-233623)
+- **last_session:** 2026-07-31 | agent: Claude Code (2026-07-31-001057)
 - **last_review:** 2026-07-27 | through 2026-07-27-214357.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -364,7 +364,26 @@
 
 ## Open Threads
 
-- [ ] (feature — design RATIFIED by Eric 2026-07-30; implementation awaiting his go)
+- [ ] (feature — design RATIFIED by Eric 2026-07-30; **implementation CODE-COMPLETE
+  2026-07-30 on branch `feature/kafka-2nd-level-routing`** (commits `6bc6d310` +
+  review-hardening `b73f6ad0` + symmetry round `538afd87`, NOT pushed) —
+  minimalist-kafka 163/163 with coverage gate, full 29-module reactor green (twice),
+  docs + CHANGELOG done, mkdocs clean; adversarial review round: 13 confirmed
+  findings → 7 distinct fixes all pinned (task://event.script.manager startup
+  rejection + null-safe ttl; synchronous dispatch errors join retry/DLQ; DOTALL
+  wildcards; long-math ttl parse; schema+flows e2e; suppression rationale; the
+  `$`-body-key hazard later solved STRUCTURALLY — see below). **Eric's symmetry
+  rulings added same session:** outbound Map/List auto-serialization to JSON bytes in
+  simple.kafka.notification + secondary.kafka.notification (inherits), NON-schema
+  topics only (subject header keeps the byte[] JSON-document contract); inbound
+  `input.body` rules address Map AND List bodies via dot-bracket paths incl. top-level
+  arrays (`input.body[0].type`) — body lookups run under a synthetic root, making the
+  throwing JsonPath dispatch unreachable ('$' keys = literal segments). Scalar
+  refinement (implementation's favor, flagged): top-level JSON scalar keeps raw
+  byte[] like a parse failure. Shared-surface fact confirmed for Eric: twin-kafka's
+  secondary adapter constructs the SAME KafkaFlowAdapter → second-level routing AND
+  topic-pattern identical on both adapters; secondary dead letters ride the secondary
+  publisher. Remaining: Eric's push/PR gate.)
   **Second-level routing for the kafka-flow-adapter.** Optional per-binding `flows:`
   rule list replaces `flow:` (mutually exclusive, startup-validated — the topic XOR
   topic-pattern precedent). Rules `<selector>(<matcher>) -> <target>` inspect a record
