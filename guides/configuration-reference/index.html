@@ -8095,17 +8095,25 @@ defaults to <code>${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}</code>. The library 
 <code>enable.auto.commit</code> / <code>max.poll.records</code> are a per-binding overlay (see <code>auto-commit</code> below), not a global
 template setting.</p>
 <p>Per-binding fields in <code>kafka-flow-adapter.yaml</code> (all <code>${ENV_VAR:default}</code>-substitutable): exactly one of
-<code>topic</code> (literal) or <code>topic-pattern</code> (regex, subscribed via <code>subscribe(Pattern)</code>) is required; <code>flow</code>
-(required); <code>group</code> (optional consumer group, used verbatim; default <code>kafka-flow-adapter.&lt;topic&gt;</code> for a
-literal topic, required for <code>topic-pattern</code>); <code>partition</code> (optional; pins one partition via manual
-assignment, mutually exclusive with <code>topic-pattern</code>); <code>schema.enabled</code> (optional <code>boolean</code>, default <code>false</code>;
-when <code>true</code>, decode the Confluent-framed value to a <code>Map</code> before routing — see the
-<a href="../minimalist-kafka/#schema">Schema Registry integration</a>); <code>dlq-topic</code> (optional; pre-provisioned
-dead-letter topic for this binding, used verbatim — no DLQ if omitted); <code>auto-commit</code> (optional <code>boolean</code>,
-default <code>false</code>; <code>true</code> uses Kafka-native auto-commit instead of manual commit-after-process); and
-<code>max-poll-records</code> (optional <code>int</code>; overrides the delivery mode's default of <code>1</code> for manual-commit or <code>500</code>
-for auto-commit). See the <a href="../minimalist-kafka/#adapter-yaml">Kafka Flow Adapter guide</a> for the full
-per-field rationale and validation rules.</p>
+<code>topic</code> (literal) or <code>topic-pattern</code> (regex, subscribed via <code>subscribe(Pattern)</code>) is required; exactly one
+of <code>flow</code> (direct routing: one flow id for every record) or <code>flows</code> (second-level routing: a rule list
+<code>&lt;selector&gt;(&lt;matcher&gt;) -&gt; &lt;target&gt;</code> picking the target <code>flow://&lt;flow-id&gt;</code> or <code>task://&lt;route&gt;</code> per record,
+first match wins, mandatory <code>default</code> — see
+<a href="../minimalist-kafka/#routing">second-level routing</a>); <code>group</code> (optional consumer group, used verbatim;
+default <code>kafka-flow-adapter.&lt;topic&gt;</code> for a literal topic, required for <code>topic-pattern</code>); <code>partition</code>
+(optional; pins one partition via manual assignment, mutually exclusive with <code>topic-pattern</code>);
+<code>schema.enabled</code> (optional <code>boolean</code>, default <code>false</code>; when <code>true</code>, decode the Confluent-framed value to a
+<code>Map</code> before routing — see the <a href="../minimalist-kafka/#schema">Schema Registry integration</a>); <code>serializer</code>
+(optional; <code>'json'</code> = best-effort SimpleMapper decode of the record value on a non-schema topic, raw
+<code>byte[]</code> kept when parsing fails — mutually exclusive with <code>schema.enabled</code>, see
+<a href="../minimalist-kafka/#routing-payload">payload prerequisites</a>); <code>ttl</code> (optional duration, default <code>30s</code>;
+the deadline for <code>task://</code> routing targets — flow targets use their own flow ttl); <code>dlq-topic</code> (optional;
+pre-provisioned dead-letter topic for this binding, used verbatim — no DLQ if omitted); <code>auto-commit</code>
+(optional <code>boolean</code>, default <code>false</code>; <code>true</code> uses Kafka-native auto-commit instead of manual
+commit-after-process); and <code>max-poll-records</code> (optional <code>int</code>; overrides the delivery mode's default of
+<code>1</code> for manual-commit or <code>500</code> for auto-commit). See the
+<a href="../minimalist-kafka/#adapter-yaml">Kafka Flow Adapter guide</a> for the full per-field rationale and
+validation rules.</p>
 <hr />
 <h2 id="sync-over-async">Sync-over-Async (<code>sync-over-async</code> extension)<a class="headerlink" href="#sync-over-async" title="Permanent link">&para;</a></h2>
 <p>The opt-in <code>sync-over-async</code> extension exposes a synchronous REST request/response over an asynchronous,

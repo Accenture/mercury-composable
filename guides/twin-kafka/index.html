@@ -2927,8 +2927,14 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 <p>The retry/dead-letter tuning keys (<code>kafka.dlq.timeout.ms</code>, <code>kafka.flow.max.retries</code>,
 <code>kafka.flow.retry.backoff.ms</code>) are application-level policy shared by both adapters. Per-binding
 options in the secondary adapter YAML are identical to the <a href="../minimalist-kafka/#adapter-yaml">primary's</a> -
-including <code>schema.enabled</code>, <code>dlq-topic</code>, and the <code>trace.id.header</code> / <code>correlation.id.header</code> /
-<code>traceparent.header</code> impedance-matching overrides.</p>
+including <code>topic-pattern</code>, <code>schema.enabled</code>, <code>dlq-topic</code>,
+<a href="../minimalist-kafka/#routing">second-level routing</a> (<code>flows</code> with <code>flow://</code> and <code>task://</code> targets,
+<code>serializer: 'json'</code>, <code>ttl</code>), and the <code>trace.id.header</code> / <code>correlation.id.header</code> /
+<code>traceparent.header</code> impedance-matching overrides. Dead letters from a secondary binding - whichever
+target kind failed - are published through the secondary cluster's own publisher. Likewise on the
+outbound side, <code>secondary.kafka.notification</code> inherits the primary publish function's body handling:
+byte[] verbatim, or a Map/List <a href="../minimalist-kafka/#outbound">auto-serialized to JSON bytes</a> on
+non-schema publishes.</p>
 <h2 id="health">Health check<a class="headerlink" href="#health" title="Permanent link">&para;</a></h2>
 <p>The module ships <strong><code>secondary.kafka.health</code></strong> - the twin of minimalist-kafka's
 <a href="../minimalist-kafka/#health"><code>kafka.health</code></a>, probing the secondary cluster through the secondary
