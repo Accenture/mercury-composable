@@ -240,13 +240,16 @@
   closely matching error messages), or flows stop being portable.
   <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-07-30 | uses: 12 | tier: active | origin: 2026-07-23-145132 -->
 
-- **graph.js is slated for eventual phase-out in favor of graph.task (Eric, 2026-07-31).**
-  The skill is troublesome by nature — it is code injection; developers have been warned
-  to use it with caution — and the newer graph.task can express very complex logic, so at
-  some point graph.js will be retired. Operating consequences: don't invest in hardening
-  graph.js beyond containment (its 5s default execution deadline exists to bound damage,
-  not to bless long scripts); prefer graph.task in examples and guidance; graph.math stays
-  (safe expression engine, no loops). Relates [[thread-task-ttl-override]].
+- **graph.js is slated for eventual phase-out in favor of graph.task (Eric, 2026-07-31),
+  and the Rust port does not carry it at all.** The skill is troublesome by nature — it is
+  code injection; developers have been warned to use it with caution — and the newer
+  graph.task can express very complex logic, so at some point graph.js will be retired.
+  Operating consequences: don't invest in hardening graph.js beyond containment (its 5s
+  default execution deadline exists to bound damage, not to bless long scripts); prefer
+  graph.task in examples and guidance; graph.math stays (safe expression engine, no
+  loops); **graph.js work is never a Rust lock-step item** — the Rust validator's
+  deadline-skill set legitimately names three skills where Java names four.
+  Relates [[thread-task-ttl-override]].
   <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-08-01 | uses: 1 | tier: working | origin: 2026-08-01-035647 -->
 
 - **The `helpers/` standalone servers exist for Docker-less developer machines and are
