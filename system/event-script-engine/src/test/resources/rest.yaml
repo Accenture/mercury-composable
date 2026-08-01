@@ -97,6 +97,42 @@ rest:
 
   - service: "http.flow.adapter"
     methods: ['GET']
+    url: "/api/subflow/timeout/{user}"
+    flow: 'subflow-ttl-catch-test'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/subflow/delay/{user}"
+    flow: 'subflow-delay-test'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/subflow/delay-var/{user}"
+    flow: 'subflow-delay-var-test'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/subflow/retry/{user}"
+    flow: 'retry-subflow-test'
+    timeout: 15s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
     url: "/api/decision?decision=_"
     flow: 'decision-test'
     timeout: 10s

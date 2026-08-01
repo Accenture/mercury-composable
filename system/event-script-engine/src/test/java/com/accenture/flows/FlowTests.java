@@ -1144,6 +1144,121 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
+    void subflowTimeoutIsCatchableWithTaskTtlOverride() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long timeout = 8000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/subflow/timeout/test");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        assert res != null;
+        // the task-level ttl (1s) gives the sub-flow a shorter deadline than the parent's 10s,
+        // so the CHILD times out first and the parent's task-level exception handler catches
+        // its 408 - with default TTL propagation the parent's own uncatchable timeout would win
+        assertEquals("caught-by-parent", res.getHeader("x-catch"),
+                "the parent's exception handler must shape the response");
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals(408, result.get("status"));
+        assertEquals("Flow timeout for 1000 ms", result.get("message"),
+                "the caught error must be the child's 1s timeout, not the parent's");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void delayDefersSubflowLaunch() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long timeout = 8000;
+        final long delay = 1200;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/subflow/delay/test");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        long started = System.currentTimeMillis();
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        long elapsed = System.currentTimeMillis() - started;
+        assert res != null;
+        // the delay parameter must defer the sub-flow launch - it used to be silently
+        // dropped at the flow:// dispatch branch, launching the child immediately
+        assertEquals(200, res.getStatus());
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals("test", result.get("user"), "the deferred sub-flow must still run: " + result);
+        assertTrue(elapsed >= delay,
+                "the sub-flow launch must be deferred by the task delay (elapsed " + elapsed + " ms)");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void modelVariableDelayDefersSubflowLaunch() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long timeout = 8000;
+        final long delay = 1200;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/subflow/delay-var/test?delay=" + delay);
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        long started = System.currentTimeMillis();
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        long elapsed = System.currentTimeMillis() - started;
+        assert res != null;
+        // the model-variable form resolves the delay from the state machine per
+        // execution and must equally defer the sub-flow launch
+        assertEquals(200, res.getStatus());
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals("test", result.get("user"), "the deferred sub-flow must still run: " + result);
+        assertTrue(elapsed >= delay,
+                "the sub-flow launch must be deferred by the model-variable delay (elapsed " + elapsed + " ms)");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void subflowTimeoutsAreRetriedWithinTheParentBudget() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long timeout = 12000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/subflow/retry/test");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        assert res != null;
+        // the field use case: three 1s sub-flow attempts caught, counted and retried inside the
+        // parent's 15s budget, then a graceful give-up response instead of a raw 408 to the caller
+        assertEquals("exhausted", res.getHeader("x-retry"));
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals(3, result.get("attempts"), "three budgeted attempts must have run");
+        assertEquals(408, result.get("last_status"), "each attempt failed with the child's timeout");
+        assertEquals("gave-up-after-retries", result.get("outcome"));
+    }
+
+    @Test
+    void taskTtlDeclarationsAreValidatedAtCompileTime() {
+        // valid: a sub-flow task may declare a deadline shorter than flow.ttl (2s < 10s)
+        var valid = com.accenture.models.Flows.getFlow("parser-test-ttl-0");
+        assertNotNull(valid, "a valid task ttl must compile");
+        assertEquals(2000L, valid.tasks.get("sub").getTtl(), "task ttl parsed to milliseconds");
+        // invalid declarations reject the whole flow at compile time (the delay >= TTL precedent):
+        // ttl on a regular function task
+        assertNull(com.accenture.models.Flows.getFlow("parser-test-ttl-1"));
+        // ttl not less than flow.ttl
+        assertNull(com.accenture.models.Flows.getFlow("parser-test-ttl-2"));
+        // malformed duration
+        assertNull(com.accenture.models.Flows.getFlow("parser-test-ttl-3"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void simpleDecisionTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long timeout = 8000;

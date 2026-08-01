@@ -38,6 +38,8 @@ public class Task {
     private boolean inputParentRef = false;
     private boolean outputParentRef = false;
     private long delay = -1;
+    // deadline override for a sub-flow task (see CompileFlows validateTtlParameter); -1 = propagate
+    private long ttl = -1;
     private String functionRoute;
     private String delayVar = null;
     private String joinTask = null;
@@ -202,6 +204,26 @@ public class Task {
      */
     public void setDelay(long delay) {
         this.delay = delay;
+    }
+
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @return sub-flow deadline override in milliseconds, or -1 when not set
+     */
+    public long getTtl() {
+        return ttl;
+    }
+
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param ttl sub-flow deadline override in milliseconds
+     */
+    public void setTtl(long ttl) {
+        this.ttl = ttl;
     }
 
     /**

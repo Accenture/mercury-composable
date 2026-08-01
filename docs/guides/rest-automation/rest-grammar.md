@@ -42,7 +42,7 @@ related:
 | `methods` | **yes** | list from `GET PUT POST DELETE HEAD PATCH` (`OPTIONS` is added automatically) |
 | `url` | **yes** | URI path; supports `{param}` path variables and a trailing `*` wildcard (case-insensitive) |
 | `flow` | no | a flow id (used with `service: http.flow.adapter`) |
-| `timeout` | no | duration like `30s` (default 30s; clamped 1s–5m) |
+| `timeout` | no | duration like `30s` (default 30s; clamped 1s–5m) — an inbound `x-ttl` request header (milliseconds) overrides it: a Mercury caller propagates its own deadline end-to-end, so this endpoint's flow runs with the caller's remaining budget instead of the configured value |
 | `cors` | no | id of a `cors` entry (must exist) |
 | `headers` | no | id of a `headers` entry (must exist) |
 | `authentication` | no | a service route, or routing specs: `'default: svc'`, `'header: svc'`, `'header: value: svc'` |

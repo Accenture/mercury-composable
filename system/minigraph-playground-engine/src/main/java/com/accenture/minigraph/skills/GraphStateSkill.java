@@ -41,9 +41,9 @@ abstract class GraphStateSkill extends GraphLambdaFunction {
     // excludes these keys from the persistence envelope and graph.resume strips them from a
     // restored record - the resumed run's own values are authoritative ('run' is the
     // fresh/resume flag set by graph.resume; embalming it would let a later resume read a
-    // stale condition, and the store is pluggable so a record is external input)
-    protected static final Set<String> NON_PERSISTED_MODEL_KEYS =
-            Set.of("cid", "instance", "flow", "ttl", "trace", "parent", "root", "none", "run");
+    // stale condition, and the store is pluggable so a record is external input).
+    // Same nine names as the runtime-immutability guard - one canonical set in the base class.
+    protected static final Set<String> NON_PERSISTED_MODEL_KEYS = RESERVED_MODEL_METADATA;
 
     protected record SkillContext(PostOffice po, GraphInstance graphInstance, SimpleNode node, String route) {}
 

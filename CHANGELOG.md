@@ -12,7 +12,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-1. **Graph state store works on Redis servers older than 6.2 (field report).** The
+1. **The `delay` task parameter now defers a sub-flow launch (previously a silent no-op).**
+   `delay` was accepted with full validation on a `flow://` task but discarded at dispatch —
+   the sub-flow always launched immediately. It now defers the launch exactly as it defers a
+   function task; the child's TTL timer starts on delivery. Because the delay consumes the
+   parent's budget before the child starts, the engine warns when `delay + ttl` is not less
+   than the effective flow TTL (the sub-flow timeout may no longer be catchable). Combined
+   with the new task-level `ttl` override, a retry loop gains spacing between attempts.
+   *Migration note: a flow that carried a (hitherto ignored) `delay` on a sub-flow task will
+   now actually delay.*
+
+2. **`graph.api.fetcher` aligns the HTTP wire timeout with its graph-side deadline.** The
+   fetcher never stamped `x-ttl` on its outbound requests, so the HTTP client ran with the
+   wire-level read timeout disabled: when the effective deadline (node `ttl`, else
+   `model.ttl`) expired, the graph moved on with a 408 but a hung upstream held its socket
+   indefinitely — visible under short-deadline retry loops, which could stack abandoned
+   connections. The fetcher now sets the request timeout from the effective deadline, so the
+   socket self-cancels with the client's one-second grace after the RPC wait gives up. Note
+   that the timeout travels as the `x-ttl` request header: when the target is another Mercury
+   application, its HTTP ingress honors an inbound `x-ttl` over the endpoint's configured
+   timeout, so the caller's deadline propagates to the callee's flow — end-to-end deadline
+   propagation on mercury-to-mercury calls.
+
+3. **The synchronous companion endpoint classifies a drain timeout as a failure.** When a
+   `run` produced no terminal line within the safety window, the endpoint returned
+   `ok: true` with silently truncated output — a hang read as success. It now returns
+   `ok: false` with an explicit "Output truncated" error. (With the new dry-run watcher
+   below, a traversal always produces a terminal line, so this net is now truly last-resort.)
+
+4. **Graph state store works on Redis servers older than 6.2 (field report).** The
    suspend/resume Redis store consumed records with `GETDEL`, a Redis 6.2+ command —
    unavailable on older managed enterprise servers and on the community Windows binary
    (5.0.14) bundled by `redis-standalone`, where a resume failed with
@@ -60,6 +88,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    outbound auto-serialization), a body-path rule to a `task://` function, and the
    mandatory default flow handling both Map and raw-byte[] bodies — driven from a new
    `publish-orders.js` console program with one keyword per routing rule.
+4. **Task-level TTL override for catchable child timeouts, on both orchestration surfaces
+   (field report).** With default TTL propagation a child inherits the parent's full TTL and
+   its timer restarts at child launch, so the parent's deadline always fires first and a
+   sub-flow, sub-graph or API-call timeout could never be caught — the whole run aborted with
+   an uncatchable 408. An Event Script task may now declare `ttl` (duration syntax, sub-flow
+   `flow://` tasks only, compile-validated to be less than `flow.ttl`, with a runtime warning
+   when it is not below the parent's effective TTL), and a graph node with skill
+   `graph.extension`, `graph.api.fetcher` or `graph.task` may declare a `ttl` node parameter
+   (the suspend-node duration grammar, `s`/`m`/`h`/`d`) — each overrides the propagated
+   deadline for that child call only, so the child times out first and the existing
+   task-level/flow-level `exception` handler (or the node's `exception=` route) catches the
+   408 and can retry within the parent's remaining budget. Propagation stays the default;
+   the override is a per-invocation opt-in at the calling site.
+5. **Model metadata is immutable in the graph engine.** The nine engine-managed model keys
+   (`model.cid`/`instance`/`flow`/`ttl`/`trace`/`parent`/`root`/`none`/`run`) can no longer
+   be overwritten by a data mapping: `GraphModelValidator` rejects such a mapping at the
+   CompileGraph deployment gate and the playground pre-run check, and the shared runtime
+   mapping guard rejects it in both walker lanes (executor and traveler), so dry-run drafts
+   are covered by construction. This closes an undocumented loophole — Event Script already
+   compile-blocks the same write — and the per-node `ttl` parameter is the sanctioned
+   deadline mechanism in its place.
+
+6. **Dry-run traversals now enforce a run-level deadline (`model.ttl`).** The playground
+   `run` command mirrors the deployed lane's flow timer: a one-shot watcher aborts a hung or
+   overlong traversal at the `model.ttl` deadline (default 30s, seedable at the instantiate
+   edge, e.g. `long(60000) -> model.ttl`) with a `Graph traversal timed out after N ms` line
+   followed by the canonical `Graph traversal aborted` terminal. Previously a dry-run had no
+   run-level timer at all — a hung node meant silence forever, and a merely long graph ran
+   unbounded where its deployed twin would answer 408. Child calls were already
+   deadline-bounded in both lanes; the watcher covers what they cannot: total run duration
+   and a skill that never replies.
+
+7. **`graph.js` scripts are cancelled at a deadline (GraalVM context cancellation).** An
+   endless or overlong script can no longer pin a kernel thread forever: the skill arms a
+   one-shot deadline that cancels the script's polyglot context and surfaces a 408
+   `script exceeded the N ms execution deadline` — a run-level error (not `exception=`-routable):
+   a dry-run aborts with the canonical terminal and a deployed run fails the request with
+   HTTP 408. The default deadline is a tight **5 seconds** — `graph.js` (like `graph.math`)
+   is meant for very simple computation or IF-THEN-ELSE, so it deliberately does not inherit
+   the typically longer `model.ttl`; a node `ttl` (duration syntax, now accepted on
+   `graph.js`) overrides it.
 
 ---
 ## Version 4.11.0, 7/30/2026
