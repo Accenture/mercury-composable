@@ -21,6 +21,7 @@ graphs:
   - 'helloext'
   - 'unit-test-1'
   - 'unit-test-ttl-wire'
+  - 'unit-test-ttl-wire-default'
   - 'unit-test-js-deadline'
   - 'unit-test-js-default-deadline'
   - 'unit-test-task-1'

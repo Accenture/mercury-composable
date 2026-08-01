@@ -70,6 +70,22 @@ class DeadlineEnforcementTest {
                 "the api.fetcher must stamp x-ttl from its effective deadline: " + body);
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void apiFetcherStampsPropagatedModelTtlWithoutNodeTtl() throws TimeoutException {
+        var response = runGraph("unit-test-ttl-wire-default", Map.of("person_id", 100));
+        assertEquals(200, response.getStatus());
+        assertInstanceOf(Map.class, response.getBody());
+        var body = (Map<String, Object>) response.getBody();
+        // without a node ttl, the fetcher's effective deadline is the propagated
+        // model.ttl - in the deployed lane that is the /api/graph rest.yaml timeout
+        // (30s here), and the same value rides the wire as x-ttl: on a
+        // mercury-to-mercury call the callee honors it over its own endpoint timeout
+        // (end-to-end deadline propagation - Eric's keep-and-document ruling)
+        assertEquals("30000", body.get("observed_ttl"),
+                "the api.fetcher must stamp the propagated model.ttl when no node ttl is declared: " + body);
+    }
+
     @Test
     void endlessJsScriptIsInterruptedAtNodeDeadline() throws TimeoutException {
         long started = System.currentTimeMillis();
