@@ -229,6 +229,22 @@ Route name of a task-level exception handler. Overrides `flow.exception` for thi
 
 Delay before this task executes. Integer = milliseconds; string = model variable path (e.g. `model.wait_ms`). Must be less than `flow.ttl`.
 
+### `ttl`
+
+| Type | Required | Default |
+|---|---|---|
+| string | No | _(parent TTL propagated)_ |
+
+Deadline override for a subflow task (`process: 'flow://...'`) — rejected on regular function tasks. Duration string in `flow.ttl` syntax (e.g. `8s`); must be less than this flow's `ttl`. By default a subflow inherits the parent's full TTL with a restarted timer, so the parent always times out first and a subflow timeout is never catchable. A shorter task `ttl` makes the subflow time out first, so this task's `exception` handler (or the flow-level one) catches the 408 and can retry within the parent's remaining budget:
+
+```yaml
+- process: 'flow://payment-processor'
+  execution: sequential
+  ttl: 8s                        # subflow times out first (must be < flow.ttl)
+  exception: 'v1.payment.retry'  # catches the 408; may route back for a retry
+  # ... name / input / output / description / next as usual
+```
+
 ### `pipeline`
 
 | Type | Required | Default |
@@ -274,7 +290,7 @@ Executes the function and then passes control to exactly one next task.
 
 | Required | Optional | Forbidden |
 |----------|----------|-----------|
-| `next` (exactly 1 entry) | `delay`, `exception` | — |
+| `next` (exactly 1 entry) | `delay`, `exception`, `ttl` *(sub-flow tasks only)* | — |
 
 ```yaml
 - name: 'step.one'
@@ -298,7 +314,7 @@ is no join point — all branches run independently to their own `end` or `sink`
 
 | Required | Optional | Forbidden |
 |----------|----------|-----------|
-| `next` (2+ entries) | `delay`, `exception` | `join`, `pipeline`, `loop` |
+| `next` (2+ entries) | `delay`, `exception`, `ttl` *(sub-flow tasks only)* | `join`, `pipeline`, `loop` |
 
 ```yaml
 - input:
@@ -322,7 +338,7 @@ task once all branches complete. Also supports iterating over a list via the `so
 
 | Required | Optional | Forbidden |
 |----------|----------|-----------|
-| `next` (1+ entries), `join` | `source`, `delay`, `exception` | `pipeline`, `loop` |
+| `next` (1+ entries), `join` | `source`, `delay`, `exception`, `ttl` *(sub-flow tasks only)* | `pipeline`, `loop` |
 
 ```yaml
 - input: []
@@ -376,7 +392,7 @@ Branches to one of the `next` tasks based on a value mapped to `decision` in the
 
 | Required | Optional | Forbidden |
 |----------|----------|-----------|
-| `next` (2+ entries) | `delay`, `exception` | `join`, `pipeline`, `loop`, `source` |
+| `next` (2+ entries) | `delay`, `exception`, `ttl` *(sub-flow tasks only)* | `join`, `pipeline`, `loop`, `source` |
 
 ```yaml
 - name: 'check.status'
@@ -404,7 +420,7 @@ asynchronously. Useful for long-running background processing after acknowledgin
 
 | Required | Optional | Forbidden |
 |----------|----------|-----------|
-| `next` (exactly 1 entry) | `delay`, `exception` | `join`, `pipeline`, `loop`, `source` |
+| `next` (exactly 1 entry) | `delay`, `exception`, `ttl` *(sub-flow tasks only)* | `join`, `pipeline`, `loop`, `source` |
 
 ```yaml
 - input:
@@ -427,7 +443,7 @@ Terminates the flow. Any output mappings set the final HTTP response.
 
 | Required | Optional | Forbidden |
 |----------|----------|-----------|
-| — | `delay`, `exception` | `next`, `join`, `pipeline`, `loop`, `source` |
+| — | `delay`, `exception`, `ttl` *(sub-flow tasks only)* | `next`, `join`, `pipeline`, `loop`, `source` |
 
 ```yaml
 - input:
@@ -449,7 +465,7 @@ A terminal task with no outbound connection. Used as a branch endpoint in `paral
 
 | Required | Optional | Forbidden |
 |----------|----------|-----------|
-| — | `delay`, `exception` | `next`, `join`, `pipeline`, `loop`, `source` |
+| — | `delay`, `exception`, `ttl` *(sub-flow tasks only)* | `next`, `join`, `pipeline`, `loop`, `source` |
 
 ```yaml
 - name: 'persist.audit'
@@ -471,7 +487,7 @@ control to the single `next` task. Supports optional `for` and `while` loop cont
 
 | Required | Optional | Forbidden |
 |----------|----------|-----------|
-| `next` (exactly 1 entry), `pipeline` | `loop`, `delay`, `exception` | `join`, `source` |
+| `next` (exactly 1 entry), `pipeline` | `loop`, `delay`, `exception`, `ttl` *(sub-flow tasks only)* | `join`, `source` |
 
 ```yaml
 - input:
@@ -803,7 +819,7 @@ A task can invoke another flow as a subroutine using the `flow://` protocol in `
 | Input | Data is mapped into `input.body` and `input.header.*` of the child flow |
 | Output | The child flow's final `output.body` is available as `result` in the parent |
 | Shared state | Parent state accessible via `model.parent.<key>` or `model.root.<key>` in child tasks |
-| TTL | The parent flow's remaining TTL governs the subflow; no separate TTL applies |
+| TTL | By default the parent's **full** `flow.ttl` value is copied to the subflow and the subflow's timer restarts at launch — so the parent's deadline fires first and a subflow timeout is not catchable. An optional task-level [`ttl`](#ttl) overrides this with a shorter subflow deadline, making its 408 catchable by this flow's exception handler |
 | Nesting | Subflows can themselves call subflows |
 
 > When the task name is omitted and `process` is a `flow://` URI, the flow ID becomes the

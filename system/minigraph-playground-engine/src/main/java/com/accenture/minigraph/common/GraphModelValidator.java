@@ -60,6 +60,7 @@ public class GraphModelValidator {
     private static final String SUSPEND = "suspend";
     private static final String NODE_NAME = "node ";
     private static final String MODEL_PREFIX = "model";
+    private static final String STATEMENT = "statement";
     private static final String MAP_TO = "->";
     // skills whose 'ttl' node parameter is the child-call DEADLINE override
     private static final Set<String> DEADLINE_TTL_SKILLS =
@@ -199,31 +200,48 @@ public class GraphModelValidator {
 
     /**
      * Model metadata (model.cid/instance/flow/ttl/trace/parent/root/none/run) is engine-managed
-     * and immutable: reject any data mapping whose right-hand side writes to it. The runtime
-     * mapping guard in GraphLambdaFunction enforces the same rule in both walker lanes; this
-     * compile-side twin fails the deployment gate and the playground pre-run check early.
+     * and immutable: reject any data mapping whose right-hand side writes to it - in the four
+     * mapping-list properties AND in 'MAPPING:' lines embedded in graph.math / graph.js statements
+     * (the same idiom the runtime guard sees). The runtime guard in GraphLambdaFunction enforces
+     * the identical rule in both walker lanes; this compile-side twin fails the deployment gate
+     * and the playground pre-run check early, so a statically detectable violation can never
+     * abort a live traversal.
      */
     private static void validateModelMetadataImmutability(MiniGraph graph) {
-        var util = Utility.getInstance();
         for (SimpleNode node : graph.getNodes()) {
-            for (String property : MAPPING_PROPERTIES) {
-                if (node.getProperty(property) instanceof List<?> entries) {
-                    for (Object entry : entries) {
-                        var text = String.valueOf(entry);
-                        int sep = text.lastIndexOf(MAP_TO);
-                        if (sep == -1) {
-                            continue;
-                        }
-                        var rhs = text.substring(sep + MAP_TO.length()).trim();
-                        var segments = util.split(rhs, ".[]");
-                        if (segments.size() > 1 && MODEL_PREFIX.equals(segments.getFirst())
-                                && GraphLambdaFunction.RESERVED_MODEL_METADATA.contains(segments.get(1))) {
-                            throw new IllegalArgumentException(NODE_NAME + node.getAlias()
-                                    + " - invalid mapping (" + text + "), model metadata is immutable");
-                        }
-                    }
+            validateNodeMappings(node);
+        }
+    }
+
+    private static void validateNodeMappings(SimpleNode node) {
+        for (String property : MAPPING_PROPERTIES) {
+            if (node.getProperty(property) instanceof List<?> entries) {
+                for (Object entry : entries) {
+                    assertNotMetadataWrite(node, String.valueOf(entry));
                 }
             }
+        }
+        if (node.getProperty(STATEMENT) instanceof List<?> statements) {
+            for (Object statement : statements) {
+                var text = String.valueOf(statement).trim();
+                if (text.toLowerCase().startsWith(GraphLambdaFunction.MAPPING_TAG)) {
+                    assertNotMetadataWrite(node, text.substring(GraphLambdaFunction.MAPPING_TAG.length()));
+                }
+            }
+        }
+    }
+
+    private static void assertNotMetadataWrite(SimpleNode node, String mapping) {
+        int sep = mapping.lastIndexOf(MAP_TO);
+        if (sep == -1) {
+            return;
+        }
+        var rhs = mapping.substring(sep + MAP_TO.length()).trim();
+        var segments = Utility.getInstance().split(rhs, ".[]");
+        if (segments.size() > 1 && MODEL_PREFIX.equals(segments.getFirst())
+                && GraphLambdaFunction.RESERVED_MODEL_METADATA.contains(segments.get(1))) {
+            throw new IllegalArgumentException(NODE_NAME + node.getAlias()
+                    + " - invalid mapping (" + mapping.trim() + "), model metadata is immutable");
         }
     }
 

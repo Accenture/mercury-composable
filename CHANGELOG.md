@@ -60,6 +60,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    outbound auto-serialization), a body-path rule to a `task://` function, and the
    mandatory default flow handling both Map and raw-byte[] bodies — driven from a new
    `publish-orders.js` console program with one keyword per routing rule.
+4. **Task-level TTL override for catchable child timeouts, on both orchestration surfaces
+   (field report).** With default TTL propagation a child inherits the parent's full TTL and
+   its timer restarts at child launch, so the parent's deadline always fires first and a
+   sub-flow, sub-graph or API-call timeout could never be caught — the whole run aborted with
+   an uncatchable 408. An Event Script task may now declare `ttl` (duration syntax, sub-flow
+   `flow://` tasks only, compile-validated to be less than `flow.ttl`, with a runtime warning
+   when it is not below the parent's effective TTL), and a graph node with skill
+   `graph.extension`, `graph.api.fetcher` or `graph.task` may declare a `ttl` node parameter
+   (the suspend-node duration grammar, `s`/`m`/`h`/`d`) — each overrides the propagated
+   deadline for that child call only, so the child times out first and the existing
+   task-level/flow-level `exception` handler (or the node's `exception=` route) catches the
+   408 and can retry within the parent's remaining budget. Propagation stays the default;
+   the override is a per-invocation opt-in at the calling site.
+5. **Model metadata is immutable in the graph engine.** The nine engine-managed model keys
+   (`model.cid`/`instance`/`flow`/`ttl`/`trace`/`parent`/`root`/`none`/`run`) can no longer
+   be overwritten by a data mapping: `GraphModelValidator` rejects such a mapping at the
+   CompileGraph deployment gate and the playground pre-run check, and the shared runtime
+   mapping guard rejects it in both walker lanes (executor and traveler), so dry-run drafts
+   are covered by construction. This closes an undocumented loophole — Event Script already
+   compile-blocks the same write — and the per-node `ttl` parameter is the sanctioned
+   deadline mechanism in its place.
 
 ---
 ## Version 4.11.0, 7/30/2026

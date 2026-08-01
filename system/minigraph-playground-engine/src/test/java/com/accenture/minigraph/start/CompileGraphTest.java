@@ -102,8 +102,10 @@ class CompileGraphTest {
         GraphModelValidator.validate(ok);
         // err1: ttl on a skill without child-call deadline semantics (graph.math);
         // err2: malformed duration on a deadline skill;
-        // err3: a data mapping writing to reserved model metadata (model.ttl)
-        for (var id : List.of("unit-test-ttl-err1", "unit-test-ttl-err2", "unit-test-ttl-err3")) {
+        // err3: a data mapping writing to reserved model metadata (model.ttl);
+        // err4: the same metadata write embedded as a MAPPING: line in a graph.math statement
+        for (var id : List.of("unit-test-ttl-err1", "unit-test-ttl-err2", "unit-test-ttl-err3",
+                              "unit-test-ttl-err4")) {
             var graph = importGraph(id);
             assertThrows(IllegalArgumentException.class, () -> GraphModelValidator.validate(graph),
                     id + " must fail the static validator");

@@ -399,6 +399,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             var stateMachine = graphInstance.stateMachine;
             var lhs = substituteVarIfAny(command.substring(0, sep).trim(), stateMachine);
             var rhs = command.substring(sep + MAP_TO.length()).trim();
+            assertMutableModelTarget(nodeName, rhs);
             var target = rhs.startsWith(MODEL_NAMESPACE)? rhs : getFetcherTarget(nodeName, rhs, isArray);
             var value = helper.getLhsOrConstant(lhs, stateMachine);
             if (value != null) {
@@ -453,6 +454,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             var sep = entry.lastIndexOf(MAP_TO);
             var lhs = substituteVarIfAny(entry.substring(0, sep).trim(), stateMachine);
             var rhs = entry.substring(sep+MAP_TO.length()).trim();
+            assertMutableModelTarget(nodeName, rhs);
             var parts = util.split(rhs, ".");
             if (parts.size() < 2 || !parts.getFirst().equals(MODEL)) {
                 throw new IllegalArgumentException(NODE_NAME + nodeName +
@@ -525,6 +527,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
                 throw new IllegalArgumentException("Invalid output data mapping in data dictionary "+nodeName +
                         " - RHS must start with 'model.' or 'output.' namespace");
             }
+            assertMutableModelTarget(nodeName, rhs);
             stateMachine.setElement(rhs, value);
         }
     }
@@ -576,15 +579,25 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         }
     }
 
-    private void validateRhs(String nodeName, String rhs, MiniGraph graph) {
+    /**
+     * Reject a write target inside engine-managed model metadata. Every runtime path that can
+     * write a {@code model.*} target calls this - data-mapping RHS validation, the fetcher-family
+     * input and output mappings, and for_each expansion - in BOTH walker lanes (executor and
+     * traveler), so dry-run drafts and single-node execution are covered as well as full runs.
+     */
+    protected void assertMutableModelTarget(String nodeName, String rhs) {
         if (rhs.startsWith(MODEL_NAMESPACE)) {
-            // model metadata is engine-managed and immutable at runtime - this shared validation
-            // runs in BOTH walker lanes (executor and traveler), so dry-run drafts are covered too
             var segments = util.split(rhs, ".[]");
             if (segments.size() > 1 && RESERVED_MODEL_METADATA.contains(segments.get(1))) {
-                throw new IllegalArgumentException(NODE_NAME + nodeName + " - invalid RHS (" + rhs
-                        + "), model metadata is immutable");
+                throw new IllegalArgumentException(NODE_NAME + nodeName + " - invalid mapping target ("
+                        + rhs + "), model metadata is immutable");
             }
+        }
+    }
+
+    private void validateRhs(String nodeName, String rhs, MiniGraph graph) {
+        if (rhs.startsWith(MODEL_NAMESPACE)) {
+            assertMutableModelTarget(nodeName, rhs);
             return;
         }
         if (rhs.startsWith(OUTPUT_ARRAY) || rhs.startsWith(OUTPUT_NAMESPACE)) {

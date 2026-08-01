@@ -1167,6 +1167,29 @@ class FlowTests extends TestBase {
                 "the caught error must be the child's 1s timeout, not the parent's");
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void subflowTimeoutsAreRetriedWithinTheParentBudget() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long timeout = 12000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/subflow/retry/test");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        assert res != null;
+        // the field use case: three 1s sub-flow attempts caught, counted and retried inside the
+        // parent's 15s budget, then a graceful give-up response instead of a raw 408 to the caller
+        assertEquals("exhausted", res.getHeader("x-retry"));
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals(3, result.get("attempts"), "three budgeted attempts must have run");
+        assertEquals(408, result.get("last_status"), "each attempt failed with the child's timeout");
+        assertEquals("gave-up-after-retries", result.get("outcome"));
+    }
+
     @Test
     void taskTtlDeclarationsAreValidatedAtCompileTime() {
         // valid: a sub-flow task may declare a deadline shorter than flow.ttl (2s < 10s)

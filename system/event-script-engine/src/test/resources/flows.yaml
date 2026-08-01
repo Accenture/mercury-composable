@@ -56,5 +56,6 @@ flows:
   - 'null-transport.yml'
   - 'slow-subflow.yml'
   - 'subflow-ttl-catch-test.yml'
+  - 'retry-subflow-test.yml'
 
 location: 'classpath:/flows/'
