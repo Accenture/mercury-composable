@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-31 | agent: Claude Code (2026-07-31-180131)
+- **last_session:** 2026-08-01 | agent: Claude Code (2026-08-01-035647)
 - **last_review:** 2026-07-31 | through 2026-07-31-001057.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -240,6 +240,15 @@
   closely matching error messages), or flows stop being portable.
   <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-07-30 | uses: 12 | tier: active | origin: 2026-07-23-145132 -->
 
+- **graph.js is slated for eventual phase-out in favor of graph.task (Eric, 2026-07-31).**
+  The skill is troublesome by nature — it is code injection; developers have been warned
+  to use it with caution — and the newer graph.task can express very complex logic, so at
+  some point graph.js will be retired. Operating consequences: don't invest in hardening
+  graph.js beyond containment (its 5s default execution deadline exists to bound damage,
+  not to bless long scripts); prefer graph.task in examples and guidance; graph.math stays
+  (safe expression engine, no loops). Relates [[thread-task-ttl-override]].
+  <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-08-01 | uses: 1 | tier: working | origin: 2026-08-01-035647 -->
+
 - **The `helpers/` standalone servers exist for Docker-less developer machines and are
   the standard local test servers for Rust ports (Eric, 2026-07-29).** They embed REAL
   redis/kafka servers as plain `java -jar` apps because many field developers work on
@@ -273,6 +282,43 @@
   <!-- id: bp-graph-workflow-suspension | created: 2026-07-28 | last_used: 2026-07-30 | uses: 5 | tier: active | origin: 2026-07-29-003528 -->
 
 ## Open Threads
+
+- [ ] (feature — **Java half MERGED 2026-07-31 as
+  [PR #250](https://github.com/Accenture/mercury-composable/pull/250), squash
+  `8191ab1c`, CI green (Build & Unit Tests 7m27s)** — four branch commits squashed:
+  feature + review-1 hardening + deadline-cleanup round + the x-ttl ruling; event-script
+  185/185, minigraph 98/98, platform-core 425/425, full reactor green; **remaining: the
+  Rust lock-step half** — handoff at /tmp/task-ttl-override-rust-handoff.md, sections
+  1-7, zero open questions; the suspend/resume-adjacent deadline surface is
+  regression-critical field-core on both engines)
+  **Task-level ttl override: catchable child timeouts (field report) + the deadline
+  cleanup round.** TTL propagation copies the parent's FULL ttl with a restarted timer →
+  the parent always expires first and its own timeout is uncatchable. Ratified:
+  propagation stays the default; per-task `ttl` (duration, < flow.ttl, flow:// tasks
+  only, runtime WARN) + per-node `ttl` on graph.extension/api.fetcher/task (suspend
+  grammar; suspend's own ttl = store expiry, distinct) → a shorter child deadline makes
+  the child's 408 CATCHABLE → budgeted retries (proven live). **Model metadata
+  (model.{cid,instance,flow,ttl,trace,parent,root,none,run}) is IMMUTABLE in the graph
+  engine at both layers** — gate + pre-run check (incl. MAPPING: statement lines) +
+  the shared runtime guard on all four model-writing paths. **Cleanup round (Eric's four
+  rulings 2026-07-31): delay now defers sub-flow launches** (cancelled at flow teardown —
+  orphaned-launch fix); **dry-run run-level watcher at model.ttl** (exactly-one-terminal
+  CAS arbitration, owner-tagged watcher slot, companion drain sized past the deadline +
+  drain-timeout = ok=false); **fetcher stamps x-ttl** (wire read-timeout = deadline+1s);
+  **graph.js deadline via sticky GraalVM close(true) on a virtual thread, default 5s**
+  (NOT model.ttl — scripts are simple computation; node ttl overrides; run-level error,
+  not exception=-routable). Adversarial round 2: 16 confirmed findings fixed — durable
+  GraalVM lessons: interrupt is non-destructive + gap-consumable (sticky close(true) is
+  the correct watchdog) and interrupt(Duration.ZERO) BLOCKS indefinitely (never on an
+  event loop). **Eric's ruling (2026-07-31): x-ttl deadline propagation is a FEATURE —
+  keep and document.** A Mercury caller's deadline propagates end-to-end (ingress honors
+  inbound x-ttl over rest.yaml timeout); documented in the rest.yaml timeout grammar row,
+  fetcher docs and CHANGELOG; both stamp branches pinned by wire-echo tests ("7000" node
+  ttl / "30000" propagated model.ttl). Residual
+  (pre-existing, recorded): overlapping runs share session instance state (late-callback
+  bleed). Spec: draft-design-specs/task-ttl-override.md (gitignored). Full detail:
+  origin log + session 2026-08-01-035647.
+  <!-- id: thread-task-ttl-override | created: 2026-08-01 | last_used: 2026-08-01 | uses: 1 | tier: working | origin: 2026-08-01-022358 -->
 
 - [ ] (field support — 2026-07-31; **Java half MERGED as
   [PR #248](https://github.com/Accenture/mercury-composable/pull/248), squash `5b73b140`,
@@ -326,7 +372,15 @@
   exercising every grammar element beside the direct-routing binding, driven by the
   new publish-orders.js (works piped for scripted regression); smoke-driven live
   end-to-end; README doubles as the manual-regression procedure** (session
-  2026-07-31-162554). Relates [[thread-redis-kafka-rpc]].
+  2026-07-31-162554). **Feedback round from Eric's manual regression (session
+  2026-08-01-001528, branch fix/kafka-demo-feedback awaiting PR gate):** DLQ topics
+  pre-created; `refund <json>` = details + auto-envelope; `order <plain text>` = the
+  canonical failure-path trigger (byte[] into a Map-typed function throws back to the
+  adapter → retries → DLQ — Eric: exactly proves the parse-failure contract);
+  numbered command/example instructions. **Field adoption: the composable
+  content-based partitioning pattern (selector function → explicit partition header,
+  docs `8ed23f34`) APPROVED for field use 2026-07-31.**
+  Relates [[thread-redis-kafka-rpc]].
   <!-- id: thread-kafka-2nd-level-routing | created: 2026-07-30 | last_used: 2026-07-31 | uses: 2 | tier: active | origin: 2026-07-30-233623 -->
 
 - [ ] (observation — surfaced 2026-07-30 by the second-level-routing code study;
