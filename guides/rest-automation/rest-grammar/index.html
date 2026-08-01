@@ -2709,7 +2709,7 @@
 <tr>
 <td><code>timeout</code></td>
 <td>no</td>
-<td>duration like <code>30s</code> (default 30s; clamped 1s–5m)</td>
+<td>duration like <code>30s</code> (default 30s; clamped 1s–5m) — an inbound <code>x-ttl</code> request header (milliseconds) overrides it: a Mercury caller propagates its own deadline end-to-end, so this endpoint's flow runs with the caller's remaining budget instead of the configured value</td>
 </tr>
 <tr>
 <td><code>cors</code></td>

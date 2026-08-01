@@ -2876,6 +2876,15 @@ in-grammar integer coercion). For anything richer, use <code>graph.task</code> (
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>skill=graph.js
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>statement[]=COMPUTE: amount -&gt; (1 - {input.body.discount}) * {book.price}
 </code></pre></div>
+<p><strong>Deadline:</strong> a script is cancelled at a hard execution deadline (GraalVM context cancellation),
+failing the node with a 408 <code>script exceeded the N ms execution deadline</code>. Unlike
+<a href="#api-fetcher"><code>graph.api.fetcher</code></a>'s call deadline, this is a <strong>run-level error</strong> — it is not
+<code>exception=</code>-routable: a dry-run emits the 408 line and the canonical <code>Graph traversal aborted</code>
+terminal, and a deployed run fails the whole request with HTTP 408. The default is a tight
+<strong>5 seconds</strong> — <code>graph.js</code> (like <code>graph.math</code>) is meant for very simple computation or
+IF-THEN-ELSE, so it deliberately does <strong>not</strong> inherit the typically longer <code>model.ttl</code>; an
+optional node <code>ttl</code> (duration syntax, e.g. <code>10s</code>) overrides it. An endless loop can no longer
+pin a kernel thread forever.</p>
 <p><strong>Gotchas:</strong> capped at <strong>50 instances</strong> per deployment (it uses kernel threads); reach for
 <code>graph.math</code> unless you need real JavaScript.</p>
 <h2 id="api-fetcher">graph.api.fetcher<a class="headerlink" href="#api-fetcher" title="Permanent link">&para;</a></h2>
@@ -2890,7 +2899,8 @@ and bounded fork-join concurrency.</p>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>output[]=result.name -&gt; output.body.name   # optional: result always lands at {node}.result
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>for_each[]=&lt;array-source&gt; -&gt; model.&lt;var&gt;   # optional: iterate a runtime list (see below)
 <a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>concurrency=3                            # optional: 1–30, default 3
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>exception=&lt;error-handler-node&gt;           # optional
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>ttl=8s                                   # optional: per-call deadline override (see below)
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>exception=&lt;error-handler-node&gt;           # optional
 </code></pre></div>
 <p><strong>Iterating a runtime list (<code>for_each</code>):</strong> the array source is typically a <strong>prior fetcher's
 result</strong> (<code>{fetcher}.result.{key}</code>); wire the current element into each call with
@@ -2925,6 +2935,16 @@ via <code>feature[]=log-response-headers</code> at <code>{node}.header.response.
 <code>{node}.status</code>/<code>{node}.error</code>, skips the <code>output[]</code> mappings, and <strong>jumps to the handler</strong>
 instead of aborting — the building block for bounded retry loops
 (<a href="../command-reference/#failure-routing">full pattern</a>). Without it, the run aborts.</p>
+<p><strong>Deadline:</strong> each call is bounded by the propagated <code>model.ttl</code> (default 30 s); the optional node
+<code>ttl</code> (duration syntax <code>&lt;digits&gt;</code> + <code>s</code>/<code>m</code>/<code>h</code>/<code>d</code>, e.g. <code>8s</code>) overrides it for this node's calls
+only. A deadline shorter than the graph's own budget makes a slow provider time out <strong>first</strong>, so
+<code>exception=</code> routing handles the timeout instead of the whole run aborting on <code>model.ttl</code> — the
+time-boxed half of a bounded retry loop. The same effective deadline is stamped as the outbound
+<code>x-ttl</code> request header, aligning the HTTP client's wire-level read timeout (deadline + a one-second
+grace) with the graph-side deadline, so a hung upstream's socket self-cancels instead of lingering
+after the 408. When the target is another Mercury application, its ingress honors the inbound
+<code>x-ttl</code> over the endpoint's configured timeout — the caller's deadline propagates end-to-end.
+Details and gotchas: <a href="#task"><code>graph.task</code></a>.</p>
 <h2 id="extension">graph.extension<a class="headerlink" href="#extension" title="Permanent link">&para;</a></h2>
 <p>Delegates to another <strong>graph model</strong> or an <strong>Event Script flow</strong>, so you can compose larger
 capabilities and reuse logic. <strong>Discover the valid targets with <code>list graphs</code> / <code>list flows</code></strong>
@@ -2958,6 +2978,11 @@ capabilities and reuse logic. <strong>Discover the valid targets with <code>list
   whole response body; <code>result.{key}</code> a field of it.</li>
 <li>The same contract applies to a <strong>flow</strong> target (<code>extension=flow://{flow-id}</code>): the named keys
   feed the flow's <code>input.body</code>, and <code>result.*</code> is the flow's <code>output.body</code>.</li>
+<li>The optional node <code>ttl</code> (duration syntax, e.g. <code>10s</code>) overrides the propagated <code>model.ttl</code> as
+  the <strong>deadline for the delegated call</strong> — a shorter child deadline lets the sub-graph or flow
+  time out first, so this node's <code>exception=</code> route catches the timeout and can retry within the
+  parent graph's remaining budget (same parameter as <a href="#api-fetcher"><code>graph.api.fetcher</code></a> and
+  <a href="#task"><code>graph.task</code></a>).</li>
 </ul>
 <p>This is the seam between the semantic layer and the composable (Event Script) layer beneath it —
 authoring the target flow: <a href="../../event-script/ai-agent-guide/">Event Script AI agent guide</a> +
@@ -2989,9 +3014,22 @@ and the body auto-converts when the function declares a PoJo input. The result l
 (1–30, default 3) iterates with bounded fork-join; <code>exception=&lt;node&gt;</code> routes failures
 (<a href="../command-reference/#failure-routing">failure routing</a>).</p>
 <p><strong>Gotchas:</strong> the <code>task</code> route must exist at runtime or the node fails fast; a call is bounded by
-<code>model.ttl</code> (default 30 s). For multi-step orchestration, prefer <a href="#extension"><code>graph.extension</code></a> —
-<code>graph.task</code> is for a single function call. Writing the function itself:
+<code>model.ttl</code> (default 30 s) — or by the node's optional <code>ttl</code> property (duration syntax, e.g.
+<code>10s</code>), which overrides the propagated value for this node only, the same deadline override as
+<a href="#api-fetcher"><code>graph.api.fetcher</code></a> and <a href="#extension"><code>graph.extension</code></a>. For multi-step
+orchestration, prefer <a href="#extension"><code>graph.extension</code></a> — <code>graph.task</code> is for a single function
+call. Writing the function itself:
 <a href="../../event-driven/ai-agent-guide/">function AI agent guide</a> (<code>#[preload]</code> + <code>ComposableFunction</code>).</p>
+<p><strong><code>ttl</code> — one grammar, three meanings.</strong> On the three calling skills (<code>graph.task</code>,
+<code>graph.api.fetcher</code>, <code>graph.extension</code>) the node <code>ttl</code> is a <strong>child-call deadline</strong>; on
+<a href="#js"><code>graph.js</code></a> it is the <strong>script execution deadline</strong> (default 5s, not <code>model.ttl</code>); on the
+<a href="#suspend">suspend node</a> the same <code>&lt;digits&gt;</code> + <code>s</code>/<code>m</code>/<code>h</code>/<code>d</code> grammar sets the <strong>store-record
+expiry</strong> — a persistence timer, not a deadline. On any other skill the property is rejected by
+the CompileGraph gate and the playground pre-run check. Note also that model metadata
+(<code>model.cid</code>/<code>instance</code>/<code>flow</code>/<code>ttl</code>/<code>trace</code>/<code>parent</code>/<code>root</code>/<code>none</code>/<code>run</code>) is engine-managed and
+<strong>immutable</strong> — a data mapping that writes to it is rejected at compile time (the CompileGraph
+gate and the pre-run check) and again at runtime in both walker lanes. The per-node <code>ttl</code> is the
+sanctioned deadline mechanism, not rewriting <code>model.ttl</code>.</p>
 <h2 id="suspend">graph.suspend<a class="headerlink" href="#suspend" title="Permanent link">&para;</a></h2>
 <p>Persists the workflow state of the running graph to an external state store and lets the run
 complete — the transaction resumes later through <a href="#resume"><code>graph.resume</code></a> with the same business

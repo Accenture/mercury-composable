@@ -2769,6 +2769,11 @@
 <td>ms (int) or a <code>model.*</code> var; must be &lt; <code>flow.ttl</code></td>
 </tr>
 <tr>
+<td><code>ttl</code></td>
+<td>no</td>
+<td>duration (e.g. <code>8s</code>); sub-flow tasks only; must be &lt; <code>flow.ttl</code>; overrides the propagated parent TTL so the sub-flow's timeout is catchable</td>
+</tr>
+<tr>
 <td><code>exception</code></td>
 <td>no</td>
 <td>task-level exception handler route (overrides <code>flow.exception</code>)</td>
@@ -2955,6 +2960,7 @@ The full catalog with examples is in <a href="../syntax/#tasks-and-data-mapping"
 <li><code>fork</code> requires <code>join</code>; <code>pipeline</code> requires a <code>pipeline</code> list.</li>
 <li>A <code>name</code> is required when the same <code>process</code> appears in more than one task.</li>
 <li><code>ext:</code> targets require <code>external.state.machine</code> to be declared.</li>
+<li>A task <code>ttl</code> is only valid on a sub-flow (<code>flow://</code>) task, and must be &lt; <code>flow.ttl</code>.</li>
 </ol>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>

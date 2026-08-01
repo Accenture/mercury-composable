@@ -3268,6 +3268,12 @@ cleared run marks — which is the standard idiom for a second dry-run with diff
 Write <code>inspect output.body.name</code>, not <code>inspect {output.body.name}</code> (a literal
 <code>{output.body}</code> is treated as the key <code>{output</code> → <code>body}</code> and resolves to nothing).</p>
 </blockquote>
+<p><strong>Run deadline:</strong> a dry-run traversal is bounded by <code>model.ttl</code> (default 30 s) — the same
+deadline its deployed twin gets from the flow timer, so dev and production time out alike. A
+hung or overlong run ends with <code>Graph traversal timed out after N ms</code> followed by the canonical
+<code>Graph traversal aborted</code> terminal (the console and the synchronous companion endpoint always
+receive an end-of-transmission line). Seed a different budget at the instantiate edge:
+<code>long(60000) -&gt; model.ttl</code>.</p>
 <h3 id="describe">describe / list / seen<a class="headerlink" href="#describe" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>describe graph
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>describe graph {graph-id}        # DISCOVERY: a deployed model&#39;s contract view
@@ -3393,22 +3399,22 @@ and examples; this is the at-a-glance contract.</p>
 <tr>
 <td><code>graph.js</code></td>
 <td><code>statement[]</code> (same statement model as <code>graph.math</code>; expressions run as full JavaScript on GraalVM)</td>
-<td><code>for_each[]</code>, <code>NEXT:</code>, <code>DELAY:</code>, <code>BEGIN</code>/<code>END</code></td>
+<td><code>for_each[]</code>, <code>NEXT:</code>, <code>DELAY:</code>, <code>BEGIN</code>/<code>END</code>, <code>ttl</code> (script deadline, default 5s)</td>
 </tr>
 <tr>
 <td><code>graph.api.fetcher</code></td>
 <td><code>dictionary[]</code> (+ <code>input[]</code> whenever its dictionaries declare parameters — the usual case)</td>
-<td><code>output[]</code> (the result set always lands at <code>{node}.result</code> for a later mapper), <code>for_each[]</code> (see <a href="#for-each">Iterative fetching</a>), <code>concurrency</code> (1–30, def 3), <code>exception</code></td>
+<td><code>output[]</code> (the result set always lands at <code>{node}.result</code> for a later mapper), <code>for_each[]</code> (see <a href="#for-each">Iterative fetching</a>), <code>concurrency</code> (1–30, def 3), <code>ttl</code> (call deadline), <code>exception</code></td>
 </tr>
 <tr>
 <td><code>graph.extension</code></td>
 <td><code>extension</code> (<code>{graph-id}</code> or <code>flow://{flow-id}</code>), <code>input[]</code></td>
-<td><code>output[]</code>, <code>for_each[]</code>, <code>concurrency</code>, <code>exception</code></td>
+<td><code>output[]</code>, <code>for_each[]</code>, <code>concurrency</code>, <code>ttl</code> (call deadline), <code>exception</code></td>
 </tr>
 <tr>
 <td><code>graph.task</code></td>
 <td><code>task</code> (a composable function's route name)</td>
-<td><code>input[]</code>, <code>output[]</code>, <code>for_each[]</code>, <code>concurrency</code>, <code>exception</code></td>
+<td><code>input[]</code>, <code>output[]</code>, <code>for_each[]</code>, <code>concurrency</code>, <code>ttl</code> (call deadline), <code>exception</code></td>
 </tr>
 <tr>
 <td><code>graph.join</code></td>

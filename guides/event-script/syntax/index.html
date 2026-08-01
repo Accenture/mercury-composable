@@ -1856,6 +1856,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#sub-flow-deadline-override-ttl-tag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-flow deadline override ("ttl" tag)
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3950,6 +3961,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#sub-flow-deadline-override-ttl-tag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-flow deadline override ("ttl" tag)
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4110,9 +4132,12 @@ All events are delivered asynchronously and there is no timeout value for each e
 for a complete end-to-end flow. Upon expiry, an unfinished flow will be aborted. You can use suffix "s" for seconds,
 "m" for minutes and "h" for hours. e.g. "30s" for 30 seconds.</p>
 <blockquote>
-<p><em>Note</em>: When using the HTTP Flow Adapter, the flow.ttl value can be higher than the REST endpoint's timeout value.
-  This would happen when one of your tasks in the event flow responds to the caller and the event flow continues to
-  execute the rest of the flow. This type of task is called "response" task.</p>
+<p><em>Note</em>: When a flow is started through the HTTP Flow Adapter, the REST endpoint's "timeout" value in
+  rest.yaml overrides flow.ttl — the adapter passes the endpoint timeout to the new flow instance as its
+  TTL, so the effective time budget at an HTTP entry point is always the REST timeout, even for the part
+  of a flow that continues asynchronously after a "response" task. Keep the two values consistent;
+  flow.ttl stands on its own when the flow is started by other means, e.g. a Kafka flow adapter.
+  Similarly, a sub-flow does not run under its own flow.ttl — see "Sub-flow deadline override" below.</p>
 </blockquote>
 <p><code>first.task</code> - this points to the route name of a function (aka "task") to which the flow engine will deliver
 the incoming event.</p>
@@ -6045,6 +6070,48 @@ the delay command will be ignored.</p>
 <a id="__codelineno-77-11" name="__codelineno-77-11" href="#__codelineno-77-11"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">end</span>
 <a id="__codelineno-77-12" name="__codelineno-77-12" href="#__codelineno-77-12"></a><span class="w">    </span><span class="nt">delay</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;2000</span><span class="nv"> </span><span class="s">ms&#39;</span>
 </code></pre></div></p>
+<h3 id="sub-flow-deadline-override-ttl-tag">Sub-flow deadline override ("ttl" tag)<a class="headerlink" href="#sub-flow-deadline-override-ttl-tag" title="Permanent link">&para;</a></h3>
+<p>You may add a "ttl" tag to a sub-flow task (<code>process: 'flow://...'</code>) to give the child flow a
+shorter deadline than its parent.</p>
+<p>By default, a sub-flow inherits the parent's full TTL value and its timer restarts when the
+sub-flow is launched. Since the child starts later, the parent's deadline always fires first —
+and a flow's own timeout bypasses exception handlers, so a slow sub-flow would abort the whole
+transaction with HTTP-408 instead of giving the parent a chance to recover.</p>
+<p>A task-level "ttl" reverses the race: the sub-flow times out first while the parent is still
+alive, so the task's exception handler (or the flow-level one) catches the 408 and can retry
+within the remaining time budget. For example, a parent with <code>flow.ttl: 30s</code> calling a sub-flow
+with <code>ttl: 8s</code> has budget for up to three attempts and still time to respond to the caller.</p>
+<p>The value uses the same duration syntax as <code>flow.ttl</code> (e.g. "8s") and must be less than the
+parent's <code>flow.ttl</code>. It is validated at compile time and rejected on a regular function task.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-78-1" name="__codelineno-78-1" href="#__codelineno-78-1"></a><span class="nt">tasks</span><span class="p">:</span>
+<a id="__codelineno-78-2" name="__codelineno-78-2" href="#__codelineno-78-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;charge.card&#39;</span>
+<a id="__codelineno-78-3" name="__codelineno-78-3" href="#__codelineno-78-3"></a><span class="w">    </span><span class="nt">input</span><span class="p">:</span>
+<a id="__codelineno-78-4" name="__codelineno-78-4" href="#__codelineno-78-4"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;model.order</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">input.body&#39;</span>
+<a id="__codelineno-78-5" name="__codelineno-78-5" href="#__codelineno-78-5"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;flow://payment-processor&#39;</span>
+<a id="__codelineno-78-6" name="__codelineno-78-6" href="#__codelineno-78-6"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-78-7" name="__codelineno-78-7" href="#__codelineno-78-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;result</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.receipt&#39;</span>
+<a id="__codelineno-78-8" name="__codelineno-78-8" href="#__codelineno-78-8"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Charge</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">card,</span><span class="nv"> </span><span class="s">time-boxed</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">8</span><span class="nv"> </span><span class="s">seconds&#39;</span>
+<a id="__codelineno-78-9" name="__codelineno-78-9" href="#__codelineno-78-9"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sequential</span>
+<a id="__codelineno-78-10" name="__codelineno-78-10" href="#__codelineno-78-10"></a><span class="w">    </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8s</span>
+<a id="__codelineno-78-11" name="__codelineno-78-11" href="#__codelineno-78-11"></a><span class="w">    </span><span class="nt">exception</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;v1.payment.retry&#39;</span>
+<a id="__codelineno-78-12" name="__codelineno-78-12" href="#__codelineno-78-12"></a><span class="w">    </span><span class="nt">next</span><span class="p">:</span>
+<a id="__codelineno-78-13" name="__codelineno-78-13" href="#__codelineno-78-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;confirm.order&#39;</span>
+<a id="__codelineno-78-14" name="__codelineno-78-14" href="#__codelineno-78-14"></a>
+<a id="__codelineno-78-15" name="__codelineno-78-15" href="#__codelineno-78-15"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
+<a id="__codelineno-78-16" name="__codelineno-78-16" href="#__codelineno-78-16"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;error.code</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">status&#39;</span>
+<a id="__codelineno-78-17" name="__codelineno-78-17" href="#__codelineno-78-17"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;model.attempt</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">attempt&#39;</span>
+<a id="__codelineno-78-18" name="__codelineno-78-18" href="#__codelineno-78-18"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;v1.payment.retry&#39;</span>
+<a id="__codelineno-78-19" name="__codelineno-78-19" href="#__codelineno-78-19"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-78-20" name="__codelineno-78-20" href="#__codelineno-78-20"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;result.attempt</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.attempt&#39;</span>
+<a id="__codelineno-78-21" name="__codelineno-78-21" href="#__codelineno-78-21"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;result.retry</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">decision&#39;</span>
+<a id="__codelineno-78-22" name="__codelineno-78-22" href="#__codelineno-78-22"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Decide</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">retry</span><span class="nv"> </span><span class="s">using</span><span class="nv"> </span><span class="s">a</span><span class="nv"> </span><span class="s">model</span><span class="nv"> </span><span class="s">counter&#39;</span>
+<a id="__codelineno-78-23" name="__codelineno-78-23" href="#__codelineno-78-23"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">decision</span>
+<a id="__codelineno-78-24" name="__codelineno-78-24" href="#__codelineno-78-24"></a><span class="w">    </span><span class="nt">next</span><span class="p">:</span>
+<a id="__codelineno-78-25" name="__codelineno-78-25" href="#__codelineno-78-25"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;charge.card&#39;</span><span class="w">      </span><span class="c1"># try again within the remaining budget</span>
+<a id="__codelineno-78-26" name="__codelineno-78-26" href="#__codelineno-78-26"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;payment.failed&#39;</span><span class="w">   </span><span class="c1"># attempts exhausted</span>
+</code></pre></div>
+<p>For a ready-made retry/backoff policy, the built-in <code>resilience.handler</code> described earlier can
+serve as the exception handler instead of a custom function.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../">Composable Orchestration — Overview</a> — the layer's purpose and the flow mental model.</li>
