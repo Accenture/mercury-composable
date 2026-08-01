@@ -958,60 +958,71 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         flowInstance.tasks.add(taskMetrics);
         final var compositeInternalCorrelationId = seq > 0? uuid + "#" + seq : uuid;
         if (functionRoute.startsWith(FLOW_PROTOCOL)) {
-            var flowId = functionRoute.substring(FLOW_PROTOCOL.length());
-            var subFlow = Flows.getFlow(flowId);
-            if (subFlow == null) {
-                log.error("Unable to process flow {}:{} - missing sub-flow {}",
-                        flowInstance.getFlow().id, flowInstance.id, functionRoute);
-                abortFlow(flowInstance, 500, functionRoute+" not defined", parentSpanId);
-                return;
-            }
-            Map<String, Object> dataset = new HashMap<>();
-            dataset.put(TTL, resolveChildTtl(flowInstance, task, deferred));
-            dataset.put(BODY, unwrapBodyIfWildcard(md));
-            if (!md.optionalHeaders.isEmpty()) {
-                dataset.put(HEADER, md.optionalHeaders);
-            }
-            // execute a subflow
-            var forward = new EventEnvelope().setTo(EventScriptManager.SERVICE_NAME)
-                                                .setReplyTo(TaskExecutor.SERVICE_NAME)
-                                                .setHeader(PARENT, flowInstance.id)
-                                                .setHeader(FLOW_ID, flowId).setBody(dataset)
-                                                // sub-flow inherits the parent's business correlation-id (model.cid)
-                                                .setHeader(EventScriptManager.BUSINESS_CORRELATION_ID,
-                                                        flowInstance.businessCorrelationId)
-                                                .setCorrelationId(compositeInternalCorrelationId)
-                                                .setSpanId(parentSpanId);
-            var po = new PostOffice(functionRoute, flowInstance.getTraceId(), flowInstance.getTracePath());
-            // the delay parameter defers a sub-flow launch the same way it defers a
-            // function task; the child's own TTL timer only starts on delivery, and the
-            // pending launch is cancelled if this flow ends during the delay window
-            if (deferred > 0) {
-                flowInstance.pendingFutureEvents.add(
-                        po.sendLater(forward, new Date(System.currentTimeMillis() + deferred)));
-            } else {
-                po.send(forward);
-            }
+            launchSubFlow(flowInstance, task, md, deferred, compositeInternalCorrelationId, parentSpanId);
         } else {
-            var po = new PostOffice(TaskExecutor.SERVICE_NAME,
-                                            flowInstance.getTraceId(), flowInstance.getTracePath());
-            var event = new EventEnvelope().setTo(functionRoute).setReplyTo(TaskExecutor.SERVICE_NAME)
-                                            .setCorrelationId(compositeInternalCorrelationId)
-                                            .setBody(unwrapBodyIfWildcard(md))
+            sendTaskEvent(flowInstance, md, deferred, functionRoute, compositeInternalCorrelationId, parentSpanId);
+        }
+    }
+
+    private void launchSubFlow(FlowInstance flowInstance, Task task, InputMappingMetadata md,
+                               long deferred, String correlationId, String parentSpanId) {
+        var functionRoute = task.getFunctionRoute();
+        var flowId = functionRoute.substring(FLOW_PROTOCOL.length());
+        var subFlow = Flows.getFlow(flowId);
+        if (subFlow == null) {
+            log.error("Unable to process flow {}:{} - missing sub-flow {}",
+                    flowInstance.getFlow().id, flowInstance.id, functionRoute);
+            abortFlow(flowInstance, 500, functionRoute+" not defined", parentSpanId);
+            return;
+        }
+        Map<String, Object> dataset = new HashMap<>();
+        dataset.put(TTL, resolveChildTtl(flowInstance, task, deferred));
+        dataset.put(BODY, unwrapBodyIfWildcard(md));
+        if (!md.optionalHeaders.isEmpty()) {
+            dataset.put(HEADER, md.optionalHeaders);
+        }
+        // execute a subflow
+        var forward = new EventEnvelope().setTo(EventScriptManager.SERVICE_NAME)
+                                            .setReplyTo(TaskExecutor.SERVICE_NAME)
+                                            .setHeader(PARENT, flowInstance.id)
+                                            .setHeader(FLOW_ID, flowId).setBody(dataset)
+                                            // sub-flow inherits the parent's business correlation-id (model.cid)
+                                            .setHeader(EventScriptManager.BUSINESS_CORRELATION_ID,
+                                                    flowInstance.businessCorrelationId)
+                                            .setCorrelationId(correlationId)
                                             .setSpanId(parentSpanId);
-            md.optionalHeaders.forEach(event::setHeader);
-            // carry the flow's business correlation-id (model.cid) on the engine-managed envelope tag -
-            // never as an envelope header - so the worker injects my_correlation_id at delivery and a
-            // mapped optional header cannot collide with the framework value
-            event.addTag(EventEmitter.BUSINESS_CID_TAG, flowInstance.businessCorrelationId);
-            // execute task by sending event (a deferred dispatch is cancelled at teardown
-            // so it cannot fire after this flow has ended - same contract as a sub-flow)
-            if (deferred > 0) {
-                flowInstance.pendingFutureEvents.add(
-                        po.sendLater(event, new Date(System.currentTimeMillis() + deferred)));
-            } else {
-                po.send(event);
-            }
+        var po = new PostOffice(functionRoute, flowInstance.getTraceId(), flowInstance.getTracePath());
+        // the delay parameter defers a sub-flow launch the same way it defers a
+        // function task; the child's own TTL timer only starts on delivery, and the
+        // pending launch is canceled if this flow ends during the delay window
+        if (deferred > 0) {
+            flowInstance.pendingFutureEvents.add(
+                    po.sendLater(forward, new Date(System.currentTimeMillis() + deferred)));
+        } else {
+            po.send(forward);
+        }
+    }
+
+    private void sendTaskEvent(FlowInstance flowInstance, InputMappingMetadata md, long deferred,
+                               String functionRoute, String correlationId, String parentSpanId) {
+        var po = new PostOffice(TaskExecutor.SERVICE_NAME,
+                                        flowInstance.getTraceId(), flowInstance.getTracePath());
+        var event = new EventEnvelope().setTo(functionRoute).setReplyTo(TaskExecutor.SERVICE_NAME)
+                                        .setCorrelationId(correlationId)
+                                        .setBody(unwrapBodyIfWildcard(md))
+                                        .setSpanId(parentSpanId);
+        md.optionalHeaders.forEach(event::setHeader);
+        // carry the flow's business correlation-id (model.cid) on the engine-managed envelope tag -
+        // never as an envelope header - so the worker injects my_correlation_id at delivery and a
+        // mapped optional header cannot collide with the framework value
+        event.addTag(EventEmitter.BUSINESS_CID_TAG, flowInstance.businessCorrelationId);
+        // execute task by sending event (a deferred dispatch is canceled at teardown
+        // so it cannot fire after this flow has ended - same contract as a sub-flow)
+        if (deferred > 0) {
+            flowInstance.pendingFutureEvents.add(
+                    po.sendLater(event, new Date(System.currentTimeMillis() + deferred)));
+        } else {
+            po.send(event);
         }
     }
 

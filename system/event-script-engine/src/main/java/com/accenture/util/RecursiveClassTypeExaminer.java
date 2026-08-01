@@ -62,10 +62,10 @@ public class RecursiveClassTypeExaminer extends ClassVisitor {
         }
 
         if (interfaceNames != null) {
-            for (String iface : interfaceNames) {
-                String ifaceName = iface.replace('/', '.');
-                interfaces.add(ifaceName);
-                types.add(ifaceName);
+            for (String iFace : interfaceNames) {
+                String iFaceName = iFace.replace('/', '.');
+                interfaces.add(iFaceName);
+                types.add(iFaceName);
             }
         }
     }

@@ -76,7 +76,7 @@ public final class RoutingRuleSet {
     private static final String BODY_SELECTOR = BODY_PREFIX + ".";
     private static final String BODY_INDEX_SELECTOR = BODY_PREFIX + "[";
     // synthetic root the record body is evaluated under - makes a top-level List addressable and keeps
-    // every lookup path away from MultiLevelMap's '$'-JsonPath dispatch (full-path prefix check only)
+    // every lookup path away from MultiLevelMap's '$' JsonPath dispatch (full-path prefix check only)
     private static final String BODY_ROOT = "body";
     private static final String DEFAULT_RULE = "default";
     private static final String ARROW = "->";

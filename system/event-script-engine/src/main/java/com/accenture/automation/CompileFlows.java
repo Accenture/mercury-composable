@@ -70,16 +70,16 @@ public class CompileFlows implements EntryPoint {
      * Reserved state-machine keys that a data mapping must never overwrite:
      * <ul>
      * <li>the READ-only metadata seeded into each flow instance by the engine (see FlowInstance) -
-     *     model.cid, model.instance, model.flow, model.ttl and model.trace. A corrupted model.cid,
+     *     'model.cid', 'model.instance', 'model.flow', 'model.ttl' and 'model.trace'. A corrupted model.cid,
      *     for example, would propagate to downstream systems through any later
      *     'model.cid -> ...' mapping.</li>
-     * <li>the model.none null constant - it works because the 'none' key is never set, so a write
+     * <li>the 'model.none' null constant - it works because the 'none' key is never set, so a write operation
      *     would silently turn every later 'model.none -> X' clear-operation into a value copy.</li>
-     * <li>the model.run flag - engine-managed flow metadata written only by the knowledge
-     *     graph's graph.resume skill ('resume' | 'fresh'); application logic reads it to react
+     * <li>the 'model.run' flag - engine-managed flow metadata written only by the knowledge
+     *     graph's 'graph.resume' skill ('resume' | 'fresh'); application logic reads it to react
      *     to a resumed-vs-fresh condition, so an overwrite would lie to that logic.</li>
      * </ul>
-     * The model.parent and model.root keys are protected as whole namespaces by
+     * The 'model.parent' and 'model.root' keys are protected as whole namespaces by
      * DataMappingHelper.validModel; writing beneath them (model.parent.*) is the shared-state
      * mechanism and stays allowed.
      */
@@ -337,7 +337,7 @@ public class CompileFlows implements EntryPoint {
 
     /**
      * Detect a data mapping target (RHS) that would overwrite a reserved key of the flow
-     * instance's state machine (the READ-only metadata or the model.none null constant).
+     * instance's state machine (the READ-only metadata or the 'model.none' null constant).
      * Exact matches are rejected for all reserved keys; nested writes (e.g. {@code model.cid.x}
      * or {@code model.cid[0]}) are also rejected for the scalar keys because they would replace
      * the scalar with a map or list. Nested writes under {@code model.parent} / {@code model.root}
@@ -634,13 +634,7 @@ public class CompileFlows implements EntryPoint {
                 throw new IllegalArgumentException(String.format(
                         "%s %s. ttl is only applicable to a sub-flow task", INVALID_TASK, md.uniqueTaskName));
             }
-            var util = Utility.getInstance();
-            int seconds = util.getDurationInSeconds(md.ttl);
-            if (seconds < 1) {
-                throw new IllegalArgumentException(String.format(
-                        "%s %s. ttl must be a positive duration (e.g. 8s)", INVALID_TASK, md.uniqueTaskName));
-            }
-            long ttlMs = seconds * 1000L;
+            long ttlMs = getValidTtlSeconds(md) * 1000L;
             if (ttlMs < entry.ttl) {
                 task.setTtl(ttlMs);
             } else {
@@ -648,6 +642,15 @@ public class CompileFlows implements EntryPoint {
                         INVALID_TASK, md.uniqueTaskName));
             }
         }
+    }
+
+    private int getValidTtlSeconds(FlowConfigMetadata md) {
+        int seconds = Utility.getInstance().getDurationInSeconds(md.ttl);
+        if (seconds < 1) {
+            throw new IllegalArgumentException(String.format(
+                    "%s %s. ttl must be a positive duration (e.g. 8s)", INVALID_TASK, md.uniqueTaskName));
+        }
+        return seconds;
     }
 
     private void setDelayFromModelVar(FlowConfigMetadata md, Task task) {

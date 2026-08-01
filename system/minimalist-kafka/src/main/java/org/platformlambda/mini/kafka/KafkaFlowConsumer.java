@@ -395,7 +395,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
                 running = false;
                 return false;   // do not commit a message that was interrupted mid-processing
             } catch (ExecutionException e) {
-                cause = e.getCause() != null ? e.getCause() : e;
+                cause = rootCause(e);
             } catch (RuntimeException e) {
                 // a synchronous dispatch error - e.g. a task route released AFTER startup validation
                 // ("Route X not found") - joins the same retry/DLQ envelope instead of escaping to the
@@ -431,6 +431,10 @@ public class KafkaFlowConsumer implements AutoCloseable {
             throws InterruptedException, ExecutionException {
         PostOffice po = PostOffice.trackable(ADAPTER_ROUTE, traceId, tracePath);
         return po.request(forward, resolveTtl(forward)).get();
+    }
+
+    private static Throwable rootCause(ExecutionException e) {
+        return e.getCause() != null? e.getCause() : e;
     }
 
     /**
@@ -476,8 +480,8 @@ public class KafkaFlowConsumer implements AutoCloseable {
      * write, preserving its headers + body. Visible (package-private, non-final) so the commit-gating can be
      * unit-tested.
      *
-     * <p>If no {@code dlq-topic} is configured, or the write to it <b>fails</b>, there is no further
-     * fallback - an "exception of an exception" in the latter case. Refusing to commit would redeliver the
+     * <p>If no {@code dlq-topic} is configured, or write to it <b>fails</b>, there is no further
+     * fallback - an "exception to an exception" in the latter case. Refusing to commit would redeliver the
      * same poison message, which would fail the flow (and the DLQ write, if configured) again, indefinitely -
      * a self-sustaining retry/recovery storm, a known cause of prolonged outages. So instead we log a loud
      * {@code ERROR} and commit, deliberately accepting the loss of this one message in exchange for
@@ -521,7 +525,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
             running = false;
             return false;   // shutdown in progress: redeliver on the next start, do not commit
         } catch (ExecutionException | TimeoutException e) {
-            // an "exception of an exception": the last line of defense failed. Drop loudly rather than
+            // an "exception to an exception": the last line of defense failed. Drop loudly rather than
             // block the partition retrying forever (a recovery storm). Future: an alternative-path store.
             log.error("DATA LOSS: dead-letter write to {} failed; dropping '{}' offset {} to avoid a "
                             + "redelivery storm (ensure the DLQ topic exists). Cause: {}",

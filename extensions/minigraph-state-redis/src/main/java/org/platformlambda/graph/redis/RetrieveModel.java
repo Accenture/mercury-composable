@@ -32,7 +32,7 @@ import static org.platformlambda.graph.redis.RedisStateConnection.KEY_PREFIX;
 
 /**
  * Redis implementation of the suspend/resume state-store RETRIEVE contract, invoked by
- * the graph.resume skill through the node's "task" property.
+ * the 'graph.resume' skill through the node's "task" property.
  * <p>
  * Contract: headers type=get; body {cid}. Returns the persisted record, or an empty map
  * when absent-or-expired (a fresh transaction is the normal case, not an error). The

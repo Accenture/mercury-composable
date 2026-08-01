@@ -31,9 +31,9 @@ import java.util.Map;
  * A perfectly stateless partitioner: each keyless record goes to a uniformly random partition.
  *
  * <p>Kafka's built-in default is a <i>sticky</i> partitioner - it keeps writing to one partition until a
- * batch closes, which is throughput-friendly but skews low-volume traffic badly (an app publishing a few
+ * batch closes, which is throughput-friendly but skews low-volume traffic badly. An app publishing a few
  * messages at a time can land everything on a single partition, leaving a multi-instance consumer group
- * mostly idle). The built-in {@code RoundRobinPartitioner} fixes the skew but keeps per-topic counters and
+ * mostly idle. The built-in {@code RoundRobinPartitioner} fixes the skew but keeps per-topic counters and
  * has known unevenness when batches are recreated. Random distribution needs no state at all and converges
  * on uniform - the pattern proven in field deployments of this library.</p>
  *

@@ -104,7 +104,7 @@ public class SchemaCodec {
      * The classloader that loaded the Confluent serde classes. Confluent's config validation resolves classes
      * (e.g. the default {@code context.name.strategy} → {@code NullContextNameStrategy}) via the <b>thread
      * context</b> classloader. When the producer runs on a {@code @KernelThreadRunner} pool thread - whose
-     * context classloader is not the application's - that lookup fails, so a serde build/use is wrapped with
+     * context classloader is not the application's - that lookup fails. Therefore, a serde build/use is wrapped with
      * {@link #withSerdeClassLoader} to set this for the duration of the call and restore the previous one after.
      */
     private static final ClassLoader SERDE_CLASSLOADER = AbstractKafkaSchemaSerDeConfig.class.getClassLoader();
@@ -279,7 +279,7 @@ public class SchemaCodec {
     }
 
     /**
-     * @param data the bytes to inspect (may be {@code null})
+     * @param data the bytes to inspect (maybe {@code null})
      * @return {@code true} if the bytes are Confluent-framed (magic byte + 4-byte id + payload)
      */
     public static boolean isFramed(byte[] data) {
