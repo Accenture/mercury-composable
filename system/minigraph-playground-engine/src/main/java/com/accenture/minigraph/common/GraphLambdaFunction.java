@@ -363,7 +363,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         }
     }
 
-    protected long getModelTtl(GraphInstance instance) {
+    protected static long getModelTtl(GraphInstance instance) {
         if (!instance.stateMachine.exists(MODEL)) {
             instance.stateMachine.setElement(MODEL, new HashMap<>());
         }
@@ -377,6 +377,8 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
      * A SHORTER child deadline lets a sub-flow, sub-graph or API call time out FIRST, so this
      * graph's error path can catch the timeout and retry within its remaining budget - with plain
      * propagation, parent and child carry the same value and the parent always expires first.
+     * (graph.js also honors a node ttl for its script-execution deadline, but resolves its own
+     * default of 5s instead of model.ttl - scripts are meant for very simple computation.)
      *
      * @param instance the graph instance
      * @param node     the calling node (graph.extension, graph.api.fetcher or graph.task)

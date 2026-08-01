@@ -280,14 +280,22 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
      * it under the compile-time flow.ttl), the override is honored but a WARN flags that the
      * catchability intent is defeated.
      */
-    private long resolveChildTtl(FlowInstance flowInstance, Task task) {
+    private long resolveChildTtl(FlowInstance flowInstance, Task task, long deferred) {
         if (task.getTtl() <= 0) {
             return flowInstance.getTtl();   // propagate TTL from parent flow
         }
-        if (task.getTtl() >= flowInstance.getTtl()) {
-            log.warn("Flow {}:{} task {} ttl {} ms is not less than the effective flow ttl {} ms"
-                    + " - the sub-flow timeout may not be catchable", flowInstance.getFlow().id,
-                    flowInstance.id, task.service, task.getTtl(), flowInstance.getTtl());
+        // a deferred launch consumes the parent's budget before the child even starts,
+        // so the delay counts against the catchability headroom
+        if (deferred + task.getTtl() >= flowInstance.getTtl()) {
+            if (deferred > 0) {
+                log.warn("Flow {}:{} task {} delay {} ms + ttl {} ms is not less than the effective flow ttl"
+                        + " {} ms - the sub-flow timeout may not be catchable", flowInstance.getFlow().id,
+                        flowInstance.id, task.service, deferred, task.getTtl(), flowInstance.getTtl());
+            } else {
+                log.warn("Flow {}:{} task {} ttl {} ms is not less than the effective flow ttl {} ms"
+                        + " - the sub-flow timeout may not be catchable", flowInstance.getFlow().id,
+                        flowInstance.id, task.service, task.getTtl(), flowInstance.getTtl());
+            }
         }
         return task.getTtl();
     }
@@ -959,7 +967,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 return;
             }
             Map<String, Object> dataset = new HashMap<>();
-            dataset.put(TTL, resolveChildTtl(flowInstance, task));
+            dataset.put(TTL, resolveChildTtl(flowInstance, task, deferred));
             dataset.put(BODY, unwrapBodyIfWildcard(md));
             if (!md.optionalHeaders.isEmpty()) {
                 dataset.put(HEADER, md.optionalHeaders);
@@ -975,7 +983,15 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                                                 .setCorrelationId(compositeInternalCorrelationId)
                                                 .setSpanId(parentSpanId);
             var po = new PostOffice(functionRoute, flowInstance.getTraceId(), flowInstance.getTracePath());
-            po.send(forward);
+            // the delay parameter defers a sub-flow launch the same way it defers a
+            // function task; the child's own TTL timer only starts on delivery, and the
+            // pending launch is cancelled if this flow ends during the delay window
+            if (deferred > 0) {
+                flowInstance.pendingFutureEvents.add(
+                        po.sendLater(forward, new Date(System.currentTimeMillis() + deferred)));
+            } else {
+                po.send(forward);
+            }
         } else {
             var po = new PostOffice(TaskExecutor.SERVICE_NAME,
                                             flowInstance.getTraceId(), flowInstance.getTracePath());
@@ -988,9 +1004,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             // never as an envelope header - so the worker injects my_correlation_id at delivery and a
             // mapped optional header cannot collide with the framework value
             event.addTag(EventEmitter.BUSINESS_CID_TAG, flowInstance.businessCorrelationId);
-            // execute task by sending event
+            // execute task by sending event (a deferred dispatch is cancelled at teardown
+            // so it cannot fire after this flow has ended - same contract as a sub-flow)
             if (deferred > 0) {
-                po.sendLater(event, new Date(System.currentTimeMillis() + deferred));
+                flowInstance.pendingFutureEvents.add(
+                        po.sendLater(event, new Date(System.currentTimeMillis() + deferred)));
             } else {
                 po.send(event);
             }

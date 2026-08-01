@@ -24,7 +24,7 @@
     { "field": "pipeline", "required": "conditional", "meaning": "ordered task list; required for pipeline" },
     { "field": "loop", "required": false, "meaning": "loop control (statement/condition) for a pipeline" },
     { "field": "source", "required": false, "meaning": "model.* list to iterate for a dynamic fork" },
-    { "field": "delay", "required": false, "meaning": "ms (int) or model.* var; must be < flow.ttl" },
+    { "field": "delay", "required": false, "meaning": "ms (int) or model.* var; must be < flow.ttl; defers function AND sub-flow tasks (a sub-flow's ttl timer starts on delivery)" },
     { "field": "ttl", "required": false, "meaning": "duration (e.g. 8s); sub-flow tasks only; must be < flow.ttl; overrides propagated TTL so the sub-flow timeout is catchable" },
     { "field": "exception", "required": false, "meaning": "task-level exception handler (overrides flow.exception)" }
   ],

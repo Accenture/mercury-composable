@@ -1169,6 +1169,58 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
+    void delayDefersSubflowLaunch() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long timeout = 8000;
+        final long delay = 1200;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/subflow/delay/test");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        long started = System.currentTimeMillis();
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        long elapsed = System.currentTimeMillis() - started;
+        assert res != null;
+        // the delay parameter must defer the sub-flow launch - it used to be silently
+        // dropped at the flow:// dispatch branch, launching the child immediately
+        assertEquals(200, res.getStatus());
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals("test", result.get("user"), "the deferred sub-flow must still run: " + result);
+        assertTrue(elapsed >= delay,
+                "the sub-flow launch must be deferred by the task delay (elapsed " + elapsed + " ms)");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void modelVariableDelayDefersSubflowLaunch() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long timeout = 8000;
+        final long delay = 1200;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/subflow/delay-var/test?delay=" + delay);
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        long started = System.currentTimeMillis();
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        long elapsed = System.currentTimeMillis() - started;
+        assert res != null;
+        // the model-variable form resolves the delay from the state machine per
+        // execution and must equally defer the sub-flow launch
+        assertEquals(200, res.getStatus());
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals("test", result.get("user"), "the deferred sub-flow must still run: " + result);
+        assertTrue(elapsed >= delay,
+                "the sub-flow launch must be deferred by the model-variable delay (elapsed " + elapsed + " ms)");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void subflowTimeoutsAreRetriedWithinTheParentBudget() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long timeout = 12000;

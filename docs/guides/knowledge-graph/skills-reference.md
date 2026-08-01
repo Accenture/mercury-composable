@@ -125,6 +125,16 @@ skill=graph.js
 statement[]=COMPUTE: amount -> (1 - {input.body.discount}) * {book.price}
 ```
 
+**Deadline:** a script is cancelled at a hard execution deadline (GraalVM context cancellation),
+failing the node with a 408 `script exceeded the N ms execution deadline`. Unlike
+[`graph.api.fetcher`](#api-fetcher)'s call deadline, this is a **run-level error** — it is not
+`exception=`-routable: a dry-run emits the 408 line and the canonical `Graph traversal aborted`
+terminal, and a deployed run fails the whole request with HTTP 408. The default is a tight
+**5 seconds** — `graph.js` (like `graph.math`) is meant for very simple computation or
+IF-THEN-ELSE, so it deliberately does **not** inherit the typically longer `model.ttl`; an
+optional node `ttl` (duration syntax, e.g. `10s`) overrides it. An endless loop can no longer
+pin a kernel thread forever.
+
 **Gotchas:** capped at **50 instances** per deployment (it uses kernel threads); reach for
 `graph.math` unless you need real JavaScript.
 ## graph.api.fetcher {#api-fetcher}
@@ -190,7 +200,12 @@ instead of aborting — the building block for bounded retry loops
 `ttl` (duration syntax `<digits>` + `s`/`m`/`h`/`d`, e.g. `8s`) overrides it for this node's calls
 only. A deadline shorter than the graph's own budget makes a slow provider time out **first**, so
 `exception=` routing handles the timeout instead of the whole run aborting on `model.ttl` — the
-time-boxed half of a bounded retry loop. Details and gotchas: [`graph.task`](#task).
+time-boxed half of a bounded retry loop. The same effective deadline is stamped as the outbound
+`x-ttl` request header, aligning the HTTP client's wire-level read timeout (deadline + a one-second
+grace) with the graph-side deadline, so a hung upstream's socket self-cancels instead of lingering
+after the 408. When the target is another Mercury application, its ingress honors the inbound
+`x-ttl` over the endpoint's configured timeout — the caller's deadline propagates end-to-end.
+Details and gotchas: [`graph.task`](#task).
 
 ## graph.extension {#extension}
 
@@ -284,8 +299,9 @@ orchestration, prefer [`graph.extension`](#extension) — `graph.task` is for a 
 call. Writing the function itself:
 [function AI agent guide](../event-driven/ai-agent-guide.md) (`#[preload]` + `ComposableFunction`).
 
-**`ttl` — two meanings, one grammar.** On the three calling skills (`graph.task`,
-`graph.api.fetcher`, `graph.extension`) the node `ttl` is a **child-call deadline**; on the
+**`ttl` — one grammar, three meanings.** On the three calling skills (`graph.task`,
+`graph.api.fetcher`, `graph.extension`) the node `ttl` is a **child-call deadline**; on
+[`graph.js`](#js) it is the **script execution deadline** (default 5s, not `model.ttl`); on the
 [suspend node](#suspend) the same `<digits>` + `s`/`m`/`h`/`d` grammar sets the **store-record
 expiry** — a persistence timer, not a deadline. On any other skill the property is rejected by
 the CompileGraph gate and the playground pre-run check. Note also that model metadata

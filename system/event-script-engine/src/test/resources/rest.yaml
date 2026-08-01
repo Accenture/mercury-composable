@@ -106,6 +106,24 @@ rest:
 
   - service: "http.flow.adapter"
     methods: ['GET']
+    url: "/api/subflow/delay/{user}"
+    flow: 'subflow-delay-test'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/subflow/delay-var/{user}"
+    flow: 'subflow-delay-var-test'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
     url: "/api/subflow/retry/{user}"
     flow: 'retry-subflow-test'
     timeout: 15s

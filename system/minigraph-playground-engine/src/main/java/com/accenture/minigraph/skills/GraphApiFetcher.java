@@ -386,6 +386,12 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var nodeName = md.fetcher.getAlias();
         var request = new AsyncHttpRequest();
         request.setMethod(md.method).setTargetHost(md.target.host).setUrl(md.target.uri);
+        // align the wire-level read timeout with the graph-side deadline (node ttl or model.ttl):
+        // without this stamp the HTTP client runs with its read timeout disabled, so a hung
+        // upstream would hold the socket long after the RPC wait gave up with a 408 - the client
+        // adds a one-second grace over this value; an explicit x-ttl from input mapping or a
+        // before-feature still wins because those are applied after this line
+        request.setTimeoutSeconds((int) Math.min(Integer.MAX_VALUE, (md.timeout + 999) / 1000));
         if (!md.inputs.isEmpty()) {
             mapHttpInput(request, nodeName, md.dd.getAlias(), md.stateMachine, md.inputs);
         }

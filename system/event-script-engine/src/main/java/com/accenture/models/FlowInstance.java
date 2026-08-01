@@ -51,6 +51,9 @@ public class FlowInstance {
     public final ConcurrentMap<Integer, PipeInfo> pipeMap = new ConcurrentHashMap<>();
     public final Queue<TaskMetrics> tasks = new ConcurrentLinkedQueue<>();
     public final ConcurrentMap<String, TaskMetrics> metrics = new ConcurrentHashMap<>();
+    // future-event ids of tasks scheduled with a 'delay' - cancelled at teardown so a
+    // deferred launch (notably a sub-flow) cannot fire after this flow has ended
+    public final Queue<String> pendingFutureEvents = new ConcurrentLinkedQueue<>();
     private final ConcurrentMap<String, Object> shared = new ConcurrentHashMap<>();
     private final long start = System.currentTimeMillis();
     private final ConcurrentMap<String, Object> references = new ConcurrentHashMap<>();
@@ -217,7 +220,14 @@ public class FlowInstance {
     public void close() {
         if (running.get()) {
             running.set(false);
-            EventEmitter.getInstance().cancelFutureEvent(timeoutWatcher);
+            var emitter = EventEmitter.getInstance();
+            emitter.cancelFutureEvent(timeoutWatcher);
+            // a deferred task launch must not outlive its flow (cancel is a safe no-op
+            // for an already-delivered event)
+            String pending;
+            while ((pending = pendingFutureEvents.poll()) != null) {
+                emitter.cancelFutureEvent(pending);
+            }
             setResponded(true);
             // explicitly release memory
             dataset.clear();

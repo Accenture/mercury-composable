@@ -408,6 +408,20 @@ public class GraphCommandService extends GraphLambdaFunction {
         }
     }
 
+    /**
+     * The effective run deadline (model.ttl) of a session's current graph instance -
+     * null when the session has no instantiated graph. The synchronous companion
+     * endpoint sizes its traversal drain window past this deadline, so the dry-run
+     * watcher's terminal - not the drain safety net - ends the capture.
+     *
+     * @param inRoute the session's inbound route (ws.*.in)
+     * @return the run deadline in milliseconds, or null when not instantiated
+     */
+    public static Long getRunDeadlineMs(String inRoute) {
+        var graphInstance = graphInstances.get(inRoute);
+        return graphInstance == null? null : getModelTtl(graphInstance);
+    }
+
     private void handleRunCommand(PostOffice po, String inRoute, String outRoute) {
         // pre-run quality check, reusing the deployment gate's whole-graph rules:
         // draft authoring deliberately allows partial models, but the moment the

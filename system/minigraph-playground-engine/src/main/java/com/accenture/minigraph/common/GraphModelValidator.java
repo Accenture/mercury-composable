@@ -62,9 +62,11 @@ public class GraphModelValidator {
     private static final String MODEL_PREFIX = "model";
     private static final String STATEMENT = "statement";
     private static final String MAP_TO = "->";
-    // skills whose 'ttl' node parameter is the child-call DEADLINE override
+    // skills whose 'ttl' node parameter is the DEADLINE override: a child-call deadline
+    // on graph.extension / graph.api.fetcher / graph.task, and the script execution
+    // deadline (GraalVM context interrupt) on graph.js
     private static final Set<String> DEADLINE_TTL_SKILLS =
-            Set.of(GraphExtension.ROUTE, GraphApiFetcher.ROUTE, GraphTask.ROUTE);
+            Set.of(GraphExtension.ROUTE, GraphApiFetcher.ROUTE, GraphTask.ROUTE, GraphJs.ROUTE);
     // the mapping-list node properties a data mapping can appear in
     private static final List<String> MAPPING_PROPERTIES = List.of("mapping", "input", "output", "for_each");
 
@@ -193,7 +195,8 @@ public class GraphModelValidator {
             } else {
                 throw new IllegalArgumentException(NODE_NAME + node.getAlias()
                         + " - 'ttl' is only applicable to the suspend node or a node with skill "
-                        + GraphExtension.ROUTE + ", " + GraphApiFetcher.ROUTE + " or " + GraphTask.ROUTE);
+                        + GraphExtension.ROUTE + ", " + GraphApiFetcher.ROUTE + ", " + GraphTask.ROUTE
+                        + " or " + GraphJs.ROUTE);
             }
         }
     }

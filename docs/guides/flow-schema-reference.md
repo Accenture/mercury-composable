@@ -229,6 +229,8 @@ Route name of a task-level exception handler. Overrides `flow.exception` for thi
 
 Delay before this task executes. Integer = milliseconds; string = model variable path (e.g. `model.wait_ms`). Must be less than `flow.ttl`.
 
+Applies to regular function tasks **and** subflow tasks (`process: 'flow://...'`). On a subflow task the launch itself is deferred and the child's TTL timer only starts on delivery, so the delay consumes the parent's budget first — keep `delay + ttl` under this flow's `ttl` or the subflow timeout may no longer be catchable (the engine logs a warning). Combined with the task `ttl` override, a delayed retry loop gains spacing between attempts (backoff).
+
 ### `ttl`
 
 | Type | Required | Default |
