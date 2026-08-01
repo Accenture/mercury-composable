@@ -27,21 +27,35 @@ function toRecord(line) {
   const rest = space === -1 ? '' : line.substring(space + 1).trim();
   const customJson = rest.startsWith('{') || rest.startsWith('[') ? rest : null;
   if (keyword === 'order' || keyword.startsWith('order-')) {
-    const rule = keyword === 'order'
+    const matched = keyword === 'order'
       ? 'input.header.type(order) [exact]' : 'input.header.type(order-*) [wildcard]';
+    // The rest of the line is the payload VERBATIM - json or not. A non-JSON payload keeps its raw
+    // byte[] under serializer 'json', and the Map-typed order processor cannot digest raw bytes:
+    // type 'order hello' to demo the failure path (3 retries, then dead-letter to demo.orders.dlq).
+    const value = rest || JSON.stringify({ item: 'keyboard', qty: 1 });
+    const failurePath = rest.length > 0 && !customJson;
     return {
       headers: { type: keyword },
-      value: customJson || JSON.stringify({ item: 'keyboard', qty: 1 }),
-      rule: `${rule} -> flow://demo-order-flow`,
+      value,
+      rule: failurePath
+        ? `${matched} -> flow://demo-order-flow - payload is NOT JSON: expect 3 retries then dead-letter to demo.orders.dlq`
+        : `${matched} -> flow://demo-order-flow`,
     };
   }
   if (keyword === 'refund') {
-    // no 'type' header: the header rules cannot match, so the input.body rule decides
+    // no 'type' header: the header rules cannot match, so the input.body rule decides.
+    // The optional json holds the refund DETAILS only - the {"event":{"kind":"refund"}} envelope
+    // the body rule matches on is added here, so 'refund {"order_id":"order-123"}' routes correctly.
+    let details;
+    try {
+      details = customJson ? JSON.parse(customJson) : { orderId: randomUUID().substring(0, 8) };
+    } catch (e) {
+      return { error: `invalid json after 'refund': ${e.message}` };
+    }
     return {
       headers: {},
-      value: customJson
-        || JSON.stringify({ event: { kind: 'refund' }, orderId: randomUUID().substring(0, 8) }),
-      rule: 'input.body.event.kind(refund) [body path] -> task://demo.refund.processor (see the Java log)',
+      value: JSON.stringify({ event: { kind: 'refund' }, ...details }),
+      rule: 'input.body.event.kind(refund) [body rule] -> task://demo.refund.processor (see the Java log)',
     };
   }
   // raw text: not a JSON object/array, so serializer 'json' keeps the byte[] and no rule matches
@@ -57,14 +71,42 @@ function toRecord(line) {
   // DefaultPartitioner avoids kafkajs' legacy-partitioner warning and spreads across the 10 partitions
   const producer = kafka.producer({ createPartitioner: Partitioners.DefaultPartitioner });
   await producer.connect();
-  console.log(`[${cfg.ts()}] connected. Publish to '${cfg.ordersTopic}' (Ctrl-C to quit). Commands:`);
-  console.log('  order [json]      -> exact rule    -> demo-order-flow');
-  console.log('  order-<x> [json]  -> wildcard rule -> demo-order-flow');
-  console.log('  refund [json]     -> body rule     -> task demo.refund.processor');
-  console.log('  <anything else>   -> default       -> demo-catch-all-flow');
+  console.log(`[${cfg.ts()}] connected. Publish to '${cfg.ordersTopic}' (Ctrl-C to quit).`);
+  console.log('');
+  console.log('1. Exact header rule (type=order) routes to flow://demo-order-flow');
+  console.log('');
+  console.log('   command: order [json]');
+  console.log('   example: order {"item": "mobile-phone", "qty": 1}');
+  console.log('');
+  console.log('2. Wildcard header rule (type=order-*) also routes to flow://demo-order-flow');
+  console.log('');
+  console.log('   command: order-<id> [json]');
+  console.log('   example: order-123 {"item": "laptop", "qty": 1}');
+  console.log('');
+  console.log('3. Body rule (event.kind=refund) routes to task://demo.refund.processor');
+  console.log('');
+  console.log('   command: refund [json]      (json = refund details; the event envelope is added)');
+  console.log('   example: refund {"order_id": "order-123"}');
+  console.log('');
+  console.log('4. When no rule matches, default routes to flow://demo-catch-all-flow');
+  console.log('');
+  console.log('   command: <anything else>');
+  console.log('   example: hello');
+  console.log('');
+  console.log('5. Failure path: a non-JSON payload on a matched order rule triggers the DLQ');
+  console.log('');
+  console.log('   command: order <plain text>');
+  console.log('   example: order hello');
+  console.log('   The order flow cannot digest raw bytes: 3 retries, then the original record is');
+  console.log('   dead-lettered to demo.orders.dlq - watch it arrive with:  node listen-dlq.js');
+  console.log('');
 
   async function publishOne(text) {
-    const { headers, value, rule } = toRecord(text);
+    const { headers, value, rule, error } = toRecord(text);
+    if (error) {
+      console.error(`[${cfg.ts()}] not published - ${error}`);
+      return;
+    }
     const cid = randomUUID();
     // W3C traceparent: the adapter adopts this trace-id, so the selected flow/task (and any message
     // it publishes to demo.outbound) shares it - end-to-end trace continuity per routed message.

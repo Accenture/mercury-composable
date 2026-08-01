@@ -59,8 +59,12 @@ Wait for it to report the broker is up on `127.0.0.1:9092`.
 ```shell
 cd examples/kafka-demo/node
 node create-topics.js
-# -> created (10 partitions each): demo.inbound, demo.orders, demo.outbound
+# -> created (10 partitions each): demo.inbound, demo.orders, demo.outbound,
+#    demo.inbound.dlq, demo.orders.dlq
 ```
+The two DLQ topics are created up front because dead-letter topics must be **pre-provisioned**
+(Kafka auto-creation is off in production) — and creating them makes the failure path a
+first-class part of the demo (see [the failure path](#failure-path)).
 
 ### Terminal C — start the kafka-demo Java app
 ```shell
@@ -124,14 +128,33 @@ record to a `Map` before routing, so the `input.body` rule can match — a non-J
 cd examples/kafka-demo/node
 node publish-orders.js
 ```
-One command per routing rule (an optional trailing JSON overrides the canned payload):
+One command per routing rule:
 
-| You type | Record shape | Rule that fires | Target |
-|----------|--------------|-----------------|--------|
-| `order` | `type: order` header + JSON body | `input.header.type(order)` — exact | `flow://demo-order-flow` |
-| `order-42` | `type: order-42` header + JSON body | `input.header.type(order-*)` — wildcard | `flow://demo-order-flow` |
-| `refund` | no `type` header, `{"event":{"kind":"refund"},...}` body | `input.body.event.kind(refund)` — body path | `task://demo.refund.processor` |
-| `hello world` | raw text (not JSON) | none — falls through | `default` → `flow://demo-catch-all-flow` |
+**1. Exact header rule (`type=order`) routes to `flow://demo-order-flow`**
+```
+command: order [json]
+example: order {"item": "mobile-phone", "qty": 1}
+```
+
+**2. Wildcard header rule (`type=order-*`) also routes to `flow://demo-order-flow`**
+```
+command: order-<id> [json]
+example: order-123 {"item": "laptop", "qty": 1}
+```
+
+**3. Body rule (`event.kind=refund`) routes to `task://demo.refund.processor`**
+```
+command: refund [json]
+example: refund {"order_id": "order-123"}
+```
+The optional json holds the refund **details** only — the `{"event":{"kind":"refund"}}` envelope
+the body rule matches on is added by the script, so the example above routes to the task.
+
+**4. When no rule matches, `default` routes to `flow://demo-catch-all-flow`**
+```
+command: <anything else>
+example: hello
+```
 
 **What you should see per command:**
 
@@ -153,6 +176,40 @@ One command per routing rule (an optional trailing JSON overrides the canned pay
 Each published record carries its own `traceparent`, so every routed message — flow or task — shows full
 trace continuity in the telemetry log, exactly like the direct-routing path.
 
+### The failure path — retries then dead-letter {#failure-path}
+
+`serializer: 'json'` is **best-effort**: an unparseable record keeps its raw `byte[]` and simply passes
+to whichever target the rules select. Start the dead-letter listener in its own terminal (program-4):
+
+```shell
+cd examples/kafka-demo/node
+node listen-dlq.js
+```
+
+Then send an order whose payload is plain text:
+
+```
+> order hello
+```
+
+The `type=order` header matches, so the record reaches `demo-order-flow` — whose Map-typed processor
+cannot digest raw bytes and **throws the exception back to the Kafka flow adapter**. Watch the Java
+terminal: the flow fails, the adapter **retries 3 times** (`kafka.flow.max.retries`), then
+**dead-letters the original record to `demo.orders.dlq`** and moves on — the partition never stalls.
+The DLQ listener prints the intercepted record — headers and body preserved verbatim, plus the
+`dlq.error` (why it failed) and `dlq.origin.topic` (where it came from) headers:
+
+```
+[...] <- demo.orders.dlq[p4] cid=2f1c...
+[...]    origin: demo.orders
+[...]    error:  java.lang.IllegalStateException: flow 'demo-order-flow' returned status 500
+[...]    body:   hello
+```
+
+This is the production contract for a malformed event, demonstrated live. (The default flow, by
+contrast, accepts raw bytes by design — compare with `hello` above, which has no matching rule and
+lands in the catch-all normally.)
+
 ## How it maps to minimalist-kafka
 
 | Piece | What it shows |
@@ -163,6 +220,7 @@ trace continuity in the telemetry log, exactly like the direct-routing path.
 | [`demo-catch-all-flow.yml`](src/main/resources/flows/demo-catch-all-flow.yml) | the mandatory **default** flow; its task handles both body shapes (Map or raw bytes) |
 | [`DemoProcessor.java`](src/main/java/com/accenture/kafka/demo/tasks/DemoProcessor.java) | a self-contained function (the unit of work), in a `tasks` package per the [Code Conventions](../../docs/guides/code-conventions.md) |
 | [`RefundProcessor.java`](src/main/java/com/accenture/kafka/demo/tasks/RefundProcessor.java) | a **`task://` routing target**: invoked directly by the adapter — headers copied verbatim, payload as body, no flow |
+| [`listen-dlq.js`](node/listen-dlq.js) | the **dead-letter side**: prints intercepted records with their `dlq.error` / `dlq.origin.topic` headers (see [the failure path](#failure-path)) |
 | `simple.kafka.notification` | the **producer** side: publish to a topic via data mapping (`text(demo.outbound) -> header.topic`) |
 
 ## Notes
@@ -170,8 +228,8 @@ trace continuity in the telemetry log, exactly like the direct-routing path.
 - Point at a different broker with `export KAFKA_BOOTSTRAP_SERVERS=host:port` (both the Java app and the
   Node programs honor it).
 - On repeated processing failure, a message is dead-lettered to the binding's configured `dlq-topic`
-  (`demo.inbound.dlq` / `demo.orders.dlq` in `kafka-flow-adapter.yaml`); pre-create those topics if you
-  want to exercise the failure path — it applies identically to `flow://` and `task://` targets. The happy
-  path never touches them.
+  (`demo.inbound.dlq` / `demo.orders.dlq` in `kafka-flow-adapter.yaml`); `create-topics.js` pre-creates
+  both, and the failure handling applies identically to `flow://` and `task://` targets — see
+  [the failure path](#failure-path). The happy path never touches them.
 - The second-level routing rule grammar (selectors, the three matcher modes, targets, `serializer`,
   `ttl`) is documented in the [Minimalist Kafka guide](../../docs/guides/minimalist-kafka.md#routing).
