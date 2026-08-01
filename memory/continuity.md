@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-01 | agent: Claude Code (2026-08-01-035647)
+- **last_session:** 2026-08-01 | agent: Claude Code (2026-08-01-230946)
 - **last_review:** 2026-07-31 | through 2026-07-31-001057.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -398,6 +398,21 @@
   itself dodges the trap (its header-name lookup is case-insensitive by design).
   Relates [[thread-kafka-2nd-level-routing]].
   <!-- id: thread-kafka-header-casing-mismatch | created: 2026-07-30 | last_used: 2026-07-30 | uses: 1 | tier: working | origin: 2026-07-30-233623 -->
+
+- [x] (release — SHIPPED 2026-08-01, **Java only — the first Java-ahead-of-Rust release
+  since the 4.8.x line, deliberate**) **v4.11.1 — the second-level routing + deadline
+  release.** [PR #252](https://github.com/Accenture/mercury-composable/pull/252), squash
+  `410e03bb`, CI green, tag on the verified squash commit. Consolidates: second-level
+  routing + JSON serde symmetry (#246) with the kafka-demo template (#247/#249, Eric
+  field-tested); Redis GETDEL compat (#248); task-ttl override + model-metadata
+  immutability + deadline cleanup (#250); Sonar polish (#251). 33-pom sweep clean, no
+  substring hazards; prep catch: a broad `git add` staged the local `.interop-mercury`
+  dev symlink — amended out and gitignored. **Rust stays at 4.11.0 until the two
+  lock-step halves land** (GETDEL + task-ttl/deadline, handoffs final in /tmp);
+  second-level routing is Java-only by design (no minimalist-kafka Rust port — the
+  grammar is the future port's contract). Rust 4.11.1 ships when the lock-step session
+  runs. Full detail: origin log.
+  <!-- id: thread-release-4-11-1 | created: 2026-08-01 | last_used: 2026-08-01 | uses: 1 | tier: working | origin: 2026-08-01-230946 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-07-30, both repos in lock-step)
   **v4.11.0 — the suspend/resume feature release.** Java: PR #245, squash `3a870951`, tag on the
