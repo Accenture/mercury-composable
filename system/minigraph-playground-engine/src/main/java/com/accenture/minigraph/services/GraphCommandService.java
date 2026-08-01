@@ -416,7 +416,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         var graphInstance = graphInstances.get(inRoute);
         if (graphInstance != null) {
             try {
-                GraphModelValidator.validateSuspendResume(graphInstance.graph);
+                GraphModelValidator.validate(graphInstance.graph);
             } catch (IllegalArgumentException e) {
                 po.send(new EventEnvelope().setTo(outRoute).setBody("Unable to run - " + e.getMessage()));
                 // the uniform end-of-transmission line, matching the traveler's

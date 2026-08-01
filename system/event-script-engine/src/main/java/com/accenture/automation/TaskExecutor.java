@@ -939,7 +939,21 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 return;
             }
             Map<String, Object> dataset = new HashMap<>();
-            dataset.put(TTL, flowInstance.getTtl());    // propagate TTL from parent flow
+            // a task-level ttl overrides the default parent-TTL propagation: a SHORTER child
+            // deadline lets the sub-flow time out first, so this flow's exception handler can
+            // catch the 408 and retry within its remaining budget
+            if (task.getTtl() > 0) {
+                if (task.getTtl() >= flowInstance.getTtl()) {
+                    // the flow's effective ttl may be smaller than the compile-time flow.ttl
+                    // (e.g. a rest.yaml timeout overrides it), defeating the catchability intent
+                    log.warn("Flow {}:{} task {} ttl {} ms is not less than the effective flow ttl {} ms"
+                            + " - the sub-flow timeout may not be catchable", flowInstance.getFlow().id,
+                            flowInstance.id, task.service, task.getTtl(), flowInstance.getTtl());
+                }
+                dataset.put(TTL, task.getTtl());
+            } else {
+                dataset.put(TTL, flowInstance.getTtl());    // propagate TTL from parent flow
+            }
             dataset.put(BODY, unwrapBodyIfWildcard(md));
             if (!md.optionalHeaders.isEmpty()) {
                 dataset.put(HEADER, md.optionalHeaders);

@@ -96,6 +96,28 @@ class CompileGraphTest {
     }
 
     @Test
+    void nodeTtlPlacementAndMetadataImmutabilityAreValidated() {
+        // valid: a graph.task node may declare a child-call deadline (ttl in the suspend grammar)
+        var ok = importGraph("unit-test-ttl-ok");
+        GraphModelValidator.validate(ok);
+        // err1: ttl on a skill without child-call deadline semantics (graph.math);
+        // err2: malformed duration on a deadline skill;
+        // err3: a data mapping writing to reserved model metadata (model.ttl)
+        for (var id : List.of("unit-test-ttl-err1", "unit-test-ttl-err2", "unit-test-ttl-err3")) {
+            var graph = importGraph(id);
+            assertThrows(IllegalArgumentException.class, () -> GraphModelValidator.validate(graph),
+                    id + " must fail the static validator");
+        }
+    }
+
+    private MiniGraph importGraph(String id) {
+        var reader = new ConfigReader("classpath:/graph/" + id + ".json");
+        var graph = new MiniGraph();
+        graph.importGraph(reader.getMap());
+        return graph;
+    }
+
+    @Test
     void deprecatedTypeMatchingSyntaxIsConvertedAtCompileTime() {
         Map<String, Object> model = CompiledGraphs.getGraph("hellojs");
         assertNotNull(model);

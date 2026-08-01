@@ -1144,6 +1144,46 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
+    void subflowTimeoutIsCatchableWithTaskTtlOverride() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long timeout = 8000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/subflow/timeout/test");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        assert res != null;
+        // the task-level ttl (1s) gives the sub-flow a shorter deadline than the parent's 10s,
+        // so the CHILD times out first and the parent's task-level exception handler catches
+        // its 408 - with default TTL propagation the parent's own uncatchable timeout would win
+        assertEquals("caught-by-parent", res.getHeader("x-catch"),
+                "the parent's exception handler must shape the response");
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals(408, result.get("status"));
+        assertEquals("Flow timeout for 1000 ms", result.get("message"),
+                "the caught error must be the child's 1s timeout, not the parent's");
+    }
+
+    @Test
+    void taskTtlDeclarationsAreValidatedAtCompileTime() {
+        // valid: a sub-flow task may declare a deadline shorter than flow.ttl (2s < 10s)
+        var valid = com.accenture.models.Flows.getFlow("parser-test-ttl-0");
+        assertNotNull(valid, "a valid task ttl must compile");
+        assertEquals(2000L, valid.tasks.get("sub").getTtl(), "task ttl parsed to milliseconds");
+        // invalid declarations reject the whole flow at compile time (the delay >= TTL precedent):
+        // ttl on a regular function task
+        assertNull(com.accenture.models.Flows.getFlow("parser-test-ttl-1"));
+        // ttl not less than flow.ttl
+        assertNull(com.accenture.models.Flows.getFlow("parser-test-ttl-2"));
+        // malformed duration
+        assertNull(com.accenture.models.Flows.getFlow("parser-test-ttl-3"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void simpleDecisionTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long timeout = 8000;

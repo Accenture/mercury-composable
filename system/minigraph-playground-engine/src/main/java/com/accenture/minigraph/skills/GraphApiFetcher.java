@@ -111,7 +111,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
                                     List<SimpleNode> dictionaryNodes)
             throws URISyntaxException, ExecutionException, InterruptedException {
         var nodeName = fetcher.getAlias();
-        var timeout = getModelTtl(graphInstance);
+        var timeout = getEffectiveTtl(graphInstance, fetcher);
         var stateMachine = graphInstance.stateMachine;
         var graph = graphInstance.graph;
         var parameterMapping = getEntries(fetcher.getProperty(INPUT));
@@ -164,7 +164,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var nodeName = fetcher.getAlias();
         var givenConcurrency = util.str2int(String.valueOf(fetcher.getProperty(CONCURRENCY)));
         var concurrency = Math.clamp(givenConcurrency < 0 ? 3 : givenConcurrency, 1, 30);
-        var timeout = getModelTtl(graphInstance);
+        var timeout = getEffectiveTtl(graphInstance, fetcher);
         var stateMachine = graphInstance.stateMachine;
         var apiParams = (Map<String, List<Object>>) stateMachine.getElement(nodeName + EACH, new HashMap<>());
         for (SimpleNode dd : dictionaryNodes) {

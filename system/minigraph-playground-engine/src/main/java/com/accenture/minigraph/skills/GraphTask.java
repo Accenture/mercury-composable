@@ -77,7 +77,7 @@ public class GraphTask extends GraphLambdaFunction {
         stateMachine.removeElement(nodeName + "." + HEADER);
         stateMachine.removeElement(nodeName + "." + STATUS);
         stateMachine.removeElement(nodeName + "." + ERROR);
-        var timeout = getModelTtl(graphInstance);
+        var timeout = getEffectiveTtl(graphInstance, node);
         var mapping = getEntries(node.getProperty(INPUT));
         var forEach = getEntries(node.getProperty(FOR_EACH));
         if (forEach.isEmpty()) {

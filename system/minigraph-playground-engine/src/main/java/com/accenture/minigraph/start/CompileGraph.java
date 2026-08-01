@@ -143,7 +143,7 @@ public class CompileGraph implements EntryPoint {
             if (graph.getEndNode() == null) {
                 throw new IllegalArgumentException("graph must have an 'end' node");
             }
-            GraphModelValidator.validateSuspendResume(graph);
+            GraphModelValidator.validate(graph);
             CompiledGraphs.addGraph(graphId, model);
             log.info("Compiled graph {}", graphId);
         } catch (IllegalArgumentException e) {
