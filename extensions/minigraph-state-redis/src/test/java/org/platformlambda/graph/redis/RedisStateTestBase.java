@@ -40,7 +40,6 @@ public abstract class RedisStateTestBase {
     protected static final String DATA_DIR = "/tmp/graph-state-redis";
     protected static final int REDIS_PORT = 16380;
     private static final AtomicBoolean started = new AtomicBoolean(false);
-    private static RedisServer redisServer;
     protected static RedisClient testClient;
     protected static StatefulRedisConnection<String, String> testConnection;
 
@@ -52,7 +51,7 @@ public abstract class RedisStateTestBase {
             if (!dir.exists() && !dir.mkdirs()) {
                 throw new IllegalStateException("Unable to create " + DATA_DIR);
             }
-            redisServer = RedisServer.newRedisServer()
+            var redisServer = RedisServer.newRedisServer()
                     .port(REDIS_PORT)
                     .setting("dir " + DATA_DIR)
                     .setting("save \"\"")

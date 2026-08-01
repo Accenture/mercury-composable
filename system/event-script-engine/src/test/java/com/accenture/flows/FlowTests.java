@@ -411,7 +411,6 @@ class FlowTests extends TestBase {
                 "W3C traceparent should carry the flow's trace-id, got: " + forwarded);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void declarativeSinkHttpTaskPropagatesTraceContext() throws ExecutionException, InterruptedException {
         // The same declarative application-to-application case, in the field's exact flow shape:

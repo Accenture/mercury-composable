@@ -38,7 +38,7 @@ import java.util.Map;
  * and TTL-expired by the platform housekeeper - nothing is written to disk.
  *
  * <p><b>Positive results only.</b> A not-found id is never cached (the registry lookup throws before the
- * cache write), so a schema registered while the app is running becomes visible on the very next lookup -
+ * cache write). Therefore, a schema registered while the app is running becomes visible on the very next lookup -
  * no stale "not found" lingers until a TTL elapses or the pod restarts. ({@link SchemaCodec} also pins
  * Confluent's own "missing" caches off, so no layer remembers an absent id.)</p>
  *

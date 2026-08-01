@@ -51,7 +51,7 @@ public class FlowInstance {
     public final ConcurrentMap<Integer, PipeInfo> pipeMap = new ConcurrentHashMap<>();
     public final Queue<TaskMetrics> tasks = new ConcurrentLinkedQueue<>();
     public final ConcurrentMap<String, TaskMetrics> metrics = new ConcurrentHashMap<>();
-    // future-event ids of tasks scheduled with a 'delay' - cancelled at teardown so a
+    // future-event ids of tasks scheduled with a 'delay' - canceled at teardown so a
     // deferred launch (notably a sub-flow) cannot fire after this flow has ended
     public final Queue<String> pendingFutureEvents = new ConcurrentLinkedQueue<>();
     private final ConcurrentMap<String, Object> shared = new ConcurrentHashMap<>();

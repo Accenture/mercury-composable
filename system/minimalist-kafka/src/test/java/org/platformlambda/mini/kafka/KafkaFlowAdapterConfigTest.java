@@ -19,11 +19,15 @@
 package org.platformlambda.mini.kafka;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.platformlambda.core.util.ConfigReader;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -276,50 +280,38 @@ class KafkaFlowAdapterConfigTest {
         assertThrows(IllegalArgumentException.class, () -> build(config));
     }
 
-    @Test
-    void rejectsFlowsThatIsNotAList() {
-        ConfigReader config = config(List.of(Map.of("topic", "orders", "flows", "default -> flow://f")));
-        assertThrows(IllegalArgumentException.class, () -> build(config));
+    /**
+     * The second-level routing and serializer validation rejections share one shape
+     * (a bad consumer entry -> fail-fast at build), so they run as one parameterized
+     * test with named cases. The unknown-flow case works because no flow is compiled
+     * in this test JVM - any flow:// target fails the cross-reference check.
+     */
+    private static Stream<Arguments> invalidRoutingOrSerializerEntries() {
+        return Stream.of(
+                Arguments.of("flows is not a list",
+                        Map.of("topic", "orders", "flows", "default -> flow://f")),
+                Arguments.of("empty flows list",
+                        Map.of("topic", "orders", "flows", List.of())),
+                Arguments.of("malformed routing rule",
+                        Map.of("topic", "orders",
+                                "flows", List.of("this is not a rule", "default -> flow://f"))),
+                Arguments.of("flows without a default rule",
+                        Map.of("topic", "orders",
+                                "flows", List.of("input.header.type(order) -> flow://order-flow"))),
+                Arguments.of("routing rule referencing an unknown flow",
+                        Map.of("topic", "orders",
+                                "flows", List.of("default -> flow://no-such-flow"))),
+                Arguments.of("unsupported serializer",
+                        Map.of("topic", "orders", "flow", "f", "serializer", "xml")),
+                Arguments.of("serializer combined with schema decoding",
+                        Map.of("topic", "orders", "flow", "f",
+                                "serializer", "json", "schema.enabled", "true")));
     }
 
-    @Test
-    void rejectsEmptyFlowsList() {
-        ConfigReader config = config(List.of(Map.of("topic", "orders", "flows", List.of())));
-        assertThrows(IllegalArgumentException.class, () -> build(config));
-    }
-
-    @Test
-    void rejectsMalformedRoutingRule() {
-        ConfigReader config = config(List.of(Map.of("topic", "orders",
-                "flows", List.of("this is not a rule", "default -> flow://f"))));
-        assertThrows(IllegalArgumentException.class, () -> build(config));
-    }
-
-    @Test
-    void rejectsFlowsWithoutDefault() {
-        ConfigReader config = config(List.of(Map.of("topic", "orders",
-                "flows", List.of("input.header.type(order) -> flow://order-flow"))));
-        assertThrows(IllegalArgumentException.class, () -> build(config));
-    }
-
-    @Test
-    void rejectsRoutingRuleReferencingUnknownFlow() {
-        // no flow is compiled in this test JVM, so any flow:// target fails the cross-reference check
-        ConfigReader config = config(List.of(Map.of("topic", "orders",
-                "flows", List.of("default -> flow://no-such-flow"))));
-        assertThrows(IllegalArgumentException.class, () -> build(config));
-    }
-
-    @Test
-    void rejectsUnsupportedSerializer() {
-        ConfigReader config = config(List.of(Map.of("topic", "orders", "flow", "f", "serializer", "xml")));
-        assertThrows(IllegalArgumentException.class, () -> build(config));
-    }
-
-    @Test
-    void rejectsSerializerCombinedWithSchemaDecoding() {
-        ConfigReader config = config(List.of(Map.of("topic", "orders", "flow", "f",
-                "serializer", "json", "schema.enabled", "true")));
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("invalidRoutingOrSerializerEntries")
+    void rejectsInvalidRoutingOrSerializerEntry(String name, Map<String, Object> entry) {
+        ConfigReader config = config(List.of(entry));
         assertThrows(IllegalArgumentException.class, () -> build(config));
     }
 
@@ -348,8 +340,8 @@ class KafkaFlowAdapterConfigTest {
 
     @Test
     void taskTtlUsesLongMathWithNoSilentWrap() {
-        // int arithmetic would wrap '50000d' (4.32e9 seconds) to a silently WRONG positive value;
-        // long math honors an absurd-but-accepted duration exactly as written
+        // integer arithmetic would wrap '50000d' (4.32e9 seconds) to a silently WRONG positive value.
+        // long math honors an absurd-but-accepted duration exactly as written.
         assertEquals(50000L * 86400 * 1000, KafkaFlowAdapter.parseTaskTtl("50000d"));
         assertEquals(86400000L, KafkaFlowAdapter.parseTaskTtl("1d"));
         assertEquals(3600000L, KafkaFlowAdapter.parseTaskTtl("1h"));

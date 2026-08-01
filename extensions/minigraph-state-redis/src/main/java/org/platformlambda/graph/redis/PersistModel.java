@@ -31,7 +31,7 @@ import static org.platformlambda.graph.redis.RedisStateConnection.KEY_PREFIX;
 
 /**
  * Redis implementation of the suspend/resume state-store PERSIST contract, invoked by
- * the graph.suspend skill through the node's "task" property.
+ * the 'graph.suspend' skill through the node's "task" property.
  * <p>
  * Contract: headers type=put; body {cid, node, ttl, model, seen, run}. The record is
  * stored opaquely (MsgPack bytes) under the business correlation ID with the requested

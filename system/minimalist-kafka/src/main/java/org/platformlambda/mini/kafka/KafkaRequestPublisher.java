@@ -32,14 +32,14 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Thread-safe wrapper around a Kafka producer, shared as a singleton by {@code
- * simple.kafka.notification}. The record is sent <b>eagerly</b> (the send is issued before the returned
+ * simple.kafka.notification}. The record is sent <b>eagerly</b> (send is issued before the returned
  * {@link Mono} is subscribed), and the {@code Mono<Void>} completes when the broker acknowledges the
  * record or errors when the send fails. This lets a caller that cares - e.g. a synchronous REST facade -
- * await delivery and fail-fast on a publish failure, while a drop-n-forget caller can simply ignore the
+ * await delivery and fail-fast on a publishing failure, while a drop-n-forget caller can simply ignore the
  * Mono (the record is still sent).
  *
  * <p>Delivery failures (e.g. broker unreachable past {@code delivery.timeout.ms}) are always logged via
- * {@code doOnError}, so a failed publish is visible even when no subscriber observes the Mono.</p>
+ * {@code doOnError}, so a failed publishing is visible even when no subscriber observes the Mono.</p>
  */
 public class KafkaRequestPublisher implements AutoCloseable {
 
@@ -53,7 +53,7 @@ public class KafkaRequestPublisher implements AutoCloseable {
 
     /**
      * Send a message eagerly and return a {@link Mono} that completes on broker acknowledgement (or errors
-     * on a delivery failure). The send is issued immediately, so a caller that ignores the Mono still
+     * on a delivery failure). Send is issued immediately, so a caller that ignores the Mono still
      * publishes; a caller that subscribes (e.g. via the composable function machinery) observes success or
      * failure and can react - the basis for fail-fast on the synchronous request path.
      *

@@ -35,13 +35,13 @@ import static org.platformlambda.core.util.common.PlatformConstants.ENV_INSTANCE
  * This is a generic resilience handler. It will retry, abort, use an alternative path or exercise a brief backoff.
  * <p>
  * The following parameters (input data mapping) define behavior:
- * 'max_attempts' - when the handler has used all the attempts, it will abort.
- * 'attempt' - this tells the handler how many attempts it has tried
- * 'status' - you should map the error status code in this field
- * 'message' - you should map the error message in this field
- * 'alternative' (start-end, code, code) - the optional codes and range of status codes to tell the handler to reroute
- * 'delay' - the delay in milliseconds before exercising retry or reroute. Minimum valued is 10 ms.
- *           Delay is skipped for the first retry. This slight delay is a protection mechanism.
+ * 1. 'max_attempts' - when the handler has used all the attempts, it will abort.
+ * 2. 'attempt' - this tells the handler how many attempts it has tried
+ * 3. 'status' - you should map the error status code in this field
+ * 4. 'message' - you should map the error message in this field
+ * 5. 'alternative' (start-end, code, code) - the optional codes and range of status codes to tell handler to reroute
+ * 6. 'delay' - the delay in milliseconds before exercising retry or reroute. Minimum valued is 10 milliseconds.
+ *              Delay is skipped for the first retry. This slight delay is a protection mechanism.
  * <p>
  * Optional backoff behavior:
  * 'cumulative' - the total number of failures since last success or backoff reset if any
@@ -64,7 +64,7 @@ import static org.platformlambda.core.util.common.PlatformConstants.ENV_INSTANCE
  *                    Not set if not in backoff mode.
  * <p>
  * 'result.attempt' should be saved in the state machine with the "model." namespace
- * 'result.cumulative' and result.backoff should be saved in the temporary file system or an external state machine
+ * 'result.cumulative' and 'result.backoff' should be saved in the temporary file system or an external state machine
  * <p>
  *     For non-blocking operation, this function is defined as an EventInterceptor for scheduling of future retries
  *     that are delayed. While a regular composable function returns a result, an EventInterceptor function must send

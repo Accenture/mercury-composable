@@ -64,12 +64,12 @@ class RedisStateStoreTest extends RedisStateTestBase {
         // retrieve returns the record with full fidelity, including binary values
         var restored = request(RETRIEVE, "get", Map.of("cid", cid));
         assertEquals(200, restored.getStatus());
-        var record = new MultiLevelMap((Map<String, Object>) restored.getBody());
-        assertEquals("step-1", record.getElement("node"));
-        assertEquals(42, record.getElement("model.amount"));
-        assertEquals("approval", record.getElement("model.nested.stage"));
-        assertArrayEquals(new byte[]{1, 2, 3}, (byte[]) record.getElement("model.binary"));
-        assertEquals(true, record.getElement("run.step-1"));
+        var restoredRecord = new MultiLevelMap((Map<String, Object>) restored.getBody());
+        assertEquals("step-1", restoredRecord.getElement("node"));
+        assertEquals(42, restoredRecord.getElement("model.amount"));
+        assertEquals("approval", restoredRecord.getElement("model.nested.stage"));
+        assertArrayEquals(new byte[]{1, 2, 3}, (byte[]) restoredRecord.getElement("model.binary"));
+        assertEquals(true, restoredRecord.getElement("run.step-1"));
         // the record is consumed atomically - a duplicate resume finds nothing
         var again = request(RETRIEVE, "get", Map.of("cid", cid));
         assertEquals(200, again.getStatus());
@@ -90,9 +90,9 @@ class RedisStateStoreTest extends RedisStateTestBase {
             assertEquals(200, request(PERSIST, "put", sampleEnvelope(cid, 30)).getStatus());
             var restored = request(RETRIEVE, "get", Map.of("cid", cid));
             assertEquals(200, restored.getStatus());
-            var record = new MultiLevelMap((Map<String, Object>) restored.getBody());
-            assertEquals("step-1", record.getElement("node"));
-            assertArrayEquals(new byte[]{1, 2, 3}, (byte[]) record.getElement("model.binary"));
+            var restoredRecord = new MultiLevelMap((Map<String, Object>) restored.getBody());
+            assertEquals("step-1", restoredRecord.getElement("node"));
+            assertArrayEquals(new byte[]{1, 2, 3}, (byte[]) restoredRecord.getElement("model.binary"));
             // consumed atomically by the transaction - a duplicate resume finds nothing
             var again = request(RETRIEVE, "get", Map.of("cid", cid));
             assertEquals(200, again.getStatus());
@@ -137,10 +137,10 @@ class RedisStateStoreTest extends RedisStateTestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void expiredRecordIsGone() throws TimeoutException, InterruptedException {
+    void expiredRecordIsGone() throws TimeoutException {
         var cid = Utility.getInstance().getUuid();
         assertEquals(200, request(PERSIST, "put", sampleEnvelope(cid, 1)).getStatus());
-        Thread.sleep(1300);
+        Utility.getInstance().sleep(1300);
         var response = request(RETRIEVE, "get", Map.of("cid", cid));
         assertEquals(200, response.getStatus());
         assertTrue(((Map<String, Object>) response.getBody()).isEmpty(), "the record must expire natively");

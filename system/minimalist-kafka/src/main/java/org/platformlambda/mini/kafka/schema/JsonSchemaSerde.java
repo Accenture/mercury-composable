@@ -77,9 +77,9 @@ class JsonSchemaSerde implements SchemaSerde {
     public byte[] serialize(String topic, int schemaId, Object value) {
         /*
          * Envelope the value with its (pre-registered) schema, so the serializer uses that schema directly
-         * instead of DERIVING one from the value's Map<String,Object> type - the derivation can't introspect
+         * instead of DERIVING one from the value's Map<String,Object> type. The derivation can't introspect
          * the Object-typed map values (noisy "Unable to process java.lang.Object" warnings) and is wasted
-         * work. use.schema.id still pins the wire id and resolves via getSchemaById (no subject lookup).
+         * work. Use.schema.id still pins the wire id and resolves via getSchemaById (no subject lookup).
          */
         JsonNode node = JSON.valueToTree(value);
         Object enveloped = JsonSchemaUtils.envelope(jsonSchemaById(schemaId), node);

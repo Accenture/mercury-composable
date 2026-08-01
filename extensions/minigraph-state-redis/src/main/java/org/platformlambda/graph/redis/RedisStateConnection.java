@@ -40,8 +40,8 @@ import java.time.Duration;
  * resume then fails loudly instead. Lettuce reconnects automatically after an outage.
  * <p>
  * Configuration keys (shared with the sync-over-async extension, so an application
- * configures Redis once): redis.host, redis.port, redis.password, redis.ssl,
- * redis.database, redis.timeout.ms - all resolvable through the usual
+ * configures Redis once): 'redis.host', 'redis.port', 'redis.password', 'redis.ssl',
+ * 'redis.database', 'redis.timeout.ms' - all resolvable through the usual
  * ${ENV_VAR:default} substitution, e.g. redis.password=${REDIS_PASSWORD:}.
  */
 class RedisStateConnection {

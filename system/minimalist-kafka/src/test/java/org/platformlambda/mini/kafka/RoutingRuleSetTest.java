@@ -139,7 +139,7 @@ class RoutingRuleSetTest {
     @Test
     void dollarPrefixedBodyKeysAreLiteralSegmentsNeverJsonPath() {
         // the body is evaluated under a synthetic root, so MultiLevelMap's '$'-JsonPath escape hatch
-        // (whose parser can throw at record time) is structurally unreachable - a '$'-prefixed key is
+        // (whose parser can throw at record time) is structurally unreachable - a '$' prefixed key is
         // an ordinary literal segment, and a JsonPath-looking key is a plain non-match, never an error
         RoutingRuleSet literal = compile("input.body.$kind(refund) -> flow://refund-flow", CATCH_ALL);
         assertEquals(flow("refund-flow"), literal.select(Map.of(), Map.of("$kind", "refund")));

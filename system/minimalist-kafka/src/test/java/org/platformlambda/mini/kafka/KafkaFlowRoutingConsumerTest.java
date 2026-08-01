@@ -178,9 +178,9 @@ class KafkaFlowRoutingConsumerTest {
         assertTrue(consumer.routeToFlow(inbound("x".getBytes(StandardCharsets.UTF_8), Map.of())),
                 "a durably dead-lettered message must allow the commit");
         assertEquals(1, dlq.history().size());
-        assertEquals("mixed-dlq", dlq.history().get(0).topic());
+        assertEquals("mixed-dlq", dlq.history().getFirst().topic());
         // the failure cause names the task target, not a flow
-        String dlqError = new String(dlq.history().get(0).headers().lastHeader("dlq.error").value(),
+        String dlqError = new String(dlq.history().getFirst().headers().lastHeader("dlq.error").value(),
                 StandardCharsets.UTF_8);
         assertTrue(dlqError.contains("task 'always.failing'"), dlqError);
     }
@@ -203,7 +203,7 @@ class KafkaFlowRoutingConsumerTest {
         assertTrue(consumer.routeToFlow(inbound("x".getBytes(StandardCharsets.UTF_8), Map.of())),
                 "a durably dead-lettered message must allow the commit");
         assertEquals(1, dlq.history().size());
-        String dlqError = new String(dlq.history().get(0).headers().lastHeader("dlq.error").value(),
+        String dlqError = new String(dlq.history().getFirst().headers().lastHeader("dlq.error").value(),
                 StandardCharsets.UTF_8);
         assertTrue(dlqError.contains("Route vanished.route not found"), dlqError);
     }

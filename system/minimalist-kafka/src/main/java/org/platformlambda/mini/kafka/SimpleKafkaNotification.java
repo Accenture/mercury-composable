@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentMap;
  * because Kafka is asynchronous.
  *
  * <p><b>Trace propagation.</b> Rather than forwarding the caller's (now-stale) traceparent, it stamps a
- * fresh W3C {@code traceparent} built from this function's <i>own</i> current span, so the consuming side
+ * fresh W3C {@code traceparent} built from this function's <i>own</i> current span. Therefore, the consuming side
  * adopts this span as the parent of the next hop - keeping the trace continuous across the Kafka boundary.</p>
  *
  * <p>byte[] is the wire form for headers and body so no custom Kafka serializer/deserializer is needed.
@@ -57,21 +57,21 @@ import java.util.concurrent.ConcurrentMap;
  *
  * <p>It returns the {@code Mono<Void>} from the publisher: the platform-core worker subscribes to it,
  * deferring the function's completion until the broker acknowledges. A caller using {@code po.request}
- * (RPC) therefore learns whether the publish succeeded - a publish failure propagates back as an error -
+ * (RPC) therefore learns whether the publishing succeeded - a publishing failure propagates back as an error -
  * while a {@code po.send} (async) caller simply doesn't observe it. The Mono is realized as {@code null}
  * (a {@code Void} body) on success.</p>
  *
  * <p><b>{@code @KernelThreadRunner}.</b> When the Schema Registry is used, this function builds Confluent
  * serializers, which use {@code synchronized} internally and are not thread-safe. Running on a kernel thread
  * (rather than a virtual thread) avoids pinning a virtual-thread carrier on those {@code synchronized}
- * sections, and each worker instance is single-flight - so each instance keeps its <b>own</b>
+ * sections, and each worker instance is single-flight. Therefore, each instance keeps its <b>own</b>
  * {@link SchemaCodec.Encoder} (in {@link #encoders}, keyed by instance), guaranteeing a Confluent serializer
  * is never touched by two threads at once.</p>
  *
  * <p><b>Keep the worker pool small.</b> Because {@code @KernelThreadRunner} puts each instance on a (scarce)
  * kernel thread rather than a virtual thread, keep {@code instances} low - {@code 5} is the default here.
  * Kafka publishing is fast and mostly waits on the broker ack, so a handful of single-flight workers sustain
- * high throughput while holding kernel-thread usage down. Raise it only if profiling shows the publish path
+ * high throughput while holding kernel-thread usage down. Raise it only if profiling shows the publishing path
  * is genuinely the bottleneck.</p>
  *
  * <p><b>Extension seam.</b> The publisher, schema codec, and outbound header names are resolved through
@@ -239,11 +239,12 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<Object, Mono
     }
 
     /**
-     * Whether an event header is forwarded verbatim as a Kafka header. Excludes routing/encoding directives
-     * (topic/partition/subject/version), the inbound traceparent under the standard or configured name
-     * (replaced with this hop's own span), the correlation-id and configured trace-id headers (stamped
-     * explicitly from the resolved values), and the framework's read-only reserved headers
-     * (my_route / my_trace_id / my_trace_path / my_correlation_id).
+     * Whether an event header is forwarded verbatim as a Kafka header.
+     * Excludes:
+     * 1. routing/encoding directives (topic/partition/subject/version)
+     * 2. the inbound traceparent under the standard or configured name (replaced with this hop's own span)
+     * 3. the correlation-id and configured trace-id headers (stamped explicitly from the resolved values)
+     * 4. and the framework's read-only reserved headers (my_route / my_trace_id / my_trace_path / my_correlation_id)
      */
     private boolean isPropagatableHeader(String key) {
         return !KafkaHeaders.TOPIC.equals(key)

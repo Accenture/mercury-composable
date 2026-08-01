@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Kafka health-check function for the platform's health endpoint.
+ * Kafka health check function for the platform's health endpoint.
  *
  * <p>Add {@code kafka.health} to {@code mandatory.health.dependencies} (or
  * {@code optional.health.dependencies}) in application.properties and the {@code /health}

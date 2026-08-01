@@ -92,7 +92,7 @@ class KafkaFlowAdapterTest {
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), LEGACY_TOPIC);
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), JSON_TOPIC);
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), AVRO_TOPIC);
-        // created before AutoStart.main() starts the topic-pattern consumer's subscribe(Pattern), same as
+        // created before AutoStart.main() starts the topic-pattern consumer subscribe(Pattern), same as
         // the topics above - avoids a race against the adapter's first metadata fetch.
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), PATTERN_TOPIC, 2);
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), ROUTED_TOPIC);
@@ -410,8 +410,8 @@ class KafkaFlowAdapterTest {
     @SuppressWarnings("unchecked")
     void bodyRuleRoutesOnSchemaDecodedRecord() throws Exception {
         JsonSinkTask.RECEIVED.clear();
-        // on a schema-enabled binding, input.body rules match on the Confluent-decoded Map -
-        // the decode happens before rule evaluation, exactly as on the direct-routing path
+        // on a schema-enabled binding, input.body rules match on the Confluent-decoded Map
+        // and decode happens before rule evaluation, exactly as on the direct-routing path
         String subject = ROUTED_SCHEMA_TOPIC + "-value";
         KafkaRuntime.schemaCodec().client().register(subject, new JsonSchema(JSON_SCHEMA));
         String cid = Utility.getInstance().getUuid();
@@ -436,7 +436,7 @@ class KafkaFlowAdapterTest {
     void listBodyRuleRoutesTopLevelJsonArray() throws Exception {
         RoutedTaskSink.RECEIVED.clear();
         // a top-level JSON array decodes to a List and is addressable by an input.body[0] bracket rule
-        // (target selection between the list rule and the default is pinned at unit level - this proves
+        // (target selection between the list rule and the default is pinned at unit level. This proves
         // the wire-to-List decode and List delivery end-to-end through the real pipeline)
         KafkaRuntime.publisher().publishSync(ROUTED_TOPIC, null, Map.of(),
                 "[{\"type\":\"batch-order\"},{\"type\":\"noise\"}]".getBytes(StandardCharsets.UTF_8), 10000);
@@ -445,7 +445,7 @@ class KafkaFlowAdapterTest {
         assertNotNull(received, "the JSON-array record should reach the task target");
         List<Object> body = (List<Object>) assertInstanceOf(List.class, received.get("body"),
                 "serializer 'json' delivered the decoded List as the task's whole body");
-        assertEquals("batch-order", ((Map<String, Object>) body.get(0)).get("type"));
+        assertEquals("batch-order", ((Map<String, Object>) body.getFirst()).get("type"));
     }
 
     @Test
