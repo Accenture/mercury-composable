@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-01 | agent: Claude Code (2026-08-01-230946)
+- **last_session:** 2026-08-02 | agent: Claude Code (2026-08-02-013842)
 - **last_review:** 2026-07-31 | through 2026-07-31-001057.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -286,7 +286,10 @@
 
 ## Open Threads
 
-- [ ] (feature — **Java half MERGED 2026-07-31 as
+- [x] (feature — **COMPLETE ON BOTH ENGINES: Rust half shipped 2026-08-01 in
+  mercury PR #191 + release PR #192, tag v4.11.1 — see session 2026-08-02-013842;
+  the x-ttl budget derivation (32-bit parse, ceil-to-seconds) is a pinned wire
+  contract on both engines.** Java half MERGED 2026-07-31 as
   [PR #250](https://github.com/Accenture/mercury-composable/pull/250), squash
   `8191ab1c`, CI green (Build & Unit Tests 7m27s)** — four branch commits squashed:
   feature + review-1 hardening + deadline-cleanup round + the x-ttl ruling; event-script
@@ -323,7 +326,9 @@
   origin log + session 2026-08-01-035647.
   <!-- id: thread-task-ttl-override | created: 2026-08-01 | last_used: 2026-08-01 | uses: 1 | tier: working | origin: 2026-08-01-022358 -->
 
-- [ ] (field support — 2026-07-31; **Java half MERGED as
+- [x] (field support — **COMPLETE ON BOTH ENGINES: Rust half shipped 2026-08-01 in
+  mercury PR #191 (fallback proven on the wire: contiguous MULTI/GET/DEL/EXEC in the
+  RESP-double journal), released in Rust v4.11.1.** 2026-07-31; **Java half MERGED as
   [PR #248](https://github.com/Accenture/mercury-composable/pull/248), squash `5b73b140`,
   CI green; field member validates on Windows VDI 2026-07-31** — remaining: the Rust
   lock-step half, handoff ready) **Graph state store fails with `ERR unknown command
