@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>kafka-connector</artifactId>
     <packaging>jar</packaging>
-    <version>4.11.1</version>
+    <version>4.11.2</version>
     <name>Cloud connector for Kafka cluster</name>
 
     <parent>
@@ -22,7 +22,7 @@
         <netty.version>4.2.16.Final</netty.version>
         <jackson-2-bom.version>2.22.1</jackson-2-bom.version>
         <log4j2.version>2.26.1</log4j2.version>
-        <kafka.version>4.2.0</kafka.version>
+        <kafka.version>4.3.1</kafka.version>
         <gson.version>2.14.0</gson.version>
         <java.version>21</java.version>
     </properties>
@@ -50,7 +50,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>cloud-connector</artifactId>
-            <version>4.11.1</version>
+            <version>4.11.2</version>
         </dependency>
 
         <dependency>
@@ -58,7 +58,7 @@
             <artifactId>kafka-clients</artifactId>
             <exclusions>
                 <exclusion>
-                    <groupId>org.lz4</groupId>
+                    <groupId>at.yawk.lz4</groupId>
                     <artifactId>lz4-java</artifactId>
                 </exclusion>
             </exclusions>
@@ -81,7 +81,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>kafka-standalone</artifactId>
-            <version>4.11.1</version>
+            <version>4.11.2</version>
             <scope>test</scope>
         </dependency>
 
