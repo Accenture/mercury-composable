@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buildCreateNodeCommand, buildDeleteNodeCommand, buildUpdateNodeCommand } from '../minigraphCommandBuilder';
+import {
+  buildCreateConnectionCommand,
+  buildCreateNodeCommand,
+  buildDeleteNodeCommand,
+  buildUpdateNodeCommand,
+} from '../minigraphCommandBuilder';
 import type { NodeFormState } from '../nodeAuthoringTypes';
+import type { ConnectionFormState } from '../connectionAuthoringTypes';
 
 function formState(overrides: Partial<NodeFormState> = {}): NodeFormState {
   return {
@@ -132,5 +138,36 @@ describe('buildDeleteNodeCommand', () => {
 
   it('rejects invalid aliases before serialization', () => {
     expect(() => buildDeleteNodeCommand('root\nwith properties')).toThrow();
+  });
+});
+
+describe('buildCreateConnectionCommand', () => {
+  function connectionState(overrides: Partial<ConnectionFormState> = {}): ConnectionFormState {
+    return {
+      sourceAlias: 'root',
+      targetAlias: 'end',
+      relation: 'done',
+      ...overrides,
+    };
+  }
+
+  it('emits backend connect command text', () => {
+    expect(buildCreateConnectionCommand(connectionState())).toBe('connect root to end with done');
+  });
+
+  it('trims aliases and relation before serialization', () => {
+    expect(buildCreateConnectionCommand(connectionState({
+      sourceAlias: '  root  ',
+      targetAlias: '  end  ',
+      relation: 'done',
+    }))).toBe('connect root to end with done');
+  });
+
+  it('rejects invalid aliases, self-connections, missing relation, and unsupported relation', () => {
+    expect(() => buildCreateConnectionCommand(connectionState({ sourceAlias: 'bad.alias' }))).toThrow();
+    expect(() => buildCreateConnectionCommand(connectionState({ targetAlias: 'bad\nalias' }))).toThrow();
+    expect(() => buildCreateConnectionCommand(connectionState({ targetAlias: 'root' }))).toThrow();
+    expect(() => buildCreateConnectionCommand(connectionState({ relation: '' }))).toThrow();
+    expect(() => buildCreateConnectionCommand(connectionState({ relation: 'custom' as ConnectionFormState['relation'] }))).toThrow();
   });
 });

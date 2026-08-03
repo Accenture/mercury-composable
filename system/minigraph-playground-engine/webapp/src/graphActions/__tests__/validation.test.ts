@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createEditNodeFormState } from '../propertyRows';
-import { getValidationErrorKeyForProperty, validateDeleteNodeAlias, validateNodeFormState } from '../validation';
+import {
+  getValidationErrorKeyForProperty,
+  validateConnectionFormState,
+  validateDeleteNodeAlias,
+  validateNodeFormState,
+} from '../validation';
+import { CONNECTION_RELATION_COLORS, CONNECTION_RELATION_OPTIONS } from '../connectionRelations';
 import type { NodeFormState } from '../nodeAuthoringTypes';
+import type { ConnectionFormState } from '../connectionAuthoringTypes';
 
 function formState(overrides: Partial<NodeFormState> = {}): NodeFormState {
   return {
@@ -195,5 +202,73 @@ describe('createEditNodeFormState', () => {
     expect(invalidKey.valid).toBe(false);
     expect(emptyArray.valid).toBe(false);
     expect(tripleQuote.valid).toBe(false);
+  });
+});
+
+describe('validateConnectionFormState', () => {
+  const graphData = {
+    nodes: [
+      { alias: 'root', types: ['Root'], properties: {} },
+      { alias: 'end', types: ['End'], properties: {} },
+    ],
+    connections: [],
+  };
+
+  function connectionState(overrides: Partial<ConnectionFormState> = {}): ConnectionFormState {
+    return {
+      sourceAlias: 'root',
+      targetAlias: 'end',
+      relation: 'done',
+      ...overrides,
+    };
+  }
+
+  it('accepts an existing source, existing target, and supported relation', () => {
+    const result = validateConnectionFormState(connectionState(), { graphData, connected: true });
+    expect(result.valid).toBe(true);
+  });
+
+  it('rejects missing source and target aliases', () => {
+    const result = validateConnectionFormState(connectionState({
+      sourceAlias: '',
+      targetAlias: '',
+    }), { graphData });
+    expect(result.errors.sourceAlias).toBeDefined();
+    expect(result.errors.targetAlias).toBeDefined();
+  });
+
+  it('rejects aliases not present in current graph data', () => {
+    const result = validateConnectionFormState(connectionState({
+      sourceAlias: 'missing-source',
+      targetAlias: 'missing-target',
+    }), { graphData });
+    expect(result.errors.sourceAlias).toContain('no longer available');
+    expect(result.errors.targetAlias).toContain('no longer available');
+  });
+
+  it('rejects same-node connections case-insensitively', () => {
+    const result = validateConnectionFormState(connectionState({
+      sourceAlias: 'Root',
+      targetAlias: 'root',
+    }));
+    expect(result.errors.targetAlias).toContain('different');
+  });
+
+  it('rejects missing and unsupported relations', () => {
+    const missing = validateConnectionFormState(connectionState({ relation: '' }));
+    const unsupported = validateConnectionFormState(connectionState({ relation: 'custom' as ConnectionFormState['relation'] }));
+    expect(missing.errors.relation).toBeDefined();
+    expect(unsupported.errors.relation).toContain('supported');
+  });
+
+  it('records disconnected state as a command-level validation error', () => {
+    const result = validateConnectionFormState(connectionState(), { graphData, connected: false });
+    expect(result.errors.command).toContain('disconnected');
+  });
+});
+
+describe('connection relation registry', () => {
+  it('keeps relation options and known color keys in sync', () => {
+    expect(Object.keys(CONNECTION_RELATION_COLORS).sort()).toEqual([...CONNECTION_RELATION_OPTIONS].sort());
   });
 });
