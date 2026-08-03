@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>minimalist-kafka</artifactId>
-    <version>4.11.1</version>
+    <version>4.11.2</version>
     <packaging>jar</packaging>
     <name>Minimalist Kafka (notification function + flow adapter)</name>
     <description>
@@ -36,14 +36,12 @@
         <httpcore5.version>5.4.3</httpcore5.version>
         <!-- Pin the Kafka client to the same version as the embedded broker used in tests
              (kafka_2.13) to avoid client/broker protocol skew. -->
-        <kafka.version>4.2.0</kafka.version>
+        <kafka.version>4.3.1</kafka.version>
         <!-- Provides the out-of-the-box Schema Registry serializers (interop with existing client
-             projects). Confluent Platform 8.3.x's own tested pairing is Apache Kafka 4.3.x, but we
-             deliberately pin our own kafka-clients (above) rather than follow that pairing - the
-             serializers implement the stable Serializer/Deserializer contract, so they are tolerant of a
-             different Kafka client version. Bumping kafka.version to 4.3.x is a separate, deferred
-             decision (broader blast radius: 24 modules, embedded broker behavior, no CVE driver) -
-             see the project backlog. -->
+             projects). Confluent Platform 8.3.x's own tested pairing is Apache Kafka 4.3.x, matching
+             the kafka.version pinned above. We still pin our own kafka-clients rather than inherit a
+             version - the serializers implement the stable Serializer/Deserializer contract, so they
+             are tolerant of a different Kafka client version. -->
         <confluent.version>8.3.0</confluent.version>
     </properties>
 
@@ -85,7 +83,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>event-script-engine</artifactId>
-            <version>4.11.1</version>
+            <version>4.11.2</version>
         </dependency>
 
         <!-- Guava's failureaccess companion is required at runtime by Confluent's serdes (Guava
@@ -105,7 +103,7 @@
             <version>${kafka.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>org.lz4</groupId>
+                    <groupId>at.yawk.lz4</groupId>
                     <artifactId>lz4-java</artifactId>
                 </exclusion>
             </exclusions>
@@ -198,7 +196,7 @@
             <scope>test</scope>
             <exclusions>
                 <exclusion>
-                    <groupId>org.lz4</groupId>
+                    <groupId>at.yawk.lz4</groupId>
                     <artifactId>lz4-java</artifactId>
                 </exclusion>
                 <exclusion>

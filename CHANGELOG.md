@@ -8,6 +8,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.11.2, 8/3/2026
+
+Security patch for field deployment quality gates. Java-only — the Maven dependency
+surface has no Rust counterpart, so the Rust engine stays at v4.11.1.
+
+### Security
+
+1. **The unused lz4 codec library is excluded again — the old exclusion had silently
+   expired.** Field Snyk scans reject deployments over CVE-2026-59949 (NULL pointer
+   dereference, CWE-125; Snyk CVSS 8.3 High) in `at.yawk.lz4:lz4-java` 1.10.x, which
+   `kafka-clients` pulls transitively with no upstream remediation path. This project has
+   always excluded the lz4 codec — no framework module enables Kafka compression; codecs
+   load lazily and the producer default is `none` — but the exclusion was pinned to the
+   library's former coordinate `org.lz4:lz4-java` and became a silent no-op when Apache
+   Kafka moved to the maintained `at.yawk.lz4` fork. All six declaration sites
+   (kafka-connector, minimalist-kafka's client and embedded test broker, twin-kafka,
+   sync-over-async, kafka-standalone) now exclude the current coordinate, so no module's
+   resolved dependency tree carries lz4-java. An application that deliberately enables
+   `compression.type=lz4` must declare `at.yawk.lz4:lz4-java` itself — the same contract
+   as before the fork switch.
+
+### Changed
+
+1. **`kafka.version` 4.2.0 → 4.3.1 across the reactor.** Executes the previously deferred
+   client upgrade and lands on Confluent Platform 8.3.x's own tested pairing (Apache
+   Kafka 4.3.x). The embedded KRaft broker used by kafka-standalone and the integration
+   tests moves in lock-step — kafka-standalone's `kafka_2.13` now references
+   `${kafka.version}` instead of a hardcoded literal — and kotlin-example's inert
+   `kafka.version` property was aligned. Validated by the full reactor build and test
+   suite against the 4.3.1 client and broker.
+
+---
 ## Version 4.11.1, 8/1/2026
 
 ### Fixed
