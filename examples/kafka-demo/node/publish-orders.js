@@ -124,8 +124,15 @@ function toRecord(line) {
     }
   }
 
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout, prompt: '> ' });
-  rl.prompt();
+  // Show the interactive prompt only on a TTY - piped input otherwise gets '>' characters
+  // glued onto the log lines.
+  const interactive = process.stdin.isTTY === true;
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: interactive ? process.stdout : undefined,
+    prompt: '> ',
+  });
+  if (interactive) rl.prompt();
 
   // chain the sends so they stay ordered and can be awaited on close - the script then works both
   // interactively AND with piped input for scripted regression runs, e.g.
@@ -137,7 +144,7 @@ function toRecord(line) {
     if (text.length > 0) {
       inflight = inflight.then(() => publishOne(text));
     }
-    rl.prompt();
+    if (interactive) rl.prompt();
   });
 
   rl.on('close', async () => {

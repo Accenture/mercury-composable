@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-02 | agent: Claude Code (2026-08-02-013842)
+- **last_session:** 2026-08-03 | agent: Claude Code (2026-08-03-155225)
 - **last_review:** 2026-07-31 | through 2026-07-31-001057.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -404,6 +404,28 @@
   Relates [[thread-kafka-2nd-level-routing]].
   <!-- id: thread-kafka-header-casing-mismatch | created: 2026-07-30 | last_used: 2026-07-30 | uses: 1 | tier: working | origin: 2026-07-30-233623 -->
 
+- [x] (release — SHIPPED 2026-08-03, **Java only by nature — the Maven dependency surface
+  has no Rust counterpart; Rust stays at 4.11.1**) **v4.11.2 — the field lz4-CVE security
+  patch + Kafka 4.3.1.** Field Snyk rejected a deployment over CVE-2026-59949 in
+  `at.yawk.lz4:lz4-java` (transitive via kafka-clients, no upstream remediation path).
+  [PR #253](https://github.com/Accenture/mercury-composable/pull/253), squash `08a31cfa`,
+  CI green, tag on the verified squash commit. **Durable lessons:** (1) the repo had
+  always excluded the unused lz4 codec, but the exclusions pinned the library's FORMER
+  coordinate `org.lz4:lz4-java` and became silent no-ops when Kafka switched to the
+  maintained `at.yawk.lz4` fork — **a groupId-pinned exclusion silently expires when
+  upstream renames a coordinate**; fixed at all six declaration sites. (2) **lz4 contract
+  (Eric):** LZ4 compression is an exception rather than a norm — a field installation
+  that needs it adds the dependency itself; the framework ships codec-free. Also executed
+  and closed the deferred kafka.version 4.2.0→4.3.1 upgrade (Confluent 8.3.x's tested
+  pairing; kafka-standalone's kafka_2.13 now on `${kafka.version}`, no broker/metadata
+  skew). Pre-release gates Eric asked for: per-module dependency-tree sweep (zero lz4,
+  all 14 Kafka artifacts uniform 4.3.1) + live kafka-demo regression against the 4.3.1
+  standalone broker (all routing rules, trace continuity, retries→DLQ — the README
+  procedure). Residual observation: the demo's publish helpers have two piped-mode-only
+  display/EOF quirks (interactive use unaffected; candidate two-line fix). Full detail:
+  origin log.
+  <!-- id: thread-release-4-11-2 | created: 2026-08-03 | last_used: 2026-08-03 | uses: 1 | tier: working | origin: 2026-08-03-155225 -->
+
 - [x] (release — SHIPPED 2026-08-01, **Java only — the first Java-ahead-of-Rust release
   since the 4.8.x line, deliberate**) **v4.11.1 — the second-level routing + deadline
   release.** [PR #252](https://github.com/Accenture/mercury-composable/pull/252), squash
@@ -655,11 +677,13 @@
   `GraphModelValidator` ([[compilegraph-mandatory-gate]]).
   <!-- id: thread-compilegraph-syntax-validation | created: 2026-07-02 | last_used: 2026-07-29 | uses: 4 | tier: working | origin: 2026-07-02-004606 -->
 
-- [ ] (planned — backlog, no ETA, no CVE driver) **Upgrade `kafka.version` (4.2.0 → 4.3.x) across
-  the 24 pom.xml files that pin it.** Deferred alongside the `confluent.version` 8.2.0→8.3.0 bump
-  — see [[minimalist-kafka-confluent-8-3-0]]. Scope when picked up: verify kafka-clients 4.3.x +
-  the embedded KRaft broker behavioral compatibility across all 24 files — a materially larger
-  test surface than a serializer-library bump.
+- [x] (planned — **CLOSED 2026-08-03: executed by the v4.11.2 release**, which gained a CVE
+  driver after all — see [[thread-release-4-11-2]]; all poms now pin 4.3.1, validated by the
+  full reactor + embedded KRaft broker + a live kafka-demo drive) **Upgrade `kafka.version`
+  (4.2.0 → 4.3.x) across the 24 pom.xml files that pin it.** Deferred alongside the
+  `confluent.version` 8.2.0→8.3.0 bump — see [[minimalist-kafka-confluent-8-3-0]]. Scope when
+  picked up: verify kafka-clients 4.3.x + the embedded KRaft broker behavioral compatibility
+  across all 24 files — a materially larger test surface than a serializer-library bump.
   <!-- id: thread-kafka-client-version-upgrade | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-230246 -->
 
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
