@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-03 | agent: Claude Code (2026-08-03-155225)
+- **last_session:** 2026-08-03 | agent: Claude Code (2026-08-03-163641)
 - **last_review:** 2026-07-31 | through 2026-07-31-001057.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -421,9 +421,12 @@
   skew). Pre-release gates Eric asked for: per-module dependency-tree sweep (zero lz4,
   all 14 Kafka artifacts uniform 4.3.1) + live kafka-demo regression against the 4.3.1
   standalone broker (all routing rules, trace continuity, retries→DLQ — the README
-  procedure). Residual observation: the demo's publish helpers have two piped-mode-only
-  display/EOF quirks (interactive use unaffected; candidate two-line fix). Full detail:
-  origin log.
+  procedure). Residual observation RESOLVED 2026-08-03 (session 2026-08-03-163641,
+  branch fix/kafka-demo-node-pipe-mode): publish-inbound.js had a real piped-EOF
+  send/disconnect race (fixed with the inflight-chain pattern); the suspected
+  publish-orders.js "off-by-one" was a capture artifact (prompt glue + an output
+  filter), NOT a script bug — both publishers now suppress the prompt on non-TTY
+  stdin. Full detail: origin log.
   <!-- id: thread-release-4-11-2 | created: 2026-08-03 | last_used: 2026-08-03 | uses: 1 | tier: working | origin: 2026-08-03-155225 -->
 
 - [x] (release — SHIPPED 2026-08-01, **Java only — the first Java-ahead-of-Rust release
