@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-03 | agent: Claude Code (2026-08-03-163641)
+- **last_session:** 2026-08-03 | agent: Claude Code (2026-08-03-170504)
 - **last_review:** 2026-07-31 | through 2026-07-31-001057.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -259,6 +259,11 @@
   Testcontainers are unavailable. Usage convention: redis-standalone serves the Rust
   minigraph-playground (suspend/resume live drives); kafka-standalone + the
   schema-registry mock will serve the future minimalist-kafka Rust port.
+  **Field-confirmed 2026-08-03: the embedded redis server works on Windows under VDI**
+  (the design-target environment — no Docker, community Redis binary 5.0.14, plain
+  `java -jar`), reported by the field alongside the v4.11.2 rollout; this also validates
+  the version-aware GETDEL/MULTI-EXEC consume strategy in its motivating environment
+  (see the closed thread-redis-getdel-compat).
   <!-- id: conv-helpers-docker-less | created: 2026-07-29 | last_used: 2026-07-30 | uses: 2 | tier: active | origin: 2026-07-29-190328 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
