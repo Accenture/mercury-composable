@@ -14,7 +14,7 @@
     { "field": "methods", "required": true, "meaning": "list from http_methods (OPTIONS auto-added; do not list it)" },
     { "field": "url", "required": true, "meaning": "URI path; supports {param} variables and a trailing * wildcard (case-insensitive)" },
     { "field": "flow", "required": false, "meaning": "flow id (used with service: http.flow.adapter)" },
-    { "field": "timeout", "required": false, "meaning": "duration like 30s (default 30s; clamped 1s-5m)" },
+    { "field": "timeout", "required": false, "meaning": "duration like 30s (default 30s; clamped 1s-5m); an inbound x-ttl request header (ms) overrides it - end-to-end deadline propagation from a Mercury caller" },
     { "field": "cors", "required": false, "meaning": "id of a cors entry (must exist)" },
     { "field": "headers", "required": false, "meaning": "id of a headers entry (must exist)" },
     { "field": "authentication", "required": false, "meaning": "a service route, or routing specs: 'default: svc' / 'header: svc' / 'header: value: svc'" },

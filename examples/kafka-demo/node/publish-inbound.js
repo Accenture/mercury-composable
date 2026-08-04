@@ -17,32 +17,49 @@ const { Kafka, Partitioners } = kafkajs;
     `[${cfg.ts()}] connected. Type a message + Enter to publish to '${cfg.inboundTopic}' (Ctrl-C to quit).`
   );
 
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout, prompt: '> ' });
-  rl.prompt();
+  async function publishOne(text) {
+    const cid = randomUUID();
+    // W3C traceparent: 00-<32-hex trace-id>-<16-hex span-id>-01. The Kafka flow adapter adopts this
+    // trace-id, so the whole flow (and the message it publishes to demo.outbound) shares it - making
+    // the end-to-end trace continuity visible.
+    const traceId = randomBytes(16).toString('hex');
+    const traceparent = `00-${traceId}-${randomBytes(8).toString('hex')}-01`;
+    try {
+      await producer.send({
+        topic: cfg.inboundTopic,
+        messages: [{ value: text, headers: { cid, traceparent } }],
+      });
+      console.log(`[${cfg.ts()}] -> ${cfg.inboundTopic} cid=${cid} traceId=${traceId} ${text}`);
+    } catch (e) {
+      console.error(`[${cfg.ts()}] publish failed:`, e.message);
+    }
+  }
 
-  rl.on('line', async (line) => {
+  // Show the interactive prompt only on a TTY - piped input otherwise gets '>' characters
+  // glued onto the log lines.
+  const interactive = process.stdin.isTTY === true;
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: interactive ? process.stdout : undefined,
+    prompt: '> ',
+  });
+  if (interactive) rl.prompt();
+
+  // chain the sends so they stay ordered and can be awaited on close - the script then works both
+  // interactively AND with piped input for scripted regression runs, e.g.
+  //   echo 'hello composable kafka' | node publish-inbound.js
+  let inflight = Promise.resolve();
+
+  rl.on('line', (line) => {
     const text = line.trim();
     if (text.length > 0) {
-      const cid = randomUUID();
-      // W3C traceparent: 00-<32-hex trace-id>-<16-hex span-id>-01. The Kafka flow adapter adopts this
-      // trace-id, so the whole flow (and the message it publishes to demo.outbound) shares it - making
-      // the end-to-end trace continuity visible.
-      const traceId = randomBytes(16).toString('hex');
-      const traceparent = `00-${traceId}-${randomBytes(8).toString('hex')}-01`;
-      try {
-        await producer.send({
-          topic: cfg.inboundTopic,
-          messages: [{ value: text, headers: { cid, traceparent } }],
-        });
-        console.log(`[${cfg.ts()}] -> ${cfg.inboundTopic} cid=${cid} traceId=${traceId} ${text}`);
-      } catch (e) {
-        console.error(`[${cfg.ts()}] publish failed:`, e.message);
-      }
+      inflight = inflight.then(() => publishOne(text));
     }
-    rl.prompt();
+    if (interactive) rl.prompt();
   });
 
   rl.on('close', async () => {
+    await inflight;
     await producer.disconnect();
     process.exit(0);
   });

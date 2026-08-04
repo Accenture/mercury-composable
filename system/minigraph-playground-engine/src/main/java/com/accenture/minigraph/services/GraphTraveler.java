@@ -38,6 +38,7 @@ import org.platformlambda.core.system.PostOffice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ import java.util.Map;
 public class GraphTraveler extends GraphLambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(GraphTraveler.class);
     public static final String ROUTE = "graph.traveler";
+    private static final String RUN_TIMEOUT = "run_timeout";
 
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
@@ -57,6 +59,8 @@ public class GraphTraveler extends GraphLambdaFunction {
         if (cid != null) {
             if (cid.contains("@")) {
                 handleSkillResponse(po, event);
+            } else if (RUN_TIMEOUT.equals(headers.get(TYPE))) {
+                handleRunTimeout(po, headers, event);
             } else if (event.getReplyTo() != null) {
                 executeGraph(po, headers, event);
             }
@@ -68,6 +72,9 @@ public class GraphTraveler extends GraphLambdaFunction {
         try {
             var in = headers.get(IN);
             var graphInstance = getGraphInstance(in);
+            // disarm a previous run's watcher BEFORE the reset so it cannot observe the
+            // half-reset state and abort the new run
+            cancelRunWatcher(graphInstance);
             graphInstance.setWsInstance(in);
             graphInstance.setCorrelationId(event.getCorrelationId());
             graphInstance.setReplyTo(event.getReplyTo());
@@ -85,8 +92,14 @@ public class GraphTraveler extends GraphLambdaFunction {
                                                 .setCorrelationId(event.getCorrelationId());
             po.send(error);
             // Uniform end-of-transmission even when the traversal fails before it
-            // starts (no graph instance yet, missing root/end) - no GraphInstance
-            // exists here, so emit the terminal line directly to the reply route.
+            // starts (no graph instance yet, missing root/end) - emit the terminal
+            // line directly to the reply route. When an instance DOES exist (the
+            // failure happened after the run watcher was armed), claim the terminal
+            // so the watcher cannot fire a second one later.
+            var graphInstance = graphInstances.get(headers.get(IN));
+            if (graphInstance != null) {
+                claimTerminal(graphInstance);
+            }
             po.send(new EventEnvelope().setTo(event.getReplyTo()).setStatus(400)
                     .setBody("Graph traversal aborted").setCorrelationId(event.getCorrelationId()));
         }
@@ -102,7 +115,84 @@ public class GraphTraveler extends GraphLambdaFunction {
         if (end == null) {
             throw new IllegalArgumentException("End node does not exist");
         }
+        armRunWatcher(po, graphInstance);
         walk(po, graphInstance, root, null);
+    }
+
+    /**
+     * Dry-run mirror of the deployed lane's flow timer (a FlowInstance schedules one at
+     * construction): a one-shot watcher that turns a hung or overlong traversal into the
+     * canonical failure terminal at the model.ttl deadline, so the console - and the
+     * synchronous companion drain - always receives an end-of-transmission line. Child
+     * calls are already deadline-bounded by getEffectiveTtl in both lanes; this covers
+     * what those cannot: total run duration and a skill that never replies. model.ttl
+     * is immutable during a run, so the deadline armed here is the deadline reported.
+     * The slot token carries the owning run's correlation id, so a stale watcher can
+     * never act on a newer run.
+     */
+    private void armRunWatcher(PostOffice po, GraphInstance graphInstance) {
+        // the traveler is re-runnable in the same session - a previous run's watcher
+        // may still be pending and must not abort the new run
+        cancelRunWatcher(graphInstance);
+        var ttl = getModelTtl(graphInstance);
+        var cid = graphInstance.getCorrelationId();
+        var timeoutEvent = new EventEnvelope().setTo(ROUTE)
+                .setHeader(TYPE, RUN_TIMEOUT).setHeader(IN, graphInstance.getWsInstance())
+                .setCorrelationId(cid);
+        graphInstance.setRunWatcher(cid + "|"
+                + po.sendLater(timeoutEvent, new Date(System.currentTimeMillis() + ttl)));
+    }
+
+    private void cancelRunWatcher(GraphInstance graphInstance) {
+        var token = graphInstance.getRunWatcher();
+        // atomic removal: two racing cancellers act at most once, on the exact token read
+        if (token != null && graphInstance.clearRunWatcher(token)) {
+            EventEmitter.getInstance().cancelFutureEvent(token.substring(token.indexOf('|') + 1));
+        }
+    }
+
+    /**
+     * Exactly-one-terminal arbitration: every terminal path (success, error, timeout)
+     * claims the run by flipping 'complete' - the winner emits its terminal and a loser
+     * stays silent, so a run racing its own deadline can never emit both terminals
+     * (which would misclassify a successful run as failed in the companion capture).
+     *
+     * @param graphInstance the graph instance
+     * @return true when this caller owns the terminal
+     */
+    private boolean claimTerminal(GraphInstance graphInstance) {
+        if (graphInstance.complete.compareAndSet(false, true)) {
+            cancelRunWatcher(graphInstance);
+            return true;
+        }
+        return false;
+    }
+
+    private void handleRunTimeout(PostOffice po, Map<String, String> headers, EventEnvelope event) {
+        var graphInstance = graphInstances.get(headers.get(IN));
+        if (graphInstance == null) {
+            return;
+        }
+        var token = graphInstance.getRunWatcher();
+        // the watcher may act only for the run that armed it: the slot token carries the
+        // owning run's correlation id and the atomic removal is the claim - a stale
+        // watcher (a newer run owns the slot, or a canceller already won) stays silent
+        if (token == null || !token.startsWith(event.getCorrelationId() + "|")
+                || !graphInstance.clearRunWatcher(token) || !claimTerminal(graphInstance)) {
+            return;
+        }
+        var out = graphInstance.getReplyTo();
+        try {
+            po.send(new EventEnvelope().setTo(out).setCorrelationId(event.getCorrelationId())
+                    .setStatus(408)
+                    .setBody("Graph traversal timed out after " + getModelTtl(graphInstance) + " ms"));
+            emitAborted(po, graphInstance);
+        } catch (Exception e) {
+            // best-effort: the reply route may be a released companion capture route -
+            // the run is already marked complete, so bookkeeping stays consistent
+            log.debug("Run-timeout terminal for {} not deliverable - {}",
+                    graphInstance.graphId, e.getMessage());
+        }
     }
 
     private void handleSkillResponse(PostOffice po, EventEnvelope response) {
@@ -111,7 +201,10 @@ public class GraphTraveler extends GraphLambdaFunction {
         var wsInstance = compositeId.substring(0, at);
         var nodeName = compositeId.substring(at+1);
         var graphInstance = graphInstances.get(wsInstance);
-        if (graphInstance != null) {
+        // a late reply after the run reached a terminal (completed, aborted or timed
+        // out) is dropped before any console send - the reply route may already be a
+        // released companion capture route
+        if (graphInstance != null && !graphInstance.complete.get()) {
             var stateMachine = graphInstance.stateMachine;
             var target = stateMachine.getElement(nodeName + "." + TARGET);
             // Unrecoverable error from the node itself
@@ -144,11 +237,14 @@ public class GraphTraveler extends GraphLambdaFunction {
             }
             var errorHandler = node.getProperty(EXCEPTION);
             if (processStatus instanceof Integer rc && resultError != null && errorHandler == null) {
-                var errorMap = getErrorMap(resultError, target);
-                var cid = graphInstance.getCorrelationId();
-                var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(errorMap).setStatus(rc);
-                po.send(error);
-                emitAborted(po, graphInstance);
+                if (claimTerminal(graphInstance)) {
+                    var errorMap = getErrorMap(resultError, target);
+                    var cid = graphInstance.getCorrelationId();
+                    var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid)
+                                                    .setBody(errorMap).setStatus(rc);
+                    po.send(error);
+                    emitAborted(po, graphInstance);
+                }
             } else if (!graphInstance.complete.get()) {
                 var next = String.valueOf(response.getBody());
                 decideNext(po, node, next, graphInstance);
@@ -221,6 +317,9 @@ public class GraphTraveler extends GraphLambdaFunction {
     }
 
     private void executionComplete(PostOffice po, GraphInstance graphInstance) {
+        if (!claimTerminal(graphInstance)) {
+            return;
+        }
         var stateMachine = graphInstance.stateMachine;
         var in = graphInstance.getWsInstance();
         var out = graphInstance.getReplyTo();
@@ -237,7 +336,6 @@ public class GraphTraveler extends GraphLambdaFunction {
         } else {
             po.send(new EventEnvelope().setTo(out).setBody(Map.of(OUTPUT, value)));
         }
-        graphInstance.complete.set(true);
         long elapsed = System.currentTimeMillis() - graphInstance.getStartTime();
         po.send(new EventEnvelope().setTo(out).setBody("Graph traversal completed in " + elapsed + " ms"));
     }
@@ -337,6 +435,9 @@ public class GraphTraveler extends GraphLambdaFunction {
     }
 
     private void handleErrorResponse(PostOffice po, GraphInstance graphInstance, EventEnvelope response) {
+        if (!claimTerminal(graphInstance)) {
+            return;
+        }
         var out = graphInstance.getReplyTo();
         var error = new EventEnvelope().setTo(out).setCorrelationId(graphInstance.getCorrelationId())
                                         .setBody(response.getBody()).setStatus(response.getStatus());
@@ -346,13 +447,13 @@ public class GraphTraveler extends GraphLambdaFunction {
 
     /**
      * Canonical failure terminal — the mirror of the success terminal in
-     * {@code executionComplete}. Marks the traversal complete and emits the single
-     * end-of-transmission line the synchronous companion endpoint drains on, so
-     * <b>every</b> {@code run} finishes with either "Graph traversal completed in N ms"
-     * or "Graph traversal aborted" — a deterministic signal, never a timeout.
+     * {@code executionComplete}. Emits the single end-of-transmission line the
+     * synchronous companion endpoint drains on, so <b>every</b> {@code run} finishes
+     * with either "Graph traversal completed in N ms" or "Graph traversal aborted" —
+     * a deterministic signal, never a timeout. Callers own the terminal via
+     * {@link #claimTerminal} before emitting.
      */
     private void emitAborted(PostOffice po, GraphInstance graphInstance) {
-        graphInstance.complete.set(true);
         po.send(new EventEnvelope().setTo(graphInstance.getReplyTo())
                 .setCorrelationId(graphInstance.getCorrelationId())
                 .setBody("Graph traversal aborted").setStatus(400));
@@ -364,7 +465,9 @@ public class GraphTraveler extends GraphLambdaFunction {
      * endpoint included) still gets the uniform end-of-transmission line last.
      */
     private void sendError(PostOffice po, GraphInstance graphInstance, String message) {
-        graphInstance.complete.set(true);
+        if (!claimTerminal(graphInstance)) {
+            return;
+        }
         var error = new EventEnvelope().setTo(graphInstance.getReplyTo())
                             .setCorrelationId(graphInstance.getCorrelationId()).setBody(message).setStatus(400);
         po.send(error);

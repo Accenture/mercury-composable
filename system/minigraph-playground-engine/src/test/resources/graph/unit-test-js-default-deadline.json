@@ -1,0 +1,55 @@
+{
+ "nodes": [
+  {
+   "types": [
+    "UnitTest"
+   ],
+   "alias": "end",
+   "properties": {}
+  },
+  {
+   "types": [
+    "Evaluate"
+   ],
+   "alias": "endless",
+   "properties": {
+    "statement": [
+     "COMPUTE: x -> (function(){ while(true){} })()"
+    ],
+    "skill": "graph.js"
+   }
+  },
+  {
+   "types": [
+    "UnitTest"
+   ],
+   "alias": "root",
+   "properties": {
+    "name": "unit-test-js-default-deadline",
+    "purpose": "Unit test fixture pinning the 5-second default script deadline of graph.js"
+   }
+  }
+ ],
+ "connections": [
+  {
+   "source": "endless",
+   "relations": [
+    {
+     "type": "test",
+     "properties": {}
+    }
+   ],
+   "target": "end"
+  },
+  {
+   "source": "root",
+   "relations": [
+    {
+     "type": "test",
+     "properties": {}
+    }
+   ],
+   "target": "endless"
+  }
+ ]
+}

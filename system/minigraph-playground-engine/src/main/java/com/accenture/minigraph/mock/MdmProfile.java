@@ -25,6 +25,7 @@ import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.util.ConfigReader;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @OptionalService("app.env=dev")
@@ -51,7 +52,13 @@ public class MdmProfile implements TypedLambdaFunction<AsyncHttpRequest, Object>
         }
         try {
             var data = new ConfigReader("classpath:/mock/profile-" + personId + ".json");
-            return data.getMap();
+            var result = new HashMap<String, Object>(data.getMap());
+            // echo the wire-observed request deadline so a caller (and the unit tests)
+            // can verify that the api.fetcher aligned x-ttl with its graph-side deadline
+            if (input.getHeader("x-ttl") != null) {
+                result.put("observed_ttl", input.getHeader("x-ttl"));
+            }
+            return result;
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Profile "+ personId+" not found");
         }

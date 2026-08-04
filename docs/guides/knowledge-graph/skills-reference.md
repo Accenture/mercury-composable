@@ -125,6 +125,16 @@ skill=graph.js
 statement[]=COMPUTE: amount -> (1 - {input.body.discount}) * {book.price}
 ```
 
+**Deadline:** a script is cancelled at a hard execution deadline (GraalVM context cancellation),
+failing the node with a 408 `script exceeded the N ms execution deadline`. Unlike
+[`graph.api.fetcher`](#api-fetcher)'s call deadline, this is a **run-level error** — it is not
+`exception=`-routable: a dry-run emits the 408 line and the canonical `Graph traversal aborted`
+terminal, and a deployed run fails the whole request with HTTP 408. The default is a tight
+**5 seconds** — `graph.js` (like `graph.math`) is meant for very simple computation or
+IF-THEN-ELSE, so it deliberately does **not** inherit the typically longer `model.ttl`; an
+optional node `ttl` (duration syntax, e.g. `10s`) overrides it. An endless loop can no longer
+pin a kernel thread forever.
+
 **Gotchas:** capped at **50 instances** per deployment (it uses kernel threads); reach for
 `graph.math` unless you need real JavaScript.
 ## graph.api.fetcher {#api-fetcher}
@@ -142,6 +152,7 @@ input[]=input.body.person_id -> person_id
 output[]=result.name -> output.body.name   # optional: result always lands at {node}.result
 for_each[]=<array-source> -> model.<var>   # optional: iterate a runtime list (see below)
 concurrency=3                            # optional: 1–30, default 3
+ttl=8s                                   # optional: per-call deadline override (see below)
 exception=<error-handler-node>           # optional
 ```
 
@@ -185,6 +196,17 @@ via `feature[]=log-response-headers` at `{node}.header.response.{name}`.
 instead of aborting — the building block for bounded retry loops
 ([full pattern](command-reference.md#failure-routing)). Without it, the run aborts.
 
+**Deadline:** each call is bounded by the propagated `model.ttl` (default 30 s); the optional node
+`ttl` (duration syntax `<digits>` + `s`/`m`/`h`/`d`, e.g. `8s`) overrides it for this node's calls
+only. A deadline shorter than the graph's own budget makes a slow provider time out **first**, so
+`exception=` routing handles the timeout instead of the whole run aborting on `model.ttl` — the
+time-boxed half of a bounded retry loop. The same effective deadline is stamped as the outbound
+`x-ttl` request header, aligning the HTTP client's wire-level read timeout (deadline + a one-second
+grace) with the graph-side deadline, so a hung upstream's socket self-cancels instead of lingering
+after the 408. When the target is another Mercury application, its ingress honors the inbound
+`x-ttl` over the endpoint's configured timeout — the caller's deadline propagates end-to-end.
+Details and gotchas: [`graph.task`](#task).
+
 ## graph.extension {#extension}
 
 Delegates to another **graph model** or an **Event Script flow**, so you can compose larger
@@ -225,6 +247,11 @@ output[]=result.sales_performance -> output.body.sales_performance
   whole response body; `result.{key}` a field of it.
 - The same contract applies to a **flow** target (`extension=flow://{flow-id}`): the named keys
   feed the flow's `input.body`, and `result.*` is the flow's `output.body`.
+- The optional node `ttl` (duration syntax, e.g. `10s`) overrides the propagated `model.ttl` as
+  the **deadline for the delegated call** — a shorter child deadline lets the sub-graph or flow
+  time out first, so this node's `exception=` route catches the timeout and can retry within the
+  parent graph's remaining budget (same parameter as [`graph.api.fetcher`](#api-fetcher) and
+  [`graph.task`](#task)).
 
 This is the seam between the semantic layer and the composable (Event Script) layer beneath it —
 authoring the target flow: [Event Script AI agent guide](../event-script/ai-agent-guide.md) +
@@ -265,9 +292,23 @@ and the body auto-converts when the function declares a PoJo input. The result l
 ([failure routing](command-reference.md#failure-routing)).
 
 **Gotchas:** the `task` route must exist at runtime or the node fails fast; a call is bounded by
-`model.ttl` (default 30 s). For multi-step orchestration, prefer [`graph.extension`](#extension) —
-`graph.task` is for a single function call. Writing the function itself:
+`model.ttl` (default 30 s) — or by the node's optional `ttl` property (duration syntax, e.g.
+`10s`), which overrides the propagated value for this node only, the same deadline override as
+[`graph.api.fetcher`](#api-fetcher) and [`graph.extension`](#extension). For multi-step
+orchestration, prefer [`graph.extension`](#extension) — `graph.task` is for a single function
+call. Writing the function itself:
 [function AI agent guide](../event-driven/ai-agent-guide.md) (`#[preload]` + `ComposableFunction`).
+
+**`ttl` — one grammar, three meanings.** On the three calling skills (`graph.task`,
+`graph.api.fetcher`, `graph.extension`) the node `ttl` is a **child-call deadline**; on
+[`graph.js`](#js) it is the **script execution deadline** (default 5s, not `model.ttl`); on the
+[suspend node](#suspend) the same `<digits>` + `s`/`m`/`h`/`d` grammar sets the **store-record
+expiry** — a persistence timer, not a deadline. On any other skill the property is rejected by
+the CompileGraph gate and the playground pre-run check. Note also that model metadata
+(`model.cid`/`instance`/`flow`/`ttl`/`trace`/`parent`/`root`/`none`/`run`) is engine-managed and
+**immutable** — a data mapping that writes to it is rejected at compile time (the CompileGraph
+gate and the pre-run check) and again at runtime in both walker lanes. The per-node `ttl` is the
+sanctioned deadline mechanism, not rewriting `model.ttl`.
 
 ## graph.suspend {#suspend}
 

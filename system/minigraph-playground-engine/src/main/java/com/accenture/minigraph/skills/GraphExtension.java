@@ -95,7 +95,7 @@ public class GraphExtension extends GraphLambdaFunction {
         var nodeName = node.getAlias();
         var givenConcurrency = util.str2int(String.valueOf(node.getProperty(CONCURRENCY)));
         var concurrency = Math.clamp(givenConcurrency < 0 ? 3 : givenConcurrency, 1, 30);
-        var timeout = getModelTtl(graphInstance);
+        var timeout = getEffectiveTtl(graphInstance, node);
         var stateMachine = graphInstance.stateMachine;
         var apiParams = (Map<String, List<Object>>) stateMachine.getElement(nodeName + EACH, new HashMap<>());
         Deque<EventEnvelope> stack = new ArrayDeque<>();
@@ -190,7 +190,7 @@ public class GraphExtension extends GraphLambdaFunction {
         for (var entry : mapping) {
             fillFetcherApiParameters(nodeName, entry, graphInstance, false);
         }
-        var timeout = getModelTtl(graphInstance);
+        var timeout = getEffectiveTtl(graphInstance, node);
         return retrieveFromExtension(po, node, graphInstance, graphId, timeout);
     }
 

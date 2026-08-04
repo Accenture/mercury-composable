@@ -75,6 +75,10 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
     private static final String TEXT_COMMAND_REQUIRED = "Body must be a non-empty text/plain command";
     private static final long COMMAND_TIMEOUT_MS = 30000;
     private static final long DRAIN_TIMEOUT_MS = 5000;
+    // margin past the dry-run watcher deadline so the watcher's terminal always beats
+    // the drain safety net; the cap stays under the endpoint's own rest.yaml timeout
+    private static final long WATCHER_GRACE_MS = 5000;
+    private static final long MAX_TRAVERSAL_DRAIN_MS = 35000;
 
     @Override
     public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) throws Exception {
@@ -111,12 +115,13 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         List<Object> buffer = new CopyOnWriteArrayList<>();
         CountDownLatch drained = new CountDownLatch(1);
         platform.registerPrivate(captureRoute, captureFunction(outRoute, traversal, buffer, drained), 1);
+        final boolean complete;
         try {
-            dispatchAndDrain(po, id, command, inRoute, captureRoute, traversal, drained);
+            complete = dispatchAndDrain(po, id, command, inRoute, captureRoute, traversal, drained);
         } finally {
             platform.release(captureRoute);
         }
-        return outcomeResponse(id, command, buffer);
+        return outcomeResponse(id, command, buffer, complete);
     }
 
     private static String commandFromBody(AsyncHttpRequest input) {
@@ -154,8 +159,8 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         };
     }
 
-    private void dispatchAndDrain(PostOffice po, String id, String command, String inRoute,
-                                  String captureRoute, boolean traversal, CountDownLatch drained)
+    private boolean dispatchAndDrain(PostOffice po, String id, String command, String inRoute,
+                                     String captureRoute, boolean traversal, CountDownLatch drained)
             throws ExecutionException, InterruptedException {
         // RPC the singleton handler with the capture route as `out`; handleEvent
         // returns once the command is dispatched (a traversal is still running).
@@ -175,12 +180,27 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         if (!traversal) {
             po.send(new EventEnvelope().setTo(captureRoute).setBody(SYNC_SENTINEL));
         }
-        // The timeout is only a safety net (matched to the command timeout for a
-        // traversal); correctness comes from the signal, not from a timer.
-        var drainTimeout = traversal ? COMMAND_TIMEOUT_MS : DRAIN_TIMEOUT_MS;
-        if (!drained.await(drainTimeout, TimeUnit.MILLISECONDS)) {
+        // The timeout is only a safety net; correctness comes from the signal, not from
+        // a timer. A traversal's window is sized past the dry-run watcher deadline so
+        // the watcher's terminal - not this net - ends the drain even in the default
+        // config. When the net DOES catch - the signal never arrived - the caller must
+        // know: the capture is truncated and the command is still running, so the
+        // outcome is classified as a failure, never a silent success.
+        var drainTimeout = traversal ? traversalDrainWindow(inRoute) : DRAIN_TIMEOUT_MS;
+        var complete = drained.await(drainTimeout, TimeUnit.MILLISECONDS);
+        if (!complete) {
             log.warn("Companion sync drain timed out for {}", id);
         }
+        return complete;
+    }
+
+    private static long traversalDrainWindow(String inRoute) {
+        var deadline = GraphCommandService.getRunDeadlineMs(inRoute);
+        var window = deadline == null? COMMAND_TIMEOUT_MS : deadline + WATCHER_GRACE_MS;
+        // the cap keeps the drain under the endpoint's rest.yaml timeout: a dry-run
+        // with a larger seeded model.ttl outlives this endpoint's budget and is
+        // reported as truncated (ok=false) - use the WebSocket console for long runs
+        return Math.clamp(window, DRAIN_TIMEOUT_MS, MAX_TRAVERSAL_DRAIN_MS);
     }
 
     private static EventEnvelope refusedResponse(String id, String command, String error) {
@@ -198,7 +218,7 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
      * Build the structured outcome from the captured output. Collect the console
      * lines first, then classify with whole-output context (see firstErrorLine).
      */
-    private static EventEnvelope outcomeResponse(String id, String command, List<Object> buffer) {
+    private static EventEnvelope outcomeResponse(String id, String command, List<Object> buffer, boolean complete) {
         List<String> output = new ArrayList<>();
         List<Object> result = new ArrayList<>();
         for (var item : buffer) {
@@ -209,6 +229,9 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
             }
         }
         String error = firstErrorLine(output);
+        if (error == null && !complete) {
+            error = "Output truncated - the command did not finish within the drain window";
+        }
         var body = new HashMap<String, Object>();
         body.put("ok", error == null);
         body.put("id", id);
@@ -226,7 +249,7 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         // a false positive.
         return line.startsWith("ERROR:") || line.contains("aborted") || line.contains("does not have")
                 || line.startsWith("Invalid") || line.contains("not found") || line.contains("Please try 'help'")
-                || line.startsWith("Syntax:");
+                || line.startsWith("Syntax:") || line.startsWith("Graph traversal timed out");
     }
 
     /**

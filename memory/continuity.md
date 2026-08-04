@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-07-31 | agent: Claude Code (2026-07-31-001057)
+- **last_session:** 2026-08-03 | agent: Claude Code (2026-08-03-170504)
 - **last_review:** 2026-07-31 | through 2026-07-31-001057.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -240,6 +240,18 @@
   closely matching error messages), or flows stop being portable.
   <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-07-30 | uses: 12 | tier: active | origin: 2026-07-23-145132 -->
 
+- **graph.js is slated for eventual phase-out in favor of graph.task (Eric, 2026-07-31),
+  and the Rust port does not carry it at all.** The skill is troublesome by nature — it is
+  code injection; developers have been warned to use it with caution — and the newer
+  graph.task can express very complex logic, so at some point graph.js will be retired.
+  Operating consequences: don't invest in hardening graph.js beyond containment (its 5s
+  default execution deadline exists to bound damage, not to bless long scripts); prefer
+  graph.task in examples and guidance; graph.math stays (safe expression engine, no
+  loops); **graph.js work is never a Rust lock-step item** — the Rust validator's
+  deadline-skill set legitimately names three skills where Java names four.
+  Relates [[thread-task-ttl-override]].
+  <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-08-01 | uses: 1 | tier: working | origin: 2026-08-01-035647 -->
+
 - **The `helpers/` standalone servers exist for Docker-less developer machines and are
   the standard local test servers for Rust ports (Eric, 2026-07-29).** They embed REAL
   redis/kafka servers as plain `java -jar` apps because many field developers work on
@@ -247,6 +259,11 @@
   Testcontainers are unavailable. Usage convention: redis-standalone serves the Rust
   minigraph-playground (suspend/resume live drives); kafka-standalone + the
   schema-registry mock will serve the future minimalist-kafka Rust port.
+  **Field-confirmed 2026-08-03: the embedded redis server works on Windows under VDI**
+  (the design-target environment — no Docker, community Redis binary 5.0.14, plain
+  `java -jar`), reported by the field alongside the v4.11.2 rollout; this also validates
+  the version-aware GETDEL/MULTI-EXEC consume strategy in its motivating environment
+  (see the closed thread-redis-getdel-compat).
   <!-- id: conv-helpers-docker-less | created: 2026-07-29 | last_used: 2026-07-30 | uses: 2 | tier: active | origin: 2026-07-29-190328 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
@@ -274,6 +291,70 @@
 
 ## Open Threads
 
+- [x] (feature — **COMPLETE ON BOTH ENGINES: Rust half shipped 2026-08-01 in
+  mercury PR #191 + release PR #192, tag v4.11.1 — see session 2026-08-02-013842;
+  the x-ttl budget derivation (32-bit parse, ceil-to-seconds) is a pinned wire
+  contract on both engines.** Java half MERGED 2026-07-31 as
+  [PR #250](https://github.com/Accenture/mercury-composable/pull/250), squash
+  `8191ab1c`, CI green (Build & Unit Tests 7m27s)** — four branch commits squashed:
+  feature + review-1 hardening + deadline-cleanup round + the x-ttl ruling; event-script
+  185/185, minigraph 98/98, platform-core 425/425, full reactor green; **remaining: the
+  Rust lock-step half** — handoff at /tmp/task-ttl-override-rust-handoff.md, sections
+  1-7, zero open questions; the suspend/resume-adjacent deadline surface is
+  regression-critical field-core on both engines)
+  **Task-level ttl override: catchable child timeouts (field report) + the deadline
+  cleanup round.** TTL propagation copies the parent's FULL ttl with a restarted timer →
+  the parent always expires first and its own timeout is uncatchable. Ratified:
+  propagation stays the default; per-task `ttl` (duration, < flow.ttl, flow:// tasks
+  only, runtime WARN) + per-node `ttl` on graph.extension/api.fetcher/task (suspend
+  grammar; suspend's own ttl = store expiry, distinct) → a shorter child deadline makes
+  the child's 408 CATCHABLE → budgeted retries (proven live). **Model metadata
+  (model.{cid,instance,flow,ttl,trace,parent,root,none,run}) is IMMUTABLE in the graph
+  engine at both layers** — gate + pre-run check (incl. MAPPING: statement lines) +
+  the shared runtime guard on all four model-writing paths. **Cleanup round (Eric's four
+  rulings 2026-07-31): delay now defers sub-flow launches** (cancelled at flow teardown —
+  orphaned-launch fix); **dry-run run-level watcher at model.ttl** (exactly-one-terminal
+  CAS arbitration, owner-tagged watcher slot, companion drain sized past the deadline +
+  drain-timeout = ok=false); **fetcher stamps x-ttl** (wire read-timeout = deadline+1s);
+  **graph.js deadline via sticky GraalVM close(true) on a virtual thread, default 5s**
+  (NOT model.ttl — scripts are simple computation; node ttl overrides; run-level error,
+  not exception=-routable). Adversarial round 2: 16 confirmed findings fixed — durable
+  GraalVM lessons: interrupt is non-destructive + gap-consumable (sticky close(true) is
+  the correct watchdog) and interrupt(Duration.ZERO) BLOCKS indefinitely (never on an
+  event loop). **Eric's ruling (2026-07-31): x-ttl deadline propagation is a FEATURE —
+  keep and document.** A Mercury caller's deadline propagates end-to-end (ingress honors
+  inbound x-ttl over rest.yaml timeout); documented in the rest.yaml timeout grammar row,
+  fetcher docs and CHANGELOG; both stamp branches pinned by wire-echo tests ("7000" node
+  ttl / "30000" propagated model.ttl). Residual
+  (pre-existing, recorded): overlapping runs share session instance state (late-callback
+  bleed). Spec: draft-design-specs/task-ttl-override.md (gitignored). Full detail:
+  origin log + session 2026-08-01-035647.
+  <!-- id: thread-task-ttl-override | created: 2026-08-01 | last_used: 2026-08-01 | uses: 1 | tier: working | origin: 2026-08-01-022358 -->
+
+- [x] (field support — **COMPLETE ON BOTH ENGINES: Rust half shipped 2026-08-01 in
+  mercury PR #191 (fallback proven on the wire: contiguous MULTI/GET/DEL/EXEC in the
+  RESP-double journal), released in Rust v4.11.1.** 2026-07-31; **Java half MERGED as
+  [PR #248](https://github.com/Accenture/mercury-composable/pull/248), squash `5b73b140`,
+  CI green; field member validates on Windows VDI 2026-07-31** — remaining: the Rust
+  lock-step half, handoff ready) **Graph state store fails with `ERR unknown command
+  GETDEL` on Redis < 6.2 — fixed with a version-aware consume strategy.** Field report: Windows VDI +
+  redis-standalone + tutorial-14 (the embedded-redis library bundles Redis 6.2.x for
+  macOS/Linux but only **5.0.14 for Windows** — the community port stopped there).
+  **Eric's ruling: version-aware (deployed envs are Linux, but enterprise managed Redis —
+  AWS for one field installation, also Azure/GCP — is outside our control).** Fix on
+  branch `fix/redis-getdel-compat` (commit `d2b49beb`): detect `redis_version` from
+  `INFO server` once per connection (stated in the startup log); ≥ 6.2 → native GETDEL,
+  older → **atomic MULTI/EXEC GET+DEL** (at-most-once resume per ADR-0010 holds on both
+  paths; plain sequential GET→DEL would open a double-resume race); undetectable version →
+  the transactional fallback (works everywhere). Tests 10/10 incl. the fallback exercised
+  for real via forced strategy; docs updated (workflow-suspension guide, reserved-names,
+  EmbeddedRedis javadoc, CHANGELOG Fixed); the permanent interop report untouched.
+  **Remaining: Eric's PR gate; then the Rust lock-step half (identical exposure at
+  lib.rs:131; handoff ready at /tmp/redis-getdel-compat-rust-handoff.md) — the
+  suspend/resume surface is regression-critical field-core on both engines.**
+  Relates [[graph-suspend-resume-design]], [[conv-helpers-docker-less]].
+  <!-- id: thread-redis-getdel-compat | created: 2026-07-31 | last_used: 2026-07-31 | uses: 1 | tier: working | origin: 2026-07-31-180131 -->
+
 - [x] (feature — design RATIFIED 2026-07-30; **MERGED same day as
   [PR #246](https://github.com/Accenture/mercury-composable/pull/246), squash `268e5ff6`, CI
   green; rides the next release via CHANGELOG Unreleased.**) **Second-level routing for the
@@ -297,7 +378,22 @@
   both adapters; secondary dead letters ride the secondary publisher. No Rust lock-step constraint
   — the grammar becomes the future minimalist-kafka port's contract. Spec:
   draft-design-specs/second-level-routing-kafka-flow-adapter.md (gitignored). Full detail:
-  sessions 2026-07-30-233623 + 2026-07-31-001057. Relates [[thread-redis-kafka-rpc]].
+  sessions 2026-07-30-233623 + 2026-07-31-001057. **Demo/migration template (Eric's
+  direction — the feature replaces a proprietary field implementation): MERGED
+  2026-07-31 as [PR #247](https://github.com/Accenture/mercury-composable/pull/247),
+  squash `929a87b9`, CI green — examples/kafka-demo gained a demo.orders binding
+  exercising every grammar element beside the direct-routing binding, driven by the
+  new publish-orders.js (works piped for scripted regression); smoke-driven live
+  end-to-end; README doubles as the manual-regression procedure** (session
+  2026-07-31-162554). **Feedback round from Eric's manual regression (session
+  2026-08-01-001528, branch fix/kafka-demo-feedback awaiting PR gate):** DLQ topics
+  pre-created; `refund <json>` = details + auto-envelope; `order <plain text>` = the
+  canonical failure-path trigger (byte[] into a Map-typed function throws back to the
+  adapter → retries → DLQ — Eric: exactly proves the parse-failure contract);
+  numbered command/example instructions. **Field adoption: the composable
+  content-based partitioning pattern (selector function → explicit partition header,
+  docs `8ed23f34`) APPROVED for field use 2026-07-31.**
+  Relates [[thread-redis-kafka-rpc]].
   <!-- id: thread-kafka-2nd-level-routing | created: 2026-07-30 | last_used: 2026-07-31 | uses: 2 | tier: active | origin: 2026-07-30-233623 -->
 
 - [ ] (observation — surfaced 2026-07-30 by the second-level-routing code study;
@@ -312,6 +408,46 @@
   itself dodges the trap (its header-name lookup is case-insensitive by design).
   Relates [[thread-kafka-2nd-level-routing]].
   <!-- id: thread-kafka-header-casing-mismatch | created: 2026-07-30 | last_used: 2026-07-30 | uses: 1 | tier: working | origin: 2026-07-30-233623 -->
+
+- [x] (release — SHIPPED 2026-08-03, **Java only by nature — the Maven dependency surface
+  has no Rust counterpart; Rust stays at 4.11.1**) **v4.11.2 — the field lz4-CVE security
+  patch + Kafka 4.3.1.** Field Snyk rejected a deployment over CVE-2026-59949 in
+  `at.yawk.lz4:lz4-java` (transitive via kafka-clients, no upstream remediation path).
+  [PR #253](https://github.com/Accenture/mercury-composable/pull/253), squash `08a31cfa`,
+  CI green, tag on the verified squash commit. **Durable lessons:** (1) the repo had
+  always excluded the unused lz4 codec, but the exclusions pinned the library's FORMER
+  coordinate `org.lz4:lz4-java` and became silent no-ops when Kafka switched to the
+  maintained `at.yawk.lz4` fork — **a groupId-pinned exclusion silently expires when
+  upstream renames a coordinate**; fixed at all six declaration sites. (2) **lz4 contract
+  (Eric):** LZ4 compression is an exception rather than a norm — a field installation
+  that needs it adds the dependency itself; the framework ships codec-free. Also executed
+  and closed the deferred kafka.version 4.2.0→4.3.1 upgrade (Confluent 8.3.x's tested
+  pairing; kafka-standalone's kafka_2.13 now on `${kafka.version}`, no broker/metadata
+  skew). Pre-release gates Eric asked for: per-module dependency-tree sweep (zero lz4,
+  all 14 Kafka artifacts uniform 4.3.1) + live kafka-demo regression against the 4.3.1
+  standalone broker (all routing rules, trace continuity, retries→DLQ — the README
+  procedure). Residual observation RESOLVED 2026-08-03 (session 2026-08-03-163641,
+  branch fix/kafka-demo-node-pipe-mode): publish-inbound.js had a real piped-EOF
+  send/disconnect race (fixed with the inflight-chain pattern); the suspected
+  publish-orders.js "off-by-one" was a capture artifact (prompt glue + an output
+  filter), NOT a script bug — both publishers now suppress the prompt on non-TTY
+  stdin. Full detail: origin log.
+  <!-- id: thread-release-4-11-2 | created: 2026-08-03 | last_used: 2026-08-03 | uses: 1 | tier: working | origin: 2026-08-03-155225 -->
+
+- [x] (release — SHIPPED 2026-08-01, **Java only — the first Java-ahead-of-Rust release
+  since the 4.8.x line, deliberate**) **v4.11.1 — the second-level routing + deadline
+  release.** [PR #252](https://github.com/Accenture/mercury-composable/pull/252), squash
+  `410e03bb`, CI green, tag on the verified squash commit. Consolidates: second-level
+  routing + JSON serde symmetry (#246) with the kafka-demo template (#247/#249, Eric
+  field-tested); Redis GETDEL compat (#248); task-ttl override + model-metadata
+  immutability + deadline cleanup (#250); Sonar polish (#251). 33-pom sweep clean, no
+  substring hazards; prep catch: a broad `git add` staged the local `.interop-mercury`
+  dev symlink — amended out and gitignored. **Rust stays at 4.11.0 until the two
+  lock-step halves land** (GETDEL + task-ttl/deadline, handoffs final in /tmp);
+  second-level routing is Java-only by design (no minimalist-kafka Rust port — the
+  grammar is the future port's contract). Rust 4.11.1 ships when the lock-step session
+  runs. Full detail: origin log.
+  <!-- id: thread-release-4-11-1 | created: 2026-08-01 | last_used: 2026-08-01 | uses: 1 | tier: working | origin: 2026-08-01-230946 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-07-30, both repos in lock-step)
   **v4.11.0 — the suspend/resume feature release.** Java: PR #245, squash `3a870951`, tag on the
@@ -549,11 +685,13 @@
   `GraphModelValidator` ([[compilegraph-mandatory-gate]]).
   <!-- id: thread-compilegraph-syntax-validation | created: 2026-07-02 | last_used: 2026-07-29 | uses: 4 | tier: working | origin: 2026-07-02-004606 -->
 
-- [ ] (planned — backlog, no ETA, no CVE driver) **Upgrade `kafka.version` (4.2.0 → 4.3.x) across
-  the 24 pom.xml files that pin it.** Deferred alongside the `confluent.version` 8.2.0→8.3.0 bump
-  — see [[minimalist-kafka-confluent-8-3-0]]. Scope when picked up: verify kafka-clients 4.3.x +
-  the embedded KRaft broker behavioral compatibility across all 24 files — a materially larger
-  test surface than a serializer-library bump.
+- [x] (planned — **CLOSED 2026-08-03: executed by the v4.11.2 release**, which gained a CVE
+  driver after all — see [[thread-release-4-11-2]]; all poms now pin 4.3.1, validated by the
+  full reactor + embedded KRaft broker + a live kafka-demo drive) **Upgrade `kafka.version`
+  (4.2.0 → 4.3.x) across the 24 pom.xml files that pin it.** Deferred alongside the
+  `confluent.version` 8.2.0→8.3.0 bump — see [[minimalist-kafka-confluent-8-3-0]]. Scope when
+  picked up: verify kafka-clients 4.3.x + the embedded KRaft broker behavioral compatibility
+  across all 24 files — a materially larger test surface than a serializer-library bump.
   <!-- id: thread-kafka-client-version-upgrade | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-230246 -->
 
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor

@@ -297,8 +297,8 @@ public class KafkaFlowAdapter implements AutoCloseable {
 
     /**
      * Fail fast when a routing rule names a flow that was never compiled or a task route that is not in
-     * the platform registry - functions preload before this {@code @MainApplication} adapter starts, so
-     * target existence is checkable here rather than failing every matching message at runtime.
+     * the platform registry - functions preload before this {@code @MainApplication} adapter starts.
+     * Therefore, target existence is checkable here rather than failing every matching message at runtime.
      */
     private static void validateRoutingTargets(int i, String label, RoutingRuleSet routing) {
         for (RoutingRuleSet.Target target : routing.allTargets()) {

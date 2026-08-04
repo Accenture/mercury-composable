@@ -34,6 +34,10 @@ flows:
   - 'parser-test-30.yml'
   - 'parser-test-31.yml'
   - 'parser-test-32.yml'
+  - 'parser-test-ttl-0.yml'
+  - 'parser-test-ttl-1.yml'
+  - 'parser-test-ttl-2.yml'
+  - 'parser-test-ttl-3.yml'
   - 'dynamic-reserved-key.yml'
   # duplicated filename is intentional for unit test
   - 'parser-test-17.yml'

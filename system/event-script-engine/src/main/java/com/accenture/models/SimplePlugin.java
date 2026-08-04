@@ -22,7 +22,7 @@ import java.lang.annotation.*;
 
 /**
  * This indicates the class is a Plugin to be used as a PluggableFunction for calculations that can be called from
- * event script. Pluggable functions start with `f:<name>(args...)`
+ * event script. Pluggable functions start with `f:<name> (args...)`
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

@@ -157,12 +157,18 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String INSPECT = "inspect";
     protected static final String DOT_DECISION = ".decision";
     protected static final String DOT_DELAY = ".delay";
-    // 'ttl' is deliberately NOT reserved: it is a task parameter of the suspend node
-    // (the data-store expiry timer), not engine-routing configuration, and it collides
-    // with nothing else
+    // 'ttl' is deliberately NOT reserved: it is a skill-scoped node parameter - the data-store
+    // expiry timer on the suspend node, and the child-call deadline override on graph.extension /
+    // graph.api.fetcher / graph.task nodes (see getEffectiveTtl) - not engine-routing configuration
     private static final Set<String> RESERVED_PARAMETERS = Set.of(SKILL, MAPPING, STATEMENT, INPUT, OUTPUT, FEATURE,
                                     EXCEPTION, EXTENSION, STATUS, ERROR, DICTIONARY, FOR_EACH, CONCURRENCY, PURPOSE,
                                     TASK, SUSPEND);
+    // Engine-managed model metadata, IMMUTABLE at runtime in both walker lanes (executor and
+    // traveler) - the same nine names as the suspend/resume NON_PERSISTED_MODEL_KEYS and Event
+    // Script's reserved model keys. A data mapping may read these but never write them; the
+    // sanctioned deadline mechanism is the per-node 'ttl' parameter, not rewriting model.ttl.
+    protected static final Set<String> RESERVED_MODEL_METADATA =
+            Set.of("cid", "instance", "flow", "ttl", "trace", "parent", "root", "none", "run");
     private static final AtomicLong loopInterval = new AtomicLong(-1);
     private static final AtomicLong highFrequency = new AtomicLong(-1);
 
@@ -357,12 +363,35 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         }
     }
 
-    protected long getModelTtl(GraphInstance instance) {
+    protected static long getModelTtl(GraphInstance instance) {
         if (!instance.stateMachine.exists(MODEL)) {
             instance.stateMachine.setElement(MODEL, new HashMap<>());
         }
         var ttl = String.valueOf(instance.stateMachine.getElement(MODEL_TTL, "30000"));
         return Math.max(1000, util.str2long(ttl));
+    }
+
+    /**
+     * The deadline (ms) for a child call made by this node: the node's optional 'ttl' property
+     * (duration syntax, e.g. 10s - the suspend-node grammar) overrides the propagated model.ttl.
+     * A SHORTER child deadline lets a sub-flow, sub-graph or API call time out FIRST, so this
+     * graph's error path can catch the timeout and retry within its remaining budget - with plain
+     * propagation, parent and child carry the same value and the parent always expires first.
+     * (graph.js also honors a node ttl for its script-execution deadline, but resolves its own
+     * default of 5s instead of model.ttl - scripts are meant for very simple computation.)
+     *
+     * @param instance the graph instance
+     * @param node     the calling node (graph.extension, graph.api.fetcher or graph.task)
+     * @return the node ttl in milliseconds when declared, else the propagated model.ttl
+     */
+    protected long getEffectiveTtl(GraphInstance instance, SimpleNode node) {
+        var nodeTtl = node.getProperty(TTL);
+        if (nodeTtl != null) {
+            // grammar validated by the CompileGraph gate / playground pre-run check; this parse
+            // also throws on an invalid value, keeping dry-run drafts honest
+            return com.accenture.minigraph.skills.GraphSuspend.getValidTtlSeconds(nodeTtl, node.getAlias()) * 1000L;
+        }
+        return getModelTtl(instance);
     }
 
     protected void fillFetcherApiParameters(String nodeName,
@@ -372,6 +401,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             var stateMachine = graphInstance.stateMachine;
             var lhs = substituteVarIfAny(command.substring(0, sep).trim(), stateMachine);
             var rhs = command.substring(sep + MAP_TO.length()).trim();
+            assertMutableModelTarget(nodeName, rhs);
             var target = rhs.startsWith(MODEL_NAMESPACE)? rhs : getFetcherTarget(nodeName, rhs, isArray);
             var value = helper.getLhsOrConstant(lhs, stateMachine);
             if (value != null) {
@@ -426,6 +456,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             var sep = entry.lastIndexOf(MAP_TO);
             var lhs = substituteVarIfAny(entry.substring(0, sep).trim(), stateMachine);
             var rhs = entry.substring(sep+MAP_TO.length()).trim();
+            assertMutableModelTarget(nodeName, rhs);
             var parts = util.split(rhs, ".");
             if (parts.size() < 2 || !parts.getFirst().equals(MODEL)) {
                 throw new IllegalArgumentException(NODE_NAME + nodeName +
@@ -498,6 +529,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
                 throw new IllegalArgumentException("Invalid output data mapping in data dictionary "+nodeName +
                         " - RHS must start with 'model.' or 'output.' namespace");
             }
+            assertMutableModelTarget(nodeName, rhs);
             stateMachine.setElement(rhs, value);
         }
     }
@@ -549,8 +581,28 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         }
     }
 
+    /**
+     * Reject a write target inside engine-managed model metadata. Every runtime path that can
+     * write a {@code model.*} target calls this - data-mapping RHS validation, the fetcher-family
+     * input and output mappings, and for_each expansion - in BOTH walker lanes (executor and
+     * traveler), so dry-run drafts and single-node execution are covered as well as full runs.
+     */
+    protected void assertMutableModelTarget(String nodeName, String rhs) {
+        if (rhs.startsWith(MODEL_NAMESPACE)) {
+            var segments = util.split(rhs, ".[]");
+            if (segments.size() > 1 && RESERVED_MODEL_METADATA.contains(segments.get(1))) {
+                throw new IllegalArgumentException(NODE_NAME + nodeName + " - invalid mapping target ("
+                        + rhs + "), model metadata is immutable");
+            }
+        }
+    }
+
     private void validateRhs(String nodeName, String rhs, MiniGraph graph) {
-        if (rhs.startsWith(OUTPUT_ARRAY) || rhs.startsWith(OUTPUT_NAMESPACE) || rhs.startsWith(MODEL_NAMESPACE)) {
+        if (rhs.startsWith(MODEL_NAMESPACE)) {
+            assertMutableModelTarget(nodeName, rhs);
+            return;
+        }
+        if (rhs.startsWith(OUTPUT_ARRAY) || rhs.startsWith(OUTPUT_NAMESPACE)) {
             return;
         }
         var parts = util.split(rhs, ".[]");

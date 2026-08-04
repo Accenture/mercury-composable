@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>sync-over-async</artifactId>
-    <version>4.11.0</version>
+    <version>4.11.2</version>
     <packaging>jar</packaging>
     <name>Sync-over-async (Redis-assisted Kafka request/reply)</name>
     <description>
@@ -34,7 +34,7 @@
         <httpcore5.version>5.4.3</httpcore5.version>
         <!-- Embedded broker (kafka_2.13) version for tests. Matches the kafka-clients version pinned by
              minimalist-kafka so there is no client/broker protocol skew. -->
-        <kafka.version>4.2.0</kafka.version>
+        <kafka.version>4.3.1</kafka.version>
     </properties>
 
     <dependencyManagement>
@@ -71,7 +71,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minimalist-kafka</artifactId>
-            <version>4.11.0</version>
+            <version>4.11.2</version>
         </dependency>
 
         <!-- Guava's failureaccess companion is required at runtime by Confluent's serdes (Guava
@@ -108,7 +108,7 @@
             <scope>test</scope>
             <exclusions>
                 <exclusion>
-                    <groupId>org.lz4</groupId>
+                    <groupId>at.yawk.lz4</groupId>
                     <artifactId>lz4-java</artifactId>
                 </exclusion>
                 <exclusion>

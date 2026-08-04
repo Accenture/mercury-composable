@@ -12,6 +12,7 @@ keywords: [kafka, flow adapter, minimalist-kafka, consumer, producer, dead lette
   simple.kafka.notification, at-least-once, auto-commit, max-poll-records, traceparent,
   metadata, input.metadata, offset, message key,
   second-level routing, flows, routing rules, serializer, task, ttl, wildcard, first match wins,
+  partitioner, content-based partitioning, SimpleRandomPartitioner, partitioner.class,
   schema registry, confluent, avro, json schema, subject, version, schema.enabled, csfle,
   field level encryption, kms, aws kms, azure key vault, gcp kms,
   oauth2, bearer auth, client credentials, token endpoint, allowed.urls, schema-registry.properties]
@@ -373,8 +374,8 @@ scope: the library guarantees durable capture (when a `dlq-topic` is configured 
 ## Outbound: publishing to Kafka {#outbound}
 
 `simple.kafka.notification` is a composable function that publishes an event to a topic. Send it an
-`EventEnvelope` with a `topic` header (required), an optional `partition` header, a body, and any
-other headers (forwarded as Kafka headers):
+`EventEnvelope` with a `topic` header (required), an optional `partition` header (see
+[partitioning strategies](#partitioning)), a body, and any other headers (forwarded as Kafka headers):
 
 ```java
 po.send(new EventEnvelope().setTo("simple.kafka.notification")
@@ -396,6 +397,59 @@ One header opts a publish into the Confluent wire format instead of raw `byte[]`
 `version`; see [Schema Registry](#schema)). It is an encoding directive — consumed by the function, not
 forwarded as a Kafka header. On this schema path the body contract stays a `byte[]` JSON document —
 the Map/List auto-serialization above does not apply.
+
+### Partitioning strategies {#partitioning}
+
+Three mechanisms decide which partition an outbound message lands on, in precedence order:
+
+1. **Explicit `partition` header** — the caller (usually a flow's data mapping) names the target
+   partition and every partitioner is bypassed. This is the building block for **content-based
+   partitioning** (below).
+2. **A custom partitioner in the producer template** — the externalized `kafka-producer.properties`
+   may set Kafka's standard `partitioner.class`; the library registers its default with
+   `putIfAbsent`, so a template's own value always wins. The Kafka `Partitioner` API receives the
+   record's key and value (payload inspection works — plain JSON bytes on non-schema topics,
+   Confluent-framed bytes on schema topics), but **not the record headers** — header-based
+   partitioning is impossible at this layer, a Kafka API limitation.
+3. **`SimpleRandomPartitioner` — the library default** for unkeyed records: simple random sampling
+   spreads low-volume traffic evenly across partitions (Kafka's own sticky default batches onto one
+   partition, which starves multi-instance consumer groups at low volume). Keyed records keep
+   Kafka's murmur2 hashing.
+
+**Content-based partitioning — the composable pattern.** When the partition must be derived from a
+record header or a payload key-value (a tenant, an entity id), compute it in the flow — where the
+whole record is visible — and pass the explicit `partition` header. A tiny selector function plus
+data mapping, no client plumbing:
+
+```yaml
+tasks:
+  - input:
+      # any header can drive the decision - including ones a Kafka Partitioner could never see
+      - 'input.header.x-routing-value -> header.routing-value'
+      - 'input.body -> *'
+    process: 'partition.selector'          # e.g. hash(routing-value) % partition count
+    output:
+      - 'result.partition -> model.partition'
+      - 'result.payload -> model.payload'
+    description: 'Derive the target partition from the record content'
+    execution: sequential
+    next:
+      - 'simple.kafka.notification'
+
+  - input:
+      - 'text(outgoing-events) -> header.topic'
+      - 'model.partition -> header.partition'   # explicit partition bypasses all partitioners
+      - 'model.payload -> *'
+    process: 'simple.kafka.notification'
+    output: []
+    description: 'Publish to the selected partition'
+    execution: end
+```
+
+A deterministic selector (same value → same partition) gives per-entity ordering — the classic reason
+for content-based placement. This is the outbound mirror of [second-level routing](#routing): content
+inspection expressed in the application layer, where it is legible and governable and can see the
+whole record, rather than buried in client configuration.
 
 ### Trace continuity across Kafka {#tracing}
 

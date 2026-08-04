@@ -38,10 +38,10 @@ class SimpleRandomPartitionerTest {
     private static final String TOPIC = "random-partitioner-test";
     private static final int PARTITIONS = 10;
 
-    private static Cluster cluster(int partitions, boolean withLeaders) {
+    private static Cluster cluster(boolean withLeaders) {
         Node node = new Node(1, "127.0.0.1", 9092);
         List<PartitionInfo> info = new ArrayList<>();
-        for (int i = 0; i < partitions; i++) {
+        for (int i = 0; i < PARTITIONS; i++) {
             // leader == null marks a partition unavailable for the availablePartitionsForTopic view
             info.add(new PartitionInfo(TOPIC, i, withLeaders ? node : null, new Node[]{node}, new Node[]{node}));
         }
@@ -53,7 +53,7 @@ class SimpleRandomPartitionerTest {
     void keylessRecordsSpreadAcrossPartitions() {
         SimpleRandomPartitioner partitioner = new SimpleRandomPartitioner();
         partitioner.configure(Map.of());
-        Cluster cluster = cluster(PARTITIONS, true);
+        Cluster cluster = cluster(true);
         Set<Integer> seen = new HashSet<>();
         for (int i = 0; i < 500; i++) {
             int p = partitioner.partition(TOPIC, null, null, null, new byte[]{1}, cluster);
@@ -69,7 +69,7 @@ class SimpleRandomPartitionerTest {
     @SuppressWarnings("resource")
     void keyedRecordsMapDeterministically() {
         SimpleRandomPartitioner partitioner = new SimpleRandomPartitioner();
-        Cluster cluster = cluster(PARTITIONS, true);
+        Cluster cluster = cluster(true);
         byte[] key = "profile-100".getBytes(StandardCharsets.UTF_8);
         int first = partitioner.partition(TOPIC, "profile-100", key, null, new byte[]{1}, cluster);
         for (int i = 0; i < 20; i++) {
@@ -79,10 +79,9 @@ class SimpleRandomPartitionerTest {
     }
 
     @Test
-    @SuppressWarnings("resource")
     void fallsBackToAllPartitionsWhenNoneAvailable() {
         SimpleRandomPartitioner partitioner = new SimpleRandomPartitioner();
-        Cluster cluster = cluster(PARTITIONS, false);
+        Cluster cluster = cluster(false);
         for (int i = 0; i < 50; i++) {
             int p = partitioner.partition(TOPIC, null, null, null, new byte[]{1}, cluster);
             assertTrue(p >= 0 && p < PARTITIONS, "must fall back to the full partition list");

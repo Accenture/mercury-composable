@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Unit tests for the notification function's body handling - the outbound symmetry of the flow
  * adapter's inbound {@code serializer: 'json'}: a Map or List body auto-serializes to JSON bytes,
- * byte[] passes through verbatim, null stays null (a Kafka tombstone). The publish path itself is
+ * byte[] passes through verbatim, null stays null (a Kafka tombstone). The publishing path itself is
  * proven end-to-end in {@link KafkaFlowAdapterTest}.
  */
 class SimpleKafkaNotificationTest {

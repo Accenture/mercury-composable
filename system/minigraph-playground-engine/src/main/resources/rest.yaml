@@ -81,7 +81,7 @@ rest:
   - service: 'post.companion.command.sync'
     methods: ['POST']
     url: '/api/companion/{id}/sync'
-    timeout: 30s
+    timeout: 40s
     cors: cors_1
     headers: header_1
     tracing: true

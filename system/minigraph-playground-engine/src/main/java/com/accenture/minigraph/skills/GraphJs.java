@@ -20,9 +20,12 @@ package com.accenture.minigraph.skills;
 
 import com.accenture.minigraph.common.GraphLambdaFunction;
 import com.accenture.minigraph.models.GraphInstance;
+import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Value;
 import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.models.SimpleNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,6 +46,7 @@ import reactor.core.publisher.Mono;
 @PreLoad(route = GraphJs.ROUTE, instances=50)
 public class GraphJs extends GraphLambdaFunction {
     public static final String ROUTE = "graph.js";
+    private static final long DEFAULT_SCRIPT_DEADLINE_MS = 5000;
 
     public GraphJs() {
         // suppress JavaScript engine warning
@@ -68,7 +72,7 @@ public class GraphJs extends GraphLambdaFunction {
         if (statements.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'statement' entries");
         }
-        var result = getResult(nodeName, forEach, statements, graphInstance);
+        var result = getResult(nodeName, node, forEach, statements, graphInstance);
         var delay = graphInstance.stateMachine.getElement(nodeName+DOT_DELAY);
         if (delay instanceof Long ms) {
             return Mono.create(sink ->
@@ -78,13 +82,50 @@ public class GraphJs extends GraphLambdaFunction {
         }
     }
 
-    private Object getResult(String nodeName, List<String> forEach, List<String> statements,
-                             GraphInstance graphInstance) {
+    private Object getResult(String nodeName, SimpleNode node, List<String> forEach, List<String> statements,
+                             GraphInstance graphInstance) throws AppException {
+        // GraalVM supports cross-thread cancellation, so a script cannot pin this kernel
+        // thread forever: arm a one-shot deadline that cancels the context. graph.js is
+        // meant for very simple computation or IF-THEN-ELSE - never more than a couple
+        // of seconds - so the default is a tight 5s rather than the (typically much
+        // longer) propagated model.ttl; a node ttl overrides it. The context is
+        // per-execution, so the cancellation has no blast radius beyond this node's run.
+        //
+        // Two deliberate choices: (1) close(true) - a STICKY cancellation - not
+        // interrupt(), which is non-destructive and only affects an eval in flight: a
+        // node execution is many evals with host-code gaps between them, and a deadline
+        // landing in a gap would be silently consumed, leaving later evals unbounded;
+        // after close(true), any in-flight or subsequent eval throws isCancelled().
+        // (2) the close runs on a virtual thread, never the Vert.x event loop - it
+        // blocks until the guest reaches a cancellation safepoint.
+        var nodeTtl = node.getProperty(TTL);
+        var deadline = nodeTtl != null
+                ? GraphSuspend.getValidTtlSeconds(nodeTtl, nodeName) * 1000L
+                : DEFAULT_SCRIPT_DEADLINE_MS;
         try (Context context = Context.create(JS)) {
-            var result = executeNode(context, nodeName, graphInstance, forEach, statements);
-            // save the decision so it can be reported in unit test or used in another evaluation node
-            graphInstance.stateMachine.setElement(nodeName+DOT_DECISION, result);
-            return result;
+            var vertx = Platform.getInstance().getVertx();
+            var watchdog = vertx.setTimer(deadline, t ->
+                Thread.ofVirtual().name("graph.js.deadline." + nodeName).start(() -> {
+                    try {
+                        context.close(true);
+                    } catch (RuntimeException e) {
+                        // racing a normal completion's close - nothing to cancel
+                    }
+                }));
+            try {
+                var result = executeNode(context, nodeName, graphInstance, forEach, statements);
+                // save the decision so it can be reported in unit test or used in another evaluation node
+                graphInstance.stateMachine.setElement(nodeName+DOT_DECISION, result);
+                return result;
+            } catch (PolyglotException e) {
+                if (e.isInterrupted() || e.isCancelled()) {
+                    throw new AppException(408, NODE_NAME + nodeName +
+                            " - script exceeded the " + deadline + " ms execution deadline");
+                }
+                throw e;
+            } finally {
+                vertx.cancelTimer(watchdog);
+            }
         }
     }
 

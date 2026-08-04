@@ -58,6 +58,7 @@ public class CompileFlows implements EntryPoint {
     private static final String SOURCE = "source";
     private static final String DECISION = "decision";
     private static final String DELAY = "delay";
+    private static final String TTL = "ttl";
     private static final String EXCEPTION = "exception";
     private static final String LOOP = "loop";
     private static final String FLOW_PROTOCOL = "flow://";
@@ -69,16 +70,16 @@ public class CompileFlows implements EntryPoint {
      * Reserved state-machine keys that a data mapping must never overwrite:
      * <ul>
      * <li>the READ-only metadata seeded into each flow instance by the engine (see FlowInstance) -
-     *     model.cid, model.instance, model.flow, model.ttl and model.trace. A corrupted model.cid,
+     *     'model.cid', 'model.instance', 'model.flow', 'model.ttl' and 'model.trace'. A corrupted model.cid,
      *     for example, would propagate to downstream systems through any later
      *     'model.cid -> ...' mapping.</li>
-     * <li>the model.none null constant - it works because the 'none' key is never set, so a write
+     * <li>the 'model.none' null constant - it works because the 'none' key is never set, so a write operation
      *     would silently turn every later 'model.none -> X' clear-operation into a value copy.</li>
-     * <li>the model.run flag - engine-managed flow metadata written only by the knowledge
-     *     graph's graph.resume skill ('resume' | 'fresh'); application logic reads it to react
+     * <li>the 'model.run' flag - engine-managed flow metadata written only by the knowledge
+     *     graph's 'graph.resume' skill ('resume' | 'fresh'); application logic reads it to react
      *     to a resumed-vs-fresh condition, so an overwrite would lie to that logic.</li>
      * </ul>
-     * The model.parent and model.root keys are protected as whole namespaces by
+     * The 'model.parent' and 'model.root' keys are protected as whole namespaces by
      * DataMappingHelper.validModel; writing beneath them (model.parent.*) is the shared-state
      * mechanism and stays allowed.
      */
@@ -214,6 +215,7 @@ public class CompileFlows implements EntryPoint {
             var md = getConfigMetadata(reader, i);
             Task task = new Task(md.uniqueTaskName, md.functionRoute, md.execution);
             validateDelayParameter(md, entry, task);
+            validateTtlParameter(md, entry, task);
             if (md.taskException instanceof String te) {
                 task.setExceptionTask(te);
             }
@@ -335,7 +337,7 @@ public class CompileFlows implements EntryPoint {
 
     /**
      * Detect a data mapping target (RHS) that would overwrite a reserved key of the flow
-     * instance's state machine (the READ-only metadata or the model.none null constant).
+     * instance's state machine (the READ-only metadata or the 'model.none' null constant).
      * Exact matches are rejected for all reserved keys; nested writes (e.g. {@code model.cid.x}
      * or {@code model.cid[0]}) are also rejected for the scalar keys because they would replace
      * the scalar with a map or list. Nested writes under {@code model.parent} / {@code model.root}
@@ -615,6 +617,42 @@ public class CompileFlows implements EntryPoint {
         }
     }
 
+    /**
+     * Parse and validate the optional per-task 'ttl' - the deadline OVERRIDE for a sub-flow task.
+     * With default TTL propagation, parent and child carry the same value and the parent's timer
+     * always fires first, so a sub-flow timeout is never catchable. A shorter child deadline lets
+     * the sub-flow time out FIRST, and this flow's task-level or flow-level exception handler can
+     * then catch the 408 and retry within the remaining budget.
+     * <p>
+     * Only meaningful on a sub-flow (flow://) task - a regular function task has no per-task
+     * watchdog, so the key is rejected there rather than silently ignored. The value uses the
+     * flow.ttl duration syntax (e.g. 8s, 2m) and must be less than this flow's own ttl.
+     */
+    private void validateTtlParameter(FlowConfigMetadata md, Flow entry, Task task) {
+        if (md.ttl != null && !md.ttl.isEmpty()) {
+            if (!task.getFunctionRoute().startsWith(FLOW_PROTOCOL)) {
+                throw new IllegalArgumentException(String.format(
+                        "%s %s. ttl is only applicable to a sub-flow task", INVALID_TASK, md.uniqueTaskName));
+            }
+            long ttlMs = getValidTtlSeconds(md) * 1000L;
+            if (ttlMs < entry.ttl) {
+                task.setTtl(ttlMs);
+            } else {
+                throw new IllegalArgumentException(String.format("%s %s. ttl must be less than flow.ttl",
+                        INVALID_TASK, md.uniqueTaskName));
+            }
+        }
+    }
+
+    private int getValidTtlSeconds(FlowConfigMetadata md) {
+        int seconds = Utility.getInstance().getDurationInSeconds(md.ttl);
+        if (seconds < 1) {
+            throw new IllegalArgumentException(String.format(
+                    "%s %s. ttl must be a positive duration (e.g. 8s)", INVALID_TASK, md.uniqueTaskName));
+        }
+        return seconds;
+    }
+
     private void setDelayFromModelVar(FlowConfigMetadata md, Task task) {
         var util = Utility.getInstance();
         List<String> dParts = util.split(md.delay, ".");
@@ -857,6 +895,7 @@ public class CompileFlows implements EntryPoint {
         Object loopCondition;
         String uniqueTaskName;
         String source;
+        String ttl;
 
         FlowConfigMetadata(ConfigReader reader, int i) {
             Object vInput = reader.get(TASKS+"["+i+"]."+INPUT, new ArrayList<>());
@@ -866,6 +905,7 @@ public class CompileFlows implements EntryPoint {
             Object vTaskDesc = reader.get(TASKS+"["+i+"]."+DESCRIPTION);
             Object vExecution = reader.get(TASKS+"["+i+"]."+EXECUTION);
             String vDelay = reader.getProperty(TASKS+"["+i+"]."+DELAY);
+            String vTtl = reader.getProperty(TASKS+"["+i+"]."+TTL);
             Object vTaskException = reader.get(TASKS+"["+i+"]."+EXCEPTION);
             String vLoopStatement = reader.getProperty(TASKS+"["+i+"]."+LOOP+"."+STATEMENT);
             Object vLoopCondition = reader.get(TASKS+"["+i+"]."+LOOP+"."+CONDITION);
@@ -877,6 +917,7 @@ public class CompileFlows implements EntryPoint {
             this.functionRoute = vFunctionRoute;
             this.execution = String.valueOf(vExecution);
             this.delay = vDelay;
+            this.ttl = vTtl;
             if (vTaskException instanceof String e) {
                 this.taskException = e;
             }
