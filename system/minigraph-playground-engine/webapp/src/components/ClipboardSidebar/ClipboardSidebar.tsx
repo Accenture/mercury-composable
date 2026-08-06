@@ -169,7 +169,12 @@ export default function ClipboardSidebar({ connected, onPasteToInput }: Clipboar
               <span className={styles.sortButtonDirection}>
                 {sortDirection === 'ascending' ? 'Asc' : 'Desc'}
               </span>
-              <span className={styles.sortButtonCaret} aria-hidden="true">v</span>
+              <span
+                className={`${styles.sortButtonCaret}${sortMenuOpen ? ` ${styles.sortButtonCaretOpen}` : ''}`}
+                aria-hidden="true"
+              >
+                ▾
+              </span>
             </button>
 
             {sortMenuOpen && (

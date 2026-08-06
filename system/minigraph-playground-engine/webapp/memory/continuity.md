@@ -5,7 +5,7 @@
 - **scope:** MiniGraph Playground React/Vite webapp
 - **root:** `system/minigraph-playground-engine/webapp`
 - **served bundle:** `system/minigraph-playground-engine/src/main/resources/public`
-- **last_session:** 2026-07-29 | agent: GitHub Copilot (2026-07-29-160756)
+- **last_session:** 2026-08-05 | agent: Kiro (Claude Opus 4.8) (2026-08-05-152458)
 
 ## Current Facts
 

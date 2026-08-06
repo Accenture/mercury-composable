@@ -254,11 +254,17 @@ describe('validateConnectionFormState', () => {
     expect(result.errors.targetAlias).toContain('different');
   });
 
-  it('rejects missing and unsupported relations', () => {
+  it('rejects a missing relation but accepts any command-safe free-text relation', () => {
     const missing = validateConnectionFormState(connectionState({ relation: '' }));
-    const unsupported = validateConnectionFormState(connectionState({ relation: 'custom' as ConnectionFormState['relation'] }));
+    const custom = validateConnectionFormState(connectionState({ relation: 'custom' }), { graphData });
     expect(missing.errors.relation).toBeDefined();
-    expect(unsupported.errors.relation).toContain('supported');
+    expect(custom.errors.relation).toBeUndefined();
+    expect(custom.valid).toBe(true);
+  });
+
+  it('rejects a relation with invalid token characters', () => {
+    const result = validateConnectionFormState(connectionState({ relation: 'bad relation' }));
+    expect(result.errors.relation).toContain('letters, numbers');
   });
 
   it('records disconnected state as a command-level validation error', () => {

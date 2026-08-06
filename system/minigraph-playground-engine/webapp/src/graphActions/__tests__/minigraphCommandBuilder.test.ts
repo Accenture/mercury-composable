@@ -163,11 +163,16 @@ describe('buildCreateConnectionCommand', () => {
     }))).toBe('connect root to end with done');
   });
 
-  it('rejects invalid aliases, self-connections, missing relation, and unsupported relation', () => {
+  it('emits a free-text (non-preset) relation verbatim', () => {
+    expect(buildCreateConnectionCommand(connectionState({ relation: 'custom' })))
+      .toBe('connect root to end with custom');
+  });
+
+  it('rejects invalid aliases, self-connections, missing relation, and malformed relation tokens', () => {
     expect(() => buildCreateConnectionCommand(connectionState({ sourceAlias: 'bad.alias' }))).toThrow();
     expect(() => buildCreateConnectionCommand(connectionState({ targetAlias: 'bad\nalias' }))).toThrow();
     expect(() => buildCreateConnectionCommand(connectionState({ targetAlias: 'root' }))).toThrow();
     expect(() => buildCreateConnectionCommand(connectionState({ relation: '' }))).toThrow();
-    expect(() => buildCreateConnectionCommand(connectionState({ relation: 'custom' as ConnectionFormState['relation'] }))).toThrow();
+    expect(() => buildCreateConnectionCommand(connectionState({ relation: 'bad relation' }))).toThrow();
   });
 });

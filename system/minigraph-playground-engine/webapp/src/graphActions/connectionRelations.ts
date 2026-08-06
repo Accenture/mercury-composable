@@ -53,8 +53,6 @@ const EDGE_FALLBACK_COLORS = [
   '#a16207',
 ] as const;
 
-const CONNECTION_RELATION_SET = new Set<string>(CONNECTION_RELATION_OPTIONS);
-
 function hashString(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i++) {
@@ -62,10 +60,6 @@ function hashString(value: string): number {
     hash |= 0;
   }
   return Math.abs(hash);
-}
-
-export function isConnectionRelation(value: string): value is ConnectionRelation {
-  return CONNECTION_RELATION_SET.has(value);
 }
 
 export function getConnectionRelationColor(

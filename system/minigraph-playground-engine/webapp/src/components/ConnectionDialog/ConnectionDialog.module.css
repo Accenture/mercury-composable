@@ -169,19 +169,6 @@ input.input:read-only {
   color: var(--text-secondary);
 }
 
-.relationSelect {
-  appearance: auto;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  cursor: pointer;
-}
-
-.relationSelect:disabled {
-  background: var(--disabled-bg);
-  color: var(--text-secondary);
-  cursor: not-allowed;
-}
-
 .message,
 .warningMessage,
 .errorMessage {

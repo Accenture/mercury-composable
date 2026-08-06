@@ -1,7 +1,6 @@
 import { MAX_BUFFER } from '../config/playgrounds';
 import type { MinigraphGraphData } from '../utils/graphTypes';
 import type { ConnectionFormState, ConnectionFormValidationErrors } from './connectionAuthoringTypes';
-import { isConnectionRelation } from './connectionRelations';
 import type { NodeFormState, NodeFormValidationErrors } from './nodeAuthoringTypes';
 
 // Keep this token rule aligned with GraphProperties.validateName on the backend.
@@ -178,8 +177,6 @@ export function validateConnectionFormState(
     errors.relation = 'Relation is required.';
   } else if (!NODE_NAME_RE.test(relation)) {
     errors.relation = 'Use only letters, numbers, underscore, and hyphen.';
-  } else if (!isConnectionRelation(relation)) {
-    errors.relation = 'Choose a supported relation.';
   }
 
   return { valid: Object.keys(errors).length === 0, errors };

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { ConnectionFormState } from '../../graphActions/connectionAuthoringTypes';
-import { CONNECTION_RELATION_OPTIONS, type ConnectionRelation } from '../../graphActions/connectionRelations';
 import CloseIcon from '../../icons/CloseIcon.svg?react';
 import styles from './ConnectionDialog.module.css';
 
@@ -27,7 +26,7 @@ export default function ConnectionDialog({
   onSubmit,
   onClose,
 }: ConnectionDialogProps) {
-  const relationRef = useRef<HTMLSelectElement>(null);
+  const relationRef = useRef<HTMLInputElement>(null);
   const sending = phase === 'sending';
   const disconnected = lockReason === 'disconnected';
   const controlsDisabled = sending || disconnected;
@@ -68,7 +67,7 @@ export default function ConnectionDialog({
     onSubmit();
   }, [controlsDisabled, onSubmit]);
 
-  const updateRelation = useCallback((relation: ConnectionRelation) => {
+  const updateRelation = useCallback((relation: string) => {
     onFormStateChange({ ...formState, relation });
   }, [formState, onFormStateChange]);
 
@@ -153,21 +152,20 @@ export default function ConnectionDialog({
 
             <label className={styles.field}>
               <span className={styles.label}>Relation</span>
-              <select
+              <input
                 ref={relationRef}
-                className={`${styles.input} ${styles.relationSelect}`}
+                className={styles.input}
+                type="text"
                 value={formState.relation}
+                placeholder="e.g. fetch"
                 disabled={controlsDisabled}
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
                 aria-invalid={Boolean(validationErrors.relation)}
                 aria-describedby={validationErrors.relation ? 'connection-relation-error' : undefined}
-                onChange={(event) => updateRelation(event.target.value as ConnectionRelation)}
-              >
-                {CONNECTION_RELATION_OPTIONS.map((relation) => (
-                  <option key={relation} value={relation}>
-                    {relation}
-                  </option>
-                ))}
-              </select>
+                onChange={(event) => updateRelation(event.target.value)}
+              />
               {validationErrors.relation && (
                 <span id="connection-relation-error" className={styles.errorText}>{validationErrors.relation}</span>
               )}

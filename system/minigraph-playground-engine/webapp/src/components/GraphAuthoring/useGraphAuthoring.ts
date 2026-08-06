@@ -18,7 +18,6 @@ import {
   buildUpdateNodeCommand,
 } from '../../graphActions/minigraphCommandBuilder';
 import type { ConnectionFormState } from '../../graphActions/connectionAuthoringTypes';
-import { CONNECTION_RELATION_OPTIONS } from '../../graphActions/connectionRelations';
 import type {
   NodeAction,
   NodeFormState,
@@ -395,13 +394,17 @@ export function useGraphAuthoring({
     const formState: ConnectionFormState = {
       sourceAlias,
       targetAlias,
-      relation: CONNECTION_RELATION_OPTIONS[0],
+      // Start empty so the dialog shows only the placeholder; the user types
+      // the relation. The open-guard below ignores the resulting
+      // "relation required" error since the relation is user-entered.
+      relation: '',
     };
     const validation = validateConnectionFormState(formState, {
       graphData: graphDataRef.current,
       connected,
     });
-    if (!validation.valid) return;
+    const { relation: _relationError, ...blockingErrors } = validation.errors;
+    if (Object.keys(blockingErrors).length > 0) return;
 
     setValidationErrors({});
     setAuthoringState({
