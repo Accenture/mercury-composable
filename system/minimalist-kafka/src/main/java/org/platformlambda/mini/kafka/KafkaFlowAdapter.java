@@ -594,7 +594,7 @@ public class KafkaFlowAdapter implements AutoCloseable {
         try {
             long perRecordMs = Math.addExact(
                     Math.multiplyExact(retryPolicy.maxRetries() + 1L, maxTargetTtlMs(binding)),
-                    Math.multiplyExact((long) retryPolicy.maxRetries(), retryPolicy.backoffMs()));
+                    Math.multiplyExact(retryPolicy.maxRetries(), retryPolicy.backoffMs()));
             envelopeMs = Math.addExact(Math.multiplyExact(perRecordMs, maxPollRecords),
                     POLL_INTERVAL_HEADROOM_MS);
         } catch (ArithmeticException e) {
@@ -618,10 +618,11 @@ public class KafkaFlowAdapter implements AutoCloseable {
     private static void warnWhenEnvelopeExceedsExplicitInterval(KafkaConsumerBinding binding,
                                                                 String explicit, long envelopeMs) {
         try {
-            if (envelopeMs > Long.parseLong(explicit.trim())) {
+            String configured = explicit.trim();
+            if (envelopeMs > Long.parseLong(configured)) {
                 log.warn("Binding '{}' sets max.poll.interval.ms={} but its worst-case retry envelope "
                         + "is {} ms - a slow-failing message may get this consumer evicted from the "
-                        + "group mid-processing", binding.topicOrPattern(), explicit.trim(), envelopeMs);
+                        + "group mid-processing", binding.topicOrPattern(), configured, envelopeMs);
             }
         } catch (NumberFormatException e) {
             // a malformed template value is the Kafka client's to reject with its own config error
