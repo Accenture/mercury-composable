@@ -224,39 +224,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
             subscribeOrAssign(consumer);
             int consecutiveFailures = 0;
             while (running) {
-                try {
-                    ConsumerRecords<String, byte[]> records = consumer.poll(POLL_TIMEOUT);
-                    for (ConsumerRecord<String, byte[]> consumerRecord : records) {
-                        if (routeToFlow(consumerRecord) && !binding.autoCommit()) {
-                            commit(consumerRecord);   // commit only after the flow finished -> at-least-once
-                        }
-                    }
-                    consecutiveFailures = 0;
-                } catch (WakeupException e) {
-                    throw e;   // close() breaking the poll - handled below, not a failure
-                } catch (CommitFailedException | RebalanceInProgressException e) {
-                    // Routine after a group rebalance: the partitions were revoked while a record was in
-                    // flight, so its offset cannot be committed. The uncommitted records redeliver to
-                    // whichever consumer now owns the partitions (at-least-once holds; flows are required
-                    // to be idempotent) and the next poll() rejoins the group.
-                    log.warn("Offset commit for {} failed after a rebalance; records will redeliver - {}",
-                            binding.topicOrPattern(), e.getMessage());
-                } catch (RetriableException e) {
-                    log.warn("Transient Kafka error on {}; retrying - {}",
-                            binding.topicOrPattern(), e.getMessage());
-                } catch (RuntimeException e) {
-                    // Unforeseen failure: stay alive (the alternative is a binding that is dead until the
-                    // pod restarts) but pause with escalating backoff so a persistent error cannot hot-loop.
-                    consecutiveFailures++;
-                    long pause = Math.min(MAX_FAILURE_BACKOFF_MS,
-                            INITIAL_FAILURE_BACKOFF_MS << Math.min(consecutiveFailures - 1, 5));
-                    log.error("Kafka flow consumer for {} caught an unexpected error (failure #{}); "
-                            + "pausing {} ms before it continues",
-                            binding.topicOrPattern(), consecutiveFailures, pause, e);
-                    if (!pause(pause)) {
-                        break;   // interrupted during shutdown
-                    }
-                }
+                consecutiveFailures = pollOnce(consecutiveFailures);
             }
         } catch (WakeupException e) {
             // expected: close() called wakeup() to break the poll
@@ -268,15 +236,59 @@ public class KafkaFlowConsumer implements AutoCloseable {
         }
     }
 
-    /** Pause after an unexpected poll-loop failure. @return false if interrupted (shutting down). */
-    private boolean pause(long ms) {
+    /**
+     * One guarded poll iteration: poll, dispatch, commit - surviving the consumer exceptions that
+     * routinely follow a group rebalance, so the binding stays alive. Only {@link WakeupException}
+     * (shutdown) escapes to the caller.
+     *
+     * @param consecutiveFailures the current unexpected-failure streak
+     * @return the streak for backoff pacing: 0 after a clean iteration, unchanged on a known
+     *         transient, incremented after an unexpected error (which also pauses with backoff)
+     */
+    private int pollOnce(int consecutiveFailures) {
         try {
-            TimeUnit.MILLISECONDS.sleep(ms);
-            return true;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            ConsumerRecords<String, byte[]> records = consumer.poll(POLL_TIMEOUT);
+            for (ConsumerRecord<String, byte[]> consumerRecord : records) {
+                if (routeToFlow(consumerRecord) && !binding.autoCommit()) {
+                    commit(consumerRecord);   // commit only after the flow finished -> at-least-once
+                }
+            }
+            return 0;
+        } catch (WakeupException e) {
+            throw e;   // close() breaking the poll - handled by the poll loop, not a failure
+        } catch (CommitFailedException | RebalanceInProgressException e) {
+            // Routine after a group rebalance: the partitions were revoked while a record was in
+            // flight, so its offset cannot be committed. The uncommitted records redeliver to
+            // whichever consumer now owns the partitions (at-least-once holds; flows are required
+            // to be idempotent) and the next poll() rejoins the group.
+            log.warn("Offset commit for {} failed after a rebalance; records will redeliver - {}",
+                    binding.topicOrPattern(), e.getMessage());
+            return consecutiveFailures;
+        } catch (RetriableException e) {
+            log.warn("Transient Kafka error on {}; retrying - {}",
+                    binding.topicOrPattern(), e.getMessage());
+            return consecutiveFailures;
+        } catch (RuntimeException e) {
+            // Unforeseen failure: stay alive (the alternative is a binding that is dead until the
+            // pod restarts) but pause with escalating backoff so a persistent error cannot hot-loop.
+            // An interrupted pause sets running=false, so the poll loop exits on its next check.
+            int failures = consecutiveFailures + 1;
+            long pause = Math.min(MAX_FAILURE_BACKOFF_MS,
+                    INITIAL_FAILURE_BACKOFF_MS << Math.min(failures - 1, 5));
+            log.error("Kafka flow consumer for {} caught an unexpected error (failure #{}); "
+                    + "pausing {} ms before it continues",
+                    binding.topicOrPattern(), failures, pause, e);
+            pause(pause);
+            return failures;
+        }
+    }
+
+    /** Pause after an unexpected poll-loop failure; an interruption stops the loop via running=false. */
+    private void pause(long ms) {
+        Utility.getInstance().sleep(ms);
+        // Utility.sleep restores the interrupt flag instead of throwing - honor a shutdown interrupt
+        if (Thread.currentThread().isInterrupted()) {
             running = false;
-            return false;
         }
     }
 
@@ -523,14 +535,13 @@ public class KafkaFlowConsumer implements AutoCloseable {
         if (retryPolicy.backoffMs() <= 0) {
             return true;
         }
-        try {
-            TimeUnit.MILLISECONDS.sleep(retryPolicy.backoffMs());
-            return true;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        Utility.getInstance().sleep(retryPolicy.backoffMs());
+        // Utility.sleep restores the interrupt flag instead of throwing - honor a shutdown interrupt
+        if (Thread.currentThread().isInterrupted()) {
             running = false;
             return false;
         }
+        return true;
     }
 
     /**
