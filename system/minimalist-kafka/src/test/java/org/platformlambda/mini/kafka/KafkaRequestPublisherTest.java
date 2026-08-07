@@ -20,12 +20,17 @@ package org.platformlambda.mini.kafka;
 
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.Cluster;
+import org.apache.kafka.common.Node;
+import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -78,6 +83,26 @@ class KafkaRequestPublisherTest {
         producer.errorNext(new RuntimeException("broker down"));
         Exception ex = assertThrows(Exception.class, publish::block);
         assertTrue(ex.getMessage().contains("broker down"));
+    }
+
+    @Test
+    void partitionsExposeTopicMetadataForBoundChecks() {
+        Node broker = new Node(0, "127.0.0.1", 9092);
+        Node[] replicas = {broker};
+        List<PartitionInfo> orders = List.of(
+                new PartitionInfo("orders", 0, broker, replicas, replicas),
+                new PartitionInfo("orders", 1, broker, replicas, replicas),
+                new PartitionInfo("orders", 2, broker, replicas, replicas));
+        Cluster cluster = new Cluster("mock-cluster", List.of(broker), orders, Set.of(), Set.of());
+        MockProducer<String, byte[]> producer =
+                new MockProducer<>(cluster, true, null, new StringSerializer(), new ByteArraySerializer());
+        try (KafkaRequestPublisher publisher = new KafkaRequestPublisher(producer)) {
+            List<PartitionInfo> partitions = publisher.partitions("orders");
+            // partition ids are contiguous 0..size-1, so size() bounds an encoded partition number
+            assertEquals(3, partitions.size());
+            assertEquals(List.of(0, 1, 2),
+                    partitions.stream().map(PartitionInfo::partition).sorted().toList());
+        }
     }
 
     @Test

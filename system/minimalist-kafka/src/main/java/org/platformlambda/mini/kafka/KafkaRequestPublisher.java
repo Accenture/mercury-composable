@@ -20,10 +20,12 @@ package org.platformlambda.mini.kafka;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.PartitionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -80,6 +82,31 @@ public class KafkaRequestPublisher implements AutoCloseable {
         });
         return Mono.fromFuture(ack)
                 .doOnError(e -> log.error("Failed to publish to topic {}: {}", topic, e.getMessage()));
+    }
+
+    /**
+     * Obtain partition metadata for a topic from the producer's own metadata view - no AdminClient
+     * involved. The first call for a topic not yet in the client's metadata cache blocks up to
+     * {@code max.block.ms} fetching it; subsequent calls are served from the cache, which the client
+     * refreshes in the background (every {@code metadata.max.age.ms}).
+     *
+     * <p>Partition ids are contiguous {@code 0..size-1}, so the returned list's size bounds an
+     * application-supplied partition number - e.g. a routing function validating an encoded partition
+     * header before publishing with an explicit partition. Validating up front matters: an
+     * out-of-range explicit partition does not fail fast on send - the producer blocks up to
+     * {@code max.block.ms} waiting for that partition to appear in metadata, then errors. A stale
+     * cache is conservative for this check, because a partition count only ever grows.</p>
+     *
+     * <p>Cautions: throws Kafka's unchecked {@link org.apache.kafka.common.errors.TimeoutException}
+     * when metadata cannot be obtained within {@code max.block.ms} (e.g. the topic does not exist and
+     * auto-creation is off); and on brokers with {@code auto.create.topics.enable=true}, requesting
+     * metadata for a nonexistent topic may <b>create</b> it - mind topic-name typos in routing code.</p>
+     *
+     * @param topic name
+     * @return partition metadata for the topic
+     */
+    public List<PartitionInfo> partitions(String topic) {
+        return producer.partitionsFor(topic);
     }
 
     /**
