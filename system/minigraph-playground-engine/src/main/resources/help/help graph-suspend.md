@@ -19,6 +19,13 @@ its join; suspend after the join instead. Anything a later step needs must be ma
 the "model" namespace before the suspension point, because a node's transient "result"
 properties do not survive suspension - the model is the workflow's durable memory.
 
+A suspensible node is a complete working node - it executes its skill in full (input
+mapping, skill, output mapping) before routing to the suspend node, so it may carry any
+non-routing skill (graph.data.mapper, graph.task, graph.api.fetcher, graph.extension),
+capture the actor's input into the model, and stage the caller's reply in output.* -
+only its exit changes. Its non-checkpoint edge defines where the next run continues
+after resume.
+
 A suspensible node suspends unconditionally - it cannot evaluate the actor's input and
 choose not to suspend. When the input decides the workflow's direction (e.g. approve vs
 reject), place a routing node (graph.math) on the resume continuation BEFORE the next

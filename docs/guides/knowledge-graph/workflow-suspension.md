@@ -239,6 +239,13 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
 - **The model is the workflow's durable memory.** Only the `model` namespace persists —
   a node's `{node}.result` scratch does not survive suspension. Map anything a later step
   needs into `model.*` **before** the checkpoint.
+- **A suspensible node is a complete working node — only its exit changes.** It executes
+  its skill in full (input mapping → skill → output mapping) before routing to the
+  `suspend` node, so it may carry any non-routing skill (`graph.data.mapper`,
+  `graph.task`, `graph.api.fetcher`, `graph.extension`), capture the actor's input into
+  `model.*`, and stage the caller's reply in `output.*` — and its non-checkpoint edge
+  defines exactly where the next run continues after resume. What it never does is
+  choose: it cannot route, and it cannot decline to suspend.
 - **Decide before you suspend.** A suspensible node always suspends — when its skill
   completes, traversal routes to the `suspend` node unconditionally; it cannot inspect
   the input and opt out. Place a routing node (e.g. `graph.math`) on the resume

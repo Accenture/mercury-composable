@@ -84,7 +84,10 @@ ELSE: order
 
 Create the three checkpoint nodes. Each captures its actor's input into the model, stages a
 stage-specific reply for the caller (overriding the default suspended response), and carries
-"suspend=true" so traversal routes to the suspend node when it completes:
+"suspend=true" so traversal routes to the suspend node when it completes. A suspensible node
+is a complete working node - it executes its skill in full and may carry any non-routing
+skill (graph.data.mapper here; graph.task, graph.api.fetcher and graph.extension work the
+same way) - only its exit changes:
 
 ```
 create node order
