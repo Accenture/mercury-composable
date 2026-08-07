@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-03 | agent: Claude Code (2026-08-03-170504)
+- **last_session:** 2026-08-07 | agent: Claude Code (2026-08-07-003746)
 - **last_review:** 2026-07-31 | through 2026-07-31-001057.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -290,6 +290,41 @@
   <!-- id: bp-graph-workflow-suspension | created: 2026-07-28 | last_used: 2026-07-30 | uses: 5 | tier: active | origin: 2026-07-29-003528 -->
 
 ## Open Threads
+
+- [ ] (field support — Sonar rescan of the 4.11.x line FAILED the field gate 2026-08-06:
+  15 new issues + new-code coverage 79.4% vs 80; **all 13 code findings FIXED 2026-08-07**
+  on branch `fix/sonar-field-round-3`, commit `15dd4d45`, rebased on main — awaiting
+  Eric's PR gate, then the field rescan) **Third field Sonar remediation round.**
+  3× S3776 helper extractions (GraphTraveler.handleSkillResponse → handleSkillSuccess +
+  early-return late-reply guard; PlaygroundLoader → loadFeature; WorkerHandler →
+  registerLogContext, same-thread synchronous so trace/log-context thread-keying is
+  unchanged); 2× S1192 constants (kafka-demo catch-all); 5× S125 trailing-semicolon prose
+  rewords; S5778 lambda single-invocation; S6213 `record` rename; S2925 replaced by a
+  deterministic expiry rewrite on the stored record (Eric first hinted Utility.sleep,
+  then preferred the deterministic version); S5961 27-assertion test split. Verified:
+  kafka-demo 8/8, minigraph 99/99, platform-core 425 green. Coverage condition: ~6 lines
+  short on 971 new — the resilience round's 8 tests + this round's split ride the next
+  drop; if the rescan still fails, target the field's uncovered-lines view directly.
+  Relates [[thread-sonar-4-10-4-field-rejection]] (same arc shape).
+  <!-- id: thread-sonar-4-11-x-field-round-3 | created: 2026-08-07 | last_used: 2026-08-07 | uses: 1 | tier: working | origin: 2026-08-07-003746 -->
+
+- [x] (field support — reported 2026-08-06 by a field member's code review; all three
+  findings CONFIRMED and FIXED 2026-08-07; **MERGED as
+  [PR #255](https://github.com/Accenture/mercury-composable/pull/255), squash `25d4f19c`,
+  CI green (Build & Unit Tests 7m42s)**) **KafkaFlowConsumer poll-loop resilience.**
+  F4 (fixed): the poll loop had no per-iteration guard — a routine post-rebalance
+  CommitFailedException killed the binding until pod restart; now known transients WARN +
+  continue (redelivery preserves at-least-once), unexpected exceptions pause with
+  escalating backoff (1s→30s) — loud but alive. F5 (fixed; worse than reported — the
+  retry envelope multiplies occupancy, so a 75s flow ttl breaches the 300s default on a
+  failing message): the adapter now derives `max.poll.interval.ms` per binding from
+  (maxRetries+1)×slowest-target-ttl + retries×backoff, ×max.poll.records + headroom
+  (floor = Kafka default; explicit template value respected + WARN). Schema observation
+  (fixed): json.fail.invalid.schema now pinned by negative tests on both serde sides via
+  the `schema.registry.serde.*` pass-through. 171/171 module tests, JaCoCo gate met; new
+  "Consumer liveness" guide section; CHANGELOG Unreleased. Repo wording generic.
+  Remaining: Eric's PR gate; no Rust lock-step (module is Java-only by design).
+  <!-- id: thread-kafka-consumer-resilience | created: 2026-08-07 | last_used: 2026-08-07 | uses: 1 | tier: working | origin: 2026-08-07-003746 -->
 
 - [x] (feature — **COMPLETE ON BOTH ENGINES: Rust half shipped 2026-08-01 in
   mercury PR #191 + release PR #192, tag v4.11.1 — see session 2026-08-02-013842;
