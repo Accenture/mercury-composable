@@ -94,8 +94,8 @@ public class GraphJs extends GraphLambdaFunction {
         // Two deliberate choices: (1) close(true) - a STICKY cancellation - not
         // interrupt(), which is non-destructive and only affects an eval in flight: a
         // node execution is many evals with host-code gaps between them, and a deadline
-        // landing in a gap would be silently consumed, leaving later evals unbounded;
-        // after close(true), any in-flight or subsequent eval throws isCancelled().
+        // landing in a gap would be silently consumed and leave later evals unbounded.
+        // After close(true), any in-flight or subsequent eval throws isCancelled().
         // (2) the close runs on a virtual thread, never the Vert.x event loop - it
         // blocks until the guest reaches a cancellation safepoint.
         var nodeTtl = node.getProperty(TTL);

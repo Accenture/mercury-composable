@@ -104,51 +104,67 @@ class CompanionSyncTest {
                     .reduce("", (a, b) -> a + "\n" + b);
             assertTrue(teedText.contains("node root created"),
                     "sync output must be teed to the session's WS .out for the live human view: " + teed);
-
-            // 4) a traversal (`run`) is asynchronous - the handler replies before the
-            //    traveler streams its output. The sync response must carry the WHOLE
-            //    traversal, drained on the traveler's terminal line (emitted last), not a
-            //    raced sentinel that truncates it. Build a runnable graph and run it.
-            syncCommand(po, sid, "create node end");
-            syncCommand(po, sid, """
-                    create node mapper
-                    with type mapper
-                    with properties
-                    skill=graph.data.mapper
-                    mapping[]=input.body.id -> output.body""");
-            syncCommand(po, sid, "connect root to mapper with first");
-            syncCommand(po, sid, "connect mapper to end with second");
-            var instantiated = syncCommand(po, sid, "instantiate graph\ntext(hello world) -> input.body.id");
-            assertEquals(Boolean.TRUE, instantiated.get("ok"), "instantiate -> ok:true: " + instantiated);
-            // the instantiate command is the dry-run's edge: it guarantees a business
-            // correlation ID like the REST edge does, with a reminder when auto-created
-            var initOutput = ((List<?>) instantiated.get("output")).stream().map(String::valueOf).toList();
-            assertTrue(initOutput.stream().anyMatch(
-                            l -> l.startsWith("No business correlation ID given - this dry-run created model.cid = ")),
-                    "the dry-run edge must auto-create model.cid with a reminder: " + initOutput);
-            // an explicitly mapped model.cid is honored without the reminder
-            var withCid = syncCommand(po, sid,
-                    "instantiate graph\ntext(hello world) -> input.body.id\ntext(dry-run-77) -> model.cid");
-            assertEquals(Boolean.TRUE, withCid.get("ok"), "instantiate with cid -> ok:true: " + withCid);
-            var withCidOutput = ((List<?>) withCid.get("output")).stream().map(String::valueOf).toList();
-            assertTrue(withCidOutput.stream().noneMatch(l -> l.contains("created model.cid")),
-                    "a supplied model.cid must be honored without the reminder: " + withCidOutput);
-
-            var ran = syncCommand(po, sid, "run");
-            assertEquals(Boolean.TRUE, ran.get("ok"), "sync run -> ok:true: " + ran);
-            var runOutput = ((List<?>) ran.get("output")).stream().map(String::valueOf).toList();
-            assertTrue(runOutput.stream().anyMatch("Walk to root"::equals),
-                    "sync run captures the traversal start: " + runOutput);
-            assertTrue(runOutput.stream().anyMatch(l -> l.startsWith("Executed mapper with skill graph.data.mapper")),
-                    "sync run captures mid-traversal skill execution: " + runOutput);
-            assertTrue(runOutput.stream().anyMatch(l -> l.startsWith("Graph traversal completed in")),
-                    "sync run must capture the traversal terminal (drain waited for it): " + runOutput);
-            assertNotNull(ran.get("result"), "sync run returns the output.body as structured result: " + ran);
-            assertTrue(String.valueOf(ran.get("result")).contains("hello world"),
-                    "structured result carries the run's output.body: " + ran.get("result"));
         } finally {
             platform.release(outRoute);
         }
+    }
+
+    /**
+     * A traversal ({@code run}) is asynchronous - the handler replies before the traveler streams
+     * its output. The sync response must carry the WHOLE traversal, drained on the traveler's
+     * terminal line (emitted last), not a raced sentinel that truncates it - and the dry-run edge
+     * guarantees a business correlation ID exactly like the REST edge does.
+     */
+    @Test
+    void syncRunDrainsWholeTraversalWithStructuredResult() throws Exception {
+        var po = EventEmitter.getInstance();
+        var sid = "ws-990007-2";
+        var inRoute = "ws.990007.2.in";
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", inRoute)));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        assertTrue(GraphCommandService.hasSession(sid), "session must exist before a companion command");
+        // build a runnable graph on this session
+        syncCommand(po, sid, "create node root\nwith type Root");
+        syncCommand(po, sid, "create node end");
+        syncCommand(po, sid, """
+                create node mapper
+                with type mapper
+                with properties
+                skill=graph.data.mapper
+                mapping[]=input.body.id -> output.body""");
+        syncCommand(po, sid, "connect root to mapper with first");
+        syncCommand(po, sid, "connect mapper to end with second");
+        var instantiated = syncCommand(po, sid, "instantiate graph\ntext(hello world) -> input.body.id");
+        assertEquals(Boolean.TRUE, instantiated.get("ok"), "instantiate -> ok:true: " + instantiated);
+        // the instantiate command is the dry-run's edge: it guarantees a business
+        // correlation ID like the REST edge does, with a reminder when auto-created
+        var initOutput = ((List<?>) instantiated.get("output")).stream().map(String::valueOf).toList();
+        assertTrue(initOutput.stream().anyMatch(
+                        l -> l.startsWith("No business correlation ID given - this dry-run created model.cid = ")),
+                "the dry-run edge must auto-create model.cid with a reminder: " + initOutput);
+        // an explicitly mapped model.cid is honored without the reminder
+        var withCid = syncCommand(po, sid,
+                "instantiate graph\ntext(hello world) -> input.body.id\ntext(dry-run-77) -> model.cid");
+        assertEquals(Boolean.TRUE, withCid.get("ok"), "instantiate with cid -> ok:true: " + withCid);
+        var withCidOutput = ((List<?>) withCid.get("output")).stream().map(String::valueOf).toList();
+        assertTrue(withCidOutput.stream().noneMatch(l -> l.contains("created model.cid")),
+                "a supplied model.cid must be honored without the reminder: " + withCidOutput);
+
+        var ran = syncCommand(po, sid, "run");
+        assertEquals(Boolean.TRUE, ran.get("ok"), "sync run -> ok:true: " + ran);
+        var runOutput = ((List<?>) ran.get("output")).stream().map(String::valueOf).toList();
+        assertTrue(runOutput.stream().anyMatch("Walk to root"::equals),
+                "sync run captures the traversal start: " + runOutput);
+        assertTrue(runOutput.stream().anyMatch(l -> l.startsWith("Executed mapper with skill graph.data.mapper")),
+                "sync run captures mid-traversal skill execution: " + runOutput);
+        assertTrue(runOutput.stream().anyMatch(l -> l.startsWith("Graph traversal completed in")),
+                "sync run must capture the traversal terminal (drain waited for it): " + runOutput);
+        assertNotNull(ran.get("result"), "sync run returns the output.body as structured result: " + ran);
+        assertTrue(String.valueOf(ran.get("result")).contains("hello world"),
+                "structured result carries the run's output.body: " + ran.get("result"));
     }
 
     /**

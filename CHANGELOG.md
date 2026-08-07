@@ -38,6 +38,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    that an invalid payload is actually rejected; now pinned on both sides (with a control proving
    the default codec stays non-validating).
 
+4. **Field Sonar rescan findings resolved (13 issues, third field remediation round), all
+   behavior-preserving.** Three methods refactored below the cognitive-complexity threshold via
+   helper extraction (the graph traveler's skill-response handler, the playground feature loader,
+   and platform-core's worker log-context registration — extracted synchronously on the same
+   worker thread, so the thread-keyed trace/log-context semantics are unchanged); the kafka-demo
+   catch-all task's duplicated literals extracted to constants; five prose comments whose
+   trailing semicolons pattern-match as commented-out code reworded; and test hygiene — one
+   assertThrows lambda reduced to a single invocation, a `record` variable renamed off the
+   restricted identifier, a fixed ttl-expiry sleep replaced by a deterministic expiry rewrite on
+   the stored record, and a 27-assertion companion test split into two focused tests.
+
 ---
 ## Version 4.11.2, 8/3/2026
 

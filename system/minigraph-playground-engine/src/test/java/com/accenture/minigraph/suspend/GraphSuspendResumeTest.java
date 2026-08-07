@@ -81,16 +81,16 @@ class GraphSuspendResumeTest {
         // into every skill and task - not the engine's internal callback IDs
         assertEquals(cid, CountingStepTask.getBusinessCid("one", cid));
         // the persisted record has the documented envelope shape and no reserved model keys
-        var record = readStoredRecord(cid);
-        assertEquals("step-1", record.getElement("data.node"));
-        assertEquals(cid, record.getElement("data.cid"));
-        assertEquals(1, record.getElement("data.model.step1_count"));
-        assertNull(record.getElement("data.model.cid"), "reserved model keys must not persist");
-        assertNull(record.getElement("data.model.instance"), "reserved model keys must not persist");
-        assertNull(record.getElement("data.model.flow"), "reserved model keys must not persist");
-        assertNull(record.getElement("data.model.trace"), "reserved model keys must not persist");
-        assertNull(record.getElement("data.model.run"), "the fresh/resume run flag must not persist");
-        assertEquals(true, record.getElement("data.run.step-1"));
+        var stored = readStoredRecord(cid);
+        assertEquals("step-1", stored.getElement("data.node"));
+        assertEquals(cid, stored.getElement("data.cid"));
+        assertEquals(1, stored.getElement("data.model.step1_count"));
+        assertNull(stored.getElement("data.model.cid"), "reserved model keys must not persist");
+        assertNull(stored.getElement("data.model.instance"), "reserved model keys must not persist");
+        assertNull(stored.getElement("data.model.flow"), "reserved model keys must not persist");
+        assertNull(stored.getElement("data.model.trace"), "reserved model keys must not persist");
+        assertNull(stored.getElement("data.model.run"), "the fresh/resume run flag must not persist");
+        assertEquals(true, stored.getElement("data.run.step-1"));
         // run 2 with the same correlation ID: resume continues past the checkpoint
         var second = runGraph("unit-test-suspend-1", cid);
         assertEquals(200, second.getStatus());
@@ -163,13 +163,13 @@ class GraphSuspendResumeTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void expiredRecordFallsBackToFreshRun() throws TimeoutException, InterruptedException {
+    void expiredRecordFallsBackToFreshRun() throws TimeoutException, IOException {
         var cid = Utility.getInstance().getUuid();
         var r1 = runGraph("unit-test-suspend-5", cid);
         assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r1.getBody()).getElement("type"));
         assertEquals(1, CountingStepTask.getCount("expiry", cid));
-        Thread.sleep(1300);
-        // the 1s record has expired: the resume falls back to a fresh run and suspends again
+        expireStoredRecord(cid);
+        // the record's expiry has passed: the resume falls back to a fresh run and suspends again
         var r2 = runGraph("unit-test-suspend-5", cid);
         assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r2.getBody()).getElement("type"));
         assertEquals(2, CountingStepTask.getCount("expiry", cid), "an expired record means a fresh run");
@@ -281,6 +281,19 @@ class GraphSuspendResumeTest {
     private MultiLevelMap readStoredRecord(String cid) throws IOException {
         var wrapper = (Map<String, Object>) new MsgPack().unpack(Files.readAllBytes(storedFile(cid).toPath()));
         return new MultiLevelMap(wrapper);
+    }
+
+    /**
+     * Rewrite the stored record's expiry into the past - a deterministic stand-in for waiting out
+     * the ttl. The store enforces expiry at retrieval time, so an expired stamp behaves exactly
+     * like elapsed wall-clock time, without a sleep in the test.
+     */
+    @SuppressWarnings("unchecked")
+    private void expireStoredRecord(String cid) throws IOException {
+        var file = storedFile(cid);
+        var wrapper = (Map<String, Object>) new MsgPack().unpack(Files.readAllBytes(file.toPath()));
+        wrapper.put("expires_at", System.currentTimeMillis() - 1000);
+        Files.write(file.toPath(), new MsgPack().pack(wrapper));
     }
 
     private File storedFile(String cid) {
