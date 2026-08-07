@@ -111,8 +111,11 @@ stages its own stage-specific reply (overriding the default `suspended` response
 manager's decision lands at a `graph.math` decision node on the `order` checkpoint's
 continuation: an approved decision routes to the next suspension point, anything else
 routes to a terminal rejection that reports the manager's reason — the workflow ends and
-no further checkpoint exists. Run it with Redis (e.g. `helpers/redis-standalone`) and
-drive the four runs with one correlation ID.
+no further checkpoint exists. The decision must sit **before** the suspensible node: a
+suspensible node always suspends when its skill completes — it cannot evaluate the input
+and choose not to — so the routing choice is made first, and only an approved decision
+reaches the checkpoint that suspends for the next actor. Run it with Redis (e.g.
+`helpers/redis-standalone`) and drive the four runs with one correlation ID.
 
 Run 1 — the customer orders a laptop; the run suspends at the `order` checkpoint and
 replies with `"run": "fresh"` (a new transaction):
@@ -236,6 +239,12 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
 - **The model is the workflow's durable memory.** Only the `model` namespace persists —
   a node's `{node}.result` scratch does not survive suspension. Map anything a later step
   needs into `model.*` **before** the checkpoint.
+- **Decide before you suspend.** A suspensible node always suspends — when its skill
+  completes, traversal routes to the `suspend` node unconditionally; it cannot inspect
+  the input and opt out. Place a routing node (e.g. `graph.math`) on the resume
+  continuation, **before** the next suspensible node, to decide whether the workflow
+  continues to that checkpoint, branches, or ends — as tutorial-14's `check-approval`
+  does with the manager's decision.
 - **A suspension point must be the sole active branch.** Do not suspend between a fan-out
   and its join — branches in flight cannot be persisted (the engine logs a warning);
   suspend *after* the join instead. Joins whose predecessors completed before suspension

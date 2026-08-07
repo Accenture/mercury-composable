@@ -125,9 +125,14 @@ mapping[]=model.run -> output.body.run
 mapping[]=model.cid -> output.body.cid
 ```
 
-Create the manager decision. It reuses the same null-safe probe idiom as "check-fresh", so
-a missing decision counts as a rejection instead of a runtime error - an approved decision
-continues to the approval checkpoint, anything else routes to the terminal rejection:
+Create the manager decision. Why a separate decision node? A suspensible node always
+suspends: when its skill completes, traversal routes to the suspend node unconditionally -
+it cannot evaluate the input and choose not to suspend. Any decision must therefore be made
+BEFORE traversal reaches the next suspensible node. That is exactly where check-approval
+sits - on the order checkpoint's continuation - so the manager's input is evaluated first,
+and only an approved decision reaches the approval checkpoint (which then suspends for the
+delivery department). It reuses the same null-safe probe idiom as "check-fresh", so a
+missing decision counts as a rejection instead of a runtime error:
 
 ```
 create node check-approval
