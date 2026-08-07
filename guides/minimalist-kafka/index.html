@@ -1882,6 +1882,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#liveness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consumer liveness: rebalances and the processing deadline
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2901,6 +2912,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#liveness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consumer liveness: rebalances and the processing deadline
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3510,6 +3532,29 @@ persisting the record to a durable store for later replay instead of dropping it
 </blockquote>
 <p><strong>Reprocessing</strong> (read the DLQ topic → fix → replay) is business-domain logic and is intentionally out of
 scope: the library guarantees durable capture (when a <code>dlq-topic</code> is configured and reachable), not replay.</p>
+<h3 id="liveness">Consumer liveness: rebalances and the processing deadline<a class="headerlink" href="#liveness" title="Permanent link">&para;</a></h3>
+<p>Two robustness behaviors keep a binding alive through the realities of consumer-group life:</p>
+<ul>
+<li><strong>The poll loop survives transient consumer exceptions.</strong> A group rebalance (scale-out, pod churn)
+  routinely makes an in-flight offset commit throw <code>CommitFailedException</code> or
+  <code>RebalanceInProgressException</code>. The loop logs a <code>WARN</code> and continues — the uncommitted records simply
+  redeliver to whichever consumer owns the partitions after the rejoin, preserving at-least-once delivery
+  (flows must be idempotent, as always). Kafka's own retriable errors get the same treatment. Any <em>other</em>
+  unexpected exception keeps the binding alive too, with an escalating pause (1s doubling to 30s) and an
+  <code>ERROR</code> per occurrence — loud but alive, instead of a consumer thread that dies silently until the pod
+  restarts.</li>
+<li><strong><code>max.poll.interval.ms</code> is derived from the binding's worst-case processing time.</strong> Message processing
+  happens <em>on the poll thread</em> (the flow's <code>ttl</code> is the deadline), so the worst case between two polls is
+  the full retry envelope — <code>(kafka.flow.max.retries + 1) ×</code> the slowest reachable flow/task <code>ttl</code>
+  <code>+ retries × backoff</code> — times <code>max.poll.records</code>, plus headroom. If that exceeds Kafka's
+  <code>max.poll.interval.ms</code> (default 5 minutes), the group coordinator evicts the consumer mid-processing and
+  the subsequent commit fails. The adapter therefore computes the envelope per binding at startup and
+  raises <code>max.poll.interval.ms</code> to cover it (never lowering it below the Kafka default; the derivation is
+  logged). An explicit <code>max.poll.interval.ms</code> in the consumer template is an operator decision and is
+  respected as-is — with a <code>WARN</code> when the computed envelope exceeds it. Raising the interval is low-risk:
+  a crashed pod is still detected by heartbeats (<code>session.timeout.ms</code>); this setting only bounds time
+  between polls.</li>
+</ul>
 <h2 id="outbound">Outbound: publishing to Kafka<a class="headerlink" href="#outbound" title="Permanent link">&para;</a></h2>
 <p><code>simple.kafka.notification</code> is a composable function that publishes an event to a topic. Send it an
 <code>EventEnvelope</code> with a <code>topic</code> header (required), an optional <code>partition</code> header (see
