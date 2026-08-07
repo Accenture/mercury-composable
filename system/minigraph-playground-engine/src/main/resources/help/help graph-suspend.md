@@ -30,7 +30,11 @@ A suspensible node suspends unconditionally - it cannot evaluate the actor's inp
 choose not to suspend. When the input decides the workflow's direction (e.g. approve vs
 reject), place a routing node (graph.math) on the resume continuation BEFORE the next
 suspensible node, so the decision is made first and only the continuing path reaches the
-checkpoint - see tutorial-14's "check-approval" node for the pattern.
+checkpoint - see tutorial-14's "check-approval" node for the pattern. To keep a workflow
+waiting on invalid input, route the fallback to a suspensible wait node whose continuation
+loops back to the decision - and RESET both loop nodes in the decision's statements before
+its IFs, because the traveler and executor never re-execute a node marked "seen" and the
+seen marks survive suspension (tutorial-14's "await-decision" shows the full loop).
 
 Unless the graph staged its own output before suspension, the skill stages a default
 response body so the caller of the suspended run receives a meaningful reply:

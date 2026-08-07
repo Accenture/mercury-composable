@@ -101,7 +101,8 @@ runs, one correlation ID**:
 
 ```text
 root → resume → order (suspend=true) → check-approval → approval (suspend=true) → delivery (suspend=true) → ship → end
-                                             ↘ manager-reject → end
+                                        ↑        ↘ manager-reject → end
+                                        └─ await-decision (suspend=true)
 ```
 
 A customer orders, the store manager approves **or rejects with a reason**, the delivery
@@ -109,13 +110,16 @@ department releases the shipment, and the parcel ships — one `suspend` node se
 checkpoint, and each suspensible node captures its actor's input into the model and
 stages its own stage-specific reply (overriding the default `suspended` response). The
 manager's decision lands at a `graph.math` decision node on the `order` checkpoint's
-continuation: an approved decision routes to the next suspension point, anything else
-routes to a terminal rejection that reports the manager's reason — the workflow ends and
-no further checkpoint exists. The decision must sit **before** the suspensible node: a
-suspensible node always suspends when its skill completes — it cannot evaluate the input
-and choose not to — so the routing choice is made first, and only an approved decision
-reaches the checkpoint that suspends for the next actor. Run it with Redis (e.g.
-`helpers/redis-standalone`) and drive the four runs with one correlation ID.
+continuation with three outcomes: an approved decision routes to the next suspension
+point, an explicit rejection routes to a terminal node that reports the manager's reason
+(the workflow ends), and anything else — a missing or unrecognized decision — re-suspends
+through `await-decision`, whose continuation loops back to the decision, so an invalid
+request can never end a long-running workflow by accident. The decision must sit
+**before** the suspensible nodes: a suspensible node always suspends when its skill
+completes — it cannot evaluate the input and choose not to — so the routing choice is
+made first, and only an approved decision reaches the checkpoint that suspends for the
+next actor. Run it with Redis (e.g. `helpers/redis-standalone`) and drive the four runs
+with one correlation ID.
 
 Run 1 — the customer orders a laptop; the run suspends at the `order` checkpoint and
 replies with `"run": "fresh"` (a new transaction):
@@ -181,11 +185,11 @@ Every stage's input crossed every suspension — the model accumulated `order`, 
 and `delivery` across four separate runs, and a later checkpoint simply re-persisted the
 grown state under the same correlation ID.
 
-The manager may **reject** instead — the alternative run 2. The `check-approval` decision
-routes anything other than an approved decision to the terminal rejection, which reports
-the manager's reason together with the original order, and the workflow ends — the record
-was already consumed on resume and nothing re-suspends, so a further request under the
-same correlation ID is a fresh 404 rejection:
+The manager may **reject** instead — the alternative run 2. An explicit
+`"decision": "rejected"` routes to the terminal rejection, which reports the manager's
+reason together with the original order, and the workflow ends — the record was already
+consumed on resume and nothing re-suspends, so a further request under the same
+correlation ID is a fresh 404 rejection:
 
 ```bash
 curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
@@ -203,6 +207,14 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
 }
 ```
 
+A **missing or unrecognized decision** takes the third path: the reply is
+`"stage": "awaiting-decision; supply decision approved or rejected for the store manager"`
+and the workflow **re-suspends** — `await-decision`'s continuation loops back to
+`check-approval`, so the next resume re-evaluates the decision and only an explicit
+`approved` or `rejected` moves the workflow forward. This is also what a replay against a
+leftover suspended record now yields — a self-explanatory "still waiting" instead of a
+surprise.
+
 The tutorial also validates its input: a request that is not an order submission, for a
 correlation ID with no suspended record, is **rejected with HTTP 404** — the order must
 come first. Three techniques worth stealing from its model:
@@ -211,8 +223,15 @@ come first. Three techniques worth stealing from its model:
   substitution inside a `text()` constant is null-safe:
   `MAPPING: text(={input.body.item}) -> model.order_probe` always yields a present
   string (`=null` when the field is absent), which an `IF` can compare safely. The
-  `check-approval` decision reuses the same idiom, so a missing decision counts as a
-  rejection rather than a runtime error.
+  `check-approval` decision reuses the same idiom, so a missing decision safely routes to
+  the wait loop rather than raising a runtime error.
+- **A wait loop across suspensions needs `RESET`.** The traveler and executor never
+  re-execute a node they have already seen — and the `seen` marks are part of the
+  persisted state, so they survive suspension. A loop that revisits a decision on every
+  resume must clear its own nodes first: `check-approval`'s
+  `RESET: check-approval await-decision` runs before its `IF` statements (an `IF` that
+  jumps to a node returns immediately), un-marking both loop nodes so the next resumed
+  run can walk them again.
 - **The run flag.** `graph.resume` sets `model.run` to `fresh` or `resume`, and the
   tutorial stages it into every reply (`model.run -> output.body.run`) — so the UI always
   knows whether it is looking at a new transaction or a resumed continuation, and a
