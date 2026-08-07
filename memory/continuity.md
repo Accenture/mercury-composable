@@ -292,9 +292,12 @@
 ## Open Threads
 
 - [ ] (field support — Sonar rescan of the 4.11.x line FAILED the field gate 2026-08-06:
-  15 new issues + new-code coverage 79.4% vs 80; **all 13 code findings FIXED 2026-08-07**
-  on branch `fix/sonar-field-round-3`, commit `15dd4d45`, rebased on main — awaiting
-  Eric's PR gate, then the field rescan) **Third field Sonar remediation round.**
+  15 new issues + new-code coverage 79.4% vs 80; **all 13 code findings FIXED and MERGED
+  2026-08-07 as [PR #256](https://github.com/Accenture/mercury-composable/pull/256),
+  squash `26dfae7c`, CI green — remaining: the field rescan**; the partition-metadata
+  API merged the same day as
+  [PR #257](https://github.com/Accenture/mercury-composable/pull/257), squash `d029d144`,
+  after the keep-both CHANGELOG Unreleased fold) **Third field Sonar remediation round.**
   3× S3776 helper extractions (GraphTraveler.handleSkillResponse → handleSkillSuccess +
   early-return late-reply guard; PlaygroundLoader → loadFeature; WorkerHandler →
   registerLogContext, same-thread synchronous so trace/log-context thread-keying is
