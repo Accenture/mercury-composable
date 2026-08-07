@@ -20,7 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    record was consumed on resume, so a later request under the same correlation ID is a fresh
    404). The decision reuses the tutorial's null-safe probe idiom, so a missing decision counts
    as a rejection rather than a runtime error. Covered by a new embedded-Redis end-to-end test;
-   the tutorial help and the workflow-suspension guide walk both outcomes.
+   the tutorial help and the workflow-suspension guide walk both outcomes. The
+   decide-before-you-suspend rule is now stated everywhere an author learns the grammar — a new
+   design rule in the guide, the tutorial help, the AI grammar (`minigraph-commands.json` and the
+   `graph.suspend` skill help) — and the validator/runtime error for `suspend=true` on a routing
+   skill now explains the why and the fix instead of only the restriction.
 
 ---
 ## Version 4.11.3, 8/6/2026
