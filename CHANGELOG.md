@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
+### Added
+
+1. **`KafkaRequestPublisher.partitions(topic)` — partition metadata for application-side
+   partition routing.** Field requirement: an application deriving an explicit partition from
+   an encoded record header needs the topic's partition count to validate the encoded value
+   (partition ids are contiguous, so `0..size-1` is the valid range). The method exposes the
+   producer's own metadata view — no AdminClient — and is reachable through the shared
+   `KafkaRuntime.publisher()` singleton, complementing the content-based partitioning pattern
+   (selector function → explicit `partition` header). Validating up front matters: an
+   out-of-range explicit partition does not fail fast on send — the producer blocks up to
+   `max.block.ms` before erroring.
+
 ### Fixed
 
 1. **The Kafka flow adapter's consumer thread no longer dies permanently on a transient rebalance
