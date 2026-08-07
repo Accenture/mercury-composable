@@ -41,6 +41,8 @@ import org.platformlambda.mini.kafka.schema.SchemaType;
 
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,6 +113,41 @@ class SchemaCodecTest {
         assertEquals("world", ((Map<?, ?>) decoded).get("hello"));
 
         assertTrue(schemaCached(id), "schema cached in memory by id");
+    }
+
+    @Test
+    void failInvalidSchemaFlagRejectsNonConformingPayloads() throws Exception {
+        // The schema.registry.serde.* pass-through delivers Confluent's json.fail.invalid.schema to
+        // BOTH serializer and deserializer. This codec reads it from the isolated 'schema.strict'
+        // prefix in the test application.properties; a strict schema makes violations detectable.
+        String strictSchema = "{\"type\":\"object\",\"properties\":{\"hello\":{\"type\":\"string\"}},"
+                + "\"required\":[\"hello\"],\"additionalProperties\":false}";
+        int id = codec.client().register("strict-orders-value", new JsonSchema(strictSchema));
+        SchemaCodec strict = SchemaCodec.fromConfig(AppConfigReader.getInstance(),
+                registry.baseUrl(), "schema.strict");
+        SchemaCodec.Encoder strictEncoder = strict.newEncoder();
+        SchemaCodec.Decoder strictDecoder = strict.newDecoder();
+
+        // serializer side: a payload missing the required key is rejected before it is framed...
+        assertThrows(RuntimeException.class,
+                () -> strictEncoder.serialize(TOPIC, SchemaType.JSON, id, Map.of("wrong", "shape")),
+                "an invalid payload must not serialize when json.fail.invalid.schema=true");
+        // ...while a conforming payload passes - proving the rejection above is validation, not setup
+        byte[] conforming = strictEncoder.serialize(TOPIC, SchemaType.JSON, id, Map.of("hello", "world"));
+        assertInstanceOf(Map.class, strictDecoder.decode(TOPIC, conforming));
+
+        // deserializer side: hand-framed bytes carrying a non-conforming document under the strict id
+        byte[] invalid = frame(id, "{\"wrong\":\"shape\"}");
+        assertThrows(RuntimeException.class, () -> strictDecoder.decode(TOPIC, invalid),
+                "an invalid payload must not decode when json.fail.invalid.schema=true");
+        // the default (non-validating) decoder accepts the same bytes - the flag is what rejects
+        assertInstanceOf(Map.class, decoder.decode(TOPIC, invalid));
+    }
+
+    /** Confluent wire format by hand: magic byte 0 + 4-byte big-endian schema id + payload. */
+    private static byte[] frame(int schemaId, String json) {
+        byte[] payload = json.getBytes(StandardCharsets.UTF_8);
+        return ByteBuffer.allocate(5 + payload.length).put((byte) 0).putInt(schemaId).put(payload).array();
     }
 
     @Test

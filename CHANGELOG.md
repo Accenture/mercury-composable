@@ -8,6 +8,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Fixed
+
+1. **The Kafka flow adapter's consumer thread no longer dies permanently on a transient rebalance
+   or commit failure.** From a field code review: the poll loop had no per-iteration guard, so a
+   routine post-rebalance `CommitFailedException`/`RebalanceInProgressException` escaped the loop,
+   was logged once, and the consumer closed — the binding was dead until the pod restarted. The
+   loop now logs known transients (including Kafka's retriable errors) at `WARN` and continues;
+   the uncommitted records redeliver after the group rejoin, preserving at-least-once delivery.
+   Any other unexpected exception keeps the binding alive with an escalating pause (1s doubling
+   to 30s) and an `ERROR` per occurrence — loud but alive.
+
+2. **`max.poll.interval.ms` is derived from each binding's worst-case processing envelope.** Also
+   from the field review: message processing happens on the poll thread (the flow's `ttl` is the
+   deadline) but nothing aligned that with Kafka's `max.poll.interval.ms` (default 5 minutes,
+   never set by the library) — a slow or slow-failing message could exceed the interval through
+   the retry envelope alone, getting the consumer evicted mid-processing and (before fix 1)
+   permanently killing the binding. The adapter now computes
+   `(kafka.flow.max.retries + 1) × slowest reachable flow/task ttl + retries × backoff`, times
+   `max.poll.records` plus headroom, and raises the interval to cover it (never below the Kafka
+   default). An explicit `max.poll.interval.ms` in the consumer template is respected as-is, with
+   a `WARN` when the envelope exceeds it. Documented in the Minimalist Kafka guide's new
+   "Consumer liveness" section.
+
+3. **Negative tests pin `json.fail.invalid.schema`.** The `schema.registry.serde.*` pass-through
+   delivers Confluent's validation flag to both serializer and deserializer, but no test asserted
+   that an invalid payload is actually rejected; now pinned on both sides (with a control proving
+   the default codec stays non-validating).
+
+---
 ## Version 4.11.2, 8/3/2026
 
 Security patch for field deployment quality gates. Java-only — the Maven dependency

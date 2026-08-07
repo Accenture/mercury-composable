@@ -18,6 +18,7 @@
 
 package org.platformlambda.mini.kafka;
 
+import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.MockConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -250,6 +251,59 @@ class KafkaFlowConsumerTest {
 
         assertNull(committed.get(tp), "auto-commit mode must not manually commit - Kafka's own "
                 + "periodic timer owns offset commits, not KafkaFlowConsumer");
+    }
+
+    @Test
+    void pollLoopSurvivesTransientRebalanceExceptions() {
+        MockConsumer<String, byte[]> mock = new MockConsumer<>("earliest");
+        AtomicInteger polls = new AtomicInteger();
+        // poll #1 throws the routine post-rebalance transient; the loop must log-and-continue, so
+        // poll #2 still happens - the old loop died here, leaving the binding dead until pod restart
+        mock.schedulePollTask(() -> {
+            polls.incrementAndGet();
+            mock.setPollException(new CommitFailedException());
+        });
+        mock.schedulePollTask(polls::incrementAndGet);
+        KafkaFlowConsumer consumer =
+                new KafkaFlowConsumer(mock, binding().build(), 1000, new RetryPolicy(0, 0, null), null);
+
+        consumer.start();
+        long deadline = System.currentTimeMillis() + 2000;
+        while (polls.get() < 2 && System.currentTimeMillis() < deadline) {
+            Utility.getInstance().sleep(10);
+        }
+        int reached = polls.get();
+        consumer.close();
+
+        assertTrue(reached >= 2, "the poll loop must survive a transient rebalance/commit exception");
+        assertTrue(mock.closed(), "close() still shuts the consumer down cleanly");
+    }
+
+    @Test
+    void pollLoopSurvivesUnexpectedErrorsWithBackoff() {
+        MockConsumer<String, byte[]> mock = new MockConsumer<>("earliest");
+        AtomicInteger polls = new AtomicInteger();
+        // an exception OUTSIDE the known-transient set (a bare KafkaException is neither
+        // CommitFailed/RebalanceInProgress nor Retriable) keeps the binding alive too, after the
+        // escalating pause (1s for the first failure) instead of hot-looping or dying
+        mock.schedulePollTask(() -> {
+            polls.incrementAndGet();
+            mock.setPollException(new org.apache.kafka.common.KafkaException("boom"));
+        });
+        mock.schedulePollTask(polls::incrementAndGet);
+        KafkaFlowConsumer consumer =
+                new KafkaFlowConsumer(mock, binding().build(), 1000, new RetryPolicy(0, 0, null), null);
+
+        consumer.start();
+        long deadline = System.currentTimeMillis() + 4000;   // covers the 1s first-failure pause
+        while (polls.get() < 2 && System.currentTimeMillis() < deadline) {
+            Utility.getInstance().sleep(10);
+        }
+        int reached = polls.get();
+        consumer.close();
+
+        assertTrue(reached >= 2, "the poll loop must pause and continue after an unexpected error");
+        assertTrue(mock.closed(), "close() still shuts the consumer down cleanly");
     }
 
     @Test
