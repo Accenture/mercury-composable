@@ -18,8 +18,8 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-07 | agent: Claude Code (2026-08-07-021646)
-- **last_review:** 2026-07-31 | through 2026-07-31-001057.md
+- **last_session:** 2026-08-07 | agent: Claude Code (2026-08-07-142823)
+- **last_review:** 2026-08-07 | through 2026-08-07-142823.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -64,40 +64,6 @@
 
 ## Key Decisions
 
-- **Release 4.8.3 — SHIPPED 2026-07-13 (tag `v4.8.3` on `6696a76f`; PRs #168-#175).** Security
-  patch + hardening, field-pipeline-validated (Snyk + Sonar) BEFORE tagging — the deferred-tag
-  flow works. Durable facts: **kafka.health** probes via `KafkaConsumer.listTopics` Metadata,
-  which needs NO ACL (brokers filter by Topic Describe → empty-but-successful under locked-down
-  principals); startup grace returns placeholder-healthy (`kafka.health.timeout` 5s /
-  `kafka.health.startup.grace` 30s). Lessons: field screenshots' naming conventions are
-  client-identifiable — paraphrase generically in fixtures/commits/PRs; a flow needs ≥1 `end`
-  task (a `sink` only terminates a side branch). Full detail: origin log.
-  See [[release-4-8-2-shipped]] for the prior cycle.
-  <!-- id: release-4-8-3-shipped | created: 2026-07-13 | last_used: 2026-07-24 | uses: 10 | tier: archive-candidate | origin: 2026-07-13-170933 -->
-
-- **Field trace-propagation report on 4.6.3 diagnosed (2026-07-13): not a framework bug** —
-  v4.5.0's documented tracing cleanup removed the `X-Correlation-Id`-doubles-as-trace-id
-  conflation that made 4.4.x *appear* to propagate; the trace id travels only as `X-Trace-Id` /
-  W3C `traceparent`, never echoed back. **Support checklist for this symptom:** (1) `tracing: true`
-  on every rest.yaml entry involved (per-endpoint, default FALSE); (2) app-to-app calls must use
-  `async.http.request` (only the framework client auto-stamps trace headers; custom/Spring clients
-  must forward `traceparent` manually); (3) trace context is thread-bound
-  ([[trace-thread-keyed-mono-gotcha]]). Validated live + regression
-  `traceContinuesAcrossApplicationToApplicationHttpCall`. Full detail: origin log.
-  <!-- id: field-trace-propagation-4-6-3-diagnosis | created: 2026-07-13 | last_used: 2026-07-24 | uses: 5 | tier: archive-candidate | origin: 2026-07-13-142021 -->
-
-- **Release 4.8.2 — SHIPPED 2026-07-12 (tag `v4.8.2` on `6c024311`; PRs #164-#166).** Durable
-  facts: (1) **Impedance matching is the twin-kafka demo pattern** — each cluster keeps its own
-  business correlation-id header; adapters read the cluster header into model.cid, flows map
-  model.cid back out under the NEXT cluster's name; never leak a cluster's header name across the
-  bridge (wire-level tests assert it). (2) **Template externalization is OPT-IN**
-  (minimalist/twin-kafka family only): location defaults are classpath-only; devops sets the
-  location key explicitly (4.8.2 CHANGELOG migration note). (3) **Release-sweep gotcha:** when the
-  outgoing version is a substring of a dependency version (classgraph 4.8.184 ⊃ "4.8.1"), the perl
-  sweep needs a digit lookahead `(?!\d)`. Cross-vendor loop precedent (Copilot authored, Claude
-  completed the crash gap, dual attribution): origin log. See [[release-4-8-1-shipped]].
-  <!-- id: release-4-8-2-shipped | created: 2026-07-12 | last_used: 2026-07-24 | uses: 5 | tier: archive-candidate | origin: 2026-07-13-014037 -->
-
 - **Release 4.8.1 — SHIPPED 2026-07-11 (tag `v4.8.1` on `3d226c5b`; PRs #159-#161).** Durable
   facts: (1) **SimpleRandomPartitioner is minimalist-kafka's producer DEFAULT** (`putIfAbsent` in
   KafkaClientConfig — a template's own `partitioner.class` wins; explicit `partition` header
@@ -109,7 +75,7 @@
   `text(application/json) -> output.header.content-type` on flow HTTP responses. (5) **No version
   strings in pom comments** — history belongs in the CHANGELOG. Full detail: origin log.
   See [[release-4-8-0-shipped]].
-  <!-- id: release-4-8-1-shipped | created: 2026-07-11 | last_used: 2026-07-30 | uses: 9 | tier: active | origin: 2026-07-12-002326 -->
+  <!-- id: release-4-8-1-shipped | created: 2026-07-11 | last_used: 2026-08-07 | uses: 13 | tier: active | origin: 2026-07-12-002326 -->
 
 - **Release 4.8.0 — SHIPPED 2026-07-10 (tag `v4.8.0` on `5d9fda45`; PRs #153-#157): twin-kafka.**
   Durable architecture facts: (1) **twin-kafka is a separate `system/` module depending on
@@ -126,7 +92,7 @@
   per-entry > application.properties global > built-in default; W3C traceparent always wins for
   the trace-id. (7) Map the business cid from `model.cid` (engine-seeded), never the raw record
   header; CompileFlows rejects mappings overwriting reserved model keys. Full detail: origin log.
-  <!-- id: release-4-8-0-shipped | created: 2026-07-10 | last_used: 2026-07-31 | uses: 9 | tier: active | origin: 2026-07-11-031930 -->
+  <!-- id: release-4-8-0-shipped | created: 2026-07-10 | last_used: 2026-07-31 | uses: 9 | tier: archive-candidate | origin: 2026-07-11-031930 -->
 
 - **Graph workflow suspension: short runs + external state store, encapsulated in skills
   (design ratified by Eric 2026-07-28). (ADR-0010)** A human checkpoint = persist
@@ -144,7 +110,7 @@
   survive); cid = resume capability (auth resume endpoints); no graph.extension crossing. Store:
   Redis = extensions/minigraph-state-redis imported by apps, NEVER the engine. Delivered by
   [[thread-graph-suspend-resume]]; serves [[bp-graph-workflow-suspension]].
-  <!-- id: graph-suspend-resume-design | created: 2026-07-29 | last_used: 2026-07-31 | uses: 6 | tier: active | origin: 2026-07-29-010343 -->
+  <!-- id: graph-suspend-resume-design | created: 2026-07-29 | last_used: 2026-08-07 | uses: 10 | tier: active | origin: 2026-07-29-010343 -->
 
 - **CompileGraph is the MANDATORY deployment gate for graph models — CompileFlows parity
   (Eric's rulings 2026-07-29; ADR-0011 ACCEPTED via the PR #240 merge, squash `4348b0da`).**
@@ -158,18 +124,7 @@
   playground `run` pre-run check — also the landing pad for
   [[thread-compilegraph-syntax-validation]]. Hot-dropping JSON into the deploy folder no longer
   executes (deployment = explicit act). Full detail: origin log.
-  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-07-30 | uses: 3 | tier: active | origin: 2026-07-29-190328 -->
-
-- **ManagedCache eviction: Java accepts + documents non-determinism; Rust is strict LRU — a
-  deliberate cross-engine asymmetry (Eric, 2026-07-27).** Java keeps Caffeine W-TinyLFU (eviction
-  under `maxItems` pressure is approximate; no policy knob exists); javadoc + CHANGELOG state it —
-  callers must never rely on which entry survives. The Rust port is moka `EvictionPolicy::lru()`
-  (deterministic) per Eric's ruling there. Eviction is internal state, NOT a presentation surface —
-  [[conv-telemetry-presentation-parity]] does not require closing this gap. "Frequency aging" is
-  NOT a determinism remediation. Revisit trigger: the first consumer that truly runs at capacity
-  (schema-registry caches are the candidate). Options record: the Rust repo's
-  docs/design/managed-cache-port.md. Full detail: origin log.
-  <!-- id: managed-cache-eviction-determinism | created: 2026-07-28 | last_used: 2026-07-28 | uses: 1 | tier: archive-candidate | origin: 2026-07-28-005814 -->
+  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-08-07 | uses: 6 | tier: active | origin: 2026-07-29-190328 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -219,16 +174,6 @@
   <!-- id: event-script-over-code | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
 ## Conventions
 
-- **Registration metadata is a cross-language contract; carriers are per-language idioms.
-  (ADR-0009)** One canonical model + fixed semantics for @PreLoad and family (boot-time
-  envInstances resolution; OptionalService OR/!/= grammar; order-free marker stacking; one
-  conflict policy — explicit > declarative, duplicates WARN + last-wins; plugins = flow vocabulary
-  never gated, features honor gating; loud-failure discovery; misuse is a tested error surface).
-  Spec: docs/guides/registration-metadata-contract.md. Conformance: golden vectors shared verbatim
-  (registration-vectors/{core,plugin,feature}.json). New ports pass the three vector suites before
-  their declaration surface is done.
-  <!-- id: registration-metadata-contract | created: 2026-07-26 | last_used: 2026-07-29 | uses: 3 | tier: active | origin: 2026-07-25-235904 -->
-
 - **Telemetry/log presentation parity across language engines is a field requirement (Eric,
   2026-07-23).** Installations will be POLYGLOT for a long time — DevSecOps teams see both engines'
   telemetry and logs in one aggregation, and any presentation difference is a support burden.
@@ -238,7 +183,7 @@
   **Scope extension: the Event Script surface is part of the cross-engine contract** — flows are
   engine-portable YAML, so any new built-in simple plugin ships in lock-step on both engines (with
   closely matching error messages), or flows stop being portable.
-  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-07-30 | uses: 12 | tier: active | origin: 2026-07-23-145132 -->
+  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-08-07 | uses: 17 | tier: active | origin: 2026-07-23-145132 -->
 
 - **graph.js is slated for eventual phase-out in favor of graph.task (Eric, 2026-07-31),
   and the Rust port does not carry it at all.** The skill is troublesome by nature — it is
@@ -250,7 +195,7 @@
   loops); **graph.js work is never a Rust lock-step item** — the Rust validator's
   deadline-skill set legitimately names three skills where Java names four.
   Relates [[thread-task-ttl-override]].
-  <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-08-01 | uses: 1 | tier: working | origin: 2026-08-01-035647 -->
+  <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-08-02 | uses: 2 | tier: active | origin: 2026-08-01-035647 -->
 
 - **The `helpers/` standalone servers exist for Docker-less developer machines and are
   the standard local test servers for Rust ports (Eric, 2026-07-29).** They embed REAL
@@ -264,7 +209,7 @@
   `java -jar`), reported by the field alongside the v4.11.2 rollout; this also validates
   the version-aware GETDEL/MULTI-EXEC consume strategy in its motivating environment
   (see the closed thread-redis-getdel-compat).
-  <!-- id: conv-helpers-docker-less | created: 2026-07-29 | last_used: 2026-07-30 | uses: 2 | tier: active | origin: 2026-07-29-190328 -->
+  <!-- id: conv-helpers-docker-less | created: 2026-07-29 | last_used: 2026-08-03 | uses: 7 | tier: active | origin: 2026-07-29-190328 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -287,9 +232,33 @@
   via pluggable external state stores, so a graph model expresses a long-running business process
   as a sequence of short runs. Realized by [[thread-graph-suspend-resume]].
   → serves: vision-mercury-composable
-  <!-- id: bp-graph-workflow-suspension | created: 2026-07-28 | last_used: 2026-07-30 | uses: 5 | tier: active | origin: 2026-07-29-003528 -->
+  <!-- id: bp-graph-workflow-suspension | created: 2026-07-28 | last_used: 2026-07-30 | uses: 5 | tier: archive-candidate | origin: 2026-07-29-003528 -->
 
 ## Open Threads
+
+- [x] (feature — **COMPLETE ON BOTH ENGINES 2026-08-07**: Java MERGED as
+  [PR #263](https://github.com/Accenture/mercury-composable/pull/263), squash `0c3e7618`,
+  CI green; Rust MERGED same day as mercury PR #193, merge `bea95c80` carrying commit
+  `8162b733` with its single co-author trailer, CI green — both ride the next release
+  via CHANGELOG Unreleased / INCREMENTS 81)
+  **tutorial-14: the manager approval became a real three-outcome decision** (team-member
+  suggestion via Eric): approved → the approval checkpoint; explicit rejected → terminal
+  manager-reject with the reason (then 404 on the consumed cid); anything else →
+  re-suspend through await-decision, whose continuation loops back to check-approval.
+  **Durable engine facts:** (1) the traveler/executor never re-execute a node marked
+  seen, and seen marks are part of the PERSISTED suspension state — a wait loop across
+  suspensions must RESET its own nodes (RESET before the IFs; an IF that jumps returns
+  immediately; the seen mark is set at walk-entry so self-RESET sticks; resetNodes clears
+  nodeSeen + skillRun + node scratch); (2) **the Playground Tutorials tab bakes
+  resources/help/*.md into the webapp bundle at build time (vite ?raw glob)** — help
+  edits are invisible in the tab until `npm run release` regenerates the bundle (both
+  repos regenerated). Grammar surface: decide-before-you-suspend + the suspensible
+  capability envelope + the wait-loop RESET pattern stated in the guide design rules,
+  tutorial help, graph.suspend skill help, and the AI catalog (suspend entries
+  byte-identical across engines); the suspend-on-routing-skill error TEACHES at all four
+  enforcement sites. E2E: three outcomes + loop stability pinned on both engines.
+  Relates [[thread-graph-suspend-resume]], [[graph-suspend-resume-design]].
+  <!-- id: thread-tutorial-14-decision | created: 2026-08-07 | last_used: 2026-08-07 | uses: 1 | tier: working | origin: 2026-08-07-142823 -->
 
 - [x] (release — SHIPPED 2026-08-07, **Java only — no Rust-ported surface touched; Rust
   stays at 4.11.1**) **v4.11.3 — the field support roll-up.**
@@ -323,7 +292,7 @@
   short on 971 new — the resilience round's 8 tests + this round's split ride the next
   drop; if the rescan still fails, target the field's uncovered-lines view directly.
   Relates [[thread-sonar-4-10-4-field-rejection]] (same arc shape).
-  <!-- id: thread-sonar-4-11-x-field-round-3 | created: 2026-08-07 | last_used: 2026-08-07 | uses: 1 | tier: working | origin: 2026-08-07-003746 -->
+  <!-- id: thread-sonar-4-11-x-field-round-3 | created: 2026-08-07 | last_used: 2026-08-07 | uses: 2 | tier: working | origin: 2026-08-07-003746 -->
 
 - [x] (field support — reported 2026-08-06 by a field member's code review; all three
   findings CONFIRMED and FIXED 2026-08-07; **MERGED as
@@ -341,7 +310,7 @@
   the `schema.registry.serde.*` pass-through. 171/171 module tests, JaCoCo gate met; new
   "Consumer liveness" guide section; CHANGELOG Unreleased. Repo wording generic.
   Remaining: Eric's PR gate; no Rust lock-step (module is Java-only by design).
-  <!-- id: thread-kafka-consumer-resilience | created: 2026-08-07 | last_used: 2026-08-07 | uses: 1 | tier: working | origin: 2026-08-07-003746 -->
+  <!-- id: thread-kafka-consumer-resilience | created: 2026-08-07 | last_used: 2026-08-07 | uses: 2 | tier: active | origin: 2026-08-07-003746 -->
 
 - [x] (feature — **COMPLETE ON BOTH ENGINES: Rust half shipped 2026-08-01 in
   mercury PR #191 + release PR #192, tag v4.11.1 — see session 2026-08-02-013842;
@@ -381,7 +350,7 @@
   (pre-existing, recorded): overlapping runs share session instance state (late-callback
   bleed). Spec: draft-design-specs/task-ttl-override.md (gitignored). Full detail:
   origin log + session 2026-08-01-035647.
-  <!-- id: thread-task-ttl-override | created: 2026-08-01 | last_used: 2026-08-01 | uses: 1 | tier: working | origin: 2026-08-01-022358 -->
+  <!-- id: thread-task-ttl-override | created: 2026-08-01 | last_used: 2026-08-02 | uses: 4 | tier: active | origin: 2026-08-01-022358 -->
 
 - [x] (field support — **COMPLETE ON BOTH ENGINES: Rust half shipped 2026-08-01 in
   mercury PR #191 (fallback proven on the wire: contiguous MULTI/GET/DEL/EXEC in the
@@ -405,7 +374,7 @@
   lib.rs:131; handoff ready at /tmp/redis-getdel-compat-rust-handoff.md) — the
   suspend/resume surface is regression-critical field-core on both engines.**
   Relates [[graph-suspend-resume-design]], [[conv-helpers-docker-less]].
-  <!-- id: thread-redis-getdel-compat | created: 2026-07-31 | last_used: 2026-07-31 | uses: 1 | tier: working | origin: 2026-07-31-180131 -->
+  <!-- id: thread-redis-getdel-compat | created: 2026-07-31 | last_used: 2026-08-03 | uses: 4 | tier: active | origin: 2026-07-31-180131 -->
 
 - [x] (feature — design RATIFIED 2026-07-30; **MERGED same day as
   [PR #246](https://github.com/Accenture/mercury-composable/pull/246), squash `268e5ff6`, CI
@@ -446,7 +415,7 @@
   content-based partitioning pattern (selector function → explicit partition header,
   docs `8ed23f34`) APPROVED for field use 2026-07-31.**
   Relates [[thread-redis-kafka-rpc]].
-  <!-- id: thread-kafka-2nd-level-routing | created: 2026-07-30 | last_used: 2026-07-31 | uses: 2 | tier: active | origin: 2026-07-30-233623 -->
+  <!-- id: thread-kafka-2nd-level-routing | created: 2026-07-30 | last_used: 2026-08-07 | uses: 8 | tier: active | origin: 2026-07-30-233623 -->
 
 - [ ] (observation — surfaced 2026-07-30 by the second-level-routing code study;
   pre-existing, separate from that feature) **Header-casing mismatch: mixed-case Kafka
@@ -484,7 +453,7 @@
   publish-orders.js "off-by-one" was a capture artifact (prompt glue + an output
   filter), NOT a script bug — both publishers now suppress the prompt on non-TTY
   stdin. Full detail: origin log.
-  <!-- id: thread-release-4-11-2 | created: 2026-08-03 | last_used: 2026-08-03 | uses: 1 | tier: working | origin: 2026-08-03-155225 -->
+  <!-- id: thread-release-4-11-2 | created: 2026-08-03 | last_used: 2026-08-03 | uses: 3 | tier: active | origin: 2026-08-03-155225 -->
 
 - [x] (release — SHIPPED 2026-08-01, **Java only — the first Java-ahead-of-Rust release
   since the 4.8.x line, deliberate**) **v4.11.1 — the second-level routing + deadline
@@ -499,7 +468,7 @@
   second-level routing is Java-only by design (no minimalist-kafka Rust port — the
   grammar is the future port's contract). Rust 4.11.1 ships when the lock-step session
   runs. Full detail: origin log.
-  <!-- id: thread-release-4-11-1 | created: 2026-08-01 | last_used: 2026-08-01 | uses: 1 | tier: working | origin: 2026-08-01-230946 -->
+  <!-- id: thread-release-4-11-1 | created: 2026-08-01 | last_used: 2026-08-03 | uses: 2 | tier: active | origin: 2026-08-01-230946 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-07-30, both repos in lock-step)
   **v4.11.0 — the suspend/resume feature release.** Java: PR #245, squash `3a870951`, tag on the
@@ -511,7 +480,7 @@
   consolidation on both sites. **Field note (Eric): suspend/resume is CORE functionality for a
   few installations — this surface is regression-critical on both engines.** Full detail:
   origin log + 2026-07-30-173341.
-  <!-- id: thread-release-4-11-0 | created: 2026-07-30 | last_used: 2026-07-30 | uses: 1 | tier: working | origin: 2026-07-30-030533 -->
+  <!-- id: thread-release-4-11-0 | created: 2026-07-30 | last_used: 2026-08-01 | uses: 3 | tier: active | origin: 2026-07-30-030533 -->
 
 - [x] (feature — COMPLETE across P1-P5, both engines) **Graph suspend/resume: workflow suspension
   for the Active Knowledge Graph.** Design: [[graph-suspend-resume-design]] (ADR-0010). Delivery:
@@ -531,36 +500,7 @@
   Java putAll-immunity pin merged via #242). Both engines carry the IDENTICAL surface; released
   in v4.11.0 ([[thread-release-4-11-0]]). Full detail: sessions 2026-07-29-003528,
   2026-07-29-190328, 2026-07-30-030533.
-  <!-- id: thread-graph-suspend-resume | created: 2026-07-28 | last_used: 2026-07-30 | uses: 7 | tier: active | origin: 2026-07-29-003528 -->
-
-- [x] (feature — CLOSED 2026-07-26; both PRs merged: Java
-  [PR #236](https://github.com/Accenture/mercury-composable/pull/236) squash `6ed481e1` + Rust
-  #183; Rust v4.10.6 released same day on the arc) **Ops-tunable worker instances, both engines.**
-  Durable facts: ActuatorServices 30 → 5 with NEW `worker.instances.actuator.services` (one knob,
-  7 aliases; the Rust port's five per-endpoint actuator services share the SAME key — one runbook
-  line tunes both engines); lambda-example event.api.auth 10 → 30. **Ops-tunability principle
-  (Eric): declared counts are rules of thumb; operations teams tune in QA/Perf via config before
-  promoting to Production.** Doc bug fixed: `worker.instances.<route>` only overrides routes whose
-  `@PreLoad` declares `envInstances` (any-route override = `yaml.preload.override`). Full detail:
-  origin log.
-  <!-- id: thread-ops-tunable-instances | created: 2026-07-26 | last_used: 2026-07-27 | uses: 1 | tier: archive-candidate | origin: 2026-07-27-005415 -->
-
-- [x] (feature — ARC COMPLETE 2026-07-26; P1 merged 2026-07-25 as Java PR #234 squash `265f295d` +
-  Rust #181; P2 merged 2026-07-26 as Java PR #235 squash `84c4957f` + Rust #182) **Annotation →
-  macro consistency arc.** Delivered: D1 Rust built-ins converted to declarative macros (46
-  flipped; positional `#[simple_plugin("name")]` grammar; order-insensitive marker stacking;
-  trybuild compile-fail guards); D2 ONE conflict policy both engines (explicit > declarative;
-  duplicate = WARN + last-wins); D3a fetch_feature + stacked optional_service; D4
-  yaml.preload.override ported to Rust with Java's exact semantics; D5 the Registration Metadata
-  Contract ([[registration-metadata-contract]], ADR-0009/ADR-0008 pair, golden vectors shared
-  VERBATIM). Deferred by design: D3b plugin gating (**Eric's principle: plugins are Event Script
-  capabilities — flow vocabulary, never conditionally on/off**), D6 executionHint. Also: Eric's
-  string-semantics ruling (Unicode scalar values in all ports; Java's UTF-16 = documented JVM
-  legacy — the F20 UTF-16 retrofit REVERTED with anti-re-retrofit guard); tests/ui fixtures =
-  test resources, no license headers. Future ports (Python/Node) start from the contract page +
-  vectors. Full detail: origin log + spec
-  draft-design-specs/annotation-macro-interop-design.md.
-  <!-- id: thread-annotation-macro-consistency | created: 2026-07-25 | last_used: 2026-07-27 | uses: 2 | tier: archive-candidate | origin: 2026-07-25-235904 -->
+  <!-- id: thread-graph-suspend-resume | created: 2026-07-28 | last_used: 2026-08-07 | uses: 9 | tier: active | origin: 2026-07-29-003528 -->
 
 - [x] (field support — CLOSED 2026-07-26: **field rescan of v4.10.6 PASSED the Sonar gate with a
   perfect Overall-Code score** — 0/0/0/0, coverage 80.5%) **v4.10.4 failed the field Sonar quality
@@ -571,44 +511,7 @@
   behavior-preserving). Verified by full reactor + a live Java-to-Java Event-over-HTTP interop
   drive targeting the three refactored trace/cid classes. Arc shape: rejection → fix → release →
   clean rescan (the [[thread-sonar-4-9-1-field-rejection]] shape). Full detail: origin log.
-  <!-- id: thread-sonar-4-10-4-field-rejection | created: 2026-07-25 | last_used: 2026-07-27 | uses: 2 | tier: archive-candidate | origin: 2026-07-25-005125 -->
-
-- [x] (release — CLOSED 2026-07-24 same day) **v4.10.5 security patch SHIPPED in lock-step —
-  react-router CVE remediation** (RSC Mode CSRF Bypass; react-router-dom RETIRED upstream at
-  7.18.1 → both webapps moved to `react-router ^8.3.0` directly; npm audit 0, 124 tests,
-  resources/public rebuilt). Java: PR #230, tag on squash `4c82eae0`. Rust: PR #180, tag on
-  `5ae307c2`. **Operational lesson: EMU accounts CANNOT create PRs via API (GraphQL + REST both
-  403) — the web UI is the only PR path.** Full detail: origin log.
-  <!-- id: thread-release-4-10-5 | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: archive-candidate | origin: 2026-07-24-154543 -->
-
-- [x] (release — CLOSED 2026-07-24 same day) **v4.10.4 SHIPPED in lock-step — standards-first
-  traceparent carrier + interop header hygiene.** Java: PR #229, tag on squash `0125c17b`
-  (verified before tagging). Rust: PR #179, tag on `03424582`. Validated by the ce_traceparent
-  four-way drive — all eight echoes identical. **PR-branch lesson: VERIFY which branch a PR points
-  at before assuming pushed commits appear in it** (fix commits sat on a second branch; resolved by
-  fast-forwarding). Fifth lock-step release of the 4.10 arc. Full detail: origin log.
-  <!-- id: thread-release-4-10-4 | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: archive-candidate | origin: 2026-07-24-154543 -->
-
-- [x] (feature — CLOSED 2026-07-24; RELEASED in v4.10.4) **Configurable traceparent header name
-  (field request).** `http/kafka/secondary.kafka.traceparent.header` + per-entry overrides
-  (rest.yaml / kafka-flow-adapter.yaml `traceparent.header`) — renames the CARRIER, not the
-  semantics: full W3C context crosses a header-stripping gateway, so cross-app span parenting
-  survives (fixes the known limitation in [[thread-field-trace-propagation-4-6-3]]). Outbound =
-  stamp BOTH names; **inbound final ruling: the STANDARD traceparent always wins, custom name read
-  only when the standard is absent** (presence of the standard means the upstream already
-  upgraded). **Standards position in all docs (Eric): W3C/OTel traceparent is the position;
-  traceparent.header = backward compat with legacy systems ONLY; departure discouraged.** Both
-  engines in lock-step (Java #227, Rust #177) + a hygiene round (both engines scrub the 5 engine
-  keys from the delivered envelope view; interceptors keep raw fidelity; x-ttl ingress alignment)
-  → ALL EIGHT interop echoes identical. Full detail: origin log.
-  <!-- id: thread-traceparent-header-config | created: 2026-07-24 | last_used: 2026-07-24 | uses: 1 | tier: archive-candidate | origin: 2026-07-24-154543 -->
-
-- [x] (release — CLOSED 2026-07-23 same day) **v4.10.3 SHIPPED in lock-step — field-deployment
-  roll-up** (releases are immutable per Eric, so post-4.10.2 fixes shipped as a new patch;
-  consolidates the whole 4.10 line for field quality gates). Java: PR #226, tag on squash
-  `bd7e909d` (verified before tagging — the 4.10.2 tag-race lesson). Rust: PR #176, tag on
-  `b3804a67`. Full detail: origin log.
-  <!-- id: thread-release-4-10-3 | created: 2026-07-23 | last_used: 2026-07-24 | uses: 1 | tier: archive-candidate | origin: 2026-07-24-023859 -->
+  <!-- id: thread-sonar-4-10-4-field-rejection | created: 2026-07-25 | last_used: 2026-08-07 | uses: 3 | tier: active | origin: 2026-07-25-005125 -->
 
 - [x] (release — CLOSED 2026-07-23) **v4.10.2 SHIPPED in lock-step** — metadata contract (#221),
   temporary.inbox alignment (Rust #171), team-contributed collection plugins
@@ -619,63 +522,11 @@
   Full detail: origin log.
   <!-- id: thread-release-4-10-2 | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-23-211728 -->
 
-- [x] (feature — COMPLETE 2026-07-23; released in v4.10.2) **Metadata injection/sanitization
-  hardening (Eric's 3rd interop round).** Design ruling: function inputs = headers/body/instance;
-  headers = envelope-header COPY + metadata INJECTED at entry, SANITIZED at exit; metadata NEVER
-  transported in the event. **Durable mechanics: the business cid rides the engine tag `my_cid`
-  (EventEmitter.BUSINESS_CID_TAG — a tags wire field, no spec change); the worker injects 4 my_*
-  keys at entry (+ legacy-header compat, x-event-api strip) and filters symmetrically at exit;
-  HTTP responses echo X-Correlation-Id (function-set header wins).** Rust aligned to Java's single
-  reserved private route `temporary.inbox` (retiring its inbox.* namespace reservation; the
-  one-record-per-span gate re-keyed to the rpc TAG). Four-way interop re-test passed in full —
-  the inbox refactor observably invisible. Both PRs merged (Java #221 `a25d95d5`, Rust #171
-  `f86fbec2`). Relates [[conv-telemetry-presentation-parity]]. Full detail: origin log.
-  <!-- id: thread-metadata-injection-hardening | created: 2026-07-23 | last_used: 2026-07-24 | uses: 1 | tier: archive-candidate | origin: 2026-07-23-211728 -->
-
 - [x] (release — CLOSED 2026-07-23) **v4.10.1 SHIPPED in lock-step** — telemetry presentation
   parity patch (PR #217 content: /api/event visible span, declarative rename, event.api.auth
   demo, interop report). Java: PR #218, tag on `9ae666df`. Rust: PR #170, tag on `2c4e4066`.
   Full detail: origin log.
   <!-- id: thread-release-4-10-1 | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: working | origin: 2026-07-23-145132 -->
-
-- [x] (feature — COMPLETE 2026-07-23; released in v4.10.1) **Post-4.10.0 telemetry presentation
-  parity + auth demo (Eric's manual-test findings).** /api/event edge became a visible span
-  (EventApiService no longer @ZeroTracing; worker-thread span capture for async callbacks);
-  demo→declarative rename; event.api.auth demo (env-secret bearer check, session-info proof).
-  Rust mirrored (callback-dispatch refactor, request-scoped context gating, my_* strip).
-  **Four-way verification: java-to-java, rust-to-rust, java-to-rust, rust-to-java all EMPTY DIFF
-  against the normalized reference signature.** Java PR #217 + Rust #169 merged; both repos' docs
-  carry the extended interop report + future-ports playbook. Relates
-  [[conv-telemetry-presentation-parity]]. Full detail: origin log.
-  <!-- id: thread-telemetry-parity-auth | created: 2026-07-23 | last_used: 2026-07-23 | uses: 1 | tier: archive-candidate | origin: 2026-07-23-145132 -->
-
-- [x] (design — COMPLETED 2026-07-22 with the v4.10.0 release) **Common event envelope wire format
-  for cross-language interop (Event over HTTP with the Rust port).** The durable contract:
-  standard envelope = MsgPack map with descriptive string keys (the `toMap()` form promoted to a
-  wire contract); compact 1-char and standard ≥2-char keys are disjoint → decoders sniff both, no
-  negotiation; **default = `standard`** (Event over HTTP is transport, not storage; `compact` kept
-  as explicit fallback) via `event.over.http.format` + per-request `x-event-format`; Java
-  `exceptionBytes` excluded — portable error = status + message + stack text. API:
-  `Format {COMPACT, STANDARD}`, `toMap(Format)`/`toBytes(Format)` (no-arg forms preserve legacy
-  behavior), sniffing `load()`. **Golden vectors** at
-  system/platform-core/src/test/resources/envelope-vectors/vectors.json, shared byte-identical
-  with the Rust port — the golden-vector conformance method's first application. Phase 1 Java
-  PR #212; Rust increments 59-62 reviewed for consistency (high fidelity, no blockers); live
-  bidirectional interop 7/7 both directions (the drive found + fixed real bug D1:
-  getTimeoutSeconds floor-division → 1s HTTP read timeout, PR #214; Rust D2/D3 fixed, declarative
-  `yaml.event.over.http` added). Released in v4.10.0; permanent record at
-  docs/test-reports/event-over-http-interop.md. → serves `vision-mercury-composable` (polyglot
-  deployment). Full detail: origin log + sessions 2026-07-22-*.
-  <!-- id: thread-event-envelope-interop | created: 2026-07-21 | last_used: 2026-07-25 | uses: 7 | tier: archive-candidate | origin: 2026-07-21-215951 -->
-
-- [x] (field support — CLOSED 2026-07-26 by the review; close condition subsumed by the v4.10.6
-  perfect-score rescan, see [[thread-sonar-4-10-4-field-rejection]]) **v4.9.1 REJECTED by the
-  field Sonar quality gate; remediated in v4.9.2** (19 issues from the 4.9.0/4.9.1 minigraph
-  companion/discovery code — S3776/S1192/S5778/S125/S1168/S5961/S6126 — all fixed
-  behavior-preserving via helper extraction, constants, test splits, prose rewording; PR #210,
-  v4.9.2 tag on `b574f41e`). **Durable lesson: extract-as-you-go when touching methods near the
-  S3776/S5961 thresholds.** Per-issue map: session 2026-07-21-173614.
-  <!-- id: thread-sonar-4-9-1-field-rejection | created: 2026-07-21 | last_used: 2026-07-27 | uses: 4 | tier: archive-candidate | origin: 2026-07-21-173614 -->
 
 - [ ] (field support — 2026-07-13; ROOT CAUSE FOUND) **Trace-propagation report: the internal API
   gateway strips `traceparent` AND `X-Trace-Id` (neither on its allow-list); only
@@ -691,7 +542,7 @@
   tooling stitches by trace id until the gateway passes it. **Pending: gateway team's allow-list
   change (asked 2026-07-14; Eric updates after the devops cloud-dev test).** Diagnosis +
   checklist: [[field-trace-propagation-4-6-3-diagnosis]]. Full detail: origin log.
-  <!-- id: thread-field-trace-propagation-4-6-3 | created: 2026-07-13 | last_used: 2026-07-24 | uses: 7 | tier: working | origin: 2026-07-13-142021 -->
+  <!-- id: thread-field-trace-propagation-4-6-3 | created: 2026-07-13 | last_used: 2026-08-01 | uses: 8 | tier: working | origin: 2026-07-13-142021 -->
 
 - [ ] (P0–P5 code-complete — 2026-07-05, branch `feature/elastic-queue-file-fifo`, submitted as
   [PR #137](https://github.com/Accenture/mercury-composable/pull/137); remaining = field canary →
@@ -726,7 +577,7 @@
   a patched `wire-runtime-jvm` fork (the upstream fix is a one-liner); (b) a field installation
   explicitly needs Protobuf and accepts the residual CVE-2026-45799 risk. What to restore:
   [[minimalist-kafka-protobuf-removed]] (all still in git history).
-  <!-- id: thread-minimalist-kafka-protobuf-revival | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-224313 -->
+  <!-- id: thread-minimalist-kafka-protobuf-revival | created: 2026-07-01 | last_used: 2026-08-03 | uses: 2 | tier: working | origin: 2026-07-01-224313 -->
 
 - [ ] (backlog — Eric, 2026-07-02; needs its own design pass) **`CompileGraph` does not carry out
   comprehensive syntax validation** for the mapping-string mini-DSL (the one
@@ -744,7 +595,7 @@
   `confluent.version` 8.2.0→8.3.0 bump — see [[minimalist-kafka-confluent-8-3-0]]. Scope when
   picked up: verify kafka-clients 4.3.x + the embedded KRaft broker behavioral compatibility
   across all 24 files — a materially larger test surface than a serializer-library bump.
-  <!-- id: thread-kafka-client-version-upgrade | created: 2026-07-01 | last_used: 2026-07-01 | uses: 1 | tier: working | origin: 2026-07-01-230246 -->
+  <!-- id: thread-kafka-client-version-upgrade | created: 2026-07-01 | last_used: 2026-08-03 | uses: 2 | tier: active | origin: 2026-07-01-230246 -->
 
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
@@ -790,17 +641,6 @@
   ([[thread-add-gradle-build]]).** → serves `vision-mercury-composable`. Full detail: sessions
   2026-06-25 → 2026-07-04.
   <!-- id: thread-redis-kafka-rpc | created: 2026-06-24 | last_used: 2026-07-31 | uses: 8 | tier: working -->
-
-- [x] (CLOSED 2026-07-27 — **ALL 15 CONFIRMED by Eric** in a one-by-one walkthrough with fresh
-  live-tree evidence per item: 5 stack facts, 3 architectural invariants, 6 core
-  conventions/gotchas, + the Vision; several now carry stronger guarantees than when written;
-  Vision current-state refreshed; cadence reset) **Re-verify invariants (was due — 50 sessions ≥
-  verify_invariants_every 40).** The never-decay set: the 5 `stack-*` facts;
-  `functions-decoupled-routes`, `typed-io-map-or-pojo`, `virtual-threads-rpc`;
-  `trace-thread-keyed-mono-gotcha`, `instant-serialization`, `kafka-mesh-opt-in`,
-  `event-script-over-code`, `conv-add-capability`, `conv-serialization-gotchas`; and the Vision
-  (`memory/vision.md`). Detail: session 2026-07-27-215011.
-  <!-- id: thread-reverify-invariants-2026q2 | created: 2026-06-29 | last_used: 2026-07-27 | uses: 2 | tier: archive-candidate -->
 
 ## User Preferences
 
