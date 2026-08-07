@@ -41,33 +41,35 @@ import java.util.Map;
 @PreLoad(route = "demo.catch.all", instances = 10)
 public class CatchAllProcessor implements TypedLambdaFunction<Object, Map<String, Object>> {
     private static final Logger log = LoggerFactory.getLogger(CatchAllProcessor.class);
+    private static final String RECEIVED = "received";
+    private static final String SHAPE = "shape";
 
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, Object input, int instance) {
         PostOffice po = new PostOffice(headers, instance);
         Map<String, Object> response = new HashMap<>();
-        // a raw byte[] means serializer: 'json' could not parse the record - show it as text;
-        // a Map/List is a well-formed JSON record that simply matched no routing rule
+        // A raw byte[] arrives when the best-effort JSON deserializer could not parse the record,
+        // so it is shown as text. A Map/List is a well-formed JSON record that matched no routing rule.
         switch (input) {
             case byte[] bytes -> {
-                response.put("received", new String(bytes, StandardCharsets.UTF_8));
-                response.put("shape", "raw bytes (not a JSON object/array)");
+                response.put(RECEIVED, new String(bytes, StandardCharsets.UTF_8));
+                response.put(SHAPE, "raw bytes (not a JSON object/array)");
             }
             case Map<?, ?> map -> {
-                response.put("received", map);
-                response.put("shape", "map (JSON object, no rule matched)");
+                response.put(RECEIVED, map);
+                response.put(SHAPE, "map (JSON object, no rule matched)");
             }
             case List<?> list -> {
-                response.put("received", list);
-                response.put("shape", "list (JSON array, no rule matched)");
+                response.put(RECEIVED, list);
+                response.put(SHAPE, "list (JSON array, no rule matched)");
             }
             case null, default -> {
-                response.put("received", String.valueOf(input));
-                response.put("shape", "other");
+                response.put(RECEIVED, String.valueOf(input));
+                response.put(SHAPE, "other");
             }
         }
         log.info("Unmatched record caught by the default rule (cid={}, traceId={}): {}",
-                po.getMyCorrelationId(), po.getTraceId(), response.get("shape"));
+                po.getMyCorrelationId(), po.getTraceId(), response.get(SHAPE));
         response.put("processedBy", "demo-catch-all-flow");
         response.put("routedBy", "default");
         response.put("traceId", po.getTraceId());

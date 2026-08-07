@@ -251,6 +251,66 @@ class KafkaFlowAdapterConfigTest {
         assertEquals("50", p.getProperty("max.poll.records"));
     }
 
+    // ---- max.poll.interval.ms derivation (the poll-thread eviction guard) ----
+    // Flow 'f' is not in the compiled Flows registry in this unit context, so the derivation falls
+    // back to the binding's task ttl (default 30000) - the same fallback resolveTtl uses at runtime.
+
+    @Test
+    void smallRetryEnvelopeKeepsThePollIntervalAtKafkaDefault() {
+        Properties p = new Properties();
+        KafkaConsumerBinding binding = KafkaConsumerBinding.builder().topic("orders").flowId("f").build();
+        KafkaFlowAdapter.applyDeliveryMode(p, binding);   // manual commit -> max.poll.records = 1
+        KafkaFlowAdapter.applyPollInterval(p, binding, new RetryPolicy(3, 500, null));
+        // envelope = 4 x 30000 + 3 x 500 + 10000 headroom = 131500 < the 300000 floor
+        assertEquals("300000", p.getProperty("max.poll.interval.ms"));
+    }
+
+    @Test
+    void derivesPollIntervalFromTheRetryEnvelopeWhenItExceedsTheDefault() {
+        Properties p = new Properties();
+        KafkaConsumerBinding binding = KafkaConsumerBinding.builder().topic("orders").flowId("f")
+                .taskTtlMs(120000L).build();
+        KafkaFlowAdapter.applyDeliveryMode(p, binding);
+        KafkaFlowAdapter.applyPollInterval(p, binding, new RetryPolicy(3, 500, null));
+        // (3+1) x 120000 + 3 x 500 + 10000 headroom = 491500 - the coordinator no longer evicts a
+        // consumer that is legitimately waiting out its retry envelope
+        assertEquals("491500", p.getProperty("max.poll.interval.ms"));
+    }
+
+    @Test
+    void autoCommitBatchSizeMultipliesThePollIntervalEnvelope() {
+        Properties p = new Properties();
+        KafkaConsumerBinding binding = KafkaConsumerBinding.builder().topic("orders").flowId("f")
+                .autoCommit(true).maxPollRecords(100).build();
+        KafkaFlowAdapter.applyDeliveryMode(p, binding);
+        KafkaFlowAdapter.applyPollInterval(p, binding, new RetryPolicy(0, 0, null));
+        // a poll batch is processed sequentially on the poll thread: 100 x 30000 + 10000 = 3010000
+        assertEquals("3010000", p.getProperty("max.poll.interval.ms"));
+    }
+
+    @Test
+    void explicitPollIntervalFromTheConsumerTemplateIsRespected() {
+        Properties p = new Properties();
+        p.setProperty("max.poll.interval.ms", "60000");
+        KafkaConsumerBinding binding = KafkaConsumerBinding.builder().topic("orders").flowId("f")
+                .taskTtlMs(120000L).build();
+        KafkaFlowAdapter.applyDeliveryMode(p, binding);
+        KafkaFlowAdapter.applyPollInterval(p, binding, new RetryPolicy(3, 500, null));
+        // an operator's explicit value is a decision, not a bug - kept as-is (with a WARN in the log)
+        assertEquals("60000", p.getProperty("max.poll.interval.ms"));
+    }
+
+    @Test
+    void oversizedPollIntervalEnvelopeClampsToIntegerRange() {
+        Properties p = new Properties();
+        KafkaConsumerBinding binding = KafkaConsumerBinding.builder().topic("orders").flowId("f")
+                .taskTtlMs(Long.MAX_VALUE / 4).build();
+        KafkaFlowAdapter.applyDeliveryMode(p, binding);
+        KafkaFlowAdapter.applyPollInterval(p, binding, new RetryPolicy(3, 500, null));
+        // max.poll.interval.ms is an int config - the derivation must not overflow past it
+        assertEquals(String.valueOf(Integer.MAX_VALUE), p.getProperty("max.poll.interval.ms"));
+    }
+
     @Test
     void parsesPartitionWhenPresent() {
         assertEquals(3, KafkaFlowAdapter.parsePartition("3"));

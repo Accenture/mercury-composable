@@ -106,25 +106,8 @@ public class WorkerHandler {
         String rpc = event.getTag(EventEmitter.RPC);
         EventEmitter po = EventEmitter.getInstance();
         String ref = tracing? po.startTracing(parentRoute, event.getTraceId(), event.getTracePath(), event.getSpanId(), instance) : "?";
-        // Register the application log context for this worker thread, in lockstep with the trace
-        // bracket. The JSON appenders look it up by thread id at log time. Gated on a real trace
-        // having been created and on the log-context feature being enabled.
         long threadId = Thread.currentThread().threadId();
-        if (tracing && LogContextConfig.getInstance().isEnabled()) {
-            // tracing defaults on for every function, but a context only makes sense once a real
-            // traceId is available (trace.id != null), per the log-context contract.
-            TraceInfo logTrace = po.getTrace(parentRoute, instance);
-            if (logTrace != null && logTrace.id != null) {
-                // the log context 'cid' is the BUSINESS correlation-id only, resolved exactly
-                // like the injected my_correlation_id: the engine's my_cid tag, else a legacy
-                // pre-4.10.2 peer's transported header. When no business context exists the
-                // token stays unset and the context block omits it - an internal routing id
-                // under the 'cid' label would mislead log aggregation
-                String businessCid = event.getTag(EventEmitter.BUSINESS_CID_TAG) != null?
-                        event.getTag(EventEmitter.BUSINESS_CID_TAG) : event.getHeaders().get(MY_CORRELATION_ID);
-                LogContextManager.register(threadId, new LogContext(logTrace, businessCid));
-            }
-        }
+        registerLogContext(po, event, threadId);
         ProcessStatus ps = processEvent(event, rpc);
         TraceInfo trace = po.stopTracing(ref);
         // processEvent never throws (it has a catch-all), so this always runs - no leak. Cheap no-op
@@ -147,6 +130,30 @@ public class WorkerHandler {
          */
         if (!ps.isReactive()) {
             Platform.getInstance().getEventSystem().send(def.getRoute(), READY + route);
+        }
+    }
+
+    /**
+     * Register the application log context for this worker thread, in lockstep with the trace
+     * bracket. The JSON appenders look it up by thread id at log time. Gated on tracing, on the
+     * log-context feature being enabled, and on a real traceId being available (trace.id != null),
+     * per the log-context contract - tracing defaults on for every function, but a context only
+     * makes sense once a real trace was created. Runs synchronously on the worker thread, before
+     * {@code processEvent}, so the thread-id key matches the executing function.
+     */
+    private void registerLogContext(EventEmitter po, EventEnvelope event, long threadId) {
+        if (tracing && LogContextConfig.getInstance().isEnabled()) {
+            TraceInfo logTrace = po.getTrace(parentRoute, instance);
+            if (logTrace != null && logTrace.id != null) {
+                // the log context 'cid' is the BUSINESS correlation-id only, resolved exactly
+                // like the injected my_correlation_id: the engine's my_cid tag, else a legacy
+                // pre-4.10.2 peer's transported header. When no business context exists the
+                // token stays unset and the context block omits it - an internal routing id
+                // under the 'cid' label would mislead log aggregation
+                String businessCid = event.getTag(EventEmitter.BUSINESS_CID_TAG) != null?
+                        event.getTag(EventEmitter.BUSINESS_CID_TAG) : event.getHeaders().get(MY_CORRELATION_ID);
+                LogContextManager.register(threadId, new LogContext(logTrace, businessCid));
+            }
         }
     }
 

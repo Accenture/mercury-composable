@@ -371,6 +371,30 @@ On a **failure**, the message is retried up to `kafka.flow.max.retries` times (w
 **Reprocessing** (read the DLQ topic → fix → replay) is business-domain logic and is intentionally out of
 scope: the library guarantees durable capture (when a `dlq-topic` is configured and reachable), not replay.
 
+### Consumer liveness: rebalances and the processing deadline {#liveness}
+
+Two robustness behaviors keep a binding alive through the realities of consumer-group life:
+
+- **The poll loop survives transient consumer exceptions.** A group rebalance (scale-out, pod churn)
+  routinely makes an in-flight offset commit throw `CommitFailedException` or
+  `RebalanceInProgressException`. The loop logs a `WARN` and continues — the uncommitted records simply
+  redeliver to whichever consumer owns the partitions after the rejoin, preserving at-least-once delivery
+  (flows must be idempotent, as always). Kafka's own retriable errors get the same treatment. Any *other*
+  unexpected exception keeps the binding alive too, with an escalating pause (1s doubling to 30s) and an
+  `ERROR` per occurrence — loud but alive, instead of a consumer thread that dies silently until the pod
+  restarts.
+- **`max.poll.interval.ms` is derived from the binding's worst-case processing time.** Message processing
+  happens *on the poll thread* (the flow's `ttl` is the deadline), so the worst case between two polls is
+  the full retry envelope — `(kafka.flow.max.retries + 1) ×` the slowest reachable flow/task `ttl`
+  `+ retries × backoff` — times `max.poll.records`, plus headroom. If that exceeds Kafka's
+  `max.poll.interval.ms` (default 5 minutes), the group coordinator evicts the consumer mid-processing and
+  the subsequent commit fails. The adapter therefore computes the envelope per binding at startup and
+  raises `max.poll.interval.ms` to cover it (never lowering it below the Kafka default; the derivation is
+  logged). An explicit `max.poll.interval.ms` in the consumer template is an operator decision and is
+  respected as-is — with a `WARN` when the computed envelope exceeds it. Raising the interval is low-risk:
+  a crashed pod is still detected by heartbeats (`session.timeout.ms`); this setting only bounds time
+  between polls.
+
 ## Outbound: publishing to Kafka {#outbound}
 
 `simple.kafka.notification` is a composable function that publishes an event to a topic. Send it an
