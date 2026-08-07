@@ -8,7 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Unreleased
+## Version 4.11.3, 8/6/2026
+
+Field support roll-up: consumer robustness from a field code review, the third field
+Sonar remediation round, and a partition-metadata API for application-side partition
+routing. Java-only — none of the changes touch a Rust-ported surface, so the Rust
+engine stays at v4.11.1.
 
 ### Added
 
@@ -31,7 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    loop now logs known transients (including Kafka's retriable errors) at `WARN` and continues;
    the uncommitted records redeliver after the group rejoin, preserving at-least-once delivery.
    Any other unexpected exception keeps the binding alive with an escalating pause (1s doubling
-   to 30s) and an `ERROR` per occurrence — loud but alive.
+   to 30s) and an `ERROR` per occurrence — loud but alive. (A same-day polish round extracted
+   the guarded iteration into `pollOnce` and moved the pause/backoff helpers to
+   `Utility.sleep` with the shutdown-interrupt semantics preserved.)
 
 2. **`max.poll.interval.ms` is derived from each binding's worst-case processing envelope.** Also
    from the field review: message processing happens on the poll thread (the flow's `ttl` is the
@@ -60,6 +67,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    assertThrows lambda reduced to a single invocation, a `record` variable renamed off the
    restricted identifier, a fixed ttl-expiry sleep replaced by a deterministic expiry rewrite on
    the stored record, and a 27-assertion companion test split into two focused tests.
+
+5. **The kafka-demo publish helpers work correctly under piped input.** `publish-inbound.js`
+   could drop a piped message (its async line handler raced the close handler's producer
+   disconnect on EOF); it now chains sends on an inflight promise awaited at close, the same
+   pattern `publish-orders.js` already used. Both publishers show the readline prompt only when
+   stdin is a TTY, so piped output stays clean for scripted regression runs.
 
 ---
 ## Version 4.11.2, 8/3/2026
