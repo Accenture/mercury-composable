@@ -84,3 +84,19 @@
 - log-context-on-by-default — Application log context is ON by default (2026-07-22, Eric via leadership request; branch — faded (sslu 21 > archive_window 20; shipped in v4.10.0, docs carry the surface) — 2026-Q3.md
 - thread-release-4-10-0 — (release in flight — 2026-07-22; CLOSED same day) v4.10.0 SHIPPED via the normal flow — — swept completed thread (shipped 2026-07-22; sslu 22 > archive_window 20) — 2026-Q3.md
 - thread-release-4-9-1 — (release in flight — 2026-07-21; CLOSED same day) v4.9.1 SHIPPED via the normal flow — — swept completed thread (shipped 2026-07-21; sslu 28 > archive_window 20) — 2026-Q3.md
+- release-4-8-3-shipped — Release 4.8.3 — SHIPPED 2026-07-13 (tag `v4.8.3` on `6696a76f`; PRs #168-#175). Security — faded — 2026-Q3.md
+- field-trace-propagation-4-6-3-diagnosis — Field trace-propagation report on 4.6.3 diagnosed (2026-07-13): not a framework bug — — faded — 2026-Q3.md
+- release-4-8-2-shipped — Release 4.8.2 — SHIPPED 2026-07-12 (tag `v4.8.2` on `6c024311`; PRs #164-#166). Durable — faded — 2026-Q3.md
+- managed-cache-eviction-determinism — ManagedCache eviction: Java accepts + documents non-determinism; Rust is strict LRU — a — faded — 2026-Q3.md
+- registration-metadata-contract — Registration metadata is a cross-language contract; carriers are per-language idioms. — faded — 2026-Q3.md
+- thread-ops-tunable-instances — (feature — CLOSED 2026-07-26; both PRs merged: Java — completed thread swept (older than archive_window) — 2026-Q3.md
+- thread-annotation-macro-consistency — (feature — ARC COMPLETE 2026-07-26; P1 merged 2026-07-25 as Java PR #234 squash `265f295d`… — completed thread swept (older than archive_window) — 2026-Q3.md
+- thread-release-4-10-5 — (release — CLOSED 2026-07-24 same day) v4.10.5 security patch SHIPPED in lock-step — — completed thread swept (older than archive_window) — 2026-Q3.md
+- thread-release-4-10-4 — (release — CLOSED 2026-07-24 same day) v4.10.4 SHIPPED in lock-step — standards-first — completed thread swept (older than archive_window) — 2026-Q3.md
+- thread-traceparent-header-config — (feature — CLOSED 2026-07-24; RELEASED in v4.10.4) Configurable traceparent header name — completed thread swept (older than archive_window) — 2026-Q3.md
+- thread-release-4-10-3 — (release — CLOSED 2026-07-23 same day) v4.10.3 SHIPPED in lock-step — field-deployment — completed thread swept (older than archive_window) — 2026-Q3.md
+- thread-metadata-injection-hardening — (feature — COMPLETE 2026-07-23; released in v4.10.2) Metadata injection/sanitization — completed thread swept (older than archive_window) — 2026-Q3.md
+- thread-telemetry-parity-auth — (feature — COMPLETE 2026-07-23; released in v4.10.1) Post-4.10.0 telemetry presentation — completed thread swept (older than archive_window) — 2026-Q3.md
+- thread-event-envelope-interop — (design — COMPLETED 2026-07-22 with the v4.10.0 release) Common event envelope wire format — completed thread swept (older than archive_window) — 2026-Q3.md
+- thread-sonar-4-9-1-field-rejection — (field support — CLOSED 2026-07-26 by the review; close condition subsumed by the v4.10.6 — completed thread swept (older than archive_window) — 2026-Q3.md
+- thread-reverify-invariants-2026q2 — (CLOSED 2026-07-27 — ALL 15 CONFIRMED by Eric in a one-by-one walkthrough with fresh — completed thread swept (older than archive_window) — 2026-Q3.md

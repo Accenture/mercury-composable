@@ -141,7 +141,9 @@ public class GraphModelValidator {
         var skill = node.getProperty(SKILL);
         if (GraphMath.ROUTE.equals(skill) || GraphJs.ROUTE.equals(skill)) {
             throw new IllegalArgumentException(NODE_NAME + alias +
-                    " cannot use 'suspend=true' with skill " + skill);
+                    " cannot use 'suspend=true' with skill " + skill +
+                    " - a suspensible node suspends unconditionally, so make the decision first: " +
+                    "place the " + skill + " node before a suspensible node and route the continuing path to it");
         }
         if (suspendNode == null) {
             throw new IllegalArgumentException(NODE_NAME + alias +
