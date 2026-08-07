@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-07 | agent: Claude Code (2026-08-07-003746)
+- **last_session:** 2026-08-07 | agent: Claude Code (2026-08-07-021646)
 - **last_review:** 2026-07-31 | through 2026-07-31-001057.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -290,6 +290,20 @@
   <!-- id: bp-graph-workflow-suspension | created: 2026-07-28 | last_used: 2026-07-30 | uses: 5 | tier: active | origin: 2026-07-29-003528 -->
 
 ## Open Threads
+
+- [x] (release — SHIPPED 2026-08-07, **Java only — no Rust-ported surface touched; Rust
+  stays at 4.11.1**) **v4.11.3 — the field support roll-up.**
+  [PR #259](https://github.com/Accenture/mercury-composable/pull/259), squash `6a45867c`,
+  CI green, tag on the verified squash. Consolidates: consumer poll-loop resilience +
+  derived max.poll.interval.ms + schema negative tests (#255, polished by #258 —
+  pollOnce extraction, Utility.sleep helpers with isInterrupted shutdown checks); the
+  third field Sonar round (#256); KafkaRequestPublisher.partitions(topic) (#257); the
+  kafka-demo piped-mode helper fix (#254, CHANGELOG entry added at the cut). Pre-release
+  gates: full reactor green + live kafka-demo README regression, which also live-proved
+  the release's own changes (piped publishers, retries→DLQ through pollOnce, interval
+  derivation silent under the floor). Remaining external: the field rescan
+  ([[thread-sonar-4-11-x-field-round-3]]).
+  <!-- id: thread-release-4-11-3 | created: 2026-08-07 | last_used: 2026-08-07 | uses: 1 | tier: working | origin: 2026-08-07-021646 -->
 
 - [ ] (field support — Sonar rescan of the 4.11.x line FAILED the field gate 2026-08-06:
   15 new issues + new-code coverage 79.4% vs 80; **all 13 code findings FIXED and MERGED
