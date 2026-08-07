@@ -153,6 +153,10 @@ public class KafkaFlowAdapter implements AutoCloseable {
     private static final String DEFAULT_GROUP_PREFIX = "kafka-flow-adapter";
     private static final int MANUAL_COMMIT_MAX_POLL_RECORDS = 1;
     private static final int AUTO_COMMIT_MAX_POLL_RECORDS = 500;   // Kafka client's own default
+    // Kafka's own max.poll.interval.ms default - the floor for the derivation, which only ever raises it.
+    private static final long KAFKA_DEFAULT_MAX_POLL_INTERVAL_MS = 300000;
+    // margin on top of the computed worst-case processing envelope (poll overhead, DLQ confirm-write, GC)
+    private static final long POLL_INTERVAL_HEADROOM_MS = 10000;
 
     private final List<KafkaFlowConsumer> consumers = new ArrayList<>();
     private final Properties consumerProps;
@@ -228,7 +232,7 @@ public class KafkaFlowAdapter implements AutoCloseable {
         KafkaConsumerBinding binding = (topicPattern != null ? builder.topicPattern(topicPattern)
                 : builder.topic(topic)).build();
         logBinding(label, binding);
-        return new KafkaFlowConsumer(newConsumer(binding), binding, dlqTimeout, retryPolicy,
+        return new KafkaFlowConsumer(newConsumer(binding, retryPolicy), binding, dlqTimeout, retryPolicy,
                 schemaEnabled ? schemaCodec : null);
     }
 
@@ -562,12 +566,89 @@ public class KafkaFlowAdapter implements AutoCloseable {
      * that decides the commit contract, so there is no ambiguity with {@link KafkaClientConfig}'s base
      * template about which setting wins.
      */
-    private Consumer<String, byte[]> newConsumer(KafkaConsumerBinding binding) {
+    private Consumer<String, byte[]> newConsumer(KafkaConsumerBinding binding, RetryPolicy retryPolicy) {
         Properties p = new Properties();
         p.putAll(consumerProps);
         p.setProperty(ConsumerConfig.GROUP_ID_CONFIG, binding.groupId());
         applyDeliveryMode(p, binding);
+        applyPollInterval(p, binding, retryPolicy);
         return new KafkaConsumer<>(p);
+    }
+
+    /**
+     * Guard against poll-thread eviction. Message processing happens ON the poll thread (a flow's own
+     * {@code ttl} is its deadline), so the worst-case time between two {@code poll()} calls is the
+     * binding's full retry envelope - {@code (maxRetries+1) x} the slowest reachable target ttl
+     * {@code + maxRetries x backoff} - times {@code max.poll.records}, plus headroom. If that envelope
+     * exceeds Kafka's {@code max.poll.interval.ms} (default 5 minutes), the group coordinator evicts the
+     * consumer mid-processing and the subsequent commit fails. This derives the interval from the
+     * envelope, never lowering it below the Kafka default. An explicit {@code max.poll.interval.ms} in
+     * the consumer template is an operator decision and is respected as-is, with a {@code WARN} when the
+     * computed envelope exceeds it. Raising the interval is low-risk: crash liveness is detected by
+     * heartbeats/{@code session.timeout.ms} - this setting only bounds time between polls. Visible for
+     * testing.
+     */
+    static void applyPollInterval(Properties p, KafkaConsumerBinding binding, RetryPolicy retryPolicy) {
+        long maxPollRecords = Long.parseLong(p.getProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG));
+        long envelopeMs;
+        try {
+            long perRecordMs = Math.addExact(
+                    Math.multiplyExact(retryPolicy.maxRetries() + 1L, maxTargetTtlMs(binding)),
+                    Math.multiplyExact((long) retryPolicy.maxRetries(), retryPolicy.backoffMs()));
+            envelopeMs = Math.addExact(Math.multiplyExact(perRecordMs, maxPollRecords),
+                    POLL_INTERVAL_HEADROOM_MS);
+        } catch (ArithmeticException e) {
+            envelopeMs = Integer.MAX_VALUE;   // an absurd configuration saturates at the config's int range
+        }
+        envelopeMs = Math.min(envelopeMs, Integer.MAX_VALUE);
+        String explicit = p.getProperty(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG);
+        if (explicit != null) {
+            warnWhenEnvelopeExceedsExplicitInterval(binding, explicit, envelopeMs);
+            return;
+        }
+        long derived = Math.max(KAFKA_DEFAULT_MAX_POLL_INTERVAL_MS, envelopeMs);
+        p.setProperty(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, String.valueOf(derived));
+        if (derived > KAFKA_DEFAULT_MAX_POLL_INTERVAL_MS) {
+            log.info("Binding '{}' derives max.poll.interval.ms={} from its worst-case retry envelope "
+                    + "(slowest target ttl x retries x max.poll.records + headroom)",
+                    binding.topicOrPattern(), derived);
+        }
+    }
+
+    private static void warnWhenEnvelopeExceedsExplicitInterval(KafkaConsumerBinding binding,
+                                                                String explicit, long envelopeMs) {
+        try {
+            if (envelopeMs > Long.parseLong(explicit.trim())) {
+                log.warn("Binding '{}' sets max.poll.interval.ms={} but its worst-case retry envelope "
+                        + "is {} ms - a slow-failing message may get this consumer evicted from the "
+                        + "group mid-processing", binding.topicOrPattern(), explicit.trim(), envelopeMs);
+            }
+        } catch (NumberFormatException e) {
+            // a malformed template value is the Kafka client's to reject with its own config error
+        }
+    }
+
+    /**
+     * The slowest reachable target deadline for a binding: flow targets use the compiled flow's own ttl
+     * (every target was validated to exist at construction); {@code task://} targets use the binding's
+     * task ttl (default {@value KafkaFlowConsumer#DEFAULT_TASK_TTL_MS} ms).
+     */
+    private static long maxTargetTtlMs(KafkaConsumerBinding binding) {
+        long taskTtl = binding.taskTtlMs() != null ? binding.taskTtlMs() : KafkaFlowConsumer.DEFAULT_TASK_TTL_MS;
+        if (binding.routingRules() == null) {
+            return flowTtl(binding.flowId(), taskTtl);
+        }
+        long max = 0;
+        for (RoutingRuleSet.Target target : binding.routingRules().allTargets()) {
+            max = Math.max(max, target.task() ? taskTtl : flowTtl(target.destination(), taskTtl));
+        }
+        return max;
+    }
+
+    /** A compiled flow's ttl, or the fallback for a flow not in the registry (defensive; validated earlier). */
+    private static long flowTtl(String flowId, long fallback) {
+        var flow = Flows.getFlow(flowId);
+        return flow != null ? flow.ttl : fallback;
     }
 
     /**
