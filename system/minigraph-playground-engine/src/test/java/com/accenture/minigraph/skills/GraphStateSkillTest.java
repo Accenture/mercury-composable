@@ -41,11 +41,12 @@ class GraphStateSkillTest {
         // in a web UI with accidental padding - the cid is the store key, and both
         // engines trim identically so the mixed-fleet key space stays one key per id
         var graphInstance = new GraphInstance("unit-test");
+        var skill = new TestSkill();
         graphInstance.stateMachine.setElement("model.cid", "  order-1001  ");
-        assertEquals("order-1001", new TestSkill().getRequiredCorrelationId(graphInstance, "suspend"));
+        assertEquals("order-1001", skill.getRequiredCorrelationId(graphInstance, "suspend"));
         // blank remains a missing correlation ID, not an empty key
         graphInstance.stateMachine.setElement("model.cid", "   ");
         assertThrows(IllegalArgumentException.class,
-                () -> new TestSkill().getRequiredCorrelationId(graphInstance, "suspend"));
+                () -> skill.getRequiredCorrelationId(graphInstance, "suspend"));
     }
 }

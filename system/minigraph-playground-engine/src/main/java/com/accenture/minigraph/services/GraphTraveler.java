@@ -204,51 +204,57 @@ public class GraphTraveler extends GraphLambdaFunction {
         // a late reply after the run reached a terminal (completed, aborted or timed
         // out) is dropped before any console send - the reply route may already be a
         // released companion capture route
-        if (graphInstance != null && !graphInstance.complete.get()) {
-            var stateMachine = graphInstance.stateMachine;
-            var target = stateMachine.getElement(nodeName + "." + TARGET);
-            // Unrecoverable error from the node itself
-            if (response.hasError()) {
-                if (target != null) {
-                    var eMap = getErrorMap(stateMachine.getElement(OUTPUT_BODY), target);
-                    stateMachine.setElement(OUTPUT_BODY, eMap);
-                }
-                handleErrorResponse(po, graphInstance, response);
-                return;
+        if (graphInstance == null || graphInstance.complete.get()) {
+            return;
+        }
+        var stateMachine = graphInstance.stateMachine;
+        var target = stateMachine.getElement(nodeName + "." + TARGET);
+        // Unrecoverable error from the node itself
+        if (response.hasError()) {
+            if (target != null) {
+                var eMap = getErrorMap(stateMachine.getElement(OUTPUT_BODY), target);
+                stateMachine.setElement(OUTPUT_BODY, eMap);
             }
-            var graph = graphInstance.graph;
-            var node = graph.findNodeByAlias(nodeName);
-            checkFrequency(po, graphInstance, nodeName);
-            // advise user that the node with skill has been executed
-            var skill = node.getProperty(SKILL);
-            var replyTo = graphInstance.getReplyTo();
-            po.send(new EventEnvelope().setTo(replyTo).setBody("Executed " + nodeName + " with skill " + skill +
-                    " in " +response.getExecutionTime() + " ms"));
-            // Skill handler would set status and error in its node properties
-            // e.g. the HTTP response status code to the API fetcher >= 400
-            var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
-            var resultError = stateMachine.getElement(nodeName + "." + ERROR);
-            // Mark the skill complete only when it did NOT fail (status + error set,
-            // e.g. an exception-routed fetcher): a join barrier consults skillRun,
-            // so a failed branch must not satisfy the barrier while it retries.
-            // GraphExecutor keeps identical semantics.
-            if (!(processStatus instanceof Integer && resultError != null)) {
-                graphInstance.skillRun.put(nodeName, true);
+            handleErrorResponse(po, graphInstance, response);
+            return;
+        }
+        handleSkillSuccess(po, graphInstance, nodeName, target, response);
+    }
+
+    private void handleSkillSuccess(PostOffice po, GraphInstance graphInstance, String nodeName,
+                                    Object target, EventEnvelope response) {
+        var stateMachine = graphInstance.stateMachine;
+        var node = graphInstance.graph.findNodeByAlias(nodeName);
+        checkFrequency(po, graphInstance, nodeName);
+        // advise user that the node with skill has been executed
+        var skill = node.getProperty(SKILL);
+        var replyTo = graphInstance.getReplyTo();
+        po.send(new EventEnvelope().setTo(replyTo).setBody("Executed " + nodeName + " with skill " + skill +
+                " in " +response.getExecutionTime() + " ms"));
+        // Skill handler would set status and error in its node properties
+        // e.g. the HTTP response status code to the API fetcher >= 400
+        var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
+        var resultError = stateMachine.getElement(nodeName + "." + ERROR);
+        // Mark the skill complete only when it did NOT fail (status + error set,
+        // e.g. an exception-routed fetcher): a join barrier consults skillRun,
+        // so a failed branch must not satisfy the barrier while it retries.
+        // GraphExecutor keeps identical semantics.
+        if (!(processStatus instanceof Integer && resultError != null)) {
+            graphInstance.skillRun.put(nodeName, true);
+        }
+        var errorHandler = node.getProperty(EXCEPTION);
+        if (processStatus instanceof Integer rc && resultError != null && errorHandler == null) {
+            if (claimTerminal(graphInstance)) {
+                var errorMap = getErrorMap(resultError, target);
+                var cid = graphInstance.getCorrelationId();
+                var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid)
+                                                .setBody(errorMap).setStatus(rc);
+                po.send(error);
+                emitAborted(po, graphInstance);
             }
-            var errorHandler = node.getProperty(EXCEPTION);
-            if (processStatus instanceof Integer rc && resultError != null && errorHandler == null) {
-                if (claimTerminal(graphInstance)) {
-                    var errorMap = getErrorMap(resultError, target);
-                    var cid = graphInstance.getCorrelationId();
-                    var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid)
-                                                    .setBody(errorMap).setStatus(rc);
-                    po.send(error);
-                    emitAborted(po, graphInstance);
-                }
-            } else if (!graphInstance.complete.get()) {
-                var next = String.valueOf(response.getBody());
-                decideNext(po, node, next, graphInstance);
-            }
+        } else if (!graphInstance.complete.get()) {
+            var next = String.valueOf(response.getBody());
+            decideNext(po, node, next, graphInstance);
         }
     }
 

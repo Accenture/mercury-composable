@@ -78,11 +78,11 @@ class CompileGraphTest {
 
     @Test
     void staticValidatorRejectsEveryInvalidSuspendResumeShape() {
-        // direct coverage of every static rule, independent of the manifest:
-        // err1 graph.suspend node not named 'suspend'; err2 suspend=true on graph.math;
-        // err3 suspensible node without a suspend node; err4 suspend node without ttl;
-        // err5 suspensible node without a drawn edge to 'suspend'; err6 suspend node
-        // without an outgoing connection; err7 suspension point without a
+        // Direct coverage of every static rule, independent of the manifest. The fixtures cover
+        // err1 a graph.suspend node not named 'suspend', err2 the suspend marker on graph.math,
+        // err3 a suspensible node without a suspend node, err4 a suspend node without ttl,
+        // err5 a suspensible node without a drawn edge to 'suspend', err6 a suspend node
+        // without an outgoing connection, and err7 a suspension point without a
         // continuation edge (a resumed run could not continue)
         for (var id : List.of("unit-test-suspend-err1", "unit-test-suspend-err2", "unit-test-suspend-err3",
                               "unit-test-suspend-err4", "unit-test-suspend-err5", "unit-test-suspend-err6",
@@ -100,10 +100,10 @@ class CompileGraphTest {
         // valid: a graph.task node may declare a child-call deadline (ttl in the suspend grammar)
         var ok = importGraph("unit-test-ttl-ok");
         GraphModelValidator.validate(ok);
-        // err1: ttl on a skill without child-call deadline semantics (graph.math);
-        // err2: malformed duration on a deadline skill;
-        // err3: a data mapping writing to reserved model metadata (model.ttl);
-        // err4: the same metadata write embedded as a MAPPING: line in a graph.math statement
+        // The err fixtures cover err1 a ttl on a skill without child-call deadline semantics
+        // (graph.math), err2 a malformed duration on a deadline skill, err3 a data mapping
+        // writing to reserved model metadata (model.ttl), and err4 the same metadata write
+        // embedded as a MAPPING line inside a graph.math statement
         for (var id : List.of("unit-test-ttl-err1", "unit-test-ttl-err2", "unit-test-ttl-err3",
                               "unit-test-ttl-err4")) {
             var graph = importGraph(id);

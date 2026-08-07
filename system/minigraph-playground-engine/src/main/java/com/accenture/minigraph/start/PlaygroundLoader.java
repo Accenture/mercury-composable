@@ -63,29 +63,33 @@ public class PlaygroundLoader implements EntryPoint {
         List<ClassInfo> services = scanner.getAnnotatedClasses(eachPackage, FetchFeature.class);
         for (ClassInfo info : services) {
             try {
-                Class<?> cls = Class.forName(info.getName());
-                FetchFeature feature = cls.getAnnotation(FetchFeature.class);
-                if (Feature.isRequired(cls)) {
-                    Class<?> featureClass = Class.forName(info.getName());
-                    Object o = featureClass.getDeclaredConstructor().newInstance();
-                    if (o instanceof FeatureRunner runner) {
-                        if (features.containsKey(feature.value())) {
-                            log.warn("Reloading FetchFeature {} - please check duplicated feature name",
-                                        feature.value());
-                        }
-                        features.put(feature.value(), new FeatureDef(runner));
-                        log.info("Class {} loaded as API fetcher feature {}", o.getClass().getName(), feature.value());
-                    } else {
-                        log.error("Did you forget to implement FetchFeature interface for {}?", o.getClass().getName());
-                    }
-                } else {
-                    log.info("Skip optional {} - {}", cls, feature.value());
-                }
+                loadFeature(info);
             } catch (ClassNotFoundException e) {
                 log.error("Class {} not found", info.getName());
             } catch (Exception e) {
                 log.error("FetchFeature {} cannot be instantiated - {}", info.getName(), e.getMessage());
             }
+        }
+    }
+
+    private void loadFeature(ClassInfo info) throws ReflectiveOperationException {
+        Class<?> cls = Class.forName(info.getName());
+        FetchFeature feature = cls.getAnnotation(FetchFeature.class);
+        if (!Feature.isRequired(cls)) {
+            log.info("Skip optional {} - {}", cls, feature.value());
+            return;
+        }
+        Class<?> featureClass = Class.forName(info.getName());
+        Object o = featureClass.getDeclaredConstructor().newInstance();
+        if (o instanceof FeatureRunner runner) {
+            if (features.containsKey(feature.value())) {
+                log.warn("Reloading FetchFeature {} - please check duplicated feature name",
+                            feature.value());
+            }
+            features.put(feature.value(), new FeatureDef(runner));
+            log.info("Class {} loaded as API fetcher feature {}", o.getClass().getName(), feature.value());
+        } else {
+            log.error("Did you forget to implement FetchFeature interface for {}?", o.getClass().getName());
         }
     }
 }
