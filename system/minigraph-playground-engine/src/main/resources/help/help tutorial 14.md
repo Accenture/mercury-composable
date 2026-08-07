@@ -1,8 +1,9 @@
 Tutorial 14
 -----------
 In this session, you will build a purchase workflow with THREE human checkpoints - a customer
-orders, the store manager approves, the delivery department releases the shipment, and the
-parcel ships to the customer. One graph model, four short runs, one correlation ID.
+orders, the store manager approves (or rejects with a reason, which ends the workflow), the
+delivery department releases the shipment, and the parcel ships to the customer. One graph
+model, four short runs, one correlation ID.
 
 Pre-requisite
 -------------
@@ -30,12 +31,16 @@ continues past the checkpoint without re-executing it. Three vocabulary pieces m
 The graph navigation is:
 
 ```
-root -> resume -> order (suspend=true) -> approval (suspend=true) -> delivery (suspend=true) -> ship -> end
+root -> resume -> order (suspend=true) -> check-approval -> approval (suspend=true) -> delivery (suspend=true) -> ship -> end
+                                               \-> manager-reject -> end
 ```
 
 Each suspensible node captures its actor's input into the model and suspends; each following
 run resumes one checkpoint further. The model is the workflow's durable memory - anything a
-later step needs must be mapped into "model.*" before the checkpoint.
+later step needs must be mapped into "model.*" before the checkpoint. The manager's decision
+lands at a graph.math decision node on the order checkpoint's continuation: an approved
+decision routes to the next suspension point, anything else routes to a terminal rejection
+that reports the manager's reason - the workflow ends with no further checkpoints.
 
 Create the graph model
 ----------------------
@@ -120,6 +125,35 @@ mapping[]=model.run -> output.body.run
 mapping[]=model.cid -> output.body.cid
 ```
 
+Create the manager decision. It reuses the same null-safe probe idiom as "check-fresh", so
+a missing decision counts as a rejection instead of a runtime error - an approved decision
+continues to the approval checkpoint, anything else routes to the terminal rejection:
+
+```
+create node check-approval
+with type Decision
+with properties
+purpose=Approved continues to the delivery release - anything else ends the workflow
+skill=graph.math
+statement[]=MAPPING: text(={input.body.decision}) -> model.approval_probe
+statement[]=IF: {model.approval_probe} == '=approved'
+THEN: approval
+ELSE: manager-reject
+```
+
+```
+create node manager-reject
+with type mapper
+with properties
+purpose=The manager rejected the purchase: report the reason and end the workflow
+skill=graph.data.mapper
+mapping[]=text(rejected) -> output.body.stage
+mapping[]=input.body.reason -> output.body.reason
+mapping[]=model.order -> output.body.order
+mapping[]=model.run -> output.body.run
+mapping[]=model.cid -> output.body.cid
+```
+
 Create the completion, rejection, suspend and end nodes:
 
 ```
@@ -172,7 +206,10 @@ connect resume to check-fresh with fresh
 connect check-fresh to order with submission
 connect check-fresh to reject with no-transaction
 connect order to suspend with checkpoint
-connect order to approval with next
+connect order to check-approval with next
+connect check-approval to approval with approved
+connect check-approval to manager-reject with rejected
+connect manager-reject to end with then
 connect approval to suspend with checkpoint
 connect approval to delivery with next
 connect delivery to suspend with checkpoint
@@ -234,10 +271,15 @@ run
 ```
 
 Watch the console: the resume node restores the persisted state and the traversal
-continues at the approval node - the order checkpoint is NOT re-executed. Now
-"inspect output.body" shows stage=approved... and run=resume, and the "seen" command
-lists the order node as visited even though this run never executed it - that is the
-restored traversal bookkeeping.
+continues at the check-approval decision - the order checkpoint is NOT re-executed. The
+approved decision routes to the approval checkpoint. Now "inspect output.body" shows
+stage=approved... and run=resume, and the "seen" command lists the order node as visited
+even though this run never executed it - that is the restored traversal bookkeeping.
+
+(The manager could reject instead: the same run with
+"text(rejected) -> input.body.decision" and "text(budget exceeded) -> input.body.reason"
+routes to manager-reject - the reply carries stage=rejected with the reason and the
+original order, and the workflow ends. You will try this over REST below.)
 
 Run 3 - the delivery department releases the shipment:
 
@@ -346,13 +388,36 @@ The workflow rejects it with HTTP-404 - the order must come first - and the repl
 resume, so a duplicated request at any stage behaves like a fresh transaction instead of
 executing that stage twice.
 
+Finally, try the manager's other option - reject with a reason. Submit a new order, then
+reject it:
+
+```
+curl -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
+  -H "Content-Type: application/json" \
+  -H "X-Correlation-Id: order-2002" \
+  -d '{"item": "monitor", "amount": 300}'
+```
+
+```
+curl -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
+  -H "Content-Type: application/json" \
+  -H "X-Correlation-Id: order-2002" \
+  -d '{"decision": "rejected", "reason": "budget exceeded"}'
+```
+
+The reply is {"stage": "rejected", "reason": "budget exceeded", "order": {...}, "run": "resume",
+"cid": "order-2002"} and the workflow is over - the record was consumed on resume and nothing
+re-suspended, so any further request under order-2002 is a fresh 404 rejection.
+
 Summary
 -------
 In this session, we expressed a purchase workflow with three human checkpoints as four short
 graph runs keyed by one business correlation ID: one reserved "suspend" node served every
 checkpoint, each suspensible node captured its actor's input into the model and staged its own
-stage response, input validation enforced the order-before-decision sequence, and the
-engine-managed "model.run" flag told every reply whether the run was fresh or resumed.
+stage response, a graph.math decision at the manager's resumption point routed an approval to
+the next checkpoint and a rejection (with the manager's reason) to the end, input validation
+enforced the order-before-decision sequence, and the engine-managed "model.run" flag told
+every reply whether the run was fresh or resumed.
 
 Why suspend and resume?
 -----------------------

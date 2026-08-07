@@ -8,6 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Changed
+
+1. **tutorial-14's manager approval step is now a real decision.** The purchase workflow's
+   store manager can approve — the graph suspends for the delivery department as before — or
+   **reject with a reason**: a `graph.math` decision at the manager's resumption point routes
+   anything other than an approved decision to a terminal rejection that reports the reason
+   together with the original order, and the workflow ends with no further checkpoints (the
+   record was consumed on resume, so a later request under the same correlation ID is a fresh
+   404). The decision reuses the tutorial's null-safe probe idiom, so a missing decision counts
+   as a rejection rather than a runtime error. Covered by a new embedded-Redis end-to-end test;
+   the tutorial help and the workflow-suspension guide walk both outcomes.
+
+---
 ## Version 4.11.3, 8/6/2026
 
 Field support roll-up: consumer robustness from a field code review, the third field

@@ -6,7 +6,7 @@
         "Root"
       ],
       "properties": {
-        "purpose": "Purchase workflow with three human checkpoints: a customer orders, the store manager approves, the delivery department releases the shipment, and the parcel ships to the customer - four short runs sharing one correlation ID",
+        "purpose": "Purchase workflow with three human checkpoints: a customer orders, the store manager approves or rejects with a reason (a rejection ends the workflow), the delivery department releases the shipment, and the parcel ships to the customer - four short runs sharing one correlation ID",
         "name": "tutorial-14"
       }
     },
@@ -50,6 +50,37 @@
           "model.cid -> output.body.cid"
         ],
         "purpose": "Capture the order step, then suspend for the next actor"
+      }
+    },
+    {
+      "alias": "check-approval",
+      "types": [
+        "Decision"
+      ],
+      "properties": {
+        "skill": "graph.math",
+        "statement": [
+          "MAPPING: text(={input.body.decision}) -> model.approval_probe",
+          "IF: {model.approval_probe} == '=approved'\nTHEN: approval\nELSE: manager-reject"
+        ],
+        "purpose": "The store manager decides: an approved decision continues to the delivery release; anything else is a rejection that ends the workflow with the manager's reason"
+      }
+    },
+    {
+      "alias": "manager-reject",
+      "types": [
+        "mapper"
+      ],
+      "properties": {
+        "skill": "graph.data.mapper",
+        "mapping": [
+          "text(rejected) -> output.body.stage",
+          "input.body.reason -> output.body.reason",
+          "model.order -> output.body.order",
+          "model.run -> output.body.run",
+          "model.cid -> output.body.cid"
+        ],
+        "purpose": "The manager rejected the purchase: report the reason with the original order and end the workflow - no further checkpoints"
       }
     },
     {
@@ -194,10 +225,40 @@
     },
     {
       "source": "order",
-      "target": "approval",
+      "target": "check-approval",
       "relations": [
         {
           "type": "next",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "check-approval",
+      "target": "approval",
+      "relations": [
+        {
+          "type": "approved",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "check-approval",
+      "target": "manager-reject",
+      "relations": [
+        {
+          "type": "rejected",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "manager-reject",
+      "target": "end",
+      "relations": [
+        {
+          "type": "then",
           "properties": {}
         }
       ]

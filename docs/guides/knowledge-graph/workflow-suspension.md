@@ -100,14 +100,19 @@ app) is the complete multi-checkpoint pattern — **three human checkpoints, fou
 runs, one correlation ID**:
 
 ```text
-root → resume → order (suspend=true) → approval (suspend=true) → delivery (suspend=true) → ship → end
+root → resume → order (suspend=true) → check-approval → approval (suspend=true) → delivery (suspend=true) → ship → end
+                                             ↘ manager-reject → end
 ```
 
-A customer orders, the store manager approves, the delivery department releases the
-shipment, and the parcel ships — one `suspend` node serves every checkpoint, and each
-suspensible node captures its actor's input into the model and stages its own
-stage-specific reply (overriding the default `suspended` response). Run it with Redis
-(e.g. `helpers/redis-standalone`) and drive the four runs with one correlation ID.
+A customer orders, the store manager approves **or rejects with a reason**, the delivery
+department releases the shipment, and the parcel ships — one `suspend` node serves every
+checkpoint, and each suspensible node captures its actor's input into the model and
+stages its own stage-specific reply (overriding the default `suspended` response). The
+manager's decision lands at a `graph.math` decision node on the `order` checkpoint's
+continuation: an approved decision routes to the next suspension point, anything else
+routes to a terminal rejection that reports the manager's reason — the workflow ends and
+no further checkpoint exists. Run it with Redis (e.g. `helpers/redis-standalone`) and
+drive the four runs with one correlation ID.
 
 Run 1 — the customer orders a laptop; the run suspends at the `order` checkpoint and
 replies with `"run": "fresh"` (a new transaction):
@@ -124,7 +129,8 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
 
 Run 2 — with the same `x-correlation-id`, the store manager approves. The `resume` node
 restores the persisted state and continues past the `order` checkpoint without
-re-executing it — every reply from here on carries `"run": "resume"`:
+re-executing it, into the `check-approval` decision — every reply from here on carries
+`"run": "resume"`:
 
 ```bash
 curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
@@ -172,6 +178,28 @@ Every stage's input crossed every suspension — the model accumulated `order`, 
 and `delivery` across four separate runs, and a later checkpoint simply re-persisted the
 grown state under the same correlation ID.
 
+The manager may **reject** instead — the alternative run 2. The `check-approval` decision
+routes anything other than an approved decision to the terminal rejection, which reports
+the manager's reason together with the original order, and the workflow ends — the record
+was already consumed on resume and nothing re-suspends, so a further request under the
+same correlation ID is a fresh 404 rejection:
+
+```bash
+curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
+  -H 'content-type: application/json' -H 'x-correlation-id: order-2002' \
+  -d '{"decision": "rejected", "reason": "budget exceeded"}'
+```
+
+```json
+{
+  "stage": "rejected",
+  "reason": "budget exceeded",
+  "order": {"item": "laptop", "amount": 2000},
+  "run": "resume",
+  "cid": "order-2002"
+}
+```
+
 The tutorial also validates its input: a request that is not an order submission, for a
 correlation ID with no suspended record, is **rejected with HTTP 404** — the order must
 come first. Three techniques worth stealing from its model:
@@ -179,7 +207,9 @@ come first. Three techniques worth stealing from its model:
 - **Null-safe presence check.** The math expression engine has no null literal, but `{var}`
   substitution inside a `text()` constant is null-safe:
   `MAPPING: text(={input.body.item}) -> model.order_probe` always yields a present
-  string (`=null` when the field is absent), which an `IF` can compare safely.
+  string (`=null` when the field is absent), which an `IF` can compare safely. The
+  `check-approval` decision reuses the same idiom, so a missing decision counts as a
+  rejection rather than a runtime error.
 - **The run flag.** `graph.resume` sets `model.run` to `fresh` or `resume`, and the
   tutorial stages it into every reply (`model.run -> output.body.run`) — so the UI always
   knows whether it is looking at a new transaction or a resumed continuation, and a
