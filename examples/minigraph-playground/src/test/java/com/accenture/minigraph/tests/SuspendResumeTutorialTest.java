@@ -113,6 +113,49 @@ class SuspendResumeTutorialTest {
 
     @SuppressWarnings("unchecked")
     @Test
+    void managerRejectionEndsTheWorkflow() throws TimeoutException {
+        var cid = Utility.getInstance().getUuid();
+        // run 1: the customer orders a monitor - suspend for the store manager
+        var ordered = stage(runGraph(cid, Map.of("item", "monitor", "amount", 300)), cid);
+        assertTrue(String.valueOf(ordered.getElement("stage")).startsWith("order-submitted"));
+        // run 2: the store manager rejects with a reason - the workflow ends, no further checkpoints
+        var rejected = stage(runGraph(cid, Map.of("decision", "rejected", "reason", "budget exceeded")), cid);
+        assertEquals("rejected", rejected.getElement("stage"));
+        assertEquals("budget exceeded", rejected.getElement("reason"), "the manager's reason is reported");
+        assertEquals("resume", rejected.getElement("run"), "the rejection run is a resumed continuation");
+        assertEquals("monitor", rejected.getElement("order.item"), "the reply echoes the original order");
+        // the record was consumed on resume and nothing re-suspended: the workflow is over,
+        // so a further request under the same correlation ID is rejected as a fresh transaction
+        var after = runGraph(cid, Map.of("release", true));
+        assertEquals(404, after.getStatus(), "a rejected workflow cannot be continued");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void invalidDecisionKeepsTheWorkflowWaiting() throws TimeoutException {
+        var cid = Utility.getInstance().getUuid();
+        // run 1: the customer orders - suspend for the store manager
+        var ordered = stage(runGraph(cid, Map.of("item", "keyboard", "amount", 80)), cid);
+        assertTrue(String.valueOf(ordered.getElement("stage")).startsWith("order-submitted"));
+        // run 2: a request with NO decision (e.g. a stale-record replay or a typo) must not
+        // end the workflow - it re-suspends and asks for a valid decision
+        var waiting = stage(runGraph(cid, Map.of("note", "no decision here")), cid);
+        assertTrue(String.valueOf(waiting.getElement("stage")).startsWith("awaiting-decision"),
+                "an invalid decision re-suspends: " + waiting.getElement("stage"));
+        assertEquals("resume", waiting.getElement("run"));
+        // run 3: an unrecognized decision value loops the same way (check-approval re-evaluates
+        // on every resume - the wait loop is stable across suspensions)
+        var stillWaiting = stage(runGraph(cid, Map.of("decision", "maybe")), cid);
+        assertTrue(String.valueOf(stillWaiting.getElement("stage")).startsWith("awaiting-decision"),
+                "an unrecognized decision keeps waiting: " + stillWaiting.getElement("stage"));
+        // run 4: the manager finally approves - the workflow continues past the loop
+        var approved = stage(runGraph(cid, Map.of("decision", "approved", "manager", "store-88")), cid);
+        assertTrue(String.valueOf(approved.getElement("stage")).startsWith("approved"),
+                "a valid decision exits the wait loop: " + approved.getElement("stage"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void freshCorrelationIdRunsFromTheStart() throws TimeoutException {
         // a transaction that never suspended simply flows through the resume node
         var response = runGraph(Utility.getInstance().getUuid(), Map.of("item", "mouse"));

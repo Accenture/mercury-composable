@@ -8,6 +8,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Changed
+
+1. **tutorial-14's manager approval step is now a real decision with three outcomes.** The
+   purchase workflow's store manager can approve — the graph suspends for the delivery
+   department as before — or **reject with a reason**: a `graph.math` decision at the manager's
+   resumption point routes an explicit rejection to a terminal node that reports the reason
+   together with the original order, and the workflow ends (the record was consumed on resume,
+   so a later request under the same correlation ID is a fresh 404). **Anything else — a missing
+   or unrecognized decision — re-suspends** through a wait node whose continuation loops back to
+   the decision, so an invalid request (or a replay against a leftover record) can never end a
+   long-running workflow by accident; the loop uses `RESET` to clear both loop nodes' seen marks
+   on every pass, since seen marks survive suspension and a seen node never re-executes. Covered
+   by embedded-Redis end-to-end tests for all three outcomes including loop stability across two
+   suspensions; the tutorial help and the workflow-suspension guide walk every path. The
+   decide-before-you-suspend rule, the suspensible node's capability envelope, and the wait-loop
+   RESET pattern are stated everywhere an author learns the grammar — the guide's design rules,
+   the tutorial help, the AI grammar (`minigraph-commands.json` and the `graph.suspend` skill
+   help) — and the validator/runtime error for `suspend=true` on a routing skill now explains
+   the why and the fix instead of only the restriction.
+
+---
 ## Version 4.11.3, 8/6/2026
 
 Field support roll-up: consumer robustness from a field code review, the third field
