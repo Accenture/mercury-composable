@@ -155,8 +155,9 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private static final String METADATA_KEY = "key";
     private static final String DLQ_ERROR_HEADER = "dlq.error";
     private static final String DLQ_ORIGIN_TOPIC_HEADER = "dlq.origin.topic";
-    // deadline for a task:// invocation when the binding sets no 'ttl' (a bare function has no flow ttl);
-    // package-private: KafkaFlowAdapter reuses it when deriving max.poll.interval.ms from the retry envelope
+    // deadline for a direct function target when the binding sets no 'ttl' - a bare function
+    // has no flow ttl. Package-private: KafkaFlowAdapter reuses it when deriving
+    // max.poll.interval.ms from the retry envelope
     static final long DEFAULT_TASK_TTL_MS = 30000;
     // Global inbound business correlation-id header (default "cid"); its value seeds the flow's model.cid.
     private static final String GLOBAL_CORRELATION_ID_HEADER = AppConfigReader.getInstance()

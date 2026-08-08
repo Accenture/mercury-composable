@@ -129,8 +129,9 @@ class SchemaCodecTest {
         SchemaCodec.Decoder strictDecoder = strict.newDecoder();
 
         // serializer side: a payload missing the required key is rejected before it is framed...
+        Map<String, Object> nonConforming = Map.of("wrong", "shape");
         assertThrows(RuntimeException.class,
-                () -> strictEncoder.serialize(TOPIC, SchemaType.JSON, id, Map.of("wrong", "shape")),
+                () -> strictEncoder.serialize(TOPIC, SchemaType.JSON, id, nonConforming),
                 "an invalid payload must not serialize when json.fail.invalid.schema=true");
         // ...while a conforming payload passes - proving the rejection above is validation, not setup
         byte[] conforming = strictEncoder.serialize(TOPIC, SchemaType.JSON, id, Map.of("hello", "world"));
