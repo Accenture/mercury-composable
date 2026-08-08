@@ -54,7 +54,7 @@ import java.util.Set;
  * node needs 'task', a valid 'ttl' and an outgoing connection; a 'resume' node needs
  * 'task'; the retired 'suspend=true' property is a deprecation WARN), the placement and
  * grammar of the per-node 'ttl' parameter (store expiry on suspend; child-call deadline
- * on graph.extension / graph.api.fetcher / graph.task; rejected elsewhere), and model
+ * on 'graph.extension' / 'graph.api.fetcher' / 'graph.task'; rejected elsewhere), and model
  * metadata immutability (no data mapping may write model.cid/ttl/... - the runtime
  * mapping guard in GraphLambdaFunction is the second layer of the same rule).
  */
@@ -234,7 +234,7 @@ public class GraphModelValidator {
     /**
      * The 'ttl' node parameter is skill-scoped: store-record expiry on the suspend node
      * (mandatory, checked by validateSuspendNode) and the child-call deadline override on
-     * graph.extension / graph.api.fetcher / graph.task (optional). On any other skilled node it
+     * 'graph.extension' / 'graph.api.fetcher' / 'graph.task' (optional). On any other skilled node it
      * is rejected rather than silently ignored. Grammar for the deadline form is the suspend
      * grammar (digits + s/m/h/d), validated here so a bad value fails the gate, not a live run.
      */
@@ -259,7 +259,7 @@ public class GraphModelValidator {
     /**
      * Model metadata (model.cid/instance/flow/ttl/trace/parent/root/none/run) is engine-managed
      * and immutable: reject any data mapping whose right-hand side writes to it - in the four
-     * mapping-list properties AND in 'MAPPING:' lines embedded in graph.math / graph.js statements
+     * mapping-list properties AND in 'MAPPING:' lines embedded in 'graph.math' / 'graph.js' statements
      * (the same idiom the runtime guard sees). The runtime guard in GraphLambdaFunction enforces
      * the identical rule in both walker lanes; this compile-side twin fails the deployment gate
      * and the playground pre-run check early, so a statically detectable violation can never

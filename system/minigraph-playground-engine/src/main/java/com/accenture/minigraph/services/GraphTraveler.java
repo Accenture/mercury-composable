@@ -145,7 +145,7 @@ public class GraphTraveler extends GraphLambdaFunction {
 
     private void cancelRunWatcher(GraphInstance graphInstance) {
         var token = graphInstance.getRunWatcher();
-        // atomic removal: two racing cancellers act at most once, on the exact token read
+        // atomic removal: two racing cancelers act at most once, on the exact token read
         if (token != null && graphInstance.clearRunWatcher(token)) {
             EventEmitter.getInstance().cancelFutureEvent(token.substring(token.indexOf('|') + 1));
         }
@@ -176,7 +176,7 @@ public class GraphTraveler extends GraphLambdaFunction {
         var token = graphInstance.getRunWatcher();
         // the watcher may act only for the run that armed it: the slot token carries the
         // owning run's correlation id and the atomic removal is the claim - a stale
-        // watcher (a newer run owns the slot, or a canceller already won) stays silent
+        // watcher (a newer run owns the slot, or a canceler already won) stays silent
         if (token == null || !token.startsWith(event.getCorrelationId() + "|")
                 || !graphInstance.clearRunWatcher(token) || !claimTerminal(graphInstance)) {
             return;
