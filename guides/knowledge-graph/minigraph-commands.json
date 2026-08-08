@@ -47,7 +47,7 @@
     "fork": "a node with multiple outgoing connections forks traversal into PARALLEL branches (one per connection, executed concurrently)",
     "join": "synchronize parallel branches with a graph.join barrier node; without one, traversal proceeds as each branch completes",
     "state_safety": "parallel branches must write to DISJOINT state keys (e.g. per-branch model.* variables) to avoid concurrent-write collisions",
-    "suspend": "a skilled node with suspend=true routes to the reserved 'suspend' node after its skill and output mapping complete; the run then ends normally and a later run with the same business correlation ID resumes past the checkpoint (see the workflow-suspension guide); the node is a COMPLETE working node - it executes its skill in full and may carry any non-routing skill (graph.data.mapper, graph.task, graph.api.fetcher, graph.extension), capture the actor's input into model.*, and stage the caller's reply in output.*; only its exit changes, and its non-checkpoint edge defines where the next run continues after resume; it suspends UNCONDITIONALLY - it cannot evaluate input and opt out - so when an actor's input decides the workflow's direction (e.g. approve vs reject), place a routing node (graph.math) on the resume continuation BEFORE the next suspensible node, as tutorial-14's check-approval does; to keep waiting on invalid input, route the fallback to a suspensible wait node whose continuation loops back to the decision, and RESET both loop nodes in the decision's statements before its IFs (seen marks survive suspension and a seen node never re-executes) - tutorial-14's await-decision shows the full loop"
+    "suspend": "there are two ways to reach the reserved 'suspend' node, discriminated purely by graph shape: EDGE MODE - a working node with a DRAWN EDGE to 'suspend' redirects there after its skill and output mapping complete (the edge IS the declaration; no property); the node is a COMPLETE working node - it may carry any non-routing skill (graph.data.mapper, graph.task, graph.api.fetcher, graph.extension), capture the actor's input into model.*, and stage the caller's reply in output.*; it must also draw a continuation edge, where the next run continues after resume WITHOUT re-executing the node. JUMP MODE - a graph.math decision returns 'suspend' from its IF-THEN-ELSE; on resume the decision is RE-EXECUTED against the new request input, so it re-decides every time - 'keep waiting on invalid input' is one jump with no extra nodes (tutorial-14's check-approval is the pattern); a decision must NOT draw an edge to 'suspend' (its drawn edges are outcome alternatives; the gate rejects the shape) and may stage the waiting reply in output.* before its IFs (outcome paths overwrite it). When 'suspend' is reachable only by jumps, anchor it behind an island (root -> island -> suspend) so the graph has no orphan nodes - traversal stops at the island. The run then ends normally and a later run with the same business correlation ID resumes (see the workflow-suspension guide). The retired suspend=true property is accepted and IGNORED for one deprecation window (gate WARN)"
   },
   "namespaces": [
     {
@@ -388,7 +388,7 @@
     {
       "type": "Suspensible",
       "structural": false,
-      "role": "visual label for a node carrying the suspend=true property"
+      "role": "visual label for a suspension point - purely cosmetic; behavior comes from the drawn edge to the 'suspend' node (edge mode) or an IF-THEN-ELSE jump (jump mode)"
     }
   ],
   "skills": [
@@ -575,7 +575,7 @@
         "exception"
       ],
       "notes": [
-        "the node MUST be named 'suspend' - a reserved alias like root/end (one per graph): traversal jumps to it by name when a suspend=true node completes; a plain edge into it is an unconditional suspension point",
+        "the node MUST be named 'suspend' - a reserved alias like root/end (one per graph); reached by a working node's drawn edge (edge mode - redirect after the skill completes) or a decision's IF-THEN-ELSE jump (jump mode - re-executed on resume); a decision must not draw an edge to it, and it cannot be an exception handler (exception=suspend is rejected)",
         "superset of graph.task with NO input/output mapping: the skill assembles the persistence envelope {cid, node, ttl, model minus reserved keys, seen, run} and invokes the task= store function (type=put) with a synchronous ack - a failed persist fails the node",
         "ttl is MANDATORY with no default (duration syntax 20s/5m/2h/2d) - it becomes the store record expiry",
         "stages a default {\"type\": \"suspended\", \"cid\": ...} reply when output.body is empty",
@@ -593,7 +593,7 @@
         "exception"
       ],
       "notes": [
-        "restores the model + traversal bookkeeping persisted by graph.suspend for model.cid and jumps past the suspension point WITHOUT re-executing it (downstream joins still see pre-suspension branches)",
+        "restores the model + traversal bookkeeping persisted by graph.suspend for model.cid and continues at the suspension point: past an edge-mode checkpoint WITHOUT re-executing it (downstream joins still see pre-suspension branches), or by RE-EXECUTING a jump-mode decision against the new input",
         "superset of graph.task with NO input/output mapping: invokes the task= store function (type=get, body {cid})",
         "no record = the NORMAL fresh-transaction case: traversal continues along the node's own forward path; either way the skill sets model.run to 'resume' or 'fresh' - the engine does not distinguish absent from expired, so fresh-vs-expired handling is application logic (e.g. a graph.math IF-THEN-ELSE on the forward path)",
         "the shipped stores consume the record atomically on retrieval - a duplicate resume behaves as a fresh run, never a double execution",
@@ -653,6 +653,6 @@
     "Dictionary/Provider config nodes are referenced by name and not traversed - but the required convention is NO NODE LEFT UNCONNECTED: wire them under a graph.island (root -[contains]-> island -[data]-> dictionary -[provider]-> provider), the graph's entity-relationship knowledge layer",
     "a node is executed once per run (a graph.math RESET statement is the only escape)",
     "instantiate graph must precede run/execute/inspect",
-    "a node with skill=graph.suspend must be named 'suspend' (reserved alias, jump-by-name; one per graph) and needs an outgoing connection so the run completes after the checkpoint; a suspend=true node must draw its checkpoint edge to it, keep a continuation edge, and must not use graph.math/graph.js; 'suspend' is a reserved node property and model.run is an engine-managed state key"
+    "a node with skill=graph.suspend must be named 'suspend' (reserved alias; one per graph) and needs an outgoing connection so the run completes after the checkpoint; a node with a drawn edge to 'suspend' must keep a continuation edge and must not use graph.math/graph.js (a decision jumps instead and is re-executed on resume); 'suspend' cannot be an exception handler; the retired suspend=true property is ignored (deprecation WARN); 'suspend' is a reserved node property and model.run is an engine-managed state key"
   ]
 }

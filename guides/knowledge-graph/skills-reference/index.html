@@ -3040,21 +3040,25 @@ skill itself — <strong>no input/output mapping on the node</strong>.</p>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>task=v1.redis.persist.model
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>ttl=2d
 </code></pre></div>
-<p>The node carrying this skill <strong>must be named <code>suspend</code></strong> — a reserved alias like <code>root</code>/<code>end</code>,
-because traversal jumps to it by name: a node with the <code>suspend=true</code> property routes here after
-its skill completes, and a plain edge into <code>suspend</code> is an unconditional suspension point. <code>ttl</code>
-is <strong>mandatory with no default</strong> (duration syntax <code>20s/5m/2h/2d</code>) — it becomes the store record's
-expiry. Unless the graph staged its own <code>output.*</code>, the caller of the suspended run receives
-<code>{"type": "suspended", "cid": ...}</code>.</p>
+<p>The node carrying this skill <strong>must be named <code>suspend</code></strong> — a reserved alias like <code>root</code>/<code>end</code>.
+Two ways in: a <strong>working node with a drawn edge</strong> to <code>suspend</code> suspends when its skill completes
+(edge mode — the edge is the declaration; a continuation edge is mandatory and the node is never
+re-executed on resume), and a <strong>decision jumps</strong> to it by returning <code>suspend</code> from its
+IF-THEN-ELSE (jump mode — the decision re-executes against the new input on every resume; it
+must not draw an edge to <code>suspend</code>). The retired <code>suspend=true</code> property is ignored (deprecation
+WARN). <code>ttl</code> is <strong>mandatory with no default</strong> (duration syntax <code>20s/5m/2h/2d</code>) — it becomes the
+store record's expiry. Unless the graph staged its own <code>output.*</code>, the caller of the suspended
+run receives <code>{"type": "suspended", "cid": ...}</code>.</p>
 <p><strong>Gotchas:</strong> the store must acknowledge (2xx) before the graph completes — a failed persist fails
 the node (<code>exception=</code> routes it); a suspension point must be the sole active branch (never
 between a fan-out and its join); only <code>model.*</code> survives — map what later steps need into the
 model <strong>before</strong> the checkpoint. Full story: <a href="../workflow-suspension/">Workflow Suspension</a>.</p>
 <h2 id="resume">graph.resume<a class="headerlink" href="#resume" title="Permanent link">&para;</a></h2>
-<p>Restores the workflow state persisted by <a href="#suspend"><code>graph.suspend</code></a> and continues traversal from
-the recorded suspension point <strong>without re-executing it</strong>. Also a superset of <code>graph.task</code> — the
-<code>task</code> property names the store function (<code>type=get</code>, body <code>{cid}</code>), restoration is encapsulated,
-no mapping on the node.</p>
+<p>Restores the workflow state persisted by <a href="#suspend"><code>graph.suspend</code></a> and continues traversal at
+the recorded suspension point — <strong>past an edge-mode checkpoint without re-executing it</strong>, or by
+<strong>re-executing a jump-mode decision</strong> against the new request input. Also a superset of
+<code>graph.task</code> — the <code>task</code> property names the store function (<code>type=get</code>, body <code>{cid}</code>),
+restoration is encapsulated, no mapping on the node.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>skill=graph.resume
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>task=v1.redis.retrieve.model
 </code></pre></div>

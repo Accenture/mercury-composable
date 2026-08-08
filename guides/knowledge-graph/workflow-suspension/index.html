@@ -2645,8 +2645,9 @@
   and the run completes normally. A later request with the <strong>same business correlation
   ID resumes</strong> past the checkpoint without re-executing it. A long-running business
   process becomes a sequence of short runs — nothing stays in memory between them.</li>
-<li><strong>Vocabulary</strong> — the <code>graph.suspend</code> and <code>graph.resume</code> skills, the reserved node
-  alias <code>suspend</code>, and the node property <code>suspend=true</code>.</li>
+<li><strong>Vocabulary</strong> — the <code>graph.suspend</code> and <code>graph.resume</code> skills and the reserved node
+  alias <code>suspend</code>, reached by a drawn edge (working nodes) or an IF-THEN-ELSE jump
+  (decisions).</li>
 <li><strong>The store is pluggable</strong> — Redis ships as the <code>minigraph-state-redis</code> extension;
   any composable function honoring the <a href="#state-store-contract">store contract</a> works.</li>
 </ul>
@@ -2677,18 +2678,34 @@ the workflow designer knows. It uses duration syntax (<code>20s</code>, <code>5m
 the store record's expiry. The <code>suspend</code> node also needs an <strong>outgoing connection</strong>
 (normally to <code>end</code>): without one, the record would persist and the run would then stall
 instead of completing — the compiler rejects the graph.</p>
-<p><strong>2. A suspensible node</strong> — any skilled node marked <code>suspend=true</code>. After its skill
-completes and its output mapping runs, traversal routes to the <code>suspend</code> node instead of
-its normal forward path. Draw <strong>both</strong> edges — the checkpoint edge to <code>suspend</code> and the
-continuation edge — so the diagram tells the whole story (the compiler enforces this).
-Routing skills (<code>graph.math</code>, <code>graph.js</code>) cannot be suspensible. A plain edge <em>into</em> the
-<code>suspend</code> node is an unconditional suspension point — no property needed.</p>
+<p><strong>2. A suspension point</strong> — there are two modes, discriminated purely by graph shape:</p>
+<ul>
+<li><strong>Edge mode (working nodes).</strong> A working node with a <strong>drawn edge to <code>suspend</code></strong> is a
+  checkpoint: after its skill completes and its output mapping runs, traversal redirects
+  to the <code>suspend</code> node instead of the node's continuation edge. The drawn edge <strong>is</strong>
+  the declaration — no property needed. Draw <strong>both</strong> edges — the checkpoint edge and at
+  least one continuation edge (the compiler enforces this): a resumed run continues along
+  the continuation and <strong>never re-executes</strong> the node.</li>
+<li><strong>Jump mode (decisions).</strong> A <code>graph.math</code> decision reaches the checkpoint by returning
+  <code>suspend</code> from its IF-THEN-ELSE. On resume the decision is <strong>re-executed</strong> against the
+  new request input — it re-decides every time, which makes "keep waiting on invalid
+  input" a one-node pattern. A decision must <strong>not</strong> draw an edge to <code>suspend</code> (its drawn
+  edges are outcome alternatives; the compiler rejects the shape). When <code>suspend</code> is
+  reachable only by jumps, anchor it behind an island (<code>root -&gt; island -&gt; suspend</code>) so
+  the graph has no orphan nodes — traversal stops at the island, so the anchor edge is
+  never walked.</li>
+</ul>
+<p>The <code>suspend</code> node cannot be an exception handler (<code>exception=suspend</code> is rejected). The
+retired <code>suspend=true</code> property is accepted and <strong>ignored</strong> for one deprecation window
+(the compiler logs a WARN): every valid earlier model already draws its checkpoint edge,
+which now declares the same behavior — models deploy unmodified.</p>
 <p><strong>3. The resume node</strong> — conventionally named <code>resume</code>, placed right after <code>root</code> (or
 after setup nodes). When the store has a record for <code>model.cid</code>, it restores the model,
 re-arms the traversal bookkeeping (a downstream <code>graph.join</code> still sees branches that
-completed before suspension), and jumps past the checkpoint. When there is no record —
-a fresh transaction, the normal first-run case, or an expired one — traversal simply
-continues along the resume node's own forward path.</p>
+completed before suspension), and continues at the checkpoint: past an edge-mode node
+along its continuation edge, or by <strong>re-executing</strong> a jump-mode decision against the new
+input. When there is no record — a fresh transaction, the normal first-run case, or an
+expired one — traversal simply continues along the resume node's own forward path.</p>
 <p>Either way, the skill records the outcome in <strong><code>model.run</code></strong> — <code>resume</code> when a record was
 restored, <code>fresh</code> when there was none. The engine deliberately does not distinguish
 absent from expired (with several checkpoints in one graph, no single fallback node could
@@ -2710,25 +2727,24 @@ colors in the Playground; the skill defines the behavior.</p>
 app) is the complete multi-checkpoint pattern — <strong>three human checkpoints, four short
 runs, one correlation ID</strong>:</p>
 <pre class="mermaid"><code>flowchart LR
-    root(["root"]) --&gt; resume --&gt; order["order&lt;br&gt;(suspend=true)"] --&gt; check{"check-approval"}
-    check --&gt;|approved| approval["approval&lt;br&gt;(suspend=true)"] --&gt; delivery["delivery&lt;br&gt;(suspend=true)"] --&gt; ship --&gt; done(["end"])
+    root(["root"]) --&gt; resume --&gt; order["order&lt;br&gt;(edge mode)"] --&gt; check{"check-approval"}
+    check --&gt;|approved| approval["approval&lt;br&gt;(edge mode)"] --&gt; delivery["delivery&lt;br&gt;(edge mode)"] --&gt; ship --&gt; done(["end"])
     check --&gt;|rejected| reject["manager-reject"] --&gt; done
-    check --&gt;|waiting| await["await-decision&lt;br&gt;(suspend=true)"] --&gt; check</code></pre>
+    check -.-&gt;|waiting: jumps to suspend,&lt;br&gt;re-decides on resume| check</code></pre>
 <p>A customer orders, the store manager approves <strong>or rejects with a reason</strong>, the delivery
 department releases the shipment, and the parcel ships — one <code>suspend</code> node serves every
-checkpoint, and each suspensible node captures its actor's input into the model and
+checkpoint. The <code>order</code>, <code>approval</code> and <code>delivery</code> checkpoints are <strong>edge mode</strong>: each
+draws its checkpoint edge to <code>suspend</code>, captures its actor's input into the model and
 stages its own stage-specific reply (overriding the default <code>suspended</code> response). The
 manager's decision lands at a <code>graph.math</code> decision node on the <code>order</code> checkpoint's
 continuation with three outcomes: an approved decision routes to the next suspension
 point, an explicit rejection routes to a terminal node that reports the manager's reason
-(the workflow ends), and anything else — a missing or unrecognized decision — re-suspends
-through <code>await-decision</code>, whose continuation loops back to the decision, so an invalid
-request can never end a long-running workflow by accident. The decision must sit
-<strong>before</strong> the suspensible nodes: a suspensible node always suspends when its skill
-completes — it cannot evaluate the input and choose not to — so the routing choice is
-made first, and only an approved decision reaches the checkpoint that suspends for the
-next actor. Run it with Redis (e.g. <code>helpers/redis-standalone</code>) and drive the four runs
-with one correlation ID.</p>
+(the workflow ends), and anything else — a missing or unrecognized decision — <strong>jumps</strong>
+to <code>suspend</code> (jump mode). Because a jump-mode decision is re-executed against the new
+input on every resume, an invalid request can never end a long-running workflow by
+accident: the workflow keeps waiting and re-decides when the next request arrives, with
+no extra wait nodes. Run it with Redis (e.g. <code>helpers/redis-standalone</code>) and drive the
+four runs with one correlation ID.</p>
 <p>Run 1 — the customer orders a laptop; the run suspends at the <code>order</code> checkpoint and
 replies with <code>"run": "fresh"</code> (a new transaction):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8085/api/graph/tutorial-14<span class="w"> </span><span class="se">\</span>
@@ -2791,11 +2807,11 @@ correlation ID is a fresh 404 rejection:</p>
 </code></pre></div>
 <p>A <strong>missing or unrecognized decision</strong> takes the third path: the reply is
 <code>"stage": "awaiting-decision; supply decision approved or rejected for the store manager"</code>
-and the workflow <strong>re-suspends</strong> — <code>await-decision</code>'s continuation loops back to
-<code>check-approval</code>, so the next resume re-evaluates the decision and only an explicit
-<code>approved</code> or <code>rejected</code> moves the workflow forward. This is also what a replay against a
-leftover suspended record now yields — a self-explanatory "still waiting" instead of a
-surprise.</p>
+and the workflow <strong>re-suspends</strong> — <code>check-approval</code> jumps to <code>suspend</code>, and because a
+jump-mode decision re-executes on every resume, the next request re-evaluates the
+decision: only an explicit <code>approved</code> or <code>rejected</code> moves the workflow forward. This is
+also what a replay against a leftover suspended record now yields — a self-explanatory
+"still waiting" instead of a surprise.</p>
 <p>The tutorial also validates its input: a request that is not an order submission, for a
 correlation ID with no suspended record, is <strong>rejected with HTTP 404</strong> — the order must
 come first. Three techniques worth stealing from its model:</p>
@@ -2804,15 +2820,13 @@ come first. Three techniques worth stealing from its model:</p>
   substitution inside a <code>text()</code> constant is null-safe:
   <code>MAPPING: text(={input.body.item}) -&gt; model.order_probe</code> always yields a present
   string (<code>=null</code> when the field is absent), which an <code>IF</code> can compare safely. The
-  <code>check-approval</code> decision reuses the same idiom, so a missing decision safely routes to
-  the wait loop rather than raising a runtime error.</li>
-<li><strong>A wait loop across suspensions needs <code>RESET</code>.</strong> The traveler and executor never
-  re-execute a node they have already seen — and the <code>seen</code> marks are part of the
-  persisted state, so they survive suspension. A loop that revisits a decision on every
-  resume must clear its own nodes first: <code>check-approval</code>'s
-  <code>RESET: check-approval await-decision</code> runs before its <code>IF</code> statements (an <code>IF</code> that
-  jumps to a node returns immediately), un-marking both loop nodes so the next resumed
-  run can walk them again.</li>
+  <code>check-approval</code> decision reuses the same idiom, so a missing decision safely jumps
+  back to the checkpoint rather than raising a runtime error.</li>
+<li><strong>A decision can stage the caller's reply.</strong> <code>graph.math</code> <code>MAPPING:</code> statements run
+  before its <code>IF</code> statements and may write <code>output.*</code> — <code>check-approval</code> stages the
+  awaiting reply unconditionally, and the approval/rejection paths overwrite it
+  downstream. A jump-mode suspension therefore replies with the decision's own staged
+  body (or the default <code>{"type": "suspended", ...}</code> when nothing was staged).</li>
 <li><strong>The run flag.</strong> <code>graph.resume</code> sets <code>model.run</code> to <code>fresh</code> or <code>resume</code>, and the
   tutorial stages it into every reply (<code>model.run -&gt; output.body.run</code>) — so the UI always
   knows whether it is looking at a new transaction or a resumed continuation, and a
@@ -2835,19 +2849,20 @@ come first. Three techniques worth stealing from its model:</p>
 <li><strong>The model is the workflow's durable memory.</strong> Only the <code>model</code> namespace persists —
   a node's <code>{node}.result</code> scratch does not survive suspension. Map anything a later step
   needs into <code>model.*</code> <strong>before</strong> the checkpoint.</li>
-<li><strong>A suspensible node is a complete working node — only its exit changes.</strong> It executes
-  its skill in full (input mapping → skill → output mapping) before routing to the
-  <code>suspend</code> node, so it may carry any non-routing skill (<code>graph.data.mapper</code>,
+<li><strong>An edge-mode checkpoint is a complete working node — only its exit changes.</strong> It
+  executes its skill in full (input mapping → skill → output mapping) before redirecting
+  to the <code>suspend</code> node, so it may carry any non-routing skill (<code>graph.data.mapper</code>,
   <code>graph.task</code>, <code>graph.api.fetcher</code>, <code>graph.extension</code>), capture the actor's input into
-  <code>model.*</code>, and stage the caller's reply in <code>output.*</code> — and its non-checkpoint edge
+  <code>model.*</code>, and stage the caller's reply in <code>output.*</code> — and its continuation edge
   defines exactly where the next run continues after resume. What it never does is
-  choose: it cannot route, and it cannot decline to suspend.</li>
-<li><strong>Decide before you suspend.</strong> A suspensible node always suspends — when its skill
-  completes, traversal routes to the <code>suspend</code> node unconditionally; it cannot inspect
-  the input and opt out. Place a routing node (e.g. <code>graph.math</code>) on the resume
-  continuation, <strong>before</strong> the next suspensible node, to decide whether the workflow
-  continues to that checkpoint, branches, or ends — as tutorial-14's <code>check-approval</code>
-  does with the manager's decision.</li>
+  choose: an edge-mode checkpoint always suspends when its skill completes.</li>
+<li><strong>Route the choice, don't property it.</strong> When the input decides the workflow's
+  direction (approve vs reject vs wait), make the decision a <code>graph.math</code> node whose
+  outcomes route naturally: continue to the next checkpoint, branch to a terminal node,
+  or <strong>jump to <code>suspend</code></strong> to keep waiting. The decision draws edges only to its real
+  outcome targets — never to <code>suspend</code> (the compiler rejects that shape) — and re-executes
+  on every resume, so each new request is re-evaluated. tutorial-14's <code>check-approval</code>
+  is the pattern.</li>
 <li><strong>A suspension point must be the sole active branch.</strong> Do not suspend between a fan-out
   and its join — branches in flight cannot be persisted (the engine logs a warning);
   suspend <em>after</em> the join instead. Joins whose predecessors completed before suspension
