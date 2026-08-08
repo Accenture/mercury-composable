@@ -237,7 +237,7 @@ public class GraphExecutor extends GraphLambdaFunction {
         } else {
             if (skill != null) {
                 executeSkill(po, skill, graphInstance, node, from, parentSpanId);
-            } else if (isSuspensible(node)) {
+            } else if (hasSuspendEdge(graphInstance.graph, node)) {
                 walkToSuspendNode(po, graphInstance, node, parentSpanId);
             } else {
                 walkNext(po, graphInstance, node, parentSpanId, false);
@@ -298,7 +298,7 @@ public class GraphExecutor extends GraphLambdaFunction {
             if (next.startsWith(RESUME_PREFIX)) {
                 resumeTraversal(po, graphInstance, next.substring(RESUME_PREFIX.length()), parentSpanId);
             } else if (NEXT.equals(next)) {
-                if (isSuspensible(node)) {
+                if (hasSuspendEdge(graphInstance.graph, node)) {
                     walkToSuspendNode(po, graphInstance, node, parentSpanId);
                 } else {
                     walkNext(po, graphInstance, node, parentSpanId, false);
@@ -315,9 +315,9 @@ public class GraphExecutor extends GraphLambdaFunction {
     }
 
     private void walkToSuspendNode(PostOffice po, GraphInstance graphInstance, SimpleNode node, String parentSpanId) {
-        // the quality gate already rejected suspension on routing skills, a missing
-        // 'suspend' node and a mis-skilled one - a compiled model needs no re-check
-        // (GraphTraveler keeps these guards: playground drafts never pass the gate)
+        // the quality gate already rejected a routing-skill drawn edge to 'suspend', a
+        // missing 'suspend' node and a mis-skilled one - a compiled model needs no
+        // re-check (GraphTraveler keeps these guards: playground drafts never pass the gate)
         walk(po, graphInstance, graphInstance.graph.findNodeByAlias(SUSPEND), node.getAlias(), parentSpanId);
     }
 
@@ -325,8 +325,16 @@ public class GraphExecutor extends GraphLambdaFunction {
         var resumedNode = graphInstance.graph.findNodeByAlias(alias);
         if (resumedNode == null) {
             sendError(po, graphInstance, "Resumed node '" + alias + "' does not exist", parentSpanId);
+        } else if (isJumpModeCheckpoint(graphInstance.graph, alias)) {
+            // the decision jumped to the checkpoint: re-execute it against the new
+            // request input - its forward links are outcome alternatives, not branches
+            // (clear the marks restored from the suspension record so the walk dispatches)
+            graphInstance.nodeSeen.remove(alias);
+            graphInstance.skillRun.remove(alias);
+            walk(po, graphInstance, resumedNode, null, parentSpanId);
         } else {
-            // the suspension point already ran before suspension - do not re-execute it
+            // the suspension point (drawn checkpoint edge) already ran before
+            // suspension - do not re-execute it; continue along its other forward links
             graphInstance.nodeSeen.put(alias, true);
             graphInstance.skillRun.put(alias, true);
             walkNext(po, graphInstance, resumedNode, parentSpanId, true);

@@ -212,6 +212,55 @@ class GraphSuspendResumeTest {
         log.info("reserved-key strip on restore verified for cid {}", cid);
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void jumpModeDecisionReExecutesOnEveryResume() throws TimeoutException, IOException {
+        var cid = Utility.getInstance().getUuid();
+        // run 1: no decision - the gate jumps to the island-anchored suspend node
+        // (no drawn edge from the gate) and stages its own waiting reply
+        var r1 = runGraph("unit-test-suspend-6", cid, Map.of("noise", true));
+        assertEquals(200, r1.getStatus());
+        var waiting1 = new MultiLevelMap((Map<String, Object>) r1.getBody());
+        assertEquals("waiting", waiting1.getElement("stage"), "the decision stages the caller's reply");
+        assertEquals("fresh", waiting1.getElement("run"));
+        // the persisted suspension point is the DECISION that jumped, not the suspend node
+        assertEquals("gate", readStoredRecord(cid).getElement("data.node"));
+        // run 2: still no decision - the gate RE-EXECUTES against the new input and
+        // re-suspends; before jump-mode re-execution this dead-ended (a node marked
+        // seen never re-dispatches and the persisted seen marks include the gate)
+        var r2 = runGraph("unit-test-suspend-6", cid, Map.of("noise", true));
+        assertEquals(200, r2.getStatus());
+        var waiting2 = new MultiLevelMap((Map<String, Object>) r2.getBody());
+        assertEquals("waiting", waiting2.getElement("stage"));
+        assertEquals("resume", waiting2.getElement("run"), "the second wait is a resumed run");
+        assertEquals("gate", readStoredRecord(cid).getElement("data.node"), "re-suspension re-persists");
+        assertEquals(0, CountingStepTask.getCount("go-step", cid), "the continuing path must not run yet");
+        // run 3: the decision arrives - the re-executed gate routes to the continuing path
+        var r3 = runGraph("unit-test-suspend-6", cid, Map.of("decision", "go"));
+        assertEquals(200, r3.getStatus());
+        var completed = new MultiLevelMap((Map<String, Object>) r3.getBody());
+        assertEquals("go-step", completed.getElement("step"));
+        assertEquals(1, CountingStepTask.getCount("go-step", cid));
+        assertEquals("resume", r3.getHeader("x-run"));
+        assertFalse(storedFile(cid).exists(), "the record must be consumed on the final resume");
+        log.info("jump-mode re-execution wait loop verified for cid {}", cid);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void retiredSuspendPropertyWithoutEdgeDeploysAndNeverSuspends() throws TimeoutException {
+        // deprecation compat: 'suspend=true' is ignored - with no drawn edge to the
+        // suspend node this graph deploys (with a gate WARN) and runs to completion
+        var cid = Utility.getInstance().getUuid();
+        var response = runGraph("unit-test-suspend-compat-1", cid);
+        assertEquals(200, response.getStatus());
+        var body = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals("finished", body.getElement("stage"));
+        assertEquals(1, CountingStepTask.getCount("compat-step", cid));
+        assertFalse(storedFile(cid).exists(), "the retired property must not suspend");
+        log.info("retired-property compat shape verified for cid {}", cid);
+    }
+
     @Test
     void rejectedDeployedGraphIsNotExecutable() throws TimeoutException {
         // every suspend-err graph failed the CompileGraph quality gate, so a request

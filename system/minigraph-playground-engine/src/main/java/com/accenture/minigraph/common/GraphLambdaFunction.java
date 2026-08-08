@@ -190,9 +190,42 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         }
     }
 
-    protected boolean isSuspensible(SimpleNode node) {
-        var value = node.getProperty(SUSPEND);
-        return value != null && "true".equalsIgnoreCase(String.valueOf(value));
+    /**
+     * A node with a drawn edge to the reserved 'suspend' node is a suspension point
+     * (edge mode): on a normal 'next' completion the walker redirects to the checkpoint,
+     * and a resumed run continues along the node's other forward links. The retired
+     * 'suspend=true' property is ignored - the drawn edge is the declaration.
+     * A decision reaches the checkpoint by jumping instead (jump mode) and is
+     * re-executed on resume; see isJumpModeCheckpoint.
+     *
+     * @param graph the graph model
+     * @param node the node to probe
+     * @return true when the node has a drawn edge to the suspend node
+     */
+    protected boolean hasSuspendEdge(MiniGraph graph, SimpleNode node) {
+        for (SimpleNode next : graph.getForwardLinks(node.getAlias())) {
+            if (SUSPEND.equals(next.getAlias())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * A suspension point with NO drawn edge to the suspend node reached the checkpoint
+     * by an IF-THEN-ELSE jump (jump mode) - by construction only a routing skill can
+     * jump, so the node is a decision and a resumed run RE-EXECUTES it against the new
+     * request input instead of continuing past it. An edge-mode suspension point
+     * (drawn edge present) is never re-executed - the resumed run continues along its
+     * other forward links, exactly the pre-rationalization behavior.
+     *
+     * @param graph the graph model
+     * @param alias the persisted suspension point
+     * @return true when the resumed run must re-execute the node
+     */
+    protected boolean isJumpModeCheckpoint(MiniGraph graph, String alias) {
+        var node = graph.findNodeByAlias(alias);
+        return node != null && !hasSuspendEdge(graph, node);
     }
 
     protected long getLoopInterval() {
