@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-07 | agent: Claude Code (2026-08-07-142823)
+- **last_session:** 2026-08-07 | agent: Claude Code (2026-08-07-225034)
 - **last_review:** 2026-08-07 | through 2026-08-07-142823.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -235,6 +235,41 @@
   <!-- id: bp-graph-workflow-suspension | created: 2026-07-28 | last_used: 2026-07-30 | uses: 5 | tier: archive-candidate | origin: 2026-07-29-003528 -->
 
 ## Open Threads
+
+- [x] (design+feature — **RATIFIED by Eric 2026-08-07 (R1-R7; R2 refined by Eric);
+  Java half MERGED same day as
+  [PR #265](https://github.com/Accenture/mercury-composable/pull/265), squash
+  `392f7128`, CI green — the PR also folded Eric's cosmetic polish + two field Sonar
+  fixes (S5778/S125 in minimalist-kafka; the field coverage condition now passes at
+  82.7%, so those were the last gate failures) + the frame() helper cleanup; note the
+  5-commit squash compounded six identical co-author trailers — keep the canonical
+  trailer to the PR footer on many-commit PRs. Rust lock-step half IMPLEMENTED
+  2026-08-08 on the mercury repo's feature/suspend-resume-rationalization, commit
+  `995cfeb7` (Rust ADR-0011 amends ADR-0009; webapp REPLACED from this repo's latest
+  UI per Eric's directive — PR #262's UI work now on both engines; knowledge-graph
+  9 suites, e2e, webapp 212/212, clippy 0) — **MERGED 2026-08-08 as mercury PR #195,
+  merge `4e6bdf43`, CI green. COMPLETE ON BOTH ENGINES**; both ride the next release**)
+  **Suspend/resume rationalization: retire `suspend=true`; suspension becomes a
+  destination** (drawn edge or graph.math jump into the reserved suspend node;
+  Suspensible type = visual-only). Driver: a second field team hit the same
+  decide-before-you-suspend wall — a design signal, not a docs gap. Review + phased
+  plan: `draft-design-specs/suspend-resume-rationalization.md` (gitignored).
+  **Ratified model — the discriminator is graph SHAPE, not skill class (Eric's
+  refinement):** edge mode (drawn edge into suspend + mandatory continuation edge,
+  shape-only gate rule, no statement inspection) = back-compat shape, resume skips
+  suspend and continues, NO re-execution, continuation fan-out fine; jump mode
+  (IF-THEN-ELSE jump, no drawn edge; suspend island-anchored — REQUIRED, the export
+  path rejects orphan nodes) = best practice, resume RE-EXECUTES the decision against
+  the new input (wait loop without RESET — obsoletes tutorial-14's await-decision
+  idiom). By construction only routing skills can jump, so jump mode ⇒ routing skill
+  with zero classification. Gate successor rules: routing-skill drawn edge to suspend
+  rejected (the new teaching error); exception=suspend rejected (R7, pending);
+  suspend=true = deprecation WARN no-op. Back-compat structurally cheap (v4.11.x
+  models replay identically; record contract {cid,node,ttl,model,seen,run} untouched).
+  Includes ADR-0012 proposal partially superseding ADR-0010's suspensible vocabulary.
+  Rust lock-step required; field-core regression-critical surface.
+  Relates [[graph-suspend-resume-design]], [[thread-tutorial-14-decision]].
+  <!-- id: thread-suspend-resume-rationalization | created: 2026-08-07 | last_used: 2026-08-07 | uses: 1 | tier: working | origin: 2026-08-07-225034 -->
 
 - [x] (feature — **COMPLETE ON BOTH ENGINES 2026-08-07**: Java MERGED as
   [PR #263](https://github.com/Accenture/mercury-composable/pull/263), squash `0c3e7618`,
