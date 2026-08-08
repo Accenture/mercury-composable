@@ -22,6 +22,55 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0012 — Suspension is a destination: edge-mode checkpoints and jump-mode decisions replace the `suspend=true` property {#adr-0012}
+**Status:** Accepted · **Date:** 2026-08-07T22:50:34.000Z · **Serves:** vision-mercury-composable · **Formalizes:** thread-suspend-resume-rationalization · **Amends:** ADR-0010
+<!-- id: adr-0012 | status: accepted -->
+
+**Abstract.** A suspension point is declared by **how a node reaches the reserved
+`suspend` node**, not by a node property — the `suspend=true` property is retired
+(accepted and ignored for one deprecation window, with a compiler WARN). Two modes,
+discriminated **purely by graph shape**: in **edge mode**, a working node with a drawn
+edge to `suspend` redirects there when its skill completes normally — the drawn edge is
+the declaration; the node must keep at least one continuation edge, where a resumed run
+continues **without re-executing** the node (byte-for-byte the prior suspensible
+behavior). In **jump mode**, a decision (`graph.math`) returns `suspend` from its
+IF-THEN-ELSE; on resume the decision is **re-executed** against the new request input, so
+it re-decides on every resume — a wait-on-invalid-input loop is one jump with no
+auxiliary nodes. A routing-skill node must **not** draw an edge to `suspend` (its drawn
+edges are outcome alternatives; the gate rejects the shape with a teaching error), the
+`suspend` node cannot be an exception handler (`exception=suspend` rejected —
+checkpoint-on-failure would smuggle in retry semantics), and a jump-only `suspend` node
+is anchored behind an island (`root → island → suspend`) to satisfy the no-orphan export
+rule — an island's outgoing edges are never traversed. The persisted record contract
+(`{cid, node, ttl, model, seen, run}`) and the store put/get contract are **unchanged**.
+
+**Rationale.** Two independent field teams hit the same conceptual wall within days: a
+suspensible node ignores IF-THEN-ELSE routing and suspends unconditionally, which reads
+as an inconsistency between decision-making and suspension — documenting the
+decide-before-you-suspend rule (the first team's remedy) did not stop the second report,
+so the constraint itself was the defect. The code study showed the property was only a
+walker-level routing trigger — persistence was already predecessor-agnostic (the record
+stores whoever routed in) and resume already continued along the persisted node's forward
+links — and it was papering over two latent divergences: the documentation already
+claimed "a plain edge into suspend is an unconditional suspension point" while the walker
+actually fanned out (checkpoint and continuation in parallel), and a jump to `suspend`
+half-worked but resume then fanned out a decision's outcome alternatives as if they were
+branches. Shape discrimination was chosen over skill-class discrimination (both were
+designed) because it is cheaper — one forward-link probe at resume, no statement
+inspection at the gate — and because the classes coincide **by construction**: working
+skills always return `next` so they can only be edge mode, and only routing skills can
+jump, so re-execution can never touch a working node. Back-compat is structural: every
+valid pre-change model necessarily drew its checkpoint edge (the prior gate required it),
+so edge-inferred redirect reproduces the old behavior exactly and pre-change store
+records replay correctly under the new engine — mixed-version fleets are safe in both
+directions. Alternatives rejected: keeping the property alongside edge inference (two
+declarations for one behavior — the confusion this fixes); statement inspection to let a
+suspend-only decision pass the gate (computationally expensive and fragile); uniform
+re-execution on resume (would double-execute working checkpoints, breaking the
+at-most-once actor-step guarantee).
+
+---
+
 ## ADR-0011 — CompileGraph is the mandatory deployment gate for graph models (CompileFlows parity) {#adr-0011}
 **Status:** Accepted · **Date:** 2026-07-29T19:03:28.000Z · **Serves:** vision-mercury-composable · **Formalizes:** compilegraph-mandatory-gate
 <!-- id: adr-0011 | status: accepted -->
@@ -64,8 +113,8 @@ per-rule coverage).
 ---
 
 ## ADR-0010 — Graph workflow suspension: short runs + an external state store, encapsulated in skills {#adr-0010}
-**Status:** Accepted · **Date:** 2026-07-29T02:00:00.000Z · **Serves:** vision-mercury-composable · **Formalizes:** graph-suspend-resume-design
-<!-- id: adr-0010 | status: accepted -->
+**Status:** Accepted (amended by ADR-0012: the `suspend=true` declaration vocabulary is retired in favor of edge/jump modes; short runs, the store contract and the record envelope stand) · **Date:** 2026-07-29T02:00:00.000Z · **Serves:** vision-mercury-composable · **Formalizes:** graph-suspend-resume-design
+<!-- id: adr-0010 | status: accepted | amended-by: adr-0012 -->
 
 **Abstract.** A long-running business process with human checkpoints (approval,
 intervention, inbox notification) is expressed as a **sequence of short graph runs**: at a

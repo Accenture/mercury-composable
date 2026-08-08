@@ -3,11 +3,11 @@
     {
       "alias": "root",
       "types": [
-        "UnitTest"
+        "Root"
       ],
       "properties": {
-        "purpose": "two suspension points: a workflow suspends and resumes twice",
-        "name": "unit-test-suspend-2"
+        "purpose": "jump-mode suspension: the gate decision jumps to the island-anchored suspend node and is re-executed on every resume",
+        "name": "unit-test-suspend-6"
       }
     },
     {
@@ -18,60 +18,52 @@
       "properties": {
         "skill": "graph.resume",
         "task": "v1.file.state.store",
-        "purpose": "Restore workflow state if a suspension record exists"
+        "purpose": "Restore workflow state if this transaction was suspended earlier"
       }
     },
     {
-      "alias": "step-a",
+      "alias": "gate",
       "types": [
-        "Suspensible"
+        "Decision"
+      ],
+      "properties": {
+        "skill": "graph.math",
+        "statement": [
+          "MAPPING: text(={input.body.decision}) -> model.decision_probe",
+          "MAPPING: text(waiting) -> output.body.stage",
+          "MAPPING: model.run -> output.body.run",
+          "IF: {model.decision_probe} == '=go'\nTHEN: step-2\nELSE: suspend"
+        ],
+        "purpose": "jump mode: 'go' proceeds, anything else jumps to the checkpoint - re-executed against each new request on resume"
+      }
+    },
+    {
+      "alias": "step-2",
+      "types": [
+        "task"
       ],
       "properties": {
         "skill": "graph.task",
         "task": "v1.counting.step",
         "input": [
-          "text(a) -> step",
+          "text(go-step) -> step",
           "model.cid -> cid"
         ],
         "output": [
-          "result.count -> model.a_count"
-        ]
+          "result -> output.body",
+          "model.run -> output.header.x-run"
+        ],
+        "purpose": "the continuing path after an approved decision"
       }
     },
     {
-      "alias": "step-b",
+      "alias": "island",
       "types": [
-        "Suspensible"
+        "island"
       ],
       "properties": {
-        "skill": "graph.task",
-        "task": "v1.counting.step",
-        "input": [
-          "text(b) -> step",
-          "model.cid -> cid",
-          "model.a_count -> prior"
-        ],
-        "output": [
-          "result.count -> model.b_count"
-        ]
-      }
-    },
-    {
-      "alias": "step-c",
-      "types": [
-        "Task"
-      ],
-      "properties": {
-        "skill": "graph.task",
-        "task": "v1.counting.step",
-        "input": [
-          "text(c) -> step",
-          "model.cid -> cid",
-          "model.b_count -> prior"
-        ],
-        "output": [
-          "result -> output.body"
-        ]
+        "skill": "graph.island",
+        "purpose": "anchor: keeps the jump-only suspend node non-orphan while plain traversal stops here"
       }
     },
     {
@@ -83,7 +75,7 @@
         "skill": "graph.suspend",
         "task": "v1.file.state.store",
         "ttl": "30s",
-        "purpose": "Persist workflow state to the external state store"
+        "purpose": "reachable only by jumping from the gate decision"
       }
     },
     {
@@ -100,57 +92,47 @@
       "target": "resume",
       "relations": [
         {
-          "type": "test",
+          "type": "then",
           "properties": {}
         }
       ]
     },
     {
       "source": "resume",
-      "target": "step-a",
+      "target": "gate",
       "relations": [
         {
-          "type": "test",
+          "type": "fresh",
           "properties": {}
         }
       ]
     },
     {
-      "source": "step-a",
+      "source": "gate",
+      "target": "step-2",
+      "relations": [
+        {
+          "type": "go",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "root",
+      "target": "island",
+      "relations": [
+        {
+          "type": "anchor",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "island",
       "target": "suspend",
       "relations": [
         {
-          "type": "checkpoint",
-          "properties": {}
-        }
-      ]
-    },
-    {
-      "source": "step-a",
-      "target": "step-b",
-      "relations": [
-        {
-          "type": "approved",
-          "properties": {}
-        }
-      ]
-    },
-    {
-      "source": "step-b",
-      "target": "suspend",
-      "relations": [
-        {
-          "type": "checkpoint",
-          "properties": {}
-        }
-      ]
-    },
-    {
-      "source": "step-b",
-      "target": "step-c",
-      "relations": [
-        {
-          "type": "approved",
+          "type": "anchor",
           "properties": {}
         }
       ]
@@ -160,17 +142,17 @@
       "target": "end",
       "relations": [
         {
-          "type": "test",
+          "type": "then",
           "properties": {}
         }
       ]
     },
     {
-      "source": "step-c",
+      "source": "step-2",
       "target": "end",
       "relations": [
         {
-          "type": "test",
+          "type": "next",
           "properties": {}
         }
       ]

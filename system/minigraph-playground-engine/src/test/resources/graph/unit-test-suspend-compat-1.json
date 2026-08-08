@@ -6,8 +6,8 @@
         "Root"
       ],
       "properties": {
-        "purpose": "R7 violation: a node routes its exception to the suspend node",
-        "name": "unit-test-suspend-err3"
+        "purpose": "compat: the retired suspend=true property with no drawn edge deploys with a WARN and never suspends",
+        "name": "unit-test-suspend-compat-1"
       }
     },
     {
@@ -18,19 +18,15 @@
       "properties": {
         "skill": "graph.task",
         "task": "v1.counting.step",
-        "exception": "suspend",
-        "purpose": "invalid: exception=suspend would give a failed node retry-on-resume semantics"
-      }
-    },
-    {
-      "alias": "suspend",
-      "types": [
-        "Suspend"
-      ],
-      "properties": {
-        "skill": "graph.suspend",
-        "task": "v1.file.state.store",
-        "ttl": "30s"
+        "suspend": true,
+        "input": [
+          "text(compat-step) -> step",
+          "model.cid -> cid"
+        ],
+        "output": [
+          "text(finished) -> output.body.stage"
+        ],
+        "purpose": "the retired property is ignored - no drawn edge, so the node continues normally"
       }
     },
     {
@@ -58,16 +54,6 @@
       "relations": [
         {
           "type": "next",
-          "properties": {}
-        }
-      ]
-    },
-    {
-      "source": "suspend",
-      "target": "end",
-      "relations": [
-        {
-          "type": "then",
           "properties": {}
         }
       ]

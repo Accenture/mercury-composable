@@ -129,24 +129,31 @@ class SchemaCodecTest {
         SchemaCodec.Decoder strictDecoder = strict.newDecoder();
 
         // serializer side: a payload missing the required key is rejected before it is framed...
+        Map<String, Object> nonConforming = Map.of("wrong", "shape");
         assertThrows(RuntimeException.class,
-                () -> strictEncoder.serialize(TOPIC, SchemaType.JSON, id, Map.of("wrong", "shape")),
+                () -> strictEncoder.serialize(TOPIC, SchemaType.JSON, id, nonConforming),
                 "an invalid payload must not serialize when json.fail.invalid.schema=true");
         // ...while a conforming payload passes - proving the rejection above is validation, not setup
         byte[] conforming = strictEncoder.serialize(TOPIC, SchemaType.JSON, id, Map.of("hello", "world"));
         assertInstanceOf(Map.class, strictDecoder.decode(TOPIC, conforming));
 
         // deserializer side: hand-framed bytes carrying a non-conforming document under the strict id
-        byte[] invalid = frame(id, "{\"wrong\":\"shape\"}");
+        byte[] invalid = frameNonConforming(id);
         assertThrows(RuntimeException.class, () -> strictDecoder.decode(TOPIC, invalid),
                 "an invalid payload must not decode when json.fail.invalid.schema=true");
         // the default (non-validating) decoder accepts the same bytes - the flag is what rejects
         assertInstanceOf(Map.class, decoder.decode(TOPIC, invalid));
     }
 
-    /** Confluent wire format by hand: magic byte 0 + 4-byte big-endian schema id + payload. */
-    private static byte[] frame(int schemaId, String json) {
-        byte[] payload = json.getBytes(StandardCharsets.UTF_8);
+    /**
+     * Confluent wire format by hand - magic byte 0 + 4-byte big-endian schema id - carrying
+     * the non-conforming document {"wrong":"shape"} that the strict schema must reject.
+     *
+     * @param schemaId the registered strict schema's global id to stamp into the frame
+     * @return framed bytes ready for the deserializer
+     */
+    private static byte[] frameNonConforming(int schemaId) {
+        byte[] payload = "{\"wrong\":\"shape\"}".getBytes(StandardCharsets.UTF_8);
         return ByteBuffer.allocate(5 + payload.length).put((byte) 0).putInt(schemaId).put(payload).array();
     }
 

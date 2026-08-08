@@ -35,10 +35,12 @@ import java.util.Map;
  * envelope is assembled by the skill itself - the node needs no input/output data mapping.
  * <p>
  * The node carrying this skill MUST be named "suspend" - a reserved alias like root and
- * end - because traversal jumps to it by name: when a node with the "suspend=true"
- * property completes normally, the walker routes to the "suspend" node instead of the
- * node's normal forward path. A plain edge into the "suspend" node is an unconditional
- * suspension point.
+ * end. There are two ways to reach the checkpoint: a working node with a DRAWN EDGE to
+ * the "suspend" node suspends when its skill completes normally (edge mode - the walker
+ * redirects instead of following the node's continuation edge, and a resumed run
+ * continues along that continuation), and a decision JUMPS to it by returning "suspend"
+ * from its IF-THEN-ELSE (jump mode - the decision is re-executed on resume against the
+ * new request input). The retired "suspend=true" property is ignored (deprecation WARN).
  * <p>
  * The persistence envelope sent to the store function (headers type=put) is:
  * {cid, node, ttl, model, seen, run} - the business correlation ID (the retrieval key),

@@ -25,8 +25,9 @@ import org.platformlambda.core.system.PostOffice;
 
 import java.util.Map;
 
-@PreLoad(route = "graph.island", instances=200)
+@PreLoad(route = GraphIsland.ROUTE, instances=200)
 public class GraphIsland extends GraphLambdaFunction {
+    public static final String ROUTE = "graph.island";
 
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {

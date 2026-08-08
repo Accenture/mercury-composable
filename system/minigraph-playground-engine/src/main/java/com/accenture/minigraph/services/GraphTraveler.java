@@ -145,7 +145,7 @@ public class GraphTraveler extends GraphLambdaFunction {
 
     private void cancelRunWatcher(GraphInstance graphInstance) {
         var token = graphInstance.getRunWatcher();
-        // atomic removal: two racing cancellers act at most once, on the exact token read
+        // atomic removal: two racing cancelers act at most once, on the exact token read
         if (token != null && graphInstance.clearRunWatcher(token)) {
             EventEmitter.getInstance().cancelFutureEvent(token.substring(token.indexOf('|') + 1));
         }
@@ -176,7 +176,7 @@ public class GraphTraveler extends GraphLambdaFunction {
         var token = graphInstance.getRunWatcher();
         // the watcher may act only for the run that armed it: the slot token carries the
         // owning run's correlation id and the atomic removal is the claim - a stale
-        // watcher (a newer run owns the slot, or a canceller already won) stays silent
+        // watcher (a newer run owns the slot, or a canceler already won) stays silent
         if (token == null || !token.startsWith(event.getCorrelationId() + "|")
                 || !graphInstance.clearRunWatcher(token) || !claimTerminal(graphInstance)) {
             return;
@@ -314,7 +314,7 @@ public class GraphTraveler extends GraphLambdaFunction {
         } else {
             if (skill != null) {
                 executeSkill(po, skill, graphInstance, node, from);
-            } else if (isSuspensible(node)) {
+            } else if (hasSuspendEdge(graphInstance.graph, node)) {
                 walkToSuspendNode(po, graphInstance, node);
             } else {
                 walkNext(po, graphInstance, node, false);
@@ -374,7 +374,7 @@ public class GraphTraveler extends GraphLambdaFunction {
             if (next.startsWith(RESUME_PREFIX)) {
                 resumeTraversal(po, graphInstance, next.substring(RESUME_PREFIX.length()));
             } else if (NEXT.equals(next)) {
-                if (isSuspensible(node)) {
+                if (hasSuspendEdge(graphInstance.graph, node)) {
                     walkToSuspendNode(po, graphInstance, node);
                 } else {
                     walkNext(po, graphInstance, node, false);
@@ -394,15 +394,15 @@ public class GraphTraveler extends GraphLambdaFunction {
         var skill = node.getProperty(SKILL);
         if (GraphMath.ROUTE.equals(skill) || GraphJs.ROUTE.equals(skill)) {
             sendError(po, graphInstance, "Node '" + node.getAlias() +
-                    "' cannot use 'suspend=true' with skill " + skill +
-                    " - a suspensible node suspends unconditionally, so make the decision first: " +
-                    "place the " + skill + " node before a suspensible node and route the continuing path to it");
+                    "' has a drawn edge to the '" + SUSPEND + "' node but uses routing skill " + skill +
+                    " - a decision reaches the checkpoint by jumping: return '" + SUSPEND +
+                    "' from its IF-THEN-ELSE and draw edges to '" + SUSPEND + "' only from working nodes");
             return;
         }
         var suspendNode = graphInstance.graph.findNodeByAlias(SUSPEND);
         if (suspendNode == null) {
             sendError(po, graphInstance, "Node '" + node.getAlias() +
-                    "' is suspensible but the graph has no '" + SUSPEND + "' node");
+                    "' is a suspension point but the graph has no '" + SUSPEND + "' node");
         } else if (!GraphSuspend.ROUTE.equals(suspendNode.getProperty(SKILL))) {
             sendError(po, graphInstance, "The '" + SUSPEND + "' node must use skill " + GraphSuspend.ROUTE);
         } else {
@@ -414,8 +414,16 @@ public class GraphTraveler extends GraphLambdaFunction {
         var resumedNode = graphInstance.graph.findNodeByAlias(alias);
         if (resumedNode == null) {
             sendError(po, graphInstance, "Resumed node '" + alias + "' does not exist");
+        } else if (isJumpModeCheckpoint(graphInstance.graph, alias)) {
+            // the decision jumped to the checkpoint: re-execute it against the new
+            // request input - its forward links are outcome alternatives, not branches
+            // (clear the marks restored from the suspension record so the walk dispatches)
+            graphInstance.nodeSeen.remove(alias);
+            graphInstance.skillRun.remove(alias);
+            walk(po, graphInstance, resumedNode, null);
         } else {
-            // the suspension point already ran before suspension - do not re-execute it
+            // the suspension point (drawn checkpoint edge) already ran before
+            // suspension - do not re-execute it; continue along its other forward links
             graphInstance.nodeSeen.put(alias, true);
             graphInstance.skillRun.put(alias, true);
             walkNext(po, graphInstance, resumedNode, true);
