@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-07 | agent: Claude Code (2026-08-07-225034)
+- **last_session:** 2026-08-08 | agent: Claude Code (2026-08-08-022929)
 - **last_review:** 2026-08-07 | through 2026-08-07-142823.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -235,6 +235,19 @@
   <!-- id: bp-graph-workflow-suspension | created: 2026-07-28 | last_used: 2026-07-30 | uses: 5 | tier: archive-candidate | origin: 2026-07-29-003528 -->
 
 ## Open Threads
+
+- [x] (release — SHIPPED AND PUBLISHED 2026-08-08, **both repos in lock-step at
+  v4.11.4**) **v4.11.4 — the suspend/resume rationalization release.** Java: release
+  [PR #266](https://github.com/Accenture/mercury-composable/pull/266), squash
+  `ad60f7e4`, CI green, 33-pom sweep, tag on the verified squash, full reactor green
+  (6:18) as the sole gate (Eric's ruling: no live kafka-demo regression — the
+  minimalist-kafka delta is test-only + one comment). Rust: release PR #196, merge
+  `27c2cc8e`, workspace 4.11.1→4.11.4 (CHANGELOG notes 4.11.2/4.11.3 were Java-only),
+  58 suites green, tag on the verified merge. Contents:
+  [[thread-suspend-resume-rationalization]] (ADR-0012/ADR-0011) + the S5778/S125 field
+  Sonar fixes riding toward the field rescan
+  ([[thread-sonar-4-11-x-field-round-3]]).
+  <!-- id: thread-release-4-11-4 | created: 2026-08-08 | last_used: 2026-08-08 | uses: 1 | tier: working | origin: 2026-08-08-022929 -->
 
 - [x] (design+feature — **RATIFIED by Eric 2026-08-07 (R1-R7; R2 refined by Eric);
   Java half MERGED same day as
