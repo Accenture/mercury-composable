@@ -148,6 +148,9 @@ class SchemaCodecTest {
     /**
      * Confluent wire format by hand - magic byte 0 + 4-byte big-endian schema id - carrying
      * the non-conforming document {"wrong":"shape"} that the strict schema must reject.
+     *
+     * @param schemaId the registered strict schema's global id to stamp into the frame
+     * @return framed bytes ready for the deserializer
      */
     private static byte[] frameNonConforming(int schemaId) {
         byte[] payload = "{\"wrong\":\"shape\"}".getBytes(StandardCharsets.UTF_8);
