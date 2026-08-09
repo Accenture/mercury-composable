@@ -339,6 +339,7 @@ tasks:
       - 'text(world) -> parameters.query.hello'
       - 'text(application/json) -> headers.content-type'
       - 'text(application/json) -> headers.accept'
+      - 'text(5000) -> headers.x-ttl'
     process: 'async.http.request'
     output:
       - 'text(application/json) -> output.header.content-type'
@@ -357,8 +358,23 @@ the parameters where parameters.query, body and cookies are optional.
 | url              | URI path                                  | /api/hello/world                      |
 | parameters.query | Query parameter key-value                 | parameters.query.hello=world          |
 | headers          | HTTP request headers                      | headers.content-type=application/json |
+| headers.x-ttl    | HTTP timeout in milliseconds              | headers.x-ttl=5000                    |
 | body             | HTTP request body for PUT, POST and PATCH | {"hello": "world"}                    |
 | cookies          | Cookie key-value                          | cookies.session-id=12345              |
+
+### HTTP timeout (X-TTL)
+
+The flow's `ttl` (or a task-level `ttl` override) bounds the **event call** to the
+`async.http.request` function - it cannot reach inside the function to govern the HTTP
+operation itself. Set the HTTP timeout explicitly with the reserved `X-TTL` request header,
+expressed in **milliseconds** (`text(5000) -> headers.x-ttl`). Without it, the AsyncHttpClient
+uses its own 30-second default, decoupled from your flow deadline.
+
+The same header also rides the outgoing request on the wire, so a downstream Mercury service
+adopts it as its processing deadline — the end-to-end deadline propagation described in the
+[REST automation timeout grammar](rest-automation/rest-grammar.md). Give the HTTP call a budget shorter
+than the calling flow or graph deadline, so an HTTP timeout surfaces as a catchable error in
+the caller instead of the caller itself expiring first.
 
 ## Starting a flow programmatically
 

@@ -279,12 +279,14 @@ class GraphTests {
     @SuppressWarnings("unchecked")
     @Test
     void tutorial13() throws TimeoutException {
-        var result = runTutorial(13, Map.of("name", "world", "amount", 21));
+        // graph.task invoking the AsyncHttpClient (async.http.request) - the input mapping
+        // stages 'model.person_id' and resolves it as a dynamic variable in the url
+        var result = runTutorial(13, Map.of("person_id", 100));
         assertInstanceOf(Map.class, result);
         var mm = new MultiLevelMap((Map<String, Object>) result);
-        assertEquals("Hello, world", mm.getElement("greeting"));
-        assertEquals(42.0, mm.getElement("doubled"));
-        assertEquals("minigraph", mm.getElement("app"));
+        assertEquals("100", mm.getElement("profile.id"));
+        assertEquals("Peter", mm.getElement("profile.name"));
+        assertEquals("100 World Blvd", mm.getElement("profile.address"));
         log.info("Tutorial 13 works");
     }
 

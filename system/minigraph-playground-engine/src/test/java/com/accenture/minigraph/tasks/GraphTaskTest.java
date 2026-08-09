@@ -68,9 +68,55 @@ class GraphTaskTest {
         // 'input.header.x-demo -> header.hello' becomes a request header of the function
         assertEquals("sunshine", mm.getElement("hello_header"));
         assertEquals(200.0, mm.getElement("doubled"));
+        // 'text(alpha) -> model.token' stages a model variable (Event Script parity) and the
+        // next entry references it as a dynamic variable into a composite body path
+        assertEquals("Bearer alpha", mm.getElement("received.nested.auth"));
         // the function's response header is mapped to the graph output header
         assertEquals("demo", response.getHeader("x-task"));
         log.info("graph.task whole-body merge and header mapping work");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void dynamicModelVariableWithHttpClient() throws TimeoutException {
+        // tutorial-13: 'input.body.person_id -> model.person_id' stages the model variable,
+        // 'text(/api/mdm/profile/{model.person_id}) -> url' resolves it, and
+        // 'text(http://127.0.0.1:${rest.server.port:8080}) -> host' proves that CompileGraph
+        // resolved the environment variable when the deployed model was loaded
+        var response = runGraph("tutorial-13", Map.of("person_id", 100), Map.of());
+        assertEquals(200, response.getStatus());
+        assertInstanceOf(Map.class, response.getBody());
+        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals("100", mm.getElement("profile.id"));
+        assertEquals("Peter", mm.getElement("profile.name"));
+        // 'text(5000) -> headers.x-ttl' sets the HTTP timeout and rides the wire as the
+        // X-TTL request header - the mock echoes what it observed
+        assertEquals("5000", mm.getElement("observed_ttl"));
+        log.info("graph.task dynamic model variable resolved into the AsyncHttpClient url");
+    }
+
+    @Test
+    void unknownProfileReturnsError() throws TimeoutException {
+        // the mock mdm service throws for an unknown person id and the graph
+        // returns the error as its output
+        var response = runGraph("tutorial-13", Map.of("person_id", 999), Map.of());
+        assertNotEquals(200, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("Profile 999 not found"),
+                "unexpected error response: " + response.getBody());
+        log.info("graph.task propagates the HTTP error for an unknown profile");
+    }
+
+    @Test
+    void modelMetadataImmutableInInputMapping() throws TimeoutException {
+        // an input mapping entry must not overwrite engine-managed model metadata -
+        // the deployment gate rejects the graph so it answers 404 as if nonexistent
+        // (the runtime guard in GraphTask covers single-node execution of drafts and
+        // is unit-tested in GraphLambdaFunctionGuardTest)
+        var response = runGraph("unit-test-task-6", Map.of("hello", "world"), Map.of());
+        assertEquals(404, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("not found"),
+                "unexpected error response: " + response.getBody());
+        log.info("graph.task input mapping with a reserved model target is rejected at the gate");
     }
 
     @SuppressWarnings("unchecked")

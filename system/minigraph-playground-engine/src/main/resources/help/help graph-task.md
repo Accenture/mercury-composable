@@ -55,13 +55,20 @@ node or a constant such as text(hello). The target (RHS) addresses the function'
    are processed in order, so later entries can merge additional key-values into a request body
    that was seeded with `*`.
 2. `header.{name}` - sets a request header of the function call
-3. any other composite key - a key-value in the request body
+3. `model.{key}` - stages a variable in the graph's state machine instead of the request body, so
+   that later entries can reference it as a **dynamic variable** (same as Event Script). e.g. after
+   `input.body.token -> model.token`, the entry `text(Bearer {model.token}) -> auth` resolves the
+   `{model.token}` reference. Engine-managed model metadata (model.cid, model.ttl, etc.) is
+   immutable - a mapping that targets it is rejected.
+4. any other composite key - a key-value in the request body
 
 Example:
 ```
 input[]=input.body -> *
 input[]=input.header.hello -> header.hello
 input[]=input.body.amount -> amount
+input[]=input.body.person_id -> model.person_id
+input[]=text(/api/mdm/profile/{model.person_id}) -> url
 ```
 
 If the function is declared as a TypedLambdaFunction with a PoJo input class, the request body map
@@ -81,6 +88,12 @@ output[]=result -> model.soap_request_payload
 Timeout
 -------
 The function call uses the graph instance's time-to-live from "model.ttl" (default 30000 ms).
+
+This deadline bounds the event call to the composable function - it cannot reach inside a
+generic function. When the function has its own downstream timeout contract, express it in the
+input data mapping. For example, the AsyncHttpClient (async.http.request) takes its HTTP timeout
+from the "x-ttl" key-value under "headers" in milliseconds, e.g. `text(5000) -> headers.x-ttl`
+(see tutorial 13).
 
 Exception handling
 ------------------

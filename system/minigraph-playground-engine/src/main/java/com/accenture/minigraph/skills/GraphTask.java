@@ -38,7 +38,9 @@ import java.util.concurrent.ExecutionException;
  * <p>
  * Input data mapping follows the Event Script syntax:
  * RHS '*' maps the LHS value as the whole request body, 'header.{name}' sets a request header,
- * and any other RHS is a composite key path in the request body.
+ * 'model.{key}' stages a variable in the graph's state machine so that later entries can
+ * reference it as a dynamic variable (e.g. text(Bearer {model.token})), and any other RHS
+ * is a composite key path in the request body.
  * <p>
  * The function's response is stored as the node's "result", "status" and "header" properties
  * and the optional output data mapping copies them to the 'model.' or 'output.' namespace.
@@ -106,9 +108,28 @@ public class GraphTask extends GraphLambdaFunction {
             var lhs = substituteVarIfAny(entry.substring(0, sep).trim(), stateMachine);
             var rhs = entry.substring(sep + MAP_TO.length()).trim();
             var value = helper.getLhsOrConstant(lhs, stateMachine);
-            body = stageTaskParameter(nodeName, request, rhs, value, body);
+            if (rhs.startsWith(MODEL_NAMESPACE)) {
+                // Event Script parity: an input entry may stage a model variable that later
+                // entries reference as a dynamic variable, e.g. text(Bearer {model.token})
+                stageModelVariable(nodeName, rhs, value, stateMachine);
+            } else {
+                body = stageTaskParameter(nodeName, request, rhs, value, body);
+            }
         }
         return request.setBody(body);
+    }
+
+    private void stageModelVariable(String nodeName, String rhs, Object value, MultiLevelMap stateMachine) {
+        assertMutableModelTarget(nodeName, rhs);
+        if (value != null) {
+            stateMachine.setElement(rhs, value);
+        } else {
+            if (rhs.endsWith("]") && rhs.contains("[")) {
+                stateMachine.setElement(rhs, null);
+            } else {
+                stateMachine.removeElement(rhs);
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
