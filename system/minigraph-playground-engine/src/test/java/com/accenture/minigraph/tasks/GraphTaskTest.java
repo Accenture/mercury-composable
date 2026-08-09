@@ -37,7 +37,7 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * End-to-end tests of the graph.task skill - a graph node that invokes a composable
+ * End-to-end tests of the 'graph.task' skill - a graph node that invokes a composable
  * function (TypedLambdaFunction registered with PreLoad) through its route name.
  */
 class GraphTaskTest {

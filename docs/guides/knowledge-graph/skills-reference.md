@@ -285,6 +285,7 @@ input[]=input.body.person_id -> model.person_id
 input[]=text(http://127.0.0.1:${rest.server.port:8080}) -> host
 input[]=text(/api/mdm/profile/{model.person_id}) -> url
 input[]=text(GET) -> method
+input[]=text(application/json) -> headers.accept
 input[]=text(5000) -> headers.x-ttl
 output[]=result -> output.body
 ```

@@ -35,7 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    model keeps the placeholder — and sets the HTTP timeout explicitly with
    `text(5000) -> headers.x-ttl` (milliseconds): the graph's ttl bounds only the event call to
    the function, so the `X-TTL` request header is the sanctioned way to give the HTTP operation
-   its own budget, and it propagates the deadline on the wire. The `v1.hello.task` demo function
+   its own budget, and it propagates the deadline on the wire. The tutorial also declares
+   `headers.accept` explicitly, so JSON decoding never depends on an HTTP library's implicit
+   default Accept header. The `v1.hello.task` demo function
    (`HelloTask`) is removed; the tutorial help, `graph.task` skill help, skills reference, the
    AI grammar (`minigraph-commands.json`) and the "Using AsyncHttpClient by configuration" guide
    section are updated to teach the staging, substitution and X-TTL idioms.

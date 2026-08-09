@@ -33,7 +33,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 /**
- * The graph.task skill invokes a composable function (a TypedLambdaFunction registered with
+ * The 'graph.task' skill invokes a composable function (a TypedLambdaFunction registered with
  * the PreLoad annotation) through its route name, given by the "task" property of the node.
  * <p>
  * Input data mapping follows the Event Script syntax:
