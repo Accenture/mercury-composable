@@ -3057,11 +3057,12 @@ skill itself — <strong>no input/output mapping on the node</strong>.</p>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>ttl=2d
 </code></pre></div>
 <p>The node carrying this skill <strong>must be named <code>suspend</code></strong> — a reserved alias like <code>root</code>/<code>end</code>.
-Two ways in: a <strong>working node with a drawn edge</strong> to <code>suspend</code> suspends when its skill completes
-(edge mode — the edge is the declaration; a continuation edge is mandatory and the node is never
-re-executed on resume), and a <strong>decision jumps</strong> to it by returning <code>suspend</code> from its
-IF-THEN-ELSE (jump mode — the decision re-executes against the new input on every resume; it
-must not draw an edge to <code>suspend</code>). The retired <code>suspend=true</code> property is ignored (deprecation
+Two patterns reach it, named after the node that pauses: a <strong>checkpoint node</strong> — a working node
+with a drawn edge to <code>suspend</code> — pauses when its skill completes (the edge is the declaration; a
+continuation edge is mandatory and the node is never re-executed on resume), and a <strong>decision
+node</strong> pauses by returning <code>suspend</code> from its IF-THEN-ELSE (the decision re-executes against the
+new input on every resume; it must not draw an edge to <code>suspend</code>). The ADRs call these shapes
+<em>edge mode</em> and <em>jump mode</em>. The retired <code>suspend=true</code> property is ignored (deprecation
 WARN). <code>ttl</code> is <strong>mandatory with no default</strong> (duration syntax <code>20s/5m/2h/2d</code>) — it becomes the
 store record's expiry. Unless the graph staged its own <code>output.*</code>, the caller of the suspended
 run receives <code>{"type": "suspended", "cid": ...}</code>.</p>
@@ -3071,8 +3072,8 @@ between a fan-out and its join); only <code>model.*</code> survives — map what
 model <strong>before</strong> the checkpoint. Full story: <a href="../workflow-suspension/">Workflow Suspension</a>.</p>
 <h2 id="resume">graph.resume<a class="headerlink" href="#resume" title="Permanent link">&para;</a></h2>
 <p>Restores the workflow state persisted by <a href="#suspend"><code>graph.suspend</code></a> and continues traversal at
-the recorded suspension point — <strong>past an edge-mode checkpoint without re-executing it</strong>, or by
-<strong>re-executing a jump-mode decision</strong> against the new request input. Also a superset of
+the recorded suspension point — <strong>past a checkpoint node without re-executing it</strong>, or by
+<strong>re-executing a decision node</strong> against the new request input. Also a superset of
 <code>graph.task</code> — the <code>task</code> property names the store function (<code>type=get</code>, body <code>{cid}</code>),
 restoration is encapsulated, no mapping on the node.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>skill=graph.resume
