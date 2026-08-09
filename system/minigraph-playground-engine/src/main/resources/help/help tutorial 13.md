@@ -44,6 +44,7 @@ input[]=input.body.person_id -> model.person_id
 input[]=text(http://127.0.0.1:${rest.server.port:8080}) -> host
 input[]=text(/api/mdm/profile/{model.person_id}) -> url
 input[]=text(GET) -> method
+input[]=text(application/json) -> headers.accept
 input[]=text(5000) -> headers.x-ttl
 output[]=result -> output.body
 purpose=Invoke AsyncHttpClient with route 'async.http.request' to fetch a user profile
@@ -82,13 +83,17 @@ The input data mapping follows the Event Script syntax and is applied in declara
    model is loaded - at 'instantiate graph' for a dry-run and at deployment time for a deployed
    model - so both lanes behave the same. The authored model (and any export) keeps the `${...}`
    placeholder, making the model portable across environments.
-4. `text(5000) -> headers.x-ttl` sets the **HTTP timeout** of the AsyncHttpClient. The graph's
+4. `text(application/json) -> headers.accept` declares the response type this client accepts.
+   Always declare it instead of relying on an HTTP library's implicit default - with an explicit
+   accept, the profile service replies with `content-type: application/json` and the
+   AsyncHttpClient decodes the response body into a map.
+5. `text(5000) -> headers.x-ttl` sets the **HTTP timeout** of the AsyncHttpClient. The graph's
    regular ttl propagation (a node's optional `ttl` property, else `model.ttl`) bounds only the
    event call to the composable function - it cannot reach inside a generic function, so the
    HTTP client would otherwise run on its own 30-second default. The X-TTL value is expressed
    in **milliseconds**. It also rides the wire as the `X-TTL` request header, so a downstream
    Mercury service adopts it as its processing deadline (end-to-end deadline propagation).
-5. Any other RHS such as `url` and `method` is a composite key path in the function's request body.
+6. Any other RHS such as `url` and `method` is a composite key path in the function's request body.
    RHS `*` would map the LHS value as the whole request body, and `header.{name}` would set a
    request header of the function call.
 

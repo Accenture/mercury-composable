@@ -19,6 +19,7 @@
           "text(http://127.0.0.1:${rest.server.port:8080}) -> host",
           "text(/api/mdm/profile/{model.person_id}) -> url",
           "text(GET) -> method",
+          "text(application/json) -> headers.accept",
           "text(5000) -> headers.x-ttl"
         ],
         "output": [

@@ -337,9 +337,9 @@ class GraphTests {
         // skillRun (its skill ran fine), so the downstream join must judge it
         // by the OUTCOME it recorded, not the run mark. Topology: slow-pre at
         // 200 ms feeds slow-x, and together with fast-y they feed j-one, which
-        // chains into j-two alongside pace-z at 100 ms. Timing: fast-y makes
+        // chains into j-two alongside pace-z at 100 milliseconds. Timing: fast-y makes
         // j-one evaluate-and-sink at about 1 ms while pace-z reaches j-two at
-        // about 100 ms. Before the fix, j-two counted the sunk j-one off its
+        // about 100 milliseconds. Before the fix, j-two counted the sunk j-one off its
         // run mark, fired prematurely, and lost branch X.
         var result = runGraph("unit-test-join-chain", Map.of("probe", true));
         assertInstanceOf(Map.class, result);

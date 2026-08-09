@@ -347,7 +347,7 @@ class CompanionSyncTest {
      * tutorial-13 in the dry-run lane: 'instantiate graph' loads the model through the
      * configuration system, so the {@code ${rest.server.port:8080}} reference in the task
      * node's 'host' resolves to the application's actual port (8090 under test - success
-     * proves the 8080 default was NOT used), and the graph.task input mapping stages
+     * proves the 8080 default was NOT used), and the 'graph.task' input mapping stages
      * model.person_id for the {model.person_id} dynamic variable in the 'url'. Deployed
      * execution of the same model is covered in GraphTaskTest - the two lanes must
      * behave the same.
