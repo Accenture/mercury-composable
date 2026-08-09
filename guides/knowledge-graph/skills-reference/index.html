@@ -3009,8 +3009,9 @@ the node into an HTTP client by configuration):</p>
 <a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>input[]=text(http://127.0.0.1:${rest.server.port:8080}) -&gt; host
 <a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>input[]=text(/api/mdm/profile/{model.person_id}) -&gt; url
 <a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>input[]=text(GET) -&gt; method
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>input[]=text(5000) -&gt; headers.x-ttl
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>output[]=result -&gt; output.body
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>input[]=text(application/json) -&gt; headers.accept
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>input[]=text(5000) -&gt; headers.x-ttl
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>output[]=result -&gt; output.body
 </code></pre></div>
 <p><code>input[]</code> entries apply <strong>in order</strong>, so field mappings after a <code>*</code> merge into the request body,
 and the body auto-converts when the function declares a PoJo input. A <code>model.{key}</code> target stages
