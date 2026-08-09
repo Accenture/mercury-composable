@@ -157,8 +157,8 @@ headers:
 
     response:
       #
-      # the system can filter the response headers set by a target service
-      # but it cannot remove any response headers set by the underlying servlet container.
+      # The system can filter the response headers set by a target service.
+      # It cannot remove any response headers set by the underlying servlet container.
       # However, you may override non-essential headers using the "add" directive. e.g. the "server" header.
       # i.e. don't touch essential headers such as content-length.
       #

@@ -8,6 +8,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Fixed
+
+1. **`graph.task` input mapping now supports `model.{key}` staging targets, restoring Event
+   Script parity for dynamic variables.** An `input[]` entry whose RHS starts with `model.`
+   stages a variable in the graph's state machine — instead of silently landing in the request
+   body under a literal `model` key — so a later entry can reference it as a dynamic variable,
+   e.g. `input.body.person_id -> model.person_id` followed by
+   `text(/api/mdm/profile/{model.person_id}) -> url` (the same idiom as Event Script's
+   `text(Bearer {model.token}) -> headers.Authorization`). This matches the `graph.api.fetcher`
+   and `graph.extension` input mappings, which already supported it. Engine-managed model
+   metadata remains immutable: the CompileGraph gate and the playground pre-run check reject a
+   reserved target at validation time, and the new runtime path calls the same shared guard,
+   covering single-node execution of drafts.
+
+### Changed
+
+1. **tutorial-13 now invokes the platform's AsyncHttpClient (`async.http.request`) instead of a
+   throwaway demo function.** The `graph.task` tutorial becomes a worked example of an HTTP
+   client by configuration: the input mapping stages `model.person_id` from the request body,
+   resolves it as a dynamic variable inside the `url`, uses `${rest.server.port:8080}`
+   environment/config substitution in the `host` — resolved when the model is loaded (at
+   deployment compile and at `instantiate graph` for a dry-run) while the authored and exported
+   model keeps the placeholder — and sets the HTTP timeout explicitly with
+   `text(5000) -> headers.x-ttl` (milliseconds): the graph's ttl bounds only the event call to
+   the function, so the `X-TTL` request header is the sanctioned way to give the HTTP operation
+   its own budget, and it propagates the deadline on the wire. The `v1.hello.task` demo function
+   (`HelloTask`) is removed; the tutorial help, `graph.task` skill help, skills reference, the
+   AI grammar (`minigraph-commands.json`) and the "Using AsyncHttpClient by configuration" guide
+   section are updated to teach the staging, substitution and X-TTL idioms.
+
+---
 ## Version 4.11.4, 8/7/2026
 
 ### Changed

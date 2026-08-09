@@ -28,6 +28,7 @@ import org.platformlambda.core.system.AutoStart;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
+import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
 import java.io.File;
@@ -340,6 +341,49 @@ class CompanionSyncTest {
         assertInstanceOf(String.class, missed.get("error"));
         assertTrue(((String) missed.get("error")).contains("not found"),
                 "the not-found error is returned in-band for a genuine miss: " + missed);
+    }
+
+    /**
+     * tutorial-13 in the dry-run lane: 'instantiate graph' loads the model through the
+     * configuration system, so the {@code ${rest.server.port:8080}} reference in the task
+     * node's 'host' resolves to the application's actual port (8090 under test - success
+     * proves the 8080 default was NOT used), and the graph.task input mapping stages
+     * model.person_id for the {model.person_id} dynamic variable in the 'url'. Deployed
+     * execution of the same model is covered in GraphTaskTest - the two lanes must
+     * behave the same.
+     */
+    @Test
+    void tutorial13DryRunResolvesEnvVarAndDynamicVariable() throws Exception {
+        var po = EventEmitter.getInstance();
+        var sid = "ws-990005-2";
+        var inRoute = "ws.990005.2.in";
+
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", inRoute)));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        assertTrue(GraphCommandService.hasSession(sid), "session must exist before a companion command");
+
+        // the tutorial model must come from the deployed classpath copy, not a stale export
+        var temp = new File("/tmp/graph", "tutorial-13.json");
+        if (temp.exists()) {
+            assertTrue(temp.delete(), "stale temp copy must be removed for a deterministic import");
+        }
+        var imported = syncCommand(po, sid, "import graph from tutorial-13");
+        assertEquals(Boolean.TRUE, imported.get("ok"), "import must succeed: " + imported);
+        var instantiated = syncCommand(po, sid, "instantiate graph\nint(100) -> input.body.person_id");
+        assertEquals(Boolean.TRUE, instantiated.get("ok"), "instantiate -> ok:true: " + instantiated);
+        var ran = syncCommand(po, sid, "run");
+        assertEquals(Boolean.TRUE, ran.get("ok"), "dry-run must succeed: " + ran);
+        // the traversal's JSON payload arrives in 'result' (console narration is 'output')
+        assertInstanceOf(List.class, ran.get("result"), "the graph output is returned in-band: " + ran);
+        var results = (List<?>) ran.get("result");
+        assertInstanceOf(Map.class, results.getFirst());
+        @SuppressWarnings("unchecked")
+        var mm = new MultiLevelMap((Map<String, Object>) results.getFirst());
+        assertEquals("Peter", mm.getElement("output.body.profile.name"));
+        assertEquals("100 World Blvd", mm.getElement("output.body.profile.address"));
     }
 
     /**
