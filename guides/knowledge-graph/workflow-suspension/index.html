@@ -2753,7 +2753,7 @@ until one moves the workflow forward:</p>
 <pre class="mermaid"><code>flowchart LR
     d{"decision"} --&gt;|approved| a["next step"]
     d --&gt;|rejected| t["terminal step"]
-    d -.-&gt;|"returns 'suspend' - waits, then&lt;br&gt;re-decides on the next request"| d
+    d -.-&gt;|"waiting..."| d
     r(["root"]) --&gt; i["island"] --&gt; s[["suspend"]]</code></pre>
 <blockquote>
 <p>The ADRs and the compiler internals call these shapes <strong>edge mode</strong> (checkpoint node —
