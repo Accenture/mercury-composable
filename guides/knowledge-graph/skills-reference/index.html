@@ -2995,19 +2995,30 @@ own function becomes, in effect, a custom skill.</p>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>task=&lt;function-route&gt;
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>input[]=input.body -&gt; *                  # &#39;*&#39; merges the mapped value into the request body
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>input[]=text(minigraph) -&gt; header.x-app  # &#39;header.{name}&#39; sets a request header
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>output[]=result -&gt; output.body
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>input[]=input.body.id -&gt; model.id        # &#39;model.{key}&#39; stages a state-machine variable
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>output[]=result -&gt; output.body
 </code></pre></div>
-<p>Worked example (invoking a deployed demo function):</p>
+<p>Worked example (tutorial-13 — any registered route is callable, so <code>async.http.request</code> turns
+the node into an HTTP client by configuration):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>create node hello-task
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>with type Task
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>with properties
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>skill=graph.task
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>task=v1.hello.task
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>input[]=input.body -&gt; *
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>output[]=result -&gt; output.body
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>task=async.http.request
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>input[]=input.body.person_id -&gt; model.person_id
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>input[]=text(http://127.0.0.1:${rest.server.port:8080}) -&gt; host
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>input[]=text(/api/mdm/profile/{model.person_id}) -&gt; url
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>input[]=text(GET) -&gt; method
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>input[]=text(5000) -&gt; headers.x-ttl
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>output[]=result -&gt; output.body
 </code></pre></div>
 <p><code>input[]</code> entries apply <strong>in order</strong>, so field mappings after a <code>*</code> merge into the request body,
-and the body auto-converts when the function declares a PoJo input. The result lands at
+and the body auto-converts when the function declares a PoJo input. A <code>model.{key}</code> target stages
+a <strong>state-machine variable</strong> instead of a body field, and later entries can reference it as a
+<strong>dynamic variable</strong> — <code>{model.person_id}</code> above resolves inside the <code>text(...)</code> constant, the
+same idiom as Event Script. The <code>${rest.server.port:8080}</code> reference is <strong>environment/config
+substitution</strong>, resolved when the model is loaded (at deployment compile, and at <code>instantiate
+graph</code> for a dry-run) while the authored and exported model keeps the placeholder. The result lands at
 <code>{node}.result</code> and response headers at <code>{node}.header</code> — in <code>output[]</code> mappings, <strong><code>result</code>
 (bare) is the function's whole result</strong> and <code>result.{key}</code> a field of it (same rule as
 <code>graph.extension</code>). Optional <code>for_each[]</code> with <code>concurrency</code>
@@ -3016,7 +3027,11 @@ and the body auto-converts when the function declares a PoJo input. The result l
 <p><strong>Gotchas:</strong> the <code>task</code> route must exist at runtime or the node fails fast; a call is bounded by
 <code>model.ttl</code> (default 30 s) — or by the node's optional <code>ttl</code> property (duration syntax, e.g.
 <code>10s</code>), which overrides the propagated value for this node only, the same deadline override as
-<a href="#api-fetcher"><code>graph.api.fetcher</code></a> and <a href="#extension"><code>graph.extension</code></a>. For multi-step
+<a href="#api-fetcher"><code>graph.api.fetcher</code></a> and <a href="#extension"><code>graph.extension</code></a>. That deadline bounds the
+<strong>event call</strong> only — it cannot reach inside a generic function, so a function with its own
+downstream timeout contract takes it from the input mapping: the AsyncHttpClient reads
+<code>headers.x-ttl</code> in <strong>milliseconds</strong> as its HTTP timeout (default 30 s when absent) and propagates
+it on the wire as the <code>X-TTL</code> header. For multi-step
 orchestration, prefer <a href="#extension"><code>graph.extension</code></a> — <code>graph.task</code> is for a single function
 call. Writing the function itself:
 <a href="../../event-driven/ai-agent-guide/">function AI agent guide</a> (<code>#[preload]</code> + <code>ComposableFunction</code>).</p>

@@ -2371,6 +2371,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Using AsyncHttpClient by configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#http-timeout-x-ttl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP timeout (X-TTL)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2768,6 +2785,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Using AsyncHttpClient by configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#http-timeout-x-ttl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP timeout (X-TTL)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3162,12 +3196,13 @@ illustrates using it as a task.</p>
 <a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;text(world)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">parameters.query.hello&#39;</span>
 <a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;text(application/json)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">headers.content-type&#39;</span>
 <a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;text(application/json)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">headers.accept&#39;</span>
-<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;async.http.request&#39;</span>
-<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
-<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;text(application/json)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.header.content-type&#39;</span>
-<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;result</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.body&#39;</span>
-<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Return</span><span class="nv"> </span><span class="s">result&#39;</span>
-<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">end</span>
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;text(5000)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">headers.x-ttl&#39;</span>
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;async.http.request&#39;</span>
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;text(application/json)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.header.content-type&#39;</span>
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;result</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.body&#39;</span>
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Return</span><span class="nv"> </span><span class="s">result&#39;</span>
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">end</span>
 </code></pre></div>
 <p>The interface contract for the AsyncHttpClient is the AsyncHttpRequest object. The following table lists
 the parameters where parameters.query, body and cookies are optional.</p>
@@ -3206,6 +3241,11 @@ the parameters where parameters.query, body and cookies are optional.</p>
 <td style="text-align: left;">headers.content-type=application/json</td>
 </tr>
 <tr>
+<td style="text-align: left;">headers.x-ttl</td>
+<td style="text-align: left;">HTTP timeout in milliseconds</td>
+<td style="text-align: left;">headers.x-ttl=5000</td>
+</tr>
+<tr>
 <td style="text-align: left;">body</td>
 <td style="text-align: left;">HTTP request body for PUT, POST and PATCH</td>
 <td style="text-align: left;">{"hello": "world"}</td>
@@ -3217,6 +3257,17 @@ the parameters where parameters.query, body and cookies are optional.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="http-timeout-x-ttl">HTTP timeout (X-TTL)<a class="headerlink" href="#http-timeout-x-ttl" title="Permanent link">&para;</a></h3>
+<p>The flow's <code>ttl</code> (or a task-level <code>ttl</code> override) bounds the <strong>event call</strong> to the
+<code>async.http.request</code> function - it cannot reach inside the function to govern the HTTP
+operation itself. Set the HTTP timeout explicitly with the reserved <code>X-TTL</code> request header,
+expressed in <strong>milliseconds</strong> (<code>text(5000) -&gt; headers.x-ttl</code>). Without it, the AsyncHttpClient
+uses its own 30-second default, decoupled from your flow deadline.</p>
+<p>The same header also rides the outgoing request on the wire, so a downstream Mercury service
+adopts it as its processing deadline — the end-to-end deadline propagation described in the
+<a href="../rest-automation/rest-grammar/">REST automation timeout grammar</a>. Give the HTTP call a budget shorter
+than the calling flow or graph deadline, so an HTTP timeout surfaces as a catchable error in
+the caller instead of the caller itself expiring first.</p>
 <h2 id="starting-a-flow-programmatically">Starting a flow programmatically<a class="headerlink" href="#starting-a-flow-programmatically" title="Permanent link">&para;</a></h2>
 <p>To start an "event" flow from a unit test, you may use the helper class "FlowExecutor" under the "Event Script" module.</p>
 <p>Examples of some APIs are as follows:</p>
