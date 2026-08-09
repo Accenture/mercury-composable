@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-08 | agent: Claude Code (2026-08-08-022929)
+- **last_session:** 2026-08-08 | agent: Claude Code (2026-08-09-025009)
 - **last_review:** 2026-08-07 | through 2026-08-07-142823.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -235,6 +235,53 @@
   <!-- id: bp-graph-workflow-suspension | created: 2026-07-28 | last_used: 2026-07-30 | uses: 5 | tier: archive-candidate | origin: 2026-07-29-003528 -->
 
 ## Open Threads
+
+- [x] (feature+fix — **COMPLETE ON BOTH ENGINES 2026-08-08, all CI green; rides the
+  next release.** Java: [PR #267](https://github.com/Accenture/mercury-composable/pull/267)
+  squash `e16f4b40` + accept-header follow-up
+  [PR #268](https://github.com/Accenture/mercury-composable/pull/268) squash `7ab9c771`
+  (incl. Eric's javadoc cosmetics). Rust: mercury PR #197 merge `79212bc0` carrying
+  `0530bd13` — the lock-step mirror PLUS **Eric's ruling: the Rust async HTTP client
+  sends a default `Accept: */*` when the caller gives none** (Java reactor-netty parity;
+  both REST servers omit response content-type absent Accept, so a model omitting
+  `headers.accept` previously decoded JSON on Java but got raw bytes on Rust; explicit
+  accept never overridden, wire-echo pinned both ways) + the INCREMENTS ledger repair
+  (78/79 reconstructed, tail ordered 76→83, Overview extended).)
+  **graph.task input mapping gains `model.*` staging (Event Script parity) + tutorial-13
+  remodeled onto async.http.request.** Eric's debug report: `text(100) -> model.id` then
+  `{model.id}` in a later entry resolved to "null" — the RHS silently landed in the
+  request body (graph.task was the fetcher-family outlier; fetcher/extension already
+  staged model.* under the shared guard). Fix: model.* RHS → guard + state-machine
+  write, visible to later entries. **Durable facts:** (1) the CompileGraph gate already
+  rejects reserved-metadata targets in input[] ("compiled or 404"); (2) **env-var
+  substitution is load-time in BOTH lanes by design** — CompileGraph loads deployed
+  models via ConfigReader (eager reference resolution), and the dry-run's `instantiate
+  graph` round-trips the session graph through a temp file + ConfigReader, so the run
+  instance gets resolved values while the authored/exported model keeps `${...}`
+  placeholders; (3) the sync companion returns a traversal's JSON payload in `result`,
+  console narration in `output`; (4) AsyncHttpRequest.fromMap renders the input-mapping
+  map into the HTTP request (keys host/url/method/headers.{name}/body); (5) **graph/flow
+  ttl bounds only the EVENT call to a composable function** — the AsyncHttpClient's own
+  HTTP timeout is `headers.x-ttl` in MILLISECONDS (absent → 30s default, decoupled from
+  the caller's deadline), which also rides the wire for end-to-end deadline propagation
+  (Eric's X-TTL round: taught in tutorial-13, graph-task help, the guide's
+  by-configuration section; wire-echo pinned via the mock's observed_ttl); (6) **never
+  rely on an HTTP library's implicit default Accept** — reactor-netty sends `*/*`, the
+  Rust client sends none, and both REST servers omit response content-type absent
+  Accept, so JSON decoding silently differs across engines unless `headers.accept` is
+  declared (the reference http-client-by-config flow always did). tutorial-13 =
+  HTTP client by configuration vs mock.mdm.profile; HelloTask (v1.hello.task) retired.
+  Module 105/105, webapp 212/212. Relates [[conv-telemetry-presentation-parity]],
+  [[compilegraph-mandatory-gate]].
+  <!-- id: thread-graph-task-model-staging | created: 2026-08-08 | last_used: 2026-08-08 | uses: 1 | tier: working | origin: 2026-08-09-025009 -->
+
+- [ ] (field validation — pending) **The field team reviews the v4.11.4 suspend/resume
+  rationalization on Monday 2026-08-10** — the second team whose pain report drove the
+  re-design evaluates whether edge/jump modes address their concerns; Eric reports
+  back with their inputs. Their v4.11.x models run unmodified under the deprecation
+  window, so the review needs no migration work from them.
+  Relates [[thread-suspend-resume-rationalization]], [[thread-release-4-11-4]].
+  <!-- id: thread-field-review-rationalization | created: 2026-08-08 | last_used: 2026-08-08 | uses: 1 | tier: working | origin: 2026-08-08-022929 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-08-08, **both repos in lock-step at
   v4.11.4**) **v4.11.4 — the suspend/resume rationalization release.** Java: release
