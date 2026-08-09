@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-08 | agent: Claude Code (2026-08-09-025009)
+- **last_session:** 2026-08-09 | agent: Claude Code (2026-08-09-164000)
 - **last_review:** 2026-08-07 | through 2026-08-07-142823.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -274,6 +274,20 @@
   Module 105/105, webapp 212/212. Relates [[conv-telemetry-presentation-parity]],
   [[compilegraph-mandatory-gate]].
   <!-- id: thread-graph-task-model-staging | created: 2026-08-08 | last_used: 2026-08-08 | uses: 1 | tier: working | origin: 2026-08-09-025009 -->
+
+- [x] (release — SHIPPED 2026-08-09, **both repos in lock-step at v4.11.5**) **v4.11.5 —
+  the graph.task parity + teaching-surfaces release, out a day ahead of the field
+  review.** Java: release [PR #270](https://github.com/Accenture/mercury-composable/pull/270)
+  squash `9a6a9569` + the post-merge diagram patch `f8dd9cd7` (straight to main per
+  Eric — no PR for a one-line docs patch), tag on `f8dd9cd7`, full reactor green (6:29).
+  Rust: release PR #199 merge `4380e29d` + diagram patch `82b020e6`, tag MOVED
+  pre-publication onto `82b020e6` (the standing docs-inclusive-tag ruling), 305 tests
+  green. Contents: [[thread-graph-task-model-staging]] (incl. the Rust default-Accept
+  ruling), tutorial-13 as HTTP-client-by-configuration, and the checkpoint/decision docs
+  reframe (Eric's proposal; live on both gh-pages sites — the decision-pattern diagram's
+  overlapping loop label fixed to 'waiting...', layout verified via the site's own
+  mermaid bundle and confirmed clean on the live page by Eric).
+  <!-- id: thread-release-4-11-5 | created: 2026-08-09 | last_used: 2026-08-09 | uses: 1 | tier: working | origin: 2026-08-09-164000 -->
 
 - [ ] (field validation — pending) **The field team reviews the v4.11.4 suspend/resume
   rationalization on Monday 2026-08-10** — the second team whose pain report drove the
