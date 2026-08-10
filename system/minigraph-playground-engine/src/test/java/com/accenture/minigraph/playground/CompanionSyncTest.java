@@ -437,6 +437,52 @@ class CompanionSyncTest {
     }
 
     /**
+     * tutorial-12 in the dry-run lane: the generic retry handler recovers the fetcher,
+     * and the walker resolves the virtual 'error' node - after the run,
+     * 'inspect error' reports code=200 with the source kept and the failure details
+     * removed (a stale 401 here misled the operator before this refinement).
+     */
+    @Test
+    void successfulRetryResolvesErrorContextInDryRun() throws Exception {
+        var po = EventEmitter.getInstance();
+        var sid = "ws-990013-1";
+        var inRoute = "ws.990013.1.in";
+
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", inRoute)));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        assertTrue(GraphCommandService.hasSession(sid), "session must exist before a companion command");
+
+        var temp = new File("/tmp/graph", "tutorial-12.json");
+        if (temp.exists()) {
+            assertTrue(temp.delete(), "stale temp copy must be removed for a deterministic import");
+        }
+        var imported = syncCommand(po, sid, "import graph from tutorial-12");
+        assertEquals(Boolean.TRUE, imported.get("ok"), "import must succeed: " + imported);
+        var instantiated = syncCommand(po, sid,
+                "instantiate graph\nint(100) -> input.body.person_id\nboolean(true) -> input.body.exception");
+        assertEquals(Boolean.TRUE, instantiated.get("ok"), "instantiate -> ok:true: " + instantiated);
+        var ran = syncCommand(po, sid, "run");
+        assertEquals(Boolean.TRUE, ran.get("ok"), "dry-run must succeed: " + ran);
+        // the generic handler retried the fetcher to success - the run's output is the profile
+        assertInstanceOf(List.class, ran.get("result"), "the graph output is returned in-band: " + ran);
+        @SuppressWarnings("unchecked")
+        var mm = new MultiLevelMap((Map<String, Object>) ((List<?>) ran.get("result")).getFirst());
+        assertEquals("Peter", mm.getElement("output.body.name"));
+        // the virtual 'error' node reports the RECOVERY, not the stale failure
+        var inspected = syncCommand(po, sid, "inspect error");
+        assertEquals(Boolean.TRUE, inspected.get("ok"), "inspect error -> ok:true: " + inspected);
+        @SuppressWarnings("unchecked")
+        var context = new MultiLevelMap((Map<String, Object>) ((List<?>) inspected.get("result")).getFirst());
+        assertEquals(200, context.getElement("outcome.code"));
+        assertEquals("fetcher", context.getElement("outcome.source"));
+        assertNull(context.getElement("outcome.message"), "the failure message must be removed on recovery");
+        assertNull(context.getElement("outcome.stack"), "the failure stack must be removed on recovery");
+    }
+
+    /**
      * Discovery commands (read-only): "list graphs" enumerates the deployable
      * graph models (compiled registry + deployed folder) with each root's
      * "purpose", and "list flows" the Event Script flows - so an agent can

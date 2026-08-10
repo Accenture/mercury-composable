@@ -177,7 +177,9 @@ node may also connect onward to more nodes for sophisticated recovery (e.g. a gr
 invoking a composable function). Note that a node is visited at most once per run unless RESET,
 so if two parallel branches fail together, only the first jump enters a shared handler. The
 alias 'error' is reserved for this namespace - probe it in a dry-run session with
-"inspect error".
+"inspect error". When the failing node is retried successfully, the context resolves to
+code=200 with the source kept and the failure details removed - the source match ensures a
+parallel node's success never clears a different node's outstanding failure.
 
 To handle an exception with retry logic, the error-handler node should be a decision-making node using
 the graph.math or graph.js skill.

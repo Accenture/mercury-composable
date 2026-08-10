@@ -96,6 +96,23 @@ class GraphErrorContextTest {
         log.info("generic handler served the failing HTTP call for cid {}", cid);
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void successfulRetryResolvesTheErrorContext() throws TimeoutException {
+        // the generic one-shot handler disarms the simulated exception and retries via
+        // RESET:/NEXT: {error.source}; when the retried source succeeds, the walker
+        // resolves the virtual 'error' node: code=200, source kept, failure details gone
+        var cid = Utility.getInstance().getUuid();
+        var response = runGraph("unit-test-error-recovery", cid, Map.of("start", true));
+        assertEquals(200, response.getStatus());
+        var body = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals("Peter", body.getElement("name"), "the retry must deliver the real result");
+        assertEquals(200, body.getElement("recovered_code"));
+        assertEquals("work", body.getElement("recovered_source"));
+        assertNull(body.getElement("stale_message"), "the failure message must be removed on recovery");
+        log.info("error context resolved after a successful retry");
+    }
+
     @Test
     void reservedErrorAliasIsRejectedAtTheGate() throws TimeoutException {
         // a node aliased 'error' would shadow the exception-context namespace - the

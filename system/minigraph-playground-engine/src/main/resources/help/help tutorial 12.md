@@ -155,6 +155,10 @@ it avoids very rapid retries that may contribute to a side effect called "recove
 "unintended denial-of-service attack". (A DELAY value may also be a dynamic variable, e.g.
 "DELAY: {model.backoff}" for a computed backoff.)
 
+After the successful retry, the virtual "error" node reports the RECOVERY instead of the stale
+failure: "inspect error" shows code=200 with the source kept and the failure details removed.
+An empty context means nothing failed; a full context means an outstanding failure.
+
 ```
 create node error-handler
 with type Decision

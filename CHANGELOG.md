@@ -33,7 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    route through the same staging. The per-node record (`{node}.status`/`{node}.error`,
    now plus `{node}.stack`) is unchanged, so existing handlers keep working. The `error`
    namespace is inspectable in a dry-run session via `inspect error` — the node alias
-   `error` has always been reserved by the graph model. (ADR-0014)
+   `error` has always been reserved by the graph model. The context also **reports
+   recovery**: when the failing `error.source` is later retried successfully,
+   `error.code` becomes 200 with the source kept and the failure details removed (the
+   source match keeps parallel branches safe) — empty means nothing failed,
+   `{source, code: 200}` means recovered, a full context means an outstanding failure.
+   (ADR-0014)
 
 2. **The orchestrator pattern: a parent graph delegates independently resumable subgraph
    paths.** `graph.extension` now stamps the caller's business correlation ID
