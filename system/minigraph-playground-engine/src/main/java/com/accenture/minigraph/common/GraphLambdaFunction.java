@@ -444,6 +444,26 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         }
     }
 
+    /**
+     * A node with an exception= handler completed without error: if it is the recorded
+     * 'error.source', the failure it staged has been RECOVERED - mark the context resolved
+     * (error.code=200, 'error.source' kept as the recovered node) and drop the failure
+     * details (message and stack). The virtual 'error' node then has three
+     * distinguishable states: empty = nothing failed this run; {source, code 200} =
+     * source failed and recovered; {source, code, message} = an outstanding failure.
+     * A different node's outstanding failure is never touched (source would not match).
+     *
+     * @param stateMachine the graph state machine
+     * @param nodeName the successfully completed node's alias
+     */
+    protected void resolveErrorContext(MultiLevelMap stateMachine, String nodeName) {
+        if (nodeName.equals(stateMachine.getElement(ERROR_SOURCE))) {
+            stateMachine.setElement(ERROR_CODE, 200);
+            stateMachine.removeElement(ERROR_MESSAGE);
+            stateMachine.removeElement(ERROR_STACK);
+        }
+    }
+
     protected static long getModelTtl(GraphInstance instance) {
         if (!instance.stateMachine.exists(MODEL)) {
             instance.stateMachine.setElement(MODEL, new HashMap<>());
