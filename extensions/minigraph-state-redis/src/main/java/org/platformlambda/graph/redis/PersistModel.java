@@ -27,16 +27,16 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Map;
 
-import static org.platformlambda.graph.redis.RedisStateConnection.KEY_PREFIX;
-
 /**
  * Redis implementation of the suspend/resume state-store PERSIST contract, invoked by
  * the 'graph.suspend' skill through the node's "task" property.
  * <p>
- * Contract: headers type=put; body {cid, node, ttl, model, seen, run}. The record is
- * stored opaquely (MsgPack bytes) under the business correlation ID with the requested
- * time-to-live (Redis SETEX - expiry is native, no sweeper needed). A 2xx reply is the
- * durability acknowledgement the suspend skill requires before the graph completes.
+ * Contract: headers type=put; body {cid, graph, node, ttl, model, seen, run}. The record
+ * is stored opaquely (MsgPack bytes) under the key 'graph:{graph_id}:{cid}' with the
+ * requested time-to-live (Redis SETEX - expiry is native, no sweeper needed). The graph
+ * ID scopes the record so the same business correlation ID may suspend independently in
+ * each domain's graph and in each subgraph. A 2xx reply is the durability
+ * acknowledgement the suspend skill requires before the graph completes.
  */
 @PreLoad(route = "v1.redis.persist.model", instances = 50,
          envInstances = "worker.instances.v1.redis.persist.model")
@@ -46,6 +46,7 @@ public class PersistModel implements TypedLambdaFunction<Map<String, Object>, Ob
     private static final String TYPE = "type";
     private static final String PUT = "put";
     private static final String CID = "cid";
+    private static final String GRAPH = "graph";
     private static final String TTL = "ttl";
 
     @Override
@@ -58,12 +59,17 @@ public class PersistModel implements TypedLambdaFunction<Map<String, Object>, Ob
         if (cid == null) {
             throw new IllegalArgumentException("Missing cid");
         }
+        var graphId = input.get(GRAPH) instanceof String value && !value.isBlank()? value : null;
+        if (graphId == null) {
+            throw new IllegalArgumentException("Missing graph");
+        }
         var ttlSeconds = input.get(TTL) instanceof Number n? n.longValue() : 0;
         if (ttlSeconds < 1) {
             throw new IllegalArgumentException("Invalid ttl");
         }
-        RedisStateConnection.commands().setex(KEY_PREFIX + cid, ttlSeconds, msgPack.pack(input));
-        log.info("Persisted workflow state for cid {}, ttl={}s", cid, ttlSeconds);
+        RedisStateConnection.commands().setex(RedisStateConnection.storeKey(graphId, cid),
+                                                ttlSeconds, msgPack.pack(input));
+        log.info("Persisted workflow state for graph {}, cid {}, ttl={}s", graphId, cid, ttlSeconds);
         return Map.of("stored", true);
     }
 }

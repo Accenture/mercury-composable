@@ -48,7 +48,7 @@ class RedisStateConnection {
     private static final Logger log = LoggerFactory.getLogger(RedisStateConnection.class);
     // one shared namespace so a workflow suspended by one application instance
     // can resume on any other instance sharing the same Redis
-    static final String KEY_PREFIX = "graph:state:";
+    private static final String KEY_NAMESPACE = "graph:";
     private static final String REDIS_VERSION = "redis_version:";
     private static final String UNKNOWN = "unknown";
     private static final Object SAFETY = new Object();
@@ -60,6 +60,19 @@ class RedisStateConnection {
     private static volatile boolean nativeGetdel = true;
 
     private RedisStateConnection() {}
+
+    /**
+     * Compose the store key: 'graph:{graph_id}:{cid}'. The graph ID scopes the record,
+     * so the same business correlation ID may suspend independently in each domain's
+     * graph and in each subgraph - and a resume only ever sees its own graph's record.
+     *
+     * @param graphId the graph that suspended
+     * @param cid the business correlation ID
+     * @return the Redis key
+     */
+    static String storeKey(String graphId, String cid) {
+        return KEY_NAMESPACE + graphId + ":" + cid;
+    }
 
     static RedisCommands<String, byte[]> commands() {
         synchronized (SAFETY) {

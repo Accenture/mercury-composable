@@ -78,7 +78,10 @@ tasks an application wires into its own `sync-to-async` flow (see
 function under these names. The knowledge graph additionally reserves the node **alias**
 `suspend` (bound to the `graph.suspend` skill — traversal jumps to it by name, the `root`/`end`
 pattern), the node **property** `suspend`, and the engine-managed state key `model.run` — see
-[Workflow Suspension](knowledge-graph/workflow-suspension.md).
+[Workflow Suspension](knowledge-graph/workflow-suspension.md). The node alias `error` is likewise
+reserved: it is the **generic exception context namespace** (`error.source`, `error.code`,
+`error.message`, `error.stack`) staged when a failed node routes to its `exception=` handler —
+see [failure routing](knowledge-graph/command-reference.md#failure-routing).
 
 ## Optional user defined functions
 

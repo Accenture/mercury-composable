@@ -175,6 +175,12 @@ public class GraphExecutor extends GraphLambdaFunction {
                 po.send(error);
                 graphInstance.complete.set(true);
             } else if (!graphInstance.complete.get()) {
+                if (processStatus instanceof Integer && resultError != null) {
+                    // the node failed and routed to its exception= handler ('next' is the
+                    // handler's alias): stage the generic exception context so one handler
+                    // can serve any node. GraphTraveler keeps identical semantics.
+                    stageErrorContext(stateMachine, nodeName);
+                }
                 var next = String.valueOf(response.getBody());
                 decideNext(po, node, next, graphInstance, parentSpanId);
             }

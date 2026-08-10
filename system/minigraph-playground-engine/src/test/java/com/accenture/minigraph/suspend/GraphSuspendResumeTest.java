@@ -81,9 +81,11 @@ class GraphSuspendResumeTest {
         // into every skill and task - not the engine's internal callback IDs
         assertEquals(cid, CountingStepTask.getBusinessCid("one", cid));
         // the persisted record has the documented envelope shape and no reserved model keys
-        var stored = readStoredRecord(cid);
+        var stored = readStoredRecord("unit-test-suspend-1", cid);
         assertEquals("step-1", stored.getElement("data.node"));
         assertEquals(cid, stored.getElement("data.cid"));
+        // cid + graph form the retrieval key: the record carries the graph that suspended
+        assertEquals("unit-test-suspend-1", stored.getElement("data.graph"));
         assertEquals(1, stored.getElement("data.model.step1_count"));
         assertNull(stored.getElement("data.model.cid"), "reserved model keys must not persist");
         assertNull(stored.getElement("data.model.instance"), "reserved model keys must not persist");
@@ -100,7 +102,7 @@ class GraphSuspendResumeTest {
         assertEquals(1, CountingStepTask.getCount("one", cid), "the suspension point must not re-execute");
         assertEquals(1, CountingStepTask.getCount("two", cid));
         assertEquals("resume", second.getHeader("x-run"), "graph.resume must flag the resumed condition");
-        assertFalse(storedFile(cid).exists(), "the record must be consumed on resume");
+        assertFalse(storedFile("unit-test-suspend-1", cid).exists(), "the record must be consumed on resume");
         log.info("suspend -> resume continuation verified for cid {}", cid);
     }
 
@@ -168,7 +170,7 @@ class GraphSuspendResumeTest {
         var r1 = runGraph("unit-test-suspend-5", cid);
         assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r1.getBody()).getElement("type"));
         assertEquals(1, CountingStepTask.getCount("expiry", cid));
-        expireStoredRecord(cid);
+        expireStoredRecord("unit-test-suspend-5", cid);
         // the record's expiry has passed: the resume falls back to a fresh run and suspends again
         var r2 = runGraph("unit-test-suspend-5", cid);
         assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r2.getBody()).getElement("type"));
@@ -184,7 +186,7 @@ class GraphSuspendResumeTest {
         assertEquals(200, first.getStatus());
         // forge the persisted record: the store is pluggable, so a record is external
         // input - inject reserved keys into its model as a hostile writer would
-        var file = storedFile(cid);
+        var file = storedFile("unit-test-suspend-1", cid);
         var msgPack = new MsgPack();
         var wrapper = (Map<String, Object>) msgPack.unpack(Files.readAllBytes(file.toPath()));
         var forged = new MultiLevelMap(wrapper);
@@ -224,7 +226,7 @@ class GraphSuspendResumeTest {
         assertEquals("waiting", waiting1.getElement("stage"), "the decision stages the caller's reply");
         assertEquals("fresh", waiting1.getElement("run"));
         // the persisted suspension point is the DECISION that jumped, not the suspend node
-        assertEquals("gate", readStoredRecord(cid).getElement("data.node"));
+        assertEquals("gate", readStoredRecord("unit-test-suspend-6", cid).getElement("data.node"));
         // run 2: still no decision - the gate RE-EXECUTES against the new input and
         // re-suspends; before jump-mode re-execution this dead-ended (a node marked
         // seen never re-dispatches and the persisted seen marks include the gate)
@@ -233,7 +235,8 @@ class GraphSuspendResumeTest {
         var waiting2 = new MultiLevelMap((Map<String, Object>) r2.getBody());
         assertEquals("waiting", waiting2.getElement("stage"));
         assertEquals("resume", waiting2.getElement("run"), "the second wait is a resumed run");
-        assertEquals("gate", readStoredRecord(cid).getElement("data.node"), "re-suspension re-persists");
+        assertEquals("gate", readStoredRecord("unit-test-suspend-6", cid).getElement("data.node"),
+                "re-suspension re-persists");
         assertEquals(0, CountingStepTask.getCount("go-step", cid), "the continuing path must not run yet");
         // run 3: the decision arrives - the re-executed gate routes to the continuing path
         var r3 = runGraph("unit-test-suspend-6", cid, Map.of("decision", "go"));
@@ -242,7 +245,8 @@ class GraphSuspendResumeTest {
         assertEquals("go-step", completed.getElement("step"));
         assertEquals(1, CountingStepTask.getCount("go-step", cid));
         assertEquals("resume", r3.getHeader("x-run"));
-        assertFalse(storedFile(cid).exists(), "the record must be consumed on the final resume");
+        assertFalse(storedFile("unit-test-suspend-6", cid).exists(),
+                "the record must be consumed on the final resume");
         log.info("jump-mode re-execution wait loop verified for cid {}", cid);
     }
 
@@ -257,8 +261,76 @@ class GraphSuspendResumeTest {
         var body = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("finished", body.getElement("stage"));
         assertEquals(1, CountingStepTask.getCount("compat-step", cid));
-        assertFalse(storedFile(cid).exists(), "the retired property must not suspend");
+        assertFalse(storedFile("unit-test-suspend-compat-1", cid).exists(),
+                "the retired property must not suspend");
         log.info("retired-property compat shape verified for cid {}", cid);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void sameCorrelationIdSuspendsIndependentlyPerGraph() throws TimeoutException, IOException {
+        // the field scenario: one business transaction suspends in more than one graph -
+        // each record is scoped by graph + cid, so a shared business correlation ID
+        // never collides across domains or subgraphs
+        var cid = Utility.getInstance().getUuid();
+        var r1 = runGraph("unit-test-suspend-1", cid);
+        assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r1.getBody()).getElement("type"));
+        var r2 = runGraph("unit-test-suspend-5", cid);
+        assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r2.getBody()).getElement("type"));
+        assertEquals("unit-test-suspend-1",
+                readStoredRecord("unit-test-suspend-1", cid).getElement("data.graph"));
+        assertEquals("unit-test-suspend-5",
+                readStoredRecord("unit-test-suspend-5", cid).getElement("data.graph"));
+        // resuming one graph consumes only its own record
+        var done = runGraph("unit-test-suspend-1", cid);
+        assertEquals(200, done.getStatus());
+        assertEquals("two", new MultiLevelMap((Map<String, Object>) done.getBody()).getElement("step"));
+        assertFalse(storedFile("unit-test-suspend-1", cid).exists());
+        assertTrue(storedFile("unit-test-suspend-5", cid).exists(),
+                "another graph's record for the same cid must survive");
+        log.info("per-graph record isolation verified for cid {}", cid);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void orchestratorParentDrivesSuspendingSubgraphPath() throws TimeoutException, IOException {
+        // the orchestrator pattern: the parent delegates a processing path to a subgraph
+        // via graph.extension; the subgraph inherits the business correlation ID, suspends
+        // at its own checkpoint under graph:{subgraph}:{cid}, and the parent routes on the
+        // suspended reply. Re-invoking the parent with the same cid resumes the subgraph.
+        var cid = Utility.getInstance().getUuid();
+        // run 1: the subgraph reaches its checkpoint - the parent reports 'waiting'
+        var first = runGraph("unit-test-orchestrator", cid, Map.of("item", "widget-7"));
+        assertEquals(200, first.getStatus());
+        var waiting = new MultiLevelMap((Map<String, Object>) first.getBody());
+        assertEquals("waiting", waiting.getElement("stage"));
+        assertEquals("suspended", waiting.getElement("type"));
+        assertEquals(cid, waiting.getElement("cid"),
+                "the subgraph must suspend under the business cid, not a per-call random id");
+        assertEquals(1, CountingStepTask.getCount("sub", cid));
+        // the parent's business correlation ID propagated into the subgraph's task
+        assertEquals(cid, CountingStepTask.getBusinessCid("sub", cid));
+        // the record is scoped by the SUBGRAPH's id and only that record exists
+        var stored = readStoredRecord("unit-test-sub-suspend", cid);
+        assertEquals("unit-test-sub-suspend", stored.getElement("data.graph"));
+        assertEquals("prepare", stored.getElement("data.node"));
+        assertEquals("widget-7", stored.getElement("data.model.item"));
+        assertFalse(storedFile("unit-test-orchestrator", cid).exists(),
+                "the parent did not suspend - only the subgraph's record exists");
+        // run 2 with the same cid: the subgraph resumes past its checkpoint
+        var second = runGraph("unit-test-orchestrator", cid, Map.of("item", "ignored-on-resume"));
+        assertEquals(200, second.getStatus());
+        var done = new MultiLevelMap((Map<String, Object>) second.getBody());
+        assertEquals("done", done.getElement("stage"));
+        assertEquals("resume", done.getElement("run"));
+        assertEquals(cid, done.getElement("cid_check"));
+        assertEquals("widget-7", done.getElement("item"), "the restored model must carry the original item");
+        assertEquals(1, done.getElement("result.prior"));
+        assertEquals(1, CountingStepTask.getCount("sub", cid), "the checkpoint step must not re-execute");
+        assertEquals(1, CountingStepTask.getCount("deliver", cid));
+        assertFalse(storedFile("unit-test-sub-suspend", cid).exists(),
+                "the record must be consumed on resume");
+        log.info("orchestrator with suspending subgraph verified for cid {}", cid);
     }
 
     @Test
@@ -327,8 +399,9 @@ class GraphSuspendResumeTest {
     }
 
     @SuppressWarnings("unchecked")
-    private MultiLevelMap readStoredRecord(String cid) throws IOException {
-        var wrapper = (Map<String, Object>) new MsgPack().unpack(Files.readAllBytes(storedFile(cid).toPath()));
+    private MultiLevelMap readStoredRecord(String graphId, String cid) throws IOException {
+        var wrapper = (Map<String, Object>) new MsgPack()
+                .unpack(Files.readAllBytes(storedFile(graphId, cid).toPath()));
         return new MultiLevelMap(wrapper);
     }
 
@@ -338,15 +411,17 @@ class GraphSuspendResumeTest {
      * like elapsed wall-clock time, without a sleep in the test.
      */
     @SuppressWarnings("unchecked")
-    private void expireStoredRecord(String cid) throws IOException {
-        var file = storedFile(cid);
+    private void expireStoredRecord(String graphId, String cid) throws IOException {
+        var file = storedFile(graphId, cid);
         var wrapper = (Map<String, Object>) new MsgPack().unpack(Files.readAllBytes(file.toPath()));
         wrapper.put("expires_at", System.currentTimeMillis() - 1000);
         Files.write(file.toPath(), new MsgPack().pack(wrapper));
     }
 
-    private File storedFile(String cid) {
-        return new File(STORE_DIR, cid);
+    private File storedFile(String graphId, String cid) {
+        // the file store scopes each record by graph + cid (FileStateStore replaces the
+        // ':' separator with '_' in the file name)
+        return new File(STORE_DIR, graphId + "_" + cid);
     }
 
     private String util32HexTraceId(String seed) {

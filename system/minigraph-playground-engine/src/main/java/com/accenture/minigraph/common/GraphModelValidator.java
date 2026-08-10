@@ -82,6 +82,10 @@ public class GraphModelValidator {
     /**
      * Validate the whole-graph contract of a complete graph model: the suspend/resume rules,
      * per-node ttl placement and grammar, and model metadata immutability.
+     * <p>
+     * Reserved aliases (including 'error', the generic exception-context namespace) need
+     * no rule here: MiniGraph rejects them at node creation, so neither lane can even
+     * import such a model.
      *
      * @param graph an imported MiniGraph
      * @throws IllegalArgumentException describing the first violated rule

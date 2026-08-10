@@ -134,7 +134,16 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String STATUS = "status";
     protected static final String HEADER = "header";
     protected static final String ERROR = "error";
+    protected static final String STACK = "stack";
     protected static final String EXCEPTION = "exception";
+    // generic exception context, staged by the walkers when a failed node routes to its
+    // exception= handler - so one island-anchored handler can serve any node. 'error' is
+    // a reserved node alias for this reason, and the names follow Event Script's flow
+    // exception contract (error.code/message/stack) plus the originating node
+    protected static final String ERROR_SOURCE = "error.source";
+    protected static final String ERROR_CODE = "error.code";
+    protected static final String ERROR_MESSAGE = "error.message";
+    protected static final String ERROR_STACK = "error.stack";
     protected static final String INSTANTIATE = "instantiate";
     protected static final String DELETE = "delete";
     protected static final String START = "start";
@@ -393,6 +402,45 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             if (node != null) {
                 stateMachine.removeElement(name);
             }
+        }
+    }
+
+    /**
+     * Record a node failure in the node's scratch area: the error message and, when the
+     * failing envelope carries one, the stack trace - so the walker can stage the full
+     * generic exception context if the node routes to an exception handler.
+     *
+     * @param stateMachine the graph state machine
+     * @param nodeName the failing node's alias
+     * @param response the failing envelope
+     */
+    protected void stageNodeError(MultiLevelMap stateMachine, String nodeName, EventEnvelope response) {
+        stateMachine.setElement(nodeName + "." + ERROR, response.getError());
+        if (response.getStackTrace() != null) {
+            stateMachine.setElement(nodeName + "." + STACK, response.getStackTrace());
+        }
+    }
+
+    /**
+     * Stage the generic exception context for an exception-handler jump: Event Script
+     * parity names (error.code/message/stack) plus the originating node in error.source,
+     * so one island-anchored handler can serve every node's exception= route without
+     * naming the failing node in its data mapping. Reads the failing node's scratch
+     * entries staged by the skill. Inspectable in a dry-run session via 'inspect error'.
+     *
+     * @param stateMachine the graph state machine
+     * @param source the failing node's alias
+     */
+    protected void stageErrorContext(MultiLevelMap stateMachine, String source) {
+        stateMachine.setElement(ERROR_SOURCE, source);
+        stateMachine.setElement(ERROR_CODE, stateMachine.getElement(source + "." + STATUS));
+        stateMachine.setElement(ERROR_MESSAGE, stateMachine.getElement(source + "." + ERROR));
+        var stack = stateMachine.getElement(source + "." + STACK);
+        if (stack != null) {
+            stateMachine.setElement(ERROR_STACK, stack);
+        } else {
+            // never let a previous failure's stack masquerade as this one's
+            stateMachine.removeElement(ERROR_STACK);
         }
     }
 

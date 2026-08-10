@@ -387,6 +387,56 @@ class CompanionSyncTest {
     }
 
     /**
+     * The dry-run twin of the generic exception context: the traveler stages
+     * error.source/code/message/stack when a failed node routes to its exception=
+     * handler, and 'inspect error' shows the staged context - the 'error' namespace
+     * is a first-class state-machine citizen like 'model', so the inspect command
+     * needs no special case.
+     */
+    @Test
+    void dryRunStagesErrorContextAndInspectErrorShowsIt() throws Exception {
+        var po = EventEmitter.getInstance();
+        var sid = "ws-990012-1";
+        var inRoute = "ws.990012.1.in";
+
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", inRoute)));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        assertTrue(GraphCommandService.hasSession(sid), "session must exist before a companion command");
+
+        var temp = new File("/tmp/graph", "unit-test-error-context.json");
+        if (temp.exists()) {
+            assertTrue(temp.delete(), "stale temp copy must be removed for a deterministic import");
+        }
+        var imported = syncCommand(po, sid, "import graph from unit-test-error-context");
+        assertEquals(Boolean.TRUE, imported.get("ok"), "import must succeed: " + imported);
+        var instantiated = syncCommand(po, sid,
+                "instantiate graph\ntext(task) -> input.body.mode\ntext(dry-err-1) -> model.cid");
+        assertEquals(Boolean.TRUE, instantiated.get("ok"), "instantiate -> ok:true: " + instantiated);
+        var ran = syncCommand(po, sid, "run");
+        assertEquals(Boolean.TRUE, ran.get("ok"), "dry-run must succeed: " + ran);
+        assertInstanceOf(List.class, ran.get("result"), "the graph output is returned in-band: " + ran);
+        @SuppressWarnings("unchecked")
+        var mm = new MultiLevelMap((Map<String, Object>) ((List<?>) ran.get("result")).getFirst());
+        assertEquals("handled", mm.getElement("output.body.stage"));
+        assertEquals("fail-task", mm.getElement("output.body.source"));
+        assertEquals(400, mm.getElement("output.body.code"));
+        // 'inspect error' returns the staged exception context - same mechanics as 'inspect model'
+        var inspected = syncCommand(po, sid, "inspect error");
+        assertEquals(Boolean.TRUE, inspected.get("ok"), "inspect error -> ok:true: " + inspected);
+        assertInstanceOf(List.class, inspected.get("result"), "inspect payload is in-band: " + inspected);
+        @SuppressWarnings("unchecked")
+        var context = new MultiLevelMap((Map<String, Object>) ((List<?>) inspected.get("result")).getFirst());
+        assertEquals("error", context.getElement("inspect"));
+        assertEquals("fail-task", context.getElement("outcome.source"));
+        assertEquals(400, context.getElement("outcome.code"));
+        assertEquals("just a test", context.getElement("outcome.message"));
+        assertNotNull(context.getElement("outcome.stack"), "error.stack must be staged when available");
+    }
+
+    /**
      * Discovery commands (read-only): "list graphs" enumerates the deployable
      * graph models (compiled registry + deployed folder) with each root's
      * "purpose", and "list flows" the Event Script flows - so an agent can

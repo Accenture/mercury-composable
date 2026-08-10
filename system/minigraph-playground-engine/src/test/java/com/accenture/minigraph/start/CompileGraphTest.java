@@ -70,6 +70,24 @@ class CompileGraphTest {
     }
 
     @Test
+    void reservedErrorAliasFailsTheGate() {
+        // the generic exception context is staged under the top-level 'error' namespace
+        // (error.source/code/message/stack - see 'inspect error'), and 'error' has always
+        // been in MiniGraph's reserved alias list: node creation itself rejects it, so
+        // the gate rejection is inherited - the model cannot even be imported
+        assertFalse(CompiledGraphs.graphExists("unit-test-error-alias"),
+                "a graph with a node aliased 'error' must be rejected by the quality gate");
+        var ex = assertThrows(IllegalArgumentException.class, () -> importGraph("unit-test-error-alias"),
+                "the graph model itself must reject the reserved alias");
+        assertTrue(ex.getMessage().contains("reserved name"),
+                "the error must teach the reservation: " + ex.getMessage());
+        // the valid fixtures of the same feature family pass the gate
+        assertTrue(CompiledGraphs.graphExists("unit-test-error-context"));
+        assertTrue(CompiledGraphs.graphExists("unit-test-orchestrator"));
+        assertTrue(CompiledGraphs.graphExists("unit-test-sub-suspend"));
+    }
+
+    @Test
     void manifestLocationDefaultsToClasspathGraph() {
         // the engine's test manifest declares no 'location' - the CompileFlows-style
         // default applies (the playground example app's manifest sets it explicitly)

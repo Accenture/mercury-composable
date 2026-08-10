@@ -72,6 +72,7 @@ abstract class GraphStateSkill extends GraphLambdaFunction {
         stateMachine.removeElement(nodeName + "." + HEADER);
         stateMachine.removeElement(nodeName + "." + STATUS);
         stateMachine.removeElement(nodeName + "." + ERROR);
+        stateMachine.removeElement(nodeName + "." + STACK);
         stateMachine.setElement(nodeName + "." + TARGET, route);
         return new SkillContext(po, graphInstance, node, route);
     }
@@ -89,7 +90,7 @@ abstract class GraphStateSkill extends GraphLambdaFunction {
 
     protected String setError(MultiLevelMap stateMachine, SimpleNode node, EventEnvelope response) {
         var nodeName = node.getAlias();
-        stateMachine.setElement(nodeName + "." + ERROR, response.getError());
+        stageNodeError(stateMachine, nodeName, response);
         var errorHandler = node.getProperty(EXCEPTION);
         if (errorHandler == null) {
             stateMachine.setElement(OUTPUT_BODY, response.getBody());

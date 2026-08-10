@@ -28,18 +28,18 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.platformlambda.graph.redis.RedisStateConnection.KEY_PREFIX;
-
 /**
  * Redis implementation of the suspend/resume state-store RETRIEVE contract, invoked by
  * the 'graph.resume' skill through the node's "task" property.
  * <p>
- * Contract: headers type=get; body {cid}. Returns the persisted record, or an empty map
- * when absent-or-expired (a fresh transaction is the normal case, not an error). The
- * record is CONSUMED atomically on retrieval, so a duplicate resume request cannot
- * execute the continuation twice - via native GETDEL on Redis 6.2+, or a MULTI/EXEC
- * GET+DEL transaction on older servers (the strategy is detected per connection, since
- * enterprise deployments rarely control their managed Redis version).
+ * Contract: headers type=get; body {cid, graph}. Returns the record persisted under
+ * 'graph:{graph_id}:{cid}', or an empty map when absent-or-expired (a fresh transaction
+ * is the normal case, not an error). The graph ID scopes the lookup, so a resume only
+ * ever sees records written by its own graph. The record is CONSUMED atomically on
+ * retrieval, so a duplicate resume request cannot execute the continuation twice - via
+ * native GETDEL on Redis 6.2+, or a MULTI/EXEC GET+DEL transaction on older servers
+ * (the strategy is detected per connection, since enterprise deployments rarely control
+ * their managed Redis version).
  */
 @PreLoad(route = "v1.redis.retrieve.model", instances = 50,
          envInstances = "worker.instances.v1.redis.retrieve.model")
@@ -49,6 +49,7 @@ public class RetrieveModel implements TypedLambdaFunction<Map<String, Object>, O
     private static final String TYPE = "type";
     private static final String GET = "get";
     private static final String CID = "cid";
+    private static final String GRAPH = "graph";
 
     @Override
     public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
@@ -60,11 +61,15 @@ public class RetrieveModel implements TypedLambdaFunction<Map<String, Object>, O
         if (cid == null) {
             throw new IllegalArgumentException("Missing cid");
         }
-        var data = RedisStateConnection.consume(KEY_PREFIX + cid);
+        var graphId = input.get(GRAPH) instanceof String value && !value.isBlank()? value : null;
+        if (graphId == null) {
+            throw new IllegalArgumentException("Missing graph");
+        }
+        var data = RedisStateConnection.consume(RedisStateConnection.storeKey(graphId, cid));
         if (data == null) {
             return new HashMap<String, Object>();
         }
-        log.info("Restored workflow state for cid {}", cid);
+        log.info("Restored workflow state for graph {}, cid {}", graphId, cid);
         return msgPack.unpack(data);
     }
 }

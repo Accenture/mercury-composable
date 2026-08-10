@@ -34,8 +34,10 @@ import java.util.concurrent.ConcurrentMap;
  * The 'graph.resume' skill restores the workflow state persisted by 'graph.suspend' and
  * continues traversal from the recorded suspension point without re-executing it. It is
  * a superset of graph.task: the "task" property names the pluggable store function
- * (headers type=get, body {cid}), but restoration is encapsulated by the skill - the
- * node needs no input/output data mapping.
+ * (headers type=get, body {cid, graph}), but restoration is encapsulated by the skill -
+ * the node needs no input/output data mapping. The graph ID scopes the lookup, so a
+ * resume only ever sees records written by its own graph (parent and subgraphs are
+ * self-contained).
  * <p>
  * Place the 'resume' node early in the traversal (conventionally named "resume", right
  * after root, or after setup nodes). When the store has a record for the business
@@ -74,7 +76,7 @@ public class GraphResume extends GraphStateSkill {
         var stateMachine = graphInstance.stateMachine;
         var timeout = getModelTtl(graphInstance);
         var request = new EventEnvelope().setTo(ctx.route()).setCorrelationId(util.getUuid())
-                .setHeader(TYPE, GET).setBody(Map.of(CID, cid));
+                .setHeader(TYPE, GET).setBody(Map.of(CID, cid, GRAPH, graphInstance.graphId));
         ctx.po().annotateTrace(TASK, ctx.route());
         ctx.po().annotateTrace(CID, cid);
         // issue the request on the worker thread so the outbound event carries this span
