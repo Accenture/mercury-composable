@@ -2853,7 +2853,11 @@ five types:</p>
 </code></pre></div>
 <p><code>{variable}</code> resolves a value from <code>input.*</code>, <code>model.*</code>, or a node property into the expression.
 An <code>IF</code> returning a node name <strong>overrides</strong> natural traversal; returning <code>next</code> keeps it.
-<code>NEXT:</code>/<code>DELAY:</code> control flow and timing.</p>
+<code>NEXT:</code>/<code>DELAY:</code> control flow and timing. <strong>Every statement command resolves
+<code>{dynamic variables}</code></strong> — jump targets (<code>NEXT:</code>, <code>THEN:</code>/<code>ELSE:</code>), <code>RESET:</code> entries and <code>DELAY:</code>
+values included — which is what makes the generic error handler possible
+(<code>NEXT: {error.source}</code> retries whichever node routed here;
+<a href="../command-reference/#failure-routing">failure routing</a>).</p>
 <p><strong>Iterating lists (<code>for_each[]</code>):</strong> each <code>source -&gt; model.{var}</code> entry whose source is a <strong>list</strong>
 becomes an iteration array (parallel lists advance in lockstep and must agree on length; scalars
 bind once; an unresolvable source removes the key). <code>BEGIN</code>/<code>END</code> split the statements into

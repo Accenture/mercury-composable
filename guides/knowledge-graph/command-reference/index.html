@@ -3636,12 +3636,14 @@ collapse into the first jump. <code>error</code> is a <strong>reserved node alia
 <code>inspect error</code> shows the staged context in a dry-run session.</p>
 <p>Wire a retry handler back explicitly (e.g. <code>connect error-handler to fetcher with retry</code>) — no
 node left unconnected. The canonical <strong>bounded-retry</strong> pattern combines the pieces (see the
-<a href="#math-statements">statement grammar</a>):</p>
+<a href="#math-statements">statement grammar</a>) — and because <strong>every statement command resolves
+<code>{dynamic variables}</code></strong>, the handler is fully generic: it retries <em>whichever node routed here</em>
+via <code>{error.source}</code>, never naming a node:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>create node error-handler
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>with type Decision
 <a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>with properties
 <a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>skill=graph.math
-<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>statement[]=RESET: fetcher, error-handler
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>statement[]=RESET: {error.source}, error-handler
 <a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>statement[]=MAPPING: f:defaultValue(model.attempts, int(0)) -&gt; model.attempts
 <a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>statement[]=MAPPING: f:add(model.attempts, int(1)) -&gt; model.attempts
 <a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>statement[]=&#39;&#39;&#39;
@@ -3649,15 +3651,17 @@ node left unconnected. The canonical <strong>bounded-retry</strong> pattern comb
 <a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a>THEN: recovery-node
 <a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a>ELSE: next
 <a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a>&#39;&#39;&#39;
-<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a>statement[]=NEXT: fetcher
+<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a>statement[]=NEXT: {error.source}
 <a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a>statement[]=DELAY: 50
 </code></pre></div>
-<p>The handler <strong>resets the fetcher and itself first</strong> (the placement rule above — it then runs on
-every path, including the recovery jump), counts attempts (<code>f:defaultValue</code> + <code>f:add</code> on the
+<p>The handler <strong>resets the failing node and itself first</strong> (the placement rule above — it then runs
+on every path, including the recovery jump), counts attempts (<code>f:defaultValue</code> + <code>f:add</code> on the
 <code>model.*</code> namespace, which <code>RESET</code> never touches), exits to a recovery node at the bound (a taken
 <code>IF</code> jump ends the list), otherwise jumps back and paces the retry with a delay — staying under
-the engine's loop guard. If the handler also carries a defensive check on the failed node's
-status, that check must come <strong>before</strong> the <code>RESET</code> (it reads state the reset wipes).</p>
+the engine's loop guard. The <code>DELAY</code> value may itself be dynamic (<code>DELAY: {model.backoff}</code>) for
+a computed backoff, and a <code>THEN:</code>/<code>ELSE:</code> target may be dynamic too. If the handler also carries
+a defensive check on the failing status (<code>IF: {error.code} == 200</code>), that check must come
+<strong>before</strong> the <code>RESET</code> (it reads state the reset wipes). tutorial-12 walks this exact handler.</p>
 <h2 id="island">Island — the knowledge layer (required)<a class="headerlink" href="#island" title="Permanent link">&para;</a></h2>
 <p>A <code>graph.island</code> node is <strong>isolated from graph traversal</strong> — it executes only to sink (the run
 log shows one <code>Executed … with skill graph.island</code> line), so traversal never continues through it.
@@ -3782,6 +3786,14 @@ result belongs to the caller. Hang the module under the <a href="#island">Island
 <li><code>DELAY: {milliseconds}</code> — pause <strong>after this node completes</strong>, deferring the walk to the next
   node (paces retries; simulates a slow service).</li>
 </ul>
+<p><strong>Every statement command resolves <code>{dynamic variables}</code></strong> — not just expressions. A <code>NEXT:</code> or
+<code>THEN:</code>/<code>ELSE:</code> jump target, a <code>RESET:</code> list entry, and a <code>DELAY:</code> value may each be a
+<code>{namespace.key}</code> reference resolved at execution time: <code>NEXT: {error.source}</code> jumps back to
+whichever node routed to this handler (<a href="#failure-routing">failure routing</a>),
+<code>RESET: {error.source}, error-handler</code> resets it, and <code>DELAY: {model.backoff}</code> paces with a
+computed backoff. An unresolved variable renders <code>null</code>: a <code>RESET:</code> entry is then a safe no-op,
+a <code>DELAY:</code> is skipped, and a jump target <strong>fails the run loudly</strong> (<em>Next node 'null' does not
+exist</em>) — correct for a jump, so seed the variable before relying on it.</p>
 <h3 id="math-for-each"><code>for_each[]</code> — iterate a statement block over lists<a class="headerlink" href="#math-for-each" title="Permanent link">&para;</a></h3>
 <p>The optional node property <code>for_each[]</code> turns part of the statement list into a <strong>loop</strong>. Each
 entry has the mapping form <code>source -&gt; model.{var}</code> — the RHS <strong>must</strong> be a <code>model.*</code> key:</p>
