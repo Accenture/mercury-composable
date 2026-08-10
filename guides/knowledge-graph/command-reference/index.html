@@ -3634,6 +3634,14 @@ island keeps it non-orphan. A handler may connect onward to more nodes for sophi
 recovery. A node is visited at most once per run unless RESET, so concurrent branch failures
 collapse into the first jump. <code>error</code> is a <strong>reserved node alias</strong> for this namespace —
 <code>inspect error</code> shows the staged context in a dry-run session.</p>
+<p><strong>The context reports recovery.</strong> When a node with <code>exception=</code> later completes <em>without</em>
+error and it is the recorded <code>error.source</code>, the engine resolves the context: <code>error.code</code>
+becomes <code>200</code>, <code>error.source</code> stays (the recovered node), and the failure details
+(<code>error.message</code>, <code>error.stack</code>) are removed. The virtual <code>error</code> node therefore has three
+distinguishable states — <strong>empty</strong> (nothing failed this run), <strong><code>{source, code: 200}</code></strong>
+(<code>source</code> failed and was successfully retried), and <strong><code>{source, code, message…}</code></strong> (an
+outstanding failure). The source match is what makes this safe with parallel branches: one
+node's success never clears a <em>different</em> node's outstanding failure.</p>
 <p>Wire a retry handler back explicitly (e.g. <code>connect error-handler to fetcher with retry</code>) — no
 node left unconnected. The canonical <strong>bounded-retry</strong> pattern combines the pieces (see the
 <a href="#math-statements">statement grammar</a>) — and because <strong>every statement command resolves
