@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-09 | agent: Claude Code (2026-08-09-164000)
+- **last_session:** 2026-08-10 | agent: Claude Code (2026-08-10-180744)
 - **last_review:** 2026-08-07 | through 2026-08-07-142823.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -289,13 +289,55 @@
   mermaid bundle and confirmed clean on the live page by Eric).
   <!-- id: thread-release-4-11-5 | created: 2026-08-09 | last_used: 2026-08-09 | uses: 1 | tier: working | origin: 2026-08-09-164000 -->
 
-- [ ] (field validation — pending) **The field team reviews the v4.11.4 suspend/resume
-  rationalization on Monday 2026-08-10** — the second team whose pain report drove the
-  re-design evaluates whether edge/jump modes address their concerns; Eric reports
-  back with their inputs. Their v4.11.x models run unmodified under the deprecation
-  window, so the review needs no migration work from them.
+- [x] (feature — **COMPLETE ON BOTH ENGINES 2026-08-10, same day as the field review;
+  both ride the next release.** Java: feature
+  [PR #271](https://github.com/Accenture/mercury-composable/pull/271) squash `adfb2a0d`
+  + post-merge polish [PR #272](https://github.com/Accenture/mercury-composable/pull/272)
+  squash `0612ec6d` (Eric's IDE cosmetics + the S3776 fix — GraphExecutor adopts the
+  traveler's handleSkillResponse→handleSkillSuccess split, making the walker twins MORE
+  symmetric; the walker staging had pushed complexity to 18), both CI green;
+  ADR-0013/ADR-0014 accepted via the merge. Rust: mercury PR #200 merge `283d41e2`
+  carrying `24eeef89` + the `cargo fmt` follow-up `7dadd1ff` (first CI run failed the
+  Format check — scripted test edits weren't rustfmt-clean; the mercury local gate is
+  tests + clippy + FMT), 58 suites / 305 tests green; Rust ADR-0012/ADR-0013 accepted;
+  port divergence documented: no native stack-trace transport → error.stack only on
+  cross-engine records.) **Field review follow-ups: graph-scoped workflow state +
+  generic exception context.** Eric's five rulings (R1 flag-day store-key change, release-note the break;
+  R2 business-cid propagation for flow→subflow/flow→graph/graph→subgraph consistency;
+  R3 Event Script parity naming error.source/code/message/stack; R4 reserve alias
+  'error'; R5 orchestrator = unit test + docs mention, no tutorial-14 change).
+  **Feature A (ADR-0013 proposed):** store contract scoped by graph + cid — envelope
+  {cid, graph, node, ttl, model, seen, run}, get body {cid, graph}, Redis key
+  `graph:{graph_id}:{cid}` (BREAKING: old-key records invisible → resume = fresh);
+  GraphExtension.inheritBusinessCid stamps the parent's model.cid like an Event Script
+  sub-flow (the second, hidden subgraph blocker: the child's cid was a per-call random
+  UUID) → the orchestrator pattern composes (parent delegates independently resumable
+  subgraph paths; reference pair unit-test-orchestrator/unit-test-sub-suspend).
+  **Feature B (ADR-0014 proposed):** walkers stage error.source/code/message/stack at
+  their exception choke points (one site per walker covers every skill incl. graph.task
+  + async.http.request); skills' consolidated stageNodeError adds {node}.stack; 'error'
+  was ALWAYS reserved in MiniGraph.RESERVED_NAMES (input/output/model/response/result/
+  parameter/none/next/api/error) so NO breaking edge and no new gate rule; `inspect
+  error` works by construction (raw state-machine viewer — Eric's virtual-node question).
+  Durable gotchas: IF/THEN/ELSE = ONE multi-line statement string; probe possibly-absent
+  keys with the `=` guard or the expression engine throws "Unknown identifier: null";
+  mock MDM 'x-exception' header = AppException(401). Verified: engine 112/112, Redis
+  store green (both consume strategies), webapp 212/212, full reactor exit 0.
+  Relates [[graph-suspend-resume-design]], [[thread-suspend-resume-rationalization]],
+  [[thread-graph-suspend-resume]].
+  <!-- id: thread-field-graph-scoped-state-and-error-context | created: 2026-08-10 | last_used: 2026-08-10 | uses: 1 | tier: working | origin: 2026-08-10-180744 -->
+
+- [x] (field validation — **CLOSED 2026-08-10: the review WENT WELL.** The team demoed a
+  complex multi-suspension use case built in a short time on checkpoint-only v4.11.x —
+  impressive adoption; the decision-node feature arrived after they started. The demo
+  surfaced two structural asks — correlation-ID-only store references collide across
+  domains/subgraphs, and per-fetcher error-handler clones make graphs busy — both
+  ratified and taken up same-day as [[thread-field-graph-scoped-state-and-error-context]].)
+  **The field team reviews the v4.11.4 suspend/resume rationalization on Monday
+  2026-08-10** — the second team whose pain report drove the re-design evaluates whether
+  edge/jump modes address their concerns; Eric reports back with their inputs.
   Relates [[thread-suspend-resume-rationalization]], [[thread-release-4-11-4]].
-  <!-- id: thread-field-review-rationalization | created: 2026-08-08 | last_used: 2026-08-08 | uses: 1 | tier: working | origin: 2026-08-08-022929 -->
+  <!-- id: thread-field-review-rationalization | created: 2026-08-08 | last_used: 2026-08-10 | uses: 2 | tier: working | origin: 2026-08-08-022929 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-08-08, **both repos in lock-step at
   v4.11.4**) **v4.11.4 — the suspend/resume rationalization release.** Java: release
