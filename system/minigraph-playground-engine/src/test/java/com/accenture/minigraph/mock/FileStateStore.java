@@ -33,11 +33,13 @@ import java.util.Map;
  * possible store, used by the engine's unit tests so the engine needs no external
  * store dependency in any scope.
  * <p>
- * Contract: headers type=put persists the request body (one file per cid, MsgPack
- * bytes, expiry stamped from the "ttl" seconds); headers type=get with body {cid}
- * returns the persisted map or an empty map when absent-or-expired, and CONSUMES the
- * record on read (delete-on-read - the file analog of Redis GETDEL, so a duplicate
- * resume cannot double-execute the continuation).
+ * Contract: headers type=put persists the request body (one file per graph + cid,
+ * MsgPack bytes, expiry stamped from the "ttl" seconds); headers type=get with body
+ * {cid, graph} returns the persisted map or an empty map when absent-or-expired, and
+ * CONSUMES the record on read (delete-on-read - the file analog of Redis GETDEL, so a
+ * duplicate resume cannot double-execute the continuation). Like the Redis reference
+ * implementation, the record is scoped by graph + cid so the same business transaction
+ * may suspend independently in a parent graph and in each subgraph.
  */
 @PreLoad(route = "v1.file.state.store", instances = 10)
 public class FileStateStore implements TypedLambdaFunction<Map<String, Object>, Object> {
@@ -47,6 +49,7 @@ public class FileStateStore implements TypedLambdaFunction<Map<String, Object>, 
     private static final String PUT = "put";
     private static final String GET = "get";
     private static final String CID = "cid";
+    private static final String GRAPH = "graph";
     private static final String TTL = "ttl";
     private static final String DATA = "data";
     private static final String EXPIRES_AT = "expires_at";
@@ -59,8 +62,13 @@ public class FileStateStore implements TypedLambdaFunction<Map<String, Object>, 
         if (!dir.exists() && !dir.mkdirs()) {
             throw new IOException("Unable to create " + STORE_DIR);
         }
+        if (!(input.get(GRAPH) instanceof String graphId) || graphId.isBlank()) {
+            // fail fast like the Redis reference implementation - a missing graph id
+            // would collapse every graph's records into one shared key space
+            throw new IllegalArgumentException("Missing graph");
+        }
         var cid = String.valueOf(input.get(CID));
-        var file = new File(dir, safeFileName(cid));
+        var file = new File(dir, safeFileName(graphId + ":" + cid));
         if (PUT.equals(type)) {
             var ttlSeconds = input.get(TTL) instanceof Number n? n.longValue() : 30;
             var wrapper = new HashMap<String, Object>();

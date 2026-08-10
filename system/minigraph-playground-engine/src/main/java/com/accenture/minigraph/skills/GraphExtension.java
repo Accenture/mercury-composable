@@ -108,6 +108,7 @@ public class GraphExtension extends GraphLambdaFunction {
                 parameters.put(key, value);
             }
             var forward = new EventEnvelope().setTo(EventScriptManager.SERVICE_NAME).setCorrelationId(util.getUuid());
+            inheritBusinessCid(forward, graphInstance);
             if (extension.startsWith(FLOW_PROTOCOL)) {
                 var flowId = extension.substring(FLOW_PROTOCOL.length());
                 var flow = Flows.getFlow(flowId);
@@ -205,6 +206,7 @@ public class GraphExtension extends GraphLambdaFunction {
         var parameters = stateMachine.getElement(nodeName + FETCH, new HashMap<>());
         var forward = new EventEnvelope();
         forward.setTo(EventScriptManager.SERVICE_NAME).setCorrelationId(util.getUuid());
+        inheritBusinessCid(forward, graphInstance);
         if (extension.startsWith(FLOW_PROTOCOL)) {
             var flowId = extension.substring(FLOW_PROTOCOL.length());
             var flow = Flows.getFlow(flowId);
@@ -242,9 +244,20 @@ public class GraphExtension extends GraphLambdaFunction {
         }));
     }
 
+    private void inheritBusinessCid(EventEnvelope forward, GraphInstance graphInstance) {
+        // the child flow or graph inherits the parent's business correlation-id (model.cid),
+        // exactly like an Event Script sub-flow launch - so a subgraph that suspends can be
+        // resumed under the same business transaction id (its store record is keyed by
+        // graph + cid, never by a per-call random id)
+        if (graphInstance.stateMachine.getElement(MODEL_CID) instanceof String businessCid
+                && !businessCid.isBlank()) {
+            forward.setHeader(EventScriptManager.BUSINESS_CORRELATION_ID, businessCid.trim());
+        }
+    }
+
     private String setError(MultiLevelMap stateMachine, SimpleNode node, EventEnvelope response) {
         var nodeName = node.getAlias();
-        stateMachine.setElement(nodeName + "." + ERROR, response.getError());
+        stageNodeError(stateMachine, nodeName, response);
         var errorHandler = node.getProperty(EXCEPTION);
         if (errorHandler == null) {
             stateMachine.setElement(OUTPUT_BODY, response.getBody());

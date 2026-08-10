@@ -43,12 +43,14 @@ import java.util.Map;
  * new request input). The retired "suspend=true" property is ignored (deprecation WARN).
  * <p>
  * The persistence envelope sent to the store function (headers type=put) is:
- * {cid, node, ttl, model, seen, run} - the business correlation ID (the retrieval key),
- * the suspension point (the node that routed here), the record's time-to-live in seconds
- * (from the node's "ttl" property, e.g. 20s/5m/2h/2d), the model namespace minus the
- * per-run reserved keys, and the traversal bookkeeping snapshots that let a resumed run
- * satisfy join barriers. The store must acknowledge with a 2xx reply before the graph
- * completes - a failed store call fails the node.
+ * {cid, graph, node, ttl, model, seen, run} - the business correlation ID, the graph ID
+ * (cid and graph together form the retrieval key, so the same business transaction may
+ * suspend independently in a parent graph and in each subgraph), the suspension point
+ * (the node that routed here), the record's time-to-live in seconds (from the node's
+ * "ttl" property, e.g. 20s/5m/2h/2d), the model namespace minus the per-run reserved
+ * keys, and the traversal bookkeeping snapshots that let a resumed run satisfy join
+ * barriers. The store must acknowledge with a 2xx reply before the graph completes -
+ * a failed store call fails the node.
  * <p>
  * Unless the graph staged its own output before suspension, the skill stages a default
  * {"type": "suspended", "cid": ...} response body so the caller of the suspended run
@@ -150,6 +152,9 @@ public class GraphSuspend extends GraphStateSkill {
         NON_PERSISTED_MODEL_KEYS.forEach(modelCopy::remove);
         var dataset = new HashMap<String, Object>();
         dataset.put(CID, cid);
+        // cid + graph form the retrieval key: the same business transaction may suspend
+        // independently in a parent graph and in each subgraph (self-contained per graph)
+        dataset.put(GRAPH, graphInstance.graphId);
         dataset.put(NODE, from);
         dataset.put(TTL, ttlSeconds);
         dataset.put(MODEL, modelCopy);

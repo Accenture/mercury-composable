@@ -279,7 +279,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         }
         md.stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());
         if (response.hasError()) {
-            md.stateMachine.setElement(nodeName + "." + ERROR, response.getError());
+            stageNodeError(md.stateMachine, nodeName, response);
             if (md.breakOnException) {
                 md.stateMachine.setElement(OUTPUT_BODY, response.getBody());
                 md.stateMachine.setElement(OUTPUT_NAMESPACE+HEADER, response.getHeaders());
@@ -426,7 +426,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         }
         md.stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());
         if (response.hasError()) {
-            md.stateMachine.setElement(nodeName + "." + ERROR, response.getError());
+            stageNodeError(md.stateMachine, nodeName, response);
             if (md.breakOnException) {
                 md.stateMachine.setElement(OUTPUT_BODY, response.getBody());
                 md.stateMachine.setElement(OUTPUT_NAMESPACE+HEADER, response.getHeaders());

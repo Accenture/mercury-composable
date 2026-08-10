@@ -79,6 +79,7 @@ public class GraphTask extends GraphLambdaFunction {
         stateMachine.removeElement(nodeName + "." + HEADER);
         stateMachine.removeElement(nodeName + "." + STATUS);
         stateMachine.removeElement(nodeName + "." + ERROR);
+        stateMachine.removeElement(nodeName + "." + STACK);
         var timeout = getEffectiveTtl(graphInstance, node);
         var mapping = getEntries(node.getProperty(INPUT));
         var forEach = getEntries(node.getProperty(FOR_EACH));
@@ -245,7 +246,7 @@ public class GraphTask extends GraphLambdaFunction {
 
     private String setError(MultiLevelMap stateMachine, SimpleNode node, EventEnvelope response) {
         var nodeName = node.getAlias();
-        stateMachine.setElement(nodeName + "." + ERROR, response.getError());
+        stageNodeError(stateMachine, nodeName, response);
         var errorHandler = node.getProperty(EXCEPTION);
         if (errorHandler == null) {
             stateMachine.setElement(OUTPUT_BODY, response.getBody());

@@ -4,6 +4,12 @@ When a node is configured with this skill of "graph extension", it will make an 
 (or flow) and collect result set into the "result" property of the node. In case of exception, the "status" and
 "result.error" fields will be set to the node's properties and the graph execution will stop.
 
+The delegated graph or flow inherits the caller's business correlation ID (model.cid), the same
+way an Event Script sub-flow does. A delegated subgraph that suspends therefore persists its
+state under the shared business correlation ID scoped by its own graph ID - re-invoking with the
+same correlation ID resumes it. This makes a parent graph a natural orchestrator of independently
+resumable subgraph paths (see the workflow-suspension guide's orchestrator pattern).
+
 Execution will start when the GraphExecutor reaches the node containing this skill.
 
 Route name
@@ -87,5 +93,14 @@ and message to the caller.
 If you want to handle the exception in your graph model, you can set the node-name of the error-handler in
 the "exception" property to tell the system to traverse to the error-handler node.
 
-To handle an exception, the error-handler node should be a decision-making node using the graph.math or graph.js skill.
-It can evaluate the status code and error in the API fetcher node to determine the next step.
+When traversal jumps to the handler, the engine also stages a generic exception context
+(error.source, error.code, error.message and error.stack when available) so ONE handler node
+can serve the "exception" route of every node in the graph - error.source is the failing node's
+alias. For an extension node, error.source is the extension node in THIS graph; failures inside
+the delegated subgraph or flow route to that graph's own handlers. Anchor a shared handler from
+an island (root -> island -> handler) because it is reached by jumping. The alias 'error' is
+reserved for this namespace - probe it in a dry-run session with "inspect error".
+
+To handle an exception with retry logic, the error-handler node should be a decision-making node
+using the graph.math or graph.js skill.
+It can evaluate the status code and error in the failed node to determine the next step.

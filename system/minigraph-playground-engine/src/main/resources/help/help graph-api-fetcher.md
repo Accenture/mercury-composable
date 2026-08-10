@@ -148,12 +148,39 @@ the "exception" property to tell the system to traverse to the error-handler nod
 
 On a failed call (HTTP status >= 400):
 
-- {node}.status and {node}.error are set (the engine's error record)
+- {node}.status and {node}.error are set (the engine's error record; {node}.stack is
+  added when the failure carries a stack trace)
 - the output[] mappings are SKIPPED
 - with exception={handler-node}, traversal JUMPS to the handler; without
   it, the run ABORTS and the error is returned to the caller.
 
-To handle an exception, the error-handler node should be a decision-making node using the graph.math or graph.js skill.
+When traversal jumps to the handler, the engine also stages a generic exception context that
+does not name the failing node:
+
+- error.source  - the failing node's alias
+- error.code    - the status code
+- error.message - the error message
+- error.stack   - the stack trace, when the failure carries one
+
+so ONE handler node can serve the "exception" route of every node in the graph. A generic
+handler reads the context in its data mapping without naming any failing node:
+
+```
+mapping[]=error.source -> output.body.failed_at
+mapping[]=error.code -> output.body.status
+mapping[]=error.message -> output.body.message
+```
+
+Anchor a shared handler from an island (root -> island -> handler): the handler is reached by
+jumping, so the island keeps it non-orphan while plain traversal stops at the island. A handler
+node may also connect onward to more nodes for sophisticated recovery (e.g. a graph.task
+invoking a composable function). Note that a node is visited at most once per run unless RESET,
+so if two parallel branches fail together, only the first jump enters a shared handler. The
+alias 'error' is reserved for this namespace - probe it in a dry-run session with
+"inspect error".
+
+To handle an exception with retry logic, the error-handler node should be a decision-making node using
+the graph.math or graph.js skill.
 It can evaluate the status code and error in the API fetcher node to determine the next step. The
 canonical bounded-retry handler:
 

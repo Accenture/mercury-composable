@@ -40,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class RedisStateStoreTest extends RedisStateTestBase {
     private static final String PERSIST = "v1.redis.persist.model";
     private static final String RETRIEVE = "v1.redis.retrieve.model";
+    private static final String GRAPH_ID = "order-workflow";
     private static final long TIMEOUT = 8000;
 
     @Test
@@ -58,11 +59,11 @@ class RedisStateStoreTest extends RedisStateTestBase {
         var stored = request(PERSIST, "put", envelope);
         assertEquals(200, stored.getStatus());
         assertEquals(true, new MultiLevelMap((Map<String, Object>) stored.getBody()).getElement("stored"));
-        // native expiry is set
-        var ttl = testConnection.sync().ttl("graph:state:" + cid);
+        // native expiry is set, under the graph-scoped key
+        var ttl = testConnection.sync().ttl("graph:" + GRAPH_ID + ":" + cid);
         assertTrue(ttl > 0 && ttl <= 30, "unexpected ttl: " + ttl);
         // retrieve returns the record with full fidelity, including binary values
-        var restored = request(RETRIEVE, "get", Map.of("cid", cid));
+        var restored = request(RETRIEVE, "get", Map.of("cid", cid, "graph", GRAPH_ID));
         assertEquals(200, restored.getStatus());
         var restoredRecord = new MultiLevelMap((Map<String, Object>) restored.getBody());
         assertEquals("step-1", restoredRecord.getElement("node"));
@@ -71,10 +72,36 @@ class RedisStateStoreTest extends RedisStateTestBase {
         assertArrayEquals(new byte[]{1, 2, 3}, (byte[]) restoredRecord.getElement("model.binary"));
         assertEquals(true, restoredRecord.getElement("run.step-1"));
         // the record is consumed atomically - a duplicate resume finds nothing
-        var again = request(RETRIEVE, "get", Map.of("cid", cid));
+        var again = request(RETRIEVE, "get", Map.of("cid", cid, "graph", GRAPH_ID));
         assertEquals(200, again.getStatus());
         assertTrue(((Map<String, Object>) again.getBody()).isEmpty(), "the record must be consumed on read");
-        assertNull(testConnection.sync().get("graph:state:" + cid));
+        assertNull(testConnection.sync().get("graph:" + GRAPH_ID + ":" + cid));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void sameCorrelationIdIsIsolatedPerGraph() throws TimeoutException {
+        // the field scenario: one business transaction crosses multiple domains and
+        // subgraphs - each graph suspends under its own record, so the shared business
+        // correlation ID never collides across graphs
+        var cid = Utility.getInstance().getUuid();
+        var parent = sampleEnvelope(cid, 30);
+        parent.put("graph", "orchestrator");
+        parent.put("node", "dispatch");
+        var child = sampleEnvelope(cid, 30);
+        child.put("graph", "shipping-path");
+        child.put("node", "carrier-checkpoint");
+        assertEquals(200, request(PERSIST, "put", parent).getStatus());
+        assertEquals(200, request(PERSIST, "put", child).getStatus());
+        // consuming the subgraph's record leaves the parent's record untouched
+        var restoredChild = request(RETRIEVE, "get", Map.of("cid", cid, "graph", "shipping-path"));
+        assertEquals("carrier-checkpoint",
+                new MultiLevelMap((Map<String, Object>) restoredChild.getBody()).getElement("node"));
+        assertNotNull(testConnection.sync().get("graph:orchestrator:" + cid),
+                "the parent record must survive the subgraph's resume");
+        var restoredParent = request(RETRIEVE, "get", Map.of("cid", cid, "graph", "orchestrator"));
+        assertEquals("dispatch",
+                new MultiLevelMap((Map<String, Object>) restoredParent.getBody()).getElement("node"));
     }
 
     @SuppressWarnings("unchecked")
@@ -88,17 +115,17 @@ class RedisStateStoreTest extends RedisStateTestBase {
         try {
             var cid = Utility.getInstance().getUuid();
             assertEquals(200, request(PERSIST, "put", sampleEnvelope(cid, 30)).getStatus());
-            var restored = request(RETRIEVE, "get", Map.of("cid", cid));
+            var restored = request(RETRIEVE, "get", Map.of("cid", cid, "graph", GRAPH_ID));
             assertEquals(200, restored.getStatus());
             var restoredRecord = new MultiLevelMap((Map<String, Object>) restored.getBody());
             assertEquals("step-1", restoredRecord.getElement("node"));
             assertArrayEquals(new byte[]{1, 2, 3}, (byte[]) restoredRecord.getElement("model.binary"));
             // consumed atomically by the transaction - a duplicate resume finds nothing
-            var again = request(RETRIEVE, "get", Map.of("cid", cid));
+            var again = request(RETRIEVE, "get", Map.of("cid", cid, "graph", GRAPH_ID));
             assertEquals(200, again.getStatus());
             assertTrue(((Map<String, Object>) again.getBody()).isEmpty(),
                     "the record must be consumed on read by the transactional strategy");
-            assertNull(testConnection.sync().get("graph:state:" + cid));
+            assertNull(testConnection.sync().get("graph:" + GRAPH_ID + ":" + cid));
         } finally {
             RedisStateConnection.overrideConsumeStrategy(true);
         }
@@ -130,7 +157,8 @@ class RedisStateStoreTest extends RedisStateTestBase {
     @SuppressWarnings("unchecked")
     @Test
     void absentCorrelationIdIsANormalEmptyResult() throws TimeoutException {
-        var response = request(RETRIEVE, "get", Map.of("cid", Utility.getInstance().getUuid()));
+        var response = request(RETRIEVE, "get",
+                Map.of("cid", Utility.getInstance().getUuid(), "graph", GRAPH_ID));
         assertEquals(200, response.getStatus());
         assertTrue(((Map<String, Object>) response.getBody()).isEmpty());
     }
@@ -141,7 +169,7 @@ class RedisStateStoreTest extends RedisStateTestBase {
         var cid = Utility.getInstance().getUuid();
         assertEquals(200, request(PERSIST, "put", sampleEnvelope(cid, 1)).getStatus());
         Utility.getInstance().sleep(1300);
-        var response = request(RETRIEVE, "get", Map.of("cid", cid));
+        var response = request(RETRIEVE, "get", Map.of("cid", cid, "graph", GRAPH_ID));
         assertEquals(200, response.getStatus());
         assertTrue(((Map<String, Object>) response.getBody()).isEmpty(), "the record must expire natively");
     }
@@ -161,8 +189,22 @@ class RedisStateStoreTest extends RedisStateTestBase {
     }
 
     @Test
+    void missingGraphIdIsRejected() throws TimeoutException {
+        // a cid-only record would collapse every graph's records into one shared key
+        // space - both store functions fail fast so the contract violation is loud
+        var stored = request(PERSIST, "put",
+                Map.of("cid", Utility.getInstance().getUuid(), "ttl", 30));
+        assertNotEquals(200, stored.getStatus());
+        assertTrue(String.valueOf(stored.getBody()).contains("Missing graph"));
+        var restored = request(RETRIEVE, "get", Map.of("cid", Utility.getInstance().getUuid()));
+        assertNotEquals(200, restored.getStatus());
+        assertTrue(String.valueOf(restored.getBody()).contains("Missing graph"));
+    }
+
+    @Test
     void invalidTtlIsRejected() throws TimeoutException {
-        var response = request(PERSIST, "put", Map.of("cid", Utility.getInstance().getUuid()));
+        var response = request(PERSIST, "put",
+                Map.of("cid", Utility.getInstance().getUuid(), "graph", GRAPH_ID));
         assertNotEquals(200, response.getStatus());
         assertTrue(String.valueOf(response.getBody()).contains("Invalid ttl"));
     }
@@ -174,6 +216,7 @@ class RedisStateStoreTest extends RedisStateTestBase {
         model.put("nested", Map.of("stage", "approval"));
         var envelope = new HashMap<String, Object>();
         envelope.put("cid", cid);
+        envelope.put("graph", GRAPH_ID);
         envelope.put("node", "step-1");
         envelope.put("ttl", ttlSeconds);
         envelope.put("model", model);
