@@ -1406,6 +1406,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#orchestrator-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The orchestrator pattern
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#state-store-contract" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2606,6 +2617,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#orchestrator-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The orchestrator pattern
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#state-store-contract" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2674,6 +2696,10 @@
   resume.</li>
 <li><strong>The store is pluggable</strong> — Redis ships as the <code>minigraph-state-redis</code> extension;
   any composable function honoring the <a href="#state-store-contract">store contract</a> works.</li>
+<li><strong>It scales to complex processes</strong> — records are scoped by <strong>graph + correlation ID</strong>,
+  so every graph (a domain's own, or each subgraph behind an orchestrating parent)
+  suspends and resumes independently under one shared business correlation ID
+  (<a href="#orchestrator-pattern">the orchestrator pattern</a>).</li>
 </ul>
 </blockquote>
 <h2 id="when-a-workflow-must-wait">When a workflow must wait<a class="headerlink" href="#when-a-workflow-must-wait" title="Permanent link">&para;</a></h2>
@@ -2700,8 +2726,8 @@ the run <strong>ends</strong> — the caller gets a <code>{"type": "suspended", 
 workflow's durable memory (the <code>model</code> namespace) waits in the state store under the
 business correlation ID with a time-to-live you choose. The resumed run is an ordinary
 graph execution that happens to start with restored state. Because the record key is the
-correlation ID, a workflow suspended on one application instance can resume on <strong>any</strong>
-instance sharing the store.</p>
+graph plus the correlation ID, a workflow suspended on one application instance can
+resume on <strong>any</strong> instance sharing the store.</p>
 <h2 id="the-three-vocabulary-pieces">The three vocabulary pieces<a class="headerlink" href="#the-three-vocabulary-pieces" title="Permanent link">&para;</a></h2>
 <p><strong>1. The <code>suspend</code> node</strong> — exactly one per graph, and the alias <code>suspend</code> is <strong>reserved</strong>
 (like <code>root</code> and <code>end</code>): traversal jumps to it <em>by name</em>. Its skill assembles and persists
@@ -2941,43 +2967,91 @@ come first. Three techniques worth stealing from its model:</p>
 <li><strong>The correlation ID is a resume capability.</strong> Whoever presents it continues the
   workflow: protect resume-bearing endpoints with rest.yaml <code>authentication</code>, and use
   non-guessable IDs (the engine generates UUIDs when the caller supplies none).</li>
-<li><strong>Suspension does not cross <code>graph.extension</code>.</strong> The business correlation ID does not
-  propagate into delegated sub-graphs or flows today — design resumable workflows as
-  top-level graphs.</li>
+<li><strong>Suspension is self-contained per graph.</strong> Records are scoped by graph + cid, so a
+  resume only ever sees records written by its own graph — you cannot suspend in one
+  subgraph and resume in another. A delegated subgraph inherits the parent's business
+  correlation ID and is fully resumable on its own; the parent orchestrates —
+  see <a href="#orchestrator-pattern">the orchestrator pattern</a>.</li>
 <li>Reserved model keys (<code>model.cid</code>, <code>model.instance</code>, <code>model.flow</code>, <code>model.ttl</code>,
   <code>model.trace</code>, <code>model.run</code>) are never persisted — the resumed run's own identity is
   authoritative. <code>model.run</code> is part of the read-only flow metadata family: <code>graph.resume</code>
   is its only writer, and the flow compiler rejects any data mapping that targets it
   (like the other reserved keys).</li>
 </ul>
+<h2 id="orchestrator-pattern">The orchestrator pattern<a class="headerlink" href="#orchestrator-pattern" title="Permanent link">&para;</a></h2>
+<p>A complex business process rarely pauses in one place. Model each processing path as its
+own subgraph and let a parent graph orchestrate:</p>
+<ul>
+<li>The parent delegates each path with <code>graph.extension</code>. The child inherits the parent's
+  <strong>business correlation ID</strong> automatically — the same way an Event Script sub-flow
+  inherits <code>model.cid</code> — so a subgraph that suspends persists its record under its own
+  <code>graph</code> + the shared <code>cid</code>.</li>
+<li>Each subgraph is a <strong>complete resumable workflow on its own</strong>: a <code>resume</code> node after
+  root, checkpoints or decisions where it must wait, records scoped to that subgraph.
+  Parent and subgraphs never collide, because every graph has its own record.</li>
+<li><strong>A suspended subgraph replies like any suspended graph</strong> — <code>{"type": "suspended",
+  "cid": ...}</code> (or whatever output it staged) — and that reply lands in the parent
+  extension node's <code>result</code>, so the parent can route on it with a decision. Probe the
+  possibly-absent key with the <code>=</code> guard (a completed path's reply has no <code>type</code>):</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>statement[]=MAPPING: text(={model.path.type}) -&gt; model.path_probe
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>statement[]=&#39;&#39;&#39;
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>IF: {model.path_probe} == &#39;=suspended&#39;
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>THEN: waiting
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>ELSE: done
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>&#39;&#39;&#39;
+</code></pre></div>
+<ul>
+<li><strong>Re-invoking the parent with the same correlation ID resumes the paths</strong>: each
+  subgraph's <code>resume</code> node finds its own record (or starts fresh), fast-forwards past its
+  checkpoint, and the parent assembles the results. A subgraph is also a deployed graph,
+  so a single path can be resumed directly at <code>POST /api/graph/{subgraph-id}</code> with the
+  same correlation ID — same capability rules as any resume endpoint.</li>
+<li><strong>One record per graph per cid.</strong> Invoke a suspendable subgraph once per correlation ID
+  per run — a <code>for_each</code> fan-out of the <em>same</em> subgraph under one cid would overwrite its
+  own record. Parallel paths belong in <em>different</em> subgraphs.</li>
+</ul>
+<p>The engine's reference models for this pattern are the <code>unit-test-orchestrator</code> /
+<code>unit-test-sub-suspend</code> pair in the minigraph test sources, pinned end-to-end by
+<code>GraphSuspendResumeTest</code>.</p>
 <h2 id="state-store-contract">The state store contract<a class="headerlink" href="#state-store-contract" title="Permanent link">&para;</a></h2>
 <p>The store is an ordinary composable function named by the suspend/resume nodes' <code>task</code>
 property — the Redis module below is one implementation; PostgreSQL, DynamoDB, MongoDB or
 anything else plugs in the same way.</p>
 <p><strong>Persist</strong> — invoked by <code>graph.suspend</code>; headers <code>type=put</code>; request body:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="nt">&quot;cid&quot;</span><span class="p">:</span><span class="w">   </span><span class="s2">&quot;&lt;business correlation ID - the retrieval key&gt;&quot;</span><span class="p">,</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w">  </span><span class="s2">&quot;&lt;the suspension point&gt;&quot;</span><span class="p">,</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">  </span><span class="nt">&quot;ttl&quot;</span><span class="p">:</span><span class="w">   </span><span class="mi">172800</span><span class="p">,</span>
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">  </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;the model namespace minus reserved keys&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="w"> </span><span class="p">},</span>
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">  </span><span class="nt">&quot;seen&quot;</span><span class="p">:</span><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;traversal bookkeeping&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">},</span>
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="w">  </span><span class="nt">&quot;run&quot;</span><span class="p">:</span><span class="w">   </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;traversal bookkeeping&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="p">{</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="nt">&quot;cid&quot;</span><span class="p">:</span><span class="w">   </span><span class="s2">&quot;&lt;business correlation ID&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span><span class="nt">&quot;graph&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;the graph that suspended - cid + graph form the retrieval key&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">  </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w">  </span><span class="s2">&quot;&lt;the suspension point&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">  </span><span class="nt">&quot;ttl&quot;</span><span class="p">:</span><span class="w">   </span><span class="mi">172800</span><span class="p">,</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">  </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;the model namespace minus reserved keys&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">  </span><span class="nt">&quot;seen&quot;</span><span class="p">:</span><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;traversal bookkeeping&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">  </span><span class="nt">&quot;run&quot;</span><span class="p">:</span><span class="w">   </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;traversal bookkeeping&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="p">}</span>
 </code></pre></div>
 <p>Store the body <strong>opaquely</strong> (the reference implementations use MsgPack — binary values
 round-trip; note the platform's <a href="../../api-overview/">serialization gotchas</a>)
 and reply 2xx only when the record is durable — the reply is the acknowledgement
 <code>graph.suspend</code> requires before the graph completes; any error fails the suspension.</p>
-<p><strong>Retrieve</strong> — invoked by <code>graph.resume</code>; headers <code>type=get</code>; body <code>{"cid": "..."}</code>.
-Return the stored record as-is, or <strong>null / an empty map</strong> when absent or expired — an
-absent record is the normal fresh-transaction case, never an error. Consume the record
-atomically on retrieval (or document your replay semantics). If the store has no native
-TTL, implement record expiry yourself.</p>
+<p><strong>Retrieve</strong> — invoked by <code>graph.resume</code>; headers <code>type=get</code>; body
+<code>{"cid": "...", "graph": "..."}</code>. Return the stored record as-is, or <strong>null / an empty
+map</strong> when absent or expired — an absent record is the normal fresh-transaction case,
+never an error. Consume the record atomically on retrieval (or document your replay
+semantics). If the store has no native TTL, implement record expiry yourself.</p>
+<p><strong>Scope every record by <code>graph</code> + <code>cid</code>, never by <code>cid</code> alone.</strong> The same business
+correlation ID legitimately suspends in more than one graph — one transaction may cross
+several domains' graphs, and an orchestrator's subgraphs each pause independently (see
+<a href="#orchestrator-pattern">the orchestrator pattern</a>). A cid-only key would collapse all of
+them into one record. This also makes suspension <strong>self-contained per graph</strong> by
+construction: a resume only ever sees records written by its own graph — you cannot
+suspend in one subgraph and resume in another.</p>
 <p>The smallest possible reference implementation is the engine's test fixture — a temp-file
 store of ~60 lines (<code>FileStateStore</code> in the minigraph test sources).</p>
 <h2 id="the-redis-store-module">The Redis store module<a class="headerlink" href="#the-redis-store-module" title="Permanent link">&para;</a></h2>
 <p><code>extensions/minigraph-state-redis</code> ships <code>v1.redis.persist.model</code> (SETEX, native expiry)
-and <code>v1.redis.retrieve.model</code> (atomic consume-on-retrieve). The consume strategy is
+and <code>v1.redis.retrieve.model</code> (atomic consume-on-retrieve). Records are keyed
+<code>graph:{graph_id}:{cid}</code>, so each domain's graph and each subgraph suspends
+independently under a shared business correlation ID. The consume strategy is
 <strong>version-aware</strong>: native <code>GETDEL</code> on Redis 6.2+, or an equally atomic <code>MULTI/EXEC</code>
 <code>GET</code>+<code>DEL</code> transaction on older servers — detected once per connection from
 <code>INFO server</code> and stated in the startup log, since enterprise deployments rarely control

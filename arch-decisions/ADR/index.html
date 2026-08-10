@@ -1973,6 +1973,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0014" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0014 — Generic exception context: one handler serves every exception= route
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-0013" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0013 — A business transaction spans graphs: workflow-state records are scoped by graph + cid, and delegation inherits the correlation ID
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0012" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2595,6 +2617,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0014" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0014 — Generic exception context: one handler serves every exception= route
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-0013" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0013 — A business transaction spans graphs: workflow-state records are scoped by graph + cid, and delegation inherits the correlation ID
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0012" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2765,6 +2809,71 @@ governing the codebase — verified against the source (<code>platform-core</cod
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
 <hr />
+<h2 id="adr-0014">ADR-0014 — Generic exception context: one handler serves every <code>exception=</code> route<a class="headerlink" href="#adr-0014" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-10 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> thread-field-graph-scoped-state-and-error-context</p>
+<!-- id: adr-0014 | status: proposed -->
+
+<p><strong>Abstract.</strong> When a failed node routes to its <code>exception=</code> handler, the walkers
+(GraphExecutor and GraphTraveler — one staging site each, covering every skill) stage a
+<strong>generic exception context</strong> in the state machine: <code>error.source</code> (the failing node's
+alias), <code>error.code</code>, <code>error.message</code>, and <code>error.stack</code> when the failing envelope
+carries one. The names follow <strong>Event Script's flow exception contract</strong>
+(<code>error.code/message/stack</code>) so both orchestration layers share one vocabulary; <code>source</code>
+is the graph-side addition, since a graph handler — unlike a flow's — is a node that many
+other nodes may name. The per-node error record (<code>{node}.status</code>/<code>{node}.error</code>, now plus
+<code>{node}.stack</code>) is unchanged, so existing handlers keep working. <code>error</code> is a <strong>reserved
+node alias</strong> (it always was, in the graph model's reserved-name list) — the namespace is a
+first-class state-machine citizen like <code>model</code>, inspectable in a dry-run with
+<code>inspect error</code>. A shared handler is island-anchored (<code>root → island → handler</code>, the
+ADR-0012 anchoring idiom) because exception routing is a jump; it is entered at most once
+per run unless RESET, and it may connect onward to further processing nodes.</p>
+<p><strong>Rationale.</strong> The field demo showed graphs cluttered with per-fetcher handler clones —
+structurally forced, because the engine staged failures only under the failing node's own
+scratch (<code>{node}.status</code>/<code>{node}.error</code>), so a handler's data mapping had to name its
+failing node statically. Staging at the walkers' exception choke points (rather than in
+each skill) covers <code>graph.api.fetcher</code>, <code>graph.task</code>, <code>graph.extension</code> and the
+suspend/resume store failures in one move, with no per-skill drift. For an extension
+node, <code>error.source</code> is the extension node in the parent graph — failures inside a
+delegated subgraph route to that subgraph's own handlers, composing with ADR-0013's
+self-containment. Event Script parity naming was chosen over graph-local naming
+(<code>error.status</code>/<code>error.error</code>) for cross-layer consistency and because <code>error.error</code>
+reads badly. The context is transient per run and never persisted across suspension.</p>
+<h2 id="adr-0013">ADR-0013 — A business transaction spans graphs: workflow-state records are scoped by graph + cid, and delegation inherits the correlation ID<a class="headerlink" href="#adr-0013" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-10 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> thread-field-graph-scoped-state-and-error-context · <strong>Amends:</strong> ADR-0010, ADR-0012</p>
+<!-- id: adr-0013 | status: proposed -->
+
+<p><strong>Abstract.</strong> The suspend/resume state-store contract is scoped by <strong>graph + cid</strong>: the
+persistence envelope gains a <code>graph</code> field (<code>{cid, graph, node, ttl, model, seen, run}</code>),
+the retrieve body becomes <code>{cid, graph}</code>, and the Redis reference implementation keys
+records <code>graph:{graph_id}:{cid}</code> (formerly <code>graph:state:{cid}</code>). Key composition remains
+store-internal, but every store MUST scope by both — a cid-only key collapses all of a
+transaction's suspensions into one record. Complementarily, <strong><code>graph.extension</code> stamps
+the parent's business correlation ID</strong> (<code>model.cid</code>) on the delegated call — both
+protocols (<code>graph://</code> id and <code>flow://</code>), both branches (single and <code>for_each</code>) — exactly
+as an Event Script sub-flow launch already did, closing the asymmetry where a subgraph's
+<code>model.cid</code> was an unusable per-call random UUID. Together these make suspension
+<strong>self-contained per graph by construction</strong>: one business transaction may suspend
+independently in each domain's graph and in each subgraph, a resume only ever sees its
+own graph's records, and an orchestrator parent can delegate independently resumable
+subgraph paths (the documented orchestrator pattern, pinned by the
+<code>unit-test-orchestrator</code>/<code>unit-test-sub-suspend</code> reference models). <strong>Breaking change</strong>
+(accepted, dev-phase — no legacy fallback): records persisted under the old key are
+invisible after upgrade and resume behaves as fresh; custom stores must adopt the
+<code>graph</code> field.</p>
+<p><strong>Rationale.</strong> The field demo drove both halves: the same business correlation ID is used
+across multiple domains, so <code>graph:state:{cid}</code> collided across domains sharing a Redis —
+and their orchestrator use case (a parent graph delegating suspend/resume per processing
+path) was structurally impossible, for two independent reasons the code study confirmed:
+the key collision, and <code>graph.extension</code> minting a random UUID per call with no
+business-cid header, so a subgraph's resume could never find its record even with scoped
+keys. The graph ID is unique per domain, so <code>graph + cid</code> addresses both the domain and
+the subgraph requirement with one convention. Scoping is enforced in the contract (the
+reference stores fail fast on a missing <code>graph</code>) rather than by engine-composed opaque
+keys, keeping key layout a store concern. The <code>for_each</code> caveat is documented, not
+enforced: one graph × one cid = one record, so a suspendable subgraph is invoked once per
+cid per run. ADR-0010's cid-as-capability note extends naturally: one cid now unlocks
+resume in every graph that suspended under it, scoped per graph id, with endpoint
+authentication unchanged.</p>
 <h2 id="adr-0012">ADR-0012 — Suspension is a destination: edge-mode checkpoints and jump-mode decisions replace the <code>suspend=true</code> property<a class="headerlink" href="#adr-0012" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-08-07T22:50:34.000Z · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> thread-suspend-resume-rationalization · <strong>Amends:</strong> ADR-0010</p>
 <!-- id: adr-0012 | status: accepted -->

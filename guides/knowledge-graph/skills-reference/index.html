@@ -2932,9 +2932,15 @@ followed (a <code>3xx</code> is a non-failure: status and body are captured and 
 <code>response -&gt; result.{key}</code> captures a whole non-JSON body); response headers are available
 via <code>feature[]=log-response-headers</code> at <code>{node}.header.response.{name}</code>.</p>
 <p><strong>Failure routing:</strong> with <code>exception={handler-node}</code>, a failed call (HTTP ≥ 400) sets
-<code>{node}.status</code>/<code>{node}.error</code>, skips the <code>output[]</code> mappings, and <strong>jumps to the handler</strong>
-instead of aborting — the building block for bounded retry loops
-(<a href="../command-reference/#failure-routing">full pattern</a>). Without it, the run aborts.</p>
+<code>{node}.status</code>/<code>{node}.error</code> (and <code>{node}.stack</code> when the failure carries one), skips the
+<code>output[]</code> mappings, and <strong>jumps to the handler</strong> instead of aborting — the building block for
+bounded retry loops (<a href="../command-reference/#failure-routing">full pattern</a>). Without it, the run
+aborts. The jump also stages the <strong>generic exception context</strong> — <code>error.source</code> (the failing
+node's alias), <code>error.code</code>, <code>error.message</code> and <code>error.stack</code> when available — so <strong>one
+island-anchored handler can serve every node's <code>exception=</code> route</strong> without naming any failing
+node in its data mapping (<code>error</code> is a reserved alias; <code>inspect error</code> shows the context in a
+dry-run session). A shared handler is entered at most once per run unless RESET; deliberate
+re-entry loops use the bounded-retry idiom.</p>
 <p><strong>Deadline:</strong> each call is bounded by the propagated <code>model.ttl</code> (default 30 s); the optional node
 <code>ttl</code> (duration syntax <code>&lt;digits&gt;</code> + <code>s</code>/<code>m</code>/<code>h</code>/<code>d</code>, e.g. <code>8s</code>) overrides it for this node's calls
 only. A deadline shorter than the graph's own budget makes a slow provider time out <strong>first</strong>, so
@@ -2983,6 +2989,10 @@ capabilities and reuse logic. <strong>Discover the valid targets with <code>list
   time out first, so this node's <code>exception=</code> route catches the timeout and can retry within the
   parent graph's remaining budget (same parameter as <a href="#api-fetcher"><code>graph.api.fetcher</code></a> and
   <a href="#task"><code>graph.task</code></a>).</li>
+<li>The delegated graph or flow <strong>inherits the caller's business correlation ID</strong> (<code>model.cid</code>),
+  the same way an Event Script sub-flow does — so a sub-graph that suspends persists its record
+  under the shared cid scoped by its own graph id, and re-invoking with the same cid resumes it
+  (<a href="../workflow-suspension/#orchestrator-pattern">the orchestrator pattern</a>).</li>
 </ul>
 <p>This is the seam between the semantic layer and the composable (Event Script) layer beneath it —
 authoring the target flow: <a href="../../event-script/ai-agent-guide/">Event Script AI agent guide</a> +
@@ -3023,7 +3033,9 @@ graph</code> for a dry-run) while the authored and exported model keeps the plac
 <code>{node}.result</code> and response headers at <code>{node}.header</code> — in <code>output[]</code> mappings, <strong><code>result</code>
 (bare) is the function's whole result</strong> and <code>result.{key}</code> a field of it (same rule as
 <code>graph.extension</code>). Optional <code>for_each[]</code> with <code>concurrency</code>
-(1–30, default 3) iterates with bounded fork-join; <code>exception=&lt;node&gt;</code> routes failures
+(1–30, default 3) iterates with bounded fork-join; <code>exception=&lt;node&gt;</code> routes failures with the
+same generic <code>error.source</code>/<code>code</code>/<code>message</code>/<code>stack</code> context as
+<a href="#api-fetcher"><code>graph.api.fetcher</code></a>, so one handler serves them all
 (<a href="../command-reference/#failure-routing">failure routing</a>).</p>
 <p><strong>Gotchas:</strong> the <code>task</code> route must exist at runtime or the node fails fast; a call is bounded by
 <code>model.ttl</code> (default 30 s) — or by the node's optional <code>ttl</code> property (duration syntax, e.g.
@@ -3050,8 +3062,10 @@ sanctioned deadline mechanism, not rewriting <code>model.ttl</code>.</p>
 <p>Persists the workflow state of the running graph to an external state store and lets the run
 complete — the transaction resumes later through <a href="#resume"><code>graph.resume</code></a> with the same business
 correlation ID. A <strong>superset of <code>graph.task</code></strong>: the <code>task</code> property names the pluggable store
-function, but the persistence envelope (<code>{cid, node, ttl, model, seen, run}</code>) is assembled by the
-skill itself — <strong>no input/output mapping on the node</strong>.</p>
+function, but the persistence envelope (<code>{cid, graph, node, ttl, model, seen, run}</code>) is assembled
+by the skill itself — <strong>no input/output mapping on the node</strong>. The record is scoped by
+<strong>graph + cid</strong> (the Redis reference keys it <code>graph:{graph_id}:{cid}</code>), so one business
+transaction may suspend independently in each domain's graph and in each subgraph.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>skill=graph.suspend
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>task=v1.redis.persist.model
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>ttl=2d
@@ -3074,7 +3088,8 @@ model <strong>before</strong> the checkpoint. Full story: <a href="../workflow-s
 <p>Restores the workflow state persisted by <a href="#suspend"><code>graph.suspend</code></a> and continues traversal at
 the recorded suspension point — <strong>past a checkpoint node without re-executing it</strong>, or by
 <strong>re-executing a decision node</strong> against the new request input. Also a superset of
-<code>graph.task</code> — the <code>task</code> property names the store function (<code>type=get</code>, body <code>{cid}</code>),
+<code>graph.task</code> — the <code>task</code> property names the store function (<code>type=get</code>, body <code>{cid, graph}</code> —
+the graph id scopes the lookup to this graph's own records),
 restoration is encapsulated, no mapping on the node.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>skill=graph.resume
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>task=v1.redis.retrieve.model

@@ -3259,8 +3259,9 @@ cleared run marks — which is the standard idiom for a second dry-run with diff
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>execute {node}             # run a single node (after instantiate)
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>inspect {namespace.key}    # read a value from the state machine
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>inspect output               # a whole namespace: input | output | model
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>inspect output               # a whole namespace: input | output | model | error
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>inspect output.body.name     # a specific composite key
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>inspect error                # the exception context after a failed node routed to its handler
 </code></pre></div>
 <blockquote>
 <p><strong>Placeholder convention:</strong> <code>{…}</code> in the syntax lines above (e.g. <code>{node}</code>,
@@ -3592,13 +3593,49 @@ name and address:</p>
 <p><code>graph.api.fetcher</code>, <code>graph.task</code>, and <code>graph.extension</code> accept an optional
 <code>exception={handler-node}</code> property. On a <strong>failed</strong> call (HTTP status ≥ 400, or a task error):</p>
 <ul>
-<li>the node's <code>{node}.status</code> and <code>{node}.error</code> are set (the engine's error record);</li>
+<li>the node's <code>{node}.status</code> and <code>{node}.error</code> are set (the engine's error record, plus
+  <code>{node}.stack</code> when the failure carries a stack trace);</li>
 <li>the node's <code>output[]</code> mappings are <strong>skipped</strong>;</li>
 <li>traversal <strong>jumps to the named handler node</strong> instead of aborting. Without <code>exception=</code>, the
   run <strong>aborts</strong> on failure.</li>
 </ul>
-<p>Wire the handler back explicitly (e.g. <code>connect error-handler to fetcher with retry</code>) — no node
-left unconnected. The canonical <strong>bounded-retry</strong> pattern combines the pieces (see the
+<p>The jump also stages a <strong>generic exception context</strong> that no handler has to know the failing
+node to read:</p>
+<table>
+<thead>
+<tr>
+<th>key</th>
+<th>value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>error.source</code></td>
+<td>the failing node's alias</td>
+</tr>
+<tr>
+<td><code>error.code</code></td>
+<td>the status code</td>
+</tr>
+<tr>
+<td><code>error.message</code></td>
+<td>the error message</td>
+</tr>
+<tr>
+<td><code>error.stack</code></td>
+<td>the stack trace, when the failure has one</td>
+</tr>
+</tbody>
+</table>
+<p>so <strong>one handler can serve every node's <code>exception=</code> route</strong>: map <code>error.source</code> /
+<code>error.code</code> / <code>error.message</code> in its data mapping instead of <code>{failing-node}.status</code>. Anchor a
+shared handler from an island (<code>root -&gt; island -&gt; handler</code>) — it is reached by jumping, and the
+island keeps it non-orphan. A handler may connect onward to more nodes for sophisticated
+recovery. A node is visited at most once per run unless RESET, so concurrent branch failures
+collapse into the first jump. <code>error</code> is a <strong>reserved node alias</strong> for this namespace —
+<code>inspect error</code> shows the staged context in a dry-run session.</p>
+<p>Wire a retry handler back explicitly (e.g. <code>connect error-handler to fetcher with retry</code>) — no
+node left unconnected. The canonical <strong>bounded-retry</strong> pattern combines the pieces (see the
 <a href="#math-statements">statement grammar</a>):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>create node error-handler
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>with type Decision

@@ -2954,7 +2954,10 @@ tasks an application wires into its own <code>sync-to-async</code> flow (see
 function under these names. The knowledge graph additionally reserves the node <strong>alias</strong>
 <code>suspend</code> (bound to the <code>graph.suspend</code> skill — traversal jumps to it by name, the <code>root</code>/<code>end</code>
 pattern), the node <strong>property</strong> <code>suspend</code>, and the engine-managed state key <code>model.run</code> — see
-<a href="../knowledge-graph/workflow-suspension/">Workflow Suspension</a>.</p>
+<a href="../knowledge-graph/workflow-suspension/">Workflow Suspension</a>. The node alias <code>error</code> is likewise
+reserved: it is the <strong>generic exception context namespace</strong> (<code>error.source</code>, <code>error.code</code>,
+<code>error.message</code>, <code>error.stack</code>) staged when a failed node routes to its <code>exception=</code> handler —
+see <a href="../knowledge-graph/command-reference/#failure-routing">failure routing</a>.</p>
 <h2 id="optional-user-defined-functions">Optional user defined functions<a class="headerlink" href="#optional-user-defined-functions" title="Permanent link">&para;</a></h2>
 <p>The following optional route names will be detected by the system for additional user defined features.</p>
 <table>
