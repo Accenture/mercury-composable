@@ -842,6 +842,24 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         return null;
     }
 
+    /**
+     * The NEXT: jump target with dynamic variables resolved - every statement command
+     * resolves {dynamic variables}, so a generic error handler can jump back to the
+     * failing node via 'NEXT: {error.source}'. An unresolved variable renders "null" and
+     * fails the jump loudly at traversal time (Next node 'null' does not exist).
+     *
+     * @param tag the statement tag
+     * @param command the statement command
+     * @param stateMachine the graph state machine
+     * @return the resolved jump target, or null when the tag is not NEXT:
+     */
+    protected String getNext(String tag, String command, MultiLevelMap stateMachine) {
+        if (NEXT_TAG.equals(tag)) {
+            return getNext(tag, substituteVarIfAny(command, stateMachine));
+        }
+        return null;
+    }
+
     private void mergeStatements(String route, String nodeName, String anotherNode,
                                  MiniGraph graph, List<String> merged) {
         var that = graph.findNodeByAlias(anotherNode);

@@ -189,7 +189,7 @@ create node error-handler
 with type Decision
 with properties
 skill=graph.math
-statement[]=RESET: fetcher, error-handler
+statement[]=RESET: {error.source}, error-handler
 statement[]=MAPPING: f:defaultValue(model.attempts, int(0)) -> model.attempts
 statement[]=MAPPING: f:add(model.attempts, int(1)) -> model.attempts
 statement[]='''
@@ -197,15 +197,18 @@ IF: {model.attempts} >= 3
 THEN: recovery-node
 ELSE: next
 '''
-statement[]=NEXT: fetcher
+statement[]=NEXT: {error.source}
 statement[]=DELAY: 50
 ```
 
-RESET comes first among the action statements so it runs on every path (a taken IF jump ends the
-statement list) - the attempt counters live in the "model" namespace, which RESET never touches.
-If the handler also carries a defensive check on the failed node's status, that check must come
-BEFORE the RESET (it reads state the reset wipes). Wire the handler back explicitly (connect
-error-handler to fetcher with retry) - no node left unconnected.
+The handler is fully GENERIC: every statement command resolves {dynamic variables}, so
+RESET: {error.source} and NEXT: {error.source} retry whichever node routed here - one handler
+serves every fetcher and task in the graph. RESET comes first among the action statements so it
+runs on every path (a taken IF jump ends the statement list) - the attempt counters live in the
+"model" namespace, which RESET never touches. If the handler also carries a defensive check on
+the failing status (IF: {error.code} == 200), that check must come BEFORE the RESET (it reads
+state the reset wipes). Wire the handler back explicitly (connect error-handler to fetcher with
+retry) - no node left unconnected. See tutorial 12 for the full walkthrough.
 
 HTTP semantics
 --------------

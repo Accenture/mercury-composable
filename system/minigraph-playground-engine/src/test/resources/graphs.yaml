@@ -45,6 +45,8 @@ graphs:
   # under its own graph-scoped record with the inherited business correlation ID
   - 'unit-test-orchestrator'
   - 'unit-test-sub-suspend'
+  # every statement command resolves dynamic variables: THEN: {model.hop} + DELAY: {model.backoff}
+  - 'unit-test-dynamic-jump'
   - 'unit-test-suspend-1'
   - 'unit-test-suspend-2'
   - 'unit-test-suspend-3'
