@@ -222,7 +222,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
 
     /**
      * A suspension point with NO drawn edge to the suspend node reached the checkpoint
-     * by an IF-THEN-ELSE jump (jump mode) - by construction only a routing skill can
+     * by an IF-THEN-ELSE jump (jump mode). By construction only a routing skill can
      * jump, so the node is a decision and a resumed run RE-EXECUTES it against the new
      * request input instead of continuing past it. An edge-mode suspension point
      * (drawn edge present) is never re-executed - the resumed run continues along its
@@ -423,7 +423,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
 
     /**
      * Stage the generic exception context for an exception-handler jump: Event Script
-     * parity names (error.code/message/stack) plus the originating node in error.source,
+     * parity names (error.code/message/stack) plus the originating node in 'error.source',
      * so one island-anchored handler can serve every node's exception= route without
      * naming the failing node in its data mapping. Reads the failing node's scratch
      * entries staged by the skill. Inspectable in a dry-run session via 'inspect error'.
@@ -456,13 +456,13 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
      * The deadline (ms) for a child call made by this node: the node's optional 'ttl' property
      * (duration syntax, e.g. 10s - the suspend-node grammar) overrides the propagated model.ttl.
      * A SHORTER child deadline lets a sub-flow, sub-graph or API call time out FIRST, so this
-     * graph's error path can catch the timeout and retry within its remaining budget - with plain
+     * graph's error path can catch the timeout and retry within its remaining budget. With plain
      * propagation, parent and child carry the same value and the parent always expires first.
      * (graph.js also honors a node ttl for its script-execution deadline, but resolves its own
      * default of 5s instead of model.ttl - scripts are meant for very simple computation.)
      *
      * @param instance the graph instance
-     * @param node     the calling node (graph.extension, graph.api.fetcher or graph.task)
+     * @param node     the calling node (graph.extension, graph.api.fetcher or 'graph.task')
      * @return the node ttl in milliseconds when declared, else the propagated model.ttl
      */
     protected long getEffectiveTtl(GraphInstance instance, SimpleNode node) {
@@ -665,7 +665,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     /**
      * Reject a write target inside engine-managed model metadata. Every runtime path that can
      * write a {@code model.*} target calls this - data-mapping RHS validation, the fetcher-family
-     * input and output mappings, and for_each expansion - in BOTH walker lanes (executor and
+     * input and output mappings, and for_each expansion. In BOTH walker lanes (executor and
      * traveler), so dry-run drafts and single-node execution are covered as well as full runs.
      */
     protected void assertMutableModelTarget(String nodeName, String rhs) {

@@ -246,7 +246,7 @@ public class GraphExtension extends GraphLambdaFunction {
 
     private void inheritBusinessCid(EventEnvelope forward, GraphInstance graphInstance) {
         // the child flow or graph inherits the parent's business correlation-id (model.cid),
-        // exactly like an Event Script sub-flow launch - so a subgraph that suspends can be
+        // exactly like an Event Script sub-flow launch. Therefore, a subgraph that suspends can be
         // resumed under the same business transaction id (its store record is keyed by
         // graph + cid, never by a per-call random id)
         if (graphInstance.stateMachine.getElement(MODEL_CID) instanceof String businessCid

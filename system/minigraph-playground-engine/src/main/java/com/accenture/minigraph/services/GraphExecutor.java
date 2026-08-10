@@ -150,40 +150,45 @@ public class GraphExecutor extends GraphLambdaFunction {
                 handleErrorResponse(po, graphInstance, response, parentSpanId);
                 return;
             }
-            var graph = graphInstance.graph;
-            var node = graph.findNodeByAlias(nodeName);
-            checkFrequency(po, graphInstance, nodeName, parentSpanId);
-            // Skill handler can also set status and error in its node properties instead of throwing exception
-            var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
-            var resultError = stateMachine.getElement(nodeName + "." + ERROR);
-            // Mark the skill complete only when it did NOT fail (status + error set,
-            // e.g. an exception-routed fetcher): a join barrier consults skillRun,
-            // so a failed branch must not satisfy the barrier while it retries.
-            // GraphTraveler keeps identical semantics.
-            if (!(processStatus instanceof Integer && resultError != null)) {
-                graphInstance.skillRun.put(nodeName, true);
+            handleSkillSuccess(po, graphInstance, nodeName, target, response, parentSpanId);
+        }
+    }
+
+    private void handleSkillSuccess(PostOffice po, GraphInstance graphInstance, String nodeName,
+                                    Object target, EventEnvelope response, String parentSpanId) {
+        var stateMachine = graphInstance.stateMachine;
+        var node = graphInstance.graph.findNodeByAlias(nodeName);
+        checkFrequency(po, graphInstance, nodeName, parentSpanId);
+        // Skill handler can also set status and error in its node properties instead of throwing exception
+        var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
+        var resultError = stateMachine.getElement(nodeName + "." + ERROR);
+        // Mark the skill complete only when it did NOT fail (status + error set,
+        // e.g. an exception-routed fetcher): a join barrier consults skillRun,
+        // so a failed branch must not satisfy the barrier while it retries.
+        // GraphTraveler keeps identical semantics.
+        if (!(processStatus instanceof Integer && resultError != null)) {
+            graphInstance.skillRun.put(nodeName, true);
+        }
+        // Skill handler would set status and error in its node properties
+        // e.g. the HTTP response status code to the API fetcher >= 400
+        var errorHandler = node.getProperty(EXCEPTION);
+        if (processStatus instanceof Integer rc && resultError != null && errorHandler == null) {
+            var errorMap = getErrorMap(resultError, target);
+            var replyTo = graphInstance.getReplyTo();
+            var cid = graphInstance.getCorrelationId();
+            var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(errorMap)
+                    .setStatus(rc).setSpanId(parentSpanId);
+            po.send(error);
+            graphInstance.complete.set(true);
+        } else if (!graphInstance.complete.get()) {
+            if (processStatus instanceof Integer && resultError != null) {
+                // the node failed and routed to its exception= handler ('next' is the
+                // handler's alias): stage the generic exception context so one handler
+                // can serve any node. GraphTraveler keeps identical semantics.
+                stageErrorContext(stateMachine, nodeName);
             }
-            // Skill handler would set status and error in its node properties
-            // e.g. the HTTP response status code to the API fetcher >= 400
-            var errorHandler = node.getProperty(EXCEPTION);
-            if (processStatus instanceof Integer rc && resultError != null && errorHandler == null) {
-                var errorMap = getErrorMap(resultError, target);
-                var replyTo = graphInstance.getReplyTo();
-                var cid = graphInstance.getCorrelationId();
-                var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(errorMap)
-                        .setStatus(rc).setSpanId(parentSpanId);
-                po.send(error);
-                graphInstance.complete.set(true);
-            } else if (!graphInstance.complete.get()) {
-                if (processStatus instanceof Integer && resultError != null) {
-                    // the node failed and routed to its exception= handler ('next' is the
-                    // handler's alias): stage the generic exception context so one handler
-                    // can serve any node. GraphTraveler keeps identical semantics.
-                    stageErrorContext(stateMachine, nodeName);
-                }
-                var next = String.valueOf(response.getBody());
-                decideNext(po, node, next, graphInstance, parentSpanId);
-            }
+            var next = String.valueOf(response.getBody());
+            decideNext(po, node, next, graphInstance, parentSpanId);
         }
     }
 
