@@ -98,7 +98,9 @@ Override Graph Traversal
 ------------------------
 Normally the next node is the one or more nodes that this node is connected to.
 If you want to tell system to jump to a specific "next-node", you can use the "NEXT:" syntax and put the name
-of the node to jump to.
+of the node to jump to. Every statement command resolves {dynamic variables} - the same rule as
+graph.math statements - so NEXT:/THEN:/ELSE: targets, RESET: entries and DELAY: values may each
+be a {namespace.key} reference (e.g. NEXT: {error.source} in a generic error handler).
 
 Deferred completion
 -------------------

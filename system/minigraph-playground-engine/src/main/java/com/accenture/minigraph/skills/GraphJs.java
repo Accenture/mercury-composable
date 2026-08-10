@@ -97,7 +97,7 @@ public class GraphJs extends GraphLambdaFunction {
         // landing in a gap would be silently consumed and leave later evals unbounded.
         // After close(true), any in-flight or subsequent eval throws isCancelled().
         // (2) the close runs on a virtual thread, never the Vert.x event loop - it
-        // blocks until the guest reaches a cancellation safepoint.
+        // blocks until the guest reaches a cancellation safe point.
         var nodeTtl = node.getProperty(TTL);
         var deadline = nodeTtl != null
                 ? GraphSuspend.getValidTtlSeconds(nodeTtl, nodeName) * 1000L
@@ -189,7 +189,7 @@ public class GraphJs extends GraphLambdaFunction {
                 }
             }
             processCommands(context, tag, command, nodeName, graphInstance);
-            var next = getNext(tag, command);
+            var next = getNext(tag, command, graphInstance.stateMachine);
             if (next != null) {
                 jump = next;
             }
@@ -208,10 +208,11 @@ public class GraphJs extends GraphLambdaFunction {
             handleDataMappingEntry(nodeName, command, graphInstance);
         }
         if (RESET_TAG.equals(tag)) {
-            resetNodes(command, graphInstance);
+            // same dynamic-variable rule as graph.math statements
+            resetNodes(substituteVarIfAny(command, graphInstance.stateMachine), graphInstance);
         }
         if (DELAY_TAG.equals(tag)) {
-            var delay = util.str2long(command);
+            var delay = util.str2long(substituteVarIfAny(command, graphInstance.stateMachine));
             if (delay >= 0) {
                 graphInstance.stateMachine.setElement(nodeName + DOT_DELAY, delay);
             }
@@ -272,16 +273,18 @@ public class GraphJs extends GraphLambdaFunction {
     }
 
     private String evaluate(Context context, GraphInstance graphInstance, String nodeName, List<String> lines) {
+        var stateMachine = graphInstance.stateMachine;
         var ifStatement = getIfStatement(lines).trim();
-        var thenStatement = getFirstWord(getThenStatement(lines).trim());
-        var elseStatement = getFirstWord(getElseStatement(lines).trim());
+        // jump targets resolve dynamic variables (same rule as graph.math statements)
+        var thenStatement = getFirstWord(substituteVarIfAny(getThenStatement(lines).trim(), stateMachine));
+        var elseStatement = getFirstWord(substituteVarIfAny(getElseStatement(lines).trim(), stateMachine));
         if (ifStatement.isEmpty() || thenStatement.isEmpty() || elseStatement.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have if:, then: or else:");
         }
         if (thenStatement.equals(elseStatement)) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " then and else statements cannot be the same");
         }
-        var text = substituteVarIfAny(ifStatement, graphInstance.stateMachine);
+        var text = substituteVarIfAny(ifStatement, stateMachine);
         Object result = toJavaObject(context.eval(JS, text));
         return getNext(graphInstance.graph, isTrue(result)? thenStatement : elseStatement);
     }

@@ -131,20 +131,29 @@ You will then create the error-handler node that is referenced in the fetcher no
 When the "exception" property is configured in a fetcher, the system will not abort the graph traversal, it will
 route it to the given error handler.
 
-In the handler, you test the "fetcher.status" variable to see if it is HTTP-200. While an error status is always
-a value equals or larger than 200, it is a good practice to do simple validation to avoid unintended configuration
-error.
+This handler is GENERIC: it never names the failing node. When a failed node routes to its
+"exception" handler, the engine stages the exception context in the state machine -
+error.source (the failing node's alias), error.code (the status code), error.message and
+error.stack when available - and every statement command resolves {dynamic variables}, so
+the handler reads and jumps back through the context ('inspect error' shows it in a
+dry-run session; the node alias "error" is reserved for this namespace).
+
+In the handler, you test "{error.code}" to see if it is HTTP-200. While an error status is
+always a value equals or larger than 200, it is a good practice to do simple validation to
+avoid unintended configuration error.
 
 If it is not 200, the statement block will execute. The first 2 mapping statements increment the variable
 "model.attempts". The next evaluation statement checks if the maximum attempts have reached, it will clear
 the simulated exception by routing to the "clear-exception" node.
 
-The "NEXT: fetcher" statement tells the system to connect to the fetcher again. Since a node cannot be executed twice,
-you use the "RESET:" command to clear its states so that it can be executed again.
+The "NEXT: {error.source}" statement tells the system to connect to the failing node again -
+whichever node routed here. Since a node cannot be executed twice, you use the "RESET:"
+command (also with the dynamic reference) to clear its states so that it can be executed again.
 
 The "DELAY: 50" means that it will pause for 50 milliseconds before the next retry. This is a best practice because
 it avoids very rapid retries that may contribute to a side effect called "recovery storm" or 
-"unintended denial-of-service attack".
+"unintended denial-of-service attack". (A DELAY value may also be a dynamic variable, e.g.
+"DELAY: {model.backoff}" for a computed backoff.)
 
 ```
 create node error-handler
@@ -152,7 +161,7 @@ with type Decision
 with properties
 skill=graph.math
 statement[]='''
-IF: {fetcher.status} == 200
+IF: {error.code} == 200
 THEN: end
 ELSE: next
 '''
@@ -163,8 +172,8 @@ IF: {model.attempts} >= 3
 THEN: clear-exception
 ELSE: next
 '''
-statement[]=RESET: fetcher, error-handler
-statement[]=NEXT: fetcher
+statement[]=RESET: {error.source}, error-handler
+statement[]=NEXT: {error.source}
 statement[]=DELAY: 50
 ```
 
@@ -172,7 +181,9 @@ Create the clear-exception node
 -------------------------------
 In the clear-exception node, you add statements to set the variable "model.exception" to false so that
 the mock service will return normal response instead of an exception. You also clear the "model.attempts" to zero
-and reset the fetcher and the clear-exception nodes so that the system can execute them again.
+and reset the failing node (again via the dynamic "{error.source}" reference - the exception
+context stays readable for the rest of the run) and the clear-exception node itself, so the
+system can execute them again.
 
 You will then create new connections to complete the exercise.
 
@@ -183,7 +194,7 @@ with properties
 skill=graph.math
 statement[]=MAPPING: boolean(false) -> model.exception
 statement[]=MAPPING: int(0) -> model.attempts
-statement[]=RESET: fetcher, clear-exception
+statement[]=RESET: {error.source}, clear-exception
 ```
 
 Connections for error-handler and clear-exception nodes
