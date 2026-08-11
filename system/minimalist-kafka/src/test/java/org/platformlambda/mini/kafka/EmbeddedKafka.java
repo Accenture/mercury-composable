@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -55,11 +56,22 @@ final class EmbeddedKafka implements AutoCloseable {
     private final Path logDir;
 
     EmbeddedKafka() {
+        this(BROKER_PORT, CONTROLLER_PORT, LOG_DIR, Map.of());
+    }
+
+    /**
+     * Variant broker on its own ports and log directory, with storage formatted at pinned feature
+     * levels - e.g. {@code Map.of("group.version", (short) 0)} boots a broker whose cluster does
+     * NOT finalize the KIP-848 consumer rebalance protocol (the normal state of an upgraded
+     * cluster whose feature flag has not been enabled yet).
+     */
+    EmbeddedKafka(int brokerPort, int controllerPort, String logDirLocation, Map<String, Short> featureLevels) {
         try {
-            this.bootstrapServers = "127.0.0.1:" + BROKER_PORT;
-            this.logDir = prepareLogDir();
-            formatStorage(logDir);
-            this.server = new KafkaRaftServer(new KafkaConfig(brokerConfig(logDir)), Time.SYSTEM);
+            this.bootstrapServers = "127.0.0.1:" + brokerPort;
+            this.logDir = prepareLogDir(logDirLocation);
+            formatStorage(logDir, featureLevels);
+            this.server = new KafkaRaftServer(
+                    new KafkaConfig(brokerConfig(logDir, brokerPort, controllerPort)), Time.SYSTEM);
             this.server.startup();
         } catch (IOException e) {
             throw new UncheckedIOException("Unable to start embedded Kafka", e);
@@ -70,21 +82,21 @@ final class EmbeddedKafka implements AutoCloseable {
         return bootstrapServers;
     }
 
-    private static Path prepareLogDir() throws IOException {
-        Path dir = Path.of(LOG_DIR);
+    private static Path prepareLogDir(String logDirLocation) throws IOException {
+        Path dir = Path.of(logDirLocation);
         cleanup(dir);
         Files.createDirectories(dir);
         return dir;
     }
 
-    private static Properties brokerConfig(Path logDir) {
+    private static Properties brokerConfig(Path logDir, int brokerPort, int controllerPort) {
         Properties p = new Properties();
         p.setProperty("process.roles", "broker,controller");
         p.setProperty("node.id", Integer.toString(NODE_ID));
-        p.setProperty("controller.quorum.voters", NODE_ID + "@127.0.0.1:" + CONTROLLER_PORT);
+        p.setProperty("controller.quorum.voters", NODE_ID + "@127.0.0.1:" + controllerPort);
         p.setProperty("listeners",
-                "PLAINTEXT://127.0.0.1:" + BROKER_PORT + ",CONTROLLER://127.0.0.1:" + CONTROLLER_PORT);
-        p.setProperty("advertised.listeners", "PLAINTEXT://127.0.0.1:" + BROKER_PORT);
+                "PLAINTEXT://127.0.0.1:" + brokerPort + ",CONTROLLER://127.0.0.1:" + controllerPort);
+        p.setProperty("advertised.listeners", "PLAINTEXT://127.0.0.1:" + brokerPort);
         p.setProperty("inter.broker.listener.name", "PLAINTEXT");
         p.setProperty("controller.listener.names", CONTROLLER_LISTENER);
         p.setProperty("listener.security.protocol.map", "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT");
@@ -99,15 +111,16 @@ final class EmbeddedKafka implements AutoCloseable {
         return p;
     }
 
-    private static void formatStorage(Path logDir) {
+    private static void formatStorage(Path logDir, Map<String, Short> featureLevels) {
         try (PrintStream quiet = new PrintStream(OutputStream.nullOutputStream(), true, StandardCharsets.UTF_8)) {
-            new Formatter()
+            Formatter formatter = new Formatter()
                     .setNodeId(NODE_ID)
                     .setClusterId(Uuid.randomUuid().toString())
                     .setDirectories(List.of(logDir.toString()))
                     .setControllerListenerName(CONTROLLER_LISTENER)
-                    .setPrintStream(quiet)
-                    .run();
+                    .setPrintStream(quiet);
+            featureLevels.forEach(formatter::setFeatureLevel);
+            formatter.run();
         } catch (Exception e) {
             throw new IllegalStateException("Unable to format embedded Kafka storage", e);
         }

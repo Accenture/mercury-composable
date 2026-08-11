@@ -392,8 +392,53 @@ Two robustness behaviors keep a binding alive through the realities of consumer-
   raises `max.poll.interval.ms` to cover it (never lowering it below the Kafka default; the derivation is
   logged). An explicit `max.poll.interval.ms` in the consumer template is an operator decision and is
   respected as-is — with a `WARN` when the computed envelope exceeds it. Raising the interval is low-risk:
-  a crashed pod is still detected by heartbeats (`session.timeout.ms`); this setting only bounds time
-  between polls.
+  a crashed pod is still detected by heartbeats (`session.timeout.ms`; broker-side group configuration
+  under the [KIP-848 consumer protocol](#rebalance-protocol)); this setting only bounds time between
+  polls.
+
+### Consumer rebalance protocol (KIP-848) {#rebalance-protocol}
+
+Kafka's *classic* rebalance protocol is client-driven with a group-wide synchronization barrier: when
+cloud infrastructure interrupts one pod, **every** member of the group stops, rejoins, and re-syncs —
+and a flapping member repeats that storm. The **KIP-848 consumer rebalance protocol** (GA since Apache
+Kafka 4.0) moves coordination to the broker's group coordinator and makes reassignment fully
+incremental: only the interrupted member's partitions move, survivors keep consuming. On clusters that
+support it, this materially reduces rebalance time and the CPU churn of unscheduled rebalances.
+
+The protocol is selected per cluster in `kafka-consumer.properties` via `group.protocol`:
+
+| Value | Behavior |
+|-------|----------|
+| *(unset)* / `classic` | Kafka's classic protocol — works on every broker. |
+| `consumer` | The KIP-848 protocol, unconditionally. Fails at runtime if the cluster does not support it. |
+| `auto` | The adapter probes the cluster once at startup and picks `consumer` when available, `classic` otherwise. |
+
+**How `auto` decides.** KIP-848 enablement is a *finalized feature flag* (`group.version >= 1`) —
+controller-managed and cluster-wide, so it is authoritative even during a rolling broker upgrade. The
+probe reads it via the `ApiVersions` handshake that every Kafka client performs on connect: the broker
+answers it before authentication completes and never applies an ACL to it, so the probe **needs no
+grant** beyond the connection credentials already in the template. One probe per cluster per
+application instance; the decision is stated in the startup log. Any probe failure — an older broker,
+an unreachable cluster, a Kafka-compatible endpoint that does not report features — resolves to
+`classic`, the safe default.
+
+**Client tuning that conflicts.** Under the consumer protocol, `session.timeout.ms`,
+`heartbeat.interval.ms` and `partition.assignment.strategy` move to broker-side group configuration —
+a client that sets them together with `group.protocol=consumer` fails fast with a `ConfigException`.
+When the template sets any of them, `auto` therefore resolves to `classic` with a `WARN` naming the
+conflicting keys: remove them to let `auto` upgrade. Everything the adapter itself manages —
+`group.id`, the delivery-mode overlay, the [derived `max.poll.interval.ms`](#liveness) — is valid
+under both protocols.
+
+**Prerequisites and managed services.** The cluster must run Apache Kafka 4.0+ with the
+`group.version` feature enabled (new 4.0+ clusters enable it at format time; upgraded clusters enable
+it explicitly — check with `kafka-features.sh describe`). Confluent Platform 8.x carries the Apache
+4.x core and reports the flag; for other managed or Kafka-compatible services (Confluent Cloud, AWS
+MSK, Azure Event Hubs), verify against your actual cluster — wherever the flag is not reported,
+`auto` simply keeps `classic`. Migration is online: a group converts when members join with the
+consumer protocol (mixed members interoperate during a rolling deploy) and reverts if all
+new-protocol members leave. To force the classic protocol regardless of cluster support, set
+`group.protocol=classic` explicitly.
 
 ## Outbound: publishing to Kafka {#outbound}
 

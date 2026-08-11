@@ -55,7 +55,10 @@ cluster's schema-id cache is isolated (Confluent global ids are only unique with
 
 All secondary templates follow the same mechanics as the primary ones: loaded from the bundled
 classpath template by default, `${ENV_VAR:default}` substitution, and OAuth token endpoint URLs
-auto-registered on the JVM allow-list. Externalization of configuration is opt-in - point the
+auto-registered on the JVM allow-list. That includes the
+[consumer rebalance protocol](minimalist-kafka.md#rebalance-protocol): each cluster resolves
+`group.protocol=auto` independently, so the primary may run the KIP-848 consumer protocol while the
+secondary stays classic (or vice versa). Externalization of configuration is opt-in - point the
 location key at a file rendered by the devops pipeline (e.g. `file:/tmp/config/...`), optionally
 with a classpath fallback as a comma-separated list. The default bootstrap is
 `${SECONDARY_KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:8092}` - matching the

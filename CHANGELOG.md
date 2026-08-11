@@ -8,6 +8,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Added
+
+1. **`group.protocol=auto`: the Kafka flow adapter can adopt the KIP-848 consumer rebalance
+   protocol automatically.** Kafka's classic rebalance protocol is client-driven with a group-wide
+   synchronization barrier — an infrastructure interruption makes every member of a consumer group
+   stop, rejoin, and re-sync, and a flapping member repeats that storm (reported from the field as
+   high CPU during unscheduled rebalances). The KIP-848 protocol (GA since Apache Kafka 4.0) is
+   broker-driven and fully incremental: only the interrupted member's partitions move. Setting
+   `group.protocol=auto` in `kafka-consumer.properties` now probes the cluster's finalized
+   `group.version` feature flag once at startup — via the `ApiVersions` handshake, which brokers
+   answer pre-authentication and never ACL-gate, so no grant is needed beyond the connection
+   credentials already in the template — and resolves to `consumer` when the cluster supports the
+   new protocol, `classic` otherwise (older brokers, probe failures, and Kafka-compatible endpoints
+   that do not report features all resolve to `classic`, the safe default). If the template also
+   sets client tuning that the consumer protocol forbids (`session.timeout.ms`,
+   `heartbeat.interval.ms`, `partition.assignment.strategy`), `auto` keeps `classic` and warns
+   instead of failing. One probe per cluster (twin-kafka's secondary cluster resolves
+   independently); the decision is stated in the startup log. Explicit `consumer`/`classic`
+   template values pass through verbatim as before.
+
+---
 ## Version 4.11.6, 8/10/2026
 
 ### Changed

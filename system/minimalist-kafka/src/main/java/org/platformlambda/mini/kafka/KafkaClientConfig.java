@@ -92,7 +92,9 @@ public final class KafkaClientConfig {
     /**
      * Base consumer config from the template, with only the wire-contract deserializers pinned. The caller
      * ({@code KafkaFlowAdapter.newConsumer}) adds a per-topic {@code group.id} and the binding's
-     * delivery-mode overlay ({@code enable.auto.commit} / {@code max.poll.records}).
+     * delivery-mode overlay ({@code enable.auto.commit} / {@code max.poll.records}). A template
+     * {@code group.protocol=auto} is resolved here to {@code consumer} or {@code classic} from the
+     * cluster's finalized {@code group.version} feature - see {@link GroupProtocolResolver}.
      */
     public static Properties consumerProperties(ConfigBase appConfig) {
         return consumerProperties(appConfig, CONSUMER_LOCATION, DEFAULT_CONSUMER);
@@ -112,6 +114,9 @@ public final class KafkaClientConfig {
         Properties p = load(appConfig.getProperty(locationKey, defaultLocations));
         p.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         p.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
+        // a template's group.protocol=auto becomes consumer|classic from the cluster's own
+        // finalized group.version feature (KIP-848) - one probe per cluster, stated in the log
+        GroupProtocolResolver.resolve(p);
         return p;
     }
 
