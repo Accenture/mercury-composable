@@ -236,8 +236,8 @@
 
 ## Open Threads
 
-- [x] (release — SHIPPED 2026-08-10 local / 2026-08-11 UTC, **both repos in lock-step at
-  v4.11.8**) **v4.11.8 — the dry-run suspend/resume regression-fix release, same evening as
+- [x] (release — SHIPPED AND PUBLISHED 2026-08-10 local / 2026-08-11 UTC, **both repos in
+  lock-step at v4.11.8**) **v4.11.8 — the dry-run suspend/resume regression-fix release, same evening as
   the regression report.** Java: release
   [PR #279](https://github.com/Accenture/mercury-composable/pull/279) squash `92dd64a8`
   (tree verified identical to the gated `7929b309`), CI green (7m29s), 33-pom sweep, full
@@ -245,7 +245,7 @@
   `d16d68f0` carrying `5b659e50` (tree verified), CI green (2m34s), Cargo 4.11.6→4.11.8
   (CHANGELOG notes v4.11.7 was Java-only), 58/305 + clippy + fmt, tag on the merge,
   dereference-verified. Sole content: [[thread-dry-run-graph-scope-fix]] (Java PR #278 /
-  Rust PR #204). Remaining: Eric publishes both GitHub releases.
+  Rust PR #204). Both GitHub releases PUBLISHED by Eric 2026-08-10.
   <!-- id: thread-release-4-11-8 | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: working | origin: 2026-08-11-051612 -->
 
 - [x] (fix — **MERGED ON BOTH ENGINES 2026-08-11, all CI green; rides the next release.**
