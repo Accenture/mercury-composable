@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-10 | agent: Claude Code (2026-08-10-223319)
+- **last_session:** 2026-08-11 | agent: Claude Code (2026-08-11-024542)
 - **last_review:** 2026-08-07 | through 2026-08-07-142823.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -235,6 +235,49 @@
   <!-- id: bp-graph-workflow-suspension | created: 2026-07-28 | last_used: 2026-07-30 | uses: 5 | tier: archive-candidate | origin: 2026-07-29-003528 -->
 
 ## Open Threads
+
+- [x] (release — SHIPPED 2026-08-10 local / 2026-08-11 UTC, **Java only — minimalist-kafka
+  has no Rust counterpart by design; Rust stays at v4.11.6**) **v4.11.7 — the KIP-848
+  auto-adoption release, same-day from field report to ship.** Release
+  [PR #277](https://github.com/Accenture/mercury-composable/pull/277) squash `0c26cab4`
+  (tree verified identical to the gated `f2856085`), CI green (7m27s), 33-pom sweep, full
+  reactor as the gate, tag `v4.11.7` dereference-verified on the squash. Sole content:
+  [[thread-kafka-kip848-auto]] (PR #276). Remaining: Eric publishes the GitHub release.
+  <!-- id: thread-release-4-11-7 | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: working | origin: 2026-08-11-024542 -->
+
+- [x] (feature — **MERGED 2026-08-11 as
+  [PR #276](https://github.com/Accenture/mercury-composable/pull/276), squash `f709e168`
+  (tree verified identical to the gated `03898b50`), CI green (Build & Unit Tests 7m10s);
+  rides the next release via CHANGELOG Unreleased. Java-only by design, no Rust
+  lock-step — minimalist-kafka's grammar is the future port's contract.**)
+  **`group.protocol=auto`: the Kafka flow adapter adopts KIP-848 when the cluster supports
+  it** — driven by a field report of high CPU during unscheduled consumer rebalances
+  (cloud infra interruptions; the classic protocol's group-wide sync barrier makes every
+  member rejoin when one pod flaps). **Durable facts:** (1) KIP-848 enablement is the
+  cluster-wide finalized feature flag `group.version` (≥1), read via
+  `Admin.describeFeatures()` which rides the pre-auth `ApiVersions` handshake —
+  **never ACL-gated** (verified in the 4.3.1 broker source; honors the KafkaHealthCheck
+  convention of avoiding Cluster-Describe-gated admin APIs — no grant needed beyond the
+  template's connection credentials). (2) The adapter runs the consumer protocol with
+  ZERO code change (17/17 e2e passed with the template value, incl. topic-pattern;
+  java-regex subscribe implemented for the new consumer, KAFKA-15538); F4/F5 carry over
+  (max.poll.interval.ms valid under both protocols). (3) **Fail-fast hazard:**
+  session.timeout.ms / heartbeat.interval.ms / partition.assignment.strategy with
+  group.protocol=consumer → ConfigException at construction — so auto's conflict guard
+  resolves to classic + WARN naming the keys (never silently strip operator tuning).
+  (4) Resolution at the single choke point KafkaClientConfig.consumerProperties (covers
+  adapter, health check, twin-kafka secondary — per-cluster templates → independent
+  per-cluster resolution); one probe per bootstrap per JVM, decision logged; probe
+  failure/absent flag → classic (Confluent Cloud/Kora feature-field reporting unverified
+  — auto conservatively stays classic there; CP 8.x = Apache 4.x core, reports it).
+  (5) EmbeddedKafka gained a feature-pinned variant constructor
+  (Formatter.setFeatureLevel) — tests pin BOTH live outcomes (group.version=1 → consumer;
+  group.version=0 broker → classic) + e2e consume under the resolved protocol.
+  Gates: minimalist-kafka 180/180, twin-kafka 9/9, both exit 0. Docs:
+  guide #rebalance-protocol section, twin-kafka per-cluster note, template comment block,
+  CHANGELOG Unreleased. Relates [[thread-kafka-consumer-resilience]],
+  [[thread-redis-getdel-compat]] (the detect-once pattern), [[thread-release-4-11-2]].
+  <!-- id: thread-kafka-kip848-auto | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: working | origin: 2026-08-11-024542 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-08-10, **both repos in lock-step at
   v4.11.6**) **v4.11.6 — the field-review follow-ups release, out the same day as the
