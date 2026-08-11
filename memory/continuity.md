@@ -236,13 +236,13 @@
 
 ## Open Threads
 
-- [x] (release — SHIPPED 2026-08-10 local / 2026-08-11 UTC, **Java only — minimalist-kafka
+- [x] (release — SHIPPED AND PUBLISHED 2026-08-10 local / 2026-08-11 UTC, **Java only — minimalist-kafka
   has no Rust counterpart by design; Rust stays at v4.11.6**) **v4.11.7 — the KIP-848
   auto-adoption release, same-day from field report to ship.** Release
   [PR #277](https://github.com/Accenture/mercury-composable/pull/277) squash `0c26cab4`
   (tree verified identical to the gated `f2856085`), CI green (7m27s), 33-pom sweep, full
   reactor as the gate, tag `v4.11.7` dereference-verified on the squash. Sole content:
-  [[thread-kafka-kip848-auto]] (PR #276). Remaining: Eric publishes the GitHub release.
+  [[thread-kafka-kip848-auto]] (PR #276). GitHub release PUBLISHED by Eric 2026-08-10.
   <!-- id: thread-release-4-11-7 | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: working | origin: 2026-08-11-024542 -->
 
 - [x] (feature — **MERGED 2026-08-11 as
