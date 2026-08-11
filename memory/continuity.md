@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-10 | agent: Claude Code (2026-08-10-180744)
+- **last_session:** 2026-08-10 | agent: Claude Code (2026-08-10-223319)
 - **last_review:** 2026-08-07 | through 2026-08-07-142823.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -236,6 +236,23 @@
 
 ## Open Threads
 
+- [x] (release — SHIPPED AND PUBLISHED 2026-08-10, **both repos in lock-step at
+  v4.11.6**) **v4.11.6 — the field-review follow-ups release, out the same day as the
+  review itself.** Java:
+  release [PR #275](https://github.com/Accenture/mercury-composable/pull/275) squash
+  `c29915ee` (tree verified identical to the gated branch commit), CI green (8m3s),
+  33-pom sweep, full reactor as the gate, tag dereference-verified on the squash. Rust:
+  release PR #203 merge `c008d11b` carrying `a3ae466f`, CI green (2m18s), 58/305 +
+  clippy + fmt (exit codes verified unpiped), tag on the merge. Contents:
+  [[thread-field-graph-scoped-state-and-error-context]] (BREAKING store key
+  `graph:{graph_id}:{cid}` — the CHANGELOG's `### Changed` section LEADS with the
+  upgrade note per R1) + [[thread-dynamic-statement-targets]] (incl. the recovery
+  semantics). CHANGELOG shape: BREAKING Changed first, Added ordered exception-context →
+  orchestrator → dynamic-vars (item 3 references the handler item 1 introduces).
+  Both GitHub releases PUBLISHED by Eric 2026-08-10 (notes lead with the BREAKING
+  upgrade note).
+  <!-- id: thread-release-4-11-6 | created: 2026-08-10 | last_used: 2026-08-10 | uses: 1 | tier: working | origin: 2026-08-10-223319 -->
+
 - [x] (feature+fix — **COMPLETE ON BOTH ENGINES 2026-08-08, all CI green; rides the
   next release.** Java: [PR #267](https://github.com/Accenture/mercury-composable/pull/267)
   squash `e16f4b40` + accept-header follow-up
@@ -288,6 +305,37 @@
   overlapping loop label fixed to 'waiting...', layout verified via the site's own
   mermaid bundle and confirmed clean on the live page by Eric).
   <!-- id: thread-release-4-11-5 | created: 2026-08-09 | last_used: 2026-08-09 | uses: 1 | tier: working | origin: 2026-08-09-164000 -->
+
+- [x] (feature+fix — **COMPLETE ON BOTH ENGINES 2026-08-10, both merged same day; rides
+  v4.11.6.** Java: [PR #273](https://github.com/Accenture/mercury-composable/pull/273)
+  squash `96d9c35f`, CI green (Build & Unit Tests 6m49s). Rust: mercury PR #201 merge
+  `354c1134` carrying `7d2da900`, CI green incl. the Format check (test job 2m9s).)
+  **Dynamic variables in every statement command —
+  completing the generic error handler — PLUS the recovery semantics follow-up
+  (Java [PR #274](https://github.com/Accenture/mercury-composable/pull/274) squash
+  `5a01c0c6`, CI green 7m17s; Rust PR #202 merge `213b739a` carrying `6c7cf134`, CI
+  green — shipped in v4.11.6 same day, see [[thread-release-4-11-6]]): a successful retry of `error.source` RESOLVES the virtual 'error' node
+  (code=200, source kept, message/stack removed; the source match keeps parallel
+  branches safe — Eric's rationale) → three states: empty / recovered / outstanding.
+  Pinned by unit-test-error-recovery (executor) + a tutorial-12 companion dry-run
+  (traveler); engine 116/116, Rust 58/305 + clippy + fmt.** Eric's regression pass (tutorial 12, live
+  session via the sync companion) found RESET:/NEXT: took targets literally — only
+  MAPPING/COMPUTE expressions and IF conditions substituted — so a generic RETRY handler
+  still needed per-node clones despite [[thread-field-graph-scoped-state-and-error-context]]'s
+  error context. Ratified fix: NEXT:/THEN:/ELSE: targets, RESET: entries and DELAY:
+  values all resolve {namespace.key} at execution time (unresolved → "null": RESET no-op,
+  DELAY skipped, jump fails loudly). Java = shared getNext(tag, command, stateMachine)
+  overload + per-tag substitution in GraphMath AND GraphJs; Rust = math executor only
+  (no graph.js, per the retirement). tutorial-12 genericized on both engines
+  (IF {error.code} == 200, RESET/NEXT {error.source}, clear-exception RESET
+  {error.source}) — its e2e pins RESET/NEXT; new unit-test-dynamic-jump +
+  DynamicStatementTargetTest pin THEN:/DELAY:. First finding of the same pass was NO bug:
+  {error.status} → the contract key is error.code (R3, Event Script parity), validated
+  live on Eric's session. Gates: Java engine 114/114 + webapp 212/212; Rust 58 suites /
+  305 tests + clippy + fmt (fmt verified by real exit code — a piped `head` masked the
+  first check; fmt belongs in the local gate line). Eric's cosmetics folded (S125-safe
+  comment quoting ×3 files + 'safe point').
+  <!-- id: thread-dynamic-statement-targets | created: 2026-08-10 | last_used: 2026-08-10 | uses: 1 | tier: working | origin: 2026-08-10-223319 -->
 
 - [x] (feature — **COMPLETE ON BOTH ENGINES 2026-08-10, same day as the field review;
   both ride the next release.** Java: feature
