@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-11 | agent: Claude Code (2026-08-11-024542)
+- **last_session:** 2026-08-11 | agent: Claude Code (2026-08-11-051612)
 - **last_review:** 2026-08-07 | through 2026-08-07-142823.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -235,6 +235,47 @@
   <!-- id: bp-graph-workflow-suspension | created: 2026-07-28 | last_used: 2026-07-30 | uses: 5 | tier: archive-candidate | origin: 2026-07-29-003528 -->
 
 ## Open Threads
+
+- [x] (release — SHIPPED 2026-08-10 local / 2026-08-11 UTC, **both repos in lock-step at
+  v4.11.8**) **v4.11.8 — the dry-run suspend/resume regression-fix release, same evening as
+  the regression report.** Java: release
+  [PR #279](https://github.com/Accenture/mercury-composable/pull/279) squash `92dd64a8`
+  (tree verified identical to the gated `7929b309`), CI green (7m29s), 33-pom sweep, full
+  reactor as the gate, tag dereference-verified on the squash. Rust: release PR #205 merge
+  `d16d68f0` carrying `5b659e50` (tree verified), CI green (2m34s), Cargo 4.11.6→4.11.8
+  (CHANGELOG notes v4.11.7 was Java-only), 58/305 + clippy + fmt, tag on the merge,
+  dereference-verified. Sole content: [[thread-dry-run-graph-scope-fix]] (Java PR #278 /
+  Rust PR #204). Remaining: Eric publishes both GitHub releases.
+  <!-- id: thread-release-4-11-8 | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: working | origin: 2026-08-11-051612 -->
+
+- [x] (fix — **MERGED ON BOTH ENGINES 2026-08-11, all CI green; rides the next release.**
+  Java [PR #278](https://github.com/Accenture/mercury-composable/pull/278) squash
+  `b697de5f` (tree verified identical to the gated `573c62aa`), Build & Unit Tests 7m49s.
+  Rust mercury PR #204 merge `f5256ecc` carrying `8fc45b94` (tree verified), test 2m8s.)
+  **v4.11.6 regression: dry-run suspend/resume never resumed — the playground lane's ephemeral
+  graphId broke the graph-scoped store key.** Eric's tutorial-14 regression drive on v4.11.7
+  (redis-standalone) hit "Transaction not found" at manager approval; root cause proven live
+  BEFORE fixing (two orphaned `graph:playground-<uuid>:order-1001` records in his Redis): the
+  dry-run lane minted `playground-{uuid}` per instantiation, so v4.11.6's `graph:{graph_id}:{cid}`
+  key never matched across instantiations (pre-v4.11.6 `graph:state:{cid}` made the handle
+  harmless — the same hidden-blocker shape as R2's extension cid). Executor lane never affected
+  (stable manifest id — why all executor-lane e2e stayed green). **Fix + Eric's ruling:** dry-run
+  identity = the root node's `name` property (export keeps it in sync with the file/deployment
+  id); **an unnamed root + suspend/resume model is REJECTED at instantiation with a teaching
+  message** (a silent ephemeral fallback would break resume invisibly — Eric); nameless
+  non-suspending drafts keep the playground handle; guard-first = rejection has no side effects.
+  Eric's S3776 catch fixed by extracting instantiateGraph (helper-extraction shape); Sonar smells
+  folded (S6213 record→storedRecord, text block). Regression test PROVEN against unfixed code
+  (fails on the key-scope pin) on Java; both engines pin resume-across-instantiations + the
+  rejection. **Verified live end-to-end:** fixed build + redis-standalone + real WS session —
+  tutorial-14's four runs (submit/approve/release/ship) all resumed, record under
+  `graph:tutorial-14:{cid}`; both apps left running for Eric. Also folded (Eric's asks):
+  minigraph-state-redis pom carries the engine's ENTIRE build section (sources JAR at build time —
+  closes the IDE decompiled-class gap — jacoco, pinned plugins). Gates: engine 118/118, redis
+  module 12/12, Rust 58/305 + clippy 0 + fmt clean.
+  Relates [[thread-field-graph-scoped-state-and-error-context]], [[graph-suspend-resume-design]],
+  [[thread-release-4-11-7]].
+  <!-- id: thread-dry-run-graph-scope-fix | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: working | origin: 2026-08-11-051612 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-08-10 local / 2026-08-11 UTC, **Java only — minimalist-kafka
   has no Rust counterpart by design; Rust stays at v4.11.6**) **v4.11.7 — the KIP-848
