@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-11 | agent: Claude Code (2026-08-11-051612)
+- **last_session:** 2026-08-11 | agent: Claude Code (2026-08-11-220600)
 - **last_review:** 2026-08-07 | through 2026-08-07-142823.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -247,6 +247,46 @@
   dereference-verified. Sole content: [[thread-dry-run-graph-scope-fix]] (Java PR #278 /
   Rust PR #204). Both GitHub releases PUBLISHED by Eric 2026-08-10.
   <!-- id: thread-release-4-11-8 | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: working | origin: 2026-08-11-051612 -->
+
+- [x] (release — SHIPPED 2026-08-11, **both repos in lock-step at v4.11.9**; cut explicitly
+  FOR FIELD DEPLOYMENT) **v4.11.9 — the dry-run graph identity simplification.** Java: release
+  [PR #281](https://github.com/Accenture/mercury-composable/pull/281) squash `eff46c5f` (tree
+  verified identical to the gated `b134e1ca`), CI green (7m52s), 33-pom sweep, full reactor as
+  the gate, tag dereference-verified on the squash. Rust: release PR #207 merge `27fa527e`
+  carrying `40f99dc8` (tree verified), CI green (2m20s), 58/305 + clippy + fmt, tag on the merge,
+  dereference-verified. Sole content: [[thread-untitled-dry-run-identity]] (Java PR #280 / Rust
+  PR #206). **Extra pre-release gate for the field cut: a LIVE drive against the built v4.11.9
+  artifacts** (redis-standalone + playground, real WS sessions) covering BOTH paths — tutorial-14's
+  four-run named workflow (fresh → resume ×3 → "shipped") and a nameless draft suspending to
+  `graph:untitled:{cid}`, resuming on a second instantiation, record consumed. Remaining: Eric
+  publishes both GitHub releases.
+  <!-- id: thread-release-4-11-9 | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: working | origin: 2026-08-11-220600 -->
+
+- [x] (fix — **MERGED ON BOTH ENGINES 2026-08-11, all CI green; rides the next release.**
+  Java [PR #280](https://github.com/Accenture/mercury-composable/pull/280) squash `68cd9d28`
+  (tree verified identical to the gated `f660ec32`), Build & Unit Tests 7m4s. Rust mercury
+  PR #206 merge `3bdcd3b3` carrying `a901b1b7` (tree verified), test 2m17s.)
+  **Dry-run graph identity simplified: an unnamed draft is scoped `untitled` instead of rejected**
+  (Eric's patch; I reviewed, agreed, and applied the follow-ups). **The durable insight: the store
+  contract needs the dry-run identity to be STABLE ACROSS INSTANTIATIONS, not derived from the
+  model name** — so v4.11.8's rejection guard was only ever defending against its own ephemeral
+  `playground-{uuid}` fallback, and a stable constant makes it unnecessary. Not a reversal of the
+  morning ruling: that objection was correct *given a uuid*; this removes the premise rather than
+  the capability. A GLOBAL constant also beats anything session-derived — the session handle comes
+  from the WebSocket route (GraphLambdaFunction.java:273-276) and changes on reconnect, which would
+  reintroduce the silent fresh-restart across a leave-and-return flow. Refuted during review (worth
+  not re-litigating): the shared `untitled` bucket is not a NEW risk class (two developers dry-running
+  the same NAMED graph with the same literal cid already collide), and GraphResume.java:111-113
+  rejects a restored record whose node alias is absent, so structurally different drafts fail loudly.
+  Follow-ups applied: Rust lock-step (guard + helpers + orphaned mirror test deleted); the missing
+  pin for the unnamed branch on BOTH engines (nameless draft suspends then resumes across a second
+  instantiation, **mutation-proven** against a per-instantiation handle); `## Unreleased` CHANGELOG
+  entries on both repos (the published v4.11.8 section deliberately NOT rewritten); one stale comment.
+  **Sonar S5961 lesson: it counts assertions reached through private test helpers, and counts static
+  call SITES** — 12 graph-building `syncCommand` calls collapsed into ONE loop over a command list
+  took the test from 28 to 22. Gates: engine 118/118; Rust 58/305 + clippy 0 + fmt clean.
+  Relates [[thread-dry-run-graph-scope-fix]], [[graph-suspend-resume-design]].
+  <!-- id: thread-untitled-dry-run-identity | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: working | origin: 2026-08-11-220600 -->
 
 - [x] (fix — **MERGED ON BOTH ENGINES 2026-08-11, all CI green; rides the next release.**
   Java [PR #278](https://github.com/Accenture/mercury-composable/pull/278) squash
