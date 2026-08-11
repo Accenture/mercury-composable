@@ -18,6 +18,7 @@
 
 package com.accenture.minigraph.playground;
 
+import com.accenture.minigraph.mock.CountingStepTask;
 import com.accenture.minigraph.services.GraphCommandService;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -210,7 +211,9 @@ class CompanionSyncTest {
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
             Utility.getInstance().sleep(20);
         }
-        syncCommand(po, sid, "create node root\nwith type Root");
+        // the root carries a name so the STABLE-IDENTITY instantiate guard passes and the
+        // run reaches the pre-run check this test pins
+        syncCommand(po, sid, "create node root\nwith type Root\nwith properties\nname=unit-test-prerun-check");
         syncCommand(po, sid, "create node end\nwith type End");
         syncCommand(po, sid,
                 "create node suspend\nwith type Suspend\nwith properties\nskill=graph.suspend\ntask=v1.file.state.store");
@@ -609,6 +612,102 @@ class CompanionSyncTest {
                 .setHeader("Content-Type", "text/plain").setHeader("Accept", "application/json")
                 .setBody(command);
         return po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(req), 10000).get();
+    }
+
+
+    /**
+     * The dry-run twin of the field regression that surfaced on tutorial-14: a suspended dry-run
+     * workflow must RESUME when the graph is re-instantiated with the same business correlation
+     * ID. The store contract scopes records by graph + cid, so the dry-run instance must present
+     * the model's stable identity (the root node's name) - a per-instantiation handle writes the
+     * suspension under a key no later instantiation can ever read, and every resume silently
+     * restarts fresh.
+     */
+    @Test
+    void dryRunResumesAcrossInstantiations() throws Exception {
+        var po = EventEmitter.getInstance();
+        var sid = "ws-990014-2";
+        var inRoute = "ws.990014.2.in";
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", inRoute)));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        assertTrue(GraphCommandService.hasSession(sid), "session must exist before a companion command");
+        // the model must import from the deployed classpath copy (a stale temp copy from an
+        // earlier manual run would shadow it)
+        var temp = new File("/tmp/graph", "unit-test-suspend-1.json");
+        if (temp.exists()) {
+            assertTrue(temp.delete(), "stale temp copy removed");
+        }
+        var cid = "dry-run-scope-1";
+        // consume-on-retrieve makes a leftover record indistinguishable from this test's own
+        var stale = new File("/tmp/suspend-resume", "unit-test-suspend-1_" + cid);
+        if (stale.exists()) {
+            assertTrue(stale.delete(), "stale store record removed");
+        }
+        var imported = syncCommand(po, sid, "import graph from unit-test-suspend-1");
+        assertEquals(Boolean.TRUE, imported.get("ok"), "import: " + imported);
+
+        // run 1: fresh transaction suspends at the checkpoint and persists under graph + cid
+        var instantiated = syncCommand(po, sid,
+                "instantiate graph\ntext(" + cid + ") -> model.cid");
+        assertEquals(Boolean.TRUE, instantiated.get("ok"), "instantiate: " + instantiated);
+        var first = syncCommand(po, sid, "run");
+        assertEquals(Boolean.TRUE, first.get("ok"), "run 1: " + first);
+        assertEquals(1, CountingStepTask.getCount("one", cid), "step-1 executes on the fresh run");
+        assertEquals(0, CountingStepTask.getCount("two", cid), "the suspension stops before step-2");
+        // the KEY pin: the record must be scoped by the model's stable name, so a later
+        // instantiation (or the production executor) can find it
+        var storedRecord = new File("/tmp/suspend-resume", "unit-test-suspend-1_" + cid);
+        assertTrue(storedRecord.exists(),
+                "the suspension must persist under the model's stable identity, not an ephemeral "
+                        + "per-instantiation handle");
+
+        // run 2: a NEW instantiation with the same business cid must resume past the checkpoint
+        var again = syncCommand(po, sid,
+                "instantiate graph\ntext(" + cid + ") -> model.cid");
+        assertEquals(Boolean.TRUE, again.get("ok"), "re-instantiate: " + again);
+        var second = syncCommand(po, sid, "run");
+        assertEquals(Boolean.TRUE, second.get("ok"), "run 2: " + second);
+        assertEquals(1, CountingStepTask.getCount("one", cid), "the checkpoint must not re-execute");
+        assertEquals(1, CountingStepTask.getCount("two", cid), "the continuation must run on resume");
+        assertFalse(storedRecord.exists(), "the record is consumed on resume (at-most-once)");
+    }
+
+    /**
+     * A suspend/resume model whose root has no {@code name} is REJECTED at instantiation
+     * (ruling on the dry-run graph-scope regression): a silent ephemeral fallback would break
+     * the resume mechanism invisibly, so the guard teaches instead. A nameless model WITHOUT
+     * suspension keeps working - scratch drafts need no stable identity.
+     */
+    @Test
+    void unnamedSuspendGraphIsRejectedAtInstantiation() throws Exception {
+        var po = EventEmitter.getInstance();
+        var sid = "ws-990015-2";
+        var inRoute = "ws.990015.2.in";
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", inRoute)));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        assertTrue(GraphCommandService.hasSession(sid), "session must exist before a companion command");
+        syncCommand(po, sid, "create node root\nwith type Root");
+        syncCommand(po, sid, "create node end\nwith type End");
+        syncCommand(po, sid, """
+                create node resume
+                with type Resume
+                with properties
+                skill=graph.resume
+                task=v1.file.state.store""");
+        syncCommand(po, sid, "connect root to resume with then");
+        syncCommand(po, sid, "connect resume to end with then");
+        var rejected = syncCommand(po, sid, "instantiate graph");
+        var lines = ((List<?>) rejected.get("output")).stream().map(String::valueOf).toList();
+        assertTrue(lines.stream().anyMatch(l -> l.contains("needs a stable identity")),
+                "the guard must teach the fix (name the root node): " + lines);
+        assertTrue(lines.stream().noneMatch(l -> l.startsWith("Graph instance created")),
+                "no instance may be created for an unnamed suspend/resume model: " + lines);
     }
 
     @SuppressWarnings("unchecked")
