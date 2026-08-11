@@ -59,16 +59,11 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final ManagedCache cachedMessage = ManagedCache.createCache("last.ws.message", 1000);
     private static final String DEFAULT_TEMP_DIR = "/tmp/graph";
     private static final String OUTCOME = "outcome";
-    private static final String PLAYGROUND = "playground";
+    private static final String UNTITLED = "untitled";
     private static final String NODES = "nodes";
     private static final String PROPERTIES = "properties";
     private static final String TOTAL = "Total ";
     private static final String INVALID_GRAPH_NAME = "Invalid filename - must be a-z, A-Z, 0-9 with optional hyphen";
-    private static final String GRAPH_SUSPEND_SKILL = "graph.suspend";
-    private static final String GRAPH_RESUME_SKILL = "graph.resume";
-    private static final String UNNAMED_SUSPEND_GRAPH =
-            "This graph model uses suspend/resume, so its workflow state needs a stable identity. "
-            + "Add a 'name' property to the root node (name=<graph-name>), then instantiate again.";
     private static final String SESSION_TAG = "Session ";
     private static final long EXPIRY = 20 * 1000L;
     private static final String[] MAPPING_PROPERTIES = {"mapping", "input", "output", "for_each"};
@@ -1369,50 +1364,18 @@ public class GraphCommandService extends GraphLambdaFunction {
         }
     }
 
-    /**
-     * The suspend/resume store contract scopes records by graph + cid, so a dry-run instance must
-     * carry the model's STABLE identity - the root node's {@code name} property, which the export
-     * path keeps in sync with the graph's file/deployment id - never a per-instantiation handle
-     * (an ephemeral id makes every resume look up a key no suspend ever wrote, so a suspended
-     * dry-run workflow could only ever restart fresh). A draft whose root has no name yet has no
-     * stable identity to scope by: it keeps a unique playground handle, and
-     * {@code handleInstantiateGraph} REJECTS it when the model uses suspend/resume - a silent
-     * ephemeral fallback there would break the resume mechanism invisibly.
-     */
-    private String stableGraphIdentity(MiniGraph graph) {
-        var name = rootName(graph);
-        return name != null ? name : PLAYGROUND + "-" + util.getUuid();
-    }
-
-    /** @return the root node's non-blank {@code name} property, or {@code null} */
-    private String rootName(MiniGraph graph) {
-        var root = graph.getRootNode();
-        return root != null && root.getProperty(NAME) instanceof String name && !name.isBlank()
-                ? name : null;
-    }
-
-    /** True when any node carries the 'graph.suspend' or 'graph.resume' skill. */
-    private boolean usesSuspension(MiniGraph graph) {
-        return graph.getNodes().stream().map(n -> n.getProperty(SKILL))
-                .anyMatch(s -> GRAPH_SUSPEND_SKILL.equals(s) || GRAPH_RESUME_SKILL.equals(s));
-    }
-
     private void handleInstantiateGraph(PostOffice po, String inRoute, String outRoute, List<String> lines) {
         var graph = graphModels.get(inRoute);
         if (graph == null) {
             return;
         }
-        // a suspend/resume model without a stable identity cannot be dry-run: its
-        // suspension record would be invisible to every later instantiation
-        if (rootName(graph) == null && usesSuspension(graph)) {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(UNNAMED_SUSPEND_GRAPH));
-            return;
-        }
-        instantiateGraph(po, inRoute, outRoute, lines, graph);
+        var root = graph.getRootNode();
+        var graphId = root != null && root.getProperty(NAME) instanceof String name && !name.isBlank()? name : UNTITLED;
+        instantiateGraph(po, inRoute, outRoute, lines, graph, graphId);
     }
 
     private void instantiateGraph(PostOffice po, String inRoute, String outRoute,
-                                  List<String> lines, MiniGraph graph) {
+                                  List<String> lines, MiniGraph graph, String graphId) {
         var currentInstance = graphInstances.get(inRoute);
         if (currentInstance != null) {
             graphInstances.remove(inRoute);
@@ -1424,7 +1387,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         util.str2file(file, text);
         // use config reader to resolve environment variables
         var reader = new ConfigReader(FILE_PREFIX+file.getPath());
-        var graphInstance = new GraphInstance(stableGraphIdentity(graph));
+        var graphInstance = new GraphInstance(graphId);
         graphInstance.graph.importGraph(reader.getMap());
         // map node properties to state machine
         var nodeCount = initializeWithNodeProperties(graphInstance);

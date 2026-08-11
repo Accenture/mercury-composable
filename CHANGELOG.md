@@ -8,6 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Changed
+
+1. **A dry-run graph whose root node has no `name` is scoped as `untitled` instead of being
+   rejected.** v4.11.8 required a suspend/resume model to carry a root `name` before the playground
+   would instantiate it, because the fallback identity was a per-instantiation handle that no later
+   run could read. What the state store actually needs is an identity that is *stable across
+   instantiations*, not one derived from the model name — so an unnamed draft now falls back to the
+   stable constant `untitled` and simply works: it suspends and resumes like any named model,
+   sharing the `graph:untitled:{cid}` scope. Naming the root node (which the export path does
+   automatically, keeping it in sync with the graph's file/deployment id) still gives a draft its
+   own scope and remains the recommendation for anything you intend to deploy.
+
+---
 ## Version 4.11.8, 8/10/2026
 
 ### Fixed
