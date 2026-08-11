@@ -8,6 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Fixed
+
+1. **Dry-run suspend/resume: a suspended workflow now resumes across `instantiate graph`
+   commands.** The graph-scoped store contract introduced in v4.11.6 keys records by
+   `graph:{graph_id}:{cid}`, but the playground dry-run lane stamped each instantiation with an
+   ephemeral `playground-{uuid}` handle — so a suspension was persisted under a key no later
+   instantiation could ever read, and every resume silently restarted fresh (surfaced by a
+   tutorial-14 regression drive: the manager-approval step rejected with "Transaction not
+   found"). The dry-run instance now carries the model's stable identity — the root node's
+   `name` property, which the export path keeps in sync with the graph's file/deployment id —
+   matching the production executor's scope, so a dry-run suspension is resumable in a later
+   instantiation. A suspend/resume model whose root has no name is REJECTED at instantiation
+   with a teaching message (a silent ephemeral fallback would break the resume mechanism
+   invisibly); a nameless draft without suspension keeps a unique playground handle. The
+   production executor lane (`POST /api/graph/{graph-id}`) was never affected.
+
+---
 ## Version 4.11.7, 8/10/2026
 
 ### Added

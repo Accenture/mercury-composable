@@ -64,6 +64,11 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final String PROPERTIES = "properties";
     private static final String TOTAL = "Total ";
     private static final String INVALID_GRAPH_NAME = "Invalid filename - must be a-z, A-Z, 0-9 with optional hyphen";
+    private static final String GRAPH_SUSPEND_SKILL = "graph.suspend";
+    private static final String GRAPH_RESUME_SKILL = "graph.resume";
+    private static final String UNNAMED_SUSPEND_GRAPH =
+            "This graph model uses suspend/resume, so its workflow state needs a stable identity. "
+            + "Add a 'name' property to the root node (name=<graph-name>), then instantiate again.";
     private static final String SESSION_TAG = "Session ";
     private static final long EXPIRY = 20 * 1000L;
     private static final String[] MAPPING_PROPERTIES = {"mapping", "input", "output", "for_each"};
@@ -660,7 +665,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     }
 
     /**
-     * Discovery: the graph models a graph.extension node can delegate to
+     * Discovery: the graph models a 'graph.extension' node can delegate to
      * (extension={graph-id}) - the compiled registry united with the deployed
      * location's *.json files - each with its root "purpose" so the listing
      * reads as living documentation.
@@ -682,7 +687,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     }
 
     /**
-     * Discovery: the Event Script flows a graph.extension node can call
+     * Discovery: the Event Script flows a 'graph.extension' node can call
      * (extension=flow://{flow-id}).
      * <p>
      * Discovery: the CONTRACT view of a deployed graph model - purpose, size,
@@ -1364,51 +1369,91 @@ public class GraphCommandService extends GraphLambdaFunction {
         }
     }
 
+    /**
+     * The suspend/resume store contract scopes records by graph + cid, so a dry-run instance must
+     * carry the model's STABLE identity - the root node's {@code name} property, which the export
+     * path keeps in sync with the graph's file/deployment id - never a per-instantiation handle
+     * (an ephemeral id makes every resume look up a key no suspend ever wrote, so a suspended
+     * dry-run workflow could only ever restart fresh). A draft whose root has no name yet has no
+     * stable identity to scope by: it keeps a unique playground handle, and
+     * {@code handleInstantiateGraph} REJECTS it when the model uses suspend/resume - a silent
+     * ephemeral fallback there would break the resume mechanism invisibly.
+     */
+    private String stableGraphIdentity(MiniGraph graph) {
+        var name = rootName(graph);
+        return name != null ? name : PLAYGROUND + "-" + util.getUuid();
+    }
+
+    /** @return the root node's non-blank {@code name} property, or {@code null} */
+    private String rootName(MiniGraph graph) {
+        var root = graph.getRootNode();
+        return root != null && root.getProperty(NAME) instanceof String name && !name.isBlank()
+                ? name : null;
+    }
+
+    /** True when any node carries the 'graph.suspend' or 'graph.resume' skill. */
+    private boolean usesSuspension(MiniGraph graph) {
+        return graph.getNodes().stream().map(n -> n.getProperty(SKILL))
+                .anyMatch(s -> GRAPH_SUSPEND_SKILL.equals(s) || GRAPH_RESUME_SKILL.equals(s));
+    }
+
     private void handleInstantiateGraph(PostOffice po, String inRoute, String outRoute, List<String> lines) {
         var graph = graphModels.get(inRoute);
-        if (graph != null) {
-            var currentInstance = graphInstances.get(inRoute);
-            if (currentInstance != null) {
-                graphInstances.remove(inRoute);
-            }
-            var mapper = SimpleMapper.getInstance().getMapper();
-            var filename = getTempGraphName(inRoute);
-            var file = new File(tempDir, filename+JSON_EXT);
-            var text = mapper.writeValueAsString(graph.exportGraph());
-            util.str2file(file, text);
-            // use config reader to resolve environment variables
-            var reader = new ConfigReader(FILE_PREFIX+file.getPath());
-            var graphInstance = new GraphInstance(PLAYGROUND+"-"+util.getUuid());
-            graphInstance.graph.importGraph(reader.getMap());
-            // map node properties to state machine
-            var nodeCount = initializeWithNodeProperties(graphInstance);
-            // perform data mapping
-            var count =  new AtomicInteger(0);
-            if (lines.size() > 1) {
-                for (int i = 1; i < lines.size(); i++) {
-                    doInitialDataMapping(lines, i, graphInstance, count);
-                }
-            }
-            var stateMachine = graphInstance.stateMachine;
-            if (!stateMachine.exists(INPUT_BODY)) {
-                stateMachine.setElement(INPUT_BODY, new HashMap<>());
-            }
-            stateMachine.setElement(OUTPUT, new HashMap<>());
-            // the instantiate command is the dry-run's edge: like the REST edge, it
-            // guarantees a business correlation ID - auto-created when the initial data
-            // mapping did not supply one, with a reminder so the user knows
-            if (!(stateMachine.getElement(MODEL_CID) instanceof String cid) || cid.isBlank()) {
-                var generated = util.getUuid();
-                stateMachine.setElement(MODEL_CID, generated);
-                po.send(new EventEnvelope().setTo(outRoute).setBody(
-                        "No business correlation ID given - this dry-run created model.cid = " + generated));
-            }
-            var timeout = getModelTtl(graphInstance);
-            log.info("Instantiate graph with {} nodes, model.ttl = {} ms", nodeCount, timeout);
-            graphInstances.put(inRoute, graphInstance);
-            po.send(new EventEnvelope().setTo(outRoute).setBody("Graph instance created. Loaded "+
-                    count.get()+ " mock " + (count.get() == 1? "entry" : "entries") + ", model.ttl = "+timeout+" ms"));
+        if (graph == null) {
+            return;
         }
+        // a suspend/resume model without a stable identity cannot be dry-run: its
+        // suspension record would be invisible to every later instantiation
+        if (rootName(graph) == null && usesSuspension(graph)) {
+            po.send(new EventEnvelope().setTo(outRoute).setBody(UNNAMED_SUSPEND_GRAPH));
+            return;
+        }
+        instantiateGraph(po, inRoute, outRoute, lines, graph);
+    }
+
+    private void instantiateGraph(PostOffice po, String inRoute, String outRoute,
+                                  List<String> lines, MiniGraph graph) {
+        var currentInstance = graphInstances.get(inRoute);
+        if (currentInstance != null) {
+            graphInstances.remove(inRoute);
+        }
+        var mapper = SimpleMapper.getInstance().getMapper();
+        var filename = getTempGraphName(inRoute);
+        var file = new File(tempDir, filename+JSON_EXT);
+        var text = mapper.writeValueAsString(graph.exportGraph());
+        util.str2file(file, text);
+        // use config reader to resolve environment variables
+        var reader = new ConfigReader(FILE_PREFIX+file.getPath());
+        var graphInstance = new GraphInstance(stableGraphIdentity(graph));
+        graphInstance.graph.importGraph(reader.getMap());
+        // map node properties to state machine
+        var nodeCount = initializeWithNodeProperties(graphInstance);
+        // perform data mapping
+        var count =  new AtomicInteger(0);
+        if (lines.size() > 1) {
+            for (int i = 1; i < lines.size(); i++) {
+                doInitialDataMapping(lines, i, graphInstance, count);
+            }
+        }
+        var stateMachine = graphInstance.stateMachine;
+        if (!stateMachine.exists(INPUT_BODY)) {
+            stateMachine.setElement(INPUT_BODY, new HashMap<>());
+        }
+        stateMachine.setElement(OUTPUT, new HashMap<>());
+        // the instantiate command is the dry-run's edge: like the REST edge, it
+        // guarantees a business correlation ID - auto-created when the initial data
+        // mapping did not supply one, with a reminder so the user knows
+        if (!(stateMachine.getElement(MODEL_CID) instanceof String cid) || cid.isBlank()) {
+            var generated = util.getUuid();
+            stateMachine.setElement(MODEL_CID, generated);
+            po.send(new EventEnvelope().setTo(outRoute).setBody(
+                    "No business correlation ID given - this dry-run created model.cid = " + generated));
+        }
+        var timeout = getModelTtl(graphInstance);
+        log.info("Instantiate graph with {} nodes, model.ttl = {} ms", nodeCount, timeout);
+        graphInstances.put(inRoute, graphInstance);
+        po.send(new EventEnvelope().setTo(outRoute).setBody("Graph instance created. Loaded "+
+                count.get()+ " mock " + (count.get() == 1? "entry" : "entries") + ", model.ttl = "+timeout+" ms"));
     }
 
     private void doInitialDataMapping(List<String> lines, int i, GraphInstance instance, AtomicInteger count) {
