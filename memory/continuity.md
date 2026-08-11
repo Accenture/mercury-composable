@@ -248,18 +248,17 @@
   Rust PR #204). Both GitHub releases PUBLISHED by Eric 2026-08-10.
   <!-- id: thread-release-4-11-8 | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: working | origin: 2026-08-11-051612 -->
 
-- [x] (release — SHIPPED 2026-08-11, **both repos in lock-step at v4.11.9**; cut explicitly
-  FOR FIELD DEPLOYMENT) **v4.11.9 — the dry-run graph identity simplification.** Java: release
+- [x] (release — SHIPPED AND PUBLISHED 2026-08-11, **both repos in lock-step at v4.11.9**; cut
+  explicitly FOR FIELD DEPLOYMENT) **v4.11.9 — the dry-run graph identity simplification.** Java: release
   [PR #281](https://github.com/Accenture/mercury-composable/pull/281) squash `eff46c5f` (tree
   verified identical to the gated `b134e1ca`), CI green (7m52s), 33-pom sweep, full reactor as
   the gate, tag dereference-verified on the squash. Rust: release PR #207 merge `27fa527e`
   carrying `40f99dc8` (tree verified), CI green (2m20s), 58/305 + clippy + fmt, tag on the merge,
-  dereference-verified. Sole content: [[thread-untitled-dry-run-identity]] (Java PR #280 / Rust
-  PR #206). **Extra pre-release gate for the field cut: a LIVE drive against the built v4.11.9
+  dereference-verified; both GitHub releases PUBLISHED by Eric 2026-08-11. Sole content:
+  [[thread-untitled-dry-run-identity]] (Java PR #280 / Rust PR #206). **Extra pre-release gate for the field cut: a LIVE drive against the built v4.11.9
   artifacts** (redis-standalone + playground, real WS sessions) covering BOTH paths — tutorial-14's
   four-run named workflow (fresh → resume ×3 → "shipped") and a nameless draft suspending to
-  `graph:untitled:{cid}`, resuming on a second instantiation, record consumed. Remaining: Eric
-  publishes both GitHub releases.
+  `graph:untitled:{cid}`, resuming on a second instantiation, record consumed.
   <!-- id: thread-release-4-11-9 | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: working | origin: 2026-08-11-220600 -->
 
 - [x] (fix — **MERGED ON BOTH ENGINES 2026-08-11, all CI green; rides the next release.**
