@@ -100,3 +100,6 @@
 - thread-event-envelope-interop — (design — COMPLETED 2026-07-22 with the v4.10.0 release) Common event envelope wire format — completed thread swept (older than archive_window) — 2026-Q3.md
 - thread-sonar-4-9-1-field-rejection — (field support — CLOSED 2026-07-26 by the review; close condition subsumed by the v4.10.6 — completed thread swept (older than archive_window) — 2026-Q3.md
 - thread-reverify-invariants-2026q2 — (CLOSED 2026-07-27 — ALL 15 CONFIRMED by Eric in a one-by-one walkthrough with fresh — completed thread swept (older than archive_window) — 2026-Q3.md
+- release-4-8-0-shipped — Release 4.8.0 — SHIPPED 2026-07-10 (tag `v4.8.0` on `5d9fda45`; PRs #153-#157): twin-kafka… — faded — 2026-Q3.md
+- bp-graph-workflow-suspension — (blueprint — RATIFIED by Eric 2026-07-28; CLOSED by Eric's gate 2026-07-30 — realized on — faded — 2026-Q3.md
+- thread-release-4-11-0 — (release — SHIPPED AND PUBLISHED 2026-07-30, both repos in lock-step) — faded — 2026-Q3.md
