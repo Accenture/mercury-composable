@@ -13,6 +13,14 @@ interface MockUploadModalProps {
   onClose: () => void;
   /** Called with a human-readable error string on failure. */
   onError: (errorMessage: string) => void;
+  /** Optional workflow-specific title. Defaults to the manual mock-upload title. */
+  title?: string;
+  /** Optional context shown above the JSON editor. */
+  description?: string;
+  /** Derived graph paths shown as non-authoritative input hints. */
+  inputPathHints?: string[];
+  /** Submit action label. Defaults to the existing Upload action. */
+  submitLabel?: string;
 }
 
 // Derive macOS status once — no hook needed; navigator APIs are synchronous.
@@ -48,7 +56,16 @@ function validateFileType(file: File): string | null {
   return null;
 }
 
-export function MockUploadModal({ uploadPath, onSuccess, onClose, onError }: MockUploadModalProps) {
+export function MockUploadModal({
+  uploadPath,
+  onSuccess,
+  onClose,
+  onError,
+  title = '⬆️ Upload Mock Data',
+  description,
+  inputPathHints = [],
+  submitLabel = 'Upload',
+}: MockUploadModalProps) {
   const [json,        setJson]        = useState('');
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [fileError,   setFileError]   = useState<string | null>(null);
@@ -110,6 +127,9 @@ export function MockUploadModal({ uploadPath, onSuccess, onClose, onError }: Moc
 
   // Browser fires `cancel` event on Escape — delegate to our close handler.
   const handleCancel = useCallback((e: React.SyntheticEvent<HTMLDialogElement>) => {
+    // A file input also emits a bubbling `cancel` event when its native picker
+    // is dismissed. Only the dialog's own cancel means “close this modal”.
+    if (e.target !== e.currentTarget) return;
     e.preventDefault(); // prevent automatic dialog.close() — we control unmounting
     handleClose();
   }, [handleClose]);
@@ -212,7 +232,7 @@ export function MockUploadModal({ uploadPath, onSuccess, onClose, onError }: Moc
         <div className={styles.modalHeader}>
           <div className={styles.modalTitleGroup}>
             <span id="mock-upload-modal-title" className={styles.modalTitle}>
-              ⬆️ Upload Mock Data
+              {title}
             </span>
             <span className={styles.modalPath}>{uploadPath}</span>
           </div>
@@ -229,6 +249,21 @@ export function MockUploadModal({ uploadPath, onSuccess, onClose, onError }: Moc
 
         {/* ── Body ───────────────────────────────────────────────────── */}
         <div className={styles.modalBody}>
+
+          {description && <p className={styles.description}>{description}</p>}
+
+          {inputPathHints.length > 0 && (
+            <div className={styles.inputHints} aria-label="Referenced graph input paths">
+              <span className={styles.inputHintsLabel}>Referenced input paths</span>
+              <div className={styles.inputHintList}>
+                {inputPathHints.slice(0, 6).map(path => <code key={path}>{path}</code>)}
+                {inputPathHints.length > 6 && (
+                  <span className={styles.moreHints}>+{inputPathHints.length - 6} more</span>
+                )}
+              </div>
+              <span className={styles.inputHintsNote}>Hints are derived from graph references.</span>
+            </div>
+          )}
 
           {/* ── Drop zone ──────────────────────────────────────────── */}
           <div
@@ -295,7 +330,7 @@ export function MockUploadModal({ uploadPath, onSuccess, onClose, onError }: Moc
             </span>
           )}
           <span className={styles.keyboardHint}>
-            {isMac ? '⌘+Enter to upload' : 'Ctrl+Enter to upload'}
+            {isMac ? `⌘+Enter to ${submitLabel.toLowerCase()}` : `Ctrl+Enter to ${submitLabel.toLowerCase()}`}
           </span>
           {uploadError && (
             <div className={styles.errorBanner} role="alert">
@@ -332,7 +367,7 @@ export function MockUploadModal({ uploadPath, onSuccess, onClose, onError }: Moc
               {isUploading ? (
                 <><span className={styles.spinner} aria-hidden="true" /> Uploading…</>
               ) : (
-                'Upload ▶'
+                submitLabel === 'Upload' ? 'Upload ▶' : submitLabel
               )}
             </button>
           </div>
@@ -342,4 +377,3 @@ export function MockUploadModal({ uploadPath, onSuccess, onClose, onError }: Moc
     </dialog>
   );
 }
-

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
-  Controls,
   useNodesState,
   useEdgesState,
   BackgroundVariant,
@@ -23,7 +22,10 @@ import type { MinigraphGraphData, MinigraphNode, MinigraphConnection } from '../
 import { hasClipboardItemType, readClipboardItemId } from '../../clipboard/dnd';
 import { findNodeByAlias, extractDirectConnections } from '../../clipboard/helpers';
 import GraphToolbar from '../GraphToolbar/GraphToolbar';
+import GraphRunControls, { type GraphRunControlsProps } from '../GraphToolbar/GraphRunControls';
 import GraphContextMenu from './GraphContextMenu';
+import GraphMinimap from './GraphMinimap';
+import { useMinimapHint } from './useMinimapHint';
 import NodeContextMenu from './NodeContextMenu';
 import GraphMultiSelectTip from './GraphMultiSelectTip';
 import {
@@ -42,6 +44,7 @@ interface GraphViewProps {
   onCopySuccess?:  () => void;
   /** Called when the clipboard write fails. */
   onCopyError?:    () => void;
+  graphRunControls?: GraphRunControlsProps;
   onRenderError?:  (message: string) => void;
   /** When true, renders a semi-transparent overlay with a spinner to indicate a background re-fetch. */
   isRefreshing?:   boolean;
@@ -49,6 +52,10 @@ interface GraphViewProps {
   onClipNode?:     (node: MinigraphNode, connections: MinigraphConnection[]) => void;
   onClipNodes?:    (items: GraphClipItem[]) => void;
   onClipboardDrop?: (itemId: string) => void;
+  /** Whether the Graph tab is currently visible and may handle graph-only hotkeys. */
+  isActive:        boolean;
+  /** Whether the graph canvas has usable visible space for the one-shot minimap hint. */
+  minimapHintEligible: boolean;
   isConnected:     boolean;
   supportsAuthoring?: boolean;
   onCreateNode?:   (source: 'empty-graph' | 'pane-context-menu') => void;
@@ -72,11 +79,14 @@ export default function GraphView({
   graphName,
   onCopySuccess,
   onCopyError,
+  graphRunControls,
   onRenderError,
   isRefreshing = false,
   onClipNode,
   onClipNodes,
   onClipboardDrop,
+  isActive,
+  minimapHintEligible,
   isConnected,
   supportsAuthoring = false,
   onCreateNode,
@@ -97,6 +107,7 @@ export default function GraphView({
   const [clipboardDragActive, setClipboardDragActive] = useState(false);
   const [tipVisible, setTipVisible] = useState(false);
   const [tipFading, setTipFading] = useState(false);
+  const [minimapOpen, setMinimapOpen] = useState(false);
   const clipboardDragDepthRef = useRef(0);
   const tipShownRef = useRef(false);
   const tipFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -188,6 +199,18 @@ export default function GraphView({
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<GraphEdgeData>>(initialEdges);
   const connectionDragSourceRef = useRef<string | null>(null);
   const hasGraphData = Boolean(graphData && graphData.nodes.length > 0);
+  const {
+    hintVisible: minimapHintVisible,
+    hintFading: minimapHintFading,
+    dismissHint: dismissMinimapHint,
+    dismissHintImmediately: dismissMinimapHintImmediately,
+    setHintFocused: setMinimapHintFocused,
+  } = useMinimapHint(Boolean(hasGraphData && minimapHintEligible && !transformError));
+
+  const handleMinimapOpenChange = useCallback((nextOpen: boolean) => {
+    setMinimapOpen(nextOpen);
+    if (nextOpen) dismissMinimapHintImmediately();
+  }, [dismissMinimapHintImmediately]);
 
   // React Flow can notify selection while it initializes controlled nodes.
   // Keep the handler stable and avoid writing an equivalent alias snapshot,
@@ -347,6 +370,7 @@ export default function GraphView({
             graphName={graphName}
             onCopySuccess={onCopySuccess}
             onCopyError={onCopyError}
+            extraActions={graphRunControls ? <GraphRunControls {...graphRunControls} /> : undefined}
           />
         )}
 
@@ -419,7 +443,15 @@ export default function GraphView({
               }}
             >
               <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="rgba(255,255,255,0.07)" />
-              <Controls showInteractive={false} />
+              <GraphMinimap
+                open={minimapOpen}
+                onOpenChange={handleMinimapOpenChange}
+                hotkeyEnabled={isActive}
+                hintVisible={minimapHintVisible}
+                hintFading={minimapHintFading}
+                onDismissHint={dismissMinimapHint}
+                onHintFocusChange={setMinimapHintFocused}
+              />
             </ReactFlow>
           ) : (
             <div className={styles.empty}>

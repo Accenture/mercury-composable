@@ -56,8 +56,11 @@
   flex: 1;
 }
 
+/* Full-width toasts span the left graph overlays, so keep only that narrow
+   layout above the controls, right-opening hint, and adjacent minimap. */
 @media (max-width: 768px) {
   .toastContainer {
+    bottom: var(--pg-graph-overlay-safe-bottom);
     left: 1rem;
     right: 1rem;
     max-width: none;

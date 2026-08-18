@@ -74,7 +74,7 @@ The **Minigraph Playground** is a React-based developer tool that communicates w
 The UI offers:
 - A **live WebSocket console** (like a REPL) where commands are sent and responses printed
 - A **ReactFlow graph visualiser** that renders the current graph model
-- A **bundled help panel** — `help` commands and their topics are served from files bundled at build time; the panel is a resizable right-side overlay toggled by a header button or `Ctrl + \``
+- A **profile-based help panel** — Minigraph's topic library and JSON-Path's focused Overview share the same resizable right-side overlay, header button, and `Ctrl + \`` shortcut
 - A **JSON/XML payload editor** for the JSON-Path playground
 - **Saved graph bookmarks** (export/import graph snapshots by name)
 - **Large payload handling** — payloads exceeding 64 KB are automatically fetched via REST and displayed inline
@@ -163,7 +163,7 @@ Switching between the Minigraph and JSON-Path playgrounds does **not** close eit
 - Fetched via REST (`GET /api/graph/model/{graph_id}/{sequence}`) after the server emits a graph-link in the WebSocket stream
 - Rendered with **ReactFlow**: nodes are colour-coded by type (`Root`, `End`, `Fetcher`, `mapper`, `Math`, `JavaScript`, `Provider`, `Dictionary`, `Join`, `Extension`, `Island`, `Decision`), edges show relation labels
 - Nodes are **resizable** (NodeResizer) and can be re-arranged interactively
-- A **minimap** provides navigation for large graphs
+- A compact **minimap toggle** is the bottom button in React Flow's left-side zoom / fit-view control stack, inheriting the native control colours and 12px icon scale while keeping the overview collapsed by default and clear of bottom-right import toasts; when a usable Graph tab first appears, a Help-style three-second hint opens to the right of the control and advertises `Ctrl + M`; opening the colour-coded minimap places it immediately beside the left control stack and lets users drag within it to pan the graph viewport, while either the control or the shortcut toggles it without intercepting text input. Desktop toasts remain at their normal bottom-right position; at 768px and below, where they span the viewport, they use the shared 11rem graph-overlay safe area above the 150px minimap and control lane
 - A **refreshing overlay** (spinner) is displayed during background re-fetches without clearing the existing graph
 - The **graph toolbar** displays a resolved graph name (root node name → save-name fallback → "Untitled"), with node/connection counts revealed on hover
 - **Orphan node segregation** — nodes not participating in any connection are classified by type and placed in horizontal rows below the main flow: Dictionary → Provider → Module → Entity → unknown catch-all
@@ -194,7 +194,8 @@ So `/api/graph/session/{id}` is currently a backend shortcut for direct consumer
 - `src/components/GraphView/NodeTypes.tsx` [L9–L22](../src/components/GraphView/NodeTypes.tsx#L9) — `TYPE_META` icon/label map per node type
 - `src/components/GraphView/NodeTypes.tsx` — `MinigraphNode`: renders as `<Fragment>` (no wrapper div); `NodeResizer` + forward target handles (left) + back-edge source handles (left) + content + forward source handles (right) + back-edge target handles (right) as siblings
 - `src/components/GraphView/NodeTypes.tsx` — `nodeTypes` export map used by `<ReactFlow nodeTypes={nodeTypes}>`
-- `src/components/GraphView/GraphView.tsx` — `<ReactFlow>` with `fitView`, `<Controls>`, `<MiniMap>`, and `isRefreshing` overlay; accepts `graphName` prop and threads it to `GraphToolbar`
+- `src/components/GraphView/GraphView.tsx` — `<ReactFlow>` with `fitView`, `<Controls>`, the `GraphMinimap` toggle, and `isRefreshing` overlay; accepts `graphName` prop and threads it to `GraphToolbar`
+- `src/components/GraphView/GraphMinimap.tsx` — extends React Flow's bottom-left `<Controls>` with the minimap as its fourth/bottom native `<ControlButton>`, matching the built-in control colour/scale, rendering the right-opening Help-style `Ctrl + M` onboarding popover, conflict-safe shortcut, pannable viewport navigation, and the legacy `<MiniMap>` colour/mask presentation immediately to the stack's right; `GraphView.tsx` owns visibility above its keyed render-error boundary and delegates the one-time, pause-aware hint lifecycle to `useMinimapHint.ts`, so graph edits neither close an open minimap nor resurrect the hint, while `RightPanel.tsx` limits the shortcut to the active Graph tab and pauses hint timing whenever that tab is hidden or clipped by maximized Help
 - `src/components/GraphToolbar/GraphToolbar.tsx` — displays `graphName` prominently with hover-reveal node/connection stats; accepts `graphName?` prop
 - `src/components/Playground.tsx` — `graphDisplayName` memo: resolves root node's `name` property → `graphSaveName` fallback; threaded via `RightPanel` → `GraphView` / `GraphDataView` → `GraphToolbar`
 
@@ -226,16 +227,19 @@ Each mutation also emits a toast notification visible in the playground's toast 
 ---
 
 ### 3.6 Bundled Help Panel (Developer Guides)
-Help content (`help.md`, `help create.md`, `help tutorial 1.md`, …) is bundled into the webapp at build time via `import.meta.glob`. When the user types `help` or `help <topic>` while connected, the command is **handled locally** by `handleLocalCommand` in `useWebSocket` — no WebSocket round-trip occurs. The console receives a local echo (`> help …`) that is classified identically to a server-echoed command, so `useAutoHelpNavigate` opens the help panel automatically.
+The Help UI is shared across playgrounds, while `PlaygroundConfig.helpContentProfile` selects its content and navigation. Minigraph's full topic library (`help.md`, `help create.md`, `help tutorial 1.md`, …) is bundled via `import.meta.glob`. JSON-Path uses a focused starter Overview from `jsonPathHelpContent.ts`, so its panel does not expose MiniGraph-specific Graph Model, Graph Skills, or Tutorials sections.
+
+When the user enters a help command that exists in the active profile while connected, it is **handled locally** by `handleLocalCommand` in `useWebSocket` — no WebSocket round-trip occurs. The console receives a local echo (`> help …`) that is classified identically to a server-echoed command, so `useAutoHelpNavigate` opens the matching content automatically. JSON-Path intentionally intercepts only bare `help`; unsupported topics such as `help create` continue to the backend.
 
 Access while disconnected: the header `?` button and the `Ctrl + \`` hotkey always open the help panel regardless of connection state.
 
 `describe …` responses remain **console-driven**; they are not captured by the help panel.
 
 **Key code locations:**
-- `src/data/helpContent.ts` — `getHelpContent(topic)`: looks up the bundled markdown string; `HELP_TOPIC_KEYS`: ordered list of all valid topic keys
+- `src/data/helpContent.ts` — profile-aware content/category lookup; Minigraph remains the default profile
+- `src/data/jsonPathHelpContent.ts` — starter JSON-Path Overview markdown
 - `src/utils/helpTopic.ts` — `extractHelpTopic(commandText)`: strips `"help "` prefix → bare topic key (lowercased)
-- `src/utils/localHelpCommand.ts` — `resolveBundledHelpTopic(commandText, supportsHelp)`: returns the topic key when the command should be handled locally, or `null` when it should go to the backend
+- `src/utils/localHelpCommand.ts` — `resolveBundledHelpTopic(commandText, supportsHelp, contentProfile)`: returns the topic key when the command exists in the active profile, or `null` when it should go to the backend
 - `src/hooks/useWebSocket.ts` — `handleLocalCommand` option: called inside `sendCommand` before the remote-send path; return `true` to intercept
 - `src/hooks/useAutoHelpNavigate.ts` — subscribes to `command.helpOrDescribe` on the bus; opens the help panel from server-echoed **and** locally-appended echoes (both classify identically)
 - `src/components/HelpBrowser/HelpBrowser.tsx` — the rendered help panel component; `activeTopic` + `onNavigate` props drive the current topic view
@@ -479,6 +483,9 @@ webapp/
 │   ├── index.css                 # Global resets / CSS variables
 │   ├── config/
 │   │   └── playgrounds.ts        # ★ SINGLE source of truth for all playgrounds
+│   ├── data/
+│   │   ├── helpContent.ts        # Profile-aware Help content/navigation registry
+│   │   └── jsonPathHelpContent.ts# JSON-Path starter Overview
 │   ├── hooks/
 │   │   ├── useWebSocket.ts       # Per-playground WS + command input logic (handleLocalCommand extension)
 │   │   ├── useGraphData.ts       # REST fetch + graph state management
@@ -671,6 +678,7 @@ interface PlaygroundConfig {
   supportsUpload?:       boolean;  // present → enables REST upload handshake
   supportsClipboard?:    boolean;  // true → enables node clip/paste sidebar (Minigraph only)
   supportsHelp?:         boolean;  // true → enables bundled help panel
+  helpContentProfile?:   HelpContentProfile; // selects Minigraph or JSON-Path content/navigation
   supportsAuthoring?:    boolean;  // true → enables create-node UI authoring (Minigraph only)
   storageKeyHelpTopic?:  string;   // localStorage key for the last help topic
   tabs:                  RightTab[]; // ordered list of right-panel tabs to show
@@ -814,7 +822,7 @@ The three possible tabs:
 | `'graph'` | `GraphView` | Both playgrounds (receives `graphName` prop) |
 | `'graph-data'` | `GraphDataView` | Both playgrounds (receives `graphName` prop) |
 
-The help panel is **not** a tab. It is a resizable overlay rendered inside `RightPanel` when `supportsHelp` is true and `helpOpen` is set. Its split position and maximised state are persisted in `localStorage`.
+The help panel is **not** a tab. It is a resizable overlay rendered inside `RightPanel` when `supportsHelp` is true and `helpOpen` is set. Open state and each playground's active topic are persisted in `localStorage`; split position and maximised state are persisted for the browser tab in `sessionStorage`.
 
 ---
 
@@ -962,7 +970,7 @@ Disconnect cleanup: when `connected` flips to false, pending debounce timers are
 
 #### `useAutoHelpNavigate`
 
-Subscribes to `bus.on('command.helpOrDescribe')`. When the echo is a bundled `help` topic, calls `onTabSwitch()` to open the help panel and sets `activeHelpTopic` via `setHelpTopic`. Both server-echoed and locally-appended help command echoes classify identically, so the hook works for both connected and disconnected local-help paths.
+Subscribes to `bus.on('command.helpOrDescribe')` when Help is enabled. When the echo resolves inside the active content profile, calls `onTabSwitch()` to open the help panel and sets `activeHelpTopic` via `setHelpTopic`. Both server-echoed and locally-appended help command echoes classify identically; profile filtering prevents JSON-Path from opening MiniGraph-only topics.
 
 `useAutoMarkdownPin` has been removed. `describe` responses are console-driven and are not captured by the help panel.
 
@@ -1700,7 +1708,7 @@ Source maps are enabled for production (`sourcemap: true`).
 1. Add the type string to `NODE_ACCENT` in `graphTransformer.ts` (gives it an accent colour)
 2. Add the type to `TYPE_META` in `NodeTypes.tsx` (gives it an icon and label)
 3. Add the type to the `nodeTypes` export in `NodeTypes.tsx` (maps it to `MinigraphNode`)
-4. (Optionally) add it to the MiniMap `colorMap` in `GraphView.tsx`
+4. (Optionally) add it to the MiniMap `NODE_COLORS` map in `GraphMinimap.tsx`
 5. If the new type should be **segregated when orphaned** (not connected to any edge), add it to `SEGREGATED_ROW_ORDER` in `graphTransformer.ts` and handle it in `classifyNode()`. Connected nodes of any type always participate in the main BFS flow regardless of classification
 
 ### Add a new mutation command to auto-refresh

@@ -198,6 +198,12 @@
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
+- **`ui-loop-engineer` is a repo-wide vendor-neutral skill.** Its canonical source lives at
+  `agent-skills/ui-loop-engineer/` (including the bundled planning checklist); the six vendor adapters
+  are gitignored generated pointers and must be refreshed with `sync-adapters`, never edited or
+  committed directly.
+  <!-- id: repo-ui-loop-engineer-skill | created: 2026-08-07 | last_used: 2026-08-07 | uses: 1 | tier: working | origin: 2026-08-07-153423 -->
+
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
