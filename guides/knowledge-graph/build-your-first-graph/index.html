@@ -2701,8 +2701,8 @@ response payload:</p>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Walk to end
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>Executed end with skill graph.data.mapper in 1.7 ms
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>{
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>  &quot;output&quot;: {
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    &quot;body&quot;: &quot;hello world&quot;
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>  "output": {
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    "body": "hello world"
 <a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>  }
 <a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>}
 <a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>Graph traversal completed in 9 ms
@@ -2729,9 +2729,9 @@ constant <code>it works</code> into <code>input.body.message</code>:</p>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>Walk to end
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>Executed end with skill graph.data.mapper in 0.4 ms
 <a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>{
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  &quot;output&quot;: {
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    &quot;body&quot;: {
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>      &quot;message&quot;: &quot;it works&quot;
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  "output": {
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    "body": {
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>      "message": "it works"
 <a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    }
 <a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>  }
 <a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>}
@@ -2759,9 +2759,9 @@ constant <code>it works</code> into <code>input.body.message</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>cp /tmp/graph/my-first-graph.json src/main/resources/graph/
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nt">graphs</span><span class="p">:</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;my-first-graph&#39;</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'my-first-graph'</span>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="nt">location</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;classpath:/graph&#39;</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="nt">location</span><span class="p">:</span><span class="w"> </span><span class="s">'classpath:/graph'</span>
 </code></pre></div>
 <p>Like <code>flows.yaml</code>, the manifest carries the location of its own models: the optional
 <code>location</code> entry points at the deployed-graph folder (<code>file:/</code> or <code>classpath:/</code> — it is
@@ -2775,10 +2775,10 @@ you why a graph was rejected (<code>Rejected graph &lt;id&gt; - &lt;reason&gt;</
 <p>A deployed graph is reachable at the generic endpoint <code>POST /api/graph/{graph-id}</code>, where the id is
 the name you exported. Send it some input:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>curl -X POST http://127.0.0.1:8085/api/graph/my-first-graph \
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  -H &quot;Content-Type: application/json&quot; \
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>  -d &#39;{&quot;message&quot;: &quot;it is a wonderful day&quot;}&#39;
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  -H "Content-Type: application/json" \
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>  -d '{"message": "it is a wonderful day"}'
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;it is a wonderful day&quot;</span><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"it is a wonderful day"</span><span class="p">}</span>
 </code></pre></div>
 <p>(The port follows your app's configuration; <code>8085</code> is illustrative.)</p>
 <h2 id="how-it-ran">What just happened<a class="headerlink" href="#how-it-ran" title="Permanent link">&para;</a></h2>

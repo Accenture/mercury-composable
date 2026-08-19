@@ -8341,11 +8341,12 @@ off by default and starts (eagerly connecting to Redis) only when <code>sync.ove
 <tbody>
 <tr>
 <td><code>boolean</code></td>
-<td><code>false</code></td>
+<td><code>true</code></td>
 </tr>
 </tbody>
 </table>
-<p>When <code>true</code>, JSON output uses <code>snake_case</code> field names instead of <code>camelCase</code>.</p>
+<p>JSON field names use <code>snake_case</code> by default — the cross-language wire convention shared with
+the Rust engine, whose serialization is snake_case at compile time. Set <code>false</code> for <code>camelCase</code>.</p>
 <hr />
 <h2 id="data-storage">Data Storage<a class="headerlink" href="#data-storage" title="Permanent link">&para;</a></h2>
 <h3 id="runningincloud"><code>running.in.cloud</code><a class="headerlink" href="#runningincloud" title="Permanent link">&para;</a></h3>
@@ -8415,8 +8416,8 @@ application. This covers the properties most developers will need to configure.<
 <a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="na">http.client.connection.timeout</span><span class="o">=</span><span class="s">5000</span>
 <a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>
 <a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="c1"># --- Distributed Tracing ---</span>
-<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="c1"># The trace ID travels as the &quot;X-Trace-Id&quot; header and the W3C &quot;traceparent&quot; header (traceId + spanId).</span>
-<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="c1"># Both are emitted outbound and accepted inbound; &quot;traceparent&quot; takes precedence on inbound. No config.</span>
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="c1"># The trace ID travels as the "X-Trace-Id" header and the W3C "traceparent" header (traceId + spanId).</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="c1"># Both are emitted outbound and accepted inbound; "traceparent" takes precedence on inbound. No config.</span>
 <a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>
 <a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="c1"># --- Correlation ID ---</span>
 <a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="c1"># Business correlation-id headers (configurable; defaults shown). Captured at the edge, preserved as</span>
@@ -8433,7 +8434,7 @@ application. This covers the properties most developers will need to configure.<
 <a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a><span class="na">protect.info.endpoints</span><span class="o">=</span><span class="s">false</span>
 <a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a>
 <a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a><span class="c1"># --- Serialization ---</span>
-<a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a><span class="na">snake.case.serialization</span><span class="o">=</span><span class="s">false</span>
+<a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a><span class="na">snake.case.serialization</span><span class="o">=</span><span class="s">true</span>
 <a id="__codelineno-1-51" name="__codelineno-1-51" href="#__codelineno-1-51"></a>
 <a id="__codelineno-1-52" name="__codelineno-1-52" href="#__codelineno-1-52"></a><span class="c1"># --- Logging ---</span>
 <a id="__codelineno-1-53" name="__codelineno-1-53" href="#__codelineno-1-53"></a><span class="na">log.format</span><span class="o">=</span><span class="s">text</span>
