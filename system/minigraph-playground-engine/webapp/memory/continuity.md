@@ -5,7 +5,7 @@
 - **scope:** MiniGraph Playground React/Vite webapp
 - **root:** `system/minigraph-playground-engine/webapp`
 - **served bundle:** `system/minigraph-playground-engine/src/main/resources/public`
-- **last_session:** 2026-08-05 | agent: Kiro (Claude Opus 4.8) (2026-08-05-152458)
+- **last_session:** 2026-08-19 | agent: Codex (2026-08-19-163020)
 
 ## Current Facts
 
@@ -32,6 +32,14 @@
   conventions, help surfacing, and refresh/session behavior around it. Engine contracts remain in root
   memory; frontend follow-up belongs here unless it changes a backend contract.
   <!-- id: webapp-suspend-resume-ui-boundary | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-160756 -->
+
+- **Node resize visibility regression fixed (2026-08-19).** The UI integration commit `0119292d`
+  added a global selected-node rule that set every React Flow resize control to `display: none`,
+  overriding `NodeResizer isVisible={selected}` and disabling the established resize interaction.
+  Removing that rule restores selected-node resize handles without changing multi-select or connection
+  authoring; a focused happy-dom test renders the real node type, applies the production CSS, and pins
+  the controls' visible computed style.
+  <!-- id: webapp-node-resize-regression-fix | created: 2026-08-19 | last_used: 2026-08-19 | uses: 1 | tier: working | origin: 2026-08-19-163020 -->
 
 ## Open Threads
 
