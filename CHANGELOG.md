@@ -27,6 +27,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    the fixed exporter recovers on the second connection; without the widened retry policy the
    span is provably lost.
 
+2. **The OpenTelemetry forwarder no longer drops a span when the export executor rejects the
+   call.** The very first CI run carrying the new cause-bearing warning exposed a second failure
+   class: `InterruptedIOException: executor rejected` — the sender's managed dispatcher runs a
+   zero-queue thread pool (`core=0`, `SynchronousQueue`) whose `execute()` rejects during
+   transient full-occupancy races, and a rejected call never reaches the retry interceptor, so
+   no retry policy can save it (retrying calls sleeping through backoff also widen that race
+   window). The exporter now runs on its own small fixed pool with an **unbounded queue** —
+   saturation means "later", never "lost" — and the pool's lifecycle is tied to the exporter so
+   a closed exporter leaks no threads. Pinned by a saturation-burst test (a burst far wider than
+   the pool queues and delivers every span) and a thread-lifecycle test (provably no export
+   threads without the owned pool, none leaked after close).
+
 ---
 ## Version 4.11.9, 8/11/2026
 

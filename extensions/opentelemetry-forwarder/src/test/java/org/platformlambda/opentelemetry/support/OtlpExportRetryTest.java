@@ -73,6 +73,64 @@ class OtlpExportRetryTest {
         }
     }
 
+    /**
+     * The second failure class from CI: the sender's managed dispatcher runs a zero-queue pool
+     * whose {@code execute()} REJECTS during transient full-occupancy races
+     * ({@code InterruptedIOException: executor rejected}) - and a rejected call never reaches the
+     * retry interceptor, so no retry policy can save it. With the exporter's own unbounded-queue
+     * pool, a burst far wider than the pool must queue and deliver every span, never reject.
+     */
+    @Test
+    void saturationBurstQueuesEveryExportInsteadOfRejecting() throws Exception {
+        try (HealthyOtlpServer server = new HealthyOtlpServer()) {
+            String endpoint = "http://127.0.0.1:" + server.port() + "/v1/traces";
+            try (SpanExporter exporter = OtelForwarderContext.buildExporter(endpoint, 10_000, Map.of())) {
+                List<CompletableResultCode> results = new java.util.ArrayList<>();
+                for (int i = 0; i < 16; i++) {
+                    results.add(exporter.export(List.of(sampleSpan())));
+                }
+                CompletableResultCode all = CompletableResultCode.ofAll(results);
+                all.join(30, TimeUnit.SECONDS);
+                assertTrue(all.isSuccess(), "a burst wider than the export pool must queue, never "
+                        + "be rejected at enqueue");
+                assertTrue(server.requests() >= 16,
+                        "every span of the burst must reach the collector (got "
+                                + server.requests() + ")");
+            }
+        }
+    }
+
+    /**
+     * Closing the exporter must also stop its export pool - tests build many exporters.
+     * Baseline-relative: the app's own forwarder (booted by sibling test classes in this JVM)
+     * runs identically-named threads, so the pin counts only the DELTA this test creates.
+     */
+    @Test
+    void closingTheExporterStopsItsExportThreads() throws Exception {
+        try (HealthyOtlpServer server = new HealthyOtlpServer()) {
+            String endpoint = "http://127.0.0.1:" + server.port() + "/v1/traces";
+            long baseline = liveExportThreads();
+            SpanExporter exporter = OtelForwarderContext.buildExporter(endpoint, 10_000, Map.of());
+            exporter.export(List.of(sampleSpan())).join(10, TimeUnit.SECONDS);
+            assertTrue(liveExportThreads() > baseline,
+                    "an active exporter runs at least one export thread of its own");
+            exporter.close();
+            long deadline = System.currentTimeMillis() + 5000;
+            while (liveExportThreads() > baseline && System.currentTimeMillis() < deadline) {
+                Thread.sleep(50);
+            }
+            assertTrue(liveExportThreads() <= baseline,
+                    "the export pool must shut down with the exporter (threads leaked)");
+        }
+    }
+
+    private long liveExportThreads() {
+        return Thread.getAllStackTraces().keySet().stream()
+                .filter(Thread::isAlive)
+                .filter(t -> "otlp-export".equals(t.getName()))
+                .count();
+    }
+
     private SpanData sampleSpan() {
         Map<String, Object> trace = new HashMap<>();
         trace.put("id", "4bf92f3577b34da6a3ce929d0e0e4736");
@@ -133,9 +191,64 @@ class OtlpExportRetryTest {
             }
         }
 
-        /** Read the full request (headers, then content-length body) so the client is
-         *  waiting on the RESPONSE when the first connection closes. */
-        private void drainRequest(InputStream in) throws IOException {
+        @Override
+        public void close() throws IOException {
+            running = false;
+            server.close();
+        }
+    }
+
+    /**
+     * A raw-socket OTLP endpoint that answers every request with an empty 200 and counts them -
+     * the healthy counterpart of {@link FlakyOtlpServer} for the saturation and lifecycle pins.
+     */
+    private static final class HealthyOtlpServer implements AutoCloseable {
+        private final ServerSocket server;
+        private final AtomicInteger requests = new AtomicInteger();
+        private volatile boolean running = true;
+
+        HealthyOtlpServer() throws IOException {
+            this.server = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
+            Thread acceptor = new Thread(this::acceptLoop, "healthy-otlp-server");
+            acceptor.setDaemon(true);
+            acceptor.start();
+        }
+
+        int port() {
+            return server.getLocalPort();
+        }
+
+        int requests() {
+            return requests.get();
+        }
+
+        private void acceptLoop() {
+            while (running) {
+                try (Socket socket = server.accept()) {
+                    drainRequest(socket.getInputStream());
+                    requests.incrementAndGet();
+                    OutputStream out = socket.getOutputStream();
+                    out.write(("HTTP/1.1 200 OK\r\n"
+                            + "content-type: application/x-protobuf\r\n"
+                            + "content-length: 0\r\n"
+                            + "connection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
+                    out.flush();
+                } catch (IOException e) {
+                    // server socket closed on shutdown, or a client went away - both fine
+                }
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            running = false;
+            server.close();
+        }
+    }
+
+    /** Read the full request (headers, then content-length body) so the client is
+     *  waiting on the RESPONSE after the server has consumed its input. */
+    private static void drainRequest(InputStream in) throws IOException {
             StringBuilder head = new StringBuilder();
             int prev3 = -1;
             int prev2 = -1;
@@ -168,12 +281,5 @@ class OtlpExportRetryTest {
                 }
                 remaining -= skipped;
             }
-        }
-
-        @Override
-        public void close() throws IOException {
-            running = false;
-            server.close();
-        }
     }
 }
