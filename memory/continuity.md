@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-14 | agent: Claude Code (2026-08-14-164331)
+- **last_session:** 2026-08-19 | agent: Claude Code (2026-08-19-184142)
 - **last_review:** 2026-08-14 | through 2026-08-14-005928.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -225,6 +225,40 @@
   dereference-verified. Sole content: [[thread-dry-run-graph-scope-fix]] (Java PR #278 /
   Rust PR #204). Both GitHub releases PUBLISHED by Eric 2026-08-10.
   <!-- id: thread-release-4-11-8 | created: 2026-08-11 | last_used: 2026-08-11 | uses: 2 | tier: active | origin: 2026-08-11-051612 -->
+
+- [x] (fix — **MERGED 2026-08-19 as
+  [PR #283](https://github.com/Accenture/mercury-composable/pull/283), squash `1685842c`
+  (tree verified identical to the gated `64387c74`), CI green (6m56s) + authoritative
+  recheck; rides the next release. Java-only — no Rust OTel forwarder.**) **OTLP forwarder: a dying pooled
+  connection could silently DROP a span — now every IOException retries.** Eric reported the
+  occasional main-CI failure of OtlpFlowTraceTest ("missing the synthetic flow-summary span",
+  seen on a memory-only commit). Diagnosis: the test's 30s await is sound; the span was dropped —
+  the WARN fired ~20ms after a sibling span succeeded (too fast for the 1s retry backoff) = a
+  single-attempt NON-RETRYABLE failure. **Durable facts:** (1) the OTel SDK's default OTLP retry
+  whitelists only SocketTimeout/Connect/UnknownHost/SocketException — a stale keep-alive reuse
+  (`IOException: unexpected end of stream`) is single-attempt, CONFIRMED empirically by the pin's
+  killed-connection reproduction; (2) `forward()` was fire-and-forget with the cause never logged
+  (`getFailureThrowable()` unused) — why the flake stayed undiagnosable. Fix: WARN now logs the
+  cause; `buildExporter` sets RetryPolicy with `setRetryExceptionPredicate(e -> true)` (default
+  bounded backoff 5×/1s→5s; HTTP-status semantics unchanged — at-least-once telemetry: duplicates
+  tolerated, drops are data loss; also fixes silent field span loss). Pinned by OtlpExportRetryTest
+  (raw-socket FlakyOtlpServer kills the first connection after draining the request, 200 on retry)
+  — **mutation-proven** (policy removed → pin fails on the drop). OtlpFlowTraceTest unchanged.
+  **Round 2 (the PR's own first CI run failed the same test — the new cause log immediately
+  named a SECOND class): `InterruptedIOException: executor rejected`** — the sender's managed
+  dispatcher is a zero-queue pool (core=0, SynchronousQueue) whose execute() rejects in
+  full-occupancy races; a rejected call never reaches the interceptor chain, so NO retry policy
+  applies (and retry backoff sleeps widen the race — Eric's side-effect suspicion partially
+  confirmed; yesterday's unlogged failure had the same signature, so possibly an original culprit
+  too). Completion `6f56560b`: exporter runs on its OWN 2-thread unbounded-queue pool
+  (setExecutorService) wrapped in PooledSpanExporter (pool lifecycle tied to exporter — the SDK
+  leaves caller-supplied executors running). Pins mutation-proven: saturation burst (16-wide, all
+  delivered) + thread lifecycle (baseline-RELATIVE — absolute counting would be order-dependent
+  on the forwarder's own threads in the shared JVM). Gates: module 26/26 exit 0.
+  CHANGELOG Unreleased items 1+2. Round 3: Eric's Sonar smells folded (`64387c74` —
+  Utility.sleep in the wait loop, shared OTLP_200 text block with `\r` escapes verified
+  byte-identical to the CRLF concatenation).
+  <!-- id: thread-otlp-export-retry | created: 2026-08-19 | last_used: 2026-08-19 | uses: 1 | tier: working | origin: 2026-08-19-184142 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-08-11, **both repos in lock-step at v4.11.9**; cut
   explicitly FOR FIELD DEPLOYMENT) **v4.11.9 — the dry-run graph identity simplification.** Java: release
