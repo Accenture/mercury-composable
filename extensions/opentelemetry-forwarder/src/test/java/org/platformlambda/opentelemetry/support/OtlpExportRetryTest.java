@@ -26,6 +26,7 @@ import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import org.junit.jupiter.api.Test;
+import org.platformlambda.core.util.Utility;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,6 +35,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +56,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@link OtelForwarderContext#buildExporter} makes this test fail on the first-attempt drop.
  */
 class OtlpExportRetryTest {
+    // HTTP requires CRLF line endings: the \r escapes pair with the text block's own \n
+    private static final String OTLP_200 = """
+            HTTP/1.1 200 OK\r
+            content-type: application/x-protobuf\r
+            content-length: 0\r
+            connection: close\r
+            \r
+            """;
 
     @Test
     void widenedRetryRecoversTheSpanWhenTheServerKillsTheFirstConnection() throws Exception {
@@ -85,7 +95,7 @@ class OtlpExportRetryTest {
         try (HealthyOtlpServer server = new HealthyOtlpServer()) {
             String endpoint = "http://127.0.0.1:" + server.port() + "/v1/traces";
             try (SpanExporter exporter = OtelForwarderContext.buildExporter(endpoint, 10_000, Map.of())) {
-                List<CompletableResultCode> results = new java.util.ArrayList<>();
+                List<CompletableResultCode> results = new ArrayList<>();
                 for (int i = 0; i < 16; i++) {
                     results.add(exporter.export(List.of(sampleSpan())));
                 }
@@ -117,7 +127,7 @@ class OtlpExportRetryTest {
             exporter.close();
             long deadline = System.currentTimeMillis() + 5000;
             while (liveExportThreads() > baseline && System.currentTimeMillis() < deadline) {
-                Thread.sleep(50);
+                Utility.getInstance().sleep(50);
             }
             assertTrue(liveExportThreads() <= baseline,
                     "the export pool must shut down with the exporter (threads leaked)");
@@ -178,10 +188,7 @@ class OtlpExportRetryTest {
                     drainRequest(socket.getInputStream());
                     if (n > 1) {
                         OutputStream out = socket.getOutputStream();
-                        out.write(("HTTP/1.1 200 OK\r\n"
-                                + "content-type: application/x-protobuf\r\n"
-                                + "content-length: 0\r\n"
-                                + "connection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
+                        out.write(OTLP_200.getBytes(StandardCharsets.US_ASCII));
                         out.flush();
                     }
                     // n == 1: close without responding - the deliberate mid-exchange kill
@@ -228,10 +235,7 @@ class OtlpExportRetryTest {
                     drainRequest(socket.getInputStream());
                     requests.incrementAndGet();
                     OutputStream out = socket.getOutputStream();
-                    out.write(("HTTP/1.1 200 OK\r\n"
-                            + "content-type: application/x-protobuf\r\n"
-                            + "content-length: 0\r\n"
-                            + "connection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
+                    out.write(OTLP_200.getBytes(StandardCharsets.US_ASCII));
                     out.flush();
                 } catch (IOException e) {
                     // server socket closed on shutdown, or a client went away - both fine
