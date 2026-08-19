@@ -8,6 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Fixed
+
+1. **The OpenTelemetry forwarder no longer drops a span when a pooled connection dies
+   mid-export.** The OTLP exporter's default retry covers only a whitelist of transport errors
+   (connect/socket timeouts, unknown host, `SocketException`); a keep-alive connection that the
+   collector closed at the moment of reuse surfaces as a plain
+   `IOException: unexpected end of stream`, which failed on the first attempt and silently
+   dropped the span (observed as an occasional CI failure of the flow-summary assertion — and
+   the same drop loses production spans in the field). The exporter now retries **every**
+   `IOException` under the SDK's default bounded backoff (5 attempts, 1s→5s); HTTP status
+   handling is unchanged (retry on 429/502/503/504 only). Telemetry delivery is at-least-once
+   by design: a rare duplicate span is tolerated by every backend, a dropped span is data loss.
+   The export-failure warning now includes the cause, so any future drop is self-diagnosing.
+   Pinned by a raw-socket test that kills the first connection after reading the request —
+   the fixed exporter recovers on the second connection; without the widened retry policy the
+   span is provably lost.
+
+---
 ## Version 4.11.9, 8/11/2026
 
 ### Changed

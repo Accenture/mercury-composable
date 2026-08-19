@@ -22,6 +22,7 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.common.InstrumentationScopeInfo;
+import io.opentelemetry.sdk.common.export.RetryPolicy;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
@@ -81,7 +82,11 @@ public class OtelForwarderContext {
         CompletableResultCode rc = exporter.export(Collections.singletonList(span));
         rc.whenComplete(() -> {
             if (!rc.isSuccess()) {
-                log.warn("OTLP export failed for span {} of trace {}", span.getSpanId(), span.getTraceId());
+                // the cause makes a dropped span diagnosable (a bare "failed" hid the reason
+                // behind an occasional CI flake for weeks)
+                Throwable cause = rc.getFailureThrowable();
+                log.warn("OTLP export failed for span {} of trace {} - {}", span.getSpanId(),
+                        span.getTraceId(), cause == null ? "no cause reported" : cause.toString());
             }
         });
     }
@@ -111,7 +116,15 @@ public class OtelForwarderContext {
                 .setEndpoint(endpoint)
                 .setTimeout(Duration.ofMillis(timeoutMs))
                 .setConnectTimeout(Duration.ofMillis(connectTimeoutMs))
-                .setCompression(encoding);
+                .setCompression(encoding)
+                // The SDK's default retry whitelists only a few IOException types (connect/socket
+                // timeouts, UnknownHost, SocketException); anything else - notably a pooled
+                // keep-alive connection the server closed as we reused it ("unexpected end of
+                // stream") - fails on the FIRST attempt and silently drops the span. Telemetry
+                // delivery is at-least-once by design: duplicates are tolerated, drops are what
+                // hurt, so every IOException is worth the default bounded backoff (5 attempts,
+                // 1s..5s). HTTP status handling is unchanged (retry on 429/502/503/504 only).
+                .setRetryPolicy(RetryPolicy.builder().setRetryExceptionPredicate(e -> true).build());
         headers.forEach(builder::addHeader);
         return builder.build();
     }
