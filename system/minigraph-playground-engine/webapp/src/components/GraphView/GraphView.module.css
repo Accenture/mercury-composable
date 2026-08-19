@@ -84,10 +84,6 @@
   outline: none;
 }
 
-:global(.react-flow__node.selectable.selected .react-flow__resize-control) {
-  display: none;
-}
-
 /*
  * After box-select, React Flow renders a group bounding rectangle spanning the
  * selected nodes. The individual node borders already express selection here;
