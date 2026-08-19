@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-19 | agent: Claude Code (2026-08-19-184142)
+- **last_session:** 2026-08-19 | agent: Claude Code (2026-08-19-195244)
 - **last_review:** 2026-08-14 | through 2026-08-14-005928.md
 - **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
 
@@ -193,6 +193,14 @@
   the version-aware GETDEL/MULTI-EXEC consume strategy in its motivating environment
   (see the closed thread-redis-getdel-compat).
   <!-- id: conv-helpers-docker-less | created: 2026-07-29 | last_used: 2026-08-11 | uses: 9 | tier: active | origin: 2026-07-29-190328 -->
+- **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
+  (Eric's feedback, 2026-08-19).** GitHub pre-fills the dialog with title-plus-body text,
+  and stray words can survive into the immutable commit title — PR #283's squash
+  `1685842c` landed as "…cannot drop a span  Body (#283)" (a leaked "Body" + double
+  space). Trim the pre-filled title to the intended one-liner on every squash; same
+  review moment as the co-author-trailer dedup rule in AGENTS.md.
+  Relates [[thread-otlp-export-retry]].
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-08-19 | uses: 1 | tier: working | origin: 2026-08-19-195244 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
