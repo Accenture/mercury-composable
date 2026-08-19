@@ -22,6 +22,7 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.common.InstrumentationScopeInfo;
+import io.opentelemetry.sdk.common.export.RetryPolicy;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
@@ -33,6 +34,9 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Holds the OTLP exporter, OpenTelemetry {@link Resource} and instrumentation scope used by the
@@ -81,7 +85,11 @@ public class OtelForwarderContext {
         CompletableResultCode rc = exporter.export(Collections.singletonList(span));
         rc.whenComplete(() -> {
             if (!rc.isSuccess()) {
-                log.warn("OTLP export failed for span {} of trace {}", span.getSpanId(), span.getTraceId());
+                // the cause makes a dropped span diagnosable (a bare "failed" hid the reason
+                // behind an occasional CI flake for weeks)
+                Throwable cause = rc.getFailureThrowable();
+                log.warn("OTLP export failed for span {} of trace {} - {}", span.getSpanId(),
+                        span.getTraceId(), cause == null ? "no cause reported" : cause.toString());
             }
         });
     }
@@ -107,13 +115,70 @@ public class OtelForwarderContext {
     public static SpanExporter buildExporter(String endpoint, long timeoutMs, long connectTimeoutMs,
                                              String compression, Map<String, String> headers) {
         String encoding = (compression == null || compression.isBlank()) ? NO_COMPRESSION : compression.trim();
+        // Exports must never be REJECTED at enqueue: the sender's managed dispatcher runs a
+        // zero-queue thread pool (core=0, SynchronousQueue) whose execute() rejects during
+        // transient full-occupancy races - surfaced in CI as InterruptedIOException
+        // "executor rejected", dropping the span before any interceptor (and therefore any
+        // retry policy) could run. A small fixed pool with an UNBOUNDED queue makes
+        // saturation mean "later", never "lost"; the wrapper below ties the pool's lifecycle
+        // to the exporter so a closed exporter leaks no threads.
+        ThreadPoolExecutor pool = new ThreadPoolExecutor(2, 2, 30, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(), OtelForwarderContext::exportThread);
+        pool.allowCoreThreadTimeOut(true);
         var builder = OtlpHttpSpanExporter.builder()
                 .setEndpoint(endpoint)
                 .setTimeout(Duration.ofMillis(timeoutMs))
                 .setConnectTimeout(Duration.ofMillis(connectTimeoutMs))
-                .setCompression(encoding);
+                .setCompression(encoding)
+                .setExecutorService(pool)
+                // The SDK's default retry whitelists only a few IOException types (connect/socket
+                // timeouts, UnknownHost, SocketException); anything else - notably a pooled
+                // keep-alive connection the server closed as we reused it ("unexpected end of
+                // stream") - fails on the FIRST attempt and silently drops the span. Telemetry
+                // delivery is at-least-once by design: duplicates are tolerated, drops are what
+                // hurt, so every IOException is worth the default bounded backoff (5 attempts,
+                // 1s..5s). HTTP status handling is unchanged (retry on 429/502/503/504 only).
+                .setRetryPolicy(RetryPolicy.builder().setRetryExceptionPredicate(e -> true).build());
         headers.forEach(builder::addHeader);
-        return builder.build();
+        return new PooledSpanExporter(builder.build(), pool);
+    }
+
+    private static Thread exportThread(Runnable r) {
+        Thread t = new Thread(r, "otlp-export");
+        t.setDaemon(true);
+        return t;
+    }
+
+    /**
+     * Ties the export thread pool's lifecycle to the exporter: the SDK treats a caller-supplied
+     * {@code ExecutorService} as unmanaged and leaves it running on shutdown, which would leak
+     * two threads per exporter (tests build many). Everything else delegates verbatim.
+     */
+    private static final class PooledSpanExporter implements SpanExporter {
+        private final SpanExporter delegate;
+        private final ThreadPoolExecutor pool;
+
+        private PooledSpanExporter(SpanExporter delegate, ThreadPoolExecutor pool) {
+            this.delegate = delegate;
+            this.pool = pool;
+        }
+
+        @Override
+        public CompletableResultCode export(java.util.Collection<SpanData> spans) {
+            return delegate.export(spans);
+        }
+
+        @Override
+        public CompletableResultCode flush() {
+            return delegate.flush();
+        }
+
+        @Override
+        public CompletableResultCode shutdown() {
+            CompletableResultCode rc = delegate.shutdown();
+            pool.shutdown();
+            return rc;
+        }
     }
 
     /**

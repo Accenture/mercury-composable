@@ -8,6 +8,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Fixed
+
+1. **The OpenTelemetry forwarder no longer drops a span when a pooled connection dies
+   mid-export.** The OTLP exporter's default retry covers only a whitelist of transport errors
+   (connect/socket timeouts, unknown host, `SocketException`); a keep-alive connection that the
+   collector closed at the moment of reuse surfaces as a plain
+   `IOException: unexpected end of stream`, which failed on the first attempt and silently
+   dropped the span (observed as an occasional CI failure of the flow-summary assertion — and
+   the same drop loses production spans in the field). The exporter now retries **every**
+   `IOException` under the SDK's default bounded backoff (5 attempts, 1s→5s); HTTP status
+   handling is unchanged (retry on 429/502/503/504 only). Telemetry delivery is at-least-once
+   by design: a rare duplicate span is tolerated by every backend, a dropped span is data loss.
+   The export-failure warning now includes the cause, so any future drop is self-diagnosing.
+   Pinned by a raw-socket test that kills the first connection after reading the request —
+   the fixed exporter recovers on the second connection; without the widened retry policy the
+   span is provably lost.
+
+2. **The OpenTelemetry forwarder no longer drops a span when the export executor rejects the
+   call.** The very first CI run carrying the new cause-bearing warning exposed a second failure
+   class: `InterruptedIOException: executor rejected` — the sender's managed dispatcher runs a
+   zero-queue thread pool (`core=0`, `SynchronousQueue`) whose `execute()` rejects during
+   transient full-occupancy races, and a rejected call never reaches the retry interceptor, so
+   no retry policy can save it (retrying calls sleeping through backoff also widen that race
+   window). The exporter now runs on its own small fixed pool with an **unbounded queue** —
+   saturation means "later", never "lost" — and the pool's lifecycle is tied to the exporter so
+   a closed exporter leaks no threads. Pinned by a saturation-burst test (a burst far wider than
+   the pool queues and delivers every span) and a thread-lifecycle test (provably no export
+   threads without the owned pool, none leaked after close).
+
+---
 ## Version 4.11.9, 8/11/2026
 
 ### Changed
