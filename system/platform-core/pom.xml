@@ -48,6 +48,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.platformlambda</groupId>
+            <artifactId>platform-contracts</artifactId>
+            <version>4.11.9</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.projectreactor.netty</groupId>
             <artifactId>reactor-netty-http</artifactId>
         </dependency>

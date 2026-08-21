@@ -259,6 +259,17 @@
       "example": "describe skill graph.api.fetcher"
     },
     {
+      "name": "describe contract",
+      "multiline": false,
+      "help": "help describe.md",
+      "syntax": "describe contract {contract-id}",
+      "notes": [
+        "DISCOVERY (read-only): reports the installed Mercury module, purpose, compile-time behavior anchors, and packaged offline references",
+        "stable ids are platform-core, rest-automation, event-script, and minigraph when their providers are installed"
+      ],
+      "example": "describe contract event-script"
+    },
+    {
       "name": "list nodes",
       "multiline": false,
       "help": "help list.md",
@@ -302,6 +313,16 @@
         "DISCOVERY (read-only): enumerates the Event Script flows - valid extension=flow://{flow-id} delegation targets"
       ],
       "example": "list flows"
+    },
+    {
+      "name": "list contracts",
+      "multiline": false,
+      "help": "help list.md",
+      "syntax": "list contracts",
+      "notes": [
+        "DISCOVERY (read-only): enumerates operational contracts contributed by installed Mercury modules"
+      ],
+      "example": "list contracts"
     },
     {
       "name": "seen",
@@ -348,11 +369,12 @@
       "name": "help",
       "multiline": false,
       "help": "help.md",
-      "syntax": "help | help {command} | help {topic} | help {skill-topic}",
+      "syntax": "help | help {command} | help {topic} | help {skill-topic} | help mercury",
       "notes": [
         "prints the engine's shipped help page in-band (same content as 'describe skill {route}' for a skill)",
         "topics are lowercase: commands by name, skills hyphenated (graph-api-fetcher, graph-math), concepts (data-dictionary, session)",
-        "aliases: 'help start' -> 'help instantiate'; 'help clear' -> 'help delete'"
+        "aliases: 'help start' -> 'help instantiate'; 'help clear' -> 'help delete'",
+        "help mercury returns the SKILL.md entrypoint packaged by the installed platform-contracts artifact"
       ],
       "example": "help data-dictionary"
     }

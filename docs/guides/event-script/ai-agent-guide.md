@@ -27,7 +27,8 @@ A flow is not called directly:
 
 1. Write the flow YAML under `src/main/resources/flows/`.
 2. Register its file in the **`flows.yaml`** manifest.
-3. Map an HTTP endpoint to it in **`rest.yaml`** (`flow: {flow-id}`) — or trigger it by event.
+3. Map an HTTP endpoint to it in **`rest.yaml`** (`service: http.flow.adapter` plus
+   `flow: {flow-id}`) — or trigger it by event.
 
 The engine compiles every registered flow at startup; a flow that violates the grammar fails to
 load. So correctness is checkable *before* runtime.

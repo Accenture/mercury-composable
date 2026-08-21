@@ -22,6 +22,42 @@ related:
 >   only *coupling*, not coding style.
 > - **Three layers, one decision tree** — choose the layer before writing code; the DSL guides
 >   below handle each layer's specifics.
+> - **Version-matched contract:** an installed development runtime serves the guide entrypoint,
+>   contract inventory, and behavior anchors; a local Java exporter snapshots them for offline use.
+
+---
+
+## Use the installed operational contract {#operational-contract}
+
+Mercury packages its AI-facing operational contract in the `platform-contracts` artifact. In a
+development MiniGraph session, these read-only commands query the installed modules rather than a
+website or repository checkout:
+
+```text
+help mercury
+list contracts
+describe contract platform-core
+describe contract rest-automation
+describe contract event-script
+describe contract minigraph
+```
+
+The command service is private and registered only when `app.env=dev`. It never exports files.
+To create the complete offline Agent Skill, a local operator runs the one-shot exporter on the
+assembled Mercury classpath and supplies an existing, trusted output root:
+
+```bash
+java -cp "$MERCURY_CLASSPATH" \
+  org.platformlambda.contracts.AgentSkillExportCli /approved/existing/export-root
+```
+
+The exporter atomically reserves only `mercury-platform/` beneath that root and refuses an existing
+target. The snapshot contains `SKILL.md`, the full linked Mercury guide set, immutable
+grammar/catalog references, `security.json`, the installed provider and class-anchor inventory,
+and `manifest.json` with per-file and whole-snapshot SHA-256 hashes. MkDocs includes are expanded
+locally, and the manifest is written last as the publication marker. It uses no model or network.
+Removal is an operator action: verify the manifest hash, remove that exact snapshot, and run a
+clean export; the exporter never overwrites or deletes a published snapshot.
 
 ---
 
@@ -150,14 +186,11 @@ flows:
 location: 'classpath:/flows/'
 ```
 
-Wire to `rest.yaml` with `flow:` instead of `service:`:
+Wire to `rest.yaml` with the flow adapter plus the flow id. This canonical fixture also shows the
+function and HTTP relay forms, and is loaded through the production REST router in tests:
 
 ```yaml
-rest:
-  - flow: "my-flow"
-    methods: ['POST']
-    url: "/api/my-flow-endpoint"
-    timeout: 10s
+--8<-- "contracts/src/main/resources/mercury/agent-skill/references/fixtures/rest-bindings.yaml"
 ```
 
 See [Event Script AI agent guide](event-script/ai-agent-guide.md) for the full flow grammar and

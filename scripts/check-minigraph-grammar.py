@@ -11,6 +11,8 @@ Checks (deterministic, stdlib only):
      (catches a NEW skill added to the engine but missing from the spec);
   4. every catalog skill route is registered in the engine source (route="graph.*")
      (catches a renamed/removed route).
+  5. the three read-only Mercury contract commands stay synchronized across the Java
+     dispatcher, command catalog, shipped help, and web autocomplete source.
 
 Exit 0 = in sync; exit 1 = drift (with details). Run from anywhere:
     python3 scripts/check-minigraph-grammar.py [--root PATH]
@@ -24,6 +26,13 @@ from pathlib import Path
 ENGINE = "system/minigraph-playground-engine"
 HELP_REL = f"{ENGINE}/src/main/resources/help"
 CATALOG_REL = "docs/guides/knowledge-graph/minigraph-commands.json"
+SUGGESTIONS_REL = f"{ENGINE}/webapp/src/utils/commandSuggestions.ts"
+COMMAND_SERVICE_REL = f"{ENGINE}/src/main/java/com/accenture/minigraph/services/GraphCommandService.java"
+CONTRACT_COMMANDS = {
+    "help mercury": "help.md",
+    "list contracts": "help list.md",
+    "describe contract {contract-id}": "help describe.md",
+}
 
 
 def help_file_to_route(name: str) -> str:
@@ -79,6 +88,26 @@ def main() -> int:
     for route in sorted(catalog_routes):
         if route not in src_routes:
             errors.append(f"catalog skill route '{route}' not found in engine source (route=\"...\")")
+
+    # 5: read-only Mercury contract command parity
+    catalog_commands = {item.get("syntax"): item.get("help") for item in catalog.get("commands", [])}
+    suggestions = (root / SUGGESTIONS_REL).read_text(errors="ignore")
+    command_service = (root / COMMAND_SERVICE_REL).read_text(errors="ignore")
+    for syntax, help_file in CONTRACT_COMMANDS.items():
+        if syntax == "help mercury":
+            help_syntax = catalog_commands.get(
+                "help | help {command} | help {topic} | help {skill-topic} | help mercury", "")
+            if help_syntax != "help.md":
+                errors.append("catalog generic help command does not include 'help mercury'")
+        elif catalog_commands.get(syntax) != help_file:
+            errors.append(f"catalog command '{syntax}' must reference '{help_file}'")
+        template = syntax.replace("{contract-id}", "{contract-id}")
+        if f"template: '{template}'" not in suggestions:
+            errors.append(f"web autocomplete is missing '{template}'")
+    for token in ('equalsIgnoreCase("mercury")', 'equalsIgnoreCase("contracts")',
+                  'equalsIgnoreCase("contract")', "MercuryContractCommands.ROUTE"):
+        if token not in command_service:
+            errors.append(f"GraphCommandService is missing contract dispatch token: {token}")
 
     n_cmd = len(catalog.get("commands", []))
     n_skill = len(catalog_routes)

@@ -30,6 +30,10 @@ describe('resolveBundledHelpTopic', () => {
     expect(resolveBundledHelpTopic('help missing-topic-xyz', true)).toBeNull();
   });
 
+  it('sends help mercury to the version-matched backend contract service', () => {
+    expect(resolveBundledHelpTopic('help mercury', true)).toBeNull();
+  });
+
   it('returns null for a describe command', () => {
     expect(resolveBundledHelpTopic('describe graph', true)).toBeNull();
   });

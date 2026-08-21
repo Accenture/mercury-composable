@@ -22,6 +22,41 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0015 — Mercury serves one operational contract through modular providers {#adr-0015}
+**Status:** Accepted · **Date:** 2026-08-20 · **Serves:** vision-mercury-composable · **Formalizes:** thread-docs-improvement-backlog
+<!-- id: adr-0015 | status: accepted -->
+
+**Abstract.** Mercury owns one version-matched operational contract under a first-class
+`contracts/` Maven module. That artifact contains the canonical Agent Skill entrypoint,
+the full linked Mercury guide set under a fixed offline reference inventory, a pure-Java
+deterministic exporter, and the provider contract used by installed runtime modules. There is one product command service; modules
+contribute providers with stable contract ids and compile-time class anchors rather than
+creating separate command services or relying on source-code discovery. MiniGraph's existing
+command surface is the first read-only frontend and keeps its vocabulary: `help mercury`,
+`list contracts`, and `describe contract {id}`. Filesystem export is deliberately excluded
+from the companion-reachable command service and provided by a one-shot local Java entrypoint.
+The exporter produces one `mercury-platform` skill and uses no LLM or network input. It
+atomically reserves the final directory, creates content without replacement, and creates
+the verified manifest last through a same-filesystem no-replace hard link as the publication
+commit marker; this preserves the stronger
+no-overwrite invariant that an atomic directory move cannot portably guarantee.
+
+**Rationale.** A flow-backed REST example drifted from the production contract because the
+overview and the runtime behavior had no shared release artifact or declared ownership anchor.
+The rejected design attempted to repair that with six generated skills, repository-wide corpus
+classification, a live AI operator, and transactional projection machinery. That made the
+documentation pipeline another platform to operate. A runtime-served contract follows Mercury's
+existing MiniGraph help pattern and the Orca precedent: the installed product supplies the guide
+that matches the behavior it will execute. Explicit providers make ownership reviewable and
+compilation-sensitive, while one command service gives agents a single discovery point. Keeping
+that surface read-only avoids turning MiniGraph's companion endpoint into a filesystem authority.
+An offline exporter remains necessary because the consuming agent may have neither the Mercury
+repository nor network access. Packaging the linked guide closure keeps progressive reference
+loading complete without making `docs/llms.txt` or a network fetch authoritative. Exclusive
+directory reservation plus a manifest-last commit marker makes incomplete output detectable and
+prevents concurrent publication from replacing pre-existing bytes. Release-asset publication is
+deferred until a downstream pack chooses a distribution channel.
+
 ## ADR-0014 — Generic exception context: one handler serves every `exception=` route {#adr-0014}
 **Status:** Proposed · **Date:** 2026-08-10 · **Serves:** vision-mercury-composable · **Formalizes:** thread-field-graph-scoped-state-and-error-context
 <!-- id: adr-0014 | status: proposed -->

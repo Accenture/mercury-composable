@@ -83,6 +83,12 @@ Subscriptions are managed from WebSocket-connected sessions only.
 
 ## Generate deterministically {#deterministic}
 
+Before authoring, use `help mercury`, `list contracts`, and
+`describe contract minigraph` to inspect the version-matched MiniGraph contract and its behavior
+anchors. These commands are read-only and use Mercury's private development command service. Skill
+export is deliberately not a companion command; the local `platform-contracts` Java exporter owns
+that operator action.
+
 1. **Use the grammar as source of truth** — [`command-reference.md`](command-reference.md) for the
    rules, [`minigraph-commands.json`](minigraph-commands.json) to look up a command's exact syntax,
    params, and allowed values. Do not infer syntax from a single example.

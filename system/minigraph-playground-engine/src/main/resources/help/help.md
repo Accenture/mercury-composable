@@ -32,6 +32,7 @@ For graph model
 - help describe (graph, node, connection or skill)
 - help data-dictionary
 - help session (display, subscribe or reset session)
+- help mercury (version-matched Mercury operational contracts)
 
 For instance model
 ------------------

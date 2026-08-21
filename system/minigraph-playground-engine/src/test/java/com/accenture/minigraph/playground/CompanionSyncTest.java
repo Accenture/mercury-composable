@@ -111,6 +111,39 @@ class CompanionSyncTest {
         }
     }
 
+    @Test
+    void companionProvidesReadOnlyMercuryContractDiscovery() throws Exception {
+        var po = EventEmitter.getInstance();
+        var sid = "ws-990015-2";
+        var inRoute = "ws.990015.2.in";
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", inRoute)));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        assertTrue(GraphCommandService.hasSession(sid), "session must exist before contract discovery");
+
+        var help = syncCommand(po, sid, "help mercury");
+        assertEquals(Boolean.TRUE, help.get("ok"), "help mercury must be read-only and available");
+        assertTrue(String.valueOf(help.get("output")).contains("# Mercury Platform"));
+
+        var listed = syncCommand(po, sid, "list contracts");
+        assertEquals(Boolean.TRUE, listed.get("ok"));
+        var listing = String.valueOf(listed.get("output"));
+        assertTrue(listing.contains("platform-core - "));
+        assertTrue(listing.contains("rest-automation - "));
+        assertTrue(listing.contains("event-script - "));
+        assertTrue(listing.contains("minigraph - "));
+
+        var described = syncCommand(po, sid, "describe contract minigraph");
+        assertEquals(Boolean.TRUE, described.get("ok"));
+        assertTrue(String.valueOf(described.get("output")).contains("GraphCommandService"));
+
+        var prohibited = syncCommand(po, sid, "export skill as snapshot");
+        assertEquals(Boolean.FALSE, prohibited.get("ok"),
+                "the companion surface must not expose filesystem skill export");
+    }
+
     /**
      * A traversal ({@code run}) is asynchronous - the handler replies before the traveler streams
      * its output. The sync response must carry the WHOLE traversal, drained on the traveler's

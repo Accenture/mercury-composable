@@ -74,6 +74,8 @@ export const COMMAND_QUICKSTART: QuickstartEntry[] = [
     template: 'list nodes' },
   { keyword: 'list connections',  description: 'List all connections in the current graph',
     template: 'list connections' },
+  { keyword: 'list contracts',    description: 'List installed Mercury operational contracts',
+    template: 'list contracts' },
   { keyword: 'describe graph',    description: 'Describe the current graph model',
     template: 'describe graph' },
   { keyword: 'describe node',     description: 'Describe a specific node and its connections',
@@ -82,6 +84,8 @@ export const COMMAND_QUICKSTART: QuickstartEntry[] = [
     template: 'describe connection {nodeA} and {nodeB}' },
   { keyword: 'describe skill',    description: 'Show documentation for a skill by route name',
     template: 'describe skill {skill.route}' },
+  { keyword: 'describe contract', description: 'Describe an installed Mercury operational contract',
+    template: 'describe contract {contract-id}' },
   { keyword: 'export',            description: 'Export the graph model to a JSON file',
     template: 'export graph as {name}' },
   { keyword: 'import graph',      description: 'Import a graph model from a saved file',
@@ -145,6 +149,11 @@ export const COMMAND_SUGGESTIONS: CommandSuggestion[] = [
     tokens:   ['help', 'describe'],
     template: 'help describe',
     hint:     'Help: describe graph / node / connection / skill',
+  },
+  {
+    tokens:   ['help', 'mercury'],
+    template: 'help mercury',
+    hint:     'Help: installed Mercury operational contracts',
   },
   {
     tokens:   ['help', 'export'],
@@ -251,6 +260,11 @@ export const COMMAND_SUGGESTIONS: CommandSuggestion[] = [
     template: 'list connections',
     hint:     'List all connections in the current graph',
   },
+  {
+    tokens:   ['list', 'contracts'],
+    template: 'list contracts',
+    hint:     'List installed Mercury operational contracts',
+  },
 
   // ── describe ────────────────────────────────────────────────────────────
   {
@@ -272,6 +286,11 @@ export const COMMAND_SUGGESTIONS: CommandSuggestion[] = [
     tokens:   ['describe', 'skill'],
     template: 'describe skill {skill.route.name}',
     hint:     'Show documentation for a skill',
+  },
+  {
+    tokens:   ['describe', 'contract'],
+    template: 'describe contract {contract-id}',
+    hint:     'Describe an installed Mercury operational contract',
   },
   // Built-in skill shortcuts for "describe skill <route>"
   ...BUILTIN_SKILLS.map(skill => ({

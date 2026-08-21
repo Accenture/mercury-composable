@@ -1,0 +1,18 @@
+rest:
+  - service: 'agent.skill.rest.function'
+    methods: ['GET']
+    url: '/api/agent-skills/rest/function/{id}'
+    timeout: 10s
+
+  - service: 'http.flow.adapter'
+    flow: 'agent-skill-rest-flow'
+    methods: ['POST']
+    url: '/api/agent-skills/rest/flow'
+    timeout: 30s
+
+  - service: 'https://example.org'
+    methods: ['GET']
+    url: '/api/agent-skills/rest/relay'
+    url_rewrite: ['/api/agent-skills/rest/relay', '/upstream']
+    timeout: 20s
+    tracing: true

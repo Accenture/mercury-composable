@@ -13,6 +13,7 @@
 
     <modules>
         <!-- Core libraries -->
+        <module>contracts</module>
         <module>system/platform-core</module>
         <module>system/rest-spring-3</module>
         <module>system/rest-spring-4</module>

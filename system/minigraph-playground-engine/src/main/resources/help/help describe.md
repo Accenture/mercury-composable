@@ -1,5 +1,5 @@
-Describe graph, node, connection or skill
------------------------------------------
+Describe graph, node, connection, skill or Mercury contract
+-----------------------------------------------------------
 
 Syntax
 ------
@@ -25,4 +25,10 @@ Skill description of a specific composable function
 ---------------------------------------------------
 ```
 describe skill {skill.route.name}
+```
+
+Describe an installed Mercury operational contract
+--------------------------------------------------
+```
+describe contract {contract-id}
 ```

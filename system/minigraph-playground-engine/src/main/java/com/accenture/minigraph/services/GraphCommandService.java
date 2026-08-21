@@ -27,6 +27,7 @@ import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.models.GraphSession;
 import com.accenture.models.Flows;
 import com.jayway.jsonpath.InvalidPathException;
+import org.platformlambda.contracts.MercuryContractCommands;
 import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.graph.MiniGraph;
@@ -65,6 +66,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final String TOTAL = "Total ";
     private static final String INVALID_GRAPH_NAME = "Invalid filename - must be a-z, A-Z, 0-9 with optional hyphen";
     private static final String SESSION_TAG = "Session ";
+    private static final long PLATFORM_COMMAND_TIMEOUT = 5000L;
     private static final long EXPIRY = 20 * 1000L;
     private static final String[] MAPPING_PROPERTIES = {"mapping", "input", "output", "for_each"};
     private static final SimpleTypeMatchingConverter converter = SimpleTypeMatchingConverter.getInstance();
@@ -235,7 +237,9 @@ public class GraphCommandService extends GraphLambdaFunction {
         var words = getWords(command);
         var echo = "> " + command;
         po.send(new EventEnvelope().setTo(outRoute).setBody(echo));
-        if (!words.isEmpty() && words.getFirst().equalsIgnoreCase(HELP)) {
+        if (isMercuryCommand(words)) {
+            handleMercuryCommand(po, outRoute, command);
+        } else if (!words.isEmpty() && words.getFirst().equalsIgnoreCase(HELP)) {
             var helpText = getHelp(words);
             po.send(new EventEnvelope().setTo(outRoute).setBody(
                     Objects.requireNonNullElseGet(helpText, () -> "'" + command + "'"+NOT_FOUND)));
@@ -250,6 +254,47 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else {
             handleCommandPartTwo(po, inRoute, outRoute, words);
         }
+    }
+
+    private boolean isMercuryCommand(List<String> words) {
+        return words.size() == 2
+                && ((words.getFirst().equalsIgnoreCase(HELP) && words.get(1).equalsIgnoreCase("mercury"))
+                || (words.getFirst().equalsIgnoreCase("list") && words.get(1).equalsIgnoreCase("contracts")))
+                || words.size() == 3
+                && words.getFirst().equalsIgnoreCase("describe")
+                && words.get(1).equalsIgnoreCase("contract");
+    }
+
+    private void handleMercuryCommand(PostOffice po, String outRoute, String command) {
+        if (!Platform.getInstance().hasRoute(MercuryContractCommands.ROUTE)) {
+            sendContractFailure(po, outRoute);
+            return;
+        }
+        try {
+            var response = po.request(new EventEnvelope()
+                    .setTo(MercuryContractCommands.ROUTE)
+                    .setBody(command), PLATFORM_COMMAND_TIMEOUT).get();
+            if (response.hasError() || !(response.getBody() instanceof Map<?, ?> result)) {
+                sendContractFailure(po, outRoute);
+                return;
+            }
+            var ok = Boolean.TRUE.equals(result.get("ok"));
+            var code = result.get("code") instanceof String text ? text : "CONTRACT_VERSION_MISMATCH";
+            var output = result.get("output") instanceof String text
+                    ? text : "Installed contract providers are incompatible";
+            po.send(new EventEnvelope().setTo(outRoute)
+                    .setBody(ok ? output : "ERROR " + code + ": " + output));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            sendContractFailure(po, outRoute);
+        } catch (Exception e) {
+            sendContractFailure(po, outRoute);
+        }
+    }
+
+    private void sendContractFailure(PostOffice po, String outRoute) {
+        po.send(new EventEnvelope().setTo(outRoute).setBody(
+                "ERROR CONTRACT_VERSION_MISMATCH: Installed contract providers are incompatible"));
     }
 
     private List<String> getWords(String command) {

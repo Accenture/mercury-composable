@@ -240,10 +240,12 @@ describe graph {graph-id}        # DISCOVERY: a deployed model's contract view
 describe node {name}
 describe connection {node-a} and {node-b}
 describe skill {skill.route}     # prints the shipped help for a skill
+describe contract {contract-id}  # installed Mercury operational contract
 list nodes
 list connections
 list graphs                      # DISCOVERY: deployable graph models (extension= targets)
 list flows                       # DISCOVERY: Event Script flows (extension=flow:// targets)
+list contracts                   # DISCOVERY: installed Mercury operational contracts
 seen                             # nodes visited in the last run
 ```
 
@@ -255,6 +257,11 @@ reads as living documentation. `list flows` enumerates the Event Script flows fo
 **contract view** — its purpose, size, and the `input.*` / `output.*` data surface derived
 from the model's own mappings — so an agent can wire the delegation's `input[]`/`output[]`
 without out-of-band knowledge or trial execution.
+
+`list contracts` and `describe contract {contract-id}` query Mercury's version-matched
+operational-contract service. Installed modules contribute stable contract ids and compile-time
+behavior anchors. Use `help mercury` for the contract vocabulary. This surface is read-only;
+skill export is a separate local Java operator action, not a companion command.
 
 ### export / import {#export}
 
@@ -295,6 +302,7 @@ help                       # overview
 help {command}             # e.g. help connect, help instantiate
 help {topic}               # e.g. help data-dictionary, help session
 help {skill-topic}         # hyphenated skill form: help graph-api-fetcher, help graph-math
+help mercury               # installed Mercury operational contract
 ```
 
 - Aliases: `help start` → `help instantiate`; `help clear` → `help delete`.
