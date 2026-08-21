@@ -220,16 +220,21 @@ class ObjectStreamTest extends TestBase {
     @Test
     void eventPublisherExpiryTest() throws InterruptedException {
         final long timeToLive = 1000;
+        // the publisher never publishes anything so its TTL is the only possible outcome.
+        // The consumer attaches immediately and waits - no sleep margin - so the test is
+        // deterministic no matter how late the expiry timer fires on a loaded machine.
         EventPublisher publisher = new EventPublisher(timeToLive);
-        Utility.getInstance().sleep(1100);
         final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         final List<Object> messages = new ArrayList<>();
-        FluxConsumer<String> fc = new FluxConsumer<>(publisher.getStreamId(), timeToLive);
+        // consumer patience must be much larger than the publisher TTL so the consumer sees
+        // the publisher-side "Event stream expired" and not its own "Consumer expired"
+        // (expiryTest covers the inverse case where the consumer expires first)
+        FluxConsumer<String> fc = new FluxConsumer<>(publisher.getStreamId(), 10000);
         fc.consume(messages::add, e -> {
             messages.add(e);
             bench.add(false);
         }, () -> bench.add(true));
-        Object signal = bench.poll(5, TimeUnit.SECONDS);
+        Object signal = bench.poll(15, TimeUnit.SECONDS);
         assertEquals(false, signal);
         assertEquals(1, messages.size());
         assertInstanceOf(AppException.class, messages.getFirst());
@@ -241,21 +246,22 @@ class ObjectStreamTest extends TestBase {
     @Test
     void fluxPublisherExpiryTest() throws InterruptedException {
         final long timeToLive = 1000;
-        Flux<String> source = Flux.create(emitter -> {
-            emitter.next("hello world");
-            emitter.complete();
-        });
-        FluxPublisher<String> publisher = new FluxPublisher<>(source, timeToLive);
-        Utility.getInstance().sleep(1100);
+        // a Flux that never emits or completes: the publisher's TTL must expire the stream
+        // and dispose the subscription. The consumer attaches immediately and waits - no
+        // sleep margin - so the test is deterministic no matter how late the expiry timer
+        // fires on a loaded machine. (A source that completes would cancel the expiry timer.)
+        FluxPublisher<String> publisher = new FluxPublisher<>(Flux.never(), timeToLive);
         String streamId = publisher.publish();
         final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         final List<Object> messages = new ArrayList<>();
-        FluxConsumer<String> fc = new FluxConsumer<>(streamId, timeToLive);
+        // consumer patience must be much larger than the publisher TTL so the consumer sees
+        // the publisher-side "Event stream expired" and not its own "Consumer expired"
+        FluxConsumer<String> fc = new FluxConsumer<>(streamId, 10000);
         fc.consume(messages::add, e -> {
             messages.add(e);
             bench.add(false);
         }, () -> bench.add(true));
-        Object signal = bench.poll(5, TimeUnit.SECONDS);
+        Object signal = bench.poll(15, TimeUnit.SECONDS);
         assertEquals(false, signal);
         assertEquals(1, messages.size());
         assertInstanceOf(AppException.class, messages.getFirst());
