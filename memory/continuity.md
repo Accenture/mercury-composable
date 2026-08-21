@@ -18,9 +18,9 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-19 | agent: Claude Code (2026-08-19-195244)
-- **last_review:** 2026-08-14 | through 2026-08-14-005928.md
-- **last_invariant_check:** 2026-07-27 | 2026-07-27-215011.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; thread-reverify-invariants-2026q2 closed)
+- **last_session:** 2026-08-21 | agent: Claude Code (2026-08-21-005515)
+- **last_review:** 2026-08-21 | through 2026-08-21-005515.md
+- **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (cadence 48 ≥ 40 — re-verify PROMPTED, not yet confirmed: see the open Re-verify invariants thread; prior full confirmation 2026-07-27 by Eric)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
 > environment, carrying forward only the confirmed Vision + Blueprint and the
@@ -64,19 +64,6 @@
 
 ## Key Decisions
 
-- **Release 4.8.1 — SHIPPED 2026-07-11 (tag `v4.8.1` on `3d226c5b`; PRs #159-#161).** Durable
-  facts: (1) **SimpleRandomPartitioner is minimalist-kafka's producer DEFAULT** (`putIfAbsent` in
-  KafkaClientConfig — a template's own `partitioner.class` wins; explicit `partition` header
-  bypasses; keyed records keep murmur2); Kafka's sticky default starves multi-instance consumer
-  groups at low volume. (2) **CryptoApi DSA methods REMOVED.** (3) Release-bump sweep = 32 poms;
-  coverage aggregate 85.8% line / 80.0% Sonar-combined — field Sonar should exclude `benchmark/**`.
-  (4) **Flow-authoring conventions:** the engine does NOT auto-convert a Map into a byte[]-typed
-  function — use `f:binary(model.x) -> *` (`:binary` colon shorthand DEPRECATED); set
-  `text(application/json) -> output.header.content-type` on flow HTTP responses. (5) **No version
-  strings in pom comments** — history belongs in the CHANGELOG. Full detail: origin log.
-  See [[release-4-8-0-shipped]].
-  <!-- id: release-4-8-1-shipped | created: 2026-07-11 | last_used: 2026-08-07 | uses: 13 | tier: archive-candidate | origin: 2026-07-12-002326 -->
-
 - **Graph workflow suspension: short runs + external state store, encapsulated in skills
   (design ratified by Eric 2026-07-28). (ADR-0010)** A human checkpoint = persist
   {cid, node, ttl, model minus reserved keys, seen, run} via `skill=graph.suspend` and complete
@@ -93,7 +80,7 @@
   survive); cid = resume capability (auth resume endpoints); no graph.extension crossing. Store:
   Redis = extensions/minigraph-state-redis imported by apps, NEVER the engine. Delivered by
   [[thread-graph-suspend-resume]]; serves [[bp-graph-workflow-suspension]].
-  <!-- id: graph-suspend-resume-design | created: 2026-07-29 | last_used: 2026-08-11 | uses: 14 | tier: active | origin: 2026-07-29-010343 -->
+  <!-- id: graph-suspend-resume-design | created: 2026-07-29 | last_used: 2026-08-11 | uses: 14 | tier: archive-candidate | origin: 2026-07-29-010343 -->
 
 - **CompileGraph is the MANDATORY deployment gate for graph models — CompileFlows parity
   (Eric's rulings 2026-07-29; ADR-0011 ACCEPTED via the PR #240 merge, squash `4348b0da`).**
@@ -107,7 +94,7 @@
   playground `run` pre-run check — also the landing pad for
   [[thread-compilegraph-syntax-validation]]. Hot-dropping JSON into the deploy folder no longer
   executes (deployment = explicit act). Full detail: origin log.
-  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-08-11 | uses: 10 | tier: active | origin: 2026-07-29-190328 -->
+  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-08-11 | uses: 10 | tier: archive-candidate | origin: 2026-07-29-190328 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -166,7 +153,7 @@
   **Scope extension: the Event Script surface is part of the cross-engine contract** — flows are
   engine-portable YAML, so any new built-in simple plugin ships in lock-step on both engines (with
   closely matching error messages), or flows stop being portable.
-  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-08-11 | uses: 22 | tier: active | origin: 2026-07-23-145132 -->
+  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-08-19 | uses: 23 | tier: active | origin: 2026-07-23-145132 -->
 
 - **graph.js is slated for eventual phase-out in favor of graph.task (Eric, 2026-07-31),
   and the Rust port does not carry it at all.** The skill is troublesome by nature — it is
@@ -178,7 +165,7 @@
   loops); **graph.js work is never a Rust lock-step item** — the Rust validator's
   deadline-skill set legitimately names three skills where Java names four.
   Relates [[thread-task-ttl-override]].
-  <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-08-10 | uses: 5 | tier: active | origin: 2026-08-01-035647 -->
+  <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-08-10 | uses: 5 | tier: archive-candidate | origin: 2026-08-01-035647 -->
 
 - **The `helpers/` standalone servers exist for Docker-less developer machines and are
   the standard local test servers for Rust ports (Eric, 2026-07-29).** They embed REAL
@@ -192,7 +179,7 @@
   `java -jar`), reported by the field alongside the v4.11.2 rollout; this also validates
   the version-aware GETDEL/MULTI-EXEC consume strategy in its motivating environment
   (see the closed thread-redis-getdel-compat).
-  <!-- id: conv-helpers-docker-less | created: 2026-07-29 | last_used: 2026-08-11 | uses: 9 | tier: active | origin: 2026-07-29-190328 -->
+  <!-- id: conv-helpers-docker-less | created: 2026-07-29 | last_used: 2026-08-11 | uses: 9 | tier: archive-candidate | origin: 2026-07-29-190328 -->
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
   (Eric's feedback, 2026-08-19).** GitHub pre-fills the dialog with title-plus-body text,
   and stray words can survive into the immutable commit title — PR #283's squash
@@ -216,10 +203,21 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-14 | uses: 2 | tier: working -->
 ## Open Threads
 
-- [ ] **(memory-health) Post-review continuity holds 34 decay-eligible facts above the
+- [ ] **Re-verify invariants (due):** confirm stack-language-java21, stack-build-maven,
+  stack-integration-spring, stack-messaging-kafka, stack-ci-gha, functions-decoupled-routes,
+  typed-io-map-or-pojo, virtual-threads-rpc, trace-thread-keyed-mono-gotcha,
+  instant-serialization, kafka-mesh-opt-in, event-script-over-code, conv-add-capability,
+  conv-serialization-gotchas, and the Vision (`memory/vision.md`) still hold, or supersede any
+  that do not (`DECAY.md` §9). Raised by the 2026-08-21 review (48 sessions since the 2026-07-27
+  full confirmation ≥ verify_invariants_every 40).
+  <!-- id: ot-reverify-invariants-20260821 | created: 2026-08-21 | last_used: 2026-08-21 | uses: 1 | tier: working | origin: 2026-08-21-005515 -->
+
+- [x] **(memory-health) Post-review continuity holds 34 decay-eligible facts above the
   configured cap of 30.** The 2026-08-14 review archived every item beyond the 20-session
   window; the remainder is recent or still live. Decide whether to condense recent completed
   threads as they age or raise `continuity_max_facts` for this mature multi-module reactor.
+  **Resolved by aging (2026-08-21 review):** 7 facts crossed the 20-session window and archived
+  normally — decay-eligible now 29 ≤ 30, with neither condensing nor a cap raise needed.
   <!-- id: memory-health-fact-cap-2026-08-14 | created: 2026-08-14 | last_used: 2026-08-14 | uses: 1 | tier: working | origin: 2026-08-14-005928 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-08-10 local / 2026-08-11 UTC, **both repos in
@@ -232,7 +230,7 @@
   (CHANGELOG notes v4.11.7 was Java-only), 58/305 + clippy + fmt, tag on the merge,
   dereference-verified. Sole content: [[thread-dry-run-graph-scope-fix]] (Java PR #278 /
   Rust PR #204). Both GitHub releases PUBLISHED by Eric 2026-08-10.
-  <!-- id: thread-release-4-11-8 | created: 2026-08-11 | last_used: 2026-08-11 | uses: 2 | tier: active | origin: 2026-08-11-051612 -->
+  <!-- id: thread-release-4-11-8 | created: 2026-08-11 | last_used: 2026-08-11 | uses: 2 | tier: archive-candidate | origin: 2026-08-11-051612 -->
 
 - [x] (fix — **MERGED 2026-08-19 as
   [PR #283](https://github.com/Accenture/mercury-composable/pull/283), squash `1685842c`
@@ -266,7 +264,7 @@
   CHANGELOG Unreleased items 1+2. Round 3: Eric's Sonar smells folded (`64387c74` —
   Utility.sleep in the wait loop, shared OTLP_200 text block with `\r` escapes verified
   byte-identical to the CRLF concatenation).
-  <!-- id: thread-otlp-export-retry | created: 2026-08-19 | last_used: 2026-08-19 | uses: 1 | tier: working | origin: 2026-08-19-184142 -->
+  <!-- id: thread-otlp-export-retry | created: 2026-08-19 | last_used: 2026-08-19 | uses: 2 | tier: active | origin: 2026-08-19-184142 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-08-11, **both repos in lock-step at v4.11.9**; cut
   explicitly FOR FIELD DEPLOYMENT) **v4.11.9 — the dry-run graph identity simplification.** Java: release
@@ -279,7 +277,7 @@
   artifacts** (redis-standalone + playground, real WS sessions) covering BOTH paths — tutorial-14's
   four-run named workflow (fresh → resume ×3 → "shipped") and a nameless draft suspending to
   `graph:untitled:{cid}`, resuming on a second instantiation, record consumed.
-  <!-- id: thread-release-4-11-9 | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: working | origin: 2026-08-11-220600 -->
+  <!-- id: thread-release-4-11-9 | created: 2026-08-11 | last_used: 2026-08-19 | uses: 2 | tier: active | origin: 2026-08-11-220600 -->
 
 - [x] (fix — **MERGED ON BOTH ENGINES 2026-08-11, all CI green; rides the next release.**
   Java [PR #280](https://github.com/Accenture/mercury-composable/pull/280) squash `68cd9d28`
@@ -305,7 +303,7 @@
   call SITES** — 12 graph-building `syncCommand` calls collapsed into ONE loop over a command list
   took the test from 28 to 22. Gates: engine 118/118; Rust 58/305 + clippy 0 + fmt clean.
   Relates [[thread-dry-run-graph-scope-fix]], [[graph-suspend-resume-design]].
-  <!-- id: thread-untitled-dry-run-identity | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: working | origin: 2026-08-11-220600 -->
+  <!-- id: thread-untitled-dry-run-identity | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: archive-candidate | origin: 2026-08-11-220600 -->
 
 - [x] (fix — **MERGED ON BOTH ENGINES 2026-08-11, all CI green; rides the next release.**
   Java [PR #278](https://github.com/Accenture/mercury-composable/pull/278) squash
@@ -334,7 +332,7 @@
   module 12/12, Rust 58/305 + clippy 0 + fmt clean.
   Relates [[thread-field-graph-scoped-state-and-error-context]], [[graph-suspend-resume-design]],
   [[thread-release-4-11-7]].
-  <!-- id: thread-dry-run-graph-scope-fix | created: 2026-08-11 | last_used: 2026-08-11 | uses: 2 | tier: active | origin: 2026-08-11-051612 -->
+  <!-- id: thread-dry-run-graph-scope-fix | created: 2026-08-11 | last_used: 2026-08-11 | uses: 2 | tier: archive-candidate | origin: 2026-08-11-051612 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-08-10 local / 2026-08-11 UTC, **Java only — minimalist-kafka
   has no Rust counterpart by design; Rust stays at v4.11.6**) **v4.11.7 — the KIP-848
@@ -343,7 +341,7 @@
   (tree verified identical to the gated `f2856085`), CI green (7m27s), 33-pom sweep, full
   reactor as the gate, tag `v4.11.7` dereference-verified on the squash. Sole content:
   [[thread-kafka-kip848-auto]] (PR #276). GitHub release PUBLISHED by Eric 2026-08-10.
-  <!-- id: thread-release-4-11-7 | created: 2026-08-11 | last_used: 2026-08-11 | uses: 2 | tier: active | origin: 2026-08-11-024542 -->
+  <!-- id: thread-release-4-11-7 | created: 2026-08-11 | last_used: 2026-08-11 | uses: 2 | tier: archive-candidate | origin: 2026-08-11-024542 -->
 
 - [x] (feature — **MERGED 2026-08-11 as
   [PR #276](https://github.com/Accenture/mercury-composable/pull/276), squash `f709e168`
@@ -377,7 +375,7 @@
   guide #rebalance-protocol section, twin-kafka per-cluster note, template comment block,
   CHANGELOG Unreleased. Relates [[thread-kafka-consumer-resilience]],
   [[thread-redis-getdel-compat]] (the detect-once pattern), [[thread-release-4-11-2]].
-  <!-- id: thread-kafka-kip848-auto | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: working | origin: 2026-08-11-024542 -->
+  <!-- id: thread-kafka-kip848-auto | created: 2026-08-11 | last_used: 2026-08-11 | uses: 1 | tier: archive-candidate | origin: 2026-08-11-024542 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-08-10, **both repos in lock-step at
   v4.11.6**) **v4.11.6 — the field-review follow-ups release, out the same day as the
@@ -394,7 +392,7 @@
   orchestrator → dynamic-vars (item 3 references the handler item 1 introduces).
   Both GitHub releases PUBLISHED by Eric 2026-08-10 (notes lead with the BREAKING
   upgrade note).
-  <!-- id: thread-release-4-11-6 | created: 2026-08-10 | last_used: 2026-08-10 | uses: 1 | tier: active | origin: 2026-08-10-223319 -->
+  <!-- id: thread-release-4-11-6 | created: 2026-08-10 | last_used: 2026-08-10 | uses: 1 | tier: archive-candidate | origin: 2026-08-10-223319 -->
 
 - [x] (feature+fix — **COMPLETE ON BOTH ENGINES 2026-08-08, all CI green; rides the
   next release.** Java: [PR #267](https://github.com/Accenture/mercury-composable/pull/267)
@@ -433,7 +431,7 @@
   HTTP client by configuration vs mock.mdm.profile; HelloTask (v1.hello.task) retired.
   Module 105/105, webapp 212/212. Relates [[conv-telemetry-presentation-parity]],
   [[compilegraph-mandatory-gate]].
-  <!-- id: thread-graph-task-model-staging | created: 2026-08-08 | last_used: 2026-08-10 | uses: 2 | tier: active | origin: 2026-08-09-025009 -->
+  <!-- id: thread-graph-task-model-staging | created: 2026-08-08 | last_used: 2026-08-10 | uses: 2 | tier: archive-candidate | origin: 2026-08-09-025009 -->
 
 - [x] (release — SHIPPED 2026-08-09, **both repos in lock-step at v4.11.5**) **v4.11.5 —
   the graph.task parity + teaching-surfaces release, out a day ahead of the field
@@ -478,7 +476,7 @@
   305 tests + clippy + fmt (fmt verified by real exit code — a piped `head` masked the
   first check; fmt belongs in the local gate line). Eric's cosmetics folded (S125-safe
   comment quoting ×3 files + 'safe point').
-  <!-- id: thread-dynamic-statement-targets | created: 2026-08-10 | last_used: 2026-08-10 | uses: 1 | tier: active | origin: 2026-08-10-223319 -->
+  <!-- id: thread-dynamic-statement-targets | created: 2026-08-10 | last_used: 2026-08-10 | uses: 1 | tier: archive-candidate | origin: 2026-08-10-223319 -->
 
 - [x] (feature — **COMPLETE ON BOTH ENGINES 2026-08-10, same day as the field review;
   both ride the next release.** Java: feature
@@ -516,7 +514,7 @@
   store green (both consume strategies), webapp 212/212, full reactor exit 0.
   Relates [[graph-suspend-resume-design]], [[thread-suspend-resume-rationalization]],
   [[thread-graph-suspend-resume]].
-  <!-- id: thread-field-graph-scoped-state-and-error-context | created: 2026-08-10 | last_used: 2026-08-11 | uses: 3 | tier: active | origin: 2026-08-10-180744 -->
+  <!-- id: thread-field-graph-scoped-state-and-error-context | created: 2026-08-10 | last_used: 2026-08-11 | uses: 3 | tier: archive-candidate | origin: 2026-08-10-180744 -->
 
 - [x] (field validation — **CLOSED 2026-08-10: the review WENT WELL.** The team demoed a
   complex multi-suspension use case built in a short time on checkpoint-only v4.11.x —
@@ -528,20 +526,7 @@
   2026-08-10** — the second team whose pain report drove the re-design evaluates whether
   edge/jump modes address their concerns; Eric reports back with their inputs.
   Relates [[thread-suspend-resume-rationalization]], [[thread-release-4-11-4]].
-  <!-- id: thread-field-review-rationalization | created: 2026-08-08 | last_used: 2026-08-10 | uses: 2 | tier: active | origin: 2026-08-08-022929 -->
-
-- [x] (release — SHIPPED AND PUBLISHED 2026-08-08, **both repos in lock-step at
-  v4.11.4**) **v4.11.4 — the suspend/resume rationalization release.** Java: release
-  [PR #266](https://github.com/Accenture/mercury-composable/pull/266), squash
-  `ad60f7e4`, CI green, 33-pom sweep, tag on the verified squash, full reactor green
-  (6:18) as the sole gate (Eric's ruling: no live kafka-demo regression — the
-  minimalist-kafka delta is test-only + one comment). Rust: release PR #196, merge
-  `27c2cc8e`, workspace 4.11.1→4.11.4 (CHANGELOG notes 4.11.2/4.11.3 were Java-only),
-  58 suites green, tag on the verified merge. Contents:
-  [[thread-suspend-resume-rationalization]] (ADR-0012/ADR-0011) + the S5778/S125 field
-  Sonar fixes riding toward the field rescan
-  ([[thread-sonar-4-11-x-field-round-3]]).
-  <!-- id: thread-release-4-11-4 | created: 2026-08-08 | last_used: 2026-08-08 | uses: 1 | tier: archive-candidate | origin: 2026-08-08-022929 -->
+  <!-- id: thread-field-review-rationalization | created: 2026-08-08 | last_used: 2026-08-10 | uses: 2 | tier: archive-candidate | origin: 2026-08-08-022929 -->
 
 - [x] (design+feature — **RATIFIED by Eric 2026-08-07 (R1-R7; R2 refined by Eric);
   Java half MERGED same day as
@@ -576,7 +561,7 @@
   Includes ADR-0012 proposal partially superseding ADR-0010's suspensible vocabulary.
   Rust lock-step required; field-core regression-critical surface.
   Relates [[graph-suspend-resume-design]], [[thread-tutorial-14-decision]].
-  <!-- id: thread-suspend-resume-rationalization | created: 2026-08-07 | last_used: 2026-08-10 | uses: 4 | tier: active | origin: 2026-08-07-225034 -->
+  <!-- id: thread-suspend-resume-rationalization | created: 2026-08-07 | last_used: 2026-08-10 | uses: 4 | tier: archive-candidate | origin: 2026-08-07-225034 -->
 
 - [x] (feature — **COMPLETE ON BOTH ENGINES 2026-08-07**: Java MERGED as
   [PR #263](https://github.com/Accenture/mercury-composable/pull/263), squash `0c3e7618`,
@@ -600,7 +585,7 @@
   byte-identical across engines); the suspend-on-routing-skill error TEACHES at all four
   enforcement sites. E2E: three outcomes + loop stability pinned on both engines.
   Relates [[thread-graph-suspend-resume]], [[graph-suspend-resume-design]].
-  <!-- id: thread-tutorial-14-decision | created: 2026-08-07 | last_used: 2026-08-10 | uses: 4 | tier: active | origin: 2026-08-07-142823 -->
+  <!-- id: thread-tutorial-14-decision | created: 2026-08-07 | last_used: 2026-08-10 | uses: 4 | tier: archive-candidate | origin: 2026-08-07-142823 -->
 
 - [x] (release — SHIPPED 2026-08-07, **Java only — no Rust-ported surface touched; Rust
   stays at 4.11.1**) **v4.11.3 — the field support roll-up.**
@@ -652,47 +637,7 @@
   the `schema.registry.serde.*` pass-through. 171/171 module tests, JaCoCo gate met; new
   "Consumer liveness" guide section; CHANGELOG Unreleased. Repo wording generic.
   Remaining: Eric's PR gate; no Rust lock-step (module is Java-only by design).
-  <!-- id: thread-kafka-consumer-resilience | created: 2026-08-07 | last_used: 2026-08-11 | uses: 3 | tier: active | origin: 2026-08-07-003746 -->
-
-- [x] (feature — **COMPLETE ON BOTH ENGINES: Rust half shipped 2026-08-01 in
-  mercury PR #191 + release PR #192, tag v4.11.1 — see session 2026-08-02-013842;
-  the x-ttl budget derivation (32-bit parse, ceil-to-seconds) is a pinned wire
-  contract on both engines.** Java half MERGED 2026-07-31 as
-  [PR #250](https://github.com/Accenture/mercury-composable/pull/250), squash
-  `8191ab1c`, CI green (Build & Unit Tests 7m27s)** — four branch commits squashed:
-  feature + review-1 hardening + deadline-cleanup round + the x-ttl ruling; event-script
-  185/185, minigraph 98/98, platform-core 425/425, full reactor green; **remaining: the
-  Rust lock-step half** — handoff at /tmp/task-ttl-override-rust-handoff.md, sections
-  1-7, zero open questions; the suspend/resume-adjacent deadline surface is
-  regression-critical field-core on both engines)
-  **Task-level ttl override: catchable child timeouts (field report) + the deadline
-  cleanup round.** TTL propagation copies the parent's FULL ttl with a restarted timer →
-  the parent always expires first and its own timeout is uncatchable. Ratified:
-  propagation stays the default; per-task `ttl` (duration, < flow.ttl, flow:// tasks
-  only, runtime WARN) + per-node `ttl` on graph.extension/api.fetcher/task (suspend
-  grammar; suspend's own ttl = store expiry, distinct) → a shorter child deadline makes
-  the child's 408 CATCHABLE → budgeted retries (proven live). **Model metadata
-  (model.{cid,instance,flow,ttl,trace,parent,root,none,run}) is IMMUTABLE in the graph
-  engine at both layers** — gate + pre-run check (incl. MAPPING: statement lines) +
-  the shared runtime guard on all four model-writing paths. **Cleanup round (Eric's four
-  rulings 2026-07-31): delay now defers sub-flow launches** (cancelled at flow teardown —
-  orphaned-launch fix); **dry-run run-level watcher at model.ttl** (exactly-one-terminal
-  CAS arbitration, owner-tagged watcher slot, companion drain sized past the deadline +
-  drain-timeout = ok=false); **fetcher stamps x-ttl** (wire read-timeout = deadline+1s);
-  **graph.js deadline via sticky GraalVM close(true) on a virtual thread, default 5s**
-  (NOT model.ttl — scripts are simple computation; node ttl overrides; run-level error,
-  not exception=-routable). Adversarial round 2: 16 confirmed findings fixed — durable
-  GraalVM lessons: interrupt is non-destructive + gap-consumable (sticky close(true) is
-  the correct watchdog) and interrupt(Duration.ZERO) BLOCKS indefinitely (never on an
-  event loop). **Eric's ruling (2026-07-31): x-ttl deadline propagation is a FEATURE —
-  keep and document.** A Mercury caller's deadline propagates end-to-end (ingress honors
-  inbound x-ttl over rest.yaml timeout); documented in the rest.yaml timeout grammar row,
-  fetcher docs and CHANGELOG; both stamp branches pinned by wire-echo tests ("7000" node
-  ttl / "30000" propagated model.ttl). Residual
-  (pre-existing, recorded): overlapping runs share session instance state (late-callback
-  bleed). Spec: draft-design-specs/task-ttl-override.md (gitignored). Full detail:
-  origin log + session 2026-08-01-035647.
-  <!-- id: thread-task-ttl-override | created: 2026-08-01 | last_used: 2026-08-02 | uses: 4 | tier: archive-candidate | origin: 2026-08-01-022358 -->
+  <!-- id: thread-kafka-consumer-resilience | created: 2026-08-07 | last_used: 2026-08-11 | uses: 3 | tier: archive-candidate | origin: 2026-08-07-003746 -->
 
 - [x] (field support — **COMPLETE ON BOTH ENGINES: Rust half shipped 2026-08-01 in
   mercury PR #191 (fallback proven on the wire: contiguous MULTI/GET/DEL/EXEC in the
@@ -716,7 +661,7 @@
   lib.rs:131; handoff ready at /tmp/redis-getdel-compat-rust-handoff.md) — the
   suspend/resume surface is regression-critical field-core on both engines.**
   Relates [[graph-suspend-resume-design]], [[conv-helpers-docker-less]].
-  <!-- id: thread-redis-getdel-compat | created: 2026-07-31 | last_used: 2026-08-11 | uses: 6 | tier: active | origin: 2026-07-31-180131 -->
+  <!-- id: thread-redis-getdel-compat | created: 2026-07-31 | last_used: 2026-08-11 | uses: 6 | tier: archive-candidate | origin: 2026-07-31-180131 -->
 
 - [x] (feature — design RATIFIED 2026-07-30; **MERGED same day as
   [PR #246](https://github.com/Accenture/mercury-composable/pull/246), squash `268e5ff6`, CI
@@ -757,7 +702,7 @@
   content-based partitioning pattern (selector function → explicit partition header,
   docs `8ed23f34`) APPROVED for field use 2026-07-31.**
   Relates [[thread-redis-kafka-rpc]].
-  <!-- id: thread-kafka-2nd-level-routing | created: 2026-07-30 | last_used: 2026-08-11 | uses: 9 | tier: active | origin: 2026-07-30-233623 -->
+  <!-- id: thread-kafka-2nd-level-routing | created: 2026-07-30 | last_used: 2026-08-11 | uses: 9 | tier: archive-candidate | origin: 2026-07-30-233623 -->
 
 - [ ] (observation — surfaced 2026-07-30 by the second-level-routing code study;
   pre-existing, separate from that feature) **Header-casing mismatch: mixed-case Kafka
@@ -795,53 +740,7 @@
   publish-orders.js "off-by-one" was a capture artifact (prompt glue + an output
   filter), NOT a script bug — both publishers now suppress the prompt on non-TTY
   stdin. Full detail: origin log.
-  <!-- id: thread-release-4-11-2 | created: 2026-08-03 | last_used: 2026-08-11 | uses: 4 | tier: active | origin: 2026-08-03-155225 -->
-
-- [x] (release — SHIPPED 2026-08-01, **Java only — the first Java-ahead-of-Rust release
-  since the 4.8.x line, deliberate**) **v4.11.1 — the second-level routing + deadline
-  release.** [PR #252](https://github.com/Accenture/mercury-composable/pull/252), squash
-  `410e03bb`, CI green, tag on the verified squash commit. Consolidates: second-level
-  routing + JSON serde symmetry (#246) with the kafka-demo template (#247/#249, Eric
-  field-tested); Redis GETDEL compat (#248); task-ttl override + model-metadata
-  immutability + deadline cleanup (#250); Sonar polish (#251). 33-pom sweep clean, no
-  substring hazards; prep catch: a broad `git add` staged the local `.interop-mercury`
-  dev symlink — amended out and gitignored. **Rust stays at 4.11.0 until the two
-  lock-step halves land** (GETDEL + task-ttl/deadline, handoffs final in /tmp);
-  second-level routing is Java-only by design (no minimalist-kafka Rust port — the
-  grammar is the future port's contract). Rust 4.11.1 ships when the lock-step session
-  runs. Full detail: origin log.
-  <!-- id: thread-release-4-11-1 | created: 2026-08-01 | last_used: 2026-08-03 | uses: 2 | tier: archive-candidate | origin: 2026-08-01-230946 -->
-
-- [x] (feature — COMPLETE across P1-P5, both engines) **Graph suspend/resume: workflow suspension
-  for the Active Knowledge Graph.** Design: [[graph-suspend-resume-design]] (ADR-0010). Delivery:
-  **P1-P4 MERGED 2026-07-28 as [PR #238](https://github.com/Accenture/mercury-composable/pull/238)**
-  (squash `168527ff`; ADR-0010 accepted via the merge; Eric drove three manual-test refinement
-  rounds — business-cid fidelity via the my_cid tag, tutorial-14 as a THREE-checkpoint purchase
-  workflow, span lineage via worker-thread eRequest in the four Mono-wrapped skills).
-  **Production-polish round MERGED 2026-07-29 as
-  [PR #240](https://github.com/Accenture/mercury-composable/pull/240)** (squash `4348b0da`;
-  ADR-0011 accepted — [[compilegraph-mandatory-gate]]; four-lens adversarial sweep, 15 findings
-  fixed incl. the reserved-key strip on restore so a forged store record cannot overwrite
-  model.cid; `model.run` joined the reserved flow-metadata family). **P5 Rust lock-step arc
-  MERGED 2026-07-30 as mercury PR #186** (five commits; 296 tests/clippy 0; Java-side 5-lens
-  consistency review: 22 findings incl. 4 blockers — composite-path forged-record bypass, missing
-  instantiate auto-cid, walker seen-marking race, RESERVED_PARAMETERS missing 'suspend' — all
-  fixed; live drive vs redis-standalone matched the Java reply contract byte-for-byte; reciprocal
-  Java putAll-immunity pin merged via #242). Both engines carry the IDENTICAL surface; released
-  in v4.11.0 ([[thread-release-4-11-0]]). Full detail: sessions 2026-07-29-003528,
-  2026-07-29-190328, 2026-07-30-030533.
-  <!-- id: thread-graph-suspend-resume | created: 2026-07-28 | last_used: 2026-08-07 | uses: 10 | tier: archive-candidate | origin: 2026-07-29-003528 -->
-
-- [x] (field support — CLOSED 2026-07-26: **field rescan of v4.10.6 PASSED the Sonar gate with a
-  perfect Overall-Code score** — 0/0/0/0, coverage 80.5%) **v4.10.4 failed the field Sonar quality
-  gate — 5 findings, fixed and released as v4.10.6** (fix PR #231 merge `c7d05d83`, release PR
-  #232 merge `2a940250`; Copilot authored, Claude Code reviewed line-by-line + prepared the
-  release, Eric gated every step). Findings: 2× S125 (prose comments ending in a stray semicolon
-  pattern-match as commented-out code) + 3× S3776 (cognitive complexity — helper extraction,
-  behavior-preserving). Verified by full reactor + a live Java-to-Java Event-over-HTTP interop
-  drive targeting the three refactored trace/cid classes. Arc shape: rejection → fix → release →
-  clean rescan (the [[thread-sonar-4-9-1-field-rejection]] shape). Full detail: origin log.
-  <!-- id: thread-sonar-4-10-4-field-rejection | created: 2026-07-25 | last_used: 2026-08-07 | uses: 3 | tier: archive-candidate | origin: 2026-07-25-005125 -->
+  <!-- id: thread-release-4-11-2 | created: 2026-08-03 | last_used: 2026-08-11 | uses: 4 | tier: archive-candidate | origin: 2026-08-03-155225 -->
 
 - [x] (release — CLOSED 2026-07-23) **v4.10.2 SHIPPED in lock-step** — metadata contract (#221),
   temporary.inbox alignment (Rust #171), team-contributed collection plugins
@@ -918,15 +817,6 @@
   `GraphModelValidator` ([[compilegraph-mandatory-gate]]).
   <!-- id: thread-compilegraph-syntax-validation | created: 2026-07-02 | last_used: 2026-07-29 | uses: 4 | tier: working | origin: 2026-07-02-004606 -->
 
-- [x] (planned — **CLOSED 2026-08-03: executed by the v4.11.2 release**, which gained a CVE
-  driver after all — see [[thread-release-4-11-2]]; all poms now pin 4.3.1, validated by the
-  full reactor + embedded KRaft broker + a live kafka-demo drive) **Upgrade `kafka.version`
-  (4.2.0 → 4.3.x) across the 24 pom.xml files that pin it.** Deferred alongside the
-  `confluent.version` 8.2.0→8.3.0 bump — see [[minimalist-kafka-confluent-8-3-0]]. Scope when
-  picked up: verify kafka-clients 4.3.x + the embedded KRaft broker behavioral compatibility
-  across all 24 files — a materially larger test surface than a serializer-library bump.
-  <!-- id: thread-kafka-client-version-upgrade | created: 2026-07-01 | last_used: 2026-08-03 | uses: 2 | tier: archive-candidate | origin: 2026-07-01-230246 -->
-
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
   build for the multi-module project.
@@ -952,7 +842,7 @@
   - **Drive an Event Script flow programmatically** (`FlowExecutor.request(...)`) + the synthetic
     `task.executor` flow-summary span.
   → serves `vision-mercury-composable`. Full detail: sessions of 2026-06-24.
-  <!-- id: thread-docs-improvement-backlog | created: 2026-06-24 | last_used: 2026-07-20 | uses: 4 | tier: working -->
+  <!-- id: thread-docs-improvement-backlog | created: 2026-06-24 | last_used: 2026-08-19 | uses: 5 | tier: working -->
 - [ ] (next iteration — Eric, 2026-06-24; **design + implement**) **Cross-pod request-response via
   Redis Pub/Sub RPC + Kafka** — a distributed sync-over-async pattern (advanced opt-in, cf.
   `kafka-mesh-opt-in`): REST sync request → POD-1 → Kafka outbound; Kafka inbound (response) →
