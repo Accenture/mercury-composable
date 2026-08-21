@@ -22,6 +22,9 @@ related:
 >   only *coupling*, not coding style.
 > - **Three layers, one decision tree** — choose the layer before writing code; the DSL guides
 >   below handle each layer's specifics.
+> - **Version-matched discovery:** a running `ai-contract-provider` app (port 8999) serves
+>   this guide set and the operational contract for the installed Mercury release — start
+>   with `GET /api/discovery`. The same app exports the offline `mercury-platform` Agent Skill.
 
 ---
 

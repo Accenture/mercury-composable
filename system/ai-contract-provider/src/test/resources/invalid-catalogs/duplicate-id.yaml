@@ -1,0 +1,11 @@
+contracts:
+  - id: 'platform-core'
+    module: 'platform-core'
+    summary: 'First declaration'
+    anchors: ['java.lang.String']
+    references: ['references/index.md']
+  - id: 'platform-core'
+    module: 'platform-core'
+    summary: 'Duplicate declaration'
+    anchors: ['java.lang.String']
+    references: ['references/index.md']

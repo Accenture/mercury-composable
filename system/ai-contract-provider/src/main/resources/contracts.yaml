@@ -1,0 +1,56 @@
+#
+# Mercury operational contract catalog.
+#
+# Each contract names the behavior anchor classes that implement it. The anchors are
+# verified by ContractCatalogTest with Class.forName (MiniGraph classes resolve through
+# a test-scope dependency), so a renamed or removed behavior class fails the reactor
+# build - the catalog cannot drift from the code it describes.
+#
+# Every reference must be a member of the packaged skill inventory (files.list),
+# also asserted by tests.
+#
+contracts:
+  - id: 'platform-core'
+    module: 'platform-core'
+    summary: 'Composable functions, EventEnvelope messages, and PostOffice routing'
+    anchors:
+      - 'org.platformlambda.core.system.AppStarter'
+      - 'org.platformlambda.core.system.PostOffice'
+      - 'org.platformlambda.core.models.EventEnvelope'
+    references:
+      - 'references/guides/ai-developer-guide.md'
+      - 'references/guides/event-driven/ai-agent-guide.md'
+
+  - id: 'rest-automation'
+    module: 'platform-core'
+    summary: 'REST automation routes, flow bindings, relays, headers, and CORS'
+    anchors:
+      - 'org.platformlambda.automation.config.RoutingEntry'
+    references:
+      - 'references/guides/rest-automation/ai-agent-guide.md'
+      - 'references/guides/rest-automation/rest-grammar.md'
+      - 'references/guides/rest-automation/rest-automation.json'
+      - 'references/fixtures/rest-bindings.yaml'
+
+  - id: 'event-script'
+    module: 'event-script-engine'
+    summary: 'Event Script flow YAML, data mapping, execution, and compilation rules'
+    anchors:
+      - 'com.accenture.automation.CompileFlows'
+    references:
+      - 'references/guides/event-script/ai-agent-guide.md'
+      - 'references/guides/event-script/flow-grammar.md'
+      - 'references/guides/event-script/event-script-flow.json'
+
+  - id: 'minigraph'
+    module: 'minigraph-playground-engine'
+    summary: 'MiniGraph models, skills, commands, validation, and compilation rules'
+    anchors:
+      - 'com.accenture.minigraph.services.GraphCommandService'
+      - 'com.accenture.minigraph.start.CompileGraph'
+      - 'com.accenture.minigraph.common.GraphModelValidator'
+    references:
+      - 'references/guides/knowledge-graph/ai-agent-guide.md'
+      - 'references/guides/knowledge-graph/command-reference.md'
+      - 'references/guides/knowledge-graph/minigraph-commands.json'
+      - 'references/guides/knowledge-graph/skills-reference.md'

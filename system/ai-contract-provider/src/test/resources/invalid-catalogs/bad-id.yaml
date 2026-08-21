@@ -1,0 +1,6 @@
+contracts:
+  - id: 'Bad_ID!'
+    module: 'platform-core'
+    summary: 'Invalid id characters'
+    anchors: ['java.lang.String']
+    references: ['references/index.md']

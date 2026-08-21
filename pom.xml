@@ -21,6 +21,7 @@
         <module>system/mini-scheduler</module>
         <module>system/minimalist-kafka</module>
         <module>system/twin-kafka</module>
+        <module>system/ai-contract-provider</module>
 
         <!-- Extensions -->
         <module>extensions/reactive-postgres</module>

@@ -22,6 +22,38 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0015 — AI discovery is a standalone composable app, not a runtime dependency {#adr-0015}
+**Status:** Proposed · **Date:** 2026-08-21 · **Serves:** vision-mercury-composable · **Formalizes:** thread-ai-contract-provider
+<!-- id: adr-0015 | status: proposed -->
+
+**Abstract.** Mercury serves a version-matched operational contract for AI agents from a
+standalone composable app, `system/ai-contract-provider`: read-only REST discovery endpoints
+(port 8999) wired `rest.yaml` → Event Script flow → function, plus a local `--export` mode
+that writes the offline `mercury-platform` Agent Skill with a hash manifest written last.
+The dependency arrow points **into** the app — it depends on platform-core and
+event-script-engine; no framework module depends on it, and no framework module changes.
+Contract claims live in one `contracts.yaml` catalog whose behavior anchor classes are
+resolved by `Class.forName` in the module's tests (MiniGraph anchors through a test-scope
+dependency), so a renamed behavior class fails the reactor build. The served
+`mercury_version` is read from the platform-core dependency's own `pom.properties`, and
+startup refuses a mixed framework assembly.
+
+**Rationale.** The motivating defect was documentation drift: the guides taught a
+`rest.yaml` flow binding (`flow:` without `service:`) that the production `RoutingEntry`
+parser rejects, and nothing tied the docs to the runtime. An earlier design packaged the
+contract as a library that platform-core, event-script-engine, and the playground engine
+all depended on, with ServiceLoader providers and playground chat commands. That inverted
+the dependency graph (the lean core acquired a docs artifact), broke in Spring Boot
+packaging (CodeSource-based resource reads), and leaked a Java-only command surface into
+the playground webapp and command catalog that the Rust engine also ships — a cross-engine
+parity break. A standalone app keeps the framework untouched, reads resources only through
+the classloader (packaging-independent), keeps discovery off the shared playground surface
+(no Rust lock-step obligation — the REST API itself is the portable contract), and is
+itself a reference implementation of the composable pattern it documents. Since all
+Mercury modules release together under one version, a build-verified static catalog gives
+the same drift guarantee as runtime provider discovery with far less machinery; filesystem
+export stays a local operator action rather than a remote capability.
+
 ## ADR-0014 — Generic exception context: one handler serves every `exception=` route {#adr-0014}
 **Status:** Proposed · **Date:** 2026-08-10 · **Serves:** vision-mercury-composable · **Formalizes:** thread-field-graph-scoped-state-and-error-context
 <!-- id: adr-0014 | status: proposed -->
