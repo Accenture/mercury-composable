@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-21 | agent: Claude Code (2026-08-21-195149)
+- **last_session:** 2026-08-21 | agent: Claude Code (2026-08-21-204921)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -243,7 +243,13 @@
   the way was the pre-existing ObjectStreamTest expiry flake — root-caused and fixed
   same-day by a parallel session as PR #287 ([[thread-objectstream-expiry-test-determinism]]).
   Superseded PR #284 left OPEN+CONFLICTING (collides with #285's guide rewrites by design)
-  — close unmerged, Eric/Eu Gene's click.)
+  — close unmerged, Eric/Eu Gene's click. **Post-merge Sonar round (Eric's IDE review)
+  MERGED 2026-08-21 as [PR #288](https://github.com/Accenture/mercury-composable/pull/288)
+  squash `4011ff23` (tree == gated `478ad98c`), CI green 7m44s — his annotation cleanup
+  (dropped attributes ARE the @PreLoad defaults; functions stay private) + fixes:
+  SkillSnapshot field case-clash rename + validateLinks CC via helper extraction;
+  ContractCatalog possessive-quantifier anchor regex + Comparator.comparing;
+  AiContractProvider S2142 re-interrupt + distinct log messages. Module 18/18.**)
   **AI discovery re-implemented as a standalone composable app after a
   colleague's PR #284 was reviewed and rejected** (review delivered in chat; two
   live-proven findings — `help mercury` broke under spring-boot nested-jar packaging via
