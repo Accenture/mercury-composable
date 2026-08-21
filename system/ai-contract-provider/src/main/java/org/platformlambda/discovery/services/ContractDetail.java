@@ -26,7 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /** Describe one installed contract: behavior anchors and packaged references. */
-@PreLoad(route = "v1.contract.detail", instances = 10, isPrivate = true)
+@PreLoad(route = "v1.contract.detail", instances = 10)
 public class ContractDetail implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
 
     @Override

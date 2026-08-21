@@ -28,7 +28,7 @@ import java.util.Map;
  * references/guides/event-script/flow-grammar.md). There is no path arithmetic to get
  * wrong: anything that is not an exact member of the snapshot is HTTP-404.
  */
-@PreLoad(route = "v1.reference.reader", instances = 10, isPrivate = true)
+@PreLoad(route = "v1.reference.reader", instances = 10)
 public class ReferenceReader implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
 
     @Override
