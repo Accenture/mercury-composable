@@ -1973,6 +1973,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0015" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0015 — AI discovery is a standalone composable app, not a runtime dependency
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0014" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2617,6 +2628,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0015" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0015 — AI discovery is a standalone composable app, not a runtime dependency
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0014" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2809,6 +2831,36 @@ governing the codebase — verified against the source (<code>platform-core</cod
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
 <hr />
+<h2 id="adr-0015">ADR-0015 — AI discovery is a standalone composable app, not a runtime dependency<a class="headerlink" href="#adr-0015" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-21 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> thread-ai-contract-provider</p>
+<!-- id: adr-0015 | status: proposed -->
+
+<p><strong>Abstract.</strong> Mercury serves a version-matched operational contract for AI agents from a
+standalone composable app, <code>system/ai-contract-provider</code>: read-only REST discovery endpoints
+(port 8999) wired <code>rest.yaml</code> → Event Script flow → function, plus a local <code>--export</code> mode
+that writes the offline <code>mercury-platform</code> Agent Skill with a hash manifest written last.
+The dependency arrow points <strong>into</strong> the app — it depends on platform-core and
+event-script-engine; no framework module depends on it, and no framework module changes.
+Contract claims live in one <code>contracts.yaml</code> catalog whose behavior anchor classes are
+resolved by <code>Class.forName</code> in the module's tests (MiniGraph anchors through a test-scope
+dependency), so a renamed behavior class fails the reactor build. The served
+<code>mercury_version</code> is read from the platform-core dependency's own <code>pom.properties</code>, and
+startup refuses a mixed framework assembly.</p>
+<p><strong>Rationale.</strong> The motivating defect was documentation drift: the guides taught a
+<code>rest.yaml</code> flow binding (<code>flow:</code> without <code>service:</code>) that the production <code>RoutingEntry</code>
+parser rejects, and nothing tied the docs to the runtime. An earlier design packaged the
+contract as a library that platform-core, event-script-engine, and the playground engine
+all depended on, with ServiceLoader providers and playground chat commands. That inverted
+the dependency graph (the lean core acquired a docs artifact), broke in Spring Boot
+packaging (CodeSource-based resource reads), and leaked a Java-only command surface into
+the playground webapp and command catalog that the Rust engine also ships — a cross-engine
+parity break. A standalone app keeps the framework untouched, reads resources only through
+the classloader (packaging-independent), keeps discovery off the shared playground surface
+(no Rust lock-step obligation — the REST API itself is the portable contract), and is
+itself a reference implementation of the composable pattern it documents. Since all
+Mercury modules release together under one version, a build-verified static catalog gives
+the same drift guarantee as runtime provider discovery with far less machinery; filesystem
+export stays a local operator action rather than a remote capability.</p>
 <h2 id="adr-0014">ADR-0014 — Generic exception context: one handler serves every <code>exception=</code> route<a class="headerlink" href="#adr-0014" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-10 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> thread-field-graph-scoped-state-and-error-context</p>
 <!-- id: adr-0014 | status: proposed -->
