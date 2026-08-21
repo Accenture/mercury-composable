@@ -20,7 +20,7 @@
 - **last_enabled:** 2026-06-20
 - **last_session:** 2026-08-21 | agent: Claude Code (2026-08-21-005515)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
-- **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (cadence 48 ≥ 40 — re-verify PROMPTED, not yet confirmed: see the open Re-verify invariants thread; prior full confirmation 2026-07-27 by Eric)
+- **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
 > environment, carrying forward only the confirmed Vision + Blueprint and the
@@ -39,7 +39,10 @@
   <!-- id: stack-build-maven | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - Integration: Spring Boot (rest-spring-3 / -4 modules)
   <!-- id: stack-integration-spring | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
-- Messaging: Kafka connectors; MsgPack wire serialization; customized Gson
+- Messaging: Kafka — the connector/presence pair (`connectors/adapters/kafka/`) plus the
+  grown family: `system/twin-kafka`, `system/minimalist-kafka`, `helpers/kafka-standalone`
+  (+ demos); MsgPack wire serialization; customized Gson. (Wording refreshed 2026-08-21 at
+  invariant re-verify — substance unchanged.)
   <!-- id: stack-messaging-kafka | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - CI: GitHub Actions (`.github/workflows/`)
   <!-- id: stack-ci-gha | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -203,13 +206,20 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-14 | uses: 2 | tier: working -->
 ## Open Threads
 
-- [ ] **Re-verify invariants (due):** confirm stack-language-java21, stack-build-maven,
+- [x] **Re-verify invariants (due):** confirm stack-language-java21, stack-build-maven,
   stack-integration-spring, stack-messaging-kafka, stack-ci-gha, functions-decoupled-routes,
   typed-io-map-or-pojo, virtual-threads-rpc, trace-thread-keyed-mono-gotcha,
   instant-serialization, kafka-mesh-opt-in, event-script-over-code, conv-add-capability,
   conv-serialization-gotchas, and the Vision (`memory/vision.md`) still hold, or supersede any
   that do not (`DECAY.md` §9). Raised by the 2026-08-21 review (48 sessions since the 2026-07-27
-  full confirmation ≥ verify_invariants_every 40).
+  full confirmation ≥ verify_invariants_every 40). **CLOSED same day: all 15 confirmed by Eric**
+  via a one-by-one walkthrough with live-tree evidence (Java 21 pom property; 30-module reactor
+  with the Gradle rider still open; rest-spring-3/-4; the Kafka family + MsgPack/Gson; 3 GHA
+  workflows; EventEnvelope + 300+ flow YAMLs; `inputPojoClass` ×6 files; virtual threads ×18
+  files; `applyTraceContext` + both WorkerHandlerTest guards; Instant in MsgPack + SimpleMapper;
+  Platform.java's `"none"` connector default; event-script-engine TaskExecutor; `@PreLoad` ×173;
+  `str2int` live). One enrichment: stack-messaging-kafka wording refreshed (grown family); no
+  supersessions.
   <!-- id: ot-reverify-invariants-20260821 | created: 2026-08-21 | last_used: 2026-08-21 | uses: 1 | tier: working | origin: 2026-08-21-005515 -->
 
 - [x] **(memory-health) Post-review continuity holds 34 decay-eligible facts above the
