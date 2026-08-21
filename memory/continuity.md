@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-21 | agent: Claude Code (2026-08-21-005515)
+- **last_session:** 2026-08-21 | agent: Claude Code (2026-08-21-195149)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -205,6 +205,26 @@
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-14 | uses: 2 | tier: working -->
 ## Open Threads
+
+- [ ] (fix — test-only; on worktree branch `claude/compassionate-wing-aa6098`, platform-core
+  gate green 426/426; **awaiting Eric's commit/PR gate, not pushed**) **ObjectStreamTest
+  expiry tests made deterministic — the PR #286 CI flake was a designed-in race.**
+  The 408 "Event stream expired" comes from a per-publisher one-shot Vert.x timer (NOT the
+  30s ObjectStreamIO housekeeper, which only CLOSEs idle streams), and
+  `FluxPublisher.publish()`'s `doFinally` CANCELS that timer on flux completion — so the old
+  shape (ttl=1000, sleep(1100), publish an instantly-completing flux) raced a 100ms margin:
+  late timer → publish cancels it → normal completion (CI signature "expected: <false> but
+  was: <true>"; mechanism proven locally by shrinking the sleep to 800ms). Rewrite (both
+  sleep-margin siblings, fluxPublisherExpiryTest + eventPublisherExpiryTest): no sleep — the
+  consumer attaches immediately and waits; the source never delivers (`Flux.never()` /
+  never-publishing EventPublisher); consumer patience 10s ≫ publisher ttl 1s so a broken
+  build fails with a crisp message mismatch ("Consumer expired"), never a silent pass. Flux
+  variant now also exercises the timer's mid-flight dispose branch (previously unreachable).
+  **Mutation-proven**: each timer body neutralized → its test fails at the message assert.
+  expiryTest/CacheTest/PostOfficeTest sleeps checked — no change needed (timer-vs-timer
+  ordering / safe-direction margins). Follows the S2925 deterministic-expiry precedent
+  ([[thread-sonar-4-11-x-field-round-3]]). Full detail: origin log.
+  <!-- id: thread-objectstream-expiry-test-determinism | created: 2026-08-21 | last_used: 2026-08-21 | uses: 1 | tier: working | origin: 2026-08-21-195149 -->
 
 - [x] **Re-verify invariants (due):** confirm stack-language-java21, stack-build-maven,
   stack-integration-spring, stack-messaging-kafka, stack-ci-gha, functions-decoupled-routes,
