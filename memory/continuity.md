@@ -206,8 +206,11 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-14 | uses: 2 | tier: working -->
 ## Open Threads
 
-- [ ] (fix — test-only; on worktree branch `claude/compassionate-wing-aa6098`, platform-core
-  gate green 426/426; **awaiting Eric's commit/PR gate, not pushed**) **ObjectStreamTest
+- [x] (fix — test-only; **MERGED 2026-08-21 as
+  [PR #287](https://github.com/Accenture/mercury-composable/pull/287), squash `fcba13ce`
+  (tree verified identical to the gated `8df7932b`), CI green (Build & Unit Tests 7m30s);
+  platform-core gate 426/426; squash title verified clean per
+  [[conv-squash-title-prefill-check]]**) **ObjectStreamTest
   expiry tests made deterministic — the PR #286 CI flake was a designed-in race.**
   The 408 "Event stream expired" comes from a per-publisher one-shot Vert.x timer (NOT the
   30s ObjectStreamIO housekeeper, which only CLOSEs idle streams), and
