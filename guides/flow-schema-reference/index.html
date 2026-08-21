@@ -1940,6 +1940,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3994,6 +4005,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -5694,9 +5716,9 @@ their arguments and place it at the destination.</p>
 <td><code>f:div(model.total, model.n) -&gt; avg</code></td>
 </tr>
 <tr>
-<td><code>f:modulus(a, b)</code></td>
+<td><code>f:mod(a, b)</code></td>
 <td>Remainder (<code>a % b</code>)</td>
-<td><code>f:modulus(model.n, int(2)) -&gt; rem</code></td>
+<td><code>f:mod(model.n, int(2)) -&gt; rem</code></td>
 </tr>
 <tr>
 <td><code>f:increment(a)</code></td>
@@ -5903,18 +5925,38 @@ payloads; only supplementary-plane characters (e.g. emoji) differ: 2 code units 
 <td><code>f:uuid() -&gt; id</code></td>
 </tr>
 <tr>
-<td><code>f:dateTime()</code></td>
-<td>Current date-time (ISO-8601)</td>
-<td><code>f:dateTime() -&gt; now</code></td>
+<td><code>f:now()</code></td>
+<td>Current UTC time — ISO-8601 by default, <code>text(ms)</code> for epoch milliseconds, <code>text(local)</code> for local date-time</td>
+<td><code>f:now(text(ms)) -&gt; ts</code></td>
 </tr>
 <tr>
-<td><code>f:date(format)</code></td>
-<td>Formatted date string</td>
-<td><code>f:date(text(yyyy-MM-dd)) -&gt; today</code></td>
+<td><code>f:dateTime(format?)</code></td>
+<td>Current date-time with local timezone, optionally formatted</td>
+<td><code>f:dateTime(text(yyyy-MM-dd)) -&gt; today</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f:setConfig(key, value)</code></td>
+<td>Set or override a configuration parameter (stored as a system property; key = non-empty string, value = any object converted to text)</td>
+<td><code>f:setConfig(text(my.parameter), model.secret) -&gt; updated</code></td>
 </tr>
 </tbody>
 </table>
 <blockquote>
+<p><code>f:setConfig</code> changes run-time state for the whole application instance, not just the calling
+flow. The typical use case is hydrating secrets from a secret manager at start-up; components
+that already consumed a parameter will not see a later override.</p>
 <p>Plugins are validated at compile time. They may only use classes from <code>java.lang</code>,
 <code>java.util</code>, <code>java.math</code>, <code>java.time</code>, and Mercury framework packages.</p>
 </blockquote>

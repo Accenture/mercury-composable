@@ -1729,6 +1729,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3834,6 +3845,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -5541,6 +5563,13 @@ double enters, precision follows IEEE-754 (integers exact to 2^53).</p>
 <dt><code>validate</code></dt>
 <dd>Perform simple field validation. See details below.</dd>
 </dl>
+<h4 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h4>
+<dl>
+<dt><code>setConfig</code></dt>
+<dd>A parameter name (non-empty string) and its value (any object, converted to text). Sets the
+value as a system property so that it overrides the corresponding base configuration
+parameter at run-time. Returns true when applied, false for invalid input. See details below.</dd>
+</dl>
 <p><em>DateTime plugins</em></p>
 <ul>
 <li>f:dateTime() will yield a timestamp with local timezone.</li>
@@ -5590,6 +5619,29 @@ As shown in the examples above, If you want to test for non-null value, use the 
 throwing an validation error. For example,
 - f:validate(input.body.id, text(id; String; evaluate))</p>
 <p>Please note that the validation rule uses semicolon as separator because comma is used for tokenization.</p>
+<p><em>Configuration override plugin</em></p>
+<p>The 'setConfig' plugin sets or overrides a configuration parameter at run-time by saving it as a
+system property. Since a system property takes precedence over the base application configuration,
+any subsequent configuration read — e.g. a <code>map(my.parameter)</code> constant in a data mapping statement
+or an <code>AppConfigReader</code> lookup inside a user function — will see the updated value.</p>
+<p>Syntax is "f:setConfig(key, value)". The key must be a non-empty string. The value can be any
+object — a text constant or a model variable — and it is converted to text with
+<code>String.valueOf(value)</code> because configuration parameter values are stored as strings.</p>
+<ul>
+<li>f:setConfig(text(my.parameter), text(demo)) -&gt; model.updated</li>
+<li>f:setConfig(text(my.parameter), model.secret) -&gt; model.updated</li>
+</ul>
+<p>It returns true when the parameter is set, or false when the key is missing or empty, or the
+value is null.</p>
+<p>The typical use case is secret hydration: a flow retrieves secrets from a cloud "secret manager"
+at start-up and sets them as configuration parameters for the rest of the application to consume.</p>
+<p>Please be careful about the application life cycle:</p>
+<ol>
+<li>The override applies to the whole application instance and stays effective until the
+   application restarts — not just for the calling flow instance.</li>
+<li>Components that have already consumed a parameter at start-up will not see the update.
+   Run the flow that sets the parameters before the dependent components read them.</li>
+</ol>
 <p><em>JSON-Path helpers</em></p>
 <p>The listOfMap and updateListOfMap plugins are designed to handle the search result of JSON-Path.</p>
 <p>The <code>listOfMap(map1, map2, ...)</code> plugin re-arranges one or more maps of lists back to a list of maps.</p>
