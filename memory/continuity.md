@@ -218,7 +218,7 @@
   threads as they age or raise `continuity_max_facts` for this mature multi-module reactor.
   **Resolved by aging (2026-08-21 review):** 7 facts crossed the 20-session window and archived
   normally — decay-eligible now 29 ≤ 30, with neither condensing nor a cap raise needed.
-  <!-- id: memory-health-fact-cap-2026-08-14 | created: 2026-08-14 | last_used: 2026-08-14 | uses: 1 | tier: working | origin: 2026-08-14-005928 -->
+  <!-- id: memory-health-fact-cap-2026-08-14 | created: 2026-08-14 | last_used: 2026-08-14 | uses: 1 | tier: archive-candidate | origin: 2026-08-14-005928 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-08-10 local / 2026-08-11 UTC, **both repos in
   lock-step at v4.11.8**) **v4.11.8 — the dry-run suspend/resume regression-fix release, same evening as
