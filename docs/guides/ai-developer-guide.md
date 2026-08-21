@@ -150,14 +150,14 @@ flows:
 location: 'classpath:/flows/'
 ```
 
-Wire to `rest.yaml` with `flow:` instead of `service:`:
+Wire to `rest.yaml` through the flow adapter. A flow binding needs **both** keys — `service:
+'http.flow.adapter'` selects the adapter and `flow:` selects the flow; an entry with `flow:`
+alone has no service and is skipped as invalid at startup. The canonical worked example below
+also shows the function and HTTP-relay binding forms, and this exact file is loaded through the
+production REST router in a platform-core test so it cannot drift from the parser:
 
 ```yaml
-rest:
-  - flow: "my-flow"
-    methods: ['POST']
-    url: "/api/my-flow-endpoint"
-    timeout: 10s
+--8<-- "system/platform-core/src/test/resources/guide-fixtures/rest-bindings.yaml"
 ```
 
 See [Event Script AI agent guide](event-script/ai-agent-guide.md) for the full flow grammar and

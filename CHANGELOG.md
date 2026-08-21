@@ -39,6 +39,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    the pool queues and delivers every span) and a thread-lifecycle test (provably no export
    threads without the owned pool, none leaked after close).
 
+3. **Documentation taught a broken rest.yaml flow binding.** Two guides showed a flow-backed
+   endpoint bound with `flow:` alone (one even advised using `flow:` *instead of* `service:`),
+   but the REST automation engine skips any entry without `service:` as invalid — a flow
+   binding requires **both** `service: 'http.flow.adapter'` and `flow: '<flow-id>'`. The guides
+   are corrected, and the worked example is now a single canonical fixture
+   (`guide-fixtures/rest-bindings.yaml`) embedded into the documentation by mkdocs **and**
+   loaded through the production `RoutingEntry` parser in a platform-core test, so the
+   documented example can no longer drift from what the router accepts.
+
 ---
 ## Version 4.11.9, 8/11/2026
 

@@ -1,0 +1,50 @@
+# The canonical rest.yaml worked example for the documentation guides.
+#
+# This exact file is included into the guides by mkdocs AND loaded through the production
+# RoutingEntry parser in RoutingEntryGuideFixtureTest, so the documented example can never
+# drift from what the REST automation engine actually accepts.
+
+rest:
+  # A flow-backed endpoint needs BOTH keys: 'service' selects the flow adapter and
+  # 'flow' selects the flow. An entry with 'flow' alone has no service and is
+  # skipped as invalid at startup.
+  - service: 'http.flow.adapter'
+    flow: 'order-status'
+    methods: ['POST']
+    url: '/api/orders/{order_id}/status'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  # A function-backed endpoint with a path parameter
+  - service: 'profile.lookup'
+    methods: ['GET']
+    url: '/api/profile/{id}'
+    timeout: 10s
+
+  # An HTTP relay: 'service' is a single URL and 'url_rewrite' maps the inbound
+  # path prefix to the upstream path
+  - service: 'https://example.org'
+    methods: ['GET']
+    url: '/api/upstream/orders'
+    url_rewrite: ['/api/upstream', '/v1']
+    timeout: 20s
+    tracing: true
+
+cors:
+  - id: cors_1
+    options:
+      - 'Access-Control-Allow-Origin: *'
+      - 'Access-Control-Allow-Methods: GET, POST, OPTIONS'
+      - 'Access-Control-Allow-Headers: Origin, Authorization, Content-Type'
+    headers:
+      - 'Access-Control-Allow-Origin: *'
+
+headers:
+  - id: header_1
+    response:
+      add:
+        - 'x-powered-by: mercury'
+      drop:
+        - 'server'
