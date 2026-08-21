@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
+### Added
+
+1. **`system/ai-contract-provider` — a standalone composable app serving Mercury's
+   version-matched operational contract for AI discovery.** Read-only REST endpoints on
+   port 8999 (`/api/discovery`, `/api/contracts`, `/api/contracts/{id}`, `/api/skill`,
+   `/api/references?path=...`, `/api/manifest`), each wired `rest.yaml` →
+   `http.flow.adapter` → Event Script flow → function — the app is itself a reference
+   implementation of the composable pattern. `--export <directory>` writes the offline
+   `mercury-platform` Agent Skill (SKILL.md, the linked guide closure, the installed
+   contract inventory, per-file SHA-256 manifest written last as the completion marker);
+   two exports of the same build are byte-identical, and the exporter never overwrites an
+   existing snapshot. The served `mercury_version` comes from the platform-core
+   dependency itself (no release-time constant), contract behavior anchors are resolved
+   with `Class.forName` in tests so the catalog cannot drift from the code, and a
+   packaged-inventory test pins `files.list` to the real `docs/guides` tree. No framework
+   module changes: the app depends on the runtime, never the reverse. (ADR-0015 proposed)
+
 ### Fixed
 
 1. **The OpenTelemetry forwarder no longer drops a span when a pooled connection dies

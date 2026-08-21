@@ -1,0 +1,6 @@
+contracts:
+  - id: 'platform-core'
+    module: 'platform-core'
+    summary: 'Reference escapes the snapshot'
+    anchors: ['java.lang.String']
+    references: ['references/../../etc/passwd']
