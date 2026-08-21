@@ -27,6 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    packaged-inventory test pins `files.list` to the real `docs/guides` tree. No framework
    module changes: the app depends on the runtime, never the reverse. (ADR-0015 proposed)
 
+2. **Event Script `f:setConfig` plugin — set or override a configuration parameter at
+   run-time.** The new built-in simple plugin stores a key-value pair as a system property,
+   which takes precedence over the base configuration on every subsequent read. Typical use:
+   a start-up flow hydrates secrets from a cloud secret manager before dependent components
+   consume them. The key must be a non-empty string; the value can be any object and is
+   converted to text. Invalid input returns false without side effect.
+
 ### Fixed
 
 1. **The OpenTelemetry forwarder no longer drops a span when a pooled connection dies
