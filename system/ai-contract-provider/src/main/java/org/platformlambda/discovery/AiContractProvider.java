@@ -118,8 +118,12 @@ public class AiContractProvider implements EntryPoint {
             log.error("Skill export failed - {}", output.get("message") == null
                     ? output : output.get("message"));
             return 1;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Skill export interrupted before completion");
+            return 1;
         } catch (Exception e) {
-            log.error("Skill export failed - {}", e.getMessage());
+            log.error("Unable to export skill - {}", e.getMessage());
             return 1;
         } finally {
             platform.release(EXPORT_CALLBACK);

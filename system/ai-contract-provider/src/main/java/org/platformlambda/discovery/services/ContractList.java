@@ -25,7 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /** List the installed operational contracts (id, module, summary). */
-@PreLoad(route = "v1.contract.list", instances = 10, isPrivate = true)
+@PreLoad(route = "v1.contract.list", instances = 10)
 public class ContractList implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
 
     @Override

@@ -29,7 +29,7 @@ import java.util.Map;
  * mapped in rest.yaml - filesystem export is a local operator action, launched by the
  * application's --export mode through the export-skill flow.
  */
-@PreLoad(route = "v1.skill.exporter", instances = 1, isPrivate = true)
+@PreLoad(route = "v1.skill.exporter")
 public class SkillExporter implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
 
     @Override

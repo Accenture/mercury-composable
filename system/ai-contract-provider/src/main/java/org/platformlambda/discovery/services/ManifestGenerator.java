@@ -24,7 +24,7 @@ import org.platformlambda.core.models.TypedLambdaFunction;
 import java.util.Map;
 
 /** Serve the deterministic snapshot manifest: per-file SHA-256 plus a whole-snapshot hash. */
-@PreLoad(route = "v1.manifest.generator", instances = 10, isPrivate = true)
+@PreLoad(route = "v1.manifest.generator", instances = 10)
 public class ManifestGenerator implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
 
     @Override

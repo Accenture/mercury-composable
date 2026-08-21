@@ -26,7 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /** The one URL an AI agent needs first: version, contract ids, and the endpoint map. */
-@PreLoad(route = "v1.discovery.index", instances = 10, isPrivate = true)
+@PreLoad(route = "v1.discovery.index", instances = 10)
 public class DiscoveryIndex implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
 
     @Override

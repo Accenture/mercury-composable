@@ -67,13 +67,13 @@ public class SkillSnapshot {
     private static final SkillSnapshot INSTANCE = new SkillSnapshot();
 
     private final Map<String, byte[]> rendered;
-    private final Map<String, Object> manifest;
+    private final Map<String, Object> snapshotManifest;
     private final String mercuryVersion;
 
     private SkillSnapshot() {
         this.mercuryVersion = dependencyVersion(PLATFORM_CORE_POM_PROPERTIES);
         this.rendered = render();
-        this.manifest = buildManifest(rendered);
+        this.snapshotManifest = buildManifest(rendered);
     }
 
     public static SkillSnapshot getInstance() {
@@ -97,7 +97,7 @@ public class SkillSnapshot {
 
     /** Deterministic manifest: per-file SHA-256 and a whole-snapshot hash. */
     public Map<String, Object> getManifest() {
-        return manifest;
+        return snapshotManifest;
     }
 
     /** Read one snapshot file as text, or throw HTTP-404 for anything else. */
@@ -184,25 +184,26 @@ public class SkillSnapshot {
 
     private static void validateLinks(Map<String, byte[]> files) {
         for (var entry : files.entrySet()) {
-            if (!entry.getKey().endsWith(".md")) {
-                continue;
-            }
-            var links = MARKDOWN_LINK.matcher(new String(entry.getValue(), StandardCharsets.UTF_8));
-            while (links.find()) {
-                var target = links.group(1).trim();
-                if (target.isEmpty() || target.startsWith("#") || target.startsWith("//")
-                        || URI_SCHEME.matcher(target).matches()) {
-                    continue;
-                }
-                var local = target.split("#", 2)[0].split("\\?", 2)[0];
-                var parent = Path.of(entry.getKey()).getParent();
-                var resolved = (parent == null ? Path.of(local) : parent.resolve(local)).normalize();
-                if (resolved.isAbsolute() || resolved.startsWith("..")
-                        || !files.containsKey(resolved.toString().replace('\\', '/'))) {
-                    throw new IllegalArgumentException("Broken relative link in "
-                            + entry.getKey() + " -> " + target);
+            if (entry.getKey().endsWith(".md")) {
+                var links = MARKDOWN_LINK.matcher(new String(entry.getValue(), StandardCharsets.UTF_8));
+                while (links.find()) {
+                    validateLink(files, entry.getKey(), links.group(1).trim());
                 }
             }
+        }
+    }
+
+    private static void validateLink(Map<String, byte[]> files, String source, String target) {
+        if (target.isEmpty() || target.startsWith("#") || target.startsWith("//")
+                || URI_SCHEME.matcher(target).matches()) {
+            return;
+        }
+        var local = target.split("#", 2)[0].split("\\?", 2)[0];
+        var parent = Path.of(source).getParent();
+        var resolved = (parent == null ? Path.of(local) : parent.resolve(local)).normalize();
+        if (resolved.isAbsolute() || resolved.startsWith("..")
+                || !files.containsKey(resolved.toString().replace('\\', '/'))) {
+            throw new IllegalArgumentException("Broken relative link in " + source + " -> " + target);
         }
     }
 

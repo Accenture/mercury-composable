@@ -23,6 +23,7 @@ import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.discovery.models.ContractEntry;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +41,10 @@ import java.util.regex.Pattern;
 public class ContractCatalog {
     private static final Pattern CONTRACT_ID = Pattern.compile("[a-z][a-z0-9-]{1,63}");
     private static final Pattern SUMMARY = Pattern.compile("[A-Za-z0-9][A-Za-z0-9 .,;:/()_+\\-]{0,239}");
-    private static final Pattern ANCHOR_CLASS = Pattern.compile("[A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z0-9_$]+)*");
+    // possessive quantifiers: segments are dot-delimited, so no backtracking is ever
+    // needed and pathological inputs cannot trigger a regex stack overflow
+    private static final Pattern ANCHOR_CLASS =
+            Pattern.compile("[A-Za-z_$][A-Za-z0-9_$]*+(\\.[A-Za-z0-9_$]++)*+");
     private static final ContractCatalog INSTANCE = new ContractCatalog();
 
     private final List<ContractEntry> contracts;
@@ -80,7 +84,7 @@ public class ContractCatalog {
             validate(entry, ids);
             result.add(entry);
         }
-        result.sort((a, b) -> a.id().compareTo(b.id()));
+        result.sort(Comparator.comparing(ContractEntry::id));
         return List.copyOf(result);
     }
 
