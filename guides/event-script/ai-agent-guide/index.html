@@ -2609,7 +2609,8 @@
 <ol>
 <li>Write the flow YAML under <code>src/main/resources/flows/</code>.</li>
 <li>Register its file in the <strong><code>flows.yaml</code></strong> manifest.</li>
-<li>Map an HTTP endpoint to it in <strong><code>rest.yaml</code></strong> (<code>flow: {flow-id}</code>) — or trigger it by event.</li>
+<li>Map an HTTP endpoint to it in <strong><code>rest.yaml</code></strong> (<code>service: 'http.flow.adapter'</code> plus
+   <code>flow: {flow-id}</code> — both keys are required) — or trigger it by event.</li>
 </ol>
 <p>The engine compiles every registered flow at startup; a flow that violates the grammar fails to
 load. So correctness is checkable <em>before</em> runtime.</p>
