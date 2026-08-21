@@ -932,7 +932,7 @@ Arguments can be model variables, constant types, or nested plugin calls.
 | `f:subtract(a, b, ...)` | `a` minus remaining args | `f:subtract(model.total, model.fee) -> net` |
 | `f:multiply(a, b)` | Product | `f:multiply(model.price, model.qty) -> total` |
 | `f:div(a, b)` | Division (`a / b`) | `f:div(model.total, model.n) -> avg` |
-| `f:modulus(a, b)` | Remainder (`a % b`) | `f:modulus(model.n, int(2)) -> rem` |
+| `f:mod(a, b)` | Remainder (`a % b`) | `f:mod(model.n, int(2)) -> rem` |
 | `f:increment(a)` | `a + 1` | `f:increment(model.count) -> next_count` |
 | `f:decrement(a)` | `a - 1` | `f:decrement(model.count) -> prev_count` |
 
@@ -993,8 +993,18 @@ Arguments can be model variables, constant types, or nested plugin calls.
 | Function | Description | Example |
 |----------|-------------|---------|
 | `f:uuid()` | Generate a random UUID string | `f:uuid() -> id` |
-| `f:dateTime()` | Current date-time (ISO-8601) | `f:dateTime() -> now` |
-| `f:date(format)` | Formatted date string | `f:date(text(yyyy-MM-dd)) -> today` |
+| `f:now()` | Current UTC time — ISO-8601 by default, `text(ms)` for epoch milliseconds, `text(local)` for local date-time | `f:now(text(ms)) -> ts` |
+| `f:dateTime(format?)` | Current date-time with local timezone, optionally formatted | `f:dateTime(text(yyyy-MM-dd)) -> today` |
+
+### Configuration
+
+| Function | Description | Example |
+|----------|-------------|---------|
+| `f:setConfig(key, value)` | Set or override a configuration parameter (stored as a system property; key = non-empty string, value = any object converted to text) | `f:setConfig(text(my.parameter), model.secret) -> updated` |
+
+> `f:setConfig` changes run-time state for the whole application instance, not just the calling
+> flow. The typical use case is hydrating secrets from a secret manager at start-up; components
+> that already consumed a parameter will not see a later override.
 
 > Plugins are validated at compile time. They may only use classes from `java.lang`,
 > `java.util`, `java.math`, `java.time`, and Mercury framework packages.
