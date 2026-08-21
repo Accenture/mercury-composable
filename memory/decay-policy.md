@@ -13,8 +13,11 @@
 
 ## Review triggers
 - review_every:         10   # run a review this many sessions after the last one
-- continuity_max_facts:  30  # ...or when continuity.md holds more than this many decaying facts/threads
+- continuity_max_facts:  35  # ...or when continuity.md holds more than this many decaying facts/threads
                              #    (the PRIMARY lean signal — a count, immune to verbosity & session velocity)
+                             #    (30 → 35 by Eric, 2026-08-21: this mature multi-module reactor sat
+                             #    chronically at the old cap — recurring the moment threads closed, only
+                             #    aging out over the 20-session window; see memory-health-fact-cap-2026-08-14)
 - continuity_max_lines: 1000 # ...or this many lines (a coarse backstop; raised from 300 in v4.24.0 — a mature,
                              #    actively-developed layer legitimately sits ~450–600 lines even when healthy).
                              #    Meant to be raised for a legitimately large/complex repo — a 29-module
