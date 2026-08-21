@@ -229,6 +229,46 @@
   ([[thread-sonar-4-11-x-field-round-3]]). Full detail: origin log.
   <!-- id: thread-objectstream-expiry-test-determinism | created: 2026-08-21 | last_used: 2026-08-21 | uses: 1 | tier: working | origin: 2026-08-21-195149 -->
 
+- [x] (feature — **BOTH PRs MERGED 2026-08-21, same day as plan ratification (D1-D5, D7 as
+  recommended; D6 = we implement).** PR A = docs fix
+  [PR #285](https://github.com/Accenture/mercury-composable/pull/285) squash `89a1ea91`,
+  tree verified identical to the gated `d784ff34`, CI green 7m10s. PR B = the app,
+  [PR #286](https://github.com/Accenture/mercury-composable/pull/286) squash `c5b05c1d`,
+  tree verified identical to the gated `4cc48855` (rebased onto main post-A; diff vs main
+  showed only #287's files), CI green 7m39s — **ADR-0015 accepted via this merge**; both
+  ride the next release via CHANGELOG Unreleased. Late fold per Eric + Eu Gene: a scoped
+  `system/AGENTS.md` (commit `4cc48855`) gives AGENTS.md-reading consumer AI tools the
+  starting point — contributors routed to the root shim, consumers to
+  `GET :8999/api/discovery` / `--export`; root AGENTS.md untouched. The one CI failure on
+  the way was the pre-existing ObjectStreamTest expiry flake — root-caused and fixed
+  same-day by a parallel session as PR #287 ([[thread-objectstream-expiry-test-determinism]]).
+  Superseded PR #284 left OPEN+CONFLICTING (collides with #285's guide rewrites by design)
+  — close unmerged, Eric/Eu Gene's click.)
+  **AI discovery re-implemented as a standalone composable app after a
+  colleague's PR #284 was reviewed and rejected** (review delivered in chat; two
+  live-proven findings — `help mercury` broke under spring-boot nested-jar packaging via
+  CodeSource-protocol resource reads, and Java-only playground commands leaked into the
+  webapp/catalog surfaces synced to the Rust engine; the PR's REAL find was kept: docs
+  taught `flow:` without `service:`, a form RoutingEntry skips as invalid).
+  **PR A (docs fix):** guides corrected; the worked example is one canonical fixture in
+  platform-core test resources, embedded by mkdocs snippet include AND loaded through the
+  production RoutingEntry parser (RoutingEntryGuideFixtureTest — note RoutingEntry.load()
+  is ADDITIVE; finally re-loads app config). **PR B (`system/ai-contract-provider`,
+  ADR-0015 Proposed):** 6 private functions + 7 flows + rest.yaml on 8999
+  (discovery/contracts/{id}/skill/references?path=/manifest) + `--export` CLI via the
+  export-skill flow; dependency arrow INVERTED (minigraph TEST-scope only — runtime dep
+  would preload the playground into the app); no ServiceLoader — contracts.yaml catalog
+  with Class.forName-verified anchors; mercury_version from platform-core's pom.properties
+  (ZERO new release-sweep sites; pom count 33→34); resources via getResourceAsStream only.
+  Gates: module 18/18; no-overwrite pin mutation-proven; live on the -exec jar (the exact
+  nested-jar environment that broke the PR) — all endpoints + CLI export verified, served
+  /api/manifest snapshot hash == exported manifest hash (`07c8bd61...`), manifest
+  independently re-verified in python; mkdocs strict + 4 doc checks green.
+  Java-only by design (no shared surface touched — no Rust lock-step).
+  Relates [[thread-docs-improvement-backlog]], [[conv-telemetry-presentation-parity]],
+  [[event-script-over-code]].
+  <!-- id: thread-ai-contract-provider | created: 2026-08-21 | last_used: 2026-08-21 | uses: 1 | tier: working | origin: 2026-08-21-173902 -->
+
 - [x] **Re-verify invariants (due):** confirm stack-language-java21, stack-build-maven,
   stack-integration-spring, stack-messaging-kafka, stack-ci-gha, functions-decoupled-routes,
   typed-io-map-or-pojo, virtual-threads-rpc, trace-thread-keyed-mono-gotcha,
