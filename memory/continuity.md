@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-22 | agent: Claude Code (2026-08-22-011827)
+- **last_session:** 2026-08-22 | agent: Claude Code (2026-08-22-032106)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -205,6 +205,16 @@
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-14 | uses: 2 | tier: working -->
 ## Open Threads
+
+- [ ] (release — SHIPPED 2026-08-21 local, **both repos in lock-step at v4.11.10**;
+  remaining: Eric publishes both GitHub releases) **v4.11.10 — the AI discovery release.**
+  Java: release [PR #291](https://github.com/Accenture/mercury-composable/pull/291) squash
+  `5cb65f04` == gated `689adf5e` (tree verified, title clean), 34-pom sweep, full reactor
+  green, tag dereference-verified on the squash. Rust: move PR #210 (examples/→system/,
+  Eric's consistency ruling) then release PR #211 merge `b77f17e8` (tree verified), 63/317
+  + clippy + fmt, tag on the merge. Contents: system/ai-contract-provider (ADR-0015),
+  f:setConfig, two OTLP span-loss fixes, flow-binding docs fix. Full detail: origin log.
+  <!-- id: thread-release-4-11-10 | created: 2026-08-22 | last_used: 2026-08-22 | uses: 1 | tier: working | origin: 2026-08-22-032106 -->
 
 - [ ] (onboarding — assessment round 2026-08-21, Eric ratified; **fork MERGED 2026-08-22 as
   [PR #290](https://github.com/Accenture/mercury-composable/pull/290) squash `f85aa02a`, tree
