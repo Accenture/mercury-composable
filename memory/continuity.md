@@ -206,8 +206,8 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-14 | uses: 2 | tier: working -->
 ## Open Threads
 
-- [ ] (release — SHIPPED 2026-08-21 local, **both repos in lock-step at v4.11.10**;
-  remaining: Eric publishes both GitHub releases) **v4.11.10 — the AI discovery release.**
+- [x] (release — SHIPPED AND PUBLISHED 2026-08-21 local, **both repos in lock-step at
+  v4.11.10**; both GitHub releases published by Eric) **v4.11.10 — the AI discovery release.**
   Java: release [PR #291](https://github.com/Accenture/mercury-composable/pull/291) squash
   `5cb65f04` == gated `689adf5e` (tree verified, title clean), 34-pom sweep, full reactor
   green, tag dereference-verified on the squash. Rust: move PR #210 (examples/→system/,
