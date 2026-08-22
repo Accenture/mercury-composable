@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-22 | agent: Claude Code (2026-08-22-003007)
+- **last_session:** 2026-08-22 | agent: Claude Code (2026-08-22-011827)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -208,8 +208,12 @@
 
 - [ ] (onboarding — assessment round 2026-08-21, Eric ratified; **fork MERGED 2026-08-22 as
   [PR #290](https://github.com/Accenture/mercury-composable/pull/290) squash `f85aa02a`, tree
-  == gated `14ae11f5`, CI green 7m50s, branches deleted**; remaining: hand the Desktop
-  handoff to an agent-memory session)
+  == gated `14ae11f5`, CI green 7m50s, branches deleted**; **handoff DELIVERED and shipped
+  upstream as agent-memory v4.38.0, 2026-08-22** — the fork is now a sanctioned converged
+  form (`fork-ok`, this repo's root pinned verbatim in the tool's test suites), the target
+  protocol carries the consumers-exit-here step-0 + the 3–6-line close-record spec + the
+  optional checkpoint, and `[closed-thread-bloat]`/`closed_narrative_max_lines` measure the
+  over-retention class; this repo upgraded same day)
   **Onboarding efficiency: root AGENTS.md now forks contributors (memory protocol) from
   consumers (system/AGENTS.md) with the ratified role-resolution ladder — a fresh
   interactive agent ASKS one question whenever the first instruction doesn't itself
@@ -218,8 +222,10 @@
   instructions.md gained terse-close-record + ready-to-work conventions.** Verdict: consumer side NOT over-engineered; contributor side over-retained
   (continuity was 64% closed-thread narrative — hence the new conventions). Upstream proposals
   (shim role-routing, close-record economy, readiness checkpoint, P3 declined as artifact):
-  `~/Desktop/agent-memory-onboarding-handoff.md`. Next review: condense the `[x]` backlog to
-  stubs; then consider lowering continuity_max_lines 1000→~600. Full detail: origin log.
+  `~/Desktop/agent-memory-onboarding-handoff.md`. Remaining — next review: condense the
+  `[x]` backlog to stubs (the new advisory measures it); re-run the fresh-agent
+  context-efficiency exercise after two reviews vs the 64% baseline; then consider lowering
+  continuity_max_lines 1000→~600. Full detail: origin log.
   <!-- id: thread-onboarding-efficiency | created: 2026-08-22 | last_used: 2026-08-22 | uses: 1 | tier: working | origin: 2026-08-22-003007 -->
 
 - [x] (feature — Eric's code; reviewed, all four rulings applied, and **MERGED ON BOTH ENGINES

@@ -15,7 +15,7 @@
 This project uses the **agent-memory** shared memory system. **Read these now, in order** — don't
 defer to a pointer chain (Copilot Ask/Plan modes won't follow it unless the files are attached):
 
-1. **`AGENTS.md`** — the universal discovery shim (forks contributors from Mercury consumers).
+1. **`AGENTS.md`** — the one-line universal discovery shim.
 2. **`memory/PROTOCOL.md`** — the memory protocol; follow it before substantive work.
 3. **`memory/instructions.md`** — persona, project rules, conventions.
 4. **`memory/continuity.md`** — current state, key decisions, open threads, the project's hard rules.
