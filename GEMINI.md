@@ -3,8 +3,8 @@
 Event-driven Java framework (Maven reactor, `com.accenture.mercury`) — self-contained functions wired by YAML event flows.
 
 This project uses the agent-memory shared memory system. **Follow
-[`memory/PROTOCOL.md`](./memory/PROTOCOL.md) first.** Root `AGENTS.md` is its one-line
-universal discovery shim.
+[`memory/PROTOCOL.md`](./memory/PROTOCOL.md) first.** Root `AGENTS.md` is its universal
+discovery shim, forking contributors from Mercury consumers.
 
 The protocol and core memory files are imported below, so they are structurally present at
 session start (presence is guaranteed; *attending* to them is still the protocol). Imports

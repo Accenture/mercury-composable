@@ -5,7 +5,7 @@ Event-driven Java framework (Maven reactor, `com.accenture.mercury`) — self-co
 This project uses the agent-memory shared memory system.
 
 **Full context:** follow [`memory/PROTOCOL.md`](./memory/PROTOCOL.md) — the memory
-protocol (root `AGENTS.md` is its one-line discovery shim) — then:
+protocol (root `AGENTS.md` is its discovery shim, forking contributors from Mercury consumers) — then:
 1. `memory/instructions.md`
 2. `memory/continuity.md`
 3. `memory/sessions/` (latest 2–3 files)
