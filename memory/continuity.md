@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-21 | agent: Claude Code (2026-08-21-204921)
+- **last_session:** 2026-08-21 | agent: Claude Code (2026-08-21-231215)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -205,6 +205,30 @@
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-14 | uses: 2 | tier: working -->
 ## Open Threads
+
+- [x] (feature — Eric's code; reviewed, all four rulings applied, and **MERGED ON BOTH ENGINES
+  2026-08-21, same day as the review.** Java:
+  [PR #289](https://github.com/Accenture/mercury-composable/pull/289) squash `b5aeaf56`, tree
+  verified identical to the gated `6628020f`, squash title clean, CI green 7m39s. Rust: mercury
+  PR #208 merge `9a7b3a47` carrying `338fc895`, tree verified, CI green 2m20s. Branches deleted
+  both ends; both ride the next release via CHANGELOG Unreleased.) **Event Script `f:setConfig`
+  simple plugin — set/override a config parameter at run-time.** Java: `System.setProperty`; Rust: `overrides::set` (the mimicking override
+  registry — Eric: a designed landing pad, checked first by every ConfigReader lookup).
+  Verified on Java: `ConfigReader.get()` consults `System.getProperty` first on EVERY read
+  (live), so the override is immediately visible to `map(key)` constants and AppConfigReader —
+  the secret-hydration use case works as designed. **Eric's rulings on the review findings:**
+  value = any object coerced via `String.valueOf`; empty/blank key → false (was a raw JDK
+  IllegalArgumentException); renamed `config` → `setConfig` before the name froze into portable
+  flows; Rust lock-step same day per [[conv-telemetry-presentation-parity]]. Flow fixture
+  set-config.yml BYTE-IDENTICAL on both engines (set task-1, `map(key)` read-back task-2,
+  numeric coercion pinned); direct unit twins both sides; Rust BUILTIN_PLUGIN_COUNT 46→47 and
+  the loaded-flow-set parity pin caught the fixture immediately. Docs both engines (syntax.md
+  catalog + detail; Java flow-schema-reference Configuration table + fixed pre-existing wrong
+  names `f:modulus`→`f:mod`, nonexistent `f:date`→`f:dateTime`, added `f:now`); CHANGELOG
+  Unreleased ×2; Rust INCREMENTS 87. Gates: Java module 189/189; ai-contract-provider 18/18;
+  mkdocs strict via uv (exit 0); Rust 58 suites/306 tests + clippy 0 + fmt clean. First
+  built-in plugin with a global side effect (rest are pure).
+  <!-- id: thread-config-plugin | created: 2026-08-21 | last_used: 2026-08-21 | uses: 1 | tier: working | origin: 2026-08-21-231215 -->
 
 - [x] (fix — test-only; **MERGED 2026-08-21 as
   [PR #287](https://github.com/Accenture/mercury-composable/pull/287), squash `fcba13ce`
