@@ -19,6 +19,8 @@
 package com.accenture.minigraph.tasks;
 
 import com.accenture.minigraph.start.PlaygroundLoader;
+import com.sun.net.httpserver.HttpServer;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
@@ -26,9 +28,12 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
+import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -45,13 +50,45 @@ class GraphTaskTest {
     private static final String ASYNC_HTTP_CLIENT = "async.http.request";
     private static final long TIMEOUT = 8000;
     private static String target;
+    private static HttpServer stubPeer;
 
     @BeforeAll
-    static void beforeAll() {
+    static void beforeAll() throws IOException {
         PlaygroundLoader.main(new String[0]);
         var config = AppConfigReader.getInstance();
         var port = config.getProperty("rest.server.port");
         target = "http://localhost:" + port;
+        startStubPeer(Utility.getInstance().str2int(config.getProperty("stub.peer.port", "8391")));
+    }
+
+    @AfterAll
+    static void afterAll() {
+        if (stubPeer != null) {
+            stubPeer.stop(0);
+        }
+    }
+
+    /**
+     * A minimal polyglot peer: an /api/event endpoint that decodes the relayed
+     * event envelope and answers with a standard-format reply envelope - the
+     * same wire contract a python or node.js function host speaks.
+     */
+    private static void startStubPeer(int port) throws IOException {
+        stubPeer = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
+        stubPeer.createContext("/api/event", exchange -> {
+            var request = new EventEnvelope(exchange.getRequestBody().readAllBytes());
+            var reply = new EventEnvelope().setBody(Map.of(
+                    "language", "stub",
+                    "route", String.valueOf(request.getTo()),
+                    "echo", request.getBody() instanceof Map? request.getBody() : Map.of()));
+            var payload = reply.toBytes(EventEnvelope.Format.STANDARD);
+            exchange.getResponseHeaders().set("Content-Type", "application/octet-stream");
+            exchange.sendResponseHeaders(200, payload.length);
+            try (var out = exchange.getResponseBody()) {
+                out.write(payload);
+            }
+        });
+        stubPeer.start();
     }
 
     @SuppressWarnings("unchecked")
@@ -154,6 +191,22 @@ class GraphTaskTest {
         assertEquals("recovered", mm.getElement("message"));
         assertEquals(400, mm.getElement("status"));
         log.info("graph.task exception handler routing works");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void foreignRouteViaEventOverHttp() throws TimeoutException {
+        // 'polyglot.stub.function' is not registered locally - it resolves through the
+        // declarative event-over-http map (yaml.event.over.http) to the stub peer, the
+        // way python/node.js polyglot functions join a knowledge graph
+        var response = runGraph("unit-test-task-7", Map.of("text", "polyglot"), Map.of());
+        assertEquals(200, response.getStatus());
+        assertInstanceOf(Map.class, response.getBody());
+        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals("stub", mm.getElement("language"));
+        assertEquals("polyglot.stub.function", mm.getElement("route"));
+        assertEquals("polyglot", mm.getElement("echo.text"));
+        log.info("graph.task reached a foreign route through the event-over-http map");
     }
 
     @Test

@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Added
+
+1. `graph.task` accepts a task route declared as a declarative Event-over-HTTP target
+   (`yaml.event.over.http`) - a knowledge graph can invoke remote engine instances and
+   polyglot (python/node.js) function hosts as graph tasks. New
+   `PostOffice.getEventHttpTarget(route)` API exposes the declarative map lookup.
+
+---
 ## Version 4.11.10, 8/21/2026
 
 ### Added
