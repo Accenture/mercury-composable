@@ -316,7 +316,10 @@
   nested-jar environment that broke the PR) — all endpoints + CLI export verified, served
   /api/manifest snapshot hash == exported manifest hash (`07c8bd61...`), manifest
   independently re-verified in python; mkdocs strict + 4 doc checks green.
-  Java-only by design (no shared surface touched — no Rust lock-step).
+  Java-only by design at ship time (no shared surface touched — no lock-step REQUIRED);
+  Eric later directed a port: the Rust engine gained its own edition 2026-08-22
+  (mercury PR #209, `examples/ai-contract-provider`, byte-identical flows, compile-time
+  anchors, build-time-embedded snapshot — see the Rust repo's memory).
   Relates [[thread-docs-improvement-backlog]], [[conv-telemetry-presentation-parity]],
   [[event-script-over-code]].
   <!-- id: thread-ai-contract-provider | created: 2026-08-21 | last_used: 2026-08-21 | uses: 1 | tier: working | origin: 2026-08-21-173902 -->
