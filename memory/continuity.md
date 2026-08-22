@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-22 | agent: Claude Code (2026-08-22-032106)
+- **last_session:** 2026-08-22 | agent: Claude Code (2026-08-22-164936)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -66,6 +66,26 @@
   <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-27 | uses: 4 | tier: core -->
 
 ## Key Decisions
+
+- **Polyglot functions = Event-over-HTTP wrappers, NOT subprocesses (Eric's design; D0–D8
+  ratified 2026-08-22).** python/node functions run as long-lived Event API peers speaking the
+  standard envelope wire format, addressed through the declarative `yaml.event.over.http` map —
+  flows and graph.task call them as if local; non-blocking on the JVM (interceptor relay, zero
+  threads per in-flight call); no subprocess stability surface. **Scope fence:** wrappers =
+  envelope codec + `/api/event` host + preload registry + thin PostOffice client + dev CLI +
+  the minimalist utilities (config with the engines' `resources/` convention and `-Dkey=value`
+  override syntax, engine-format logging, trace context) — NO orchestration, NO event bus.
+  Engine-parity behaviors pinned: handler errors ride HTTP 200 with envelope status; transport
+  errors 400/403/404/408; engine-identical messages; my_cid tag → my_correlation_id; compact
+  format rejected (standard only). **One engine gap approved for fix (D5): graph.task's
+  po.exists guard doesn't consult the event-over-http map** (GraphTask.java:74, Rust
+  skills.rs:362) — surgical relaxation, Java+Rust lock-step. stdio-subprocess alternative
+  investigated and SHELVED (niche: single-artifact embedded scripting; revisit only on field
+  demand). The node wrapper is the sanctioned "fresh node.js re-port" answer. Golden envelope
+  vectors are the conformance gate; interop report per wrapper release (D6). Spec:
+  draft-design-specs/polyglot-script-runner.md. Delivered by [[thread-polyglot-initiative]];
+  serves [[bp-polyglot-functions]].
+  <!-- id: polyglot-event-over-http-design | created: 2026-08-22 | last_used: 2026-08-22 | uses: 1 | tier: working | origin: 2026-08-22-164936 -->
 
 - **Graph workflow suspension: short runs + external state store, encapsulated in skills
   (design ratified by Eric 2026-07-28). (ADR-0010)** A human checkpoint = persist
@@ -198,6 +218,11 @@
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
+- [ ] (blueprint) **Polyglot function execution** — python/node.js functions join Event Script
+  flows and MiniGraph graphs as Event-over-HTTP peers (ratified design D0–D8, 2026-08-22);
+  wrappers live in the repurposed Accenture/mercury-python + mercury-nodejs repos.
+  → serves: vision-mercury-composable
+  <!-- id: bp-polyglot-functions | created: 2026-08-22 | last_used: 2026-08-22 | uses: 1 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
   <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-08-14 | uses: 2 | tier: working -->
@@ -205,6 +230,27 @@
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-14 | uses: 2 | tier: working -->
 ## Open Threads
+
+- [ ] (feature — design RATIFIED D0–D8 2026-08-22 + two in-flight refinements (minimalist
+  utilities; resources/ + -D config conventions); **both wrapper repos REBOOTED and scaffolded
+  same day on `feature/polyglot-event-over-http`, and **both MERGED same day** — mercury-python
+  [PR #15](https://github.com/Accenture/mercury-python/pull/15) true merge `99ae249` carrying
+  `ad7e104`+`2c92a29` (30/30 tests), mercury-nodejs
+  [PR #86](https://github.com/Accenture/mercury-nodejs/pull/86) true merge `05e66a5` carrying
+  `0ae7a17`+`5f56d1d` (31/31; legacy npm mercury-composable v4.3.28 in history); trees verified
+  identical to the gated commits, branches deleted both ends; both codecs verified against the
+  shared golden envelope vectors;
+  **interop proven live:** python⇄node both directions, and composable-example 4.11.10's
+  shipped `event-over-http-declarative` FLOW executed the python `hello.declarative` function
+  unchanged — my_correlation_id injected, engine trace_id in the python log, zero engine
+  change.) **Polyglot initiative — python/node.js Event-over-HTTP wrappers.**
+  Remaining: P2 graph.task exists-guard relaxation (Java + Rust lock-step, the ONLY engine
+  change; pin = foreign-route graph e2e vs a stub peer); P4 docs chapter + examples demo +
+  interop-report extension on both engine repos + ADR-0016 proposal + fresh CI workflows for
+  the wrapper repos (legacy CI went with the reboot); P5 publishing gates (npm version
+  strategy vs legacy 4.3.28; PyPI name availability). Design record: [[polyglot-event-over-http-design]]; serves
+  [[bp-polyglot-functions]]. Full detail: origin log.
+  <!-- id: thread-polyglot-initiative | created: 2026-08-22 | last_used: 2026-08-22 | uses: 1 | tier: working | origin: 2026-08-22-164936 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-08-21 local, **both repos in lock-step at
   v4.11.10**; both GitHub releases published by Eric) **v4.11.10 — the AI discovery release.**
