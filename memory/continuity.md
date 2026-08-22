@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-22 | agent: Claude Code (2026-08-22-164936)
+- **last_session:** 2026-08-22 | agent: Claude Code (2026-08-22-180334)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -244,8 +244,10 @@
   shipped `event-over-http-declarative` FLOW executed the python `hello.declarative` function
   unchanged — my_correlation_id injected, engine trace_id in the python log, zero engine
   change.) **Polyglot initiative — python/node.js Event-over-HTTP wrappers.**
-  Remaining: P2 graph.task exists-guard relaxation (Java + Rust lock-step, the ONLY engine
-  change; pin = foreign-route graph e2e vs a stub peer); P4 docs chapter + examples demo +
+  Remaining — **paused 2026-08-22: Eric is AI-enabling both wrapper repos with agent-memory
+  first (independent maintenance); P2 resumes after enablement.** P2 graph.task exists-guard
+  relaxation (Java + Rust lock-step, the ONLY engine change; pin = foreign-route graph e2e vs
+  a stub peer); P4 docs chapter + examples demo +
   interop-report extension on both engine repos + ADR-0016 proposal + fresh CI workflows for
   the wrapper repos (legacy CI went with the reboot); P5 publishing gates (npm version
   strategy vs legacy 4.3.28; PyPI name availability). Design record: [[polyglot-event-over-http-design]]; serves
@@ -1047,6 +1049,15 @@
   <!-- id: thread-redis-kafka-rpc | created: 2026-06-24 | last_used: 2026-07-31 | uses: 8 | tier: working -->
 
 ## User Preferences
+
+- **Release rhythm (Eric; established by 2026-07-25):** Claude Code prepares every release
+  artifact — branch, version sweep, build verification, CHANGELOG, release notes — but
+  never merges, tags, or publishes without Eric's explicit go-ahead for that specific
+  step; PR-open and tag/publish are each individually gated. (Materialized into shared
+  memory 2026-08-22: the smoke test found six session logs referencing this id while the
+  fact lived only in an agent's personal store — a project-relevant working rhythm belongs
+  in the shared layer.)
+  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-08-22 | uses: 1 | tier: working | origin: 2026-08-22-180334 -->
 
 ## Team / Members
 
