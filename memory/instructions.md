@@ -110,6 +110,26 @@ cd examples/composable-example && java -jar target/composable-example-<version>.
 4. Respect the serialization gotchas above when choosing types.
 5. Record significant decisions in the session log and `continuity.md`.
 
+## Session Working Conventions
+
+*(Adopted 2026-08-21 from the fresh-agent onboarding assessment — ratified by Eric.)*
+
+- **Terse close records.** When marking a continuity Open Thread `[x]`, keep the record to
+  3–6 lines: outcome, PR/commit refs, one durable lesson, and the `origin:` log pointer.
+  The full ship narrative belongs in the origin session log — never duplicate it into
+  `continuity.md` (that duplication is what bloated continuity to 972 lines / 64%
+  closed-thread narrative).
+- **Ready-to-work checkpoint.** When starting substantive implementation work (not trivial
+  Q&A), emit a compact readiness summary before changing code so the human can confirm the
+  task was understood:
+
+  ```text
+  Task: <module> — <intended change>
+  Governing invariant/ADR: <id or none>
+  Validation: <smallest targeted test command>
+  Human decision needed: none | <description>
+  ```
+
 ## Testing
 
 - JUnit via Maven Surefire. The richest end-to-end reference is

@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-21 | agent: Claude Code (2026-08-21-231215)
+- **last_session:** 2026-08-22 | agent: Claude Code (2026-08-22-003007)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -205,6 +205,22 @@
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-14 | uses: 2 | tier: working -->
 ## Open Threads
+
+- [ ] (onboarding — assessment round 2026-08-21, Eric ratified; **fork MERGED 2026-08-22 as
+  [PR #290](https://github.com/Accenture/mercury-composable/pull/290) squash `f85aa02a`, tree
+  == gated `14ae11f5`, CI green 7m50s, branches deleted**; remaining: hand the Desktop
+  handoff to an agent-memory session)
+  **Onboarding efficiency: root AGENTS.md now forks contributors (memory protocol) from
+  consumers (system/AGENTS.md) with the ratified role-resolution ladder — a fresh
+  interactive agent ASKS one question whenever the first instruction doesn't itself
+  resolve the path ("the answer creates your path", Eric); memory-carrying sessions
+  never re-ask; headless defaults contributor.
+  instructions.md gained terse-close-record + ready-to-work conventions.** Verdict: consumer side NOT over-engineered; contributor side over-retained
+  (continuity was 64% closed-thread narrative — hence the new conventions). Upstream proposals
+  (shim role-routing, close-record economy, readiness checkpoint, P3 declined as artifact):
+  `~/Desktop/agent-memory-onboarding-handoff.md`. Next review: condense the `[x]` backlog to
+  stubs; then consider lowering continuity_max_lines 1000→~600. Full detail: origin log.
+  <!-- id: thread-onboarding-efficiency | created: 2026-08-22 | last_used: 2026-08-22 | uses: 1 | tier: working | origin: 2026-08-22-003007 -->
 
 - [x] (feature — Eric's code; reviewed, all four rulings applied, and **MERGED ON BOTH ENGINES
   2026-08-21, same day as the review.** Java:
