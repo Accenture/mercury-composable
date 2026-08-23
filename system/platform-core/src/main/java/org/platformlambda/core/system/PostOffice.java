@@ -233,6 +233,18 @@ public class PostOffice {
     }
 
     /**
+     * Check if a route resolves to an Event-over-HTTP target declared in the
+     * optional "yaml.event.over.http" configuration - the way remote engine
+     * instances and polyglot function hosts are addressed as if local
+     *
+     * @param route name of the target service
+     * @return the target URL or null if the route is not configured
+     */
+    public String getEventHttpTarget(String route) {
+        return po.getEventHttpTarget(route);
+    }
+
+    /**
      * User application may add key-values to a trace using this method
      * <p>
      * Please note that trace annotation feature is available inside a user function
