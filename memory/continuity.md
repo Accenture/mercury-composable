@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-22 | agent: Claude Code (2026-08-22-180334)
+- **last_session:** 2026-08-22 | agent: Claude Code (2026-08-22-185319)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -244,10 +244,18 @@
   shipped `event-over-http-declarative` FLOW executed the python `hello.declarative` function
   unchanged — my_correlation_id injected, engine trace_id in the python log, zero engine
   change.) **Polyglot initiative — python/node.js Event-over-HTTP wrappers.**
-  Remaining — **paused 2026-08-22: Eric is AI-enabling both wrapper repos with agent-memory
-  first (independent maintenance); P2 resumes after enablement.** P2 graph.task exists-guard
-  relaxation (Java + Rust lock-step, the ONLY engine change; pin = foreign-route graph e2e vs
-  a stub peer); P4 docs chapter + examples demo +
+  **P2 DONE 2026-08-22 (both engines, same day the wrapper repos came back agent-memory-
+  enabled): Java commit `10c53ca3` + Rust `83b12c36` on `feature/graph-task-event-over-http`
+  branches — the graph.task guard consults the event-over-http map (Java adds
+  `PostOffice.getEventHttpTarget`), unit-test-task-7 pin byte-identical on both engines and
+  proven vs unfixed code, compiled-set pin 49→50; gates: minigraph 119/119 + platform-core
+  426 green; Rust 63 suites + clippy 0 + fmt clean. **MERGED 2026-08-22: Java
+  [PR #292](https://github.com/Accenture/mercury-composable/pull/292) squash `fad24f11` ==
+  gated `a31c5316` (incl. Eric's IDE cosmetics; title clean), Rust
+  [PR #212](https://github.com/Accenture/mercury/pull/212) merge `c49d6cd7` carrying
+  `83b12c36`; trees verified, CI green both, branches deleted both ends; rides the next
+  release.**
+  Remaining: P4 docs chapter + examples demo +
   interop-report extension on both engine repos + ADR-0016 proposal + fresh CI workflows for
   the wrapper repos (legacy CI went with the reboot); P5 publishing gates (npm version
   strategy vs legacy 4.3.28; PyPI name availability). Design record: [[polyglot-event-over-http-design]]; serves
