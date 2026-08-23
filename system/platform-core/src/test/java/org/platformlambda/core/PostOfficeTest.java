@@ -1017,7 +1017,6 @@ class PostOfficeTest extends TestBase {
         assertTrue(multi.exists("trace.span_id"));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void accidentalMetadataEchoIsSanitizedAtExit() throws InterruptedException, ExecutionException {
         // Eric's scenario: a function accidentally copies its input headers - including the
@@ -1110,6 +1109,7 @@ class PostOfficeTest extends TestBase {
                 "the legacy carrier is scrubbed from the delivered envelope view");
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void rpcTelemetryCarriesSpanLineage() throws InterruptedException {
         // Regression: the RPC trace record (the one with round_trip) must chain like a

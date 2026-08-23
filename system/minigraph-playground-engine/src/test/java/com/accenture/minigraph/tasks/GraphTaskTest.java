@@ -198,7 +198,7 @@ class GraphTaskTest {
     void foreignRouteViaEventOverHttp() throws TimeoutException {
         // 'polyglot.stub.function' is not registered locally - it resolves through the
         // declarative event-over-http map (yaml.event.over.http) to the stub peer, the
-        // way python/node.js polyglot functions join a knowledge graph
+        // way python/node.js polyglot functions join a 'knowledge graph'
         var response = runGraph("unit-test-task-7", Map.of("text", "polyglot"), Map.of());
         assertEquals(200, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());
