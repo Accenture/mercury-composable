@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-22 | agent: Claude Code (2026-08-22-185319)
+- **last_session:** 2026-08-23 | agent: Claude Code (2026-08-23-042109)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -74,7 +74,11 @@
   threads per in-flight call); no subprocess stability surface. **Scope fence:** wrappers =
   envelope codec + `/api/event` host + preload registry + thin PostOffice client + dev CLI +
   the minimalist utilities (config with the engines' `resources/` convention and `-Dkey=value`
-  override syntax, engine-format logging, trace context) — NO orchestration, NO event bus.
+  override syntax, engine-format logging, trace context) — NO orchestration. **Fence amended 2026-08-23 (Eric):** + the primitive in-process event bus (per-route
+  FIFO mailboxes, faithful `instances`, deliver/publish only, NO spill tier/queue cap —
+  back-pressure stays with the engines' flows/graphs) + the engines' actuator endpoints
+  (/info, /info/routes, /env, /health, /livenessprobe; type=info/type=health
+  health-function contract) + log.format text|json|compact.
   Engine-parity behaviors pinned: handler errors ride HTTP 200 with envelope status; transport
   errors 400/403/404/408; engine-identical messages; my_cid tag → my_correlation_id; compact
   format rejected (standard only). **One engine gap approved for fix (D5): graph.task's
@@ -255,6 +259,14 @@
   [PR #212](https://github.com/Accenture/mercury/pull/212) merge `c49d6cd7` carrying
   `83b12c36`; trees verified, CI green both, branches deleted both ends; rides the next
   release.**
+  **Wrapper feature round MERGED 2026-08-23** — both wrappers gained the primitive
+  event bus (instances/private faithful, local PostOffice delivery, no-spill ruling),
+  the actuator endpoints, log.format text|json|compact and a sample
+  resources/application.yml: python
+  [PR #17](https://github.com/Accenture/mercury-python/pull/17) true merge `f38ac17`,
+  node [PR #87](https://github.com/Accenture/mercury-nodejs/pull/87) true merge
+  `fa7b2bf`; trees verified, branches deleted both ends; detail in the wrapper repos'
+  memory (logs 2026-08-23-031558 / 2026-08-23-031920).
   Remaining: P4 docs chapter + examples demo +
   interop-report extension on both engine repos + ADR-0016 proposal + fresh CI workflows for
   the wrapper repos (legacy CI went with the reboot); P5 publishing gates (npm version
