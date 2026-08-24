@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-24 | agent: Claude Code (2026-08-24-001110)
+- **last_session:** 2026-08-24 | agent: Claude Code (2026-08-24-170545)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -279,11 +279,34 @@
   node [PR #87](https://github.com/Accenture/mercury-nodejs/pull/87) true merge
   `fa7b2bf`; trees verified, branches deleted both ends; detail in the wrapper repos'
   memory (logs 2026-08-23-031558 / 2026-08-23-031920).
-  Remaining: P4 docs chapter + examples demo +
-  interop-report extension on both engine repos + ADR-0016 proposal + fresh CI workflows for
-  the wrapper repos (legacy CI went with the reboot); P5 publishing gates (npm version
-  strategy vs legacy 4.3.28; PyPI name availability). Design record: [[polyglot-event-over-http-design]]; serves
-  [[bp-polyglot-functions]]. Full detail: origin log.
+  **P4 docs SHIPPED 2026-08-24 in two halves.** Wrapper docs sites LIVE same day
+  (python [PR #20](https://github.com/Accenture/mercury-python/pull/20) merge `0bc97f7`,
+  node [PR #89](https://github.com/Accenture/mercury-nodejs/pull/89) merge `5ccf355`;
+  sites at accenture.github.io/mercury-python + /mercury-nodejs on the engine Material
+  theme; the fresh wrapper ci.yml workflows shipped in the same PRs — maiden runs green,
+  wrapper-CI item CLOSED; node repo's Pages source had to be flipped off the legacy
+  doc/2025-11-15 branch). Engine half MERGED AND LIVE same day: Java
+  [PR #294](https://github.com/Accenture/mercury-composable/pull/294) squash
+  `807a063c` == gated `8c89b1ad` (chapter guides/polyglot-functions.md + ADR-0016
+  Proposed + interop-report wrapper round; tree verified, title clean, reactor green) /
+  Rust PR #214 merge `c5221258` (twin chapter + ADR-0014 + report round + **home page
+  unified on the Java reference and site renamed "Composable for Rust"** per Eric's
+  directive) + Rust PR #215 merge `4573bd21` (nav parity: Operate & integrate +
+  Orientation tabs — tab row now identical across the two engine sites, Eric confirmed
+  live). The
+  "examples demo" item resolved by documentation: the wrapper demo apps register
+  hello.declarative and default to port 8085 (lambda-example/hello-world's slot), so
+  the shipped zero-code demo swaps in a wrapper callee with one -D override — taught in
+  the chapter, no new example code. CI fix round: both engines' ai-contract-provider
+  link validators failed closed on the new cross-link until
+  `references/guides/polyglot-functions.md` joined both files.list inventories (Java
+  `8c89b1ad`, Rust `d278d8ae`) — new guide pages linked from packaged references must
+  join the snapshot inventory on BOTH engines.
+  **P4 COMPLETE across all four repos.** Remaining: P5 publishing gates only
+  (npm version strategy vs legacy 4.3.28; PyPI name availability — Eric's calls);
+  optional extras offered: a live Rust-engine→wrapper drive; Rust layer-tab label
+  parity ("Event Script" vs "Composable"). Design record: [[polyglot-event-over-http-design]]; serves
+  [[bp-polyglot-functions]]. Full detail: origin log + 2026-08-24-170545.
   <!-- id: thread-polyglot-initiative | created: 2026-08-22 | last_used: 2026-08-22 | uses: 1 | tier: working | origin: 2026-08-22-164936 -->
 
 - [x] (release — SHIPPED AND PUBLISHED 2026-08-21 local, **both repos in lock-step at
