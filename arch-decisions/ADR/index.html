@@ -1509,6 +1509,8 @@
       
         
       
+        
+      
     
     
     
@@ -1653,6 +1655,34 @@
     
   
     Event over HTTP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/polyglot-functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Polyglot Functions (Python & Node.js)
   
 
     
@@ -1971,6 +2001,17 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#adr-0016" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0016 — Polyglot functions are Event-over-HTTP peers, not subprocesses or ports
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#adr-0015" class="md-nav__link">
@@ -2628,6 +2669,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0016" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0016 — Polyglot functions are Event-over-HTTP peers, not subprocesses or ports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0015" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2831,6 +2883,53 @@ governing the codebase — verified against the source (<code>platform-core</cod
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
 <hr />
+<h2 id="adr-0016">ADR-0016 — Polyglot functions are Event-over-HTTP peers, not subprocesses or ports<a class="headerlink" href="#adr-0016" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-22 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> polyglot-event-over-http-design</p>
+<!-- id: adr-0016 | status: proposed -->
+
+<p><strong>Abstract.</strong> Functions written in Python and Node.js join Event Script flows and
+MiniGraph knowledge graphs as long-lived <strong>Event API peers</strong>: each official wrapper
+(<a href="https://github.com/Accenture/mercury-python">mercury-python</a>,
+<a href="https://github.com/Accenture/mercury-nodejs">mercury-nodejs</a>) hosts <code>POST /api/event</code>
+with the engines' exact semantics and speaks the standard envelope wire format, verified
+against the golden conformance vectors shared by the Java and Rust engines. The engine
+addresses a polyglot route through the existing declarative <code>yaml.event.over.http</code> map —
+non-blocking on the JVM (the relay is an interceptor; no thread is held per in-flight
+call) — so a flow task or <code>graph.task</code> node calls a Python or Node.js function exactly as
+if it were local, with trace context, the <code>my_cid</code> → <code>my_correlation_id</code> injection, and
+the portable error contract (handler errors ride HTTP 200 with envelope status; transport
+errors keep 400/403/404/408 with engine-identical messages) intact. The wrapper scope is
+fenced: envelope codec, Event API host, <code>preload</code> registry, thin <code>PostOffice</code> client, a
+primitive in-process event bus (per-route FIFO mailboxes with faithful <code>instances</code>; no
+spill tier, no queue cap), the engines' actuator endpoints, the minimalist utilities
+(configuration with the <code>resources/</code> convention and <code>-Dkey=value</code> overrides,
+engine-format logging with <code>log.format=text|json|compact</code>, trace context), and a dev
+runner — <strong>no orchestration</strong>: flows, graphs, persistence, and pub/sub stay on the
+engines. The single engine change is the <code>graph.task</code> route-existence guard consulting
+the Event-over-HTTP map (Java + Rust lock-step, shipped in v4.11.11). The wire
+conformance vectors are the acceptance gate for every wrapper, and each wrapper release
+extends the interop test report.</p>
+<p><strong>Rationale.</strong> The alternative designs were a full language port and an
+engine-managed subprocess runner, and both were investigated. A full port re-implements
+the composable core (event bus, flow engine, graph engine) per language — the Node.js
+legacy port demonstrated the cost: it fell ~2 years behind and was retired. A
+subprocess runner (functions as child processes over stdio) was prototyped and shelved:
+on JDK 21 pipe I/O and <code>Process.waitFor</code> pin virtual-thread carriers, forcing
+kernel-thread isolation per in-flight call, plus process-tree lifecycle management and
+per-call interpreter startup — an operational stability surface the peer model does not
+have, with the niche benefit (single-artifact embedded scripting) deferred until field
+demand exists. The peer model reuses what already works: the function contract is
+route-name + envelope (nothing in it is Java), the Event API endpoint already carries it
+across instances and across the Rust engine, and the declarative map already abstracts
+location. Keeping orchestration out of the wrappers preserves the architecture's one
+boundary — the engine tier owns sequencing, retries, and back-pressure (a leaf host
+fails fast by deadline instead of hoarding work) — and keeps each wrapper small enough
+to stay in lock-step through a conformance suite rather than a porting effort.
+Engine-consistent utilities and actuator endpoints are part of the decision, not
+convenience: polyglot installations put every language's telemetry, logs, probes, and
+dashboards in front of one DevSecOps team, so presentation parity is a field
+requirement. The Node.js wrapper is also the sanctioned answer to the retired legacy
+port — a fresh re-port was never going to stay current; a thin protocol wrapper can.</p>
 <h2 id="adr-0015">ADR-0015 — AI discovery is a standalone composable app, not a runtime dependency<a class="headerlink" href="#adr-0015" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-21 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> thread-ai-contract-provider</p>
 <!-- id: adr-0015 | status: proposed -->

@@ -1509,6 +1509,8 @@
       
         
       
+        
+      
     
     
     
@@ -1653,6 +1655,34 @@
     
   
     Event over HTTP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/polyglot-functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Polyglot Functions (Python & Node.js)
   
 
     
@@ -2374,6 +2404,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-polyglot-wrapper-round-2026-08-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The polyglot wrapper round (2026-08-22)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#learnings-for-future-language-ports" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2884,6 +2925,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-polyglot-wrapper-round-2026-08-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The polyglot wrapper round (2026-08-22)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#learnings-for-future-language-ports" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2924,8 +2976,9 @@ telemetry presentation-parity drive conducted 2026-07-23.</em></p>
 and — in the interest of honest engineering — the defects the drives surfaced and how each
 was fixed and re-verified. Everything here is reproducible from the shipped examples by
 following the <a href="../../guides/event-over-http/#zero-code-demo">Event over HTTP</a> walk-through.
-It is also kept as a <strong>playbook for future language ports</strong> (e.g. Python) — see the
-learnings section at the end.</p>
+It is also kept as a <strong>playbook for future language ports</strong> — see the learnings section
+at the end; the <a href="#the-polyglot-wrapper-round-2026-08-22">polyglot wrapper round</a> records
+the playbook's first execution, bringing Python and Node.js into the family.</p>
 <h2 id="background-the-wire-format-validation-drive">Background: the wire-format validation drive<a class="headerlink" href="#background-the-wire-format-validation-drive" title="Permanent link">&para;</a></h2>
 <p>The first interop drive (2026-07-22, morning) validated the language-neutral
 <a href="../../guides/event-envelope-wire-format/">standard event envelope wire format</a> end-to-end:
@@ -3414,9 +3467,44 @@ self-consistent — the <code>trace.id.header</code> fallback already yields to 
 engines flipped in lock-step with their precedence regressions inverted, and note that the
 drive's ce_traceparent-only scenario (the gateway simulation) is unaffected: the custom
 name remains the carrier whenever the standard header does not survive the intermediary.</p>
+<h2 id="the-polyglot-wrapper-round-2026-08-22">The polyglot wrapper round (2026-08-22)<a class="headerlink" href="#the-polyglot-wrapper-round-2026-08-22" title="Permanent link">&para;</a></h2>
+<p>The playbook below was executed for real when the <strong>polyglot initiative</strong> brought Python
+and Node.js into the family — not as engine ports but as lightweight <strong>Event-over-HTTP
+wrappers</strong> (<a href="https://github.com/Accenture/mercury-python">mercury-python</a>,
+<a href="https://github.com/Accenture/mercury-nodejs">mercury-nodejs</a>; see the
+<a href="../../guides/polyglot-functions/">Polyglot Functions</a> guide). Evidence from the
+acceptance drives, conducted 2026-08-22 against engine v4.11.10:</p>
+<ol>
+<li><strong>Golden conformance vectors first — item 1 of the playbook, literally.</strong> Both
+   wrappers' standard-format codecs are verified against the same golden vectors the
+   Java and Rust engines share, carried verbatim in each wrapper's test suite. The
+   classic compact format is detected and rejected with a teaching error (the wrappers
+   are standard-only by design).</li>
+<li><strong>Cross-wrapper drive.</strong> Python ⇄ Node.js live in both directions — RPC replies,
+   trace context, and reply annotations intact across both hops.</li>
+<li><strong>The flagship drive: an unchanged engine flow executed a Python function.</strong> The
+   composable-example's shipped <code>event-over-http-declarative</code> Event Script flow — the
+   <a href="../../guides/event-over-http/#zero-code-demo">zero-code demo</a> of this report's
+   earlier rounds — ran against the Python demo host in the lambda-example's slot
+   (same port 8085, same public <code>hello.declarative</code> route), with <strong>zero engine change
+   and zero engine configuration change</strong>. The reply carried <code>"language": "python"</code>;
+   the flow's business correlation id arrived injected as the read-only
+   <code>my_correlation_id</code> header (the <code>my_cid</code> tag contract); <code>x-flow-id</code> and the flow's
+   <code>x-ttl</code> were delivered; and the Python host's log line showed the <strong>engine's trace
+   id</strong> in the engine-consistent log format — presentation parity extending to the
+   wrapper family (playbook items 3 and 5).</li>
+<li><strong>The one engine change shipped separately, in lock-step.</strong> <code>graph.task</code>'s
+   route-existence guard now consults the <code>yaml.event.over.http</code> map on both engines
+   (Java <a href="https://github.com/Accenture/mercury-composable/pull/292">PR #292</a>, Rust
+   <a href="https://github.com/Accenture/mercury/pull/212">PR #212</a>), released in <strong>v4.11.11</strong>
+   — deployed knowledge graphs can name polyglot routes directly.</li>
+</ol>
+<p>Per the initiative's conformance ruling, this report gains a round like this one with
+each wrapper release: the golden vectors are the per-release gate, and a live
+engine-flow-to-wrapper drive is the acceptance proof.</p>
 <h2 id="learnings-for-future-language-ports">Learnings for future language ports<a class="headerlink" href="#learnings-for-future-language-ports" title="Permanent link">&para;</a></h2>
-<p>This validation arc is the playbook for bringing the next language (e.g. Python) into the
-family:</p>
+<p>This validation arc is the playbook that brought Python and Node.js into the family (the
+wrapper round above) and remains the checklist for the next language:</p>
 <ol>
 <li><strong>Golden conformance vectors first.</strong> The wire format is proven byte-identically with
    vectors shared verbatim between repositories — no prose interpretation.</li>

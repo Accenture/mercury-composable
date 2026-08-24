@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/code-conventions/">
+        <link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/polyglot-functions/">
       
       
-        <link rel="prev" href="../actuators-and-http-client/">
+        <link rel="prev" href="../event-over-http/">
       
       
-        <link rel="next" href="../documentation-conventions/">
+        <link rel="next" href="../minimalist-kafka/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Code Conventions - Composable for Java</title>
+        <title>Polyglot Functions - Composable for Java</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#code-conventions" class="md-skip">
+        <a href="#polyglot-functions" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Code Conventions
+              Polyglot Functions
             
           </span>
         </div>
@@ -364,10 +364,12 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
+      <li class="md-tabs__item md-tabs__item--active">
         <a href="../build-test-deploy/" class="md-tabs__link">
           
   
@@ -386,12 +388,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href="../../arch-decisions/ADR/" class="md-tabs__link">
           
   
@@ -1486,8 +1486,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -1515,19 +1517,22 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
             
   
   
@@ -1545,7 +1550,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1672,10 +1677,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../polyglot-functions/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Polyglot Functions (Python & Node.js)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1691,6 +1723,109 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-peers-not-ports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why peers, not ports
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wiring-one-map-entry-per-route" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wiring: one map entry per route
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Wiring: one map entry per route">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-zero-code-demo-third-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The zero-code demo, third language
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#calling-from-a-knowledge-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Calling from a knowledge graph
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-contract-end-to-end" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The contract, end to end
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#operating-a-polyglot-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operating a polyglot installation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1847,10 +1982,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -1892,22 +2025,19 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -1925,7 +2055,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2248,37 +2378,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Conventions
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../code-conventions/" class="md-nav__link">
         
   
   
@@ -2294,81 +2397,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#altitude-where-this-fits" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Altitude — where this fits
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#package-organization" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Package organization
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#route-naming" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Route naming
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#function-granularity" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Function granularity
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        See also
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2548,10 +2576,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#altitude-where-this-fits" class="md-nav__link">
+  <a href="#why-peers-not-ports" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Altitude — where this fits
+        Why peers, not ports
       
     </span>
   </a>
@@ -2559,10 +2587,38 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#package-organization" class="md-nav__link">
+  <a href="#wiring-one-map-entry-per-route" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Package organization
+        Wiring: one map entry per route
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Wiring: one map entry per route">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-zero-code-demo-third-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The zero-code demo, third language
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#calling-from-a-knowledge-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Calling from a knowledge graph
       
     </span>
   </a>
@@ -2570,10 +2626,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#route-naming" class="md-nav__link">
+  <a href="#the-contract-end-to-end" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Route naming
+        The contract, end to end
       
     </span>
   </a>
@@ -2581,10 +2637,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#function-granularity" class="md-nav__link">
+  <a href="#operating-a-polyglot-installation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Function granularity
+        Operating a polyglot installation
       
     </span>
   </a>
@@ -2622,69 +2678,166 @@
   
 
 
-<h1 id="code-conventions">Code Conventions<a class="headerlink" href="#code-conventions" title="Permanent link">&para;</a></h1>
-<p><em>Reference: Recommended conventions for organizing and naming Mercury application code.</em></p>
+<h1 id="polyglot-functions">Polyglot Functions<a class="headerlink" href="#polyglot-functions" title="Permanent link">&para;</a></h1>
+<p><em>Guide: How to write composable functions in Python or Node.js and wire them into flows
+and knowledge graphs.</em></p>
 <blockquote>
 <p><strong>At a glance</strong></p>
 <ul>
-<li><strong>What</strong> — soft, evolving recommendations for how to organize and name code in a composable
-  application: package layout, route naming, function granularity.</li>
-<li><strong>Why it matters</strong> — composable apps are many small functions wired by route names; a little naming
-  and layout discipline keeps the whole readable and keeps route collisions out.</li>
-<li><strong>For</strong> developers and AI agents writing functions, flows, and the classes around them.</li>
+<li><strong>What</strong> — official lightweight wrappers let you write functions in <strong>Python</strong> and
+  <strong>Node.js</strong>; the engine calls them through the declarative
+  <a href="../event-over-http/">Event-over-HTTP</a> map with <strong>zero orchestration code</strong> in the
+  foreign language.</li>
+<li><strong>For</strong> teams whose unit of work lives in another ecosystem — Python ML inference and
+  data tooling, Node.js services — while flows and graphs stay on the engine.</li>
+<li><strong>Versions</strong> — Event Script flows call polyglot functions on any engine that speaks
+  the standard wire format; MiniGraph <code>graph.task</code> requires engine <strong>v4.11.11+</strong>.</li>
 </ul>
 </blockquote>
-<h2 id="altitude-where-this-fits">Altitude — where this fits<a class="headerlink" href="#altitude-where-this-fits" title="Permanent link">&para;</a></h2>
-<p>These are <strong>recommendations</strong>, not hard rules. They sit below the two harder tiers:</p>
+<h2 id="why-peers-not-ports">Why peers, not ports<a class="headerlink" href="#why-peers-not-ports" title="Permanent link">&para;</a></h2>
+<p>A Mercury function is already fully decoupled: it is addressed by a route-name string and
+receives an <code>EventEnvelope</code>. Nothing in that contract says "Java" — so the shortest path
+to another language is not porting the composable core, it is letting a function in that
+language <strong>speak the same envelope over the existing Event API endpoint</strong>.</p>
+<p>That is exactly what the polyglot wrappers are:</p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Repository</th>
+<th>Documentation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Composable for Python</td>
+<td><a href="https://github.com/Accenture/mercury-python">Accenture/mercury-python</a></td>
+<td><a href="https://accenture.github.io/mercury-python/">https://accenture.github.io/mercury-python/</a></td>
+</tr>
+<tr>
+<td>Composable for Node.js</td>
+<td><a href="https://github.com/Accenture/mercury-nodejs">Accenture/mercury-nodejs</a></td>
+<td><a href="https://accenture.github.io/mercury-nodejs/">https://accenture.github.io/mercury-nodejs/</a></td>
+</tr>
+</tbody>
+</table>
+<p>Each wrapper is a long-lived <strong>Event API peer</strong>: an HTTP host serving <code>POST /api/event</code>
+with the engines' exact semantics, a function registry with the engines' <code>preload</code>
+contract (route name, <code>instances</code>, private visibility), a thin <code>PostOffice</code> client, a
+primitive in-process event bus for leaf-side composition, and the minimalist utilities
+(configuration, logging, trace context) in engine-consistent presentation. The envelope
+codec implements the language-neutral
+<a href="../event-envelope-wire-format/">standard wire format</a> and is verified against the same
+golden conformance vectors the Java and Rust engines share.</p>
+<p>Just as important is what the wrappers deliberately <strong>do not</strong> contain: no flows, no
+graphs, no persistence, no pub/sub. Orchestration — sequencing, branching, retries,
+compensation — stays in Event Script and MiniGraph on the engine, where it is
+declarative, inspectable, and governed. A polyglot function is a <strong>unit of work</strong>; the
+architecture keeps it that way.</p>
+<blockquote>
+<p>Why not subprocesses? A child-process design was investigated and shelved: it binds the
+engine to foreign runtime lifecycles (kernel-thread pinning, process-tree cleanup,
+per-call interpreter startup) and creates a stability surface the peer model simply
+does not have. A peer scales, deploys, and restarts independently — it is an ordinary
+application in its own ecosystem.</p>
+</blockquote>
+<h2 id="wiring-one-map-entry-per-route">Wiring: one map entry per route<a class="headerlink" href="#wiring-one-map-entry-per-route" title="Permanent link">&para;</a></h2>
+<p>Polyglot functions ride the same declarative mechanism as any remote engine function —
+the <a href="../event-over-http/#event-over-http-using-configuration"><code>yaml.event.over.http</code> map</a>.
+On the engine application:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">yaml.event.over.http</span><span class="o">=</span><span class="s">classpath:/event-over-http.yaml</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">event.http</span><span class="p">:</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">route</span><span class="p">:</span><span class="w"> </span><span class="s">'hello.declarative'</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">'http://${peer.demo.host:127.0.0.1}:${peer.demo.port}/api/event'</span>
+</code></pre></div>
+<p>That is the entire integration surface. Any flow task or <code>graph.task</code> node that names
+<code>hello.declarative</code> now executes the Python (or Node.js) function — the flow and the
+graph neither know nor care.</p>
+<h3 id="the-zero-code-demo-third-language">The zero-code demo, third language<a class="headerlink" href="#the-zero-code-demo-third-language" title="Permanent link">&para;</a></h3>
+<p>The <a href="../event-over-http/#zero-code-demo">Event over HTTP zero-code demo</a> already swaps its
+Java callee for the Rust hello-world with no changes. The polyglot wrappers extend the
+same swap: their demo apps register the same public <code>hello.declarative</code> route, and the
+wrapper's default port is 8085 — the lambda-example's slot.</p>
+<ol>
+<li>Start the composable-example as in the demo walk-through.</li>
+<li>
+<p>Instead of the lambda-example, start the Python demo (from a clone of
+   mercury-python, after its documented setup):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mercury-serve<span class="w"> </span>examples/demo_app.py<span class="w"> </span>-Drest.server.port<span class="o">=</span><span class="m">8085</span>
+</code></pre></div>
+<p>or the Node.js demo (from a clone of mercury-nodejs, after <code>npm install</code> and
+<code>npm run build</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>node<span class="w"> </span>dist/src/cli.js<span class="w"> </span>examples/demo-app.mjs<span class="w"> </span>-Drest.server.port<span class="o">=</span><span class="m">8085</span>
+</code></pre></div>
+<p>(The <code>-Dkey=value</code> override syntax is the engines' own — the wrappers carry the same
+configuration conventions, so operating them feels identical.)</p>
+</li>
+<li>
+<p>Run the same <code>curl</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">"content-type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">     </span>-d<span class="w"> </span><span class="s1">'{"hello": "world"}'</span><span class="w"> </span>http://127.0.0.1:8100/api/event/http/declarative
+</code></pre></div>
+</li>
+</ol>
+<p>The reply now carries <code>"language": "python"</code> (or <code>"node.js"</code>), and the wrapper's log line
+shows the <strong>engine's trace id</strong> in the engine-consistent log format. This exact drive —
+the shipped <code>event-over-http-declarative</code> flow executing the Python function unchanged,
+with the flow's business correlation id injected as <code>my_correlation_id</code> — was the
+acceptance proof of the polyglot design (see the
+<a href="../../test-reports/event-over-http-interop/#the-polyglot-wrapper-round-2026-08-22">interop report</a>).</p>
+<h2 id="calling-from-a-knowledge-graph">Calling from a knowledge graph<a class="headerlink" href="#calling-from-a-knowledge-graph" title="Permanent link">&para;</a></h2>
+<p><code>graph.task</code> invokes composable functions from graph nodes, and a declarative
+Event-over-HTTP target is a composable function. From engine <strong>v4.11.11</strong> the deployment
+gate and the executor consult the <code>yaml.event.over.http</code> map, so a deployed graph can
+name a polyglot route directly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>skill=graph.task, task=hello.declarative
+</code></pre></div>
+<p>On engines before v4.11.11 the route-existence guard only checked local routes and a
+graph naming a remote target failed validation — upgrade both the Java and Rust engines
+to at least v4.11.11 before pointing graphs at polyglot functions.</p>
+<h2 id="the-contract-end-to-end">The contract, end to end<a class="headerlink" href="#the-contract-end-to-end" title="Permanent link">&para;</a></h2>
+<p>The function contract is the engines' own, restated in each wrapper's documentation
+(start at the wrapper's <em>AI agent guide</em> for the token-efficient version):</p>
 <ul>
-<li><strong><a href="../../arch-decisions/ADR/">Architectural Decision Records</a></strong> — durable architecture <em>decisions</em> with
-  rationale (the <em>why</em>); changing one is a governed event.</li>
-<li><strong><a href="../methodology/">Methodology</a></strong> — the four composable design <em>principles</em> (the philosophy).</li>
-<li><strong>Code conventions (this page)</strong> — evolving "how we organize and name code." Add here when a practice is
-  worth sharing but is a matter of readability or team convention rather than a binding decision.</li>
+<li><strong>Input</strong> — <code>(headers, body)</code> exactly as a <code>TypedLambdaFunction</code> sees them; reserved
+  engine headers are cleaned at ingress; the caller's business correlation id arrives as
+  the read-only <code>my_correlation_id</code> header.</li>
+<li><strong>Errors are portable</strong> — a wrapper <code>AppException(400, "missing 'text'")</code> becomes a
+  400 envelope on HTTP 200 (handler errors ride HTTP 200 with envelope status, exactly
+  like the engines); the calling flow's <code>exception:</code> task or the graph's <code>error.*</code>
+  context fires as if the function were local. Transport-level failures keep the engine
+  status codes: 403 private target, 404 unknown route, 408 timeout.</li>
+<li><strong>Trace continuity</strong> — the engine's trace id and path ride the wire; wrapper telemetry
+  and log lines join the same aggregated trace, and <code>annotate_trace</code> entries return on
+  the reply envelope.</li>
+<li><strong>Timeouts</strong> — the flow's <code>ttl</code> (or the graph's) bounds the call; on breach the engine
+  receives the standard 408 and the exception path decides recovery. Back-pressure and
+  retries belong to the engine tier by design — the wrappers keep no spill queue.</li>
+<li><strong>Wire format</strong> — the wrappers speak the <strong>standard</strong> envelope format only (the
+  engines' default for Event over HTTP); the classic compact format is rejected with a
+  teaching error.</li>
 </ul>
-<p>If a guideline turns out to be load-bearing (breaking it breaks the system), promote it to an ADR instead.</p>
-<h2 id="package-organization">Package organization<a class="headerlink" href="#package-organization" title="Permanent link">&para;</a></h2>
-<p>Group classes by their <strong>role in the composable model</strong>, not by technical type:</p>
-<ul>
-<li><strong>Flow-task functions</strong> — functions that exist to be wired as Event Script tasks (a flow's <code>process:</code>
-  steps) go in a <strong><code>tasks</code> package</strong> (e.g. <code>org.platformlambda.tasks</code>). Collecting them in one place makes
-  the set of "things a flow can call" obvious at a glance and separates them from runtime plumbing. The
-  <code>sync-over-async</code> extension follows this: <code>SyncPrepareTask</code> and <code>SyncAwaitTask</code> (the <code>sync.prepare</code> /
-  <code>sync.await</code> facade tasks) live under <code>tasks</code>, while the return-route coordinator and its helpers stay in
-  the feature package.</li>
-<li><strong>Runtime / engine classes</strong> — coordinators, stores, autoloaders, and other plumbing stay in the
-  <strong>feature package</strong> (e.g. <code>org.platformlambda.sync</code>), not under <code>tasks</code>.</li>
-<li><strong>Configuration holders</strong> — config readers and constants go in a <strong><code>support</code></strong> (or <code>config</code>) package.</li>
-</ul>
-<p>This is a readability convention; the framework does not require it — <code>@PreLoad</code> discovery scans the
-configured <code>web.component.scan</code> base regardless of sub-package, so a function registers wherever it lives.</p>
-<h2 id="route-naming">Route naming<a class="headerlink" href="#route-naming" title="Permanent link">&para;</a></h2>
-<p>A function's <strong>route name is its whole contract</strong> with every flow that calls it (see
-<a href="../../arch-decisions/ADR/">ADR-0001</a> and <a href="../../arch-decisions/ADR/">ADR-0005 — one atom, four roles</a>),
-so name with care:</p>
-<ul>
-<li>Use <strong>lowercase dotted</strong> names: <code>v1.get.profile</code>, <code>sync.prepare</code>, <code>system.of.record</code>.</li>
-<li>Prefer a <strong>stable, intent-revealing</strong> name over an implementation detail — flows reference the string,
-  so renaming a route is a breaking change to every flow that uses it.</li>
-<li><strong>Do not overload a reserved route.</strong> Library and extension functions register their own routes; see
-  <a href="../reserved-names-and-headers/">Reserved Names &amp; Headers</a> for the do-not-collide list (which includes
-  the shipped <code>sync.prepare</code> / <code>sync.await</code> / <code>simple.kafka.notification</code> routes).</li>
-</ul>
-<h2 id="function-granularity">Function granularity<a class="headerlink" href="#function-granularity" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Keep a function a <strong>single unit of work</strong> (input → process → output). Sequencing, branching, and
-  failure handling are <strong>orchestration</strong> and belong in the Event Script flow, not inside the function
-  (see <a href="../../arch-decisions/ADR/">ADR-0007</a>).</li>
-<li>Reserve in-function logic for what a flat task chain genuinely cannot express — e.g. a synchronous
-  blocking rendezvous that must wrap an asynchronous call.</li>
-</ul>
+<h2 id="operating-a-polyglot-installation">Operating a polyglot installation<a class="headerlink" href="#operating-a-polyglot-installation" title="Permanent link">&para;</a></h2>
+<p>The wrappers serve the engines' actuator endpoints on the same port as <code>/api/event</code> —
+<code>/info</code>, <code>/info/routes</code>, <code>/env</code>, <code>/health</code>, <code>/livenessprobe</code> with the <code>type=info</code> /
+<code>type=health</code> health-function contract — and their <code>log.format</code> carries the engines'
+<code>text</code> / <code>json</code> / <code>compact</code> presentations. Kubernetes probes, dashboards, and log
+aggregation treat a Python or Node.js app exactly like an engine app: one operational
+surface, no per-language tooling. This is the
+<a href="../../test-reports/event-over-http-interop/">telemetry presentation parity</a> requirement
+extended to the wrapper family.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../arch-decisions/ADR/">Architectural Decision Records</a> — the durable decisions these conventions realize.</li>
-<li><a href="../methodology/">Methodology</a> — the four composable design principles.</li>
-<li><a href="../reserved-names-and-headers/">Reserved Names &amp; Headers</a> — routes and headers not to overload.</li>
-<li><a href="../event-driven/ai-agent-guide/">Function AI agent guide</a> — the <code>@PreLoad</code> + <code>TypedLambdaFunction</code> contract.</li>
+<li><a href="../event-over-http/">Event over HTTP</a> — the underlying mechanism, endpoint security,
+  and the full demo walk-through.</li>
+<li><a href="https://accenture.github.io/mercury-python/">Composable for Python</a> and
+  <a href="https://accenture.github.io/mercury-nodejs/">Composable for Node.js</a> — write the
+  functions: handler styles, local composition, testing, AI agent guides.</li>
+<li><a href="../../test-reports/event-over-http-interop/">Interop Test Report</a> — the conformance
+  evidence, including the polyglot wrapper round.</li>
+<li><a href="../event-envelope-wire-format/">Event Envelope Wire Format</a> — the language-neutral
+  contract everything above rides on.</li>
 </ul>
 
 
@@ -2726,7 +2879,7 @@ so name with care:</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../actuators-and-http-client/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Actuators &amp; HTTP Client">
+          <a href="../event-over-http/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Event over HTTP">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2736,20 +2889,20 @@ so name with care:</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Actuators & HTTP Client
+                Event over HTTP
               </div>
             </div>
           </a>
         
         
           
-          <a href="../documentation-conventions/" class="md-footer__link md-footer__link--next" aria-label="Next: Documentation Conventions">
+          <a href="../minimalist-kafka/" class="md-footer__link md-footer__link--next" aria-label="Next: Minimalist Kafka">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Documentation Conventions
+                Minimalist Kafka
               </div>
             </div>
             <div class="md-footer__button md-icon">
