@@ -54,7 +54,7 @@ A machine-readable map of the whole site lives at [`llms.txt`](llms.txt).
 - **Get started** — [Getting Started](guides/getting-started.md)
 - **Guides** — [REST Automation](guides/rest-automation/index.md) · [Build, Test & Deploy](guides/build-test-deploy.md) ·
   [Spring Boot Integration](guides/spring-boot.md) · [Event over HTTP](guides/event-over-http.md) ·
-  [Service Mesh](guides/service-mesh.md)
+  [Polyglot Functions](guides/polyglot-functions.md) · [Service Mesh](guides/service-mesh.md)
 - **Knowledge Graph** — [Knowledge Graph as Application](guides/knowledge-graph/index.md) ·
   [Build your first graph](guides/knowledge-graph/build-your-first-graph.md) ·
   [Minimalist Property Graph](guides/knowledge-graph/property-graph.md)
@@ -75,3 +75,7 @@ A machine-readable map of the whole site lives at [`llms.txt`](llms.txt).
   layers, same flow YAML, behavior-synced with this engine:
   [github.com/Accenture/mercury](https://github.com/Accenture/mercury)
   · [documentation](https://accenture.github.io/mercury/)
+- **Polyglot functions:** write functions in **Python** or **Node.js** and call them from
+  flows and graphs — see [Polyglot Functions](guides/polyglot-functions.md):
+  [Composable for Python](https://accenture.github.io/mercury-python/)
+  · [Composable for Node.js](https://accenture.github.io/mercury-nodejs/)

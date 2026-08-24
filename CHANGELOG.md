@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Added
+
+1. Polyglot Functions documentation chapter (`guides/polyglot-functions.md`) - writing
+   composable functions in Python and Node.js with the official Event-over-HTTP wrappers
+   (docs: accenture.github.io/mercury-python and accenture.github.io/mercury-nodejs),
+   with the zero-code demo extended to the wrapper demo apps. ADR-0016 (Proposed) records
+   the peers-not-subprocesses design; the interop test report gains the polyglot wrapper
+   round (2026-08-22 acceptance drives); the home page now links the wrapper family.
+
+---
 ## Version 4.11.11, 8/23/2026
 
 ### Added

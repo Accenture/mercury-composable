@@ -22,6 +22,55 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0016 — Polyglot functions are Event-over-HTTP peers, not subprocesses or ports {#adr-0016}
+**Status:** Proposed · **Date:** 2026-08-22 · **Serves:** vision-mercury-composable · **Formalizes:** polyglot-event-over-http-design
+<!-- id: adr-0016 | status: proposed -->
+
+**Abstract.** Functions written in Python and Node.js join Event Script flows and
+MiniGraph knowledge graphs as long-lived **Event API peers**: each official wrapper
+([mercury-python](https://github.com/Accenture/mercury-python),
+[mercury-nodejs](https://github.com/Accenture/mercury-nodejs)) hosts `POST /api/event`
+with the engines' exact semantics and speaks the standard envelope wire format, verified
+against the golden conformance vectors shared by the Java and Rust engines. The engine
+addresses a polyglot route through the existing declarative `yaml.event.over.http` map —
+non-blocking on the JVM (the relay is an interceptor; no thread is held per in-flight
+call) — so a flow task or `graph.task` node calls a Python or Node.js function exactly as
+if it were local, with trace context, the `my_cid` → `my_correlation_id` injection, and
+the portable error contract (handler errors ride HTTP 200 with envelope status; transport
+errors keep 400/403/404/408 with engine-identical messages) intact. The wrapper scope is
+fenced: envelope codec, Event API host, `preload` registry, thin `PostOffice` client, a
+primitive in-process event bus (per-route FIFO mailboxes with faithful `instances`; no
+spill tier, no queue cap), the engines' actuator endpoints, the minimalist utilities
+(configuration with the `resources/` convention and `-Dkey=value` overrides,
+engine-format logging with `log.format=text|json|compact`, trace context), and a dev
+runner — **no orchestration**: flows, graphs, persistence, and pub/sub stay on the
+engines. The single engine change is the `graph.task` route-existence guard consulting
+the Event-over-HTTP map (Java + Rust lock-step, shipped in v4.11.11). The wire
+conformance vectors are the acceptance gate for every wrapper, and each wrapper release
+extends the interop test report.
+
+**Rationale.** The alternative designs were a full language port and an
+engine-managed subprocess runner, and both were investigated. A full port re-implements
+the composable core (event bus, flow engine, graph engine) per language — the Node.js
+legacy port demonstrated the cost: it fell ~2 years behind and was retired. A
+subprocess runner (functions as child processes over stdio) was prototyped and shelved:
+on JDK 21 pipe I/O and `Process.waitFor` pin virtual-thread carriers, forcing
+kernel-thread isolation per in-flight call, plus process-tree lifecycle management and
+per-call interpreter startup — an operational stability surface the peer model does not
+have, with the niche benefit (single-artifact embedded scripting) deferred until field
+demand exists. The peer model reuses what already works: the function contract is
+route-name + envelope (nothing in it is Java), the Event API endpoint already carries it
+across instances and across the Rust engine, and the declarative map already abstracts
+location. Keeping orchestration out of the wrappers preserves the architecture's one
+boundary — the engine tier owns sequencing, retries, and back-pressure (a leaf host
+fails fast by deadline instead of hoarding work) — and keeps each wrapper small enough
+to stay in lock-step through a conformance suite rather than a porting effort.
+Engine-consistent utilities and actuator endpoints are part of the decision, not
+convenience: polyglot installations put every language's telemetry, logs, probes, and
+dashboards in front of one DevSecOps team, so presentation parity is a field
+requirement. The Node.js wrapper is also the sanctioned answer to the retired legacy
+port — a fresh re-port was never going to stay current; a thin protocol wrapper can.
+
 ## ADR-0015 — AI discovery is a standalone composable app, not a runtime dependency {#adr-0015}
 **Status:** Proposed · **Date:** 2026-08-21 · **Serves:** vision-mercury-composable · **Formalizes:** thread-ai-contract-provider
 <!-- id: adr-0015 | status: proposed -->
