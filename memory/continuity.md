@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-23 | agent: Claude Code (2026-08-23-042109)
+- **last_session:** 2026-08-24 | agent: Claude Code (2026-08-24-001110)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -235,6 +235,18 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-14 | uses: 2 | tier: working -->
 ## Open Threads
 
+- [x] (release — SHIPPED 2026-08-23 local, **both repos in lock-step at v4.11.11**;
+  **both GitHub releases PUBLISHED by Eric**) **v4.11.11 — the graph.task
+  Event-over-HTTP field release.** Java: release
+  [PR #293](https://github.com/Accenture/mercury-composable/pull/293) squash `50d890bf`
+  == gated `39441544` (tree verified, title clean), 34-pom sweep, full reactor green
+  (6:08), tag dereference-verified on the squash. Rust: release PR #213 merge `3040e8e3`
+  carrying `2d4baae4` (tree verified), workspace bump (Cargo.toml + 12 lock entries),
+  test/clippy/fmt clean, tag on the merge. Sole content: the P2 graph.task guard
+  (#292 / #212) — deployed graphs call polyglot function hosts. Full detail: origin log.
+  Relates [[thread-polyglot-initiative]].
+  <!-- id: thread-release-4-11-11 | created: 2026-08-24 | last_used: 2026-08-24 | uses: 1 | tier: working | origin: 2026-08-24-001110 -->
+
 - [ ] (feature — design RATIFIED D0–D8 2026-08-22 + two in-flight refinements (minimalist
   utilities; resources/ + -D config conventions); **both wrapper repos REBOOTED and scaffolded
   same day on `feature/polyglot-event-over-http`, and **both MERGED same day** — mercury-python
@@ -257,8 +269,8 @@
   [PR #292](https://github.com/Accenture/mercury-composable/pull/292) squash `fad24f11` ==
   gated `a31c5316` (incl. Eric's IDE cosmetics; title clean), Rust
   [PR #212](https://github.com/Accenture/mercury/pull/212) merge `c49d6cd7` carrying
-  `83b12c36`; trees verified, CI green both, branches deleted both ends; rides the next
-  release.**
+  `83b12c36`; trees verified, CI green both, branches deleted both ends — **SHIPPED to the field in v4.11.11, 2026-08-23**
+  ([[thread-release-4-11-11]]).**
   **Wrapper feature round MERGED 2026-08-23** — both wrappers gained the primitive
   event bus (instances/private faithful, local PostOffice delivery, no-spill ruling),
   the actuator endpoints, log.format text|json|compact and a sample
