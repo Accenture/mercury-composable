@@ -1248,9 +1248,10 @@ Map of file extension to MIME type. Example: `mime.types.svg: image/svg+xml`.
 
 | Type | Default |
 |------|---------|
-| `boolean` | `false` |
+| `boolean` | `true` |
 
-When `true`, JSON output uses `snake_case` field names instead of `camelCase`.
+JSON field names use `snake_case` by default — the cross-language wire convention shared with
+the Rust engine, whose serialization is snake_case at compile time. Set `false` for `camelCase`.
 
 ---
 
@@ -1329,7 +1330,7 @@ kafka.correlation.id.header=cid
 protect.info.endpoints=false
 
 # --- Serialization ---
-snake.case.serialization=false
+snake.case.serialization=true
 
 # --- Logging ---
 log.format=text

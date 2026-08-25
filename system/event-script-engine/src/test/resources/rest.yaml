@@ -392,6 +392,15 @@ rest:
     tracing: true
 
   - service: "http.flow.adapter"
+    methods: [ 'GET' ]
+    url: "/api/pluggableFunctions/set-config"
+    flow: 'set-config-parameter'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
     methods: [ 'POST' ]
     url: "/api/wildcard-conversion/test"
     flow: 'wildcard-conversion-test'

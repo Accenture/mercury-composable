@@ -13,8 +13,11 @@
 
 ## Review triggers
 - review_every:         10   # run a review this many sessions after the last one
-- continuity_max_facts:  30  # ...or when continuity.md holds more than this many decaying facts/threads
+- continuity_max_facts:  35  # ...or when continuity.md holds more than this many decaying facts/threads
                              #    (the PRIMARY lean signal — a count, immune to verbosity & session velocity)
+                             #    (30 → 35 by Eric, 2026-08-21: this mature multi-module reactor sat
+                             #    chronically at the old cap — recurring the moment threads closed, only
+                             #    aging out over the 20-session window; see memory-health-fact-cap-2026-08-14)
 - continuity_max_lines: 1000 # ...or this many lines (a coarse backstop; raised from 300 in v4.24.0 — a mature,
                              #    actively-developed layer legitimately sits ~450–600 lines even when healthy).
                              #    Meant to be raised for a legitimately large/complex repo — a 29-module
@@ -22,6 +25,11 @@
                              #    nothing archivable. When lines exceed this but nothing has faded/superseded,
                              #    memory-lint says so (condense shipped decisions, or raise this) rather than
                              #    prescribing a review that can't help (v4.28.3).
+- closed_narrative_max_lines: 150  # ...or when completed [x] threads carry more narrative than this while
+                             #    waiting out archive_window. Close records are 3–6-line stubs; the full
+                             #    story lives in the origin session log (v4.38.0 — measured here 2026-08-21:
+                             #    64% of continuity was closed-thread narrative). Reviews condense (REVIEW.md);
+                             #    matches the terse-close-record convention in memory/instructions.md.
 
 ## Invariant verification
 - verify_invariants_every: 40  # sessions between human re-checks of core / invariants (raised from 20 in

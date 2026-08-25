@@ -123,6 +123,7 @@ export function load_windows(root) {
     review_every: 10,
     continuity_max_facts: 30,
     continuity_max_lines: 600,
+    closed_narrative_max_lines: 150,
   };
   const p = join(root, "memory", "decay-policy.md");
   if (existsSync(p)) {
@@ -415,11 +416,39 @@ export function check_continuity_health(cont, sessions, cont_text, cont_lines, r
   return out;
 }
 
+export function closed_narrative_lines(cont_text) {
+  // Non-empty lines belonging to completed `- [x]` thread records (checkbox line
+  // through footer), the block ending at the next open thread or heading. This is
+  // the measured bloat class (mercury-composable field report, 2026-08-21: 64% of
+  // continuity was closed-thread narrative whose canonical home is the origin log).
+  let in_block = false;
+  let count = 0;
+  for (const line of cont_text.split(/\r?\n/)) {
+    if (/^- \[x\]/.test(line)) in_block = true;
+    else if (/^- \[ \]/.test(line) || line.startsWith("#")) in_block = false;
+    if (in_block && line.trim()) count += 1;
+  }
+  return count;
+}
+
+export function check_closed_thread_bloat(cont_text, cap) {
+  // (11) advisory: completed threads should wait out archive_window as terse
+  // stubs (3–6 lines), not full ship narratives — REVIEW.md condenses them.
+  const n = closed_narrative_lines(cont_text);
+  if (n <= cap) return [];
+  return [
+    `[closed-thread-bloat] ${n} line(s) of completed [x] thread records > ` +
+      `closed_narrative_max_lines ${cap} — condense them to 3-6-line stubs at the next ` +
+      `review (REVIEW.md; the full narrative lives in each thread's origin session log), ` +
+      `or raise closed_narrative_max_lines in decay-policy.md.`,
+  ];
+}
+
 // (10) [secret-material] — committed memory surfaces must not carry credentials or PII.
 // Field incident (reported 2026-08-13, a client repo's DLP scanner): smoke-test output pasted into a
 // session log leaked a live OAuth client secret — session logs are committed & shared, so
 // anything pasted into them ships to every clone. This check is the deterministic backstop
-// behind the AGENTS.md redaction rule. Advisory (WARN): the script detects *shapes*; whether
+// behind the memory/PROTOCOL.md redaction rule. Advisory (WARN): the script detects *shapes*; whether
 // a hit is a real secret stays human/agent judgment. Unlike check 7 it DOES scan sessions/
 // and archive/ — that's where pasted output lives — and it never echoes the matched value
 // (a lint line quoting the secret would just amplify the leak into terminals and CI logs).
@@ -489,6 +518,17 @@ const HOME_OK = new Set(["runner", "user", "username", "vsts_azpcontainer"]); //
 
 function is_placeholder_value(key, v) {
   // Values that are templates, redactions, or number/date/version shapes — not secrets.
+  // The tool's own opt-down knob is knob vocabulary, not a credential: the pre-commit guard's
+  // blocking message itself prints "AGENT_MEMORY_SECRET_GUARD=advisory", so a memory file
+  // documenting that guidance would otherwise self-flag (field report, 2026-08-19).
+  // Value-constrained on purpose — an arbitrary value under this key still flags, so the
+  // exemption cannot be used as a smuggling envelope. Trailing ).,  punctuation is tolerated
+  // because prose/parenthesized guidance rides it into the captured value — the guard's own
+  // line ends "…=advisory)" (same capture behavior v4.33.2 fixed for backticks).
+  if (["AGENT_MEMORY_SECRET_GUARD", "AGENT-MEMORY.SECRETGUARD"].includes(key.toUpperCase())
+      && /^(?:advisory|enforcing)[).,]*$/i.test(v)) {
+    return true; // the git-config spelling (agent-memory.secretguard) is the same knob
+  }
   if (TEMPLATE_VALUE_RE.test(v)) return true;
   const m = TEMPLATE_DEFAULT_RE.exec(v);
   if (m && (m[1].length < 8 || is_placeholder_value(key, m[1]))) {
@@ -549,7 +589,7 @@ export function check_secret_material(root) {
 // hook's footer), never repeated per finding (field feedback, 2026-08-14 regression test).
 const SECRET_GUIDANCE =
   "  -> committed files are shared: redact to (REDACTED) or move the value out; a live " +
-  "credential is EXPOSED — rotate it (git history keeps the original; see the AGENTS.md " +
+  "credential is EXPOSED — rotate it (git history keeps the original; see the memory/PROTOCOL.md " +
   "redaction rule)";
 
 function scan_lines(path, rel, credential_only) {
@@ -689,6 +729,7 @@ export function main(argv) {
       cont, sessions, cont_text, cont_lines,
       w.review_every, w.continuity_max_facts, w.continuity_max_lines, pinned, archivable
     ),
+    ...check_closed_thread_bloat(cont_text, w.closed_narrative_max_lines),
     ...check_stale_metadata(cont, pinned, refs, stems, w.working_window, acw, aw),
     ...check_secret_material(root),
   ];

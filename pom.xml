@@ -8,7 +8,7 @@
     <groupId>com.accenture.mercury</groupId>
     <artifactId>parent-mercury</artifactId>
     <packaging>pom</packaging>
-    <version>4.11.9</version>
+    <version>4.11.11</version>
     <name>Parent Mercury</name>
 
     <modules>
@@ -21,6 +21,7 @@
         <module>system/mini-scheduler</module>
         <module>system/minimalist-kafka</module>
         <module>system/twin-kafka</module>
+        <module>system/ai-contract-provider</module>
 
         <!-- Extensions -->
         <module>extensions/reactive-postgres</module>

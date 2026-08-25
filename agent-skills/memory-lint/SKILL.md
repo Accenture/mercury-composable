@@ -21,7 +21,7 @@ script, so the riskiest operation is verified against observable evidence.
 
 - **After** running the memory **review** ritual (`REVIEW.md`) — verify its archival decisions.
 - **Before** committing `memory/` changes.
-- In **CI** or a **pre-commit hook** (the optional reinforcement `AGENTS.md` mentions) — a non-zero
+- In **CI** or a **pre-commit hook** (the reinforcement `memory/PROTOCOL.md` describes) — a non-zero
   exit fails the gate.
 
 ## What to do
@@ -66,6 +66,11 @@ script, so the riskiest operation is verified against observable evidence.
    - *advisory* — **`[continuity-bloat]`**: more than `continuity_max_facts` decaying facts/threads
      (the primary lean signal — a count, immune to verbosity & session velocity), or more than
      `continuity_max_lines` lines (a coarse backstop). Both say "a review is due to lean it down."
+   - *advisory* — **`[closed-thread-bloat]`** (v4.38.0): more than `closed_narrative_max_lines`
+     (default 150) non-empty lines inside completed `- [x]` thread blocks — close records should
+     wait out `archive_window` as 3–6-line stubs, not ship narratives (the full story lives in each
+     thread's origin session log; a review condenses them per `REVIEW.md` step 5). Measured field
+     cost: 64% of a hot repo's continuity was closed-thread narrative.
    - *advisory* — **`[stale-metadata]`**: a fact's stored `tier` disagrees with the tier recomputed from
      the reference log (review steps 2–3 — apply events / re-tier — were skipped), excluding `core`,
      `superseded`, never-referenced facts, and **pinned `- [ ]` open threads** (their tier label isn't
@@ -82,6 +87,15 @@ script, so the riskiest operation is verified against observable evidence.
      still holds the original. Waive a deliberately-quoted example (e.g. a log documenting a cleanup)
      by tagging that line `lint:allow-secret-material`. (Field incident, reported 2026-08-13: a client
      repo's DLP scanner caught a live OAuth client secret pasted into a committed session log.)
+     **Known-safe documentation examples still flag by design** — e.g. AWS's canonical doc pair
+     (`AKIA…EXAMPLE` and its secret partner): the guard keeps one simple contract (anything
+     credential-shaped gets redacted or visibly waived) rather than an invisible built-in whitelist;
+     quote such an example deliberately with the same `lint:allow-secret-material` tag (v4.34.2).
+     The one built-in exemption is the tool's **own opt-down knob** — the guard's blocking message
+     prints `AGENT_MEMORY_SECRET_GUARD=advisory`, so documenting that guidance is not a finding
+     (env-var and git-config spellings, `AGENT_MEMORY_SECRET_GUARD` / `agent-memory.secretguard`;
+     only the documented settings `advisory`/`enforcing` — any other value under those keys still
+     flags, v4.34.2).
 3. **ERROR** (exit 1) → fix per `DECAY.md` / `REVIEW.md`: reactivate an over-archived fact (move it
    back into `continuity.md`), de-duplicate, or repair a link. **WARN** is advisory — the next review
    may act on it.

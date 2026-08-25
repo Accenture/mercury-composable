@@ -8,6 +8,93 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Added
+
+1. Polyglot Functions documentation chapter (`guides/polyglot-functions.md`) - writing
+   composable functions in Python and Node.js with the official Event-over-HTTP wrappers
+   (docs: accenture.github.io/mercury-python and accenture.github.io/mercury-nodejs),
+   with the zero-code demo extended to the wrapper demo apps. ADR-0016 (Proposed) records
+   the peers-not-subprocesses design; the interop test report gains the polyglot wrapper
+   round (2026-08-22 acceptance drives); the home page now links the wrapper family.
+
+---
+## Version 4.11.11, 8/23/2026
+
+### Added
+
+1. `graph.task` accepts a task route declared as a declarative Event-over-HTTP target
+   (`yaml.event.over.http`) - a knowledge graph can invoke remote engine instances and
+   polyglot (python/node.js) function hosts as graph tasks. New
+   `PostOffice.getEventHttpTarget(route)` API exposes the declarative map lookup.
+
+---
+## Version 4.11.10, 8/21/2026
+
+### Added
+
+1. **`system/ai-contract-provider` — a standalone composable app serving Mercury's
+   version-matched operational contract for AI discovery.** Read-only REST endpoints on
+   port 8999 (`/api/discovery`, `/api/contracts`, `/api/contracts/{id}`, `/api/skill`,
+   `/api/references?path=...`, `/api/manifest`), each wired `rest.yaml` →
+   `http.flow.adapter` → Event Script flow → function — the app is itself a reference
+   implementation of the composable pattern. `--export <directory>` writes the offline
+   `mercury-platform` Agent Skill (SKILL.md, the linked guide closure, the installed
+   contract inventory, per-file SHA-256 manifest written last as the completion marker);
+   two exports of the same build are byte-identical, and the exporter never overwrites an
+   existing snapshot. The served `mercury_version` comes from the platform-core
+   dependency itself (no release-time constant), contract behavior anchors are resolved
+   with `Class.forName` in tests so the catalog cannot drift from the code, and a
+   packaged-inventory test pins `files.list` to the real `docs/guides` tree. No framework
+   module changes: the app depends on the runtime, never the reverse. (ADR-0015 proposed)
+
+2. **Event Script `f:setConfig` plugin — set or override a configuration parameter at
+   run-time.** The new built-in simple plugin stores a key-value pair as a system property,
+   which takes precedence over the base configuration on every subsequent read. Typical use:
+   a start-up flow hydrates secrets from a cloud secret manager before dependent components
+   consume them. The key must be a non-empty string; the value can be any object and is
+   converted to text. Invalid input returns false without side effect.
+
+### Fixed
+
+1. **The OpenTelemetry forwarder no longer drops a span when a pooled connection dies
+   mid-export.** The OTLP exporter's default retry covers only a whitelist of transport errors
+   (connect/socket timeouts, unknown host, `SocketException`); a keep-alive connection that the
+   collector closed at the moment of reuse surfaces as a plain
+   `IOException: unexpected end of stream`, which failed on the first attempt and silently
+   dropped the span (observed as an occasional CI failure of the flow-summary assertion — and
+   the same drop loses production spans in the field). The exporter now retries **every**
+   `IOException` under the SDK's default bounded backoff (5 attempts, 1s→5s); HTTP status
+   handling is unchanged (retry on 429/502/503/504 only). Telemetry delivery is at-least-once
+   by design: a rare duplicate span is tolerated by every backend, a dropped span is data loss.
+   The export-failure warning now includes the cause, so any future drop is self-diagnosing.
+   Pinned by a raw-socket test that kills the first connection after reading the request —
+   the fixed exporter recovers on the second connection; without the widened retry policy the
+   span is provably lost.
+
+2. **The OpenTelemetry forwarder no longer drops a span when the export executor rejects the
+   call.** The very first CI run carrying the new cause-bearing warning exposed a second failure
+   class: `InterruptedIOException: executor rejected` — the sender's managed dispatcher runs a
+   zero-queue thread pool (`core=0`, `SynchronousQueue`) whose `execute()` rejects during
+   transient full-occupancy races, and a rejected call never reaches the retry interceptor, so
+   no retry policy can save it (retrying calls sleeping through backoff also widen that race
+   window). The exporter now runs on its own small fixed pool with an **unbounded queue** —
+   saturation means "later", never "lost" — and the pool's lifecycle is tied to the exporter so
+   a closed exporter leaks no threads. Pinned by a saturation-burst test (a burst far wider than
+   the pool queues and delivers every span) and a thread-lifecycle test (provably no export
+   threads without the owned pool, none leaked after close).
+
+3. **Documentation taught a broken rest.yaml flow binding.** Two guides showed a flow-backed
+   endpoint bound with `flow:` alone (one even advised using `flow:` *instead of* `service:`),
+   but the REST automation engine skips any entry without `service:` as invalid — a flow
+   binding requires **both** `service: 'http.flow.adapter'` and `flow: '<flow-id>'`. The guides
+   are corrected, and the worked example is now a single canonical fixture
+   (`guide-fixtures/rest-bindings.yaml`) embedded into the documentation by mkdocs **and**
+   loaded through the production `RoutingEntry` parser in a platform-core test, so the
+   documented example can no longer drift from what the router accepts.
+
+---
 ## Version 4.11.9, 8/11/2026
 
 ### Changed

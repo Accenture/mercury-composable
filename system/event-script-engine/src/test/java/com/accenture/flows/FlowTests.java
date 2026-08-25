@@ -2065,6 +2065,41 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
+    void shouldSetConfigParameterWithPluggableFunction() throws InterruptedException, ExecutionException {
+        final long timeout = 8000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(host)
+                .setMethod("GET")
+                .setHeader("accept", "application/json")
+                .setUrl("/api/pluggableFunctions/set-config");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = EventEnvelope.of().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope res = po.request(req, timeout).get();
+        assertNotNull(res);
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertNotNull(result);
+        // the plugin sets the parameter as a system property
+        assertEquals(true, result.get("updated"));
+        assertEquals("from-config-plugin", System.getProperty("unit.test.config.override"));
+        // a system property overrides base configuration at run-time, so a later task
+        // reading the parameter with the map(key) constant sees the updated value
+        assertEquals("from-config-plugin", result.get("value_from_config"));
+        assertEquals("from-config-plugin",
+                AppConfigReader.getInstance().getProperty("unit.test.config.override"));
+        // a non-string value is converted to text with String.valueOf(value)
+        assertEquals(true, result.get("numeric_value"));
+        assertEquals("8088", System.getProperty("unit.test.config.numeric"));
+        assertEquals("8088", result.get("numeric_from_config"));
+        // invalid usage returns false and sets nothing - missing 2nd argument
+        assertEquals(false, result.get("one_argument"));
+        assertNull(System.getProperty("unit.test.config.incomplete"));
+        // invalid usage returns false - empty parameter name
+        assertEquals(false, result.get("empty_key"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void inputConversionTest() throws ExecutionException, InterruptedException {
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(host).setMethod("POST")

@@ -103,3 +103,30 @@
 - release-4-8-0-shipped — Release 4.8.0 — SHIPPED 2026-07-10 (tag `v4.8.0` on `5d9fda45`; PRs #153-#157): twin-kafka… — faded — 2026-Q3.md
 - bp-graph-workflow-suspension — (blueprint — RATIFIED by Eric 2026-07-28; CLOSED by Eric's gate 2026-07-30 — realized on — faded — 2026-Q3.md
 - thread-release-4-11-0 — (release — SHIPPED AND PUBLISHED 2026-07-30, both repos in lock-step) — faded — 2026-Q3.md
+- release-4-8-1-shipped — Release 4.8.1 — SHIPPED 2026-07-11 (tag `v4.8.1` on `3d226c5b`; PRs #159-#161). Durable — faded (sslu > archive_window 20; 2026-08-21 review) — 2026-Q3.md
+- thread-release-4-11-4 — (release — SHIPPED AND PUBLISHED 2026-08-08, both repos in lock-step at — faded (sslu > archive_window 20; 2026-08-21 review) — 2026-Q3.md
+- thread-task-ttl-override — (feature — COMPLETE ON BOTH ENGINES: Rust half shipped 2026-08-01 in — faded (sslu > archive_window 20; 2026-08-21 review) — 2026-Q3.md
+- thread-release-4-11-1 — (release — SHIPPED 2026-08-01, Java only — the first Java-ahead-of-Rust release — faded (sslu > archive_window 20; 2026-08-21 review) — 2026-Q3.md
+- thread-graph-suspend-resume — (feature — COMPLETE across P1-P5, both engines) Graph suspend/resume: workflow suspension — faded (sslu > archive_window 20; 2026-08-21 review) — 2026-Q3.md
+- thread-sonar-4-10-4-field-rejection — (field support — CLOSED 2026-07-26: field rescan of v4.10.6 PASSED the Sonar gate with a — faded (sslu > archive_window 20; 2026-08-21 review) — 2026-Q3.md
+- thread-kafka-client-version-upgrade — (planned — CLOSED 2026-08-03: executed by the v4.11.2 release, which gained a CVE — faded (sslu > archive_window 20; 2026-08-21 review) — 2026-Q3.md
+- graph-suspend-resume-design — Graph workflow suspension: short runs + external state store, encapsulated in skills — faded — 2026-Q3.md
+- conv-helpers-docker-less — The `helpers/` standalone servers exist for Docker-less developer machines and are — faded — 2026-Q3.md
+- repo-ui-loop-engineer-skill — `ui-loop-engineer` is a repo-wide vendor-neutral skill. Its canonical source lives at — faded — 2026-Q3.md
+- memory-health-fact-cap-2026-08-14 — (memory-health) Post-review continuity holds 34 decay-eligible facts above the — faded — 2026-Q3.md
+- thread-release-4-11-8 — (release — SHIPPED AND PUBLISHED 2026-08-10 local / 2026-08-11 UTC, both repos in — faded — 2026-Q3.md
+- thread-untitled-dry-run-identity — (fix — MERGED ON BOTH ENGINES 2026-08-11, all CI green; rides the next release. — faded — 2026-Q3.md
+- thread-dry-run-graph-scope-fix — (fix — MERGED ON BOTH ENGINES 2026-08-11, all CI green; rides the next release. — faded — 2026-Q3.md
+- thread-release-4-11-7 — (release — SHIPPED AND PUBLISHED 2026-08-10 local / 2026-08-11 UTC, Java only — minimalist… — faded — 2026-Q3.md
+- thread-kafka-kip848-auto — (feature — MERGED 2026-08-11 as — faded — 2026-Q3.md
+- thread-release-4-11-6 — (release — SHIPPED AND PUBLISHED 2026-08-10, both repos in lock-step at — faded — 2026-Q3.md
+- thread-graph-task-model-staging — (feature+fix — COMPLETE ON BOTH ENGINES 2026-08-08, all CI green; rides the — faded — 2026-Q3.md
+- thread-dynamic-statement-targets — (feature+fix — COMPLETE ON BOTH ENGINES 2026-08-10, both merged same day; rides — faded — 2026-Q3.md
+- thread-field-graph-scoped-state-and-error-context — (feature — COMPLETE ON BOTH ENGINES 2026-08-10, same day as the field review; — faded — 2026-Q3.md
+- thread-field-review-rationalization — (field validation — CLOSED 2026-08-10: the review WENT WELL. The team demoed a — faded — 2026-Q3.md
+- thread-suspend-resume-rationalization — (design+feature — RATIFIED by Eric 2026-08-07 (R1-R7; R2 refined by Eric); — faded — 2026-Q3.md
+- thread-tutorial-14-decision — (feature — COMPLETE ON BOTH ENGINES 2026-08-07: Java MERGED as — faded — 2026-Q3.md
+- thread-kafka-consumer-resilience — (field support — reported 2026-08-06 by a field member's code review; all three — faded — 2026-Q3.md
+- thread-redis-getdel-compat — (field support — COMPLETE ON BOTH ENGINES: Rust half shipped 2026-08-01 in — faded — 2026-Q3.md
+- thread-kafka-2nd-level-routing — (feature — design RATIFIED 2026-07-30; MERGED same day as — faded — 2026-Q3.md
+- thread-release-4-11-2 — (release — SHIPPED 2026-08-03, Java only by nature — the Maven dependency surface — faded — 2026-Q3.md

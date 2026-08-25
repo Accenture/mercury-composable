@@ -44,45 +44,13 @@ Look up exact fields/values in [`rest-automation.json`](rest-automation.json); f
 
 ## Worked example {#example}
 
-A flow-backed endpoint plus a reusable CORS config:
+The canonical example below covers all three binding forms — a flow-backed endpoint with
+reusable CORS and response-header configs, a function-backed endpoint with a path parameter,
+and an HTTP relay with `url_rewrite`. This exact file is also loaded through the production
+`RoutingEntry` parser in a platform-core test, so the example cannot drift from the router:
 
 ```yaml
-rest:
-  - service: 'http.flow.adapter'
-    flow: 'order-status'
-    methods: ['POST']
-    url: '/api/orders/{order_id}/status'
-    timeout: 30s
-    cors: cors_1
-    headers: header_1
-    tracing: true
-
-cors:
-  - id: cors_1
-    options:
-      - 'Access-Control-Allow-Origin: *'
-      - 'Access-Control-Allow-Methods: GET, POST, OPTIONS'
-      - 'Access-Control-Allow-Headers: Origin, Authorization, Content-Type'
-    headers:
-      - 'Access-Control-Allow-Origin: *'
-
-headers:
-  - id: header_1
-    response:
-      add:
-        - 'x-powered-by: mercury'
-      drop:
-        - 'server'
-```
-
-A function-backed endpoint with a path parameter:
-
-```yaml
-rest:
-  - service: 'profile.lookup'
-    methods: ['GET']
-    url: '/api/profile/{id}'
-    timeout: 10s
+--8<-- "system/platform-core/src/test/resources/guide-fixtures/rest-bindings.yaml"
 ```
 
 A traced endpoint serving a legacy caller that uses its own trace/correlation header names

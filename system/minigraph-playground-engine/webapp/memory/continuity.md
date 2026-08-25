@@ -5,7 +5,7 @@
 - **scope:** MiniGraph Playground React/Vite webapp
 - **root:** `system/minigraph-playground-engine/webapp`
 - **served bundle:** `system/minigraph-playground-engine/src/main/resources/public`
-- **last_session:** 2026-08-18 | agent: Codex (2026-08-18-133837)
+- **last_session:** 2026-08-19 | agent: Codex (2026-08-19-163020)
 - **last_review:** 2026-08-10 | through 2026-08-10-185950.md
 
 ## Current Facts
@@ -88,6 +88,14 @@
   work, quarantines delayed uncorrelated responses, and invalidates across graph/export/session/
   connection changes. JSON-Path receives no controls; no backend command or persistence contract changed.
   <!-- id: webapp-graph-toolbar-run-controls | created: 2026-08-17 | last_used: 2026-08-18 | uses: 2 | tier: active | origin: 2026-08-17-181556 | supersedes: webapp-acknowledged-graph-run-control -->
+
+- **Node resize visibility regression fixed (2026-08-19).** The UI integration commit `0119292d`
+  added a global selected-node rule that set every React Flow resize control to `display: none`,
+  overriding `NodeResizer isVisible={selected}` and disabling the established resize interaction.
+  Removing that rule restores selected-node resize handles without changing multi-select or connection
+  authoring; a focused happy-dom test renders the real node type, applies the production CSS, and pins
+  the controls' visible computed style.
+  <!-- id: webapp-node-resize-regression-fix | created: 2026-08-19 | last_used: 2026-08-19 | uses: 1 | tier: working | origin: 2026-08-19-163020 -->
 
 ## Open Threads
 

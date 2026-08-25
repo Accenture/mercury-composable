@@ -380,6 +380,11 @@ The mirror direction works the same way: the Rust hello-flow (port 8100) declare
 or the Rust hello-world — interchangeably. Point `peer.demo.host` / `peer.demo.port` at any
 peer that exposes the route.
 
+The swap extends beyond the two engines: the official **Python and Node.js wrappers**
+register the same `hello.declarative` route in their demo apps and default to the same
+port 8085, so the identical `curl` executes a Python or Node.js function with zero
+changes — see [Polyglot Functions](polyglot-functions.md).
+
 ## Advantages
 
 The Event API exposes all public functions of an application instance to the network using a single REST endpoint.
@@ -410,6 +415,8 @@ Please refer to [REST Automation](rest-automation/index.md) for details.
 
 - [Interop Test Report (Java ⇄ Rust)](../test-reports/event-over-http-interop.md) — the live
   bidirectional validation of both patterns, with span-level trace evidence.
+- [Polyglot Functions](polyglot-functions.md) — write the functions themselves in Python
+  or Node.js and call them through this mechanism.
 - [Spring Boot Integration](spring-boot.md) — run Mercury in Spring Boot.
 - [Minimalist Service Mesh](service-mesh.md) — Kafka-based service discovery & routing.
 - [REST Automation](rest-automation/index.md) — declarative HTTP endpoints, no controllers.

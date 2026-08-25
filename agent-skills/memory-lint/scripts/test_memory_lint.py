@@ -339,6 +339,40 @@ class TestContinuityHealth(unittest.TestCase):
         self.assertIn("Condense shipped decisions", w[0])
         self.assertNotIn("a review is due to lean it down", w[0])
 
+    def test_closed_thread_bloat_counts_only_closed_blocks(self):
+        # (11) counting rule: non-empty lines inside `- [x]` blocks (checkbox through
+        # footer), a block ending at the next open thread or heading. Open threads and
+        # headings never count (the bloat class is completed ship narratives —
+        # mercury-composable field report, 64% of continuity).
+        cont_text = (
+            "## Open Threads\n\n"
+            "- [x] **Shipped X.** line two of the record\n"
+            "  more narrative\n"
+            "  <!-- id: shipped-x | created: 2026-01-01 | last_used: 2026-01-01 "
+            "| uses: 1 | tier: active -->\n"
+            "\n"
+            "- [ ] **Open thing.** must not count\n"
+            "  narrative of the open thread\n"
+        )
+        self.assertEqual(memory_lint.closed_narrative_lines(cont_text), 3)
+        self.assertEqual(memory_lint.check_closed_thread_bloat(cont_text, 150), [])
+        w = memory_lint.check_closed_thread_bloat(cont_text, 2)
+        self.assertEqual(len(w), 1)
+        self.assertIn("[closed-thread-bloat] 3 line(s)", w[0])
+        self.assertIn("condense them to 3-6-line stubs", w[0])
+        self.assertIn("origin session log", w[0])
+
+    def test_closed_narrative_knob_default_and_parse(self):
+        with tempfile.TemporaryDirectory() as root:
+            self.assertEqual(
+                memory_lint.load_windows(root)["closed_narrative_max_lines"], 150)
+            os.makedirs(os.path.join(root, "memory"), exist_ok=True)
+            with open(os.path.join(root, "memory", "decay-policy.md"), "w",
+                      encoding="utf-8") as f:
+                f.write("- closed_narrative_max_lines: 99\n")
+            self.assertEqual(
+                memory_lint.load_windows(root)["closed_narrative_max_lines"], 99)
+
     def test_healthy_ok(self):
         cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n"
         sessions = ["2026-06-27-120000.md"]
@@ -613,6 +647,37 @@ class TestSecretMaterial(unittest.TestCase):
             self.assertEqual(len(w), 1)
             self.assertIn("key 'client_secret'", w[0])
             self.assertIn("(3 hit(s)", w[0])
+
+    def test_self_knob_settings_are_not_credentials(self):
+        # Field FP (mercury-composable, 2026-08-19): the pre-commit guard's own blocking message
+        # prints "AGENT_MEMORY_SECRET_GUARD=advisory", so a session log documenting that guidance
+        # self-flagged (the key contains SECRET; "advisory" meets the value floor). The knob's
+        # documented settings are exempt — but ONLY those values: an arbitrary value under the
+        # same key must still flag (no smuggling envelope). Fixture lines quote the guard's
+        # guidance line and the field repro line VERBATIM (v4.33.2 lesson) — the guidance line's
+        # closing paren rides into the captured value, which the exemption must tolerate.
+        opaque = self._secret("AGENT_MEMORY_TEST_KNOB_OPAQUE")
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {
+                "sessions/2026-08-19-120000.md": "\n".join([
+                    "# Session",
+                    "  git commit --no-verify    (or opt down: AGENT_MEMORY_SECRET_GUARD=advisory)",
+                    "Opt down with AGENT_MEMORY_SECRET_GUARD=advisory if needed.",
+                    "The default is AGENT_MEMORY_SECRET_GUARD=enforcing.",
+                    "inline form: `AGENT_MEMORY_SECRET_GUARD=advisory`",
+                    "git-config spelling: `agent-memory.secretguard=advisory`",
+                ]) + "\n",
+            })
+            self.assertEqual(memory_lint.check_secret_material(root), [])
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {
+                "sessions/2026-08-19-130000.md":
+                    f"# Session\nAGENT_MEMORY_SECRET_GUARD={opaque}\n",
+            })
+            w = memory_lint.check_secret_material(root)
+            self.assertEqual(len(w), 1)
+            self.assertIn("key 'AGENT_MEMORY_SECRET_GUARD'", w[0])
+            self.assertNotIn(opaque, w[0])
 
     def test_archive_scanned_and_counts_aggregated(self):
         password = self._secret("AGENT_MEMORY_TEST_ARCHIVE_PASSWORD")

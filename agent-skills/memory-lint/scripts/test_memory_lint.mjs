@@ -19,6 +19,9 @@ import {
   sessions_since_review,
   check_stale_metadata,
   check_secret_material,
+  closed_narrative_lines,
+  check_closed_thread_bloat,
+  load_windows,
 } from "./memory-lint.mjs";
 
 // (8) advisory cadence/size triggers (v4.24.0). cont is a Map; cont.size is the fact count.
@@ -414,6 +417,42 @@ test("check_continuity_health: a healthy layer is OK", () => {
   );
 });
 
+test("closed-thread bloat counts only closed blocks", () => {
+  // (11) counting rule: non-empty lines inside `- [x]` blocks (checkbox through
+  // footer), a block ending at the next open thread or heading. Open threads and
+  // headings never count (the bloat class is completed ship narratives —
+  // mercury-composable field report, 64% of continuity).
+  const cont_text =
+    "## Open Threads\n\n" +
+    "- [x] **Shipped X.** line two of the record\n" +
+    "  more narrative\n" +
+    "  <!-- id: shipped-x | created: 2026-01-01 | last_used: 2026-01-01 " +
+    "| uses: 1 | tier: active -->\n" +
+    "\n" +
+    "- [ ] **Open thing.** must not count\n" +
+    "  narrative of the open thread\n";
+  assert.equal(closed_narrative_lines(cont_text), 3);
+  assert.deepEqual(check_closed_thread_bloat(cont_text, 150), []);
+  const w = check_closed_thread_bloat(cont_text, 2);
+  assert.equal(w.length, 1);
+  assert.ok(w[0].includes("[closed-thread-bloat] 3 line(s)"));
+  assert.ok(w[0].includes("condense them to 3-6-line stubs"));
+  assert.ok(w[0].includes("origin session log"));
+});
+
+test("closed_narrative_max_lines: default and policy parse", () => {
+  const root = mkdtempSync(join(tmpdir(), "lint-knob-"));
+  try {
+    assert.equal(load_windows(root).closed_narrative_max_lines, 150);
+    mkdirSync(join(root, "memory"), { recursive: true });
+    writeFileSync(join(root, "memory", "decay-policy.md"),
+      "- closed_narrative_max_lines: 99\n");
+    assert.equal(load_windows(root).closed_narrative_max_lines, 99);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 const STALE_STEMS = ["2026-06-01-000000", "2026-06-02-000000", "2026-06-03-000000"];
 
 test("check_stale_metadata flags tier drift", () => {
@@ -735,6 +774,43 @@ test("check_secret_material: all-caps enum constants are key-scoped", () => {
     assert.ok(w[0].includes("(3 hit(s)"));
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_secret_material: the tool's own opt-down knob settings are not credentials", () => {
+  // Field FP (mercury-composable, 2026-08-19): the pre-commit guard's own blocking message
+  // prints "AGENT_MEMORY_SECRET_GUARD=advisory", so a session log documenting that guidance
+  // self-flagged (the key contains SECRET; "advisory" meets the value floor). The knob's
+  // documented settings are exempt — but ONLY those values: an arbitrary value under the
+  // same key must still flag (no smuggling envelope). Fixture lines quote the guard's
+  // guidance line and the field repro line VERBATIM (v4.33.2 lesson) — the guidance line's
+  // closing paren rides into the captured value, which the exemption must tolerate.
+  const opaque = fixtureSecret("AGENT_MEMORY_TEST_KNOB_OPAQUE");
+  const cleanRoot = secretSetup({
+    "sessions/2026-08-19-120000.md": [
+      "# Session",
+      "  git commit --no-verify    (or opt down: AGENT_MEMORY_SECRET_GUARD=advisory)",
+      "Opt down with AGENT_MEMORY_SECRET_GUARD=advisory if needed.",
+      "The default is AGENT_MEMORY_SECRET_GUARD=enforcing.",
+      "inline form: `AGENT_MEMORY_SECRET_GUARD=advisory`",
+      "git-config spelling: `agent-memory.secretguard=advisory`",
+    ].join("\n") + "\n",
+  });
+  try {
+    assert.deepEqual(check_secret_material(cleanRoot), []);
+  } finally {
+    rmSync(cleanRoot, { recursive: true, force: true });
+  }
+  const flaggedRoot = secretSetup({
+    "sessions/2026-08-19-130000.md": `# Session\nAGENT_MEMORY_SECRET_GUARD=${opaque}\n`,
+  });
+  try {
+    const w = check_secret_material(flaggedRoot);
+    assert.equal(w.length, 1);
+    assert.ok(w[0].includes("key 'AGENT_MEMORY_SECRET_GUARD'"));
+    assert.ok(!w[0].includes(opaque));
+  } finally {
+    rmSync(flaggedRoot, { recursive: true, force: true });
   }
 });
 
