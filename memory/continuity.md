@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-24 | agent: Claude Code (2026-08-24-170545)
+- **last_session:** 2026-08-25 | agent: Claude Code (2026-08-25-231243)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -222,6 +222,19 @@
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
+- [ ] (blueprint) **AI agent orchestration ("graph engineering")** — the Active Knowledge
+  Graph as the governed run-time for AI agents: LLM reasoning, MCP tools, and inner-loop
+  agents join graphs as wrapper-side functions (bounded-agency decision graphs;
+  agent-as-node); suspend/resume = human-in-the-loop; CompileGraph + the promotion
+  lifecycle = the governance answer ("governed nondeterminism", never determinism claims).
+  Engine core stays LLM/vendor-free; wrapper scope fence intact (adapters are functions ON
+  the wrappers). Run-time complement to the design-time [[bp-ai-companion-llm-backend]];
+  builds on [[bp-polyglot-functions]]; compounds [[bp-graph-governance-lifecycle]].
+  Concept doc: draft-design-specs/ai-agent-orchestration.md (Q1–Q8 open questions,
+  E0–E4 experiment plan). Direction ratified by Eric 2026-08-25; experiments queued
+  post-workshop (E0 = llm.chat in the python demo app + bounded-agency demo graph — also
+  the first live graph.task→wrapper drive). → serves: vision-mercury-composable
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-08-25 | uses: 1 | tier: working | origin: 2026-08-25-213703 -->
 - [ ] (blueprint) **Polyglot function execution** — python/node.js functions join Event Script
   flows and MiniGraph graphs as Event-over-HTTP peers (ratified design D0–D8, 2026-08-22);
   wrappers live in the repurposed Accenture/mercury-python + mercury-nodejs repos.
@@ -234,6 +247,22 @@
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-14 | uses: 2 | tier: working -->
 ## Open Threads
+
+- [x] (field support — **MERGED 2026-08-25 as
+  [PR #296](https://github.com/Accenture/mercury-composable/pull/296) squash `fd4f5ba4`
+  == gated `ee49da4b` (tree verified, title clean), full reactor CI green 10m21s,
+  branches deleted both ends; rides the next release**) **Field scan remediation round:
+  netty 4.2.17.Final (Eric's 33-pom sweep reviewed clean, resolution verified on both
+  dependency paths), Snyk `SECRET_GUIDANCE`→`GUIDANCE` rename in memory-lint (.py+.mjs;
+  interim local copy of an UPSTREAM agent-memory patch — Eric's ruling; handoff at
+  ~/Desktop/agent-memory-secret-guidance-handoff.md), fourth Sonar round (S2139
+  rethrow-with-target+cause, S5778 hoist, S1128 ×2; two S6548 Info singleton advisories
+  left as house pattern — recommend field-side accept).** Durable lesson: builtin-skill
+  edits never stick (route fixes upstream); scanner-neutral naming for string constants.
+  Remaining external: the field re-scan against the next drop.
+  origin: 2026-08-25-231243. Relates [[thread-sonar-4-11-x-field-round-3]],
+  [[thread-ai-contract-provider]].
+  <!-- id: thread-field-scan-remediation-20260825 | created: 2026-08-25 | last_used: 2026-08-25 | uses: 1 | tier: working | origin: 2026-08-25-231243 -->
 
 - [x] (release — SHIPPED 2026-08-23 local, **both repos in lock-step at v4.11.11**;
   **both GitHub releases PUBLISHED by Eric**) **v4.11.11 — the graph.task
