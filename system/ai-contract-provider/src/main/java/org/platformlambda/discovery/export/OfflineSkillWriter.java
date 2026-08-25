@@ -72,8 +72,7 @@ public class OfflineSkillWriter {
             if (e instanceof AppException appException) {
                 throw appException;
             }
-            log.error("Skill export to {} failed", target, e);
-            throw new AppException(500, "Skill export failed - " + e.getMessage());
+            throw new AppException(500, "Skill export to " + target + " failed - " + e.getMessage(), e);
         }
         var result = new LinkedHashMap<String, Object>();
         result.put("skill_directory", target.toString());

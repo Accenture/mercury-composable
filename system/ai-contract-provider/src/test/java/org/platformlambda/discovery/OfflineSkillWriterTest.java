@@ -35,7 +35,6 @@ import java.util.TreeMap;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class OfflineSkillWriterTest {
 
@@ -75,10 +74,11 @@ class OfflineSkillWriterTest {
     @Test
     void refusesAnExistingSnapshotAndNeverOverwrites() throws IOException {
         var writer = new OfflineSkillWriter();
-        writer.export(temp.toString());
+        var exportRoot = temp.toString();
+        writer.export(exportRoot);
         var marker = temp.resolve(OfflineSkillWriter.SKILL_DIRECTORY).resolve("SKILL.md");
         var original = Files.readAllBytes(marker);
-        var e = assertThrows(AppException.class, () -> writer.export(temp.toString()));
+        var e = assertThrows(AppException.class, () -> writer.export(exportRoot));
         assertEquals(409, e.getStatus());
         assertArrayEquals(original, Files.readAllBytes(marker), "existing snapshot untouched");
     }
