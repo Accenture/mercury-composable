@@ -58,7 +58,6 @@ class OfflineSkillWriterTest {
         assertEquals(firstTree.size(), result.get("files"));
 
         // the manifest must verify against the exported bytes, independently recomputed
-        @SuppressWarnings("unchecked")
         var manifest = SimpleMapper.getInstance().getMapper().readValue(
                 new String(firstTree.get(SkillSnapshot.MANIFEST)), Map.class);
         assertEquals(result.get("snapshot_sha256"), manifest.get("snapshot_sha256"));
