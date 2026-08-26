@@ -587,6 +587,8 @@ export function check_secret_material(root) {
 // One consolidated guidance line accompanies [secret-material] findings — printed ONCE per
 // run by the consumer (report() for a full lint, the --scan-files CLI branch, the pre-commit
 // hook's footer), never repeated per finding (field feedback, 2026-08-14 regression test).
+// Scanner-neutral name: enterprise secret scanners flag trigger-word identifiers assigned
+// string literals (Snyk field FP, 2026-08-25) — the suites' hygiene test enforces this.
 const GUIDANCE =
   "  -> committed files are shared: redact to (REDACTED) or move the value out; a live " +
   "credential is EXPOSED — rotate it (git history keeps the original; see the memory/PROTOCOL.md " +
