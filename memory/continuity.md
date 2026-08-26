@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-26 | agent: Claude Code (2026-08-26-002631)
+- **last_session:** 2026-08-26 | agent: Claude Code (2026-08-26-020650)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -259,9 +259,17 @@
   rethrow-with-target+cause, S5778 hoist, S1128 ×2; two S6548 Info singleton advisories
   left as house pattern — recommend field-side accept).** Durable lesson: builtin-skill
   edits never stick (route fixes upstream); scanner-neutral naming for string constants.
-  Remaining external: the field re-scan against the next drop.
-  origin: 2026-08-25-231243. Relates [[thread-sonar-4-11-x-field-round-3]],
-  [[thread-ai-contract-provider]].
+  **Coverage follow-up (2026-08-26): the re-scan cleared all six issues and Snyk PASSED,
+  but the gate re-failed on new-code coverage — 0% on the 1 new line, the S2139 rethrow
+  (an S2139 rewrite of an uncovered catch block turns invisible legacy uncoverage into a
+  gate-failing new-code condition; pair such fixes with a catch-path test in the same
+  PR). Fixed by a mutation-proven catch-path test:
+  [PR #297](https://github.com/Accenture/mercury-composable/pull/297) squash `a6db32a2`
+  == gated `e6a73945` (tree verified, title clean), CI 6m37s, branches deleted both
+  ends. Upstream closed its half same day — agent-memory 4.38.1 ships the `GUIDANCE`
+  rename (upgrade log 2026-08-26-002631).** Remaining external: the field's final gate
+  re-check. origin: 2026-08-25-231243 + 2026-08-26-020650. Relates
+  [[thread-sonar-4-11-x-field-round-3]], [[thread-ai-contract-provider]].
   <!-- id: thread-field-scan-remediation-20260825 | created: 2026-08-25 | last_used: 2026-08-25 | uses: 1 | tier: working | origin: 2026-08-25-231243 -->
 
 - [x] (release — SHIPPED 2026-08-23 local, **both repos in lock-step at v4.11.11**;
