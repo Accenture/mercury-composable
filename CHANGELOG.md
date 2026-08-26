@@ -19,6 +19,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    the peers-not-subprocesses design; the interop test report gains the polyglot wrapper
    round (2026-08-22 acceptance drives); the home page now links the wrapper family.
 
+### Changed
+
+1. Netty upgraded from 4.2.16.Final to 4.2.17.Final across all modules (field security
+   scan remediation).
+
+### Fixed
+
+1. Fourth field Sonar round: the offline skill export in `system/ai-contract-provider`
+   rethrows with context (target path and cause) instead of log-and-rethrow
+   (java:S2139); single-invocation `assertThrows` lambda and unused-import cleanups in
+   tests (java:S5778, java:S1128).
+
 ---
 ## Version 4.11.11, 8/23/2026
 

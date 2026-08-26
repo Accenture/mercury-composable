@@ -26,16 +26,22 @@ import org.platformlambda.discovery.export.OfflineSkillWriter;
 import org.platformlambda.discovery.services.SkillSnapshot;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class OfflineSkillWriterTest {
 
@@ -59,7 +65,6 @@ class OfflineSkillWriterTest {
         assertEquals(firstTree.size(), result.get("files"));
 
         // the manifest must verify against the exported bytes, independently recomputed
-        @SuppressWarnings("unchecked")
         var manifest = SimpleMapper.getInstance().getMapper().readValue(
                 new String(firstTree.get(SkillSnapshot.MANIFEST)), Map.class);
         assertEquals(result.get("snapshot_sha256"), manifest.get("snapshot_sha256"));
@@ -75,12 +80,38 @@ class OfflineSkillWriterTest {
     @Test
     void refusesAnExistingSnapshotAndNeverOverwrites() throws IOException {
         var writer = new OfflineSkillWriter();
-        writer.export(temp.toString());
+        var exportRoot = temp.toString();
+        writer.export(exportRoot);
         var marker = temp.resolve(OfflineSkillWriter.SKILL_DIRECTORY).resolve("SKILL.md");
         var original = Files.readAllBytes(marker);
-        var e = assertThrows(AppException.class, () -> writer.export(temp.toString()));
+        var e = assertThrows(AppException.class, () -> writer.export(exportRoot));
         assertEquals(409, e.getStatus());
         assertArrayEquals(original, Files.readAllBytes(marker), "existing snapshot untouched");
+    }
+
+    @Test
+    void wrapsAnExportFailureWithContextAndCause() throws IOException {
+        assumeTrue(FileSystems.getDefault().supportedFileAttributeViews().contains("posix"),
+                "needs a POSIX file system to force the I/O failure");
+        var writer = new OfflineSkillWriter();
+        var readOnlyRoot = Files.createDirectory(temp.resolve("read-only-root"));
+        var originalPermissions = Files.getPosixFilePermissions(readOnlyRoot);
+        Files.setPosixFilePermissions(readOnlyRoot,
+                Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_EXECUTE));
+        try {
+            assumeFalse(Files.isWritable(readOnlyRoot),
+                    "environment ignores directory permissions - cannot force the failure");
+            var exportRoot = readOnlyRoot.toString();
+            var e = assertThrows(AppException.class, () -> writer.export(exportRoot));
+            assertEquals(500, e.getStatus());
+            assertInstanceOf(IOException.class, e.getCause(),
+                    "the underlying cause must survive for the ultimate handler");
+            assertTrue(e.getMessage().contains(
+                    "Skill export to " + readOnlyRoot.resolve(OfflineSkillWriter.SKILL_DIRECTORY)),
+                    "the message must name the export target: " + e.getMessage());
+        } finally {
+            Files.setPosixFilePermissions(readOnlyRoot, originalPermissions);
+        }
     }
 
     @Test
