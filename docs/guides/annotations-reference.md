@@ -169,7 +169,7 @@ public class HeavyTask implements TypedLambdaFunction<Map<String, Object>, Map<S
 - Route names must be lowercase letters, digits, and dots. At least one dot is required.
 - Multiple routes: each name gets a full, independent set of `instances` workers.
 - The `instance` parameter in `handleEvent` indicates which worker is executing (0-based).
-- Spring Boot (`rest-spring-3` module): field injection (`@Autowired`, `@Value`) works.
+- Spring Boot (`rest-spring-4` module): field injection (`@Autowired`, `@Value`) works.
   Constructor injection does NOT work because instances are created before the Spring context.
 - `@PreLoad` can be combined with `@KernelThreadRunner`, `@EventInterceptor`, `@ZeroTracing`,
   and `@OptionalService` on the same class.
@@ -300,7 +300,7 @@ public class MainApp implements EntryPoint {
 - The static `main` method should contain only `AutoStart.main(args)`. All initialization
   logic belongs in `start()`.
 - Can be combined with `@OptionalService` for conditional activation.
-- In Spring Boot apps (`rest-spring-3`/`rest-spring-4`), execution is deferred until Spring
+- In Spring Boot apps (`rest-spring-4`), execution is deferred until Spring
   Boot itself fires `ApplicationReadyEvent` — see
   [Application Lifecycle](architecture.md#application-lifecycle) for the full sequence.
 
@@ -906,7 +906,7 @@ The `web.component.scan` property accepts a comma-separated list of package name
 scanner finds `@PreLoad`, `@MainApplication`, `@BeforeApplication`, `@WebSocketService`,
 and `@SimplePlugin` classes within those packages (and all sub-packages).
 
-**Spring Boot note**: When using `rest-spring-3` with multiple packages in
+**Spring Boot note**: When using `rest-spring-4` with multiple packages in
 `web.component.scan`, Spring's own component scanner requires the separate
 `spring.component.scan` property to scan for Spring beans.
 

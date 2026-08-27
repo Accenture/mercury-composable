@@ -1,6 +1,6 @@
 ---
 title: Spring Boot Integration
-summary: Run Mercury Composable as a Spring Boot 3/4 application — via the rest-spring modules or
+summary: Run Mercury Composable as a Spring Boot application — via the rest-spring-4 module or
   the lightweight platform-core HTTP server.
 layer: operate
 audience: [developer]
@@ -13,17 +13,22 @@ keywords: [spring boot, integration, rest-spring, autoconfigure, embedded server
 
 > **At a glance**
 >
-> - **What** — run Mercury inside Spring Boot 3 or 4 (the `rest-spring` modules), or keep the
+> - **What** — run Mercury inside Spring Boot (the `rest-spring-4` module), or keep the
 >   lightweight platform-core HTTP server.
 > - **For** teams integrating Mercury into an existing Spring stack.
+
+> **Spring Boot 3 retired**: the `rest-spring-3` add-on and its example were removed when the
+> Spring community stopped issuing security patches for Spring Boot 3. Use `rest-spring-4` —
+> it provides the same integration surface (RestServer bootstrap, autowiring, configuration
+> keys), so migration is a dependency swap plus the Spring Boot 3 → 4 upgrade of your own code.
 
 While the platform-core foundation code includes a lightweight non-blocking HTTP server, you can also turn your
 application into an executable Spring Boot application.
 
 There are two ways to do that:
 
-1. Add dependency for Spring Boot version 3/4 and implement your Spring Boot main application
-2. Add the `rest-spring-3` or `rest-spring-4` add-on library for a pre-configured Spring Boot 3/4 experience
+1. Add dependency for Spring Boot and implement your Spring Boot main application
+2. Add the `rest-spring-4` add-on library for a pre-configured Spring Boot experience
 
 ## Add platform-core to an existing Spring Boot application
 
@@ -51,14 +56,13 @@ platform-core foundation code to load the event-listener functions into memory b
 
 ## Use the rest-spring library in your application
 
-The second option is to add the `rest-spring-3` or `rest-spring-4` dependency to your composable application.
-The rest-spring-3 library is a pre-configured Spring Boot 3 library with WebFlux as the asynchronous
-HTTP servlet engine. Similarly, the rest-spring-4 is pre-configured for Spring Boot 4.
+The second option is to add the `rest-spring-4` dependency to your composable application.
+The rest-spring-4 library is pre-configured for Spring Boot 4.
 
-This turns your composable application into a pre-configured Spring Boot 3/4 application.
+This turns your composable application into a pre-configured Spring Boot application.
 It provides consistent behavior for XML and JSON serialization and exception handling.
 
-The RestServer class in the rest-spring-3/rest-spring-4 library is used to bootstrap a Spring Boot application.
+The RestServer class in the rest-spring-4 library is used to bootstrap a Spring Boot application.
 
 Spring Boot is a sophisticated ecosystem by itself. If the simple RestServer bootstrap does not fit your
 use cases, please use the sample MainApp to implement your own Spring Boot initializer.
@@ -138,7 +142,7 @@ The platform-core and Spring Boot will use `rest.server.port` and `server.port` 
 
 ## Spring Autowiring
  
-When using the `rest-spring-3` or `rest-spring-4` module, bean and value injection may be used:
+When using the `rest-spring-4` module, bean and value injection may be used:
  
 ```java
 @PreLoad(route = "v1.demo.function")
@@ -167,7 +171,7 @@ public class DemoFunction implements LambdaFunction {
 ```
 
 Please note that the Spring annotation `@Service` is not required in a composable function.
-The `@PreLoad` annotation will automatically perform autowiring when the "rest-spring-3" dependency
+The `@PreLoad` annotation will automatically perform autowiring when the "rest-spring-4" dependency
 is included in pom.xml.
 
 > *Note*: This should be done judiciously - Composable functions should have very few dependencies
@@ -179,10 +183,9 @@ is included in pom.xml.
 * Only applies to instances loaded with `@PreLoad` - Functions registered programmatically will not undergo injection.
 * Constructor injection is not viable - these instances are constructed before the Spring context is created.
 
-## The rest-spring-example demo applications
+## The rest-spring-example demo application
 
-The two example applications (`rest-spring-3-example` and `rest-spring-4-example`) are the same and they
-use the rest-spring-3 and rest-spring-4 libraries respectively.
+The `rest-spring-4-example` application demonstrates this setup with the rest-spring-4 library.
 
 Let's review the `rest-spring-4-example` demo application in the "examples/rest-spring-4-example" project.
 
@@ -300,7 +303,7 @@ public class WsEchoDemo implements LambdaFunction {
 
 The above creates a websocket service at the URL "/ws/hello" server endpoint.
 
-Please review the example code in the WsEchoDemo class in the rest-spring-3-example project for details.
+Please review the example code in the WsEchoDemo class in the rest-spring-4-example project for details.
 
 If you want to use Spring Boot's Tomcat websocket server, you can disable the non-blocking websocket server feature
 by removing the `websocket.server.port` configuration and any websocket service classes with the `WebSocketService`

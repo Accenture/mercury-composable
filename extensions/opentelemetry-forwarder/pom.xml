@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>opentelemetry-forwarder</artifactId>
-    <version>4.11.11</version>
+    <version>4.11.12</version>
     <packaging>jar</packaging>
     <name>OpenTelemetry trace forwarder extension</name>
     <description>
@@ -16,7 +16,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.0</version>
+        <version>4.1.1</version>
     </parent>
 
     <properties>
@@ -51,7 +51,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.11.11</version>
+            <version>4.11.12</version>
         </dependency>
 
         <dependency>
@@ -76,7 +76,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>event-script-engine</artifactId>
-            <version>4.11.11</version>
+            <version>4.11.12</version>
             <scope>test</scope>
         </dependency>
         <dependency>

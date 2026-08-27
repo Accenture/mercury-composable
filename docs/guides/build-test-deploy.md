@@ -391,8 +391,8 @@ A sample Dockerfile for an executable JAR may look like this:
 FROM mcr.microsoft.com/openjdk/jdk:21-ubuntu
 EXPOSE 8083
 WORKDIR /app
-COPY target/rest-spring-3-example-x.y.z.jar .
-ENTRYPOINT ["java","-jar","rest-spring-3-example-x.y.z.jar"]
+COPY target/rest-spring-4-example-x.y.z.jar .
+ENTRYPOINT ["java","-jar","rest-spring-4-example-x.y.z.jar"]
 ```
 
 ## Distributed tracing

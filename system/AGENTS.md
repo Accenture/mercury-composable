@@ -28,7 +28,7 @@ it rather than assuming the docs match your runtime.
 | `platform-core` | core engine: functions, `EventEnvelope`, `PostOffice`, REST automation |
 | `event-script-engine` | Event Script: YAML flows replacing orchestration code |
 | `minigraph-playground-engine` | Active Knowledge Graph engine + playground |
-| `rest-spring-3` / `rest-spring-4` | optional Spring Boot integration |
+| `rest-spring-4` | optional Spring Boot integration |
 | `mini-scheduler`, `minimalist-kafka`, `twin-kafka` | scheduling and Kafka libraries |
 | `ai-contract-provider` | AI discovery app serving this operational contract |
 
