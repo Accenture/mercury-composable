@@ -680,9 +680,9 @@ sequential, object-oriented and reactive programming styles.
 The core-engine has a built-in lightweight non-blocking HTTP server, but you can also use Spring Boot and other
 application server framework with it.
 
-A sample Spring Boot integration is provided in the "rest-spring-3" project. It is an optional feature, and you can
+A sample Spring Boot integration is provided in the "rest-spring-4" project. It is an optional feature, and you can
 decide to use a regular Spring Boot application with Mercury Composable or to pick the customized Spring Boot in the
-"rest-spring-3" library.
+"rest-spring-4" library.
 
 ## Application template for quick start
 

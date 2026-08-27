@@ -88,7 +88,7 @@ rest:
     timeout: 10s
 ```
 
-> *Note*: When using the rest-spring-3 library, the actuator endpoints are always available from the
+> *Note*: When using the rest-spring-4 library, the actuator endpoints are always available from the
           Spring Boot's HTTP port and they cannot be changed.
 
 ## Custom health services

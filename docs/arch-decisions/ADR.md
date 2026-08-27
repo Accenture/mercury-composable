@@ -22,6 +22,34 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0017 — Spring Boot integration targets Boot 4 only; the Boot 3 lane is retired {#adr-0017}
+**Status:** Proposed · **Date:** 2026-08-27 · **Serves:** vision-mercury-composable · **Formalizes:** stack-integration-spring-boot4
+<!-- id: adr-0017 | status: proposed -->
+
+**Abstract.** The optional Spring Boot integration is provided by a single module,
+`system/rest-spring-4` (with `examples/rest-spring-4-example` as its reference
+application), targeting Spring Boot 4. The Spring Boot 3 lane — `system/rest-spring-3`
+and `examples/rest-spring-3-example` — is removed from the reactor. The integration
+surface carries over unchanged: the RestServer bootstrap, the `spring.boot.main`
+override, `@PreLoad` autowiring, and the same configuration keys — so migrating an
+application is a dependency swap plus that application's own Spring Boot 3 → 4 upgrade.
+Spring remains optional and is never required by platform-core: the lightweight built-in
+non-blocking HTTP server stays the default.
+
+**Rationale.** The Spring community stopped issuing security patches for Spring Boot 3,
+and field deployment pipelines enforce that directly: dependency security scanning
+(Snyk) rejects Spring Boot 3 dependencies outright and requires Spring Framework 7 or
+newer, so a build carrying the Boot 3 lane blocks deployment. Continuing to ship a
+Boot 3 integration would hand field installations a permanently-unpatchable web
+dependency lane — the opposite of the framework's security posture, where field
+deployments are gated by dependency scanners (cf. the netty and lz4 remediation
+rounds). Maintaining two lanes also doubled every Spring upgrade sweep
+(both `spring-boot-starter-parent` versions, two example applications) while exposing
+the same integration surface. The alternative — freezing `rest-spring-3` for legacy
+consumers — was rejected: an EOL web stack is a liability regardless of freshness of the
+rest of the build, and the migration cost is a dependency swap. Applications that must
+stay on Spring Boot 3 can remain on Mercury releases up to this one.
+
 ## ADR-0016 — Polyglot functions are Event-over-HTTP peers, not subprocesses or ports {#adr-0016}
 **Status:** Proposed · **Date:** 2026-08-22 · **Serves:** vision-mercury-composable · **Formalizes:** polyglot-event-over-http-design
 <!-- id: adr-0016 | status: proposed -->

@@ -8,7 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Unreleased
+## Version 4.11.12, 8/27/2026
+
+### Removed
+
+1. **BREAKING**: The Spring Boot 3 integration lane is retired — `system/rest-spring-3`
+   and `examples/rest-spring-3-example` are removed. The Spring community no longer
+   issues security patches for Spring Boot 3, and dependency security scanning in
+   deployment pipelines now rejects Spring Boot 3 and requires Spring Framework 7+,
+   blocking deployment while the lane is present. Migrate to `rest-spring-4`: the
+   integration surface is the same (RestServer bootstrap, `spring.boot.main` override,
+   `@PreLoad` autowiring, configuration keys), so the change is a dependency swap plus
+   your application's own Spring Boot 3 → 4 upgrade. See the Spring Boot Integration
+   guide (ADR-0017).
 
 ### Added
 
@@ -23,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 1. Netty upgraded from 4.2.16.Final to 4.2.17.Final across all modules (field security
    scan remediation).
+2. Spring Boot upgraded from 4.1.0 to 4.1.1 (`spring-boot-starter-parent` across the
+   Boot-4 lane; brings Spring Framework 7.0.9, Micrometer 1.17.1, Jackson 3.1.5 — the
+   rest-spring-3 lane stays on its own Boot 3.5.x parent; explicit netty 4.2.17.Final
+   override unaffected).
+3. Project Reactor BOM upgraded from 2025.0.6 to 2025.0.7 across all declaring modules
+   (reactor-core 3.8.7, reactor-netty 1.3.7 — both Spring lanes included).
 
 ### Fixed
 
