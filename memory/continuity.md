@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-26 | agent: Claude Code (2026-08-26-020650)
+- **last_session:** 2026-08-27 | agent: Claude Code (2026-08-27-213034)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -37,8 +37,16 @@
 - Build: Maven 3.9.7+ is the current build tool (multi-module reactor, `com.accenture.mercury:parent-mercury`).
   **Gradle support is planned to be added alongside it** (Eric, 2026-06-24 — see Open Thread `thread-add-gradle-build`).
   <!-- id: stack-build-maven | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
+- Integration: Spring Boot 4 only — `system/rest-spring-4` (+ its example). The Boot 3
+  lane (rest-spring-3 + rest-spring-3-example) was RETIRED 2026-08-27 (Eric's directive:
+  the Spring community no longer issues Boot 3 security patches, and field Snyk now
+  REJECTS Boot 3 dependencies and requires Spring Framework ≥ 7 — the deployment
+  pipeline was BLOCKED until removal; v4.11.12 is the unblocking release). Same
+  integration surface; migration = dependency swap + the app's own Boot 3→4 upgrade.
+  Spring stays optional, never required by core. (ADR-0017)
+  <!-- id: stack-integration-spring-boot4 | created: 2026-08-27 | last_used: 2026-08-27 | uses: 1 | tier: core | supersedes: stack-integration-spring | origin: 2026-08-27-213034 -->
 - Integration: Spring Boot (rest-spring-3 / -4 modules)
-  <!-- id: stack-integration-spring | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
+  <!-- id: stack-integration-spring | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: superseded | superseded-by: stack-integration-spring-boot4 -->
 - Messaging: Kafka — the connector/presence pair (`connectors/adapters/kafka/`) plus the
   grown family: `system/twin-kafka`, `system/minimalist-kafka`, `helpers/kafka-standalone`
   (+ demos); MsgPack wire serialization; customized Gson. (Wording refreshed 2026-08-21 at
@@ -247,6 +255,23 @@
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-14 | uses: 2 | tier: working -->
 ## Open Threads
+
+- [x] (maintenance + BREAKING — **SHIPPED AND PUBLISHED 2026-08-27 as v4.11.12, Java
+  only — Rust stays at v4.11.11 (no Rust-ported surface touched).** Release
+  [PR #298](https://github.com/Accenture/mercury-composable/pull/298) squash `0467dc21`
+  == gated `a19d1d8d` (tree verified, title clean), 32-pom sweep (surface 34→32), four
+  green builds (reactor pre+post sweep, Eric's local, CI 8m31s), tag
+  dereference-verified on the squash, GitHub release PUBLISHED by Eric — notes lead
+  with the BREAKING retirement) **Spring round: Boot 4.1.1 + Reactor BOM 2025.0.7;
+  SPRING BOOT 3 LANE RETIRED (rest-spring-3 + example removed; ADR-0017 rides the
+  merge).** Driver: field Snyk REJECTS Boot 3 and requires Spring Framework ≥ 7 —
+  deployment pipeline BLOCKED; v4.11.12 is the unblocking release (ships Framework
+  7.0.9; netty 4.2.17.Final pin verified held). Durable lesson: the Boot parent is the
+  repo's dependencyManagement spine (property overrides like netty.version ride it);
+  parity-verify example twins before re-pointing walkthroughs.
+  origin: 2026-08-27-213034. Relates [[stack-integration-spring-boot4]],
+  [[thread-field-scan-remediation-20260825]].
+  <!-- id: thread-spring-round-20260827 | created: 2026-08-27 | last_used: 2026-08-27 | uses: 1 | tier: working | origin: 2026-08-27-213034 -->
 
 - [x] (field support — **MERGED 2026-08-25 as
   [PR #296](https://github.com/Accenture/mercury-composable/pull/296) squash `fd4f5ba4`
