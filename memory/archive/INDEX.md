@@ -110,3 +110,23 @@
 - thread-graph-suspend-resume — (feature — COMPLETE across P1-P5, both engines) Graph suspend/resume: workflow suspension — faded (sslu > archive_window 20; 2026-08-21 review) — 2026-Q3.md
 - thread-sonar-4-10-4-field-rejection — (field support — CLOSED 2026-07-26: field rescan of v4.10.6 PASSED the Sonar gate with a — faded (sslu > archive_window 20; 2026-08-21 review) — 2026-Q3.md
 - thread-kafka-client-version-upgrade — (planned — CLOSED 2026-08-03: executed by the v4.11.2 release, which gained a CVE — faded (sslu > archive_window 20; 2026-08-21 review) — 2026-Q3.md
+- conv-helpers-docker-less — The `helpers/` standalone servers exist for Docker-less developer machines and are — faded — 2026-Q3.md
+- memory-health-fact-cap-2026-08-14 — (memory-health) Post-review continuity holds 34 decay-eligible facts above the — faded — 2026-Q3.md
+- thread-release-4-11-8 — (release — SHIPPED AND PUBLISHED 2026-08-10 local / 2026-08-11 UTC, both repos in — faded — 2026-Q3.md
+- thread-release-4-11-9 — (release — SHIPPED AND PUBLISHED 2026-08-11, both repos in lock-step at v4.11.9; cut — faded — 2026-Q3.md
+- thread-untitled-dry-run-identity — (fix — MERGED ON BOTH ENGINES 2026-08-11, all CI green; rides the next release. — faded — 2026-Q3.md
+- thread-dry-run-graph-scope-fix — (fix — MERGED ON BOTH ENGINES 2026-08-11, all CI green; rides the next release. — faded — 2026-Q3.md
+- thread-release-4-11-7 — (release — SHIPPED AND PUBLISHED 2026-08-10 local / 2026-08-11 UTC, Java only — minimalist… — faded — 2026-Q3.md
+- thread-kafka-kip848-auto — (feature — MERGED 2026-08-11 as — faded — 2026-Q3.md
+- thread-release-4-11-6 — (release — SHIPPED AND PUBLISHED 2026-08-10, both repos in lock-step at — faded — 2026-Q3.md
+- thread-release-4-11-5 — (release — SHIPPED 2026-08-09, both repos in lock-step at v4.11.5) v4.11.5 — — faded — 2026-Q3.md
+- thread-field-graph-scoped-state-and-error-context — (feature — COMPLETE ON BOTH ENGINES 2026-08-10, same day as the field review; — faded — 2026-Q3.md
+- thread-field-review-rationalization — (field validation — CLOSED 2026-08-10: the review WENT WELL. The team demoed a — faded — 2026-Q3.md
+- thread-suspend-resume-rationalization — (design+feature — RATIFIED by Eric 2026-08-07 (R1-R7; R2 refined by Eric); — faded — 2026-Q3.md
+- thread-release-4-11-3 — (release — SHIPPED 2026-08-07, Java only — no Rust-ported surface touched; Rust — faded — 2026-Q3.md
+- thread-kafka-consumer-resilience — (field support — reported 2026-08-06 by a field member's code review; all three — faded — 2026-Q3.md
+- thread-redis-getdel-compat — (field support — COMPLETE ON BOTH ENGINES: Rust half shipped 2026-08-01 in — faded — 2026-Q3.md
+- thread-kafka-2nd-level-routing — (feature — design RATIFIED 2026-07-30; MERGED same day as — faded — 2026-Q3.md
+- thread-release-4-10-2 — (release — CLOSED 2026-07-23) v4.10.2 SHIPPED in lock-step — metadata contract (#221), — faded — 2026-Q3.md
+- thread-release-4-10-1 — (release — CLOSED 2026-07-23) v4.10.1 SHIPPED in lock-step — telemetry presentation — faded — 2026-Q3.md
+- stack-integration-spring — Integration: Spring Boot (rest-spring-3 / -4 modules) — superseded by stack-integration-spring-boot4 — 2026-Q3.md
