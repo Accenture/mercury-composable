@@ -3206,8 +3206,8 @@ run the application.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>FROM<span class="w"> </span>mcr.microsoft.com/openjdk/jdk:21-ubuntu
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>EXPOSE<span class="w"> </span><span class="m">8083</span>
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>WORKDIR<span class="w"> </span>/app
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>COPY<span class="w"> </span>target/rest-spring-3-example-x.y.z.jar<span class="w"> </span>.
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>ENTRYPOINT<span class="w"> </span><span class="o">[</span><span class="s2">"java"</span>,<span class="s2">"-jar"</span>,<span class="s2">"rest-spring-3-example-x.y.z.jar"</span><span class="o">]</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>COPY<span class="w"> </span>target/rest-spring-4-example-x.y.z.jar<span class="w"> </span>.
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>ENTRYPOINT<span class="w"> </span><span class="o">[</span><span class="s2">"java"</span>,<span class="s2">"-jar"</span>,<span class="s2">"rest-spring-4-example-x.y.z.jar"</span><span class="o">]</span>
 </code></pre></div>
 <h2 id="distributed-tracing">Distributed tracing<a class="headerlink" href="#distributed-tracing" title="Permanent link">&para;</a></h2>
 <blockquote>

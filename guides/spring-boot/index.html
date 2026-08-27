@@ -1734,10 +1734,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-rest-spring-example-demo-applications" class="md-nav__link">
+  <a href="#the-rest-spring-example-demo-application" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The rest-spring-example demo applications
+        The rest-spring-example demo application
       
     </span>
   </a>
@@ -2626,10 +2626,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-rest-spring-example-demo-applications" class="md-nav__link">
+  <a href="#the-rest-spring-example-demo-application" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The rest-spring-example demo applications
+        The rest-spring-example demo application
       
     </span>
   </a>
@@ -2683,17 +2683,21 @@
 <blockquote>
 <p><strong>At a glance</strong></p>
 <ul>
-<li><strong>What</strong> — run Mercury inside Spring Boot 3 or 4 (the <code>rest-spring</code> modules), or keep the
+<li><strong>What</strong> — run Mercury inside Spring Boot (the <code>rest-spring-4</code> module), or keep the
   lightweight platform-core HTTP server.</li>
 <li><strong>For</strong> teams integrating Mercury into an existing Spring stack.</li>
 </ul>
+<p><strong>Spring Boot 3 retired</strong>: the <code>rest-spring-3</code> add-on and its example were removed when the
+Spring community stopped issuing security patches for Spring Boot 3. Use <code>rest-spring-4</code> —
+it provides the same integration surface (RestServer bootstrap, autowiring, configuration
+keys), so migration is a dependency swap plus the Spring Boot 3 → 4 upgrade of your own code.</p>
 </blockquote>
 <p>While the platform-core foundation code includes a lightweight non-blocking HTTP server, you can also turn your
 application into an executable Spring Boot application.</p>
 <p>There are two ways to do that:</p>
 <ol>
-<li>Add dependency for Spring Boot version 3/4 and implement your Spring Boot main application</li>
-<li>Add the <code>rest-spring-3</code> or <code>rest-spring-4</code> add-on library for a pre-configured Spring Boot 3/4 experience</li>
+<li>Add dependency for Spring Boot and implement your Spring Boot main application</li>
+<li>Add the <code>rest-spring-4</code> add-on library for a pre-configured Spring Boot experience</li>
 </ol>
 <h2 id="add-platform-core-to-an-existing-spring-boot-application">Add platform-core to an existing Spring Boot application<a class="headerlink" href="#add-platform-core-to-an-existing-spring-boot-application" title="Permanent link">&para;</a></h2>
 <p>For the first option, the platform-core library can co-exist with Spring Boot. You can write code specific
@@ -2714,12 +2718,11 @@ your Spring Boot main application like this:</p>
 <p>We suggest running <code>AutoStart.main</code> before the <code>SpringApplication.run</code> statement. This would allow the
 platform-core foundation code to load the event-listener functions into memory before Spring Boot starts.</p>
 <h2 id="use-the-rest-spring-library-in-your-application">Use the rest-spring library in your application<a class="headerlink" href="#use-the-rest-spring-library-in-your-application" title="Permanent link">&para;</a></h2>
-<p>The second option is to add the <code>rest-spring-3</code> or <code>rest-spring-4</code> dependency to your composable application.
-The rest-spring-3 library is a pre-configured Spring Boot 3 library with WebFlux as the asynchronous
-HTTP servlet engine. Similarly, the rest-spring-4 is pre-configured for Spring Boot 4.</p>
-<p>This turns your composable application into a pre-configured Spring Boot 3/4 application.
+<p>The second option is to add the <code>rest-spring-4</code> dependency to your composable application.
+The rest-spring-4 library is pre-configured for Spring Boot 4.</p>
+<p>This turns your composable application into a pre-configured Spring Boot application.
 It provides consistent behavior for XML and JSON serialization and exception handling.</p>
-<p>The RestServer class in the rest-spring-3/rest-spring-4 library is used to bootstrap a Spring Boot application.</p>
+<p>The RestServer class in the rest-spring-4 library is used to bootstrap a Spring Boot application.</p>
 <p>Spring Boot is a sophisticated ecosystem by itself. If the simple RestServer bootstrap does not fit your
 use cases, please use the sample MainApp to implement your own Spring Boot initializer.</p>
 <p>You can add the "spring.boot.main" parameter in the application.properties to point to your own Spring Boot
@@ -2780,7 +2783,7 @@ application server, please add the following to your application.properties file
 </code></pre></div>
 <p>The platform-core and Spring Boot will use <code>rest.server.port</code> and <code>server.port</code> respectively.</p>
 <h2 id="spring-autowiring">Spring Autowiring<a class="headerlink" href="#spring-autowiring" title="Permanent link">&para;</a></h2>
-<p>When using the <code>rest-spring-3</code> or <code>rest-spring-4</code> module, bean and value injection may be used:</p>
+<p>When using the <code>rest-spring-4</code> module, bean and value injection may be used:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"v1.demo.function"</span><span class="p">)</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">DemoFunction</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">LambdaFunction</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
@@ -2806,7 +2809,7 @@ application server, please add the following to your application.properties file
 <a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="p">}</span>
 </code></pre></div>
 <p>Please note that the Spring annotation <code>@Service</code> is not required in a composable function.
-The <code>@PreLoad</code> annotation will automatically perform autowiring when the "rest-spring-3" dependency
+The <code>@PreLoad</code> annotation will automatically perform autowiring when the "rest-spring-4" dependency
 is included in pom.xml.</p>
 <blockquote>
 <p><em>Note</em>: This should be done judiciously - Composable functions should have very few dependencies
@@ -2818,9 +2821,8 @@ is included in pom.xml.</p>
 <li>Only applies to instances loaded with <code>@PreLoad</code> - Functions registered programmatically will not undergo injection.</li>
 <li>Constructor injection is not viable - these instances are constructed before the Spring context is created.</li>
 </ul>
-<h2 id="the-rest-spring-example-demo-applications">The rest-spring-example demo applications<a class="headerlink" href="#the-rest-spring-example-demo-applications" title="Permanent link">&para;</a></h2>
-<p>The two example applications (<code>rest-spring-3-example</code> and <code>rest-spring-4-example</code>) are the same and they
-use the rest-spring-3 and rest-spring-4 libraries respectively.</p>
+<h2 id="the-rest-spring-example-demo-application">The rest-spring-example demo application<a class="headerlink" href="#the-rest-spring-example-demo-application" title="Permanent link">&para;</a></h2>
+<p>The <code>rest-spring-4-example</code> application demonstrates this setup with the rest-spring-4 library.</p>
 <p>Let's review the <code>rest-spring-4-example</code> demo application in the "examples/rest-spring-4-example" project.</p>
 <p>You can use the rest-spring-4-example as a template to create a Spring Boot application.</p>
 <p>In addition to the REST automation engine that lets you create REST endpoints by configuration, you can also
@@ -2913,7 +2915,7 @@ application.properties.</p>
 <a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="p">}</span>
 </code></pre></div>
 <p>The above creates a websocket service at the URL "/ws/hello" server endpoint.</p>
-<p>Please review the example code in the WsEchoDemo class in the rest-spring-3-example project for details.</p>
+<p>Please review the example code in the WsEchoDemo class in the rest-spring-4-example project for details.</p>
 <p>If you want to use Spring Boot's Tomcat websocket server, you can disable the non-blocking websocket server feature
 by removing the <code>websocket.server.port</code> configuration and any websocket service classes with the <code>WebSocketService</code>
 annotation.</p>

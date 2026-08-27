@@ -2003,6 +2003,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0017" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0017 — Spring Boot integration targets Boot 4 only; the Boot 3 lane is retired
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0016" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2669,6 +2680,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0017" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0017 — Spring Boot integration targets Boot 4 only; the Boot 3 lane is retired
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0016" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2883,6 +2905,32 @@ governing the codebase — verified against the source (<code>platform-core</cod
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
 <hr />
+<h2 id="adr-0017">ADR-0017 — Spring Boot integration targets Boot 4 only; the Boot 3 lane is retired<a class="headerlink" href="#adr-0017" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-27 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> stack-integration-spring-boot4</p>
+<!-- id: adr-0017 | status: proposed -->
+
+<p><strong>Abstract.</strong> The optional Spring Boot integration is provided by a single module,
+<code>system/rest-spring-4</code> (with <code>examples/rest-spring-4-example</code> as its reference
+application), targeting Spring Boot 4. The Spring Boot 3 lane — <code>system/rest-spring-3</code>
+and <code>examples/rest-spring-3-example</code> — is removed from the reactor. The integration
+surface carries over unchanged: the RestServer bootstrap, the <code>spring.boot.main</code>
+override, <code>@PreLoad</code> autowiring, and the same configuration keys — so migrating an
+application is a dependency swap plus that application's own Spring Boot 3 → 4 upgrade.
+Spring remains optional and is never required by platform-core: the lightweight built-in
+non-blocking HTTP server stays the default.</p>
+<p><strong>Rationale.</strong> The Spring community stopped issuing security patches for Spring Boot 3,
+and field deployment pipelines enforce that directly: dependency security scanning
+(Snyk) rejects Spring Boot 3 dependencies outright and requires Spring Framework 7 or
+newer, so a build carrying the Boot 3 lane blocks deployment. Continuing to ship a
+Boot 3 integration would hand field installations a permanently-unpatchable web
+dependency lane — the opposite of the framework's security posture, where field
+deployments are gated by dependency scanners (cf. the netty and lz4 remediation
+rounds). Maintaining two lanes also doubled every Spring upgrade sweep
+(both <code>spring-boot-starter-parent</code> versions, two example applications) while exposing
+the same integration surface. The alternative — freezing <code>rest-spring-3</code> for legacy
+consumers — was rejected: an EOL web stack is a liability regardless of freshness of the
+rest of the build, and the migration cost is a dependency swap. Applications that must
+stay on Spring Boot 3 can remain on Mercury releases up to this one.</p>
 <h2 id="adr-0016">ADR-0016 — Polyglot functions are Event-over-HTTP peers, not subprocesses or ports<a class="headerlink" href="#adr-0016" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-22 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> polyglot-event-over-http-design</p>
 <!-- id: adr-0016 | status: proposed -->

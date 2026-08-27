@@ -1924,10 +1924,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#launch-the-rest-spring-3-example-and-lambda-example-with-kafka" class="md-nav__link">
+  <a href="#launch-the-rest-spring-4-example-and-lambda-example-with-kafka" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Launch the rest-spring-3-example and lambda-example with kafka
+        Launch the rest-spring-4-example and lambda-example with kafka
       
     </span>
   </a>
@@ -1935,10 +1935,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#send-an-event-request-from-rest-spring-3-example-to-lambda-example" class="md-nav__link">
+  <a href="#send-an-event-request-from-rest-spring-4-example-to-lambda-example" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Send an event request from rest-spring-3-example to lambda-example
+        Send an event request from rest-spring-4-example to lambda-example
       
     </span>
   </a>
@@ -2680,10 +2680,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#launch-the-rest-spring-3-example-and-lambda-example-with-kafka" class="md-nav__link">
+  <a href="#launch-the-rest-spring-4-example-and-lambda-example-with-kafka" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Launch the rest-spring-3-example and lambda-example with kafka
+        Launch the rest-spring-4-example and lambda-example with kafka
       
     </span>
   </a>
@@ -2691,10 +2691,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#send-an-event-request-from-rest-spring-3-example-to-lambda-example" class="md-nav__link">
+  <a href="#send-an-event-request-from-rest-spring-4-example-to-lambda-example" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Send an event request from rest-spring-3-example to lambda-example
+        Send an event request from rest-spring-4-example to lambda-example
       
     </span>
   </a>
@@ -2916,17 +2916,17 @@ as a presence monitor.</p>
 <p>Presence monitor is resilient. You can run more than one instance to back up each other.
 If you are not using Docker or Kubernetes, you need to change the "server.port" parameter of the second instance
 to 8081 so that the two application instances can run in the same laptop.</p>
-<h2 id="launch-the-rest-spring-3-example-and-lambda-example-with-kafka">Launch the rest-spring-3-example and lambda-example with kafka<a class="headerlink" href="#launch-the-rest-spring-3-example-and-lambda-example-with-kafka" title="Permanent link">&para;</a></h2>
-<p>Let's run the rest-spring-3-example and lambda-example applications with Kafka connector turned on.</p>
-<p>For demo purpose, the rest-spring-3-example and lambda-example are pre-configured with "kafka-connector". 
+<h2 id="launch-the-rest-spring-4-example-and-lambda-example-with-kafka">Launch the rest-spring-4-example and lambda-example with kafka<a class="headerlink" href="#launch-the-rest-spring-4-example-and-lambda-example-with-kafka" title="Permanent link">&para;</a></h2>
+<p>Let's run the rest-spring-4-example and lambda-example applications with Kafka connector turned on.</p>
+<p>For demo purpose, the rest-spring-4-example and lambda-example are pre-configured with "kafka-connector". 
 If you do not need these libraries, please remove them from the pom.xml built script.</p>
 <p>Since kafka-connector is pre-configured, we can build and start the two demo applications like this. The
 examples are not part of the top-level reactor build, so build each one with <code>mvn clean package</code> first
 (the <code>mvn clean install</code> in <a href="../getting-started/">Getting Started</a> installs the libraries they depend on):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>cd examples/rest-spring-3-example
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>cd examples/rest-spring-4-example
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>mvn clean package
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>java -Dcloud.connector=kafka -Dmandatory.health.dependencies=cloud.connector.health 
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>     -jar target/rest-spring-3-example-x.y.z.jar
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>     -jar target/rest-spring-4-example-x.y.z.jar
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>cd examples/lambda-example
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>mvn clean package
@@ -2936,14 +2936,14 @@ examples are not part of the top-level reactor build, so build each one with <co
 <p>The above command uses the "-D" parameters to configure the "cloud.connector" and "mandatory.health.dependencies".</p>
 <p>The parameter <code>mandatory.health.dependencies=cloud.connector.health</code> tells the system to turn on the health check
 endpoint for the application.</p>
-<p>For the rest-spring-3-example, the start-up log may look like this:</p>
+<p>For the rest-spring-4-example, the start-up log may look like this:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>AppStarter:344 - Modules loaded in 2,825 ms
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>PresenceConnector:155 - Connected pc.abb4a4de.in, 127.0.0.1:8080, 
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>                        /ws/presence/202303282583899cf43a49b98f0522492b9ca178
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>EventConsumer:160 - Subscribed multiplex.0001.0
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>ServiceLifeCycle:73 - multiplex.0001, partition 0 ready
 </code></pre></div>
-<p>This means that the rest-spring-3-example has successfully connected to the presence monitor at port 8080.
+<p>This means that the rest-spring-4-example has successfully connected to the presence monitor at port 8080.
 It has subscribed to the topic "multiplex.0001" partition 0.</p>
 <p>For the lambda-example, the log may look like this:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>AppStarter:344 - Modules loaded in 2,742 m
@@ -2951,12 +2951,12 @@ It has subscribed to the topic "multiplex.0001" partition 0.</p>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>                        /ws/presence/2023032808d82ebe2c0d4e5aa9ca96b3813bdd25
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>EventConsumer:160 - Subscribed multiplex.0001.1
 <a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>ServiceLifeCycle:73 - multiplex.0001, partition 1 ready
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>ServiceRegistry:242 - Peer 202303282583899cf43a49b98f0522492b9ca178 joins (rest-spring-3-example x.y.z)
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>ServiceRegistry:383 - hello.world (rest-spring-3-example, WEB.202303282583899cf43a49b98f0522492b9ca178) registered
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>ServiceRegistry:242 - Peer 202303282583899cf43a49b98f0522492b9ca178 joins (rest-spring-4-example x.y.z)
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>ServiceRegistry:383 - hello.world (rest-spring-4-example, WEB.202303282583899cf43a49b98f0522492b9ca178) registered
 </code></pre></div>
-<p>You notice that the lambda-example has discovered the rest-spring-3-example through Kafka and added the 
+<p>You notice that the lambda-example has discovered the rest-spring-4-example through Kafka and added the 
 "hello.world" to the distributed routing table.</p>
-<p>At this point, the rest-spring-3-example will find the lambda-example application as well:</p>
+<p>At this point, the rest-spring-4-example will find the lambda-example application as well:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>ServiceRegistry:242 - Peer 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 joins (lambda-example x.y.z)
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>ServiceRegistry:383 - hello.world (lambda-example, 
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>                                   APP.2023032808d82ebe2c0d4e5aa9ca96b3813bdd25) registered
@@ -2965,8 +2965,8 @@ It has subscribed to the topic "multiplex.0001" partition 0.</p>
 </code></pre></div>
 <p>This is real-time service discovery coordinated by the "kafka-presence" monitor application.</p>
 <p>Now you have created a minimalist event-driven service mesh.</p>
-<h2 id="send-an-event-request-from-rest-spring-3-example-to-lambda-example">Send an event request from rest-spring-3-example to lambda-example<a class="headerlink" href="#send-an-event-request-from-rest-spring-3-example-to-lambda-example" title="Permanent link">&para;</a></h2>
-<p>In <a href="../event-over-http/">Event over HTTP</a>, you have sent a request from the rest-spring-3-example to the lambda-example using 
+<h2 id="send-an-event-request-from-rest-spring-4-example-to-lambda-example">Send an event request from rest-spring-4-example to lambda-example<a class="headerlink" href="#send-an-event-request-from-rest-spring-4-example-to-lambda-example" title="Permanent link">&para;</a></h2>
+<p>In <a href="../event-over-http/">Event over HTTP</a>, you have sent a request from the rest-spring-4-example to the lambda-example using 
 "Event over HTTP" without a service mesh.</p>
 <p>In this section, you can make the same request using service mesh.</p>
 <p>Please point your browser to http://127.0.0.1:8083/api/pojo/mesh/1
@@ -3002,7 +3002,7 @@ You will see the following response in your browser.</p>
 <a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="w">      </span><span class="s2">"service.monitor (11)"</span>
 <a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="w">    </span><span class="p">],</span>
 <a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="w">    </span><span class="nt">"virtual_topics"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="w">      </span><span class="s2">"multiplex.0001-000 -&gt; 202303282583899cf43a49b98f0522492b9ca178, rest-spring-3-example vx.y.z"</span><span class="p">,</span>
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="w">      </span><span class="s2">"multiplex.0001-000 -&gt; 202303282583899cf43a49b98f0522492b9ca178, rest-spring-4-example vx.y.z"</span><span class="p">,</span>
 <a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="w">      </span><span class="s2">"multiplex.0001-001 -&gt; 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25, lambda-example vx.y.z"</span>
 <a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="w">    </span><span class="p">],</span>
 <a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a><span class="w">    </span><span class="nt">"connections"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
@@ -3023,7 +3023,7 @@ You will see the following response in your browser.</p>
 <a id="__codelineno-10-37" name="__codelineno-10-37" href="#__codelineno-10-37"></a><span class="w">        </span><span class="nt">"elapsed"</span><span class="p">:</span><span class="w"> </span><span class="s2">"29 minutes 42 seconds"</span><span class="p">,</span>
 <a id="__codelineno-10-38" name="__codelineno-10-38" href="#__codelineno-10-38"></a><span class="w">        </span><span class="nt">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2023-03-28T17:38:47Z"</span><span class="p">,</span>
 <a id="__codelineno-10-39" name="__codelineno-10-39" href="#__codelineno-10-39"></a><span class="w">        </span><span class="nt">"origin"</span><span class="p">:</span><span class="w"> </span><span class="s2">"202303282583899cf43a49b98f0522492b9ca178"</span><span class="p">,</span>
-<a id="__codelineno-10-40" name="__codelineno-10-40" href="#__codelineno-10-40"></a><span class="w">        </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"rest-spring-3-example"</span><span class="p">,</span>
+<a id="__codelineno-10-40" name="__codelineno-10-40" href="#__codelineno-10-40"></a><span class="w">        </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"rest-spring-4-example"</span><span class="p">,</span>
 <a id="__codelineno-10-41" name="__codelineno-10-41" href="#__codelineno-10-41"></a><span class="w">        </span><span class="nt">"topic"</span><span class="p">:</span><span class="w"> </span><span class="s2">"multiplex.0001-000"</span><span class="p">,</span>
 <a id="__codelineno-10-42" name="__codelineno-10-42" href="#__codelineno-10-42"></a><span class="w">        </span><span class="nt">"monitor"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2023032896b12f9de149459f9c8b71ad8b6b49fa"</span><span class="p">,</span>
 <a id="__codelineno-10-43" name="__codelineno-10-43" href="#__codelineno-10-43"></a><span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"WEB"</span><span class="p">,</span>
@@ -3047,7 +3047,7 @@ You will see the following response in your browser.</p>
 <a id="__codelineno-10-61" name="__codelineno-10-61" href="#__codelineno-10-61"></a><span class="w">  </span><span class="p">}</span>
 <a id="__codelineno-10-62" name="__codelineno-10-62" href="#__codelineno-10-62"></a><span class="p">}</span>
 </code></pre></div>
-<p>In this example, it shows that there are two user applications (rest-spring-3-example and lambda-example) connected.</p>
+<p>In this example, it shows that there are two user applications (rest-spring-4-example and lambda-example) connected.</p>
 <h2 id="presence-monitor-health-endpoint">Presence monitor health endpoint<a class="headerlink" href="#presence-monitor-health-endpoint" title="Permanent link">&para;</a></h2>
 <p>The presence monitor has a "/health" endpoint.</p>
 <p>You can visit http://127.0.0.1:8080/health and it will show something like this:</p>
@@ -3069,7 +3069,7 @@ You will see the following response in your browser.</p>
 <a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="p">}</span>
 </code></pre></div>
 <h2 id="user-application-health-endpoint">User application health endpoint<a class="headerlink" href="#user-application-health-endpoint" title="Permanent link">&para;</a></h2>
-<p>Similarly, you can check the health status of the rest-spring-3-example application with http://127.0.0.1:8083/health</p>
+<p>Similarly, you can check the health status of the rest-spring-4-example application with http://127.0.0.1:8083/health</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="p">{</span>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="nt">"dependency"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">    </span><span class="p">{</span>
@@ -3099,12 +3099,12 @@ number of topics because it handles topic issuance to each user application inst
 </ol>
 <h2 id="stop-an-application">Stop an application<a class="headerlink" href="#stop-an-application" title="Permanent link">&para;</a></h2>
 <p>You can press "control-C" to stop an application. Let's stop the lambda-example application.</p>
-<p>Once you stopped lamdba-example from the command line, the rest-spring-3-example will detect it:</p>
+<p>Once you stopped lamdba-example from the command line, the rest-spring-4-example will detect it:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>ServiceRegistry:278 - Peer 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 left (lambda-example x.y.z)
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>ServiceRegistry:401 - hello.world 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 unregistered
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>ServiceRegistry:401 - hello.pojo 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 unregistered
 </code></pre></div>
-<p>The rest-spring-3-example will update its distributed routing table automatically.</p>
+<p>The rest-spring-4-example will update its distributed routing table automatically.</p>
 <p>You will also find log messages in the kafka-presence application like this:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>MonitorService:120 - Member 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 left
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>TopicController:250 - multiplex.0001-001 released by 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25,

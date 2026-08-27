@@ -5001,7 +5001,7 @@ Platform singleton under each route name. Worker instances are created on demand
 <li>Route names must be lowercase letters, digits, and dots. At least one dot is required.</li>
 <li>Multiple routes: each name gets a full, independent set of <code>instances</code> workers.</li>
 <li>The <code>instance</code> parameter in <code>handleEvent</code> indicates which worker is executing (0-based).</li>
-<li>Spring Boot (<code>rest-spring-3</code> module): field injection (<code>@Autowired</code>, <code>@Value</code>) works.
+<li>Spring Boot (<code>rest-spring-4</code> module): field injection (<code>@Autowired</code>, <code>@Value</code>) works.
   Constructor injection does NOT work because instances are created before the Spring context.</li>
 <li><code>@PreLoad</code> can be combined with <code>@KernelThreadRunner</code>, <code>@EventInterceptor</code>, <code>@ZeroTracing</code>,
   and <code>@OptionalService</code> on the same class.</li>
@@ -5131,7 +5131,7 @@ framework instantiates all <code>@MainApplication</code> classes in <code>sequen
 <li>The static <code>main</code> method should contain only <code>AutoStart.main(args)</code>. All initialization
   logic belongs in <code>start()</code>.</li>
 <li>Can be combined with <code>@OptionalService</code> for conditional activation.</li>
-<li>In Spring Boot apps (<code>rest-spring-3</code>/<code>rest-spring-4</code>), execution is deferred until Spring
+<li>In Spring Boot apps (<code>rest-spring-4</code>), execution is deferred until Spring
   Boot itself fires <code>ApplicationReadyEvent</code> — see
   <a href="../architecture/#application-lifecycle">Application Lifecycle</a> for the full sequence.</li>
 </ul>
@@ -5838,7 +5838,7 @@ located inside the configured packages are found.</p>
 <p>The <code>web.component.scan</code> property accepts a comma-separated list of package names. The
 scanner finds <code>@PreLoad</code>, <code>@MainApplication</code>, <code>@BeforeApplication</code>, <code>@WebSocketService</code>,
 and <code>@SimplePlugin</code> classes within those packages (and all sub-packages).</p>
-<p><strong>Spring Boot note</strong>: When using <code>rest-spring-3</code> with multiple packages in
+<p><strong>Spring Boot note</strong>: When using <code>rest-spring-4</code> with multiple packages in
 <code>web.component.scan</code>, Spring's own component scanner requires the separate
 <code>spring.component.scan</code> property to scan for Spring beans.</p>
 <p><strong>What happens if a class is outside the scan path</strong>: The class is silently ignored.
