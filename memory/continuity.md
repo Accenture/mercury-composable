@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-27 | agent: Claude Code (2026-08-27-213034)
+- **last_session:** 2026-08-27 | agent: Claude Code (2026-08-27-234035)
 - **last_review:** 2026-08-27 | through 2026-08-27-213034.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -247,11 +247,12 @@
   == gated `a19d1d8d`, 32-pom sweep, four green builds, tag dereference-verified,
   release PUBLISHED by Eric) **Spring round: Boot 4.1.1 + Reactor BOM 2025.0.7; SPRING
   BOOT 3 LANE RETIRED (ADR-0017).** Driver: field Snyk rejects Boot 3 and requires
-  Spring Framework ≥ 7 — deployment pipeline BLOCKED; v4.11.12 unblocks (ships Framework
-  7.0.9; netty 4.2.17.Final pin held). Lesson: the Boot parent is the repo's
+  Spring Framework ≥ 7 — deployment pipeline BLOCKED. **UNBLOCK CONFIRMED 2026-08-27:
+  the field Snyk scan passed on v4.11.12 and it is published to the field** (ships
+  Framework 7.0.9; netty 4.2.17.Final pin held). Lesson: the Boot parent is the repo's
   dependencyManagement spine; parity-verify example twins before re-pointing
   walkthroughs. origin: 2026-08-27-213034. Relates [[stack-integration-spring-boot4]].
-  <!-- id: thread-spring-round-20260827 | created: 2026-08-27 | last_used: 2026-08-27 | uses: 1 | tier: working | origin: 2026-08-27-213034 -->
+  <!-- id: thread-spring-round-20260827 | created: 2026-08-27 | last_used: 2026-08-27 | uses: 2 | tier: active | origin: 2026-08-27-213034 -->
 
 - [x] (field support — MERGED 2026-08-25/26 as
   [PR #296](https://github.com/Accenture/mercury-composable/pull/296) squash `fd4f5ba4`
@@ -263,7 +264,7 @@
   builtin-skill edits never stick — route upstream; pair an S2139 rewrite of an
   uncovered catch block with a catch-path test in the same PR.
   origin: 2026-08-25-231243 + 2026-08-26-020650. Relates [[thread-sonar-4-11-x-field-round-3]].
-  <!-- id: thread-field-scan-remediation-20260825 | created: 2026-08-25 | last_used: 2026-08-27 | uses: 3 | tier: active | origin: 2026-08-25-231243 -->
+  <!-- id: thread-field-scan-remediation-20260825 | created: 2026-08-25 | last_used: 2026-08-27 | uses: 5 | tier: active | origin: 2026-08-25-231243 -->
 
 - [x] (release — SHIPPED 2026-08-23, both repos lock-step at v4.11.11; releases
   PUBLISHED by Eric) **v4.11.11 — the graph.task Event-over-HTTP field release.** Java
@@ -366,7 +367,7 @@
   archived, 14 close records condensed to stubs, continuity 1181→~600 lines): remaining —
   re-run the fresh-agent context-efficiency exercise after the next review vs the 64%
   baseline, then decide the continuity_max_lines lowering. Full detail: origin log.
-  <!-- id: thread-onboarding-efficiency | created: 2026-08-22 | last_used: 2026-08-25 | uses: 3 | tier: working | origin: 2026-08-22-003007 -->
+  <!-- id: thread-onboarding-efficiency | created: 2026-08-22 | last_used: 2026-08-27 | uses: 4 | tier: working | origin: 2026-08-22-003007 -->
 
 - [x] (feature — MERGED BOTH ENGINES 2026-08-21, shipped in v4.11.10: Java
   [PR #289](https://github.com/Accenture/mercury-composable/pull/289) squash `b5aeaf56`
@@ -455,7 +456,7 @@
   [[thread-field-scan-remediation-20260825]]) **Third field Sonar remediation round**
   (3× S3776 helper extractions; S1192/S125/S5778/S6213/S2925/S5961; the
   deterministic-expiry precedent). origin: 2026-08-07-003746.
-  <!-- id: thread-sonar-4-11-x-field-round-3 | created: 2026-08-07 | last_used: 2026-08-26 | uses: 7 | tier: active | origin: 2026-08-07-003746 -->
+  <!-- id: thread-sonar-4-11-x-field-round-3 | created: 2026-08-07 | last_used: 2026-08-27 | uses: 8 | tier: active | origin: 2026-08-07-003746 -->
 
 - [ ] (observation — surfaced 2026-07-30 by the second-level-routing code study;
   pre-existing, separate from that feature) **Header-casing mismatch: mixed-case Kafka
@@ -593,7 +594,7 @@
   memory 2026-08-22: the smoke test found six session logs referencing this id while the
   fact lived only in an agent's personal store — a project-relevant working rhythm belongs
   in the shared layer.)
-  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-08-27 | uses: 14 | tier: active | origin: 2026-08-22-180334 -->
+  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-08-27 | uses: 15 | tier: active | origin: 2026-08-22-180334 -->
 
 ## Team / Members
 
