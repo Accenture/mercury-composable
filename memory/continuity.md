@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-29 | agent: Claude Code (2026-08-29-162504)
+- **last_session:** 2026-08-29 | agent: Claude Code (2026-08-29-231510)
 - **last_review:** 2026-08-27 | through 2026-08-27-213034.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -241,29 +241,34 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
 ## Open Threads
 
-- [ ] (feature — **Phase 1 (Java) MERGED 2026-08-29 as
-  [PR #300](https://github.com/Accenture/mercury-composable/pull/300) squash `1410c33f`
-  == gated `5392f424`, tree verified, branch deleted both ends; next = Rust twin of
-  Phase 1, then Phases 2/3**) **SSE consumption in
-  AsyncHttpClient + Event-over-HTTP peer streaming (option 2; ADR-0019 Proposed).**
-  The same PR made `draft-design-specs/` PUBLIC (Eric's OSS-transparency directive;
-  README states the lifecycle: specs serve during design/implementation, then journal
-  records — source code is the source of truth; all 12 specs swept for proprietary
-  info pre-publication; future specs are written publication-clean from first draft).
-  Closes the two post-edge gaps: engine consuming LLM-provider token streams, and
-  wrapper functions streaming to the engine — ONE mechanism (the relay already flows
-  through AsyncHttpClient). D1–D9 approved; **D5 = Eric's hybrid control/data-plane
+- [ ] (feature — **Phase 2 (Java) MERGED 2026-08-29 as
+  [PR #301](https://github.com/Accenture/mercury-composable/pull/301) squash `894822a5`
+  == gated `0d8b28ee`; Phase 1 done BOTH engines (Java
+  [PR #300](https://github.com/Accenture/mercury-composable/pull/300) squash `1410c33f`,
+  Rust twin [PR #217](https://github.com/Accenture/mercury/pull/217) merge `ec4c2702`);
+  ADR-0018/0019 flipped ACCEPTED in #301; next = Rust twin of Phase 2, then Phase 3
+  wrapper twins**) **SSE consumption in AsyncHttpClient + Event-over-HTTP peer
+  streaming (option 2).** Closes the two post-edge gaps: engine consuming LLM-provider
+  token streams (Phase 1, raw mode), and peer functions streaming to the engine
+  (Phase 2, envelope mode) — ONE mechanism through AsyncHttpClient. D1–D9 + the
+  Phase-2 internals P2-1…P2-6 ratified by Eric; **D5 = Eric's hybrid control/data-plane
   framing** (control signals as envelope key-value headers in base64-MsgPack frames
   under reserved SSE name `envelope` — first frame + terminals + non-text escape;
-  tokens as raw SSE frames, ~90% hot-path overhead cut). Phase 1 shipped: D1
-  Accept-gated candidate branch, SseRelay (incremental parser, per-read idle allowance
-  w/ comment reset, in-band 408/500, lock-serialized), buffered fallback,
-  self-relay demo endpoint (/api/hello/relay — SSE-to-SSE relay by configuration).
-  9 new tests; platform-core 459/459. Rejected alternatives on record: WebSocket
-  (fence/mesh-drift/gateways), per-segment lane POSTs, gRPC, long-polling.
-  Spec: draft-design-specs/async-http-client-sse-streaming.md.
+  tokens as raw SSE frames). Phase 2 shipped: `accept: text/event-stream` EVENT-header
+  opt-in on send-with-reply_to (RPC/x-async never stream); server = dynamic lane
+  binding + envelope-mode rendering in the edge renderer (zero new config; plain RPC
+  never consumes a lane; atomic release claim closes the bind-vs-close race; cid
+  rewritten to the edge requestId = RPC-inbox parity); client submode with conformance
+  guards (missing-head / ended-without-eof in-band 500s); explicit degradation (406
+  "Streaming function requires a caller that accepts text/event-stream"; 503 pool
+  reuse; single-shot byte-identical); **standard error triple {"type","status",
+  "message"} aligned across writer.fail() / client failInBand / housekeeper abort —
+  the Rust twin inherits this alignment + the pending hello-world README section**.
+  x-ttl (ms event header) = idle allowance both hops. 14 new tests; platform-core
+  473/473. Phase-1 record + rejected alternatives + specs-go-public: origin log.
+  Spec: draft-design-specs/async-http-client-sse-streaming.md §7.
   Serves [[bp-agent-orchestration]] + [[bp-polyglot-functions]].
-  <!-- id: thread-sse-consumption-streaming | created: 2026-08-29 | last_used: 2026-08-29 | uses: 1 | tier: working | origin: 2026-08-29-162504 -->
+  <!-- id: thread-sse-consumption-streaming | created: 2026-08-29 | last_used: 2026-08-29 | uses: 2 | tier: working | origin: 2026-08-29-162504 -->
 
 
 - [x] (feature — **COMPLETE BOTH ENGINES 2026-08-28/29**: Java
