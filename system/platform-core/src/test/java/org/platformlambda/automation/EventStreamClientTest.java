@@ -192,7 +192,7 @@ class EventStreamClientTest extends TestBase {
         var events = consume("http://127.0.0.1:" + edgePort, "/api/hello/stream",
                 Map.of("mode", "sse"), 10, 4);
         assertEquals(4, events.size(), "3 data envelopes + eof");
-        EventEnvelope first = events.get(0);
+        EventEnvelope first = events.getFirst();
         assertEquals(EventStreamWriter.DATA, marker(first));
         // head control rides the first envelope: upstream status + SSE content type
         assertEquals(200, first.getStatus());
@@ -211,7 +211,7 @@ class EventStreamClientTest extends TestBase {
     @Test
     void multiFieldFramesMapPerSseSpecification() throws InterruptedException {
         var events = consume("http://127.0.0.1:" + mockPort, "/sse/multifield", null, 5, 2);
-        EventEnvelope data = events.get(0);
+        EventEnvelope data = events.getFirst();
         assertEquals(EventStreamWriter.DATA, marker(data));
         assertEquals("tokens", data.getHeaders().get(EventStreamWriter.X_EVENT_NAME));
         assertEquals("line1\nline2", data.getRawBody(), "multi-line data joins with newline");
@@ -231,7 +231,7 @@ class EventStreamClientTest extends TestBase {
     @Test
     void idleStallFailsInBandWithTimeout408() throws InterruptedException {
         var events = consume("http://127.0.0.1:" + mockPort, "/sse/silent", null, 2, 3);
-        assertEquals("one", events.get(0).getRawBody());
+        assertEquals("one", events.getFirst().getRawBody());
         EventEnvelope error = events.get(1);
         assertEquals(EventStreamWriter.EXCEPTION, marker(error));
         assertEquals(408, error.getStatus());
@@ -245,7 +245,7 @@ class EventStreamClientTest extends TestBase {
         // the comments prove liveness, so the stream must complete
         var events = consume("http://127.0.0.1:" + mockPort, "/sse/comments", null, 2, 3);
         assertEquals(3, events.size());
-        assertEquals("early", events.get(0).getRawBody());
+        assertEquals("early", events.getFirst().getRawBody());
         assertEquals("late", events.get(1).getRawBody());
         assertEquals(EventStreamWriter.EOF, marker(events.get(2)));
     }
@@ -253,7 +253,7 @@ class EventStreamClientTest extends TestBase {
     @Test
     void midStreamDisconnectFailsInBand() throws InterruptedException {
         var events = consume("http://127.0.0.1:" + mockPort, "/sse/abort", null, 10, 3);
-        assertEquals("partial", events.get(0).getRawBody());
+        assertEquals("partial", events.getFirst().getRawBody());
         EventEnvelope error = events.get(1);
         assertEquals(EventStreamWriter.EXCEPTION, marker(error));
         assertEquals(500, error.getStatus());
@@ -288,7 +288,7 @@ class EventStreamClientTest extends TestBase {
     }
 
     @Test
-    void withoutAcceptTheSseResponseBuffersAsBefore() throws IOException, InterruptedException {
+    void withoutAcceptTheSseResponseBuffersAsBefore() {
         // backward-compat pin: an RPC without Accept: text/event-stream receives
         // the whole SSE payload buffered as one text body (today's behavior)
         var po = EventEmitter.getInstance();
@@ -298,17 +298,13 @@ class EventStreamClientTest extends TestBase {
         req.setUrl("/api/hello/stream");
         req.setQueryParameter("mode", "sse");
         req.setTimeoutSeconds(10);
-        try {
-            EventEnvelope response = po.asyncRequest(new EventEnvelope()
-                            .setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req.toMap()), 15000)
-                    .toCompletionStage().toCompletableFuture().get(20, TimeUnit.SECONDS);
-            assertEquals(200, response.getStatus());
-            String text = String.valueOf(response.getRawBody());
-            assertTrue(text.contains("data: Hello"), text);
-            assertTrue(text.contains("event: done"), text);
-        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
-            fail(e);
-        }
+        EventEnvelope response = assertDoesNotThrow(() -> po.asyncRequest(new EventEnvelope()
+                        .setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req.toMap()), 15000)
+                .toCompletionStage().toCompletableFuture().get(20, TimeUnit.SECONDS));
+        assertEquals(200, response.getStatus());
+        String text = String.valueOf(response.getRawBody());
+        assertTrue(text.contains("data: Hello"), text);
+        assertTrue(text.contains("event: done"), text);
     }
 
     @Test
