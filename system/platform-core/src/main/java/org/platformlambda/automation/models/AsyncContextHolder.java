@@ -19,6 +19,9 @@
 package org.platformlambda.automation.models;
 
 import io.vertx.core.http.HttpServerRequest;
+import org.platformlambda.core.models.EventEnvelope;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("java:S1104")
 public class AsyncContextHolder {
@@ -37,6 +40,10 @@ public class AsyncContextHolder {
     // the dedicated reply lane checked out for a streaming endpoint; volatile because
     // the housekeeper reads it from another thread; returned to the pool at context close
     public volatile String streamLane;
+    // non-null when this context serves an Event-over-HTTP streaming relay (/api/event):
+    // stream events render as the envelope-mode wire dialect in the requester's format
+    public volatile EventEnvelope.Format envelopeStreamFormat;
+    private final AtomicBoolean laneReleased = new AtomicBoolean(false);
 
     public AsyncContextHolder(HttpServerRequest request) {
         this.request = request;
@@ -76,5 +83,16 @@ public class AsyncContextHolder {
 
     public void touch() {
         this.lastAccess = System.currentTimeMillis();
+    }
+
+    /**
+     * Claim the one-time right to return this context's reply lane to the pool.
+     * The atomic claim lets a dynamic lane binding race safely with a concurrent
+     * context close - whichever side runs second performs the release, exactly once.
+     *
+     * @return the lane to release, or null when there is none, or it was already claimed
+     */
+    public String claimLaneRelease() {
+        return streamLane != null && laneReleased.compareAndSet(false, true) ? streamLane : null;
     }
 }

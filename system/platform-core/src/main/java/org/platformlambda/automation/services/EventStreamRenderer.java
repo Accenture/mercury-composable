@@ -59,6 +59,7 @@ public class EventStreamRenderer {
     private static final String DATA = EventStreamWriter.DATA;
     private static final String EOF = EventStreamWriter.EOF;
     private static final String EXCEPTION = EventStreamWriter.EXCEPTION;
+    private static final String ENVELOPE = EventStreamWriter.ENVELOPE;
     private static final String X_EVENT_STREAM = EventStreamWriter.X_EVENT_STREAM;
     private static final String X_EVENT_NAME = EventStreamWriter.X_EVENT_NAME;
     private static final String X_TTL = "x-ttl";
@@ -126,6 +127,21 @@ public class EventStreamRenderer {
     }
 
     /**
+     * Validate the x-event-stream marker; an unknown value is dropped with a warning
+     *
+     * @param requestId the request correlation id
+     * @param signal the x-event-stream marker value
+     * @return true when the signal is not a valid stream marker
+     */
+    private static boolean invalidSignal(String requestId, String signal) {
+        if (DATA.equals(signal) || EOF.equals(signal) || EXCEPTION.equals(signal)) {
+            return false;
+        }
+        log.warn("Dropping event for {} - invalid {} signal '{}'", requestId, X_EVENT_STREAM, signal);
+        return true;
+    }
+
+    /**
      * Extract the x-event-stream marker from an envelope (case-insensitive), if any
      *
      * @param event the incoming envelope
@@ -149,8 +165,7 @@ public class EventStreamRenderer {
      * @param signal the x-event-stream marker value
      */
     public static void handle(String requestId, AsyncContextHolder holder, EventEnvelope event, String signal) {
-        if (!DATA.equals(signal) && !EOF.equals(signal) && !EXCEPTION.equals(signal)) {
-            log.warn("Dropping event for {} - invalid {} signal '{}'", requestId, X_EVENT_STREAM, signal);
+        if (invalidSignal(requestId, signal)) {
             return;
         }
         if (holder.eventStream == null) {
@@ -166,6 +181,131 @@ public class EventStreamRenderer {
             case EOF -> renderEof(requestId, holder, event);
             default -> renderException(requestId, holder, event);
         }
+    }
+
+    /**
+     * Envelope-mode rendering for the Event-over-HTTP streaming relay ("/api/event"
+     * with a caller that accepts text/event-stream). The wire is the hybrid dialect:
+     * envelope frames (SSE event name "envelope", one base64-encoded serialized
+     * EventEnvelope per frame) wherever envelope semantics matter - the head, the
+     * terminals and non-text segments - and raw SSE frames for plain text segments.
+     * The terminals end the response cleanly; the engine-to-engine wire carries no
+     * cosmetic done/error frames because the decoded terminal envelope is the signal.
+     *
+     * @param requestId the request correlation id
+     * @param holder the request context
+     * @param event the incoming envelope
+     * @param signal the x-event-stream marker value
+     */
+    public static void handleEnvelopeMode(String requestId, AsyncContextHolder holder,
+                                          EventEnvelope event, String signal) {
+        if (invalidSignal(requestId, signal)) {
+            return;
+        }
+        boolean first = holder.eventStream == null;
+        if (first) {
+            // uniform SSE, a pre-head failure included - the caller always receives
+            // the exact envelope, while the transport head mirrors its status
+            openEnvelopeStream(requestId, holder, event);
+        }
+        EventStreamState state = holder.eventStream;
+        if (state.isClosed()) {
+            return;
+        }
+        holder.touch();
+        if (DATA.equals(signal)) {
+            Buffer frame = envelopeModeDataFrame(holder, event, first);
+            if (frame != null) {
+                state.incrementEventCount();
+                state.addByteCount(frame.length());
+                writeOrQueue(requestId, holder, frame);
+            }
+        } else {
+            writeOrQueue(requestId, holder, envelopeFrame(holder, event));
+            finish(requestId, holder, signal);
+        }
+    }
+
+    private static void openEnvelopeStream(String requestId, AsyncContextHolder holder, EventEnvelope event) {
+        HttpServerResponse response = holder.request.response();
+        if (event.getStatus() != 200) {
+            response.setStatusCode(event.getStatus());
+        }
+        if (holder.cidHeaderName != null && holder.businessCorrelationId != null) {
+            response.putHeader(holder.cidHeaderName, holder.businessCorrelationId);
+        }
+        // the target's own headers stay inside the envelope frames; only the endpoint's
+        // response header transform (add rules) reaches the outer response
+        applyTransformOnlyHeaders(response, holder);
+        response.putHeader(CONTENT_TYPE, TEXT_EVENT_STREAM);
+        if (!response.headers().contains(CACHE_CONTROL)) {
+            response.putHeader(CACHE_CONTROL, NO_CACHE);
+        }
+        var state = new EventStreamState(EventStreamState.Mode.SSE);
+        holder.eventStream = state;
+        response.setChunked(true);
+        applyIdleTimeoutOverride(holder, event);
+        response.closeHandler(unused -> cleanup(requestId, holder));
+        if (KEEP_ALIVE_MS > 0) {
+            long timer = Platform.getInstance().getVertx().setPeriodic(KEEP_ALIVE_MS, t -> ping(holder));
+            state.setKeepAliveTimer(timer);
+        }
+    }
+
+    private static void applyTransformOnlyHeaders(HttpServerResponse response, AsyncContextHolder holder) {
+        if (holder.resHeaderId != null) {
+            var httpUtil = SimpleHttpUtility.getInstance();
+            HeaderInfo hi = RoutingEntry.getInstance().getResponseHeaderInfo(holder.resHeaderId);
+            Map<String, String> added = httpUtil.filterHeaders(hi, new HashMap<>());
+            for (Map.Entry<String, String> kv : added.entrySet()) {
+                String prettyHeader = httpUtil.getHeaderCase(kv.getKey());
+                if (prettyHeader != null) {
+                    response.putHeader(prettyHeader, kv.getValue());
+                }
+            }
+        }
+    }
+
+    private static Buffer envelopeModeDataFrame(AsyncContextHolder holder, EventEnvelope event, boolean first) {
+        if (first || hasEnvelopeSemantics(event)) {
+            return envelopeFrame(holder, event);
+        }
+        Object body = event.getRawBody();
+        // a bare no-op segment carries nothing - parity with raw-mode rendering
+        return body == null ? null : sseFrame(getEventName(event), (String) body);
+    }
+
+    /**
+     * A data segment must ride as an envelope frame when a raw SSE frame cannot carry
+     * it losslessly: a non-text body, text containing a carriage return (SSE normalizes
+     * line endings), a custom envelope header, a non-200 status, or a user event name
+     * that collides with the reserved "envelope" word.
+     *
+     * @param event the data segment
+     * @return true when the segment needs the envelope-frame escape hatch
+     */
+    private static boolean hasEnvelopeSemantics(EventEnvelope event) {
+        if (event.getStatus() != 200) {
+            return true;
+        }
+        for (Map.Entry<String, String> kv : event.getHeaders().entrySet()) {
+            String key = kv.getKey().toLowerCase();
+            boolean reserved = X_EVENT_STREAM.equals(key) || X_EVENT_NAME.equals(key) || X_TTL.equals(key);
+            if (!reserved || (X_EVENT_NAME.equals(key) && ENVELOPE.equals(kv.getValue()))) {
+                return true;
+            }
+        }
+        Object body = event.getRawBody();
+        return !(body == null || (body instanceof String text && !text.contains("\r")));
+    }
+
+    private static Buffer envelopeFrame(AsyncContextHolder holder, EventEnvelope event) {
+        // server-internal addressing never leaks to the wire - the consuming relay
+        // rewrites addressing to the original caller anyway
+        EventEnvelope wire = event.copy().setTo(null).setReplyTo(null);
+        EventEnvelope.Format format = holder.envelopeStreamFormat == null ?
+                EventEnvelope.Format.STANDARD : holder.envelopeStreamFormat;
+        return sseFrame(ENVELOPE, util.bytesToBase64(wire.toBytes(format)));
     }
 
     private static void sendErrorBeforeHead(String requestId, AsyncContextHolder holder, EventEnvelope event) {

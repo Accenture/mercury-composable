@@ -40,6 +40,15 @@ rest:
     url: "/api/hello/relay"
     timeout: 15s
     stream: true
+
+  # Event-over-HTTP streaming composition: the function forwards its reply lane
+  # into a send to a remote (event-over-http mapped) streaming function - the
+  # segments relay through /api/event (envelope mode) and re-render here
+  - service: "hello.remote.relay"
+    methods: ['GET']
+    url: "/api/hello/remote"
+    timeout: 15s
+    stream: true
   - service: ["hello.mock"]
     methods: ['GET', 'PUT', 'POST', 'HEAD', 'PATCH', 'DELETE']
     url: "/api/hello/world"

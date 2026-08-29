@@ -117,7 +117,7 @@ public class EventEnvelope {
      * Decoding is automatic: {@link #load(byte[])} detects the format because
      * the two key namespaces are disjoint (compact keys are exactly one
      * character; standard keys are all longer). Encoding is transport policy:
-     * a transport selects the format explicitly via {@link #toBytes(Format)}
+     * transport selects the format explicitly via {@link #toBytes(Format)}
      * or {@link #toMap(Format)}.
      */
     public enum Format { COMPACT, STANDARD }
@@ -869,8 +869,8 @@ public class EventEnvelope {
 
     /**
      * The serialization format detected by the most recent {@link #load(byte[])},
-     * or null if this envelope was not created from a serialized form. A
-     * transport that answers a request can mirror the requester's format.
+     * or null if this envelope was not created from a serialized form.
+     * Transport that answers a request can mirror the requester's format.
      *
      * @return the detected wire format or null
      */
@@ -947,7 +947,7 @@ public class EventEnvelope {
      * <p>
      * This no-argument form is equivalent to {@code toBytes(Format.COMPACT)} and
      * preserves the historical wire behavior for same-language transports
-     * (service mesh, streams). A transport that needs cross-language
+     * (service mesh, streams). Transport that needs cross-language
      * interoperability selects {@link Format#STANDARD} explicitly.
      *
      * @return byte array

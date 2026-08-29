@@ -60,9 +60,14 @@ public class EventStreamWriter {
     public static final String DATA = "data";
     public static final String EOF = "eof";
     public static final String EXCEPTION = "exception";
+    // reserved SSE event name of the Event-over-HTTP envelope-mode wire dialect:
+    // a frame with this name carries one base64-encoded serialized EventEnvelope
+    public static final String ENVELOPE = "envelope";
 
     private static final String X_TTL = "x-ttl";
     private static final String CONTENT_TYPE = "content-type";
+    private static final String TYPE = "type";
+    private static final String ERROR = "error";
     private static final String STATUS = "status";
     private static final String MESSAGE = "message";
 
@@ -171,7 +176,9 @@ public class EventStreamWriter {
     public void fail(Throwable e) {
         if (closed.compareAndSet(false, true)) {
             int status = e instanceof AppException appEx ? appEx.getStatus() : 500;
+            // the standard error key-values: '{"type": "error", "status": n, "message": text}'
             Map<String, Object> error = new HashMap<>();
+            error.put(TYPE, ERROR);
             error.put(STATUS, status);
             error.put(MESSAGE, e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
             var event = envelope(EXCEPTION, error, null).setStatus(status);

@@ -213,10 +213,58 @@ public class HttpRouter {
 
     public static void closeContext(String requestId) {
         AsyncContextHolder holder = contexts.remove(requestId);
-        if (holder != null && holder.streamLane != null) {
-            // the atomic map removal guarantees the lane is released exactly once
-            EventStreamRenderer.releaseLane(holder.streamLane);
+        if (holder != null) {
+            // the atomic claim in the holder guarantees the lane is released exactly once,
+            // even against a concurrent dynamic lane binding (bindEnvelopeStream)
+            String lane = holder.claimLaneRelease();
+            if (lane != null) {
+                EventStreamRenderer.releaseLane(lane);
+            }
         }
+    }
+
+    /**
+     * Bind an envelope-mode event stream to a live request context - the Event-over-HTTP
+     * streaming relay ("/api/event" with a caller that accepts text/event-stream).
+     * Reuses the reply lane already checked out when the endpoint is stream-enabled,
+     * otherwise checks out a lane dynamically so plain RPC traffic never consumes one.
+     *
+     * @param requestId the edge request correlation id
+     * @param format the requester's envelope serialization format for the wire frames
+     * @param timeoutMs idle allowance between stream events
+     * @return the reply lane's route name, or null when the context is gone or the pool is exhausted
+     */
+    public static String bindEnvelopeStream(String requestId, EventEnvelope.Format format, long timeoutMs) {
+        AsyncContextHolder holder = contexts.get(requestId);
+        if (holder == null) {
+            return null;
+        }
+        if (holder.streamLane == null) {
+            String lane = EventStreamRenderer.checkoutLane();
+            if (lane == null) {
+                return null;
+            }
+            holder.streamLane = lane;
+        }
+        holder.envelopeStreamFormat = format;
+        holder.setTimeout(timeoutMs);
+        if (!contexts.containsKey(requestId)) {
+            // the context closed while binding - undo through the atomic claim
+            String lane = holder.claimLaneRelease();
+            if (lane != null) {
+                EventStreamRenderer.releaseLane(lane);
+            }
+            return null;
+        }
+        return holder.streamLane;
+    }
+
+    /**
+     * @param requestId the edge request correlation id
+     * @return true when the request context is still open
+     */
+    public static boolean hasContext(String requestId) {
+        return requestId != null && contexts.containsKey(requestId);
     }
 
     public void handleEvent(AssignedRoute route, String requestId, int status, String error) {

@@ -31,6 +31,7 @@ import reactor.netty.ByteBufFlux;
 import reactor.netty.http.Http11SslContextSpec;
 import reactor.netty.http.client.HttpClient;
 import io.netty.handler.codec.http.HttpMethod;
+import org.platformlambda.automation.services.EventStreamRenderer;
 import org.platformlambda.automation.services.HttpRouter;
 import org.platformlambda.automation.util.CustomContentTypeResolver;
 import org.platformlambda.core.annotations.EventInterceptor;
@@ -42,6 +43,7 @@ import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlParser;
 import org.platformlambda.core.serializers.SimpleXmlWriter;
 import org.platformlambda.core.system.*;
+import org.msgpack.core.MessagePackException;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.core.util.W3cTrace;
@@ -97,6 +99,14 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private static final String X_TTL = "x-ttl";
     private static final String ACCEPT = "accept";
     private static final String TEXT_EVENT_STREAM = "text/event-stream";
+    // the Event-over-HTTP relay marks its request event so the SSE consumption
+    // switches to the envelope-mode wire dialect
+    private static final String X_EVENT_API = "x-event-api";
+    private static final String STREAM_RELAY = "stream";
+    private static final String ENVELOPE = EventStreamWriter.ENVELOPE;
+    private static final String TYPE = "type";
+    private static final String ERROR = "error";
+    private static final String MESSAGE = "message";
     private static final String CONTENT_TYPE = "content-type";
     private static final String CONTENT_LENGTH = "content-length";
     private static final String X_CONTENT_LENGTH = "x-content-length";
@@ -565,6 +575,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         private final AsyncHttpRequest request;
         private final HttpClient.ResponseReceiver<?> http;
         private final int timeoutSeconds;
+        // the Event-over-HTTP relay path consumes the peer's envelope-mode wire dialect
+        private final boolean envelopeRelay;
 
         public HttpResponseHandler(EventEnvelope input, AsyncHttpRequest request, HttpClient.ResponseReceiver<?> http) {
             this.input = input;
@@ -572,6 +584,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             this.http = http;
             int timeout = request.getTimeoutSeconds();
             this.timeoutSeconds = timeout > 0? timeout : DEFAULT_TTL_SECONDS;
+            this.envelopeRelay = STREAM_RELAY.equals(input.getHeader(X_EVENT_API));
         }
 
         public void process() {
@@ -659,6 +672,12 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
          * render exactly as the single-shot path would
          */
         private void renderBuffered(byte[] b) {
+            if (envelopeRelay) {
+                // the peer answered single-shot (a non-streaming target, or an edge
+                // error) - deliver the decoded reply with the classic callback semantics
+                deliverToCallback(decodeRelayReply(b));
+                return;
+            }
             String resContentType = resolver.getContentType(response.getHeader(CONTENT_TYPE));
             String len = response.getHeader(CONTENT_LENGTH);
             boolean renderAsBytes = "true".equals(request.getHeader(X_NO_STREAM));
@@ -673,6 +692,65 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             } else {
                 sendResponse(input, response);
             }
+        }
+
+        /**
+         * Decode a single-shot Event-over-HTTP reply: a serialized envelope normally,
+         * with the classic tolerant handling of an edge-level REST error body
+         * and of a payload that is not a packed envelope at all
+         *
+         * @param b the buffered response body
+         * @return the reply envelope for the callback
+         */
+        private EventEnvelope decodeRelayReply(byte[] b) {
+            if (b.length == 0) {
+                return new EventEnvelope().setStatus(response.getStatus());
+            }
+            try {
+                return new EventEnvelope(b);
+            } catch (IllegalArgumentException | MessagePackException e) {
+                EventEnvelope restError = restErrorReply(b);
+                return restError != null? restError : new EventEnvelope().setStatus(400)
+                        .setBody("Did you configure rest.yaml correctly? Invalid result set - " + e.getMessage());
+            }
+        }
+
+        /**
+         * An edge-level REST error ({"status": n, "message": ..., "type": "error"})
+         * arrives as JSON, not as a packed envelope - unwrap it exactly as the
+         * classic relay does
+         *
+         * @param b the buffered response body
+         * @return the unwrapped error envelope, or null when it is not a REST error
+         */
+        @SuppressWarnings("unchecked")
+        private EventEnvelope restErrorReply(byte[] b) {
+            if (response.getStatus() >= 400) {
+                try {
+                    Map<String, Object> data = SimpleMapper.getInstance().getMapper().readValue(b, Map.class);
+                    if (ERROR.equals(data.get(TYPE)) && data.get(MESSAGE) instanceof String text) {
+                        return new EventEnvelope().setStatus(response.getStatus()).setBody(text);
+                    }
+                } catch (Exception e) {
+                    // not a REST error body
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Forward one decoded or synthesized event to the original caller's reply
+         * route with the original correlation id (the relay rewrites addressing)
+         *
+         * @param reply the event to forward
+         */
+        private void deliverToCallback(EventEnvelope reply) {
+            reply.setTo(input.getReplyTo())
+                    .setFrom(input.getFrom() == null? ASYNC_HTTP_REQUEST : input.getFrom())
+                    .setReplyTo(null)
+                    .setCorrelationId(input.getCorrelationId())
+                    .setTrace(input.getTraceId(), input.getTracePath());
+            EventEmitter.getInstance().send(reply);
         }
 
         /**
@@ -782,6 +860,10 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             }
 
             private void emitData(String text, String name) {
+                if (envelopeRelay) {
+                    emitRelayFrame(text, name);
+                    return;
+                }
                 EventEnvelope segment = new EventEnvelope()
                         .setHeader(EventStreamWriter.X_EVENT_STREAM, EventStreamWriter.DATA)
                         .setBody(text);
@@ -797,7 +879,79 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 sendSegment(segment);
             }
 
+            /**
+             * Envelope-mode dialect (the Event-over-HTTP relay): an "envelope" frame
+             * carries one base64-encoded serialized EventEnvelope - the head, the
+             * terminals and non-text segments; any other frame is a raw text segment.
+             * A decoded terminal (eof or exception) ends the logical stream - trailing
+             * frames are discarded. The caller holds the lock.
+             *
+             * @param text the frame's data text
+             * @param name the frame's event name, if any
+             */
+            private void emitRelayFrame(String text, String name) {
+                if (closed) {
+                    return;
+                }
+                if (ENVELOPE.equals(name)) {
+                    deliverEnvelopeFrame(text);
+                } else if (!headSent) {
+                    // the dialect guarantees an envelope frame first (conformance guard)
+                    failInBand(500, "Invalid event stream - missing envelope head");
+                } else {
+                    deliverRawFrame(text, name);
+                }
+            }
+
+            /**
+             * Decode one envelope frame and forward it; a decoded terminal
+             * (eof or exception) ends the logical stream
+             *
+             * @param text the frame's base64-encoded serialized envelope
+             */
+            private void deliverEnvelopeFrame(String text) {
+                final EventEnvelope decoded;
+                try {
+                    decoded = new EventEnvelope(util.base64ToBytes(text));
+                } catch (IllegalArgumentException | MessagePackException e) {
+                    failInBand(500, "Invalid event stream - malformed envelope frame");
+                    return;
+                }
+                headSent = true;
+                deliverToCallback(decoded);
+                String signal = EventStreamRenderer.getSignal(decoded);
+                if (EventStreamWriter.EOF.equals(signal) || EventStreamWriter.EXCEPTION.equals(signal)) {
+                    closed = true;
+                    cancelIdleTimer();
+                    if (connection != null && !connection.isDisposed()) {
+                        connection.dispose();
+                    }
+                }
+            }
+
+            /**
+             * Synthesize a data envelope from one raw text frame and forward it
+             *
+             * @param text the frame's data text
+             * @param name the frame's event name, if any
+             */
+            private void deliverRawFrame(String text, String name) {
+                EventEnvelope segment = new EventEnvelope()
+                        .setHeader(EventStreamWriter.X_EVENT_STREAM, EventStreamWriter.DATA)
+                        .setBody(text);
+                if (name != null && !name.isEmpty()) {
+                    segment.setHeader(EventStreamWriter.X_EVENT_NAME, name);
+                }
+                deliverToCallback(segment);
+            }
+
             public void onComplete() {
+                if (envelopeRelay) {
+                    // the dialect ends with a decoded terminal - a bare transport end
+                    // is a truncation; after a terminal this is a silent no-op
+                    failInBand(500, "Event stream ended without eof");
+                    return;
+                }
                 lock.lock();
                 try {
                     if (closed) {
@@ -840,12 +994,16 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                     EventEnvelope error = new EventEnvelope()
                             .setHeader(EventStreamWriter.X_EVENT_STREAM, EventStreamWriter.EXCEPTION)
                             .setStatus(status)
-                            .setBody(Map.of("status", status, "message", message));
+                            .setBody(Map.of(TYPE, ERROR, "status", status, MESSAGE, message));
                     if (!headSent) {
                         headSent = true;
                         error.setHeader(CONTENT_TYPE, TEXT_EVENT_STREAM);
                     }
-                    sendSegment(error);
+                    if (envelopeRelay) {
+                        deliverToCallback(error);
+                    } else {
+                        sendSegment(error);
+                    }
                 } finally {
                     lock.unlock();
                 }
