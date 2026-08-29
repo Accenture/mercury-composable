@@ -22,7 +22,7 @@ import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
-import org.platformlambda.core.models.LambdaFunction;
+import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.EventStreamWriter;
 import org.platformlambda.core.util.Utility;
 
@@ -47,14 +47,13 @@ import java.util.Map;
  */
 @PreLoad(route = "hello.sse", instances = 10)
 @EventInterceptor
-public class HelloSse implements LambdaFunction {
+public class HelloSse implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final long DEFAULT_DELAY_MS = 1000;
     private static final int DEFAULT_COUNT = 10;
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
+    public Void handleEvent(Map<String, String> headers, EventEnvelope request, int instance) {
         var util = Utility.getInstance();
-        EventEnvelope request = (EventEnvelope) input;
         AsyncHttpRequest http = new AsyncHttpRequest(request.getRawBody());
         String delayParam = http.getQueryParameter("delay");
         long delay = delayParam == null ? DEFAULT_DELAY_MS : Math.clamp(util.str2long(delayParam), 50, 5000);

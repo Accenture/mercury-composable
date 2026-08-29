@@ -75,11 +75,10 @@ A streaming producer is an interceptor function - it receives the raw event enve
 ```java
 @PreLoad(route = "v1.token.producer", instances = 50)
 @EventInterceptor
-public class TokenProducer implements LambdaFunction {
+public class TokenProducer implements TypedLambdaFunction<EventEnvelope, Void> {
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
-        EventEnvelope request = (EventEnvelope) input;
+    public Void handleEvent(Map<String, String> headers, EventEnvelope request, int instance) {
         var out = new EventStreamWriter(request);
         out.first(200, "text/event-stream");
         out.write("Hello");                          // one segment
