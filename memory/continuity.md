@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-27 | agent: Claude Code (2026-08-27-234035)
+- **last_session:** 2026-08-28 | agent: Claude Code (2026-08-28-025445)
 - **last_review:** 2026-08-27 | through 2026-08-27-213034.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -240,6 +240,44 @@
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
 ## Open Threads
+
+- [ ] (feature — **Java MERGED 2026-08-28 as
+  [PR #299](https://github.com/Accenture/mercury-composable/pull/299) squash `2eea5038`
+  == gated `da37479b`, branch deleted both ends; remaining = the Rust twin** (D7:
+  Java-first, vocabulary pinned) then staged follow-ups) **HTTP response streaming —
+  token/event streaming to the HTTP edge; the PREREQUISITE for the AI SDLC work** (Q8
+  of the agent-orchestration concept promoted). D1 ratified 2026-08-27 (multi-shot
+  reply_to model; envelope marker `x-event-stream: data|eof|exception`; standards-only
+  wire — SSE/chunked+NDJSON); **D2–D8 approved as recommended 2026-08-28**; D9 added in
+  implementation and **REVISED same day to Eric's checkout-pool design**: `stream: true`
+  on the rest.yaml endpoint CHECKS OUT a dedicated ordered reply lane
+  (`async.http.response.stream.{n}`, instances=1) from a LIFO stack of 500 (pinned to
+  the async.http.response instance count; no config knob) for the request's lifetime —
+  lane rides the AsyncContextHolder, released exactly-once in HttpRouter.closeContext
+  (the termination funnel); empty stack → immediate HTTP-503 "Streaming response pool
+  exhausted" (message = engine-parity surface); per-request strict FIFO, zero
+  cross-request lane sharing (the earlier hash-sharded pool was rejected: two ids on one
+  lane = a routing hazard). rest.yaml surface + 503 → Rust twin must mirror. New:
+  EventStreamWriter (producer), EventStreamRenderer/State (edge, drain-race lock),
+  streaming-aware housekeeper timeout (in-band 408 via the holder's lane),
+  `event.stream.keep.alive` config. Gates: 23 streaming tests (FIFO burst forcing the
+  drain path, 4-parallel-burst net that caught a real drainHandler race — fixed with a
+  per-request lock, touch-pacing, in-band timeout via real housekeeper, D5 conflict,
+  exhaustion→503→recovery, lane return, LIFO reuse), platform-core
+  449/449, mkdocs strict 0, ai-contract-provider 19/19 (guides/http-streaming.md in
+  files.list), pre-PR IDE Sonar round CLEAN (7 findings fixed — 2× S3776 extraction,
+  S2184, always-DATA param, S125 prose reword, fluent-return, test hygiene).
+  Developer demo shipped in examples/lambda-example: `hello.sse` at
+  `GET /api/hello/sse` (stream: true) + `scripts/sse-client.mjs` Node consumer —
+  live-proven (10 messages ~1s apart, done event, socket close); example suite 15/15.
+  Response header transforms (rest.yaml headers.response add/keep/drop) apply to
+  streamed heads — single-shot parity via the same filterHeaders; SSE Cache-Control
+  default is set-if-absent. Streaming tests 24/24; platform-core 450/450.
+  Docs chapter + ADR-0018 Proposed + CHANGELOG. Spec:
+  draft-design-specs/http-response-streaming.md (§2a/§8a). Follow-ups staged: flow
+  handoff (model.http.* reserved keys), wrapper streaming via Event-over-HTTP posts to
+  the reply lane, graph-run streaming. Serves [[bp-agent-orchestration]].
+  <!-- id: thread-http-response-streaming | created: 2026-08-28 | last_used: 2026-08-28 | uses: 1 | tier: working | origin: 2026-08-28-025445 -->
 
 - [x] (maintenance + BREAKING — SHIPPED AND PUBLISHED 2026-08-27 as **v4.11.12**, Java
   only (Rust stays v4.11.11). Release
