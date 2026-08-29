@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/methodology/">
+        <link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/http-streaming/">
       
       
-        <link rel="prev" href="../architecture/">
+        <link rel="prev" href="../event-over-http/">
       
       
-        <link rel="next" href="../ai-developer-guide/">
+        <link rel="next" href="../polyglot-functions/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Methodology - Composable for Java</title>
+        <title>HTTP Response Streaming - Composable for Java</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#methodology" class="md-skip">
+        <a href="#http-response-streaming" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Methodology
+              HTTP Response Streaming
             
           </span>
         </div>
@@ -276,12 +276,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href="../architecture/" class="md-tabs__link">
           
   
@@ -366,10 +364,12 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
+      <li class="md-tabs__item md-tabs__item--active">
         <a href="../build-test-deploy/" class="md-tabs__link">
           
   
@@ -573,10 +573,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -590,22 +588,19 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -623,7 +618,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -666,37 +661,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Methodology
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../methodology/" class="md-nav__link">
         
   
   
@@ -712,202 +680,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#methodology_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Methodology
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#events-at-the-center-of-the-modern-enterprise" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Events at the center of the modern enterprise
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#first-principle-input-process-output" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        First principle - "input-process-output"
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#second-principle-zero-to-one-dependency" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Second principle - zero to one dependency
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#third-principle-platform-abstraction" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Third principle - platform abstraction
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#fourth-principle-event-choreography" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Fourth principle - event choreography
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#what-composable-design-buys-you" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What composable design buys you
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#application-development" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Application development
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#seamless-transition-from-product-to-application-design" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Seamless transition from product to application design
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#application-packaging-and-deployment" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Application packaging and deployment
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#smaller-memory-footprint" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Smaller memory footprint
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#composable-framework" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Composable framework
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#event-envelope" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Event Envelope
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#language-neutral" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Language neutral
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#functional-isolation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Functional isolation
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        See also
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1714,8 +1486,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -1745,19 +1519,22 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
             
   
   
@@ -1775,7 +1552,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1902,10 +1679,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../http-streaming/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP Response Streaming
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1921,6 +1725,125 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#declare-a-streaming-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Declare a streaming endpoint
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#produce-a-stream" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Produce a stream
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-client-sees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the client sees
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timeouts-disconnects-and-slow-clients" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timeouts, disconnects and slow clients
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#failure-before-the-first-segment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure before the first segment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#try-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Try it
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#relation-to-x-stream-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Relation to x-stream-id
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2699,10 +2622,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#methodology_1" class="md-nav__link">
+  <a href="#the-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Methodology
+        The model
       
     </span>
   </a>
@@ -2710,10 +2633,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#events-at-the-center-of-the-modern-enterprise" class="md-nav__link">
+  <a href="#declare-a-streaming-endpoint" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Events at the center of the modern enterprise
+        Declare a streaming endpoint
       
     </span>
   </a>
@@ -2721,10 +2644,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#first-principle-input-process-output" class="md-nav__link">
+  <a href="#produce-a-stream" class="md-nav__link">
     <span class="md-ellipsis">
       
-        First principle - "input-process-output"
+        Produce a stream
       
     </span>
   </a>
@@ -2732,10 +2655,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#second-principle-zero-to-one-dependency" class="md-nav__link">
+  <a href="#what-the-client-sees" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Second principle - zero to one dependency
+        What the client sees
       
     </span>
   </a>
@@ -2743,10 +2666,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#third-principle-platform-abstraction" class="md-nav__link">
+  <a href="#timeouts-disconnects-and-slow-clients" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Third principle - platform abstraction
+        Timeouts, disconnects and slow clients
       
     </span>
   </a>
@@ -2754,10 +2677,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#fourth-principle-event-choreography" class="md-nav__link">
+  <a href="#failure-before-the-first-segment" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fourth principle - event choreography
+        Failure before the first segment
       
     </span>
   </a>
@@ -2765,10 +2688,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-composable-design-buys-you" class="md-nav__link">
+  <a href="#try-it" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What composable design buys you
+        Try it
       
     </span>
   </a>
@@ -2776,87 +2699,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#application-development" class="md-nav__link">
+  <a href="#relation-to-x-stream-id" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Application development
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#seamless-transition-from-product-to-application-design" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Seamless transition from product to application design
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#application-packaging-and-deployment" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Application packaging and deployment
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#smaller-memory-footprint" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Smaller memory footprint
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#composable-framework" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Composable framework
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#event-envelope" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Event Envelope
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#language-neutral" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Language neutral
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#functional-isolation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Functional isolation
+        Relation to x-stream-id
       
     </span>
   </a>
@@ -2894,208 +2740,169 @@
   
 
 
-<h1 id="methodology">Methodology<a class="headerlink" href="#methodology" title="Permanent link">&para;</a></h1>
-<p><em>Concepts: Design philosophy and principles behind Mercury Composable's event-driven architecture.</em></p>
+<h1 id="http-response-streaming">HTTP Response Streaming<a class="headerlink" href="#http-response-streaming" title="Permanent link">&para;</a></h1>
+<p><em>Guide: How a function streams an HTTP response progressively - token by token, event by
+event.</em></p>
 <blockquote>
 <p><strong>At a glance</strong></p>
 <ul>
-<li><strong>What</strong> — the four composable design principles (input-process-output, zero dependency,
-  platform abstraction, event choreography) and the thinking behind them.</li>
-<li><strong>For</strong> architects shaping composable systems; the <a href="../architecture/">Architecture Overview</a> is
-  the technical companion.</li>
+<li><strong>What</strong> — a callee sends a <em>sequence</em> of events to the caller's reply route until an
+  end-of-transmission signal; the HTTP edge renders each segment as it arrives.</li>
+<li><strong>For</strong> — LLM token streams, agent progress events, and live updates of a running
+  transaction. The wire is standard HTTP: Server-Sent Events (<code>text/event-stream</code>) or
+  chunked transfer with JSON lines.</li>
 </ul>
 </blockquote>
-<p>Software development is a long fight against complexity — and most of that complexity is <em>coupling</em>: code
-that cannot change without breaking something else. Composable methodology attacks coupling at its source.
-You build an application from <strong>self-contained functions</strong> that know nothing about one another, then wire
-them together with configuration instead of code. Functions become plug-and-play: you mix and match them
-into new applications, run multiple versions side by side, and retire one without side effects on the rest —
-so applications are easier to design, build, maintain, deploy, and scale.</p>
-<p>Composable architecture became an industry direction around 2022, alongside Domain-Driven Design (DDD),
-CQRS, and microservices. Mercury was among the first frameworks to realize it end-to-end for event-driven
-systems — the methodology below is how that realization works in practice.</p>
-<h2 id="methodology_1">Methodology<a class="headerlink" href="#methodology_1" title="Permanent link">&para;</a></h2>
-<p>The Composable Methodology takes a different approach in software development that empowers and aligns product owners,
-business analysts, technology architects and software engineers.</p>
-<p>Historically, there is a disconnect between product features and application design because product is user and
-business focused but application design is technology oriented. Product owners have almost no direct control over
-the quality of the user applications that are supposed to address business requirements. There is a communication
-barrier between the two domains in most projects. It requires a lot of iterations to get things right. The lack of
-direct connection between business domain and technical domain also leads to higher technical debts that are not just
-limited to imperfect coding.</p>
-<p>Composable methodology addresses this fundamental issue by connecting the two domains seamlessly.</p>
-<p>Before developers write a line of code, we start a project from product design. The output from a product design
-is a business transaction event flow diagram, ideally from a tactical Event Storming workshop or a more relaxed
-white boarding discussion among product owners, business domain experts and technology architects.</p>
-<blockquote>
-<p>Figure 1 - Event Flow Diagram</p>
-</blockquote>
-<pre class="mermaid"><code>flowchart LR
-    user[/"user"/] --&gt; inbound["flow adapter&lt;br&gt;(inbound)"]
-    inbound -.-&gt; start([Start])
-    start --&gt; t1["task-1"]
-    t1 --&gt; d2{"Decision&lt;br&gt;task-2"}
-    d2 -- Yes --&gt; t3["task-3"] --&gt; t4["task-4"] --&gt; fin([End])
-    d2 -- No --&gt; t5["task-5"] --&gt; fin
-    fin -.-&gt; outbound["flow adapter&lt;br&gt;(outbound)"]
-    outbound --&gt; user</code></pre>
-<p>As shown in Figure 1, a transaction flow diagram has a start point and an end point. Each processing step is called
-a "task". Some tasks would do calculation and some tasks would make decision to pass to the next steps.</p>
-<blockquote>
-<p><em>Note</em>: Task types include decision, response, end, sequential, parallel, fork, sink and pipeline.</p>
-</blockquote>
-<p>The product team designs a transaction flow to address a business use case and presents it as a diagram.
-Naturally, this is how a human designer thinks. We don't want to prematurely adjust the business requirements
-to any infrastructural limitation.</p>
-<h2 id="events-at-the-center-of-the-modern-enterprise">Events at the center of the modern enterprise<a class="headerlink" href="#events-at-the-center-of-the-modern-enterprise" title="Permanent link">&para;</a></h2>
-<p>In Domain Driven Design, it is well accepted that business transactions and their intermediate objects can be
-represented as "events".</p>
-<p>An event is a holder of a business object that may be a transaction request, a transaction response, a data object
-or any intermediate data representation. Generally, a data object is a structure of key-values.</p>
-<p>For simplicity, we will call a transaction flow diagram as "Event Flow Diagram" from now on.</p>
-<h2 id="first-principle-input-process-output">First principle - "input-process-output"<a class="headerlink" href="#first-principle-input-process-output" title="Permanent link">&para;</a></h2>
-<p>The first principle of composable application design is that each function (called a <strong>task</strong> when it is a step
-in an event flow) is self-contained and its input and output are immutable.</p>
-<p>Self-containment means that the task or function does not need to know the world outside its functional scope, thus
-making the function as pure as "input-process-output". i.e. given some input, the task or function will carry out
-some business logic to generate some output according to functional specification.</p>
-<p>Immutability is an important guardrail for clean code design. A function cannot change the business object outside
-its functional scope, thus eliminating the chance of unintended side effects of data interference.</p>
-<blockquote>
-<p><em>Note</em>: A <strong>task</strong> is a function in its role as a step in an event flow — the same atom, named by where it
-          appears. The unit you write is always a <strong>function</strong>; "task" is just what we call it inside a flow diagram.</p>
-</blockquote>
-<h2 id="second-principle-zero-to-one-dependency">Second principle - zero to one dependency<a class="headerlink" href="#second-principle-zero-to-one-dependency" title="Permanent link">&para;</a></h2>
-<p>The second principle is that each function should have zero dependency with other user functions.</p>
-<p>To connect to the world outside its functional scope, a function may have one and only one dependency with a platform
-or infrastructure component function. In composable design, a library can be packaged as a reusable composable
-function.</p>
-<p>A function consumes a platform component or library by sending an event to the component instead of tight coupling
-with a direct method call. Decoupling between functions and components promotes non-blocking, asynchronous and
-parallel operation that yields higher performance and throughput.</p>
-<h2 id="third-principle-platform-abstraction">Third principle - platform abstraction<a class="headerlink" href="#third-principle-platform-abstraction" title="Permanent link">&para;</a></h2>
-<p>Since composable functions are self-contained and independent, they can be reused and repackaged into different
-applications to serve different purposes. Therefore, composable functions are, by definition, plug-n-play.</p>
-<p>The platform and infrastructure are encapsulated as <code>adapters</code>, <code>gateways</code> and <code>wrappers</code>.
-Figure 1 illustrates this architectural principle by connecting an event flow to the user through an event flow
-adapter. For example, a "HTTP Flow Adapter" serves both inbound request and outbound response. A "Kafka Flow Adapter"
-uses one topic for inbound and another topic for outbound events.</p>
-<h2 id="fourth-principle-event-choreography">Fourth principle - event choreography<a class="headerlink" href="#fourth-principle-event-choreography" title="Permanent link">&para;</a></h2>
-<p>Without direct coupling, a composable development framework must support "Event Choreography" so that we can
-connect the various user composable functions, platform components and libraries together and route the events
-according to an event flow diagram for each use case.</p>
-<h2 id="what-composable-design-buys-you">What composable design buys you<a class="headerlink" href="#what-composable-design-buys-you" title="Permanent link">&para;</a></h2>
-<p>Following these principles pays off in concrete ways:</p>
-<ul>
-<li><strong>Maintainability</strong> — isolated functions are easy to understand, test, and change.</li>
-<li><strong>Reusability</strong> — a self-contained function can be reused across applications.</li>
-<li><strong>Performance</strong> — loose coupling enables asynchronous, parallel execution without bottlenecks.</li>
-<li><strong>Testability</strong> — well-defined input and output make unit testing straightforward.</li>
-<li><strong>Debuggability</strong> — independent functions make it easy to pinpoint a fault.</li>
-<li><strong>Technology freedom</strong> — inside a function you may use any style or library; nothing leaks across the boundary.</li>
-</ul>
-<h2 id="application-development">Application development<a class="headerlink" href="#application-development" title="Permanent link">&para;</a></h2>
-<p>Once we have drawn the event flow diagrams for different use cases, we can create user stories for each composable
-function and assign the development of each function to a developer or a pair of developers if using pair-programming.</p>
-<p>Composable methodology embraces "Test Driven Development (TDD)". Since each function is self-contained, it is TDD
-friendly because the developer does not need to deal with external dependencies for unit tests. It is the first
-principle of "input-process-output".</p>
-<p>This methodology allows us to scale our application development resources much better than traditional approach
-because developers do not need to know details of dependencies, thus avoiding hard code and reducing technical debts.</p>
-<p>For integration tests, it is easy to mock platform, infrastructure, database and HTTP resources by assigning
-mock functions to some tasks in an event flow. This greatly simplifies integration mocking.</p>
-<h2 id="seamless-transition-from-product-to-application-design">Seamless transition from product to application design<a class="headerlink" href="#seamless-transition-from-product-to-application-design" title="Permanent link">&para;</a></h2>
-<p>Event flow diagram describes the product and each composable function contains the specific processing logic.
-Data attributes in an event flowing from one function to another provide the clarity for product designers and
-application engineers to communicate effectively.</p>
-<h2 id="application-packaging-and-deployment">Application packaging and deployment<a class="headerlink" href="#application-packaging-and-deployment" title="Permanent link">&para;</a></h2>
-<p>Composable functions are independent and isolated. We can package related functions for an event flow in a single
-executable. A senior developer or architect can decide how to package related functions to reduce memory footprint
-and to scale efficiently and horizontally.</p>
-<h2 id="smaller-memory-footprint">Smaller memory footprint<a class="headerlink" href="#smaller-memory-footprint" title="Permanent link">&para;</a></h2>
-<p>By design, composable functions are granular in nature. They are registered to an "event loop" on-demand. i.e.
-a function is executed when an event arrives. Without multiple levels of tight coupling, each piece of user code
-consumes memory efficiently. Memory is released to the system as soon as the function finishes execution.</p>
-<h2 id="composable-framework">Composable framework<a class="headerlink" href="#composable-framework" title="Permanent link">&para;</a></h2>
-<p>To realize the composable design principles, a low-latency in-memory event system is available at the core
-of the Mercury-Composable framework.</p>
-<blockquote>
-<p>Figure 2 - Composable Framework</p>
-</blockquote>
-<pre class="mermaid"><code>flowchart LR
-    caller[/"Calling&lt;br&gt;application"/]
-    caller -- request --&gt; adapter
-    adapter -. optional response .-&gt; caller
-    subgraph app["Composable Application executable"]
-        direction TB
-        config[/"Event Flow&lt;br&gt;configuration"/] --&gt; manager{{"Event Manager"}}
-        state[/"State&lt;br&gt;Machine"/] --&gt; manager
-        adapter["Flow Adapter"] --&gt; manager
-        manager --&gt; bus["In-memory Low-Latency Event System"]
-        bus --- t1["Task-1"]
-        bus --- t2["Task-2"]
-        bus --- t3["Task-3"]
-    end</code></pre>
-<p>As illustrated in Figure 2, event choreography for an event flow is described as an "Event Flow Configuration".
-An "Event Manager" is implemented as part of a low-latency in-memory event system. Composable functions
-(a <strong>task</strong> when wired into an event flow) ride on the in-memory event system so that the event manager can invoke them by
-sending events.</p>
-<p>Since composable functions are self-contained, the event manager performs input/output data mapping to and from
-the functional scope of a composable function. This flexible data mapping allows developers to write more generic
-code that responds to different input dataset, thus promoting software reusability.</p>
-<p>An in-memory state machine will be created for each execution of a transaction or "event flow". It is used for holding
-transaction "states" and temporary data objects.</p>
-<p>Sometimes a transaction may be suspended and restarted with different event flows. The in-memory state machine can
-be extended to an external datastore so that transaction states can be monitored and recovered operationally.</p>
-<blockquote>
-<p><em>Note</em>: The framework combines native Java 21 virtual thread management with the Eclipse Vert.x event bus.</p>
-</blockquote>
-<h2 id="event-envelope">Event Envelope<a class="headerlink" href="#event-envelope" title="Permanent link">&para;</a></h2>
-<p>We use a standard "Event Envelope" to transport an event over the in-memory event bus. An event envelope contains
-three parts: (1) body, (2) headers and (3) metadata.</p>
-<p>Event body is used to transport a business object. It may be a PoJo or a HashMap.</p>
-<p>Headers can be used to carry additional parameters to tell the user composable function what to do.</p>
-<p>Examples for metadata include performance metrics, status, exception, optional tracing information, and
-correlation ID.</p>
-<h2 id="language-neutral">Language neutral<a class="headerlink" href="#language-neutral" title="Permanent link">&para;</a></h2>
-<p>The event flow configuration syntax and event envelope serialization scheme are standardized for polyglot deployment.
-The event flow configuration rides on YAML and event envelope serialization uses binary JSON ("MsgPack").</p>
-<p>For higher serialization efficiency, the intermediate format is using "key-value" maps. JSON string is only used at
-the inbound and outbound flow adapters.</p>
-<h2 id="functional-isolation">Functional isolation<a class="headerlink" href="#functional-isolation" title="Permanent link">&para;</a></h2>
-<p>Each function must implement the Composable interface, called "TypedLambdaFunction".</p>
-<p>The composable interface enforces a single "handleEvent" method where the function can access the event's headers
-and body.</p>
-<p>By design, each composable function is invoked by events. It is running parallel with other user functions.
-This non-blocking asynchronous execution architecture delivers higher performance than traditional coding approach
-with direct method invocation.</p>
-<p>While each function is executed in an event-driven and reactive manner, the user application code inside each
-composable function may use any coding style including object-oriented design, functional or reactive.</p>
-<p>Functional isolation means that you can use any open source or commercial library or framework in your user
-function without concerns about thread safety or unintended side effect.</p>
-<p>A composable function may look like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"my.first.function"</span><span class="p">,</span><span class="w"> </span><span class="n">instances</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MyFirstFunction</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TypedLambdaFunction</span><span class="o">&lt;</span><span class="n">MyPoJo</span><span class="p">,</span><span class="w"> </span><span class="n">AnotherPoJo</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nd">@Override</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">AnotherPojo</span><span class="w"> </span><span class="nf">handleEvent</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">MyPoJo</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">        </span><span class="c1">// your business logic here</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">}</span>
+<h2 id="the-model">The model<a class="headerlink" href="#the-model" title="Permanent link">&para;</a></h2>
+<p>Streaming is native to the event system: a caller provides a <code>reply_to</code> address, and the
+callee may send it as many events as it likes. For a regular request the return route is
+single-shot - the first response event completes the HTTP exchange. A <em>streaming</em>
+response makes it multi-shot: each event carries one segment, and a final signal declares
+end of transmission.</p>
+<p>Each segment event carries the reserved envelope header:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>x-event-stream: data | eof | exception
 </code></pre></div>
-<p>A composable function is declared with a "route name" using the "PreLoad" annotation.</p>
-<blockquote>
-<p><em>Note</em>: the "instance" count for each composable function controls execution concurrency in a single application.
-          It can be used with horizontal scaling to optimize use of computing resources.
-For a technical deep dive into how the framework implements these principles,
-see the <a href="../architecture/">Architecture Overview</a>.</p>
-</blockquote>
+<p>This marker is internal protocol between the callee and the HTTP edge - like
+<code>x-stream-id</code> and <code>x-ttl</code>, it never appears on the wire. The HTTP client sees only
+standard HTTP: chunked transfer encoding, and Server-Sent Events framing when the content
+type is <code>text/event-stream</code>.</p>
+<h2 id="declare-a-streaming-endpoint">Declare a streaming endpoint<a class="headerlink" href="#declare-a-streaming-endpoint" title="Permanent link">&para;</a></h2>
+<p>Add <code>stream: true</code> to the endpoint definition in rest.yaml:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="s">"v1.token.producer"</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'POST'</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">"/api/chat"</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60s</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">stream</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</code></pre></div>
+<p>The flag makes the request check out a <em>dedicated ordered reply lane</em> - a
+single-instance route drawn from a pool of 500 (matching the <code>async.http.response</code>
+concurrency). All segments of the request ride its own lane, so they render in the exact
+order the function sent them, while different requests stream concurrently through their
+own lanes. The lane returns to the pool when the request completes; when all 500 lanes
+are busy, further streaming requests are rejected immediately with HTTP-503
+(<code>Streaming response pool exhausted</code>) - deterministic back-pressure instead of silent
+queuing. An idle lane costs only a little memory and no CPU. The endpoint may still
+answer single-shot - a response without the <code>x-event-stream</code> marker behaves exactly as
+before.</p>
+<p>The endpoint's other declarations compose normally: <code>cors</code> headers and the optional
+<code>headers</code> response transform (add/keep/drop) apply to the streamed response head
+exactly as they do to a single-shot response.</p>
+<h2 id="produce-a-stream">Produce a stream<a class="headerlink" href="#produce-a-stream" title="Permanent link">&para;</a></h2>
+<p>A streaming producer is an interceptor function - it receives the raw event envelope
+(including <code>reply_to</code> and correlation id) and replies by sending events itself:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"v1.token.producer"</span><span class="p">,</span><span class="w"> </span><span class="n">instances</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">50</span><span class="p">)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nd">@EventInterceptor</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">TokenProducer</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TypedLambdaFunction</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="p">,</span><span class="w"> </span><span class="n">Void</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Void</span><span class="w"> </span><span class="nf">handleEvent</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">request</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="n">out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">EventStreamWriter</span><span class="p">(</span><span class="n">request</span><span class="p">);</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">        </span><span class="n">out</span><span class="p">.</span><span class="na">first</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="w"> </span><span class="s">"text/event-stream"</span><span class="p">);</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="n">out</span><span class="p">.</span><span class="na">write</span><span class="p">(</span><span class="s">"Hello"</span><span class="p">);</span><span class="w">                          </span><span class="c1">// one segment</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">        </span><span class="n">out</span><span class="p">.</span><span class="na">write</span><span class="p">(</span><span class="s">"tokens"</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">"n"</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">));</span><span class="w">         </span><span class="c1">// a named (typed) SSE event</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">        </span><span class="n">out</span><span class="p">.</span><span class="na">close</span><span class="p">(</span><span class="n">Map</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">"usage"</span><span class="p">,</span><span class="w"> </span><span class="mi">42</span><span class="p">));</span><span class="w">              </span><span class="c1">// end of transmission</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="p">}</span>
+</code></pre></div>
+<p><code>EventStreamWriter</code> is thin sugar over plain event sends:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>first(status, contentType)</code></td>
+<td>optional head control, carried by the first outgoing event</td>
+</tr>
+<tr>
+<td><code>first(status, contentType, ttlSeconds)</code></td>
+<td>as above, plus an idle-allowance override between segments</td>
+</tr>
+<tr>
+<td><code>write(segment)</code></td>
+<td>one <code>data</code> segment - String, byte[] or Map</td>
+</tr>
+<tr>
+<td><code>write(eventName, segment)</code></td>
+<td>a named segment - the name maps to the SSE <code>event:</code> field</td>
+</tr>
+<tr>
+<td><code>close()</code> / <code>close(metadata)</code></td>
+<td>end of transmission - metadata rides the terminal SSE <code>done</code> event</td>
+</tr>
+<tr>
+<td><code>fail(exception)</code></td>
+<td>in-band failure - rendered as an SSE <code>error</code> event, or truncation in chunked mode</td>
+</tr>
+</tbody>
+</table>
+<p>The first event commits the HTTP response head (status, content type, other headers).
+Later events cannot change it. Writes after <code>close()</code> or <code>fail()</code> are dropped, mirroring
+the edge dropping late segments after a timeout or client disconnect.</p>
+<h2 id="what-the-client-sees">What the client sees<a class="headerlink" href="#what-the-client-sees" title="Permanent link">&para;</a></h2>
+<p><strong>SSE mode</strong> (<code>Content-Type: text/event-stream</code>) - the de facto wire for LLM token
+streams and agent progress events:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>data: Hello
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>event: tokens
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>data: {"n":2}
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>event: done
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>data: {"usage":42}
+</code></pre></div>
+<ul>
+<li>A <code>Map</code> segment renders as compact one-line JSON; multi-line text splits into
+  successive <code>data:</code> lines per the SSE specification.</li>
+<li>End of transmission is the terminal <code>event: done</code>, carrying the <code>close(...)</code> metadata.</li>
+<li>An in-band failure is <code>event: error</code> with <code>{"status":n,"message":"...","type":"error"}</code> -
+  the HTTP status is already committed by then, which is why the failure travels in-band.</li>
+<li>While the producer is quiet, the edge emits an SSE comment (<code>: ping</code>) every
+  <code>event.stream.keep.alive</code> interval (default <code>30s</code>, <code>0</code> disables) so idle proxies do not
+  drop the connection. Pings do not extend the idle timeout.</li>
+</ul>
+<p><strong>Chunked mode</strong> (any other content type): String and byte[] segments append verbatim;
+<code>Map</code> segments stream as JSON Lines (one compact JSON object per line). End of
+transmission simply ends the response.</p>
+<h2 id="timeouts-disconnects-and-slow-clients">Timeouts, disconnects and slow clients<a class="headerlink" href="#timeouts-disconnects-and-slow-clients" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The endpoint <code>timeout</code> acts as an <em>idle</em> allowance - each arriving segment extends it.
+  A producer may override the idle allowance with <code>first(status, contentType, ttlSeconds)</code>.</li>
+<li>A stalled stream fails in-band: the client receives an SSE <code>error</code> event with status
+  408 (chunked mode: the response truncates).</li>
+<li>When the client disconnects, the context closes and late segments are dropped as
+  no-ops - producers do not need to handle cancellation.</li>
+<li>A client that stops reading is bounded by a 1 MB server-side buffer; beyond that the
+  connection is closed.</li>
+</ul>
+<h2 id="failure-before-the-first-segment">Failure before the first segment<a class="headerlink" href="#failure-before-the-first-segment" title="Permanent link">&para;</a></h2>
+<p><code>fail(...)</code> before any <code>write(...)</code> renders a normal HTTP error response (the head is not
+yet committed), so early failures keep proper HTTP status codes.</p>
+<h2 id="try-it">Try it<a class="headerlink" href="#try-it" title="Permanent link">&para;</a></h2>
+<p>The lambda-example application ships a runnable demo: the <code>hello.sse</code> function serves
+<code>GET /api/hello/sse</code> (declared with <code>stream: true</code>) and streams test messages slowly so
+you can watch the progressive rendering. Start the application and consume the endpoint
+with the companion Node.js script, which prints each event with its arrival time:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>node<span class="w"> </span>examples/lambda-example/scripts/sse-client.mjs
+</code></pre></div>
+<p>or with curl:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-N<span class="w"> </span>-H<span class="w"> </span><span class="s1">'accept: text/event-stream'</span><span class="w"> </span>http://127.0.0.1:8085/api/hello/sse
+</code></pre></div>
+<p>The <code>-N</code> (<code>--no-buffer</code>) flag matters: curl receives the events progressively either
+way, but without <code>-N</code> it holds output in an internal buffer, so the messages would
+appear all at once when the stream ends.</p>
+<h2 id="relation-to-x-stream-id">Relation to <code>x-stream-id</code><a class="headerlink" href="#relation-to-x-stream-id" title="Permanent link">&para;</a></h2>
+<p>The existing <code>x-stream-id</code> relay (object streams, file downloads, <code>Flux</code> results) is
+unchanged. <code>x-event-stream</code> is the idiom for progressive text/JSON delivery - tokens and
+events - with SSE framing and in-band terminal signals. If both headers appear on a
+response, <code>x-event-stream</code> wins and the stray <code>x-stream-id</code> is ignored with a warning.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../architecture/">Architecture Overview</a> — the technical mental model behind these principles.</li>
-<li><a href="../getting-started/">Getting Started</a> — the principles applied in a working app.</li>
-<li><a href="../event-driven/">Event-driven Foundation</a> — the Layer-1 core these principles run on.</li>
+<li><a href="../event-over-http/">Event over HTTP</a> - the same envelope protocol between applications</li>
+<li><a href="../actuators-and-http-client/">Actuators and HTTP client</a></li>
 </ul>
 
 
@@ -3137,7 +2944,7 @@ see the <a href="../architecture/">Architecture Overview</a>.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../architecture/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Architecture Overview">
+          <a href="../event-over-http/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Event over HTTP">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3147,20 +2954,20 @@ see the <a href="../architecture/">Architecture Overview</a>.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Architecture Overview
+                Event over HTTP
               </div>
             </div>
           </a>
         
         
           
-          <a href="../ai-developer-guide/" class="md-footer__link md-footer__link--next" aria-label="Next: AI Developer Guide">
+          <a href="../polyglot-functions/" class="md-footer__link md-footer__link--next" aria-label="Next: Polyglot Functions (Python &amp; Node.js)">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                AI Developer Guide
+                Polyglot Functions (Python & Node.js)
               </div>
             </div>
             <div class="md-footer__button md-icon">

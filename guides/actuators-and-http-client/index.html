@@ -1511,6 +1511,8 @@
       
         
       
+        
+      
     
     
     
@@ -1655,6 +1657,34 @@
     
   
     Event over HTTP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../http-streaming/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP Response Streaming
   
 
     
@@ -2975,6 +3005,11 @@
 </tr>
 </tbody>
 </table>
+<p>For readability, <code>/info/routes</code> renders pool-style route families compactly: routes that
+differ only by a trailing numeric suffix, with the same number of instances and contiguous
+numbering, collapse into one display entry - e.g. the 500 streaming reply lanes appear as
+<code>"async.http.response.stream.0 - 499": 1</code>. This is display-only; the routing table itself
+is unchanged.</p>
 <h2 id="system-provided-rest-endpoints">System provided REST endpoints<a class="headerlink" href="#system-provided-rest-endpoints" title="Permanent link">&para;</a></h2>
 <p>When REST automation is turned on, the following essential REST endpoints will be provided if they are
 not configured in rest.yaml. The "POST /api/event" is used for Event-Over-HTTP protocol and the others

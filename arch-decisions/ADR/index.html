@@ -1511,6 +1511,8 @@
       
         
       
+        
+      
     
     
     
@@ -1655,6 +1657,34 @@
     
   
     Event over HTTP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/http-streaming/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP Response Streaming
   
 
     
@@ -2001,6 +2031,17 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#adr-0018" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0018 — HTTP response streaming rides the multi-shot reply route; the wire stays standards-only
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#adr-0017" class="md-nav__link">
@@ -2680,6 +2721,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0018" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0018 — HTTP response streaming rides the multi-shot reply route; the wire stays standards-only
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0017" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2905,6 +2957,46 @@ governing the codebase — verified against the source (<code>platform-core</cod
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
 <hr />
+<h2 id="adr-0018">ADR-0018 — HTTP response streaming rides the multi-shot reply route; the wire stays standards-only<a class="headerlink" href="#adr-0018" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-28 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> http-response-streaming-design</p>
+<!-- id: adr-0018 | status: proposed -->
+
+<p><strong>Abstract.</strong> A function streams an HTTP response (LLM token segments, agent progress
+events, live updates) by exercising the platform's native streaming pattern: the callee
+sends a sequence of events to the caller-provided reply route until an
+end-of-transmission signal. Each event carries the reserved <strong>envelope</strong> header
+<code>x-event-stream: data | eof | exception</code> (the ObjectStream vocabulary); the marker is
+internal protocol consumed by the REST automation edge — like <code>x-stream-id</code> and <code>x-ttl</code>,
+it never appears on the wire. The public HTTP surface is standards-only: Server-Sent
+Events framing when the content type is <code>text/event-stream</code> (typed events, a terminal
+<code>done</code> event carrying trailing metadata, in-band <code>error</code> events, keep-alive comments),
+chunked transfer with JSON Lines otherwise. A streaming endpoint is declared with
+<code>stream: true</code> in rest.yaml, which checks out a dedicated ordered reply lane for the
+request's lifetime — a single-instance route (<code>async.http.response.stream.{n}</code>) drawn
+LIFO from a pool of 500 (the <code>async.http.response</code> concurrency), returned when the
+request context closes — the "ready" signal pattern of the reactive manager/worker
+design. All segments of one request ride its own lane (strict FIFO) while different
+requests stream concurrently through their own lanes; an exhausted pool rejects further
+streaming requests immediately with HTTP-503 (deterministic back-pressure, no
+configuration knob). The first event commits the response head; each
+arrival extends the idle timeout; stalls fail in-band; client disconnects turn late
+segments into no-op drops; a bounded drain-aware buffer guards slow clients. Responses
+without the marker are single-shot, exactly as before, and the legacy <code>x-stream-id</code>
+relay is untouched.</p>
+<p><strong>Rationale.</strong> The prerequisite for AI-era workloads is progressive delivery over plain
+HTTP — SSE is the de facto wire for chat token streams (OpenAI, Anthropic, Gemini and
+every compatible server), agent progress protocols (MCP Streamable HTTP, A2A), and the
+live-watch window of long-running workflows. The alternative — building on the existing
+<code>Flux</code>/<code>x-stream-id</code> relay — was rejected: the producer API is Reactor-typed and
+JVM-only (invisible to Event Script, knowledge graphs, and the polyglot wrappers, which
+is exactly where LLM tokens will come from), structured segments buffered at the edge
+instead of streaming, and the relay has no SSE framing or in-band terminal events. The
+multi-shot reply route adds no new substrate — anything that can send an envelope to a
+route can stream, which keeps the mechanism language-neutral by construction: flow
+tasks, graph nodes, and Event-over-HTTP peers join by sending the same envelopes. A
+custom HTTP header was rejected in favor of the envelope marker so the wire stays fully
+standard (RFC 6648 discourages new X- wire headers; the envelope already has a reserved
+x- vocabulary).</p>
 <h2 id="adr-0017">ADR-0017 — Spring Boot integration targets Boot 4 only; the Boot 3 lane is retired<a class="headerlink" href="#adr-0017" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-27 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> stack-integration-spring-boot4</p>
 <!-- id: adr-0017 | status: proposed -->
