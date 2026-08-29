@@ -24,6 +24,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.ByteBufFlux;
@@ -59,14 +60,16 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 @EventInterceptor
 public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void> {
     public static final String ASYNC_HTTP_REQUEST = "async.http.request";
     public static final String ASYNC_HTTP_RESPONSE = "async.http.response";
     // ordered reply-lane family for streaming responses: a pool of single-instance lanes
-    // (async.http.response.stream.{n}) - a request pins to one lane by hash, so its
-    // segment order is guaranteed while different requests stream concurrently
+    // (async.http.response.stream.{n}) - a streaming request checks out one dedicated
+    // lane for its lifetime, so its segment order is guaranteed while different
+    // requests stream concurrently through their own lanes
     public static final String ASYNC_HTTP_RESPONSE_STREAM_PREFIX = "async.http.response.stream.";
     private static final Logger log = LoggerFactory.getLogger(AsyncHttpClient.class);
     private static final AtomicBoolean loaded = new AtomicBoolean(false);
@@ -92,6 +95,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private static final String HEAD = "HEAD";
     private static final String X_STREAM_ID = "x-stream-id";
     private static final String X_TTL = "x-ttl";
+    private static final String ACCEPT = "accept";
+    private static final String TEXT_EVENT_STREAM = "text/event-stream";
     private static final String CONTENT_TYPE = "content-type";
     private static final String CONTENT_LENGTH = "content-length";
     private static final String X_CONTENT_LENGTH = "x-content-length";
@@ -195,8 +200,12 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         // one extra second of grace over the request TTL so a peer that spends
         // its whole TTL and then replies (e.g. an Event-over-HTTP 408 sent AT
         // the deadline) is still readable; the caller's own RPC timeout - not
-        // this wire-level read timeout - governs the user-visible deadline
-        client = client.responseTimeout(Duration.ofSeconds(request.getTimeoutSeconds() + 1L));
+        // this wire-level read timeout - governs the user-visible deadline.
+        // A progressive SSE candidate is exempt: a healthy stream may outlive
+        // any fixed total - the SSE relay enforces a per-read idle allowance
+        if (!isEventStreamCandidate(input, request)) {
+            client = client.responseTimeout(Duration.ofSeconds(request.getTimeoutSeconds() + 1L));
+        }
         if (request.isSecure()) {
             if (request.isTrustAllCert()) {
                 Http11SslContextSpec http11Context = Http11SslContextSpec.forClient()
@@ -394,6 +403,23 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         }
     }
 
+    /**
+     * A request is a progressive-SSE candidate when the caller explicitly accepts
+     * text/event-stream AND supplied a reply_to (a multi-shot-capable consumer).
+     * Everything else keeps the buffered single-shot behavior.
+     *
+     * @param input the request event
+     * @param request the HTTP request dataset
+     * @return true when the response may be consumed progressively
+     */
+    private static boolean isEventStreamCandidate(EventEnvelope input, AsyncHttpRequest request) {
+        if (input.getReplyTo() == null) {
+            return false;
+        }
+        String accept = request.getHeader(ACCEPT);
+        return accept != null && accept.contains(TEXT_EVENT_STREAM);
+    }
+
     private void sendResponse(EventEnvelope input, EventEnvelope response) {
         response.setTo(input.getReplyTo()).setFrom(ASYNC_HTTP_REQUEST)
                 .setCorrelationId(input.getCorrelationId())
@@ -549,6 +575,10 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         }
 
         public void process() {
+            if (isEventStreamCandidate(input, request)) {
+                processEventStreamCapable();
+                return;
+            }
             var noContent = new AtomicBoolean(true);
             http.responseSingle((httpResponse, buffer) -> {
                 response.setStatus(httpResponse.status().code());
@@ -576,6 +606,264 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                     sendResponse(input, response);
                 }
             });
+        }
+
+        /**
+         * The caller opted into SSE (Accept + reply_to). If the upstream answers with
+         * text/event-stream, consume it progressively: one x-event-stream data envelope
+         * per SSE event to the caller's reply_to, then eof - the same producer contract
+         * the HTTP edge consumes. A non-SSE response falls back to the buffered
+         * single-shot rendering, exactly as before.
+         */
+        private void processEventStreamCapable() {
+            var relay = new SseRelay();
+            var fallback = new ByteArrayOutputStream();
+            var streaming = new AtomicBoolean(false);
+            Disposable connection = http.response((httpResponse, content) -> {
+                response.setStatus(httpResponse.status().code());
+                var httpHeaders = httpResponse.responseHeaders();
+                httpHeaders.forEach(kv -> response.setHeader(kv.getKey(), kv.getValue()));
+                String resContentType = resolver.getContentType(response.getHeader(CONTENT_TYPE));
+                if (resContentType != null && resContentType.startsWith(TEXT_EVENT_STREAM)) {
+                    streaming.set(true);
+                    relay.start();
+                }
+                return content.asByteArray();
+            }).subscribeOn(Schedulers.fromExecutor(executor)).subscribe(
+                chunk -> {
+                    if (streaming.get()) {
+                        relay.onChunk(chunk);
+                    } else {
+                        fallback.writeBytes(chunk);
+                    }
+                },
+                e -> {
+                    if (streaming.get()) {
+                        relay.onTransportError(e);
+                    } else {
+                        sendErrorResponse(input, e);
+                    }
+                },
+                () -> {
+                    if (streaming.get()) {
+                        relay.onComplete();
+                    } else {
+                        renderBuffered(fallback.toByteArray());
+                    }
+                });
+            relay.setConnection(connection);
+        }
+
+        /**
+         * Buffered fallback of the SSE-candidate path (the upstream did not stream):
+         * render exactly as the single-shot path would
+         */
+        private void renderBuffered(byte[] b) {
+            String resContentType = resolver.getContentType(response.getHeader(CONTENT_TYPE));
+            String len = response.getHeader(CONTENT_LENGTH);
+            boolean renderAsBytes = "true".equals(request.getHeader(X_NO_STREAM));
+            if (renderAsBytes || len != null || isTextResponse(resContentType)) {
+                if (len == null) {
+                    response.setHeader(X_CONTENT_LENGTH, b.length);
+                }
+                sendFixedLengthResponse(resContentType, response, b);
+            } else if (b.length > 0) {
+                Platform.getInstance().getVirtualThreadExecutor().submit(() ->
+                        sendStreamResponse(response, new ByteArrayInputStream(b)));
+            } else {
+                sendResponse(input, response);
+            }
+        }
+
+        /**
+         * Progressive SSE consumption (raw mode): an incremental frame parser feeding
+         * x-event-stream envelopes to the caller's reply_to. The request TTL is the
+         * per-read idle allowance (any upstream bytes - keep-alive comments included -
+         * reset it); idle expiry and mid-stream transport errors fail the stream
+         * in-band, matching the edge contract.
+         */
+        private class SseRelay {
+            // the reply-lane lesson applies here too: the chunk consumer and the
+            // idle timer run on different threads - one lock serializes them
+            private final ReentrantLock lock = new ReentrantLock();
+            private final ByteArrayOutputStream pending = new ByteArrayOutputStream();
+            private final List<String> dataLines = new ArrayList<>();
+            private final long idleMs = timeoutSeconds * 1000L;
+            private String eventName = null;
+            private boolean headSent = false;
+            private volatile boolean closed = false;
+            private volatile long lastActivity = System.currentTimeMillis();
+            private long timer = -1;
+            private Disposable connection;
+
+            public void start() {
+                lastActivity = System.currentTimeMillis();
+                armIdleTimer(idleMs);
+            }
+
+            public void setConnection(Disposable connection) {
+                this.connection = connection;
+            }
+
+            private void armIdleTimer(long delayMs) {
+                timer = Platform.getInstance().getVertx().setTimer(Math.max(100, delayMs), t -> {
+                    if (closed) {
+                        return;
+                    }
+                    long quiet = System.currentTimeMillis() - lastActivity;
+                    if (quiet >= idleMs) {
+                        onIdleTimeout();
+                    } else {
+                        armIdleTimer(idleMs - quiet);
+                    }
+                });
+            }
+
+            public void onChunk(byte[] chunk) {
+                // any upstream bytes prove liveness - comments included
+                lastActivity = System.currentTimeMillis();
+                lock.lock();
+                try {
+                    if (closed) {
+                        return;
+                    }
+                    pending.writeBytes(chunk);
+                    drainCompleteLines();
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            /**
+             * Extract complete lines from the pending buffer - a newline is a
+             * single byte, so byte-level splitting is UTF-8 safe
+             */
+            private void drainCompleteLines() {
+                byte[] buffer = pending.toByteArray();
+                int start = 0;
+                for (int i = 0; i < buffer.length; i++) {
+                    if (buffer[i] == '\n') {
+                        int end = i > start && buffer[i - 1] == '\r' ? i - 1 : i;
+                        onLine(new String(buffer, start, end - start, StandardCharsets.UTF_8));
+                        start = i + 1;
+                    }
+                }
+                pending.reset();
+                if (start < buffer.length) {
+                    pending.write(buffer, start, buffer.length - start);
+                }
+            }
+
+            /**
+             * One SSE line - the caller holds the lock
+             */
+            private void onLine(String line) {
+                if (line.isEmpty()) {
+                    // blank line dispatches the pending event (SSE specification)
+                    if (!dataLines.isEmpty()) {
+                        emitData(String.join("\n", dataLines), eventName);
+                    }
+                    dataLines.clear();
+                    eventName = null;
+                } else if (line.charAt(0) != ':') {
+                    // a comment line (leading colon) is consumed, never forwarded
+                    int colon = line.indexOf(':');
+                    String field = colon == -1 ? line : line.substring(0, colon);
+                    String value = colon == -1 ? "" : line.substring(colon + 1);
+                    if (!value.isEmpty() && value.charAt(0) == ' ') {
+                        value = value.substring(1);
+                    }
+                    switch (field) {
+                        case "data" -> dataLines.add(value);
+                        case "event" -> eventName = value;
+                        default -> { /* id, retry and unknown fields are ignored */ }
+                    }
+                }
+            }
+
+            private void emitData(String text, String name) {
+                EventEnvelope segment = new EventEnvelope()
+                        .setHeader(EventStreamWriter.X_EVENT_STREAM, EventStreamWriter.DATA)
+                        .setBody(text);
+                if (name != null && !name.isEmpty()) {
+                    segment.setHeader(EventStreamWriter.X_EVENT_NAME, name);
+                }
+                if (!headSent) {
+                    headSent = true;
+                    // head control rides the first envelope: upstream status + SSE type
+                    segment.setStatus(response.getStatus());
+                    segment.setHeader(CONTENT_TYPE, TEXT_EVENT_STREAM);
+                }
+                sendSegment(segment);
+            }
+
+            public void onComplete() {
+                lock.lock();
+                try {
+                    if (closed) {
+                        return;
+                    }
+                    // an incomplete trailing event is discarded (SSE specification)
+                    closed = true;
+                    cancelIdleTimer();
+                    EventEnvelope eof = new EventEnvelope()
+                            .setHeader(EventStreamWriter.X_EVENT_STREAM, EventStreamWriter.EOF);
+                    if (!headSent) {
+                        headSent = true;
+                        eof.setStatus(response.getStatus()).setHeader(CONTENT_TYPE, TEXT_EVENT_STREAM);
+                    }
+                    sendSegment(eof);
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            public void onTransportError(Throwable e) {
+                failInBand(500, e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
+            }
+
+            private void onIdleTimeout() {
+                failInBand(408, "Timeout for " + (idleMs / 1000) + " seconds");
+                if (connection != null && !connection.isDisposed()) {
+                    connection.dispose();
+                }
+            }
+
+            private void failInBand(int status, String message) {
+                lock.lock();
+                try {
+                    if (closed) {
+                        return;
+                    }
+                    closed = true;
+                    cancelIdleTimer();
+                    EventEnvelope error = new EventEnvelope()
+                            .setHeader(EventStreamWriter.X_EVENT_STREAM, EventStreamWriter.EXCEPTION)
+                            .setStatus(status)
+                            .setBody(Map.of("status", status, "message", message));
+                    if (!headSent) {
+                        headSent = true;
+                        error.setHeader(CONTENT_TYPE, TEXT_EVENT_STREAM);
+                    }
+                    sendSegment(error);
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            private void cancelIdleTimer() {
+                if (timer != -1) {
+                    Platform.getInstance().getVertx().cancelTimer(timer);
+                    timer = -1;
+                }
+            }
+
+            private void sendSegment(EventEnvelope segment) {
+                segment.setTo(input.getReplyTo()).setFrom(ASYNC_HTTP_REQUEST)
+                        .setCorrelationId(input.getCorrelationId())
+                        .setTrace(input.getTraceId(), input.getTracePath());
+                EventEmitter.getInstance().send(segment);
+            }
         }
 
         private byte[] resStreamToBytes(EventEnvelope response, InputStream stream, String contentLen) {

@@ -30,6 +30,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    plus the `scripts/sse-client.mjs` progressive-rendering client). See the
    HTTP Response Streaming guide (ADR-0018).
 
+2. **Progressive SSE consumption in the HTTP client** - `async.http.request` can
+   consume a `text/event-stream` response progressively (an LLM provider's token
+   stream, another engine's streaming endpoint, any SSE API), relaying one
+   `x-event-stream: data` envelope per upstream event to the caller's reply route,
+   then `eof` - the same streaming protocol the HTTP edge consumes, which makes an
+   SSE-to-SSE relay a pure configuration exercise. Activation is explicit: the
+   request must declare `Accept: text/event-stream`, the response must be SSE, and
+   the request must carry a reply route; anything else keeps the buffered single-shot
+   behavior. For streams, the request timeout acts as the idle allowance between
+   reads (keep-alive comments reset it); idle expiry and mid-stream disconnects fail
+   the stream in-band. (ADR-0019)
+
 ### Changed
 
 1. The `/info/routes` actuator endpoint renders pool-style route families compactly:

@@ -32,6 +32,14 @@ rest:
     timeout: 15s
     stream: true
     headers: header_2
+
+  # SSE-to-SSE relay: the function forwards its reply lane into async.http.request,
+  # which consumes this app's own SSE demo endpoint progressively (raw mode)
+  - service: "hello.event.relay"
+    methods: ['GET']
+    url: "/api/hello/relay"
+    timeout: 15s
+    stream: true
   - service: ["hello.mock"]
     methods: ['GET', 'PUT', 'POST', 'HEAD', 'PATCH', 'DELETE']
     url: "/api/hello/world"
