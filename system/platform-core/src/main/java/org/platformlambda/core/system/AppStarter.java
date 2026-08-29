@@ -841,13 +841,14 @@ public class AppStarter {
             String message = "Timeout for " + (holder.timeout / 1000) + " seconds";
             if (holder.eventStream != null && holder.streamLane != null) {
                 // a streaming response times out in-band through the SAME ordered
-                // lane as its segments, so the timeout cannot overtake them
+                // lane as its segments, so the timeout cannot overtake them -
+                // the body is the exception contract's {status, message} shape
                 try {
                     EventEmitter.getInstance().send(new EventEnvelope()
                             .setTo(holder.streamLane)
                             .setCorrelationId(id).setStatus(408)
                             .setHeader(EventStreamWriter.X_EVENT_STREAM, EventStreamWriter.EXCEPTION)
-                            .setBody(message));
+                            .setBody(Map.of("type", "error", "status", 408, "message", message)));
                 } catch (IllegalArgumentException e) {
                     log.error("Unable to time out event stream {} - {}", id, e.getMessage());
                 }

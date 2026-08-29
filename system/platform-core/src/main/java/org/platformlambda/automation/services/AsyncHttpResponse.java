@@ -57,6 +57,8 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
     private static final String INPUT_STREAM_SUFFIX = ".in";
     private static final String SET_COOKIE = "Set-Cookie";
     private static final String CONTENT_TYPE = "Content-Type";
+    private static final String LOWER_CONTENT_TYPE = "content-type";
+    private static final String OCTET_STREAM = "application/octet-stream";
     private static final String CONTENT_LEN = "Content-Length";
     private static final String HTML_START = "<html><body><pre>\n";
     private static final String HTML_END = "\n</pre></body></html>";
@@ -82,6 +84,17 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
         holder.touch();
         // multi-shot streaming response? (x-event-stream: data | eof | exception)
         String streamSignal = EventStreamRenderer.getSignal(event);
+        if (holder.envelopeStreamFormat != null && !HEAD.equals(holder.method)) {
+            // Event-over-HTTP streaming relay context (/api/event with an SSE-accepting
+            // caller): stream events render as the envelope-mode wire dialect, while a
+            // single-shot reply renders as the classic packed-envelope response so a
+            // non-streaming target stays byte-identical to the RPC path
+            if (streamSignal != null) {
+                EventStreamRenderer.handleEnvelopeMode(requestId, holder, event, streamSignal);
+                return null;
+            }
+            event = packedSingleShot(event, holder.envelopeStreamFormat);
+        }
         if (streamSignal != null && !HEAD.equals(holder.method)) {
             EventStreamRenderer.handle(requestId, holder, event, streamSignal);
             return null;
@@ -103,6 +116,20 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
         HttpRouter.closeContext(requestId);
         response.end();
         return null;
+    }
+
+    /**
+     * Mirror the classic Event-over-HTTP RPC reply wire: the whole result envelope
+     * rides as a serialized byte body with an octet-stream content type
+     *
+     * @param result the target function's single-shot reply
+     * @param format the requester's envelope serialization format
+     * @return the wire-level envelope for the classic rendering path
+     */
+    private EventEnvelope packedSingleShot(EventEnvelope result, EventEnvelope.Format format) {
+        return new EventEnvelope()
+                .setHeader(LOWER_CONTENT_TYPE, OCTET_STREAM)
+                .setBody(result.toBytes(format));
     }
 
     private void setBusinessCorrelationIdHeader(HttpServerResponse response, AsyncContextHolder holder) {

@@ -13,7 +13,23 @@ data join), buffered fallback for non-SSE responses on the candidate path, and t
 self-relay demo endpoint (/api/hello/relay in the test app). Gates: 9 new tests
 (mapping, multi-field frames, 50-event FIFO burst, idle 408, comment-reset,
 mid-stream disconnect, buffered fallback, no-Accept backward-compat pin, progressive
-self-relay e2e) — platform-core 459/459. ADR-0019 Proposed.
+self-relay e2e) — platform-core 459/459. ADR-0019 Proposed (Accepted at the Phase-1
+merge; Rust twin same day).
+**Phase 2 P2-1…P2-6 RATIFIED by Eric and IMPLEMENTED (Java) 2026-08-29:** the
+envelope-mode relay per §7 — EventApiService streaming branch with dynamic lane
+binding, envelope-mode rendering in the edge renderer, the caller-side relay in
+EventEmitter (accept event-header opt-in), the envelope submode in AsyncHttpClient
+(dialect decode, strict-head and truncation guards, buffered-fallback decode), and
+the 406/503 refusals. One contract alignment found during implementation (completed
+by Eric's review): every in-band exception body now carries the standard error
+key-values {"type": "error", "status": n, "message": text} — the edge housekeeper's
+408 abort was String-bodied, and EventStreamWriter.fail() and the client's in-band
+failures were missing the "type" key (wire-invisible at the local edge, which
+re-wraps; shape-visible to envelope-mode callers and reply-route consumers). Gates: 14 new tests
+(EventOverHttpStreamTest — dialect round-trips incl. every escape-hatch trigger,
+byte-identical single-shot fallback, both 406 paths, 503 pool exhaustion, REST-error
+unwrap, misbehaving-peer conformance guards, progressive engine⇄engine e2e out the
+edge) — platform-core 473/473. Next: the Rust twin, then Phase 3 (wrapper twins).
 **Serves:** `bp-agent-orchestration` (an `llm.chat` node consuming provider token streams)
 and `bp-polyglot-functions` (wrapper functions streaming back to the engine) — the two
 remaining gaps after [[thread-http-response-streaming]] closed the engine→HTTP-edge leg.
@@ -145,8 +161,9 @@ Two consumption modes, selected by context:
     base64-encoded MsgPack envelope (the one codec; golden vectors still the gate).
   - **First frame** = envelope frame (head control: status, content-type, x-ttl).
   - **Terminal frames** (`eof` / `exception`) = envelope frames — one per stream, so
-    zero meaningful cost, and trailing metadata / {status,message} keep exact Map
-    types end-to-end (matters when the consumer is a function, not the edge).
+    zero meaningful cost, and trailing metadata / the standard error body
+    {"type": "error", "status": n, "message": text} keep exact Map types end-to-end
+    (matters when the consumer is a function, not the edge).
   - **Text segments** = raw frames: `data: <text>`, optional user `event: <name>` →
     `x-event-name` (SSE's native field; the same grammar the edge renders).
   - **Adaptive escape hatch**: the writer emits an envelope frame for any segment that
@@ -206,10 +223,123 @@ Two consumption modes, selected by context:
   buffered (backward-compat pin), burst FIFO through the relay.
 - Mutation-proof the idle timer and the terminal mapping (kill the fix, watch it fail).
 
-## 7. Follow-ups staged (not this spec's scope)
+## 7. Phase 2 design — envelope-mode relay internals (RATIFIED by Eric 2026-08-29; implemented same day)
 
-- Phase 2/3 detail rounds (envelope-mode relay internals; wrapper host/writer twins;
-  interop report round per `conv-telemetry-presentation-parity`).
+The engine⇄engine leg: a streaming function on engine B, invoked over Event-over-HTTP
+from engine A, streams its segments back to the original caller's reply route on A.
+Zero new config keys; zero new endpoints; the wire is the D5 hybrid dialect.
+
+### P2-1 — Trigger: the caller's `accept` EVENT header on the callback path
+
+Today's `send()` over an event-over-http mapping already has a **callback mode**
+(`reply_to` present → RPC + response delivered to the callback route). Streaming extends
+exactly that path: when the outbound event carries `reply_to` AND the event header
+`accept: text/event-stream`, the relay switches to streaming-capable mode — the POST
+advertises `Accept: text/event-stream` (D6) and the caller's `reply_to`/`cid` pass
+through to `async.http.request` (the Phase-1 relay pattern) with an internal
+envelope-mode marker. Without the accept header, the callback path is byte-identical to
+today. The RPC path (`po.request` — a Future completes once, it cannot stream) and the
+drop-n-forget path (`x-async`) never stream and never advertise; a streaming target
+invoked via RPC gets the P2-4 refusal. D1 parity: explicit Accept opt-in, now at the
+event level — a stray user `accept` header is harmless (single-shot targets fall back
+byte-identically).
+
+### P2-2 — Server realization: dynamic reply lane + envelope mode in the edge renderer
+
+`/api/event` stays a normal (non-`stream: true`) endpoint — plain RPC traffic keeps its
+unbounded concurrency. When the POST accepts SSE (and is not `x-async`), EventApiService,
+after the existing route/private validation:
+
+1. binds an envelope-mode stream context: reuse the holder's lane if the endpoint was
+   (unusually) declared `stream: true`, else check out a lane from the SAME 500-lane pool
+   (dry pool → single-shot error, the pinned "Streaming response pool exhausted" 503);
+   the bind records the requester's wire format (COMPACT/STANDARD mirroring, as today)
+   and an atomic release guard closes the checkout race with client disconnect;
+2. rewrites the relayed request's `reply_to` to the lane and its `cid` to the edge
+   requestId (exact parity: today's RPC inbox rewrites the cid the same way), then
+   dispatches with `po.send` — no RPC future; the holder's idle timer (x-ttl from the
+   POST, per P2-6) is the guard.
+
+The lane's handler (AsyncHttpResponse) sees the envelope-mode context and renders the
+**wire dialect** instead of user-facing SSE:
+
+- **first envelope (whatever it is — EventStreamWriter puts head control on the first
+  outgoing event)** → `event: envelope` + `data: <base64(MsgPack(envelope))>` — packed
+  verbatim in the mirrored wire format after clearing `to`/`reply_to` (server-internal
+  route names never leak; the client rewrites addressing anyway per D7). Outer HTTP head:
+  status mirrors the envelope status, content-type `text/event-stream`, Cache-Control
+  no-cache; keep-alive pings, back-pressure queue and slow-client guard inherited.
+- **subsequent data envelopes** → raw frame (`data: <text>`, `event: <x-event-name>`)
+  when losslessly raw-able: String body, no `\r`, no custom headers, name ≠ `envelope`;
+  otherwise the envelope-frame escape hatch (Map/bytes segments keep exact types).
+- **terminals (`eof`/`exception`)** → one envelope frame, then clean HTTP end. The
+  engine⇄engine wire carries NO cosmetic `event: done` / `event: error` frames — those
+  are the edge's human-facing dialect; the decoded terminal envelope is the signal
+  (P2-5). A pre-head exception also rides SSE-uniform (head + exception frame + end) so
+  the caller always receives the exact error envelope.
+- **a single-shot reply (no x-event-stream marker)** → NOT SSE: packed-envelope
+  octet-stream response, byte-identical to today's RPC wire (P2-3) — so a streaming-
+  capable call to a non-streaming function is indistinguishable from today.
+
+### P2-3 — Compatibility matrix (all paths explicit)
+
+| Caller | Target | Result |
+| --- | --- | --- |
+| new, accept declared | streams | progressive envelope-mode relay (NEW) |
+| new, accept declared | single-shot | byte-identical to today (buffered fallback decode) |
+| new, no accept / RPC / async | single-shot | byte-identical to today |
+| any non-accepting caller (incl. old engines) | streams | explicit refusal per P2-4 |
+| new, accept declared | old peer (no SSE production) | non-SSE response → buffered fallback, today's semantics |
+
+### P2-4 — Refusal wording (D6 pinned, engine-identical)
+
+A streaming target invoked by a non-accepting caller: the first segment completes the
+server's RPC inbox carrying `x-event-stream` → EventApiService answers **406**
+`"Streaming function requires a caller that accepts text/event-stream"` instead of
+relaying a truncated first segment. Orphan follow-up segments die on the closed inbox.
+
+### P2-5 — Client realization (AsyncHttpClient envelope submode)
+
+The Phase-1 SSE branch gains the envelope dialect when the request event carries the
+internal relay marker (`x-event-api: stream`, stripped before wire):
+
+- `event: envelope` frame → base64 → MsgPack decode → forward to the original `reply_to`
+  with the original `cid` (D7 rewrite); a decoded terminal stops forwarding, cancels the
+  idle timer, and discards any trailing frames (tolerance for wrapper dialects).
+- raw frame → data envelope (`x-event-stream: data`, body = text, `event:` name →
+  `x-event-name`) — the inverse of the server's raw framing.
+- **strict head rule:** the first frame MUST be an envelope frame; a raw first frame is
+  an in-band exception 500 "Invalid event stream - missing envelope head" (conformance
+  guard for wrapper implementations).
+- clean HTTP end WITHOUT a decoded terminal → in-band exception 500 "Event stream ended
+  without eof" (catches truncating middleware); transport eof after a decoded terminal
+  is suppressed (no double-terminal).
+- buffered (non-SSE) fallback → decode the packed envelope and deliver to the callback
+  with today's rewrite — including today's tolerant wrap of a non-envelope error body.
+- Phase-1 in-band 408/500 idle/transport handling unchanged.
+
+### P2-6 — TTL semantics across the hop (D4 extended)
+
+The outbound event's `x-ttl` header (default: the existing 60s relay allowance) becomes
+the idle allowance on BOTH hops: it rides the POST's `x-ttl` (server holder idle timer —
+housekeeper aborts with the in-band 408 exception frame) and sets the client's per-read
+idle allowance. The target can extend it mid-relationship via `first(status, ct, ttl)` —
+the head frame's x-ttl reaches both the server holder and (decoded) the caller's edge,
+exactly as a local stream would.
+
+### Phase 2 test plan
+
+Full-chain e2e in one process (edge `stream: true` endpoint → function relays via
+event-over-http to the app's OWN `/api/event` → local streaming target), progressive
+timing asserted; single-shot-over-capable-path byte-compare vs classic RPC; 406 refusal
+pin; Map/bytes/`\r`/reserved-name escape-hatch round-trips (exact types); eof trailing
+metadata round-trip; mid-stream `fail()` propagation; server idle 408 through the chain;
+pool-dry 503; x-async and RPC pins unchanged; trailing-frame discard tolerance.
+
+## 8. Follow-ups staged (not this spec's scope)
+
+- Phase 3 detail round (wrapper host/writer twins; interop report round per
+  `conv-telemetry-presentation-parity`).
 - Event Script flow handoff (`model.http.*` reserved keys) — unchanged from the edge
   spec's v1.1 list.
 - graph-run streaming (bp-agent-orchestration).

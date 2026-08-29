@@ -236,7 +236,10 @@ class EventStreamClientTest extends TestBase {
         assertEquals(EventStreamWriter.EXCEPTION, marker(error));
         assertEquals(408, error.getStatus());
         assertInstanceOf(Map.class, error.getRawBody());
-        assertEquals("Timeout for 2 seconds", ((Map<?, ?>) error.getRawBody()).get("message"));
+        // the standard error key-values: '{"type": "error", "status": n, "message": text}'
+        Map<?, ?> body = (Map<?, ?>) error.getRawBody();
+        assertEquals("error", body.get("type"));
+        assertEquals("Timeout for 2 seconds", body.get("message"));
     }
 
     @Test
