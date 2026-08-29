@@ -40,6 +40,12 @@ GET /livenessprobe
 | /health        | Application health check endpoint                              |
 | /livenessprobe | Check if application is running normally                       |
 
+For readability, `/info/routes` renders pool-style route families compactly: routes that
+differ only by a trailing numeric suffix, with the same number of instances and contiguous
+numbering, collapse into one display entry - e.g. the 500 streaming reply lanes appear as
+`"async.http.response.stream.0 - 499": 1`. This is display-only; the routing table itself
+is unchanged.
+
 ## System provided REST endpoints
 
 When REST automation is turned on, the following essential REST endpoints will be provided if they are

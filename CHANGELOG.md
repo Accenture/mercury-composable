@@ -30,6 +30,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    plus the `scripts/sse-client.mjs` progressive-rendering client). See the
    HTTP Response Streaming guide (ADR-0018).
 
+### Changed
+
+1. The `/info/routes` actuator endpoint renders pool-style route families compactly:
+   routes differing only by a trailing numeric suffix, with uniform instances and
+   contiguous numbering, collapse into one display entry (e.g. the 500 streaming reply
+   lanes appear as `"async.http.response.stream.0 - 499": 1`). Display-only - the
+   routing table is unchanged.
+
 ---
 ## Version 4.11.12, 8/27/2026
 

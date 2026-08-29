@@ -306,11 +306,8 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
     }
 
     private Map<String, Object> getLocalRouting() {
-        var result = new HashMap<String, Object>();
-        var publicRoutes = new HashMap<String, Object>();
-        var privateRoutes = new HashMap<String, Object>();
-        result.put("public", publicRoutes);
-        result.put("private", privateRoutes);
+        var publicRoutes = new HashMap<String, Integer>();
+        var privateRoutes = new HashMap<String, Integer>();
         var map = Platform.getInstance().getLocalRoutingTable();
         for (var entry: map.entrySet()) {
             var service = entry.getValue();
@@ -318,6 +315,53 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
                 privateRoutes.put(entry.getKey(), service.getConcurrency());
             } else {
                 publicRoutes.put(entry.getKey(), service.getConcurrency());
+            }
+        }
+        var result = new HashMap<String, Object>();
+        result.put("public", compressRouteFamilies(publicRoutes));
+        result.put("private", compressRouteFamilies(privateRoutes));
+        return result;
+    }
+
+    /**
+     * Render pool-style route families compactly. Routes that differ only by a trailing
+     * numeric suffix (e.g. async.http.response.stream.0 ... async.http.response.stream.499)
+     * collapse into one display entry ("async.http.response.stream.0 - 499") when the
+     * numbering is contiguous and every member has the same concurrency. Irregular
+     * families and singletons render individually. This is display-only - the underlying
+     * routing table is unchanged.
+     *
+     * @param routes route name to concurrency
+     * @return display map with route families compressed
+     */
+    private Map<String, Object> compressRouteFamilies(Map<String, Integer> routes) {
+        var result = new HashMap<String, Object>();
+        var families = new HashMap<String, TreeMap<Integer, Integer>>();
+        for (var entry : routes.entrySet()) {
+            String route = entry.getKey();
+            int dot = route.lastIndexOf('.');
+            String suffix = dot > 0 ? route.substring(dot + 1) : "";
+            // canonical digits only (no leading zeros) so individual names are preserved exactly
+            if (!suffix.isEmpty() && suffix.length() < 10 &&
+                    suffix.chars().allMatch(Character::isDigit) &&
+                    suffix.equals(String.valueOf(util.str2int(suffix)))) {
+                families.computeIfAbsent(route.substring(0, dot + 1), k -> new TreeMap<>())
+                        .put(util.str2int(suffix), entry.getValue());
+            } else {
+                result.put(route, entry.getValue());
+            }
+        }
+        for (var family : families.entrySet()) {
+            var members = family.getValue();
+            int min = members.firstKey();
+            int max = members.lastKey();
+            boolean uniform = new HashSet<>(members.values()).size() == 1;
+            if (members.size() > 1 && uniform && members.size() == max - min + 1) {
+                result.put(family.getKey() + min + " - " + max, members.firstEntry().getValue());
+            } else {
+                for (var member : members.entrySet()) {
+                    result.put(family.getKey() + member.getKey(), member.getValue());
+                }
             }
         }
         return result;
