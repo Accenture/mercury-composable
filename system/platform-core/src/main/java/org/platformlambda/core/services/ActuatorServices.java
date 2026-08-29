@@ -8,6 +8,7 @@ import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.*;
 import org.platformlambda.core.util.AppConfigReader;
+import org.platformlambda.core.util.ManagedCache;
 import org.platformlambda.core.util.SimpleCache;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -37,6 +38,10 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
     private static final Logger log = LoggerFactory.getLogger(ActuatorServices.class);
     private static final Utility util = Utility.getInstance();
     private static final SimpleCache cache = SimpleCache.createCache("health.info", 5000);
+    // the routing table changes infrequently - cache the rendered routing view for 10 minutes
+    private static final ManagedCache localRoutingCache =
+            ManagedCache.createCache("local.routing.info", 10 * 60 * 1000L);
+    private static final String LOCAL_ROUTING = "local.routing";
     private static final String GET = "GET";
     private static final String MY_ROUTE = "my_route";
     private static final String TYPE = "type";
@@ -305,7 +310,14 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         return Collections.emptyMap();
     }
 
+    @SuppressWarnings("unchecked")
     private Map<String, Object> getLocalRouting() {
+        // the routing table changes infrequently - cache the rendered view briefly
+        // to skip repeated computation under actuator polling
+        Object cached = localRoutingCache.get(LOCAL_ROUTING);
+        if (cached instanceof Map) {
+            return (Map<String, Object>) cached;
+        }
         var publicRoutes = new HashMap<String, Integer>();
         var privateRoutes = new HashMap<String, Integer>();
         var map = Platform.getInstance().getLocalRoutingTable();
@@ -320,6 +332,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         var result = new HashMap<String, Object>();
         result.put("public", compressRouteFamilies(publicRoutes));
         result.put("private", compressRouteFamilies(privateRoutes));
+        localRoutingCache.put(LOCAL_ROUTING, result);
         return result;
     }
 
