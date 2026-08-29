@@ -1819,6 +1819,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#consume-an-sse-stream-http-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consume an SSE stream (HTTP client)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#relation-to-x-stream-id" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2699,6 +2710,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#consume-an-sse-stream-http-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consume an SSE stream (HTTP client)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#relation-to-x-stream-id" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2894,6 +2916,55 @@ with the companion Node.js script, which prints each event with its arrival time
 <p>The <code>-N</code> (<code>--no-buffer</code>) flag matters: curl receives the events progressively either
 way, but without <code>-N</code> it holds output in an internal buffer, so the messages would
 appear all at once when the stream ends.</p>
+<h2 id="consume-an-sse-stream-http-client">Consume an SSE stream (HTTP client)<a class="headerlink" href="#consume-an-sse-stream-http-client" title="Permanent link">&para;</a></h2>
+<p>The other direction: <code>async.http.request</code> can consume a Server-Sent Events response
+progressively - an LLM provider's token stream, another engine's streaming endpoint, or
+any SSE API - and relay each event to your reply route using the same streaming
+protocol.</p>
+<p>Activation is explicit and standard - all three must hold:</p>
+<ol>
+<li>the request declares <code>Accept: text/event-stream</code>,</li>
+<li>the response actually arrives as <code>Content-Type: text/event-stream</code>, and</li>
+<li>the request event carries a <code>reply_to</code> (a multi-shot-capable consumer).</li>
+</ol>
+<p>Anything else keeps the buffered single-shot behavior exactly as before.</p>
+<p>Each upstream SSE event becomes one <code>x-event-stream: data</code> envelope to your reply
+route: the event's data is the body (multi-line data joins with newline per the SSE
+specification), an <code>event:</code> name maps to <code>x-event-name</code>, and comment/id/retry fields
+are consumed by the client, never forwarded. The first envelope carries the head
+(upstream status and the SSE content type). A clean upstream end sends <code>eof</code>; a
+mid-stream failure sends an in-band <code>exception</code>. Payloads are never interpreted -
+provider conventions such as <code>data: [DONE]</code> are forwarded verbatim for your function
+to handle, keeping the client vendor-neutral.</p>
+<p>For a stream, the request's timeout is the <em>idle</em> allowance between reads rather than
+a total limit: any upstream bytes - keep-alive comments included - reset it, and on
+expiry the client fails the stream in-band with status 408 and closes the upstream
+connection.</p>
+<p>The composition this enables: a streaming endpoint's function can forward its own
+<code>reply_to</code> and correlation id into the client call, turning the application into an
+SSE-to-SSE relay with no imperative streaming code -</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"v1.sse.relay"</span><span class="p">,</span><span class="w"> </span><span class="n">instances</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">50</span><span class="p">)</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nd">@EventInterceptor</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">SseRelay</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TypedLambdaFunction</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="p">,</span><span class="w"> </span><span class="n">Void</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Void</span><span class="w"> </span><span class="nf">handleEvent</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">request</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">        </span><span class="n">AsyncHttpRequest</span><span class="w"> </span><span class="n">upstream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">AsyncHttpRequest</span><span class="p">();</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">        </span><span class="n">upstream</span><span class="p">.</span><span class="na">setMethod</span><span class="p">(</span><span class="s">"GET"</span><span class="p">);</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">        </span><span class="n">upstream</span><span class="p">.</span><span class="na">setTargetHost</span><span class="p">(</span><span class="s">"https://api.example.com"</span><span class="p">);</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">        </span><span class="n">upstream</span><span class="p">.</span><span class="na">setUrl</span><span class="p">(</span><span class="s">"/v1/tokens"</span><span class="p">);</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">        </span><span class="n">upstream</span><span class="p">.</span><span class="na">setHeader</span><span class="p">(</span><span class="s">"accept"</span><span class="p">,</span><span class="w"> </span><span class="s">"text/event-stream"</span><span class="p">);</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">        </span><span class="n">upstream</span><span class="p">.</span><span class="na">setTimeoutSeconds</span><span class="p">(</span><span class="mi">30</span><span class="p">);</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">        </span><span class="c1">// the caller's reply lane becomes the client's reply route:</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">        </span><span class="c1">// upstream tokens render progressively out the HTTP edge</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="w">        </span><span class="n">EventEmitter</span><span class="p">.</span><span class="na">getInstance</span><span class="p">().</span><span class="na">send</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="p">()</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="w">                </span><span class="p">.</span><span class="na">setTo</span><span class="p">(</span><span class="s">"async.http.request"</span><span class="p">).</span><span class="na">setBody</span><span class="p">(</span><span class="n">upstream</span><span class="p">.</span><span class="na">toMap</span><span class="p">())</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="w">                </span><span class="p">.</span><span class="na">setReplyTo</span><span class="p">(</span><span class="n">request</span><span class="p">.</span><span class="na">getReplyTo</span><span class="p">())</span>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="w">                </span><span class="p">.</span><span class="na">setCorrelationId</span><span class="p">(</span><span class="n">request</span><span class="p">.</span><span class="na">getCorrelationId</span><span class="p">()));</span>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="p">}</span>
+</code></pre></div>
 <h2 id="relation-to-x-stream-id">Relation to <code>x-stream-id</code><a class="headerlink" href="#relation-to-x-stream-id" title="Permanent link">&para;</a></h2>
 <p>The existing <code>x-stream-id</code> relay (object streams, file downloads, <code>Flux</code> results) is
 unchanged. <code>x-event-stream</code> is the idiom for progressive text/JSON delivery - tokens and

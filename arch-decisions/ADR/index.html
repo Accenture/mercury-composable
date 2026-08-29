@@ -2033,6 +2033,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0019" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0019 — The HTTP client consumes SSE progressively; Event-over-HTTP streams on the same call
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0018" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2721,6 +2732,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0019" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0019 — The HTTP client consumes SSE progressively; Event-over-HTTP streams on the same call
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0018" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2956,6 +2978,44 @@ governing the codebase — verified against the source (<code>platform-core</cod
 <code>event-script-engine</code>, <code>minigraph-playground-engine</code>) and the published guides, which are
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
+<hr />
+<h2 id="adr-0019">ADR-0019 — The HTTP client consumes SSE progressively; Event-over-HTTP streams on the same call<a class="headerlink" href="#adr-0019" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-29 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> async-http-client-sse-streaming-design</p>
+<!-- id: adr-0019 | status: proposed -->
+
+<p><strong>Abstract.</strong> <code>async.http.request</code> consumes a <code>text/event-stream</code> response progressively
+and relays it as the platform's own streaming protocol: one <code>x-event-stream: data</code>
+envelope per upstream SSE event to the caller's reply route (the event's data as body,
+<code>event:</code> name as <code>x-event-name</code>, head control - upstream status plus the SSE content
+type - on the first envelope), <code>eof</code> on a clean end, and an in-band <code>exception</code> on idle
+expiry or a mid-stream disconnect. Activation is explicit and standard: the request must
+declare <code>Accept: text/event-stream</code>, the response must actually be SSE, and the request
+must carry a <code>reply_to</code>; anything else keeps the buffered single-shot behavior. For a
+stream, the request timeout becomes the per-read idle allowance (any upstream bytes,
+keep-alive comments included, reset it). Payloads are never interpreted - provider
+conventions such as <code>data: [DONE]</code> forward verbatim, keeping the client vendor-neutral.
+Because the streaming producer contract is the one the HTTP edge already consumes, a
+streaming endpoint's function can forward its own <code>reply_to</code> and correlation id into the
+client call and the application becomes an SSE-to-SSE relay by configuration. The same
+enhancement is the transport for Event-over-HTTP peer streaming (python/node wrapper
+functions and engine⇄engine): the peer's <code>/api/event</code> answers the SAME call with an SSE
+response using a hybrid control/data framing - control signals (the head, <code>eof</code>,
+<code>exception</code>, and any segment that cannot round-trip as text) ride base64-encoded MsgPack
+envelope frames under the reserved SSE event name <code>envelope</code>, while token segments ride
+raw SSE frames with near-zero overhead - negotiated by the same Accept contract, so
+version skew degrades explicitly, never silently.</p>
+<p><strong>Rationale.</strong> Progressive delivery had reached the HTTP edge (ADR-0018) but not the two
+consumption paths AI-era workloads need: an engine function consuming an LLM provider's
+token stream, and a polyglot wrapper function streaming results back to the engine. One
+mechanism closes both because the Event-over-HTTP relay already flows through
+AsyncHttpClient. Alternatives rejected: an on-demand WebSocket channel (breaks the
+wrapper scope fence, grows four codebases, historically gateway-hostile, and drifts
+toward the standing-connection mesh the framework keeps opt-in); per-segment POSTs back
+to the reply lane (FIFO forces serialized posts - one round trip per token - and opens
+an inbound path to reply lanes); gRPC/HTTP-2 push (a foreign dependency stack); and
+long-polling (chatty and stateful). Streaming on the response of the engine's own
+request adds no inbound surface, is ordered by TCP for free, and rides the wire shape
+gateways already accommodate for LLM traffic.</p>
 <hr />
 <h2 id="adr-0018">ADR-0018 — HTTP response streaming rides the multi-shot reply route; the wire stays standards-only<a class="headerlink" href="#adr-0018" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-28 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> http-response-streaming-design</p>
