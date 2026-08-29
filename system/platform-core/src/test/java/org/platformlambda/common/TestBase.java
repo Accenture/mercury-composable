@@ -33,6 +33,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.automation.service.MockEventStreamService;
+import org.platformlambda.automation.service.MockSseRelayService;
 import org.platformlambda.automation.service.MockHelloWorld;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
@@ -96,6 +97,7 @@ public class TestBase {
             // streaming-response producer (multi-shot reply route) for EventStreamResponseTest -
             // registered before endpoint rendering so the rest.yaml existence check passes
             platform.registerPrivate("hello.event.stream", new MockEventStreamService(), 10);
+            platform.registerPrivate("hello.event.relay", new MockSseRelayService(), 10);
             // test registering the same function with an alias route name
             // hello.list is a special function to test returning result set as a list
             platform.registerPrivate(HELLO_LIST, (headers, input, instance) ->

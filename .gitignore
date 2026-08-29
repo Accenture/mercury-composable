@@ -48,8 +48,8 @@ __pycache__/
 *.pyc
 site/
 
-# Work-in-progress design drafts — kept local until finalized (not for commit)
-draft-design-specs/
+# Design specs (draft-design-specs/) are committed by design: they are the living
+# work-in-progress journal of how this project evolves — transparent, for human readers
 .interop-mercury
 
 # === agent-memory: AI infrastructure (personal / per-machine — do not commit) ===
