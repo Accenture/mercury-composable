@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-28 | agent: Claude Code (2026-08-28-025445)
+- **last_session:** 2026-08-29 | agent: Claude Code (2026-08-29-162504)
 - **last_review:** 2026-08-27 | through 2026-08-27-213034.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -95,7 +95,7 @@
   vectors are the conformance gate; interop report per wrapper release (D6). Spec:
   draft-design-specs/polyglot-script-runner.md. Delivered by [[thread-polyglot-initiative]];
   serves [[bp-polyglot-functions]].
-  <!-- id: polyglot-event-over-http-design | created: 2026-08-22 | last_used: 2026-08-25 | uses: 6 | tier: active | origin: 2026-08-22-164936 -->
+  <!-- id: polyglot-event-over-http-design | created: 2026-08-22 | last_used: 2026-08-29 | uses: 8 | tier: active | origin: 2026-08-22-164936 -->
 
 - **Graph workflow suspension: short runs + external state store, encapsulated in skills
   (design ratified by Eric 2026-07-28). (ADR-0010)** A human checkpoint = persist
@@ -113,7 +113,7 @@
   survive); cid = resume capability (auth resume endpoints); no graph.extension crossing. Store:
   Redis = extensions/minigraph-state-redis imported by apps, NEVER the engine. Delivered by
   [[thread-graph-suspend-resume]]; serves [[bp-graph-workflow-suspension]].
-  <!-- id: graph-suspend-resume-design | created: 2026-07-29 | last_used: 2026-08-25 | uses: 15 | tier: active | origin: 2026-07-29-010343 -->
+  <!-- id: graph-suspend-resume-design | created: 2026-07-29 | last_used: 2026-08-28 | uses: 16 | tier: active | origin: 2026-07-29-010343 -->
 
 - **CompileGraph is the MANDATORY deployment gate for graph models — CompileFlows parity
   (Eric's rulings 2026-07-29; ADR-0011 ACCEPTED via the PR #240 merge, squash `4348b0da`).**
@@ -186,7 +186,7 @@
   **Scope extension: the Event Script surface is part of the cross-engine contract** — flows are
   engine-portable YAML, so any new built-in simple plugin ships in lock-step on both engines (with
   closely matching error messages), or flows stop being portable.
-  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-08-27 | uses: 32 | tier: active | origin: 2026-07-23-145132 -->
+  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-08-29 | uses: 34 | tier: active | origin: 2026-07-23-145132 -->
 
 - **graph.js is slated for eventual phase-out in favor of graph.task (Eric, 2026-07-31),
   and the Rust port does not carry it at all.** The skill is troublesome by nature — it is
@@ -227,12 +227,12 @@
   E0–E4 experiment plan). Direction ratified by Eric 2026-08-25; experiments queued
   post-workshop (E0 = llm.chat in the python demo app + bounded-agency demo graph — also
   the first live graph.task→wrapper drive). → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-08-25 | uses: 1 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-08-29 | uses: 3 | tier: working | origin: 2026-08-25-213703 -->
 - [ ] (blueprint) **Polyglot function execution** — python/node.js functions join Event Script
   flows and MiniGraph graphs as Event-over-HTTP peers (ratified design D0–D8, 2026-08-22);
   wrappers live in the repurposed Accenture/mercury-python + mercury-nodejs repos.
   → serves: vision-mercury-composable
-  <!-- id: bp-polyglot-functions | created: 2026-08-22 | last_used: 2026-08-25 | uses: 5 | tier: working -->
+  <!-- id: bp-polyglot-functions | created: 2026-08-22 | last_used: 2026-08-29 | uses: 6 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
   <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
@@ -240,6 +240,31 @@
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
 ## Open Threads
+
+- [ ] (feature — **Phase 1 (Java) MERGED 2026-08-29 as
+  [PR #300](https://github.com/Accenture/mercury-composable/pull/300) squash `1410c33f`
+  == gated `5392f424`, tree verified, branch deleted both ends; next = Rust twin of
+  Phase 1, then Phases 2/3**) **SSE consumption in
+  AsyncHttpClient + Event-over-HTTP peer streaming (option 2; ADR-0019 Proposed).**
+  The same PR made `draft-design-specs/` PUBLIC (Eric's OSS-transparency directive;
+  README states the lifecycle: specs serve during design/implementation, then journal
+  records — source code is the source of truth; all 12 specs swept for proprietary
+  info pre-publication; future specs are written publication-clean from first draft).
+  Closes the two post-edge gaps: engine consuming LLM-provider token streams, and
+  wrapper functions streaming to the engine — ONE mechanism (the relay already flows
+  through AsyncHttpClient). D1–D9 approved; **D5 = Eric's hybrid control/data-plane
+  framing** (control signals as envelope key-value headers in base64-MsgPack frames
+  under reserved SSE name `envelope` — first frame + terminals + non-text escape;
+  tokens as raw SSE frames, ~90% hot-path overhead cut). Phase 1 shipped: D1
+  Accept-gated candidate branch, SseRelay (incremental parser, per-read idle allowance
+  w/ comment reset, in-band 408/500, lock-serialized), buffered fallback,
+  self-relay demo endpoint (/api/hello/relay — SSE-to-SSE relay by configuration).
+  9 new tests; platform-core 459/459. Rejected alternatives on record: WebSocket
+  (fence/mesh-drift/gateways), per-segment lane POSTs, gRPC, long-polling.
+  Spec: draft-design-specs/async-http-client-sse-streaming.md.
+  Serves [[bp-agent-orchestration]] + [[bp-polyglot-functions]].
+  <!-- id: thread-sse-consumption-streaming | created: 2026-08-29 | last_used: 2026-08-29 | uses: 1 | tier: working | origin: 2026-08-29-162504 -->
+
 
 - [x] (feature — **COMPLETE BOTH ENGINES 2026-08-28/29**: Java
   [PR #299](https://github.com/Accenture/mercury-composable/pull/299) squash `2eea5038`
@@ -258,7 +283,7 @@
   Staged follow-ups live under [[bp-agent-orchestration]]: Event Script flow handoff
   (model.http.* reserved keys), wrapper streaming, graph-run streaming.
   origin: 2026-08-28-025445 (Java) + mercury 2026-08-29-012914 (Rust).
-  <!-- id: thread-http-response-streaming | created: 2026-08-28 | last_used: 2026-08-28 | uses: 1 | tier: working | origin: 2026-08-28-025445 -->
+  <!-- id: thread-http-response-streaming | created: 2026-08-28 | last_used: 2026-08-29 | uses: 2 | tier: active | origin: 2026-08-28-025445 -->
 
 - [x] (maintenance + BREAKING — SHIPPED AND PUBLISHED 2026-08-27 as **v4.11.12**, Java
   only (Rust stays v4.11.11). Release
@@ -291,7 +316,7 @@
   == gated `39441544`; Rust PR #213 merge `3040e8e3`. Sole content: the P2 graph.task
   guard (#292/#212) — deployed graphs call polyglot function hosts.
   origin: 2026-08-24-001110. Relates [[thread-polyglot-initiative]].
-  <!-- id: thread-release-4-11-11 | created: 2026-08-24 | last_used: 2026-08-24 | uses: 2 | tier: active | origin: 2026-08-24-001110 -->
+  <!-- id: thread-release-4-11-11 | created: 2026-08-24 | last_used: 2026-08-24 | uses: 2 | tier: archive-candidate | origin: 2026-08-24-001110 -->
 
 - [ ] (feature — design RATIFIED D0–D8 2026-08-22 + two in-flight refinements (minimalist
   utilities; resources/ + -D config conventions); **both wrapper repos REBOOTED and scaffolded
@@ -613,7 +638,7 @@
   memory 2026-08-22: the smoke test found six session logs referencing this id while the
   fact lived only in an agent's personal store — a project-relevant working rhythm belongs
   in the shared layer.)
-  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-08-27 | uses: 15 | tier: active | origin: 2026-08-22-180334 -->
+  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-08-29 | uses: 16 | tier: active | origin: 2026-08-22-180334 -->
 
 ## Team / Members
 
