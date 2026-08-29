@@ -8,6 +8,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Added
+
+1. **HTTP response streaming** - a function can stream an HTTP response progressively
+   (token segments, progress events) by sending a sequence of events to the caller's
+   reply route until an end-of-transmission signal, using the reserved envelope header
+   `x-event-stream: data | eof | exception` (internal protocol - the wire carries only
+   standard HTTP). Server-Sent Events framing for `text/event-stream` (typed events via
+   `x-event-name`, terminal `done` event with trailing metadata, in-band `error` events,
+   configurable keep-alive pings via `event.stream.keep.alive`); chunked transfer with
+   JSON Lines for other content types. Declare a streaming endpoint with `stream: true`
+   in rest.yaml - the request checks out a dedicated ordered reply lane
+   (`async.http.response.stream.{n}`) from a pool of 500 for its lifetime: per-request
+   strict FIFO with cross-request concurrency, and HTTP-503 back-pressure when the pool
+   is exhausted. New
+   `EventStreamWriter` producer helper; idle timeouts fail streams in-band; client
+   disconnects drop late segments as no-ops; a 1 MB drain-aware buffer guards against
+   slow clients. A runnable demo ships in examples/lambda-example (`GET /api/hello/sse`
+   plus the `scripts/sse-client.mjs` progressive-rendering client). See the
+   HTTP Response Streaming guide (ADR-0018).
+
+---
 ## Version 4.11.12, 8/27/2026
 
 ### Removed

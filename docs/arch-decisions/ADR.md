@@ -22,6 +22,48 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0018 — HTTP response streaming rides the multi-shot reply route; the wire stays standards-only {#adr-0018}
+**Status:** Proposed · **Date:** 2026-08-28 · **Serves:** vision-mercury-composable · **Formalizes:** http-response-streaming-design
+<!-- id: adr-0018 | status: proposed -->
+
+**Abstract.** A function streams an HTTP response (LLM token segments, agent progress
+events, live updates) by exercising the platform's native streaming pattern: the callee
+sends a sequence of events to the caller-provided reply route until an
+end-of-transmission signal. Each event carries the reserved **envelope** header
+`x-event-stream: data | eof | exception` (the ObjectStream vocabulary); the marker is
+internal protocol consumed by the REST automation edge — like `x-stream-id` and `x-ttl`,
+it never appears on the wire. The public HTTP surface is standards-only: Server-Sent
+Events framing when the content type is `text/event-stream` (typed events, a terminal
+`done` event carrying trailing metadata, in-band `error` events, keep-alive comments),
+chunked transfer with JSON Lines otherwise. A streaming endpoint is declared with
+`stream: true` in rest.yaml, which checks out a dedicated ordered reply lane for the
+request's lifetime — a single-instance route (`async.http.response.stream.{n}`) drawn
+LIFO from a pool of 500 (the `async.http.response` concurrency), returned when the
+request context closes — the "ready" signal pattern of the reactive manager/worker
+design. All segments of one request ride its own lane (strict FIFO) while different
+requests stream concurrently through their own lanes; an exhausted pool rejects further
+streaming requests immediately with HTTP-503 (deterministic back-pressure, no
+configuration knob). The first event commits the response head; each
+arrival extends the idle timeout; stalls fail in-band; client disconnects turn late
+segments into no-op drops; a bounded drain-aware buffer guards slow clients. Responses
+without the marker are single-shot, exactly as before, and the legacy `x-stream-id`
+relay is untouched.
+
+**Rationale.** The prerequisite for AI-era workloads is progressive delivery over plain
+HTTP — SSE is the de facto wire for chat token streams (OpenAI, Anthropic, Gemini and
+every compatible server), agent progress protocols (MCP Streamable HTTP, A2A), and the
+live-watch window of long-running workflows. The alternative — building on the existing
+`Flux`/`x-stream-id` relay — was rejected: the producer API is Reactor-typed and
+JVM-only (invisible to Event Script, knowledge graphs, and the polyglot wrappers, which
+is exactly where LLM tokens will come from), structured segments buffered at the edge
+instead of streaming, and the relay has no SSE framing or in-band terminal events. The
+multi-shot reply route adds no new substrate — anything that can send an envelope to a
+route can stream, which keeps the mechanism language-neutral by construction: flow
+tasks, graph nodes, and Event-over-HTTP peers join by sending the same envelopes. A
+custom HTTP header was rejected in favor of the envelope marker so the wire stays fully
+standard (RFC 6648 discourages new X- wire headers; the envelope already has a reserved
+x- vocabulary).
+
 ## ADR-0017 — Spring Boot integration targets Boot 4 only; the Boot 3 lane is retired {#adr-0017}
 **Status:** Proposed · **Date:** 2026-08-27 · **Serves:** vision-mercury-composable · **Formalizes:** stack-integration-spring-boot4
 <!-- id: adr-0017 | status: proposed -->

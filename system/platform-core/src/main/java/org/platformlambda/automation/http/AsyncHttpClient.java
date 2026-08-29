@@ -64,6 +64,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void> {
     public static final String ASYNC_HTTP_REQUEST = "async.http.request";
     public static final String ASYNC_HTTP_RESPONSE = "async.http.response";
+    // ordered reply-lane family for streaming responses: a pool of single-instance lanes
+    // (async.http.response.stream.{n}) - a request pins to one lane by hash, so its
+    // segment order is guaranteed while different requests stream concurrently
+    public static final String ASYNC_HTTP_RESPONSE_STREAM_PREFIX = "async.http.response.stream.";
     private static final Logger log = LoggerFactory.getLogger(AsyncHttpClient.class);
     private static final AtomicBoolean loaded = new AtomicBoolean(false);
     private static final long HOUSEKEEPING_INTERVAL = 30 * 1000L;    // 30 seconds

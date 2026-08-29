@@ -45,6 +45,7 @@ public class RoutingEntry {
     private static final String AUTHENTICATION = "authentication";
     private static final String UPLOAD = "upload";
     private static final String TRACING = "tracing";
+    private static final String STREAM = "stream";
     // optional per-endpoint overrides of the global http.trace.id.header / http.correlation.id.header
     // / http.traceparent.header
     private static final String TRACE_ID_HEADER = "trace.id.header";
@@ -506,6 +507,12 @@ public class RoutingEntry {
         String tracing = config.getProperty(REST+"["+idx+"]."+TRACING);
         if ("true".equalsIgnoreCase(tracing)) {
             info.tracing = true;
+        }
+        // streaming-response endpoint: the reply route is the ordered single-lane
+        // async.http.response.stream, so segment order is guaranteed end-to-end
+        String stream = config.getProperty(REST+"["+idx+"]."+STREAM);
+        if ("true".equalsIgnoreCase(stream)) {
+            info.streamResponse = true;
         }
         // optional per-endpoint header-name overrides; ConfigReader normalizes the dotted keys into
         // nested maps, so the composite paths below resolve them correctly

@@ -415,7 +415,9 @@ Please refer to [REST Automation](rest-automation/index.md) for details.
 
 - [Interop Test Report (Java ⇄ Rust)](../test-reports/event-over-http-interop.md) — the live
   bidirectional validation of both patterns, with span-level trace evidence.
-- [Polyglot Functions](polyglot-functions.md) — write the functions themselves in Python
+- [Polyglot Functions](polyglot-functions.md)
+- [HTTP Response Streaming](http-streaming.md) - stream token segments to the HTTP edge
+  by sending events to the caller's reply route — write the functions themselves in Python
   or Node.js and call them through this mechanism.
 - [Spring Boot Integration](spring-boot.md) — run Mercury in Spring Boot.
 - [Minimalist Service Mesh](service-mesh.md) — Kafka-based service discovery & routing.

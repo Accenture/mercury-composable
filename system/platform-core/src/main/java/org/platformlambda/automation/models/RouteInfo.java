@@ -35,6 +35,8 @@ public class RouteInfo {
     public List<String> methods;
     public int timeoutSeconds = 30;
     public boolean upload = false;
+    // streaming-response endpoint: replies ride the ordered single-lane return route
+    public boolean streamResponse = false;
     // optional for HTTP relay
     public String host;
     public String flowId;
