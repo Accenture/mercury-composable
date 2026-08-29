@@ -32,6 +32,11 @@ public class AsyncContextHolder {
     public String method;
     public String cidHeaderName;
     public String businessCorrelationId;
+    // present when the response is a multi-shot event stream (x-event-stream)
+    public EventStreamState eventStream;
+    // the dedicated reply lane checked out for a streaming endpoint; volatile because
+    // the housekeeper reads it from another thread; returned to the pool at context close
+    public volatile String streamLane;
 
     public AsyncContextHolder(HttpServerRequest request) {
         this.request = request;
@@ -64,10 +69,9 @@ public class AsyncContextHolder {
         return this;
     }
 
-    public AsyncContextHolder setCorrelation(String cidHeaderName, String businessCorrelationId) {
+    public void setCorrelation(String cidHeaderName, String businessCorrelationId) {
         this.cidHeaderName = cidHeaderName;
         this.businessCorrelationId = businessCorrelationId;
-        return this;
     }
 
     public void touch() {

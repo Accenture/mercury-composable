@@ -32,6 +32,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.platformlambda.automation.http.AsyncHttpClient;
+import org.platformlambda.automation.service.MockEventStreamService;
 import org.platformlambda.automation.service.MockHelloWorld;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
@@ -92,6 +93,9 @@ public class TestBase {
             log.info("Mock cloud ready");
             Platform platform = Platform.getInstance();
             platform.registerPrivate(HELLO_MOCK, new MockHelloWorld(), 10);
+            // streaming-response producer (multi-shot reply route) for EventStreamResponseTest -
+            // registered before endpoint rendering so the rest.yaml existence check passes
+            platform.registerPrivate("hello.event.stream", new MockEventStreamService(), 10);
             // test registering the same function with an alias route name
             // hello.list is a special function to test returning result set as a list
             platform.registerPrivate(HELLO_LIST, (headers, input, instance) ->

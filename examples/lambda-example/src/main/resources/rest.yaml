@@ -76,13 +76,22 @@ rest:
     headers: header_1
     tracing: true
 
-  - service: "hello.download"
+  #
+  # Progressive result set rendering (HTTP response streaming) demo.
+  # "stream: true" gives the request a dedicated ordered reply lane so the
+  # "hello.sse" function can stream test messages slowly as Server-Sent Events.
+  # Query parameters are place-holders for documentation purpose only.
+  #
+  # Try it with the companion script: node scripts/sse-client.mjs
+  #
+  - service: "hello.sse"
     methods: ['GET']
-    url: "/api/hello/download"
-    timeout: 20s
+    url: "/api/hello/sse?delay=_&count=_"
+    timeout: 30s
     cors: cors_1
     headers: header_1
     tracing: true
+    stream: true
 
   - service: "hello.upload"
     methods: ['POST']
@@ -113,7 +122,7 @@ rest:
     methods: ['GET', 'PUT', 'POST']
     url: "/api/v1/*"
     url_rewrite: ['/api/v1', '/api']
-    timeout: 20
+    timeout: 20s
     cors: cors_1
     headers: header_1
     tracing: true

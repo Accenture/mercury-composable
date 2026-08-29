@@ -80,6 +80,12 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
             return null;
         }
         holder.touch();
+        // multi-shot streaming response? (x-event-stream: data | eof | exception)
+        String streamSignal = EventStreamRenderer.getSignal(event);
+        if (streamSignal != null && !HEAD.equals(holder.method)) {
+            EventStreamRenderer.handle(requestId, holder, event, streamSignal);
+            return null;
+        }
         HttpServerResponse response = holder.request.response();
         setBusinessCorrelationIdHeader(response, holder);
         boolean isHeadMethod = HEAD.equals(holder.method);

@@ -21,6 +21,17 @@ rest:
   #
   # This feature is used for seamless legacy system migration where we can send
   # the same request to the old and the new services at the same time for A/B comparison.
+  #
+  # Streaming response endpoint (multi-shot reply route).
+  # "stream: true" assigns the ordered single-lane return route so that
+  # token segments render in the exact order the callee sent them.
+  #
+  - service: "hello.event.stream"
+    methods: ['GET']
+    url: "/api/hello/stream"
+    timeout: 15s
+    stream: true
+    headers: header_2
   - service: ["hello.mock"]
     methods: ['GET', 'PUT', 'POST', 'HEAD', 'PATCH', 'DELETE']
     url: "/api/hello/world"
@@ -224,6 +235,13 @@ cors:
 # add/drop/keep HTTP request and response headers
 #
 headers:
+  # response header transform for the streaming endpoint - the streamed head must
+  # honor add/drop exactly as a single-shot response would
+  - id: header_2
+    response:
+      add: ["x-stream-transform: applied"]
+      drop: ['x-secret-header']
+
   - id: header_1
     request:
       #
