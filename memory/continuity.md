@@ -416,7 +416,9 @@
   **P4 COMPLETE across all four repos.** Remaining: P5 publishing gates only —
   the version strategy is RESOLVED (both wrappers joined the engine lock-step line at
   v4.12.0, 2026-08-30, clearing the legacy npm 4.3.x); the npm/PyPI publish acts stay
-  Eric's calls (PyPI name availability still to verify);
+  Eric's calls and are SEQUENCED (Eric, 2026-08-30): package publication happens after
+  the first iteration of the AI SDLC feature completes ([[bp-agent-orchestration]];
+  PyPI name availability still to verify at publish time);
   optional extras offered: a live Rust-engine→wrapper drive; Rust layer-tab label
   parity ("Event Script" vs "Composable"). Design record: [[polyglot-event-over-http-design]]; serves
   [[bp-polyglot-functions]]. Full detail: origin log + 2026-08-24-170545.
