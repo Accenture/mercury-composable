@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-29 | agent: Claude Code (2026-08-29-231510)
+- **last_session:** 2026-08-30 | agent: Claude Code (2026-08-30-004122)
 - **last_review:** 2026-08-27 | through 2026-08-27-213034.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -241,13 +241,15 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
 ## Open Threads
 
-- [ ] (feature — **Phase 2 (Java) MERGED 2026-08-29 as
+- [ ] (feature — **Phases 1+2 COMPLETE BOTH ENGINES: Java Phase 2 MERGED 2026-08-29 as
   [PR #301](https://github.com/Accenture/mercury-composable/pull/301) squash `894822a5`
-  == gated `0d8b28ee`; Phase 1 done BOTH engines (Java
+  == gated `0d8b28ee`, Rust twin MERGED 2026-08-30 as
+  [PR #218](https://github.com/Accenture/mercury/pull/218) merge `1723ace6` carrying
+  `54436ca4`; Phase 1 both engines (Java
   [PR #300](https://github.com/Accenture/mercury-composable/pull/300) squash `1410c33f`,
-  Rust twin [PR #217](https://github.com/Accenture/mercury/pull/217) merge `ec4c2702`);
-  ADR-0018/0019 flipped ACCEPTED in #301; next = Rust twin of Phase 2, then Phase 3
-  wrapper twins**) **SSE consumption in AsyncHttpClient + Event-over-HTTP peer
+  Rust [PR #217](https://github.com/Accenture/mercury/pull/217) merge `ec4c2702`);
+  ADR-0018/0019 (Java) + ADR-0015/0016 (Rust) all ACCEPTED; next = Phase 3
+  wrapper twins in mercury-python/mercury-nodejs**) **SSE consumption in AsyncHttpClient + Event-over-HTTP peer
   streaming (option 2).** Closes the two post-edge gaps: engine consuming LLM-provider
   token streams (Phase 1, raw mode), and peer functions streaming to the engine
   (Phase 2, envelope mode) — ONE mechanism through AsyncHttpClient. D1–D9 + the
