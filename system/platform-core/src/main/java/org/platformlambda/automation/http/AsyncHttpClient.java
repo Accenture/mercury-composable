@@ -68,11 +68,11 @@ import java.util.concurrent.locks.ReentrantLock;
 public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void> {
     public static final String ASYNC_HTTP_REQUEST = "async.http.request";
     public static final String ASYNC_HTTP_RESPONSE = "async.http.response";
-    // ordered reply-lane family for streaming responses: a pool of single-instance lanes
-    // (async.http.response.stream.{n}) - a streaming request checks out one dedicated
+    // ordered reply-lane family for streaming responses: a route pool of single-instance
+    // lanes (async.http.response.stream.{n}) - a streaming request checks out one dedicated
     // lane for its lifetime, so its segment order is guaranteed while different
     // requests stream concurrently through their own lanes
-    public static final String ASYNC_HTTP_RESPONSE_STREAM_PREFIX = "async.http.response.stream.";
+    public static final String ASYNC_HTTP_RESPONSE_STREAM_POOL = "async.http.response.stream";
     private static final Logger log = LoggerFactory.getLogger(AsyncHttpClient.class);
     private static final AtomicBoolean loaded = new AtomicBoolean(false);
     private static final long HOUSEKEEPING_INTERVAL = 30 * 1000L;    // 30 seconds

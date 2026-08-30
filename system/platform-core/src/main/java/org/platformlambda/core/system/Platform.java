@@ -60,6 +60,9 @@ public class Platform {
     private static final AtomicBoolean LOADED = new AtomicBoolean(false);
     private static final ReentrantLock SAFETY1 = new ReentrantLock();
     private static final ReentrantLock SAFETY2 = new ReentrantLock();
+    // route pools (prefix -> lane count): lifecycle metadata only, never consulted for routing
+    private static final ConcurrentMap<String, Integer> poolRegistry = new ConcurrentHashMap<>();
+    private static final ReentrantLock POOL_LOCK = new ReentrantLock();
     private static String originId;
     private static String appId;
     private static Vertx vertx;
@@ -558,6 +561,7 @@ public class Platform {
             throw new IllegalArgumentException("Missing LambdaFunction instance");
         }
         String path = getValidatedRoute(route);
+        warnIfPoolMember("Registering", path);
         if (registry.containsKey(path)) {
             log.warn("{} LambdaFunction {}", RELOADING, path);
             release(path);
@@ -573,43 +577,131 @@ public class Platform {
     }
 
     /**
-     * Register a public stream function
-     *
-     * @param route name of the service
-     * @param lambda function
-     * @throws IllegalArgumentException if the route name is invalid
-     */
-    public void registerStream(String route, StreamFunction lambda) {
-        registerStream(route, lambda, false);
-    }
-
-    /**
      * Register a private stream function
      *
      * @param route name of the service
      * @param lambda function
      * @throws IllegalArgumentException if the route name is invalid
      */
-    public void registerPrivateStream(String route, StreamFunction lambda) {
-        registerStream(route, lambda, true);
-    }
-
-    private void registerStream(String route, StreamFunction lambda, boolean isPrivate) {
+    public void registerStream(String route, StreamFunction lambda) {
         if (lambda == null) {
             throw new IllegalArgumentException("Missing StreamFunction instance");
         }
         String path = getValidatedRoute(route);
+        warnIfPoolMember("Registering", path);
         if (registry.containsKey(path)) {
             log.warn("{} StreamFunction {}", RELOADING, path);
             release(path);
         }
-        ServiceDef service = new ServiceDef(path, lambda).setConcurrency(1).setPrivate(isPrivate);
+        ServiceDef service = new ServiceDef(path, lambda).setConcurrency(1).setPrivate(true);
         ServiceQueue manager = new ServiceQueue(service);
         service.setManager(manager);
         registry.put(path, service);
-        if (!isPrivate) {
-            advertiseRoute(route);
+    }
+
+    /**
+     * Register a route pool - a set of private singleton routes "{prefix}.{n}" for n = 0 to count-1.
+     * Each member runs with instances=1 so it is a strict FIFO lane; a caller may check out a lane
+     * for exclusive use to preserve event order while other lanes serve concurrent traffic.
+     * One lambda instance is shared across all members - the function must be stateless,
+     * the same contract as a multi-instance function.
+     * <p>
+     * Registering an existing pool RELOADS it: the previous member set is released first,
+     * with a warning in the application log. This API covers registration only -
+     * lane checkout and return are the caller's concern. Route pools are always private.
+     *
+     * @param prefix route name base in canonical form, e.g. "async.http.response.stream"
+     * @param lambda function shared by all members of the pool
+     * @param count number of lanes, at least 1
+     * @return the generated member routes in order
+     * @throws IllegalArgumentException for missing lambda, count less than 1 or an invalid prefix
+     */
+    public List<String> registerRoutePool(String prefix, TypedLambdaFunction<?, ?> lambda, int count) {
+        if (lambda == null) {
+            throw new IllegalArgumentException("Missing LambdaFunction instance");
         }
+        if (count < 1) {
+            throw new IllegalArgumentException("Route pool count must be at least 1");
+        }
+        // the prefix must be canonical so the generated names are exactly "{prefix}.{n}" -
+        // silent name filtering would break the returned member-list contract
+        String probe = prefix + ".0";
+        if (!probe.equals(getValidatedRoute(probe))) {
+            throw new IllegalArgumentException(INVALID_ROUTE + prefix + " - route pool prefix must be canonical");
+        }
+        POOL_LOCK.lock();
+        try {
+            Integer previous = poolRegistry.remove(prefix);
+            if (previous != null) {
+                log.warn("{} route pool {} ({} -> {} lanes)", RELOADING, prefix, previous, count);
+                releasePoolMembers(prefix, previous);
+            }
+            List<String> members = new ArrayList<>(count);
+            for (int n = 0; n < count; n++) {
+                String member = prefix + "." + n;
+                register(member, lambda, true, 1);
+                members.add(member);
+            }
+            poolRegistry.put(prefix, count);
+            return members;
+        } finally {
+            POOL_LOCK.unlock();
+        }
+    }
+
+    /**
+     * Release a route pool - removes all its members and the pool itself
+     *
+     * @param prefix route name base of the pool
+     * @return true if the pool existed and was released
+     */
+    public boolean releaseRoutePool(String prefix) {
+        POOL_LOCK.lock();
+        try {
+            // remove the pool entry first so the member release calls below are not
+            // reported as individual updates to an active pool
+            Integer count = poolRegistry.remove(prefix);
+            if (count == null) {
+                return false;
+            }
+            releasePoolMembers(prefix, count);
+            return true;
+        } finally {
+            POOL_LOCK.unlock();
+        }
+    }
+
+    private void releasePoolMembers(String prefix, int count) {
+        for (int n = 0; n < count; n++) {
+            release(prefix + "." + n);
+        }
+    }
+
+    private void warnIfPoolMember(String action, String route) {
+        String pool = getPoolOf(route);
+        if (pool != null) {
+            log.warn("{} {} which belongs to route pool {}", action, route, pool);
+        }
+    }
+
+    private String getPoolOf(String route) {
+        int dot = route.lastIndexOf('.');
+        if (dot > 0) {
+            String prefix = route.substring(0, dot);
+            Integer count = poolRegistry.get(prefix);
+            if (count != null) {
+                String suffix = route.substring(dot + 1);
+                // a member's suffix is canonical digits (no leading zeros) within the pool's range
+                if (!suffix.isEmpty() && suffix.length() < 10 &&
+                        suffix.chars().allMatch(Character::isDigit)) {
+                    int n = Utility.getInstance().str2int(suffix);
+                    if (suffix.equals(String.valueOf(n)) && n < count) {
+                        return prefix;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private String getValidatedRoute(String route) {
@@ -658,6 +750,7 @@ public class Platform {
      */
     public boolean release(String route) {
         if (route != null && registry.containsKey(route)) {
+            warnIfPoolMember("Releasing", route);
             ServiceDef def = registry.get(route);
             if (!def.isPrivate()) {
                 TargetRoute cloud = EventEmitter.getInstance().getCloudRoute();

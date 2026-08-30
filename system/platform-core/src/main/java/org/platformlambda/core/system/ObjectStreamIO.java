@@ -102,7 +102,7 @@ public class ObjectStreamIO {
         StreamConsumer consumer = new StreamConsumer(publisher, in, out);
         platform.registerPrivate(in, consumer, 1);
         streams.put(in, new StreamInfo(expirySeconds));
-        platform.registerPrivateStream(out, publisher);
+        platform.registerStream(out, publisher);
         String timer = util.elapsedTime(expirySeconds * 1000L);
         log.debug("Stream {} created, idle expiry {}", id, timer);
     }
@@ -270,13 +270,5 @@ public class ObjectStreamIO {
         }
     }
 
-    private static class CallBackReference {
-        final String cb;
-        final String cid;
-
-        public CallBackReference(String cb, String cid) {
-            this.cb = cb;
-            this.cid = cid;
-        }
-    }
+    private record CallBackReference(String cb, String cid) { }
 }
