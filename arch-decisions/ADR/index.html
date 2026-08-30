@@ -2035,6 +2035,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0020" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0020 — Route pools: numbered singleton lanes as a first-class platform registration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0019" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2762,6 +2773,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0020" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0020 — Route pools: numbered singleton lanes as a first-class platform registration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0019" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3008,6 +3030,42 @@ governing the codebase — verified against the source (<code>platform-core</cod
 <code>event-script-engine</code>, <code>minigraph-playground-engine</code>) and the published guides, which are
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
+<hr />
+<h2 id="adr-0020">ADR-0020 — Route pools: numbered singleton lanes as a first-class platform registration<a class="headerlink" href="#adr-0020" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-30 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> route-pool-registration-design</p>
+<!-- id: adr-0020 | status: proposed -->
+
+<p><strong>Abstract.</strong> <code>Platform.registerRoutePool(prefix, lambda, count)</code> registers a set of
+private singleton routes <code>{prefix}.{n}</code> for n = 0 to count-1 and returns the member
+names in order; <code>releaseRoutePool(prefix)</code> removes the set symmetrically. Each member is
+a strict FIFO lane (instances=1, one shared stateless lambda), so a caller that checks
+out a lane gets per-conversation event ordering while other lanes serve concurrent
+traffic — the pattern the HTTP edge's SSE reply lanes (<code>async.http.response.stream.{n}</code>)
+introduced, promoted from an open-coded loop in AppStarter to a platform API with
+registry-level identity (a pool registry mapping prefix to lane count). Pools are always
+private: lane checkout is an in-process rendezvous, so advertising members to the
+service mesh would be meaningless. Registering an existing pool reloads it (the previous
+member set is released first, house reload semantics); individual register/release calls
+that touch a pool member are warned, never refused — range-checked, so a neighbor route
+such as <code>{prefix}.10</code> beside a count-3 pool is never misclassified. Pool mutations are
+atomic under a <code>ReentrantLock</code> (virtual-thread-friendly on Java 21).
+<code>getLocalRoutingTable()</code> is deliberately untouched: it remains the truthful live
+registry consumed by mesh route advertising and Spring autowiring; the compact pool
+rendering stays display-only in the actuator (<code>compressRouteFamilies</code>).</p>
+<p><strong>Rationale.</strong> The v4.12.0 streaming milestone shipped the lane-pool pattern without an
+abstraction: 500 <code>registerPrivate</code> calls, no release counterpart, and no way for the
+platform to tell a pool from 500 coincidentally numbered routes; upcoming consumers
+(graph-run streaming, wrapper relay pools under the AI SDLC work) would each re-open-code
+it. Alternatives rejected: naming the API <code>registerStreams</code> (one character from the
+existing <code>registerStream(String, StreamFunction)</code> with entirely different semantics —
+and the abstraction is a pool of ordered lanes, not a stream); collapsing pool members
+inside <code>getLocalRoutingTable()</code> (the collapsed display key is not a valid route name,
+and the table has functional consumers — the Kafka mesh advertises from it, rest-spring-4
+autowires from it); an <code>isPrivate</code> flag (no remote use case exists, and the platform
+expresses privacy as method pairs, never booleans); renaming the lane family to
+<code>http.response.stream.{n}</code> (the lanes are sibling instances of <code>async.http.response</code> —
+renaming the child while the parent stays would split the <code>async.http.*</code> namespace
+family, and the name already shipped in traces, actuator views and docs).</p>
 <hr />
 <h2 id="adr-0019">ADR-0019 — The HTTP client consumes SSE progressively; Event-over-HTTP streams on the same call<a class="headerlink" href="#adr-0019" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-08-29 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> async-http-client-sse-streaming-design</p>
