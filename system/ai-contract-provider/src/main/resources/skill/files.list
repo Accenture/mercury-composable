@@ -52,4 +52,5 @@ references/guides/sync-over-async.md
 references/guides/twin-kafka.md
 references/index.md
 references/test-reports/event-over-http-interop.md
+references/test-reports/progressive-rendering-interop.md
 security.json
