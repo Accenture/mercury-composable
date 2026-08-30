@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-30 | agent: Claude Code (2026-08-30-004122)
+- **last_session:** 2026-08-30 | agent: Claude Code (2026-08-30-050040)
 - **last_review:** 2026-08-27 | through 2026-08-27-213034.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -175,6 +175,16 @@
   `model` via the `*` passthrough. Distilled from the sync-over-async composable refactoring (2026-06-27,
   Claude Code). (ADR-0007)
   <!-- id: event-script-over-code | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
+- **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
+  the instance does not host answers 404 even when the instance's own
+  `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
+  Forwarding would make every app an Event-over-HTTP relay and open routing loops; the
+  `x-event-api` wire marker is the existing loop guard (an event that crossed the wire
+  once is never re-forwarded), the map is caller-side knowledge (not a promise to third
+  parties), and deliberate hop-through is an explicit relay function (demo:
+  `hello.remote.relay`). Recorded in the progressive-rendering interop report.
+  <!-- id: event-api-local-routes-only | created: 2026-08-30 | last_used: 2026-08-30 | uses: 1 | tier: core | origin: 2026-08-30-050040 -->
+
 ## Conventions
 
 - **Telemetry/log presentation parity across language engines is a field requirement (Eric,
@@ -241,15 +251,37 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
 ## Open Threads
 
-- [ ] (feature — **Phases 1+2 COMPLETE BOTH ENGINES: Java Phase 2 MERGED 2026-08-29 as
+- [x] (release+feature — **MERGED ALL FOUR REPOS 2026-08-30: the v4.12.0
+  progressive-rendering milestone.** Java
+  [PR #302](https://github.com/Accenture/mercury-composable/pull/302) squash `6e034293`
+  == gated `ee23d8fc`; Rust [PR #219](https://github.com/Accenture/mercury/pull/219)
+  merge `bc1a9fd2`; python [PR #21](https://github.com/Accenture/mercury-python/pull/21)
+  merge `bfca7e4`; node [PR #90](https://github.com/Accenture/mercury-nodejs/pull/90)
+  merge `40a9f8f` — trees verified, titles clean, branches deleted; wrappers jumped
+  0.1.0 → 4.12.0 onto the lock-step line, resolving the P5 version question; the
+  npm/PyPI publish acts remain Eric-gated) **Progressive rendering complete: wrapper
+  streaming twins + telemetry program (span lineage, business-cid continuity,
+  app-log-context), engine demo relays, the interop report with the live matrix and
+  the telemetry/app-context appendix.** Lesson: the engines' telemetry model is the
+  parity contract — rpc-gate, touch stamping, sender fill, log-context template.
+  origin: 2026-08-30-050040.
+  <!-- id: ot-progressive-rendering-v4120 | created: 2026-08-30 | last_used: 2026-08-30 | uses: 1 | tier: working | origin: 2026-08-30-050040 -->
+
+- [x] (feature — **COMPLETE, ALL PHASES, ALL FOUR REPOS — shipped as the v4.12.0
+  milestone 2026-08-30 (Java [PR #302](https://github.com/Accenture/mercury-composable/pull/302)
+  squash `6e034293`, Rust [PR #219](https://github.com/Accenture/mercury/pull/219),
+  python [PR #21](https://github.com/Accenture/mercury-python/pull/21), node
+  [PR #90](https://github.com/Accenture/mercury-nodejs/pull/90); wrappers joined the
+  lock-step line at 4.12.0). Phase 3 wrapper twins + telemetry program (span lineage,
+  business-cid continuity, app-log-context) + demo relay + interop report: origin log
+  2026-08-30-050040.** Java Phase 2 MERGED 2026-08-29 as
   [PR #301](https://github.com/Accenture/mercury-composable/pull/301) squash `894822a5`
   == gated `0d8b28ee`, Rust twin MERGED 2026-08-30 as
   [PR #218](https://github.com/Accenture/mercury/pull/218) merge `1723ace6` carrying
   `54436ca4`; Phase 1 both engines (Java
   [PR #300](https://github.com/Accenture/mercury-composable/pull/300) squash `1410c33f`,
   Rust [PR #217](https://github.com/Accenture/mercury/pull/217) merge `ec4c2702`);
-  ADR-0018/0019 (Java) + ADR-0015/0016 (Rust) all ACCEPTED; next = Phase 3
-  wrapper twins in mercury-python/mercury-nodejs**) **SSE consumption in AsyncHttpClient + Event-over-HTTP peer
+  ADR-0018/0019 (Java) + ADR-0015/0016 (Rust) all ACCEPTED**) **SSE consumption in AsyncHttpClient + Event-over-HTTP peer
   streaming (option 2).** Closes the two post-edge gaps: engine consuming LLM-provider
   token streams (Phase 1, raw mode), and peer functions streaming to the engine
   (Phase 2, envelope mode) — ONE mechanism through AsyncHttpClient. D1–D9 + the
@@ -380,8 +412,10 @@
   `references/guides/polyglot-functions.md` joined both files.list inventories (Java
   `8c89b1ad`, Rust `d278d8ae`) — new guide pages linked from packaged references must
   join the snapshot inventory on BOTH engines.
-  **P4 COMPLETE across all four repos.** Remaining: P5 publishing gates only
-  (npm version strategy vs legacy 4.3.28; PyPI name availability — Eric's calls);
+  **P4 COMPLETE across all four repos.** Remaining: P5 publishing gates only —
+  the version strategy is RESOLVED (both wrappers joined the engine lock-step line at
+  v4.12.0, 2026-08-30, clearing the legacy npm 4.3.x); the npm/PyPI publish acts stay
+  Eric's calls (PyPI name availability still to verify);
   optional extras offered: a live Rust-engine→wrapper drive; Rust layer-tab label
   parity ("Event Script" vs "Composable"). Design record: [[polyglot-event-over-http-design]]; serves
   [[bp-polyglot-functions]]. Full detail: origin log + 2026-08-24-170545.
