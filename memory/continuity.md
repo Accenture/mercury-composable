@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-30 | agent: Claude Code (2026-08-30-052948)
+- **last_session:** 2026-08-30 | agent: Claude Code (2026-08-30-211721)
 - **last_review:** 2026-08-27 | through 2026-08-27-213034.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -185,6 +185,22 @@
   `hello.remote.relay`). Recorded in the progressive-rendering interop report.
   <!-- id: event-api-local-routes-only | created: 2026-08-30 | last_used: 2026-08-30 | uses: 1 | tier: core | origin: 2026-08-30-050040 -->
 
+- **Route pools are a first-class platform registration (ADR-0020; Eric ratified D1–D10
+  2026-08-30).** `registerRoutePool(prefix, lambda, count)` = private singleton FIFO lanes
+  `{prefix}.0..{count-1}` returning the ordered member list; `releaseRoutePool` symmetric;
+  house RELOAD semantics on re-registration; mutation-time range-checked warnings in
+  register/registerStream/release (never refusals); mutations atomic under a ReentrantLock
+  (Eric: VT-friendly on Java 21). **`getLocalRoutingTable()` is a permanent non-goal for
+  display collapse** — it is the truthful live registry consumed by mesh advertising
+  (ServiceRegistry) and Spring autowiring (AppLoader); pool rendering stays display-only in
+  the actuator (`compressRouteFamilies`, shipped earlier). D10: the lane family KEEPS
+  `async.http.response.stream.{n}` (rename rejected — sibling of `async.http.response`).
+  Same-day follow-up (Eric): `registerStream` is private-only and `registerPrivateStream`
+  is removed (ObjectStreamIO is the exclusive mechanism; minor breaking — CHANGELOG
+  Unreleased carries the note). Spec: draft-design-specs/register-route-pool.md.
+  Delivered by [[ot-route-pool-api]].
+  <!-- id: route-pool-registration-design | created: 2026-08-30 | last_used: 2026-08-30 | uses: 1 | tier: working | origin: 2026-08-30-211721 -->
+
 ## Conventions
 
 - **Telemetry/log presentation parity across language engines is a field requirement (Eric,
@@ -250,6 +266,17 @@
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
 ## Open Threads
+
+- [x] (feature — **SHIPPED BOTH ENGINES 2026-08-30, rides the next release**: Java
+  [PR #303](https://github.com/Accenture/mercury-composable/pull/303) squash `b3741664`
+  == gated `fe3f4fff`; Rust [PR #220](https://github.com/Accenture/mercury/pull/220)
+  merge `9dea9182` carrying `d753d004`; trees verified, branches deleted both ends;
+  ADR-0020/ADR-0017 Accepted via the merges; CHANGELOG Unreleased in both repos —
+  Java follow-up `60b45ebe`) **Route pool platform API —
+  registerRoutePool/releaseRoutePool + SSE reply-lane adoption.** Lesson: `gh pr create`
+  is EMU-blocked — `--web` prefill works; PR-open stays Eric's gesture.
+  Design: [[route-pool-registration-design]]. origin: 2026-08-30-211721.
+  <!-- id: ot-route-pool-api | created: 2026-08-30 | last_used: 2026-08-30 | uses: 1 | tier: working | origin: 2026-08-30-211721 -->
 
 - [x] (release+feature — **SHIPPED AND PUBLISHED 2026-08-30: the v4.12.0
   progressive-rendering milestone, all four repos — releases PUBLISHED by Eric,
