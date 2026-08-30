@@ -23,8 +23,8 @@ in that ADR's own *Rationale* section.
 ---
 
 ## ADR-0020 — Route pools: numbered singleton lanes as a first-class platform registration {#adr-0020}
-**Status:** Proposed · **Date:** 2026-08-30 · **Serves:** vision-mercury-composable · **Formalizes:** route-pool-registration-design
-<!-- id: adr-0020 | status: proposed -->
+**Status:** Accepted · **Date:** 2026-08-30 · **Serves:** vision-mercury-composable · **Formalizes:** route-pool-registration-design
+<!-- id: adr-0020 | status: accepted -->
 
 **Abstract.** `Platform.registerRoutePool(prefix, lambda, count)` registers a set of
 private singleton routes `{prefix}.{n}` for n = 0 to count-1 and returns the member
