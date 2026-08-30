@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-30 | agent: Claude Code (2026-08-30-050040)
+- **last_session:** 2026-08-30 | agent: Claude Code (2026-08-30-052948)
 - **last_review:** 2026-08-27 | through 2026-08-27-213034.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -251,8 +251,9 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
 ## Open Threads
 
-- [x] (release+feature — **MERGED ALL FOUR REPOS 2026-08-30: the v4.12.0
-  progressive-rendering milestone.** Java
+- [x] (release+feature — **SHIPPED AND PUBLISHED 2026-08-30: the v4.12.0
+  progressive-rendering milestone, all four repos — releases PUBLISHED by Eric,
+  annotated tags dereference-verified (this repo v4.12.0 → `6e034293`).** Java
   [PR #302](https://github.com/Accenture/mercury-composable/pull/302) squash `6e034293`
   == gated `ee23d8fc`; Rust [PR #219](https://github.com/Accenture/mercury/pull/219)
   merge `bc1a9fd2`; python [PR #21](https://github.com/Accenture/mercury-python/pull/21)
