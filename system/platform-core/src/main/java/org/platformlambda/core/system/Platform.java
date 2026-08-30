@@ -577,7 +577,11 @@ public class Platform {
     }
 
     /**
-     * Register a private stream function
+     * Register a private stream function - this is used exclusively by the ObjectStreamIO module
+     * to publish a stream of objects (String, bytes or Map). Each object is stored in a queue
+     * that a consumer will reactively pull the next available object.<p>
+     *
+     * See StreamPublisher and StreamConsumer in ObjectStreamIO for the reactive mechanism.
      *
      * @param route name of the service
      * @param lambda function
