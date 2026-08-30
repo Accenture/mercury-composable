@@ -8,6 +8,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Added
+
+1. Route pool registration API `registerRoutePool` / `releaseRoutePool` - a set of
+   private singleton routes `{prefix}.{n}` (strict FIFO lanes sharing one stateless
+   function) with registry-level identity, symmetric release, reload semantics and
+   range-checked integrity warnings for individual member updates. The HTTP edge's
+   SSE reply-lane pool now registers through it (ADR-0020; lock-step with the Rust
+   engine).
+
+### Changed
+
+1. `registerStream` is now private-only and `registerPrivateStream` is removed - a
+   stream function's use case is always a private route (it is the ObjectStreamIO
+   publishing mechanism). Minor breaking for any application that registered a
+   public stream function.
+2. The unused constant `AsyncHttpClient.ASYNC_HTTP_RESPONSE_STREAM_PREFIX` is
+   removed; `ASYNC_HTTP_RESPONSE_STREAM_POOL` (the un-dotted pool base) replaces it.
+   Lane route names on the wire and in telemetry are unchanged.
+
+---
 ## Version 4.12.0, 8/30/2026
 
 The progressive-rendering milestone: token/event streaming end to end - HTTP edge,
