@@ -580,16 +580,13 @@ public class AppStarter {
             EventEmitter.getInstance().send(startupMonitor, "ready");
             platform.registerPrivate(AsyncHttpClient.ASYNC_HTTP_RESPONSE, new AsyncHttpResponse(contexts),
                                      RESPONSE_HANDLER_INSTANCES);
-            // streaming responses use a pool of dedicated single-instance reply lanes:
+            // streaming responses use a route pool of dedicated single-instance reply lanes:
             // a streaming request checks out one lane for its lifetime (strict FIFO for its
             // segments) and returns it when its context closes; the pool size matches the
             // async.http.response instances, and an idle lane costs only a little memory
-            var streamResponder = new AsyncHttpResponse(contexts);
-            for (int lane = 0; lane < RESPONSE_HANDLER_INSTANCES; lane++) {
-                String laneRoute = AsyncHttpClient.ASYNC_HTTP_RESPONSE_STREAM_PREFIX + lane;
-                platform.registerPrivate(laneRoute, streamResponder, 1);
-                EventStreamRenderer.releaseLane(laneRoute);
-            }
+            platform.registerRoutePool(AsyncHttpClient.ASYNC_HTTP_RESPONSE_STREAM_POOL,
+                            new AsyncHttpResponse(contexts), RESPONSE_HANDLER_INSTANCES)
+                    .forEach(EventStreamRenderer::releaseLane);
             // start timeout handler
             Housekeeper housekeeper = new Housekeeper(contexts);
             platform.getVertx().setPeriodic(HOUSEKEEPING_INTERVAL,

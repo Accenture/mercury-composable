@@ -22,6 +22,45 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0020 — Route pools: numbered singleton lanes as a first-class platform registration {#adr-0020}
+**Status:** Proposed · **Date:** 2026-08-30 · **Serves:** vision-mercury-composable · **Formalizes:** route-pool-registration-design
+<!-- id: adr-0020 | status: proposed -->
+
+**Abstract.** `Platform.registerRoutePool(prefix, lambda, count)` registers a set of
+private singleton routes `{prefix}.{n}` for n = 0 to count-1 and returns the member
+names in order; `releaseRoutePool(prefix)` removes the set symmetrically. Each member is
+a strict FIFO lane (instances=1, one shared stateless lambda), so a caller that checks
+out a lane gets per-conversation event ordering while other lanes serve concurrent
+traffic — the pattern the HTTP edge's SSE reply lanes (`async.http.response.stream.{n}`)
+introduced, promoted from an open-coded loop in AppStarter to a platform API with
+registry-level identity (a pool registry mapping prefix to lane count). Pools are always
+private: lane checkout is an in-process rendezvous, so advertising members to the
+service mesh would be meaningless. Registering an existing pool reloads it (the previous
+member set is released first, house reload semantics); individual register/release calls
+that touch a pool member are warned, never refused — range-checked, so a neighbor route
+such as `{prefix}.10` beside a count-3 pool is never misclassified. Pool mutations are
+atomic under a `ReentrantLock` (virtual-thread-friendly on Java 21).
+`getLocalRoutingTable()` is deliberately untouched: it remains the truthful live
+registry consumed by mesh route advertising and Spring autowiring; the compact pool
+rendering stays display-only in the actuator (`compressRouteFamilies`).
+
+**Rationale.** The v4.12.0 streaming milestone shipped the lane-pool pattern without an
+abstraction: 500 `registerPrivate` calls, no release counterpart, and no way for the
+platform to tell a pool from 500 coincidentally numbered routes; upcoming consumers
+(graph-run streaming, wrapper relay pools under the AI SDLC work) would each re-open-code
+it. Alternatives rejected: naming the API `registerStreams` (one character from the
+existing `registerStream(String, StreamFunction)` with entirely different semantics —
+and the abstraction is a pool of ordered lanes, not a stream); collapsing pool members
+inside `getLocalRoutingTable()` (the collapsed display key is not a valid route name,
+and the table has functional consumers — the Kafka mesh advertises from it, rest-spring-4
+autowires from it); an `isPrivate` flag (no remote use case exists, and the platform
+expresses privacy as method pairs, never booleans); renaming the lane family to
+`http.response.stream.{n}` (the lanes are sibling instances of `async.http.response` —
+renaming the child while the parent stays would split the `async.http.*` namespace
+family, and the name already shipped in traces, actuator views and docs).
+
+---
+
 ## ADR-0019 — The HTTP client consumes SSE progressively; Event-over-HTTP streams on the same call {#adr-0019}
 **Status:** Accepted · **Date:** 2026-08-29 · **Serves:** vision-mercury-composable · **Formalizes:** async-http-client-sse-streaming-design
 <!-- id: adr-0019 | status: accepted -->
