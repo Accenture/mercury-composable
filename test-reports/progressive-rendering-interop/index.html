@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://accenture.github.io/mercury-composable/test-reports/event-over-http-interop/">
+        <link rel="canonical" href="https://accenture.github.io/mercury-composable/test-reports/progressive-rendering-interop/">
       
       
-        <link rel="prev" href="../../guides/registration-metadata-contract/">
+        <link rel="prev" href="../event-over-http-interop/">
       
       
-        <link rel="next" href="../progressive-rendering-interop/">
+        <link rel="next" href="../suspend-resume-interop/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Interop Test Report — Event over HTTP, Java ⇄ Rust - Composable for Java</title>
+        <title>Interop Test Report — Progressive Rendering, all four runtimes - Composable for Java</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#interop-test-report-event-over-http-java-rust" class="md-skip">
+        <a href="#interop-test-report-progressive-rendering-all-four-runtimes" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Interop Test Report — Event over HTTP, Java ⇄ Rust
+              Interop Test Report — Progressive Rendering, all four runtimes
             
           </span>
         </div>
@@ -2168,6 +2168,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../event-over-http-interop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interop Test Report (Java ⇄ Rust)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -2187,7 +2215,7 @@
   <span class="md-ellipsis">
     
   
-    Interop Test Report (Java ⇄ Rust)
+    Interop Test Report — Progressive Rendering
   
 
     
@@ -2205,7 +2233,7 @@
   <span class="md-ellipsis">
     
   
-    Interop Test Report (Java ⇄ Rust)
+    Interop Test Report — Progressive Rendering
   
 
     
@@ -2231,10 +2259,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#background-the-wire-format-validation-drive" class="md-nav__link">
+  <a href="#the-contract-under-test" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Background: the wire-format validation drive
+        The contract under test
       
     </span>
   </a>
@@ -2242,10 +2270,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#this-drive-the-two-calling-patterns-both-directions" class="md-nav__link">
+  <a href="#the-live-matrix" class="md-nav__link">
     <span class="md-ellipsis">
       
-        This drive: the two calling patterns, both directions
+        The live matrix
       
     </span>
   </a>
@@ -2253,10 +2281,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#results-functionality-66-pass" class="md-nav__link">
+  <a href="#engine-engine-and-per-runtime-coverage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Results — functionality: 6/6 pass
+        Engine ⇄ engine and per-runtime coverage
       
     </span>
   </a>
@@ -2264,10 +2292,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#results-trace-continuity" class="md-nav__link">
+  <a href="#trace-continuity-opentelemetry-span-parent-span-verification" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Results — trace continuity
+        Trace continuity (OpenTelemetry span / parent-span verification)
       
     </span>
   </a>
@@ -2275,10 +2303,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#findings-and-resolution" class="md-nav__link">
+  <a href="#business-correlation-id-continuity" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Findings and resolution
+        Business correlation-id continuity
       
     </span>
   </a>
@@ -2286,10 +2314,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#verdict" class="md-nav__link">
+  <a href="#defects-surfaced-by-the-round-fixed-and-re-verified" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Verdict
+        Defects surfaced by the round (fixed and re-verified)
       
     </span>
   </a>
@@ -2297,149 +2325,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-presentation-parity-drive-2026-07-23" class="md-nav__link">
+  <a href="#reproduce" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The presentation-parity drive (2026-07-23)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="The presentation-parity drive (2026-07-23)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#method-a-normalized-reference-signature" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Method: a normalized reference signature
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#reaching-the-bar-required-refactoring-not-patching" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reaching the bar required refactoring, not patching
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#result-empty-diff-in-all-four-directions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Result: empty diff in all four directions
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-metadata-hardening-round-2026-07-23" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The metadata-hardening round (2026-07-23)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="The metadata-hardening round (2026-07-23)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#regression-re-test-the-refactor-is-observably-invisible" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Regression re-test: the refactor is observably invisible
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-configurable-traceparent-round-2026-07-24" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The configurable-traceparent round (2026-07-24)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="The configurable-traceparent round (2026-07-24)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#results-the-feature-is-correct-and-symmetric" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Results — the feature is correct and symmetric
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#findings-pre-existing-surfaces-exposed-by-the-matrix-not-caused-by-the-feature" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Findings — pre-existing surfaces exposed by the matrix (not caused by the feature)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#verdict_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Verdict
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#resolution-the-hygiene-round-2026-07-24-ships-in-v4104" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Resolution — the hygiene round (2026-07-24, ships in v4.10.4)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-polyglot-wrapper-round-2026-08-22" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The polyglot wrapper round (2026-08-22)
+        Reproduce
       
     </span>
   </a>
@@ -2447,10 +2336,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#learnings-for-future-language-ports" class="md-nav__link">
+  <a href="#appendix-telemetry-and-app-context-example-live-capture" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Learnings for future language ports
+        Appendix - telemetry and app context example (live capture)
       
     </span>
   </a>
@@ -2461,34 +2350,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../progressive-rendering-interop/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Interop Test Report — Progressive Rendering
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -2780,10 +2641,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#background-the-wire-format-validation-drive" class="md-nav__link">
+  <a href="#the-contract-under-test" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Background: the wire-format validation drive
+        The contract under test
       
     </span>
   </a>
@@ -2791,10 +2652,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#this-drive-the-two-calling-patterns-both-directions" class="md-nav__link">
+  <a href="#the-live-matrix" class="md-nav__link">
     <span class="md-ellipsis">
       
-        This drive: the two calling patterns, both directions
+        The live matrix
       
     </span>
   </a>
@@ -2802,10 +2663,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#results-functionality-66-pass" class="md-nav__link">
+  <a href="#engine-engine-and-per-runtime-coverage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Results — functionality: 6/6 pass
+        Engine ⇄ engine and per-runtime coverage
       
     </span>
   </a>
@@ -2813,10 +2674,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#results-trace-continuity" class="md-nav__link">
+  <a href="#trace-continuity-opentelemetry-span-parent-span-verification" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Results — trace continuity
+        Trace continuity (OpenTelemetry span / parent-span verification)
       
     </span>
   </a>
@@ -2824,10 +2685,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#findings-and-resolution" class="md-nav__link">
+  <a href="#business-correlation-id-continuity" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Findings and resolution
+        Business correlation-id continuity
       
     </span>
   </a>
@@ -2835,10 +2696,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#verdict" class="md-nav__link">
+  <a href="#defects-surfaced-by-the-round-fixed-and-re-verified" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Verdict
+        Defects surfaced by the round (fixed and re-verified)
       
     </span>
   </a>
@@ -2846,149 +2707,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-presentation-parity-drive-2026-07-23" class="md-nav__link">
+  <a href="#reproduce" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The presentation-parity drive (2026-07-23)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="The presentation-parity drive (2026-07-23)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#method-a-normalized-reference-signature" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Method: a normalized reference signature
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#reaching-the-bar-required-refactoring-not-patching" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reaching the bar required refactoring, not patching
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#result-empty-diff-in-all-four-directions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Result: empty diff in all four directions
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-metadata-hardening-round-2026-07-23" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The metadata-hardening round (2026-07-23)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="The metadata-hardening round (2026-07-23)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#regression-re-test-the-refactor-is-observably-invisible" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Regression re-test: the refactor is observably invisible
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-configurable-traceparent-round-2026-07-24" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The configurable-traceparent round (2026-07-24)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="The configurable-traceparent round (2026-07-24)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#results-the-feature-is-correct-and-symmetric" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Results — the feature is correct and symmetric
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#findings-pre-existing-surfaces-exposed-by-the-matrix-not-caused-by-the-feature" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Findings — pre-existing surfaces exposed by the matrix (not caused by the feature)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#verdict_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Verdict
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#resolution-the-hygiene-round-2026-07-24-ships-in-v4104" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Resolution — the hygiene round (2026-07-24, ships in v4.10.4)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-polyglot-wrapper-round-2026-08-22" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The polyglot wrapper round (2026-08-22)
+        Reproduce
       
     </span>
   </a>
@@ -2996,10 +2718,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#learnings-for-future-language-ports" class="md-nav__link">
+  <a href="#appendix-telemetry-and-app-context-example-live-capture" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Learnings for future language ports
+        Appendix - telemetry and app context example (live capture)
       
     </span>
   </a>
@@ -3026,573 +2748,388 @@
   
 
 
-<h1 id="interop-test-report-event-over-http-java-rust">Interop Test Report — Event over HTTP, Java ⇄ Rust<a class="headerlink" href="#interop-test-report-event-over-http-java-rust" title="Permanent link">&para;</a></h1>
-<p><em>Live bidirectional interoperability validation between the Java engine
-(<a href="https://github.com/Accenture/mercury-composable">mercury-composable</a>) and the official
-Rust implementation (<a href="https://github.com/Accenture/mercury">mercury</a>): the wire-format and
-calling-pattern drives conducted 2026-07-22 as the release gate for the v4.10 line, and the
-telemetry presentation-parity drive conducted 2026-07-23.</em></p>
-<p>This report is a permanent record. It documents what was tested, the evidence collected,
-and — in the interest of honest engineering — the defects the drives surfaced and how each
-was fixed and re-verified. Everything here is reproducible from the shipped examples by
-following the <a href="../../guides/event-over-http/#zero-code-demo">Event over HTTP</a> walk-through.
-It is also kept as a <strong>playbook for future language ports</strong> — see the learnings section
-at the end; the <a href="#the-polyglot-wrapper-round-2026-08-22">polyglot wrapper round</a> records
-the playbook's first execution, bringing Python and Node.js into the family.</p>
-<h2 id="background-the-wire-format-validation-drive">Background: the wire-format validation drive<a class="headerlink" href="#background-the-wire-format-validation-drive" title="Permanent link">&para;</a></h2>
-<p>The first interop drive (2026-07-22, morning) validated the language-neutral
-<a href="../../guides/event-envelope-wire-format/">standard event envelope wire format</a> end-to-end:
-Java→Rust 7/7 and Rust→Java 7/7 test cases, including binary payloads, in-band error
-semantics (403/404/408 as envelope status), async acknowledgement, and W3C trace
-continuity in both directions. That drive found and fixed three defects — a Java HTTP
-client read-timeout truncation
-(<a href="https://github.com/Accenture/mercury-composable/pull/214">PR #214</a>) and its Rust mirror
-plus an example echo binary drop
-(<a href="https://github.com/Accenture/mercury/pull/166">mercury PR #166</a>). Golden conformance
-vectors are shared verbatim between the two repositories.</p>
-<h2 id="this-drive-the-two-calling-patterns-both-directions">This drive: the two calling patterns, both directions<a class="headerlink" href="#this-drive-the-two-calling-patterns-both-directions" title="Permanent link">&para;</a></h2>
-<p>The second drive validated the two Event-over-HTTP usage patterns — <strong>programmatic</strong> (the
-PostOffice request API with an explicit Event API endpoint URL) and <strong>declarative</strong> (a
-foreign route resolved through <code>event-over-http.yaml</code>) — using the shipped example
-applications as-is.</p>
+<h1 id="interop-test-report-progressive-rendering-all-four-runtimes">Interop Test Report — Progressive Rendering, all four runtimes<a class="headerlink" href="#interop-test-report-progressive-rendering-all-four-runtimes" title="Permanent link">&para;</a></h1>
+<p><em>Live cross-runtime validation of the progressive streaming contract across the four
+Mercury Composable runtimes — the Java engine
+(<a href="https://github.com/Accenture/mercury-composable">mercury-composable</a>), the Rust engine
+(<a href="https://github.com/Accenture/mercury">mercury</a>), and the Python
+(<a href="https://github.com/Accenture/mercury-python">mercury-python</a>) and Node.js
+(<a href="https://github.com/Accenture/mercury-nodejs">mercury-nodejs</a>) function hosts — conducted
+2026-08-30 (UTC) at the close of the streaming program's wrapper round. This report is a
+permanent record in the tradition of the
+<a href="../event-over-http-interop/">Event over HTTP interop report</a>: what was tested, the
+evidence, and the defects the round surfaced with their fixes.</em></p>
+<h2 id="the-contract-under-test">The contract under test<a class="headerlink" href="#the-contract-under-test" title="Permanent link">&para;</a></h2>
+<p>One paradigm on all four runtimes: <strong>the caller provides a reply address; the callee
+streams events to it until a terminal signal.</strong> Each segment is one event to the
+caller's <code>reply_to</code>, marked with the reserved envelope header
+<code>x-event-stream: data | eof | exception</code>. Across the Event-over-HTTP hop, the peer
+answers the one POST with a Server-Sent Events response in the <strong>hybrid envelope-mode
+dialect</strong>: envelope frames (the reserved SSE event name <code>envelope</code>, one base64-encoded
+serialized envelope per frame) wherever envelope semantics matter — the head, the
+terminals, and any segment that cannot round-trip as plain text — and raw SSE frames
+for text tokens. The consuming client decodes the dialect and forwards each event to
+the original reply address with the original correlation id, so a local stream and a
+remote stream are indistinguishable to the consumer.</p>
+<p>Delivered by: Java engine PRs
+<a href="https://github.com/Accenture/mercury-composable/pull/299">#299</a> (edge streaming),
+<a href="https://github.com/Accenture/mercury-composable/pull/300">#300</a> (SSE consumption),
+<a href="https://github.com/Accenture/mercury-composable/pull/301">#301</a> (envelope mode) —
+ADR-0018/0019; Rust engine PRs
+<a href="https://github.com/Accenture/mercury/pull/216">#216</a>,
+<a href="https://github.com/Accenture/mercury/pull/217">#217</a>,
+<a href="https://github.com/Accenture/mercury/pull/218">#218</a> — ADR-0015/0016; and the
+matching wrapper round in mercury-python and mercury-nodejs (interceptor functions,
+<code>EventStreamWriter</code>, streaming <code>/api/event</code> host, <code>stream()</code>/<code>stream_to()</code> client).</p>
+<h2 id="the-live-matrix">The live matrix<a class="headerlink" href="#the-live-matrix" title="Permanent link">&para;</a></h2>
+<p>Ten producer/consumer combinations were driven live with the SHIPPED demo applications
+— no test shims. Producers pace their segments (300 ms in these drives), so
+progressive delivery is directly observable in the arrival timestamps; buffered
+delivery would show all segments arriving together.</p>
 <table>
 <thead>
 <tr>
-<th>Role</th>
-<th>Drive A</th>
-<th>Drive B</th>
+<th>#</th>
+<th>Consumer</th>
+<th>Producer</th>
+<th>Result</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Caller (port 8100)</td>
-<td>Java composable-example</td>
-<td>Rust hello-flow</td>
+<td>1</td>
+<td>Node.js client</td>
+<td>Python <code>hello.tokens</code></td>
+<td>segments at ~11/312/612/916 ms, eof metadata <code>{count, language: python}</code></td>
 </tr>
 <tr>
-<td>Callee (port 8085)</td>
-<td>Rust hello-world</td>
-<td>Java lambda-example</td>
+<td>2</td>
+<td>Python client</td>
+<td>Node.js <code>hello.tokens</code></td>
+<td>segments at ~5/304/606/908 ms, eof metadata <code>{count, language: node.js}</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Python client</td>
+<td><strong>Java engine</strong> <code>hello.sse</code></td>
+<td>segments at ~103/407/708/1012 ms, terminal <code>eof</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Node.js client</td>
+<td><strong>Java engine</strong> <code>hello.sse</code></td>
+<td>segments at ~13/320/620/924 ms, terminal <code>eof</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Python client</td>
+<td><strong>Rust engine</strong> <code>hello.sse</code></td>
+<td>segments at ~3/306/607 ms, terminal <code>eof</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Node.js client</td>
+<td><strong>Rust engine</strong> <code>hello.sse</code></td>
+<td>segments at ~10/312/615 ms, terminal <code>eof</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Java engine</strong> edge (<code>/api/hello/remote</code>)</td>
+<td>Python <code>hello.tokens</code></td>
+<td>SSE out the engine edge at ~195/493/793/1094 ms, terminal <code>event: done</code> with the Python eof metadata</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Java engine</strong> edge</td>
+<td>Node.js <code>hello.tokens</code></td>
+<td>~217/516/817 ms, terminal metadata <code>{count, language: node.js}</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Rust engine</strong> edge</td>
+<td>Python <code>hello.tokens</code></td>
+<td>~20/323/624 ms, same shape</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>Rust engine</strong> edge</td>
+<td>Node.js <code>hello.tokens</code></td>
+<td>~19/320/622 ms, same shape</td>
 </tr>
 </tbody>
 </table>
-<p>Endpoints exercised on each caller: <code>POST /api/event/http/demo</code> (declarative; renamed to
-<code>/api/event/http/declarative</code> after v4.10.0), <code>POST /api/event/http/programmatic</code>, and
-<code>GET /api/event/http/demo</code>. <strong>Zero configuration
-changes between drives</strong> — the callees are drop-in counterparts of each other (same port,
-same public routes <code>hello.world</code> / <code>hello.declarative</code>), which is the point of the demo.</p>
-<p><strong>Versions under test:</strong> Java at
-<a href="https://github.com/Accenture/mercury-composable/pull/215">PR #215</a> (pre-4.10, CI green);
-Rust at <a href="https://github.com/Accenture/mercury/pull/167">PR #167</a>.</p>
-<h2 id="results-functionality-66-pass">Results — functionality: 6/6 pass<a class="headerlink" href="#results-functionality-66-pass" title="Permanent link">&para;</a></h2>
+<p>Common observations across all ten:</p>
 <ul>
-<li>Every request returned HTTP 200 with <code>Content-Type: application/json</code> and the correct
-  echo: the request body round-tripped intact, and the <code>origin</code> field identified the
-  application instance that actually executed the function — in the other language.</li>
-<li>Java callee: the echoed <code>my_route</code> header discriminates the pattern —
-  <code>hello.declarative</code> (declarative) vs <code>hello.world</code> (programmatic) — demonstrating why
-  the echo function registers two route names. (The demo echo has since been changed to
-  display the clean envelope-header view, so the injected metadata no longer appears in
-  its output; the two route names remain.)</li>
+<li><strong>Progressive on the wire</strong> — arrival gaps match the producer's pacing; nothing
+  buffers end-to-end (rows 7–10 traverse the full chain: HTTP edge → engine relay
+  function → Event-over-HTTP → wrapper host → wrapper function and back).</li>
+<li><strong>Correlation</strong> — the caller's correlation id is restored on every delivered
+  envelope (D7), and the engines' demo authentication (<code>authorization: demo</code>) rides
+  the per-target security headers unchanged.</li>
+<li><strong>Exact types</strong> — eof trailing metadata arrives as a real map, not text, on every
+  path (the envelope-frame escape hatch).</li>
+<li><strong>Explicit degradation, observed live</strong> — a missing token produced the engine's
+  401 and a private target its 403, both delivered as clean envelopes through the
+  buffered fallback; a caller without the <code>accept: text/event-stream</code> opt-in receives
+  the pinned <code>406 Streaming function requires a caller that accepts
+  text/event-stream</code>.</li>
 </ul>
-<h2 id="results-trace-continuity">Results — trace continuity<a class="headerlink" href="#results-trace-continuity" title="Permanent link">&para;</a></h2>
-<p>Distributed traces were inspected at the individual span level in both applications' logs.</p>
-<p><strong>Java → Rust: a fully connected cross-language span tree in both patterns.</strong> For the
-declarative call (trace <code>a6b8fa67…</code>): Java <code>http.flow.adapter</code> (span <code>9fbd1bdc</code>) → Rust
-<code>event.api.service</code> (span <code>a092275c</code>, parent <code>9fbd1bdc</code> — chained across the wire) → Rust
-<code>hello.declarative</code> (span <code>8e505921</code>) — and back on the Java side, the response callback
-span parents onto the <strong>Rust</strong> function's span, closing the loop. The programmatic call
-chains the same way through the Java <code>v1.event.over.http.rpc</code> task span.</p>
-<p><strong>Rust → Java:</strong> the declarative call chained fully (Java <code>hello.declarative</code> parented
-onto the Rust flow-adapter span, matching Java-caller behavior exactly; even the echo's
-internal fire-and-forget <code>hello.pojo</code> call chained onto the echo's span). The programmatic
-call initially joined by trace id only — see finding I3 below.</p>
-<p>With the <a href="../../guides/observability/#log-context">default-on application log context</a>,
-every structured log line on both sides carried the same trace id — logs and spans join up
-across the language boundary with zero setup.</p>
-<h2 id="findings-and-resolution">Findings and resolution<a class="headerlink" href="#findings-and-resolution" title="Permanent link">&para;</a></h2>
-<p>Span-level analysis surfaced three telemetry-fidelity defects, all in the Rust port and
-none affecting functionality. Recording them here is deliberate: the drives exist to find
-exactly this class of issue.</p>
+<h2 id="engine-engine-and-per-runtime-coverage">Engine ⇄ engine and per-runtime coverage<a class="headerlink" href="#engine-engine-and-per-runtime-coverage" title="Permanent link">&para;</a></h2>
+<p>Because the protocol signatures are identical across the four runtimes, each
+repository's unit suite exercises the full protocol against its own application
+instance (client consuming its own <code>/api/event</code> host in one process): Java
+<code>EventOverHttpStreamTest</code> (14 cases), Rust <code>event_over_http_stream.rs</code> (14), Python
+<code>test_event_stream.py</code> (17), Node.js <code>event-stream.test.ts</code> (17). Each suite also
+carries <strong>misbehaving-peer fixtures</strong> — a raw first frame, a transport end without a
+decoded terminal, trailing frames after the terminal — because a self-loop alone
+cannot catch a deviation implemented identically in both halves of one runtime; the
+live matrix above is the cross-implementation conformance check, and it passed with
+zero shims.</p>
+<h2 id="trace-continuity-opentelemetry-span-parent-span-verification">Trace continuity (OpenTelemetry span / parent-span verification)<a class="headerlink" href="#trace-continuity-opentelemetry-span-parent-span-verification" title="Permanent link">&para;</a></h2>
+<p>The drives were repeated with telemetry capture to verify distributed-trace
+continuity across the streaming hop. Findings, with the observed evidence:</p>
 <ul>
-<li><strong>I1 — duplicate span records.</strong> The Rust callee emitted two records per RPC-served span
-  (its worker record plus the caller-side round-trip record). The Java engine emits exactly
-  one: the worker suppresses its own record when serving an RPC and the caller's inbox
-  record — carrying <code>exec_time</code>, <code>round_trip</code>, and span lineage — is <em>the</em> record for that
-  span. The Rust port now applies the same suppression, and the callee's annotations ride
-  the reply envelope (a wire-compatible field that survives Event-over-HTTP hops in either
-  direction).</li>
-<li><strong>I2 — foreign span adoption on relayed replies.</strong> A round-trip record adopted the span
-  id of whatever function produced the reply — for a flow, that is the flow's final task,
-  not the requested route — misattributing and duplicating a span reported elsewhere. Both
-  engines now adopt the reply's span id only when the reply comes from the requested route
-  itself (Java: <code>InboxBase.spanIdFromResponder</code>, commit <code>140640d8</code>; Rust: commit
-  <code>8328d720</code>). The same defect had been caught on the Java side by the event-script
-  engine's span-uniqueness regression suite during this same release cycle.</li>
-<li><strong>I3 — missing caller span on the programmatic wire envelope.</strong> The Rust programmatic
-  client did not stamp the calling function's span id onto the outbound envelope, so the
-  remote callee's record lost its <code>parent_span_id</code> (the declarative path was correct). Now
-  fixed; both patterns parent identically.</li>
+<li><strong>One trace id end to end, both directions.</strong> In the engine→wrapper drive, the
+  Java edge minted trace <code>f22af2e005f2445198563e2dc4f1ba54</code>; every engine span
+  carried it (the relay function, the HTTP client leg, each reply-lane segment
+  delivery), the Python function received it (trace id and path ride inside the
+  wire envelope), and the demo now echoes it in the eof trailing metadata - so
+  the terminal frame rendered out the engine's own edge carries the same trace
+  id the edge minted: continuity is self-documenting in the demo output. In the
+  wrapper→engine drive, a Python caller supplied W3C trace id
+  <code>4bf92f3577b34da6a3ce929d0e0e4736</code> with trace path <code>PY /stream-drive</code>; the
+  engine's <code>event.api.auth</code>, <code>event.api.service</code> and <code>hello.sse</code> spans all
+  carried that id, and the function's span carried the caller's trace path.</li>
+<li><strong>Span parenting chains on the engines.</strong> The streaming target's span parents
+  onto the Event API service span - observed live:
+  <code>event.api.service span_id=bfcddb32dd597ddb</code> →
+  <code>hello.sse parent_span_id=bfcddb32dd597ddb</code>. Outbound, the engines' relay leg
+  sends the W3C <code>traceparent</code> header carrying the sending function's span id
+  (the trace-aware PostOffice stamps the span onto the outbound event), so a
+  receiving ENGINE parents its spans onto the caller's - the same cross-engine
+  parenting validated in the Event over HTTP interop report.</li>
+<li><strong>Wrapper executions are real spans</strong> (closed at this round - the wrappers
+  originally propagated the trace id but minted no spans, which broke the
+  lineage into disconnected segments at every wrapper hop). The function hosts
+  now implement the engines' exact span model: every traced execution mints a
+  16-hex span with the caller's span (from the inbound envelope) as its
+  parent; outbound calls and stream segments carry the current span onward;
+  and non-RPC executions emit the engines' distributed-trace dataset record on
+  the <code>distributed.tracing</code> log stream - the same
+  <code>{"trace": {...}, "annotations": {...}}</code> shape the Java engine logs - so one
+  log aggregation (or a stdout log-ingest agent forwarding to an observability
+  dashboard) stitches the full span tree across all four runtimes. RPC
+  round-trips emit no dataset, exactly like the engines: their metrics fold
+  into the caller's view.</li>
+<li><strong>The connected tree, live-proven in all three directions.</strong> Engine→wrapper:
+  under one Java-edge trace, the relay function's span <code>8cbc0b4d4be75362</code>
+  became the Python <code>hello.tokens</code> span's parent (<code>span_id=7b90847f4b8b617a</code>,
+  <code>parent_span_id=8cbc0b4d4be75362</code> in the wrapper's own trace record), and
+  the Java reply-lane delivery spans then parented onto the Python span -
+  edge → engine function → wrapper function → engine deliveries, one unbroken
+  chain. Wrapper→engine: a Python caller carrying external span
+  <code>00f067aa0ba902b7</code> (the shape of a user-edge OpenTelemetry span) produced
+  <code>event.api.auth</code> and <code>event.api.service</code> spans parented on it, with
+  <code>hello.sse</code> parented on the service span. Wrapper⇄wrapper: a Node.js
+  execution's record showed the Python caller's span as its parent. This is
+  the lineage the AI SDLC requires - user → agent → MCP → tools in one tree.</li>
+<li><strong>One deliberate exception</strong>: plain-text token segments ride raw SSE frames,
+  which carry no envelope metadata (the zero-overhead token path), so their
+  engine-side delivery spans join the trace unparented; a stream's head and
+  terminal segments ride envelope frames and parent correctly. The engines'
+  HTTP client leg (<code>async.http.request</code>) remains a sibling span - classic
+  Event-over-HTTP parity.</li>
+<li><strong>Correlation id</strong>: the caller's cid rode every delivered envelope in every
+  drive (<code>cid-trace-drive</code> on all four segments of the supplied-trace drive).</li>
 </ul>
-<p><strong>Re-drive after the fixes (both directions, both patterns):</strong> exactly one record per span
-(zero duplicates), no foreign span ids on round-trip records, and callee records parent
-onto the caller's task span in both patterns — every parent id cross-checked as a real
-span in the caller's log.</p>
-<h2 id="verdict">Verdict<a class="headerlink" href="#verdict" title="Permanent link">&para;</a></h2>
-<p><strong>Interop validation passed in full.</strong> Both Event-over-HTTP patterns are functionally
-proven Java ⇄ Rust with zero configuration changes, and distributed-trace telemetry is
-span-accurate across the language boundary in both directions. The shipped examples are
-drop-in cross-language counterparts, and the walk-through in the
-<a href="../../guides/event-over-http/#zero-code-demo">Event over HTTP guide</a> reproduces this
-validation with a single <code>curl</code>.</p>
-<h2 id="the-presentation-parity-drive-2026-07-23">The presentation-parity drive (2026-07-23)<a class="headerlink" href="#the-presentation-parity-drive-2026-07-23" title="Permanent link">&para;</a></h2>
-<p>After v4.10.0 shipped, a manual review of all four direction combinations
-(java-to-java, rust-to-rust, java-to-rust, rust-to-java) side by side — the way a
-DevSecOps operator reads an aggregated log stream — raised the bar from "trace continuity
-works" to a stronger requirement:</p>
-<blockquote>
-<p><strong>Field installations stay polyglot for a long time. Operators aggregate both engines'
-telemetry and logs in one place, and any presentation difference is a support burden.
-The same-language logs of the two engines must be exact structural replicas of each
-other — then cross-language runs are symmetric by construction.</strong></p>
-</blockquote>
-<p>That review surfaced loose ends the per-direction drives had not:</p>
+<p>The check itself surfaced defect #5: the engine demo relay originally built its
+forward event with the raw EventEmitter, which stamps no trace - the hop
+continued cid but DROPPED the trace id. Fixed by using a trace-aware
+PostOffice (its <code>touch</code> fill-stamps from/trace/span), and the wrapper demos'
+<code>hello.tokens</code> now echo their received trace id in the eof metadata so the
+continuity is visible in every future drive.</p>
+<h2 id="business-correlation-id-continuity">Business correlation-id continuity<a class="headerlink" href="#business-correlation-id-continuity" title="Permanent link">&para;</a></h2>
+<p>The same verification was run for the business correlation-id (<code>my_cid</code>) - the
+engine-managed envelope tag captured at an engine's HTTP edge from the
+configured header (default <code>X-Correlation-Id</code>) and injected into every
+receiving function's input headers as the read-only <code>my_correlation_id</code> view.
+The wrapper demos' <code>hello.tokens</code> echo the view in the eof metadata alongside
+the trace id, so every future drive self-documents both continuity dimensions.
+Live results:</p>
 <ul>
-<li><strong>Java:</strong> the <code>/api/event</code> edge connected to no span — <code>event.api.service</code> was a
-  zero-tracing relay, so the remote target function parented onto a span from another
-  application with nothing in between, and the HTTP response leg floated unparented.</li>
-<li><strong>Rust:</strong> an incomplete application log-context block (constants only) appeared on
-  telemetry and system lines that carry no request trace; the first-leg
-  <code>http.flow.adapter</code> span was never recorded (its RPC-style dispatch suppressed the
-  worker record), leaving <code>parent_span_id</code> values that pointed at spans no record
-  reported; and reserved <code>my_*</code> metadata could leak into HTTP response headers.</li>
+<li><strong>Java engine edge → Python</strong>: <code>X-Correlation-Id: biz-e2w-001</code> on the edge
+  request came back in the terminal metadata rendered out the same edge -
+  edge header → <code>my_cid</code> tag → relay function's injected header view →
+  trace-aware PostOffice re-stamp → packed envelope over the hop → wrapper
+  host injection → function echo.</li>
+<li><strong>Rust engine edge → Python</strong>: <code>biz-rust-005</code> echoed identically. The Rust
+  demo relay needed no change: the Rust engine has one PostOffice and
+  <code>apply_current_trace</code> always stamps trace and business correlation-id from
+  the ambient context.</li>
+<li><strong>Python → Node.js and Node.js → Python</strong> (wrapper ⇄ wrapper): a caller-side
+  context (<code>trace_context(..., my_correlation_id=...)</code> / <code>runWithTrace({...,
+  myCorrelationId})</code>) produced <code>biz-w2w-002</code> / <code>biz-w2w-003</code> echoes from the
+  opposite wrapper - the tag crossed the hop and the receiving host injected
+  the view.</li>
+<li><strong>Wrapper → engine</strong>: the wrappers stamp the identical tag bytes (the same
+  codec proven above), and the engines' pinned suites cover the receiving
+  half: an <code>/api/event</code> caller carrying the <code>my_cid</code> tag reaches the target
+  function as <code>po.getMyCorrelationId()</code> (Java
+  <code>EventHttpTest.eventOverHttpPropagatesTraceAndCorrelationId</code>; Rust twin).</li>
 </ul>
-<h3 id="method-a-normalized-reference-signature">Method: a normalized reference signature<a class="headerlink" href="#method-a-normalized-reference-signature" title="Permanent link">&para;</a></h3>
-<p>The Java engine is the reference implementation. After fixing the Java <code>/api/event</code> edge
-(the service is now traced: its span parents onto the remote caller's span, the target
-function parents onto it, and both response legs chain onto real spans), a live
-java-to-java run was distilled into a <strong>normalized trace signature</strong>: per calling pattern,
-the exact set of telemetry records — service name, parent edge (expressed symbolically so
-span-id values don't matter), record kind (<code>round_trip</code> for RPC-served spans vs
-<code>exec-only</code> for callback-served worker records), and path. Volatile fields (ids, origins,
-timestamps, durations, thread/instance numbers, ordering) are exempt; everything else must
-match record-for-record.</p>
-<p><strong>Declarative pattern — 8 records:</strong></p>
-<table>
-<thead>
-<tr>
-<th>side</th>
-<th>service</th>
-<th>parent (span owner)</th>
-<th>kind</th>
-<th>path</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>caller</td>
-<td>http.flow.adapter</td>
-<td>(root)</td>
-<td>exec-only</td>
-<td>POST /api/event/http/declarative</td>
-</tr>
-<tr>
-<td>caller</td>
-<td>task.executor</td>
-<td>http.flow.adapter@caller</td>
-<td>exec-only</td>
-<td>POST /api/event/http/declarative</td>
-</tr>
-<tr>
-<td>callee</td>
-<td>event.api.auth</td>
-<td>http.flow.adapter@caller</td>
-<td>round_trip</td>
-<td>POST /api/event</td>
-</tr>
-<tr>
-<td>callee</td>
-<td>event.api.service</td>
-<td>http.flow.adapter@caller</td>
-<td>exec-only</td>
-<td>POST /api/event</td>
-</tr>
-<tr>
-<td>callee</td>
-<td>hello.declarative</td>
-<td>event.api.service@callee</td>
-<td>round_trip</td>
-<td>POST /api/event/http/declarative</td>
-</tr>
-<tr>
-<td>callee</td>
-<td>hello.pojo</td>
-<td>hello.declarative@callee</td>
-<td>exec-only</td>
-<td>POST /api/event/http/declarative</td>
-</tr>
-<tr>
-<td>callee</td>
-<td>async.http.response</td>
-<td>event.api.service@callee</td>
-<td>exec-only</td>
-<td>POST /api/event</td>
-</tr>
-<tr>
-<td>caller</td>
-<td>async.http.response</td>
-<td>hello.declarative@callee</td>
-<td>exec-only</td>
-<td>POST /api/event/http/declarative</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Programmatic pattern — 9 records:</strong> identical shape with the caller's
-<code>v1.event.over.http.rpc</code> task span between the flow adapter and the callee (the callee's
-<code>event.api.auth</code> / <code>event.api.service</code> parent onto it), the callee function being
-<code>hello.world</code>, and one deliberate asymmetry: the caller's <code>async.http.response</code> parents
-onto the <strong>callee's function span</strong> in the declarative pattern (the flow task's reply <em>is</em>
-the remote reply) but onto the <strong>local task span</strong> in the programmatic one (the flow's
-reply is produced locally by that task).</p>
-<p>The signature also pins the invariants: one record per span, no dangling parents, HTTP
-response headers free of reserved <code>my_*</code> metadata, and the log-context gating rule — a
-<code>context</code> block appears <strong>only</strong> on log lines emitted inside a traced function execution;
-telemetry and system lines carry none at all.</p>
-<h3 id="reaching-the-bar-required-refactoring-not-patching">Reaching the bar required refactoring, not patching<a class="headerlink" href="#reaching-the-bar-required-refactoring-not-patching" title="Permanent link">&para;</a></h3>
-<p>Matching the signature exposed genuine low-level variance in the Rust port's RPC
-implementation, resolved structurally: its REST automation now dispatches endpoint
-services as <strong>callbacks</strong> through a registered <code>async.http.response</code> service (the Java
-twin) instead of RPC through a oneshot inbox — which is what made the first-leg and
-response-leg spans real — and the business correlation-id moved to the reserved
-envelope-header channel for exact <code>PostOffice</code> parity. The log context was re-gated to
-render only inside a traced, non-zero-traced worker execution. The same drive added the
-<code>event.api.auth</code> authentication demo to both engines (a shared token resolved from the
-<code>DEMO_PEER_TOKEN</code> environment variable — authentication appears in the trace as a real
-span, and its session info rides to the target function as proof).</p>
-<h3 id="result-empty-diff-in-all-four-directions">Result: empty diff in all four directions<a class="headerlink" href="#result-empty-diff-in-all-four-directions" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Direction</th>
-<th>Declarative (8 records)</th>
-<th>Programmatic (9 records)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>java → java (reference)</td>
-<td>—</td>
-<td>—</td>
-</tr>
-<tr>
-<td>rust → rust</td>
-<td><strong>empty diff</strong></td>
-<td><strong>empty diff</strong></td>
-</tr>
-<tr>
-<td>java → rust</td>
-<td><strong>empty diff</strong></td>
-<td><strong>empty diff</strong></td>
-</tr>
-<tr>
-<td>rust → java</td>
-<td><strong>empty diff</strong></td>
-<td><strong>empty diff</strong></td>
-</tr>
-</tbody>
-</table>
-<p>Exactly as predicted: once the same-language logs were replicas, the cross-language runs
-were symmetric with no additional work. Authentication verified in every direction
-(session proof in the echo; wrong or missing token → HTTP-401), response headers clean,
-and zero context blocks on untraced lines in either engine.</p>
-<h2 id="the-metadata-hardening-round-2026-07-23">The metadata-hardening round (2026-07-23)<a class="headerlink" href="#the-metadata-hardening-round-2026-07-23" title="Permanent link">&para;</a></h2>
-<p>A further manual four-direction review — after v4.10.1 — found two remaining issues: protected
-metadata visible to user functions and responses, and the business correlation-id missing from
-HTTP response headers. The trace signature was re-verified as an exact replica in all four
-directions <strong>before</strong> any fix, isolating the issues to pure header hygiene. The round produced
-a design ruling that is now the cross-engine contract:</p>
-<blockquote>
-<p><strong>A composable function has exactly three inputs — headers, body and instance. The headers
-are a COPY of the envelope headers with read-only metadata injected by the worker at entry
-and sanitized at exit. Metadata is never transported in the event itself.</strong></p>
-</blockquote>
-<p>Root causes: the business correlation-id was the one metadata key transported as a real
-envelope header (the envelope has fields for trace id and path, but none for the business
-cid), so it leaked across the wire and into relayed events; the engine-internal <code>x-event-api</code>
-relay guard reached function views; and neither engine echoed the correlation-id on HTTP
-responses.</p>
-<p><strong>Fixes (both engines):</strong> the business correlation-id rides an engine-managed envelope tag —
-<code>rpc</code> and <code>my_cid</code> are now documented reserved tag names in the
-<a href="../../guides/event-envelope-wire-format/">wire-format specification</a> — with the worker
-injecting the four <code>my_*</code> read-only keys at delivery and sanitizing them (plus <code>x-event-api</code>)
-from returned envelopes at exit, covering the accidental-copy case; and REST automation echoes
-the request's business correlation-id on every HTTP response. This also closed a day-one
-injection asymmetry: the Rust callee now shows the identical <code>my_*</code> key set as Java, so the
-echo demos are replicas again.</p>
-<p><strong>The RPC reply path was aligned in the same round.</strong> The Rust port had minted per-request
-pseudo-routes under an <code>inbox.</code> prefix — reserving the entire <code>inbox.*</code> namespace, which
-belongs to applications (workflow systems use routes like <code>inbox.approval</code> for human-approval
-staging). It now mirrors the Java design: one reserved private route <code>temporary.inbox</code> with a
-correlation-id-keyed pending registry, registered as an <strong>essential service</strong> at the highest
-startup priority (with the deliberate concurrency triple: HTTP client 500, temporary.inbox
-500, telemetry 1 — a singleton to preserve record ordering); the RPC marker is the reserved
-<code>rpc</code> tag; and the mesh-era <code>route@origin</code> syntax is never generated (inbound-tolerant only —
-instance addressing is a Kafka-service-mesh concern the port does not carry). A regression
-proves a user function registered as <code>inbox.approval</code> is reachable, RPC-able, and traced
-normally. The rework also surfaced a genuine pre-existing defect in the Rust HTTP client
-service (replying through the global platform instead of its own).</p>
-<h3 id="regression-re-test-the-refactor-is-observably-invisible">Regression re-test: the refactor is observably invisible<a class="headerlink" href="#regression-re-test-the-refactor-is-observably-invisible" title="Permanent link">&para;</a></h3>
-<p>The working hypothesis — that the rework would make interop more robust <em>and predictable</em> —
-was tested by re-running the full battery in both cross-language directions:</p>
-<table>
-<thead>
-<tr>
-<th>Check</th>
-<th>Java → Rust</th>
-<th>Rust → Java</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Functionality (both patterns)</td>
-<td>pass</td>
-<td>pass</td>
-</tr>
-<tr>
-<td><code>X-Correlation-Id</code> response echo</td>
-<td>pass</td>
-<td>pass</td>
-</tr>
-<tr>
-<td>Generated-cid identity across the wire</td>
-<td>pass</td>
-<td>pass (one value end to end)</td>
-</tr>
-<tr>
-<td>Identical injected <code>my_*</code> key set</td>
-<td>pass</td>
-<td>pass</td>
-</tr>
-<tr>
-<td><code>x-event-api</code> in any function view</td>
-<td>absent</td>
-<td>absent</td>
-</tr>
-<tr>
-<td>Authentication (session proof / 401)</td>
-<td>pass</td>
-<td>pass</td>
-</tr>
-<tr>
-<td><strong>Trace signature</strong></td>
-<td><strong>empty diff</strong> (8+9 records)</td>
-<td><strong>empty diff</strong> (8+9 records)</td>
-</tr>
-</tbody>
-</table>
-<p>Same-language: Java full reactor and the Rust workspace suites green, with the rust-to-rust
-signature also an empty diff. The internals hardened — a static route table, one cid-keyed
-correlation concept local and remote, deterministic essential-service startup — while
-observable behavior stayed byte-for-byte unchanged, which is exactly what the empty diff is
-designed to prove.</p>
-<h2 id="the-configurable-traceparent-round-2026-07-24">The configurable-traceparent round (2026-07-24)<a class="headerlink" href="#the-configurable-traceparent-round-2026-07-24" title="Permanent link">&para;</a></h2>
-<p>A field installation's API gateway strips the standard W3C <code>traceparent</code> from its header
-allow-list, so both engines gained a configurable traceparent <strong>carrier name</strong> —
-<code>http.traceparent.header</code> (Java adds the <code>kafka.*</code> / <code>secondary.kafka.*</code> twins), with per-entry
-overrides — shipped in lock-step (Java PR #227, Rust PR #177). Before release, this round
-validated the feature live across the language boundary with the custom name <code>ce_traceparent</code>,
-every application launched with <code>-Dhttp.traceparent.header=ce_traceparent</code> (the Rust port
-honors the same <code>-D</code> override syntax).</p>
-<p>The drive deliberately simulated the field scenario: the client supplied the W3C value <strong>only
-under <code>ce_traceparent</code></strong> — the standard header never sent — so any trace continuity observed
-had to come from the custom carrier.</p>
-<h3 id="results-the-feature-is-correct-and-symmetric">Results — the feature is correct and symmetric<a class="headerlink" href="#results-the-feature-is-correct-and-symmetric" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Check</th>
-<th>java→rust</th>
-<th>rust→java</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Functionality (declarative + programmatic)</td>
-<td>pass</td>
-<td>pass</td>
-</tr>
-<tr>
-<td>Edge adopts trace context from <code>ce_traceparent</code> alone</td>
-<td>pass</td>
-<td>pass</td>
-</tr>
-<tr>
-<td>Caller's REST span parents onto the client's span</td>
-<td>pass</td>
-<td>pass</td>
-</tr>
-<tr>
-<td>Callee <code>/api/event</code> spans parent onto the caller's span</td>
-<td>pass</td>
-<td>pass</td>
-</tr>
-<tr>
-<td>Declarative reply-span asymmetry preserved cross-language</td>
-<td>pass</td>
-<td>pass</td>
-</tr>
-<tr>
-<td>Authentication (<code>event.api.auth</code>)</td>
-<td>pass</td>
-<td>pass</td>
-</tr>
-<tr>
-<td><code>X-Correlation-Id</code> response echo</td>
-<td>pass</td>
-<td>pass</td>
-</tr>
-</tbody>
-</table>
-<p>Wire-level captures (a header-dumping listener standing in for the peer) confirmed the <strong>dual
-stamp</strong> on both engines' outbound <code>/api/event</code> calls: <code>traceparent</code> and <code>ce_traceparent</code>
-carrying the identical W3C value, alongside the trace-id header. A four-combination echo
-matrix (java→java, java→rust, rust→rust, rust→java, both patterns, all eight runs under the
-custom name) confirmed the feature introduces no cross-engine differences: every echoed
-<code>ce_traceparent</code> and trace behavior was symmetric.</p>
-<h3 id="findings-pre-existing-surfaces-exposed-by-the-matrix-not-caused-by-the-feature">Findings — pre-existing surfaces exposed by the matrix (not caused by the feature)<a class="headerlink" href="#findings-pre-existing-surfaces-exposed-by-the-matrix-not-caused-by-the-feature" title="Permanent link">&para;</a></h3>
-<p>The deeper matrix inspection surfaced header-hygiene asymmetries that predate this feature:</p>
+<p>The check surfaced one parity gap in the (unreleased) wrapper round, fixed and
+test-pinned in both wrappers: the wrapper clients inherited trace id/path and
+the internal correlation id into outbound events but did not re-stamp the
+business correlation-id as the <code>my_cid</code> tag, and local bus deliveries skipped
+the header-view injection that the HTTP host performs. Both halves now mirror
+the engines (<code>PostOffice.touch</code> / WorkerHandler parity): outbound events carry
+the context's business correlation-id as the tag, local deliveries inject the
+read-only view, and the trace context (<code>get_trace()</code> / <code>getTrace()</code>) exposes
+it to handlers and relays.</p>
+<p>By design (confirmed at this verification round): an engine's <code>/api/event</code>
+ingress serves LOCAL routes only - it answers 404 for a route it does not
+host, even when its own <code>yaml.event.over.http</code> map points that route at a
+peer. The map is caller-side routing for the app's own outbound calls;
+forwarding inbound calls onward would make every application an
+Event-over-HTTP relay and open routing loops (the <code>x-event-api</code> wire marker
+exists precisely to prevent such re-forwarding). Callers address the owning
+peer directly; deliberate hop-through composition is an explicit relay
+function - the demo <code>hello.remote.relay</code> is exactly that pattern.</p>
+<h2 id="defects-surfaced-by-the-round-fixed-and-re-verified">Defects surfaced by the round (fixed and re-verified)<a class="headerlink" href="#defects-surfaced-by-the-round-fixed-and-re-verified" title="Permanent link">&para;</a></h2>
+<p>Honest engineering record — each was caught by the twin-building discipline before
+any release:</p>
 <ol>
-<li><strong>Both programmatic demo tasks transport their injected metadata.</strong> Java's
-   <code>EventOverHttpRpc</code> (<code>headers.forEach(req::setHeader)</code>) and the Rust twin (its <code>set_header</code>
-   loop) copy the function's <strong>injected</strong> header view — including the four <code>my_*</code> keys — onto
-   the outgoing envelope: the accidental-copy anti-pattern of learning #7, on the request side.</li>
-<li><strong>The two engines sanitize different subsets at the receiving <code>/api/event</code> door.</strong> With
-   inbound <code>my_*</code> on the wire, a Java callee delivers <code>my_correlation_id</code> (the legacy-cid
-   compat carrier) but strips <code>my_route</code>/<code>my_trace_id</code>/<code>my_trace_path</code>; a Rust callee strips
-   <code>my_correlation_id</code> and <code>x-event-api</code> but delivers the other three. On the declarative
-   path, <code>x-event-api: callback</code> is visible in a Java callee's envelope view, absent in a
-   Rust callee's.</li>
-<li><strong>Wire hygiene nits.</strong> The Rust HTTP client emits each trace header twice (same value);
-   it stamps <code>x-correlation-id</code> on the <code>/api/event</code> request where Java carries the business
-   cid only in the envelope tag; Java sends <code>accept</code> and <code>x-small-payload-as-bytes</code> where
-   Rust does not; and the Rust port does not log the resolved traceparent header name at
-   startup (Java: <code>Traceparent HTTP header is 'ce_traceparent'</code>).</li>
+<li><strong>Rust engine</strong>: the envelope-mode single-shot reply initially reached the caller
+   unwrapped (rendered as plain JSON instead of the classic packed-envelope wire);
+   fixed by wrapping at the one <code>SingleShot</code> outcome site — caught by the twin suite's
+   first run.</li>
+<li><strong>Node.js host</strong>: a <code>Promise.race</code> against a queue waiter abandoned the losing
+   waiter, which would steal and drop the next envelope; fixed by reusing one pending
+   promise across keep-alive cycles (<code>raceMs</code> documents the rule) — caught in design
+   review before the first test run.</li>
+<li><strong>Error-body contract</strong>: the in-band exception bodies converged on the standard
+   error key-values <code>type</code> / <code>status</code> / <code>message</code> across all four runtimes (three
+   Java sites and their twins were missing the <code>type</code> key or used a plain-text body).</li>
+<li><strong>Node.js</strong>: object error bodies would have stringified as <code>[object Object]</code>;
+   fixed with JSON rendering (<code>errorText</code>).</li>
+<li><strong>Java demo relay</strong>: the forward event was built with the raw (untraced)
+   EventEmitter, silently dropping the distributed trace across the hop; fixed
+   with a trace-aware PostOffice - found by the trace-continuity verification
+   above.</li>
 </ol>
-<h3 id="verdict_1">Verdict<a class="headerlink" href="#verdict_1" title="Permanent link">&para;</a></h3>
-<p>The configurable traceparent carrier works end to end in both directions: with the standard
-header never supplied, the custom name alone carried the full W3C context — trace identity
-<strong>and</strong> span parenting — through both engines' edges, app-to-app hops, and <code>/api/event</code>
-doors. The feature is release-ready. The findings above were fixed in the hygiene round
-below.</p>
-<h3 id="resolution-the-hygiene-round-2026-07-24-ships-in-v4104">Resolution — the hygiene round (2026-07-24, ships in v4.10.4)<a class="headerlink" href="#resolution-the-hygiene-round-2026-07-24-ships-in-v4104" title="Permanent link">&para;</a></h3>
-<p>All findings were fixed in lock-step and the matrix re-run:</p>
-<ol>
-<li><strong>The delivered envelope view is scrubbed on both engines.</strong> The worker removes the five
-   engine keys (<code>my_route</code>, <code>my_trace_id</code>, <code>my_trace_path</code>, <code>my_correlation_id</code>,
-   <code>x-event-api</code>) from the delivered envelope's own headers for non-interceptor functions —
-   whatever a peer transported or a local edge merged can never masquerade as application
-   data. The legacy <code>my_correlation_id</code> compat carrier remains honored into the injected
-   view before the scrub, and event interceptors keep raw transport fidelity (on the Rust
-   port this also <em>restored</em> interceptor fidelity that its earlier partial scrub had
-   violated). Entry-side regression twins added on both engines. The investigation settled
-   the attribution: the Rust port never injected metadata into the envelope view — the
-   matrix leaks were pure transport (both programmatic demos' header-copy loops) plus, on
-   the Java side, the declarative relay guard and the auth session-info merge reaching the
-   envelope view.</li>
-<li><strong>Both programmatic demo tasks forward business headers only</strong> — the injected <code>my_*</code>
-   view describes the local function's own context and is never transported.</li>
-<li><strong>Wire hygiene aligned to the Java reference.</strong> The Rust client now stamps each trace
-   header exactly once, no longer adds <code>x-correlation-id</code> to the event-over-HTTP transport
-   leg (the business cid rides the envelope tag), sends <code>accept</code> and
-   <code>x-small-payload-as-bytes</code> like Java, and logs the resolved
-   <code>Correlation-id / Trace-id / Traceparent HTTP header</code> names at startup.</li>
-<li><strong>The endpoint timeout rides the request dataset as <code>x-ttl</code> on both engines.</strong> Java's
-   REST ingress represents the route timeout as the request's <code>x-ttl</code> header (caller-sent
-   value wins), so a flow's <code>input.header</code> view carries it; the Rust ingress now does the
-   same — with a regression pinning both the default and the caller-wins precedence.</li>
-</ol>
-<p><strong>Final verification:</strong> the four-combination matrix re-ran with both fixed engines under
-<code>ce_traceparent</code> — <strong>all eight echoes are identical</strong> after normalizing volatile fields
-(same header set, same values including <code>x-ttl</code> milliseconds), wire captures show the same
-header set from both engines' clients, and cross-language span parenting held in both
-directions. Gates: Java full reactor green (422 platform-core tests, 2 new); Rust workspace
-260 passed (3 new), clippy 0, fmt clean.</p>
-<p><strong>Post-round refinement — inbound precedence finalized before release.</strong> In line with the
-standards position, the inbound rule was flipped from the drive's original
-custom-name-first semantics: the <strong>standard <code>traceparent</code> always wins</strong>, and the custom
-name is read only when the standard header is absent. Rationale: a well-formed standard
-traceparent means the legacy system already upgraded to the W3C/OTel standard, so a
-proprietary header alongside it is residual and safely ignored. This also makes the family
-self-consistent — the <code>trace.id.header</code> fallback already yields to the standard. Both
-engines flipped in lock-step with their precedence regressions inverted, and note that the
-drive's ce_traceparent-only scenario (the gateway simulation) is unaffected: the custom
-name remains the carrier whenever the standard header does not survive the intermediary.</p>
-<h2 id="the-polyglot-wrapper-round-2026-08-22">The polyglot wrapper round (2026-08-22)<a class="headerlink" href="#the-polyglot-wrapper-round-2026-08-22" title="Permanent link">&para;</a></h2>
-<p>The playbook below was executed for real when the <strong>polyglot initiative</strong> brought Python
-and Node.js into the family — not as engine ports but as lightweight <strong>Event-over-HTTP
-wrappers</strong> (<a href="https://github.com/Accenture/mercury-python">mercury-python</a>,
-<a href="https://github.com/Accenture/mercury-nodejs">mercury-nodejs</a>; see the
-<a href="../../guides/polyglot-functions/">Polyglot Functions</a> guide). Evidence from the
-acceptance drives, conducted 2026-08-22 against engine v4.11.10:</p>
-<ol>
-<li><strong>Golden conformance vectors first — item 1 of the playbook, literally.</strong> Both
-   wrappers' standard-format codecs are verified against the same golden vectors the
-   Java and Rust engines share, carried verbatim in each wrapper's test suite. The
-   classic compact format is detected and rejected with a teaching error (the wrappers
-   are standard-only by design).</li>
-<li><strong>Cross-wrapper drive.</strong> Python ⇄ Node.js live in both directions — RPC replies,
-   trace context, and reply annotations intact across both hops.</li>
-<li><strong>The flagship drive: an unchanged engine flow executed a Python function.</strong> The
-   composable-example's shipped <code>event-over-http-declarative</code> Event Script flow — the
-   <a href="../../guides/event-over-http/#zero-code-demo">zero-code demo</a> of this report's
-   earlier rounds — ran against the Python demo host in the lambda-example's slot
-   (same port 8085, same public <code>hello.declarative</code> route), with <strong>zero engine change
-   and zero engine configuration change</strong>. The reply carried <code>"language": "python"</code>;
-   the flow's business correlation id arrived injected as the read-only
-   <code>my_correlation_id</code> header (the <code>my_cid</code> tag contract); <code>x-flow-id</code> and the flow's
-   <code>x-ttl</code> were delivered; and the Python host's log line showed the <strong>engine's trace
-   id</strong> in the engine-consistent log format — presentation parity extending to the
-   wrapper family (playbook items 3 and 5).</li>
-<li><strong>The one engine change shipped separately, in lock-step.</strong> <code>graph.task</code>'s
-   route-existence guard now consults the <code>yaml.event.over.http</code> map on both engines
-   (Java <a href="https://github.com/Accenture/mercury-composable/pull/292">PR #292</a>, Rust
-   <a href="https://github.com/Accenture/mercury/pull/212">PR #212</a>), released in <strong>v4.11.11</strong>
-   — deployed knowledge graphs can name polyglot routes directly.</li>
-</ol>
-<p>Per the initiative's conformance ruling, this report gains a round like this one with
-each wrapper release: the golden vectors are the per-release gate, and a live
-engine-flow-to-wrapper drive is the acceptance proof.</p>
-<h2 id="learnings-for-future-language-ports">Learnings for future language ports<a class="headerlink" href="#learnings-for-future-language-ports" title="Permanent link">&para;</a></h2>
-<p>This validation arc is the playbook that brought Python and Node.js into the family (the
-wrapper round above) and remains the checklist for the next language:</p>
-<ol>
-<li><strong>Golden conformance vectors first.</strong> The wire format is proven byte-identically with
-   vectors shared verbatim between repositories — no prose interpretation.</li>
-<li><strong>Same-language baseline before cross-language testing.</strong> Distill a live run of the
-   reference engine (java-to-java) into a normalized trace signature; the new port must
-   produce an <strong>empty diff</strong> on its own same-language run. Cross-language symmetry then
-   follows by construction — do not chase cross-language differences directly.</li>
-<li><strong>The signature is more than topology.</strong> It pins record kinds (round_trip vs
-   exec-only), path values, one-record-per-span, no dangling parents, log-context gating,
-   and transport-header hygiene — the things an operator actually sees in an aggregated
-   view. Presentation parity is a standing invariant, not a one-off acceptance test:
-   polyglot installations put both engines' output in front of the same DevSecOps team.</li>
-<li><strong>Expect refactoring, not configuration.</strong> Matching the signature will surface genuine
-   low-level differences (RPC vs callback dispatch, context scoping). Fix the structure;
-   telemetry-layer workarounds recreate the drift later.</li>
-<li><strong>The demo pair is the reusable test vehicle.</strong> A new port implements the hello-world /
-   hello-flow counterparts on the same ports and route names, and every drive in this
-   report — functionality, trace continuity, authentication, signature diff — runs against
-   it unchanged, with zero configuration.</li>
-<li><strong>Live drives find what unit tests do not.</strong> Every drive in this story surfaced real
-   defects (timeout truncation, span misattribution, context leakage, an invisible relay
-   edge) that per-repository test suites had not caught.</li>
-<li><strong>Reserve the minimum; inject the rest.</strong> Engine metadata is injected into the function's
-   input copy at entry and sanitized at exit — never transported in the event — and the
-   engine reserves the smallest possible surface (one RPC listener route, two tag names).
-   Route namespaces and header space belong to applications; a port that borrows them for
-   engine plumbing will collide with real-world naming sooner or later.</li>
-</ol>
+<h2 id="reproduce">Reproduce<a class="headerlink" href="#reproduce" title="Permanent link">&para;</a></h2>
+<p>Every row of the matrix uses shipped demo applications:</p>
+<ul>
+<li><strong>Engine as producer</strong>: run the Java <code>lambda-example</code> (port 8085) or Rust
+  <code>hello-world</code> (8085; any port with <code>-Drest.server.port=…</code>); their public
+  <code>hello.sse</code> streams paced test messages. Consume from a wrapper with
+  <code>PostOffice.stream("hello.sse", …, endpoint="http://host:port/api/event")</code> and the
+  demo <code>authorization: demo</code> header.</li>
+<li><strong>Engine as consumer</strong>: run a wrapper demo app (python <code>mercury-serve
+  examples/demo_app.py</code>, port 8086; node demo, 8087), then the engine demo with its
+  routing map (Java: <code>-Dyaml.event.over.http=classpath:/event-over-http.yaml</code>; Rust:
+  ships enabled) and <code>-Dpeer.demo.port</code> as needed, and watch
+  <code>curl -N -H 'accept: text/event-stream'
+  'http://127.0.0.1:8085/api/hello/remote?delay=300&amp;count=3'</code> render the wrapper's
+  tokens progressively out the engine's edge.</li>
+<li><strong>Wrapper ⇄ wrapper</strong>: point either wrapper's <code>stream()</code> at the other demo's
+  <code>/api/event</code>.</li>
+</ul>
+<p>Baselines at the time of the drives: Java engine main after PR #301, Rust engine main
+after PR #218, mercury-python and mercury-nodejs at the streaming feature round -
+shipped together as the v4.12.0 milestone release across all four repositories.</p>
+<h2 id="appendix-telemetry-and-app-context-example-live-capture">Appendix - telemetry and app context example (live capture)<a class="headerlink" href="#appendix-telemetry-and-app-context-example-live-capture" title="Permanent link">&para;</a></h2>
+<p>One live request, captured end to end, showing how the telemetry stream and
+the application log context connect the engine to the wrapper. Setup: the Java
+<code>lambda-example</code> (port 8085) with its event-over-http map pointing
+<code>hello.tokens</code> at the Python demo app (port 8086, <code>-Dlog.format=compact</code>).
+The caller supplies a business correlation-id; the engine's HTTP edge mints
+the trace:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-N<span class="w"> </span>-H<span class="w"> </span><span class="s1">'accept: text/event-stream'</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'X-Correlation-Id: biz-e2e-777'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="s1">'http://127.0.0.1:8085/api/hello/remote?delay=100&amp;count=1'</span>
+</code></pre></div>
+<p><strong>1. Java engine - the relay function's telemetry record</strong> (the root span of
+trace <code>710dcb0b706e4b5b949be138d0992b0b</code>, minted at the edge):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">"level"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">"time"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-08-29 21:24:17.734"</span><span class="p">,</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"org.platformlambda.core.services.Telemetry.handleEvent(Telemetry.java:81)"</span><span class="p">,</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="nt">"thread"</span><span class="p">:</span><span class="w"> </span><span class="mi">762</span><span class="p">,</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">"trace"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">      </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GET /api/hello/remote?delay=100&amp;count=1"</span><span class="p">,</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">      </span><span class="nt">"span_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"afa2897918e3871b"</span><span class="p">,</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">      </span><span class="nt">"service"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hello.remote.relay"</span><span class="p">,</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">      </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">      </span><span class="nt">"origin"</span><span class="p">:</span><span class="w"> </span><span class="s2">"20260830a0dcb550832b4683b4853c609778cd82"</span><span class="p">,</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">      </span><span class="nt">"start"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-08-30T04:24:17.733Z"</span><span class="p">,</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">      </span><span class="nt">"exec_time"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.728</span><span class="p">,</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">      </span><span class="nt">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http.request"</span><span class="p">,</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"710dcb0b706e4b5b949be138d0992b0b"</span><span class="p">,</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">      </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">200</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>2. The wire</strong> - the relay's trace-aware PostOffice stamps the outbound event
+with the trace id and path, its own span id (<code>afa2897918e3871b</code>) and the
+<code>my_cid</code> tag (<code>biz-e2e-777</code>); the whole envelope crosses <code>POST /api/event</code>,
+with <code>X-Trace-Id</code> and the W3C <code>traceparent</code> on the HTTP headers.</p>
+<p><strong>3. Python wrapper - the function's own application log line.</strong> The handler
+runs <code>log.info("Streaming %d messages", count)</code>; the app-log-context feature
+adds the <code>context</code> block. Note the join keys: the engine's trace id, the
+business <code>cid</code> from the edge header, and this execution's <code>spanId</code> with the
+relay's span as <code>parentSpanId</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span><span class="nt">"time"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-08-29 21:24:17.847"</span><span class="p">,</span><span class="w"> </span><span class="nt">"level"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span><span class="w"> </span><span class="nt">"logger"</span><span class="p">:</span><span class="w"> </span><span class="s2">"mercury_user_app:93"</span><span class="p">,</span><span class="w"> </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Streaming 1 messages"</span><span class="p">,</span><span class="w"> </span><span class="nt">"context"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"cid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"biz-e2e-777"</span><span class="p">,</span><span class="w"> </span><span class="nt">"traceId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"710dcb0b706e4b5b949be138d0992b0b"</span><span class="p">,</span><span class="w"> </span><span class="nt">"tracePath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GET /api/hello/remote?delay=100&amp;count=1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"spanId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"55ebd6464ffdf9c2"</span><span class="p">,</span><span class="w"> </span><span class="nt">"parentSpanId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"afa2897918e3871b"</span><span class="p">,</span><span class="w"> </span><span class="nt">"service"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hello.tokens"</span><span class="p">,</span><span class="w"> </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-08-30T04:24:17.847Z"</span><span class="p">}}</span>
+</code></pre></div>
+<p><strong>4. Python wrapper - the telemetry record for the same execution</strong> (same
+<code>span_id</code> as the app log line's <code>spanId</code> - the join key between the two
+streams; <code>from</code> names the calling engine function):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span><span class="nt">"time"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-08-29 21:24:17.949"</span><span class="p">,</span><span class="w"> </span><span class="nt">"level"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span><span class="w"> </span><span class="nt">"logger"</span><span class="p">:</span><span class="w"> </span><span class="s2">"distributed.tracing:158"</span><span class="p">,</span><span class="w"> </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"trace"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"origin"</span><span class="p">:</span><span class="w"> </span><span class="s2">"202608303cbae673831a4ab08cbb6f108fec0171"</span><span class="p">,</span><span class="w"> </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"710dcb0b706e4b5b949be138d0992b0b"</span><span class="p">,</span><span class="w"> </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GET /api/hello/remote?delay=100&amp;count=1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"service"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hello.tokens"</span><span class="p">,</span><span class="w"> </span><span class="nt">"start"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-08-30T04:24:17.847Z"</span><span class="p">,</span><span class="w"> </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hello.remote.relay"</span><span class="p">,</span><span class="w"> </span><span class="nt">"exec_time"</span><span class="p">:</span><span class="w"> </span><span class="mf">101.673</span><span class="p">,</span><span class="w"> </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">200</span><span class="p">,</span><span class="w"> </span><span class="nt">"span_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"55ebd6464ffdf9c2"</span><span class="p">,</span><span class="w"> </span><span class="nt">"parent_span_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"afa2897918e3871b"</span><span class="p">}}}</span>
+</code></pre></div>
+<p><strong>5. Java engine - a reply-lane delivery record.</strong> The wrapper's stream
+segments carry its span, so the engine-side delivery span parents onto the
+Python function (<code>parent_span_id = 55ebd6464ffdf9c2</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">"level"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">"time"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-08-29 21:24:17.853"</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"org.platformlambda.core.services.Telemetry.handleEvent(Telemetry.java:81)"</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="nt">"thread"</span><span class="p">:</span><span class="w"> </span><span class="mi">779</span><span class="p">,</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="nt">"trace"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">      </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GET /api/hello/remote?delay=100&amp;count=1"</span><span class="p">,</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">      </span><span class="nt">"parent_span_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"55ebd6464ffdf9c2"</span><span class="p">,</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">      </span><span class="nt">"span_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"a50c19b7415406df"</span><span class="p">,</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">      </span><span class="nt">"service"</span><span class="p">:</span><span class="w"> </span><span class="s2">"async.http.response.stream.499"</span><span class="p">,</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">      </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">      </span><span class="nt">"origin"</span><span class="p">:</span><span class="w"> </span><span class="s2">"20260830a0dcb550832b4683b4853c609778cd82"</span><span class="p">,</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">      </span><span class="nt">"start"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-08-30T04:24:17.851Z"</span><span class="p">,</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">      </span><span class="nt">"exec_time"</span><span class="p">:</span><span class="w"> </span><span class="mf">1.202</span><span class="p">,</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">      </span><span class="nt">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hello.tokens"</span><span class="p">,</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"710dcb0b706e4b5b949be138d0992b0b"</span><span class="p">,</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">      </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">200</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>6. The caller's view</strong> - the terminal SSE frame rendered back out the Java
+edge echoes both continuity dimensions:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>event: done
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>data: {"trace_id":"710dcb0b706e4b5b949be138d0992b0b","count":1,"my_correlation_id":"biz-e2e-777","language":"python"}
+</code></pre></div>
+<p><strong>Connectivity, in one paragraph.</strong> Every record above carries the one trace
+id the engine minted at its HTTP edge, and the span ids chain across the
+runtime boundary in both directions: the edge request → the relay function's
+span (<code>afa289...</code>) → the Python execution's span (<code>55ebd6...</code>, parented on the
+relay) → the engine's reply-lane delivery spans (parented on the Python span).
+The business correlation-id from the <code>X-Correlation-Id</code> edge header rides the
+<code>my_cid</code> envelope tag through every hop and surfaces as the <code>cid</code> in the
+wrapper's app-log context and in the demo's terminal metadata. The wrapper's
+application log line and its telemetry record share the same <code>span_id</code>, which
+is what lets a log aggregation (or a stdout log-ingest agent) attach a
+function's own log output to the exact span of the distributed trace - the
+complete telemetry and app-context story from user to engine to wrapper and
+back, assembled entirely from the four runtimes' stdout logs.</p>
 
 
 
@@ -3633,7 +3170,7 @@ wrapper round above) and remains the checklist for the next language:</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../../guides/registration-metadata-contract/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Registration Metadata Contract">
+          <a href="../event-over-http-interop/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Interop Test Report (Java ⇄ Rust)">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3643,20 +3180,20 @@ wrapper round above) and remains the checklist for the next language:</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Registration Metadata Contract
+                Interop Test Report (Java ⇄ Rust)
               </div>
             </div>
           </a>
         
         
           
-          <a href="../progressive-rendering-interop/" class="md-footer__link md-footer__link--next" aria-label="Next: Interop Test Report — Progressive Rendering">
+          <a href="../suspend-resume-interop/" class="md-footer__link md-footer__link--next" aria-label="Next: Interop Test Report — Suspend/Resume">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Interop Test Report — Progressive Rendering
+                Interop Test Report — Suspend/Resume
               </div>
             </div>
             <div class="md-footer__button md-icon">
