@@ -158,6 +158,7 @@ nav:
     - Event Envelope Wire Format: guides/event-envelope-wire-format.md
     - Registration Metadata Contract: guides/registration-metadata-contract.md
     - Interop Test Report (Java ⇄ Rust): test-reports/event-over-http-interop.md
+    - Interop Test Report — Progressive Rendering: test-reports/progressive-rendering-interop.md
     - Interop Test Report — Suspend/Resume: test-reports/suspend-resume-interop.md
     - Reserved Names & Headers: guides/reserved-names-and-headers.md
     - Actuators & HTTP Client: guides/actuators-and-http-client.md

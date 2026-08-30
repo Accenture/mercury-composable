@@ -336,10 +336,156 @@ pin; Map/bytes/`\r`/reserved-name escape-hatch round-trips (exact types); eof tr
 metadata round-trip; mid-stream `fail()` propagation; server idle 408 through the chain;
 pool-dry 503; x-async and RPC pins unchanged; trailing-frame discard tolerance.
 
-## 8. Follow-ups staged (not this spec's scope)
+## 8. Phase 3 design — wrapper twins (RATIFIED by Eric 2026-08-30, incl. the reply_to revision)
 
-- Phase 3 detail round (wrapper host/writer twins; interop report round per
-  `conv-telemetry-presentation-parity`).
+The python/node language packs gain both halves of the dialect: their `/api/event`
+host answers streaming-capable calls with the envelope-mode SSE response (a wrapper
+FUNCTION streams to an engine caller), and their client consumes SSE (a wrapper
+function calls a remote streaming function). Everything stays inside the wrapper
+scope fence — codec + host + thin client; no orchestration.
+
+### W1 — reply_to in the primitive bus; interceptor handlers; engine-identical writer
+
+**Eric's revision (2026-08-30), replacing the contextvar proposal:** the wrappers'
+primitive event bus allows the **reply_to mechanism** — envelope-addressed delivery
+to a LOCAL route — so the producer paradigm is identical across all four runtimes:
+*the caller provides a reply address; the callee streams events to it until a
+terminal signal.* It is not orchestration — simple routing to a local function,
+exactly what the engines' in-memory bus does. reply_to never routes across the wire
+(cross-wire replies ride the SSE response, as on the engines). Consequences:
+
+- `@preload` gains the engines' **interceptor flavor**: an envelope-receiving
+  handler whose return value is not auto-replied — manual sends via reply_to.
+  Streaming producers and relay functions are interceptors, as on the engines.
+- `EventStreamWriter.from_request(event)` — the engines' exact producer API
+  (reads reply_to + cid from the incoming envelope; head control on the first
+  outgoing event; write / write_named / close(metadata) / fail; writes after
+  close dropped; the standard error triple on fail).
+- Per-request **inbox sinks** (generated local route names backed by queues, the
+  engines' AsyncInbox idea) give interceptor dispatch its reply addressing; the
+  single-process host needs no lane pool — a per-request sink IS the lane.
+- This unlocks the **relay composition** in wrappers: a streaming function
+  forwards its own reply_to into a call against a remote streaming peer, and
+  segments flow engine → wrapper → peer → back with zero buffering.
+
+### W2 — host dispatch (the EventApiService half)
+
+For a capable call (`Accept: text/event-stream`, not x-async) to an interceptor
+target, the host dispatches with reply_to = a per-request sink and classifies the
+first envelope exactly like the engines: unmarked → the classic single-shot
+response, byte-identical; marked → the envelope-mode SSE dialect (same frame
+rules; terminals then clean end; x-ttl ms as per-segment idle with the in-band
+408 triple; `event.stream.keep.alive` pings, same config key, default 30s).
+A NON-capable call whose first reply carries `x-event-stream` answers the pinned
+`406 Streaming function requires a caller that accepts text/event-stream` — the
+engines' exact detection mechanism. Non-interceptor targets keep today's
+future-based dispatch untouched. An uncaught handler exception after the head
+becomes an in-band exception frame (the host awaits the handler — a small
+wrapper-side improvement over engine interceptors).
+
+### W3 — client surface (the AsyncHttpClient half)
+
+- `po.stream(route, body, ...)` → an async iterator (`for await` on node) yielding
+  the SAME decoded envelopes an engine reply route receives — data segments then
+  the terminal; a non-streaming target yields its one classic reply (graceful
+  degradation). Local routes are supported through the same sink mechanics (a
+  dividend of W1's reply_to ruling — the earlier "local = error" proposal is
+  superseded).
+- `po.stream_to(route, body, reply_to=..., cid=...)` → the raw relay form for
+  composition: decoded envelopes forward verbatim to the named LOCAL route with
+  the given correlation id; awaits the terminal.
+- Conformance guards identical to the engines: missing envelope head / malformed
+  frame / transport end without a decoded terminal synthesize the pinned in-band
+  exception envelopes; per-read idle = x-ttl with the 408 triple; frames after a
+  decoded terminal are discarded.
+
+### W3a — business correlation-id parity (added at the interop verification, 2026-08-30)
+
+The continuity check surfaced the missing outbound half in the wrappers: they
+injected the `my_cid` tag as the read-only `my_correlation_id` header view at
+HTTP delivery but never re-stamped it on outbound calls, and local bus
+deliveries skipped the injection. Completed to full engine parity
+(`PostOffice.touch` / WorkerHandler): the trace context carries the business
+correlation-id (`get_trace()` / `trace_context(...)`; node `getTrace()` /
+`runWithTrace`, now exported), outbound client envelopes fill-stamp the
+`my_cid` tag from context, and local deliveries inject the header view exactly
+like the HTTP host. Pinned by two tests per wrapper; live-proven in the interop
+report's business-correlation-id section (both engine edges → python echo;
+wrapper ⇄ wrapper both directions).
+
+### W7 — wrapper span lineage (RATIFIED direction 2026-08-30; implemented same day)
+
+Eric's framing: for the AI SDLC, OpenTelemetry lineage is the observability
+substrate - *user → agent → MCP → tools*, "the lineage documents the graphs."
+Wrapper functions are exactly where the agent-orchestration adapters (LLM, MCP,
+tools) will live, so a span-less wrapper boundary would break the trace tree at
+its most important nodes. The wrappers therefore implement the engines' full
+span model rather than trace-id passthrough:
+
+- Every traced execution mints a 16-hex (W3C-shaped) span; the caller's span
+  (from the inbound envelope) is its parent. The trace context exposes
+  `span_id`/`parent_span_id` (python; camelCase on node), and
+  `trace_context()`/`runWithTrace()` accept a caller span so a batch edge can
+  parent onto an external OpenTelemetry span.
+- Outbound client events and EventStreamWriter segments carry the CURRENT
+  span (PostOffice.touch parity), which also lights the W3C `traceparent`
+  header the wrapper clients already stamped conditionally.
+- Non-RPC executions emit the engines' distributed-trace dataset record
+  (`{"trace": {...}, "annotations": {...}}`, Java-reference key set incl.
+  origin/start/exec_time/status/span_id/parent_span_id) on a
+  `distributed.tracing` logger; the wrapper log pipeline renders structured
+  messages as real JSON objects in json/compact mode and compact JSON in text
+  mode. The stdout log stream is the field-grade sink: log-ingest agents
+  (e.g. a Dynatrace stdout ingest agent) forward it to dashboards - per Eric,
+  often a better field solution than an OTLP forwarder; OTLP export from
+  wrappers stays out of the minimalist fence.
+- RPC round-trips emit no dataset (engine WorkerHandler parity): the wrapper
+  clients stamp the engines' `rpc` envelope tag on `request()` calls and the
+  bus suppresses the record for reply-future or rpc-tagged deliveries.
+- Live-proven three ways under single traces: Java relay span → python span
+  (parent = relay) → Java lane spans (parent = python span); python caller's
+  external span → engine event.api.auth/service parents; node execution
+  parented on a python caller's span. Interop report carries the evidence.
+- Known nuance: raw SSE token frames carry no envelope metadata, so their
+  engine-side delivery spans join the trace unparented (head/terminal parent
+  correctly via envelope frames) - see the §9 follow-up.
+- Sender attribution (Eric's review find): the hosts fill `from` with
+  `event.api.service` for an anonymous wire caller (the Java EventApiService's
+  touch fill), the trace context carries the executing route so onward calls
+  and stream segments attribute themselves, and bare local callers fall back
+  to the engines' `unknown`.
+- Application log context (Eric's follow-on gap): the app-log-context twin -
+  `app.log.context` on by default with a packaged `default-log-context.yaml`
+  (the engines' classpath-resource twin, not a code constant) carrying the
+  engines' template
+  (cid/traceId/tracePath/spanId/parentSpanId/service/timestamp), replaceable
+  via `resources/app-log-context.yaml` ($tokens + `${ENV:default}` constants,
+  invalid tokens fail fast), a `context` block on json/compact log lines
+  inside traced requests only, `update_context`/`updateContext` developer API
+  with reserved-key guard - so app logs and trace records correlate end to
+  end. Long-lived bus workers detach from the creating caller's context
+  (a leak the sample drives exposed).
+
+### W4–W6
+
+- **W4** — a sync-bridge `stream_sync` (blocking iterator for plain-`def` python
+  handlers) is DEFERRED to field demand; the async form covers the LLM-relay case.
+- **W5** — config: the same `event.stream.keep.alive` key (30s default, 0 off);
+  x-ttl stays milliseconds on the wire.
+- **W6** — conformance: wrapper suites against conforming and misbehaving mock
+  peers, then a live interop round against BOTH engines at ship (wrapper→engine
+  and engine→wrapper token streams), recorded in the interop report per
+  `conv-telemetry-presentation-parity`.
+
+Rollout: mercury-python first (the reference wrapper), mercury-nodejs as its twin,
+then the live interop round and the wrapper docs chapters.
+
+## 9. Follow-ups staged (not this spec's scope)
+
 - Event Script flow handoff (`model.http.*` reserved keys) — unchanged from the edge
   spec's v1.1 list.
 - graph-run streaming (bp-agent-orchestration).
+- Raw-frame lane parenting (optional polish, Java+Rust lock-step): the engines'
+  SSE-consuming client could remember the stream head's span id and stamp it on
+  the envelopes it rebuilds from RAW token frames, so per-token delivery spans
+  parent onto the producer like the head/terminal already do.

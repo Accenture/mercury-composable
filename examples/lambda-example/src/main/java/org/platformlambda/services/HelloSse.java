@@ -45,7 +45,10 @@ import java.util.Map;
  * Try it with the companion script: {@code node scripts/sse-client.mjs} or with
  * {@code curl -N -H 'accept: text/event-stream' http://127.0.0.1:8085/api/hello/sse}
  */
-@PreLoad(route = "hello.sse", instances = 10)
+// public so a peer application (an engine or a python/node function host) can
+// consume this stream through /api/event - the cross-runtime streaming demo,
+// the hello.declarative precedent
+@PreLoad(route = "hello.sse", instances = 10, isPrivate = false)
 @EventInterceptor
 public class HelloSse implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final long DEFAULT_DELAY_MS = 1000;

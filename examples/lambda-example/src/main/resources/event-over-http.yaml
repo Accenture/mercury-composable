@@ -2,3 +2,8 @@ event:
   http:
     - route: 'hello.world'
       target: 'http://127.0.0.1:8086/api/event'
+    # the wrapper demo apps' streaming function (python demo-app defaults to
+    # port 8086, node demo-app to 8087) - point at another peer with
+    # -Dpeer.demo.host / -Dpeer.demo.port
+    - route: 'hello.tokens'
+      target: 'http://${peer.demo.host:127.0.0.1}:${peer.demo.port:8086}/api/event'
