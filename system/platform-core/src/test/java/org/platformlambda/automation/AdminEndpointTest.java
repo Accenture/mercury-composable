@@ -91,6 +91,11 @@ class AdminEndpointTest extends TestBase {
         Map<String, Object> privateRoutes = (Map<String, Object>) routing.get("private");
         assertTrue(privateRoutes.containsKey("routes.actuator.service"));
         assertTrue(publicRoutes.containsKey("hello.mock"));
+        // pool-style route families render as one compact entry (display-only compression):
+        // the 500 streaming reply lanes collapse into "async.http.response.stream.0 - 499"
+        assertEquals(1, privateRoutes.get("async.http.response.stream.0 - 499"));
+        assertFalse(privateRoutes.containsKey("async.http.response.stream.0"));
+        assertFalse(privateRoutes.containsKey("async.http.response.stream.499"));
     }
 
     @SuppressWarnings("unchecked")

@@ -201,8 +201,70 @@ public class HttpRouter {
         return contexts;
     }
 
+    static String getReplyRoute(String requestId) {
+        // a streaming endpoint replies through the dedicated single-instance lane checked
+        // out for this request, so segment order is guaranteed end-to-end while different
+        // requests stream concurrently through their own lanes
+        AsyncContextHolder holder = contexts.get(requestId);
+        String lane = holder != null ? holder.streamLane : null;
+        return (lane != null ? lane : AsyncHttpClient.ASYNC_HTTP_RESPONSE)
+                + "@" + Platform.getInstance().getOrigin();
+    }
+
     public static void closeContext(String requestId) {
-        contexts.remove(requestId);
+        AsyncContextHolder holder = contexts.remove(requestId);
+        if (holder != null) {
+            // the atomic claim in the holder guarantees the lane is released exactly once,
+            // even against a concurrent dynamic lane binding (bindEnvelopeStream)
+            String lane = holder.claimLaneRelease();
+            if (lane != null) {
+                EventStreamRenderer.releaseLane(lane);
+            }
+        }
+    }
+
+    /**
+     * Bind an envelope-mode event stream to a live request context - the Event-over-HTTP
+     * streaming relay ("/api/event" with a caller that accepts text/event-stream).
+     * Reuses the reply lane already checked out when the endpoint is stream-enabled,
+     * otherwise checks out a lane dynamically so plain RPC traffic never consumes one.
+     *
+     * @param requestId the edge request correlation id
+     * @param format the requester's envelope serialization format for the wire frames
+     * @param timeoutMs idle allowance between stream events
+     * @return the reply lane's route name, or null when the context is gone or the pool is exhausted
+     */
+    public static String bindEnvelopeStream(String requestId, EventEnvelope.Format format, long timeoutMs) {
+        AsyncContextHolder holder = contexts.get(requestId);
+        if (holder == null) {
+            return null;
+        }
+        if (holder.streamLane == null) {
+            String lane = EventStreamRenderer.checkoutLane();
+            if (lane == null) {
+                return null;
+            }
+            holder.streamLane = lane;
+        }
+        holder.envelopeStreamFormat = format;
+        holder.setTimeout(timeoutMs);
+        if (!contexts.containsKey(requestId)) {
+            // the context closed while binding - undo through the atomic claim
+            String lane = holder.claimLaneRelease();
+            if (lane != null) {
+                EventStreamRenderer.releaseLane(lane);
+            }
+            return null;
+        }
+        return holder.streamLane;
+    }
+
+    /**
+     * @param requestId the edge request correlation id
+     * @return true when the request context is still open
+     */
+    public static boolean hasContext(String requestId) {
+        return requestId != null && contexts.containsKey(requestId);
     }
 
     public void handleEvent(AssignedRoute route, String requestId, int status, String error) {
@@ -384,7 +446,7 @@ public class HttpRouter {
 
     /**
      * This is a very primitive way to resolve content-type for proper loading of
-     * HTML, CSS and Javascript contents by a browser.
+     * HTML, CSS and JavaScript contents by a browser.
      * <p>
      * It is not intended to be a comprehensive MIME type resolver.
      *
@@ -492,6 +554,15 @@ public class HttpRouter {
         EventEmitter po = EventEmitter.getInstance();
         if (!po.exists(route.info.primary)) {
             throw new AppException(503, "Service " + route.info.primary + " not reachable");
+        }
+        if (route.info.streamResponse) {
+            // a streaming endpoint borrows a dedicated ordered reply lane for the lifetime
+            // of the request - an empty pool means the system is at full streaming capacity
+            String lane = EventStreamRenderer.checkoutLane();
+            if (lane == null) {
+                throw new AppException(503, "Streaming response pool exhausted");
+            }
+            holder.streamLane = lane;
         }
         String authService = getReachableAuthService(po, request, route);
         AsyncHttpRequest req = prepareHttpRequest(request, route, uri);
@@ -930,7 +1001,7 @@ public class HttpRouter {
             EventEnvelope event = new EventEnvelope();
             event.setTo(requestEvent.primary).setFrom(HTTP_REQUEST)
                     .setCorrelationId(requestEvent.requestId).setBody(requestEvent.httpRequest)
-                    .setReplyTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
+                    .setReplyTo(getReplyRoute(requestEvent.requestId));
             // Business correlation-id is carried on the engine-managed envelope tag, never as a header.
             // the worker injects my_correlation_id into the target function's input copy at delivery
             if (requestEvent.getBusinessCorrelationId() != null) {
@@ -1085,7 +1156,7 @@ class HttpAuth implements LambdaFunction {
             var forward = new EventEnvelope();
             forward.setTo(event.primary).setBody(req)
                     .setCorrelationId(event.requestId)
-                    .setReplyTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
+                    .setReplyTo(HttpRouter.getReplyRoute(event.requestId));
             // expose the business correlation-id to the target function (and downstream via PostOffice)
             if (event.getBusinessCorrelationId() != null) {
                 forward.setHeader(HttpRouter.MY_CORRELATION_ID, event.getBusinessCorrelationId());

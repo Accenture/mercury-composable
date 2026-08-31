@@ -140,6 +140,7 @@ nav:
     - Observability: guides/observability.md
     - Spring Boot Integration: guides/spring-boot.md
     - Event over HTTP: guides/event-over-http.md
+    - HTTP Response Streaming: guides/http-streaming.md
     - Polyglot Functions (Python & Node.js): guides/polyglot-functions.md
     - Minimalist Kafka: guides/minimalist-kafka.md
     - Twin Kafka (dual cluster): guides/twin-kafka.md
@@ -157,6 +158,7 @@ nav:
     - Event Envelope Wire Format: guides/event-envelope-wire-format.md
     - Registration Metadata Contract: guides/registration-metadata-contract.md
     - Interop Test Report (Java ⇄ Rust): test-reports/event-over-http-interop.md
+    - Interop Test Report — Progressive Rendering: test-reports/progressive-rendering-interop.md
     - Interop Test Report — Suspend/Resume: test-reports/suspend-resume-interop.md
     - Reserved Names & Headers: guides/reserved-names-and-headers.md
     - Actuators & HTTP Client: guides/actuators-and-http-client.md

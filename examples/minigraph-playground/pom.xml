@@ -5,14 +5,14 @@
 
     <groupId>com.accenture</groupId>
     <artifactId>minigraph-playground</artifactId>
-    <version>4.11.11</version>
+    <version>4.12.0</version>
     <packaging>jar</packaging>
     <name>MiniGraph Playground</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.0</version>
+        <version>4.1.1</version>
         <relativePath/>
     </parent>
 
@@ -39,7 +39,7 @@
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-bom</artifactId>
-                <version>2025.0.6</version>
+                <version>2025.0.7</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -51,7 +51,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minigraph-playground-engine</artifactId>
-            <version>4.11.11</version>
+            <version>4.12.0</version>
         </dependency>
 
         <!-- Redis state store for graph suspend/resume: including this jar registers
@@ -61,7 +61,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minigraph-state-redis</artifactId>
-            <version>4.11.11</version>
+            <version>4.12.0</version>
         </dependency>
 
         <!-- Embedded Redis (real redis-server binary, incl. arm64 macOS) for the

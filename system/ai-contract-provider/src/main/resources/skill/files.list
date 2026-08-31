@@ -24,6 +24,7 @@ references/guides/event-script/index.md
 references/guides/event-script/syntax.md
 references/guides/flow-schema-reference.md
 references/guides/getting-started.md
+references/guides/http-streaming.md
 references/guides/knowledge-graph/ai-agent-guide.md
 references/guides/knowledge-graph/build-your-first-graph.md
 references/guides/knowledge-graph/command-reference.md
@@ -51,4 +52,5 @@ references/guides/sync-over-async.md
 references/guides/twin-kafka.md
 references/index.md
 references/test-reports/event-over-http-interop.md
+references/test-reports/progressive-rendering-interop.md
 security.json

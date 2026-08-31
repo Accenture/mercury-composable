@@ -22,6 +22,156 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0020 — Route pools: numbered singleton lanes as a first-class platform registration {#adr-0020}
+**Status:** Accepted · **Date:** 2026-08-30 · **Serves:** vision-mercury-composable · **Formalizes:** route-pool-registration-design
+<!-- id: adr-0020 | status: accepted -->
+
+**Abstract.** `Platform.registerRoutePool(prefix, lambda, count)` registers a set of
+private singleton routes `{prefix}.{n}` for n = 0 to count-1 and returns the member
+names in order; `releaseRoutePool(prefix)` removes the set symmetrically. Each member is
+a strict FIFO lane (instances=1, one shared stateless lambda), so a caller that checks
+out a lane gets per-conversation event ordering while other lanes serve concurrent
+traffic — the pattern the HTTP edge's SSE reply lanes (`async.http.response.stream.{n}`)
+introduced, promoted from an open-coded loop in AppStarter to a platform API with
+registry-level identity (a pool registry mapping prefix to lane count). Pools are always
+private: lane checkout is an in-process rendezvous, so advertising members to the
+service mesh would be meaningless. Registering an existing pool reloads it (the previous
+member set is released first, house reload semantics); individual register/release calls
+that touch a pool member are warned, never refused — range-checked, so a neighbor route
+such as `{prefix}.10` beside a count-3 pool is never misclassified. Pool mutations are
+atomic under a `ReentrantLock` (virtual-thread-friendly on Java 21).
+`getLocalRoutingTable()` is deliberately untouched: it remains the truthful live
+registry consumed by mesh route advertising and Spring autowiring; the compact pool
+rendering stays display-only in the actuator (`compressRouteFamilies`).
+
+**Rationale.** The v4.12.0 streaming milestone shipped the lane-pool pattern without an
+abstraction: 500 `registerPrivate` calls, no release counterpart, and no way for the
+platform to tell a pool from 500 coincidentally numbered routes; upcoming consumers
+(graph-run streaming, wrapper relay pools under the AI SDLC work) would each re-open-code
+it. Alternatives rejected: naming the API `registerStreams` (one character from the
+existing `registerStream(String, StreamFunction)` with entirely different semantics —
+and the abstraction is a pool of ordered lanes, not a stream); collapsing pool members
+inside `getLocalRoutingTable()` (the collapsed display key is not a valid route name,
+and the table has functional consumers — the Kafka mesh advertises from it, rest-spring-4
+autowires from it); an `isPrivate` flag (no remote use case exists, and the platform
+expresses privacy as method pairs, never booleans); renaming the lane family to
+`http.response.stream.{n}` (the lanes are sibling instances of `async.http.response` —
+renaming the child while the parent stays would split the `async.http.*` namespace
+family, and the name already shipped in traces, actuator views and docs).
+
+---
+
+## ADR-0019 — The HTTP client consumes SSE progressively; Event-over-HTTP streams on the same call {#adr-0019}
+**Status:** Accepted · **Date:** 2026-08-29 · **Serves:** vision-mercury-composable · **Formalizes:** async-http-client-sse-streaming-design
+<!-- id: adr-0019 | status: accepted -->
+
+**Abstract.** `async.http.request` consumes a `text/event-stream` response progressively
+and relays it as the platform's own streaming protocol: one `x-event-stream: data`
+envelope per upstream SSE event to the caller's reply route (the event's data as body,
+`event:` name as `x-event-name`, head control - upstream status plus the SSE content
+type - on the first envelope), `eof` on a clean end, and an in-band `exception` on idle
+expiry or a mid-stream disconnect. Activation is explicit and standard: the request must
+declare `Accept: text/event-stream`, the response must actually be SSE, and the request
+must carry a `reply_to`; anything else keeps the buffered single-shot behavior. For a
+stream, the request timeout becomes the per-read idle allowance (any upstream bytes,
+keep-alive comments included, reset it). Payloads are never interpreted - provider
+conventions such as `data: [DONE]` forward verbatim, keeping the client vendor-neutral.
+Because the streaming producer contract is the one the HTTP edge already consumes, a
+streaming endpoint's function can forward its own `reply_to` and correlation id into the
+client call and the application becomes an SSE-to-SSE relay by configuration. The same
+enhancement is the transport for Event-over-HTTP peer streaming (python/node wrapper
+functions and engine⇄engine): the peer's `/api/event` answers the SAME call with an SSE
+response using a hybrid control/data framing - control signals (the head, `eof`,
+`exception`, and any segment that cannot round-trip as text) ride base64-encoded MsgPack
+envelope frames under the reserved SSE event name `envelope`, while token segments ride
+raw SSE frames with near-zero overhead - negotiated by the same Accept contract, so
+version skew degrades explicitly, never silently.
+
+**Rationale.** Progressive delivery had reached the HTTP edge (ADR-0018) but not the two
+consumption paths AI-era workloads need: an engine function consuming an LLM provider's
+token stream, and a polyglot wrapper function streaming results back to the engine. One
+mechanism closes both because the Event-over-HTTP relay already flows through
+AsyncHttpClient. Alternatives rejected: an on-demand WebSocket channel (breaks the
+wrapper scope fence, grows four codebases, historically gateway-hostile, and drifts
+toward the standing-connection mesh the framework keeps opt-in); per-segment POSTs back
+to the reply lane (FIFO forces serialized posts - one round trip per token - and opens
+an inbound path to reply lanes); gRPC/HTTP-2 push (a foreign dependency stack); and
+long-polling (chatty and stateful). Streaming on the response of the engine's own
+request adds no inbound surface, is ordered by TCP for free, and rides the wire shape
+gateways already accommodate for LLM traffic.
+
+---
+
+## ADR-0018 — HTTP response streaming rides the multi-shot reply route; the wire stays standards-only {#adr-0018}
+**Status:** Accepted · **Date:** 2026-08-28 · **Serves:** vision-mercury-composable · **Formalizes:** http-response-streaming-design
+<!-- id: adr-0018 | status: accepted -->
+
+**Abstract.** A function streams an HTTP response (LLM token segments, agent progress
+events, live updates) by exercising the platform's native streaming pattern: the callee
+sends a sequence of events to the caller-provided reply route until an
+end-of-transmission signal. Each event carries the reserved **envelope** header
+`x-event-stream: data | eof | exception` (the ObjectStream vocabulary); the marker is
+internal protocol consumed by the REST automation edge — like `x-stream-id` and `x-ttl`,
+it never appears on the wire. The public HTTP surface is standards-only: Server-Sent
+Events framing when the content type is `text/event-stream` (typed events, a terminal
+`done` event carrying trailing metadata, in-band `error` events, keep-alive comments),
+chunked transfer with JSON Lines otherwise. A streaming endpoint is declared with
+`stream: true` in rest.yaml, which checks out a dedicated ordered reply lane for the
+request's lifetime — a single-instance route (`async.http.response.stream.{n}`) drawn
+LIFO from a pool of 500 (the `async.http.response` concurrency), returned when the
+request context closes — the "ready" signal pattern of the reactive manager/worker
+design. All segments of one request ride its own lane (strict FIFO) while different
+requests stream concurrently through their own lanes; an exhausted pool rejects further
+streaming requests immediately with HTTP-503 (deterministic back-pressure, no
+configuration knob). The first event commits the response head; each
+arrival extends the idle timeout; stalls fail in-band; client disconnects turn late
+segments into no-op drops; a bounded drain-aware buffer guards slow clients. Responses
+without the marker are single-shot, exactly as before, and the legacy `x-stream-id`
+relay is untouched.
+
+**Rationale.** The prerequisite for AI-era workloads is progressive delivery over plain
+HTTP — SSE is the de facto wire for chat token streams (OpenAI, Anthropic, Gemini and
+every compatible server), agent progress protocols (MCP Streamable HTTP, A2A), and the
+live-watch window of long-running workflows. The alternative — building on the existing
+`Flux`/`x-stream-id` relay — was rejected: the producer API is Reactor-typed and
+JVM-only (invisible to Event Script, knowledge graphs, and the polyglot wrappers, which
+is exactly where LLM tokens will come from), structured segments buffered at the edge
+instead of streaming, and the relay has no SSE framing or in-band terminal events. The
+multi-shot reply route adds no new substrate — anything that can send an envelope to a
+route can stream, which keeps the mechanism language-neutral by construction: flow
+tasks, graph nodes, and Event-over-HTTP peers join by sending the same envelopes. A
+custom HTTP header was rejected in favor of the envelope marker so the wire stays fully
+standard (RFC 6648 discourages new X- wire headers; the envelope already has a reserved
+x- vocabulary).
+
+## ADR-0017 — Spring Boot integration targets Boot 4 only; the Boot 3 lane is retired {#adr-0017}
+**Status:** Proposed · **Date:** 2026-08-27 · **Serves:** vision-mercury-composable · **Formalizes:** stack-integration-spring-boot4
+<!-- id: adr-0017 | status: proposed -->
+
+**Abstract.** The optional Spring Boot integration is provided by a single module,
+`system/rest-spring-4` (with `examples/rest-spring-4-example` as its reference
+application), targeting Spring Boot 4. The Spring Boot 3 lane — `system/rest-spring-3`
+and `examples/rest-spring-3-example` — is removed from the reactor. The integration
+surface carries over unchanged: the RestServer bootstrap, the `spring.boot.main`
+override, `@PreLoad` autowiring, and the same configuration keys — so migrating an
+application is a dependency swap plus that application's own Spring Boot 3 → 4 upgrade.
+Spring remains optional and is never required by platform-core: the lightweight built-in
+non-blocking HTTP server stays the default.
+
+**Rationale.** The Spring community stopped issuing security patches for Spring Boot 3,
+and field deployment pipelines enforce that directly: dependency security scanning
+(Snyk) rejects Spring Boot 3 dependencies outright and requires Spring Framework 7 or
+newer, so a build carrying the Boot 3 lane blocks deployment. Continuing to ship a
+Boot 3 integration would hand field installations a permanently-unpatchable web
+dependency lane — the opposite of the framework's security posture, where field
+deployments are gated by dependency scanners (cf. the netty and lz4 remediation
+rounds). Maintaining two lanes also doubled every Spring upgrade sweep
+(both `spring-boot-starter-parent` versions, two example applications) while exposing
+the same integration surface. The alternative — freezing `rest-spring-3` for legacy
+consumers — was rejected: an EOL web stack is a liability regardless of freshness of the
+rest of the build, and the migration cost is a dependency swap. Applications that must
+stay on Spring Boot 3 can remain on Mercury releases up to this one.
+
 ## ADR-0016 — Polyglot functions are Event-over-HTTP peers, not subprocesses or ports {#adr-0016}
 **Status:** Proposed · **Date:** 2026-08-22 · **Serves:** vision-mercury-composable · **Formalizes:** polyglot-event-over-http-design
 <!-- id: adr-0016 | status: proposed -->

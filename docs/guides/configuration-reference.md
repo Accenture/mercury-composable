@@ -309,7 +309,7 @@ Route names or `flow://<flow-id>` identifiers to activate at startup without an 
 |------|---------|
 | `String` | — |
 
-Package for Spring Boot component scanning; used alongside `web.component.scan` when running with `rest-spring-3`.
+Package for Spring Boot component scanning; used alongside `web.component.scan` when running with `rest-spring-4`.
 
 ### `web.component.scan`
 
@@ -669,7 +669,7 @@ When `true`, the `/info`, `/routes`, `/lib`, and `/env` endpoints require an `X-
 
 ## Spring Boot Integration
 
-These properties are relevant only when using the `rest-spring-3` module.
+These properties are relevant only when using the `rest-spring-4` module.
 
 ### `spring.boot.main`
 

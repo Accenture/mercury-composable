@@ -52,6 +52,7 @@ class SkillSnapshotTest {
         expected.add("references/index.md");
         expected.add("references/arch-decisions/ADR.md");
         expected.add("references/test-reports/event-over-http-interop.md");
+        expected.add("references/test-reports/progressive-rendering-interop.md");
         expected.add("references/fixtures/rest-bindings.yaml");
         try (var paths = Files.walk(docs.resolve("guides"))) {
             paths.filter(Files::isRegularFile).forEach(path ->

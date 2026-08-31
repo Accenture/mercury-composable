@@ -8,13 +8,12 @@
     <groupId>com.accenture.mercury</groupId>
     <artifactId>parent-mercury</artifactId>
     <packaging>pom</packaging>
-    <version>4.11.11</version>
+    <version>4.12.0</version>
     <name>Parent Mercury</name>
 
     <modules>
         <!-- Core libraries -->
         <module>system/platform-core</module>
-        <module>system/rest-spring-3</module>
         <module>system/rest-spring-4</module>
         <module>system/event-script-engine</module>
         <module>system/minigraph-playground-engine</module>
@@ -47,7 +46,6 @@
              gained unit tests; pg-example stays standalone because its tests download an
              embedded Postgres binary) -->
         <module>examples/lambda-example</module>
-        <module>examples/rest-spring-3-example</module>
         <module>examples/rest-spring-4-example</module>
         <module>examples/composable-example</module>
         <module>examples/kotlin-example</module>

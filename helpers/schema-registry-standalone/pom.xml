@@ -9,13 +9,13 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>schema-registry-standalone</artifactId>
     <packaging>jar</packaging>
-    <version>4.11.11</version>
+    <version>4.12.0</version>
     <name>Standalone Schema Registry server for dev</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.0</version>
+        <version>4.1.1</version>
         <relativePath />
     </parent>
 
@@ -41,7 +41,7 @@
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-bom</artifactId>
-                <version>2025.0.6</version>
+                <version>2025.0.7</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -50,11 +50,11 @@
 
     <dependencies>
         <!-- platform-core provides the built-in reactive HTTP server + REST automation.
-             This is a minimalist HTTP service, so rest-spring-3/4 is NOT required. -->
+             This is a minimalist HTTP service, so rest-spring-4 is NOT required. -->
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.11.11</version>
+            <version>4.12.0</version>
         </dependency>
 
         <dependency>

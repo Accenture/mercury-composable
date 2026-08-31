@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.accenture</groupId>
     <artifactId>pg-example</artifactId>
-    <version>4.11.11</version>
+    <version>4.12.0</version>
     <packaging>jar</packaging>
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.0</version>
+        <version>4.1.1</version>
     </parent>
     
     <properties>
@@ -29,7 +29,7 @@
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-bom</artifactId>
-                <version>2025.0.6</version>
+                <version>2025.0.7</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -47,12 +47,12 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>rest-spring-4</artifactId>
-            <version>4.11.11</version>
+            <version>4.12.0</version>
         </dependency>
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>reactive-postgres</artifactId>
-            <version>4.11.11</version>
+            <version>4.12.0</version>
         </dependency>
 
         <dependency>

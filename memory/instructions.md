@@ -29,7 +29,7 @@ system/
   platform-core            ← core engine: event bus, function registry,
                              PostOffice RPC, virtual-thread integration (no Spring)
   event-script-engine      ← compiles & executes YAML event flows
-  rest-spring-3 / -4       ← Spring Boot integration (REST adapter, autoconfig)
+  rest-spring-4            ← Spring Boot integration (REST adapter, autoconfig; Boot 3 lane retired 2026-08-27)
   mini-scheduler           ← scheduled task support
   minigraph-playground-engine
 extensions/reactive-postgres   ← optional add-ons (R2DBC, graph engine, playground)
@@ -38,7 +38,7 @@ connectors/                ← Kafka pub/sub adapters + presence/service monitor
   adapters/kafka/{kafka-connector, kafka-presence}
 helpers/                   ← standalone dev servers, no Docker (kafka-standalone, redis-standalone)
 examples/                  ← reference apps; composable-example is the primary demo
-  (lambda, rest-spring-3/-4, composable, kotlin, scheduler, minigraph, kafka-demo)
+  (lambda, rest-spring-4, composable, kotlin, scheduler, minigraph, kafka-demo)
 benchmark/benchmark-reporter ← self-contained perf harness (benchmark-client retired 4.6.2)
 docs/ (guides/, arch-decisions/)  ← docs (mkdocs `docs_dir: docs`);
                                   arch-decisions/ADR.md = the ADR ledger (holds durable design rationale)

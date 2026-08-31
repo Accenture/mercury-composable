@@ -8,3 +8,23 @@ event.http:
     target: 'http://127.0.0.1:${server.port}/api/event'
     headers:
       authorization: 'demo'
+  # Event-over-HTTP peer streaming (EventOverHttpStreamTest): the streaming target
+  # and the single-shot echo loop back to this app's own /api/event
+  - route: 'hello.stream.remote'
+    target: 'http://127.0.0.1:${server.port}/api/event'
+    headers:
+      authorization: 'demo'
+  - route: 'hello.single.remote'
+    target: 'http://127.0.0.1:${server.port}/api/event'
+    headers:
+      authorization: 'demo'
+  # an edge-level REST error on the relay path (POST to a GET-only endpoint)
+  - route: 'mock.rest.error'
+    target: 'http://127.0.0.1:${server.port}/api/hello/stream'
+  # conformance guards against a misbehaving peer (fixed-port mock SSE server)
+  - route: 'mock.sse.raw.first'
+    target: 'http://127.0.0.1:${sse.mock.port}/mock/raw-first'
+  - route: 'mock.sse.no.terminal'
+    target: 'http://127.0.0.1:${sse.mock.port}/mock/no-terminal'
+  - route: 'mock.sse.foreign'
+    target: 'http://127.0.0.1:${sse.mock.port}/mock/foreign-dialect'

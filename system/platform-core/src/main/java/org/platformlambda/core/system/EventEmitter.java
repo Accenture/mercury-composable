@@ -65,6 +65,9 @@ public class EventEmitter {
     private static final String ERROR = "error";
     private static final String MESSAGE = "message";
     private static final String X_EVENT_API = "x-event-api";
+    // x-event-api marker of the streaming-capable relay (progressive SSE consumption)
+    private static final String STREAM_RELAY = "stream";
+    private static final String TEXT_EVENT_STREAM = "text/event-stream";
     private static final String X_NO_STREAM = "x-small-payload-as-bytes";
     private static final String HTTP = "http";
     private static final String HTTPS = "https";
@@ -779,6 +782,10 @@ public class EventEmitter {
 
     private void sendWithEventHttp(EventEnvelope event, String to, String targetHttp) {
         String callback = event.getReplyTo();
+        if (callback != null && acceptsEventStream(event)) {
+            relayEventStream(event, to, targetHttp, callback);
+            return;
+        }
         String eventApiType = callback == null? "async" : "callback";
         event.setReplyTo(null);
         EventEnvelope forwardEvent = EventEnvelope.of(event.toMap()).setHeader(X_EVENT_API, eventApiType);
@@ -803,6 +810,89 @@ public class EventEmitter {
                 }
             }
         });
+    }
+
+    /**
+     * The event-level opt-in for progressive streaming over Event-over-HTTP:
+     * the outbound event declares the header "accept: text/event-stream"
+     *
+     * @param event the outbound event
+     * @return true when the caller accepts a progressive event stream
+     */
+    private boolean acceptsEventStream(EventEnvelope event) {
+        for (Map.Entry<String, String> kv : event.getHeaders().entrySet()) {
+            if (ACCEPT.equalsIgnoreCase(kv.getKey())) {
+                String value = kv.getValue();
+                return value != null && value.contains(TEXT_EVENT_STREAM);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Streaming-capable Event-over-HTTP relay (callback mode with the accept opt-in):
+     * the POST advertises Accept: text/event-stream and the caller's reply route and
+     * correlation id pass through to the HTTP client, which consumes the peer's SSE
+     * response progressively and forwards each decoded event to the callback. A peer
+     * that answers single-shot (the target does not stream, or an older engine) falls
+     * back to the classic callback delivery. The event's x-ttl header (milliseconds,
+     * default 60 seconds) is the idle allowance between stream events on both hops.
+     *
+     * @param event the outbound event (a copy - safe to mutate)
+     * @param to the target route
+     * @param targetHttp the peer's event endpoint
+     * @param callback the caller's reply route
+     */
+    private void relayEventStream(EventEnvelope event, String to, String targetHttp, String callback) {
+        final URI url;
+        try {
+            url = new URI(targetHttp);
+        } catch (URISyntaxException e) {
+            log.error("Unable to relay event stream {} to {} - {}", to, targetHttp, e.getMessage());
+            return;
+        }
+        String ttlHeader = null;
+        for (Map.Entry<String, String> kv : event.getHeaders().entrySet()) {
+            if (X_TTL.equalsIgnoreCase(kv.getKey())) {
+                ttlHeader = kv.getValue();
+            }
+        }
+        long ttlMs = ttlHeader == null?
+                ASYNC_EVENT_HTTP_TIMEOUT : Math.max(1000L, Utility.getInstance().str2long(ttlHeader));
+        event.setReplyTo(null);
+        EventEnvelope forwardEvent = EventEnvelope.of(event.toMap()).setHeader(X_EVENT_API, STREAM_RELAY);
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod(POST);
+        req.setHeader(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
+        req.setHeader(X_NO_STREAM, "true");
+        req.setHeader(ACCEPT, TEXT_EVENT_STREAM);
+        req.setHeader(X_TTL, String.valueOf(ttlMs));
+        Map<String, String> securityHeaders = getEventHttpHeaders(to);
+        if (securityHeaders != null) {
+            for (Map.Entry<String, String> kv : securityHeaders.entrySet()) {
+                if (!X_EVENT_FORMAT.equalsIgnoreCase(kv.getKey())) {
+                    req.setHeader(kv.getKey(), kv.getValue());
+                }
+            }
+        }
+        setTraceHeaders(req, forwardEvent);
+        req.setUrl(url.getPath());
+        req.setTargetHost(getTargetFromUrl(url));
+        byte[] b = forwardEvent.toBytes(httpEventFormat(securityHeaders));
+        req.setBody(b);
+        req.setContentLength(b.length);
+        // the client's per-read idle allowance - one extra second so the peer's
+        // in-band 408, sent AT the deadline, wins the race
+        req.setTimeoutSeconds((int) (ttlMs / 1000) + 1);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST)
+                .setBody(req).setHeader(X_EVENT_API, STREAM_RELAY)
+                .setReplyTo(callback).setCorrelationId(event.getCorrelationId())
+                .setFrom(to);
+        if (event.getTraceId() != null) {
+            request.setTraceId(event.getTraceId());
+            request.setTracePath(event.getTracePath());
+        }
+        send(request);
     }
 
     @SuppressWarnings("unchecked")

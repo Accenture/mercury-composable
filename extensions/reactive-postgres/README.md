@@ -101,7 +101,7 @@ You can use Spring autowiring in a LambdaFunction or TypedLambdaFunction. DO NOT
 annotation because the platform foundation code will automate the wiring for you. The "@PreLoad" annotation is
 used to scan the class and perform autowiring.
 
-Note that this library requires the "rest-spring-3" dependency that has been tuned to be compatible with the
+Note that this library requires the "rest-spring-4" dependency that has been tuned to be compatible with the
 Spring ecosystem.
 
 See the HttpTestEndpoint and DbDemoFunction for how autowiring is done.

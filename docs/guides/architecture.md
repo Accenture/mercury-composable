@@ -394,7 +394,7 @@ integration too. From `AutoStart.main()` — the universal entry point — the s
    - **No Spring Boot**: `AppStarter` runs `@MainApplication` classes immediately, in the same pass as
      steps 1–3.
    - **Spring Boot** (detected via the `spring.boot.main` config property, e.g. `RestServer` in
-     `rest-spring-3`/`rest-spring-4`): `AppStarter` completes steps 1–3, then hands off to Spring Boot's
+     `rest-spring-4`): `AppStarter` completes steps 1–3, then hands off to Spring Boot's
      own `main()`, which runs its full bootstrap (bean creation, its own embedded server if used)
      independently. Only once Spring Boot fires `ApplicationReadyEvent` does the framework's `AppLoader`
      component autowire Spring dependencies into the already-registered composable functions and *then*

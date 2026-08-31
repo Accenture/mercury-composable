@@ -30,6 +30,7 @@ import org.platformlambda.automation.config.RoutingEntry;
 import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.automation.http.HttpRequestHandler;
 import org.platformlambda.automation.models.AsyncContextHolder;
+import org.platformlambda.automation.services.EventStreamRenderer;
 import org.platformlambda.automation.services.HttpRouter;
 import org.platformlambda.automation.services.AsyncHttpResponse;
 import org.platformlambda.automation.util.SimpleHttpUtility;
@@ -59,6 +60,8 @@ public class AppStarter {
     private static final ConcurrentMap<String, LambdaFunction> wsLambdas = new ConcurrentHashMap<>();
     private static final AtomicInteger compileCycle = new AtomicInteger(0);
     private static final long HOUSEKEEPING_INTERVAL = 10 * 1000L;    // 10 seconds
+    // shared by async.http.response and the streaming reply-lane pool (one lane per instance)
+    private static final int RESPONSE_HANDLER_INSTANCES = 500;
     private static final String SKIP_OPTIONAL = "Skip optional {}";
     private static final String CLASS_NOT_FOUND = "Class {} not found";
     private static final String JAVA_VERSION = "java.version";
@@ -145,7 +148,8 @@ public class AppStarter {
                 // initializing lazily inside the structured appender's first append would
                 // re-enter the appender on the same thread, tripping log4j2's recursion
                 // guard ("Recursive call to appender ...") and losing the announcement.
-                LogContextConfig.getInstance();
+                var lc = LogContextConfig.getInstance();
+                log.debug("LogContextConfig {} loaded", lc);
                 String classPath = CLASSPATH + xmlFile;
                 Configurator.reconfigure(URI.create(classPath));
                 log.info("Logger reconfigured in {} mode", json? JSON : COMPACT);
@@ -574,7 +578,15 @@ public class AppStarter {
         platform.registerPrivate(startupMonitor, f, 1);
         server.listen(port).onSuccess(service -> {
             EventEmitter.getInstance().send(startupMonitor, "ready");
-            platform.registerPrivate(AsyncHttpClient.ASYNC_HTTP_RESPONSE, new AsyncHttpResponse(contexts), 500);
+            platform.registerPrivate(AsyncHttpClient.ASYNC_HTTP_RESPONSE, new AsyncHttpResponse(contexts),
+                                     RESPONSE_HANDLER_INSTANCES);
+            // streaming responses use a route pool of dedicated single-instance reply lanes:
+            // a streaming request checks out one lane for its lifetime (strict FIFO for its
+            // segments) and returns it when its context closes; the pool size matches the
+            // async.http.response instances, and an idle lane costs only a little memory
+            platform.registerRoutePool(AsyncHttpClient.ASYNC_HTTP_RESPONSE_STREAM_POOL,
+                            new AsyncHttpResponse(contexts), RESPONSE_HANDLER_INSTANCES)
+                    .forEach(EventStreamRenderer::releaseLane);
             // start timeout handler
             Housekeeper housekeeper = new Housekeeper(contexts);
             platform.getVertx().setPeriodic(HOUSEKEEPING_INTERVAL,
@@ -815,12 +827,31 @@ public class AppStarter {
                         long t1 = holder.lastAccess;
                         if (now - t1 > relaxedTimeout) {
                             log.warn("Async HTTP Context {} timeout for {} ms", id, now - t1);
-                            SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
-                            httpUtil.sendError(id, holder.request, 408,
-                                    "Timeout for " + (holder.timeout / 1000) + " seconds");
+                            abortExpiredRequest(id, holder);
                         }
                     }
                 }
+            }
+        }
+
+        private void abortExpiredRequest(String id, AsyncContextHolder holder) {
+            String message = "Timeout for " + (holder.timeout / 1000) + " seconds";
+            if (holder.eventStream != null && holder.streamLane != null) {
+                // a streaming response times out in-band through the SAME ordered
+                // lane as its segments, so the timeout cannot overtake them -
+                // the body is the exception contract's {status, message} shape
+                try {
+                    EventEmitter.getInstance().send(new EventEnvelope()
+                            .setTo(holder.streamLane)
+                            .setCorrelationId(id).setStatus(408)
+                            .setHeader(EventStreamWriter.X_EVENT_STREAM, EventStreamWriter.EXCEPTION)
+                            .setBody(Map.of("type", "error", "status", 408, "message", message)));
+                } catch (IllegalArgumentException e) {
+                    log.error("Unable to time out event stream {} - {}", id, e.getMessage());
+                }
+            } else {
+                SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
+                httpUtil.sendError(id, holder.request, 408, message);
             }
         }
     }

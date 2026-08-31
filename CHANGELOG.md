@@ -12,6 +12,121 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+1. Route pool registration API `registerRoutePool` / `releaseRoutePool` - a set of
+   private singleton routes `{prefix}.{n}` (strict FIFO lanes sharing one stateless
+   function) with registry-level identity, symmetric release, reload semantics and
+   range-checked integrity warnings for individual member updates. The HTTP edge's
+   SSE reply-lane pool now registers through it (ADR-0020; lock-step with the Rust
+   engine).
+
+### Changed
+
+1. `registerStream` is now private-only and `registerPrivateStream` is removed - a
+   stream function's use case is always a private route (it is the ObjectStreamIO
+   publishing mechanism). Minor breaking for any application that registered a
+   public stream function.
+2. The unused constant `AsyncHttpClient.ASYNC_HTTP_RESPONSE_STREAM_PREFIX` is
+   removed; `ASYNC_HTTP_RESPONSE_STREAM_POOL` (the un-dotted pool base) replaces it.
+   Lane route names on the wire and in telemetry are unchanged.
+
+---
+## Version 4.12.0, 8/30/2026
+
+The progressive-rendering milestone: token/event streaming end to end - HTTP edge,
+HTTP client, and Event-over-HTTP peers - with full OpenTelemetry lineage and
+business-correlation continuity across all four runtimes (Java, Rust, Python,
+Node.js language packs at the same version). Useful on its own, and the
+foundation for the AI SDLC (agent, MCP and tool adapters as wrapper-side
+functions with complete observability).
+
+### Added
+
+1. **HTTP response streaming** - a function can stream an HTTP response progressively
+   (token segments, progress events) by sending a sequence of events to the caller's
+   reply route until an end-of-transmission signal, using the reserved envelope header
+   `x-event-stream: data | eof | exception` (internal protocol - the wire carries only
+   standard HTTP). Server-Sent Events framing for `text/event-stream` (typed events via
+   `x-event-name`, terminal `done` event with trailing metadata, in-band `error` events,
+   configurable keep-alive pings via `event.stream.keep.alive`); chunked transfer with
+   JSON Lines for other content types. Declare a streaming endpoint with `stream: true`
+   in rest.yaml - the request checks out a dedicated ordered reply lane
+   (`async.http.response.stream.{n}`) from a pool of 500 for its lifetime: per-request
+   strict FIFO with cross-request concurrency, and HTTP-503 back-pressure when the pool
+   is exhausted. New
+   `EventStreamWriter` producer helper; idle timeouts fail streams in-band; client
+   disconnects drop late segments as no-ops; a 1 MB drain-aware buffer guards against
+   slow clients. A runnable demo ships in examples/lambda-example (`GET /api/hello/sse`
+   plus the `scripts/sse-client.mjs` progressive-rendering client). See the
+   HTTP Response Streaming guide (ADR-0018).
+
+2. **Progressive SSE consumption in the HTTP client** - `async.http.request` can
+   consume a `text/event-stream` response progressively (an LLM provider's token
+   stream, another engine's streaming endpoint, any SSE API), relaying one
+   `x-event-stream: data` envelope per upstream event to the caller's reply route,
+   then `eof` - the same streaming protocol the HTTP edge consumes, which makes an
+   SSE-to-SSE relay a pure configuration exercise. Activation is explicit: the
+   request must declare `Accept: text/event-stream`, the response must be SSE, and
+   the request must carry a reply route; anything else keeps the buffered single-shot
+   behavior. For streams, the request timeout acts as the idle allowance between
+   reads (keep-alive comments reset it); idle expiry and mid-stream disconnects fail
+   the stream in-band. (ADR-0019)
+
+3. **Event-over-HTTP peer streaming (envelope mode)** - a remote streaming function
+   reached through `/api/event` can stream its segments back to the caller's reply
+   route on the same HTTP call. The caller opts in per event: a send with a
+   `reply_to` and the `accept: text/event-stream` event header; the `x-ttl` event
+   header (ms, default 60s) is the idle allowance between stream events on both
+   hops. On the wire, the peer answers with SSE in a hybrid dialect - control
+   signals (the head, the eof/exception terminals, and any segment that cannot
+   round-trip as plain text) ride base64-encoded serialized envelopes under the
+   reserved SSE event name `envelope`, while text segments ride raw frames - so
+   segment types and terminal metadata survive the hop exactly, and token relays
+   stay near-zero overhead. Compatibility is explicit: a non-streaming target
+   answers byte-identical to the classic callback reply; a streaming function
+   invoked without the opt-in (RPC, or no accept header) receives
+   `406 Streaming function requires a caller that accepts text/event-stream`;
+   server-side lane exhaustion answers the same 503 back-pressure as a local
+   streaming endpoint (plain RPC traffic never consumes a lane). The consuming
+   client guards the dialect (a missing envelope head or a transport end without a
+   terminal fail in-band). See the HTTP Response Streaming guide. (ADR-0019)
+
+4. **Engine-to-wrapper streaming demo and interop test report.** The lambda-example
+   gains `GET /api/hello/remote` (`hello.remote.relay`): a streaming endpoint whose
+   function forwards its caller's reply lane into an event-over-http mapped remote
+   streaming function (the Python/Node.js demo apps' `hello.tokens`), rendering a
+   remote peer's tokens progressively out this application's HTTP edge with zero
+   imperative streaming code. `hello.sse` is now public, so wrapper clients can
+   consume it over `/api/event`. A permanent interop test report
+   (`docs/test-reports/progressive-rendering-interop.md`, packaged with the AI
+   contract provider) records the live ten-combination cross-runtime matrix, the
+   OpenTelemetry span-lineage and business-correlation-id verification, and a
+   captured end-to-end telemetry + application-log-context example.
+
+### Changed
+
+1. The `/info/routes` actuator endpoint renders pool-style route families compactly:
+   routes differing only by a trailing numeric suffix, with uniform instances and
+   contiguous numbering, collapse into one display entry (e.g. the 500 streaming reply
+   lanes appear as `"async.http.response.stream.0 - 499": 1`). Display-only - the
+   routing table is unchanged.
+
+---
+## Version 4.11.12, 8/27/2026
+
+### Removed
+
+1. **BREAKING**: The Spring Boot 3 integration lane is retired — `system/rest-spring-3`
+   and `examples/rest-spring-3-example` are removed. The Spring community no longer
+   issues security patches for Spring Boot 3, and dependency security scanning in
+   deployment pipelines now rejects Spring Boot 3 and requires Spring Framework 7+,
+   blocking deployment while the lane is present. Migrate to `rest-spring-4`: the
+   integration surface is the same (RestServer bootstrap, `spring.boot.main` override,
+   `@PreLoad` autowiring, configuration keys), so the change is a dependency swap plus
+   your application's own Spring Boot 3 → 4 upgrade. See the Spring Boot Integration
+   guide (ADR-0017).
+
+### Added
+
 1. Polyglot Functions documentation chapter (`guides/polyglot-functions.md`) - writing
    composable functions in Python and Node.js with the official Event-over-HTTP wrappers
    (docs: accenture.github.io/mercury-python and accenture.github.io/mercury-nodejs),
@@ -23,6 +138,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 1. Netty upgraded from 4.2.16.Final to 4.2.17.Final across all modules (field security
    scan remediation).
+2. Spring Boot upgraded from 4.1.0 to 4.1.1 (`spring-boot-starter-parent` across the
+   Boot-4 lane; brings Spring Framework 7.0.9, Micrometer 1.17.1, Jackson 3.1.5 — the
+   rest-spring-3 lane stays on its own Boot 3.5.x parent; explicit netty 4.2.17.Final
+   override unaffected).
+3. Project Reactor BOM upgraded from 2025.0.6 to 2025.0.7 across all declaring modules
+   (reactor-core 3.8.7, reactor-netty 1.3.7 — both Spring lanes included).
 
 ### Fixed
 

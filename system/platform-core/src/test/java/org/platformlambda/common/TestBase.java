@@ -32,6 +32,10 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.platformlambda.automation.http.AsyncHttpClient;
+import org.platformlambda.automation.service.MockEventStreamService;
+import org.platformlambda.automation.service.MockRemoteRelayService;
+import org.platformlambda.automation.service.MockRemoteStreamService;
+import org.platformlambda.automation.service.MockSseRelayService;
 import org.platformlambda.automation.service.MockHelloWorld;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
@@ -92,6 +96,19 @@ public class TestBase {
             log.info("Mock cloud ready");
             Platform platform = Platform.getInstance();
             platform.registerPrivate(HELLO_MOCK, new MockHelloWorld(), 10);
+            // streaming-response producer (multi-shot reply route) for EventStreamResponseTest -
+            // registered before endpoint rendering so the rest.yaml existence check passes
+            platform.registerPrivate("hello.event.stream", new MockEventStreamService(), 10);
+            platform.registerPrivate("hello.event.relay", new MockSseRelayService(), 10);
+            // Event-over-HTTP peer streaming (EventOverHttpStreamTest): a PUBLIC streaming
+            // target reachable through /api/event, a PUBLIC single-shot echo for the
+            // fallback pins, and the edge relay of the engine-to-engine composition
+            platform.registerPrivate("hello.stream.remote", new MockRemoteStreamService(), 10);
+            platform.makePublic("hello.stream.remote");
+            platform.registerPrivate("hello.single.remote", (headers, input, instance) ->
+                    Map.of("echo", input == null? "none" : input), 5);
+            platform.makePublic("hello.single.remote");
+            platform.registerPrivate("hello.remote.relay", new MockRemoteRelayService(), 10);
             // test registering the same function with an alias route name
             // hello.list is a special function to test returning result set as a list
             platform.registerPrivate(HELLO_LIST, (headers, input, instance) ->

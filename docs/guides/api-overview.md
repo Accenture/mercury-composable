@@ -295,6 +295,29 @@ platform.release("another.function");
 
 The above API will unload the function from memory and release it from the "event loop".
 
+### Register a route pool
+
+When many concurrent conversations each need strict event ordering, register a
+"route pool" - a set of private singleton routes `{prefix}.{n}` sharing one stateless
+function. Each member runs exactly one worker, so it is a strict FIFO lane: an
+application checks out a lane for one conversation's lifetime to keep that
+conversation's events in order, while other conversations flow through their own lanes
+concurrently. This is the pattern behind the HTTP edge's SSE reply lanes
+(`async.http.response.stream.{n}`).
+
+```java
+// registers my.lane.0, my.lane.1, ... my.lane.4 - route pools are always private
+List<String> lanes = platform.registerRoutePool("my.lane", new MyLaneFunction(), 5);
+
+// releases all members and the pool itself
+platform.releaseRoutePool("my.lane");
+```
+
+The returned list contains the generated member routes in order, ready to seed your own
+checkout structure - lane checkout and return are your application's concern; the
+platform covers registration only. Registering an existing pool reloads it: the previous
+member set is released first.
+
 ### Check if a function is available
 
 You can check if a function with the named route has been deployed.
@@ -680,9 +703,9 @@ sequential, object-oriented and reactive programming styles.
 The core-engine has a built-in lightweight non-blocking HTTP server, but you can also use Spring Boot and other
 application server framework with it.
 
-A sample Spring Boot integration is provided in the "rest-spring-3" project. It is an optional feature, and you can
+A sample Spring Boot integration is provided in the "rest-spring-4" project. It is an optional feature, and you can
 decide to use a regular Spring Boot application with Mercury Composable or to pick the customized Spring Boot in the
-"rest-spring-3" library.
+"rest-spring-4" library.
 
 ## Application template for quick start
 
