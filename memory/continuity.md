@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-30 | agent: Claude Code (2026-08-30-211721)
+- **last_session:** 2026-09-01 | agent: Claude Code (2026-09-01-022524)
 - **last_review:** 2026-08-27 | through 2026-08-27-213034.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -234,6 +234,15 @@
   review moment as the co-author-trailer dedup rule in AGENTS.md.
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-08-26 | uses: 7 | tier: active | origin: 2026-08-19-195244 -->
+- **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
+  Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
+  deleting a module freezes its findings on the last resolved dependency tree, failing
+  the security gate forever. A parentless dependency-free `packaging=pom` placeholder
+  re-tests to an empty graph (zero findings). Live at system/rest-spring-3 +
+  examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
+  **release version sweeps must include these non-reactor poms deliberately.** Relates
+  [[stack-integration-spring-boot4]].
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-01 | uses: 1 | tier: working | origin: 2026-09-01-022524 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -250,9 +259,14 @@
   the wrappers). Run-time complement to the design-time [[bp-ai-companion-llm-backend]];
   builds on [[bp-polyglot-functions]]; compounds [[bp-graph-governance-lifecycle]].
   Concept doc: draft-design-specs/ai-agent-orchestration.md (Q1–Q8 open questions,
-  E0–E4 experiment plan). Direction ratified by Eric 2026-08-25; experiments queued
-  post-workshop (E0 = llm.chat in the python demo app + bounded-agency demo graph — also
-  the first live graph.task→wrapper drive). → serves: vision-mercury-composable
+  E0–E4 experiment plan). Direction ratified by Eric 2026-08-25. **E0 DONE 2026-09-01**
+  ([[ot-agent-orchestration-e0]]): support-triage graph + llm.chat/llm.stream python AI
+  nodes + progressive token rendering out the engine SSE edge — the first live
+  graph.task→wrapper drive, real Gemini verdicts, one distributed trace. Enterprise LLM
+  access is platform-mediated only (Bedrock/Vertex/Foundry — concept doc Q2); the
+  Anthropic SDK covers all three, so the switch is client-construction only — re-drive
+  waits on Eric's cloud account. Next: E1 (suspend checkpoint on an LLM verdict), Q8's
+  second half (graph-run streaming). → serves: vision-mercury-composable
   <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-08-29 | uses: 3 | tier: working | origin: 2026-08-25-213703 -->
 - [ ] (blueprint) **Polyglot function execution** — python/node.js functions join Event Script
   flows and MiniGraph graphs as Event-over-HTTP peers (ratified design D0–D8, 2026-08-22);
@@ -266,6 +280,20 @@
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
 ## Open Threads
+
+- [x] (feature — **SHIPPED 2026-09-01, three repos, four PRs, merges verified, branches
+  deleted**: Java [PR #304](https://github.com/Accenture/mercury-composable/pull/304)
+  squash `9be00fe8` == gated `c3096560`; python
+  [PR #22](https://github.com/Accenture/mercury-python/pull/22) merge `44caf9a6`; Rust
+  [PR #221](https://github.com/Accenture/mercury/pull/221) merge `0372313a`; plus the Snyk
+  placeholder poms [PR #305](https://github.com/Accenture/mercury-composable/pull/305)
+  squash `e5785eb4`) **AI agent orchestration E0 + streaming reply-lane FIFO rotation.**
+  Bounded-agency triage graph routed live Gemini verdicts; llm.chat/llm.stream AI nodes;
+  progressive tokens out the engine SSE edge; reply lanes now walk .0,.1,.2 (ADR-0018
+  amended, both engines lock-step). Lesson: PyCharm validates monkeypatch attr-name
+  literals regardless of target typing — route the name through a helper parameter.
+  Design: [[bp-agent-orchestration]]. origin: 2026-09-01-022524.
+  <!-- id: ot-agent-orchestration-e0 | created: 2026-09-01 | last_used: 2026-09-01 | uses: 1 | tier: working | origin: 2026-09-01-022524 -->
 
 - [x] (feature — **SHIPPED BOTH ENGINES 2026-08-30, rides the next release**: Java
   [PR #303](https://github.com/Accenture/mercury-composable/pull/303) squash `b3741664`
@@ -652,7 +680,10 @@
   means (malformed plugin calls? unknown plugin names? arg-count/type checks?), and whether to
   reuse or diverge from event-script-engine's own `validInput`/`validOutput` (already diverges —
   minigraph's per-skill namespace rules don't match event-script's). Landing pad exists:
-  `GraphModelValidator` ([[compilegraph-mandatory-gate]]).
+  `GraphModelValidator` ([[compilegraph-mandatory-gate]]). **New case (2026-09-01, E0
+  round): a node with task/input/output but NO `skill` property compiles and silently
+  passes through as a structural node** — a gate warning would have saved a debugging
+  round (origin: 2026-09-01-022524).
   <!-- id: thread-compilegraph-syntax-validation | created: 2026-07-02 | last_used: 2026-07-29 | uses: 4 | tier: working | origin: 2026-07-02-004606 -->
 
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
