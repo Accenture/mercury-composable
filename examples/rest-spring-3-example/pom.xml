@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    DO NOT DELETE. This file has no build role - it exists so the dependency scanner
+    has a manifest to scan at this path. See the comment in system/rest-spring-3/pom.xml
+    for the mechanism: a Snyk project outlives its manifest and keeps reporting the last
+    dependency set it resolved, so a deleted module fails the security gate permanently
+    until an empty manifest lets a re-test report zero.
+    The example application is retired (ADR-0017) and is intentionally absent from the
+    reactor, so nothing is built or published from here.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.accenture</groupId>
+    <artifactId>rest-spring-3-example</artifactId>
+    <version>4.11.12</version>
+    <packaging>pom</packaging>
+    <name>Retired Spring Boot 3 example (see ADR-0017)</name>
+    <description>
+        Retired placeholder, carrying no code. The Spring Boot 3 example application is gone
+        along with the rest-spring-3 library. Use examples/rest-spring-4-example instead -
+        it is the equivalent application built against Spring Boot 4, and the documentation
+        refers to it throughout.
+    </description>
+    <distributionManagement>
+        <relocation>
+            <groupId>com.accenture</groupId>
+            <artifactId>rest-spring-4-example</artifactId>
+            <version>4.11.12</version>
+            <message>
+                rest-spring-3-example is retired along with the rest-spring-3 library: Spring
+                Framework 6.2.x is out of security support. Use rest-spring-4-example, the
+                equivalent application built against Spring Boot 4.
+            </message>
+        </relocation>
+    </distributionManagement>
+</project>
+
