@@ -464,8 +464,16 @@ logged rather than silently masked.
 
 One header opts a publish into the Confluent wire format instead of raw `byte[]`: `subject` (with an optional
 `version`; see [Schema Registry](#schema)). It is an encoding directive — consumed by the function, not
-forwarded as a Kafka header. On this schema path the body contract stays a `byte[]` JSON document —
-the Map/List auto-serialization above does not apply.
+forwarded as a Kafka header. On this schema path **the body must be `byte[]` (a pre-serialized JSON
+document) — passing a `Map` or `List` is rejected with `IllegalArgumentException`**; the Map/List
+JSON convenience applies to non-schema topics only.
+
+> **Keep the worker pool small.** When the Schema Registry is in use, `simple.kafka.notification` runs
+> on **kernel threads** (`@KernelThreadRunner`) because Confluent's serializers are not thread-safe.
+> Each worker instance owns its own encoder and is single-flight, so a small pool (the default is 5)
+> sustains high throughput — Kafka publishing is fast and mostly waits on the broker acknowledgement.
+> Raise `instances` only if profiling shows the publishing path is the genuine bottleneck. This
+> constraint does not apply to raw `byte[]` publishing (no Schema Registry).
 
 ### Partitioning strategies {#partitioning}
 
@@ -626,7 +634,7 @@ unauthenticated registry (like the local mock) keeps working with zero configura
 input:
   - 'text(orders) -> header.topic'
   - 'text(orders-value) -> header.subject'    # version omitted → latest
-  - 'model.payload -> *'        # the body: a Map / JSON document
+  - 'model.payload -> *'        # the body: must be byte[] (a JSON document) on the schema path
 process: 'simple.kafka.notification'
 ```
 
