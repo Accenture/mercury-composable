@@ -20,7 +20,7 @@
 - **latest_release:** v4.12.0 (2026-08-30; the CHANGELOG Unreleased section rides the
   next release — the live version source stays the root pom.xml)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-09-01 | agent: Claude Code (2026-09-01-032130)
+- **last_session:** 2026-09-01 | agent: Claude Code (2026-09-01-032130) + continuation
 - **last_review:** 2026-09-01 | through 2026-09-01-022524.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -537,8 +537,12 @@
   §Outbound — `@KernelThreadRunner`/keep-instances-small callout added; body-must-be-`byte[]` named
   explicitly with `IllegalArgumentException`; misleading `Map` comment in §Produce YAML fixed.
   **Next:** surface `## Doc Gaps` at next review sweep; measure guide sufficiency rate.
-  PR: [#306](https://github.com/Accenture/mercury-composable/pull/306) (open).
-  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-09-01 | uses: 1 | tier: working | origin: 2026-09-01-032130 -->
+  PR: [#306](https://github.com/Accenture/mercury-composable/pull/306) squash `6f6c3989` — merged.
+  **Guide-first rule propagated 2026-09-01 to all four repos** (Rust
+  [PR #222](https://github.com/Accenture/mercury/pull/222) squash `c730e17e`; python
+  [PR #23](https://github.com/Accenture/mercury-python/pull/23) squash `a12c56b6`; node
+  [PR #91](https://github.com/Accenture/mercury-nodejs/pull/91) squash `0899ad59`).
+  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-09-01 | uses: 2 | tier: working | origin: 2026-09-01-032130 -->
 
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
