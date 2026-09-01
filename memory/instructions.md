@@ -141,6 +141,14 @@ cd examples/minigraph-playground && java -jar target/minigraph-playground-<versi
   Human decision needed: none | <description>
   ```
 
+- **Guide-first lookup rule.** For "how do I configure X" or "how does Y work" questions,
+  start with the AI contract provider guide (`minimalist-kafka.md`, `event-script/ai-agent-guide.md`,
+  etc.) reachable from `llms.txt` or the `mercury-platform` skill. Fall back to source code only when
+  the guide is silent on the specific behavior or you need to verify a subtle invariant (exact constant
+  name, thread-safety contract, test-proven edge case). Guide-first saves 3–5× the tokens vs. discovery
+  + source reads. When source *was* needed to fill a genuine gap, note it in the session log under
+  `## Doc Gaps` (format: question, guide page, missing detail) so it can be closed in a follow-up PR.
+
 ## Testing
 
 - JUnit via Maven Surefire. The richest end-to-end reference is

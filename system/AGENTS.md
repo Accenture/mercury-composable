@@ -40,6 +40,24 @@ it rather than assuming the docs match your runtime.
   `docs/guides/knowledge-graph/minigraph-commands.json`
 - Contract catalog: `system/ai-contract-provider/src/main/resources/contracts.yaml`
 
+## Efficient lookup
+
+**For "how do I configure / use X" questions, start with the guide — not the source.**
+The guides served by `ai-contract-provider` (and exported into the `mercury-platform` skill)
+are the version-matched, token-efficient answer surface. A typical configuration question
+costs 3–5× more tokens when answered from source discovery instead of the guide.
+
+Lookup order:
+1. `llms.txt` (repo root or docs site) → find the matching guide page by keyword.
+2. Read the relevant guide section (e.g. `minimalist-kafka.md §Schema` for schema-registry config).
+3. Fall back to source only when the guide is genuinely silent on the specific behavior or you
+   need to verify a subtle invariant (exact constant name, thread-safety contract, test-proven
+   edge case).
+
+When source reveals something the guide missed, note the gap and consider raising an issue
+or PR against the upstream OSS project (github.com/Accenture/mercury-composable) — the
+`docs/` guide pages live there, and that is how the guides improve.
+
 ## The one gotcha
 
 A `rest.yaml` flow binding requires **both** `service: 'http.flow.adapter'` and

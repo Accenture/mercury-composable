@@ -20,7 +20,7 @@
 - **latest_release:** v4.12.0 (2026-08-30; the CHANGELOG Unreleased section rides the
   next release — the live version source stays the root pom.xml)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-09-01 | agent: Claude Code (2026-09-01-031112)
+- **last_session:** 2026-09-01 | agent: Claude Code (2026-09-01-032130)
 - **last_review:** 2026-09-01 | through 2026-09-01-022524.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -115,7 +115,7 @@
   survive); cid = resume capability (auth resume endpoints); no graph.extension crossing. Store:
   Redis = extensions/minigraph-state-redis imported by apps, NEVER the engine. Delivered by
   [[thread-graph-suspend-resume]]; serves [[bp-graph-workflow-suspension]].
-  <!-- id: graph-suspend-resume-design | created: 2026-07-29 | last_used: 2026-08-28 | uses: 16 | tier: active | origin: 2026-07-29-010343 -->
+  <!-- id: graph-suspend-resume-design | created: 2026-07-29 | last_used: 2026-08-28 | uses: 16 | tier: archive-candidate | origin: 2026-07-29-010343 -->
 
 - **CompileGraph is the MANDATORY deployment gate for graph models — CompileFlows parity
   (Eric's rulings 2026-07-29; ADR-0011 ACCEPTED via the PR #240 merge, squash `4348b0da`).**
@@ -374,13 +374,16 @@
   wrapper sites live + engine chapters/ADR-0016 + nav parity (python PR #20, node
   PR #89, Java PR #294, Rust PR #214/#215). Lesson: new guide pages linked from packaged
   references must join the ai-contract-provider files.list inventory on BOTH engines.
-  **Remaining — P5 publishing gates only:** versions RESOLVED (wrappers joined the
-  lock-step line at v4.12.0); the npm/PyPI publish acts stay Eric's calls, SEQUENCED
-  after the first AI SDLC iteration completes ([[bp-agent-orchestration]]; PyPI name
-  availability to verify at publish time). Optional extras offered: a live
+  **Remaining — P5 publication, GREEN-LIT by Eric 2026-09-01** ("tomorrow prepare to
+  publish Rust, Python and Node to their public artifactory" — the AI-SDLC-iteration
+  sequencing gate is satisfied by E0). Scope: python → PyPI (name availability to
+  verify), node → npm (legacy mercury-composable v4.3.28 history on the name), **plus
+  the Rust engine → crates.io (NEW surface, widened beyond the wrapper pair)**. Agent
+  prepares everything (dry-runs, metadata, checklists); the publish acts stay Eric's
+  per [[eric-release-rhythm]]. Optional extras still offered: a live
   Rust-engine→wrapper drive; Rust layer-tab label parity. Design:
   [[polyglot-event-over-http-design]]; serves [[bp-polyglot-functions]].
-  <!-- id: thread-polyglot-initiative | created: 2026-08-22 | last_used: 2026-09-01 | uses: 9 | tier: working | origin: 2026-08-22-164936 -->
+  <!-- id: thread-polyglot-initiative | created: 2026-08-22 | last_used: 2026-09-01 | uses: 10 | tier: working | origin: 2026-08-22-164936 -->
 
 - [x] (onboarding — **CLOSED 2026-09-01, all items done, decision recorded**) **Onboarding
   efficiency round.** Root AGENTS.md contributor/consumer fork + role-resolution ladder
@@ -520,6 +523,23 @@
   round (origin: 2026-09-01-022524).
   <!-- id: thread-compilegraph-syntax-validation | created: 2026-07-02 | last_used: 2026-09-01 | uses: 5 | tier: working | origin: 2026-07-02-004606 -->
 
+- [ ] (initiative — **guide-first rule recorded 2026-09-01**; loop design ratified) **Doc-improvement
+  feedback loop** — ongoing tuning of the AI contract provider guides to raise "guide sufficiency rate"
+  (fraction of "how do I" questions answerable from the guide alone, without source reads). Three layers:
+  (1) **in-session capture** — session logs get `## Doc Gaps` (question / guide page / missing detail)
+  whenever source was needed where the guide should have sufficed; (2) **periodic sweep** — at every
+  memory review, tally gaps across recent logs and surface top items as a PR punch-list for the relevant
+  `docs/` guide page; (3) **verification** — after each guide PR, a fresh-agent probe on the same
+  question confirms source is no longer needed. Metric: guide sufficiency rate, measured on the same
+  cadence as the onboarding fresh-agent re-measure. Seed gap from this session: guide-first rule was
+  absent from `instructions.md` (now added); `minimalist-kafka.md` schema section was sufficient but the
+  rule to check it first was not encoded. **First gap CLOSED same session:** `minimalist-kafka.md`
+  §Outbound — `@KernelThreadRunner`/keep-instances-small callout added; body-must-be-`byte[]` named
+  explicitly with `IllegalArgumentException`; misleading `Map` comment in §Produce YAML fixed.
+  **Next:** surface `## Doc Gaps` at next review sweep; measure guide sufficiency rate.
+  PR: [#306](https://github.com/Accenture/mercury-composable/pull/306) (open).
+  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-09-01 | uses: 1 | tier: working | origin: 2026-09-01-032130 -->
+
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
   build for the multi-module project.
@@ -574,7 +594,7 @@
   memory 2026-08-22: the smoke test found six session logs referencing this id while the
   fact lived only in an agent's personal store — a project-relevant working rhythm belongs
   in the shared layer.)
-  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-09-01 | uses: 23 | tier: active | origin: 2026-08-22-180334 -->
+  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-09-01 | uses: 24 | tier: active | origin: 2026-08-22-180334 -->
 
 ## Team / Members
 
