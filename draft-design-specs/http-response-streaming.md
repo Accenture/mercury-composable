@@ -3,7 +3,8 @@
 **Status:** APPROVED AND IMPLEMENTED (Java) — D1 ratified 2026-08-27; **D2–D8 approved
 as recommended by Eric 2026-08-28**; implemented same day with one design addition made
 during implementation (D9, the ordered reply lane — see §2a; **revised same day to
-Eric's checkout-pool design**: dedicated lane per active stream, LIFO stack of 500,
+Eric's checkout-pool design**: dedicated lane per active stream, rotating checkout pool
+of 500 (FIFO round-robin since the 2026-08-31 refinement; originally a LIFO stack),
 HTTP-503 back-pressure, no config knob). Rust twin pending (D7:
 Java-first with the vocabulary pinned). **Serves:** `bp-agent-orchestration` (this is Q8 of
 `ai-agent-orchestration.md`, promoted to prerequisite: without it an `llm.chat` node can
@@ -66,11 +67,15 @@ own ordering idiom is a route with one instance (cf. ObjectStreamIO's `instances
 consumer). Solution, keeping the D1 contract intact (the callee still just sends to
 reply_to): a streaming endpoint is declared with **`stream: true` in rest.yaml**, and
 the request **checks out a dedicated ordered reply lane for its lifetime** — a
-single-instance route (`async.http.response.stream.{n}`) drawn from a **LIFO stack pool
-of 500** (pinned to the `async.http.response` instance count — no configuration knob).
-The lane rides on the AsyncContextHolder (direct access to the original HTTP
-request/response) and returns to the stack when the request context closes — the "ready"
-signal pattern of the reactive manager/worker design. One request's segments are strict
+single-instance route (`async.http.response.stream.{n}`) drawn from a **rotating FIFO
+pool of 500** (pinned to the `async.http.response` instance count — no configuration
+knob). The lane rides on the AsyncContextHolder (direct access to the original HTTP
+request/response) and rejoins the tail of the queue when the request context closes — a
+rotating variant of the "ready" signal pattern of the reactive manager/worker design.
+Selection therefore round-robins (`.0`, `.1`, `.2` ...) — predictable in telemetry —
+and a just-released lane rests the full pool length before reuse, maximizing separation
+from any straggler cleanup on it (refined 2026-08-31 from the original LIFO stack,
+which re-picked the same top-of-stack lane for every sequential request). One request's segments are strict
 FIFO through its own lane; different requests never share a lane. An exhausted pool
 rejects further streaming requests immediately with **HTTP-503 "Streaming response pool
 exhausted"** (deterministic back-pressure). An idle lane costs a little memory and no
@@ -83,8 +88,8 @@ rendering work. The checkout removed the `streamResponse` flag from HttpRequestE
 (tag "12") — both reply sites resolve the lane from the holder by requestId. The
 housekeeper's in-band timeout targets the holder's lane so it cannot overtake segments.
 The 50-segment unpaced burst test pins per-request ordering; four parallel bursts pin
-cross-request independence; exhaustion (503 + recovery), lane return, and LIFO reuse
-have dedicated tests. A stream-marked response arriving on the ordinary lane still
+cross-request independence; exhaustion (503 + recovery), lane return, and rotation
+reuse have dedicated tests. A stream-marked response arriving on the ordinary lane still
 renders (single-segment or tolerant producers), but only the declared lane guarantees
 order. `stream: true` and the 503 message are rest.yaml/wire surface → part of the
 cross-engine contract (Rust twin mirrors both).
@@ -268,7 +273,7 @@ platform-core tests (the release gate for the feature):
   touch-extends-life pacing, 8KB×50 FIFO burst forcing the drain path, four parallel
   bursts (which caught and now pin a real drain-handler race — fixed with a per-request
   lock), D5 conflict, pool exhaustion → 503 → recovery, lane returns on completion,
-  LIFO reuse, response-header-transform parity; 3 writer-contract; 3 state/cap units).
+  rotation reuse, response-header-transform parity; 3 writer-contract; 3 state/cap units).
   platform-core full suite 450/450; mkdocs strict clean;
   ai-contract-provider 19/19 with the new guide in files.list.
 - Docs: guides/http-streaming.md (+nav, llms.txt, event-over-http See-also), ADR-0018

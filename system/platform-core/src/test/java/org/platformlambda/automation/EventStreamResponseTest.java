@@ -264,14 +264,17 @@ class EventStreamResponseTest extends TestBase {
     }
 
     @Test
-    void laneCheckoutIsLifo() {
-        // the pool is a stack ("ready" signal pattern): the most recently
-        // released lane is the first to be reused
+    void laneCheckoutRotatesThroughThePool() {
+        // the pool is a rotating FIFO queue: a released lane rejoins at the tail,
+        // so consecutive requests take successive lanes (round-robin) and a
+        // just-released lane gets the longest possible rest before reuse
         String first = EventStreamRenderer.checkoutLane();
         assertNotNull(first);
         EventStreamRenderer.releaseLane(first);
-        assertEquals(first, EventStreamRenderer.checkoutLane(), "most recently released lane is reused first");
-        EventStreamRenderer.releaseLane(first);
+        String second = EventStreamRenderer.checkoutLane();
+        assertNotNull(second);
+        assertNotEquals(first, second, "a released lane must go to the tail, not be reused immediately");
+        EventStreamRenderer.releaseLane(second);
     }
 
     @Test
