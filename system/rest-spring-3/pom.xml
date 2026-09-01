@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    DO NOT DELETE. This file has no build role - it exists so the dependency scanner
+    has a manifest to scan at this path.
+    Snyk keys a project on repository + branch + manifest path, and it does NOT retire a
+    project when the manifest disappears: the project stays active and keeps reporting the
+    last dependency set it resolved. Deleting system/rest-spring-3 therefore froze that
+    project on the Spring Boot 3 parent's Spring Framework 6.2.19 tree, which fails the
+    pipeline's security gate forever - the findings cannot be remediated because the code
+    they describe is gone, and a re-test cannot clear them because there is nothing to read.
+    A parentless, dependency-free pom resolves to an empty dependency graph, so a re-test
+    of this project reports zero. That is this file's entire purpose. The module is retired
+    (ADR-0017) and is intentionally absent from the reactor, so nothing is built or
+    published from here.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.platformlambda</groupId>
+    <artifactId>rest-spring-3</artifactId>
+    <version>4.11.12</version>
+    <packaging>pom</packaging>
+    <name>Retired Spring Boot 3 module (see ADR-0017)</name>
+    <description>
+        Retired placeholder, carrying no code. The pre-configured Spring Boot 3 library is
+        gone because Spring Framework 6.2.x no longer receives security fixes, so the lane
+        could not clear a dependency security gate. Use rest-spring-4, the same library
+        built against Spring Boot 4. Note that rest-spring-4 is compiled against Spring
+        Boot 4 APIs and will not load inside a Spring Boot 3 application - to stay on
+        Spring Boot 3, drop this dependency and bring your own Spring Boot 3 main
+        application alongside platform-core instead.
+    </description>
+    <!--
+        Metadata only, since this artifact is no longer published from the reactor. It
+        applies if the coordinate is ever built or installed from source, in which case
+        Maven substitutes rest-spring-4 and prints the message below.
+    -->
+    <distributionManagement>
+        <relocation>
+            <groupId>org.platformlambda</groupId>
+            <artifactId>rest-spring-4</artifactId>
+            <version>4.11.12</version>
+            <message>
+                rest-spring-3 is retired: Spring Framework 6.2.x is out of security support.
+                Resolving rest-spring-4 instead, which REQUIRES Spring Boot 4. If your
+                application is still on Spring Boot 3, remove this dependency and bring your
+                own Spring Boot 3 main application alongside platform-core.
+            </message>
+        </relocation>
+    </distributionManagement>
+</project>
