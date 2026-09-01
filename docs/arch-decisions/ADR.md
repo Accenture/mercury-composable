@@ -118,9 +118,11 @@ Events framing when the content type is `text/event-stream` (typed events, a ter
 chunked transfer with JSON Lines otherwise. A streaming endpoint is declared with
 `stream: true` in rest.yaml, which checks out a dedicated ordered reply lane for the
 request's lifetime — a single-instance route (`async.http.response.stream.{n}`) drawn
-LIFO from a pool of 500 (the `async.http.response` concurrency), returned when the
-request context closes — the "ready" signal pattern of the reactive manager/worker
-design. All segments of one request ride its own lane (strict FIFO) while different
+in FIFO rotation from a pool of 500 (the `async.http.response` concurrency; refined
+2026-08-31 from the original LIFO stack so consecutive requests take successive lanes
+and a released lane, rejoining at the tail, rests longest before reuse), returned when
+the request context closes — a rotating variant of the "ready" signal pattern of the
+reactive manager/worker design. All segments of one request ride its own lane (strict FIFO) while different
 requests stream concurrently through their own lanes; an exhausted pool rejects further
 streaming requests immediately with HTTP-503 (deterministic back-pressure, no
 configuration knob). The first event commits the response head; each

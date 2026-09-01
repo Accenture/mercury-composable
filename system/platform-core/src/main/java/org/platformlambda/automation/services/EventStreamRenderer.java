@@ -86,9 +86,11 @@ public class EventStreamRenderer {
     // slow-client guard: writes queue here when the socket back-pressures, bounded by this cap
     private static final long PENDING_CAP_BYTES = 1024 * 1024L;
     private static final long KEEP_ALIVE_MS = resolveKeepAlive();
-    // available reply lanes (LIFO stack): a streaming request checks out a dedicated
-    // single-instance route for its lifetime and returns it when the request context
-    // closes - the "ready" signal pattern of the reactive manager/worker design
+    // available reply lanes (rotating FIFO queue): a streaming request checks out a
+    // dedicated single-instance route from the head for its lifetime and the lane
+    // rejoins at the tail when the request context closes - lane selection therefore
+    // round-robins through the pool (.0, .1, .2 ...) and a just-released lane gets
+    // the longest possible rest before reuse
     private static final ConcurrentLinkedDeque<String> LANE_POOL = new ConcurrentLinkedDeque<>();
 
     private EventStreamRenderer() {}
@@ -116,7 +118,7 @@ public class EventStreamRenderer {
      * @param route the lane's route name
      */
     public static void releaseLane(String route) {
-        LANE_POOL.push(route);
+        LANE_POOL.addLast(route);
     }
 
     /**

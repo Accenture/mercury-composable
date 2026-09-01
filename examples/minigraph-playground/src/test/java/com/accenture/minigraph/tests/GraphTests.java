@@ -263,6 +263,83 @@ class GraphTests {
         log.info("Tutorial 12 works");
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void supportTriageRejectsMissingTextWithoutModelCall() throws TimeoutException {
+        // proves the deployment gate compiled the AI-node demo graph (a rejected model
+        // answers 404 as if nonexistent) and that its input-validation branch bounds
+        // the run before any LLM call - token-free and wrapper-free by design
+        var request = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
+                .setBody(Map.of("hello", "world")).setHeader("Content-Type", "application/json");
+        request.setHeader("Accept", "application/json");
+        request.setUrl("/api/graph/support-triage");
+        var event = new EventEnvelope().setTo("async.http.request").setBody(request);
+        var po = PostOffice.trackable("unit.test", "triage-1", "TEST /graph/support-triage");
+        var response = po.asyncRequest(event, TIMEOUT).await(TIMEOUT, TimeUnit.MILLISECONDS);
+        assertEquals(400, response.getStatus());
+        assertInstanceOf(Map.class, response.getBody());
+        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals("rejected", mm.getElement("type"));
+        assertEquals("Missing text. Provide the user request in the 'text' field",
+                mm.getElement("message"));
+        log.info("support-triage rejects without spending tokens");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void supportTriageRoutesOnTheVerdict() throws TimeoutException {
+        // the full bounded-agency path, token-free: the route-decoupled AI node resolves
+        // to MockLlmChat in this test scope, so schema staging, the graph.task call,
+        // decision routing on the verdict and the usage surfacing all run for free
+        var request = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
+                .setBody(Map.of("text", "the app crashes when I save my profile"))
+                .setHeader("Content-Type", "application/json");
+        request.setHeader("Accept", "application/json");
+        request.setUrl("/api/graph/support-triage");
+        var event = new EventEnvelope().setTo("async.http.request").setBody(request);
+        var po = PostOffice.trackable("unit.test", "triage-2", "TEST /graph/support-triage");
+        var response = po.asyncRequest(event, TIMEOUT).await(TIMEOUT, TimeUnit.MILLISECONDS);
+        assertEquals(200, response.getStatus());
+        assertInstanceOf(Map.class, response.getBody());
+        log.info("support-triage response: {}", response.getBody());
+        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals("bug-filed", mm.getElement("action"));
+        assertEquals("bug", mm.getElement("verdict.label"));
+        assertEquals("the app crashes when I save my profile", mm.getElement("request"));
+        // token usage rides model.* into the response - the E0 evidence shape
+        assertEquals(42, mm.getElement("usage.input_tokens"));
+        assertEquals(7, mm.getElement("usage.output_tokens"));
+        assertEquals("mock-llm", mm.getElement("model"));
+        log.info("support-triage routes on the verdict - token-free");
+    }
+
+    @Test
+    void llmStreamEndpointRendersTokenBatchesAsSse() throws Exception {
+        // the AI-token streaming composition, token-free: the route-decoupled streaming
+        // AI node resolves to MockLlmStream in this test scope, so the relay endpoint,
+        // the reply-lane checkout and the SSE rendering are pinned without credentials.
+        // A raw JDK HTTP client reads the real SSE document off the wire.
+        java.net.http.HttpResponse<String> httpResponse;
+        try (var client = java.net.http.HttpClient.newHttpClient()) {
+            var httpRequest = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(target + "/api/llm/stream"))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "text/event-stream")
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString("{\"prompt\": \"stream a demo\"}"))
+                    .build();
+            httpResponse = client.send(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+        }
+        assertEquals(200, httpResponse.statusCode());
+        assertTrue(httpResponse.headers().firstValue("content-type").orElse("")
+                .contains("text/event-stream"));
+        String sse = httpResponse.body();
+        assertTrue(sse.contains("data: Mercury"), sse);
+        assertTrue(sse.contains("data: streams"), sse);
+        assertTrue(sse.contains("data: tokens"), sse);
+        assertTrue(sse.contains("mock-llm"), sse);
+        log.info("llm.stream endpoint renders token batches - token-free");
+    }
+
     private Object runTutorial(int chapter, Map<String, Object> input) throws TimeoutException {
         var request = new AsyncHttpRequest().setMethod(input.isEmpty()? "GET" : "POST").setTargetHost(target);
         if (!input.isEmpty()) {

@@ -55,8 +55,9 @@ instance. Each member has `instances=1`, so each lane is a strict FIFO mailbox; 
 checkout of a lane gives a stream per-conversation ordering while unrelated streams run
 concurrently through their own lanes. Registration and checkout are separate concerns:
 this API owns registration only; checkout stays with the consumer
-(`EventStreamRenderer.LANE_POOL`, a LIFO `ConcurrentLinkedDeque` with
-`checkoutLane()`/`releaseLane()`).
+(`EventStreamRenderer.LANE_POOL`, a rotating FIFO `ConcurrentLinkedDeque` with
+`checkoutLane()`/`releaseLane()` — head checkout, tail return, so selection
+round-robins through the pool; refined 2026-08-31 from the original LIFO stack).
 
 ## 3. Decisions
 
@@ -202,7 +203,7 @@ the adoption and was removed. Behavior-identical by construction: same names, sa
 ## 7. Out of scope / non-goals
 
 - **Checkout mechanics** — stay in `EventStreamRenderer`. If a second consumer wants the
-  checkout half, consider promoting the LIFO deque into a pool handle then; do not block
+  checkout half, consider promoting the rotating deque into a pool handle then; do not block
   this round on it.
 - **Public pools** (D2) — add only when a concrete case appears.
 - **`getLocalRoutingTable()` changes** (D3) — permanent non-goal.

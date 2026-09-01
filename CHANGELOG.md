@@ -18,6 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    range-checked integrity warnings for individual member updates. The HTTP edge's
    SSE reply-lane pool now registers through it (ADR-0020; lock-step with the Rust
    engine).
+2. `support-triage` demo graph in examples/minigraph-playground - the bounded-agency
+   AI-node pattern (agent-orchestration experiment E0): the LLM node is `llm.chat`, a
+   python wrapper-side function reached through declarative Event-over-HTTP; the graph
+   classifies a user request with a schema-constrained verdict and routes among
+   enumerated branches. Zero engine change - the engine stays LLM-free.
+3. `POST /api/llm/stream` demo endpoint in examples/minigraph-playground - the AI-token
+   streaming composition (E0 follow-up): a relay function forwards its reply lane into
+   the event-over-http mapped `llm.stream` AI node (python demo app pulling the
+   provider's REAL token stream), and the token batches re-render progressively out the
+   engine's HTTP edge as SSE. Live-proven with Gemini: 25+ timestamped token batches
+   over a ~2s generation, one distributed trace across both processes. Zero engine
+   change.
 
 ### Changed
 
@@ -28,6 +40,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 2. The unused constant `AsyncHttpClient.ASYNC_HTTP_RESPONSE_STREAM_PREFIX` is
    removed; `ASYNC_HTTP_RESPONSE_STREAM_POOL` (the un-dotted pool base) replaces it.
    Lane route names on the wire and in telemetry are unchanged.
+3. Streaming reply-lane checkout now rotates through the pool (FIFO round-robin)
+   instead of re-picking the most recently released lane (LIFO): the first stream
+   takes `async.http.response.stream.0`, the next `.1`, and so on, with a released
+   lane rejoining at the tail - predictable lane selection in telemetry and maximal
+   rest before a lane is reused (lock-step with the Rust engine).
 
 ---
 ## Version 4.12.0, 8/30/2026
