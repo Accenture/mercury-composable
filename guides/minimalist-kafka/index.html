@@ -3740,8 +3740,17 @@ convenience applies to <strong>non-schema-registry topics only</strong>; <code>n
 logged rather than silently masked.</p>
 <p>One header opts a publish into the Confluent wire format instead of raw <code>byte[]</code>: <code>subject</code> (with an optional
 <code>version</code>; see <a href="#schema">Schema Registry</a>). It is an encoding directive — consumed by the function, not
-forwarded as a Kafka header. On this schema path the body contract stays a <code>byte[]</code> JSON document —
-the Map/List auto-serialization above does not apply.</p>
+forwarded as a Kafka header. On this schema path <strong>the body must be <code>byte[]</code> (a pre-serialized JSON
+document) — passing a <code>Map</code> or <code>List</code> is rejected with <code>IllegalArgumentException</code></strong>; the Map/List
+JSON convenience applies to non-schema topics only.</p>
+<blockquote>
+<p><strong>Keep the worker pool small.</strong> When the Schema Registry is in use, <code>simple.kafka.notification</code> runs
+on <strong>kernel threads</strong> (<code>@KernelThreadRunner</code>) because Confluent's serializers are not thread-safe.
+Each worker instance owns its own encoder and is single-flight, so a small pool (the default is 5)
+sustains high throughput — Kafka publishing is fast and mostly waits on the broker acknowledgement.
+Raise <code>instances</code> only if profiling shows the publishing path is the genuine bottleneck. This
+constraint does not apply to raw <code>byte[]</code> publishing (no Schema Registry).</p>
+</blockquote>
 <h3 id="partitioning">Partitioning strategies<a class="headerlink" href="#partitioning" title="Permanent link">&para;</a></h3>
 <p>Three mechanisms decide which partition an outbound message lands on, in precedence order:</p>
 <ol>
@@ -3887,7 +3896,7 @@ unauthenticated registry (like the local mock) keeps working with zero configura
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nt">input</span><span class="p">:</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(orders)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.topic'</span>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(orders-value)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.subject'</span><span class="w">    </span><span class="c1"># version omitted → latest</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'model.payload</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">*'</span><span class="w">        </span><span class="c1"># the body: a Map / JSON document</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'model.payload</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">*'</span><span class="w">        </span><span class="c1"># the body: must be byte[] (a JSON document) on the schema path</span>
 <a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'simple.kafka.notification'</span>
 </code></pre></div>
 <p>The producer resolves the subject (+ version) to a <strong>global schema id</strong> and its <strong>schema type</strong> from the
