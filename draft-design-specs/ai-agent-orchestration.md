@@ -54,9 +54,11 @@ substituted for "system".
 
 **Evidence discipline (honest-evidence rule):** flows → python function is proven live
 (2026-08-22 flagship drive, my_correlation_id + engine trace_id in the python log).
-graph.task → wrapper function is pinned by engine tests on both engines (v4.11.11,
-unit-test-task-7) but has **no live drive yet** — E0 below produces the first one. No
-LLM or MCP call has run through Mercury yet; that is what the experiments are for.
+graph.task → wrapper function: the first LIVE drive ran 2026-08-30 (E0 below — the
+support-triage graph's classify node reached llm.chat on the python demo app through
+declarative Event-over-HTTP, one unbroken trace across both processes). The first live
+LLM calls through Mercury ran the same day (Gemini; the Anthropic re-drive follows the
+org API key). MCP has not run yet — that is what E2 is for.
 Nothing in this section may be claimed in public docs beyond what has actually run.
 
 ## 3. Architecture concept
@@ -172,6 +174,16 @@ every agent's toolbox — governed in both directions.
   to the REST edge needs design — Q8), token/usage accounting, structured-output
   enforcement, provider neutrality/pluggability, rate-limit retry semantics vs the
   graph's own retry handlers (avoid double-retry).
+  **Enterprise-access requirement (field constraint, 2026-08-30):** enterprise security
+  policies commonly forbid direct vendor API keys — provider access must ride the cloud
+  platforms (AWS Bedrock for Claude models, Google Vertex, Azure AI Foundry) with the
+  platform's own credential chain (AWS credentials / GCP ADC / Entra), never a raw key.
+  The adapter absorbs this at CLIENT CONSTRUCTION only: the Anthropic SDK's platform
+  clients (AnthropicBedrockMantle / AnthropicVertex / AnthropicFoundry) expose the same
+  messages surface (structured outputs GA on Bedrock+Vertex, beta on Foundry; Bedrock
+  model ids take the `anthropic.` prefix), and the Gemini SDK flips to Vertex by
+  environment (GOOGLE_GENAI_USE_VERTEXAI + ADC) with zero adapter change. Direct API
+  keys remain the dev-loop convenience only.
 - **Q3 — MCP registration timing.** Static tool declaration vs boot-time enumeration of
   the server's tool list; allowlist config shape; failure behavior when a listed tool is
   absent at boot (fail-fast per the compiled-or-404 taste?).
@@ -188,6 +200,18 @@ every agent's toolbox — governed in both directions.
 - **Q8 — streaming to the edge.** Token streaming from an LLM node through a graph run
   to the HTTP response — pattern using Flux/ObjectStream, or explicitly out of scope for
   v1 (request-response per node).
+  **PARTIALLY ANSWERED WITH LIVE EVIDENCE (2026-08-31):** for a REST endpoint (no graph
+  run), the composition already exists on the shipped streaming foundation and ran live
+  with REAL Gemini tokens — `llm.stream` in the python demo app pulls the provider's
+  token stream (generate_content_stream / messages.stream) and relays each token batch
+  via EventStreamWriter; the engine's `llm.stream.relay` endpoint (minigraph-playground,
+  POST /api/llm/stream, stream: true) forwards its reply lane + `accept:
+  text/event-stream` into the Event-over-HTTP send; 25+ timestamped token batches
+  rendered progressively out the engine's SSE edge over a ~2s generation, terminal
+  `done` event carrying usage/model/stop_reason/trace ids, one distributed trace across
+  both processes (relay span → async.http.request SSE-consumption span → per-batch
+  reply-lane spans). Zero engine change. STILL OPEN in Q8: token streaming from an LLM
+  node INSIDE a graph run (graph-run streaming — the staged engine follow-up).
 
 ## 7. Experiment plan (E-series — post-workshop; each produces evidence for D-rulings)
 
@@ -197,6 +221,26 @@ every agent's toolbox — governed in both directions.
   graph.task → wrapper drive** (closes that evidence gap incidentally).
   *Evidence out:* the demo graph JSON, the live trace (engine trace_id in the python
   log), token usage surfaced in `model`.
+  **E0 DONE 2026-08-30 — live drive complete.** Built beyond the spec: `llm.chat` is
+  PROVIDER-NEUTRAL (Anthropic + Gemini backends behind one contract; `llm.provider`
+  config / `params.provider` select; schema → structured output with additionalProperties
+  defaulted closed; usage/stop_reason surfaced; provider errors ride the envelope status;
+  params.timeout_ms → SDK timeout) + the `support-triage` graph in
+  examples/minigraph-playground (input-validation decision, verdict schema expressed in
+  mapping lines, triage decision over three enumerated branches). *Live evidence (Gemini
+  `gemini-3.6-flash`, Eric's personal key; the Anthropic re-drive runs when the org key
+  arrives):* all three branches returned real verdicts and routed correctly
+  (bug-filed / answered / feature-routed) with usage in `model` (bug run:
+  input_tokens 32, output_tokens 21); ONE trace across both processes — engine span
+  chain http.flow.adapter → check-input → classify (graph.task task=llm.chat) → triage
+  → file-bug, with the same trace id (208feaeabce2488eaf90bbb723b7f23f) in the wrapper
+  log (`Handled llm.chat status=200 exec_time=2111ms`); the provider-ERROR path was
+  live-proven first (Google 401/404/504 rode the envelope into the graph error context,
+  `target=llm.chat`). Token-free CI: a mock on the same route pins the full path
+  (route decoupling = the mock-by-config story; engine module 20/20, python 92/92).
+  Engine finding → thread-compilegraph-syntax-validation: a node carrying
+  task/input/output but NO `skill` property compiles and silently passes through —
+  gate-warning candidate.
 - **E1 — human authority.** Insert `graph.suspend` before a side-effectful step; approve
   → resume; reject → re-suspend loop (tutorial-14 shape, LLM verdict as the decision
   input). *Evidence out:* suspension record contents with conversation context (feeds Q5).

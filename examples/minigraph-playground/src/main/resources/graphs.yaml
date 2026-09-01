@@ -12,5 +12,6 @@ graphs:
   - 'tutorial-11'
   - 'tutorial-12'
   - 'tutorial-14'
+  - 'support-triage'
 
 location: 'classpath:/graph'
