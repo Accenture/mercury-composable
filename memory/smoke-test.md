@@ -17,6 +17,11 @@
 Run it **on demand** ("run the memory smoke test"), after a large change, or alongside a
 review. Don't edit the questions to make them pass.
 
+> Methodology note (2026-09-01): a Claude Code agent in this repo cannot be perfectly
+> blind — CLAUDE.md auto-imports PROTOCOL.md, instructions.md, continuity.md and
+> vision.md at session start. The constraint to honor is "answer only from the
+> prescribed read set", and the runner should disclose the imports in its report.
+
 ## Orientation questions (generic — apply to any repo)
 
 1. What does this project do, and what type is it? *(→ instructions "What This Project Is")*
@@ -42,3 +47,4 @@ review. Don't edit the questions to make them pass.
 | 2026-06-14 | (v3.7.0 upgrade) | — | baseline — run the test to populate |
 | 2026-08-14 | 2026-08-14-005928 | 12/12 | none |
 | 2026-08-22 | 2026-08-22-164936 | 12/12 | All questions pass (fresh-context agent, memory files only), plus 3 integrity findings: (1) dangling id `eric-release-rhythm` — six logs referenced a fact that lived only in an agent's personal store → materialized into continuity User Preferences under the same id; (2) Q11's pointer was stale (fact archived) → hint retargeted to the live homes; (3) observation for the team: several supersessions are narrated inline without `tier: superseded` footers — readable but not machine-traceable; consider footering at a future review. |
+| 2026-09-01 | 2026-09-01-022524 | 12/12 | Ran as the onboarding-efficiency re-measure (fresh-context agent; no [[ref]] dangles — all resolve in archive/INDEX.md). Context-efficiency verdict: shipped-history share of continuity 64% (2026-08-21 baseline) → ~31%; "acceptable, trending lean". Gaps → actions same day: polyglot-initiative done-narrative condensed; "the field" glossary + placeholder-module note + playground run line + draft-design-specs status added to instructions.md; `latest_release` line added to Project State; vision.md current-state version refreshed to v4.12.0; stale "gitignored draft-design-specs" wording fixed. |

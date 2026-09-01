@@ -20,6 +20,10 @@
                              #    aging out over the 20-session window; see memory-health-fact-cap-2026-08-14)
 - continuity_max_lines: 1000 # ...or this many lines (a coarse backstop; raised from 300 in v4.24.0 — a mature,
                              #    actively-developed layer legitimately sits ~450–600 lines even when healthy).
+                             #    (Reviewed and deliberately KEPT at 1000 by Eric, 2026-09-01, after the
+                             #    fresh-agent re-measure: healthy lean size is ~600, so the once-floated 600
+                             #    cap would fire permanently; the sharp re-bloat guards are
+                             #    continuity_max_facts + closed_narrative_max_lines.)
                              #    Meant to be raised for a legitimately large/complex repo — a 29-module
                              #    reactor with many dense, active Key Decisions can sit well above 600 with
                              #    nothing archivable. When lines exceed this but nothing has faded/superseded,

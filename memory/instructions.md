@@ -17,6 +17,10 @@ readers to it (docs/README references were removed 2026-07-20).
 **Build:** Maven 3.9.7+ — `pom.xml` source of truth for the version
 **Upstream:** github.com/Accenture/mercury-composable · docs: accenture.github.io/mercury-composable
 
+> **"The field"** (in memory and session logs) = client production installations that
+> consume Mercury releases through their own governed pipelines (Snyk/Sonar security and
+> quality gates). Client specifics are deliberately kept out of this repository.
+
 > High-level only. The precise dependency list and current versions live in
 > `memory/continuity.md` → `## Stack & Tools` (the live source of truth).
 
@@ -42,7 +46,12 @@ examples/                  ← reference apps; composable-example is the primary
 benchmark/benchmark-reporter ← self-contained perf harness (benchmark-client retired 4.6.2)
 docs/ (guides/, arch-decisions/)  ← docs (mkdocs `docs_dir: docs`);
                                   arch-decisions/ADR.md = the ADR ledger (holds durable design rationale)
+draft-design-specs/        ← committed working design specs (public since 2026-08)
 ```
+
+> `system/rest-spring-3/` and `examples/rest-spring-3-example/` hold retired placeholder
+> poms only (Snyk project continuity after the Boot 3 retirement — ADR-0017, PR #305);
+> they are intentionally absent from the reactor.
 
 ## Core Abstractions
 
@@ -95,6 +104,8 @@ mvn test -Dtest=FlowTest#endToEndFlowTest -f examples/composable-example/pom.xml
 mvn clean install -DskipTests                       # skip tests
 # Run the example app (use the built artifact's actual version):
 cd examples/composable-example && java -jar target/composable-example-<version>.jar
+# Run the MiniGraph playground (port 8085; graphs deploy at POST /api/graph/{graph-id}):
+cd examples/minigraph-playground && java -jar target/minigraph-playground-<version>.jar
 ```
 
 **Requirements:** Java 21+, Maven 3.9.7+ (`.java-version` pins the JDK).

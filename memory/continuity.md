@@ -17,8 +17,10 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
+- **latest_release:** v4.12.0 (2026-08-30; the CHANGELOG Unreleased section rides the
+  next release — the live version source stays the root pom.xml)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-09-01 | agent: Claude Code (2026-09-01-022524)
+- **last_session:** 2026-09-01 | agent: Claude Code (2026-09-01-031112)
 - **last_review:** 2026-09-01 | through 2026-09-01-022524.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -242,7 +244,7 @@
   examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-01 | uses: 1 | tier: working | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-01 | uses: 2 | tier: active | origin: 2026-09-01-022524 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -267,7 +269,7 @@
   Anthropic SDK covers all three, so the switch is client-construction only — re-drive
   waits on Eric's cloud account. Next: E1 (suspend checkpoint on an LLM verdict), Q8's
   second half (graph-run streaming). → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-01 | uses: 8 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-01 | uses: 9 | tier: working | origin: 2026-08-25-213703 -->
 - [ ] (blueprint) **Polyglot function execution** — python/node.js functions join Event Script
   flows and MiniGraph graphs as Event-over-HTTP peers (ratified design D0–D8, 2026-08-22);
   wrappers live in the repurposed Accenture/mercury-python + mercury-nodejs repos.
@@ -291,7 +293,7 @@
   .0,.1,.2 — ADR-0018 amended). Lesson: PyCharm validates monkeypatch attr-name literals —
   route the name through a helper parameter. Design: [[bp-agent-orchestration]].
   origin: 2026-09-01-022524.
-  <!-- id: ot-agent-orchestration-e0 | created: 2026-09-01 | last_used: 2026-09-01 | uses: 1 | tier: working | origin: 2026-09-01-022524 -->
+  <!-- id: ot-agent-orchestration-e0 | created: 2026-09-01 | last_used: 2026-09-01 | uses: 2 | tier: active | origin: 2026-09-01-022524 -->
 
 - [x] (feature — **SHIPPED BOTH ENGINES 2026-08-30, rides the next release**: Java
   [PR #303](https://github.com/Accenture/mercury-composable/pull/303) squash `b3741664`
@@ -350,7 +352,7 @@
   memory-lint rename upstreamed, Sonar round 4 + catch-path coverage). Lesson: pair an
   S2139 rewrite of an uncovered catch block with a catch-path test in the same PR.
   origin: 2026-08-25-231243 + 2026-08-26-020650. Relates [[thread-sonar-4-11-x-field-round-3]].
-  <!-- id: thread-field-scan-remediation-20260825 | created: 2026-08-25 | last_used: 2026-08-27 | uses: 5 | tier: active | origin: 2026-08-25-231243 -->
+  <!-- id: thread-field-scan-remediation-20260825 | created: 2026-08-25 | last_used: 2026-08-27 | uses: 5 | tier: archive-candidate | origin: 2026-08-25-231243 -->
 
 - [x] (release — SHIPPED 2026-08-23, both repos lock-step at v4.11.11; releases
   PUBLISHED by Eric) **v4.11.11 — the graph.task Event-over-HTTP field release.** Java
@@ -360,98 +362,38 @@
   origin: 2026-08-24-001110. Relates [[thread-polyglot-initiative]].
   <!-- id: thread-release-4-11-11 | created: 2026-08-24 | last_used: 2026-08-24 | uses: 2 | tier: archive-candidate | origin: 2026-08-24-001110 -->
 
-- [ ] (feature — design RATIFIED D0–D8 2026-08-22 + two in-flight refinements (minimalist
-  utilities; resources/ + -D config conventions); **both wrapper repos REBOOTED and scaffolded
-  same day on `feature/polyglot-event-over-http`, and **both MERGED same day** — mercury-python
-  [PR #15](https://github.com/Accenture/mercury-python/pull/15) true merge `99ae249` carrying
-  `ad7e104`+`2c92a29` (30/30 tests), mercury-nodejs
-  [PR #86](https://github.com/Accenture/mercury-nodejs/pull/86) true merge `05e66a5` carrying
-  `0ae7a17`+`5f56d1d` (31/31; legacy npm mercury-composable v4.3.28 in history); trees verified
-  identical to the gated commits, branches deleted both ends; both codecs verified against the
-  shared golden envelope vectors;
-  **interop proven live:** python⇄node both directions, and composable-example 4.11.10's
-  shipped `event-over-http-declarative` FLOW executed the python `hello.declarative` function
-  unchanged — my_correlation_id injected, engine trace_id in the python log, zero engine
-  change.) **Polyglot initiative — python/node.js Event-over-HTTP wrappers.**
-  **P2 DONE 2026-08-22 (both engines, same day the wrapper repos came back agent-memory-
-  enabled): Java commit `10c53ca3` + Rust `83b12c36` on `feature/graph-task-event-over-http`
-  branches — the graph.task guard consults the event-over-http map (Java adds
-  `PostOffice.getEventHttpTarget`), unit-test-task-7 pin byte-identical on both engines and
-  proven vs unfixed code, compiled-set pin 49→50; gates: minigraph 119/119 + platform-core
-  426 green; Rust 63 suites + clippy 0 + fmt clean. **MERGED 2026-08-22: Java
-  [PR #292](https://github.com/Accenture/mercury-composable/pull/292) squash `fad24f11` ==
-  gated `a31c5316` (incl. Eric's IDE cosmetics; title clean), Rust
-  [PR #212](https://github.com/Accenture/mercury/pull/212) merge `c49d6cd7` carrying
-  `83b12c36`; trees verified, CI green both, branches deleted both ends — **SHIPPED to the field in v4.11.11, 2026-08-23**
-  ([[thread-release-4-11-11]]).**
-  **Wrapper feature round MERGED 2026-08-23** — both wrappers gained the primitive
-  event bus (instances/private faithful, local PostOffice delivery, no-spill ruling),
-  the actuator endpoints, log.format text|json|compact and a sample
-  resources/application.yml: python
-  [PR #17](https://github.com/Accenture/mercury-python/pull/17) true merge `f38ac17`,
-  node [PR #87](https://github.com/Accenture/mercury-nodejs/pull/87) true merge
-  `fa7b2bf`; trees verified, branches deleted both ends; detail in the wrapper repos'
-  memory (logs 2026-08-23-031558 / 2026-08-23-031920).
-  **P4 docs SHIPPED 2026-08-24 in two halves.** Wrapper docs sites LIVE same day
-  (python [PR #20](https://github.com/Accenture/mercury-python/pull/20) merge `0bc97f7`,
-  node [PR #89](https://github.com/Accenture/mercury-nodejs/pull/89) merge `5ccf355`;
-  sites at accenture.github.io/mercury-python + /mercury-nodejs on the engine Material
-  theme; the fresh wrapper ci.yml workflows shipped in the same PRs — maiden runs green,
-  wrapper-CI item CLOSED; node repo's Pages source had to be flipped off the legacy
-  doc/2025-11-15 branch). Engine half MERGED AND LIVE same day: Java
-  [PR #294](https://github.com/Accenture/mercury-composable/pull/294) squash
-  `807a063c` == gated `8c89b1ad` (chapter guides/polyglot-functions.md + ADR-0016
-  Proposed + interop-report wrapper round; tree verified, title clean, reactor green) /
-  Rust PR #214 merge `c5221258` (twin chapter + ADR-0014 + report round + **home page
-  unified on the Java reference and site renamed "Composable for Rust"** per Eric's
-  directive) + Rust PR #215 merge `4573bd21` (nav parity: Operate & integrate +
-  Orientation tabs — tab row now identical across the two engine sites, Eric confirmed
-  live). The
-  "examples demo" item resolved by documentation: the wrapper demo apps register
-  hello.declarative and default to port 8085 (lambda-example/hello-world's slot), so
-  the shipped zero-code demo swaps in a wrapper callee with one -D override — taught in
-  the chapter, no new example code. CI fix round: both engines' ai-contract-provider
-  link validators failed closed on the new cross-link until
-  `references/guides/polyglot-functions.md` joined both files.list inventories (Java
-  `8c89b1ad`, Rust `d278d8ae`) — new guide pages linked from packaged references must
-  join the snapshot inventory on BOTH engines.
-  **P4 COMPLETE across all four repos.** Remaining: P5 publishing gates only —
-  the version strategy is RESOLVED (both wrappers joined the engine lock-step line at
-  v4.12.0, 2026-08-30, clearing the legacy npm 4.3.x); the npm/PyPI publish acts stay
-  Eric's calls and are SEQUENCED (Eric, 2026-08-30): package publication happens after
-  the first iteration of the AI SDLC feature completes ([[bp-agent-orchestration]];
-  PyPI name availability still to verify at publish time);
-  optional extras offered: a live Rust-engine→wrapper drive; Rust layer-tab label
-  parity ("Event Script" vs "Composable"). Design record: [[polyglot-event-over-http-design]]; serves
-  [[bp-polyglot-functions]]. Full detail: origin log + 2026-08-24-170545.
-  <!-- id: thread-polyglot-initiative | created: 2026-08-22 | last_used: 2026-09-01 | uses: 8 | tier: working | origin: 2026-08-22-164936 -->
+- [ ] (feature — design RATIFIED D0–D8 2026-08-22; **P1–P4 COMPLETE across the four
+  repos**; completed-phase narrative condensed 2026-09-01 — full detail: origin log,
+  2026-08-24-170545, and the wrapper repos' memory) **Polyglot initiative — python/node.js
+  Event-over-HTTP wrappers.** Shipped: wrapper reboots + envelope codecs vs the golden
+  vectors + live python⇄node/engine interop (python PR #15, node PR #86, 2026-08-22);
+  the graph.task event-over-http guard, both engines (Java
+  [PR #292](https://github.com/Accenture/mercury-composable/pull/292), Rust PR #212 —
+  the sole content of field release v4.11.11); the wrapper feature round — primitive
+  event bus, actuator endpoints, log.format (python PR #17, node PR #87); P4 docs —
+  wrapper sites live + engine chapters/ADR-0016 + nav parity (python PR #20, node
+  PR #89, Java PR #294, Rust PR #214/#215). Lesson: new guide pages linked from packaged
+  references must join the ai-contract-provider files.list inventory on BOTH engines.
+  **Remaining — P5 publishing gates only:** versions RESOLVED (wrappers joined the
+  lock-step line at v4.12.0); the npm/PyPI publish acts stay Eric's calls, SEQUENCED
+  after the first AI SDLC iteration completes ([[bp-agent-orchestration]]; PyPI name
+  availability to verify at publish time). Optional extras offered: a live
+  Rust-engine→wrapper drive; Rust layer-tab label parity. Design:
+  [[polyglot-event-over-http-design]]; serves [[bp-polyglot-functions]].
+  <!-- id: thread-polyglot-initiative | created: 2026-08-22 | last_used: 2026-09-01 | uses: 9 | tier: working | origin: 2026-08-22-164936 -->
 
-- [ ] (onboarding — assessment round 2026-08-21, Eric ratified; **fork MERGED 2026-08-22 as
-  [PR #290](https://github.com/Accenture/mercury-composable/pull/290) squash `f85aa02a`, tree
-  == gated `14ae11f5`, CI green 7m50s, branches deleted**; **handoff DELIVERED and shipped
-  upstream as agent-memory v4.38.0, 2026-08-22** — the fork is now a sanctioned converged
-  form (`fork-ok`, this repo's root pinned verbatim in the tool's test suites), the target
-  protocol carries the consumers-exit-here step-0 + the 3–6-line close-record spec + the
-  optional checkpoint, and `[closed-thread-bloat]`/`closed_narrative_max_lines` measure the
-  over-retention class; this repo upgraded same day)
-  **Onboarding efficiency: root AGENTS.md now forks contributors (memory protocol) from
-  consumers (system/AGENTS.md) with the ratified role-resolution ladder — a fresh
-  interactive agent ASKS one question whenever the first instruction doesn't itself
-  resolve the path ("the answer creates your path", Eric); memory-carrying sessions
-  never re-ask; headless defaults contributor.
-  instructions.md gained terse-close-record + ready-to-work conventions.** Verdict: consumer side NOT over-engineered; contributor side over-retained
-  (continuity was 64% closed-thread narrative — hence the new conventions). Upstream proposals
-  (shim role-routing, close-record economy, readiness checkpoint, P3 declined as artifact):
-  `~/Desktop/agent-memory-onboarding-handoff.md`. Remaining — next review: condense the
-  `[x]` backlog to stubs (the new advisory measures it); re-run the fresh-agent
-  context-efficiency exercise after two reviews vs the 64% baseline; then consider lowering
-  continuity_max_lines 1000→~600. **First post-adoption review RAN 2026-08-27** (20
-  archived, 14 close records condensed to stubs, continuity 1181→~600 lines); **second
-  RAN 2026-09-01** (5 archived, 12 records condensed, closed-narrative back under the
-  150-line advisory): remaining — the fresh-agent context-efficiency exercise is now DUE
-  (two post-adoption reviews complete; compare vs the 64% baseline), then decide the
-  continuity_max_lines lowering. Full detail: origin log.
-  <!-- id: thread-onboarding-efficiency | created: 2026-08-22 | last_used: 2026-08-27 | uses: 4 | tier: working | origin: 2026-08-22-003007 -->
+- [x] (onboarding — **CLOSED 2026-09-01, all items done, decision recorded**) **Onboarding
+  efficiency round.** Root AGENTS.md contributor/consumer fork + role-resolution ladder
+  ([PR #290](https://github.com/Accenture/mercury-composable/pull/290)); terse-close-record
+  + ready-to-work conventions; handoff upstreamed as agent-memory v4.38.0. Two
+  post-adoption reviews + the 2026-09-01 fresh-agent re-measure: smoke test 12/12,
+  shipped-history share 64% → ~31%, continuity 1181 → 600 lines, verdict "acceptable,
+  trending lean"; punch-list fixes applied same day. **continuity_max_lines KEPT at 1000
+  (Eric, 2026-09-01)** — the sharp re-bloat guards are continuity_max_facts 35 +
+  closed_narrative_max_lines 150; 600 would fire permanently on a healthy lean file.
+  Lesson: retention STYLE (close-record economy), not the caps, drives onboarding cost.
+  origin: 2026-08-22-003007 (+ 2026-09-01-031112).
+  <!-- id: thread-onboarding-efficiency | created: 2026-08-22 | last_used: 2026-09-01 | uses: 5 | tier: active | origin: 2026-08-22-003007 -->
 
 - [x] (feature — MERGED 2026-08-21, shipped in v4.11.10:
   [PR #285](https://github.com/Accenture/mercury-composable/pull/285)/[PR #286](https://github.com/Accenture/mercury-composable/pull/286)/[PR #288](https://github.com/Accenture/mercury-composable/pull/288);
@@ -541,9 +483,11 @@
   VT-pinning vector). Copilot review hardening applied (bounded dispatch mailbox with no-drop
   back-pressure, O(1) segment channels, stale-dir cleanup). `benchmark/benchmark-reporter` module
   added — self-contained field A/B harness → HTML report. **Next = field steps: run
-  benchmark-reporter on real envs, then P4 retire BDB.** Design spec + field notes: gitignored
-  draft-design-specs. Docs/ADR sync: [[thread-elastic-queue-docs-adr]]. Full detail: origin log.
-  <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-07-06 | uses: 12 | tier: working | origin: 2026-07-05-033922 -->
+  benchmark-reporter on real envs, then P4 retire BDB.** Design spec + field notes:
+  draft-design-specs/ (committed and public since the 2026-08 specs-go-public round; the
+  earlier "gitignored" status here predated it). Docs/ADR sync:
+  [[thread-elastic-queue-docs-adr]]. Full detail: origin log.
+  <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-09-01 | uses: 13 | tier: working | origin: 2026-07-05-033922 -->
 
 - [ ] (backlog — do at ElasticQueue merge / P4) **Docs sync + ADR for the ElasticQueue file store /
   off-loop dispatch.** Deferred deliberately: nothing in the current guides is wrong today, and the
@@ -630,7 +574,7 @@
   memory 2026-08-22: the smoke test found six session logs referencing this id while the
   fact lived only in an agent's personal store — a project-relevant working rhythm belongs
   in the shared layer.)
-  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-09-01 | uses: 22 | tier: active | origin: 2026-08-22-180334 -->
+  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-09-01 | uses: 23 | tier: active | origin: 2026-08-22-180334 -->
 
 ## Team / Members
 
