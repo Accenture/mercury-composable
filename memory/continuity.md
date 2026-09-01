@@ -537,6 +537,7 @@
   §Outbound — `@KernelThreadRunner`/keep-instances-small callout added; body-must-be-`byte[]` named
   explicitly with `IllegalArgumentException`; misleading `Map` comment in §Produce YAML fixed.
   **Next:** surface `## Doc Gaps` at next review sweep; measure guide sufficiency rate.
+  PR: [#306](https://github.com/Accenture/mercury-composable/pull/306) (open).
   <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-09-01 | uses: 1 | tier: working | origin: 2026-09-01-032130 -->
 
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
