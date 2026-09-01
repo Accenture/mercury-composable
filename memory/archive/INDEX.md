@@ -130,3 +130,8 @@
 - thread-release-4-10-2 — (release — CLOSED 2026-07-23) v4.10.2 SHIPPED in lock-step — metadata contract (#221), — faded — 2026-Q3.md
 - thread-release-4-10-1 — (release — CLOSED 2026-07-23) v4.10.1 SHIPPED in lock-step — telemetry presentation — faded — 2026-Q3.md
 - stack-integration-spring — Integration: Spring Boot (rest-spring-3 / -4 modules) — superseded by stack-integration-spring-boot4 — 2026-Q3.md
+- ot-reverify-invariants-20260821 — Re-verify invariants (2026-08-21 review) — CLOSED same day: all 15 confirmed — faded (completed threads past archive_window 20) — 2026-Q3.md
+- thread-otlp-export-retry — (fix — MERGED 2026-08-19 as — faded (completed threads past archive_window 20) — 2026-Q3.md
+- thread-release-4-11-10 — (release — SHIPPED AND PUBLISHED 2026-08-21, both repos lock-step at v4.11.10) — faded (completed threads past archive_window 20) — 2026-Q3.md
+- thread-config-plugin — (feature — MERGED BOTH ENGINES 2026-08-21, shipped in v4.11.10: Java — faded (completed threads past archive_window 20) — 2026-Q3.md
+- thread-objectstream-expiry-test-determinism — (fix — test-only; MERGED 2026-08-21 as — faded (completed threads past archive_window 20) — 2026-Q3.md
