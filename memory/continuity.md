@@ -17,8 +17,9 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.0 (2026-08-30; the CHANGELOG Unreleased section rides the
-  next release — the live version source stays the root pom.xml)
+- **latest_release:** v4.12.1 (2026-09-01 — the lock-step registry-debut line: Rust
+  crates.io + python PyPI + node npm all published at 4.12.1; the live version source
+  stays the root pom.xml)
 - **last_enabled:** 2026-06-20
 - **last_review:** 2026-09-01 | through 2026-09-01-022524.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
