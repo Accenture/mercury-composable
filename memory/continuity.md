@@ -35,6 +35,11 @@
 > versions. `instructions.md` keeps only a high-level descriptor and points here.
 
 - Language: Java 21 (virtual threads). (Kotlin appears only as an example module, not a framework language.)
+  **The build targets Java 21 deliberately — wider compatibility** (Eric, 2026-09-02); the
+  documented recommended JDK/JRE is Java 25 (current LTS, fully supports the Java 21
+  virtual-thread technology). **The toolchain (`.java-version`, CI setup-java) intentionally
+  STAYS on 21 until the majority of field installations run Java 25** — Java version
+  migration is slow across enterprise customers; do not bump it ahead of the field.
   <!-- id: stack-language-java21 | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - Build: Maven 3.9.7+ is the current build tool (multi-module reactor, `com.accenture.mercury:parent-mercury`).
   **Gradle support is planned to be added alongside it** (Eric, 2026-06-24 — see Open Thread `thread-add-gradle-build`).
@@ -129,7 +134,7 @@
   playground `run` pre-run check — also the landing pad for
   [[thread-compilegraph-syntax-validation]]. Hot-dropping JSON into the deploy folder no longer
   executes (deployment = explicit act). Full detail: origin log.
-  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-09-01 | uses: 13 | tier: active | origin: 2026-07-29-190328 -->
+  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-09-02 | uses: 14 | tier: active | origin: 2026-07-29-190328 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -214,10 +219,12 @@
   **Scope extension: the Event Script surface is part of the cross-engine contract** — flows are
   engine-portable YAML, so any new built-in simple plugin ships in lock-step on both engines (with
   closely matching error messages), or flows stop being portable.
-  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-09-01 | uses: 39 | tier: active | origin: 2026-07-23-145132 -->
+  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-09-02 | uses: 40 | tier: active | origin: 2026-07-23-145132 -->
 
-- **graph.js is slated for eventual phase-out in favor of graph.task (Eric, 2026-07-31),
-  and the Rust port does not carry it at all.** The skill is troublesome by nature — it is
+- **graph.js is FORMALLY DEPRECATED (Eric, 2026-09-02; ADR-0022) — backward compatibility
+  only; the field is refactoring off it; AI agents must never use it; the Rust port does
+  not carry it at all.** (Originally slated for phase-out 2026-07-31; a field AI-agent
+  exercise reported a silent quoted-string-equality defect — documented, not fixed.) The skill is troublesome by nature — it is
   code injection; developers have been warned to use it with caution — and the newer
   graph.task can express very complex logic, so at some point graph.js will be retired.
   Operating consequences: don't invest in hardening graph.js beyond containment (its 5s
@@ -226,7 +233,7 @@
   loops); **graph.js work is never a Rust lock-step item** — the Rust validator's
   deadline-skill set legitimately names three skills where Java names four.
   Relates [[thread-task-ttl-override]].
-  <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-09-01 | uses: 8 | tier: active | origin: 2026-08-01-035647 -->
+  <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-09-02 | uses: 9 | tier: active | origin: 2026-08-01-035647 -->
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
   (Eric's feedback, 2026-08-19).** GitHub pre-fills the dialog with title-plus-body text,
@@ -300,7 +307,7 @@
   memory 2026-08-22: the smoke test found six session logs referencing this id while the
   fact lived only in an agent's personal store — a project-relevant working rhythm belongs
   in the shared layer.)
-  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-09-02 | uses: 26 | tier: active | origin: 2026-08-22-180334 -->
+  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-09-02 | uses: 27 | tier: active | origin: 2026-08-22-180334 -->
 
 ## Team / Members
 

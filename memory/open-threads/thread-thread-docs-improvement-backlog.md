@@ -18,5 +18,11 @@
   - **Document `${ENV_VAR:default}` config substitution** (unset `${VAR}` with no default → null).
   - **Drive an Event Script flow programmatically** (`FlowExecutor.request(...)`) + the synthetic
     `task.executor` flow-summary span.
+  - *(from the 2026-09-02 feedback round)* **lambda-example request-response demo** (the
+    RPC idiom lives only in composable-example's EventOverHttpRpc; the KernelThreadRunner
+    sync-over-async statement is now in configuration-reference); **inspect subtree
+    parity check** (Java prints `{}` for subtrees, a Rust test suggests its twin renders
+    them — pin one behavior); optional: graph.js equality-defect root cause (moot under
+    ADR-0022 deprecation).
   → serves `vision-mercury-composable`. Full detail: sessions of 2026-06-24.
-  <!-- id: thread-docs-improvement-backlog | created: 2026-06-24 | last_used: 2026-08-24 | uses: 10 | tier: working -->
+  <!-- id: thread-docs-improvement-backlog | created: 2026-06-24 | last_used: 2026-09-02 | uses: 11 | tier: working -->

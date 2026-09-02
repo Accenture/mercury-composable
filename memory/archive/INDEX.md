@@ -136,3 +136,6 @@
 - thread-config-plugin — (feature — MERGED BOTH ENGINES 2026-08-21, shipped in v4.11.10: Java — faded (completed threads past archive_window 20) — 2026-Q3.md
 - thread-objectstream-expiry-test-determinism — (fix — test-only; MERGED 2026-08-21 as — faded (completed threads past archive_window 20) — 2026-Q3.md
 - thread-release-4-11-11 — (release — SHIPPED 2026-08-23, both repos lock-step at v4.11.11; releases — faded (completed thread past archive_window 20) — 2026-Q3.md
+- thread-dynamic-statement-targets — (feature — COMPLETE BOTH ENGINES 2026-08-10, shipped in v4.11.6: Java — faded (completed threads past archive_window 20) — 2026-Q3.md
+- thread-graph-task-model-staging — (feature+fix — COMPLETE BOTH ENGINES 2026-08-08, shipped in v4.11.5: Java — faded (completed threads past archive_window 20) — 2026-Q3.md
+- thread-tutorial-14-decision — (feature — COMPLETE BOTH ENGINES 2026-08-07: Java — faded (completed threads past archive_window 20) — 2026-Q3.md

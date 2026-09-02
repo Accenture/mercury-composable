@@ -11,10 +11,15 @@
   rule to check it first was not encoded. **First gap CLOSED same session:** `minimalist-kafka.md`
   §Outbound — `@KernelThreadRunner`/keep-instances-small callout added; body-must-be-`byte[]` named
   explicitly with `IllegalArgumentException`; misleading `Map` comment in §Produce YAML fixed.
+  **First EXTERNAL-source firing 2026-09-02:** a field AI agent's three-layer build feedback
+  (ai-enabled-repo-demo docs/feedback) drove the async-companion retirement (ADR-0021),
+  the graph.js formal deprecation (ADR-0022), and an 8-guide docs campaign — Java PR #310
+  + Rust PR #224, both merged (origin: 2026-09-02-050213). The loop works on external
+  input, not just self-captured gaps.
   **Next:** surface `## Doc Gaps` at next review sweep; measure guide sufficiency rate.
   PR: [#306](https://github.com/Accenture/mercury-composable/pull/306) squash `6f6c3989` — merged.
   **Guide-first rule propagated 2026-09-01 to all four repos** (Rust
   [PR #222](https://github.com/Accenture/mercury/pull/222) squash `c730e17e`; python
   [PR #23](https://github.com/Accenture/mercury-python/pull/23) squash `a12c56b6`; node
   [PR #91](https://github.com/Accenture/mercury-nodejs/pull/91) squash `0899ad59`).
-  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-09-01 | uses: 1 | tier: working | origin: 2026-09-01-032130 -->
+  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-09-02 | uses: 2 | tier: working | origin: 2026-09-01-032130 -->
