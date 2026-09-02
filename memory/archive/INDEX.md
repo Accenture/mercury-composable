@@ -135,3 +135,4 @@
 - thread-release-4-11-10 — (release — SHIPPED AND PUBLISHED 2026-08-21, both repos lock-step at v4.11.10) — faded (completed threads past archive_window 20) — 2026-Q3.md
 - thread-config-plugin — (feature — MERGED BOTH ENGINES 2026-08-21, shipped in v4.11.10: Java — faded (completed threads past archive_window 20) — 2026-Q3.md
 - thread-objectstream-expiry-test-determinism — (fix — test-only; MERGED 2026-08-21 as — faded (completed threads past archive_window 20) — 2026-Q3.md
+- thread-release-4-11-11 — (release — SHIPPED 2026-08-23, both repos lock-step at v4.11.11; releases — faded (completed thread past archive_window 20) — 2026-Q3.md
