@@ -23,8 +23,8 @@ in that ADR's own *Rationale* section.
 ---
 
 ## ADR-0022 — graph.js is deprecated: backward compatibility only {#adr-0022}
-**Status:** Proposed · **Date:** 2026-09-02 · **Serves:** vision-mercury-composable · **Formalizes:** graphjs-phase-out-direction
-<!-- id: adr-0022 | status: proposed -->
+**Status:** Accepted · **Date:** 2026-09-02 · **Serves:** vision-mercury-composable · **Formalizes:** graphjs-phase-out-direction
+<!-- id: adr-0022 | status: accepted -->
 
 **Abstract.** The `graph.js` skill is deprecated. It remains shipped for backward
 compatibility while existing field applications refactor off it, but new graphs must not
@@ -48,8 +48,8 @@ from Rust lock-step scope.
 ---
 
 ## ADR-0021 — The companion endpoint is synchronous only: the fire-and-forget sibling is retired {#adr-0021}
-**Status:** Proposed · **Date:** 2026-09-02 · **Serves:** vision-mercury-composable · **Formalizes:** (rides ADR-0008's constraint)
-<!-- id: adr-0021 | status: proposed -->
+**Status:** Accepted · **Date:** 2026-09-02 · **Serves:** vision-mercury-composable · **Formalizes:** (rides ADR-0008's constraint)
+<!-- id: adr-0021 | status: accepted -->
 
 **Abstract.** `POST /api/companion/{id}` (fire-and-forget, `{status:"accepted"}`) is
 retired; `POST /api/companion/{id}/sync` (ADR-0008) is the only companion endpoint. The
