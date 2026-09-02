@@ -3076,8 +3076,8 @@ the source of truth in case of ambiguity. The narrative design reasoning behind 
 in that ADR's own <em>Rationale</em> section.</p>
 <hr />
 <h2 id="adr-0022">ADR-0022 — graph.js is deprecated: backward compatibility only<a class="headerlink" href="#adr-0022" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-09-02 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> graphjs-phase-out-direction</p>
-<!-- id: adr-0022 | status: proposed -->
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-09-02 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> graphjs-phase-out-direction</p>
+<!-- id: adr-0022 | status: accepted -->
 
 <p><strong>Abstract.</strong> The <code>graph.js</code> skill is deprecated. It remains shipped for backward
 compatibility while existing field applications refactor off it, but new graphs must not
@@ -3097,8 +3097,8 @@ CompileGraph gate continues to accept existing models; graph.js work remains exc
 from Rust lock-step scope.</p>
 <hr />
 <h2 id="adr-0021">ADR-0021 — The companion endpoint is synchronous only: the fire-and-forget sibling is retired<a class="headerlink" href="#adr-0021" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-09-02 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> (rides ADR-0008's constraint)</p>
-<!-- id: adr-0021 | status: proposed -->
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-09-02 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> (rides ADR-0008's constraint)</p>
+<!-- id: adr-0021 | status: accepted -->
 
 <p><strong>Abstract.</strong> <code>POST /api/companion/{id}</code> (fire-and-forget, <code>{status:"accepted"}</code>) is
 retired; <code>POST /api/companion/{id}/sync</code> (ADR-0008) is the only companion endpoint. The
