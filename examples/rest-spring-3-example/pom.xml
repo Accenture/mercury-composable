@@ -13,7 +13,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.accenture</groupId>
     <artifactId>rest-spring-3-example</artifactId>
-    <version>4.12.1</version>
+    <version>4.12.2</version>
     <packaging>pom</packaging>
     <name>Retired Spring Boot 3 example (see ADR-0017)</name>
     <description>
@@ -26,7 +26,7 @@
         <relocation>
             <groupId>com.accenture</groupId>
             <artifactId>rest-spring-4-example</artifactId>
-            <version>4.12.1</version>
+            <version>4.12.2</version>
             <message>
                 rest-spring-3-example is retired along with the rest-spring-3 library: Spring
                 Framework 6.2.x is out of security support. Use rest-spring-4-example, the

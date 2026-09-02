@@ -18,7 +18,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>rest-spring-3</artifactId>
-    <version>4.12.1</version>
+    <version>4.12.2</version>
     <packaging>pom</packaging>
     <name>Retired Spring Boot 3 module (see ADR-0017)</name>
     <description>
@@ -39,7 +39,7 @@
         <relocation>
             <groupId>org.platformlambda</groupId>
             <artifactId>rest-spring-4</artifactId>
-            <version>4.12.1</version>
+            <version>4.12.2</version>
             <message>
                 rest-spring-3 is retired: Spring Framework 6.2.x is out of security support.
                 Resolving rest-spring-4 instead, which REQUIRES Spring Boot 4. If your
