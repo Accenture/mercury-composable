@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
+### Added
+
+1. New `json` simple plugin for Event Script and graph data mapping —
+   `f:json(text([])) -> my_empty_list` parses JSON text (a constant or a model variable)
+   into a live map or list in one statement:
+   `f:json(text({"hello": [1, 2, {"nested": "demo"}]})) -> my_nested_dataset`. Closes
+   the field feedback gap where creating a simple dataset (e.g. an empty list) required
+   a composable function. Whole numbers parse as long, decimals as double; malformed
+   JSON aborts the task as a 400-class user error ("Unable to parse JSON: (reason)").
+
+### Removed
+
+1. Two unused `TypeConversionUtils` methods (`isBoolean`, `deepCopy(List)`) — internal
+   plugin-support utilities with no remaining callers.
+
 ### Breaking
 
 1. The fire-and-forget AI companion endpoint `POST /api/companion/{id}` is RETIRED

@@ -545,9 +545,14 @@ The dot-bracket form addresses list elements on either side of `->`:
 ```
 
 Append mode (`[]` on the destination) is how a list is built up rule by rule — e.g. three
-`text(...) -> model.list[]` rules produce a three-element list. To hand a function an empty
-list, have the function default it, or map a list-typed value from a source that already
-holds one — there is no empty-list constant.
+`text(...) -> model.list[]` rules produce a three-element list. To create a list — or any
+JSON dataset — in a single statement, parse it with the
+[`f:json` plugin](#plugin-functions-f-prefix):
+
+```yaml
+- 'f:json(text([])) -> model.my_empty_list'                              # empty list
+- 'f:json(text({"hello": [1, 2, {"nested": "demo"}]})) -> model.data'   # nested dataset
+```
 
 ### Three-part mapping
 
@@ -937,7 +942,12 @@ their arguments and place it at the destination.
 
 Syntax: `f:<name>(arg1, arg2, ...) -> destination`
 
-Arguments can be model variables, constant types, or nested plugin calls.
+Arguments can be model variables or constant types. Nested plugin calls are **not**
+supported — the engine deliberately ignores an `f:` expression inside another plugin's
+argument list (loop prevention); compute the inner value into a model variable first.
+The argument tokenizer splits on **top-level commas only**, so commas inside a nested
+constant are safe — e.g. `f:json(text({"a": 1, "b": 2}))` passes the whole JSON as one
+argument.
 
 ### Arithmetic
 
@@ -977,6 +987,7 @@ Arguments can be model variables, constant types, or nested plugin calls.
 | `f:boolean(a)` | Convert to boolean | `f:boolean(model.str) -> flag` |
 | `f:binary(a)` | Convert to byte[] | `f:binary(model.text) -> bytes` |
 | `f:b64(a)` | Base64 encode/decode | `f:b64(model.bytes) -> encoded` |
+| `f:json(a)` | Parse JSON text — object `{...}` → map, array `[...]` → list | `f:json(text([])) -> empty_list` |
 
 ### String operations
 

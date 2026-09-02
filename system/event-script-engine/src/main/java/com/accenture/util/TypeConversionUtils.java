@@ -32,15 +32,42 @@ public class TypeConversionUtils {
         return util.getUuid4();
     }
 
-    public static Boolean isBoolean(Object input){
-        if(input == null){
-            return false;
-        }
+    public static Object parseJson(Object input) {
+        // "case null" matters: an absent model variable (or a nested plugin, which the engine
+        // nulls by design) must raise this clear error, not a NullPointerException
         return switch (input) {
-            case Boolean i -> true;
-            case String s -> s.equalsIgnoreCase("true") || s.equalsIgnoreCase("false");
-            default -> false;
+            case String text -> convertJson(text);
+            case byte[] b -> convertJson(util.getUTF(b));
+            case null, default -> throw new IllegalArgumentException("Input must be a JSON in string or byte array");
         };
+    }
+
+    private static Object convertJson(String input) {
+        var trimmed = input.trim();
+        if (trimmed.isEmpty()) {
+            return new HashMap<>();
+        }
+        final boolean isMap = trimmed.startsWith("{") && trimmed.endsWith("}");
+        final boolean isList = trimmed.startsWith("[") && trimmed.endsWith("]");
+        if (isMap || isList) {
+            try {
+                var mapper = SimpleMapper.getInstance().getMapper();
+                return isMap? mapper.readValue(trimmed, Map.class) : mapper.readValue(trimmed, List.class);
+            } catch (RuntimeException e) {
+                // normalize the parser's own exception into the plugin error contract so the
+                // flow aborts with 400 (user error), not 500 - and so the Rust twin can match
+                throw new IllegalArgumentException("Unable to parse JSON: " + getParserErrorSummary(e));
+            }
+        }
+        throw new IllegalArgumentException("Input is not JSON: " + input);
+    }
+
+    private static String getParserErrorSummary(Throwable e) {
+        var cause = e.getCause() != null? e.getCause() : e;
+        var message = String.valueOf(cause.getMessage());
+        // first line only - the parser may append a troubleshooting URL on the next line
+        int lf = message.indexOf('\n');
+        return lf == -1? message : message.substring(0, lf);
     }
 
     public static Boolean convertBoolean(Object input){
@@ -138,10 +165,6 @@ public class TypeConversionUtils {
     }
 
     public static Map<String, Object> deepCopy(Map<String, Object> value) {
-        return util.deepCopy(value);
-    }
-
-    public static List<Object> deepCopy(List<Object> value) {
         return util.deepCopy(value);
     }
 

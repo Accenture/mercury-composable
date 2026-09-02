@@ -1480,9 +1480,12 @@ A plugin function can be configured in the left-hand-side of an input/output dat
 `f:` prefix with your plugin name. i.e. `f:pluginName(variables...)`
 
 A plugin can access variables in the `model.`, `input.`, `output.` namespaces. You may also use constants such as
-`text(value)`, `int(value)`. For constant text value, it should not contain the comma (`,`) character because comma
-is used as a separator for the plugin's argument variables. If comma must be used in a text constant, set the
-constant as a model variable and apply the model variable as an argument to a plugin.
+`text(value)`, `int(value)`. The argument tokenizer splits on **top-level commas only**, so a comma inside a
+nested constant is safe — e.g. `f:json(text({"a": 1, "b": 2}))` passes the whole JSON as one argument. One
+caution: an *unbalanced* close-parenthesis inside a text constant can confuse the splitter; if your text needs
+one, set the value in a model variable first and pass the model variable as the argument. Nested plugin calls
+(an `f:` expression as another plugin's argument) are not supported — the engine deliberately ignores them to
+prevent execution loops.
 
 For model, input and output variables, you may also use JSON-Path syntax to extract value as argument to a plugin.
 
@@ -1634,6 +1637,9 @@ For example:
 `text`
 :   A list of variables that can evaluate to a String
 
+`json`
+:   A single JSON text (String or byte[]) — an object `{...}` becomes a map, an array `[...]` becomes a list. See details below.
+
 `listOfMap`
 :   Convert "a map of lists" to "a list of maps" — **order-preserving**: list order follows array index order (guaranteed)
 
@@ -1722,6 +1728,37 @@ throwing an validation error. For example,
 - f:validate(input.body.id, text(id; String; evaluate))
 
 Please note that the validation rule uses semicolon as separator because comma is used for tokenization.
+
+*JSON parsing plugin*
+
+The 'json' plugin parses JSON text into a live dataset in one data mapping statement —
+an object `{...}` becomes a map, an array `[...]` becomes a list. The input can be a text
+constant, a model variable, or any mapping source holding a JSON string or byte array.
+
+- f:json(text([])) -> model.my_empty_list
+- f:json(text({"hello": [1, 2, {"nested": "demo"}]})) -> model.my_nested_dataset
+- f:json(model.raw_json_text) -> model.parsed
+
+This makes simple dataset creation a one-liner — e.g. seeding an empty list before
+building it up with append-mode (`[]`) mapping rules — without writing a composable
+function for it.
+
+Behavior notes:
+
+1. Only the JSON composite forms are accepted. A scalar such as `42` or `hello` throws
+   "Input is not JSON" — the scalar constants (`text`, `int`, `long`, `float`, `double`,
+   `boolean`) already cover those.
+2. Whole numbers parse as long and decimals as double. Small whole numbers are downcast
+   to integer when the dataset later rides an event — standard serialization behavior.
+3. Blank input returns an empty map instead of aborting the flow.
+4. The parser is lenient: unquoted keys are accepted, and a trailing comma inserts a
+   trailing null element (`[1, 2,]` becomes `[1, 2, null]`). Prefer strict JSON.
+5. Malformed JSON throws "Unable to parse JSON: (reason)"; a null or non-text input
+   throws "Input must be a JSON in string or byte array". Both abort the task as a user
+   error (HTTP 400 at the flow edge).
+6. `{model.key}` and `[model.index]` references inside the JSON text are resolved as
+   runtime substitutions *before* parsing — useful for composing dynamic JSON; be aware
+   of it if your JSON legitimately contains such text.
 
 *Configuration override plugin*
 
