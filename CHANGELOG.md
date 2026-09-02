@@ -8,6 +8,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Breaking
+
+1. The fire-and-forget AI companion endpoint `POST /api/companion/{id}` is RETIRED
+   (ADR-0021) - the bare URL now answers 404. Use the synchronous
+   `POST /api/companion/{id}/sync` (ADR-0008), unchanged, which returns the command
+   outcome in-band and tees output to the session console. Driven by a field AI-agent
+   exercise: the async form hid errors and forced sleep-padded drivers.
+
+### Deprecated
+
+1. The `graph.js` skill (ADR-0022) - kept for backward compatibility only; new graphs
+   and AI agents must use `graph.math` for decisions plus `graph.task` for anything the
+   safe dialect cannot express. Runtime script evaluation fails enterprise security
+   review, and a silent equality defect with quoted string literals was reported from
+   the field.
+
+### Fixed
+
+1. The Playground `export graph` command now reports an in-band ERROR when the file
+   write fails (the write result was previously unchecked); its idempotent-write
+   behavior (identical content skips the physical write, preserving the mtime) is now
+   documented.
+
+### Documentation
+
+1. AI-grammar feedback round (from a field agent's three-layer build): the companion
+   guide now documents /sync as the only endpoint; "restart ends the session - export
+   first" and "404 means the session is gone" warnings; inspect's leaf-vs-subtree
+   behavior; array element and append mapping syntax (`hello[0]`, `hello[]`) in the
+   flow schema reference; graph.js deprecation banners; example gotcha notes
+   (snake.case.serialization, example groupIds).
+
+---
 ## Version 4.12.1, 9/1/2026
 
 The lock-step companion to the first public-registry releases (the Rust engine's

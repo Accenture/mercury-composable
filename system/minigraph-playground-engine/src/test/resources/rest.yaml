@@ -69,14 +69,6 @@ rest:
     headers: header_1
     tracing: true
 
-  - service: 'post.companion.command'
-    methods: ['POST']
-    url: '/api/companion/{id}'
-    timeout: 30s
-    cors: cors_1
-    headers: header_1
-    tracing: true
-
   - service: 'post.companion.command.sync'
     methods: ['POST']
     url: '/api/companion/{id}/sync'

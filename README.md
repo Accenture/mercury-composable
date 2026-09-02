@@ -51,7 +51,7 @@ The [Getting Started](https://accenture.github.io/mercury-composable/guides/gett
 
 ## Documentation
 
-Full documentation: **[accenture.github.io/mercury-composable](https://accenture.github.io/mercury-composable/)**. AI agents can use [`docs/llms.txt`](docs/llms.txt) as a machine-readable map.
+Full documentation: **[accenture.github.io/mercury-composable](https://accenture.github.io/mercury-composable/)**. AI agents can use [`docs/llms.txt`](docs/llms.txt) as a machine-readable map — and the same guides ship **offline** inside the [AI contract provider](system/ai-contract-provider/README.md) (`system/ai-contract-provider`; the guides' source of truth is [`docs/guides/`](docs/guides/), which the app packages at build time).
 
 | | |
 |---|---|

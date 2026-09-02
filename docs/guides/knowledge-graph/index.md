@@ -173,10 +173,12 @@ The **MiniGraph Playground** is a browser workbench (served over a WebSocket ses
 covers the full lifecycle — `create node`, `connect`, `instantiate graph`, `run`, `inspect`,
 `describe graph`, and `export/import graph`.
 
-The same commands can be driven by an **AI companion**: `POST /api/companion/{session-id}` accepts a
-Playground command (as `text/plain`) and dispatches it into your live session, with output streaming
-back to the browser console. This is the seed of **user–AI collaboration** — a person and an AI
-co-authoring the same graph in real time. (Both the Playground and companion endpoints are
+The same commands can be driven by an **AI companion**: `POST /api/companion/{session-id}/sync`
+accepts a Playground command (as `text/plain`), runs it in your live session, and returns the
+outcome **in-band** as `{ok, output, error, result}` — while teeing the same output to the browser
+console. This is the seed of **user–AI collaboration** — a person and an AI co-authoring the same
+graph in real time. AI drivers should start with the **[AI agent guide](ai-agent-guide.md)** (the
+full contract and self-correction rules). (Both the Playground and companion endpoints are
 **dev-only**, gated by `app.env=dev`.)
 
 ## What's built today vs. on the roadmap {#maturity}

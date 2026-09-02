@@ -3,6 +3,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- the groupId of an example is the example's own; it is NOT a platform
+         convention (other examples use com.accenture) - use your organization's -->
     <groupId>org.platformlambda</groupId>
     <artifactId>composable-example</artifactId>
     <packaging>jar</packaging>

@@ -1246,7 +1246,14 @@ public class GraphCommandService extends GraphLambdaFunction {
                 }
                 root.addProperty(NAME, filename);
                 var text = SimpleMapper.getInstance().getMapper().writeValueAsString(graph.exportGraph());
-                util.str2file(file, text);
+                // str2file skips the physical write when content is identical (mtime is
+                // NOT a write indicator) and returns false only on an I/O failure -
+                // that failure must not be reported as success
+                if (!util.str2file(file, text)) {
+                    po.send(new EventEnvelope().setTo(outRoute).setBody(
+                            "ERROR: unable to write "+file.getPath()+" - check filesystem permissions and space"));
+                    return;
+                }
                 var n = getRandomCounter();
                 po.send(new EventEnvelope().setTo(outRoute).setBody(
                         "Graph exported to "+file.getPath()+"\n"+"Described in /api/graph/model/"+filename+"/"+n));

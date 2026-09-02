@@ -211,7 +211,7 @@ cleared run marks — which is the standard idiom for a second dry-run with diff
 ```
 run                        # traverse from root to end
 execute {node}             # run a single node (after instantiate)
-inspect {namespace.key}    # read a value from the state machine
+inspect {namespace.key}    # read a value from the state machine (leaf keys resolve; a subtree prints {})
 ```
 
 ```
@@ -222,6 +222,11 @@ inspect error                # the exception context after a failed node routed 
 
 > **Placeholder convention:** `{…}` in the syntax lines above (e.g. `{node}`,
 > `{namespace.key}`) marks a value you substitute — **do not type the braces**.
+> **`inspect` resolves leaves, not subtrees**: `inspect output` prints `{}` even when
+> `output.body.rmdAmount` holds a value — ask for the specific composite key. (An AI driver on
+> the `/sync` companion endpoint rarely needs `inspect` at all: a run's structured outcome comes
+> back in the response's `result` field.)
+
 > Write `inspect output.body.name`, not `inspect {output.body.name}` (a literal
 > `{output.body}` is treated as the key `{output` → `body}` and resolves to nothing).
 
@@ -264,6 +269,10 @@ import graph from {name}
 import node {node} from {name}
 ```
 
+- `export` is **idempotent**: when the file already holds byte-identical content the physical
+  write is skipped, so **the file's mtime is not a write indicator** — verify by content, or by
+  the `Described in ...` link in the reply. A genuine I/O failure reports `ERROR: unable to
+  write ...`.
 - `export` writes JSON to `location.graph.temp`; it adds `name={name}` to the root node and
   **fails if any node is an orphan** (every node must connect to ≥1 other).
 - The export reply includes `Described in /api/graph/model/{name}/{token}` — a read-only HTTP

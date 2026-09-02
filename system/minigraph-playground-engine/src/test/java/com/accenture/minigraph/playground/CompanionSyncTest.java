@@ -284,15 +284,11 @@ class CompanionSyncTest {
                             .anyMatch(l -> l.contains("not available on the companion endpoint")),
                     "refusal must be visible on the live console: " + teed);
 
-            // 4) the fire-and-forget endpoint enforces the same restriction with a 400,
-            //    while its read-only 'session' status query still dispatches (accepted)
-            var refusedLegacy = legacyCommand(po, sid, "session subscribe ws-990001-2");
-            assertEquals(400, refusedLegacy.getStatus(), "legacy endpoint refuses with 400");
-            assertTrue(String.valueOf(refusedLegacy.getBody()).contains("not available on the companion endpoint"),
-                    "legacy refusal carries the reason: " + refusedLegacy.getBody());
-            var statusLegacy = legacyCommand(po, sid, "session");
-            assertEquals(200, statusLegacy.getStatus(),
-                    "read-only 'session' stays allowed on the legacy endpoint: " + statusLegacy.getBody());
+            // 4) the fire-and-forget endpoint is RETIRED (2026-09-02): the bare
+            //    companion URL answers 404 via REST automation (no route mapping)
+            var retired = legacyCommand(po, sid, "session");
+            assertEquals(404, retired.getStatus(),
+                    "the retired async endpoint must answer 404: " + retired.getBody());
         } finally {
             platform.release(outRoute);
         }
@@ -607,6 +603,7 @@ class CompanionSyncTest {
     }
 
     private EventEnvelope legacyCommand(EventEmitter po, String sid, String command) throws Exception {
+        // the RETIRED fire-and-forget URL - kept only to pin its 404
         var req = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
                 .setUrl("/api/companion/{id}").setPathParameter("id", sid)
                 .setHeader("Content-Type", "text/plain").setHeader("Accept", "application/json")

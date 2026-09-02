@@ -534,6 +534,21 @@ input:
 > `'* -> *'` passes the entire model as input. `'* -> *'` in output copies function result
 > directly to the output body.
 
+### Array elements and append mode
+
+The dot-bracket form addresses list elements on either side of `->`:
+
+```yaml
+- 'text(world) -> model.hello[0]'   # set the first element (creates the list)
+- 'text(next) -> model.hello[]'     # APPEND: [] on the destination adds after the last element
+- 'input.body.items[1] -> model.second'  # read the second element of a source list
+```
+
+Append mode (`[]` on the destination) is how a list is built up rule by rule — e.g. three
+`text(...) -> model.list[]` rules produce a three-element list. To hand a function an empty
+list, have the function default it, or map a list-typed value from a source that already
+holds one — there is no empty-list constant.
+
 ### Three-part mapping
 
 A three-part rule decomposes into two rules at compile time:

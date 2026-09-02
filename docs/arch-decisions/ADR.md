@@ -22,6 +22,56 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0022 — graph.js is deprecated: backward compatibility only {#adr-0022}
+**Status:** Proposed · **Date:** 2026-09-02 · **Serves:** vision-mercury-composable · **Formalizes:** graphjs-phase-out-direction
+<!-- id: adr-0022 | status: proposed -->
+
+**Abstract.** The `graph.js` skill is deprecated. It remains shipped for backward
+compatibility while existing field applications refactor off it, but new graphs must not
+use it and AI agents are instructed never to generate it. The sanctioned pattern is
+`graph.math` for decisions plus `graph.task` for anything the safe dialect cannot express.
+
+**Context.** graph.js evaluates JavaScript at runtime (GraalVM) — code injection by
+another name, which fails enterprise security review; the field is already refactoring
+it out. A 2026-09 field AI-agent exercise additionally reported a silent-correctness
+defect (equality comparisons with quoted string literals evaluate to false without any
+error, mis-routing IF branches) and demonstrated that the graph.math + graph.task rebuild
+is more legible — rule order becomes visible nodes instead of a script. Per the standing
+phase-out direction (2026-07-31), the skill is contained, not hardened: the defect is
+documented, not fixed. The Rust engine never carried graph.js, so deprecation also closes
+an engine-parity gap. Removal lands in a future major release.
+
+**Consequences.** Deprecation banners in the skills reference and AI agent guide; the
+CompileGraph gate continues to accept existing models; graph.js work remains excluded
+from Rust lock-step scope.
+
+---
+
+## ADR-0021 — The companion endpoint is synchronous only: the fire-and-forget sibling is retired {#adr-0021}
+**Status:** Proposed · **Date:** 2026-09-02 · **Serves:** vision-mercury-composable · **Formalizes:** (rides ADR-0008's constraint)
+<!-- id: adr-0021 | status: proposed -->
+
+**Abstract.** `POST /api/companion/{id}` (fire-and-forget, `{status:"accepted"}`) is
+retired; `POST /api/companion/{id}/sync` (ADR-0008) is the only companion endpoint. The
+bare URL now answers 404 through REST automation; `/sync` is unchanged, so field drivers
+need no migration.
+
+**Context.** ADR-0008 added `/sync` as an additive sibling so AI agents see command
+outcomes in-band. A 2026-09 field AI-agent exercise showed the async endpoint is an
+attractive trap: the guide dedicated to the companion documented only the async form, and
+an agent that followed it was blind to errors, scraped a browser console for results, and
+sleep-padded every command (measured: 12 s vs 0.1 s for a 25-command build). The field has
+driven `/sync` exclusively for multiple sprints, so the maintainer retired the async form
+outright rather than keeping a documented-legacy hazard. Re-pointing the bare URL at sync
+semantics was rejected: old fire-and-forget scripts would silently receive a different
+response contract; a loud 404 is the unambiguous retirement.
+
+**Consequences.** One endpoint, one contract, no ambiguity for agents or docs; a
+breaking change note rides the next release; the Rust engine retires its twin in
+lock-step.
+
+---
+
 ## ADR-0020 — Route pools: numbered singleton lanes as a first-class platform registration {#adr-0020}
 **Status:** Accepted · **Date:** 2026-08-30 · **Serves:** vision-mercury-composable · **Formalizes:** route-pool-registration-design
 <!-- id: adr-0020 | status: accepted -->
