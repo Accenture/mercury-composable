@@ -42,4 +42,3 @@ review. Don't edit the questions to make them pass.
 | 2026-06-14 | (v3.7.0 upgrade) | — | baseline — run the test to populate |
 | 2026-08-14 | 2026-08-14-005928 | 12/12 | none |
 | 2026-08-22 | 2026-08-22-164936 | 12/12 | All questions pass (fresh-context agent, memory files only), plus 3 integrity findings: (1) dangling id `eric-release-rhythm` — six logs referenced a fact that lived only in an agent's personal store → materialized into continuity User Preferences under the same id; (2) Q11's pointer was stale (fact archived) → hint retargeted to the live homes; (3) observation for the team: several supersessions are narrated inline without `tier: superseded` footers — readable but not machine-traceable; consider footering at a future review. |
-| 2026-08-31 | 2026-08-31-161838 | 12/12 | none — fresh-context agent answered all orientation questions from the permitted memory surface only. |

@@ -18,8 +18,8 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-31 | agent: Codex (2026-08-31-161838)
-- **last_review:** 2026-08-31 | through 2026-08-31-161838.md
+- **last_session:** 2026-08-30 | agent: Claude Code (2026-08-30-211721)
+- **last_review:** 2026-08-27 | through 2026-08-27-213034.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -52,10 +52,6 @@
   <!-- id: stack-messaging-kafka | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - CI: GitHub Actions (`.github/workflows/`)
   <!-- id: stack-ci-gha | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
-- **`ui-loop-engineer` is a repo-wide vendor-neutral skill.** Its canonical source lives at
-  `agent-skills/ui-loop-engineer/` (including the bundled planning checklist); vendor adapters
-  are generated pointers refreshed with `sync-adapters`, never edited or committed directly.
-  <!-- id: repo-ui-loop-engineer-skill | created: 2026-08-07 | last_used: 2026-08-31 | uses: 2 | tier: active | origin: 2026-08-07-153423 -->
 ## Architectural Invariants
 
 > Hard constraints that must never change. These never decay (`core`).
@@ -99,7 +95,7 @@
   vectors are the conformance gate; interop report per wrapper release (D6). Spec:
   draft-design-specs/polyglot-script-runner.md. Delivered by [[thread-polyglot-initiative]];
   serves [[bp-polyglot-functions]].
-  <!-- id: polyglot-event-over-http-design | created: 2026-08-22 | last_used: 2026-08-30 | uses: 11 | tier: active | origin: 2026-08-22-164936 -->
+  <!-- id: polyglot-event-over-http-design | created: 2026-08-22 | last_used: 2026-08-29 | uses: 8 | tier: active | origin: 2026-08-22-164936 -->
 
 - **Graph workflow suspension: short runs + external state store, encapsulated in skills
   (design ratified by Eric 2026-07-28). (ADR-0010)** A human checkpoint = persist
@@ -117,7 +113,7 @@
   survive); cid = resume capability (auth resume endpoints); no graph.extension crossing. Store:
   Redis = extensions/minigraph-state-redis imported by apps, NEVER the engine. Delivered by
   [[thread-graph-suspend-resume]]; serves [[bp-graph-workflow-suspension]].
-  <!-- id: graph-suspend-resume-design | created: 2026-07-29 | last_used: 2026-08-28 | uses: 17 | tier: active | origin: 2026-07-29-010343 -->
+  <!-- id: graph-suspend-resume-design | created: 2026-07-29 | last_used: 2026-08-28 | uses: 16 | tier: active | origin: 2026-07-29-010343 -->
 
 - **CompileGraph is the MANDATORY deployment gate for graph models — CompileFlows parity
   (Eric's rulings 2026-07-29; ADR-0011 ACCEPTED via the PR #240 merge, squash `4348b0da`).**
@@ -131,7 +127,7 @@
   playground `run` pre-run check — also the landing pad for
   [[thread-compilegraph-syntax-validation]]. Hot-dropping JSON into the deploy folder no longer
   executes (deployment = explicit act). Full detail: origin log.
-  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-08-25 | uses: 12 | tier: archive-candidate | origin: 2026-07-29-190328 -->
+  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-08-25 | uses: 12 | tier: active | origin: 2026-07-29-190328 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -216,7 +212,7 @@
   **Scope extension: the Event Script surface is part of the cross-engine contract** — flows are
   engine-portable YAML, so any new built-in simple plugin ships in lock-step on both engines (with
   closely matching error messages), or flows stop being portable.
-  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-08-30 | uses: 38 | tier: active | origin: 2026-07-23-145132 -->
+  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-08-29 | uses: 34 | tier: active | origin: 2026-07-23-145132 -->
 
 - **graph.js is slated for eventual phase-out in favor of graph.task (Eric, 2026-07-31),
   and the Rust port does not carry it at all.** The skill is troublesome by nature — it is
@@ -228,7 +224,7 @@
   loops); **graph.js work is never a Rust lock-step item** — the Rust validator's
   deadline-skill set legitimately names three skills where Java names four.
   Relates [[thread-task-ttl-override]].
-  <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-08-25 | uses: 7 | tier: archive-candidate | origin: 2026-08-01-035647 -->
+  <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-08-25 | uses: 7 | tier: active | origin: 2026-08-01-035647 -->
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
   (Eric's feedback, 2026-08-19).** GitHub pre-fills the dialog with title-plus-body text,
@@ -237,7 +233,7 @@
   space). Trim the pre-filled title to the intended one-liner on every squash; same
   review moment as the co-author-trailer dedup rule in AGENTS.md.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-08-30 | uses: 10 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-08-26 | uses: 7 | tier: active | origin: 2026-08-19-195244 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -257,12 +253,12 @@
   E0–E4 experiment plan). Direction ratified by Eric 2026-08-25; experiments queued
   post-workshop (E0 = llm.chat in the python demo app + bounded-agency demo graph — also
   the first live graph.task→wrapper drive). → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-08-30 | uses: 7 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-08-29 | uses: 3 | tier: working | origin: 2026-08-25-213703 -->
 - [ ] (blueprint) **Polyglot function execution** — python/node.js functions join Event Script
   flows and MiniGraph graphs as Event-over-HTTP peers (ratified design D0–D8, 2026-08-22);
   wrappers live in the repurposed Accenture/mercury-python + mercury-nodejs repos.
   → serves: vision-mercury-composable
-  <!-- id: bp-polyglot-functions | created: 2026-08-22 | last_used: 2026-08-30 | uses: 9 | tier: working -->
+  <!-- id: bp-polyglot-functions | created: 2026-08-22 | last_used: 2026-08-29 | uses: 6 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
   <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
@@ -271,60 +267,122 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
 ## Open Threads
 
-- [x] (feature — SHIPPED BOTH ENGINES 2026-08-30) **Route pool platform API —
-  registerRoutePool/releaseRoutePool + SSE reply-lane adoption.** Java
-  [PR #303](https://github.com/Accenture/mercury-composable/pull/303) `b3741664`; Rust
-  [PR #220](https://github.com/Accenture/mercury/pull/220) `9dea9182`; ADRs accepted.
-  Lesson: EMU blocks `gh pr create`; `--web` prefill works. Design:
-  [[route-pool-registration-design]]; origin: 2026-08-30-211721.
+- [x] (feature — **SHIPPED BOTH ENGINES 2026-08-30, rides the next release**: Java
+  [PR #303](https://github.com/Accenture/mercury-composable/pull/303) squash `b3741664`
+  == gated `fe3f4fff`; Rust [PR #220](https://github.com/Accenture/mercury/pull/220)
+  merge `9dea9182` carrying `d753d004`; trees verified, branches deleted both ends;
+  ADR-0020/ADR-0017 Accepted via the merges; CHANGELOG Unreleased in both repos —
+  Java follow-up `60b45ebe`) **Route pool platform API —
+  registerRoutePool/releaseRoutePool + SSE reply-lane adoption.** Lesson: `gh pr create`
+  is EMU-blocked — `--web` prefill works; PR-open stays Eric's gesture.
+  Design: [[route-pool-registration-design]]. origin: 2026-08-30-211721.
   <!-- id: ot-route-pool-api | created: 2026-08-30 | last_used: 2026-08-30 | uses: 1 | tier: working | origin: 2026-08-30-211721 -->
 
-- [x] (release+feature — PUBLISHED 2026-08-30) **v4.12.0 progressive rendering
-  completed across Java [#302](https://github.com/Accenture/mercury-composable/pull/302),
-  Rust [#219](https://github.com/Accenture/mercury/pull/219), Python #21, and Node #90;**
-  wrappers joined the 4.12.0 lock-step line with streaming, telemetry, demos, and
-  interop proof. Lesson: engine telemetry is the parity contract; npm/PyPI publishing
-  remains Eric-gated. origin: 2026-08-30-050040.
-  <!-- id: ot-progressive-rendering-v4120 | created: 2026-08-30 | last_used: 2026-08-30 | uses: 2 | tier: active | origin: 2026-08-30-050040 -->
+- [x] (release+feature — **SHIPPED AND PUBLISHED 2026-08-30: the v4.12.0
+  progressive-rendering milestone, all four repos — releases PUBLISHED by Eric,
+  annotated tags dereference-verified (this repo v4.12.0 → `6e034293`).** Java
+  [PR #302](https://github.com/Accenture/mercury-composable/pull/302) squash `6e034293`
+  == gated `ee23d8fc`; Rust [PR #219](https://github.com/Accenture/mercury/pull/219)
+  merge `bc1a9fd2`; python [PR #21](https://github.com/Accenture/mercury-python/pull/21)
+  merge `bfca7e4`; node [PR #90](https://github.com/Accenture/mercury-nodejs/pull/90)
+  merge `40a9f8f` — trees verified, titles clean, branches deleted; wrappers jumped
+  0.1.0 → 4.12.0 onto the lock-step line, resolving the P5 version question; the
+  npm/PyPI publish acts remain Eric-gated) **Progressive rendering complete: wrapper
+  streaming twins + telemetry program (span lineage, business-cid continuity,
+  app-log-context), engine demo relays, the interop report with the live matrix and
+  the telemetry/app-context appendix.** Lesson: the engines' telemetry model is the
+  parity contract — rpc-gate, touch stamping, sender fill, log-context template.
+  origin: 2026-08-30-050040.
+  <!-- id: ot-progressive-rendering-v4120 | created: 2026-08-30 | last_used: 2026-08-30 | uses: 1 | tier: working | origin: 2026-08-30-050040 -->
 
-- [x] (feature — COMPLETE in v4.12.0 across all four repos) **AsyncHttpClient SSE
-  consumption + Event-over-HTTP peer streaming** shipped through Java PRs #300–302,
-  Rust PRs #217–219, Python #21, and Node #90; all four ADRs accepted. One mechanism
-  handles raw LLM tokens and envelope control frames, with standard in-band errors and
-  explicit 406/503 degradation. Serves [[bp-agent-orchestration]] and
-  [[bp-polyglot-functions]]; origin: 2026-08-29-162504 + 2026-08-30-050040.
-  <!-- id: thread-sse-consumption-streaming | created: 2026-08-29 | last_used: 2026-08-30 | uses: 5 | tier: active | origin: 2026-08-29-162504 -->
+- [x] (feature — **COMPLETE, ALL PHASES, ALL FOUR REPOS — shipped as the v4.12.0
+  milestone 2026-08-30 (Java [PR #302](https://github.com/Accenture/mercury-composable/pull/302)
+  squash `6e034293`, Rust [PR #219](https://github.com/Accenture/mercury/pull/219),
+  python [PR #21](https://github.com/Accenture/mercury-python/pull/21), node
+  [PR #90](https://github.com/Accenture/mercury-nodejs/pull/90); wrappers joined the
+  lock-step line at 4.12.0). Phase 3 wrapper twins + telemetry program (span lineage,
+  business-cid continuity, app-log-context) + demo relay + interop report: origin log
+  2026-08-30-050040.** Java Phase 2 MERGED 2026-08-29 as
+  [PR #301](https://github.com/Accenture/mercury-composable/pull/301) squash `894822a5`
+  == gated `0d8b28ee`, Rust twin MERGED 2026-08-30 as
+  [PR #218](https://github.com/Accenture/mercury/pull/218) merge `1723ace6` carrying
+  `54436ca4`; Phase 1 both engines (Java
+  [PR #300](https://github.com/Accenture/mercury-composable/pull/300) squash `1410c33f`,
+  Rust [PR #217](https://github.com/Accenture/mercury/pull/217) merge `ec4c2702`);
+  ADR-0018/0019 (Java) + ADR-0015/0016 (Rust) all ACCEPTED**) **SSE consumption in AsyncHttpClient + Event-over-HTTP peer
+  streaming (option 2).** Closes the two post-edge gaps: engine consuming LLM-provider
+  token streams (Phase 1, raw mode), and peer functions streaming to the engine
+  (Phase 2, envelope mode) — ONE mechanism through AsyncHttpClient. D1–D9 + the
+  Phase-2 internals P2-1…P2-6 ratified by Eric; **D5 = Eric's hybrid control/data-plane
+  framing** (control signals as envelope key-value headers in base64-MsgPack frames
+  under reserved SSE name `envelope` — first frame + terminals + non-text escape;
+  tokens as raw SSE frames). Phase 2 shipped: `accept: text/event-stream` EVENT-header
+  opt-in on send-with-reply_to (RPC/x-async never stream); server = dynamic lane
+  binding + envelope-mode rendering in the edge renderer (zero new config; plain RPC
+  never consumes a lane; atomic release claim closes the bind-vs-close race; cid
+  rewritten to the edge requestId = RPC-inbox parity); client submode with conformance
+  guards (missing-head / ended-without-eof in-band 500s); explicit degradation (406
+  "Streaming function requires a caller that accepts text/event-stream"; 503 pool
+  reuse; single-shot byte-identical); **standard error triple {"type","status",
+  "message"} aligned across writer.fail() / client failInBand / housekeeper abort —
+  the Rust twin inherits this alignment + the pending hello-world README section**.
+  x-ttl (ms event header) = idle allowance both hops. 14 new tests; platform-core
+  473/473. Phase-1 record + rejected alternatives + specs-go-public: origin log.
+  Spec: draft-design-specs/async-http-client-sse-streaming.md §7.
+  Serves [[bp-agent-orchestration]] + [[bp-polyglot-functions]].
+  <!-- id: thread-sse-consumption-streaming | created: 2026-08-29 | last_used: 2026-08-29 | uses: 2 | tier: working | origin: 2026-08-29-162504 -->
 
 
-- [x] (feature — COMPLETE BOTH ENGINES 2026-08-28/29) **HTTP response streaming to
-  the edge** shipped in Java [PR #299](https://github.com/Accenture/mercury-composable/pull/299)
-  and Rust [PR #216](https://github.com/Accenture/mercury/pull/216): standards-only
-  SSE/chunked+NDJSON, 500-lane back-pressure, and live demos. Lesson: lock the pending
-  queue around concurrent drain flushing; separate process-once resource fill from
-  per-runtime route registration; origin: 2026-08-28-025445.
-  <!-- id: thread-http-response-streaming | created: 2026-08-28 | last_used: 2026-08-30 | uses: 4 | tier: active | origin: 2026-08-28-025445 -->
+- [x] (feature — **COMPLETE BOTH ENGINES 2026-08-28/29**: Java
+  [PR #299](https://github.com/Accenture/mercury-composable/pull/299) squash `2eea5038`
+  == gated `da37479b`; Rust twin
+  [PR #216](https://github.com/Accenture/mercury/pull/216) merge `b191cf1e` carrying
+  `fa2f2654` — trees verified, branches deleted, CI green both) **HTTP response
+  streaming — token/event streaming to the HTTP edge; the PREREQUISITE for the AI SDLC
+  work is DONE.** `x-event-stream` multi-shot reply route; `stream: true`; 500-lane LIFO
+  checkout pool + HTTP-503 back-pressure; SSE/chunked+NDJSON standards-only wire;
+  EventStreamWriter both engines; /info/routes family compression + 10-min cached view;
+  demos live-proven byte-identical (lambda-example + hello-world, sse-client.mjs).
+  ADR-0018 (Java) / ADR-0015 (Rust) Proposed — flips ride the next docs commits.
+  Durable lessons: a vert.x drainHandler is a second concurrent flusher (lock the
+  pending queue, force writeQueueFull in tests); checkout pools separate resource fill
+  (process-once) from route registration (per-runtime rebind on the Rust port).
+  Staged follow-ups live under [[bp-agent-orchestration]]: Event Script flow handoff
+  (model.http.* reserved keys), wrapper streaming, graph-run streaming.
+  origin: 2026-08-28-025445 (Java) + mercury 2026-08-29-012914 (Rust).
+  <!-- id: thread-http-response-streaming | created: 2026-08-28 | last_used: 2026-08-29 | uses: 2 | tier: active | origin: 2026-08-28-025445 -->
 
-- [x] (maintenance + BREAKING — PUBLISHED 2026-08-27 as **v4.11.12**, Java only)
-  **Boot 4.1.1 + Reactor BOM 2025.0.7; Boot 3 lane retired (ADR-0017).** Release
-  [PR #298](https://github.com/Accenture/mercury-composable/pull/298) `0467dc21` cleared
-  the field Snyk block. Lesson: the Boot parent is the dependency-management spine;
-  parity-check example twins before re-pointing walkthroughs. Relates
-  [[stack-integration-spring-boot4]]; origin: 2026-08-27-213034.
+- [x] (maintenance + BREAKING — SHIPPED AND PUBLISHED 2026-08-27 as **v4.11.12**, Java
+  only (Rust stays v4.11.11). Release
+  [PR #298](https://github.com/Accenture/mercury-composable/pull/298) squash `0467dc21`
+  == gated `a19d1d8d`, 32-pom sweep, four green builds, tag dereference-verified,
+  release PUBLISHED by Eric) **Spring round: Boot 4.1.1 + Reactor BOM 2025.0.7; SPRING
+  BOOT 3 LANE RETIRED (ADR-0017).** Driver: field Snyk rejects Boot 3 and requires
+  Spring Framework ≥ 7 — deployment pipeline BLOCKED. **UNBLOCK CONFIRMED 2026-08-27:
+  the field Snyk scan passed on v4.11.12 and it is published to the field** (ships
+  Framework 7.0.9; netty 4.2.17.Final pin held). Lesson: the Boot parent is the repo's
+  dependencyManagement spine; parity-verify example twins before re-pointing
+  walkthroughs. origin: 2026-08-27-213034. Relates [[stack-integration-spring-boot4]].
   <!-- id: thread-spring-round-20260827 | created: 2026-08-27 | last_used: 2026-08-27 | uses: 2 | tier: active | origin: 2026-08-27-213034 -->
 
-- [x] (field support — SHIPPED in v4.11.12) **Field scan remediation** landed in
-  [PR #296](https://github.com/Accenture/mercury-composable/pull/296) `fd4f5ba4` and
-  [PR #297](https://github.com/Accenture/mercury-composable/pull/297) `a6db32a2`; field
-  Snyk passed. Lessons: route builtin-skill fixes upstream, and pair S2139 catch rewrites
-  with catch-path tests. Relates [[thread-sonar-4-11-x-field-round-3]]; origin:
-  2026-08-25-231243 + 2026-08-26-020650.
+- [x] (field support — MERGED 2026-08-25/26 as
+  [PR #296](https://github.com/Accenture/mercury-composable/pull/296) squash `fd4f5ba4`
+  + coverage follow-up [PR #297](https://github.com/Accenture/mercury-composable/pull/297)
+  squash `a6db32a2` (trees == gated); shipped in v4.11.12; the field re-scan cleared all
+  issues and Snyk PASSED) **Field scan remediation: netty 4.2.17.Final; Snyk
+  SECRET_GUIDANCE→GUIDANCE rename in memory-lint (upstream shipped agent-memory 4.38.1
+  same day); Sonar round 4 + a mutation-proven catch-path coverage test.** Lessons:
+  builtin-skill edits never stick — route upstream; pair an S2139 rewrite of an
+  uncovered catch block with a catch-path test in the same PR.
+  origin: 2026-08-25-231243 + 2026-08-26-020650. Relates [[thread-sonar-4-11-x-field-round-3]].
   <!-- id: thread-field-scan-remediation-20260825 | created: 2026-08-25 | last_used: 2026-08-27 | uses: 5 | tier: active | origin: 2026-08-25-231243 -->
 
-- [x] (release — PUBLISHED 2026-08-23, both repos lock-step) **v4.11.11 graph.task
-  Event-over-HTTP field release:** Java [PR #293](https://github.com/Accenture/mercury-composable/pull/293)
-  `50d890bf`; Rust PR #213 `3040e8e3`. The graph.task guard now lets deployed graphs
-  call polyglot function hosts. Relates [[thread-polyglot-initiative]].
-  origin: 2026-08-24-001110.
+- [x] (release — SHIPPED 2026-08-23, both repos lock-step at v4.11.11; releases
+  PUBLISHED by Eric) **v4.11.11 — the graph.task Event-over-HTTP field release.** Java
+  [PR #293](https://github.com/Accenture/mercury-composable/pull/293) squash `50d890bf`
+  == gated `39441544`; Rust PR #213 merge `3040e8e3`. Sole content: the P2 graph.task
+  guard (#292/#212) — deployed graphs call polyglot function hosts.
+  origin: 2026-08-24-001110. Relates [[thread-polyglot-initiative]].
   <!-- id: thread-release-4-11-11 | created: 2026-08-24 | last_used: 2026-08-24 | uses: 2 | tier: archive-candidate | origin: 2026-08-24-001110 -->
 
 - [ ] (feature — design RATIFIED D0–D8 2026-08-22 + two in-flight refinements (minimalist
@@ -391,7 +449,15 @@
   optional extras offered: a live Rust-engine→wrapper drive; Rust layer-tab label
   parity ("Event Script" vs "Composable"). Design record: [[polyglot-event-over-http-design]]; serves
   [[bp-polyglot-functions]]. Full detail: origin log + 2026-08-24-170545.
-  <!-- id: thread-polyglot-initiative | created: 2026-08-22 | last_used: 2026-08-30 | uses: 7 | tier: working | origin: 2026-08-22-164936 -->
+  <!-- id: thread-polyglot-initiative | created: 2026-08-22 | last_used: 2026-08-25 | uses: 6 | tier: working | origin: 2026-08-22-164936 -->
+
+- [x] (release — SHIPPED AND PUBLISHED 2026-08-21, both repos lock-step at v4.11.10)
+  **v4.11.10 — the AI discovery release**: system/ai-contract-provider (ADR-0015),
+  f:setConfig, two OTLP span-loss fixes, flow-binding docs fix. Java
+  [PR #291](https://github.com/Accenture/mercury-composable/pull/291) squash `5cb65f04`
+  == gated `689adf5e`; Rust PR #211 merge `b77f17e8` (after move PR #210).
+  origin: 2026-08-22-032106.
+  <!-- id: thread-release-4-11-10 | created: 2026-08-22 | last_used: 2026-08-22 | uses: 1 | tier: archive-candidate | origin: 2026-08-22-032106 -->
 
 - [ ] (onboarding — assessment round 2026-08-21, Eric ratified; **fork MERGED 2026-08-22 as
   [PR #290](https://github.com/Accenture/mercury-composable/pull/290) squash `f85aa02a`, tree
@@ -418,37 +484,94 @@
   baseline, then decide the continuity_max_lines lowering. Full detail: origin log.
   <!-- id: thread-onboarding-efficiency | created: 2026-08-22 | last_used: 2026-08-27 | uses: 4 | tier: working | origin: 2026-08-22-003007 -->
 
-- [x] (feature — SHIPPED in v4.11.10) **AI discovery became the standalone
-  `system/ai-contract-provider` app** via PRs #285/#286/#288; the Rust edition followed
-  in PR #209. It provides 6 functions, 7 flows, REST :8999, `--export`, and verified
-  contract anchors. Lesson: nested-jar resources and engine-specific commands must not
-  leak into synchronized discovery surfaces. origin: 2026-08-21-173902.
-  <!-- id: thread-ai-contract-provider | created: 2026-08-21 | last_used: 2026-08-27 | uses: 9 | tier: archive-candidate | origin: 2026-08-21-173902 -->
+- [x] (feature — MERGED BOTH ENGINES 2026-08-21, shipped in v4.11.10: Java
+  [PR #289](https://github.com/Accenture/mercury-composable/pull/289) squash `b5aeaf56`
+  == gated `6628020f`; Rust PR #208 merge `9a7b3a47`) **Event Script `f:setConfig`
+  plugin — set/override a config parameter at run-time** (Java System.setProperty; Rust
+  the overrides registry). First built-in plugin with a global side effect. Lesson:
+  rename before a name freezes into portable flows (`config`→`setConfig`).
+  origin: 2026-08-21-231215.
+  <!-- id: thread-config-plugin | created: 2026-08-21 | last_used: 2026-08-22 | uses: 2 | tier: archive-candidate | origin: 2026-08-21-231215 -->
 
-- [x] (feature+fix — COMPLETE BOTH ENGINES, shipped in v4.11.5) **graph.task gained
-  `model.*` staging and tutorial-13 moved to async.http.request with x-ttl.** Java
-  PRs #267/#268; Rust PR #197. Lesson: declare `headers.accept`; HTTP-library defaults
-  differ and silently change JSON decoding. origin: 2026-08-09-025009.
-  <!-- id: thread-graph-task-model-staging | created: 2026-08-08 | last_used: 2026-08-26 | uses: 4 | tier: archive-candidate | origin: 2026-08-09-025009 -->
+- [x] (fix — test-only; MERGED 2026-08-21 as
+  [PR #287](https://github.com/Accenture/mercury-composable/pull/287) squash `fcba13ce`
+  == gated `8df7932b`) **ObjectStreamTest expiry tests made deterministic** — the
+  PR #286 CI flake was a designed-in race (per-publisher one-shot expiry timer vs sleep
+  margins); rewritten sleep-free (consumer waits, source never delivers),
+  mutation-proven. Lesson: expiry tests wait on the consumer; never race a margin
+  against a timer. origin: 2026-08-21-195149.
+  <!-- id: thread-objectstream-expiry-test-determinism | created: 2026-08-21 | last_used: 2026-08-21 | uses: 2 | tier: archive-candidate | origin: 2026-08-21-195149 -->
 
-- [x] (feature — COMPLETE BOTH ENGINES, shipped in v4.11.6) **Dynamic
-  `{namespace.key}` targets cover NEXT/THEN/ELSE/RESET/DELAY and successful retries
-  resolve the virtual error node.** Java PRs #273/#274; Rust PRs #201/#202. Lesson:
-  unresolved targets fail loudly, RESET no-ops, and DELAY skips.
+- [x] (feature — MERGED 2026-08-21, shipped in v4.11.10: docs fix
+  [PR #285](https://github.com/Accenture/mercury-composable/pull/285) squash `89a1ea91`;
+  the app [PR #286](https://github.com/Accenture/mercury-composable/pull/286) squash
+  `c5b05c1d` — ADR-0015 accepted via the merge; Sonar polish
+  [PR #288](https://github.com/Accenture/mercury-composable/pull/288) squash `4011ff23`)
+  **AI discovery re-implemented as the standalone `system/ai-contract-provider` app**
+  after a colleague's PR #284 was reviewed and REJECTED (nested-jar resource reads broke
+  `help mercury`; Java-only commands leaked into Rust-synced surfaces; its real find
+  kept: docs taught `flow:` without `service:`). 6 functions + 7 flows + rest.yaml :8999
+  + `--export` CLI; contracts.yaml catalog with Class.forName-verified anchors; Rust
+  edition ported 2026-08-22 (mercury PR #209). origin: 2026-08-21-173902.
+  <!-- id: thread-ai-contract-provider | created: 2026-08-21 | last_used: 2026-08-27 | uses: 9 | tier: active | origin: 2026-08-21-173902 -->
+
+- [x] **Re-verify invariants (2026-08-21 review) — CLOSED same day: all 15 confirmed
+  by Eric** (one-by-one walkthrough with live-tree evidence; stack-messaging-kafka
+  wording refreshed, no supersessions). origin: 2026-08-21-005515.
+  <!-- id: ot-reverify-invariants-20260821 | created: 2026-08-21 | last_used: 2026-08-22 | uses: 2 | tier: archive-candidate | origin: 2026-08-21-005515 -->
+
+- [x] (fix — MERGED 2026-08-19 as
+  [PR #283](https://github.com/Accenture/mercury-composable/pull/283) squash `1685842c`
+  == gated `64387c74`; Java-only; shipped in v4.11.10) **OTLP forwarder: silent span
+  drops fixed — every IOException now retries** (the OTel default retry whitelist
+  misses stale keep-alive resets), **and the exporter moved off the SDK's zero-queue
+  dispatcher onto its own pool** (a rejected execute() bypassed retry entirely). Pins
+  mutation-proven (FlakyOtlpServer + saturation burst). Lesson: log the failure cause
+  first — `getFailureThrowable()` was unused, which kept the flake undiagnosable.
+  origin: 2026-08-19-184142.
+  <!-- id: thread-otlp-export-retry | created: 2026-08-19 | last_used: 2026-08-22 | uses: 3 | tier: archive-candidate | origin: 2026-08-19-184142 -->
+
+- [x] (feature+fix — COMPLETE BOTH ENGINES 2026-08-08, shipped in v4.11.5: Java
+  [PR #267](https://github.com/Accenture/mercury-composable/pull/267) squash `e16f4b40`
+  + [PR #268](https://github.com/Accenture/mercury-composable/pull/268) squash
+  `7ab9c771`; Rust PR #197 merge `79212bc0` incl. the default-Accept ruling)
+  **graph.task input mapping gains `model.*` staging (Event Script parity); tutorial-13
+  remodeled onto async.http.request with x-ttl deadline propagation.** Lesson: never
+  rely on an HTTP library's implicit Accept — reactor-netty sends `*/*`, the Rust
+  client none; declare `headers.accept` or JSON decoding silently differs across
+  engines. origin: 2026-08-09-025009.
+  <!-- id: thread-graph-task-model-staging | created: 2026-08-08 | last_used: 2026-08-25 | uses: 3 | tier: active | origin: 2026-08-09-025009 -->
+
+- [x] (feature — COMPLETE BOTH ENGINES 2026-08-10, shipped in v4.11.6: Java
+  [PR #273](https://github.com/Accenture/mercury-composable/pull/273) squash `96d9c35f`
+  + recovery semantics
+  [PR #274](https://github.com/Accenture/mercury-composable/pull/274) squash `5a01c0c6`;
+  Rust PRs #201/#202) **Dynamic `{namespace.key}` variables in every statement command
+  (NEXT/THEN/ELSE/RESET/DELAY) — completes the generic error handler; a successful
+  retry of `error.source` RESOLVES the virtual error node.** Lesson: unresolved targets
+  fail loudly (jump to "null"), RESET no-ops, DELAY skips.
   origin: 2026-08-10-223319.
-  <!-- id: thread-dynamic-statement-targets | created: 2026-08-10 | last_used: 2026-08-26 | uses: 3 | tier: archive-candidate | origin: 2026-08-10-223319 -->
+  <!-- id: thread-dynamic-statement-targets | created: 2026-08-10 | last_used: 2026-08-25 | uses: 2 | tier: active | origin: 2026-08-10-223319 -->
 
-- [x] (feature — COMPLETE BOTH ENGINES 2026-08-07) **tutorial-14 manager approval
-  became a three-outcome decision** via Java PR #263 and Rust PR #193. Lesson: seen
-  marks persist into suspension, so wait loops RESET their own nodes; Tutorials help
-  is build-time bundled. origin: 2026-08-07-142823.
-  <!-- id: thread-tutorial-14-decision | created: 2026-08-07 | last_used: 2026-08-26 | uses: 6 | tier: archive-candidate | origin: 2026-08-07-142823 -->
+- [x] (feature — COMPLETE BOTH ENGINES 2026-08-07: Java
+  [PR #263](https://github.com/Accenture/mercury-composable/pull/263) squash `0c3e7618`;
+  Rust PR #193 merge `bea95c80`) **tutorial-14: manager approval became a real
+  three-outcome decision** (approved / rejected-terminal / re-suspend loop). Durable
+  engine facts: seen marks persist into suspension state — a wait loop RESETs its own
+  nodes; the Playground Tutorials tab bakes help/*.md into the bundle at build time
+  (`npm run release` regenerates). origin: 2026-08-07-142823.
+  <!-- id: thread-tutorial-14-decision | created: 2026-08-07 | last_used: 2026-08-25 | uses: 5 | tier: active | origin: 2026-08-07-142823 -->
 
-- [x] (field support — shipped in v4.11.3) **Third field Sonar remediation round**
-  landed via PRs #256/#257; the 2026-08-26 rescan and PR #297 cleared the final issue,
-  and Snyk passed. Lesson: keep expiry tests deterministic. See
-  [[thread-field-scan-remediation-20260825]]. origin: 2026-08-07-003746.
-  <!-- id: thread-sonar-4-11-x-field-round-3 | created: 2026-08-07 | last_used: 2026-08-27 | uses: 8 | tier: archive-candidate | origin: 2026-08-07-003746 -->
+- [x] (field support — round-3 fixes MERGED 2026-08-07:
+  [PR #256](https://github.com/Accenture/mercury-composable/pull/256) squash `26dfae7c`
+  + partition API [PR #257](https://github.com/Accenture/mercury-composable/pull/257)
+  squash `d029d144`, shipped in v4.11.3. **The open rescan item RESOLVED — closed at
+  the 2026-08-27 review**: the 2026-08-26 field re-scan cleared all issues, PR #297
+  fixed the residual coverage condition, and Snyk passed — see
+  [[thread-field-scan-remediation-20260825]]) **Third field Sonar remediation round**
+  (3× S3776 helper extractions; S1192/S125/S5778/S6213/S2925/S5961; the
+  deterministic-expiry precedent). origin: 2026-08-07-003746.
+  <!-- id: thread-sonar-4-11-x-field-round-3 | created: 2026-08-07 | last_used: 2026-08-27 | uses: 8 | tier: active | origin: 2026-08-07-003746 -->
 
 - [ ] (observation — surfaced 2026-07-30 by the second-level-routing code study;
   pre-existing, separate from that feature) **Header-casing mismatch: mixed-case Kafka
@@ -463,11 +586,14 @@
   Relates [[thread-kafka-2nd-level-routing]].
   <!-- id: thread-kafka-header-casing-mismatch | created: 2026-07-30 | last_used: 2026-07-30 | uses: 1 | tier: working | origin: 2026-07-30-233623 -->
 
-- [x] (release — SHIPPED 2026-08-03, Java-only) **v4.11.2 field lz4-CVE patch +
-  Kafka 4.3.1** landed in [PR #253](https://github.com/Accenture/mercury-composable/pull/253)
-  `08a31cfa`. Lesson: groupId-pinned exclusions can expire on coordinate renames; the
-  framework remains lz4-codec-free. origin: 2026-08-03-155225.
-  <!-- id: thread-release-4-11-2 | created: 2026-08-03 | last_used: 2026-08-26 | uses: 6 | tier: archive-candidate | origin: 2026-08-03-155225 -->
+- [x] (release — SHIPPED 2026-08-03, Java-only) **v4.11.2 — the field lz4-CVE
+  security patch + Kafka 4.3.1**
+  ([PR #253](https://github.com/Accenture/mercury-composable/pull/253) squash
+  `08a31cfa`). Lessons: a groupId-pinned exclusion silently expires when upstream
+  renames a coordinate (fixed at all six sites); the framework ships lz4-codec-free —
+  a field installation that needs LZ4 adds the dependency itself.
+  origin: 2026-08-03-155225.
+  <!-- id: thread-release-4-11-2 | created: 2026-08-03 | last_used: 2026-08-25 | uses: 5 | tier: active | origin: 2026-08-03-155225 -->
 
 - [ ] (field support — 2026-07-13; ROOT CAUSE FOUND) **Trace-propagation report: the internal API
   gateway strips `traceparent` AND `X-Trace-Id` (neither on its allow-list); only
@@ -583,7 +709,7 @@
   memory 2026-08-22: the smoke test found six session logs referencing this id while the
   fact lived only in an agent's personal store — a project-relevant working rhythm belongs
   in the shared layer.)
-  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-08-30 | uses: 21 | tier: active | origin: 2026-08-22-180334 -->
+  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-08-29 | uses: 16 | tier: active | origin: 2026-08-22-180334 -->
 
 ## Team / Members
 
