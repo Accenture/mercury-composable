@@ -2846,7 +2846,7 @@
 </tr>
 <tr>
 <td><a href="#js"><code>graph.js</code></a></td>
-<td>compute/branch with full JavaScript (slower)</td>
+<td><strong>DEPRECATED</strong> — backward compatibility only; use <code>graph.math</code> + <code>graph.task</code></td>
 </tr>
 <tr>
 <td><a href="#api-fetcher"><code>graph.api.fetcher</code></a></td>
@@ -2901,7 +2901,8 @@ inside one mapper). Example:</p>
 </code></pre></div>
 <h2 id="math">graph.math<a class="headerlink" href="#math" title="Permanent link">&para;</a></h2>
 <p>Fast inline math and boolean evaluation for computation and decision-making. This is <strong>the</strong> skill
-for inline compute/branch (<a href="#js"><code>graph.js</code></a> when you need real JavaScript). Statements run in order;
+for inline compute/branch (never reach for the deprecated <a href="#js"><code>graph.js</code></a> — pair <code>graph.math</code>
+with <a href="#task"><code>graph.task</code></a> for anything the dialect cannot express). Statements run in order;
 five types:</p>
 <table>
 <thead>
@@ -2964,6 +2965,19 @@ only: <strong>no bitwise operators, no function calls</strong> (e.g. <code>parse
 returns a double, so an integer result serializes as e.g. <code>8.0</code> (numerically exact — there is no
 in-grammar integer coercion). For anything richer, use <code>graph.task</code> (a composable function).</p>
 <h2 id="js">graph.js<a class="headerlink" href="#js" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>DEPRECATED (2026-09) — do not use in new graphs; AI agents must not use it at all.</strong> It is
+kept for backward compatibility while existing field applications refactor off it. Two reasons:
+<strong>(1) security</strong> — evaluating JavaScript at runtime is code injection by another name and fails
+enterprise security review; <strong>(2) a reported silent-correctness defect</strong> — a field agent
+exercise showed equality comparisons with quoted string literals evaluating to <code>false</code> without
+error (<code>"{input.body.planType}" === "ROTH_401K"</code> → <code>false</code> while <code>.indexOf(...) &gt;= 0</code> → <code>true</code>),
+so an <code>IF</code> silently falls through to the wrong branch. <strong>The replacement pattern:</strong> express
+decisions in <a href="#math"><code>graph.math</code></a> (safe expression dialect, readable <code>IF</code> nodes) and delegate
+anything the dialect cannot express to <a href="#task"><code>graph.task</code></a> (a composable function). The field
+rebuild that produced this report ended up with clearer graphs: rule order became visible nodes
+instead of a script.</p>
+</blockquote>
 <p>Same statement model as <a href="#math"><code>graph.math</code></a> — the full
 <a href="../command-reference/#math-statements">statement grammar</a> applies — but expressions run as
 <strong>full JavaScript on GraalVM</strong>: more flexible, slower.</p>

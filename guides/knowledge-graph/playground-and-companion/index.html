@@ -2785,34 +2785,53 @@ can't subscribe to yourself or to a non-primary session; a primary session has n
 unsubscribe.)</p>
 <h2 id="companion">The companion endpoint<a class="headerlink" href="#companion" title="Permanent link">&para;</a></h2>
 <p>The <strong>companion endpoint</strong> lets an HTTP client — a script, a test harness, or an AI agent —
-dispatch a Playground command into an <strong>already-open</strong> session. The command runs as if typed, and
-output streams back to that session's browser console.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>POST /api/companion/{session-id}
+dispatch a Playground command into an <strong>already-open</strong> session. The command runs as if typed;
+the outcome comes back <strong>in the HTTP response</strong>, and every output line is <em>also</em> teed to that
+session's browser console so a watching human sees the same thing live.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>POST /api/companion/{session-id}/sync
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Content-Type: text/plain
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>&lt;any Playground command&gt;
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>&lt;exactly ONE Playground command&gt;
 </code></pre></div>
-<p>The response is an immediate acknowledgement — the real output appears on the WebSocket:</p>
+<p>The response carries the command's outcome in-band:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"companion"</span><span class="p">,</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"accepted"</span><span class="p">,</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ws-123456-7"</span><span class="p">,</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Command dispatched to graph.command.service. Output streams to the WebSocket console for this session."</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="p">}</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">"ok"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ws-123456-7"</span><span class="p">,</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"create node root ..."</span><span class="p">,</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="nt">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"&gt; create node root ..."</span><span class="p">,</span><span class="w"> </span><span class="s2">"node root created"</span><span class="p">],</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="nt">"result"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="err">s</span><span class="kc">tru</span><span class="err">c</span><span class="kc">ture</span><span class="err">d</span><span class="w"> </span><span class="err">da</span><span class="kc">ta</span><span class="p">,</span><span class="w"> </span><span class="err">e.g.</span><span class="w"> </span><span class="err">a</span><span class="w"> </span><span class="err">ru</span><span class="kc">n</span><span class="err">'s</span><span class="w"> </span><span class="err">ou</span><span class="kc">t</span><span class="err">pu</span><span class="kc">t</span><span class="err">.body</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">]</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="p">}</span>
 </code></pre></div>
-<p>Status codes: <strong>200</strong> dispatched (command <em>syntax</em> errors still return 200 — the error text appears
-on the WebSocket, not in the HTTP response); <strong>400</strong> missing/empty/non-text body; <strong>404</strong> no active
-session for that id. To read the current model for a live session, <code>GET /api/graph/session/{id}</code>.</p>
+<p>Null fields are omitted (<code>error</code> appears only on failure, <code>result</code> only when the command yields
+data). When <code>ok</code> is <code>false</code>, <code>error</code> carries the first failing line — read <code>output</code> for the full
+picture, fix, and re-issue. The complete contract, including the <code>ok</code> derivation and the rules an
+AI driver should follow, is in the <a href="../ai-agent-guide/">AI agent guide</a>.</p>
+<p>Status codes: <strong>200</strong> executed (read <code>ok</code>/<code>error</code> in the body); <strong>400</strong> missing/empty/non-text
+body; <strong>404</strong> no active session for that id — <strong>operationally, a 404 means the session is gone</strong>
+(for example, the app was restarted): stop and obtain a fresh session id, because every command
+against a dead id will keep failing. To read the current model for a live session,
+<code>GET /api/graph/session/{id}</code>.</p>
 <p>A minimal call:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nv">SESSION_ID</span><span class="o">=</span><span class="s2">"ws-384729-17"</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>curl<span class="w"> </span>-sS<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"http://localhost:8300/api/companion/</span><span class="si">${</span><span class="nv">SESSION_ID</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>curl<span class="w"> </span>-sS<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"http://localhost:8300/api/companion/</span><span class="si">${</span><span class="nv">SESSION_ID</span><span class="si">}</span><span class="s2">/sync"</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: text/plain'</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span>--data-binary<span class="w"> </span><span class="s1">$'create node root\nwith type Root\nwith properties\nskill=graph.math'</span>
 </code></pre></div>
-<p>Under the hood, the endpoint (<code>post.companion.command</code>) confirms the session is live, then dispatches
-to a <strong>singleton</strong> command handler so commands execute in order without races. Like the Playground
-itself, it is gated by <code>@OptionalService("app.env=dev")</code> — <strong>do not expose it beyond trusted dev
-environments</strong> (there is no auth).</p>
+<blockquote>
+<p><strong>Retired:</strong> the original fire-and-forget <code>POST /api/companion/{session-id}</code> (which returned
+only <code>{status:"accepted"}</code> and streamed the real outcome to the console) was <strong>retired in
+2026-09</strong> — it hid errors from the caller and forced slower, sleep-padded drivers. The bare URL
+now answers 404; use <code>/sync</code>.</p>
+</blockquote>
+<p>Under the hood, the endpoint (<code>post.companion.command.sync</code>) confirms the session is live, then
+dispatches to a <strong>singleton</strong> command handler so commands execute in order without races. Like the
+Playground itself, it is gated by <code>@OptionalService("app.env=dev")</code> — <strong>do not expose it beyond
+trusted dev environments</strong> (there is no auth).</p>
+<blockquote>
+<p><strong>Restarting the app ends every session — export first.</strong> The working graph lives in the
+session, not on disk: <code>export graph as {name}</code> before any restart (deploying a graph requires
+one), or the unexported work is lost.</p>
+</blockquote>
 <h2 id="collaboration">User–AI collaboration<a class="headerlink" href="#collaboration" title="Permanent link">&para;</a></h2>
 <p>Put the two together and you get the seed of the framework's collaboration vision: a person watches
 the Playground in the browser while an <strong>AI companion</strong> builds the graph through the companion
@@ -2824,6 +2843,7 @@ endpoint; maturing it into an integrated, pluggable companion is on the roadmap 
 <a href="../#maturity">the maturity section</a>).</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
+<li><a href="../ai-agent-guide/">AI agent guide</a> — the full companion contract for AI drivers (the <code>ok</code> derivation, self-correction rules, one-command-per-request).</li>
 <li><a href="../build-your-first-graph/">Build your first Active Knowledge Graph</a> — the command loop in a full walkthrough.</li>
 <li><a href="../skills-reference/">Built-in skills reference</a> — what <code>describe skill</code> documents in the console.</li>
 <li><a href="../">Knowledge Graph as Application</a> — the paradigm and where collaboration fits.</li>

@@ -3347,7 +3347,7 @@ cleared run marks — which is the standard idiom for a second dry-run with diff
 <h3 id="run">run / execute / inspect<a class="headerlink" href="#run" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>run                        # traverse from root to end
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>execute {node}             # run a single node (after instantiate)
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>inspect {namespace.key}    # read a value from the state machine
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>inspect {namespace.key}    # read a value from the state machine (leaf keys resolve; a subtree prints {})
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>inspect output               # a whole namespace: input | output | model | error
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>inspect output.body.name     # a specific composite key
@@ -3356,7 +3356,11 @@ cleared run marks — which is the standard idiom for a second dry-run with diff
 <blockquote>
 <p><strong>Placeholder convention:</strong> <code>{…}</code> in the syntax lines above (e.g. <code>{node}</code>,
 <code>{namespace.key}</code>) marks a value you substitute — <strong>do not type the braces</strong>.
-Write <code>inspect output.body.name</code>, not <code>inspect {output.body.name}</code> (a literal
+<strong><code>inspect</code> resolves leaves, not subtrees</strong>: <code>inspect output</code> prints <code>{}</code> even when
+<code>output.body.rmdAmount</code> holds a value — ask for the specific composite key. (An AI driver on
+the <code>/sync</code> companion endpoint rarely needs <code>inspect</code> at all: a run's structured outcome comes
+back in the response's <code>result</code> field.)</p>
+<p>Write <code>inspect output.body.name</code>, not <code>inspect {output.body.name}</code> (a literal
 <code>{output.body}</code> is treated as the key <code>{output</code> → <code>body}</code> and resolves to nothing).</p>
 </blockquote>
 <p><strong>Run deadline:</strong> a dry-run traversal is bounded by <code>model.ttl</code> (default 30 s) — the same
@@ -3391,6 +3395,10 @@ without out-of-band knowledge or trial execution.</p>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>import node {node} from {name}
 </code></pre></div>
 <ul>
+<li><code>export</code> is <strong>idempotent</strong>: when the file already holds byte-identical content the physical
+  write is skipped, so <strong>the file's mtime is not a write indicator</strong> — verify by content, or by
+  the <code>Described in ...</code> link in the reply. A genuine I/O failure reports <code>ERROR: unable to
+  write ...</code>.</li>
 <li><code>export</code> writes JSON to <code>location.graph.temp</code>; it adds <code>name={name}</code> to the root node and
   <strong>fails if any node is an orphan</strong> (every node must connect to ≥1 other).</li>
 <li>The export reply includes <code>Described in /api/graph/model/{name}/{token}</code> — a read-only HTTP

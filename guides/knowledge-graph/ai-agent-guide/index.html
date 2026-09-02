@@ -2732,14 +2732,9 @@
 <td>Send the request body; get the response. No session.</td>
 </tr>
 <tr>
-<td><strong>Build/edit a graph — AI agents, preferred</strong></td>
+<td><strong>Build/edit a graph</strong></td>
 <td><code>POST /api/companion/{session-id}/sync</code></td>
 <td><strong>Synchronous</strong> — returns the command outcome <strong>in-band</strong> <code>{ok, output, error, result}</code>; output is <em>also</em> teed to the human's WS console.</td>
-</tr>
-<tr>
-<td><strong>Build/edit a graph — fire-and-forget (legacy)</strong></td>
-<td><code>POST /api/companion/{session-id}</code></td>
-<td>Dispatches the command; outcome streams to the WS console only (HTTP returns just an ack). Kept for Java parity.</td>
 </tr>
 <tr>
 <td><strong>Read the live model</strong></td>
@@ -2780,9 +2775,14 @@ can self-correct without a human relaying the console:</p>
 <p>Status codes: <code>200</code> executed (read <code>ok</code>/<code>error</code> in the body); <code>400</code> missing/empty/non-text body;
 <code>404</code> no active session for that id.</p>
 <blockquote>
-<p><strong>Legacy fire-and-forget</strong> (<code>POST /api/companion/{session-id}</code>, no <code>/sync</code>): returns only
-<code>{status:"accepted"}</code>; the outcome streams to the WS console, not the HTTP response, so the caller
-is <strong>blind to errors</strong>. Prefer <code>/sync</code>.</p>
+<p><strong>Retired:</strong> the fire-and-forget <code>POST /api/companion/{session-id}</code> (no <code>/sync</code>) was removed in
+2026-09 — it returned only <code>{status:"accepted"}</code>, leaving the caller <strong>blind to errors</strong> and
+forcing sleep-padded drivers. The bare URL answers 404. There is exactly one companion endpoint:
+<code>/sync</code>.</p>
+<p><strong>Never use <code>graph.js</code>.</strong> It is <strong>deprecated</strong> (kept for backward compatibility only): runtime
+script evaluation fails enterprise security review, and a silent expression defect has been
+reported in the field. Express decisions with <code>graph.math</code> and everything richer with
+<code>graph.task</code> — see the <a href="../skills-reference/#js">skills reference</a>.</p>
 </blockquote>
 <p><strong>Rules of engagement:</strong> one command per POST (multi-line commands are fine — see the grammar);
 the session must already be open (you do not create it); single operator — don't POST while a

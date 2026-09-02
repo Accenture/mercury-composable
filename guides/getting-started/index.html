@@ -3025,7 +3025,9 @@
   composable functions, and how to write and wire your own.</li>
 <li><strong>And glimpse</strong> — the <strong>Active Knowledge Graph</strong> (the top layer): one call returns <code>hello world</code>
   from a <em>graph that executes</em>, not from code.</li>
-<li><strong>Prerequisites</strong> — Java 21+, Maven 3.9.7+. The Quickstart below takes ~5 minutes; the full
+<li><strong>Prerequisites</strong> — Java 21+ (the build deliberately targets 21 for wider
+  compatibility) — <strong>recommended JDK/JRE: Java 25, the current LTS release</strong>, which fully
+  supports the Java 21 virtual-thread technology; Maven 3.9.7+. The Quickstart below takes ~5 minutes; the full
   walkthrough that follows, ~20.</li>
 </ul>
 </blockquote>
@@ -3036,7 +3038,10 @@ functions without adverse side effect to a production system. Multiple versions 
 can decide how to route user requests to different versions of a function. Applications would be easier to design,
 develop, maintain, deploy, and scale.</p>
 <h2 id="quickstart-five-minutes-from-zero-to-a-running-api">Quickstart — five minutes from zero to a running API<a class="headerlink" href="#quickstart-five-minutes-from-zero-to-a-running-api" title="Permanent link">&para;</a></h2>
-<p><strong>Prerequisites:</strong> Java 21+ (<code>java --version</code>), Maven 3.9.7+ (<code>mvn --version</code>), and Git.</p>
+<p><strong>Prerequisites:</strong> Java 21+ (<code>java --version</code>) — <strong>Java 25 (current LTS) is the recommended
+JDK/JRE</strong>. The build targets Java 21 bytecode <em>deliberately, for wider compatibility</em>; the
+virtual-thread technology it builds on is fully supported on Java 25. Plus Maven 3.9.7+
+(<code>mvn --version</code>) and Git.</p>
 <p><strong>1. Clone and build the libraries.</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/Accenture/mercury-composable.git
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>mercury-composable

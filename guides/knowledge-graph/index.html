@@ -2855,10 +2855,12 @@ prints the same content.</p>
 <code>/ws/graph</code>) for building, dry-running, and inspecting graphs interactively. Its command grammar
 covers the full lifecycle — <code>create node</code>, <code>connect</code>, <code>instantiate graph</code>, <code>run</code>, <code>inspect</code>,
 <code>describe graph</code>, and <code>export/import graph</code>.</p>
-<p>The same commands can be driven by an <strong>AI companion</strong>: <code>POST /api/companion/{session-id}</code> accepts a
-Playground command (as <code>text/plain</code>) and dispatches it into your live session, with output streaming
-back to the browser console. This is the seed of <strong>user–AI collaboration</strong> — a person and an AI
-co-authoring the same graph in real time. (Both the Playground and companion endpoints are
+<p>The same commands can be driven by an <strong>AI companion</strong>: <code>POST /api/companion/{session-id}/sync</code>
+accepts a Playground command (as <code>text/plain</code>), runs it in your live session, and returns the
+outcome <strong>in-band</strong> as <code>{ok, output, error, result}</code> — while teeing the same output to the browser
+console. This is the seed of <strong>user–AI collaboration</strong> — a person and an AI co-authoring the same
+graph in real time. AI drivers should start with the <strong><a href="ai-agent-guide/">AI agent guide</a></strong> (the
+full contract and self-correction rules). (Both the Playground and companion endpoints are
 <strong>dev-only</strong>, gated by <code>app.env=dev</code>.)</p>
 <h2 id="maturity">What's built today vs. on the roadmap<a class="headerlink" href="#maturity" title="Permanent link">&para;</a></h2>
 <p>To keep this honest — the engine is real, the enterprise lifecycle is partly aspirational:</p>

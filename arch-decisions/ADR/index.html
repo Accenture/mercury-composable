@@ -2035,6 +2035,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0022" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0022 — graph.js is deprecated: backward compatibility only
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-0021" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0021 — The companion endpoint is synchronous only: the fire-and-forget sibling is retired
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0020" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2773,6 +2795,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0022" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0022 — graph.js is deprecated: backward compatibility only
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-0021" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0021 — The companion endpoint is synchronous only: the fire-and-forget sibling is retired
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0020" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3030,6 +3074,48 @@ governing the codebase — verified against the source (<code>platform-core</cod
 <code>event-script-engine</code>, <code>minigraph-playground-engine</code>) and the published guides, which are
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
+<hr />
+<h2 id="adr-0022">ADR-0022 — graph.js is deprecated: backward compatibility only<a class="headerlink" href="#adr-0022" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-09-02 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> graphjs-phase-out-direction</p>
+<!-- id: adr-0022 | status: proposed -->
+
+<p><strong>Abstract.</strong> The <code>graph.js</code> skill is deprecated. It remains shipped for backward
+compatibility while existing field applications refactor off it, but new graphs must not
+use it and AI agents are instructed never to generate it. The sanctioned pattern is
+<code>graph.math</code> for decisions plus <code>graph.task</code> for anything the safe dialect cannot express.</p>
+<p><strong>Context.</strong> graph.js evaluates JavaScript at runtime (GraalVM) — code injection by
+another name, which fails enterprise security review; the field is already refactoring
+it out. A 2026-09 field AI-agent exercise additionally reported a silent-correctness
+defect (equality comparisons with quoted string literals evaluate to false without any
+error, mis-routing IF branches) and demonstrated that the graph.math + graph.task rebuild
+is more legible — rule order becomes visible nodes instead of a script. Per the standing
+phase-out direction (2026-07-31), the skill is contained, not hardened: the defect is
+documented, not fixed. The Rust engine never carried graph.js, so deprecation also closes
+an engine-parity gap. Removal lands in a future major release.</p>
+<p><strong>Consequences.</strong> Deprecation banners in the skills reference and AI agent guide; the
+CompileGraph gate continues to accept existing models; graph.js work remains excluded
+from Rust lock-step scope.</p>
+<hr />
+<h2 id="adr-0021">ADR-0021 — The companion endpoint is synchronous only: the fire-and-forget sibling is retired<a class="headerlink" href="#adr-0021" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-09-02 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> (rides ADR-0008's constraint)</p>
+<!-- id: adr-0021 | status: proposed -->
+
+<p><strong>Abstract.</strong> <code>POST /api/companion/{id}</code> (fire-and-forget, <code>{status:"accepted"}</code>) is
+retired; <code>POST /api/companion/{id}/sync</code> (ADR-0008) is the only companion endpoint. The
+bare URL now answers 404 through REST automation; <code>/sync</code> is unchanged, so field drivers
+need no migration.</p>
+<p><strong>Context.</strong> ADR-0008 added <code>/sync</code> as an additive sibling so AI agents see command
+outcomes in-band. A 2026-09 field AI-agent exercise showed the async endpoint is an
+attractive trap: the guide dedicated to the companion documented only the async form, and
+an agent that followed it was blind to errors, scraped a browser console for results, and
+sleep-padded every command (measured: 12 s vs 0.1 s for a 25-command build). The field has
+driven <code>/sync</code> exclusively for multiple sprints, so the maintainer retired the async form
+outright rather than keeping a documented-legacy hazard. Re-pointing the bare URL at sync
+semantics was rejected: old fire-and-forget scripts would silently receive a different
+response contract; a loud 404 is the unambiguous retirement.</p>
+<p><strong>Consequences.</strong> One endpoint, one contract, no ambiguity for agents or docs; a
+breaking change note rides the next release; the Rust engine retires its twin in
+lock-step.</p>
 <hr />
 <h2 id="adr-0020">ADR-0020 — Route pools: numbered singleton lanes as a first-class platform registration<a class="headerlink" href="#adr-0020" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-08-30 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> route-pool-registration-design</p>

@@ -6761,7 +6761,10 @@ identified by <code>flow.id</code>. Multiple comma-separated paths are merged. S
 <p>YAML file(s) that override <code>@PreLoad</code> annotation settings (route name, instance count) without recompiling.</p>
 <hr />
 <h2 id="threading-performance">Threading &amp; Performance<a class="headerlink" href="#threading-performance" title="Permanent link">&para;</a></h2>
-<p>By default all functions run on Java 21 virtual threads. Use <code>@KernelThreadRunner</code> to pin a
+<p>By default all functions run on Java 21 virtual threads — this is the platform's
+<strong>sync-over-async contract</strong>: blocking-style code (a <code>PostOffice</code> request, a
+<code>future.get()</code>) suspends only its virtual thread and releases the carrier, so
+sequential code performs like reactive with none of the ceremony. Use <code>@KernelThreadRunner</code> to pin a
 function to the kernel thread pool for blocking-I/O operations that are incompatible with
 virtual threads.</p>
 <h3 id="deferredcommitlog"><code>deferred.commit.log</code><a class="headerlink" href="#deferredcommitlog" title="Permanent link">&para;</a></h3>

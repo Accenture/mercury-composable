@@ -2845,7 +2845,12 @@ constant <code>it works</code> into <code>input.body.message</code>:</p>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="na">graph.model.automation</span><span class="o">=</span><span class="s">classpath:/graphs.yaml</span>
 </code></pre></div>
 <p>Copy the model into the deployed-graph folder <strong>and list its ID in the manifest</strong>
-(<code>graphs.yaml</code>), then restart the app:</p>
+(<code>graphs.yaml</code>), then restart the app.</p>
+<blockquote>
+<p><strong>Export before you restart.</strong> Restarting ends every Playground session, and the working graph
+lives in the session — anything not exported with <code>export graph as {name}</code> is lost. The export
+in the previous step is what makes this restart safe.</p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>cp /tmp/graph/my-first-graph.json src/main/resources/graph/
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nt">graphs</span><span class="p">:</span>
