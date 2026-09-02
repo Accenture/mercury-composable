@@ -2007,6 +2007,22 @@ class FlowTests extends TestBase {
         assertEquals(256.75d, result.get("double_convert"));
         // break into another function to satisfy SonarQube requirement
         checkTypeAssertion(result);
+        checkJsonPluginAssertion(result);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void checkJsonPluginAssertion(Map<String, Object> result) {
+        // f:json(text([])) creates an empty list directly in data mapping
+        assertEquals(List.of(), result.get("empty_list"));
+        assertEquals(Map.of(), result.get("empty_map"));
+        // a nested JSON constant - commas and braces ride inside the text(...) argument;
+        // whole numbers arrive as integers after the event round trip (MsgPack downcast)
+        Object nested = result.get("nested_json");
+        assertInstanceOf(Map.class, nested);
+        Map<String, Object> nestedMap = (Map<String, Object>) nested;
+        assertEquals(List.of(1, 2, Map.of("nested", "demo")), nestedMap.get("hello"));
+        // f:json also accepts JSON text held in a model variable
+        assertEquals(List.of(10, 20, 30), result.get("parsed_from_model"));
     }
 
     private void checkTypeAssertion(Map<String, Object> result) {
