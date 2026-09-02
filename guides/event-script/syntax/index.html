@@ -5523,9 +5523,12 @@ the default behavior is to convert the Class Name to camelCase.</p>
 <p>A plugin function can be configured in the left-hand-side of an input/output data mapping statement using the
 <code>f:</code> prefix with your plugin name. i.e. <code>f:pluginName(variables...)</code></p>
 <p>A plugin can access variables in the <code>model.</code>, <code>input.</code>, <code>output.</code> namespaces. You may also use constants such as
-<code>text(value)</code>, <code>int(value)</code>. For constant text value, it should not contain the comma (<code>,</code>) character because comma
-is used as a separator for the plugin's argument variables. If comma must be used in a text constant, set the
-constant as a model variable and apply the model variable as an argument to a plugin.</p>
+<code>text(value)</code>, <code>int(value)</code>. The argument tokenizer splits on <strong>top-level commas only</strong>, so a comma inside a
+nested constant is safe — e.g. <code>f:json(text({"a": 1, "b": 2}))</code> passes the whole JSON as one argument. One
+caution: an <em>unbalanced</em> close-parenthesis inside a text constant can confuse the splitter; if your text needs
+one, set the value in a model variable first and pass the model variable as the argument. Nested plugin calls
+(an <code>f:</code> expression as another plugin's argument) are not supported — the engine deliberately ignores them to
+prevent execution loops.</p>
 <p>For model, input and output variables, you may also use JSON-Path syntax to extract value as argument to a plugin.</p>
 <p>For example:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-60-1" name="__codelineno-60-1" href="#__codelineno-60-1"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
@@ -5638,6 +5641,8 @@ double enters, precision follows IEEE-754 (integers exact to 2^53).</p>
 <dd>A list of variables that can evaluate to a long integer</dd>
 <dt><code>text</code></dt>
 <dd>A list of variables that can evaluate to a String</dd>
+<dt><code>json</code></dt>
+<dd>A single JSON text (String or byte[]) — an object <code>{...}</code> becomes a map, an array <code>[...]</code> becomes a list. See details below.</dd>
 <dt><code>listOfMap</code></dt>
 <dd>Convert "a map of lists" to "a list of maps" — <strong>order-preserving</strong>: list order follows array index order (guaranteed)</dd>
 <dt><code>updateListOfMap</code></dt>
@@ -5709,6 +5714,35 @@ As shown in the examples above, If you want to test for non-null value, use the 
 throwing an validation error. For example,
 - f:validate(input.body.id, text(id; String; evaluate))</p>
 <p>Please note that the validation rule uses semicolon as separator because comma is used for tokenization.</p>
+<p><em>JSON parsing plugin</em></p>
+<p>The 'json' plugin parses JSON text into a live dataset in one data mapping statement —
+an object <code>{...}</code> becomes a map, an array <code>[...]</code> becomes a list. The input can be a text
+constant, a model variable, or any mapping source holding a JSON string or byte array.</p>
+<ul>
+<li>f:json(text([])) -&gt; model.my_empty_list</li>
+<li>f:json(text({"hello": [1, 2, {"nested": "demo"}]})) -&gt; model.my_nested_dataset</li>
+<li>f:json(model.raw_json_text) -&gt; model.parsed</li>
+</ul>
+<p>This makes simple dataset creation a one-liner — e.g. seeding an empty list before
+building it up with append-mode (<code>[]</code>) mapping rules — without writing a composable
+function for it.</p>
+<p>Behavior notes:</p>
+<ol>
+<li>Only the JSON composite forms are accepted. A scalar such as <code>42</code> or <code>hello</code> throws
+   "Input is not JSON" — the scalar constants (<code>text</code>, <code>int</code>, <code>long</code>, <code>float</code>, <code>double</code>,
+   <code>boolean</code>) already cover those.</li>
+<li>Whole numbers parse as long and decimals as double. Small whole numbers are downcast
+   to integer when the dataset later rides an event — standard serialization behavior.</li>
+<li>Blank input returns an empty map instead of aborting the flow.</li>
+<li>The parser is lenient: unquoted keys are accepted, and a trailing comma inserts a
+   trailing null element (<code>[1, 2,]</code> becomes <code>[1, 2, null]</code>). Prefer strict JSON.</li>
+<li>Malformed JSON throws "Unable to parse JSON: (reason)"; a null or non-text input
+   throws "Input must be a JSON in string or byte array". Both abort the task as a user
+   error (HTTP 400 at the flow edge).</li>
+<li><code>{model.key}</code> and <code>[model.index]</code> references inside the JSON text are resolved as
+   runtime substitutions <em>before</em> parsing — useful for composing dynamic JSON; be aware
+   of it if your JSON legitimately contains such text.</li>
+</ol>
 <p><em>Configuration override plugin</em></p>
 <p>The 'setConfig' plugin sets or overrides a configuration parameter at run-time by saving it as a
 system property. Since a system property takes precedence over the base application configuration,
