@@ -9,4 +9,4 @@
   closed_narrative_max_lines 150; 600 would fire permanently on a healthy lean file.
   Lesson: retention STYLE (close-record economy), not the caps, drives onboarding cost.
   origin: 2026-08-22-003007 (+ 2026-09-01-031112).
-  <!-- id: thread-onboarding-efficiency | created: 2026-08-22 | last_used: 2026-09-01 | uses: 5 | tier: active | origin: 2026-08-22-003007 -->
+  <!-- id: thread-onboarding-efficiency | created: 2026-08-22 | last_used: 2026-09-01 | uses: 5 | tier: archive-candidate | origin: 2026-08-22-003007 -->

@@ -23,7 +23,7 @@
   no wrapper changes this round. v4.12.1 (2026-09-01) was the lock-step registry debut:
   Rust crates.io + python PyPI + node npm; the live version source stays the root pom.xml)
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-01 | through 2026-09-01-022524.md
+- **last_review:** 2026-09-02 | through 2026-09-02-172746.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -208,7 +208,7 @@
   is removed (ObjectStreamIO is the exclusive mechanism; minor breaking — CHANGELOG
   Unreleased carries the note). Spec: draft-design-specs/register-route-pool.md.
   Delivered by [[ot-route-pool-api]].
-  <!-- id: route-pool-registration-design | created: 2026-08-30 | last_used: 2026-09-01 | uses: 2 | tier: active | origin: 2026-08-30-211721 -->
+  <!-- id: route-pool-registration-design | created: 2026-08-30 | last_used: 2026-09-01 | uses: 2 | tier: archive-candidate | origin: 2026-08-30-211721 -->
 
 ## Conventions
 
@@ -221,7 +221,7 @@
   **Scope extension: the Event Script surface is part of the cross-engine contract** — flows are
   engine-portable YAML, so any new built-in simple plugin ships in lock-step on both engines (with
   closely matching error messages), or flows stop being portable.
-  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-09-02 | uses: 40 | tier: active | origin: 2026-07-23-145132 -->
+  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-09-02 | uses: 42 | tier: active | origin: 2026-07-23-145132 -->
 
 - **graph.js is FORMALLY DEPRECATED (Eric, 2026-09-02; ADR-0022) — backward compatibility
   only; the field is refactoring off it; AI agents must never use it; the Rust port does
@@ -244,7 +244,7 @@
   space). Trim the pre-filled title to the intended one-liner on every squash; same
   review moment as the co-author-trailer dedup rule in AGENTS.md.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-01 | uses: 11 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-02 | uses: 13 | tier: active | origin: 2026-08-19-195244 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
@@ -253,7 +253,7 @@
   examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-02 | uses: 3 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-02 | uses: 4 | tier: active | origin: 2026-09-01-022524 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -309,7 +309,7 @@
   memory 2026-08-22: the smoke test found six session logs referencing this id while the
   fact lived only in an agent's personal store — a project-relevant working rhythm belongs
   in the shared layer.)
-  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-09-02 | uses: 27 | tier: active | origin: 2026-08-22-180334 -->
+  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-09-02 | uses: 29 | tier: active | origin: 2026-08-22-180334 -->
 
 ## Team / Members
 

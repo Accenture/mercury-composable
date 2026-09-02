@@ -8,4 +8,4 @@
   AsyncHttpClient. Lesson: streaming is a send-with-reply_to EVENT-header opt-in
   (`accept: text/event-stream`); plain RPC never consumes a lane.
   Spec: draft-design-specs/async-http-client-sse-streaming.md §7. origin: 2026-08-29-162504.
-  <!-- id: thread-sse-consumption-streaming | created: 2026-08-29 | last_used: 2026-09-01 | uses: 6 | tier: active | origin: 2026-08-29-162504 -->
+  <!-- id: thread-sse-consumption-streaming | created: 2026-08-29 | last_used: 2026-09-01 | uses: 6 | tier: archive-candidate | origin: 2026-08-29-162504 -->

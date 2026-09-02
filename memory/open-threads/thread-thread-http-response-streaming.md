@@ -6,4 +6,4 @@
   wire, EventStreamWriter both engines; lane checkout became FIFO rotation 2026-09-01,
   [[ot-agent-orchestration-e0]]). Lesson: a vert.x drainHandler is a second concurrent
   flusher — lock the pending queue. origin: 2026-08-28-025445 (+ mercury 2026-08-29-012914).
-  <!-- id: thread-http-response-streaming | created: 2026-08-28 | last_used: 2026-09-01 | uses: 5 | tier: active | origin: 2026-08-28-025445 -->
+  <!-- id: thread-http-response-streaming | created: 2026-08-28 | last_used: 2026-09-01 | uses: 5 | tier: archive-candidate | origin: 2026-08-28-025445 -->

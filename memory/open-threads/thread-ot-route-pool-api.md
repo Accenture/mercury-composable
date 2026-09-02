@@ -7,4 +7,4 @@
   registerRoutePool/releaseRoutePool + SSE reply-lane adoption.** Lesson: `gh pr create`
   is EMU-blocked — `--web` prefill works; PR-open stays Eric's gesture.
   Design: [[route-pool-registration-design]]. origin: 2026-08-30-211721.
-  <!-- id: ot-route-pool-api | created: 2026-08-30 | last_used: 2026-09-01 | uses: 2 | tier: active | origin: 2026-08-30-211721 -->
+  <!-- id: ot-route-pool-api | created: 2026-08-30 | last_used: 2026-09-01 | uses: 2 | tier: archive-candidate | origin: 2026-08-30-211721 -->

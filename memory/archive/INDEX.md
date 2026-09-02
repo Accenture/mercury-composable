@@ -139,3 +139,4 @@
 - thread-dynamic-statement-targets — (feature — COMPLETE BOTH ENGINES 2026-08-10, shipped in v4.11.6: Java — faded (completed threads past archive_window 20) — 2026-Q3.md
 - thread-graph-task-model-staging — (feature+fix — COMPLETE BOTH ENGINES 2026-08-08, shipped in v4.11.5: Java — faded (completed threads past archive_window 20) — 2026-Q3.md
 - thread-tutorial-14-decision — (feature — COMPLETE BOTH ENGINES 2026-08-07: Java — faded (completed threads past archive_window 20) — 2026-Q3.md
+- thread-release-4-11-2 — (release — SHIPPED 2026-08-03, Java-only) v4.11.2 — the field lz4-CVE security — faded — 2026-Q3.md
