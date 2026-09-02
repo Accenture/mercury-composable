@@ -1,22 +1,14 @@
-- [ ] (feature — design RATIFIED D0–D8 2026-08-22; **P1–P4 COMPLETE across the four
-  repos**; completed-phase narrative condensed 2026-09-01 — full detail: origin log,
-  2026-08-24-170545, and the wrapper repos' memory) **Polyglot initiative — python/node.js
-  Event-over-HTTP wrappers.** Shipped: wrapper reboots + envelope codecs vs the golden
-  vectors + live python⇄node/engine interop (python PR #15, node PR #86, 2026-08-22);
-  the graph.task event-over-http guard, both engines (Java
-  [PR #292](https://github.com/Accenture/mercury-composable/pull/292), Rust PR #212 —
-  the sole content of field release v4.11.11); the wrapper feature round — primitive
-  event bus, actuator endpoints, log.format (python PR #17, node PR #87); P4 docs —
-  wrapper sites live + engine chapters/ADR-0016 + nav parity (python PR #20, node
-  PR #89, Java PR #294, Rust PR #214/#215). Lesson: new guide pages linked from packaged
-  references must join the ai-contract-provider files.list inventory on BOTH engines.
-  **Remaining — P5 publication, GREEN-LIT by Eric 2026-09-01** ("tomorrow prepare to
-  publish Rust, Python and Node to their public artifactory" — the AI-SDLC-iteration
-  sequencing gate is satisfied by E0). Scope: python → PyPI (name availability to
-  verify), node → npm (legacy mercury-composable v4.3.28 history on the name), **plus
-  the Rust engine → crates.io (NEW surface, widened beyond the wrapper pair)**. Agent
-  prepares everything (dry-runs, metadata, checklists); the publish acts stay Eric's
-  per [[eric-release-rhythm]]. Optional extras still offered: a live
-  Rust-engine→wrapper drive; Rust layer-tab label parity. Design:
+- [x] (feature — **INITIATIVE COMPLETE 2026-09-01: P1–P5 all done.** P5 publication:
+  crates.io (seven mercury-prefixed crates), PyPI and npm all live and verified at
+  v4.12.1 — `pip install mercury-composable`, `npm install mercury-composable`,
+  `cargo add mercury-platform-core` — releases tagged lock-step; detail in each repo's
+  2026-09-01 logs) **Polyglot initiative — python/node.js Event-over-HTTP wrappers**
+  (+ the Rust engine's registry debut, widened into P5 by Eric). Earlier phases:
+  wrapper reboots + codecs + live interop (P1, 2026-08-22); the graph.task
+  event-over-http guard both engines (P2 → field release v4.11.11); wrapper feature
+  round (P3); docs sites + engine chapters (P4). Lessons: packaged-reference guide pages
+  join files.list on BOTH engines; registries throttle new-name bursts — plan first
+  publications in waves; constrain sdists in agent-memory repos. Design:
   [[polyglot-event-over-http-design]]; serves [[bp-polyglot-functions]].
-  <!-- id: thread-polyglot-initiative | created: 2026-08-22 | last_used: 2026-09-01 | uses: 10 | tier: working | origin: 2026-08-22-164936 -->
+  origin: 2026-08-22-164936.
+  <!-- id: thread-polyglot-initiative | created: 2026-08-22 | last_used: 2026-09-02 | uses: 11 | tier: active | origin: 2026-08-22-164936 -->

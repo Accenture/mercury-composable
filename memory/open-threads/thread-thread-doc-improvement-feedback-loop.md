@@ -17,4 +17,4 @@
   [PR #222](https://github.com/Accenture/mercury/pull/222) squash `c730e17e`; python
   [PR #23](https://github.com/Accenture/mercury-python/pull/23) squash `a12c56b6`; node
   [PR #91](https://github.com/Accenture/mercury-nodejs/pull/91) squash `0899ad59`).
-  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-09-01 | uses: 2 | tier: working | origin: 2026-09-01-032130 -->
+  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-09-01 | uses: 1 | tier: working | origin: 2026-09-01-032130 -->

@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>ai-contract-provider</artifactId>
     <packaging>jar</packaging>
-    <version>4.12.0</version>
+    <version>4.12.1</version>
     <name>Mercury AI contract provider</name>
     <description>
         Standalone composable app serving Mercury's version-matched operational contract for
@@ -54,13 +54,13 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.12.0</version>
+            <version>4.12.1</version>
         </dependency>
 
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>event-script-engine</artifactId>
-            <version>4.12.0</version>
+            <version>4.12.1</version>
         </dependency>
 
         <!-- test-scope only: the catalog names MiniGraph behavior classes as anchors and the
@@ -70,7 +70,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minigraph-playground-engine</artifactId>
-            <version>4.12.0</version>
+            <version>4.12.1</version>
             <scope>test</scope>
         </dependency>
 

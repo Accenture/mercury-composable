@@ -96,7 +96,7 @@
   vectors are the conformance gate; interop report per wrapper release (D6). Spec:
   draft-design-specs/polyglot-script-runner.md. Delivered by [[thread-polyglot-initiative]];
   serves [[bp-polyglot-functions]].
-  <!-- id: polyglot-event-over-http-design | created: 2026-08-22 | last_used: 2026-09-01 | uses: 12 | tier: active | origin: 2026-08-22-164936 -->
+  <!-- id: polyglot-event-over-http-design | created: 2026-08-22 | last_used: 2026-09-02 | uses: 13 | tier: active | origin: 2026-08-22-164936 -->
 
 - **Graph workflow suspension: short runs + external state store, encapsulated in skills
   (design ratified by Eric 2026-07-28). (ADR-0010)** A human checkpoint = persist
@@ -243,7 +243,7 @@
   examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-01 | uses: 2 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-02 | uses: 3 | tier: active | origin: 2026-09-01-022524 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -273,7 +273,7 @@
   flows and MiniGraph graphs as Event-over-HTTP peers (ratified design D0–D8, 2026-08-22);
   wrappers live in the repurposed Accenture/mercury-python + mercury-nodejs repos.
   → serves: vision-mercury-composable
-  <!-- id: bp-polyglot-functions | created: 2026-08-22 | last_used: 2026-09-01 | uses: 10 | tier: working -->
+  <!-- id: bp-polyglot-functions | created: 2026-08-22 | last_used: 2026-09-02 | uses: 11 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
   <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
@@ -299,7 +299,7 @@
   memory 2026-08-22: the smoke test found six session logs referencing this id while the
   fact lived only in an agent's personal store — a project-relevant working rhythm belongs
   in the shared layer.)
-  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-09-01 | uses: 24 | tier: active | origin: 2026-08-22-180334 -->
+  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-09-02 | uses: 25 | tier: active | origin: 2026-08-22-180334 -->
 
 ## Team / Members
 

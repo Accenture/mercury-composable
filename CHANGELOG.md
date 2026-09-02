@@ -8,7 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Unreleased
+## Version 4.12.1, 9/1/2026
+
+The lock-step companion to the first public-registry releases (the Rust engine's
+crates.io debut and the python/node wrappers' PyPI/npm debuts all carry 4.12.1):
+the route pool platform API, the agent-orchestration E0 demos, and the streaming
+reply-lane rotation.
 
 ### Added
 
@@ -30,6 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    engine's HTTP edge as SSE. Live-proven with Gemini: 25+ timestamped token batches
    over a ~2s generation, one distributed trace across both processes. Zero engine
    change.
+4. Placeholder manifests for the retired Spring Boot 3 modules (system/rest-spring-3,
+   examples/rest-spring-3-example) - parentless, dependency-free poms outside the
+   reactor so the dependency scanner's per-manifest projects re-test to an empty
+   graph instead of freezing on the retired lane's last dependency tree; relocation
+   metadata points local source builds at the rest-spring-4 equivalents.
 
 ### Changed
 
