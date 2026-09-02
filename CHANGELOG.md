@@ -41,6 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    behavior; array element and append mapping syntax (`hello[0]`, `hello[]`) in the
    flow schema reference; graph.js deprecation banners; example gotcha notes
    (snake.case.serialization, example groupIds).
+2. The recommended JDK/JRE is documented as Java 25 (the current LTS release; fully
+   supports the Java 21 virtual-thread technology). The build's Java 21 target is
+   documented as deliberate - wider compatibility.
 
 ---
 ## Version 4.12.1, 9/1/2026

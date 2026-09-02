@@ -11,7 +11,7 @@ A Java framework for building composable, event-driven applications from self-co
 
 ## What is Mercury Composable?
 
-An application is assembled from **independent functions** — plain Java classes with no knowledge of one another — that communicate only through **events**. The flows that sequence them live in **YAML**, so orchestration is configuration, not code. Everything runs on Java 21 **virtual threads**, so straightforward blocking code performs like reactive, and each function's immutable input/output makes the design equally friendly to human developers and AI code assistants.
+An application is assembled from **independent functions** — plain Java classes with no knowledge of one another — that communicate only through **events**. The flows that sequence them live in **YAML**, so orchestration is configuration, not code. Everything runs on Java 21 **virtual threads**, so straightforward blocking code performs like reactive, and each function's immutable input/output makes the design equally friendly to human developers and AI code assistants. (The build targets Java 21 deliberately, for wider compatibility; the **recommended JDK/JRE is Java 25**, the current LTS, which fully supports the virtual-thread technology.)
 
 It ascends three layers — adopt only the ones you need:
 
