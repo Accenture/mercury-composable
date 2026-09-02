@@ -29,7 +29,7 @@ related:
 |---|---|
 | [`graph.data.mapper`](#data-mapper) | copy/transform data between namespaces |
 | [`graph.math`](#math) | compute and branch with fast inline math/boolean |
-| [`graph.js`](#js) | compute/branch with full JavaScript (slower) |
+| [`graph.js`](#js) | **DEPRECATED** — backward compatibility only; use `graph.math` + `graph.task` |
 | [`graph.api.fetcher`](#api-fetcher) | call external HTTP APIs declaratively |
 | [`graph.task`](#task) | invoke a composable function through its route name |
 | [`graph.extension`](#extension) | delegate to a sub-graph or an Event Script flow |
@@ -72,7 +72,8 @@ mapping[]=fetch-two.result.profile -> output.body.profile[1]
 ## graph.math {#math}
 
 Fast inline math and boolean evaluation for computation and decision-making. This is **the** skill
-for inline compute/branch ([`graph.js`](#js) when you need real JavaScript). Statements run in order;
+for inline compute/branch (never reach for the deprecated [`graph.js`](#js) — pair `graph.math`
+with [`graph.task`](#task) for anything the dialect cannot express). Statements run in order;
 five types:
 
 | Statement | Purpose |
@@ -119,6 +120,18 @@ returns a double, so an integer result serializes as e.g. `8.0` (numerically exa
 in-grammar integer coercion). For anything richer, use `graph.task` (a composable function).
 
 ## graph.js {#js}
+
+> **DEPRECATED (2026-09) — do not use in new graphs; AI agents must not use it at all.** It is
+> kept for backward compatibility while existing field applications refactor off it. Two reasons:
+> **(1) security** — evaluating JavaScript at runtime is code injection by another name and fails
+> enterprise security review; **(2) a reported silent-correctness defect** — a field agent
+> exercise showed equality comparisons with quoted string literals evaluating to `false` without
+> error (`"{input.body.planType}" === "ROTH_401K"` → `false` while `.indexOf(...) >= 0` → `true`),
+> so an `IF` silently falls through to the wrong branch. **The replacement pattern:** express
+> decisions in [`graph.math`](#math) (safe expression dialect, readable `IF` nodes) and delegate
+> anything the dialect cannot express to [`graph.task`](#task) (a composable function). The field
+> rebuild that produced this report ended up with clearer graphs: rule order became visible nodes
+> instead of a script.
 
 Same statement model as [`graph.math`](#math) — the full
 [statement grammar](command-reference.md#math-statements) applies — but expressions run as

@@ -108,7 +108,9 @@ cd examples/composable-example && java -jar target/composable-example-<version>.
 cd examples/minigraph-playground && java -jar target/minigraph-playground-<version>.jar
 ```
 
-**Requirements:** Java 21+, Maven 3.9.7+ (`.java-version` pins the JDK).
+**Requirements:** Java 21+ (the build targets 21 *deliberately, for wider compatibility* —
+Eric, 2026-09-02; **recommended JDK/JRE: Java 25, current LTS**, which fully supports the
+Java 21 virtual-thread technology), Maven 3.9.7+ (`.java-version` pins the local JDK).
 
 ## Core Rules
 

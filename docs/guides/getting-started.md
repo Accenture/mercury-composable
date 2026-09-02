@@ -19,7 +19,9 @@ keywords: [getting started, tutorial, composable, example app, rest, flows, func
 >   composable functions, and how to write and wire your own.
 > - **And glimpse** — the **Active Knowledge Graph** (the top layer): one call returns `hello world`
 >   from a *graph that executes*, not from code.
-> - **Prerequisites** — Java 21+, Maven 3.9.7+. The Quickstart below takes ~5 minutes; the full
+> - **Prerequisites** — Java 21+ (the build deliberately targets 21 for wider
+>   compatibility) — **recommended JDK/JRE: Java 25, the current LTS release**, which fully
+>   supports the Java 21 virtual-thread technology; Maven 3.9.7+. The Quickstart below takes ~5 minutes; the full
 >   walkthrough that follows, ~20.
 
 Mercury Composable is a software development toolkit for writing composable applications.
@@ -32,7 +34,10 @@ develop, maintain, deploy, and scale.
 
 ## Quickstart — five minutes from zero to a running API
 
-**Prerequisites:** Java 21+ (`java --version`), Maven 3.9.7+ (`mvn --version`), and Git.
+**Prerequisites:** Java 21+ (`java --version`) — **Java 25 (current LTS) is the recommended
+JDK/JRE**. The build targets Java 21 bytecode *deliberately, for wider compatibility*; the
+virtual-thread technology it builds on is fully supported on Java 25. Plus Maven 3.9.7+
+(`mvn --version`) and Git.
 
 **1. Clone and build the libraries.**
 

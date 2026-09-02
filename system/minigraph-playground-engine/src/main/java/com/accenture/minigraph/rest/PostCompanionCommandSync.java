@@ -43,10 +43,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Synchronous AI-companion endpoint (ADR-0008) — the additive sibling of
- * {@link PostCompanionCommand}. Where the fire-and-forget endpoint returns
- * {@code {status:"accepted"}} and streams the real outcome only to the WebSocket
- * console, this endpoint returns the command's <b>outcome in-band</b> as
+ * THE AI-companion endpoint (ADR-0008, synchronous). Its fire-and-forget sibling
+ * (POST /api/companion/{id}, which returned {@code {status:"accepted"}} and streamed
+ * the real outcome only to the WebSocket console) was RETIRED 2026-09-02 — it hid
+ * errors from the caller and forced slower, sleep-padded drivers. This endpoint
+ * returns the command's <b>outcome in-band</b> as
  * {@code {ok, id, command, output, error, result}} so an AI agent can self-correct
  * without a human relaying the console. Each output line is <b>also teed</b> to the
  * session's real WebSocket {@code .out} route, so a watching human — and, via the
@@ -63,7 +64,7 @@ import java.util.concurrent.TimeUnit;
  * "Graph traversal aborted"), always emitted last; every other command emits all
  * output before it replies, so a <b>FIFO sentinel</b> marks its buffer drained. A
  * sentinel would race (and usually beat) the traversal tail, truncating the
- * capture. The existing endpoint and the WebSocket console are unchanged.
+ * capture. The WebSocket console behavior is unchanged.
  */
 @OptionalService("app.env=dev")
 @PreLoad(route = "post.companion.command.sync", instances = 10)

@@ -331,7 +331,10 @@ YAML file(s) that override `@PreLoad` annotation settings (route name, instance 
 
 ## Threading & Performance
 
-By default all functions run on Java 21 virtual threads. Use `@KernelThreadRunner` to pin a
+By default all functions run on Java 21 virtual threads — this is the platform's
+**sync-over-async contract**: blocking-style code (a `PostOffice` request, a
+`future.get()`) suspends only its virtual thread and releases the carrier, so
+sequential code performs like reactive with none of the ceremony. Use `@KernelThreadRunner` to pin a
 function to the kernel thread pool for blocking-I/O operations that are incompatible with
 virtual threads.
 

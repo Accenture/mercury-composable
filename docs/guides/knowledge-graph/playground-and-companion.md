@@ -85,44 +85,62 @@ unsubscribe.)
 ## The companion endpoint {#companion}
 
 The **companion endpoint** lets an HTTP client — a script, a test harness, or an AI agent —
-dispatch a Playground command into an **already-open** session. The command runs as if typed, and
-output streams back to that session's browser console.
+dispatch a Playground command into an **already-open** session. The command runs as if typed;
+the outcome comes back **in the HTTP response**, and every output line is *also* teed to that
+session's browser console so a watching human sees the same thing live.
 
 ```
-POST /api/companion/{session-id}
+POST /api/companion/{session-id}/sync
 Content-Type: text/plain
 
-<any Playground command>
+<exactly ONE Playground command>
 ```
 
-The response is an immediate acknowledgement — the real output appears on the WebSocket:
+The response carries the command's outcome in-band:
 
 ```json
 {
-  "type": "companion",
-  "status": "accepted",
+  "ok": true,
   "id": "ws-123456-7",
-  "message": "Command dispatched to graph.command.service. Output streams to the WebSocket console for this session."
+  "command": "create node root ...",
+  "output": ["> create node root ...", "node root created"],
+  "result": [ ... structured data, e.g. a run's output.body ... ]
 }
 ```
 
-Status codes: **200** dispatched (command *syntax* errors still return 200 — the error text appears
-on the WebSocket, not in the HTTP response); **400** missing/empty/non-text body; **404** no active
-session for that id. To read the current model for a live session, `GET /api/graph/session/{id}`.
+Null fields are omitted (`error` appears only on failure, `result` only when the command yields
+data). When `ok` is `false`, `error` carries the first failing line — read `output` for the full
+picture, fix, and re-issue. The complete contract, including the `ok` derivation and the rules an
+AI driver should follow, is in the [AI agent guide](ai-agent-guide.md).
+
+Status codes: **200** executed (read `ok`/`error` in the body); **400** missing/empty/non-text
+body; **404** no active session for that id — **operationally, a 404 means the session is gone**
+(for example, the app was restarted): stop and obtain a fresh session id, because every command
+against a dead id will keep failing. To read the current model for a live session,
+`GET /api/graph/session/{id}`.
 
 A minimal call:
 
 ```bash
 SESSION_ID="ws-384729-17"
-curl -sS -X POST "http://localhost:8300/api/companion/${SESSION_ID}" \
+curl -sS -X POST "http://localhost:8300/api/companion/${SESSION_ID}/sync" \
   -H 'Content-Type: text/plain' \
   --data-binary $'create node root\nwith type Root\nwith properties\nskill=graph.math'
 ```
 
-Under the hood, the endpoint (`post.companion.command`) confirms the session is live, then dispatches
-to a **singleton** command handler so commands execute in order without races. Like the Playground
-itself, it is gated by `@OptionalService("app.env=dev")` — **do not expose it beyond trusted dev
-environments** (there is no auth).
+> **Retired:** the original fire-and-forget `POST /api/companion/{session-id}` (which returned
+> only `{status:"accepted"}` and streamed the real outcome to the console) was **retired in
+> 2026-09** — it hid errors from the caller and forced slower, sleep-padded drivers. The bare URL
+> now answers 404; use `/sync`.
+
+Under the hood, the endpoint (`post.companion.command.sync`) confirms the session is live, then
+dispatches to a **singleton** command handler so commands execute in order without races. Like the
+Playground itself, it is gated by `@OptionalService("app.env=dev")` — **do not expose it beyond
+trusted dev environments** (there is no auth).
+
+> **Restarting the app ends every session — export first.** The working graph lives in the
+> session, not on disk: `export graph as {name}` before any restart (deploying a graph requires
+> one), or the unexported work is lost.
 
 ## User–AI collaboration {#collaboration}
 
@@ -138,6 +156,7 @@ endpoint; maturing it into an integrated, pluggable companion is on the roadmap 
 
 ## See also {#see-also}
 
+- [AI agent guide](ai-agent-guide.md) — the full companion contract for AI drivers (the `ok` derivation, self-correction rules, one-command-per-request).
 - [Build your first Active Knowledge Graph](build-your-first-graph.md) — the command loop in a full walkthrough.
 - [Built-in skills reference](skills-reference.md) — what `describe skill` documents in the console.
 - [Knowledge Graph as Application](index.md) — the paradigm and where collaboration fits.

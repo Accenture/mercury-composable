@@ -187,16 +187,17 @@ class SessionManagementTest {
             return;
         }
         try (fx) {
-            // AI dispatches "create node" commands via the companion endpoint.
-            // The session owner (client A) sees the echo and the engine's confirmation
-            // on its WebSocket - this is the user-AI collaboration channel.
-            var accepted = postCompanion(fx.sessionA(), "create node alpha");
-            assertEquals(200, accepted.getStatus());
-            assertInstanceOf(Map.class, accepted.getBody());
-            var acceptedBody = (Map<String, Object>) accepted.getBody();
-            assertEquals("companion", acceptedBody.get("type"));
-            assertEquals("accepted", acceptedBody.get("status"));
-            assertEquals(fx.sessionA(), acceptedBody.get("id"));
+            // AI dispatches "create node" commands via the companion endpoint (the
+            // synchronous /sync - the outcome comes back in-band). The session owner
+            // (client A) still sees the echo and the engine's confirmation teed to
+            // its WebSocket - this is the user-AI collaboration channel.
+            var outcome = postCompanion(fx.sessionA(), "create node alpha");
+            assertEquals(200, outcome.getStatus());
+            assertInstanceOf(Map.class, outcome.getBody());
+            var outcomeBody = (Map<String, Object>) outcome.getBody();
+            assertEquals(Boolean.TRUE, outcomeBody.get("ok"));
+            assertEquals("create node alpha", outcomeBody.get("command"));
+            assertEquals(fx.sessionA(), outcomeBody.get("id"));
             assertNotNull(waitForMessage(fx.messagesA(), "node alpha created", 5));
 
             assertEquals(200, postCompanion(fx.sessionA(), "create node beta").getStatus());
@@ -445,13 +446,15 @@ class SessionManagementTest {
 
     private EventEnvelope postCompanion(String sessionId, String command)
             throws ExecutionException, InterruptedException {
+        // the synchronous companion endpoint (ADR-0008) - the fire-and-forget
+        // sibling was retired 2026-09-02
         var req = new AsyncHttpRequest().setMethod("POST").setTargetHost(httpTarget)
-                .setUrl("/api/companion/{id}").setPathParameter("id", sessionId)
+                .setUrl("/api/companion/{id}/sync").setPathParameter("id", sessionId)
                 .setHeader("Content-Type", "text/plain")
                 .setHeader("Accept", "application/json")
                 .setBody(command);
         var envelope = new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(req);
-        return po.request(envelope, 5000).get();
+        return po.request(envelope, 10000).get();
     }
 
     private EventEnvelope getLiveGraph(String sessionId)

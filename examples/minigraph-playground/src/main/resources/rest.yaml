@@ -83,16 +83,10 @@ rest:
     headers: header_1
     tracing: true
 
-  - service: 'post.companion.command'
-    methods: ['POST']
-    url: '/api/companion/{id}'
-    timeout: 30s
-    cors: cors_1
-    headers: header_1
-    tracing: true
-
-  # synchronous companion (ADR-0008) - returns the command outcome in-band
-  # {ok, output, error, result}; additive sibling of the endpoint above
+  # THE companion endpoint (ADR-0008, synchronous) - returns the command outcome
+  # in-band as {ok, id, command, output, error, result} and tees every line to the
+  # session's WebSocket console. The legacy fire-and-forget /api/companion/{id}
+  # endpoint was RETIRED 2026-09-02 (it hid errors and forced slower drivers).
   - service: 'post.companion.command.sync'
     methods: ['POST']
     url: '/api/companion/{id}/sync'
