@@ -338,9 +338,18 @@ class EventStreamClientTest extends TestBase {
         // the relay's own eof renders one final terminal event
         long doneCount = lines.stream().filter("event: done"::equals).count();
         assertEquals(2, doneCount, "upstream done + relay terminal: " + lines);
-        // progressive end to end: the upstream paces segments 250ms apart
-        long elapsed = arrivals.get(lines.indexOf("data: {\"segments\":2}")) - arrivals.get(hello);
-        assertTrue(elapsed >= 300, "progressive relay expected, elapsed " + elapsed + " ms");
+        // progressive end to end: the upstream paces segments 250ms apart, so a buffered
+        // relay would deliver every line in one flush (~0ms apart). Assert the largest
+        // consecutive-arrival gap, not the first-to-last span: a reader that starts late
+        // on a loaded runner observes the already-queued frames coalesced, which
+        // compresses the span (CI flake 2026-09-02: 127ms observed against a 300ms
+        // floor) but can only erase every gap by missing the whole production window.
+        long maxGap = 0;
+        for (int i = hello + 1; i < arrivals.size(); i++) {
+            maxGap = Math.max(maxGap, arrivals.get(i) - arrivals.get(i - 1));
+        }
+        assertTrue(maxGap >= 100, "progressive relay expected, max arrival gap " + maxGap
+                + " ms, arrivals " + arrivals);
         Utility.getInstance().sleep(100);
     }
 }
