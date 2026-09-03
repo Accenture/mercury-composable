@@ -286,7 +286,7 @@ class CompanionSyncTest {
 
             // 4) the fire-and-forget endpoint is RETIRED (2026-09-02): the bare
             //    companion URL answers 404 via REST automation (no route mapping)
-            var retired = legacyCommand(po, sid, "session");
+            var retired = postToRetiredCompanionUrl(po, sid);
             assertEquals(404, retired.getStatus(),
                     "the retired async endpoint must answer 404: " + retired.getBody());
         } finally {
@@ -602,12 +602,14 @@ class CompanionSyncTest {
         }
     }
 
-    private EventEnvelope legacyCommand(EventEmitter po, String sid, String command) throws Exception {
-        // the RETIRED fire-and-forget URL - kept only to pin its 404
+    private EventEnvelope postToRetiredCompanionUrl(EventEmitter po, String sid) throws Exception {
+        // the RETIRED fire-and-forget URL - kept only to pin its 404. The body is
+        // arbitrary: the bare URL has no route mapping, so REST automation answers 404
+        // before any command is ever read.
         var req = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
                 .setUrl("/api/companion/{id}").setPathParameter("id", sid)
                 .setHeader("Content-Type", "text/plain").setHeader("Accept", "application/json")
-                .setBody(command);
+                .setBody("any command");
         return po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(req), 10000).get();
     }
 
