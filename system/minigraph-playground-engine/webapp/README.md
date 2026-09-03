@@ -216,6 +216,7 @@ The navigation bar in the header has two sections:
 | **Shift+Enter** | Single-line command | New line (no send) |
 | **Ctrl/⌘+Enter** | Multiline command | Send command |
 | **Enter** | Multiline command | New line |
+| **Ctrl + backtick** | Anywhere in a Help-enabled playground | Toggle the Help panel |
 | **↑** | Command input | Recall previous command from history |
 | **↓** | Command input | Move forward in history (↓ past index 0 clears the field) |
 
@@ -254,9 +255,12 @@ Each playground has its own independent storage keys, so switching between playg
 
 ### JSON-Path quick start
 
-1. Click **Start** to connect.
-2. Paste any JSON document into the Payload Editor and send `load`.
-3. Enter a JSONPath expression (starting with `$`) in the command input and press **Enter**.
+1. Open the top-right **?** button (or press **Ctrl + backtick**) for a short JSON-Path Overview; this works before connecting.
+2. Click **Start** to connect.
+3. Paste any JSON document into the Payload Editor and send `load`.
+4. Enter a JSONPath expression (starting with `$`) in the command input and press **Enter**.
+
+The JSON-Path Help panel uses the same resizable, maximizable panel as Minigraph, but intentionally exposes only its own **Overview** section. While connected, the bare `help` command opens that Overview locally.
 
 ---
 

@@ -19,6 +19,11 @@ value is a composable function route name.
 
 For more information about each feature, try the following help topics.
 
+Keyboard shortcuts
+------------------
+- `Ctrl + M` - Toggle the minimap while viewing the Graph tab
+- `Ctrl + backtick` - Toggle the Help panel
+
 For graph model
 ---------------
 - help create (node)

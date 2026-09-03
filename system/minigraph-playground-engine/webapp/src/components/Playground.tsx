@@ -15,6 +15,7 @@ import { useMockUploadModal } from '../hooks/useMockUploadModal';
 import { useLargePayloadDownload } from '../hooks/useLargePayloadDownload';
 import { useSavedGraphs } from '../hooks/useSavedGraphs';
 import { useGraphSaveName } from '../hooks/useGraphSaveName';
+import { useGraphRunWorkflow } from '../hooks/useGraphRunWorkflow';
 import { useSavedGraphWorkflow } from '../hooks/useSavedGraphWorkflow';
 import { usePinnedGraphPath } from '../hooks/usePinnedGraphPath';
 import { buildClipboardPastePlan } from '../clipboard/paste';
@@ -50,7 +51,7 @@ interface PlaygroundProps {
 }
 
 export default function Playground({ config }: PlaygroundProps) {
-  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, supportsClipboard, supportsHelp, supportsAuthoring, supportsSessionCollaboration, tabs } = config;
+  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, supportsClipboard, supportsHelp, helpContentProfile = 'minigraph', supportsAuthoring, supportsGraphRun, supportsSessionCollaboration, tabs } = config;
 
   const navigate = useNavigate();
 
@@ -106,8 +107,8 @@ export default function Playground({ config }: PlaygroundProps) {
   // Bundled help commands are handled locally — no WebSocket round-trip needed.
   // Define before useWebSocket so it is in scope when the options object is evaluated.
   const handleLocalCommand = useCallback((text: string): boolean => {
-    return resolveBundledHelpTopic(text, supportsHelp === true) !== null;
-  }, [supportsHelp]);
+    return resolveBundledHelpTopic(text, supportsHelp === true, helpContentProfile) !== null;
+  }, [supportsHelp, helpContentProfile]);
 
   // All WebSocket + console logic lives in the hook
   const ws = useWebSocket({ wsPath, storageKeyHistory, payload, addToast, bus, handleLocalCommand });
@@ -136,7 +137,7 @@ export default function Playground({ config }: PlaygroundProps) {
   const {
     modalUploadPath, successfulUploadPaths,
     handleOpenUploadModal, handleCloseUploadModal,
-    handleUploadSuccess, handleUploadError, resetSuccessfulPaths,
+    handleCloseUploadPath, handleUploadSuccess, handleUploadError, resetSuccessfulPaths,
   } = useMockUploadModal({ bus, addToast });
 
   // ── Auto-refresh on mutation commands ────────────────────────────────────
@@ -221,6 +222,8 @@ export default function Playground({ config }: PlaygroundProps) {
     bus,
     setHelpTopic: setActiveHelpTopic,
     onTabSwitch:  supportsHelp ? () => setHelpOpen(true) : () => {},
+    enabled: supportsHelp === true,
+    contentProfile: helpContentProfile,
   });
 
   // ── Auto-download large payloads ──────────────────────────────────────────
@@ -389,6 +392,24 @@ export default function Playground({ config }: PlaygroundProps) {
     addToast,
   });
 
+  // ── Graph run workflow ───────────────────────────────────────────────────
+  // The backend graph instance is authoritative. This hook only mirrors
+  // acknowledged lifecycle state and serializes the existing text commands.
+  const graphRun = useGraphRunWorkflow({
+    enabled: supportsGraphRun === true,
+    bus,
+    connected: ws.connected,
+    connectionEpoch: ws.connectionEpoch,
+    graphData,
+    graphIdentity: pinnedGraphPath,
+    isPrimary:
+      supportsGraphRun !== true ||
+      (sessionCollaboration.state.sessionId !== null && sessionCollaboration.isPrimary),
+    sendRawText: ws.sendRawText,
+    addToast,
+    onWorkflowInputInvalidated: handleCloseUploadPath,
+  });
+
   // ── Saved graph workflow ──────────────────────────────────────────────────
   // Note: must be called AFTER useAutoGraphRefresh — both listen on graph.link
   // and ProtocolBus fires listeners in insertion order.
@@ -437,6 +458,16 @@ export default function Playground({ config }: PlaygroundProps) {
     resetSaveName();
   }, [ws.clearMessages, setGraphData, resetSuccessfulPaths, resetSaveName]);
 
+  const handleModalUploadSuccess = useCallback((responseBody: string) => {
+    handleUploadSuccess(responseBody);
+    graphRun.handleInputUploadSuccess();
+  }, [graphRun.handleInputUploadSuccess, handleUploadSuccess]);
+
+  const handleModalClose = useCallback(() => {
+    handleCloseUploadModal();
+    graphRun.handleInputCancelled();
+  }, [graphRun.handleInputCancelled, handleCloseUploadModal]);
+
   return (
     <div className={styles.wrapper}>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
@@ -444,9 +475,17 @@ export default function Playground({ config }: PlaygroundProps) {
       {modalUploadPath && (
         <MockUploadModal
           uploadPath={modalUploadPath}
-          onSuccess={handleUploadSuccess}
-          onClose={handleCloseUploadModal}
+          onSuccess={handleModalUploadSuccess}
+          onClose={handleModalClose}
           onError={handleUploadError}
+          title={graphRun.isWorkflowInputModal ? '▶ Add Graph Input' : undefined}
+          description={
+            graphRun.isWorkflowInputModal
+              ? 'Add the JSON body and keep this graph instantiated for a later run.'
+              : undefined
+          }
+          inputPathHints={graphRun.isWorkflowInputModal ? graphRun.inputBodyPaths : undefined}
+          submitLabel={graphRun.isWorkflowInputModal ? 'Upload & Instantiate' : undefined}
         />
       )}
 
@@ -585,6 +624,14 @@ export default function Playground({ config }: PlaygroundProps) {
             onGraphRenderError={(msg) => addToast(msg, 'error')}
             onGraphDataCopySuccess={() => addToast('Graph JSON copied to clipboard!', 'success')}
             onGraphDataCopyError={() => addToast('Copy failed', 'error')}
+            graphRunControls={supportsGraphRun ? {
+              phase: graphRun.phase,
+              canInstantiate: graphRun.canInstantiate,
+              canRun: graphRun.canRun,
+              disabledReason: graphRun.disabledReason,
+              onInstantiate: graphRun.instantiateGraph,
+              onRun: graphRun.runGraph,
+            } : undefined}
             isGraphRefreshing={isRefreshing}
             onClipNode={supportsClipboard ? handleClipNode : undefined}
             onClipNodes={supportsClipboard ? handleClipNodes : undefined}
@@ -600,6 +647,7 @@ export default function Playground({ config }: PlaygroundProps) {
               (onToggleMaximize: () => void, isMaximized: boolean) => (
                 <HelpBrowser
                   activeTopic={activeHelpTopic}
+                  contentProfile={helpContentProfile}
                   onNavigate={setActiveHelpTopic}
                   onClose={() => setHelpOpen(false)}
                   onToggleMaximize={onToggleMaximize}

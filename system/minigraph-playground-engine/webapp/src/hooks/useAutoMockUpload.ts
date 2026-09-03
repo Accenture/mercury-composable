@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { type ProtocolBus } from '../protocol/bus';
 
 export interface UseAutoMockUploadOptions {
   bus:         ProtocolBus;
   onOpenModal: (uploadPath: string) => void;
-  modalOpen:   boolean;
+  /** Synchronous ownership check so batched open→close events do not leave a stale guard. */
+  isModalOpen: () => boolean;
 }
 
 /**
@@ -14,22 +15,13 @@ export interface UseAutoMockUploadOptions {
 export function useAutoMockUpload({
   bus,
   onOpenModal,
-  modalOpen,
+  isModalOpen,
 }: UseAutoMockUploadOptions): void {
-
-  const pendingModalRef = useRef(false);
-
-  // Clear the guard when the modal closes
-  useEffect(() => {
-    if (!modalOpen) pendingModalRef.current = false;
-  }, [modalOpen]);
-
   // Subscribe to upload.invitation events
   useEffect(() => {
     return bus.on('upload.invitation', (event) => {
-      if (pendingModalRef.current) return;
-      pendingModalRef.current = true;
+      if (isModalOpen()) return;
       onOpenModal(event.uploadPath);
     });
-  }, [bus, onOpenModal]);
+  }, [bus, isModalOpen, onOpenModal]);
 }
