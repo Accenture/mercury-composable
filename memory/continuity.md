@@ -210,6 +210,17 @@
   Delivered by [[ot-route-pool-api]].
   <!-- id: route-pool-registration-design | created: 2026-08-30 | last_used: 2026-09-01 | uses: 2 | tier: archive-candidate | origin: 2026-08-30-211721 -->
 
+- **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
+  design, contributed from ai-enabled-repo-demo).**
+  `examples/minigraph-playground/scripts/playground-session-broker.mjs` (zero-dependency,
+  Node ≥ 22) holds a `/ws/graph/playground` session with the UI's own welcome/ping handshake,
+  auto-reconnects across app restarts (new session id captured), and exposes a localhost control
+  API (`GET /session`, `POST /start|/stop`). Humans join with `session subscribe <id>` as equal
+  co-authors (session sync is symmetric — all commands except `session` topology propagate to
+  primary and subscribers alike); the agent drives via companion `/sync`. Identical copy in the
+  Rust repo — both engines share the WS handshake. Dev-only, like the Playground itself.
+  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-03 | uses: 1 | tier: working | origin: 2026-09-03-172753 -->
+
 ## Conventions
 
 - **Telemetry/log presentation parity across language engines is a field requirement (Eric,
