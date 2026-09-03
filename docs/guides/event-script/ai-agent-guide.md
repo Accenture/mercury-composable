@@ -93,6 +93,26 @@ A decision example (branch on a function result):
       - 'approve.task'      # decision = false            -> next[1] (second)
 ```
 
+## Scaffolding a project from the template {#scaffolding}
+
+Start a new Event Script application from `examples/composable-example` and trim against this
+manifest:
+
+| File | Role | Trim? |
+|---|---|---|
+| `pom.xml` | Build; set your own artifact/group ids | keep (edit ids) |
+| `application.properties` (main **and** test) | App name, `rest.server.port` — give the test copy a **distinct port**. **Caution:** the example's test properties set `snake.case.serialization=true`, which silently renames every JSON response field if copied wholesale | keep (edit values) |
+| `flows.yaml` + `flows/*.yml` | Your flow definitions — list every flow file you ship | replace with yours |
+| `rest.yaml` | Binds URLs to flows via `http.flow.adapter` | replace example routes with yours |
+| `event-over-http.yaml` | Outbound event-over-HTTP targets | drop unless you call another app |
+| Static/demo assets (`errorPage.html`, `public/`, `app-log-context.yaml`) | Example plumbing | drop unless used |
+| Main class annotated `@MainApplication` | App entry point | keep (rename) |
+
+The minimal `rest.yaml` for a derived project is **one `http.flow.adapter` entry per endpoint**,
+each naming its `flow:` (plus the `cors`/`headers` blocks those entries reference). No
+function-route entries are needed — the flow adapter is the only HTTP boundary, which is exactly
+the point of this layer.
+
 ## See also {#see-also}
 
 - [Event Script flow grammar](flow-grammar.md) + [`event-script-flow.json`](event-script-flow.json) — the source of truth.

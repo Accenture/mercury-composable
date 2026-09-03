@@ -347,6 +347,25 @@ curl -s -X POST http://127.0.0.1:8085/api/greeting \
 
 ---
 
+## Scaffolding a project from the template {#scaffolding}
+
+Start a new event-driven application from `examples/lambda-example` and trim against this
+manifest — every file below is load-bearing unless marked otherwise:
+
+| File | Role | Trim? |
+|---|---|---|
+| `pom.xml` | Build; set your own artifact/group ids | keep (edit ids) |
+| `application.properties` (main **and** test) | App name, `rest.server.port` — give the test copy a **distinct port** so tests and a running app never collide | keep (edit values) |
+| `rest.yaml` | Maps URLs to your function routes | replace the example's `hello.*` routes with yours; keep the `cors`/`headers` blocks your routes reference |
+| `event-over-http.yaml` | Outbound event-over-HTTP targets | drop unless you call another app |
+| `errorPage.html`, `public/`, `helloworld.txt` | Static-content demo assets | drop unless serving static content |
+| `app-log-context.yaml` | Log-context enrichment demo | drop unless used |
+| Main class annotated `@MainApplication` | App entry point | keep (rename) |
+
+The minimal `rest.yaml` for a derived project is **just your own endpoints**: one entry per
+URL → function route (plus a health endpoint if you register one). Everything else in the
+template's route list is demonstration.
+
 ## See also {#see-also}
 
 - [Write your first function](write-your-first-function.md) — step-by-step tutorial with PostOffice call.

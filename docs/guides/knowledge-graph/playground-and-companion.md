@@ -73,14 +73,15 @@ be shared so several people model the same graph together:
 
 ```
 session                       # show this session + its subscribers
-session subscribe ws-178443-2 # mirror another session's commands into yours
+session subscribe ws-178443-2 # join that primary session as an equal co-author
 session unsubscribe           # detach, keeping your current graph
 session reset                 # clear the primary session; subscribers keep their graphs
 ```
 
-When you subscribe to a primary session, commands flow to both, keeping the model in sync. (You
-can't subscribe to yourself or to a non-primary session; a primary session has nothing to
-unsubscribe.)
+When you subscribe to a primary session, commands mirror **both ways** — every command except the
+`session` topology commands propagates to the primary and all subscribers alike, so all parties
+(human or AI) are equal co-authors of one shared model. (You can't subscribe to yourself or to a
+non-primary session; a primary session has nothing to unsubscribe.)
 
 ## The companion endpoint {#companion}
 
