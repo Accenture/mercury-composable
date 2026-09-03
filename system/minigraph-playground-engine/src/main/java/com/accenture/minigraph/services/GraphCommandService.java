@@ -1226,45 +1226,51 @@ public class GraphCommandService extends GraphLambdaFunction {
     }
 
     private void handleExportCommand(PostOffice po, String inRoute, String outRoute, String filename) {
-        if (validGraphFileName(filename)) {
-            var graph = graphModels.get(inRoute);
-            if (graph != null) {
-                var file = new File(tempDir, filename+JSON_EXT);
-                // check if the filename is the same as the Root's name property
-                var root = graph.getRootNode();
-                if (root == null) {
-                    root = graph.createRootNode();
-                    root.addType(ROOT);
-                    po.send(new EventEnvelope().setTo(outRoute).setBody("Root node created because it does not exist"));
-                } else {
-                    // the guard fires only on a DECLARED, mismatching identity - a missing or
-                    // blank root name has no identity evidence to contradict the export target
-                    // and adopts the target id below, exactly like the no-root path
-                    var name = root.getProperty(NAME);
-                    var declared = name == null? "" : String.valueOf(name).trim();
-                    if (!declared.isEmpty() && !filename.equals(declared) && file.exists()) {
-                        po.send(new EventEnvelope().setTo(outRoute).setBody("Expect root node name="+
-                                filename+ ", Actual: "+declared+"\nUpdate root node to overwrite existing graph model"));
-                        return;
-                    }
-                }
-                root.addProperty(NAME, filename);
-                var text = SimpleMapper.getInstance().getMapper().writeValueAsString(graph.exportGraph());
-                // str2file skips the physical write when content is identical (mtime is
-                // NOT a write indicator) and returns false only on an I/O failure -
-                // that failure must not be reported as success
-                if (!util.str2file(file, text)) {
-                    po.send(new EventEnvelope().setTo(outRoute).setBody(
-                            "ERROR: unable to write "+file.getPath()+" - check filesystem permissions and space"));
-                    return;
-                }
-                var n = getRandomCounter();
-                po.send(new EventEnvelope().setTo(outRoute).setBody(
-                        "Graph exported to "+file.getPath()+"\n"+"Described in /api/graph/model/"+filename+"/"+n));
-            }
-        } else {
+        if (!validGraphFileName(filename)) {
             po.send(new EventEnvelope().setTo(outRoute).setBody(INVALID_GRAPH_NAME));
+            return;
         }
+        var graph = graphModels.get(inRoute);
+        if (graph == null) {
+            return;
+        }
+        var file = new File(tempDir, filename+JSON_EXT);
+        var root = graph.getRootNode();
+        if (root == null) {
+            root = graph.createRootNode();
+            root.addType(ROOT);
+            po.send(new EventEnvelope().setTo(outRoute).setBody("Root node created because it does not exist"));
+        } else if (exportNameConflicts(root, filename, file)) {
+            po.send(new EventEnvelope().setTo(outRoute).setBody("Expect root node name="+
+                    filename+ ", Actual: "+declaredRootName(root)+"\nUpdate root node to overwrite existing graph model"));
+            return;
+        }
+        root.addProperty(NAME, filename);
+        var text = SimpleMapper.getInstance().getMapper().writeValueAsString(graph.exportGraph());
+        // str2file skips the physical write when content is identical (mtime is
+        // NOT a write indicator) and returns false only on an I/O failure -
+        // that failure must not be reported as success
+        if (!util.str2file(file, text)) {
+            po.send(new EventEnvelope().setTo(outRoute).setBody(
+                    "ERROR: unable to write "+file.getPath()+" - check filesystem permissions and space"));
+            return;
+        }
+        var n = getRandomCounter();
+        po.send(new EventEnvelope().setTo(outRoute).setBody(
+                "Graph exported to "+file.getPath()+"\n"+"Described in /api/graph/model/"+filename+"/"+n));
+    }
+
+    // An export overwrites the wrong file only when the root declares a DIFFERENT
+    // identity than the target: a missing or blank root name has no identity to
+    // contradict the target and adopts it (like a freshly created root).
+    private boolean exportNameConflicts(SimpleNode root, String filename, File file) {
+        var declared = declaredRootName(root);
+        return !declared.isEmpty() && !filename.equals(declared) && file.exists();
+    }
+
+    private String declaredRootName(SimpleNode root) {
+        var name = root.getProperty(NAME);
+        return name == null? "" : String.valueOf(name).trim();
     }
 
     private void handleDeleteCommand(PostOffice po, String inRoute, String outRoute, List<String> words) {

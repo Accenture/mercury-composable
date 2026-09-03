@@ -765,7 +765,6 @@ class CompanionSyncTest {
         assertFalse(storedRecord.exists(), "the record is consumed on resume (at-most-once)");
     }
 
-    @SuppressWarnings("unchecked")
     /**
      * The export guard validates the root name only when one is DECLARED: a missing or
      * blank root name has no identity evidence to contradict the export target, so the
@@ -831,6 +830,7 @@ class CompanionSyncTest {
         return sid;
     }
 
+    @SuppressWarnings("unchecked")
     private Map<String, Object> syncCommand(EventEmitter po, String sid, String command) throws Exception {
         var req = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
                 .setUrl("/api/companion/{id}/sync").setPathParameter("id", sid)
