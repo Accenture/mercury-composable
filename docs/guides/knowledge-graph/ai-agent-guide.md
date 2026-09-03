@@ -224,20 +224,102 @@ know which bar you are building to:
 - **Example-specific (always safe to drop):** `llm.stream.relay`, `mock.mdm.profile`,
   `mock.account.details` — they belong to the support-triage demo, not the platform.
 - **Profile `headless-minimal`** — enough for CI, `curl`, and an agent-driven dry-run over
-  `/sync`; the Playground **UI will not work**:
-  `http.flow.adapter` (`/api/graph/{graph_id}`), `post.companion.command.sync`
-  (`/api/companion/{id}/sync`), `get.live.graph` (`/api/graph/session/{id}`).
+  `/sync`; the Playground **UI will not work**.
 - **Profile `playground-enabled`** — headless-minimal **plus** the UI plumbing every template
-  ships: `get.index.html`, `get.ws.html` (`/api/ws/{id}`), `show.graph.model`
-  (`/api/graph/model/{graph_id}/{sequence}` — the Graph tab's D3 fetch after
-  `describe graph`/`export graph`), `upload.json.content` (`/api/json/content/{id}`) and
-  `upload.mock.content` (`/api/mock/{id}`) — the two-step handshake behind the console's
-  `upload` / `upload mock data` commands — and `inspect.state.machine`
-  (`/api/inspect/{id}/{key}`).
+  ships. If a human will ever open the Playground against your app — and in the
+  [hosting topology](#hosting) they will — build to this profile.
 
-If a human will ever open the Playground against your app — and in the
-[hosting topology](#hosting) they will — build to `playground-enabled`. When in doubt, diff your
-trimmed `rest.yaml` against the template's.
+**Copy-paste boilerplate** — the full `playground-enabled` route set; deleting the routes marked
+`[playground-enabled]` leaves `headless-minimal`. Keep the template's `cors_1` and `header_1`
+blocks verbatim (every entry references them):
+
+```yaml
+rest:
+  # ── headless-minimal ──────────────────────────────────────────────────────
+  # Execute a deployed graph: POST /api/graph/{graph-id}
+  - service: 'http.flow.adapter'
+    methods: ['POST', 'GET']
+    url: '/api/graph/{graph_id}'
+    flow: 'graph-executor'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  # THE companion endpoint — an AI agent's build/edit channel (outcome in-band)
+  - service: 'post.companion.command.sync'
+    methods: ['POST']
+    url: '/api/companion/{id}/sync'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  # Read the live session's graph model as JSON
+  - service: 'get.live.graph'
+    methods: ['GET']
+    url: '/api/graph/session/{id}'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  # ── [playground-enabled] UI plumbing — required when a human opens the UI ─
+  # Serves the Playground web app
+  - service: 'get.index.html'
+    methods: ['GET']
+    url: '/index.html'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+
+  - service: 'get.ws.html'
+    methods: ['GET']
+    url: '/api/ws/{id}'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  # The Graph tab's model fetch after `describe graph` / `export graph`
+  - service: 'show.graph.model'
+    methods: ['GET']
+    url: '/api/graph/model/{graph_id}/{sequence}'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  # Backs the console `upload` command: opens a UI dialog where the human
+  # operator pastes a JSON string (the JSON-Path payload editor handshake)
+  - service: 'upload.json.content'
+    methods: ['POST']
+    url: '/api/json/content/{id}'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  # Backs the console `upload mock data` command (mock-input upload dialog)
+  - service: 'upload.mock.content'
+    methods: ['POST']
+    url: '/api/mock/{id}'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  # The UI's state-machine inspector
+  - service: 'inspect.state.machine'
+    methods: ['GET']
+    url: '/api/inspect/{id}/{key}'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+```
+
+When in doubt, diff your trimmed `rest.yaml` against the template's.
 
 ## See also {#see-also}
 
