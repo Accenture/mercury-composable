@@ -1154,6 +1154,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scaffolding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scaffolding a project from the template
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#see-also" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3018,6 +3029,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scaffolding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scaffolding a project from the template
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#see-also" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3412,6 +3434,58 @@ the input type varies). For all other cases, prefer <code>TypedLambdaFunction&lt
 <a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="c1"># → {"greeting": "Hello, Mercury!"}</span>
 </code></pre></div>
 <hr />
+<h2 id="scaffolding">Scaffolding a project from the template<a class="headerlink" href="#scaffolding" title="Permanent link">&para;</a></h2>
+<p>Start a new event-driven application from <code>examples/lambda-example</code> and trim against this
+manifest — every file below is load-bearing unless marked otherwise:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Role</th>
+<th>Trim?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pom.xml</code></td>
+<td>Build; set your own artifact/group ids</td>
+<td>keep (edit ids)</td>
+</tr>
+<tr>
+<td><code>application.properties</code> (main <strong>and</strong> test)</td>
+<td>App name, <code>rest.server.port</code> — give the test copy a <strong>distinct port</strong> so tests and a running app never collide</td>
+<td>keep (edit values)</td>
+</tr>
+<tr>
+<td><code>rest.yaml</code></td>
+<td>Maps URLs to your function routes</td>
+<td>replace the example's <code>hello.*</code> routes with yours; keep the <code>cors</code>/<code>headers</code> blocks your routes reference</td>
+</tr>
+<tr>
+<td><code>event-over-http.yaml</code></td>
+<td>Outbound event-over-HTTP targets</td>
+<td>drop unless you call another app</td>
+</tr>
+<tr>
+<td><code>errorPage.html</code>, <code>public/</code>, <code>helloworld.txt</code></td>
+<td>Static-content demo assets</td>
+<td>drop unless serving static content</td>
+</tr>
+<tr>
+<td><code>app-log-context.yaml</code></td>
+<td>Log-context enrichment demo</td>
+<td>drop unless used</td>
+</tr>
+<tr>
+<td>Main class annotated <code>@MainApplication</code></td>
+<td>App entry point</td>
+<td>keep (rename)</td>
+</tr>
+</tbody>
+</table>
+<p>The minimal <code>rest.yaml</code> for a derived project is <strong>just your own endpoints</strong>: one entry per
+URL → function route (plus a health endpoint if you register one). Everything else in the
+template's route list is demonstration.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../write-your-first-function/">Write your first function</a> — step-by-step tutorial with PostOffice call.</li>

@@ -2776,13 +2776,14 @@ shipped help for each skill — the same content this Part documents.</p>
 <p>Each open Playground connection is a <strong>session</strong> with a public id like <code>ws-178443-2</code>. Sessions can
 be shared so several people model the same graph together:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>session                       # show this session + its subscribers
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>session subscribe ws-178443-2 # mirror another session's commands into yours
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>session subscribe ws-178443-2 # join that primary session as an equal co-author
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>session unsubscribe           # detach, keeping your current graph
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>session reset                 # clear the primary session; subscribers keep their graphs
 </code></pre></div>
-<p>When you subscribe to a primary session, commands flow to both, keeping the model in sync. (You
-can't subscribe to yourself or to a non-primary session; a primary session has nothing to
-unsubscribe.)</p>
+<p>When you subscribe to a primary session, commands mirror <strong>both ways</strong> — every command except the
+<code>session</code> topology commands propagates to the primary and all subscribers alike, so all parties
+(human or AI) are equal co-authors of one shared model. (You can't subscribe to yourself or to a
+non-primary session; a primary session has nothing to unsubscribe.)</p>
 <h2 id="companion">The companion endpoint<a class="headerlink" href="#companion" title="Permanent link">&para;</a></h2>
 <p>The <strong>companion endpoint</strong> lets an HTTP client — a script, a test harness, or an AI agent —
 dispatch a Playground command into an <strong>already-open</strong> session. The command runs as if typed;

@@ -1221,6 +1221,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scaffolding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scaffolding a project from the template
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#see-also" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2652,6 +2663,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scaffolding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scaffolding a project from the template
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#see-also" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2756,6 +2778,59 @@ fields, and mapping namespaces; use <a href="../flow-grammar/"><code>flow-gramma
 <a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'review.task'</span><span class="w">       </span><span class="c1"># decision = true (high_risk) -&gt; next[0] (first)</span>
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'approve.task'</span><span class="w">      </span><span class="c1"># decision = false            -&gt; next[1] (second)</span>
 </code></pre></div>
+<h2 id="scaffolding">Scaffolding a project from the template<a class="headerlink" href="#scaffolding" title="Permanent link">&para;</a></h2>
+<p>Start a new Event Script application from <code>examples/composable-example</code> and trim against this
+manifest:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Role</th>
+<th>Trim?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pom.xml</code></td>
+<td>Build; set your own artifact/group ids</td>
+<td>keep (edit ids)</td>
+</tr>
+<tr>
+<td><code>application.properties</code> (main <strong>and</strong> test)</td>
+<td>App name, <code>rest.server.port</code> — give the test copy a <strong>distinct port</strong>. <strong>Caution:</strong> the example's test properties set <code>snake.case.serialization=true</code>, which silently renames every JSON response field if copied wholesale</td>
+<td>keep (edit values)</td>
+</tr>
+<tr>
+<td><code>flows.yaml</code> + <code>flows/*.yml</code></td>
+<td>Your flow definitions — list every flow file you ship</td>
+<td>replace with yours</td>
+</tr>
+<tr>
+<td><code>rest.yaml</code></td>
+<td>Binds URLs to flows via <code>http.flow.adapter</code></td>
+<td>replace example routes with yours</td>
+</tr>
+<tr>
+<td><code>event-over-http.yaml</code></td>
+<td>Outbound event-over-HTTP targets</td>
+<td>drop unless you call another app</td>
+</tr>
+<tr>
+<td>Static/demo assets (<code>errorPage.html</code>, <code>public/</code>, <code>app-log-context.yaml</code>)</td>
+<td>Example plumbing</td>
+<td>drop unless used</td>
+</tr>
+<tr>
+<td>Main class annotated <code>@MainApplication</code></td>
+<td>App entry point</td>
+<td>keep (rename)</td>
+</tr>
+</tbody>
+</table>
+<p>The minimal <code>rest.yaml</code> for a derived project is <strong>one <code>http.flow.adapter</code> entry per endpoint</strong>,
+each naming its <code>flow:</code> (plus the <code>cors</code>/<code>headers</code> blocks those entries reference). No
+function-route entries are needed — the flow adapter is the only HTTP boundary, which is exactly
+the point of this layer.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../flow-grammar/">Event Script flow grammar</a> + <a href="../event-script-flow.json"><code>event-script-flow.json</code></a> — the source of truth.</li>

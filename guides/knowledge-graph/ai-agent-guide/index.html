@@ -1457,6 +1457,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#hosting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hosting the session yourself
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#deterministic" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1483,6 +1494,17 @@
     <span class="md-ellipsis">
       
         Worked example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scaffolding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scaffolding a project from the template
       
     </span>
   </a>
@@ -2641,6 +2663,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#hosting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hosting the session yourself
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#deterministic" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2667,6 +2700,17 @@
     <span class="md-ellipsis">
       
         Worked example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scaffolding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scaffolding a project from the template
       
     </span>
   </a>
@@ -2785,12 +2829,40 @@ reported in the field. Express decisions with <code>graph.math</code> and everyt
 <code>graph.task</code> — see the <a href="../skills-reference/#js">skills reference</a>.</p>
 </blockquote>
 <p><strong>Rules of engagement:</strong> one command per POST (multi-line commands are fine — see the grammar);
-the session must already be open (you do not create it); single operator — don't POST while a
-human is typing in the same instant; never expose this beyond a trusted dev host.
-<strong>Session topology is off-limits:</strong> a companion is an <em>assistant to</em> the session in the URL, not a
-WebSocket session of its own — both companion endpoints reject <code>session subscribe</code> /
+the session must already be open (over the companion endpoint you do not create it — but see
+<a href="#hosting">Hosting the session yourself</a>); take turns — co-editing with humans is the design
+intent, just don't POST in the same instant a human is mid-keystroke; never expose this beyond a
+trusted dev host.
+<strong>Session topology is off-limits over HTTP:</strong> a companion is an <em>assistant to</em> the session in the
+URL, not a WebSocket session of its own — the companion endpoint rejects <code>session subscribe</code> /
 <code>session unsubscribe</code> / <code>session reset</code> (the read-only <code>session</code> status query is allowed).
-Subscriptions are managed from WebSocket-connected sessions only.</p>
+Subscriptions are managed from WebSocket-connected sessions only.
+<strong>Session sync is symmetric:</strong> when sessions are joined by <code>session subscribe</code>, <strong>every command
+except the <code>session</code> topology commands propagates to the primary and all subscribers alike</strong> —
+AI and humans are equal co-authors of one shared model, and anyone's command (typos included) is
+seen by everyone. It is collaboration, not a one-way broadcast.</p>
+<h2 id="hosting">Hosting the session yourself<a class="headerlink" href="#hosting" title="Permanent link">&para;</a></h2>
+<p>The flow above borrows a human's browser session. The stronger topology is the inverse: <strong>the
+agent hosts the session and humans subscribe to it.</strong> If a human's tab drops (backgrounded past
+the idle timeout, laptop lid closed), they simply re-subscribe and the current work-in-progress
+graph syncs back to them — nothing lives in anyone's browser.</p>
+<p>The WebSocket contract a host needs (identical in the Java and Rust engines):</p>
+<ol>
+<li>Connect to <code>ws://{host}/ws/graph/playground</code>.</li>
+<li>On open, send <code>{"type":"welcome"}</code>.</li>
+<li>The server announces the id as a plain-text frame: <code>session ws-NNNNNN-N started</code>.</li>
+<li>Keep-alive: send <code>{"type":"ping","message":"keep alive","time":"..."}</code> on an interval
+   (the web UI uses 20 s); the server answers <code>{"type":"pong"}</code>. Filter ping/pong frames from
+   any console you render.</li>
+<li>A restart of the app destroys the session (and any unexported graph — export first);
+   reconnect and parse the <strong>new</strong> id.</li>
+</ol>
+<p>You do not need to implement this: the template ships a zero-dependency reference,
+<code>scripts/playground-session-broker.mjs</code> (Node ≥ 22). It holds the session, keeps it alive,
+auto-reconnects across app restarts, and exposes a localhost control API (<code>GET /session</code>,
+<code>GET /console</code>, <code>POST /start</code>, <code>POST /stop</code>) so the agent reads the session id over HTTP, hands
+it to the humans (<code>session subscribe {id}</code> in their browsers), and keeps driving commands
+through <code>/sync</code> as usual. See <code>scripts/README.md</code> in the template.</p>
 <h2 id="deterministic">Generate deterministically<a class="headerlink" href="#deterministic" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>Use the grammar as source of truth</strong> — <a href="../command-reference/"><code>command-reference.md</code></a> for the
@@ -2869,6 +2941,77 @@ self-correct on failure:</p>
 <p>Because each response carries <code>ok</code>/<code>error</code>/<code>result</code>, an agent verifies and corrects <strong>itself</strong> — no
 need to relay the WebSocket console. The same lines are still teed to the human's console, so a
 watcher (and any <code>session subscribe</code>d session) follows along live.</p>
+<h2 id="scaffolding">Scaffolding a project from the template<a class="headerlink" href="#scaffolding" title="Permanent link">&para;</a></h2>
+<p>Start every knowledge-graph project from <code>examples/minigraph-playground</code> and trim — <strong>against
+this manifest, not against your build passing</strong> (<code>mvn test</code> and <code>curl</code> both stay green with
+Playground UI routes missing; only the browser notices).</p>
+<p><strong>Boilerplate manifest</strong> — what a derived project keeps:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Role</th>
+<th>Trim?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pom.xml</code></td>
+<td>Build; set your own artifact/group ids</td>
+<td>keep (edit ids)</td>
+</tr>
+<tr>
+<td><code>application.properties</code> (main + test)</td>
+<td>App name, <code>rest.server.port</code> (use a distinct test port), <code>rest.automation=true</code>, <code>app.env=dev</code> for the Playground</td>
+<td>keep (edit values)</td>
+</tr>
+<tr>
+<td><code>rest.yaml</code></td>
+<td>REST routes</td>
+<td>keep — trim <strong>by profile, below</strong></td>
+</tr>
+<tr>
+<td><code>flows.yaml</code> + <code>flows/graph-executor.yml</code></td>
+<td>Binds <code>POST /api/graph/{graph_id}</code> to the graph executor</td>
+<td>keep</td>
+</tr>
+<tr>
+<td><code>flows/flow-11.yml</code> and other example flows</td>
+<td>Support-triage demo flows</td>
+<td>drop unless used</td>
+</tr>
+<tr>
+<td><code>graphs.yaml</code> + <code>graph/*.json</code></td>
+<td>Your deployed graph models — list every id you serve</td>
+<td>replace with yours</td>
+</tr>
+<tr>
+<td>Main class annotated <code>@MainApplication</code></td>
+<td>App entry point</td>
+<td>keep (rename)</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>rest.yaml</code> — two named profiles.</strong> The template's route list mixes three kinds of routes;
+know which bar you are building to:</p>
+<ul>
+<li><strong>Example-specific (always safe to drop):</strong> <code>llm.stream.relay</code>, <code>mock.mdm.profile</code>,
+  <code>mock.account.details</code> — they belong to the support-triage demo, not the platform.</li>
+<li><strong>Profile <code>headless-minimal</code></strong> — enough for CI, <code>curl</code>, and an agent-driven dry-run over
+  <code>/sync</code>; the Playground <strong>UI will not work</strong>:
+  <code>http.flow.adapter</code> (<code>/api/graph/{graph_id}</code>), <code>post.companion.command.sync</code>
+  (<code>/api/companion/{id}/sync</code>), <code>get.live.graph</code> (<code>/api/graph/session/{id}</code>).</li>
+<li><strong>Profile <code>playground-enabled</code></strong> — headless-minimal <strong>plus</strong> the UI plumbing every template
+  ships: <code>get.index.html</code>, <code>get.ws.html</code> (<code>/api/ws/{id}</code>), <code>show.graph.model</code>
+  (<code>/api/graph/model/{graph_id}/{sequence}</code> — the Graph tab's D3 fetch after
+  <code>describe graph</code>/<code>export graph</code>), <code>upload.json.content</code> (<code>/api/json/content/{id}</code>) and
+  <code>upload.mock.content</code> (<code>/api/mock/{id}</code>) — the two-step handshake behind the console's
+  <code>upload</code> / <code>upload mock data</code> commands — and <code>inspect.state.machine</code>
+  (<code>/api/inspect/{id}/{key}</code>).</li>
+</ul>
+<p>If a human will ever open the Playground against your app — and in the
+<a href="#hosting">hosting topology</a> they will — build to <code>playground-enabled</code>. When in doubt, diff your
+trimmed <code>rest.yaml</code> against the template's.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../command-reference/">MiniGraph command grammar</a> + <a href="../minigraph-commands.json"><code>minigraph-commands.json</code></a> — the source of truth.</li>
