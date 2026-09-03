@@ -2904,6 +2904,10 @@ through <code>/sync</code> as usual. See <code>scripts/README.md</code> in the t
    execution are needed for <code>extension=</code> targets.</li>
 <li><strong>Create nodes:</strong> <code>create node root</code> (type <code>Root</code>), the active/skill nodes, and <code>create node end</code>
    (type <code>End</code>, usually with <code>graph.data.mapper</code> to shape <code>output.body</code>).
+   A mapper can also set the <strong>HTTP response status</strong>: map an int to <code>output.status</code>
+   (e.g. <code>int(400) -&gt; output.status</code> in a refusal node) — a graph is not limited to
+   <code>200</code> + an error flag in the body. A non-2xx status routes through the exception path;
+   see <a href="../workflow-suspension/">workflow-suspension.md</a> for that pattern.
    <strong>Best practice — give the root node these two properties at creation time:</strong>
    <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>name={graph-id}          # the id you will export/deploy as
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>created={ISO timestamp}  # e.g. 2026-09-03T18:55:00Z — the current time
@@ -2930,6 +2934,10 @@ through <code>/sync</code> as usual. See <code>scripts/README.md</code> in the t
    export overwrites cleanly; the delete-and-verify here is defense in depth.) Deploy the JSON
    into your project's <code>resources/graph/</code>, list the id in <code>graphs.yaml</code>, rebuild, restart, then
    call <code>POST /api/graph/{name}</code>.</li>
+<li><strong>Dry-running the deployed model in a fresh session:</strong> a Playground session opened after the
+   restart starts <strong>empty</strong> — no root node — even though the graph is deployed. Run
+   <code>import graph from {name}</code> first (it falls back to the deployed classpath model, <code>ok:true</code>),
+   then <code>instantiate graph</code> and <code>run</code> as usual.</li>
 </ol>
 <h2 id="example">Worked example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
 <p>Building the hello-world graph via the <strong>synchronous</strong> <code>/sync</code> endpoint, one command per request.
