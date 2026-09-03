@@ -254,6 +254,19 @@
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
   <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-02 | uses: 4 | tier: active | origin: 2026-09-01-022524 -->
+- **Positioning rule: do NOT claim the "Streamable HTTP" protocol until an MCP
+  facade/wrapper feature ships (Eric, 2026-09-02).** Streamable HTTP is the MCP-spec
+  NAMED transport (JSON-RPC 2.0 framing, `Mcp-Session-Id` session management, a
+  GET-opened server-initiated stream, `Last-Event-ID` resumability) — the progressive
+  rendering feature implements none of those, deliberately (verified against the tree:
+  no Last-Event-ID anywhere; the SSE client ignores `id:`/`retry:` by pinned test).
+  Approved wording claims the PATTERN: "modern single-endpoint streaming design — one
+  endpoint; `Accept: text/event-stream` upgrades the same connection to a
+  standards-compliant SSE stream, otherwise a buffered JSON reply; no legacy
+  two-endpoint SSE pair", or the short form "Streamable-HTTP-style". Applies
+  product-wide (both engines' docs). The literal checkbox is a bounded MCP adapter on
+  the existing shape — a future [[bp-agent-orchestration]] item, not a redesign.
+  <!-- id: conv-no-streamable-http-claim | created: 2026-09-03 | last_used: 2026-09-03 | uses: 1 | tier: working | origin: 2026-09-03-004215 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
