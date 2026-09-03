@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+### Fixed
+
+1. The Playground `export graph` overwrite guard no longer rejects a graph whose root
+   node has no `name` property (it compared "null" against the target filename). The
+   root name is validated only when declared - a declared, mismatching name still
+   rejects the overwrite; a missing or blank name is accepted and the export assigns
+   the target id as the root name, exactly like the no-root path. Found by the
+   ai-enabled-repo-demo rehearsal loop: the first export of an unnamed draft worked,
+   re-exporting the same draft failed. Lock-step with the Rust engine.
+
+---
 ## Version 4.12.2, 9/2/2026
 
 ### Added

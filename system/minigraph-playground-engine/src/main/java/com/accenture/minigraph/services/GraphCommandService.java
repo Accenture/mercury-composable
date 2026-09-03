@@ -1237,10 +1237,14 @@ public class GraphCommandService extends GraphLambdaFunction {
                     root.addType(ROOT);
                     po.send(new EventEnvelope().setTo(outRoute).setBody("Root node created because it does not exist"));
                 } else {
+                    // the guard fires only on a DECLARED, mismatching identity - a missing or
+                    // blank root name has no identity evidence to contradict the export target
+                    // and adopts the target id below, exactly like the no-root path
                     var name = root.getProperty(NAME);
-                    if (!filename.equals(name) && file.exists()) {
+                    var declared = name == null? "" : String.valueOf(name).trim();
+                    if (!declared.isEmpty() && !filename.equals(declared) && file.exists()) {
                         po.send(new EventEnvelope().setTo(outRoute).setBody("Expect root node name="+
-                                filename+ ", Actual: "+name+"\nUpdate root node to overwrite existing graph model"));
+                                filename+ ", Actual: "+declared+"\nUpdate root node to overwrite existing graph model"));
                         return;
                     }
                 }
