@@ -264,8 +264,13 @@
   endpoint; `Accept: text/event-stream` upgrades the same connection to a
   standards-compliant SSE stream, otherwise a buffered JSON reply; no legacy
   two-endpoint SSE pair", or the short form "Streamable-HTTP-style". Applies
-  product-wide (both engines' docs). The literal checkbox is a bounded MCP adapter on
-  the existing shape — a future [[bp-agent-orchestration]] item, not a redesign.
+  product-wide (both engines' docs). **Off-the-shelf-consumer claim VERIFIED
+  2026-09-03** against live lambda-example `/api/hello/sse`: browser-native
+  `EventSource` (Chromium) and the `eventsource` npm package (v5.1.1) both consume it
+  with correct default + named-event dispatch and progressive arrival — no custom
+  parsing (complementing Eric's curl + hand-rolled .mjs tests, which prove the
+  zero-dependency wire). The literal checkbox is a bounded MCP adapter on the
+  existing shape — a future [[bp-agent-orchestration]] item, not a redesign.
   <!-- id: conv-no-streamable-http-claim | created: 2026-09-03 | last_used: 2026-09-03 | uses: 1 | tier: working | origin: 2026-09-03-004215 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
