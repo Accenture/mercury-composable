@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Unreleased
+## Version 4.12.3, 9/4/2026
 
 ### Added
 
@@ -28,6 +28,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    WARN. The flag is a veto, not a trigger — the default starts nothing that is not
    otherwise configured, and only the literal `false` disables. Java-only: the Rust port
    carries no Kafka module.
+
+2. **The Mercury Story** — a white paper (`docs/ai-grammar-methodology.md`) and a
+   presentation deck (`docs/presentations/ai-grammar-story.html`, self-contained HTML
+   served by the docs site), featured front and center on the documentation home page.
+   The story of the framework — origin, the three-layer ascent, governed nondeterminism —
+   and the **AI grammar methodology**: documentation engineered as a machine-consumable,
+   CI-verified, token-budgeted contract, including the three-step developer journey where
+   building blocks built on Mercury compile AI grammars of their own. Grounded in 19
+   verified industry and academic references.
+
+3. `llms.txt` is now **complete and CI-enforced**: every guide page and DSL catalog is
+   listed (nine were missing, including the whole REST automation spec kit — grammar,
+   AI agent guide, and `rest-automation.json` — leaving `rest.yaml` authoring
+   undiscoverable to AI agents), and `check-doc-canon.py` gains a coverage check so a
+   new guide cannot ship unlisted.
 
 ### Fixed
 
