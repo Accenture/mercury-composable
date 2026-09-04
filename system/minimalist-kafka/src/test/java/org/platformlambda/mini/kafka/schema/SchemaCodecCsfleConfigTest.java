@@ -29,9 +29,12 @@ import io.confluent.kafka.schemaregistry.client.rest.entities.RuleMode;
 import io.confluent.kafka.schemaregistry.client.rest.entities.RuleSet;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.core.util.common.ConfigBase;
+import org.platformlambda.mini.kafka.OAuthUrlAllowList;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -64,6 +67,8 @@ class SchemaCodecCsfleConfigTest {
     private static final String TAGGED_FIELD = "ssn";
     private static final String PII_TAG = "PII";
     private static final Utility util = Utility.getInstance();
+
+    private String savedAllowList;
 
     /** Minimal, fully-controlled {@link ConfigBase} backed by a flat key-value map (no dotted-key flattening). */
     private static final class MapConfig implements ConfigBase {
@@ -190,6 +195,66 @@ class SchemaCodecCsfleConfigTest {
         Map<String, Object> decoded = (Map<String, Object>) decoder.decode(TOPIC, framed);
         assertEquals("123-45-6789", decoded.get(TAGGED_FIELD), "SchemaCodec.Decoder decrypts the Avro field back");
         assertEquals("world", decoded.get("hello"));
+    }
+
+    /**
+     * The inherit-template fixture carries an OAuth token endpoint (required by Confluent's
+     * OauthCredentialProvider), and loading it auto-registers that URL on a JVM-wide system property.
+     * Save and restore it so these tests leave no global state behind, as SchemaRegistryOAuthTest does.
+     */
+    @BeforeEach
+    void saveAllowList() {
+        savedAllowList = System.getProperty(OAuthUrlAllowList.ALLOWED_URLS_PROPERTY);
+    }
+
+    @AfterEach
+    void restoreAllowList() {
+        if (savedAllowList == null) {
+            System.clearProperty(OAuthUrlAllowList.ALLOWED_URLS_PROPERTY);
+        } else {
+            System.setProperty(OAuthUrlAllowList.ALLOWED_URLS_PROPERTY, savedAllowList);
+        }
+    }
+
+    @Test
+    void serdeInheritsRegistryClientTemplate() {
+        // A serde's rule executors build their own registry clients from this config map alone -
+        // Confluent's CSFLE EncryptionExecutor.configure() creates a DekRegistryClient from it - so a
+        // map seeded empty leaves those clients unauthenticated and every DEK lookup 401s, even though
+        // the codec's own client authenticates against the same registry. The credentials the template
+        // already resolved must therefore reach the serdes too.
+        Map<String, Object> appConfig = new HashMap<>();
+        appConfig.put("schema.registry.properties", "classpath:/schema-registry-serde-inherit-test.properties");
+        // no calls are made against this URL; only the config composition is under test
+        SchemaCodec codec = SchemaCodec.fromConfig(new MapConfig(appConfig), "http://127.0.0.1:1");
+
+        Map<String, Object> serdeConfig = codec.serdeConfig();
+        assertEquals("OAUTHBEARER", serdeConfig.get("bearer.auth.credentials.source"));
+        assertEquals("inherit-client", serdeConfig.get("bearer.auth.client.id"));
+        assertEquals("inherit-secret", serdeConfig.get("bearer.auth.client.secret"));
+        assertEquals("lsrc-test", serdeConfig.get("bearer.auth.logical.cluster"));
+        // the library's own pins belong to the registry REST client, not to the serdes: inheriting the
+        // template (not the post-processed client config) keeps them out
+        assertFalse(serdeConfig.containsKey("schema.registry.url"),
+                "serde config carries only what the application authored");
+        assertFalse(serdeConfig.containsKey("missing.id.cache.ttl.sec"),
+                "the library's negative-cache pins stay on the registry client");
+    }
+
+    @Test
+    void serdeOverridesWinOverInheritedTemplate() {
+        Map<String, Object> appConfig = new HashMap<>();
+        appConfig.put("schema.registry.properties", "classpath:/schema-registry-serde-inherit-test.properties");
+        // an explicit serde.* entry must still take precedence, so a serde-only identity stays expressible
+        appConfig.put("schema.registry.serde.bearer.auth.client.id", "serde-specific-client");
+        appConfig.put("schema.registry.serde.secret", "local-kms-passphrase");
+        SchemaCodec codec = SchemaCodec.fromConfig(new MapConfig(appConfig), "http://127.0.0.1:1");
+
+        Map<String, Object> serdeConfig = codec.serdeConfig();
+        assertEquals("serde-specific-client", serdeConfig.get("bearer.auth.client.id"), "serde.* overrides the template");
+        assertEquals("local-kms-passphrase", serdeConfig.get("secret"), "serde-only keys still pass through");
+        assertEquals("inherit-secret", serdeConfig.get("bearer.auth.client.secret"),
+                "keys the serde does not override are still inherited");
     }
 
     @Test

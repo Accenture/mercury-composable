@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -117,6 +118,17 @@ public class SchemaCodec {
         this.client = client;
         this.registryUrl = registryUrl;
         this.extraSerdeConfig = extraSerdeConfig;
+    }
+
+    /**
+     * The config handed to every serde (and, through them, to Confluent's rule executors).
+     * Package-private (like {@link #extractSerdeConfig(ConfigBase)}) so the composition performed by
+     * {@link #fromConfig(ConfigBase, String, String)} is directly unit-testable.
+     *
+     * @return an unmodifiable view of the serde config
+     */
+    Map<String, Object> serdeConfig() {
+        return Collections.unmodifiableMap(extraSerdeConfig);
     }
 
     /**
@@ -227,8 +239,9 @@ public class SchemaCodec {
          * template, so they always win: the registry URL comes from application.properties (the feature
          * switch) and the negative caches stay pinned off.
          */
-        Map<String, Object> srConfig = new HashMap<>(
-                KafkaClientConfig.schemaRegistryProperties(config, keyPrefix + ".properties", templateDefaults));
+        Map<String, Object> srTemplate =
+                KafkaClientConfig.schemaRegistryProperties(config, keyPrefix + ".properties", templateDefaults);
+        Map<String, Object> srConfig = new HashMap<>(srTemplate);
         Object bearerAuthSource = srConfig.get(SchemaRegistryClientConfig.BEARER_AUTH_CREDENTIALS_SOURCE);
         srConfig.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
         /*
@@ -244,9 +257,33 @@ public class SchemaCodec {
                 IDENTITY_MAP_CAPACITY,
                 List.of(new JsonSchemaProvider(), new AvroSchemaProvider()),
                 srConfig, cache, versionCache);
-        Map<String, Object> extraSerdeConfig = extractSerdeConfig(config, keyPrefix + ".serde.");
+        /*
+         * The serdes inherit the SAME registry client template, then apply their own
+         * schema.registry.serde.* overrides on top.
+         *
+         * Confluent's serdes do not only use the SchemaRegistryClient handed to them: the CSFLE
+         * rule executor (EncryptionExecutor.configure) builds its OWN DekRegistryClient from the
+         * serde config map alone. Seeded from an empty map, that client inherits no credentials and
+         * every DEK lookup reaches the registry unauthenticated, so an encrypted field fails with
+         * `Unauthorized; error code: 401` even though this class's own client is fully authenticated
+         * against the same registry with the same identity.
+         *
+         * Duplicating the bearer.auth.* block under schema.registry.serde.* is not a viable
+         * workaround for the caller: those keys live in application.properties, whose ${...}
+         * references AppConfigReader resolves - and destructively rewrites - at construction, before
+         * any @MainApplication credential bootstrap has published its system properties. The
+         * registry client template does not have that problem because it is read later, which is
+         * precisely why the credentials this method already resolved are the right ones to pass on.
+         *
+         * Inheriting the template rather than the post-processed srConfig keeps the library's own
+         * pins (registry URL, negative-cache TTLs) out of the serde config, so the serdes see only
+         * what the application authored.
+         */
+        Map<String, Object> serdeOverrides = extractSerdeConfig(config, keyPrefix + ".serde.");
+        Map<String, Object> extraSerdeConfig = new HashMap<>(srTemplate);
+        extraSerdeConfig.putAll(serdeOverrides);
         log.info("Schema codec ready (registry={}, cache={}, ttlMs={}, types={}, csfle={}, auth={})",
-                registryUrl, keyPrefix, ttlMillis, List.of(SchemaType.values()), !extraSerdeConfig.isEmpty(),
+                registryUrl, keyPrefix, ttlMillis, List.of(SchemaType.values()), !serdeOverrides.isEmpty(),
                 bearerAuthSource == null ? "none" : bearerAuthSource);
         return new SchemaCodec(client, registryUrl, extraSerdeConfig);
     }

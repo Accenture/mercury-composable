@@ -71,7 +71,10 @@ jobs:
                 case "$pat" in ''|'#'*) continue ;; esac
                 case "$f" in $pat) keep=0; break ;; esac
               done < .agent/secret-scan-ignore
-              [ "$keep" = "1" ] && printf '%s\n' "$f"
+              # if/fi, not '[ ] &&': under bash -e, a trailing exempted file would otherwise
+              # return 1 from the substitution and abort the step with no output (found the
+              # first time a waiver was exercised, 2026-09-04)
+              if [ "$keep" = "1" ]; then printf '%s\n' "$f"; fi
             done)"
           fi
           [ -z "$cfgs" ] && { echo "no changed config files; skipping."; exit 0; }
