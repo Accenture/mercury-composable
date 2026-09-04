@@ -3398,7 +3398,14 @@ without out-of-band knowledge or trial execution.</p>
 <li><code>export</code> is <strong>idempotent</strong>: when the file already holds byte-identical content the physical
   write is skipped, so <strong>the file's mtime is not a write indicator</strong> — verify by content, or by
   the <code>Described in ...</code> link in the reply. A genuine I/O failure reports <code>ERROR: unable to
-  write ...</code>.</li>
+  write ...</code>. In a rehearsal loop this means a "successful" export that changed nothing is
+  telling you <strong>the saved file already matches your graph</strong> — you re-exported the version
+  already saved, not a modified working copy.</li>
+<li><strong>Overwriting an existing file</strong> validates the root <code>name</code> only when one is declared: a
+  declared name that differs from the export target rejects the overwrite
+  (<code>Expect root node name=...</code>) — protecting <code>graph123.json</code> from another graph's content —
+  while a <strong>missing or blank root name is accepted</strong>, and the export assigns the target id
+  as the root name (the same self-naming a brand-new export performs).</li>
 <li><code>export</code> writes JSON to <code>location.graph.temp</code>; it adds <code>name={name}</code> to the root node and
   <strong>fails if any node is an orphan</strong> (every node must connect to ≥1 other).</li>
 <li>The export reply includes <code>Described in /api/graph/model/{name}/{token}</code> — a read-only HTTP
