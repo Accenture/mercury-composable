@@ -62,6 +62,21 @@
   (+ demos); MsgPack wire serialization; customized Gson. (Wording refreshed 2026-08-21 at
   invariant re-verify — substance unchanged.)
   <!-- id: stack-messaging-kafka | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
+- **Jackson runs as two coexisting lanes (established at the 2026-09-04 field Snyk
+  remediation, vertx 5.1.6 + Jackson-2 BOM 2.22.2).** Lane 2 = `com.fasterxml.jackson.*`
+  (Kafka 4.3.x broker modules, Confluent 8.3.x serdes, Boot legacy management) — the single
+  fix lever is the per-pom `jackson-2-bom.version` Spring Boot property (management beats
+  nearest-wins; kafka-standalone's two direct pins reference the property, never literals —
+  a direct version would beat dependencyManagement and silently stay vulnerable). Lane 3 =
+  `tools.jackson.*` (Jackson 3; new Maven coordinates AND Java packages, so the lanes cannot
+  conflict) — rides in via vertx-core 5.1.x's deliberately dual-stack JSON codec and is pinned
+  by the per-pom `jackson-bom.version` Boot property (Boot 4 imports `tools.jackson:jackson-bom`
+  at that property; currently 3.2.2, proactively ahead of the Jackson-LTS 3.1.x that both Boot
+  4.1.1 and vertx-dependencies default to). `jackson-annotations` stays on 2.x
+  coordinates by Jackson-3 design (one copy serves both lanes). platform-core excludes only
+  vertx's lane-2 `jackson-core`; Mercury itself is Gson/MsgPack and never touches vertx
+  JSON. The field Snyk gate watches both lanes independently.
+  <!-- id: jackson-dual-lane-coexistence | created: 2026-09-04 | last_used: 2026-09-04 | uses: 1 | tier: working | origin: 2026-09-04-225035 -->
 - CI: GitHub Actions (`.github/workflows/`)
   <!-- id: stack-ci-gha | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 ## Architectural Invariants
