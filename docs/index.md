@@ -18,6 +18,17 @@ event bus.
 
 > **New here?** Start with **[Getting Started](guides/getting-started.md)** — it opens with a 5-minute quickstart.
 
+## The story and the method
+
+Two flagship reads set the frame for everything below:
+
+- **[The Mercury Story — Origin, Evolution, and the AI Grammar Methodology](ai-grammar-methodology.md)** —
+  the white paper: why Mercury exists, the ascent from code to configuration to knowledge, and the
+  methodology for building applications *and building blocks* with an AI partner — where every
+  building block compiles an AI grammar of its own and stays legible to the next project.
+- **[The presentation deck](presentations/ai-grammar-story.html)** — the same story in slides, for
+  a talk or a first briefing.
+
 ## A layered ascent
 
 Mercury grew in three layers. Each builds on the one beneath it, and you can mix them in a single
