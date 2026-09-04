@@ -17,8 +17,8 @@ event-driven core descends from the **Scala/Akka actor model**, realized on the 
 event bus.
 
 [Get started](guides/getting-started.md){ .md-button .md-button--primary }
-[Read the white paper](ai-grammar-methodology.md){ .md-button }
-[View the deck](presentations/ai-grammar-story.html){ .md-button }
+[Read the white paper](https://accenture.github.io/mercury-composable/ai-grammar-methodology/){ .md-button }
+[View the deck](https://accenture.github.io/mercury-composable/presentations/ai-grammar-story.html){ .md-button }
 
 *The white paper — **The Mercury Story: Origin, Evolution, and the AI Grammar Methodology** — tells
 why Mercury exists and how to build applications and building blocks with an AI partner; the deck is
