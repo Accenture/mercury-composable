@@ -286,7 +286,7 @@ class CompanionSyncTest {
 
             // 4) the fire-and-forget endpoint is RETIRED (2026-09-02): the bare
             //    companion URL answers 404 via REST automation (no route mapping)
-            var retired = legacyCommand(po, sid, "session");
+            var retired = postToRetiredCompanionUrl(po, sid);
             assertEquals(404, retired.getStatus(),
                     "the retired async endpoint must answer 404: " + retired.getBody());
         } finally {
@@ -602,12 +602,14 @@ class CompanionSyncTest {
         }
     }
 
-    private EventEnvelope legacyCommand(EventEmitter po, String sid, String command) throws Exception {
-        // the RETIRED fire-and-forget URL - kept only to pin its 404
+    private EventEnvelope postToRetiredCompanionUrl(EventEmitter po, String sid) throws Exception {
+        // the RETIRED fire-and-forget URL - kept only to pin its 404. The body is
+        // arbitrary: the bare URL has no route mapping, so REST automation answers 404
+        // before any command is ever read.
         var req = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
                 .setUrl("/api/companion/{id}").setPathParameter("id", sid)
                 .setHeader("Content-Type", "text/plain").setHeader("Accept", "application/json")
-                .setBody(command);
+                .setBody("any command");
         return po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(req), 10000).get();
     }
 
@@ -763,6 +765,71 @@ class CompanionSyncTest {
         assertEquals(1, CountingStepTask.getCount("u-one", cid), "the checkpoint must not re-execute");
         assertEquals(1, CountingStepTask.getCount("u-two", cid), "the continuation must run on resume");
         assertFalse(storedRecord.exists(), "the record is consumed on resume (at-most-once)");
+    }
+
+    /**
+     * The export guard validates the root name only when one is DECLARED: a missing or
+     * blank root name has no identity evidence to contradict the export target, so the
+     * export adopts the target id as the name (exactly like the no-root path already
+     * does). A declared, mismatching name still rejects the overwrite.
+     */
+    @Test
+    void exportAcceptsMissingRootNameAndStillRejectsMismatch() throws Exception {
+        var po = EventEmitter.getInstance();
+        var file = new File("/tmp/graph/export-guard-test.json");
+        if (file.exists()) {
+            assertTrue(file.delete(), "stale test file must be removable");
+        }
+        try {
+            // an unnamed root exports fine when the file does not exist yet
+            var sid1 = openCompanionSession("990021");
+            syncCommand(po, sid1, "create node root\nwith type Root");
+            var first = syncCommand(po, sid1, "export graph as export-guard-test");
+            assertEquals(Boolean.TRUE, first.get("ok"), "first export: " + first);
+            assertTrue(file.exists(), "first export created the file");
+
+            // the friction case: ANOTHER session's unnamed graph re-exports over the
+            // existing file - missing name must be accepted, not compared as "null"
+            var sid2 = openCompanionSession("990022");
+            syncCommand(po, sid2, "create node root\nwith type Root");
+            var second = syncCommand(po, sid2, "export graph as export-guard-test");
+            var secondOut = ((List<?>) second.get("output")).stream().map(String::valueOf).toList();
+            assertTrue(secondOut.stream().anyMatch(l -> l.startsWith("Graph exported to ")),
+                    "an unnamed root must be accepted over an existing file: " + secondOut);
+            assertTrue(secondOut.stream().noneMatch(l -> l.startsWith("Expect root node name=")),
+                    "no identity rejection without a declared name: " + secondOut);
+
+            // a DECLARED mismatching name still rejects the overwrite
+            var sid3 = openCompanionSession("990023");
+            syncCommand(po, sid3, """
+                    create node root
+                    with type Root
+                    with properties
+                    name=some-other-graph""");
+            var rejected = syncCommand(po, sid3, "export graph as export-guard-test");
+            var rejectedOut = ((List<?>) rejected.get("output")).stream().map(String::valueOf).toList();
+            assertTrue(rejectedOut.stream().anyMatch(
+                    l -> l.startsWith("Expect root node name=export-guard-test, Actual: some-other-graph")),
+                    "a declared mismatch must still reject the overwrite: " + rejectedOut);
+            assertTrue(rejectedOut.stream().noneMatch(l -> l.startsWith("Graph exported to ")),
+                    "the mismatching graph must not be exported: " + rejectedOut);
+        } finally {
+            if (file.exists() && !file.delete()) {
+                file.deleteOnExit();
+            }
+        }
+    }
+
+    private String openCompanionSession(String seq) {
+        var po = EventEmitter.getInstance();
+        var sid = "ws-" + seq + "-2";
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", "ws." + seq + ".2.in")));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        assertTrue(GraphCommandService.hasSession(sid), "session must exist before a companion command");
+        return sid;
     }
 
     @SuppressWarnings("unchecked")
