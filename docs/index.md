@@ -16,18 +16,13 @@ virtual threads, so straightforward synchronous code performs on par with reacti
 event-driven core descends from the **Scala/Akka actor model**, realized on the **Eclipse Vert.x**
 event bus.
 
-> **New here?** Start with **[Getting Started](guides/getting-started.md)** — it opens with a 5-minute quickstart.
+[Get started](guides/getting-started.md){ .md-button .md-button--primary }
+[Read the white paper](ai-grammar-methodology.md){ .md-button }
+[View the deck](presentations/ai-grammar-story.html){ .md-button }
 
-## The story and the method
-
-Two flagship reads set the frame for everything below:
-
-- **[The Mercury Story — Origin, Evolution, and the AI Grammar Methodology](ai-grammar-methodology.md)** —
-  the white paper: why Mercury exists, the ascent from code to configuration to knowledge, and the
-  methodology for building applications *and building blocks* with an AI partner — where every
-  building block compiles an AI grammar of its own and stays legible to the next project.
-- **[The presentation deck](presentations/ai-grammar-story.html)** — the same story in slides, for
-  a talk or a first briefing.
+*The white paper — **The Mercury Story: Origin, Evolution, and the AI Grammar Methodology** — tells
+why Mercury exists and how to build applications and building blocks with an AI partner; the deck is
+the same story in slides.*
 
 ## A layered ascent
 
