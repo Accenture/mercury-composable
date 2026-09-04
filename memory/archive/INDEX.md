@@ -150,3 +150,4 @@
 - thread-http-response-streaming — (feature — COMPLETE BOTH ENGINES 2026-08-28/29: Java — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
 - thread-spring-round-20260827 — (maintenance + BREAKING — v4.11.12 SHIPPED AND PUBLISHED 2026-08-27, Java only: — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
 - thread-sse-consumption-streaming — (feature — COMPLETE, ALL PHASES — shipped in v4.12.0 2026-08-30: Java Phase 1 — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
+- thread-onboarding-efficiency — (onboarding — CLOSED 2026-09-01, all items done, decision recorded) Onboarding — faded — completed thread not referenced in over archive_window (20) sessions — 2026-Q3.md
