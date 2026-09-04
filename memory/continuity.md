@@ -158,7 +158,7 @@
   legible statement of the event flow — sequence, topics, fail-fast path, branches — without reading
   Java) and it **manages dependencies** (the engine enforces control- and data-flow wiring, functions
   stay decoupled per `functions-decoupled-routes`, reusable blocks like `simple.kafka.notification` are
-  composed by reference not duplicated). Bounded by `one-atom-four-roles`: not all code becomes YAML — an
+  composed by reference not duplicated). Bounded by `one-atom-four-roles` (the **function** is the single atom; *service* / *task* / *skill* merely name how it is wired — see `docs/guides/documentation-conventions.md`, formalized as ADR-0004/ADR-0005): not all code becomes YAML — an
   intrinsically in-function concern (e.g. a blocking rendezvous that must wrap a publish) stays in code.
   Routing vocabulary to learn: `decision` selects a `next` entry by value (`true`=`1`=first, `false`=`2`=
   second; integer is 1-based → multi-way switch — engine `TaskExecutor.handleDecisionTask`, intentional;

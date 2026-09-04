@@ -39,7 +39,7 @@ the one below:
   documented prompt.
 
 **Type:** Multi-module Java 21 framework / SDK (Maven reactor, `com.accenture.mercury`,
-v4.12.0 as of 2026-08-30; official Rust port and python/node.js language packs in
+version per `continuity.md` → `latest_release`; official Rust port and python/node.js language packs in
 lock-step at the same version).
 
 ## What it should become  *(TARGET)*

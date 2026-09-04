@@ -36,7 +36,11 @@ system/
   rest-spring-4            ← Spring Boot integration (REST adapter, autoconfig; Boot 3 lane retired 2026-08-27)
   mini-scheduler           ← scheduled task support
   minigraph-playground-engine
-extensions/reactive-postgres   ← optional add-ons (R2DBC, graph engine, playground)
+  minimalist-kafka         ← opt-in Kafka library: flow adapter (inbound) + notification (outbound)
+  twin-kafka               ← a SECOND Kafka cluster on top of minimalist-kafka (dual-cluster bridge)
+  ai-contract-provider     ← serves the version-matched AI documentation contract
+extensions/                ← optional add-ons: reactive-postgres (R2DBC), opentelemetry-forwarder,
+                             sync-over-async, minigraph-state-redis (graph suspend/resume store)
 connectors/                ← Kafka pub/sub adapters + presence/service monitoring
   core/{cloud-connector, service-monitor}
   adapters/kafka/{kafka-connector, kafka-presence}
