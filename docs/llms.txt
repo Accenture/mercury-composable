@@ -23,6 +23,9 @@
 - [Function Execution Strategies](https://accenture.github.io/mercury-composable/guides/event-driven/function-execution/): virtual vs. kernel threads, Mono/Flux.
 - [Function AI agent guide](https://accenture.github.io/mercury-composable/guides/event-driven/ai-agent-guide/): @PreLoad annotation contract, TypedLambdaFunction interface, pre-write checklist, PostOffice patterns — for deterministic function generation.
 - [REST Automation](https://accenture.github.io/mercury-composable/guides/rest-automation/): declare HTTP endpoints via rest.yaml, no controllers.
+- [REST AI agent guide](https://accenture.github.io/mercury-composable/guides/rest-automation/ai-agent-guide/): the authoritative context for authoring rest.yaml deterministically — structure, binding modes, a pre-write checklist, and a worked example.
+- [REST grammar](https://accenture.github.io/mercury-composable/guides/rest-automation/rest-grammar/): the rule-based reference for the rest.yaml DSL — how an endpoint maps to a service or a flow, plus the CORS and header-transform blocks.
+- [rest-automation.json](https://accenture.github.io/mercury-composable/guides/rest-automation/rest-automation.json): the machine-readable rest.yaml catalog — entry fields, http methods, binding modes, cors/headers blocks, invariants.
 
 ## Layer 2 — Composable orchestration (Event Script)
 - [Composable Orchestration (Overview)](https://accenture.github.io/mercury-composable/guides/event-script/): Layer 2 overview — what Event Script is, the flow mental model, where it sits.
@@ -36,6 +39,10 @@
 ## Layer 3 — Semantic (Active Knowledge Graph)
 - [Knowledge Graph as Application](https://accenture.github.io/mercury-composable/guides/knowledge-graph/): the paradigm, execution model, node model, built-in skills, layer integration, Playground & AI companion, and maturity.
 - [Minimalist Property Graph](https://accenture.github.io/mercury-composable/guides/knowledge-graph/property-graph/): the in-memory property-graph data model and API the layer builds on.
+- [Build your first graph](https://accenture.github.io/mercury-composable/guides/knowledge-graph/build-your-first-graph/): hands-on walkthrough — model a service in the Playground, dry-run it, then deploy it and call it over REST without writing application code.
+- [Workflow suspension](https://accenture.github.io/mercury-composable/guides/knowledge-graph/workflow-suspension/): express a long-running process as a sequence of short graph runs — suspend while waiting on a person or another system, persist state to a pluggable store, resume by business correlation id without re-executing completed steps.
+- [Composing the layers](https://accenture.github.io/mercury-composable/guides/knowledge-graph/composing-the-layers/): how a graph reaches external APIs (data-dictionary + provider nodes), delegates to sub-graphs and Event Script flows (graph.extension), and is exposed as a REST endpoint through the graph-executor flow.
+- [Playground & AI companion](https://accenture.github.io/mercury-composable/guides/knowledge-graph/playground-and-companion/): the interactive workbench for building, dry-running and inspecting graphs — its command grammar, collaborative sessions, and the companion endpoint that lets an AI co-author in a live session.
 
 ### Operating the MiniGraph Playground — start here if you are an AI agent
 These are self-contained; you should not need the engine source or the tutorial walkthroughs:
