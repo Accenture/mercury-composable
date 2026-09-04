@@ -140,7 +140,7 @@ gates on the maps, golden vectors for the cross-language contracts, the version-
 When documentation can drift freely, agents rationally learn to distrust it and go read source —
 which defeats the entire economics. The gates are what make guide-first behavior rational.
 
-**The proof.** The ai-enabled-repo-demo exercise put the grammar under load: fresh AI agents —
+**The proof.** The ai-enabled-repo-demo exercises put the grammar under load: fresh AI agents —
 no project context, no human hints — built and ran applications from the grammar alone, through
 repeated rehearsals and a live demonstration. Every friction they hit became a fix within days,
 shipped to the field in v4.12.2: a `json` simple plugin closing a data-mapping gap, an
@@ -274,6 +274,6 @@ The north star does not move:
 ---
 
 *Sources: this repository's `docs/guides/` and `docs/arch-decisions/ADR.md`; the shared memory
-layer (`memory/vision.md`, `memory/continuity.md`); the ai-enabled-repo-demo exercise records;
+layer (`memory/vision.md`, `memory/continuity.md`); records of the ai-enabled-repo-demo exercises;
 measurements taken 2026-09-04 on the Rust engine's documentation map. All figures are
 reproducible from the cited artifacts.*
