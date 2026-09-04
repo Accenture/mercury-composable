@@ -3530,6 +3530,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#kafkaproducerenabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        kafka.producer.enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kafkaconsumerenabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        kafka.consumer.enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#kafkaproducerproperties" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3622,6 +3644,17 @@
     <span class="md-ellipsis">
       
         yaml.secondary.kafka.flow.adapter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#secondarykafkaproducerenabled-secondarykafkaconsumerenabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        secondary.kafka.producer.enabled / secondary.kafka.consumer.enabled
       
     </span>
   </a>
@@ -5772,6 +5805,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#kafkaproducerenabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        kafka.producer.enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kafkaconsumerenabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        kafka.consumer.enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#kafkaproducerproperties" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5864,6 +5919,17 @@
     <span class="md-ellipsis">
       
         yaml.secondary.kafka.flow.adapter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#secondarykafkaproducerenabled-secondarykafkaconsumerenabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        secondary.kafka.producer.enabled / secondary.kafka.consumer.enabled
       
     </span>
   </a>
@@ -7972,6 +8038,38 @@ Kafka. See the <a href="../minimalist-kafka/">Kafka Flow Adapter guide</a>. The 
 </tbody>
 </table>
 <p>Location of the <code>kafka-flow-adapter.yaml</code> binding file (<code>topic -&gt; flow</code>). Unset = inbound adapter disabled.</p>
+<h3 id="kafkaproducerenabled"><code>kafka.producer.enabled</code><a class="headerlink" href="#kafkaproducerenabled" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<p>Whether this cluster's producer is built. Set <code>false</code> on a consume-only leg of a <a href="../twin-kafka/#one-way">bridge</a>, where the cluster issues no producer credentials and building the client would fail the deployment. <code>simple.kafka.notification</code> stays registered and fails naming this key. A binding that declares <code>dlq-topic</code> while the producer is disabled <strong>fails startup</strong> — dead letters are published through that same producer, so the contradiction is rejected rather than silently dropping poison messages. The flag is a veto, not a trigger: only the literal <code>false</code> disables, and leaving the default starts nothing not otherwise configured.</p>
+<h3 id="kafkaconsumerenabled"><code>kafka.consumer.enabled</code><a class="headerlink" href="#kafkaconsumerenabled" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<p>Whether this cluster's consumer is used. Set <code>false</code> on a produce-only leg: no adapter consumer starts even when <code>yaml.kafka.flow.adapter</code> is set, and <code>kafka.health</code> builds its Metadata probe from the <strong>producer</strong> template instead (filtered to the consumer config surface, so producer-only keys such as <code>acks</code> are dropped) — keeping a one-way bridge health-checkable on both legs. Disabling both clients is allowed and logs a startup <code>WARN</code>.</p>
 <h3 id="kafkaproducerproperties"><code>kafka.producer.properties</code><a class="headerlink" href="#kafkaproducerproperties" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -8116,6 +8214,22 @@ Kafka. See the <a href="../minimalist-kafka/">Kafka Flow Adapter guide</a>. The 
 </tbody>
 </table>
 <p><a href="../twin-kafka/">twin-kafka</a>: secondary-cluster adapter config location; unset = secondary inbound adapter off.</p>
+<h3 id="secondarykafkaproducerenabled-secondarykafkaconsumerenabled"><code>secondary.kafka.producer.enabled</code> / <code>secondary.kafka.consumer.enabled</code><a class="headerlink" href="#secondarykafkaproducerenabled-secondarykafkaconsumerenabled" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<p><a href="../twin-kafka/#one-way">twin-kafka</a>: the secondary cluster's twins of <code>kafka.producer.enabled</code> / <code>kafka.consumer.enabled</code>, with identical semantics. Each cluster reads only its own keys and names its own key in any resulting error, so a <a href="../twin-kafka/#one-way">one-way bridge</a> declares its direction as four settings — the shape a managed cluster's per-client credentials actually force.</p>
 <h3 id="secondarykafkaproducerproperties-secondarykafkaconsumerproperties"><code>secondary.kafka.producer.properties</code> / <code>secondary.kafka.consumer.properties</code><a class="headerlink" href="#secondarykafkaproducerproperties-secondarykafkaconsumerproperties" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
