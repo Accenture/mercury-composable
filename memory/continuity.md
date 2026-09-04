@@ -17,11 +17,14 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.2 (2026-09-02 — the AI-grammar feedback-round field release:
-  async companion retirement ADR-0021, graph.js deprecation ADR-0022, the new `json`
-  simple plugin; lock-step with Rust v4.12.2. The python/node packs stay at 4.12.1 —
-  no wrapper changes this round. v4.12.1 (2026-09-01) was the lock-step registry debut:
-  Rust crates.io + python PyPI + node npm; the live version source stays the root pom.xml)
+- **latest_release:** v4.12.3 (2026-09-04 — the field-fix triple, released same-day: Kafka
+  producer/consumer opt-out for one-way bridges; Schema Registry credentials inherited by the
+  serdes (the CSFLE 401, contributed from the field); export-guard identity validated only when
+  declared. Plus the Mercury story white paper + deck front and center on the docs site, the
+  llms.txt coverage gate, and the agent-memory v4.39.2 floor. Lock-step with Rust v4.12.3, all
+  seven crates on crates.io (verified); python/node packs stay at 4.12.1 — no wrapper changes.
+  Prior: v4.12.2 (2026-09-02, the AI-grammar feedback-round field release). The live version
+  source stays the root pom.xml)
 - **last_enabled:** 2026-06-20
 - **last_review:** 2026-09-04 | through 2026-09-04-040305.md
 - **last_invariant_check:** 2026-09-04 | 2026-09-04-043732.md (all 15 confirmed by Eric + the Vision — one-by-one walkthrough with live-tree evidence; no supersessions; stack-messaging-kafka re-checked after PR #315 added Kafka config keys additively; ot-reverify-invariants-20260904 closed. Prior: 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed))
