@@ -2889,7 +2889,9 @@ What we <em>call</em> it depends on how it is wired:</p>
   optional <code>related</code>), an <strong>"At a glance"</strong> block, consistent headings with stable anchors, and a
   <strong>"See also"</strong> footer. URLs are lowercase-kebab <strong>semantic slugs</strong>. This is a clean rewrite —
   old URLs are intentionally <strong>not</strong> preserved (no redirects); the navigation is the source of truth.</li>
-<li><strong><code>llms.txt</code></strong> is the machine-readable site map, organized by layer, and is kept current.</li>
+<li><strong><code>llms.txt</code></strong> is the machine-readable site map, organized by layer, and is kept current — every
+  guide page and DSL catalog carries an entry, enforced in CI (a page with no entry is unreachable by
+  an agent following the map, which sends it into engine source instead).</li>
 <li><strong>The three DSLs</strong> (MiniGraph, Event Script, REST automation) each ship a deterministic spec kit:
   a grammar reference, a machine-readable catalog, an AI-agent guide, and a CI drift test. A claim that
   an agent can generate correct artifacts "from this page alone" belongs <strong>only</strong> to those agent guides,
@@ -2897,7 +2899,8 @@ What we <em>call</em> it depends on how it is wired:</p>
 </ul>
 <h2 id="enforcement">Enforcement<a class="headerlink" href="#enforcement" title="Permanent link">&para;</a></h2>
 <p>The mechanical rules are checked in CI by <code>scripts/check-doc-canon.py</code> — slugs, frontmatter,
-At-a-glance, no UTF-8 BOM, and retired terminology — alongside the three DSL grammar drift checks.</p>
+At-a-glance, no UTF-8 BOM, retired terminology, and <code>llms.txt</code> coverage — alongside the three DSL
+grammar drift checks.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../architecture/">Architecture Overview</a> — the request pipeline and the origin story in full.</li>
