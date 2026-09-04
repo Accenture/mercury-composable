@@ -8,4 +8,4 @@
   .0,.1,.2 — ADR-0018 amended). Lesson: PyCharm validates monkeypatch attr-name literals —
   route the name through a helper parameter. Design: [[bp-agent-orchestration]].
   origin: 2026-09-01-022524.
-  <!-- id: ot-agent-orchestration-e0 | created: 2026-09-01 | last_used: 2026-09-02 | uses: 4 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: ot-agent-orchestration-e0 | created: 2026-09-01 | last_used: 2026-09-02 | uses: 4 | tier: archive-candidate | origin: 2026-09-01-022524 -->

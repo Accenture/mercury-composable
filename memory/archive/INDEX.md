@@ -140,3 +140,8 @@
 - thread-graph-task-model-staging — (feature+fix — COMPLETE BOTH ENGINES 2026-08-08, shipped in v4.11.5: Java — faded (completed threads past archive_window 20) — 2026-Q3.md
 - thread-tutorial-14-decision — (feature — COMPLETE BOTH ENGINES 2026-08-07: Java — faded (completed threads past archive_window 20) — 2026-Q3.md
 - thread-release-4-11-2 — (release — SHIPPED 2026-08-03, Java-only) v4.11.2 — the field lz4-CVE security — faded — 2026-Q3.md
+- graph-suspend-resume-design — Graph workflow suspension: short runs + external state store, encapsulated in skills — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
+- ot-progressive-rendering-v4120 — (release+feature — v4.12.0 SHIPPED AND PUBLISHED 2026-08-30, all four repos: — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
+- thread-ai-contract-provider — (feature — MERGED 2026-08-21, shipped in v4.11.10: — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
+- thread-field-scan-remediation-20260825 — (field support — MERGED 2026-08-25/26: — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
+- thread-sonar-4-11-x-field-round-3 — (field support — round-3 fixes MERGED 2026-08-07: — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md

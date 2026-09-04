@@ -6,4 +6,4 @@
   review surface is the argument pipeline (tokenizer, substitution, null path, top-level
   exception mapping), not the plugin body. Demo-repo response letter updated (item 7.3).
   origin: 2026-09-02-163132
-  <!-- id: ot-json-plugin | created: 2026-09-02 | last_used: 2026-09-02 | uses: 2 | tier: active | origin: 2026-09-02-163132 -->
+  <!-- id: ot-json-plugin | created: 2026-09-02 | last_used: 2026-09-02 | uses: 2 | tier: archive-candidate | origin: 2026-09-02-163132 -->

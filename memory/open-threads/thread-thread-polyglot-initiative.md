@@ -11,4 +11,4 @@
   publications in waves; constrain sdists in agent-memory repos. Design:
   [[polyglot-event-over-http-design]]; serves [[bp-polyglot-functions]].
   origin: 2026-08-22-164936.
-  <!-- id: thread-polyglot-initiative | created: 2026-08-22 | last_used: 2026-09-02 | uses: 11 | tier: active | origin: 2026-08-22-164936 -->
+  <!-- id: thread-polyglot-initiative | created: 2026-08-22 | last_used: 2026-09-02 | uses: 11 | tier: archive-candidate | origin: 2026-08-22-164936 -->
