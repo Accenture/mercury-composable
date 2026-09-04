@@ -87,7 +87,9 @@ Voice: product narrative, present tense, why before how. Avoid analyst/whitepape
   optional `related`), an **"At a glance"** block, consistent headings with stable anchors, and a
   **"See also"** footer. URLs are lowercase-kebab **semantic slugs**. This is a clean rewrite —
   old URLs are intentionally **not** preserved (no redirects); the navigation is the source of truth.
-- **`llms.txt`** is the machine-readable site map, organized by layer, and is kept current.
+- **`llms.txt`** is the machine-readable site map, organized by layer, and is kept current — every
+  guide page and DSL catalog carries an entry, enforced in CI (a page with no entry is unreachable by
+  an agent following the map, which sends it into engine source instead).
 - **The three DSLs** (MiniGraph, Event Script, REST automation) each ship a deterministic spec kit:
   a grammar reference, a machine-readable catalog, an AI-agent guide, and a CI drift test. A claim that
   an agent can generate correct artifacts "from this page alone" belongs **only** to those agent guides,
@@ -96,7 +98,8 @@ Voice: product narrative, present tense, why before how. Avoid analyst/whitepape
 ## Enforcement
 
 The mechanical rules are checked in CI by `scripts/check-doc-canon.py` — slugs, frontmatter,
-At-a-glance, no UTF-8 BOM, and retired terminology — alongside the three DSL grammar drift checks.
+At-a-glance, no UTF-8 BOM, retired terminology, and `llms.txt` coverage — alongside the three DSL
+grammar drift checks.
 
 ## See also
 

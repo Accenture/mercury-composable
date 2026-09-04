@@ -11,7 +11,10 @@ Checks (deterministic, stdlib only), over docs/:
   3. frontmatter     - every docs/guides/**/*.md begins with a YAML '---' block;
   4. at-a-glance     - every docs/guides/**/*.md has an 'At a glance' block;
   5. terminology     - no retired canon-violating phrases ("five distinct layers",
-                       task/function "interchangeable", a stale "rewrite in progress" note).
+                       task/function "interchangeable", a stale "rewrite in progress" note);
+  7. llms.txt cover  - every guide page and DSL catalog is listed in docs/llms.txt (the canon
+                       calls llms.txt the machine-readable site map "kept current"; nothing
+                       enforced it, so pages shipped invisible to the guide-first lookup rule).
 
 Exit 0 = clean; exit 1 = drift (with details). Run from anywhere:
     python3 scripts/check-doc-canon.py [--root PATH]
@@ -90,13 +93,26 @@ def main() -> int:
                 errors.append(f"[redirect] case-only redirect (clobbers page on macOS): "
                               f"mkdocs.yml:{i}  {m.group(1)} -> {m.group(2)}")
 
+    # 7. llms.txt coverage - the canon (documentation-conventions.md) calls llms.txt the
+    #    machine-readable site map, kept current. An unlisted page is unreachable by the
+    #    guide-first lookup rule, so an agent falls back to reading engine source.
+    if llms.exists():
+        listed = llms.read_text(encoding="utf-8")
+        for p in sorted(list(guides.rglob("*.md")) + list(guides.rglob("*.json"))):
+            rel = p.relative_to(docs).as_posix()
+            slug = rel[:-3] if rel.endswith(".md") else rel
+            if slug.endswith("/index"):
+                slug = slug[: -len("/index")]
+            if f"/{slug}/" not in listed and f"/{slug}" not in listed:
+                errors.append(f"[llms] not listed in docs/llms.txt: {p.relative_to(root)}")
+
     if errors:
         print("Documentation canon drift detected:\n")
         for e in errors:
             print("  - " + e)
         print(f"\n{len(errors)} issue(s). See docs/guides/documentation-conventions.md.")
         return 1
-    print("Documentation canon: OK (slugs, frontmatter, at-a-glance, no BOM, no retired terms).")
+    print("Documentation canon: OK (slugs, frontmatter, at-a-glance, no BOM, no retired terms, llms.txt coverage).")
     return 0
 
 
