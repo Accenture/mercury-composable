@@ -80,8 +80,11 @@ import java.util.concurrent.ConcurrentMap;
  * the routing, header propagation, trace stamping, and Confluent serialization logic is shared.</p>
  */
 @KernelThreadRunner
-@PreLoad(route = "simple.kafka.notification", instances = 5)
+@PreLoad(route = SimpleKafkaNotification.ROUTE, instances = 5)
 public class SimpleKafkaNotification implements TypedLambdaFunction<Object, Mono<Void>> {
+
+    /** The route this function registers under. */
+    public static final String ROUTE = "simple.kafka.notification";
 
     // Read-only reserved headers injected by the framework; never forwarded to Kafka as raw headers.
     private static final String MY_ROUTE = "my_route";
@@ -135,6 +138,28 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<Object, Mono
         return "schema.registry.url";
     }
 
+    /** The producer opt-out property named in error messages - twin-kafka overrides with its secondary key. */
+    protected String producerEnabledKey() {
+        return KafkaClientConfig.PRODUCER_ENABLED;
+    }
+
+    /**
+     * The target cluster's publisher, or a loud failure when that cluster's producer is switched off.
+     *
+     * <p>The function stays REGISTERED when the producer is disabled, so a flow that publishes anyway
+     * fails with the setting that caused it rather than a "route not found" that sends the developer
+     * hunting through flow YAML. Called at the publish site, after every input check, so a caller's
+     * own mistake is never masked by this environment condition.</p>
+     */
+    private KafkaRequestPublisher requirePublisher() {
+        KafkaRequestPublisher publisher = publisher();
+        if (publisher == null) {
+            throw new IllegalStateException("Kafka producer is disabled (" + producerEnabledKey()
+                    + "=false); cannot publish");
+        }
+        return publisher;
+    }
+
     // resource: the publisher is the process-wide shared singleton owned by KafkaRuntime,
     // not a resource this function opens - closing it here would tear it down for everyone
     @SuppressWarnings("resource")
@@ -178,7 +203,9 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<Object, Mono
             }
         }
         byte[] payload = encode(topic, headers, body, instance);
-        return publisher().publish(topic, partition, kafkaHeaders, payload);
+        // checked last: every caller-input error (missing topic, a non-byte[] schema document) is the
+        // caller's own mistake and must surface ahead of an environment condition
+        return requirePublisher().publish(topic, partition, kafkaHeaders, payload);
     }
 
     /**

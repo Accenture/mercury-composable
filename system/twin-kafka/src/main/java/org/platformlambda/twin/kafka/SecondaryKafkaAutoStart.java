@@ -63,6 +63,9 @@ public class SecondaryKafkaAutoStart implements EntryPoint {
     private static final String DEFAULT_CONSUMER = "classpath:/secondary-kafka-consumer.properties";
     private static final String REGISTRY_URL = "secondary.schema.registry.url";
     private static final String REGISTRY_PREFIX = "secondary.schema.registry";
+    // per-cluster opt-out flags (default true) - the twins of kafka.producer.enabled / kafka.consumer.enabled
+    static final String PRODUCER_ENABLED = "secondary.kafka.producer.enabled";
+    static final String CONSUMER_ENABLED = "secondary.kafka.consumer.enabled";
     // application-level retry/DLQ policy, shared with the primary adapter
     private static final String DLQ_TIMEOUT = "kafka.dlq.timeout.ms";
     private static final String MAX_RETRIES = "kafka.flow.max.retries";
@@ -71,23 +74,33 @@ public class SecondaryKafkaAutoStart implements EntryPoint {
     @Override
     public void start(String[] args) {
         AppConfigReader config = AppConfigReader.getInstance();
-        KafkaRequestPublisher publisher = new KafkaRequestPublisher(new KafkaProducer<>(
-                KafkaClientConfig.producerProperties(config, PRODUCER_LOCATION, DEFAULT_PRODUCER)));
-        SecondaryKafkaRuntime.setPublisher(publisher);
+        boolean producerEnabled = KafkaClientConfig.clientEnabled(config, PRODUCER_ENABLED);
+        boolean consumerEnabled = KafkaClientConfig.clientEnabled(config, CONSUMER_ENABLED);
+        if (!producerEnabled && !consumerEnabled) {
+            log.warn("Secondary Kafka is inert - both {} and {} are false", PRODUCER_ENABLED, CONSUMER_ENABLED);
+        }
+        KafkaRequestPublisher publisher = startPublisher(config, producerEnabled);
 
         // per-cluster and optional: unset means raw byte[] on the secondary cluster
         SchemaCodec schemaCodec = SchemaCodec.fromConfig(config, config.getProperty(REGISTRY_URL), REGISTRY_PREFIX);
         SecondaryKafkaRuntime.setSchemaCodec(schemaCodec);
 
         String adapterConfig = config.getProperty(ADAPTER_CONFIG);
-        if (adapterConfig != null) {
+        if (!consumerEnabled) {
+            log.info("{}=false; secondary Kafka flow adapter not started", CONSUMER_ENABLED);
+        } else if (adapterConfig != null) {
             long dlqTimeout = Long.parseLong(config.getProperty(DLQ_TIMEOUT, "10000"));
             int maxRetries = Integer.parseInt(config.getProperty(MAX_RETRIES, "3"));
             long retryBackoffMs = Long.parseLong(config.getProperty(RETRY_BACKOFF, "500"));
             // dead letters from secondary bindings go through the SECONDARY publisher (same cluster)
             RetryPolicy retryPolicy = new RetryPolicy(maxRetries, retryBackoffMs, publisher);
+            ConfigReader adapterReader = new ConfigReader(adapterConfig);
+            if (publisher == null) {
+                // no secondary producer to dead-letter through: a dlq-topic would silently drop messages
+                KafkaFlowAdapter.rejectDeadLetterWithoutProducer(adapterReader, PRODUCER_ENABLED);
+            }
             Properties consumerProps = KafkaClientConfig.consumerProperties(config, CONSUMER_LOCATION, DEFAULT_CONSUMER);
-            KafkaFlowAdapter adapter = new KafkaFlowAdapter(consumerProps, new ConfigReader(adapterConfig),
+            KafkaFlowAdapter adapter = new KafkaFlowAdapter(consumerProps, adapterReader,
                     dlqTimeout, retryPolicy, schemaCodec, REGISTRY_URL);
             adapter.start();
             SecondaryKafkaRuntime.setAdapter(adapter);
@@ -95,5 +108,21 @@ public class SecondaryKafkaAutoStart implements EntryPoint {
         } else {
             log.info("{} not set; secondary Kafka flow adapter not started", ADAPTER_CONFIG);
         }
+    }
+
+    /**
+     * Build the secondary publisher, or none when {@code secondary.kafka.producer.enabled=false} - the
+     * consume-only leg of a bridge, where the secondary cluster grants no producer credentials.
+     */
+    private static KafkaRequestPublisher startPublisher(AppConfigReader config, boolean producerEnabled) {
+        if (!producerEnabled) {
+            log.info("{}=false; secondary Kafka producer not started - [{}] is unavailable",
+                    PRODUCER_ENABLED, SecondaryKafkaNotification.ROUTE);
+            return null;
+        }
+        KafkaRequestPublisher publisher = new KafkaRequestPublisher(new KafkaProducer<>(
+                KafkaClientConfig.producerProperties(config, PRODUCER_LOCATION, DEFAULT_PRODUCER)));
+        SecondaryKafkaRuntime.setPublisher(publisher);
+        return publisher;
     }
 }

@@ -52,6 +52,10 @@ import java.util.Properties;
  *
  * <p>An OAuth 2.0 token endpoint URL found in any template ({@code sasl.oauthbearer.token.endpoint.url})
  * is auto-registered on the JVM allow-list - see {@link OAuthUrlAllowList}.</p>
+ *
+ * <p>Either client can be switched off for its cluster with {@code kafka.producer.enabled} /
+ * {@code kafka.consumer.enabled} (default true) - see {@link #clientEnabled} for why the one-way leg of
+ * a bridge needs it.</p>
  */
 public final class KafkaClientConfig {
 
@@ -61,8 +65,41 @@ public final class KafkaClientConfig {
     private static final String DEFAULT_PRODUCER = "classpath:/kafka-producer.properties";
     private static final String DEFAULT_CONSUMER = "classpath:/kafka-consumer.properties";
     private static final String DEFAULT_SCHEMA_REGISTRY = "classpath:/schema-registry.properties";
+    /** Opt-out flag for the primary cluster's producer (default true) - see {@link #clientEnabled}. */
+    public static final String PRODUCER_ENABLED = "kafka.producer.enabled";
+    /** Opt-out flag for the primary cluster's consumer (default true) - see {@link #clientEnabled}. */
+    public static final String CONSUMER_ENABLED = "kafka.consumer.enabled";
+    private static final String DISABLED = "false";
 
     private KafkaClientConfig() {}
+
+    /** Whether the primary cluster's producer is enabled ({@code kafka.producer.enabled}, default true). */
+    public static boolean producerEnabled(ConfigBase appConfig) {
+        return clientEnabled(appConfig, PRODUCER_ENABLED);
+    }
+
+    /** Whether the primary cluster's consumer is enabled ({@code kafka.consumer.enabled}, default true). */
+    public static boolean consumerEnabled(ConfigBase appConfig) {
+        return clientEnabled(appConfig, CONSUMER_ENABLED);
+    }
+
+    /**
+     * Whether a Kafka client is enabled for its cluster - the reuse seam for a library (e.g. twin-kafka)
+     * whose second cluster has its own {@code secondary.kafka.*.enabled} keys.
+     *
+     * <p>The flag is a <b>veto, not a trigger</b>: the default is enabled, and only the literal
+     * {@code false} switches a client off. Leaving it at the default therefore starts nothing that is
+     * not otherwise configured - an inbound adapter still requires its {@code yaml.*.flow.adapter}
+     * setting. Its purpose is the one-way leg of a bridge, where the cluster grants credentials for a
+     * producer OR a consumer but not both, and building the unused client fails the deployment.</p>
+     *
+     * @param appConfig the application configuration
+     * @param key       the application property naming the flag (e.g. "kafka.producer.enabled")
+     * @return false only when the key is explicitly set to {@code false}
+     */
+    public static boolean clientEnabled(ConfigBase appConfig, String key) {
+        return !DISABLED.equalsIgnoreCase(appConfig.getProperty(key, "true").trim());
+    }
 
     /** Producer config from the template, with the byte[] wire-contract serializers pinned. */
     public static Properties producerProperties(ConfigBase appConfig) {
@@ -117,6 +154,59 @@ public final class KafkaClientConfig {
         // a template's group.protocol=auto becomes consumer|classic from the cluster's own
         // finalized group.version feature (KIP-848) - one probe per cluster, stated in the log
         GroupProtocolResolver.resolve(p);
+        return p;
+    }
+
+    /**
+     * Client config for the {@code kafka.health} Metadata probe: the consumer template normally, or the
+     * PRODUCER template on a produce-only leg (consumer disabled, producer enabled).
+     *
+     * <p>A one-way bridge leg holds credentials for one client only, yet a bridge is healthy only when
+     * BOTH clusters are reachable - so the probe follows whichever client the deployment actually
+     * configured. The producer template is filtered to {@link ConsumerConfig#configNames()} before use,
+     * so producer-only settings ({@code acks}, {@code partitioner.class}, the serializers) are dropped
+     * rather than logged as unknown-config warnings; every connection and security parameter
+     * ({@code bootstrap.servers}, {@code security.protocol}, {@code sasl.*}, {@code ssl.*}) is named
+     * identically in both client surfaces and survives the filter. The probe joins no consumer group, so
+     * nothing consumer-specific is required. Same filtering idiom as
+     * {@code GroupProtocolResolver.probe}, which reduces a consumer template to the Admin surface.</p>
+     *
+     * <p>When both clients are disabled the consumer template is used unchanged: the module is inert and
+     * an application in that state should not be listing the health dependency at all.</p>
+     */
+    public static Properties healthProbeProperties(ConfigBase appConfig) {
+        return healthProbeProperties(appConfig, CONSUMER_ENABLED, CONSUMER_LOCATION, DEFAULT_CONSUMER,
+                PRODUCER_ENABLED, PRODUCER_LOCATION, DEFAULT_PRODUCER);
+    }
+
+    /**
+     * Health-probe config from caller-selected keys and template locations - the reuse seam for a library
+     * (e.g. twin-kafka) probing an additional cluster. See {@link #healthProbeProperties(ConfigBase)} for
+     * the fallback rule.
+     *
+     * @param appConfig          the application configuration
+     * @param consumerEnabledKey the flag naming whether this cluster's consumer is enabled
+     * @param consumerLocationKey the application property naming the consumer template location(s)
+     * @param defaultConsumer    the consumer template fallback used when that key is unset
+     * @param producerEnabledKey the flag naming whether this cluster's producer is enabled
+     * @param producerLocationKey the application property naming the producer template location(s)
+     * @param defaultProducer    the producer template fallback used when that key is unset
+     * @return the probe's consumer properties
+     */
+    public static Properties healthProbeProperties(ConfigBase appConfig, String consumerEnabledKey,
+                                                   String consumerLocationKey, String defaultConsumer,
+                                                   String producerEnabledKey, String producerLocationKey,
+                                                   String defaultProducer) {
+        if (clientEnabled(appConfig, consumerEnabledKey) || !clientEnabled(appConfig, producerEnabledKey)) {
+            return consumerProperties(appConfig, consumerLocationKey, defaultConsumer);
+        }
+        Properties producer = load(appConfig.getProperty(producerLocationKey, defaultProducer));
+        Properties p = new Properties();
+        producer.stringPropertyNames().stream()
+                .filter(ConsumerConfig.configNames()::contains)
+                .forEach(k -> p.setProperty(k, producer.getProperty(k)));
+        p.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        p.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
         return p;
     }
 

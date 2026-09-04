@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
+### Added
+
+1. Per-client opt-out for both Kafka libraries: `kafka.producer.enabled` /
+   `kafka.consumer.enabled` (minimalist-kafka) and `secondary.kafka.producer.enabled` /
+   `secondary.kafka.consumer.enabled` (twin-kafka), all defaulting to `true`. The
+   producer was previously built unconditionally at startup, so the one-way leg of a
+   bridge failed to deploy where the managed cluster issues credentials per client and
+   had none for the unused one. Each cluster reads only its own keys and names its own
+   key in any resulting error. Three deliberate behaviors: `simple.kafka.notification`
+   stays registered when the producer is off and fails naming the setting (rather than
+   a "route not found"); a binding that declares `dlq-topic` while its cluster's
+   producer is off **fails startup**, since dead letters ride that producer and would
+   otherwise be dropped with a DATA LOSS log; and `kafka.health` builds its Metadata
+   probe from the producer template when the consumer is off, so both legs of a one-way
+   bridge stay health-checkable. Disabling both clients is allowed and logs a startup
+   WARN. The flag is a veto, not a trigger — the default starts nothing that is not
+   otherwise configured, and only the literal `false` disables. Java-only: the Rust port
+   carries no Kafka module.
+
 ### Fixed
 
 1. The Playground `export graph` overwrite guard no longer rejects a graph whose root
