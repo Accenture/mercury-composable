@@ -46,7 +46,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-1. The Playground `export graph` overwrite guard no longer rejects a graph whose root
+1. [Kafka] Schema Registry credentials now reach the serdes, so client-side field level
+   encryption works against an authenticated registry. `SchemaCodec` passed its serdes a
+   config map built only from `schema.registry.serde.*`, which is empty for almost every
+   application. Confluent's serdes do not only use the `SchemaRegistryClient` they are
+   given: the CSFLE rule executor (`EncryptionExecutor.configure`) builds its **own**
+   `DekRegistryClient` from that map alone, so every DEK lookup went out unauthenticated
+   and any encrypted field failed with `Unauthorized; error code: 401` — even though the
+   codec's own client was fully authenticated against the same registry with the same
+   identity. The serdes now inherit the registry client template and apply their own
+   `schema.registry.serde.*` entries on top, so a serde-only setting (a KMS driver
+   credential, a serde-specific identity) still wins. Duplicating `bearer.auth.*` under
+   `schema.registry.serde.*` was not a usable workaround: those keys live in
+   `application.properties`, whose `${...}` references `AppConfigReader` resolves — and
+   destructively rewrites — at construction, before any `@MainApplication` credential
+   bootstrap has published its system properties. Contributed from the field.
+
+2. The Playground `export graph` overwrite guard no longer rejects a graph whose root
    node has no `name` property (it compared "null" against the target filename). The
    root name is validated only when declared - a declared, mismatching name still
    rejects the overwrite; a missing or blank name is accepted and the export assigns
