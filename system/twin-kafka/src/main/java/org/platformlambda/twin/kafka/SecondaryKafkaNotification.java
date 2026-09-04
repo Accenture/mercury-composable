@@ -42,8 +42,11 @@ import org.platformlambda.mini.kafka.schema.SchemaCodec;
  * worker pool (see {@link SimpleKafkaNotification} for the full rationale).</p>
  */
 @KernelThreadRunner
-@PreLoad(route = "secondary.kafka.notification", instances = 5)
+@PreLoad(route = SecondaryKafkaNotification.ROUTE, instances = 5)
 public class SecondaryKafkaNotification extends SimpleKafkaNotification {
+
+    /** The route this function registers under. */
+    public static final String ROUTE = "secondary.kafka.notification";
 
     // Outbound header names for the secondary cluster: cluster-specific keys, falling back to the globals.
     private static final String CORRELATION_ID_HEADER =
@@ -91,5 +94,10 @@ public class SecondaryKafkaNotification extends SimpleKafkaNotification {
     @Override
     protected String registryUrlKey() {
         return "secondary.schema.registry.url";
+    }
+
+    @Override
+    protected String producerEnabledKey() {
+        return SecondaryKafkaAutoStart.PRODUCER_ENABLED;
     }
 }

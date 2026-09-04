@@ -996,6 +996,22 @@ Kafka. See the [Kafka Flow Adapter guide](minimalist-kafka.md). The inbound adap
 
 Location of the `kafka-flow-adapter.yaml` binding file (`topic -> flow`). Unset = inbound adapter disabled.
 
+### `kafka.producer.enabled`
+
+| Type | Default |
+|------|---------|
+| `boolean` | `true` |
+
+Whether this cluster's producer is built. Set `false` on a consume-only leg of a [bridge](twin-kafka.md#one-way), where the cluster issues no producer credentials and building the client would fail the deployment. `simple.kafka.notification` stays registered and fails naming this key. A binding that declares `dlq-topic` while the producer is disabled **fails startup** — dead letters are published through that same producer, so the contradiction is rejected rather than silently dropping poison messages. The flag is a veto, not a trigger: only the literal `false` disables, and leaving the default starts nothing not otherwise configured.
+
+### `kafka.consumer.enabled`
+
+| Type | Default |
+|------|---------|
+| `boolean` | `true` |
+
+Whether this cluster's consumer is used. Set `false` on a produce-only leg: no adapter consumer starts even when `yaml.kafka.flow.adapter` is set, and `kafka.health` builds its Metadata probe from the **producer** template instead (filtered to the consumer config surface, so producer-only keys such as `acks` are dropped) — keeping a one-way bridge health-checkable on both legs. Disabling both clients is allowed and logs a startup `WARN`.
+
 ### `kafka.producer.properties`
 
 | Type | Default |
@@ -1067,6 +1083,14 @@ Time-to-live for an entry in the in-memory (platform `ManagedCache`) cache of sc
 | `String` (location) | — |
 
 [twin-kafka](twin-kafka.md): secondary-cluster adapter config location; unset = secondary inbound adapter off.
+
+### `secondary.kafka.producer.enabled` / `secondary.kafka.consumer.enabled`
+
+| Type | Default |
+|------|---------|
+| `boolean` | `true` |
+
+[twin-kafka](twin-kafka.md#one-way): the secondary cluster's twins of `kafka.producer.enabled` / `kafka.consumer.enabled`, with identical semantics. Each cluster reads only its own keys and names its own key in any resulting error, so a [one-way bridge](twin-kafka.md#one-way) declares its direction as four settings — the shape a managed cluster's per-client credentials actually force.
 
 ### `secondary.kafka.producer.properties` / `secondary.kafka.consumer.properties`
 

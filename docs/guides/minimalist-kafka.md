@@ -58,7 +58,38 @@ yaml.kafka.flow.adapter=classpath:/kafka-flow-adapter.yaml
 ```
 
 The library autoloads at startup (`@MainApplication`): it builds the shared producer and, if
-`yaml.kafka.flow.adapter` is set, starts one consumer thread per topic binding.
+`yaml.kafka.flow.adapter` is set, starts one consumer thread per topic binding. Either client can be
+[switched off](#opt-out) when the cluster has no credentials for it.
+
+### Switching off a client you do not use {#opt-out}
+
+Both clients start by default. When the cluster grants credentials for only **one** of them — the
+usual case for one leg of a [bridge](twin-kafka.md#bridge), where a Confluent console issues an API
+key for producing *or* consuming — switch the unused one off:
+
+```properties
+# a consume-only leg: this cluster issues no producer credentials
+kafka.producer.enabled=false
+```
+
+| Setting | Effect when `false` |
+|---|---|
+| `kafka.producer.enabled` | No producer is built. `simple.kafka.notification` stays registered but fails with a message naming this key, so a flow that publishes anyway points at the config rather than at a missing route. |
+| `kafka.consumer.enabled` | No adapter consumer starts, even with `yaml.kafka.flow.adapter` set, and [`kafka.health`](#health) probes through the producer template instead. |
+
+Two rules worth knowing:
+
+- **The flag is a veto, not a trigger.** Leaving it at the default starts nothing that is not otherwise
+  configured — an inbound adapter still needs `yaml.kafka.flow.adapter`. Only the literal `false`
+  switches a client off; any other value leaves it on.
+- **A dead-letter topic needs a producer.** Dead letters are published through this cluster's own
+  producer, so a binding that declares `dlq-topic` while `kafka.producer.enabled=false` **fails the
+  deployment at startup**, naming both settings. It is the contradiction that matters: without the
+  guard an exhausted message would be dropped with a `DATA LOSS` log and its offset committed. Enable
+  the producer, or drop the `dlq-topic`.
+
+Disabling both is allowed — the module goes inert and says so with a startup `WARN` — which makes a
+"Kafka off in this profile" switch possible without removing the dependency.
 
 ## Inbound: the adapter YAML {#adapter-yaml}
 
@@ -562,6 +593,15 @@ check is live. Two keys tune the behavior: `kafka.health.timeout` (default `5s`)
 `kafka.health.startup.grace` (default `30s`) - see the
 [Configuration Reference](configuration-reference.md#observability).
 
+> **On a produce-only leg the probe uses the producer template.** With
+> [`kafka.consumer.enabled=false`](#opt-out) there are no consumer credentials to build a probe from,
+> yet a bridge is healthy only when both clusters are reachable. So the probe follows whichever client
+> the deployment configured, reading connection and security settings (`bootstrap.servers`,
+> `security.protocol`, `sasl.*`, `ssl.*` - named identically in both client surfaces) from
+> `kafka-producer.properties`. Producer-only settings such as `acks` are filtered out rather than
+> logged as unknown config. Nothing else about the probe changes; it still joins no group and needs
+> no ACL.
+
 Dual-cluster applications get a twin for the second cluster: [twin-kafka](twin-kafka.md#health)
 ships `secondary.kafka.health`, so a bridge lists both dependencies.
 
@@ -759,6 +799,8 @@ The essentials:
 | Key | Default | Description |
 |-----|---------|-------------|
 | `yaml.kafka.flow.adapter` | — | Adapter config location; unset = inbound adapter off. |
+| `kafka.producer.enabled` | `true` | Set `false` on a consume-only leg to build no producer — see [switching off a client](#opt-out). A binding with `dlq-topic` then fails startup. |
+| `kafka.consumer.enabled` | `true` | Set `false` on a produce-only leg to start no adapter consumer; [`kafka.health`](#health) then probes through the producer template. |
 | `kafka.producer.properties` | `classpath:/kafka-producer.properties` | Producer template location. Set to an external file path (or explicit fallback list) to externalize. |
 | `kafka.consumer.properties` | `classpath:/kafka-consumer.properties` | Consumer template location. Set to an external file path (or explicit fallback list) to externalize. |
 | `kafka.dlq.timeout.ms` | `10000` | Confirm-write timeout for the dead-letter publish. (Flow processing has no timeout knob — the flow's own `ttl` is the deadline.) |

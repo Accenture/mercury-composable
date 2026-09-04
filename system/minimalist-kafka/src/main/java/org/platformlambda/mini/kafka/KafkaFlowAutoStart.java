@@ -61,9 +61,14 @@ public class KafkaFlowAutoStart implements EntryPoint {
     @Override
     public void start(String[] args) {
         AppConfigReader config = AppConfigReader.getInstance();
-        KafkaRequestPublisher publisher =
-                new KafkaRequestPublisher(new KafkaProducer<>(KafkaClientConfig.producerProperties(config)));
-        KafkaRuntime.setPublisher(publisher);
+        boolean producerEnabled = KafkaClientConfig.producerEnabled(config);
+        boolean consumerEnabled = KafkaClientConfig.consumerEnabled(config);
+        if (!producerEnabled && !consumerEnabled) {
+            // a legitimate "Kafka off in this profile" switch - stated loudly because the module is inert
+            log.warn("Kafka is inert - both {} and {} are false",
+                    KafkaClientConfig.PRODUCER_ENABLED, KafkaClientConfig.CONSUMER_ENABLED);
+        }
+        KafkaRequestPublisher publisher = startPublisher(config, producerEnabled);
 
         /*
          * Optional Confluent Schema Registry codec (null when schema.registry.url is not configured). A shared
@@ -74,15 +79,23 @@ public class KafkaFlowAutoStart implements EntryPoint {
         KafkaRuntime.setSchemaCodec(schemaCodec);
 
         String adapterConfig = config.getProperty(ADAPTER_CONFIG);
-        if (adapterConfig != null) {
+        if (!consumerEnabled) {
+            log.info("{}=false; Kafka flow adapter not started", KafkaClientConfig.CONSUMER_ENABLED);
+        } else if (adapterConfig != null) {
             // confirm-write timeout for the dead-letter publish (broker ack); the flow wait uses flow.ttl
             long dlqTimeout = Long.parseLong(config.getProperty(DLQ_TIMEOUT, "10000"));
             int maxRetries = Integer.parseInt(config.getProperty(MAX_RETRIES, "3"));
             long retryBackoffMs = Long.parseLong(config.getProperty(RETRY_BACKOFF, "500"));
             // failed messages are dead-lettered through the same shared producer, to each binding's dlq-topic
             RetryPolicy retryPolicy = new RetryPolicy(maxRetries, retryBackoffMs, publisher);
+            ConfigReader adapterReader = new ConfigReader(adapterConfig);
+            if (publisher == null) {
+                // no producer to dead-letter through: a binding's dlq-topic would silently drop messages
+                KafkaFlowAdapter.rejectDeadLetterWithoutProducer(adapterReader,
+                        KafkaClientConfig.PRODUCER_ENABLED);
+            }
             Properties consumerProps = KafkaClientConfig.consumerProperties(config);
-            KafkaFlowAdapter adapter = new KafkaFlowAdapter(consumerProps, new ConfigReader(adapterConfig),
+            KafkaFlowAdapter adapter = new KafkaFlowAdapter(consumerProps, adapterReader,
                     dlqTimeout, retryPolicy, schemaCodec);
             adapter.start();
             KafkaRuntime.setAdapter(adapter);
@@ -90,5 +103,23 @@ public class KafkaFlowAutoStart implements EntryPoint {
         } else {
             log.info("{} not set; Kafka flow adapter not started", ADAPTER_CONFIG);
         }
+    }
+
+    /**
+     * Build the shared publisher, or none when the producer is switched off - the produce-side of a
+     * one-way bridge leg, where this cluster grants no producer credentials. A null publisher leaves
+     * {@code simple.kafka.notification} registered but unusable (it fails with a message naming the
+     * flag) and makes dead-lettering impossible, which is why a {@code dlq-topic} is rejected above.
+     */
+    private static KafkaRequestPublisher startPublisher(AppConfigReader config, boolean producerEnabled) {
+        if (!producerEnabled) {
+            log.info("{}=false; Kafka producer not started - [{}] is unavailable",
+                    KafkaClientConfig.PRODUCER_ENABLED, SimpleKafkaNotification.ROUTE);
+            return null;
+        }
+        KafkaRequestPublisher publisher =
+                new KafkaRequestPublisher(new KafkaProducer<>(KafkaClientConfig.producerProperties(config)));
+        KafkaRuntime.setPublisher(publisher);
+        return publisher;
     }
 }

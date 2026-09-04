@@ -184,6 +184,32 @@ public class KafkaFlowAdapter implements AutoCloseable {
         }
     }
 
+    /**
+     * Reject an adapter config that declares a dead-letter topic while its cluster's producer is disabled -
+     * called by the autoloader before the adapter is built, when and only when the producer is off.
+     *
+     * <p>Dead letters are published through that same cluster's producer, so without one an exhausted
+     * message would be <b>dropped</b> with a DATA LOSS error and its offset committed (see
+     * {@link KafkaFlowConsumer#writeToDeadLetter}). A consume-only bridge leg is exactly the shape that
+     * wants a DLQ, and silently losing poison messages is worse than refusing to start - so the
+     * contradiction fails the deployment instead, naming both settings.</p>
+     *
+     * @param config             the adapter config (the {@code consumer} binding list)
+     * @param producerEnabledKey the flag that switched the producer off, named in the error for accuracy
+     */
+    public static void rejectDeadLetterWithoutProducer(ConfigReader config, String producerEnabledKey) {
+        if (config.get(CONSUMER) instanceof List<?> list) {
+            for (int i = 0; i < list.size(); i++) {
+                if (list.get(i) instanceof Map<?, ?> entry && text(entry.get(DLQ_TOPIC)) != null) {
+                    throw new IllegalArgumentException("consumer[" + i + "] declares '" + DLQ_TOPIC
+                            + "' but the Kafka producer is disabled (" + producerEnabledKey + "=false) - "
+                            + "dead letters are published through that producer; enable it or remove '"
+                            + DLQ_TOPIC + "'");
+                }
+            }
+        }
+    }
+
     /** Validate one consumer-binding entry and build its {@link KafkaFlowConsumer} (fail-fast on any error). */
     private KafkaFlowConsumer buildConsumer(int i, Object item, long dlqTimeout, RetryPolicy retryPolicy,
                                             SchemaCodec schemaCodec) {

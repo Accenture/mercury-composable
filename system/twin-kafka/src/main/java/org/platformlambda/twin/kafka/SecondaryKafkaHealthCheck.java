@@ -35,7 +35,10 @@ import java.util.Properties;
  * </pre>
  *
  * <p>Behavior is identical to {@code kafka.health} (single no-ACL Metadata probe, start-up
- * grace with a placeholder healthy status, HTTP 503 when unreachable). Tunables follow the
+ * grace with a placeholder healthy status, HTTP 503 when unreachable) - including the
+ * produce-only fallback: with {@code secondary.kafka.consumer.enabled=false} the probe is built
+ * from the secondary PRODUCER template instead, so a one-way bridge leg stays health-checkable.
+ * Tunables follow the
  * twin-kafka fallback convention: {@code secondary.kafka.health.timeout} and
  * {@code secondary.kafka.health.startup.grace} fall back to the {@code kafka.health.*}
  * globals, then to the built-in defaults (5s / 30s).
@@ -47,14 +50,17 @@ public class SecondaryKafkaHealthCheck extends KafkaHealthCheck {
     private static final String SERVICE_NAME = "secondary.kafka";
     private static final String CONSUMER_LOCATION = "secondary.kafka.consumer.properties";
     private static final String DEFAULT_CONSUMER = "classpath:/secondary-kafka-consumer.properties";
+    private static final String PRODUCER_LOCATION = "secondary.kafka.producer.properties";
+    private static final String DEFAULT_PRODUCER = "classpath:/secondary-kafka-producer.properties";
     private static final String TIMEOUT_KEY = "secondary.kafka.health.timeout";
     private static final String GRACE_KEY = "secondary.kafka.health.startup.grace";
     private static final String PRIMARY_TIMEOUT_KEY = "kafka.health.timeout";
     private static final String PRIMARY_GRACE_KEY = "kafka.health.startup.grace";
 
     public SecondaryKafkaHealthCheck() {
-        this(KafkaClientConfig.consumerProperties(AppConfigReader.getInstance(),
-                        CONSUMER_LOCATION, DEFAULT_CONSUMER),
+        this(KafkaClientConfig.healthProbeProperties(AppConfigReader.getInstance(),
+                        SecondaryKafkaAutoStart.CONSUMER_ENABLED, CONSUMER_LOCATION, DEFAULT_CONSUMER,
+                        SecondaryKafkaAutoStart.PRODUCER_ENABLED, PRODUCER_LOCATION, DEFAULT_PRODUCER),
              resolveDurationMs(GRACE_KEY, PRIMARY_GRACE_KEY, DEFAULT_GRACE));
     }
 

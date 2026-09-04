@@ -56,6 +56,12 @@ import java.util.concurrent.locks.ReentrantLock;
  * the consumer Metadata API instead of AdminClient.describeCluster (gated by Cluster Describe)
  * or partitionsFor (throws TopicAuthorizationException without a grant on the named topic).
  *
+ * <p>The probe follows whichever client the deployment configured: the consumer template normally, or
+ * the PRODUCER template on a produce-only leg ({@code kafka.consumer.enabled=false}), where the cluster
+ * grants no consumer credentials to build a probe from - see
+ * {@code KafkaClientConfig.healthProbeProperties}. A bridge is healthy only when both clusters are
+ * reachable, so each leg stays probeable whichever direction it runs in.
+ *
  * <p>During application start-up the function returns a <b>placeholder healthy</b> status and
  * warms up the client in the background, so {@code /health} does not fail (or block) while the
  * Kafka client and the rest of the start-up sequence are still coming up. After the first
@@ -99,7 +105,7 @@ public class KafkaHealthCheck implements LambdaFunction {
     private volatile boolean ready = false;
 
     public KafkaHealthCheck() {
-        this(PRIMARY_SERVICE_NAME, KafkaClientConfig.consumerProperties(AppConfigReader.getInstance()),
+        this(PRIMARY_SERVICE_NAME, KafkaClientConfig.healthProbeProperties(AppConfigReader.getInstance()),
              resolveDurationMs(TIMEOUT_KEY, DEFAULT_TIMEOUT),
              resolveDurationMs(GRACE_KEY, DEFAULT_GRACE));
     }
