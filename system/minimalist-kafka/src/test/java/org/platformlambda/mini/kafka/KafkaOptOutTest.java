@@ -21,6 +21,7 @@ package org.platformlambda.mini.kafka;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.util.ConfigReader;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -52,8 +53,9 @@ class KafkaOptOutTest {
     void publishingWithoutAProducerNamesTheSettingThatCausedIt() {
         var notification = withoutPublisher();
         Map<String, String> headers = Map.of(KafkaHeaders.TOPIC, "orders.onprem");
+        byte[] payload = "payload".getBytes(StandardCharsets.UTF_8);
         var e = assertThrows(IllegalStateException.class,
-                () -> notification.handleEvent(headers, "payload".getBytes(), 0));
+                () -> notification.handleEvent(headers, payload, 0));
         assertTrue(e.getMessage().contains("kafka.producer.enabled"),
                 "the error points at the config, not at a missing route: " + e.getMessage());
     }

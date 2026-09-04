@@ -25,10 +25,11 @@ import org.platformlambda.mini.kafka.KafkaClientConfig;
 import org.platformlambda.mini.kafka.KafkaHeaders;
 import org.platformlambda.mini.kafka.KafkaRequestPublisher;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -65,8 +66,9 @@ class SecondaryKafkaOptOutTest {
             }
         };
         Map<String, String> headers = Map.of(KafkaHeaders.TOPIC, "orders.cloud");
+        byte[] payload = "payload".getBytes(StandardCharsets.UTF_8);
         var e = assertThrows(IllegalStateException.class,
-                () -> notification.handleEvent(headers, "payload".getBytes(), 0));
+                () -> notification.handleEvent(headers, payload, 0));
         assertTrue(e.getMessage().contains("secondary.kafka.producer.enabled"),
                 "the secondary cluster diagnoses itself, not the primary: " + e.getMessage());
     }
@@ -92,9 +94,11 @@ class SecondaryKafkaOptOutTest {
         ConfigBase bridge = config(Map.of("kafka.producer.enabled", "false",
                 "secondary.kafka.consumer.enabled", "false"));
         // a one-way bridge: consume from the primary, publish to the secondary
-        assertEquals(false, KafkaClientConfig.producerEnabled(bridge));
-        assertEquals(true, KafkaClientConfig.consumerEnabled(bridge));
-        assertEquals(true, KafkaClientConfig.clientEnabled(bridge, SecondaryKafkaAutoStart.PRODUCER_ENABLED));
-        assertEquals(false, KafkaClientConfig.clientEnabled(bridge, SecondaryKafkaAutoStart.CONSUMER_ENABLED));
+        assertFalse(KafkaClientConfig.producerEnabled(bridge), "primary producer off");
+        assertTrue(KafkaClientConfig.consumerEnabled(bridge), "primary consumer on");
+        assertTrue(KafkaClientConfig.clientEnabled(bridge, SecondaryKafkaAutoStart.PRODUCER_ENABLED),
+                "secondary producer on");
+        assertFalse(KafkaClientConfig.clientEnabled(bridge, SecondaryKafkaAutoStart.CONSUMER_ENABLED),
+                "secondary consumer off");
     }
 }
