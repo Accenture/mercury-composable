@@ -8,4 +8,4 @@
   `Thread.ofVirtual()`.
   origin: 2026-09-04-043732.md
 
-  <!-- id: ot-reverify-invariants-20260904 | created: 2026-09-04 | last_used: 2026-09-04 | uses: 2 | tier: working | origin: 2026-09-04-043732 -->
+  <!-- id: ot-reverify-invariants-20260904 | created: 2026-09-04 | last_used: 2026-09-04 | uses: 1 | tier: working | origin: 2026-09-04-043732 -->

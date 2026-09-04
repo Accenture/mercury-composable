@@ -145,3 +145,8 @@
 - thread-ai-contract-provider — (feature — MERGED 2026-08-21, shipped in v4.11.10: — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
 - thread-field-scan-remediation-20260825 — (field support — MERGED 2026-08-25/26: — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
 - thread-sonar-4-11-x-field-round-3 — (field support — round-3 fixes MERGED 2026-08-07: — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
+- route-pool-registration-design — Route pools are a first-class platform registration (ADR-0020; Eric ratified D1–D10 — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
+- ot-route-pool-api — (feature — SHIPPED BOTH ENGINES 2026-08-30, rides the next release: Java — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
+- thread-http-response-streaming — (feature — COMPLETE BOTH ENGINES 2026-08-28/29: Java — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
+- thread-spring-round-20260827 — (maintenance + BREAKING — v4.11.12 SHIPPED AND PUBLISHED 2026-08-27, Java only: — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
+- thread-sse-consumption-streaming — (feature — COMPLETE, ALL PHASES — shipped in v4.12.0 2026-08-30: Java Phase 1 — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md

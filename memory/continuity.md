@@ -176,22 +176,6 @@
   `hello.remote.relay`). Recorded in the progressive-rendering interop report.
   <!-- id: event-api-local-routes-only | created: 2026-08-30 | last_used: 2026-08-30 | uses: 1 | tier: core | origin: 2026-08-30-050040 -->
 
-- **Route pools are a first-class platform registration (ADR-0020; Eric ratified D1–D10
-  2026-08-30).** `registerRoutePool(prefix, lambda, count)` = private singleton FIFO lanes
-  `{prefix}.0..{count-1}` returning the ordered member list; `releaseRoutePool` symmetric;
-  house RELOAD semantics on re-registration; mutation-time range-checked warnings in
-  register/registerStream/release (never refusals); mutations atomic under a ReentrantLock
-  (Eric: VT-friendly on Java 21). **`getLocalRoutingTable()` is a permanent non-goal for
-  display collapse** — it is the truthful live registry consumed by mesh advertising
-  (ServiceRegistry) and Spring autowiring (AppLoader); pool rendering stays display-only in
-  the actuator (`compressRouteFamilies`, shipped earlier). D10: the lane family KEEPS
-  `async.http.response.stream.{n}` (rename rejected — sibling of `async.http.response`).
-  Same-day follow-up (Eric): `registerStream` is private-only and `registerPrivateStream`
-  is removed (ObjectStreamIO is the exclusive mechanism; minor breaking — CHANGELOG
-  Unreleased carries the note). Spec: draft-design-specs/register-route-pool.md.
-  Delivered by [[ot-route-pool-api]].
-  <!-- id: route-pool-registration-design | created: 2026-08-30 | last_used: 2026-09-01 | uses: 2 | tier: archive-candidate | origin: 2026-08-30-211721 -->
-
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
   `examples/minigraph-playground/scripts/playground-session-broker.mjs` (zero-dependency,
@@ -214,7 +198,7 @@
   **Scope extension: the Event Script surface is part of the cross-engine contract** — flows are
   engine-portable YAML, so any new built-in simple plugin ships in lock-step on both engines (with
   closely matching error messages), or flows stop being portable.
-  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-09-02 | uses: 42 | tier: archive-candidate | origin: 2026-07-23-145132 -->
+  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-09-02 | uses: 42 | tier: core | origin: 2026-07-23-145132 | note: promoted to core 2026-09-04 (Eric): the cross-engine contract is a standing field requirement, not a fading decision; it fell to archive-candidate only because one window was docs work -->
 
 - **graph.js is FORMALLY DEPRECATED (Eric, 2026-09-02; ADR-0022) — backward compatibility
   only; the field is refactoring off it; AI agents must never use it; the Rust port does
@@ -264,12 +248,22 @@
   parsing (complementing Eric's curl + hand-rolled .mjs tests, which prove the
   zero-dependency wire). The literal checkbox is a bounded MCP adapter on the
   existing shape — a future [[bp-agent-orchestration]] item, not a redesign.
-  <!-- id: conv-no-streamable-http-claim | created: 2026-09-03 | last_used: 2026-09-03 | uses: 2 | tier: active | origin: 2026-09-03-004215 -->
+  <!-- id: conv-no-streamable-http-claim | created: 2026-09-03 | last_used: 2026-09-03 | uses: 2 | tier: archive-candidate | origin: 2026-09-03-004215 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
+- **Declare a Memory Reference when a fact is CONSULTED to make a decision — not only when it is
+  edited (Eric agreed, 2026-09-04).** A session log's `## Memory References` is the sole input to
+  `refresh-metadata`, so an undeclared consultation reads as non-use and decays the fact. This is
+  not hypothetical: `2026-09-04-011530.md` declared `(none)` while reasoning explicitly from
+  `conv-telemetry-presentation-parity` to conclude the Kafka opt-out was Java-only, and the very
+  next refresh demoted a 42-use fact to `archive-candidate`. Past logs are immutable, so the guard
+  is forward-looking. Rule of thumb: if you would have decided differently without the fact, it is
+  a reference. Surfaced by the 2026-09-04 smoke test; the two facts it endangered are now `core`.
+  <!-- id: conv-declare-consulted-references | created: 2026-09-04 | last_used: 2026-09-04 | uses: 1 | tier: core -->
+
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
 - [ ] (blueprint) **AI agent orchestration ("graph engineering")** — the Active Knowledge
@@ -320,7 +314,7 @@
   memory 2026-08-22: the smoke test found six session logs referencing this id while the
   fact lived only in an agent's personal store — a project-relevant working rhythm belongs
   in the shared layer.)
-  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-09-02 | uses: 29 | tier: archive-candidate | origin: 2026-08-22-180334 -->
+  <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-09-02 | uses: 29 | tier: core | origin: 2026-08-22-180334 | note: promoted to core 2026-09-04 (Eric): an operating preference that does not decay in relevance — and the sole User Preferences fact, so archiving it would fail the orientation question outright -->
 
 ## Team / Members
 
