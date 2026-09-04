@@ -28,9 +28,8 @@
   Jackson-2 BOM 2.22.2, proactive Jackson-3 BOM 3.2.2 + Tomcat 11.0.25 — merged to main
   2026-09-04 (PR #320) with **deliberately NO v4.12.4**: the field had not yet published
   4.12.3 to their Artifactory and catches up with a quick patch; the fixes ride main until
-  the next regular release. Field pipeline status: Snyk stage addressed; the SonarQube stage
-  has not run yet — their gate covers Overall Code, so a follow-up code-smell round is
-  possible)
+  the next regular release. Field pipeline: PASSED end-to-end (Snyk + SonarQube) and
+  DEPLOYED same-day 2026-09-04 — no Sonar follow-up round was needed)
 - **last_enabled:** 2026-06-20
 - **last_review:** 2026-09-04 | through 2026-09-04-040305.md
 - **last_invariant_check:** 2026-09-04 | 2026-09-04-043732.md (all 15 confirmed by Eric + the Vision — one-by-one walkthrough with live-tree evidence; no supersessions; stack-messaging-kafka re-checked after PR #315 added Kafka config keys additively; ot-reverify-invariants-20260904 closed. Prior: 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed))
