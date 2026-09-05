@@ -4084,9 +4084,12 @@ Flow YAML can move across the two engines. Python and Node.js functions can part
 Event-over-HTTP peers using the same envelope.</p>
 <p>The grammar remains language-neutral because the contracts remain language-neutral.</p>
 <h3 id="project-memory">Project Memory<a class="headerlink" href="#project-memory" title="Permanent link">&para;</a></h3>
-<p>The project's memory is distinct from the platform's grammar. Vision, Blueprint, continuity,
-session records, and architecture decisions orient each AI session on purpose and state rather
-than only API shape.</p>
+<p>The project's memory is distinct from the platform's grammar — and unlike the mechanisms above,
+Mercury does not implement it. The repository is AI-enabled with <strong>agent-memory</strong>, a
+vendor-neutral shared-memory and cognitive-loop tool that installs and versions the memory layer
+whose content Mercury's contributors maintain. Vision, Blueprint, continuity, session records,
+and architecture decisions orient each AI session on purpose and state rather than only API
+shape.</p>
 <p>Together, these mechanisms make guide-first behavior rational. If documentation can drift freely,
 an AI partner learns to distrust it and returns to source. Verification gates preserve trust in
 the explanatory layer.</p>
@@ -4109,6 +4112,10 @@ the same orientation:</p>
 <blockquote>
 <p>Mechanize the arithmetic. Do not mechanize the judgment.</p>
 </blockquote>
+<p>This step has a concrete, reusable implementation: Mercury's repositories are AI-enabled with
+<strong>agent-memory</strong>, which installs the shared memory layer, gates a human-confirmed Vision
+(bootstrapped as a draft, never fabricated), and orients every subsequent session — the same
+tool that maintains this repository's own <code>memory/</code>.</p>
 <p>The proof point is Mercury's own Rust engine: AI-enabled <strong>before its first line of code</strong>, so
 every increment was derived from stated intent rather than reconstructed after the fact. Roughly
 a hundred increments later it ships in lock-step with the Java engine, with the same discipline
@@ -4332,7 +4339,8 @@ exercises; measurements taken 2026-09-04 on the Rust engine's documentation map.
 reproducible from the cited artifacts.</em></p>
 <p><em>Mercury Composable is an official Accenture open-source project (github.com/Accenture/mercury-composable),
 with an official Rust port. agent-memory is a lightweight, vendor-neutral shared-memory and
-cognitive-loop framework for human-AI collaboration, published under Apache-2.0.</em></p>
+cognitive-loop tool for human-AI collaboration; it installs and maintains this repository's
+shared <code>memory/</code> layer.</em></p>
 
 
 
