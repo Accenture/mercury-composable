@@ -461,9 +461,12 @@ The grammar remains language-neutral because the contracts remain language-neutr
 
 ### Project Memory
 
-The project's memory is distinct from the platform's grammar. Vision, Blueprint, continuity,
-session records, and architecture decisions orient each AI session on purpose and state rather
-than only API shape.
+The project's memory is distinct from the platform's grammar — and unlike the mechanisms above,
+Mercury does not implement it. The repository is AI-enabled with **agent-memory**, a
+vendor-neutral shared-memory and cognitive-loop tool that installs and versions the memory layer
+whose content Mercury's contributors maintain. Vision, Blueprint, continuity, session records,
+and architecture decisions orient each AI session on purpose and state rather than only API
+shape.
 
 Together, these mechanisms make guide-first behavior rational. If documentation can drift freely,
 an AI partner learns to distrust it and returns to source. Verification gates preserve trust in
@@ -496,6 +499,11 @@ Current state → Vision → Blueprint → Design → Implementation → Feedbac
 Memory preserves continuity, but judgment remains a shared human responsibility.
 
 > Mechanize the arithmetic. Do not mechanize the judgment.
+
+This step has a concrete, reusable implementation: Mercury's repositories are AI-enabled with
+**agent-memory**, which installs the shared memory layer, gates a human-confirmed Vision
+(bootstrapped as a draft, never fabricated), and orients every subsequent session — the same
+tool that maintains this repository's own `memory/`.
 
 The proof point is Mercury's own Rust engine: AI-enabled **before its first line of code**, so
 every increment was derived from stated intent rather than reconstructed after the fact. Roughly
@@ -777,4 +785,5 @@ reproducible from the cited artifacts.*
 
 *Mercury Composable is an official Accenture open-source project (github.com/Accenture/mercury-composable),
 with an official Rust port. agent-memory is a lightweight, vendor-neutral shared-memory and
-cognitive-loop framework for human-AI collaboration, published under Apache-2.0.*
+cognitive-loop tool for human-AI collaboration; it installs and maintains this repository's
+shared `memory/` layer.*
