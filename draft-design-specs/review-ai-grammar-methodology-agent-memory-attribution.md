@@ -109,3 +109,16 @@ framework→tool + dangling-license fix are still worth taking, with option B.
 
 *Feedback only — no files in `docs/` were changed. Drafted wording is free to use, adapt,
 or discard.*
+
+---
+
+## Resolution (2026-09-05, Eric's ruling)
+
+**Accepted and applied now, both engines:** F1 (§6 Project Memory provenance), F2 (Step 1 names
+agent-memory), F3 **option B** (framework → tool; license clause dropped in favor of the
+installs-and-maintains sentence), F5 (deck row: "the project's grammar, via agent-memory").
+
+**Deferred by design:** F3 option A's locator and F4's reference entry — direct URLs to
+agent-memory stay out of this official Accenture publication until agent-memory is promoted to
+an official Accenture open-source asset; they land then, at the official URL. Tracked in
+`memory/open-threads/thread-ot-agent-memory-attribution-locators.md`.
