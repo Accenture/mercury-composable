@@ -1,13 +1,3 @@
----
-title: Intent-Driven Development and the Architecture of Human-AI Collaboration
-summary: White paper — Intent-Driven Development as the collaboration model for the AI era, with
-  Mercury as the working reference implementation: shared memory, AI grammar, and governed
-  execution, from event-driven origins to AI co-authorship.
-audience: [executive, architect, developer, business, ai-agent]
-keywords: [intent-driven development, human-ai collaboration, ai grammar, governed nondeterminism,
-  active knowledge graph, composable, shared memory, enterprise ai governance, white paper]
----
-
 # Intent-Driven Development and the Architecture of Human-AI Collaboration
 
 *The Mercury Story: from event-driven systems to AI co-authorship*
