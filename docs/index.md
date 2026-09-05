@@ -20,9 +20,9 @@ event bus.
 [Read the white paper](https://accenture.github.io/mercury-composable/ai-grammar-methodology/){ .md-button }
 [View the deck](https://accenture.github.io/mercury-composable/presentations/ai-grammar-story.html){ .md-button }
 
-*The white paper — **The Mercury Story: Origin, Evolution, and the AI Grammar Methodology** — tells
-why Mercury exists and how to build applications and building blocks with an AI partner; the deck is
-the same story in slides.*
+*The white paper — **Intent-Driven Development and the Architecture of Human-AI Collaboration** —
+presents the collaboration model the AI era needs and the Mercury story that proved it: shared
+memory, AI grammar, and governed execution; the deck tells the same story in slides.*
 
 ## A layered ascent
 
