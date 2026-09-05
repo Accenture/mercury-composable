@@ -73,6 +73,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Version 4.12.2, 9/2/2026
 
+The AI-grammar feedback round: a field AI agent's three-layer build (Event Script,
+Playground, companion driving) filed findings that drove most of this release - the
+companion endpoint retirement, the `graph.js` deprecation, the Playground export fix,
+and the documentation updates below. The `json` simple plugin closes a separate,
+unrelated field-feedback gap.
+
 ### Added
 
 1. New `json` simple plugin for Event Script and graph data mapping —
@@ -113,12 +119,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 
-1. AI-grammar feedback round (from a field agent's three-layer build): the companion
-   guide now documents /sync as the only endpoint; "restart ends the session - export
-   first" and "404 means the session is gone" warnings; inspect's leaf-vs-subtree
-   behavior; array element and append mapping syntax (`hello[0]`, `hello[]`) in the
-   flow schema reference; graph.js deprecation banners; example gotcha notes
-   (snake.case.serialization, example groupIds).
+1. From the AI-grammar feedback round above: the companion guide now documents /sync
+   as the only endpoint; "restart ends the session - export first" and "404 means the
+   session is gone" warnings; inspect's leaf-vs-subtree behavior; array element and
+   append mapping syntax (`hello[0]`, `hello[]`) in the flow schema reference; graph.js
+   deprecation banners; example gotcha notes (snake.case.serialization, example
+   groupIds).
 2. The recommended JDK/JRE is documented as Java 25 (the current LTS release; fully
    supports the Java 21 virtual-thread technology). The build's Java 21 target is
    documented as deliberate - wider compatibility.
