@@ -17,8 +17,8 @@ event-driven core descends from the **Scala/Akka actor model**, realized on the 
 event bus.
 
 [Get started](guides/getting-started.md){ .md-button .md-button--primary }
-[Read the white paper](https://accenture.github.io/mercury-composable/ai-grammar-methodology/){ .md-button }
-[View the deck](https://accenture.github.io/mercury-composable/presentations/ai-grammar-story.html){ .md-button }
+[Read the white paper](https://accenture.github.io/mercury-composable/mercury-story/){ .md-button }
+[View the deck](https://accenture.github.io/mercury-composable/presentations/mercury-story.html){ .md-button }
 
 *The white paper — **Intent-Driven Development and the Architecture of Human-AI Collaboration** —
 presents the collaboration model the AI era needs and the Mercury story that proved it: shared
