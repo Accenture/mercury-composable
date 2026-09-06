@@ -5,7 +5,7 @@
 *A white paper · Eric Law with Claude Code and GitHub Copilot · 2026-09-04*
 
 > Prefer slides? The Mercury story within this paper has a
-> **[presentation deck](presentations/ai-grammar-story.html)**.
+> **[presentation deck](presentations/mercury-story.html)**.
 
 ---
 
