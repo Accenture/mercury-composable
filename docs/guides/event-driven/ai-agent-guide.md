@@ -84,6 +84,11 @@ public interface TypedLambdaFunction<I, O> {
 
 - `headers` — request headers (`Map<String, String>`); case-insensitive lookup via `EventEnvelope.getHeader()`.
 - `input` — the deserialized request body. Type `I` can be `Map<String, Object>`, a PoJo, or a primitive.
+  PoJo shape: serialization is **field-driven** (the customized Gson reads/writes fields, so
+  getters/setters are optional and a no-arg constructor is not required by the Gson path —
+  though keeping one is good practice for portability); field types are enforced on
+  deserialization, which is what makes a PoJo the sanctioned fix for wire-level numeric
+  downcasts.
   For key-by-key data mapping (Event Script / Knowledge Graph), `I` must be `Map` or a PoJo —
   not a `List`.
 - `instance` — the worker index (0 to `instances − 1`). Pass to `new PostOffice(headers, instance)`.

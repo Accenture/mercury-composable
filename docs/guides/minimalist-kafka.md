@@ -160,7 +160,7 @@ Every message hands the flow a `Map` with three top-level objects — `input.bod
 |-------|------|--------------|
 | `body` | `byte[]` or `Map` | The message payload; a `Map` when [`schema.enabled`](#schema) decodes a Confluent-framed value or [`serializer: 'json'`](#routing-payload) parses a JSON object, raw `byte[]` otherwise. |
 | `header` | `Map<String,String>` | The record's Kafka headers, including `traceparent` (consumed for [trace continuity](#tracing)) and `cid` (correlation id) when the producer set them. |
-| `metadata` | `Map<String,Object>` | The record's own envelope facts — `topic`, `partition`, `offset`, `timestamp`, and `key` (omitted when the record carries no key). |
+| `metadata` | `Map<String,Object>` | The record's own envelope facts — `topic`, `partition`, `offset`, `timestamp` (epoch milliseconds, a `long`), and `key` (omitted when the record carries no key). |
 
 `metadata.topic` and `metadata.partition` are the record's **actual** topic and partition — not the
 binding's configured `topic`/`topic-pattern`. For a literal `topic` binding this is redundant (the flow
@@ -341,7 +341,10 @@ library **pins** only the parameters its contract depends on and lets the templa
 | Partitioning (producer) | `partitioner.class` **defaulted** (not pinned) to `SimpleRandomPartitioner` | any `partitioner.class` set here wins |
 | Connection / security | — | `bootstrap.servers`, `security.protocol`, `sasl.*`, `ssl.*`, `acks` |
 
-`bootstrap.servers` is template-only via `${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}`. The byte[] wire
+`bootstrap.servers` is template-only via `${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}`, and the
+shipped consumer template sets `auto.offset.reset=${KAFKA_AUTO_OFFSET_RESET:earliest}` — a
+brand-new consumer group starts from the beginning of the topic; committed offsets govern
+thereafter. The byte[] wire
 contract keeps the building blocks serializer-free; richer encodings layer on top via the
 [Schema Registry integration](#schema) (JSON Schema / Avro), opt-in per binding.
 
@@ -500,6 +503,14 @@ convenience applies to **non-schema-registry topics only**; `null` stays `null` 
 
 Publishing is **drop-n-forget** (Kafka's commit log is the durable buffer), but async delivery failures are
 logged rather than silently masked.
+
+Two contract details worth knowing: any **other body type** (a String, a PoJo) is rejected
+loudly with an `IllegalArgumentException` — convert to `byte[]` or a `Map`/`List` first. And
+the **correlation-id header is auto-stamped as a fallback**: when the flow maps no value under
+the configured header (default `cid`), the publisher stamps the flow's own business
+correlation id (`model.cid`); an explicitly mapped value always wins. With a customized
+`kafka.correlation.id.header`, map to the configured name — a `header.cid` mapping under a
+custom name is forwarded as a literal `cid` record header, never renamed.
 
 One header opts a publish into the Confluent wire format instead of raw `byte[]`: `subject` (with an optional
 `version`; see [Schema Registry](#schema)). It is an encoding directive — consumed by the function, not
@@ -732,6 +743,12 @@ schema's `Metadata`) and **never** from this library's serde config, so differen
 KEKs/vendors without any code or config change here. Whoever registers/governs the schema — CI, an admin
 tool — owns this binding. A schema with no `ENCRYPT` rule serializes exactly as before (plaintext); CSFLE is
 per-subject, never a single global on/off switch.
+
+> **Registry authentication is inherited by the serdes.** The serializer/deserializer's own
+> registry and DEK-registry clients receive the same `schema-registry.properties`
+> authentication this library uses for its schema lookups (with any
+> `schema.registry.serde.*` overrides applied on top) — a governed registry that returns
+> 401 to anonymous clients works without duplicating credentials.
 
 **3. What *does* go in `application.properties` — the `schema.registry.serde.*` pass-through.** This is
 reserved for genuinely **global, app-level** settings the KMS *driver* itself needs (not per-subject key

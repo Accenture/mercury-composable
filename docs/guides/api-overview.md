@@ -571,6 +571,17 @@ po.annotateTrace("hello", "world");
 Annotations of key-values, if any, will be recorded in the trace and they are not accessible by
 another function.
 
+**The worker-return deadline.** The per-function trace context is keyed to the worker thread
+and torn down — and the span's telemetry emitted — the moment `handleEvent` returns. Two
+consequences for reactive code:
+
+- `po.getTrace()` returns the current `TraceInfo` (trace id, path, and annotations) **only on
+  the worker thread**; called from a `Mono`/`Flux` completion callback it returns `null`.
+  Capture the `TraceInfo` on the worker thread first if the async continuation needs it.
+- `annotateTrace(...)` after the worker has returned is a **silent no-op** — for a
+  `Mono`-returning function, annotate *before* returning the `Mono`. Events sent from a
+  completion callback still carry the trace id and path, but get no span parenting.
+
 Please be moderate to attach only *small amount of transaction specific information* to the
 performance metrics of your functions.
 

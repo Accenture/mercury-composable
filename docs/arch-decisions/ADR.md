@@ -22,6 +22,37 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0023 — Claims-fixture gate: documentation behavior claims are drift-tested {#adr-0023}
+**Status:** Accepted · **Date:** 2026-09-06 · **Serves:** vision-mercury-composable · **Formalizes:** claims-fixture-gate
+<!-- id: adr-0023 | status: accepted -->
+
+**Abstract.** High-value prose claims about engine behavior (defaults, precedence,
+thresholds, failure semantics) are registered in `docs/guides/claims-registry.json`. CI
+verifies both sides of every claim: the normative sentence must still appear on its page
+(doc-canon check 8, whitespace-normalized case-insensitive containment) and the named
+engine test must still exist as a method definition — while the tests themselves pin the
+behavior in the normal build. A registered claim states exactly what its test pins.
+
+**Context.** The AI grammar coverage study (2026-09-06) found all ten of its documentation
+drift items in ungated prose, while the gated surfaces (DSL catalogs, guide fixtures,
+golden vectors) held almost perfectly. The Rust edition's divergence-note mechanism had
+even *observed* one drift item and documented around it instead of failing a build. Ten
+registry entries would have caught every finding. Alternatives considered: line-number
+pins (rot with every edit) and AST/NLP documentation parsing (over-engineering); chosen:
+distinctive quoted substrings plus test-definition existence checks — deterministic and
+stdlib-only. The registry is itself a grammar asset: it ships inside the version-matched
+contract and is listed in `llms.txt`, so an AI agent may treat registered claims as
+source-verified.
+
+**Consequences.** "Verified" extends from catalog shape to stated behavior. New claims
+enter through the same friction → fix → gate feedback circuit that grew the grammar
+(ten to twenty high-value claims is the intended steady state, not hundreds). The format
+is engine-neutral: the Rust engine carries its own registry when the held sibling sweep
+unblocks. Seeded with eleven claims pinned by seven new `Claim*Test` classes and four
+existing tests.
+
+---
+
 ## ADR-0022 — graph.js is deprecated: backward compatibility only {#adr-0022}
 **Status:** Accepted · **Date:** 2026-09-02 · **Serves:** vision-mercury-composable · **Formalizes:** graphjs-phase-out-direction
 <!-- id: adr-0022 | status: accepted -->

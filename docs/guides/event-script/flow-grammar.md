@@ -123,7 +123,9 @@ The full catalog with examples is in [Event Script Syntax](syntax.md#tasks-and-d
 - The engine runs `first.task`, then chains by execution type (`next`/`join`/`pipeline`).
 - A `decision` task routes by the value its `output` maps into `decision`.
 - `flow.exception` catches unhandled task errors; a task's own `exception` overrides it; the handler
-  reads `error.*`. The built-in `resilience.handler` adds retry/backoff.
+  reads `error.*`. The built-in `resilience.handler` adds retry/backoff. With no handler at all,
+  the caller receives the default error body `{type: 'error', status, message}` with the thrown
+  status.
 
 ## Invariants {#invariants}
 

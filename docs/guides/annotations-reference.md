@@ -81,7 +81,7 @@ Maximum concurrent worker instances. Range 1–1000. Controls how many events th
 |---|---|
 | `String` | `""` |
 
-Override `instances` from an application property or environment variable. Syntax: `"${SOME_VAR:default}"`. Takes precedence over `instances` when the property is present.
+Override `instances` from configuration: names a property **key** looked up in `application.properties` (e.g. `envInstances = "heavy.task.instances"`); a `${ENV_VAR:default}` value may appear on the *right-hand side of that property* in the config file. Falls back to `instances` when the key is absent or non-numeric. Never write a `${...}` literal as the annotation value — the config reader rejects it and the application fails at startup.
 
 #### `isPrivate`
 
@@ -160,8 +160,9 @@ public class SearchUsers implements TypedLambdaFunction<SearchRequest, List<User
 public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> { ... }
 
 // Instance count from a configuration KEY: envInstances names a property key looked up in
-// application.properties (e.g. heavy.task.instances=20); a non-numeric or missing value
-// falls back to `instances`. A "${...}" literal here is NOT resolved and silently no-ops.
+// application.properties (e.g. heavy.task.instances=20); a nonexistent key or non-numeric
+// value falls back to `instances`. Never write a "${...}" literal here - the config reader
+// rejects it and the application fails at startup.
 @PreLoad(route = "v1.heavy.task", instances = 10, envInstances = "heavy.task.instances")
 public class HeavyTask implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> { ... }
 ```

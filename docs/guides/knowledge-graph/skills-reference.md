@@ -279,6 +279,16 @@ output[]=result.sales_performance -> output.body.sales_performance
   the same way an Event Script sub-flow does — so a sub-graph that suspends persists its record
   under the shared cid scoped by its own graph id, and re-invoking with the same cid resumes it
   ([the orchestrator pattern](workflow-suspension.md#orchestrator-pattern)).
+- **A missing `flow://` target is NOT `exception=`-routable**: an unknown flow id throws
+  *before* the delegated call is made, and a skill-thrown error aborts the whole run. An
+  unknown **graph id**, by contrast, reaches the graph executor and comes back as a `404`
+  reply *of the call itself* — which IS staged into `error.*` and routed to the `exception=`
+  handler like any other 4xx/5xx reply, task error, or timeout.
+- `flow://` targets resolve **at call time** — the CompileGraph deployment gate validates graph
+  structure and mapping syntax but does not check that a referenced flow id exists; use
+  `list flows` when authoring, and cover the node with a dry-run.
+- On a handled failure, **`error.code` is the delegated call's response status** (the child's
+  4xx/5xx, or the RPC timeout status `408` when the child's deadline fires).
 
 This is the seam between the semantic layer and the composable (Event Script) layer beneath it —
 authoring the target flow: [Event Script AI agent guide](../event-script/ai-agent-guide.md) +

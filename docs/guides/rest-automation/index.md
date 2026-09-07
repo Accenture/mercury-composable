@@ -144,6 +144,23 @@ public class SimpleAuthentication implements TypedLambdaFunction<AsyncHttpReques
 }
 ```
 
+The same `AsyncHttpRequest` input type serves any **directly-bound** user function (an
+endpoint whose `service:` names your function instead of `http.flow.adapter`). A `{param}`
+path variable is read from the request object:
+
+```java
+@PreLoad(route = "v1.get.profile.direct", instances = 10)
+public class GetProfileDirect implements TypedLambdaFunction<AsyncHttpRequest, Object> {
+
+    @Override
+    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
+        String profileId = input.getPathParameter("profile_id");   // from url: /api/profile/{profile_id}
+        // input.getQueryParameter(...), input.getBody(), input.getHeader(...) similarly
+        return Map.of("profile_id", profileId);
+    }
+}
+```
+
 Your authentication function can return a boolean value to indicate if the request should be accepted or rejected.
 
 If true, the system will send the HTTP request to the service. In this example, it is the "hello.world" function.

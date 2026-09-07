@@ -28,3 +28,7 @@ custom.content.types:
 modules.autostart:
   - 'demo.main.app'
   - 'flow://my-unit-test'
+
+# claims-fixture pin (ClaimConfigYmlWinsTest): deliberate conflict with the same key in
+# application.properties - this .yml value must win because application.yml merges last.
+claim.merge.winner: 'yml-value'

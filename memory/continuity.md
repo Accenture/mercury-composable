@@ -105,6 +105,17 @@
 
 ## Key Decisions
 
+- **The claims-fixture gate drift-tests documentation BEHAVIOR claims (ADR-0023, accepted
+  2026-09-06).** `docs/guides/claims-registry.json` registers high-value prose claims — a claim
+  states exactly what its named engine test pins, never more; doc-canon check 8 verifies the
+  normative sentence still appears on its page AND the test pin still exists as a method
+  definition; the `Claim*Test` pins run in the normal build. Born from the coverage study's
+  core finding: all doc drift lived in ungated prose while gated surfaces held. The registry
+  ships in the packaged contract and llms.txt (agents may treat registered claims as
+  source-verified). Engine-neutral format — the Rust registry lands with the held
+  [[ot-rust-docs-sibling-sweep]]. New claims enter via the feedback circuit.
+  <!-- id: claims-fixture-gate | created: 2026-09-06 | last_used: 2026-09-06 | uses: 1 | tier: working | origin: 2026-09-07-030526 -->
+
 - **Polyglot functions = Event-over-HTTP wrappers, NOT subprocesses (Eric's design; D0–D8
   ratified 2026-08-22).** python/node functions run as long-lived Event API peers speaking the
   standard envelope wire format, addressed through the declarative `yaml.event.over.http` map —

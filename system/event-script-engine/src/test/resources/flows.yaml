@@ -60,5 +60,6 @@ flows:
   - 'subflow-delay-test.yml'
   - 'subflow-delay-var-test.yml'
   - 'retry-subflow-test.yml'
+  - 'claim-decision-invalid-test.yml'
 
 location: 'classpath:/flows/'
