@@ -211,7 +211,7 @@ cleared run marks — which is the standard idiom for a second dry-run with diff
 ```
 run                        # traverse from root to end
 execute {node}             # run a single node (after instantiate)
-inspect {namespace.key}    # read a value from the state machine (leaf keys resolve; a subtree prints {})
+inspect {namespace.key}    # read a value from the state machine (a leaf value or a whole subtree)
 ```
 
 ```
@@ -222,10 +222,10 @@ inspect error                # the exception context after a failed node routed 
 
 > **Placeholder convention:** `{…}` in the syntax lines above (e.g. `{node}`,
 > `{namespace.key}`) marks a value you substitute — **do not type the braces**.
-> **`inspect` resolves leaves, not subtrees**: `inspect output` prints `{}` even when
-> `output.body.rmdAmount` holds a value — ask for the specific composite key. (An AI driver on
-> the `/sync` companion endpoint rarely needs `inspect` at all: a run's structured outcome comes
-> back in the response's `result` field.)
+> **`inspect` returns subtrees too**: `inspect output` prints the whole populated namespace
+> map; ask for a composite key like `inspect output.body.rmdAmount` when you want one value.
+> (An AI driver on the `/sync` companion endpoint rarely needs `inspect` at all: a run's
+> structured outcome comes back in the response's `result` field.)
 
 > Write `inspect output.body.name`, not `inspect {output.body.name}` (a literal
 > `{output.body}` is treated as the key `{output` → `body}` and resolves to nothing).
@@ -280,8 +280,9 @@ import node {node} from {name}
   (`Expect root node name=...`) — protecting `graph123.json` from another graph's content —
   while a **missing or blank root name is accepted**, and the export assigns the target id
   as the root name (the same self-naming a brand-new export performs).
-- `export` writes JSON to `location.graph.temp`; it adds `name={name}` to the root node and
-  **fails if any node is an orphan** (every node must connect to ≥1 other).
+- `export` writes JSON to `location.graph.temp` and adds `name={name}` to the root node.
+  (Orphan nodes are not rejected at export — the CompileGraph deployment gate re-validates
+  the whole model.)
 - The export reply includes `Described in /api/graph/model/{name}/{token}` — a read-only HTTP
   view of the exported model.
 

@@ -451,7 +451,8 @@ When `setException(Throwable ex)` is called, the framework determines the status
 | `IllegalArgumentException` | `400` |
 | Any other `Throwable` | `500` |
 
-Throw `AppException` from user functions to return structured error responses:
+Throw `AppException` (import `org.platformlambda.core.exception.AppException`) from user
+functions to return structured error responses:
 
 ```java
 throw new AppException(404, "Profile not found");
@@ -710,7 +711,7 @@ helps when debugging flows.
 | `output.header.<name>` | Sets a response header |
 | `output.status` | Sets the HTTP response status code |
 | `header.<name>` | Sets a key-value in the next function's `headers` argument |
-| `error.status` | Status code when an exception handler task is invoked |
+| `error.code` | Status code when an exception handler task is invoked |
 | `error.message` | Error message when an exception handler task is invoked |
 | `error.task` | Route of the task that threw the exception |
 | `error.stack` | Stack trace when an exception handler task is invoked |

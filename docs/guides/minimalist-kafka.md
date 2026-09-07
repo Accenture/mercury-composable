@@ -48,7 +48,15 @@ which is a different concern; this library is an application-level building bloc
 
 ## Enabling the library {#enable}
 
-1. Depend on `system/minimalist-kafka` (it depends on `event-script-engine`).
+1. Depend on `system/minimalist-kafka` (it depends on `event-script-engine`):
+
+    ```xml
+    <dependency>
+        <groupId>org.platformlambda</groupId>
+        <artifactId>minimalist-kafka</artifactId>
+        <version>x.y.z</version>  <!-- the current Mercury version in the root pom.xml -->
+    </dependency>
+    ```
 2. Point `yaml.kafka.flow.adapter` at your adapter config (inbound). Without it, no consumer starts.
 3. Provide the Kafka client templates (see [client config](#client-config)) — the classpath defaults work
    for local dev.
@@ -367,7 +375,7 @@ auto-commit only changes *when* Kafka considers the offset committed, not whethe
 dead-lettered. Choose this per binding for high-volume topics (e.g. clickstream/telemetry) that can tolerate
 occasional loss on crash in exchange for throughput; leave strict topics on the default.
 
-A flow **succeeds** when it replies with status `200`. Any other status — or a thrown exception, including a
+A flow **succeeds** when it replies with a status below `400` (any 2xx/3xx). A `4xx`/`5xx` status — or a thrown exception, including a
 **timeout** when the flow does not reply within its own `ttl` — is a **failure**. (Kafka is asynchronous, so
 unlike an HTTP entry the adapter has no inherent request timeout: the flow's `ttl` *is* the processing
 deadline. There is no separate flow-timeout knob.)

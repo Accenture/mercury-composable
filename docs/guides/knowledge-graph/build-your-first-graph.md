@@ -127,8 +127,8 @@ export graph as my-first-graph
 
 ```
 > export graph as my-first-graph
-Added name=my-first-graph to Root node
 Graph exported to /tmp/graph/my-first-graph.json
+Described in /api/graph/model/my-first-graph/{token}
 ```
 
 ## Step 4 — deploy it {#deploy}

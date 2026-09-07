@@ -48,13 +48,14 @@ related:
 | `authentication` | no | a service route, or routing specs: `'default: svc'`, `'header: svc'`, `'header: value: svc'` |
 | `upload` | no | `true`/`false` (default false) — enable multipart upload |
 | `tracing` | no | `true`/`false` (default false) — enable distributed tracing |
+| `stream` | no | `true`/`false` (default false) — progressive response streaming (SSE / chunked JSON Lines) on a dedicated ordered reply lane; see the [HTTP Response Streaming](../http-streaming.md) guide |
 | `trace.id.header` | no | per-endpoint override of the global `http.trace.id.header` (default `X-Trace-Id`) — impedance matching for a caller that sends its own trace-id header name; a well-formed W3C `traceparent` still takes precedence |
 | `correlation.id.header` | no | per-endpoint override of the global `http.correlation.id.header` (default `X-Correlation-Id`) — impedance matching for a caller that sends its own business correlation-id header name |
 | `traceparent.header` | no | per-endpoint override of the global `http.traceparent.header` (default `traceparent`) — the header carrying the full W3C trace context, for **backward compatibility with a legacy intermediary only** (departure from the W3C/OTel standard is discouraged); the standard `traceparent` always wins, and the custom name is read only when the standard is absent |
 | `trust_all_cert` | no | `true`/`false` — **HTTPS relay only** |
 | `url_rewrite` | no | a list of **exactly two** strings `[from, to]` — **HTTP(S) relay only** |
 
-Boolean fields (`upload`, `tracing`, `trust_all_cert`) are written **unquoted**, e.g. `tracing: true`.
+Boolean fields (`upload`, `tracing`, `stream`, `trust_all_cert`) are written **unquoted**, e.g. `tracing: true`.
 The header-override values are header names, written quoted like other strings, e.g.
 `trace.id.header: 'X-Legacy-Trace'` (header capture is case-insensitive; precedence is
 per-entry > `application.properties` global > built-in default — see

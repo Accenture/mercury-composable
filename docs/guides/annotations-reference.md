@@ -159,8 +159,10 @@ public class SearchUsers implements TypedLambdaFunction<SearchRequest, List<User
 @PreLoad(route = "greeting.case.1, greeting.case.2", instances = 10)
 public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> { ... }
 
-// Instance count from environment variable
-@PreLoad(route = "v1.heavy.task", envInstances = "${HEAVY_TASK_INSTANCES:10}")
+// Instance count from a configuration KEY: envInstances names a property key looked up in
+// application.properties (e.g. heavy.task.instances=20); a non-numeric or missing value
+// falls back to `instances`. A "${...}" literal here is NOT resolved and silently no-ops.
+@PreLoad(route = "v1.heavy.task", instances = 10, envInstances = "heavy.task.instances")
 public class HeavyTask implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> { ... }
 ```
 
@@ -173,8 +175,11 @@ public class HeavyTask implements TypedLambdaFunction<Map<String, Object>, Map<S
   Constructor injection does NOT work because instances are created before the Spring context.
 - `@PreLoad` can be combined with `@KernelThreadRunner`, `@EventInterceptor`, `@ZeroTracing`,
   and `@OptionalService` on the same class.
-- Runtime instance count override (without recompiling):
-  set `worker.instances.<route>=N` in `application.properties`.
+- Runtime instance count override (without recompiling) — **only for functions whose
+  `@PreLoad` declares `envInstances`**: the annotation names a configuration key (framework
+  built-ins use the `worker.instances.<route>` convention), and setting that key in
+  `application.properties` overrides `instances`. For functions without `envInstances`,
+  use `yaml.preload.override` instead.
 - Preload override YAML: use `yaml.preload.override` to re-map routes or change instance
   counts for library functions you cannot recompile.
 

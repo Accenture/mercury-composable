@@ -156,11 +156,16 @@ REST endpoint while keeping execution decoupled from the protocol.
 ```
 
 ```yaml
-# graph-executor.yml — wraps the engine as a flow task
+# graph-executor.yml — wraps the engine as a flow task (the complete, loadable flow —
+# it ships pre-wired in the MiniGraph playground engine and example app)
 flow:
   id: 'graph-executor'
+  description: 'MiniGraph Traveler'
+  ttl: 60s
   exception: 'graph.exception.handler'
+
 first.task: 'graph.executor'
+
 tasks:
   - input:
       - 'model.instance -> header.instance'
@@ -170,8 +175,22 @@ tasks:
       - 'status -> output.status'
       - 'header -> output.header'
       - 'result -> output.body'
+    description: 'Perform active graph traversal and execute nodes'
+    execution: end
+
+  - input:
+      - 'error.code -> status'
+      - 'error.message -> message'
+      - 'error.stack -> stack'
+    process: 'graph.exception.handler'
+    output:
+      - 'result.status -> output.status'
+      - 'result -> output.body'
+    description: 'Render graph errors as clean HTTP responses'
     execution: end
 ```
+
+> `graph.exception.handler` is an engine **built-in** — you reference it, you do not write it.
 
 So a request flows: `http.flow.adapter` → `graph-executor` flow → `graph.executor` (loads the model
 by `graph_id`, traverses it) → `async.http.response`. Calling it:

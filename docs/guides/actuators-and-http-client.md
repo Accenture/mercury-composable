@@ -559,7 +559,8 @@ If you want to enforce Integer or Long, please design a PoJo to fit your use cas
 However, floating point numbers (Float and Double) are rendered without type matching.
 
 For untyped numbers, you may use the convenient type conversion methods in the platform-core's
-Utility class. For examples, util.str2int and util.str2long.
+Utility class (import `org.platformlambda.core.util.Utility`; obtain it with
+`Utility.getInstance()`). For examples, util.str2int and util.str2long.
 <br/>
 
 ## See also
