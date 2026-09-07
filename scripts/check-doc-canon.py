@@ -19,7 +19,7 @@ Checks (deterministic, stdlib only), over docs/:
                        sentence present on one of its pages AND its engine-test pin resolvable
                        (module::Class#method exists). The AI grammar coverage study found all
                        doc drift in ungated prose - this gate extends drift testing from shape
-                       to behavior (proposed ADR-0023).
+                       to behavior (ADR-0023).
 
 Exit 0 = clean; exit 1 = drift (with details). Run from anywhere:
     python3 scripts/check-doc-canon.py [--root PATH]

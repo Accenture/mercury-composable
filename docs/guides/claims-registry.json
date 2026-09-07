@@ -1,7 +1,7 @@
 {
   "registry": "claims-fixture",
   "version": "1.0",
-  "description": "Machine-readable registry of CI-pinned documentation behavior claims (the claims-fixture gate, proposed ADR-0023). Each claim states exactly what its named engine test pins - no more. The claim's normative sentence must appear on one of its pages (check 8 of scripts/check-doc-canon.py: whitespace-normalized, case-insensitive containment) and the engine test pin must exist and pass in the normal build. Origin: the AI grammar coverage study found all documentation drift in ungated prose - this gate extends drift testing from shape to behavior. An AI agent may treat these claims as source-verified.",
+  "description": "Machine-readable registry of CI-pinned documentation behavior claims (the claims-fixture gate, ADR-0023). Each claim states exactly what its named engine test pins - no more. The claim's normative sentence must appear on one of its pages (check 8 of scripts/check-doc-canon.py: whitespace-normalized, case-insensitive containment) and the engine test pin must exist and pass in the normal build. Origin: the AI grammar coverage study found all documentation drift in ungated prose - this gate extends drift testing from shape to behavior. An AI agent may treat these claims as source-verified.",
   "test_ref_format": "module-path::TestClass#method",
   "claims": [
     {

@@ -1,7 +1,7 @@
 # Claims-fixture gate — drift-testing documentation *behavior* claims
 
-**Status:** DESIGN + first implementation (this branch) · proposed as **ADR-0023** (awaiting
-maintainer approval)
+**Status:** IMPLEMENTED · **ADR-0023 Accepted** (Eric, 2026-09-06 — entry in
+`docs/arch-decisions/ADR.md`)
 **Motivation:** the AI grammar coverage study (`ai-grammar-coverage-study.md`) — all 10
 doc-drift findings were *prose behavior claims* (defaults, precedence, thresholds, failure
 semantics) in exactly the tier no existing gate covers, while the gated surfaces (DSL
@@ -82,7 +82,7 @@ footnote. Porting waits on the held sibling sweep (`ot-rust-docs-sibling-sweep`)
   friction → fix → gate loop the grammar already runs). Ten to twenty high-value claims is
   the intended steady state, not hundreds.
 
-## Proposed ADR-0023 (draft, for the ledger on approval)
+## ADR-0023 (accepted — the authoritative entry lives in the ledger; draft kept for provenance)
 
 > **ADR-0023 — Claims-fixture gate: documentation behavior claims are drift-tested**
 > Accepted YYYY-MM-DD. High-value prose claims about engine behavior (defaults, precedence,
