@@ -256,6 +256,10 @@
   `1685842c` landed as "…cannot drop a span  Body (#283)" (a leaked "Body" + double
   space). Trim the pre-filled title to the intended one-liner on every squash; same
   review moment as the co-author-trailer dedup rule in AGENTS.md.
+  Second instance: PR #328's squash `fd7f14f5` landed the agent's PR-handoff PREAMBLE in the
+  title ("docs/deck-benchmark-study (e385eec2, 55ab58e1 + logs), title Deck slide 13 …").
+  Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
+  block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-05 | uses: 14 | tier: active | origin: 2026-08-19-195244 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
