@@ -112,8 +112,10 @@
   definition; the `Claim*Test` pins run in the normal build. Born from the coverage study's
   core finding: all doc drift lived in ungated prose while gated surfaces held. The registry
   ships in the packaged contract and llms.txt (agents may treat registered claims as
-  source-verified). Engine-neutral format — the Rust registry lands with the held
-  [[ot-rust-docs-sibling-sweep]]. New claims enter via the feedback circuit.
+  source-verified). Engine-neutral format — the Rust twin LANDED 2026-09-07 (Rust PR #238,
+  merge `76b8f282`: 20 claims via `scripts/check-doc-claims.py` in BOTH docs.yml and rust.yml,
+  Rust ADR-0018 accepted same-PR; the Rust-side sweep thread is closed). New claims enter via
+  the feedback circuit.
   <!-- id: claims-fixture-gate | created: 2026-09-06 | last_used: 2026-09-06 | uses: 1 | tier: working | origin: 2026-09-07-030526 -->
 
 - **Polyglot functions = Event-over-HTTP wrappers, NOT subprocesses (Eric's design; D0–D8
