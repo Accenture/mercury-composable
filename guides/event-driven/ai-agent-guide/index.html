@@ -3210,6 +3210,11 @@ correctness is checkable before runtime, but not by relying on a crash.</p>
 <ul>
 <li><code>headers</code> — request headers (<code>Map&lt;String, String&gt;</code>); case-insensitive lookup via <code>EventEnvelope.getHeader()</code>.</li>
 <li><code>input</code> — the deserialized request body. Type <code>I</code> can be <code>Map&lt;String, Object&gt;</code>, a PoJo, or a primitive.
+  PoJo shape: serialization is <strong>field-driven</strong> (the customized Gson reads/writes fields, so
+  getters/setters are optional and a no-arg constructor is not required by the Gson path —
+  though keeping one is good practice for portability); field types are enforced on
+  deserialization, which is what makes a PoJo the sanctioned fix for wire-level numeric
+  downcasts.
   For key-by-key data mapping (Event Script / Knowledge Graph), <code>I</code> must be <code>Map</code> or a PoJo —
   not a <code>List</code>.</li>
 <li><code>instance</code> — the worker index (0 to <code>instances − 1</code>). Pass to <code>new PostOffice(headers, instance)</code>.</li>

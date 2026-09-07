@@ -3093,6 +3093,15 @@ routing file is turned on and the peer address is externalized:</p>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">route</span><span class="p">:</span><span class="w"> </span><span class="s">'hello.declarative'</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">'http://${peer.demo.host:127.0.0.1}:${peer.demo.port}/api/event'</span>
 </code></pre></div>
+<blockquote>
+<p>The flat <code>event.http:</code> key and the nested <code>event:</code> / <code>http:</code> form seen elsewhere in this
+guide are equivalent spellings (dotted keys normalize to the same structure). Note also
+that the map is <strong>loaded once at platform startup</strong> — editing the file requires an
+application restart. And the receiving side serves <strong>local routes only</strong>: an inbound
+<code>/api/event</code> call to a route the instance does not host answers <code>404</code> even when the
+instance's own map points that route at a peer — the map is caller-side knowledge, never a
+relay instruction (deliberate hop-through is an explicit relay function).</p>
+</blockquote>
 <p>and the REST endpoint <code>GET/POST /api/event/http/declarative</code> (see <code>rest.yaml</code>) runs the flow
 <code>event-over-http-declarative</code> whose task simply names the route:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">tasks</span><span class="p">:</span>

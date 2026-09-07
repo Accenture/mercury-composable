@@ -3095,6 +3095,12 @@ instead, see <a href="#log-context">Application log context</a>.</p>
 <p>The span tree mirrors the <a href="../architecture/">three paradigm layers</a>, and tracing is <strong>virtual-thread-safe</strong> — the
 parent span is threaded through a per-task anchor, not a <code>ThreadLocal</code>, so concurrently-dispatched siblings still
 share the correct parent.</p>
+<blockquote>
+<p><strong>Mono/Flux boundary</strong>: a function's span closes when its worker returns — not when a
+returned <code>Mono</code> completes — so annotate (and capture <code>po.getTrace()</code> if needed) on the
+worker thread before returning. See the
+<a href="../api-overview/#trace-annotation">trace annotation notes</a> for the exact rules.</p>
+</blockquote>
 <table>
 <thead>
 <tr>

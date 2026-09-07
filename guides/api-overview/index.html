@@ -3842,6 +3842,17 @@ instance using <code>PostOffice.trackable(headers, instance)</code> and follow t
 </code></pre></div>
 <p>Annotations of key-values, if any, will be recorded in the trace and they are not accessible by
 another function.</p>
+<p><strong>The worker-return deadline.</strong> The per-function trace context is keyed to the worker thread
+and torn down — and the span's telemetry emitted — the moment <code>handleEvent</code> returns. Two
+consequences for reactive code:</p>
+<ul>
+<li><code>po.getTrace()</code> returns the current <code>TraceInfo</code> (trace id, path, and annotations) <strong>only on
+  the worker thread</strong>; called from a <code>Mono</code>/<code>Flux</code> completion callback it returns <code>null</code>.
+  Capture the <code>TraceInfo</code> on the worker thread first if the async continuation needs it.</li>
+<li><code>annotateTrace(...)</code> after the worker has returned is a <strong>silent no-op</strong> — for a
+  <code>Mono</code>-returning function, annotate <em>before</em> returning the <code>Mono</code>. Events sent from a
+  completion callback still carry the trace id and path, but get no span parenting.</li>
+</ul>
 <p>Please be moderate to attach only <em>small amount of transaction specific information</em> to the
 performance metrics of your functions.</p>
 <blockquote>

@@ -3067,7 +3067,9 @@ The full catalog with examples is in <a href="../syntax/#tasks-and-data-mapping"
 <li>The engine runs <code>first.task</code>, then chains by execution type (<code>next</code>/<code>join</code>/<code>pipeline</code>).</li>
 <li>A <code>decision</code> task routes by the value its <code>output</code> maps into <code>decision</code>.</li>
 <li><code>flow.exception</code> catches unhandled task errors; a task's own <code>exception</code> overrides it; the handler
-  reads <code>error.*</code>. The built-in <code>resilience.handler</code> adds retry/backoff.</li>
+  reads <code>error.*</code>. The built-in <code>resilience.handler</code> adds retry/backoff. With no handler at all,
+  the caller receives the default error body <code>{type: 'error', status, message}</code> with the thrown
+  status.</li>
 </ul>
 <h2 id="invariants">Invariants<a class="headerlink" href="#invariants" title="Permanent link">&para;</a></h2>
 <p>Compile-time rules — violate them and the flow won't load:</p>

@@ -3494,7 +3494,7 @@ its own source, etc.) fails startup fast and loud rather than being silently ski
 <tr>
 <td><code>metadata</code></td>
 <td><code>Map&lt;String,Object&gt;</code></td>
-<td>The record's own envelope facts — <code>topic</code>, <code>partition</code>, <code>offset</code>, <code>timestamp</code>, and <code>key</code> (omitted when the record carries no key).</td>
+<td>The record's own envelope facts — <code>topic</code>, <code>partition</code>, <code>offset</code>, <code>timestamp</code> (epoch milliseconds, a <code>long</code>), and <code>key</code> (omitted when the record carries no key).</td>
 </tr>
 </tbody>
 </table>
@@ -3693,7 +3693,10 @@ library <strong>pins</strong> only the parameters its contract depends on and le
 </tr>
 </tbody>
 </table>
-<p><code>bootstrap.servers</code> is template-only via <code>${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}</code>. The byte[] wire
+<p><code>bootstrap.servers</code> is template-only via <code>${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}</code>, and the
+shipped consumer template sets <code>auto.offset.reset=${KAFKA_AUTO_OFFSET_RESET:earliest}</code> — a
+brand-new consumer group starts from the beginning of the topic; committed offsets govern
+thereafter. The byte[] wire
 contract keeps the building blocks serializer-free; richer encodings layer on top via the
 <a href="#schema">Schema Registry integration</a> (JSON Schema / Avro), opt-in per binding.</p>
 <blockquote>
@@ -3849,6 +3852,13 @@ bytes, and a consuming binding with <code>serializer: 'json'</code> hands its fl
 convenience applies to <strong>non-schema-registry topics only</strong>; <code>null</code> stays <code>null</code> (a Kafka tombstone).</p>
 <p>Publishing is <strong>drop-n-forget</strong> (Kafka's commit log is the durable buffer), but async delivery failures are
 logged rather than silently masked.</p>
+<p>Two contract details worth knowing: any <strong>other body type</strong> (a String, a PoJo) is rejected
+loudly with an <code>IllegalArgumentException</code> — convert to <code>byte[]</code> or a <code>Map</code>/<code>List</code> first. And
+the <strong>correlation-id header is auto-stamped as a fallback</strong>: when the flow maps no value under
+the configured header (default <code>cid</code>), the publisher stamps the flow's own business
+correlation id (<code>model.cid</code>); an explicitly mapped value always wins. With a customized
+<code>kafka.correlation.id.header</code>, map to the configured name — a <code>header.cid</code> mapping under a
+custom name is forwarded as a literal <code>cid</code> record header, never renamed.</p>
 <p>One header opts a publish into the Confluent wire format instead of raw <code>byte[]</code>: <code>subject</code> (with an optional
 <code>version</code>; see <a href="#schema">Schema Registry</a>). It is an encoding directive — consumed by the function, not
 forwarded as a Kafka header. On this schema path <strong>the body must be <code>byte[]</code> (a pre-serialized JSON
@@ -4064,6 +4074,13 @@ schema's <code>Metadata</code>) and <strong>never</strong> from this library's s
 KEKs/vendors without any code or config change here. Whoever registers/governs the schema — CI, an admin
 tool — owns this binding. A schema with no <code>ENCRYPT</code> rule serializes exactly as before (plaintext); CSFLE is
 per-subject, never a single global on/off switch.</p>
+<blockquote>
+<p><strong>Registry authentication is inherited by the serdes.</strong> The serializer/deserializer's own
+registry and DEK-registry clients receive the same <code>schema-registry.properties</code>
+authentication this library uses for its schema lookups (with any
+<code>schema.registry.serde.*</code> overrides applied on top) — a governed registry that returns
+401 to anonymous clients works without duplicating credentials.</p>
+</blockquote>
 <p><strong>3. What <em>does</em> go in <code>application.properties</code> — the <code>schema.registry.serde.*</code> pass-through.</strong> This is
 reserved for genuinely <strong>global, app-level</strong> settings the KMS <em>driver</em> itself needs (not per-subject key
 identity): typically nothing at all if you rely on your cloud's default credential chain (e.g. an IAM role for

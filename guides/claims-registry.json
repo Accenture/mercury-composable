@@ -1,0 +1,96 @@
+{
+  "registry": "claims-fixture",
+  "version": "1.0",
+  "description": "Machine-readable registry of CI-pinned documentation behavior claims (the claims-fixture gate, ADR-0023). Each claim states exactly what its named engine test pins - no more. The claim's normative sentence must appear on one of its pages (check 8 of scripts/check-doc-canon.py: whitespace-normalized, case-insensitive containment) and the engine test pin must exist and pass in the normal build. Origin: the AI grammar coverage study found all documentation drift in ungated prose - this gate extends drift testing from shape to behavior. An AI agent may treat these claims as source-verified.",
+  "test_ref_format": "module-path::TestClass#method",
+  "claims": [
+    {
+      "id": "error-dataset-code-key",
+      "claim": "The flow exception context exposes the HTTP status under error.code.",
+      "pages": ["docs/guides/event-script/syntax.md", "docs/guides/event-script/flow-grammar.md", "docs/guides/event-envelope-reference.md"],
+      "quote": "error.code - the status code of the exception",
+      "test": "system/event-script-engine::FlowTests#subflowTimeoutIsCatchableWithTaskTtlOverride",
+      "since": "4.12.3+"
+    },
+    {
+      "id": "config-yml-wins",
+      "claim": "When application.properties and application.yml define the same key, the .yml value wins (application.yml is merged last).",
+      "pages": ["docs/guides/configuration-reference.md"],
+      "quote": "`application.yml` is merged last",
+      "test": "system/platform-core::ClaimConfigYmlWinsTest#ymlValueWinsOverPropertiesValueForTheSameKey",
+      "since": "4.12.3+"
+    },
+    {
+      "id": "kafka-success-threshold",
+      "claim": "The Kafka flow adapter treats any flow reply status below 400 (2xx/3xx) as success - acknowledged, never retried or dead-lettered.",
+      "pages": ["docs/guides/minimalist-kafka.md"],
+      "quote": "A flow **succeeds** when it replies with a status below `400`",
+      "test": "system/minimalist-kafka::ClaimKafkaSuccessThresholdTest#statusBelow400IsSuccessNoRetryNoDeadLetter",
+      "since": "4.12.3+"
+    },
+    {
+      "id": "startup-duplicate-route-reload",
+      "claim": "Registering a duplicate route does not fail the application: the earlier registration is reloaded and the newest function serves.",
+      "pages": ["docs/guides/event-driven/ai-agent-guide.md"],
+      "quote": "a duplicate route reloads the earlier registration",
+      "test": "system/platform-core::PostOfficeTest#reloadPublicServiceAsPrivate",
+      "since": "4.12.3+"
+    },
+    {
+      "id": "envinstances-config-key",
+      "claim": "@PreLoad envInstances names a configuration KEY looked up in application.properties; a nonexistent key falls back to the annotation's instances.",
+      "pages": ["docs/guides/annotations-reference.md"],
+      "quote": "envInstances names a property key looked up in",
+      "test": "system/platform-core::ClaimEnvInstancesConfigKeyTest#envInstancesIsConfigKeyLookupWithAnnotationFallback",
+      "since": "4.12.3+"
+    },
+    {
+      "id": "flows-location-default",
+      "claim": "A flows.yaml manifest that omits 'location' loads its flow files from classpath:/flows/.",
+      "pages": ["docs/guides/flow-schema-reference.md"],
+      "quote": "Default: `classpath:/flows/`",
+      "test": "system/event-script-engine::ClaimFlowsLocationDefaultTest#manifestWithoutLocationLoadsFromDefaultClasspathFlows",
+      "since": "4.12.3+"
+    },
+    {
+      "id": "decision-invalid-value",
+      "claim": "A non-boolean, non-numeric decision value coerces to 1 and silently selects the first branch.",
+      "pages": ["docs/guides/event-script/syntax.md"],
+      "quote": "silently select the first branch",
+      "test": "system/event-script-engine::ClaimDecisionInvalidValueTest#nonNumericDecisionSilentlyRoutesToBranchOne",
+      "since": "4.12.3+"
+    },
+    {
+      "id": "inspect-returns-subtrees",
+      "claim": "The Playground inspect command resolves whole subtrees, not only leaf keys.",
+      "pages": ["docs/guides/knowledge-graph/command-reference.md"],
+      "quote": "`inspect` returns subtrees too",
+      "test": "system/minigraph-playground-engine::CompanionSyncTest#dryRunStagesErrorContextAndInspectErrorShowsIt",
+      "since": "4.12.3+"
+    },
+    {
+      "id": "export-allows-orphans",
+      "claim": "Graph export does not reject orphan nodes; the CompileGraph deployment gate re-validates the whole model.",
+      "pages": ["docs/guides/knowledge-graph/command-reference.md"],
+      "quote": "Orphan nodes are not rejected at export",
+      "test": "system/minigraph-playground-engine::ClaimExportAllowsOrphansTest#exportAcceptsGraphWithOrphanNodeAndKeepsItInTheFile",
+      "since": "4.12.3+"
+    },
+    {
+      "id": "reserved-model-keys-nine",
+      "claim": "The reserved model-metadata key set is exactly nine names: cid, instance, flow, ttl, trace, parent, root, none, run.",
+      "pages": ["docs/guides/knowledge-graph/workflow-suspension.md"],
+      "quote": "`model.parent`, `model.root`, `model.none`, `model.run`",
+      "test": "system/minigraph-playground-engine::ClaimReservedModelKeysTest#reservedModelMetadataIsExactlyTheDocumentedNineNames",
+      "since": "4.12.3+"
+    },
+    {
+      "id": "stream-field-parsed",
+      "claim": "rest.yaml's stream: true is parsed by the engine and streaming replies ride a dedicated ordered reply lane.",
+      "pages": ["docs/guides/rest-automation/rest-grammar.md"],
+      "quote": "progressive response streaming (SSE / chunked JSON Lines) on a dedicated ordered reply lane",
+      "test": "system/platform-core::EventStreamResponseTest#sseSegmentsArriveProgressivelyWithTerminalDoneEvent",
+      "since": "4.12.3+"
+    }
+  ]
+}

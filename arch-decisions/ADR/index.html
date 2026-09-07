@@ -2065,6 +2065,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0023" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0023 — Claims-fixture gate: documentation behavior claims are drift-tested
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0022" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2825,6 +2836,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0023" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0023 — Claims-fixture gate: documentation behavior claims are drift-tested
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0022" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3104,6 +3126,33 @@ governing the codebase — verified against the source (<code>platform-core</cod
 <code>event-script-engine</code>, <code>minigraph-playground-engine</code>) and the published guides, which are
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
+<hr />
+<h2 id="adr-0023">ADR-0023 — Claims-fixture gate: documentation behavior claims are drift-tested<a class="headerlink" href="#adr-0023" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-09-06 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> claims-fixture-gate</p>
+<!-- id: adr-0023 | status: accepted -->
+
+<p><strong>Abstract.</strong> High-value prose claims about engine behavior (defaults, precedence,
+thresholds, failure semantics) are registered in <code>docs/guides/claims-registry.json</code>. CI
+verifies both sides of every claim: the normative sentence must still appear on its page
+(doc-canon check 8, whitespace-normalized case-insensitive containment) and the named
+engine test must still exist as a method definition — while the tests themselves pin the
+behavior in the normal build. A registered claim states exactly what its test pins.</p>
+<p><strong>Context.</strong> The AI grammar coverage study (2026-09-06) found all ten of its documentation
+drift items in ungated prose, while the gated surfaces (DSL catalogs, guide fixtures,
+golden vectors) held almost perfectly. The Rust edition's divergence-note mechanism had
+even <em>observed</em> one drift item and documented around it instead of failing a build. Ten
+registry entries would have caught every finding. Alternatives considered: line-number
+pins (rot with every edit) and AST/NLP documentation parsing (over-engineering); chosen:
+distinctive quoted substrings plus test-definition existence checks — deterministic and
+stdlib-only. The registry is itself a grammar asset: it ships inside the version-matched
+contract and is listed in <code>llms.txt</code>, so an AI agent may treat registered claims as
+source-verified.</p>
+<p><strong>Consequences.</strong> "Verified" extends from catalog shape to stated behavior. New claims
+enter through the same friction → fix → gate feedback circuit that grew the grammar
+(ten to twenty high-value claims is the intended steady state, not hundreds). The format
+is engine-neutral: the Rust engine carries its own registry when the held sibling sweep
+unblocks. Seeded with eleven claims pinned by seven new <code>Claim*Test</code> classes and four
+existing tests.</p>
 <hr />
 <h2 id="adr-0022">ADR-0022 — graph.js is deprecated: backward compatibility only<a class="headerlink" href="#adr-0022" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-09-02 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> graphjs-phase-out-direction</p>

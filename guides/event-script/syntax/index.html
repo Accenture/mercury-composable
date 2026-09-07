@@ -5245,6 +5245,13 @@ key "user" and the HTTP request body will be mapped to the function input body.<
 will be selected (<code>1</code> selects the first task, <code>2</code> the second, <code>N</code> the N-th). An integer decision therefore
 supports more than two branches - much like a <code>switch</code> statement in code - while a boolean decision is the
 two-way special case (<code>true</code> = <code>1</code> = first, <code>false</code> = <code>2</code> = second).</p>
+<p><strong>Runtime semantics for a bad decision value</strong> — a <code>null</code> or missing decision aborts the flow
+("returned invalid decision"), and an integer <strong>above</strong> the branch count aborts likewise; but
+<code>0</code>, negative integers, and any non-boolean, non-numeric value (e.g. the <em>string</em> <code>"false"</code>)
+are coerced through integer conversion clamped to a minimum of <code>1</code>, so they <strong>silently select
+the first branch</strong>. Return a real boolean or a valid 1-based integer from the function, or
+stage the value through a typed model variable
+(e.g. <code>input.query.flag -&gt; model.flag:boolean(yes=true)</code>) — never rely on coercion.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a><span class="nt">tasks</span><span class="p">:</span>
 <a id="__codelineno-44-2" name="__codelineno-44-2" href="#__codelineno-44-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
 <a id="__codelineno-44-3" name="__codelineno-44-3" href="#__codelineno-44-3"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.query.decision</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">decision'</span>

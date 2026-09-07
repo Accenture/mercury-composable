@@ -4627,6 +4627,10 @@ It is identified by the <code>yaml.flow.automation</code> application property.<
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">exception</span><span class="p">:</span><span class="w"> </span><span class="s">'v1.payment.retry'</span><span class="w">  </span><span class="c1"># catches the 408; may route back for a retry</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="c1"># ... name / input / output / description / next as usual</span>
 </code></pre></div>
+<p>The timeout surfaces on the parent's handler as status <code>408</code> with the message
+<code>Flow timeout for {ms} ms</code>. Note that a TTL abort <strong>bypasses the child's own
+<code>flow.exception</code></strong> — the child cannot swallow its timeout — and the built-in
+<code>resilience.handler</code> treats a missing <code>model.attempt</code> (first-ever failure) as <code>0</code>.</p>
 <h3 id="pipeline"><code>pipeline</code><a class="headerlink" href="#pipeline" title="Permanent link">&para;</a></h3>
 <table>
 <thead>

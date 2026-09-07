@@ -3131,6 +3131,16 @@ capabilities and reuse logic. <strong>Discover the valid targets with <code>list
   the same way an Event Script sub-flow does — so a sub-graph that suspends persists its record
   under the shared cid scoped by its own graph id, and re-invoking with the same cid resumes it
   (<a href="../workflow-suspension/#orchestrator-pattern">the orchestrator pattern</a>).</li>
+<li><strong>A missing <code>flow://</code> target is NOT <code>exception=</code>-routable</strong>: an unknown flow id throws
+  <em>before</em> the delegated call is made, and a skill-thrown error aborts the whole run. An
+  unknown <strong>graph id</strong>, by contrast, reaches the graph executor and comes back as a <code>404</code>
+  reply <em>of the call itself</em> — which IS staged into <code>error.*</code> and routed to the <code>exception=</code>
+  handler like any other 4xx/5xx reply, task error, or timeout.</li>
+<li><code>flow://</code> targets resolve <strong>at call time</strong> — the CompileGraph deployment gate validates graph
+  structure and mapping syntax but does not check that a referenced flow id exists; use
+  <code>list flows</code> when authoring, and cover the node with a dry-run.</li>
+<li>On a handled failure, <strong><code>error.code</code> is the delegated call's response status</strong> (the child's
+  4xx/5xx, or the RPC timeout status <code>408</code> when the child's deadline fires).</li>
 </ul>
 <p>This is the seam between the semantic layer and the composable (Event Script) layer beneath it —
 authoring the target flow: <a href="../../event-script/ai-agent-guide/">Event Script AI agent guide</a> +

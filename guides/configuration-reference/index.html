@@ -2536,6 +2536,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#knowledge-graph-minigraph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Knowledge Graph (MiniGraph)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Knowledge Graph (MiniGraph)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#graphmodelautomation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.model.automation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#locationgraphtemp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        location.graph.temp
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#component-scanning-startup" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3663,6 +3702,17 @@
     <span class="md-ellipsis">
       
         schema.registry.cache.ttl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#schemaregistryserde" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        schema.registry.serde.*
       
     </span>
   </a>
@@ -4811,6 +4861,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#knowledge-graph-minigraph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Knowledge Graph (MiniGraph)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Knowledge Graph (MiniGraph)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#graphmodelautomation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.model.automation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#locationgraphtemp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        location.graph.temp
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#component-scanning-startup" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5945,6 +6034,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#schemaregistryserde" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        schema.registry.serde.*
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#yamlsecondarykafkaflowadapter" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6705,7 +6805,9 @@ Set <code>rest.automation=true</code> and provide a <code>yaml.rest.automation</
 </tr>
 </tbody>
 </table>
-<p>Location(s) of REST endpoint configuration file(s). Multiple files are merged.</p>
+<p>Location(s) of REST endpoint configuration file(s). Multiple files are merged. A missing or
+empty file degrades gracefully — a warning is logged, no endpoints are rendered, and startup
+continues.</p>
 <hr />
 <h2 id="event-script-flow-engine">Event Script / Flow Engine<a class="headerlink" href="#event-script-flow-engine" title="Permanent link">&para;</a></h2>
 <p>Flow configuration files are compiled at startup. Each file lists one or more flow definitions
@@ -6758,7 +6860,10 @@ identified by <code>flow.id</code>. Multiple comma-separated paths are merged. S
 </tr>
 </tbody>
 </table>
-<p>Location(s) of Event Script flow definition files.</p>
+<p>Location(s) of Event Script flow definition files. A missing file degrades gracefully
+(warning logged; no flows deployed), and a flow with structural violations is skipped with an
+error log — startup continues in both cases. (A task-level data-mapping violation only omits
+that task: the flow still deploys and fails at runtime when the missing task is reached.)</p>
 <h3 id="yamljournal"><code>yaml.journal</code><a class="headerlink" href="#yamljournal" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -6791,6 +6896,45 @@ identified by <code>flow.id</code>. Multiple comma-separated paths are merged. S
 </tbody>
 </table>
 <p>Location(s) of the multicast route configuration. Multicast is a <strong>local-JVM fan-out</strong>: a message sent to a source route is automatically relayed to all listed target routes within the same in-memory event bus. Format: <code>multicast: [{source: "a.route", targets: ["b.route", "c.route"]}]</code>. Not the same as <code>PostOffice.broadcast()</code>, which is a distributed service-mesh operation.</p>
+<hr />
+<h2 id="knowledge-graph-minigraph">Knowledge Graph (MiniGraph)<a class="headerlink" href="#knowledge-graph-minigraph" title="Permanent link">&para;</a></h2>
+<h3 id="graphmodelautomation"><code>graph.model.automation</code><a class="headerlink" href="#graphmodelautomation" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code> (location)</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>Location of the graph deployment manifest (e.g. <code>classpath:/graphs.yaml</code>) listing the graph
+model ids the CompileGraph gate compiles at startup; the manifest's own optional <code>location</code>
+key (default <code>classpath:/graph</code>) says where the model JSON files live. When this property is
+absent, a warning is logged and <strong>no graphs are executable</strong> — every <code>/api/graph/{graph-id}</code>
+call answers 404 ("compiled or 404", ADR-0011).</p>
+<h3 id="locationgraphtemp"><code>location.graph.temp</code><a class="headerlink" href="#locationgraphtemp" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code> (local path)</td>
+<td><code>/tmp/graph</code></td>
+</tr>
+</tbody>
+</table>
+<p>Where the Playground's <code>export graph</code> command writes model JSON. Must be a local filesystem
+path (read/write requirement).</p>
 <hr />
 <h2 id="component-scanning-startup">Component Scanning &amp; Startup<a class="headerlink" href="#component-scanning-startup" title="Permanent link">&para;</a></h2>
 <h3 id="modulesautostart"><code>modules.autostart</code><a class="headerlink" href="#modulesautostart" title="Permanent link">&para;</a></h3>
@@ -8230,6 +8374,26 @@ Kafka. See the <a href="../minimalist-kafka/">Kafka Flow Adapter guide</a>. The 
 </tbody>
 </table>
 <p>Time-to-live for an entry in the in-memory (platform <code>ManagedCache</code>) cache of schemas fetched by id. Positive results only — a not-found id is never cached, so a newly-registered schema is visible immediately. The TTL bounds how long a cached schema is reused before re-fetching; <code>30m</code> lets schema changes be picked up without a pod restart (lengthen it in production where schemas change rarely). Cleared at startup (rebuildable).</p>
+<h3 id="schemaregistryserde"><code>schema.registry.serde.*</code><a class="headerlink" href="#schemaregistryserde" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code> (prefix family)</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>Pass-through prefix for Confluent serde configuration: every <code>schema.registry.serde.&lt;key&gt;</code>
+property is handed to the serializer/deserializer as <code>&lt;key&gt;</code> verbatim — e.g.
+<code>schema.registry.serde.access.key.id=${AWS_ACCESS_KEY_ID}</code> supplies global KMS driver
+credentials for <a href="../minimalist-kafka/#csfle">CSFLE</a>. Omit entirely to use the cloud default
+credential chain.</p>
 <h3 id="yamlsecondarykafkaflowadapter"><code>yaml.secondary.kafka.flow.adapter</code><a class="headerlink" href="#yamlsecondarykafkaflowadapter" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
