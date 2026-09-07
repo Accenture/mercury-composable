@@ -320,10 +320,14 @@
   waits on Eric's cloud account. Next: E1 (suspend checkpoint on an LLM verdict), Q8's
   second half (graph-run streaming). → serves: vision-mercury-composable
   <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-04 | uses: 11 | tier: working | origin: 2026-08-25-213703 -->
-- [ ] (blueprint) **Polyglot function execution** — python/node.js functions join Event Script
-  flows and MiniGraph graphs as Event-over-HTTP peers (ratified design D0–D8, 2026-08-22);
-  wrappers live in the repurposed Accenture/mercury-python + mercury-nodejs repos.
-  → serves: vision-mercury-composable
+- [x] (blueprint) **Polyglot function execution — GAP CLOSED (Eric, 2026-09-07).** python/node
+  functions join flows and graphs as Event-over-HTTP peers: design D0–D8 (2026-08-22) delivered
+  by the polyglot initiative, P1–P5 complete 2026-09-01 — wrappers published from
+  Accenture/mercury-python + mercury-nodejs (packs at 4.12.1), golden-vector conformance +
+  interop reports, graph.task D5 fix. Residual streaming/agent phases ride
+  [[bp-agent-orchestration]], not this gap. Lesson: the scope fence (wrappers = peers, never
+  orchestrators) is what kept four codebases in lock-step. origin: 2026-08-22-164936 + the
+  archived [[thread-polyglot-initiative]] close. → served: vision-mercury-composable
   <!-- id: bp-polyglot-functions | created: 2026-08-22 | last_used: 2026-09-02 | uses: 11 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
