@@ -18,7 +18,8 @@ related:
 >   then deploy it and call it over REST. No application code, only a graph model.
 > - **You'll use** — the MiniGraph Playground (the interactive workbench) and one skill,
 >   `graph.data.mapper`.
-> - **Prerequisites** — the app running with `app.env=dev` and the Playground open in a browser;
+> - **Prerequisites** — the app running with `app.env=dev` and the Playground open in a browser
+>   (the app's base URL, e.g. `http://127.0.0.1:8085/` — the Playground UI is the app's web root);
 >   about 10 minutes. New to the idea? Read [Knowledge Graph as Application](index.md) first.
 > - **Conventions** — lines you type into the Playground inbox are shown in code blocks; the
 >   console's reply follows under `>`.

@@ -1074,6 +1074,14 @@ will be selected (`1` selects the first task, `2` the second, `N` the N-th). An 
 supports more than two branches - much like a `switch` statement in code - while a boolean decision is the
 two-way special case (`true` = `1` = first, `false` = `2` = second).
 
+**Runtime semantics for a bad decision value** — a `null` or missing decision aborts the flow
+("returned invalid decision"), and an integer **above** the branch count aborts likewise; but
+`0`, negative integers, and any non-boolean, non-numeric value (e.g. the *string* `"false"`)
+are coerced through integer conversion clamped to a minimum of `1`, so they **silently select
+the first branch**. Return a real boolean or a valid 1-based integer from the function, or
+stage the value through a typed model variable
+(e.g. `input.query.flag -> model.flag:boolean(yes=true)`) — never rely on coercion.
+
 ```yaml
 tasks:
   - input:

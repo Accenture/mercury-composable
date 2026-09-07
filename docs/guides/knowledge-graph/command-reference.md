@@ -31,6 +31,7 @@ related:
 | **Node name** | lowercase letters, digits and hyphen | `person-name`, `mdm-profile`, `fetcher-1` |
 | **Node type** | a descriptive label; shipped examples **capitalize** structural types | `Root`, `End`, `Provider`, `Dictionary`, `Fetcher`, `Island` |
 | **Reserved names** | the root node **must** be named `root`; the end node **must** be `end` | — |
+| **Root `purpose`** | required by the **CompileGraph deployment gate** — a session dry-run does not enforce it, so include it at creation to avoid a deploy-time rejection | — |
 | **Property** | `key=value`; keys may be composite (dot-bracket) | `url=http://...`, `mapping[]=a -> b` |
 | **List property** | a `key[]=entry` line *appends* one entry to the list `key` | repeat `mapping[]=...` per entry |
 | **Multi-line value** | wrap the value in triple single quotes | `statement[]='''` … `'''` |

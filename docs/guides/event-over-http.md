@@ -208,6 +208,14 @@ event.http:
     target: 'http://${peer.demo.host:127.0.0.1}:${peer.demo.port}/api/event'
 ```
 
+> The flat `event.http:` key and the nested `event:` / `http:` form seen elsewhere in this
+> guide are equivalent spellings (dotted keys normalize to the same structure). Note also
+> that the map is **loaded once at platform startup** — editing the file requires an
+> application restart. And the receiving side serves **local routes only**: an inbound
+> `/api/event` call to a route the instance does not host answers `404` even when the
+> instance's own map points that route at a peer — the map is caller-side knowledge, never a
+> relay instruction (deliberate hop-through is an explicit relay function).
+
 and the REST endpoint `GET/POST /api/event/http/declarative` (see `rest.yaml`) runs the flow
 `event-over-http-declarative` whose task simply names the route:
 

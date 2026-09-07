@@ -247,6 +247,11 @@ Deadline override for a subflow task (`process: 'flow://...'`) — rejected on r
   # ... name / input / output / description / next as usual
 ```
 
+The timeout surfaces on the parent's handler as status `408` with the message
+`Flow timeout for {ms} ms`. Note that a TTL abort **bypasses the child's own
+`flow.exception`** — the child cannot swallow its timeout — and the built-in
+`resilience.handler` treats a missing `model.attempt` (first-ever failure) as `0`.
+
 ### `pipeline`
 
 | Type | Required | Default |

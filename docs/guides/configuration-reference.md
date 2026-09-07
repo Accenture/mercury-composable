@@ -243,7 +243,9 @@ Location of static web content (HTML, CSS, JS, images).
 |------|---------|
 | `String` (comma-sep paths) | `classpath:/rest.yaml` |
 
-Location(s) of REST endpoint configuration file(s). Multiple files are merged.
+Location(s) of REST endpoint configuration file(s). Multiple files are merged. A missing or
+empty file degrades gracefully — a warning is logged, no endpoints are rendered, and startup
+continues.
 
 ---
 
@@ -275,7 +277,10 @@ Location(s) of the event-over-HTTP target mapping configuration.
 |------|---------|
 | `String` (comma-sep paths) | `classpath:/flows.yaml` |
 
-Location(s) of Event Script flow definition files.
+Location(s) of Event Script flow definition files. A missing file degrades gracefully
+(warning logged; no flows deployed), and a flow with structural violations is skipped with an
+error log — startup continues in both cases. (A task-level data-mapping violation only omits
+that task: the flow still deploys and fails at runtime when the missing task is reached.)
 
 ### `yaml.journal`
 
@@ -292,6 +297,31 @@ Location(s) of the journal configuration (lists routes whose messages are record
 | `String` (comma-sep paths) | `classpath:/multicast.yaml` |
 
 Location(s) of the multicast route configuration. Multicast is a **local-JVM fan-out**: a message sent to a source route is automatically relayed to all listed target routes within the same in-memory event bus. Format: `multicast: [{source: "a.route", targets: ["b.route", "c.route"]}]`. Not the same as `PostOffice.broadcast()`, which is a distributed service-mesh operation.
+
+---
+
+## Knowledge Graph (MiniGraph)
+
+### `graph.model.automation`
+
+| Type | Default |
+|------|---------|
+| `String` (location) | — |
+
+Location of the graph deployment manifest (e.g. `classpath:/graphs.yaml`) listing the graph
+model ids the CompileGraph gate compiles at startup; the manifest's own optional `location`
+key (default `classpath:/graph`) says where the model JSON files live. When this property is
+absent, a warning is logged and **no graphs are executable** — every `/api/graph/{graph-id}`
+call answers 404 ("compiled or 404", ADR-0011).
+
+### `location.graph.temp`
+
+| Type | Default |
+|------|---------|
+| `String` (local path) | `/tmp/graph` |
+
+Where the Playground's `export graph` command writes model JSON. Must be a local filesystem
+path (read/write requirement).
 
 ---
 
@@ -1077,6 +1107,18 @@ Registry client template location; externalize the same way as the producer temp
 | duration | `30m` |
 
 Time-to-live for an entry in the in-memory (platform `ManagedCache`) cache of schemas fetched by id. Positive results only — a not-found id is never cached, so a newly-registered schema is visible immediately. The TTL bounds how long a cached schema is reused before re-fetching; `30m` lets schema changes be picked up without a pod restart (lengthen it in production where schemas change rarely). Cleared at startup (rebuildable).
+
+### `schema.registry.serde.*`
+
+| Type | Default |
+|------|---------|
+| `String` (prefix family) | — |
+
+Pass-through prefix for Confluent serde configuration: every `schema.registry.serde.<key>`
+property is handed to the serializer/deserializer as `<key>` verbatim — e.g.
+`schema.registry.serde.access.key.id=${AWS_ACCESS_KEY_ID}` supplies global KMS driver
+credentials for [CSFLE](minimalist-kafka.md#csfle). Omit entirely to use the cloud default
+credential chain.
 
 ### `yaml.secondary.kafka.flow.adapter`
 

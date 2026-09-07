@@ -68,6 +68,11 @@ The span tree mirrors the [three paradigm layers](architecture.md), and tracing 
 parent span is threaded through a per-task anchor, not a `ThreadLocal`, so concurrently-dispatched siblings still
 share the correct parent.
 
+> **Mono/Flux boundary**: a function's span closes when its worker returns — not when a
+> returned `Mono` completes — so annotate (and capture `po.getTrace()` if needed) on the
+> worker thread before returning. See the
+> [trace annotation notes](api-overview.md#trace-annotation) for the exact rules.
+
 | Layer | What becomes a span | Lineage |
 |:------|:--------------------|:--------|
 | **Layer 1 — Platform Core** | each function execution | the caller's span becomes the child's `parent_span_id` |
