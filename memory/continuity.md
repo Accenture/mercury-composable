@@ -328,7 +328,7 @@
   [[bp-agent-orchestration]], not this gap. Lesson: the scope fence (wrappers = peers, never
   orchestrators) is what kept four codebases in lock-step. origin: 2026-08-22-164936 + the
   archived [[thread-polyglot-initiative]] close. → served: vision-mercury-composable
-  <!-- id: bp-polyglot-functions | created: 2026-08-22 | last_used: 2026-09-02 | uses: 11 | tier: working -->
+  <!-- id: bp-polyglot-functions | created: 2026-08-22 | last_used: 2026-09-07 | uses: 12 | tier: active -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
   <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
