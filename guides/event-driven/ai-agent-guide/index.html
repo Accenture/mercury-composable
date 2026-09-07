@@ -3123,8 +3123,10 @@
 <li>Any caller (REST endpoint, Event Script flow, another function) addresses the function <strong>only by
    its route name string</strong>.</li>
 </ol>
-<p>A function that violates the contract (duplicate route, invalid <code>instances</code>, bad interface) causes the
-application to fail at startup — correctness is checkable before runtime.</p>
+<p>Contract violations are caught at startup, but the application <strong>keeps starting</strong>: a duplicate
+route reloads the earlier registration with a <code>Reloading</code> warning, and a bad interface or
+invalid route is skipped with an error log. Check the startup log for these messages —
+correctness is checkable before runtime, but not by relying on a crash.</p>
 <hr />
 <h2 id="annotation"><code>@PreLoad</code> annotation — full contract<a class="headerlink" href="#annotation" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@PreLoad</span><span class="p">(</span>

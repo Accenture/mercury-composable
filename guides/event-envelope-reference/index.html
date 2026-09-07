@@ -5493,7 +5493,8 @@ The <code>AppException</code> class maps Java exceptions to HTTP-compatible stat
 </tr>
 </tbody>
 </table>
-<p>Throw <code>AppException</code> from user functions to return structured error responses:</p>
+<p>Throw <code>AppException</code> (import <code>org.platformlambda.core.exception.AppException</code>) from user
+functions to return structured error responses:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">AppException</span><span class="p">(</span><span class="mi">404</span><span class="p">,</span><span class="w"> </span><span class="s">"Profile not found"</span><span class="p">);</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">AppException</span><span class="p">(</span><span class="mi">422</span><span class="p">,</span><span class="w"> </span><span class="s">"Invalid input: email is required"</span><span class="p">);</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">AppException</span><span class="p">(</span><span class="mi">403</span><span class="p">,</span><span class="w"> </span><span class="s">"Access denied"</span><span class="p">,</span><span class="w"> </span><span class="n">originalException</span><span class="p">);</span>
@@ -5916,7 +5917,7 @@ helps when debugging flows.</p>
 <td>Sets a key-value in the next function's <code>headers</code> argument</td>
 </tr>
 <tr>
-<td><code>error.status</code></td>
+<td><code>error.code</code></td>
 <td>Status code when an exception handler task is invoked</td>
 </tr>
 <tr>

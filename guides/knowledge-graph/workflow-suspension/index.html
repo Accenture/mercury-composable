@@ -3093,7 +3093,8 @@ come first. Three techniques worth stealing from its model:</p>
   correlation ID and is fully resumable on its own; the parent orchestrates —
   see <a href="#orchestrator-pattern">the orchestrator pattern</a>.</li>
 <li>Reserved model keys (<code>model.cid</code>, <code>model.instance</code>, <code>model.flow</code>, <code>model.ttl</code>,
-  <code>model.trace</code>, <code>model.run</code>) are never persisted — the resumed run's own identity is
+  <code>model.trace</code>, <code>model.parent</code>, <code>model.root</code>, <code>model.none</code>, <code>model.run</code>) are never
+  persisted — the resumed run's own identity is
   authoritative. <code>model.run</code> is part of the read-only flow metadata family: <code>graph.resume</code>
   is its only writer, and the flow compiler rejects any data mapping that targets it
   (like the other reserved keys).</li>
@@ -3182,7 +3183,14 @@ suspends. Configuration uses the same
 <code>redis.*</code> keys as the sync-over-async extension (<code>redis.host</code>, <code>redis.port</code>,
 <code>redis.password</code>, <code>redis.ssl</code>, <code>redis.database</code>, <code>redis.timeout.ms</code>), and the worker
 counts are ops-tunable via <code>worker.instances.v1.redis.persist.model</code> /
-<code>worker.instances.v1.redis.retrieve.model</code>. See the module README for details.</p>
+<code>worker.instances.v1.redis.retrieve.model</code>. Dependency:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nt">&lt;dependency&gt;</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>org.platformlambda<span class="nt">&lt;/groupId&gt;</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>minigraph-state-redis<span class="nt">&lt;/artifactId&gt;</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>x.y.z<span class="nt">&lt;/version&gt;</span><span class="w">  </span><span class="cm">&lt;!-- the current Mercury version in the root pom.xml --&gt;</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="nt">&lt;/dependency&gt;</span>
+</code></pre></div>
+<p>See the module README for details.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../skills-reference/">Built-in skills reference</a> — <code>graph.suspend</code> / <code>graph.resume</code> entries.</li>

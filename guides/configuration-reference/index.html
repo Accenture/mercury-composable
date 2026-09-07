@@ -6299,10 +6299,12 @@
 <p>Mercury Composable applications are configured through <code>application.properties</code> (or the
 equivalent <code>application.yml</code>). This page is the exhaustive reference for every configuration
 key supported by the framework and its optional modules.</p>
-<p>Properties are set in <code>src/main/resources/application.properties</code> and can be overridden via
-environment variables or JVM system properties (<code>-Dkey=value</code>) using Spring Boot's standard
-property resolution order. When both <code>application.properties</code> and <code>application.yml</code> are
-present, <code>.properties</code> takes precedence.</p>
+<p>Properties are set in <code>src/main/resources/application.properties</code> and can be overridden with
+JVM system properties (<code>-Dkey=value</code>), which the config reader checks first. Environment
+variables enter through <code>${ENV_VAR:default}</code> substitution inside values (and additionally
+through Spring Boot's own resolution order in <code>rest-spring-4</code> apps). When both
+<code>application.properties</code> and <code>application.yml</code> are present, they are merged and <strong><code>.yml</code>
+values win</strong> for overlapping keys (<code>application.yml</code> is merged last).</p>
 <blockquote>
 <p><strong>Tip</strong>: In <code>application.yml</code>, dots in property names become nested YAML keys.
 For example, <code>rest.server.port=8100</code> becomes:

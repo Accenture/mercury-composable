@@ -3085,37 +3085,52 @@ are not part of this build — each is built on its own in the next step.</p>
 <p><strong>2. Build and run the example app.</strong></p>
 <blockquote>
 <p><strong>Note</strong>: <code>x.y.z</code> denotes the current Mercury version shown in the root <code>pom.xml</code>.</p>
+<p><strong>Depending on Mercury from your own application</strong> — module artifacts use the
+<code>org.platformlambda</code> groupId (the reactor parent <code>com.accenture.mercury</code> is build-only):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">&lt;dependency&gt;</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>org.platformlambda<span class="nt">&lt;/groupId&gt;</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>platform-core<span class="nt">&lt;/artifactId&gt;</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>x.y.z<span class="nt">&lt;/version&gt;</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nt">&lt;/dependency&gt;</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nt">&lt;dependency&gt;</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>org.platformlambda<span class="nt">&lt;/groupId&gt;</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>event-script-engine<span class="nt">&lt;/artifactId&gt;</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>x.y.z<span class="nt">&lt;/version&gt;</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="nt">&lt;/dependency&gt;</span>
+</code></pre></div>
+<p>Opt-in modules follow the same pattern: <code>rest-spring-4</code>, <code>minimalist-kafka</code>, <code>twin-kafka</code>,
+<code>minigraph-playground-engine</code>, <code>minigraph-state-redis</code>.</p>
 </blockquote>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>examples/composable-example
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>mvn<span class="w"> </span>clean<span class="w"> </span>package
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>java<span class="w"> </span>-jar<span class="w"> </span>target/composable-example-x.y.z.jar
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">cd</span><span class="w"> </span>examples/composable-example
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>mvn<span class="w"> </span>clean<span class="w"> </span>package
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>java<span class="w"> </span>-jar<span class="w"> </span>target/composable-example-x.y.z.jar
 </code></pre></div>
 <p>Look for these lines to confirm it's running:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>CompileFlows - Loaded create-profile
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>CompileFlows - Loaded delete-profile
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>CompileFlows - Loaded get-profile
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>CompileFlows - Event scripts deployed: 3
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>AppStarter - Reactive HTTP server running on port-8100
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>CompileFlows - Loaded create-profile
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>CompileFlows - Loaded delete-profile
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>CompileFlows - Loaded get-profile
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>CompileFlows - Event scripts deployed: 3
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>AppStarter - Reactive HTTP server running on port-8100
 </code></pre></div>
 <p><strong>3. Try it.</strong> The example is a simple profile management API. Run these in a new terminal:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Create</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8100/api/profile<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Accept: application/json"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"id": 100, "name": "Hello World", "address": "100 World Blvd", "telephone": "123-456-7890"}'</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># Retrieve</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8100/api/profile/100
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="c1"># Delete</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>DELETE<span class="w"> </span>http://127.0.0.1:8100/api/profile/100
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Create</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8100/api/profile<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Accept: application/json"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"id": 100, "name": "Hello World", "address": "100 World Blvd", "telephone": "123-456-7890"}'</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># Retrieve</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8100/api/profile/100
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="c1"># Delete</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>DELETE<span class="w"> </span>http://127.0.0.1:8100/api/profile/100
 </code></pre></div>
 <p>Create returns <code>201 Created</code> — note <code>address</code> and <code>telephone</code> masked as <code>***</code> (the flow encrypts them
 before storing):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">"profile"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"***"</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Hello World"</span><span class="p">,</span><span class="w"> </span><span class="nt">"telephone"</span><span class="p">:</span><span class="w"> </span><span class="s2">"***"</span><span class="p">,</span><span class="w"> </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="p">},</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CREATE"</span><span class="p">,</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">"secure"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"address"</span><span class="p">,</span><span class="w"> </span><span class="s2">"telephone"</span><span class="p">]</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">"profile"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"***"</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Hello World"</span><span class="p">,</span><span class="w"> </span><span class="nt">"telephone"</span><span class="p">:</span><span class="w"> </span><span class="s2">"***"</span><span class="p">,</span><span class="w"> </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CREATE"</span><span class="p">,</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nt">"secure"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"address"</span><span class="p">,</span><span class="w"> </span><span class="s2">"telephone"</span><span class="p">]</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">}</span>
 </code></pre></div>
 <p>Retrieve returns <code>200 OK</code> with the fields decrypted; delete returns <code>200 OK</code> with
 <code>{ "id": 100, "deleted": true }</code>.</p>
@@ -3128,12 +3143,12 @@ build your own.</p>
 lets a <strong>graph</strong> be the application — nodes execute as the engine traverses them, so behavior lives in a
 model, not in code. For a 30-second taste, run the MiniGraph playground (a separate example) and call a
 built-in tutorial graph:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">cd</span><span class="w"> </span>examples/minigraph-playground
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>mvn<span class="w"> </span>clean<span class="w"> </span>package
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>java<span class="w"> </span>-jar<span class="w"> </span>target/minigraph-playground-x.y.z.jar
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">cd</span><span class="w"> </span>examples/minigraph-playground
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>mvn<span class="w"> </span>clean<span class="w"> </span>package
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>java<span class="w"> </span>-jar<span class="w"> </span>target/minigraph-playground-x.y.z.jar
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>curl<span class="w"> </span>http://127.0.0.1:8085/api/graph/tutorial-1
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># hello world</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>http://127.0.0.1:8085/api/graph/tutorial-1
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># hello world</span>
 </code></pre></div>
 <p>That <code>hello world</code> came from traversing a two-node graph — a <code>Root</code> wired to an <code>End</code> node carrying a
 skill — not from imperative code. Build one yourself in
@@ -3168,14 +3183,14 @@ flow adapters. e.g. Adapters for MQ, Kafka, Serverless, File based staging area,
 <p>The standard HTTP flow adapter leverages the underlying REST automation system to serve user facing REST
 API endpoints. For example, a hypothetical "get profile" endpoint is created like this in the "rest.yaml"
 configuration file:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="s">"http.flow.adapter"</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'GET'</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">"/api/profile/{profile_id}"</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'get-profile'</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10s</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">    </span><span class="nt">cors</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cors_1</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="nt">headers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">header_1</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="s">"http.flow.adapter"</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'GET'</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">"/api/profile/{profile_id}"</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'get-profile'</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10s</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="nt">cors</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cors_1</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="nt">headers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">header_1</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
 <p>In this REST configuration entry, the system creates a REST API endpoint for "GET /api/profile/{profile_id}".
 When a request arrives at this endpoint, the HTTP request will be converted to an incoming event by the flow adapter
@@ -3183,45 +3198,45 @@ that routes the event to the "event manager" to execute a new instance of the "g
 <h3 id="flow-configuration-example">Flow configuration example<a class="headerlink" href="#flow-configuration-example" title="Permanent link">&para;</a></h3>
 <p>The event manager is driven by configuration instead of code. A hypothetical "get profile" flow is defined in
 a YAML file like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">flow</span><span class="p">:</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="s">'get-profile'</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Get</span><span class="nv"> </span><span class="s">a</span><span class="nv"> </span><span class="s">user</span><span class="nv"> </span><span class="s">profile</span><span class="nv"> </span><span class="s">using</span><span class="nv"> </span><span class="s">profile</span><span class="nv"> </span><span class="s">ID'</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10s</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="nt">exception</span><span class="p">:</span><span class="w"> </span><span class="s">'v1.hello.exception'</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="nt">first.task</span><span class="p">:</span><span class="w"> </span><span class="s">'v1.get.profile'</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="nt">tasks</span><span class="p">:</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.path_parameter.profile_id</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.profile_id'</span>
-<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'v1.get.profile'</span>
-<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
-<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'result</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.profile'</span>
-<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Retrieve</span><span class="nv"> </span><span class="s">user</span><span class="nv"> </span><span class="s">profile</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">database</span><span class="nv"> </span><span class="s">using</span><span class="nv"> </span><span class="s">profile_id'</span>
-<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sequential</span>
-<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="w">    </span><span class="nt">next</span><span class="p">:</span>
-<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'v1.decrypt.fields'</span>
-<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>
-<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
-<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'model.profile</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">dataset'</span>
-<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(telephone,</span><span class="nv"> </span><span class="s">address)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">protected_fields'</span>
-<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'v1.decrypt.fields'</span>
-<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
-<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(application/json)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.header.content-type'</span>
-<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'result</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.body'</span>
-<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Decrypt</span><span class="nv"> </span><span class="s">fields'</span>
-<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">end</span>
-<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a>
-<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
-<a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'error.code</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">status'</span>
-<a id="__codelineno-8-32" name="__codelineno-8-32" href="#__codelineno-8-32"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'error.message</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">message'</span>
-<a id="__codelineno-8-33" name="__codelineno-8-33" href="#__codelineno-8-33"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'error.stack</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">stack'</span>
-<a id="__codelineno-8-34" name="__codelineno-8-34" href="#__codelineno-8-34"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'v1.hello.exception'</span>
-<a id="__codelineno-8-35" name="__codelineno-8-35" href="#__codelineno-8-35"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
-<a id="__codelineno-8-36" name="__codelineno-8-36" href="#__codelineno-8-36"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'result.status</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.status'</span>
-<a id="__codelineno-8-37" name="__codelineno-8-37" href="#__codelineno-8-37"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'result</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.body'</span>
-<a id="__codelineno-8-38" name="__codelineno-8-38" href="#__codelineno-8-38"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Just</span><span class="nv"> </span><span class="s">a</span><span class="nv"> </span><span class="s">demo</span><span class="nv"> </span><span class="s">exception</span><span class="nv"> </span><span class="s">handler'</span>
-<a id="__codelineno-8-39" name="__codelineno-8-39" href="#__codelineno-8-39"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">end</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">flow</span><span class="p">:</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="s">'get-profile'</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Get</span><span class="nv"> </span><span class="s">a</span><span class="nv"> </span><span class="s">user</span><span class="nv"> </span><span class="s">profile</span><span class="nv"> </span><span class="s">using</span><span class="nv"> </span><span class="s">profile</span><span class="nv"> </span><span class="s">ID'</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10s</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="nt">exception</span><span class="p">:</span><span class="w"> </span><span class="s">'v1.hello.exception'</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="nt">first.task</span><span class="p">:</span><span class="w"> </span><span class="s">'v1.get.profile'</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="nt">tasks</span><span class="p">:</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.path_parameter.profile_id</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.profile_id'</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'v1.get.profile'</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'result</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.profile'</span>
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Retrieve</span><span class="nv"> </span><span class="s">user</span><span class="nv"> </span><span class="s">profile</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">database</span><span class="nv"> </span><span class="s">using</span><span class="nv"> </span><span class="s">profile_id'</span>
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sequential</span>
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="w">    </span><span class="nt">next</span><span class="p">:</span>
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'v1.decrypt.fields'</span>
+<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a>
+<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
+<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'model.profile</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">dataset'</span>
+<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(telephone,</span><span class="nv"> </span><span class="s">address)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">protected_fields'</span>
+<a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'v1.decrypt.fields'</span>
+<a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(application/json)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.header.content-type'</span>
+<a id="__codelineno-9-26" name="__codelineno-9-26" href="#__codelineno-9-26"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'result</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.body'</span>
+<a id="__codelineno-9-27" name="__codelineno-9-27" href="#__codelineno-9-27"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Decrypt</span><span class="nv"> </span><span class="s">fields'</span>
+<a id="__codelineno-9-28" name="__codelineno-9-28" href="#__codelineno-9-28"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">end</span>
+<a id="__codelineno-9-29" name="__codelineno-9-29" href="#__codelineno-9-29"></a>
+<a id="__codelineno-9-30" name="__codelineno-9-30" href="#__codelineno-9-30"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
+<a id="__codelineno-9-31" name="__codelineno-9-31" href="#__codelineno-9-31"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'error.code</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">status'</span>
+<a id="__codelineno-9-32" name="__codelineno-9-32" href="#__codelineno-9-32"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'error.message</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">message'</span>
+<a id="__codelineno-9-33" name="__codelineno-9-33" href="#__codelineno-9-33"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'error.stack</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">stack'</span>
+<a id="__codelineno-9-34" name="__codelineno-9-34" href="#__codelineno-9-34"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'v1.hello.exception'</span>
+<a id="__codelineno-9-35" name="__codelineno-9-35" href="#__codelineno-9-35"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-9-36" name="__codelineno-9-36" href="#__codelineno-9-36"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'result.status</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.status'</span>
+<a id="__codelineno-9-37" name="__codelineno-9-37" href="#__codelineno-9-37"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'result</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.body'</span>
+<a id="__codelineno-9-38" name="__codelineno-9-38" href="#__codelineno-9-38"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Just</span><span class="nv"> </span><span class="s">a</span><span class="nv"> </span><span class="s">demo</span><span class="nv"> </span><span class="s">exception</span><span class="nv"> </span><span class="s">handler'</span>
+<a id="__codelineno-9-39" name="__codelineno-9-39" href="#__codelineno-9-39"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">end</span>
 </code></pre></div>
 <p>Note that the flow configuration is referring user functions by their "route" names. It is because all user functions
 are self-contained with clearly defined input and output and the event manager would set their inputs and collect their
@@ -3232,15 +3247,15 @@ stateless. The "state machine" is referenced using the namespace "model".</p>
 <h3 id="assigning-a-route-name-to-a-user-function">Assigning a route name to a user function<a class="headerlink" href="#assigning-a-route-name-to-a-user-function" title="Permanent link">&para;</a></h3>
 <p>You can assign a route name to a Java class using the <code>PreLoad</code> annotation like this:
 See the <a href="../annotations-reference/">Annotations Reference</a> for the complete list of parameters and all available annotations.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="o">=</span><span class="s">"v1.get.profile"</span><span class="p">,</span><span class="w"> </span><span class="n">instances</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">GetProfile</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TypedLambdaFunction</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">Profile</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="nd">@Override</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Profile</span><span class="w"> </span><span class="nf">handleEvent</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">        </span><span class="c1">// your business logic here</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="o">=</span><span class="s">"v1.get.profile"</span><span class="p">,</span><span class="w"> </span><span class="n">instances</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">GetProfile</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TypedLambdaFunction</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">Profile</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Profile</span><span class="w"> </span><span class="nf">handleEvent</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">        </span><span class="c1">// your business logic here</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="p">}</span>
 </code></pre></div>
 <p>Inside the "handleEvent" method, you can write regular Java code using your preferred coding style and
 framework. You can define input/output as Map or PoJo.</p>
@@ -3248,8 +3263,8 @@ framework. You can define input/output as Map or PoJo.</p>
 <p>Mercury Composable leverages the best of Java 21 virtual threading technology. Therefore, you would need to
 install Java JDK version 21 or higher. You also need maven version 3.9.7 or higher to build the libraries.</p>
 <p>Assuming you clone the repository into the "sandbox" directory, you may build the libraries like this.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">cd</span><span class="w"> </span>sandbox/mercury-composable
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>mvn<span class="w"> </span>clean<span class="w"> </span>install
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">cd</span><span class="w"> </span>sandbox/mercury-composable
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>mvn<span class="w"> </span>clean<span class="w"> </span>install
 </code></pre></div>
 <p>The compiled libraries will be saved to your local ".m2" maven repository. For production, you may publish
 the Mercury Composable libraries into your enterprise artifactory.</p>
@@ -3335,27 +3350,27 @@ acknowledgement to the user.</p>
 <p>The REST endpoints for the three use cases are shown in the "rest.yaml" configuration file under the "main/resources"
 in the example subproject.</p>
 <p>You also find the following configuration parameters in "application.properties":</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="na">rest.server.port</span><span class="o">=</span><span class="s">8100</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="na">rest.automation</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="na">yaml.rest.automation</span><span class="o">=</span><span class="s">classpath:/rest.yaml</span>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="na">yaml.flow.automation</span><span class="o">=</span><span class="s">classpath:/flows.yaml</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="na">rest.server.port</span><span class="o">=</span><span class="s">8100</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="na">rest.automation</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="na">yaml.rest.automation</span><span class="o">=</span><span class="s">classpath:/rest.yaml</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="na">yaml.flow.automation</span><span class="o">=</span><span class="s">classpath:/flows.yaml</span>
 </code></pre></div>
 <p>See the <a href="../configuration-reference/">Configuration Reference</a> for a complete list of all available properties.</p>
 <p>The flow configuration files are shown in the "main/resources/flows" folder where you will find the flow configuration
 files for the three event flows, namely get-profile.yml, delete-profile.yml and create-profile.yml.</p>
 <h3 id="starting-the-application">Starting the application<a class="headerlink" href="#starting-the-application" title="Permanent link">&para;</a></h3>
 <p>When the application starts, you will see extract of the application log like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>CompileFlows:142 - Loaded create-profile
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>CompileFlows:142 - Loaded delete-profile
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>CompileFlows:142 - Loaded get-profile
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>CompileFlows:144 - Event scripts deployed: 3
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>...
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>ServiceQueue:91 - PRIVATE v1.get.profile with 100 instances started as virtual threads
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>...
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>RoutingEntry:582 - GET /api/profile/{profile_id} -&gt; [http.flow.adapter], timeout=10s, tracing=true, flow=get-profile
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>...
-<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>AppStarter:378 - Modules loaded in 663 ms
-<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>AppStarter:365 - Reactive HTTP server running on port-8100
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>CompileFlows:142 - Loaded create-profile
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>CompileFlows:142 - Loaded delete-profile
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>CompileFlows:142 - Loaded get-profile
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>CompileFlows:144 - Event scripts deployed: 3
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>...
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>ServiceQueue:91 - PRIVATE v1.get.profile with 100 instances started as virtual threads
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>...
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>RoutingEntry:582 - GET /api/profile/{profile_id} -&gt; [http.flow.adapter], timeout=10s, tracing=true, flow=get-profile
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>...
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>AppStarter:378 - Modules loaded in 663 ms
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>AppStarter:365 - Reactive HTTP server running on port-8100
 </code></pre></div>
 <p>It shows that the 3 flow configuration files are compiled as objects to optimize performance. The user functions are
 loaded into the event system and the REST endpoints are rendered from the "rest.yaml" file.</p>
@@ -3363,72 +3378,72 @@ loaded into the event system and the REST endpoints are rendered from the "rest.
 <p>You exercised the three endpoints in the Quickstart. Because the <code>get-profile</code> endpoint sets
 <code>tracing: true</code> in <code>rest.yaml</code>, each request also emits a distributed trace to the application log —
 handy for seeing the path a request took and the time spent in each task:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="p">{</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="nt">"level"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="nt">"time"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2025-08-27 18:39:25.683"</span><span class="p">,</span>
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"org.platformlambda.core.services.Telemetry.handleEvent(Telemetry.java:81)"</span><span class="p">,</span>
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span><span class="nt">"thread"</span><span class="p">:</span><span class="w"> </span><span class="mi">336</span><span class="p">,</span>
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">    </span><span class="nt">"trace"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">      </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GET /api/profile/100"</span><span class="p">,</span>
-<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">      </span><span class="nt">"service"</span><span class="p">:</span><span class="w"> </span><span class="s2">"task.executor"</span><span class="p">,</span>
-<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="w">      </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="w">      </span><span class="nt">"origin"</span><span class="p">:</span><span class="w"> </span><span class="s2">"20250828c022812c67294a63871942c568a9e277"</span><span class="p">,</span>
-<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="w">      </span><span class="nt">"exec_time"</span><span class="p">:</span><span class="w"> </span><span class="mf">7.0</span><span class="p">,</span>
-<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="w">      </span><span class="nt">"start"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2025-08-28T01:39:25.674Z"</span><span class="p">,</span>
-<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="w">      </span><span class="nt">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"event.script.manager"</span><span class="p">,</span>
-<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="w">      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"9c0934a98dcf4ab1ae4b5b7b389f6d31"</span><span class="p">,</span>
-<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a><span class="w">      </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">200</span>
-<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a><span class="w">    </span><span class="p">},</span>
-<a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a><span class="w">    </span><span class="nt">"annotations"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a><span class="w">      </span><span class="nt">"execution"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Run 2 tasks in 7 ms"</span><span class="p">,</span>
-<a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a><span class="w">      </span><span class="nt">"tasks"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a><span class="w">        </span><span class="p">{</span>
-<a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a><span class="w">          </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v1.get.profile"</span><span class="p">,</span>
-<a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a><span class="w">          </span><span class="nt">"spent"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.982</span>
-<a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a><span class="w">        </span><span class="p">},</span>
-<a id="__codelineno-13-25" name="__codelineno-13-25" href="#__codelineno-13-25"></a><span class="w">        </span><span class="p">{</span>
-<a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a><span class="w">          </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v1.decrypt.fields"</span><span class="p">,</span>
-<a id="__codelineno-13-27" name="__codelineno-13-27" href="#__codelineno-13-27"></a><span class="w">          </span><span class="nt">"spent"</span><span class="p">:</span><span class="w"> </span><span class="mf">1.313</span>
-<a id="__codelineno-13-28" name="__codelineno-13-28" href="#__codelineno-13-28"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-13-29" name="__codelineno-13-29" href="#__codelineno-13-29"></a><span class="w">      </span><span class="p">],</span>
-<a id="__codelineno-13-30" name="__codelineno-13-30" href="#__codelineno-13-30"></a><span class="w">      </span><span class="nt">"flow"</span><span class="p">:</span><span class="w"> </span><span class="s2">"get-profile"</span>
-<a id="__codelineno-13-31" name="__codelineno-13-31" href="#__codelineno-13-31"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-13-32" name="__codelineno-13-32" href="#__codelineno-13-32"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-13-33" name="__codelineno-13-33" href="#__codelineno-13-33"></a><span class="p">}</span>
-<a id="__codelineno-13-34" name="__codelineno-13-34" href="#__codelineno-13-34"></a><span class="p">{</span>
-<a id="__codelineno-13-35" name="__codelineno-13-35" href="#__codelineno-13-35"></a><span class="w">  </span><span class="nt">"level"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span>
-<a id="__codelineno-13-36" name="__codelineno-13-36" href="#__codelineno-13-36"></a><span class="w">  </span><span class="nt">"time"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2025-08-27 18:39:25.685"</span><span class="p">,</span>
-<a id="__codelineno-13-37" name="__codelineno-13-37" href="#__codelineno-13-37"></a><span class="w">  </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"org.platformlambda.core.services.Telemetry.handleEvent(Telemetry.java:81)"</span><span class="p">,</span>
-<a id="__codelineno-13-38" name="__codelineno-13-38" href="#__codelineno-13-38"></a><span class="w">  </span><span class="nt">"thread"</span><span class="p">:</span><span class="w"> </span><span class="mi">337</span><span class="p">,</span>
-<a id="__codelineno-13-39" name="__codelineno-13-39" href="#__codelineno-13-39"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-13-40" name="__codelineno-13-40" href="#__codelineno-13-40"></a><span class="w">    </span><span class="nt">"trace"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-13-41" name="__codelineno-13-41" href="#__codelineno-13-41"></a><span class="w">      </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GET /api/profile/100"</span><span class="p">,</span>
-<a id="__codelineno-13-42" name="__codelineno-13-42" href="#__codelineno-13-42"></a><span class="w">      </span><span class="nt">"service"</span><span class="p">:</span><span class="w"> </span><span class="s2">"async.http.response"</span><span class="p">,</span>
-<a id="__codelineno-13-43" name="__codelineno-13-43" href="#__codelineno-13-43"></a><span class="w">      </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<a id="__codelineno-13-44" name="__codelineno-13-44" href="#__codelineno-13-44"></a><span class="w">      </span><span class="nt">"origin"</span><span class="p">:</span><span class="w"> </span><span class="s2">"20250828c022812c67294a63871942c568a9e277"</span><span class="p">,</span>
-<a id="__codelineno-13-45" name="__codelineno-13-45" href="#__codelineno-13-45"></a><span class="w">      </span><span class="nt">"start"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2025-08-28T01:39:25.681Z"</span><span class="p">,</span>
-<a id="__codelineno-13-46" name="__codelineno-13-46" href="#__codelineno-13-46"></a><span class="w">      </span><span class="nt">"exec_time"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.374</span><span class="p">,</span>
-<a id="__codelineno-13-47" name="__codelineno-13-47" href="#__codelineno-13-47"></a><span class="w">      </span><span class="nt">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"task.executor"</span><span class="p">,</span>
-<a id="__codelineno-13-48" name="__codelineno-13-48" href="#__codelineno-13-48"></a><span class="w">      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"9c0934a98dcf4ab1ae4b5b7b389f6d31"</span><span class="p">,</span>
-<a id="__codelineno-13-49" name="__codelineno-13-49" href="#__codelineno-13-49"></a><span class="w">      </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">200</span>
-<a id="__codelineno-13-50" name="__codelineno-13-50" href="#__codelineno-13-50"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-13-51" name="__codelineno-13-51" href="#__codelineno-13-51"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-13-52" name="__codelineno-13-52" href="#__codelineno-13-52"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="nt">"level"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span><span class="nt">"time"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2025-08-27 18:39:25.683"</span><span class="p">,</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">  </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"org.platformlambda.core.services.Telemetry.handleEvent(Telemetry.java:81)"</span><span class="p">,</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">  </span><span class="nt">"thread"</span><span class="p">:</span><span class="w"> </span><span class="mi">336</span><span class="p">,</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="w">    </span><span class="nt">"trace"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="w">      </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GET /api/profile/100"</span><span class="p">,</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="w">      </span><span class="nt">"service"</span><span class="p">:</span><span class="w"> </span><span class="s2">"task.executor"</span><span class="p">,</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="w">      </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="w">      </span><span class="nt">"origin"</span><span class="p">:</span><span class="w"> </span><span class="s2">"20250828c022812c67294a63871942c568a9e277"</span><span class="p">,</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="w">      </span><span class="nt">"exec_time"</span><span class="p">:</span><span class="w"> </span><span class="mf">7.0</span><span class="p">,</span>
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="w">      </span><span class="nt">"start"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2025-08-28T01:39:25.674Z"</span><span class="p">,</span>
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="w">      </span><span class="nt">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"event.script.manager"</span><span class="p">,</span>
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="w">      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"9c0934a98dcf4ab1ae4b5b7b389f6d31"</span><span class="p">,</span>
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a><span class="w">      </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">200</span>
+<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a><span class="w">    </span><span class="nt">"annotations"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a><span class="w">      </span><span class="nt">"execution"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Run 2 tasks in 7 ms"</span><span class="p">,</span>
+<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a><span class="w">      </span><span class="nt">"tasks"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a><span class="w">        </span><span class="p">{</span>
+<a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a><span class="w">          </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v1.get.profile"</span><span class="p">,</span>
+<a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a><span class="w">          </span><span class="nt">"spent"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.982</span>
+<a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a><span class="w">        </span><span class="p">},</span>
+<a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a><span class="w">        </span><span class="p">{</span>
+<a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a><span class="w">          </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v1.decrypt.fields"</span><span class="p">,</span>
+<a id="__codelineno-14-27" name="__codelineno-14-27" href="#__codelineno-14-27"></a><span class="w">          </span><span class="nt">"spent"</span><span class="p">:</span><span class="w"> </span><span class="mf">1.313</span>
+<a id="__codelineno-14-28" name="__codelineno-14-28" href="#__codelineno-14-28"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-14-29" name="__codelineno-14-29" href="#__codelineno-14-29"></a><span class="w">      </span><span class="p">],</span>
+<a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a><span class="w">      </span><span class="nt">"flow"</span><span class="p">:</span><span class="w"> </span><span class="s2">"get-profile"</span>
+<a id="__codelineno-14-31" name="__codelineno-14-31" href="#__codelineno-14-31"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-14-32" name="__codelineno-14-32" href="#__codelineno-14-32"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-14-33" name="__codelineno-14-33" href="#__codelineno-14-33"></a><span class="p">}</span>
+<a id="__codelineno-14-34" name="__codelineno-14-34" href="#__codelineno-14-34"></a><span class="p">{</span>
+<a id="__codelineno-14-35" name="__codelineno-14-35" href="#__codelineno-14-35"></a><span class="w">  </span><span class="nt">"level"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span>
+<a id="__codelineno-14-36" name="__codelineno-14-36" href="#__codelineno-14-36"></a><span class="w">  </span><span class="nt">"time"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2025-08-27 18:39:25.685"</span><span class="p">,</span>
+<a id="__codelineno-14-37" name="__codelineno-14-37" href="#__codelineno-14-37"></a><span class="w">  </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"org.platformlambda.core.services.Telemetry.handleEvent(Telemetry.java:81)"</span><span class="p">,</span>
+<a id="__codelineno-14-38" name="__codelineno-14-38" href="#__codelineno-14-38"></a><span class="w">  </span><span class="nt">"thread"</span><span class="p">:</span><span class="w"> </span><span class="mi">337</span><span class="p">,</span>
+<a id="__codelineno-14-39" name="__codelineno-14-39" href="#__codelineno-14-39"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-40" name="__codelineno-14-40" href="#__codelineno-14-40"></a><span class="w">    </span><span class="nt">"trace"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-41" name="__codelineno-14-41" href="#__codelineno-14-41"></a><span class="w">      </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GET /api/profile/100"</span><span class="p">,</span>
+<a id="__codelineno-14-42" name="__codelineno-14-42" href="#__codelineno-14-42"></a><span class="w">      </span><span class="nt">"service"</span><span class="p">:</span><span class="w"> </span><span class="s2">"async.http.response"</span><span class="p">,</span>
+<a id="__codelineno-14-43" name="__codelineno-14-43" href="#__codelineno-14-43"></a><span class="w">      </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-14-44" name="__codelineno-14-44" href="#__codelineno-14-44"></a><span class="w">      </span><span class="nt">"origin"</span><span class="p">:</span><span class="w"> </span><span class="s2">"20250828c022812c67294a63871942c568a9e277"</span><span class="p">,</span>
+<a id="__codelineno-14-45" name="__codelineno-14-45" href="#__codelineno-14-45"></a><span class="w">      </span><span class="nt">"start"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2025-08-28T01:39:25.681Z"</span><span class="p">,</span>
+<a id="__codelineno-14-46" name="__codelineno-14-46" href="#__codelineno-14-46"></a><span class="w">      </span><span class="nt">"exec_time"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.374</span><span class="p">,</span>
+<a id="__codelineno-14-47" name="__codelineno-14-47" href="#__codelineno-14-47"></a><span class="w">      </span><span class="nt">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"task.executor"</span><span class="p">,</span>
+<a id="__codelineno-14-48" name="__codelineno-14-48" href="#__codelineno-14-48"></a><span class="w">      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"9c0934a98dcf4ab1ae4b5b7b389f6d31"</span><span class="p">,</span>
+<a id="__codelineno-14-49" name="__codelineno-14-49" href="#__codelineno-14-49"></a><span class="w">      </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">200</span>
+<a id="__codelineno-14-50" name="__codelineno-14-50" href="#__codelineno-14-50"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-14-51" name="__codelineno-14-51" href="#__codelineno-14-51"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-14-52" name="__codelineno-14-52" href="#__codelineno-14-52"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="main-application-entry-point">Main application entry point<a class="headerlink" href="#main-application-entry-point" title="Permanent link">&para;</a></h3>
 <p>Every application has an entry point. The MainApp in the example app contains the entry point like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nd">@MainApplication</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MainApp</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">EntryPoint</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">   </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">      </span><span class="n">AutoStart</span><span class="p">.</span><span class="na">main</span><span class="p">(</span><span class="n">args</span><span class="p">);</span>
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">   </span><span class="p">}</span>
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">   </span><span class="nd">@Override</span>
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="w">   </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="w">        </span><span class="c1">// your startup logic here</span>
-<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="w">      </span><span class="n">log</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">"Started"</span><span class="p">);</span>
-<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="w">   </span><span class="p">}</span>
-<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nd">@MainApplication</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MainApp</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">EntryPoint</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">   </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">      </span><span class="n">AutoStart</span><span class="p">.</span><span class="na">main</span><span class="p">(</span><span class="n">args</span><span class="p">);</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">   </span><span class="p">}</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">   </span><span class="nd">@Override</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">   </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">        </span><span class="c1">// your startup logic here</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="w">      </span><span class="n">log</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">"Started"</span><span class="p">);</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="w">   </span><span class="p">}</span>
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="p">}</span>
 </code></pre></div>
 <p>Since your application is event driven, the main application does not need any additional code in the above
 example. However, this is a good place to put application initialization code if any.</p>
@@ -3440,27 +3455,27 @@ the MainApplication method to automatically initialize your library. For example
 and security credentials for a platform component or database that your library uses.</p>
 <p>Alternatively, you may use the "autostart module" method that would automatically send start command to
 some composable functions in your library.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="o">=</span><span class="s">"demo.library.setup"</span><span class="p">)</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">DemoLibSetup</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TypedLambdaFunction</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="p">,</span><span class="w"> </span><span class="n">Void</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">Logger</span><span class="w"> </span><span class="n">log</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LoggerFactory</span><span class="p">.</span><span class="na">getLogger</span><span class="p">(</span><span class="n">DemoLibSetup</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">    </span><span class="nd">@Override</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Void</span><span class="w"> </span><span class="nf">handleEvent</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="kd">throws</span><span class="w"> </span><span class="n">Exception</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">        </span><span class="n">log</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">"Demo library is starting"</span><span class="p">);</span>
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">        </span><span class="c1">// put your startup business logic here</span>
-<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
-<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="o">=</span><span class="s">"demo.library.setup"</span><span class="p">)</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">DemoLibSetup</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TypedLambdaFunction</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="p">,</span><span class="w"> </span><span class="n">Void</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">Logger</span><span class="w"> </span><span class="n">log</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LoggerFactory</span><span class="p">.</span><span class="na">getLogger</span><span class="p">(</span><span class="n">DemoLibSetup</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Void</span><span class="w"> </span><span class="nf">handleEvent</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="kd">throws</span><span class="w"> </span><span class="n">Exception</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="w">        </span><span class="n">log</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">"Demo library is starting"</span><span class="p">);</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="w">        </span><span class="c1">// put your startup business logic here</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="p">}</span>
 </code></pre></div>
 <p>The above composable function is labeled as <code>demo.library.setup</code>, you would need to add this to the
 application.properties of the application that uses this library:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># comma separated list of composable module route names</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>modules.autostart<span class="o">=</span>demo.library.setup,<span class="w"> </span>flow://my-startup-flow
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># comma separated list of composable module route names</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>modules.autostart<span class="o">=</span>demo.library.setup,<span class="w"> </span>flow://my-startup-flow
 </code></pre></div>
 <p>If you use application.yml, it will be a list like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nt">modules.autostart</span><span class="p">:</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'demo.library.setup'</span>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'flow://my-startup-flow'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nt">modules.autostart</span><span class="p">:</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'demo.library.setup'</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'flow://my-startup-flow'</span>
 </code></pre></div>
 <p>For more sophisticated startup procedure, you can use a flow to execute multiple tasks. The second item in the
 <code>modules.autostart</code> illustrates this use case.</p>
@@ -3472,7 +3487,7 @@ application.properties of the application that uses this library:</p>
 <h2 id="graceful-shutdown">Graceful shutdown<a class="headerlink" href="#graceful-shutdown" title="Permanent link">&para;</a></h2>
 <p>If your application has some dependencies that must be shutdown gracefully, you can use Java's native API
 similar to this sample code:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">Runtime</span><span class="p">.</span><span class="na">getRuntime</span><span class="p">().</span><span class="na">addShutdownHook</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Thread</span><span class="p">(</span><span class="k">this</span><span class="p">::</span><span class="n">stopAdmin</span><span class="p">));</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">Runtime</span><span class="p">.</span><span class="na">getRuntime</span><span class="p">().</span><span class="na">addShutdownHook</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Thread</span><span class="p">(</span><span class="k">this</span><span class="p">::</span><span class="n">stopAdmin</span><span class="p">));</span>
 </code></pre></div>
 <h2 id="dependency-management">Dependency management<a class="headerlink" href="#dependency-management" title="Permanent link">&para;</a></h2>
 <p>As a best practice, your user functions should not have any dependencies with other user functions.</p>
@@ -3480,7 +3495,7 @@ similar to this sample code:</p>
 an external system, platform or database, you can encapsulate the dependency in a composable function.</p>
 <h2 id="component-scan">Component scan<a class="headerlink" href="#component-scan" title="Permanent link">&para;</a></h2>
 <p>Please update the following in the application.properties (or application.yml) to include packages of your own functions:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="na">web.component.scan</span><span class="o">=</span><span class="s">your.package.name</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="na">web.component.scan</span><span class="o">=</span><span class="s">your.package.name</span>
 </code></pre></div>
 <p>Note that <code>web.component.scan</code> is a comma separated list of package names.
 Classes under the web.component.scan will be scanned for composable functions.</p>
@@ -3498,11 +3513,11 @@ database persistence.</p>
 <p>The executable JAR is in the target folder. </p>
 <p>Composable application is by definition cloud native. It is designed to be deployable using Kubernetes or serverless.</p>
 <p>A sample Dockerfile for your executable JAR may look like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>FROM<span class="w"> </span>eclipse-temurin:21.0.1_12-jdk
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>EXPOSE<span class="w"> </span><span class="m">8083</span>
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>WORKDIR<span class="w"> </span>/app
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>COPY<span class="w"> </span>target/your-app-name.jar<span class="w"> </span>.
-<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>ENTRYPOINT<span class="w"> </span><span class="o">[</span><span class="s2">"java"</span>,<span class="s2">"-jar"</span>,<span class="s2">"your-app-name.jar"</span><span class="o">]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>FROM<span class="w"> </span>eclipse-temurin:21.0.1_12-jdk
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>EXPOSE<span class="w"> </span><span class="m">8083</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>WORKDIR<span class="w"> </span>/app
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>COPY<span class="w"> </span>target/your-app-name.jar<span class="w"> </span>.
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>ENTRYPOINT<span class="w"> </span><span class="o">[</span><span class="s2">"java"</span>,<span class="s2">"-jar"</span>,<span class="s2">"your-app-name.jar"</span><span class="o">]</span>
 </code></pre></div>
 <p>The above Dockerfile will fetch Openjdk 21 packaged in "Ubuntu 22.04 LTS".</p>
 <h2 id="event-choreography-by-configuration">Event choreography by configuration<a class="headerlink" href="#event-choreography-by-configuration" title="Permanent link">&para;</a></h2>
