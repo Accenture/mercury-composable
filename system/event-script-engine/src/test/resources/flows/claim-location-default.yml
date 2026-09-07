@@ -1,0 +1,22 @@
+#
+# Claims-fixture pin (claim id: flows-location-default)
+#
+# Listed ONLY in claim-flows-no-location.yaml, a manifest without a 'location' key, so this
+# file is reachable solely through the documented default location 'classpath:/flows/'.
+#
+flow:
+  id: 'claim-location-default'
+  description: 'Pin - a flow manifest without a location key loads flow files from classpath:/flows/'
+  ttl: 10s
+
+first.task: 'claim.echo'
+
+tasks:
+  - name: 'claim.echo'
+    input:
+      - 'input.body -> *'
+    process: 'no.op'
+    output:
+      - 'result -> output.body'
+    description: 'Echo to prove the flow loaded from the default location and executes'
+    execution: end

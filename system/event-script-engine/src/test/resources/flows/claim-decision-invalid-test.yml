@@ -1,0 +1,46 @@
+#
+# Claims-fixture pin (claim id: decision-invalid-value)
+#
+# The first task echoes the caller-supplied decision value verbatim (no.op), so the ENGINE's
+# decision handling is exercised directly:
+# - no decision value at all -> the flow aborts with "returned invalid decision"
+# - a non-numeric string coerces via Math.max(1, str2int(...)) and silently routes to branch 1
+# - a numeric string routes normally (control case)
+#
+flow:
+  id: 'claim-decision-invalid-test'
+  description: 'Pin - null decision aborts the flow; a non-numeric string routes to branch 1'
+  ttl: 10s
+
+first.task: 'echo.decision'
+
+tasks:
+  - name: 'echo.decision'
+    input:
+      - 'input.body.decision -> decision'
+    process: 'no.op'
+    output:
+      - 'result.decision -> decision'
+    description: 'Echo the caller-supplied decision value verbatim'
+    execution: decision
+    next:
+      - 'branch.one'
+      - 'branch.two'
+
+  - name: 'branch.one'
+    input:
+      - 'text(one) -> branch'
+    process: 'no.op'
+    output:
+      - 'result -> output.body'
+    description: 'First decision branch'
+    execution: end
+
+  - name: 'branch.two'
+    input:
+      - 'text(two) -> branch'
+    process: 'no.op'
+    output:
+      - 'result -> output.body'
+    description: 'Second decision branch'
+    execution: end

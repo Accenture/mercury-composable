@@ -1,0 +1,10 @@
+#
+# Claims-fixture pin (claim id: flows-location-default)
+#
+# This flow manifest deliberately OMITS the optional 'location' key, so the engine must fall
+# back to the documented default 'classpath:/flows/' (CompileFlows). The flow file listed
+# below exists only under src/test/resources/flows/ - if the default location ever changes,
+# this flow fails to load and ClaimFlowsLocationDefaultTest fails.
+#
+flows:
+  - 'claim-location-default.yml'

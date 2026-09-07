@@ -102,6 +102,11 @@ Each was confirmed against source; items 1–3 re-verified independently.
    the `${...}` literal silently no-ops (`AppStarter.java:495-496`). Lines 176-177 also
    present `worker.instances.<route>` as a generic override without the opt-in condition that
    `configuration-reference.md:357-369` states correctly.
+   *(Correction, found while pinning this claim for the claims-fixture gate: the `${...}`
+   literal is worse than a no-op — the config reader throws on it and the application FAILS
+   at startup; what falls back to `instances` is a nonexistent plain key. The docs and the
+   claim registry carry the corrected semantics, pinned by
+   `ClaimEnvInstancesConfigKeyTest`.)*
 6. **`inspect` semantics wrong** — `command-reference.md:214, 225-226` say inspect resolves
    only leaf keys / prints `{}` for subtrees; the engine returns populated nested subtrees
    (`MultiLevelMap.getElement`, pinned by `PlaygroundTest.java:308`).
