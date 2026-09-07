@@ -106,9 +106,7 @@ def main() -> int:
         listed = llms.read_text(encoding="utf-8")
         for p in sorted(list(guides.rglob("*.md")) + list(guides.rglob("*.json"))):
             rel = p.relative_to(docs).as_posix()
-            slug = rel[:-3] if rel.endswith(".md") else rel
-            if slug.endswith("/index"):
-                slug = slug[: -len("/index")]
+            slug = rel.removesuffix(".md").removesuffix("/index")
             if f"/{slug}/" not in listed and f"/{slug}" not in listed:
                 errors.append(f"[llms] not listed in docs/llms.txt: {p.relative_to(root)}")
 

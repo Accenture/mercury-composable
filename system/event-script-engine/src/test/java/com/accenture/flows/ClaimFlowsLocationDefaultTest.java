@@ -59,7 +59,7 @@ class ClaimFlowsLocationDefaultTest extends TestBase {
         EventEnvelope result = FlowExecutor.getInstance()
                 .request("unit.test", util.getUuid(), "TEST /claim/location/default",
                         FLOW_ID, dataset, util.getUuid(), 8000).get();
-        assertInstanceOf(Map.class, result.getBody());
+        assertInstanceOf(Map.class, result.getBody(), "the flow response body must be a Map");
         Map<String, Object> body = (Map<String, Object>) result.getBody();
         assertEquals("world", body.get("hello"),
                 "the flow loaded from the default location must execute normally");

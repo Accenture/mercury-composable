@@ -53,11 +53,10 @@ class ClaimReservedModelKeysTest {
     @Test
     void reservedModelMetadataIsExactlyTheDocumentedNineNames() {
         var documented = Set.of("cid", "instance", "flow", "ttl", "trace", "parent", "root", "none", "run");
-        assertEquals(documented, GraphLambdaFunction.RESERVED_MODEL_METADATA,
+        assertEquals(GraphLambdaFunction.RESERVED_MODEL_METADATA, documented,
                 "the reserved model-metadata key set must stay exactly the nine documented names - "
                         + "adding or removing one changes the documented contract "
                         + "(claims-registry: reserved-model-keys-nine)");
-        assertEquals(9, GraphLambdaFunction.RESERVED_MODEL_METADATA.size());
     }
 
     @Test
@@ -68,6 +67,7 @@ class ClaimReservedModelKeysTest {
                     "model." + key + " must be rejected as an engine-managed metadata write target");
         }
         // and a tenth, non-reserved name passes: the guard scope IS the nine-name set
-        assertDoesNotThrow(() -> probe.assertMutableModelTarget("worker", "model.custom"));
+        assertDoesNotThrow(() -> probe.assertMutableModelTarget("worker", "model.custom"),
+                "a non-reserved model key must be accepted - the guard scope is exactly the nine-name set");
     }
 }

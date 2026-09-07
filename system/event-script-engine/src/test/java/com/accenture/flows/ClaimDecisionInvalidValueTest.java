@@ -51,7 +51,8 @@ class ClaimDecisionInvalidValueTest extends TestBase {
         EventEnvelope result = FlowExecutor.getInstance()
                 .request("unit.test", util.getUuid(), "TEST /claim/decision/invalid",
                         FLOW_ID, dataset, util.getUuid(), 8000).get();
-        assertInstanceOf(Map.class, result.getBody());
+        assertInstanceOf(Map.class, result.getBody(),
+                "flow " + FLOW_ID + " must return a Map body");
         envelopeHolder[0] = result;
         return (Map<String, Object>) result.getBody();
     }
@@ -62,7 +63,7 @@ class ClaimDecisionInvalidValueTest extends TestBase {
         EventEnvelope[] holder = new EventEnvelope[1];
         Map<String, Object> body = runFlow(Map.of("hello", "world"), holder);
         assertEquals(500, holder[0].getStatus(), "a null decision must abort the flow: " + body);
-        assertEquals(500, body.get("status"));
+        assertEquals(500, body.get("status"), "the error body must carry the abort status: " + body);
         String message = String.valueOf(body.get("message"));
         assertTrue(message.contains("returned invalid decision"),
                 "the abort reason must be the invalid decision: " + body);
@@ -84,7 +85,7 @@ class ClaimDecisionInvalidValueTest extends TestBase {
         // cannot pass merely because everything routes to the first branch
         EventEnvelope[] holder = new EventEnvelope[1];
         Map<String, Object> body = runFlow(Map.of("decision", "2"), holder);
-        assertEquals(200, holder[0].getStatus());
+        assertEquals(200, holder[0].getStatus(), "a numeric decision must not abort: " + body);
         assertEquals("two", body.get("branch"), "decision '2' must select the second branch: " + body);
     }
 }

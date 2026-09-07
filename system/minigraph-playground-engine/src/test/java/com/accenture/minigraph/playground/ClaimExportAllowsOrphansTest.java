@@ -29,6 +29,8 @@ import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 
@@ -61,12 +63,12 @@ class ClaimExportAllowsOrphansTest {
     @Test
     void exportAcceptsGraphWithOrphanNodeAndKeepsItInTheFile() throws Exception {
         var po = EventEmitter.getInstance();
+        // /tmp/graph is the Playground export feature's fixed dry-run directory
+        // (location.graph.temp default) - the test observes the app's own behavior there
         var file = new File("/tmp/graph/claim-orphan-export.json");
-        if (file.exists()) {
-            assertTrue(file.delete(), "stale test file must be removable");
-        }
+        Files.deleteIfExists(file.toPath());
         try {
-            var sid = openCompanionSession("990051");
+            var sid = openCompanionSession();
             syncCommand(po, sid, "create node root\nwith type Root");
             // a non-root node with NO connection to anything: a true orphan
             syncCommand(po, sid, "create node island-orphan");
@@ -81,13 +83,16 @@ class ClaimExportAllowsOrphansTest {
             assertTrue(text.contains("island-orphan"),
                     "the orphan node must be present in the exported model, not silently dropped");
         } finally {
-            if (file.exists() && !file.delete()) {
+            try {
+                Files.deleteIfExists(file.toPath());
+            } catch (IOException e) {
                 file.deleteOnExit();
             }
         }
     }
 
-    private String openCompanionSession(String seq) {
+    private String openCompanionSession() {
+        var seq = "990051";     // unused session sequence, unique to this test class
         var po = EventEmitter.getInstance();
         var sid = "ws-" + seq + "-2";
         po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
@@ -107,7 +112,7 @@ class ClaimExportAllowsOrphansTest {
                 .setBody(command);
         var resp = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(req), 10000).get();
         assertEquals(200, resp.getStatus(), "sync endpoint returns 200 with the outcome in the body");
-        assertInstanceOf(Map.class, resp.getBody());
+        assertInstanceOf(Map.class, resp.getBody(), "sync endpoint must return a JSON map body");
         return (Map<String, Object>) resp.getBody();
     }
 }
