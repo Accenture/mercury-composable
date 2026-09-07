@@ -31,7 +31,7 @@
   the next regular release. Field pipeline: PASSED end-to-end (Snyk + SonarQube) and
   DEPLOYED same-day 2026-09-04 — no Sonar follow-up round was needed)
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-04 | through 2026-09-04-040305.md
+- **last_review:** 2026-09-07 | through 2026-09-07-055024.md
 - **last_invariant_check:** 2026-09-04 | 2026-09-04-043732.md (all 15 confirmed by Eric + the Vision — one-by-one walkthrough with live-tree evidence; no supersessions; stack-messaging-kafka re-checked after PR #315 added Kafka config keys additively; ot-reverify-invariants-20260904 closed. Prior: 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed))
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -81,7 +81,7 @@
   coordinates by Jackson-3 design (one copy serves both lanes). platform-core excludes only
   vertx's lane-2 `jackson-core`; Mercury itself is Gson/MsgPack and never touches vertx
   JSON. The field Snyk gate watches both lanes independently.
-  <!-- id: jackson-dual-lane-coexistence | created: 2026-09-04 | last_used: 2026-09-04 | uses: 1 | tier: working | origin: 2026-09-04-225035 -->
+  <!-- id: jackson-dual-lane-coexistence | created: 2026-09-04 | last_used: 2026-09-04 | uses: 1 | tier: archive-candidate | origin: 2026-09-04-225035 -->
 - CI: GitHub Actions (`.github/workflows/`)
   <!-- id: stack-ci-gha | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 ## Architectural Invariants
@@ -116,7 +116,7 @@
   merge `76b8f282`: 20 claims via `scripts/check-doc-claims.py` in BOTH docs.yml and rust.yml,
   Rust ADR-0018 accepted same-PR; the Rust-side sweep thread is closed). New claims enter via
   the feedback circuit.
-  <!-- id: claims-fixture-gate | created: 2026-09-06 | last_used: 2026-09-06 | uses: 1 | tier: working | origin: 2026-09-07-030526 -->
+  <!-- id: claims-fixture-gate | created: 2026-09-06 | last_used: 2026-09-07 | uses: 2 | tier: active | origin: 2026-09-07-030526 -->
 
 - **Polyglot functions = Event-over-HTTP wrappers, NOT subprocesses (Eric's design; D0–D8
   ratified 2026-08-22).** python/node functions run as long-lived Event API peers speaking the
@@ -140,7 +140,7 @@
   vectors are the conformance gate; interop report per wrapper release (D6). Spec:
   draft-design-specs/polyglot-script-runner.md. Delivered by [[thread-polyglot-initiative]];
   serves [[bp-polyglot-functions]].
-  <!-- id: polyglot-event-over-http-design | created: 2026-08-22 | last_used: 2026-09-02 | uses: 13 | tier: archive-candidate | origin: 2026-08-22-164936 -->
+  <!-- id: polyglot-event-over-http-design | created: 2026-08-22 | last_used: 2026-09-04 | uses: 14 | tier: archive-candidate | origin: 2026-08-22-164936 -->
 
 - **CompileGraph is the MANDATORY deployment gate for graph models — CompileFlows parity
   (Eric's rulings 2026-07-29; ADR-0011 ACCEPTED via the PR #240 merge, squash `4348b0da`).**
@@ -154,7 +154,7 @@
   playground `run` pre-run check — also the landing pad for
   [[thread-compilegraph-syntax-validation]]. Hot-dropping JSON into the deploy folder no longer
   executes (deployment = explicit act). Full detail: origin log.
-  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-09-02 | uses: 14 | tier: archive-candidate | origin: 2026-07-29-190328 -->
+  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-09-07 | uses: 18 | tier: active | origin: 2026-07-29-190328 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -221,7 +221,7 @@
   co-authors (session sync is symmetric — all commands except `session` topology propagate to
   primary and subscribers alike); the agent drives via companion `/sync`. Identical copy in the
   Rust repo — both engines share the WS handshake. Dev-only, like the Playground itself.
-  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-03 | uses: 4 | tier: active | origin: 2026-09-03-172753 -->
+  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-04 | uses: 5 | tier: archive-candidate | origin: 2026-09-03-172753 -->
 
 ## Conventions
 
@@ -248,7 +248,7 @@
   loops); **graph.js work is never a Rust lock-step item** — the Rust validator's
   deadline-skill set legitimately names three skills where Java names four.
   Relates [[thread-task-ttl-override]].
-  <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-09-02 | uses: 9 | tier: archive-candidate | origin: 2026-08-01-035647 -->
+  <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-09-07 | uses: 12 | tier: active | origin: 2026-08-01-035647 -->
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
   (Eric's feedback, 2026-08-19).** GitHub pre-fills the dialog with title-plus-body text,
@@ -257,7 +257,7 @@
   space). Trim the pre-filled title to the intended one-liner on every squash; same
   review moment as the co-author-trailer dedup rule in AGENTS.md.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-02 | uses: 13 | tier: archive-candidate | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-05 | uses: 14 | tier: active | origin: 2026-08-19-195244 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
@@ -266,7 +266,7 @@
   examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-02 | uses: 4 | tier: archive-candidate | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-04 | uses: 6 | tier: archive-candidate | origin: 2026-09-01-022524 -->
 - **Positioning rule: do NOT claim the "Streamable HTTP" protocol until an MCP
   facade/wrapper feature ships (Eric, 2026-09-02).** Streamable HTTP is the MCP-spec
   NAMED transport (JSON-RPC 2.0 framing, `Mcp-Session-Id` session management, a
@@ -284,7 +284,7 @@
   parsing (complementing Eric's curl + hand-rolled .mjs tests, which prove the
   zero-dependency wire). The literal checkbox is a bounded MCP adapter on the
   existing shape — a future [[bp-agent-orchestration]] item, not a redesign.
-  <!-- id: conv-no-streamable-http-claim | created: 2026-09-03 | last_used: 2026-09-03 | uses: 2 | tier: archive-candidate | origin: 2026-09-03-004215 -->
+  <!-- id: conv-no-streamable-http-claim | created: 2026-09-03 | last_used: 2026-09-04 | uses: 3 | tier: archive-candidate | origin: 2026-09-03-004215 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -319,7 +319,7 @@
   Anthropic SDK covers all three, so the switch is client-construction only — re-drive
   waits on Eric's cloud account. Next: E1 (suspend checkpoint on an LLM verdict), Q8's
   second half (graph-run streaming). → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-03 | uses: 10 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-04 | uses: 11 | tier: working | origin: 2026-08-25-213703 -->
 - [ ] (blueprint) **Polyglot function execution** — python/node.js functions join Event Script
   flows and MiniGraph graphs as Event-over-HTTP peers (ratified design D0–D8, 2026-08-22);
   wrappers live in the repurposed Accenture/mercury-python + mercury-nodejs repos.

@@ -7,4 +7,4 @@
   (F1/F2/F3-B/F5 — naming and describing the tool, no links) shipped 2026-09-05 on Eric's
   ruling: no direct URLs to personal-GitHub research inside an official Accenture
   publication until the promotion lands. Trigger: Eric announces the promotion.
-  <!-- id: ot-agent-memory-attribution-locators | created: 2026-09-05 | last_used: 2026-09-05 | uses: 1 | tier: working | origin: 2026-09-05-174738 -->
+  <!-- id: ot-agent-memory-attribution-locators | created: 2026-09-05 | last_used: 2026-09-06 | uses: 2 | tier: working | origin: 2026-09-05-174738 -->

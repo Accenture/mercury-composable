@@ -151,3 +151,6 @@
 - thread-spring-round-20260827 — (maintenance + BREAKING — v4.11.12 SHIPPED AND PUBLISHED 2026-08-27, Java only: — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
 - thread-sse-consumption-streaming — (feature — COMPLETE, ALL PHASES — shipped in v4.12.0 2026-08-30: Java Phase 1 — faded — not referenced in over archive_window (20) sessions — 2026-Q3.md
 - thread-onboarding-efficiency — (onboarding — CLOSED 2026-09-01, all items done, decision recorded) Onboarding — faded — completed thread not referenced in over archive_window (20) sessions — 2026-Q3.md
+- ot-agent-orchestration-e0 — (feature — SHIPPED 2026-09-01, three repos, merges verified: Java — faded (completed threads past archive_window: sslu 30, 28, 32 > 20) — 2026-Q3.md
+- ot-json-plugin — `json` simple plugin — land the PR pair (Java + Rust lock-step). DONE 2026-09-02: — faded (completed threads past archive_window: sslu 30, 28, 32 > 20) — 2026-Q3.md
+- thread-polyglot-initiative — (feature — INITIATIVE COMPLETE 2026-09-01: P1–P5 all done. P5 publication: — faded (completed threads past archive_window: sslu 30, 28, 32 > 20) — 2026-Q3.md
