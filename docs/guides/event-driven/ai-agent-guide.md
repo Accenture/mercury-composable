@@ -37,8 +37,10 @@ Functions are **not called directly**. The framework loads them at startup:
 4. Any caller (REST endpoint, Event Script flow, another function) addresses the function **only by
    its route name string**.
 
-A function that violates the contract (duplicate route, invalid `instances`, bad interface) causes the
-application to fail at startup — correctness is checkable before runtime.
+Contract violations are caught at startup, but the application **keeps starting**: a duplicate
+route reloads the earlier registration with a `Reloading` warning, and a bad interface or
+invalid route is skipped with an error log. Check the startup log for these messages —
+correctness is checkable before runtime, but not by relying on a crash.
 
 ---
 

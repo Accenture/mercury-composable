@@ -49,7 +49,7 @@ File names of individual flow configuration YAML files to load.
 |---|---|
 | string | No |
 
-Base directory for resolving file names. Default: resources folder root. Example: `classpath:/flows/`.
+Base directory for resolving file names. Default: `classpath:/flows/`.
 
 Multiple flow list files can be specified as a comma-separated list:
 

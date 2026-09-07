@@ -89,7 +89,8 @@ public class TokenProducer implements TypedLambdaFunction<EventEnvelope, Void> {
 }
 ```
 
-`EventStreamWriter` is thin sugar over plain event sends:
+`EventStreamWriter` (import `org.platformlambda.core.system.EventStreamWriter`) is thin sugar
+over plain event sends:
 
 | Method | Meaning |
 | ------ | ------- |

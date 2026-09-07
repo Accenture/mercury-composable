@@ -54,6 +54,25 @@ mvn clean install
 **2. Build and run the example app.**
 
 > **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+>
+> **Depending on Mercury from your own application** — module artifacts use the
+> `org.platformlambda` groupId (the reactor parent `com.accenture.mercury` is build-only):
+>
+> ```xml
+> <dependency>
+>     <groupId>org.platformlambda</groupId>
+>     <artifactId>platform-core</artifactId>
+>     <version>x.y.z</version>
+> </dependency>
+> <dependency>
+>     <groupId>org.platformlambda</groupId>
+>     <artifactId>event-script-engine</artifactId>
+>     <version>x.y.z</version>
+> </dependency>
+> ```
+>
+> Opt-in modules follow the same pattern: `rest-spring-4`, `minimalist-kafka`, `twin-kafka`,
+> `minigraph-playground-engine`, `minigraph-state-redis`.
 
 ```shell
 cd examples/composable-example

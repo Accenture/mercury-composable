@@ -551,7 +551,7 @@ to a task or the generic exception handler that attaches to the flow itself.
 The error dataset includes the following:
 
 1. error.task - this is the task name of the task that throws exception
-2. error.status - the status code of the exception
+2. error.code - the status code of the exception
 3. error.message - the error message
 4. error.stack - stack trace if any
 
