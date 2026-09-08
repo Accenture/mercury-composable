@@ -20,6 +20,7 @@ import { usePinnedGraphPath } from '../hooks/usePinnedGraphPath';
 import { buildClipboardPastePlan } from '../clipboard/paste';
 import { buildBatchClipToast } from '../clipboard/batchClipSummary';
 import { createGraphAuthoringExecutor } from '../graphActions/graphAuthoringExecutor';
+import { buildDeleteConnectionCommand } from '../graphActions/minigraphCommandBuilder';
 import { MAX_BATCH_NODE_ACTIONS } from '../graphActions/batchNodeActions';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
@@ -412,6 +413,22 @@ export default function Playground({ config }: PlaygroundProps) {
     [graphAuthoring.openCreateConnection],
   );
 
+  // Keyboard delete of a selected connection: fire the backend command and let
+  // the auto-refresh redraw the graph from the "{a} -> {b} removed" reply —
+  // the same trust model as the clipboard paste-drop flow.
+  const handleDeleteConnection = useCallback((sourceAlias: string, targetAlias: string) => {
+    try {
+      const command = buildDeleteConnectionCommand(sourceAlias, targetAlias);
+      if (!ws.sendRawText(command)) {
+        addToast('Could not send the delete-connection command because the WebSocket is not open.', 'error');
+        return;
+      }
+      addToast(`Deleting connection ${sourceAlias} → ${targetAlias}…`, 'info');
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : String(err), 'error');
+    }
+  }, [ws.sendRawText, addToast]);
+
   // Restore the scroll position when the console re-mounts (console toggle or
   // node editor closing): the message-driven auto-scroll in useWebSocket only
   // fires on new messages, so an unchanged backlog would otherwise reappear
@@ -701,6 +718,7 @@ export default function Playground({ config }: PlaygroundProps) {
             onEditNode={supportsAuthoring ? graphAuthoring.openEditNode : undefined}
             onDeleteNode={supportsAuthoring ? graphAuthoring.deleteNode : undefined}
             onDeleteNodes={supportsAuthoring ? graphAuthoring.deleteNodes : undefined}
+            onDeleteConnection={supportsAuthoring ? handleDeleteConnection : undefined}
             helpPanel={supportsHelp && helpOpen ? (
               (onToggleMaximize: () => void, isMaximized: boolean) => (
                 <HelpBrowser

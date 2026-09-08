@@ -42,6 +42,7 @@ interface RightPanelProps {
   onEditNode?:             (node: MinigraphNode) => void;
   onDeleteNode?:           (node: MinigraphNode) => void;
   onDeleteNodes?:          (nodes: MinigraphNode[]) => void;
+  onDeleteConnection?:     (sourceAlias: string, targetAlias: string) => void;
   /**
    * When provided and non-null, the right panel renders a vertical split:
    * top = tab content, bottom = help panel.  Accepts either a plain ReactNode
@@ -83,6 +84,7 @@ export default function RightPanel({
   onEditNode,
   onDeleteNode,
   onDeleteNodes,
+  onDeleteConnection,
   helpPanel,
 }: RightPanelProps) {
   const uid              = useId();
@@ -176,6 +178,7 @@ export default function RightPanel({
               onEditNode={onEditNode}
               onDeleteNode={onDeleteNode}
               onDeleteNodes={onDeleteNodes}
+              onDeleteConnection={onDeleteConnection}
             />
           </div>
         </div>

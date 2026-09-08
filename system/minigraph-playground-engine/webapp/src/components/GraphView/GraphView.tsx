@@ -14,6 +14,7 @@ import {
   type OnConnect,
   type OnConnectStart,
   type OnConnectEnd,
+  type OnBeforeDelete,
   type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -60,6 +61,8 @@ interface GraphViewProps {
   onEditNode?:     (node: MinigraphNode) => void;
   onDeleteNode?:   (node: MinigraphNode) => void;
   onDeleteNodes?:  (nodes: MinigraphNode[]) => void;
+  /** Called for each selected connection when the user presses Delete/Backspace. */
+  onDeleteConnection?: (sourceAlias: string, targetAlias: string) => void;
 }
 
 const EMPTY_NODES: Node<GraphNodeData>[]  = [];
@@ -88,6 +91,7 @@ export default function GraphView({
   onEditNode,
   onDeleteNode,
   onDeleteNodes,
+  onDeleteConnection,
 }: GraphViewProps) {
 
   // ── Context menu state ──────────────────────────────────────────────────
@@ -424,6 +428,32 @@ export default function GraphView({
     connectionDragSourceRef.current = null;
   }, []);
 
+  // ── Keyboard delete of selected connections ────────────────────────────────
+  // Click an edge to select it, press Delete (or Backspace) to remove it.
+  // React Flow's delete pipeline is only used as the key handler: the callback
+  // ALWAYS blocks the local removal and forwards selected edges to the backend
+  // command instead — the graph re-renders from the backend's "{a} -> {b}
+  // removed" confirmation via the auto-refresh. Selected nodes are ignored
+  // here on purpose: node deletion keeps its confirmed context-menu flow.
+  const canDeleteConnection = Boolean(supportsAuthoring && onDeleteConnection && isConnected);
+  const handleBeforeDelete = useCallback<OnBeforeDelete<Node<GraphNodeData>, Edge<GraphEdgeData>>>(
+    async ({ edges: edgesToDelete }) => {
+      if (canDeleteConnection && edgesToDelete.length > 0) {
+        // The backend deletes ALL connections between a node pair with one
+        // command, so parallel selected edges collapse to one call.
+        const seenPairs = new Set<string>();
+        for (const edge of edgesToDelete) {
+          const pair = `${edge.source}\t${edge.target}`;
+          if (seenPairs.has(pair)) continue;
+          seenPairs.add(pair);
+          onDeleteConnection?.(edge.source, edge.target);
+        }
+      }
+      return false; // the backend owns graph mutations — never delete locally
+    },
+    [canDeleteConnection, onDeleteConnection],
+  );
+
   if (transformError) {
     return (
       <div className={styles.empty}>
@@ -474,6 +504,8 @@ export default function GraphView({
               onConnect={handleConnect}
               onConnectStart={handleConnectStart}
               onConnectEnd={handleConnectEnd}
+              deleteKeyCode={['Delete', 'Backspace']}
+              onBeforeDelete={handleBeforeDelete}
               nodeTypes={nodeTypes}
               fitView
               fitViewOptions={{ padding: 0.25 }}

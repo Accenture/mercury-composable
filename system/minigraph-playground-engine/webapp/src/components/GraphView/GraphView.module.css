@@ -225,6 +225,19 @@
   cursor: crosshair;
 }
 
+/* ── Selected connection ──
+ * Edge strokes are set inline by the transformer, so the selected state needs
+ * !important to win. Click an edge to select it; Delete/Backspace removes it.
+ */
+.graphSurface :global(.react-flow__edge.selected .react-flow__edge-path) {
+  stroke: var(--primary-color) !important;
+  stroke-width: 3 !important;
+}
+
+.graphSurface :global(.react-flow__edge.selected .react-flow__edge-textbg) {
+  stroke: var(--primary-color) !important;
+}
+
 /*
  * ── Node detail-mode toggle icon ──
  * A miniature node card rendered in HTML/CSS rather than SVG: React Flow's

@@ -83,8 +83,13 @@
   otherwise). Alternative path: context-menu "Connect to…" arms click-a-target mode.
   Both paths end in `ConnectionPopover` anchored at the drop point (relation vocabulary as
   one-click colored chips + free text) — `ConnectionDialog`/`GraphAuthoringModals` deleted;
-  the Playground has zero modals. React Flow gotchas: Handles listen to mouse/touch (not
-  pointer) events; verify body-vs-ring hit-testing with `document.elementFromPoint`.
+  the Playground has zero modals. Edges are selectable (blue selected stroke) and
+  Delete/Backspace removes them through `onBeforeDelete` — which ALWAYS returns false: the
+  backend owns mutations (`delete connection {a} and {b}`, redraw from the "removed"
+  confirmation); keyboard delete deliberately ignores selected nodes (confirmed
+  context-menu flow only). React Flow gotchas: Handles listen to mouse/touch (not
+  pointer) events; verify body-vs-ring hit-testing with `document.elementFromPoint`;
+  default `deleteKeyCode` would delete elements client-side only — always intercept.
   <!-- id: webapp-connect-ux-neo4j-halo | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
 
 ## Open Threads

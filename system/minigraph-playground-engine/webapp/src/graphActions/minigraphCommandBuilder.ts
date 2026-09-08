@@ -3,6 +3,7 @@ import type { ConnectionFormState } from './connectionAuthoringTypes';
 import {
   validateCommandSize,
   validateConnectionFormState,
+  validateDeleteConnectionAliases,
   validateDeleteNodeAlias,
   validateNodeFormState,
   type DeleteNodeValidationOptions,
@@ -102,6 +103,20 @@ export function buildDeleteNodeCommand(aliasInput: string, options: DeleteNodeVa
   }
 
   const command = `delete node ${alias}`;
+  assertValidCommandSize(command);
+  return command;
+}
+
+export function buildDeleteConnectionCommand(sourceInput: string, targetInput: string): string {
+  const source = sourceInput.trim();
+  const target = targetInput.trim();
+  const validation = validateDeleteConnectionAliases(source, target);
+  if (!validation.valid) {
+    throw new Error(Object.values(validation.errors)[0] ?? 'Invalid connection endpoints.');
+  }
+
+  // Backend grammar: deletes ALL connections between the two nodes.
+  const command = `delete connection ${source} and ${target}`;
   assertValidCommandSize(command);
   return command;
 }

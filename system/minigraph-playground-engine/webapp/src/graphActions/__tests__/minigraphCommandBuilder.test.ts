@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildCreateConnectionCommand,
   buildCreateNodeCommand,
+  buildDeleteConnectionCommand,
   buildDeleteNodeCommand,
   buildUpdateNodeCommand,
 } from '../minigraphCommandBuilder';
@@ -150,6 +151,19 @@ describe('buildUpdateNodeCommand', () => {
       'input[]=exception:false',
       'provider=mdm-profile',
     ].join('\n'));
+  });
+});
+
+describe('buildDeleteConnectionCommand', () => {
+  it('emits the backend delete-connection grammar', () => {
+    expect(buildDeleteConnectionCommand('clear-exception', 'person-name'))
+      .toBe('delete connection clear-exception and person-name');
+  });
+
+  it('rejects invalid endpoints and self-connections', () => {
+    expect(() => buildDeleteConnectionCommand('bad alias', 'person-name')).toThrow();
+    expect(() => buildDeleteConnectionCommand('a\nand b', 'person-name')).toThrow();
+    expect(() => buildDeleteConnectionCommand('same', 'same')).toThrow();
   });
 });
 
