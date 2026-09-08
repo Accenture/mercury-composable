@@ -24,11 +24,13 @@ import { GraphViewErrorBoundary } from './GraphViewErrorBoundary';
 import { transformGraphData, computeMeasuredPositions, type GraphNodeData, type GraphEdgeData } from '../../utils/graphTransformer';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import type { MinigraphGraphData, MinigraphNode, MinigraphConnection } from '../../utils/graphTypes';
+import type { ConnectionRemovalRequest } from '../../graphActions/connectionEdits';
 import { hasClipboardItemType, readClipboardItemId } from '../../clipboard/dnd';
 import { findNodeByAlias, extractDirectConnections } from '../../clipboard/helpers';
 import GraphToolbar from '../GraphToolbar/GraphToolbar';
 import GraphContextMenu from './GraphContextMenu';
 import NodeContextMenu from './NodeContextMenu';
+import EdgeContextMenu from './EdgeContextMenu';
 import GraphMultiSelectTip from './GraphMultiSelectTip';
 import {
   filterAliasesToGraphNodes,
@@ -61,8 +63,13 @@ interface GraphViewProps {
   onEditNode?:     (node: MinigraphNode) => void;
   onDeleteNode?:   (node: MinigraphNode) => void;
   onDeleteNodes?:  (nodes: MinigraphNode[]) => void;
-  /** Called for each selected connection when the user presses Delete/Backspace. */
-  onDeleteConnection?: (sourceAlias: string, targetAlias: string) => void;
+  /**
+   * One call per delete gesture, with every requested directed removal:
+   * Delete/Backspace passes the selected edges (relation undefined = the whole
+   * directed edge); the edge context menu passes one named relation.  Batching
+   * lets the handler plan reconnects across edges that share a node pair.
+   */
+  onDeleteConnections?: (requests: ConnectionRemovalRequest[]) => void;
   /**
    * Changes whenever a panel toggle reshapes the graph pane (console hidden or
    * restored, node editor opened or closed, workspace/help panels).  The graph
@@ -98,7 +105,7 @@ export default function GraphView({
   onEditNode,
   onDeleteNode,
   onDeleteNodes,
-  onDeleteConnection,
+  onDeleteConnections,
   panelLayoutKey,
 }: GraphViewProps) {
 
@@ -109,6 +116,13 @@ export default function GraphView({
     target: NodeContextTarget;
   } | null>(null);
   const [paneMenu, setPaneMenu] = useState<{ x: number; y: number } | null>(null);
+  const [edgeMenu, setEdgeMenu] = useState<{
+    x: number;
+    y: number;
+    source: string;
+    target: string;
+    relations: string[];
+  } | null>(null);
   const [selectedNodeAliases, setSelectedNodeAliases] = useState<string[]>([]);
   const [clipboardDragActive, setClipboardDragActive] = useState(false);
   const [tipVisible, setTipVisible] = useState(false);
@@ -230,6 +244,7 @@ export default function GraphView({
     setEdges(initialEdges);
     setSelectedNodeAliases([]);
     setContextMenu(null);
+    setEdgeMenu(null);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   // ── Measured re-layout ────────────────────────────────────────────────────
@@ -430,6 +445,7 @@ export default function GraphView({
     connectionDragSourceRef.current = params.nodeId;
     setContextMenu(null);
     setPaneMenu(null);
+    setEdgeMenu(null);
   }, []);
 
   const handleConnectEnd = useCallback<OnConnectEnd>(() => {
@@ -467,23 +483,25 @@ export default function GraphView({
   // command instead — the graph re-renders from the backend's "{a} -> {b}
   // removed" confirmation via the auto-refresh. Selected nodes are ignored
   // here on purpose: node deletion keeps its confirmed context-menu flow.
-  const canDeleteConnection = Boolean(supportsAuthoring && onDeleteConnection && isConnected);
+  const canDeleteConnection = Boolean(supportsAuthoring && onDeleteConnections && isConnected);
   const handleBeforeDelete = useCallback<OnBeforeDelete<Node<GraphNodeData>, Edge<GraphEdgeData>>>(
     async ({ edges: edgesToDelete }) => {
       if (canDeleteConnection && edgesToDelete.length > 0) {
-        // The backend deletes ALL connections between a node pair with one
-        // command, so parallel selected edges collapse to one call.
+        // One request per directed edge; the handler plans reconnects across
+        // edges sharing a pair (the backend deletes a pair in both directions).
         const seenPairs = new Set<string>();
+        const requests: ConnectionRemovalRequest[] = [];
         for (const edge of edgesToDelete) {
           const pair = `${edge.source}\t${edge.target}`;
           if (seenPairs.has(pair)) continue;
           seenPairs.add(pair);
-          onDeleteConnection?.(edge.source, edge.target);
+          requests.push({ source: edge.source, target: edge.target });
         }
+        onDeleteConnections?.(requests);
       }
       return false; // the backend owns graph mutations — never delete locally
     },
-    [canDeleteConnection, onDeleteConnection],
+    [canDeleteConnection, onDeleteConnections],
   );
 
   if (transformError) {
@@ -555,6 +573,7 @@ export default function GraphView({
                 event.stopPropagation();
                 dismissMultiSelectTip();
                 setPaneMenu(null);
+                setEdgeMenu(null);
                 if (!canOpenNodeContextMenu) return;
                 const target = resolveNodeContextTarget(node.data.alias, selectedNodeAliases);
                 if (target.kind === 'single-node' && selectedNodeAliases.length > 1) {
@@ -566,10 +585,26 @@ export default function GraphView({
                 }
                 setContextMenu({ x: event.clientX, y: event.clientY, target });
               }}
+              onEdgeContextMenu={(event, edge) => {
+                event.preventDefault();
+                event.stopPropagation();
+                dismissMultiSelectTip();
+                setContextMenu(null);
+                setPaneMenu(null);
+                if (!canDeleteConnection) return;
+                setEdgeMenu({
+                  x: event.clientX,
+                  y: event.clientY,
+                  source: edge.source,
+                  target: edge.target,
+                  relations: edge.data?.relationTypes ?? [],
+                });
+              }}
               onPaneContextMenu={(event) => {
                 event.preventDefault();
                 dismissMultiSelectTip();
                 setContextMenu(null);
+                setEdgeMenu(null);
                 if (!canCreateNode) return;
                 setPaneMenu({ x: event.clientX, y: event.clientY });
               }}
@@ -577,6 +612,7 @@ export default function GraphView({
                 dismissMultiSelectTip();
                 setContextMenu(null);
                 setPaneMenu(null);
+                setEdgeMenu(null);
                 setConnectFromAlias(null);
               }}
               onNodeClick={(event, node) => {
@@ -749,6 +785,23 @@ export default function GraphView({
               onClose={() => setContextMenu(null)}
             />
           )}
+          <EdgeContextMenu
+            open={edgeMenu !== null && canDeleteConnection}
+            x={edgeMenu?.x ?? 0}
+            y={edgeMenu?.y ?? 0}
+            sourceAlias={edgeMenu?.source ?? ''}
+            targetAlias={edgeMenu?.target ?? ''}
+            relations={edgeMenu?.relations ?? []}
+            onDeleteRelation={(relation) => {
+              if (!edgeMenu) return;
+              onDeleteConnections?.([{
+                source: edgeMenu.source,
+                target: edgeMenu.target,
+                relation,
+              }]);
+            }}
+            onClose={() => setEdgeMenu(null)}
+          />
         </div>
       </div>
     </GraphViewErrorBoundary>

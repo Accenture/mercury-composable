@@ -83,29 +83,39 @@
   otherwise). Alternative path: context-menu "Connect to…" arms click-a-target mode.
   Both paths end in `ConnectionPopover` anchored at the drop point (relation vocabulary as
   one-click colored chips + free text) — `ConnectionDialog`/`GraphAuthoringModals` deleted;
-  the Playground has zero modals. Edges are selectable (blue selected stroke) and
-  Delete/Backspace removes them through `onBeforeDelete` — which ALWAYS returns false: the
-  backend owns mutations (`delete connection {a} and {b}`, redraw from the "removed"
-  confirmation); keyboard delete deliberately ignores selected nodes (confirmed
-  context-menu flow only). React Flow gotchas: Handles listen to mouse/touch (not
-  pointer) events; verify body-vs-ring hit-testing with `document.elementFromPoint`;
-  default `deleteKeyCode` would delete elements client-side only — always intercept.
+  the Playground has zero modals. Edges are selectable (blue selected stroke); removal is
+  DIRECTED and relation-aware: Delete/Backspace removes selected edges through
+  `onBeforeDelete` (ALWAYS returns false — the backend owns mutations), and right-click
+  opens `EdgeContextMenu` with one item per relation (`Delete 'fetch'` / `Delete 'test'` /
+  `Delete all (n)`). The engine's only removal command (`delete connection {a} and {b}`)
+  wipes the pair in BOTH directions, so `planConnectionRemoval` (connectionEdits.ts)
+  compiles requested directed removals into pair-delete + reconnect-survivors compounds
+  (kept forward relations + the whole reverse direction), batched per gesture so a
+  reciprocal selection plans one clean wipe. Keyboard delete deliberately ignores selected
+  nodes (confirmed context-menu flow only). React Flow gotchas: Handles listen to
+  mouse/touch (not pointer) events; verify body-vs-ring hit-testing with
+  `document.elementFromPoint`; default `deleteKeyCode` would delete elements client-side
+  only — always intercept.
   <!-- id: webapp-connect-ux-neo4j-halo | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
 
 - **Undo is frontend-only compensating commands (2026-09-08, Eric's ruling: the backend
   stays lightweight — minimalist design principle; no engine undo journal, hence no Rust
   lock-step obligation).** `undoCommands.ts` builds inverse console commands from
-  pre-mutation graphData snapshots (connection delete ⇄ re-connect both directions; node
-  edit ⇄ re-submit full-replace snapshot; create ⇄ delete; node delete ⇄ recreate +
-  reconnect); `useGraphUndo` (depth 20) replays them over the WS and the graph redraws
-  from backend confirmations. Triggers: Ctrl/Cmd+Z + per-toast Undo buttons (ToastAction).
-  Invalidation: disconnect + graph import only — collaborative sessions keep
-  last-write-wins; console-typed commands untracked; relation properties not restored;
-  batch node-delete not undoable; no redo. All inverse text flows through the
-  minigraphCommandBuilder boundary. The executor PACES inverse commands (await each
-  `graph.mutation` confirmation, 2.5s timeout): the backend can process a later
-  single-line command before an earlier multi-line `create node` completes — unpaced
-  node-delete undo lost its reconnects ("node X not found").
+  pre-mutation graphData snapshots (connection removal ⇄ reconnect exactly the removed
+  DIRECTED relations — the removal compound already preserved survivors; connection create
+  ⇄ delete pair + restore both prior directions; node edit ⇄ re-submit full-replace
+  snapshot; create ⇄ delete; node delete ⇄ recreate + reconnect); `useGraphUndo` (depth
+  20) replays them over the WS and the graph redraws from backend confirmations. Triggers:
+  Ctrl/Cmd+Z + per-toast Undo buttons (ToastAction). Invalidation: disconnect + graph
+  import only — collaborative sessions keep last-write-wins; console-typed commands
+  untracked; relation properties not restored; batch node-delete not undoable; no redo.
+  All inverse text flows through the minigraphCommandBuilder boundary. The executor PACES
+  commands (await each `graph.mutation` confirmation, 2.5s timeout): the backend can
+  process a later single-line command before an earlier multi-line `create node`
+  completes — unpaced node-delete undo lost its reconnects ("node X not found"). The same
+  paced lane is exposed as `runCommands` for UI compounds (connection removals): batches
+  queue FIFO behind the running one and share the busy flag with undo, so edits and undos
+  never interleave.
   <!-- id: webapp-undo-compensating-commands | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
 
 ## Open Threads

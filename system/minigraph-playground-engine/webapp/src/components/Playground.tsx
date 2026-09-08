@@ -20,10 +20,14 @@ import { usePinnedGraphPath } from '../hooks/usePinnedGraphPath';
 import { buildClipboardPastePlan } from '../clipboard/paste';
 import { buildBatchClipToast } from '../clipboard/batchClipSummary';
 import { createGraphAuthoringExecutor } from '../graphActions/graphAuthoringExecutor';
-import { buildDeleteConnectionCommand } from '../graphActions/minigraphCommandBuilder';
+import {
+  describeRemovedRelations,
+  planConnectionRemoval,
+  type ConnectionRemovalRequest,
+} from '../graphActions/connectionEdits';
 import {
   buildConnectionCreateUndo,
-  buildConnectionDeleteUndo,
+  buildConnectionRemovalUndo,
   buildNodeCreateUndo,
   buildNodeDeleteUndo,
   buildNodeEditUndo,
@@ -505,25 +509,22 @@ export default function Playground({ config }: PlaygroundProps) {
     [graphAuthoring.openCreateConnection, graphData],
   );
 
-  // Keyboard delete of a selected connection: fire the backend command and let
-  // the auto-refresh redraw the graph from the "{a} -> {b} removed" reply —
-  // the same trust model as the clipboard paste-drop flow. The pre-delete
-  // relations become the undo recipe.
-  const handleDeleteConnection = useCallback((sourceAlias: string, targetAlias: string) => {
-    try {
-      const command = buildDeleteConnectionCommand(sourceAlias, targetAlias);
-      const undoCandidate = graphData
-        ? buildConnectionDeleteUndo(graphData, sourceAlias, targetAlias)
-        : null;
-      if (!ws.sendRawText(command)) {
-        addToast('Could not send the delete-connection command because the WebSocket is not open.', 'error');
-        return;
-      }
-      toastWithUndo(`Deleted connection ${sourceAlias} → ${targetAlias}`, graphUndo.push(undoCandidate));
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : String(err), 'error');
-    }
-  }, [addToast, graphData, graphUndo.push, toastWithUndo, ws.sendRawText]);
+  // Connection removal (keyboard Delete on selected edges, or a relation item
+  // from the edge context menu): the planner turns the requested DIRECTED
+  // removals into backend commands — the pair-wiping `delete connection` plus
+  // reconnects for every survivor — sent paced, and the graph redraws from the
+  // backend confirmations via the auto-refresh. The removed relations become
+  // the undo recipe.
+  const handleDeleteConnections = useCallback((requests: ConnectionRemovalRequest[]) => {
+    if (!graphData) return;
+    const plan = planConnectionRemoval(graphData, requests);
+    if (!plan) return; // stale gesture — nothing matches the current graph
+    graphUndo.runCommands(plan.commands);
+    toastWithUndo(
+      `Deleted ${describeRemovedRelations(plan.removed)}`,
+      graphUndo.push(buildConnectionRemovalUndo(plan.removed)),
+    );
+  }, [graphData, graphUndo.push, graphUndo.runCommands, toastWithUndo]);
 
   // Wraps that capture pre-mutation snapshots before delegating to the
   // authoring hook; the matching undo entry is pushed in onAccepted.
@@ -829,7 +830,7 @@ export default function Playground({ config }: PlaygroundProps) {
             onEditNode={supportsAuthoring ? handleOpenEditNode : undefined}
             onDeleteNode={supportsAuthoring ? handleDeleteNode : undefined}
             onDeleteNodes={supportsAuthoring ? graphAuthoring.deleteNodes : undefined}
-            onDeleteConnection={supportsAuthoring ? handleDeleteConnection : undefined}
+            onDeleteConnections={supportsAuthoring ? handleDeleteConnections : undefined}
             panelLayoutKey={`${consoleOpen || nodeEditSession !== null}|${clipboardOpen}|${helpOpen}`}
             helpPanel={supportsHelp && helpOpen ? (
               (onToggleMaximize: () => void, isMaximized: boolean) => (

@@ -6,6 +6,7 @@ import {
   buildDeleteNodeCommand,
   buildUpdateNodeCommand,
 } from './minigraphCommandBuilder';
+import { describeRemovedRelations, type RemovedRelation } from './connectionEdits';
 import { createEditNodeFormState } from './propertyRows';
 
 /**
@@ -46,18 +47,19 @@ function pairConnectCommands(
   return commands;
 }
 
-/** Inverse of `delete connection a and b` (which removes BOTH directions). */
-export function buildConnectionDeleteUndo(
-  graphData: MinigraphGraphData,
-  sourceAlias: string,
-  targetAlias: string,
-): UndoEntry | null {
+/**
+ * Inverse of a connection-removal plan: reconnect exactly the removed directed
+ * relations.  (The plan's compound already preserved every survivor — kept
+ * forward relations and the reverse direction — so the undo re-adds only what
+ * actually disappeared.)
+ */
+export function buildConnectionRemovalUndo(removed: RemovedRelation[]): UndoEntry | null {
+  if (removed.length === 0) return null;
   try {
-    const inverseCommands = pairConnectCommands(graphData, sourceAlias, targetAlias);
-    if (inverseCommands.length === 0) return null;
     return {
-      label: `delete connection ${sourceAlias} → ${targetAlias}`,
-      inverseCommands,
+      label: `delete ${describeRemovedRelations(removed)}`,
+      inverseCommands: removed.map(({ source, target, relation }) =>
+        buildCreateConnectionCommand({ sourceAlias: source, targetAlias: target, relation })),
     };
   } catch {
     return null;

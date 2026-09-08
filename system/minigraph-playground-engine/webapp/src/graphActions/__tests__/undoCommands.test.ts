@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildConnectionCreateUndo,
-  buildConnectionDeleteUndo,
+  buildConnectionRemovalUndo,
   buildNodeCreateUndo,
   buildNodeDeleteUndo,
   buildNodeEditUndo,
@@ -23,18 +23,29 @@ function graph(): MinigraphGraphData {
   };
 }
 
-describe('buildConnectionDeleteUndo', () => {
-  it('recreates every relation of the pair in BOTH directions', () => {
-    const entry = buildConnectionDeleteUndo(graph(), 'fetcher', 'end');
+describe('buildConnectionRemovalUndo', () => {
+  it('reconnects exactly the removed directed relations — never the reverse direction', () => {
+    const entry = buildConnectionRemovalUndo([
+      { source: 'fetcher', target: 'end', relation: 'complete' },
+      { source: 'fetcher', target: 'end', relation: 'done' },
+    ]);
+    expect(entry?.label).toBe('delete connection fetcher → end');
     expect(entry?.inverseCommands).toEqual([
       'connect fetcher to end with complete',
       'connect fetcher to end with done',
-      'connect end to fetcher with retry',
     ]);
   });
 
-  it('returns null when the pair has no connections', () => {
-    expect(buildConnectionDeleteUndo(graph(), 'root', 'end')).toBeNull();
+  it('labels a single-relation removal by its relation', () => {
+    const entry = buildConnectionRemovalUndo([
+      { source: 'root', target: 'fetcher', relation: 'fetch' },
+    ]);
+    expect(entry?.label).toBe("delete relation 'fetch' (root → fetcher)");
+    expect(entry?.inverseCommands).toEqual(['connect root to fetcher with fetch']);
+  });
+
+  it('returns null when nothing was removed', () => {
+    expect(buildConnectionRemovalUndo([])).toBeNull();
   });
 });
 

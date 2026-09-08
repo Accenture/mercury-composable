@@ -29,6 +29,12 @@ export interface UseGraphUndoReturn {
   undoLast: () => void;
   /** Undo a specific entry — only when it is still the newest one. */
   undoEntry: (id: number) => void;
+  /**
+   * Run a compound edit as paced commands (each awaits the previous one's
+   * mutation confirmation).  Concurrent calls queue behind the running batch;
+   * undo shares the busy flag, so an undo never interleaves with a compound.
+   */
+  runCommands: (commands: string[]) => void;
   hasEntries: () => boolean;
   clear: () => void;
 }
@@ -96,9 +102,36 @@ export function useGraphUndo({
     });
   }, [bus]);
 
+  const pendingBatchesRef = useRef<string[][]>([]);
+
+  const runCommands = useCallback((commands: string[]) => {
+    if (commands.length === 0) return;
+    pendingBatchesRef.current.push(commands);
+    if (executingRef.current) return; // the running drain picks it up
+    executingRef.current = true;
+    void (async () => {
+      try {
+        for (;;) {
+          const batch = pendingBatchesRef.current.shift();
+          if (!batch) break;
+          for (const command of batch) {
+            if (!sendRawText(command)) {
+              addToast('Could not send the command because the WebSocket is not open.', 'error');
+              pendingBatchesRef.current = [];
+              return;
+            }
+            await waitForMutationConfirmation();
+          }
+        }
+      } finally {
+        executingRef.current = false;
+      }
+    })();
+  }, [addToast, sendRawText, waitForMutationConfirmation]);
+
   const undoEntry = useCallback((id?: number) => {
     if (executingRef.current) {
-      addToast('An undo is already in progress.', 'info');
+      addToast('A graph edit is already in progress.', 'info');
       return;
     }
     const stack = stackRef.current;
@@ -134,5 +167,5 @@ export function useGraphUndo({
   const undoLast = useCallback(() => undoEntry(undefined), [undoEntry]);
   const hasEntries = useCallback(() => stackRef.current.length > 0, []);
 
-  return { push, undoLast, undoEntry, hasEntries, clear };
+  return { push, undoLast, undoEntry, runCommands, hasEntries, clear };
 }

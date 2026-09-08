@@ -7,6 +7,7 @@ import styles from './RightPanel.module.css';
 import { type ValidationResult } from '../../utils/validators';
 import type { MinigraphGraphData, MinigraphNode, MinigraphConnection } from '../../utils/graphTypes';
 import type { GraphClipItem } from '../GraphView/selectionTargets';
+import type { ConnectionRemovalRequest } from '../../graphActions/connectionEdits';
 
 export type RightTab = 'payload' | 'graph' | 'graph-data';
 
@@ -42,7 +43,7 @@ interface RightPanelProps {
   onEditNode?:             (node: MinigraphNode) => void;
   onDeleteNode?:           (node: MinigraphNode) => void;
   onDeleteNodes?:          (nodes: MinigraphNode[]) => void;
-  onDeleteConnection?:     (sourceAlias: string, targetAlias: string) => void;
+  onDeleteConnections?:    (requests: ConnectionRemovalRequest[]) => void;
   /** Changes whenever a panel toggle reshapes the graph pane; GraphView re-fits on change. */
   panelLayoutKey?:         string;
   /**
@@ -86,7 +87,7 @@ export default function RightPanel({
   onEditNode,
   onDeleteNode,
   onDeleteNodes,
-  onDeleteConnection,
+  onDeleteConnections,
   panelLayoutKey,
   helpPanel,
 }: RightPanelProps) {
@@ -181,7 +182,7 @@ export default function RightPanel({
               onEditNode={onEditNode}
               onDeleteNode={onDeleteNode}
               onDeleteNodes={onDeleteNodes}
-              onDeleteConnection={onDeleteConnection}
+              onDeleteConnections={onDeleteConnections}
               panelLayoutKey={panelLayoutKey}
             />
           </div>
