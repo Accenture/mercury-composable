@@ -689,4 +689,32 @@ describe('node overlap prevention', () => {
       height: partial.get(node.alias) ?? estimates.get(node.alias)!,
     })));
   });
+
+  it('thumbnail mode renders header-only cards with compact estimates', () => {
+    const graph = tutorial12Fixture as MinigraphGraphData;
+    const expanded = transformGraphData(graph);
+    const compact = transformGraphData(graph, { compactNodes: true });
+
+    for (const node of compact.nodes) {
+      expect(node.data.compact).toBe(true);
+      expect(node.height).toBeUndefined();
+      expect(node.initialHeight).toBeGreaterThanOrEqual(node.data.minHeight);
+    }
+    expect(expanded.nodes.every(node => !node.data.compact)).toBe(true);
+
+    // Property-heavy nodes shrink to the header card; the content no longer
+    // drives the estimate.
+    const compactErrorHandler = compact.nodes.find(node => node.id === 'error-handler')!;
+    const expandedErrorHandler = expanded.nodes.find(node => node.id === 'error-handler')!;
+    expect(compactErrorHandler.initialHeight).toBeLessThan(100);
+    expect(compactErrorHandler.initialHeight).toBeLessThan(expandedErrorHandler.initialHeight!);
+
+    expectNoOverlap(compact.nodes.map(node => ({
+      id: node.id,
+      x: node.position.x,
+      y: node.position.y,
+      width: nodeWidth(node),
+      height: nodeHeight(node),
+    })));
+  });
 });

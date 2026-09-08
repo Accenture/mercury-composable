@@ -51,7 +51,10 @@
   route a long edge around a tall node; it shares the geometry-pair budget with scoring. Stale-window
   guard for refreshes: RF node `data.properties` must be reference-identical to the current
   graphData node's before relaying out. Previously heights were fixed at ~100px and clipped 200–440px
-  of content, which is also why older bundles showed overlapping nodes.
+  of content, which is also why older bundles showed overlapping nodes. A thumbnail/expanded toggle
+  (React Flow `ControlButton`, persisted `graph-nodes-compact`) renders header-only cards via
+  `transformGraphData({ compactNodes })`; toggling rebuilds the nodes and re-enters the same
+  measure-then-relayout cycle (done-key = graphData + mode; fitView on every completed pass).
   <!-- id: webapp-content-sized-nodes-measured-relayout | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
 
 ## Open Threads

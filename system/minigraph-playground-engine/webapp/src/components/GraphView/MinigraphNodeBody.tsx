@@ -6,6 +6,8 @@ interface MinigraphNodeBodyProps {
   alias: string;
   nodeType: string;
   properties: Record<string, unknown>;
+  /** Thumbnail mode: render the header only, no property rows. */
+  compact?: boolean;
 }
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -44,7 +46,7 @@ function PropertyRows({ properties }: { properties: Record<string, unknown> }) {
   );
 }
 
-export function MinigraphNodeBody({ alias, nodeType, properties }: MinigraphNodeBodyProps) {
+export function MinigraphNodeBody({ alias, nodeType, properties, compact = false }: MinigraphNodeBodyProps) {
   const meta = getMinigraphNodeTypeMeta(nodeType);
 
   return (
@@ -56,9 +58,11 @@ export function MinigraphNodeBody({ alias, nodeType, properties }: MinigraphNode
           <span className={styles.badge}>{meta.label}</span>
         </div>
 
-        <div className={styles.body}>
-          <PropertyRows properties={properties} />
-        </div>
+        {!compact && (
+          <div className={styles.body}>
+            <PropertyRows properties={properties} />
+          </div>
+        )}
       </div>
     </Fragment>
   );

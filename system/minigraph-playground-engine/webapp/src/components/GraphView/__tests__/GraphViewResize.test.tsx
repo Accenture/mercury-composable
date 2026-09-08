@@ -26,6 +26,7 @@ const selectedNode: Node<GraphNodeData> = {
     backSourceHandles: [],
     backTargetHandles: [],
     supportsConnectionAuthoring: false,
+    compact: false,
     minHeight: 100,
   },
 };

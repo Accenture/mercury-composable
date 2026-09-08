@@ -3,6 +3,7 @@ import {
   ReactFlow,
   Background,
   Controls,
+  ControlButton,
   useNodesState,
   useEdgesState,
   BackgroundVariant,
@@ -20,6 +21,7 @@ import '@xyflow/react/dist/style.css';
 import { AUTHORING_SOURCE_HANDLE_ID, AUTHORING_TARGET_HANDLE_ID, nodeTypes } from './NodeTypes';
 import { GraphViewErrorBoundary } from './GraphViewErrorBoundary';
 import { transformGraphData, computeMeasuredPositions, type GraphNodeData, type GraphEdgeData } from '../../utils/graphTransformer';
+import { useLocalStorage } from '../../hooks/useLocalStorage';
 import type { MinigraphGraphData, MinigraphNode, MinigraphConnection } from '../../utils/graphTypes';
 import { hasClipboardItemType, readClipboardItemId } from '../../clipboard/dnd';
 import { findNodeByAlias, extractDirectConnections } from '../../clipboard/helpers';
@@ -153,11 +155,18 @@ export default function GraphView({
   const onRenderErrorRef = useRef(onRenderError);
   useEffect(() => { onRenderErrorRef.current = onRenderError; }, [onRenderError]);
 
+  // ── Thumbnail / expanded node detail mode ────────────────────────────────
+  // Thumbnail nodes render header-only cards for a compact topology overview.
+  // Toggling rebuilds the nodes (mode is a transform input), which re-enters
+  // the same measure-then-relayout cycle as a fresh graph load.
+  const [compactNodes, setCompactNodes] = useLocalStorage<boolean>('graph-nodes-compact', false);
+
   const { nodes: initialNodes, edges: initialEdges, transformError } = useMemo(() => {
     if (!graphData) return { nodes: EMPTY_NODES, edges: EMPTY_EDGES, transformError: null };
     try {
       const result = transformGraphData(graphData, {
         supportsConnectionAuthoring: canCreateConnection,
+        compactNodes,
       });
       return { ...result, transformError: null };
     } catch (err) {
@@ -167,7 +176,7 @@ export default function GraphView({
       // useEffect below, which fires the callback safely after the render cycle.
       return { nodes: EMPTY_NODES, edges: EMPTY_EDGES, transformError: message };
     }
-  }, [canCreateConnection, graphData]);
+  }, [canCreateConnection, compactNodes, graphData]);
 
   // Fire the render-error callback whenever the transform produces a new error.
   // A useEffect is the correct place for side-effects that react to derived state.
@@ -216,24 +225,28 @@ export default function GraphView({
   // their content.  Once every node reports a measured height, re-run the
   // layout with the true values and re-fit the viewport; this is what
   // guarantees nodes never overlap regardless of content.  Runs once per
-  // graphData object: later dimension changes (a manual NodeResizer drag)
-  // are the user's own and must not snap the layout back.
+  // (graphData, detail mode) pair: later dimension changes (a manual
+  // NodeResizer drag) are the user's own and must not snap the layout back.
   const rfInstanceRef = useRef<ReactFlowInstance<Node<GraphNodeData>, Edge<GraphEdgeData>> | null>(null);
-  const measuredLayoutDoneRef = useRef<MinigraphGraphData | null>(null);
+  const measuredLayoutDoneRef = useRef<{ graph: MinigraphGraphData; compact: boolean } | null>(null);
   useEffect(() => {
     if (!graphData || graphData.nodes.length === 0) return;
-    if (measuredLayoutDoneRef.current === graphData) return;
+    const done = measuredLayoutDoneRef.current;
+    if (done && done.graph === graphData && done.compact === compactNodes) return;
 
-    // The nodes state must already derive from THIS graphData.  On a graph
-    // refresh this effect can fire in the same commit as the re-sync above,
-    // while `nodes` still holds the previous graph's (measured) nodes — the
-    // alias set may even match.  The transformer passes each graph node's
-    // `properties` object through by reference, so reference equality is an
-    // exact provenance test; parsed server payloads always allocate fresh
-    // objects, never reusing the previous graph's.
+    // The nodes state must already derive from THIS graphData and detail mode.
+    // On a graph refresh or a mode toggle this effect can fire in the same
+    // commit as the re-sync above, while `nodes` still holds the previous
+    // build's (measured) nodes — the alias set may even match.  The
+    // transformer passes each graph node's `properties` object through by
+    // reference (an exact provenance test: parsed server payloads always
+    // allocate fresh objects) and stamps the detail mode on `data.compact`.
     const propsByAlias = new Map(graphData.nodes.map(n => [n.alias, n.properties]));
     const nodesMatchGraph = nodes.length === propsByAlias.size &&
-      nodes.every(node => propsByAlias.get(node.id) === node.data.properties);
+      nodes.every(node =>
+        propsByAlias.get(node.id) === node.data.properties &&
+        node.data.compact === compactNodes,
+      );
     if (!nodesMatchGraph) return;
 
     const measuredHeights = new Map<string, number>();
@@ -243,23 +256,25 @@ export default function GraphView({
       measuredHeights.set(node.id, height);
     }
 
-    measuredLayoutDoneRef.current = graphData;
-    const measuredPositions = computeMeasuredPositions(graphData, measuredHeights);
+    measuredLayoutDoneRef.current = { graph: graphData, compact: compactNodes };
+    const measuredPositions = computeMeasuredPositions(graphData, measuredHeights, { compactNodes });
     const moved = nodes.some(node => {
       const position = measuredPositions.get(node.id);
       return position !== undefined &&
         (position.x !== node.position.x || position.y !== node.position.y);
     });
-    if (!moved) return;
-
-    setNodes(currentNodes => currentNodes.map(node => {
-      const position = measuredPositions.get(node.id);
-      return position ? { ...node, position } : node;
-    }));
+    if (moved) {
+      setNodes(currentNodes => currentNodes.map(node => {
+        const position = measuredPositions.get(node.id);
+        return position ? { ...node, position } : node;
+      }));
+    }
+    // Re-fit even when nothing moved: a detail-mode toggle changes the graph
+    // bounds drastically while the estimate layout may already be exact.
     requestAnimationFrame(() => {
       rfInstanceRef.current?.fitView({ padding: 0.25 });
     });
-  }, [graphData, nodes, setNodes]);
+  }, [compactNodes, graphData, nodes, setNodes]);
 
   const dismissMultiSelectTip = useCallback(() => {
     if (!tipVisible || tipFading) return;
@@ -472,7 +487,32 @@ export default function GraphView({
               }}
             >
               <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="rgba(255,255,255,0.07)" />
-              <Controls showInteractive={false} />
+              <Controls showInteractive={false}>
+                {/* Thumbnail / expanded node detail toggle — lives with the
+                    other view controls (+ / − / fit). */}
+                <ControlButton
+                  onClick={() => setCompactNodes(prev => !prev)}
+                  title={compactNodes ? 'Show node details' : 'Show thumbnail nodes'}
+                  aria-label={compactNodes ? 'Show node details' : 'Show thumbnail nodes'}
+                  aria-pressed={compactNodes}
+                >
+                  {compactNodes ? (
+                    // Expanded-card icon: header bar + body rows
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                      <rect x="2" y="2" width="12" height="12" rx="1.6" />
+                      <path d="M2 5.6h12" />
+                      <path d="M4.4 8.4h7.2" />
+                      <path d="M4.4 11h7.2" />
+                    </svg>
+                  ) : (
+                    // Thumbnail-card icon: header bar only
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                      <rect x="2" y="4.5" width="12" height="7" rx="1.6" />
+                      <path d="M2 7.5h12" />
+                    </svg>
+                  )}
+                </ControlButton>
+              </Controls>
             </ReactFlow>
           ) : (
             <div className={styles.empty}>

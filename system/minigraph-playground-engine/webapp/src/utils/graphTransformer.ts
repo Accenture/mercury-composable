@@ -16,6 +16,8 @@ export interface GraphNodeData extends Record<string, unknown> {
   /** Back-edge target handles — rendered on the RIGHT side (incoming back-edges to this node). */
   backTargetHandles: GraphHandleData[];
   supportsConnectionAuthoring: boolean;
+  /** Thumbnail mode: render the header only, no property rows. */
+  compact: boolean;
   minHeight: number;
 }
 
@@ -37,6 +39,9 @@ export interface GraphEdgeData extends Record<string, unknown> {
 // updates accordingly, keeping NodeResizer in sync.
 const NODE_WIDTH  = 240;
 const NODE_HEIGHT = 100; // rough estimate; ResizeObserver will correct it post-mount
+// Thumbnail mode: nodes render header-only, so the base height drops to the
+// header card.  Handle-spread floors still apply on top of it.
+const NODE_HEIGHT_COMPACT = 48;
 const ROW_GAP            = 60;   // vertical gap between nodes stacked in the same column
 const COL_GAP            = 120;  // horizontal gap between columns (levels)
 const COMPONENT_GAP      = 360;  // horizontal gap between independent flow trees
@@ -92,9 +97,9 @@ function edgeHandleOffset(index: number, total: number): number {
 }
 
 
-function nodeHeightForHandleCount(handleCount: number): number {
-  if (handleCount <= 1) return NODE_HEIGHT;
-  return Math.max(NODE_HEIGHT, ((handleCount - 1) * EDGE_HANDLE_GAP) + (EDGE_HANDLE_PADDING * 2));
+function nodeHeightForHandleCount(handleCount: number, baseHeight: number = NODE_HEIGHT): number {
+  if (handleCount <= 1) return baseHeight;
+  return Math.max(baseHeight, ((handleCount - 1) * EDGE_HANDLE_GAP) + (EDGE_HANDLE_PADDING * 2));
 }
 
 // ─── Content height estimation ───────────────────────────────────────────────
@@ -1342,13 +1347,15 @@ function computeLayout(
 }
 
 /**
- * Estimated node heights for layout: the content estimate, floored by the
- * handle-count minimum.  Counts total outgoing/incoming for rough handle
- * counts — accurate per-side counts only exist once back-edges are known.
+ * Estimated node heights for layout: the content estimate (header-only in
+ * thumbnail mode), floored by the handle-count minimum.  Counts total
+ * outgoing/incoming for rough handle counts — accurate per-side counts only
+ * exist once back-edges are known.
  */
 function layoutNodeHeights(
   nodes: MinigraphGraphData['nodes'],
   connections: MinigraphGraphData['connections'],
+  compactNodes: boolean,
 ): Map<string, number> {
   const totalOutgoing = new Map<string, number>();
   const totalIncoming = new Map<string, number>();
@@ -1358,16 +1365,16 @@ function layoutNodeHeights(
   }
 
   return new Map(
-    nodes.map(n => [
-      n.alias,
-      Math.max(
-        nodeHeightForHandleCount(Math.max(
-          totalOutgoing.get(n.alias) ?? 0,
-          totalIncoming.get(n.alias) ?? 0,
-        )),
-        estimateNodeContentHeight(n),
-      ),
-    ]),
+    nodes.map(n => {
+      const handleFloor = nodeHeightForHandleCount(
+        Math.max(totalOutgoing.get(n.alias) ?? 0, totalIncoming.get(n.alias) ?? 0),
+        compactNodes ? NODE_HEIGHT_COMPACT : NODE_HEIGHT,
+      );
+      return [
+        n.alias,
+        compactNodes ? handleFloor : Math.max(handleFloor, estimateNodeContentHeight(n)),
+      ];
+    }),
   );
 }
 
@@ -1383,9 +1390,10 @@ function layoutNodeHeights(
 export function computeMeasuredPositions(
   data: MinigraphGraphData,
   measuredHeights: Map<string, number>,
+  options: { compactNodes?: boolean } = {},
 ): Map<string, { x: number; y: number }> {
   const connections = data.connections ?? [];
-  const heights = layoutNodeHeights(data.nodes, connections);
+  const heights = layoutNodeHeights(data.nodes, connections, options.compactNodes === true);
   for (const [alias, measured] of measuredHeights) {
     if (heights.has(alias) && Number.isFinite(measured) && measured > 0) {
       heights.set(alias, measured);
@@ -1400,12 +1408,13 @@ export function computeMeasuredPositions(
  */
 export function transformGraphData(
   data: MinigraphGraphData,
-  options: { supportsConnectionAuthoring?: boolean } = {},
+  options: { supportsConnectionAuthoring?: boolean; compactNodes?: boolean } = {},
 ): { nodes: Node<GraphNodeData>[]; edges: Edge<GraphEdgeData>[] } {
   const connections = data.connections ?? [];
   const supportsConnectionAuthoring = options.supportsConnectionAuthoring === true;
+  const compactNodes = options.compactNodes === true;
 
-  const approxNodeHeights = layoutNodeHeights(data.nodes, connections);
+  const approxNodeHeights = layoutNodeHeights(data.nodes, connections, compactNodes);
   const { positions, levelOf } = computeLayout(data.nodes, connections, approxNodeHeights);
 
   // ── Classify connections as forward or backward ───────────────────────────
@@ -1502,7 +1511,10 @@ export function transformGraphData(
     const left  = leftSide.get(n.alias) ?? [];
     // Handle-count floor: the box must span its spread edge handles even when
     // the content is shorter.  Rendered height above the floor is content-driven.
-    const handleMinHeight = nodeHeightForHandleCount(Math.max(right.length, left.length));
+    const handleMinHeight = nodeHeightForHandleCount(
+      Math.max(right.length, left.length),
+      compactNodes ? NODE_HEIGHT_COMPACT : NODE_HEIGHT,
+    );
     const estimatedHeight = Math.max(
       handleMinHeight,
       approxNodeHeights.get(n.alias) ?? NODE_HEIGHT,
@@ -1572,6 +1584,7 @@ export function transformGraphData(
         backSourceHandles,
         backTargetHandles,
         supportsConnectionAuthoring,
+        compact:       compactNodes,
         minHeight:     handleMinHeight,
       },
     };
