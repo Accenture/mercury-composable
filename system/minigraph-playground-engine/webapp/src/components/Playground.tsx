@@ -236,6 +236,21 @@ export default function Playground({ config }: PlaygroundProps) {
     addToast,
   });
 
+  // ── Console panel visibility ─────────────────────────────────────────────
+  // Hiding the console gives the right panel the full width, so the graph
+  // view can use the whole screen. Persisted like the other panel toggles.
+  const [consoleOpen, setConsoleOpen] = useLocalStorage<boolean>('console-panel-open', true);
+
+  // Restore the scroll position when the console re-mounts: the
+  // message-driven auto-scroll in useWebSocket only fires on new messages,
+  // so an unchanged backlog would otherwise reappear scrolled to the top.
+  const consoleRef = ws.consoleRef;
+  useEffect(() => {
+    if (consoleOpen && consoleRef.current) {
+      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+    }
+  }, [consoleOpen, consoleRef]);
+
   // ── Clipboard integration ────────────────────────────────────────────────
   const clipboardCtx = useClipboardContext();
 
@@ -481,9 +496,17 @@ export default function Playground({ config }: PlaygroundProps) {
               connected={ws.connected}
             />
           )}
+          <button
+            className={styles.panelToggle}
+            onClick={() => setConsoleOpen(prev => !prev)}
+            aria-label={consoleOpen ? 'Hide console panel' : 'Show console panel'}
+            aria-pressed={consoleOpen}
+          >
+            Console
+          </button>
           {supportsClipboard && (
             <button
-              className={styles.clipboardToggle}
+              className={styles.panelToggle}
               onClick={() => setClipboardOpen(prev => !prev)}
               aria-label={clipboardOpen ? 'Close workspace sidebar' : 'Open workspace sidebar'}
               aria-pressed={clipboardOpen}
@@ -548,28 +571,32 @@ export default function Playground({ config }: PlaygroundProps) {
         defaultLayout={defaultLayout}
         onLayoutChanged={onLayoutChanged}
       >
-        <Panel defaultSize={(helpOpen || clipboardOpen) ? "50%" : "60%"} minSize="25%">
-          <LeftPanel
-            messages={ws.messages}
-            classificationMap={classificationMap}
-            onCopy={ws.copyMessages}
-            onClear={handleClearMessages}
-            consoleRef={ws.consoleRef}
-            command={ws.command}
-            onCommandChange={ws.setCommand}
-            onCommandKeyDown={ws.handleKeyDown}
-            onSend={ws.sendCommand}
-            sendDisabled={!ws.connected || !ws.command.trim()}
-            inputDisabled={!ws.connected}
-            commandHistory={ws.history}
-            onGraphLinkMessage={handleGraphLinkMessage}
-            onCopyMessage={() => addToast('Copied to clipboard', 'success')}
-            onSendToJsonPath={handleSendToJsonPath}
-            onUploadMockData={handleOpenUploadModal}
-            successfulUploadPaths={successfulUploadPaths}
-          />
-        </Panel>
-        <Separator className={styles.resizeHandle} aria-label="Resize panels" />
+        {consoleOpen && (
+          <>
+            <Panel defaultSize={(helpOpen || clipboardOpen) ? "50%" : "60%"} minSize="25%">
+              <LeftPanel
+                messages={ws.messages}
+                classificationMap={classificationMap}
+                onCopy={ws.copyMessages}
+                onClear={handleClearMessages}
+                consoleRef={ws.consoleRef}
+                command={ws.command}
+                onCommandChange={ws.setCommand}
+                onCommandKeyDown={ws.handleKeyDown}
+                onSend={ws.sendCommand}
+                sendDisabled={!ws.connected || !ws.command.trim()}
+                inputDisabled={!ws.connected}
+                commandHistory={ws.history}
+                onGraphLinkMessage={handleGraphLinkMessage}
+                onCopyMessage={() => addToast('Copied to clipboard', 'success')}
+                onSendToJsonPath={handleSendToJsonPath}
+                onUploadMockData={handleOpenUploadModal}
+                successfulUploadPaths={successfulUploadPaths}
+              />
+            </Panel>
+            <Separator className={styles.resizeHandle} aria-label="Resize panels" />
+          </>
+        )}
         <Panel defaultSize={helpOpen ? "50%" : clipboardOpen ? "30%" : "40%"} minSize="20%">
           <RightPanel
             tabs={tabs}
