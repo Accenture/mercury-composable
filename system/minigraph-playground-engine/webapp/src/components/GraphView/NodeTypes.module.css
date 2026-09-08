@@ -161,17 +161,22 @@
   z-index: 3;
 }
 
-/* The visible halo ring, drawn just outside the node border. */
+/* The visible halo ring, drawn just outside the node border.  Solid and
+ * thick enough to survive small zoom levels (everything here scales with the
+ * graph zoom), and offset far enough from the border to read as a distinct
+ * ring next to a selected node's resize frame. */
 .authoringRing::before {
-  border: 3px solid color-mix(in srgb, var(--node-accent, var(--primary-color)) 55%, transparent);
-  border-radius: 14px;
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--node-accent, var(--primary-color)) 12%, transparent);
+  border: 5px solid color-mix(in srgb, var(--node-accent, var(--primary-color)) 45%, #ffffff);
+  border-radius: 18px;
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--node-accent, var(--primary-color)) 70%, transparent),
+    0 0 0 8px color-mix(in srgb, var(--node-accent, var(--primary-color)) 10%, transparent);
   content: "";
-  inset: 3px;
+  inset: 0;
   opacity: 0;
   pointer-events: none;
   position: absolute;
-  transition: opacity 0.12s ease, box-shadow 0.12s ease;
+  transition: opacity 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 :global(.react-flow__node:hover) .authoringRing::before,
@@ -180,8 +185,10 @@
 }
 
 .authoringRing:hover::before {
-  border-color: color-mix(in srgb, var(--node-accent, var(--primary-color)) 85%, transparent);
-  box-shadow: 0 0 0 6px color-mix(in srgb, var(--node-accent, var(--primary-color)) 20%, transparent);
+  border-color: color-mix(in srgb, var(--node-accent, var(--primary-color)) 80%, #ffffff);
+  box-shadow:
+    0 0 0 1.5px var(--node-accent, var(--primary-color)),
+    0 0 0 9px color-mix(in srgb, var(--node-accent, var(--primary-color)) 16%, transparent);
 }
 
 /* ── Connection drop target: the whole node, active only mid-drag ────────── */
