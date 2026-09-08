@@ -513,9 +513,25 @@ export default function Playground({ config }: PlaygroundProps) {
           )}
           <button
             className={styles.panelToggle}
-            onClick={() => setConsoleOpen(prev => !prev)}
-            aria-label={consoleOpen ? 'Hide console panel' : 'Show console panel'}
-            aria-pressed={consoleOpen}
+            onClick={() => {
+              // While the node editor occupies the console's slot, this button
+              // means "give me the console back": close the editor (same
+              // discard semantics as Esc/Cancel) and show the console. A save
+              // in flight blocks closing, exactly like Esc/Cancel.
+              if (nodeEditSession !== null) {
+                if (nodeEditSession.phase !== 'sending') {
+                  graphAuthoring.close();
+                  setConsoleOpen(true);
+                }
+                return;
+              }
+              setConsoleOpen(prev => !prev);
+            }}
+            aria-label={nodeEditSession !== null
+              ? 'Show console panel and close the node editor'
+              : consoleOpen ? 'Hide console panel' : 'Show console panel'}
+            aria-pressed={consoleVisible}
+            title={nodeEditSession !== null ? 'Closes the node editor' : undefined}
           >
             Console
           </button>
