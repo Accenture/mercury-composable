@@ -44,11 +44,15 @@ export default function GraphAuthoringModals({
     );
   }
 
+  // Edit-node sessions render as the in-place NodeEditPanel in the left panel
+  // slot (hosted by Playground), not as a modal.
+  if (state.action === 'edit-node') return null;
+
   return (
     <NodeDialog
       open
-      mode={state.action === 'edit-node' ? 'edit' : 'create'}
-      aliasReadOnly={state.action === 'edit-node'}
+      mode="create"
+      aliasReadOnly={false}
       formState={state.formState}
       phase={state.phase}
       lockReason={lockReason}

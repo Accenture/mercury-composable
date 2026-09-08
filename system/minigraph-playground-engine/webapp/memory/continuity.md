@@ -57,6 +57,16 @@
   measure-then-relayout cycle (done-key = graphData + mode; fitView on every completed pass).
   <!-- id: webapp-content-sized-nodes-measured-relayout | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
 
+- **Edit Node is an in-place panel, not a modal (2026-09-08, Eric's UX direction).** The
+  `NodeEditPanel` renders in the left panel slot (the console's space) as a "magnified node":
+  accent ribbon = node header (icon + alias + type badge, recolored live from the Node Type
+  field), node-style aligned key/value grid rows, scrollable body. Esc / Cancel / successful
+  save closes the session and the slot returns to its previous content — `consoleOpen` is
+  never mutated by the editor. Create node/connection keep their modals
+  (`GraphAuthoringModals` returns null for edit-node). useGraphAuthoring stayed the single
+  owner of validation/transport; the panel is presentational, mirroring NodeDialog's contract.
+  <!-- id: webapp-edit-node-inplace-panel | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
+
 ## Open Threads
 
 - [ ] Review MiniGraph webapp architecture after the UI PR stack and graph suspend/resume engine work.

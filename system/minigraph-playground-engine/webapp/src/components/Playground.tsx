@@ -27,6 +27,7 @@ import GraphSaveButton from './GraphSaveButton/GraphSaveButton';
 import SavedGraphsMenu from './SavedGraphsMenu/SavedGraphsMenu';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
+import NodeEditPanel from './NodeEditPanel/NodeEditPanel';
 import { MockUploadModal } from './MockUploadModal/MockUploadModal';
 import GraphAuthoringModals from './GraphAuthoring/GraphAuthoringModals';
 import { useGraphAuthoring } from './GraphAuthoring/useGraphAuthoring';
@@ -241,16 +242,6 @@ export default function Playground({ config }: PlaygroundProps) {
   // view can use the whole screen. Persisted like the other panel toggles.
   const [consoleOpen, setConsoleOpen] = useLocalStorage<boolean>('console-panel-open', true);
 
-  // Restore the scroll position when the console re-mounts: the
-  // message-driven auto-scroll in useWebSocket only fires on new messages,
-  // so an unchanged backlog would otherwise reappear scrolled to the top.
-  const consoleRef = ws.consoleRef;
-  useEffect(() => {
-    if (consoleOpen && consoleRef.current) {
-      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
-    }
-  }, [consoleOpen, consoleRef]);
-
   // ── Clipboard integration ────────────────────────────────────────────────
   const clipboardCtx = useClipboardContext();
 
@@ -391,6 +382,30 @@ export default function Playground({ config }: PlaygroundProps) {
     executor: graphAuthoringExecutor,
     onUserMessage: addToast,
   });
+
+  // ── In-place node editor ──────────────────────────────────────────────────
+  // An open edit-node session takes over the left panel slot (the console's
+  // space) with the magnified-node editor — the console hides while editing.
+  // consoleOpen itself is never touched, so Esc / Cancel / a successful save
+  // simply unmounts the editor and the slot returns to its previous state
+  // (console back if it was open, full-width graph if it was hidden).
+  const authoringState = graphAuthoring.state;
+  const nodeEditSession =
+    supportsAuthoring && authoringState.status === 'open' && authoringState.action === 'edit-node'
+      ? authoringState
+      : null;
+
+  // Restore the scroll position when the console re-mounts (console toggle or
+  // node editor closing): the message-driven auto-scroll in useWebSocket only
+  // fires on new messages, so an unchanged backlog would otherwise reappear
+  // scrolled to the top.
+  const consoleRef = ws.consoleRef;
+  const consoleVisible = consoleOpen && nodeEditSession === null;
+  useEffect(() => {
+    if (consoleVisible && consoleRef.current) {
+      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+    }
+  }, [consoleVisible, consoleRef]);
 
   // ── Session collaboration ────────────────────────────────────────────────
   // The Session dropdown is rendered from Navigation, but this hook is created
@@ -571,28 +586,47 @@ export default function Playground({ config }: PlaygroundProps) {
         defaultLayout={defaultLayout}
         onLayoutChanged={onLayoutChanged}
       >
-        {consoleOpen && (
+        {(consoleOpen || nodeEditSession !== null) && (
           <>
             <Panel defaultSize={(helpOpen || clipboardOpen) ? "50%" : "60%"} minSize="25%">
-              <LeftPanel
-                messages={ws.messages}
-                classificationMap={classificationMap}
-                onCopy={ws.copyMessages}
-                onClear={handleClearMessages}
-                consoleRef={ws.consoleRef}
-                command={ws.command}
-                onCommandChange={ws.setCommand}
-                onCommandKeyDown={ws.handleKeyDown}
-                onSend={ws.sendCommand}
-                sendDisabled={!ws.connected || !ws.command.trim()}
-                inputDisabled={!ws.connected}
-                commandHistory={ws.history}
-                onGraphLinkMessage={handleGraphLinkMessage}
-                onCopyMessage={() => addToast('Copied to clipboard', 'success')}
-                onSendToJsonPath={handleSendToJsonPath}
-                onUploadMockData={handleOpenUploadModal}
-                successfulUploadPaths={successfulUploadPaths}
-              />
+              {nodeEditSession !== null ? (
+                <NodeEditPanel
+                  formState={nodeEditSession.formState}
+                  phase={nodeEditSession.phase}
+                  lockReason={
+                    nodeEditSession.phase === 'sending'
+                      ? 'sending'
+                      : nodeEditSession.connectionLost
+                        ? 'disconnected'
+                        : null
+                  }
+                  serverMessage={nodeEditSession.serverMessage}
+                  validationErrors={graphAuthoring.validationErrors}
+                  onFormStateChange={graphAuthoring.updateFormState}
+                  onSubmit={graphAuthoring.submit}
+                  onClose={graphAuthoring.close}
+                />
+              ) : (
+                <LeftPanel
+                  messages={ws.messages}
+                  classificationMap={classificationMap}
+                  onCopy={ws.copyMessages}
+                  onClear={handleClearMessages}
+                  consoleRef={ws.consoleRef}
+                  command={ws.command}
+                  onCommandChange={ws.setCommand}
+                  onCommandKeyDown={ws.handleKeyDown}
+                  onSend={ws.sendCommand}
+                  sendDisabled={!ws.connected || !ws.command.trim()}
+                  inputDisabled={!ws.connected}
+                  commandHistory={ws.history}
+                  onGraphLinkMessage={handleGraphLinkMessage}
+                  onCopyMessage={() => addToast('Copied to clipboard', 'success')}
+                  onSendToJsonPath={handleSendToJsonPath}
+                  onUploadMockData={handleOpenUploadModal}
+                  successfulUploadPaths={successfulUploadPaths}
+                />
+              )}
             </Panel>
             <Separator className={styles.resizeHandle} aria-label="Resize panels" />
           </>
