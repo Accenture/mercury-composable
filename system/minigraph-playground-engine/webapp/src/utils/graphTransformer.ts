@@ -39,9 +39,10 @@ export interface GraphEdgeData extends Record<string, unknown> {
 // updates accordingly, keeping NodeResizer in sync.
 const NODE_WIDTH  = 240;
 const NODE_HEIGHT = 100; // rough estimate; ResizeObserver will correct it post-mount
-// Thumbnail mode: nodes render header-only, so the base height drops to the
-// header card.  Handle-spread floors still apply on top of it.
-const NODE_HEIGHT_COMPACT = 48;
+// Thumbnail mode: every node is a uniform FIXED-height card — the header
+// (~40px) plus a clipped body peek of 1.5x the header showing the first
+// key-values.  Handle-spread floors still apply on top of it.
+const COMPACT_NODE_HEIGHT = 100;
 const ROW_GAP            = 60;   // vertical gap between nodes stacked in the same column
 const COL_GAP            = 120;  // horizontal gap between columns (levels)
 const COMPONENT_GAP      = 360;  // horizontal gap between independent flow trees
@@ -1368,7 +1369,7 @@ function layoutNodeHeights(
     nodes.map(n => {
       const handleFloor = nodeHeightForHandleCount(
         Math.max(totalOutgoing.get(n.alias) ?? 0, totalIncoming.get(n.alias) ?? 0),
-        compactNodes ? NODE_HEIGHT_COMPACT : NODE_HEIGHT,
+        compactNodes ? COMPACT_NODE_HEIGHT : NODE_HEIGHT,
       );
       return [
         n.alias,
@@ -1513,7 +1514,7 @@ export function transformGraphData(
     // the content is shorter.  Rendered height above the floor is content-driven.
     const handleMinHeight = nodeHeightForHandleCount(
       Math.max(right.length, left.length),
-      compactNodes ? NODE_HEIGHT_COMPACT : NODE_HEIGHT,
+      compactNodes ? COMPACT_NODE_HEIGHT : NODE_HEIGHT,
     );
     const estimatedHeight = Math.max(
       handleMinHeight,
@@ -1564,13 +1565,16 @@ export function transformGraphData(
       // node toggling available while Shift+drag from empty canvas box-selects.
       className: 'nokey',
       position: positions.get(n.alias) ?? { x: 0, y: 0 },
-      // Fixed width, content-driven height: `initialHeight` sizes the very
-      // first paint (before measurement) at the layout's estimate, then drops
-      // out of the inline style so the DOM height follows the content, floored
-      // by style.minHeight.  A fixed `height` is only ever (re)introduced by
-      // the user through NodeResizer.
-      width:         NODE_WIDTH,
-      initialHeight: estimatedHeight,
+      // Fixed width; the height depends on the detail mode.  Expanded:
+      // `initialHeight` sizes the very first paint (before measurement) at the
+      // layout's estimate, then drops out of the inline style so the DOM
+      // height follows the content, floored by style.minHeight — a fixed
+      // `height` is only ever (re)introduced by the user through NodeResizer.
+      // Thumbnail: a fixed uniform card height; the body peek is clipped.
+      width: NODE_WIDTH,
+      ...(compactNodes
+        ? { height: estimatedHeight }
+        : { initialHeight: estimatedHeight }),
       style: {
         ...getMinigraphNodeShellStyle(n.types[0] ?? 'unknown'),
         minHeight: handleMinHeight,

@@ -690,24 +690,25 @@ describe('node overlap prevention', () => {
     })));
   });
 
-  it('thumbnail mode renders header-only cards with compact estimates', () => {
+  it('thumbnail mode renders uniform fixed-height cards with a clipped body peek', () => {
     const graph = tutorial12Fixture as MinigraphGraphData;
     const expanded = transformGraphData(graph);
     const compact = transformGraphData(graph, { compactNodes: true });
 
     for (const node of compact.nodes) {
       expect(node.data.compact).toBe(true);
-      expect(node.height).toBeUndefined();
-      expect(node.initialHeight).toBeGreaterThanOrEqual(node.data.minHeight);
+      // Fixed uniform card: 100 (header + 1.5x-header peek), raised only by
+      // the handle-spread floor.  Content never drives the height.
+      expect(node.height).toBe(Math.max(100, node.data.minHeight));
+      expect(node.initialHeight).toBeUndefined();
     }
     expect(expanded.nodes.every(node => !node.data.compact)).toBe(true);
 
-    // Property-heavy nodes shrink to the header card; the content no longer
-    // drives the estimate.
+    // Property-heavy nodes shrink to the uniform card in thumbnail mode.
     const compactErrorHandler = compact.nodes.find(node => node.id === 'error-handler')!;
     const expandedErrorHandler = expanded.nodes.find(node => node.id === 'error-handler')!;
-    expect(compactErrorHandler.initialHeight).toBeLessThan(100);
-    expect(compactErrorHandler.initialHeight).toBeLessThan(expandedErrorHandler.initialHeight!);
+    expect(compactErrorHandler.height).toBe(100);
+    expect(compactErrorHandler.height!).toBeLessThan(expandedErrorHandler.initialHeight!);
 
     expectNoOverlap(compact.nodes.map(node => ({
       id: node.id,

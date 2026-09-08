@@ -184,3 +184,35 @@
 @keyframes graphRefreshSpin {
   to { transform: rotate(360deg); }
 }
+
+/*
+ * ── Node detail-mode toggle icon ──
+ * A miniature node card rendered in HTML/CSS rather than SVG: React Flow's
+ * controls stylesheet forces `fill: currentColor` on control-button SVGs,
+ * which turned a stroked icon into a dark blob.  The mini card mirrors the
+ * real node look — accent border, tinted header band, body rows.
+ */
+.detailToggleIcon {
+  box-sizing: border-box;
+  display: block;
+  width: 15px;
+  height: 12px;
+  border: 1px solid var(--primary-color);
+  border-radius: 3px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.detailToggleHeader {
+  display: block;
+  height: 4px;
+  background: color-mix(in srgb, var(--primary-color) 45%, #fff);
+  border-bottom: 1px solid color-mix(in srgb, var(--primary-color) 55%, #fff);
+}
+
+.detailToggleLine {
+  display: block;
+  height: 1px;
+  margin: 1px 2px 0;
+  background: color-mix(in srgb, var(--primary-color) 60%, #fff);
+}

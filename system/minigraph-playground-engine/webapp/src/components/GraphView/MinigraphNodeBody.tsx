@@ -6,7 +6,7 @@ interface MinigraphNodeBodyProps {
   alias: string;
   nodeType: string;
   properties: Record<string, unknown>;
-  /** Thumbnail mode: render the header only, no property rows. */
+  /** Thumbnail mode: the body is a clipped peek that fades out at the card edge. */
   compact?: boolean;
 }
 
@@ -58,11 +58,9 @@ export function MinigraphNodeBody({ alias, nodeType, properties, compact = false
           <span className={styles.badge}>{meta.label}</span>
         </div>
 
-        {!compact && (
-          <div className={styles.body}>
-            <PropertyRows properties={properties} />
-          </div>
-        )}
+        <div className={compact ? `${styles.body} ${styles.bodyPeek}` : styles.body}>
+          <PropertyRows properties={properties} />
+        </div>
       </div>
     </Fragment>
   );

@@ -496,21 +496,18 @@ export default function GraphView({
                   aria-label={compactNodes ? 'Show node details' : 'Show thumbnail nodes'}
                   aria-pressed={compactNodes}
                 >
-                  {compactNodes ? (
-                    // Expanded-card icon: header bar + body rows
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-                      <rect x="2" y="2" width="12" height="12" rx="1.6" />
-                      <path d="M2 5.6h12" />
-                      <path d="M4.4 8.4h7.2" />
-                      <path d="M4.4 11h7.2" />
-                    </svg>
-                  ) : (
-                    // Thumbnail-card icon: header bar only
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-                      <rect x="2" y="4.5" width="12" height="7" rx="1.6" />
-                      <path d="M2 7.5h12" />
-                    </svg>
-                  )}
+                  {/* Mini node card; body rows appear when the click would
+                      expand the details, a bare card when it would collapse. */}
+                  <span className={styles.detailToggleIcon} aria-hidden="true">
+                    <span className={styles.detailToggleHeader} />
+                    {compactNodes && (
+                      <>
+                        <span className={styles.detailToggleLine} />
+                        <span className={styles.detailToggleLine} />
+                        <span className={styles.detailToggleLine} />
+                      </>
+                    )}
+                  </span>
                 </ControlButton>
               </Controls>
             </ReactFlow>

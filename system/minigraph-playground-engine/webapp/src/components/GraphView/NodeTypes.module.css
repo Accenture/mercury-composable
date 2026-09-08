@@ -69,6 +69,19 @@
   padding: 0 0.6rem;
 }
 
+/*
+ * Thumbnail-mode body peek: the card has a fixed uniform height, so the body
+ * fills the remaining space below the header, clips overflowing rows, and
+ * fades out toward the card edge to signal there is more content.
+ */
+.bodyPeek {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(180deg, #000 45%, transparent 96%);
+  -webkit-mask-image: linear-gradient(180deg, #000 45%, transparent 96%);
+}
+
 .row {
   padding: 0.25rem 0rem;
   display: flex;
