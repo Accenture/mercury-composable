@@ -164,13 +164,15 @@
 /* The visible halo ring, drawn just outside the node border.  Solid and
  * thick enough to survive small zoom levels (everything here scales with the
  * graph zoom), and offset far enough from the border to read as a distinct
- * ring next to a selected node's resize frame. */
+ * ring next to a selected node's resize frame.  Always PRIMARY BLUE: the halo
+ * is the connect affordance, not a node-identity marker — custom node types
+ * (grey unknown accent) must show the same signal as built-in ones. */
 .authoringRing::before {
-  border: 5px solid color-mix(in srgb, var(--node-accent, var(--primary-color)) 45%, #ffffff);
+  border: 5px solid color-mix(in srgb, var(--primary-color) 45%, #ffffff);
   border-radius: 18px;
   box-shadow:
-    0 0 0 1.5px color-mix(in srgb, var(--node-accent, var(--primary-color)) 70%, transparent),
-    0 0 0 8px color-mix(in srgb, var(--node-accent, var(--primary-color)) 10%, transparent);
+    0 0 0 1.5px color-mix(in srgb, var(--primary-color) 70%, transparent),
+    0 0 0 8px color-mix(in srgb, var(--primary-color) 10%, transparent);
   content: "";
   inset: 0;
   opacity: 0;
@@ -185,10 +187,10 @@
 }
 
 .authoringRing:hover::before {
-  border-color: color-mix(in srgb, var(--node-accent, var(--primary-color)) 80%, #ffffff);
+  border-color: color-mix(in srgb, var(--primary-color) 80%, #ffffff);
   box-shadow:
-    0 0 0 1.5px var(--node-accent, var(--primary-color)),
-    0 0 0 9px color-mix(in srgb, var(--node-accent, var(--primary-color)) 16%, transparent);
+    0 0 0 1.5px var(--primary-color),
+    0 0 0 9px color-mix(in srgb, var(--primary-color) 16%, transparent);
 }
 
 /* ── Connection drop target: the whole node, active only mid-drag ────────── */
