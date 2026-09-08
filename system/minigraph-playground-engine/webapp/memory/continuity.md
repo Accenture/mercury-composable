@@ -5,7 +5,7 @@
 - **scope:** MiniGraph Playground React/Vite webapp
 - **root:** `system/minigraph-playground-engine/webapp`
 - **served bundle:** `system/minigraph-playground-engine/src/main/resources/public`
-- **last_session:** 2026-08-19 | agent: Codex (2026-08-19-163020)
+- **last_session:** 2026-09-08 | agent: Claude Code (2026-09-08-164102)
 
 ## Current Facts
 
@@ -40,6 +40,19 @@
   authoring; a focused happy-dom test renders the real node type, applies the production CSS, and pins
   the controls' visible computed style.
   <!-- id: webapp-node-resize-regression-fix | created: 2026-08-19 | last_used: 2026-08-19 | uses: 1 | tier: working | origin: 2026-08-19-163020 -->
+
+- **Graph nodes are content-sized with a measured re-layout (2026-09-08).** Nodes carry no fixed
+  `height`: `initialHeight` (content-aware estimate) sizes the pre-measurement paint,
+  `style.minHeight` keeps the handle-count floor, and React Flow v12 drops `initialHeight` from
+  inline styles after measurement so the DOM height follows content (a fixed `height` returns only
+  via NodeResizer). GraphView re-runs the layout once per graphData with real measured heights
+  (`computeMeasuredPositions`) and re-fits — this is the non-overlap guarantee. A bounded intrusion
+  relief pass (computeLayout step 4.5) shifts a column chain vertically when no slot ordering can
+  route a long edge around a tall node; it shares the geometry-pair budget with scoring. Stale-window
+  guard for refreshes: RF node `data.properties` must be reference-identical to the current
+  graphData node's before relaying out. Previously heights were fixed at ~100px and clipped 200–440px
+  of content, which is also why older bundles showed overlapping nodes.
+  <!-- id: webapp-content-sized-nodes-measured-relayout | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
 
 ## Open Threads
 

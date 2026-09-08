@@ -13,12 +13,13 @@ import {
   type OnConnect,
   type OnConnectStart,
   type OnConnectEnd,
+  type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import { AUTHORING_SOURCE_HANDLE_ID, AUTHORING_TARGET_HANDLE_ID, nodeTypes } from './NodeTypes';
 import { GraphViewErrorBoundary } from './GraphViewErrorBoundary';
-import { transformGraphData, type GraphNodeData, type GraphEdgeData } from '../../utils/graphTransformer';
+import { transformGraphData, computeMeasuredPositions, type GraphNodeData, type GraphEdgeData } from '../../utils/graphTransformer';
 import type { MinigraphGraphData, MinigraphNode, MinigraphConnection } from '../../utils/graphTypes';
 import { hasClipboardItemType, readClipboardItemId } from '../../clipboard/dnd';
 import { findNodeByAlias, extractDirectConnections } from '../../clipboard/helpers';
@@ -209,6 +210,57 @@ export default function GraphView({
     setContextMenu(null);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
+  // ── Measured re-layout ────────────────────────────────────────────────────
+  // The transformer positions nodes from ESTIMATED heights — real heights only
+  // exist after React Flow measures the rendered DOM, because nodes size to
+  // their content.  Once every node reports a measured height, re-run the
+  // layout with the true values and re-fit the viewport; this is what
+  // guarantees nodes never overlap regardless of content.  Runs once per
+  // graphData object: later dimension changes (a manual NodeResizer drag)
+  // are the user's own and must not snap the layout back.
+  const rfInstanceRef = useRef<ReactFlowInstance<Node<GraphNodeData>, Edge<GraphEdgeData>> | null>(null);
+  const measuredLayoutDoneRef = useRef<MinigraphGraphData | null>(null);
+  useEffect(() => {
+    if (!graphData || graphData.nodes.length === 0) return;
+    if (measuredLayoutDoneRef.current === graphData) return;
+
+    // The nodes state must already derive from THIS graphData.  On a graph
+    // refresh this effect can fire in the same commit as the re-sync above,
+    // while `nodes` still holds the previous graph's (measured) nodes — the
+    // alias set may even match.  The transformer passes each graph node's
+    // `properties` object through by reference, so reference equality is an
+    // exact provenance test; parsed server payloads always allocate fresh
+    // objects, never reusing the previous graph's.
+    const propsByAlias = new Map(graphData.nodes.map(n => [n.alias, n.properties]));
+    const nodesMatchGraph = nodes.length === propsByAlias.size &&
+      nodes.every(node => propsByAlias.get(node.id) === node.data.properties);
+    if (!nodesMatchGraph) return;
+
+    const measuredHeights = new Map<string, number>();
+    for (const node of nodes) {
+      const height = node.measured?.height;
+      if (typeof height !== 'number') return; // wait until every node is measured
+      measuredHeights.set(node.id, height);
+    }
+
+    measuredLayoutDoneRef.current = graphData;
+    const measuredPositions = computeMeasuredPositions(graphData, measuredHeights);
+    const moved = nodes.some(node => {
+      const position = measuredPositions.get(node.id);
+      return position !== undefined &&
+        (position.x !== node.position.x || position.y !== node.position.y);
+    });
+    if (!moved) return;
+
+    setNodes(currentNodes => currentNodes.map(node => {
+      const position = measuredPositions.get(node.id);
+      return position ? { ...node, position } : node;
+    }));
+    requestAnimationFrame(() => {
+      rfInstanceRef.current?.fitView({ padding: 0.25 });
+    });
+  }, [graphData, nodes, setNodes]);
+
   const dismissMultiSelectTip = useCallback(() => {
     if (!tipVisible || tipFading) return;
     setTipFading(true);
@@ -362,6 +414,7 @@ export default function GraphView({
             <ReactFlow
               nodes={nodes}
               edges={edges}
+              onInit={(instance) => { rfInstanceRef.current = instance; }}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               nodesConnectable={canCreateConnection}
