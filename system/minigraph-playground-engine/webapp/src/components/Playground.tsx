@@ -21,6 +21,15 @@ import { buildClipboardPastePlan } from '../clipboard/paste';
 import { buildBatchClipToast } from '../clipboard/batchClipSummary';
 import { createGraphAuthoringExecutor } from '../graphActions/graphAuthoringExecutor';
 import { buildDeleteConnectionCommand } from '../graphActions/minigraphCommandBuilder';
+import {
+  buildConnectionCreateUndo,
+  buildConnectionDeleteUndo,
+  buildNodeCreateUndo,
+  buildNodeDeleteUndo,
+  buildNodeEditUndo,
+  type UndoEntry,
+} from '../graphActions/undoCommands';
+import { useGraphUndo } from '../hooks/useGraphUndo';
 import { MAX_BATCH_NODE_ACTIONS } from '../graphActions/batchNodeActions';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
@@ -43,6 +52,7 @@ import { useClipboardContext } from '../contexts/ClipboardContext';
 import { ProtocolBus } from '../protocol/bus';
 import { useProtocolKernel } from '../protocol/useProtocolKernel';
 import type { GraphLinkEvent } from '../protocol/events';
+import type { NodeActionTextResult } from '../utils/messageParser';
 import type { ClipboardItemRecord } from '../clipboard/db';
 import type { MinigraphNode, MinigraphConnection } from '../utils/graphTypes';
 import type { GraphClipItem } from './GraphView/selectionTargets';
@@ -150,6 +160,64 @@ export default function Playground({ config }: PlaygroundProps) {
     sendRawText: ws.sendRawText,
     addToast,
   });
+
+  // ── Undo (compensating commands) ──────────────────────────────────────────
+  // The backend stays a lightweight command executor (minimalist principle):
+  // every UI-initiated mutation captures a pre-mutation snapshot and pushes
+  // the inverse console commands. Ctrl+Z and per-toast Undo buttons replay
+  // them; the graph redraws from the backend confirmations.
+  const graphUndo = useGraphUndo({
+    bus,
+    connected: ws.connected,
+    sendRawText: ws.sendRawText,
+    addToast,
+  });
+
+  // Pre-mutation snapshots, keyed to the in-flight authoring action.
+  const preEditNodeRef = useRef<MinigraphNode | null>(null);
+  const pendingConnectionUndoRef = useRef<UndoEntry | null>(null);
+  const pendingNodeDeleteUndoRef = useRef(new Map<string, UndoEntry | null>());
+
+  const toastWithUndo = useCallback((message: string, undoId: number | null) => {
+    if (undoId === null) {
+      addToast(message, 'success');
+      return;
+    }
+    addToast(message, 'success', {
+      durationMs: 6000,
+      action: { label: 'Undo', onClick: () => graphUndo.undoEntry(undoId) },
+    });
+  }, [addToast, graphUndo.undoEntry]);
+
+  // Push the inverse only once the backend ACCEPTS the mutation.
+  const handleAuthoringAccepted = useCallback((result: NodeActionTextResult) => {
+    if (result.action === 'edit-node') {
+      const previous = preEditNodeRef.current;
+      preEditNodeRef.current = null;
+      if (previous && previous.alias === result.alias) {
+        toastWithUndo(`Updated node ${previous.alias}`, graphUndo.push(buildNodeEditUndo(previous)));
+      }
+      return;
+    }
+    if (result.action === 'create-node' && result.alias) {
+      toastWithUndo(`Created node ${result.alias}`, graphUndo.push(buildNodeCreateUndo(result.alias)));
+      return;
+    }
+    if (result.action === 'create-connection') {
+      const entry = pendingConnectionUndoRef.current;
+      pendingConnectionUndoRef.current = null;
+      toastWithUndo(
+        `Connected ${result.alias ?? ''} → ${result.targetAlias ?? ''}`,
+        graphUndo.push(entry),
+      );
+      return;
+    }
+    if (result.action === 'delete-node' && result.alias) {
+      const entry = pendingNodeDeleteUndoRef.current.get(result.alias) ?? null;
+      pendingNodeDeleteUndoRef.current.delete(result.alias);
+      toastWithUndo(`Deleted node ${result.alias}`, graphUndo.push(entry));
+    }
+  }, [graphUndo.push, toastWithUndo]);
 
   // ── Session-bound graph state invalidation ───────────────────────────────
   // Graph API paths are tied to the backend WebSocket session.  When the
@@ -381,6 +449,7 @@ export default function Playground({ config }: PlaygroundProps) {
     connected: ws.connected,
     graphData,
     executor: graphAuthoringExecutor,
+    onAccepted: handleAuthoringAccepted,
     onUserMessage: addToast,
   });
 
@@ -405,29 +474,71 @@ export default function Playground({ config }: PlaygroundProps) {
       ? authoringState
       : null;
   const [connectionAnchor, setConnectionAnchor] = useState<{ x: number; y: number } | null>(null);
+
+  // Ctrl/Cmd+Z undoes the newest tracked mutation — but never while typing
+  // (native text undo) or while an authoring session is open.
+  const authoringSessionOpen = nodeEditSession !== null || connectionSession !== null;
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'z' && event.key !== 'Z') return;
+      if (!(event.metaKey || event.ctrlKey) || event.shiftKey || event.altKey) return;
+      const target = event.target;
+      if (target instanceof Element && target.closest('input, textarea, select, [contenteditable="true"]')) return;
+      if (authoringSessionOpen) return;
+      if (!graphUndo.hasEntries()) return;
+      event.preventDefault();
+      graphUndo.undoLast();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [authoringSessionOpen, graphUndo.hasEntries, graphUndo.undoLast]);
   const handleOpenCreateConnection = useCallback(
     (sourceAlias: string, targetAlias: string, anchor?: { x: number; y: number }) => {
       setConnectionAnchor(anchor ?? null);
+      // Snapshot the pair's pre-create relations: the inverse must delete the
+      // pair and re-add exactly these.
+      pendingConnectionUndoRef.current = graphData
+        ? buildConnectionCreateUndo(graphData, sourceAlias, targetAlias)
+        : null;
       graphAuthoring.openCreateConnection(sourceAlias, targetAlias);
     },
-    [graphAuthoring.openCreateConnection],
+    [graphAuthoring.openCreateConnection, graphData],
   );
 
   // Keyboard delete of a selected connection: fire the backend command and let
   // the auto-refresh redraw the graph from the "{a} -> {b} removed" reply —
-  // the same trust model as the clipboard paste-drop flow.
+  // the same trust model as the clipboard paste-drop flow. The pre-delete
+  // relations become the undo recipe.
   const handleDeleteConnection = useCallback((sourceAlias: string, targetAlias: string) => {
     try {
       const command = buildDeleteConnectionCommand(sourceAlias, targetAlias);
+      const undoCandidate = graphData
+        ? buildConnectionDeleteUndo(graphData, sourceAlias, targetAlias)
+        : null;
       if (!ws.sendRawText(command)) {
         addToast('Could not send the delete-connection command because the WebSocket is not open.', 'error');
         return;
       }
-      addToast(`Deleting connection ${sourceAlias} → ${targetAlias}…`, 'info');
+      toastWithUndo(`Deleted connection ${sourceAlias} → ${targetAlias}`, graphUndo.push(undoCandidate));
     } catch (err) {
       addToast(err instanceof Error ? err.message : String(err), 'error');
     }
-  }, [ws.sendRawText, addToast]);
+  }, [addToast, graphData, graphUndo.push, toastWithUndo, ws.sendRawText]);
+
+  // Wraps that capture pre-mutation snapshots before delegating to the
+  // authoring hook; the matching undo entry is pushed in onAccepted.
+  const handleOpenEditNode = useCallback((node: MinigraphNode) => {
+    preEditNodeRef.current = node;
+    graphAuthoring.openEditNode(node);
+  }, [graphAuthoring.openEditNode]);
+
+  const handleDeleteNode = useCallback((node: MinigraphNode) => {
+    pendingNodeDeleteUndoRef.current.set(
+      node.alias,
+      graphData ? buildNodeDeleteUndo(graphData, node) : null,
+    );
+    graphAuthoring.deleteNode(node);
+  }, [graphAuthoring.deleteNode, graphData]);
 
   // Restore the scroll position when the console re-mounts (console toggle or
   // node editor closing): the message-driven auto-scroll in useWebSocket only
@@ -715,8 +826,8 @@ export default function Playground({ config }: PlaygroundProps) {
             supportsAuthoring={supportsAuthoring}
             onCreateNode={supportsAuthoring ? graphAuthoring.openCreateNode : undefined}
             onCreateConnection={supportsAuthoring ? handleOpenCreateConnection : undefined}
-            onEditNode={supportsAuthoring ? graphAuthoring.openEditNode : undefined}
-            onDeleteNode={supportsAuthoring ? graphAuthoring.deleteNode : undefined}
+            onEditNode={supportsAuthoring ? handleOpenEditNode : undefined}
+            onDeleteNode={supportsAuthoring ? handleDeleteNode : undefined}
             onDeleteNodes={supportsAuthoring ? graphAuthoring.deleteNodes : undefined}
             onDeleteConnection={supportsAuthoring ? handleDeleteConnection : undefined}
             helpPanel={supportsHelp && helpOpen ? (

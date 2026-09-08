@@ -92,6 +92,22 @@
   default `deleteKeyCode` would delete elements client-side only — always intercept.
   <!-- id: webapp-connect-ux-neo4j-halo | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
 
+- **Undo is frontend-only compensating commands (2026-09-08, Eric's ruling: the backend
+  stays lightweight — minimalist design principle; no engine undo journal, hence no Rust
+  lock-step obligation).** `undoCommands.ts` builds inverse console commands from
+  pre-mutation graphData snapshots (connection delete ⇄ re-connect both directions; node
+  edit ⇄ re-submit full-replace snapshot; create ⇄ delete; node delete ⇄ recreate +
+  reconnect); `useGraphUndo` (depth 20) replays them over the WS and the graph redraws
+  from backend confirmations. Triggers: Ctrl/Cmd+Z + per-toast Undo buttons (ToastAction).
+  Invalidation: disconnect + graph import only — collaborative sessions keep
+  last-write-wins; console-typed commands untracked; relation properties not restored;
+  batch node-delete not undoable; no redo. All inverse text flows through the
+  minigraphCommandBuilder boundary. The executor PACES inverse commands (await each
+  `graph.mutation` confirmation, 2.5s timeout): the backend can process a later
+  single-line command before an earlier multi-line `create node` completes — unpaced
+  node-delete undo lost its reconnects ("node X not found").
+  <!-- id: webapp-undo-compensating-commands | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
+
 ## Open Threads
 
 - [ ] Review MiniGraph webapp architecture after the UI PR stack and graph suspend/resume engine work.
