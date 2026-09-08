@@ -43,6 +43,8 @@ interface RightPanelProps {
   onDeleteNode?:           (node: MinigraphNode) => void;
   onDeleteNodes?:          (nodes: MinigraphNode[]) => void;
   onDeleteConnection?:     (sourceAlias: string, targetAlias: string) => void;
+  /** Changes whenever a panel toggle reshapes the graph pane; GraphView re-fits on change. */
+  panelLayoutKey?:         string;
   /**
    * When provided and non-null, the right panel renders a vertical split:
    * top = tab content, bottom = help panel.  Accepts either a plain ReactNode
@@ -85,6 +87,7 @@ export default function RightPanel({
   onDeleteNode,
   onDeleteNodes,
   onDeleteConnection,
+  panelLayoutKey,
   helpPanel,
 }: RightPanelProps) {
   const uid              = useId();
@@ -179,6 +182,7 @@ export default function RightPanel({
               onDeleteNode={onDeleteNode}
               onDeleteNodes={onDeleteNodes}
               onDeleteConnection={onDeleteConnection}
+              panelLayoutKey={panelLayoutKey}
             />
           </div>
         </div>

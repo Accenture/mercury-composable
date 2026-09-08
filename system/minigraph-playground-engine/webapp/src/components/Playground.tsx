@@ -830,6 +830,7 @@ export default function Playground({ config }: PlaygroundProps) {
             onDeleteNode={supportsAuthoring ? handleDeleteNode : undefined}
             onDeleteNodes={supportsAuthoring ? graphAuthoring.deleteNodes : undefined}
             onDeleteConnection={supportsAuthoring ? handleDeleteConnection : undefined}
+            panelLayoutKey={`${consoleOpen || nodeEditSession !== null}|${clipboardOpen}|${helpOpen}`}
             helpPanel={supportsHelp && helpOpen ? (
               (onToggleMaximize: () => void, isMaximized: boolean) => (
                 <HelpBrowser

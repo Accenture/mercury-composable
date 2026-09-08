@@ -63,6 +63,13 @@ interface GraphViewProps {
   onDeleteNodes?:  (nodes: MinigraphNode[]) => void;
   /** Called for each selected connection when the user presses Delete/Backspace. */
   onDeleteConnection?: (sourceAlias: string, targetAlias: string) => void;
+  /**
+   * Changes whenever a panel toggle reshapes the graph pane (console hidden or
+   * restored, node editor opened or closed, workspace/help panels).  The graph
+   * re-fits on change — but never during continuous separator drags, which
+   * must not fight the user's zoom/pan.
+   */
+  panelLayoutKey?: string;
 }
 
 const EMPTY_NODES: Node<GraphNodeData>[]  = [];
@@ -92,6 +99,7 @@ export default function GraphView({
   onDeleteNode,
   onDeleteNodes,
   onDeleteConnection,
+  panelLayoutKey,
 }: GraphViewProps) {
 
   // ── Context menu state ──────────────────────────────────────────────────
@@ -427,6 +435,30 @@ export default function GraphView({
   const handleConnectEnd = useCallback<OnConnectEnd>(() => {
     connectionDragSourceRef.current = null;
   }, []);
+
+  // ── Auto-fit on discrete panel-layout changes ──────────────────────────────
+  // Hiding/restoring the console (or the node editor taking/releasing its
+  // slot, or the workspace/help panels toggling) reshapes the graph pane; the
+  // graph re-fits so it always uses the new real estate. The key carries only
+  // panel VISIBILITY, so dragging a separator never re-fits. Double rAF: the
+  // first frame lets React Flow's own ResizeObserver ingest the new container
+  // size, the second fits against the fresh dimensions.
+  const previousPanelLayoutKeyRef = useRef(panelLayoutKey);
+  useEffect(() => {
+    if (previousPanelLayoutKeyRef.current === panelLayoutKey) return;
+    previousPanelLayoutKeyRef.current = panelLayoutKey;
+    if (!hasGraphData) return;
+    let innerFrame: number | null = null;
+    const outerFrame = requestAnimationFrame(() => {
+      innerFrame = requestAnimationFrame(() => {
+        rfInstanceRef.current?.fitView({ padding: 0.25 });
+      });
+    });
+    return () => {
+      cancelAnimationFrame(outerFrame);
+      if (innerFrame !== null) cancelAnimationFrame(innerFrame);
+    };
+  }, [hasGraphData, panelLayoutKey]);
 
   // ── Keyboard delete of selected connections ────────────────────────────────
   // Click an edge to select it, press Delete (or Backspace) to remove it.
