@@ -67,10 +67,17 @@ describe('buildCreateNodeCommand', () => {
     }))).toThrow();
   });
 
-  it('rejects property value newline injection', () => {
-    expect(() => buildCreateNodeCommand(formState({
-      properties: [{ id: 'p1', key: 'name', value: 'demo\nwith properties' }],
-    }))).toThrow();
+  it('serializes multiline property values with triple-quote blocks', () => {
+    expect(buildCreateNodeCommand(formState({
+      properties: [{ id: 'p1', key: 'statement', value: 'IF: true\nTHEN: next' }],
+    }))).toBe([
+      'create node root',
+      'with type Root',
+      'with properties',
+      "statement='''",
+      'IF: true\nTHEN: next',
+      "'''",
+    ].join('\n'));
   });
 
   it('rejects multiline property delimiters', () => {

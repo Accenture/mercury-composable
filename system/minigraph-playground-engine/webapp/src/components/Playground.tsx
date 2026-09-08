@@ -383,15 +383,16 @@ export default function Playground({ config }: PlaygroundProps) {
     onUserMessage: addToast,
   });
 
-  // ── In-place node editor ──────────────────────────────────────────────────
-  // An open edit-node session takes over the left panel slot (the console's
-  // space) with the magnified-node editor — the console hides while editing.
-  // consoleOpen itself is never touched, so Esc / Cancel / a successful save
-  // simply unmounts the editor and the slot returns to its previous state
-  // (console back if it was open, full-width graph if it was hidden).
+  // ── In-place node authoring panel ─────────────────────────────────────────
+  // An open create-node or edit-node session takes over the left panel slot
+  // (the console's space) with the magnified-node editor — the console hides
+  // while authoring. consoleOpen itself is never touched, so Esc / Cancel / a
+  // successful submit simply unmounts the editor and the slot returns to its
+  // previous state (console back if it was open, full-width graph if hidden).
   const authoringState = graphAuthoring.state;
   const nodeEditSession =
-    supportsAuthoring && authoringState.status === 'open' && authoringState.action === 'edit-node'
+    supportsAuthoring && authoringState.status === 'open' &&
+    (authoringState.action === 'edit-node' || authoringState.action === 'create-node')
       ? authoringState
       : null;
 
@@ -607,6 +608,7 @@ export default function Playground({ config }: PlaygroundProps) {
             <Panel defaultSize={(helpOpen || clipboardOpen) ? "50%" : "60%"} minSize="25%">
               {nodeEditSession !== null ? (
                 <NodeEditPanel
+                  mode={nodeEditSession.action === 'edit-node' ? 'edit' : 'create'}
                   formState={nodeEditSession.formState}
                   phase={nodeEditSession.phase}
                   lockReason={

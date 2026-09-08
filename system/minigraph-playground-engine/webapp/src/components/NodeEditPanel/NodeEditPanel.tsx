@@ -7,6 +7,8 @@ import CloseIcon from '../../icons/CloseIcon.svg?react';
 import styles from './NodeEditPanel.module.css';
 
 interface NodeEditPanelProps {
+  /** 'edit' updates an existing node (alias fixed); 'create' authors a new one (alias editable). */
+  mode: 'create' | 'edit';
   formState: NodeFormState;
   phase: 'editing' | 'sending';
   lockReason: null | 'sending' | 'disconnected';
@@ -29,11 +31,13 @@ function estimateTextareaRows(value: string): number {
 }
 
 /**
- * In-place node editor rendered in the left panel slot (the console's space)
- * instead of a modal — a "magnified node": the accent-colored ribbon mirrors
- * the node header (icon + alias + type badge, colored by the current node
- * type) and the properties render as aligned node-style rows.  The body
- * scrolls, so the number of key-value rows does not matter.
+ * In-place node authoring panel rendered in the left panel slot (the
+ * console's space) instead of a modal — a "magnified node": the
+ * accent-colored ribbon mirrors the node header (icon + alias + type badge,
+ * colored by the current node type) and the properties render as aligned
+ * node-style rows.  The body scrolls, so the number of key-value rows does
+ * not matter.  Create and edit share the exact same look and behavior; the
+ * only difference is that create edits the alias in the ribbon.
  *
  * Presentational only: it edits a NodeFormState and reports submit/close
  * intents upward; useGraphAuthoring owns validation, transport, and result
@@ -41,6 +45,7 @@ function estimateTextareaRows(value: string): number {
  * and restores whatever the left slot held before).
  */
 export default function NodeEditPanel({
+  mode,
   formState,
   phase,
   lockReason,
@@ -50,19 +55,30 @@ export default function NodeEditPanel({
   onSubmit,
   onClose,
 }: NodeEditPanelProps) {
+  const aliasRef = useRef<HTMLInputElement>(null);
   const nodeTypeRef = useRef<HTMLInputElement>(null);
   const propertyKeyRefs = useRef(new Map<string, HTMLInputElement>());
   const pendingFocusPropertyIdRef = useRef<string | null>(null);
+  const creating = mode === 'create';
   const sending = phase === 'sending';
   const disconnected = lockReason === 'disconnected';
   const controlsDisabled = sending || disconnected;
+  const submitLabel = creating ? 'Create Node' : 'Save Changes';
+  const sendingLabel = creating ? 'Creating...' : 'Saving...';
+  const disconnectedMessage = creating
+    ? 'Connection disconnected. Refresh the page and create the node again after the app reconnects.'
+    : 'Connection disconnected. Refresh the page and edit the node again after the app reconnects.';
 
   const meta = getMinigraphNodeTypeMeta(formState.nodeType);
   const accent = getMinigraphNodeAccent(formState.nodeType);
 
   // Escape closes the editor and restores the previous left-panel content.
   useEffect(() => {
-    nodeTypeRef.current?.focus();
+    if (creating) {
+      aliasRef.current?.focus();
+    } else {
+      nodeTypeRef.current?.focus();
+    }
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
@@ -72,7 +88,7 @@ export default function NodeEditPanel({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onClose, sending]);
+  }, [creating, onClose, sending]);
 
   useEffect(() => {
     const rowId = pendingFocusPropertyIdRef.current;
@@ -184,12 +200,25 @@ export default function NodeEditPanel({
       <form
         className={styles.card}
         style={{ borderColor: accent, ['--node-accent' as string]: accent }}
-        aria-label={`Edit node ${formState.alias}`}
+        aria-label={creating ? 'Create node' : `Edit node ${formState.alias}`}
         onSubmit={handleFormSubmit}
       >
         <header className={styles.ribbon}>
           <span className={styles.ribbonIcon} aria-hidden="true">{meta.icon}</span>
-          <span className={styles.ribbonAlias}>{formState.alias}</span>
+          {creating ? (
+            <input
+              ref={aliasRef}
+              className={styles.ribbonAliasInput}
+              value={formState.alias}
+              placeholder="node-alias"
+              aria-label="Node alias"
+              disabled={controlsDisabled}
+              aria-invalid={Boolean(validationErrors.alias)}
+              onChange={(event) => updateFormState({ alias: event.target.value })}
+            />
+          ) : (
+            <span className={styles.ribbonAlias}>{formState.alias}</span>
+          )}
           <span className={styles.ribbonBadge}>{meta.label}</span>
           <button
             type="button"
@@ -210,9 +239,12 @@ export default function NodeEditPanel({
           {validationErrors.command && (
             <div className={styles.errorMessage} role="alert">{validationErrors.command}</div>
           )}
+          {validationErrors.alias && (
+            <div className={styles.errorMessage} role="alert">{validationErrors.alias}</div>
+          )}
           {disconnected && (
             <div className={styles.warningMessage} role="status">
-              {serverMessage ?? 'Connection disconnected. Refresh the page and edit the node again after the app reconnects.'}
+              {serverMessage ?? disconnectedMessage}
             </div>
           )}
 
@@ -335,7 +367,7 @@ export default function NodeEditPanel({
             className={styles.primaryButton}
             disabled={controlsDisabled}
           >
-            {sending ? 'Saving...' : 'Save Changes'}
+            {sending ? sendingLabel : submitLabel}
           </button>
         </footer>
       </form>

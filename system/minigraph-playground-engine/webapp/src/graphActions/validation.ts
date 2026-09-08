@@ -45,8 +45,11 @@ export function isValidPropertyPath(path: string): boolean {
   return path.split('.').every((segment) => PROPERTY_PATH_SEGMENT_RE.test(segment));
 }
 
-function isValidPropertyKey(key: string, mode: 'create' | 'edit'): boolean {
-  return mode === 'edit' ? isValidPropertyPath(key) : NODE_NAME_RE.test(key);
+// Create and edit share one key grammar: the backend parses both commands'
+// property lines through the same MultiLevelMap path syntax (dot/bracket,
+// including the [] append signature).
+function isValidPropertyKey(key: string): boolean {
+  return isValidPropertyPath(key);
 }
 
 // Validate the supported authoring surface: alias, optional node type, and
@@ -91,15 +94,12 @@ export function validateNodeFormState(
 
     if (!key && value) {
       errors[getValidationErrorKeyForProperty(row.id, 'key')] = 'Property key is required when value is present.';
-    } else if (!isValidPropertyKey(key, mode)) {
-      errors[getValidationErrorKeyForProperty(row.id, 'key')] = mode === 'edit'
-        ? 'Use a property name or dot/bracket path, for example mapping[] or config.value.'
-        : 'Use only letters, numbers, underscore, and hyphen.';
+    } else if (!isValidPropertyKey(key)) {
+      errors[getValidationErrorKeyForProperty(row.id, 'key')] =
+        'Use a property name or dot/bracket path, for example mapping[] or config.value.';
     }
 
-    if (mode === 'create' && (value.includes('\r') || value.includes('\n'))) {
-      errors[getValidationErrorKeyForProperty(row.id, 'value')] = 'Property value must be a single line.';
-    } else if (value.includes("'''")) {
+    if (value.includes("'''")) {
       errors[getValidationErrorKeyForProperty(row.id, 'value')] = "Property value cannot contain '''.";
     }
   }

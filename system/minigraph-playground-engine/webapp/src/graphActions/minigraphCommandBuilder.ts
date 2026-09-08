@@ -46,7 +46,8 @@ export function buildCreateNodeCommand(formState: NodeFormState): string {
 
   const alias = formState.alias.trim();
   const nodeType = formState.nodeType.trim();
-  const propertyRows = getSerializablePropertyRows(formState);
+  // Preserve multiline values: create and update share the ''' serialization.
+  const propertyRows = getSerializablePropertyRows(formState, true);
 
   // Match the existing multiline command grammar consumed by
   // GraphCommandService.handleMultiLineCommand.

@@ -19,6 +19,7 @@ function makeFormState(): NodeFormState {
 
 function renderPanel(overrides: Partial<React.ComponentProps<typeof NodeEditPanel>> = {}) {
   const props = {
+    mode: 'edit' as const,
     formState: makeFormState(),
     phase: 'editing' as const,
     lockReason: null,
@@ -78,6 +79,26 @@ describe('NodeEditPanel', () => {
     for (const input of screen.getAllByLabelText('Property key')) {
       expect((input as HTMLInputElement).disabled).toBe(true);
     }
+  });
+
+  it('create mode edits the alias in the ribbon with create labels', () => {
+    const { props } = renderPanel({
+      mode: 'create',
+      formState: {
+        alias: '',
+        nodeType: 'Fetcher',
+        properties: [{ id: 'row-1', key: '', value: '' }],
+        source: 'pane-context-menu',
+      },
+    });
+
+    const aliasInput = screen.getByLabelText('Node alias') as HTMLInputElement;
+    expect(document.activeElement).toBe(aliasInput);
+    expect(screen.getByRole('form', { name: 'Create node' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Create Node' })).toBeTruthy();
+
+    fireEvent.change(aliasInput, { target: { value: 'my-node' } });
+    expect(props.onFormStateChange).toHaveBeenCalledWith(expect.objectContaining({ alias: 'my-node' }));
   });
 
   it('re-sorts and regroups rows by key after a drag-and-drop reorder', () => {

@@ -53,6 +53,32 @@
   word-break: break-word;
 }
 
+/* Create mode: the alias is typed directly in the ribbon, styled to blend in. */
+.ribbonAliasInput {
+  background: color-mix(in srgb, #ffffff 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--node-accent, #6c7086) 45%, transparent);
+  border-radius: var(--radius-sm);
+  color: inherit;
+  flex: 1;
+  font: inherit;
+  min-width: 0;
+  padding: 0.15rem 0.4rem;
+}
+
+.ribbonAliasInput::placeholder {
+  color: inherit;
+  opacity: 0.5;
+}
+
+.ribbonAliasInput:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--node-accent, #2563eb) 45%, transparent);
+  outline-offset: 0;
+}
+
+.ribbonAliasInput[aria-invalid="true"] {
+  border-color: #dc2626;
+}
+
 .ribbonBadge {
   background: color-mix(in srgb, var(--node-accent, #6c7086) 20%, transparent);
   border-radius: var(--radius-sm);

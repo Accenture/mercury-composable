@@ -67,21 +67,27 @@ describe('validateNodeFormState', () => {
     expect(result.errors[getValidationErrorKeyForProperty('p1', 'key')]).toBeDefined();
   });
 
-  it('rejects property keys outside the backend name token', () => {
+  it('accepts dot/bracket path keys and multiline values in create mode', () => {
+    // Create and edit share one grammar: the backend parses both commands'
+    // property lines identically (path keys, [] appends, ''' multiline).
     const result = validateNodeFormState(formState({
-      properties: [{ id: 'p1', key: 'a.b', value: 'demo' }],
+      properties: [
+        { id: 'p1', key: 'a.b', value: 'demo' },
+        { id: 'p2', key: 'input[]', value: 'person_id' },
+        { id: 'p3', key: 'statement', value: 'IF: true\nTHEN: next' },
+      ],
     }));
-    expect(result.errors[getValidationErrorKeyForProperty('p1', 'key')]).toBeDefined();
+    expect(result.valid).toBe(true);
   });
 
-  it('rejects multiline and triple-quote property values', () => {
-    const newline = validateNodeFormState(formState({
-      properties: [{ id: 'p1', key: 'name', value: 'a\nb' }],
+  it('rejects malformed property keys and triple-quote values', () => {
+    const badKey = validateNodeFormState(formState({
+      properties: [{ id: 'p1', key: 'bad key', value: 'demo' }],
     }));
     const tripleQuote = validateNodeFormState(formState({
       properties: [{ id: 'p2', key: 'name', value: "a'''b" }],
     }));
-    expect(newline.errors[getValidationErrorKeyForProperty('p1', 'value')]).toBeDefined();
+    expect(badKey.errors[getValidationErrorKeyForProperty('p1', 'key')]).toBeDefined();
     expect(tripleQuote.errors[getValidationErrorKeyForProperty('p2', 'value')]).toBeDefined();
   });
 });
