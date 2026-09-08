@@ -29,7 +29,7 @@ import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
 import NodeEditPanel from './NodeEditPanel/NodeEditPanel';
 import { MockUploadModal } from './MockUploadModal/MockUploadModal';
-import GraphAuthoringModals from './GraphAuthoring/GraphAuthoringModals';
+import ConnectionPopover from './ConnectionPopover/ConnectionPopover';
 import { useGraphAuthoring } from './GraphAuthoring/useGraphAuthoring';
 import { useSessionCollaboration } from '../session/useSessionCollaboration';
 import ClipboardSidebar from './ClipboardSidebar/ClipboardSidebar';
@@ -396,6 +396,22 @@ export default function Playground({ config }: PlaygroundProps) {
       ? authoringState
       : null;
 
+  // ── Inline connection popover ─────────────────────────────────────────────
+  // A create-connection session renders as a popover anchored at the connect
+  // gesture's drop point (captured by GraphView), not as a modal.
+  const connectionSession =
+    supportsAuthoring && authoringState.status === 'open' && authoringState.action === 'create-connection'
+      ? authoringState
+      : null;
+  const [connectionAnchor, setConnectionAnchor] = useState<{ x: number; y: number } | null>(null);
+  const handleOpenCreateConnection = useCallback(
+    (sourceAlias: string, targetAlias: string, anchor?: { x: number; y: number }) => {
+      setConnectionAnchor(anchor ?? null);
+      graphAuthoring.openCreateConnection(sourceAlias, targetAlias);
+    },
+    [graphAuthoring.openCreateConnection],
+  );
+
   // Restore the scroll position when the console re-mounts (console toggle or
   // node editor closing): the message-driven auto-scroll in useWebSocket only
   // fires on new messages, so an unchanged backlog would otherwise reappear
@@ -481,10 +497,20 @@ export default function Playground({ config }: PlaygroundProps) {
         />
       )}
 
-      {supportsAuthoring && (
-        <GraphAuthoringModals
-          state={graphAuthoring.state}
+      {connectionSession !== null && (
+        <ConnectionPopover
+          formState={connectionSession.formState}
+          phase={connectionSession.phase}
+          lockReason={
+            connectionSession.phase === 'sending'
+              ? 'sending'
+              : connectionSession.connectionLost
+                ? 'disconnected'
+                : null
+          }
+          serverMessage={connectionSession.serverMessage}
           validationErrors={graphAuthoring.validationErrors}
+          anchor={connectionAnchor}
           onFormStateChange={graphAuthoring.updateFormState}
           onSubmit={graphAuthoring.submit}
           onClose={graphAuthoring.close}
@@ -671,7 +697,7 @@ export default function Playground({ config }: PlaygroundProps) {
             isConnected={ws.connected}
             supportsAuthoring={supportsAuthoring}
             onCreateNode={supportsAuthoring ? graphAuthoring.openCreateNode : undefined}
-            onCreateConnection={supportsAuthoring ? graphAuthoring.openCreateConnection : undefined}
+            onCreateConnection={supportsAuthoring ? handleOpenCreateConnection : undefined}
             onEditNode={supportsAuthoring ? graphAuthoring.openEditNode : undefined}
             onDeleteNode={supportsAuthoring ? graphAuthoring.deleteNode : undefined}
             onDeleteNodes={supportsAuthoring ? graphAuthoring.deleteNodes : undefined}

@@ -38,7 +38,7 @@ interface RightPanelProps {
   isConnected:             boolean;
   supportsAuthoring?:      boolean;
   onCreateNode?:           (source: 'empty-graph' | 'pane-context-menu') => void;
-  onCreateConnection?:     (sourceAlias: string, targetAlias: string) => void;
+  onCreateConnection?:     (sourceAlias: string, targetAlias: string, anchor?: { x: number; y: number }) => void;
   onEditNode?:             (node: MinigraphNode) => void;
   onDeleteNode?:           (node: MinigraphNode) => void;
   onDeleteNodes?:          (nodes: MinigraphNode[]) => void;

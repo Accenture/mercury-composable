@@ -55,7 +55,8 @@ interface GraphViewProps {
   isConnected:     boolean;
   supportsAuthoring?: boolean;
   onCreateNode?:   (source: 'empty-graph' | 'pane-context-menu') => void;
-  onCreateConnection?: (sourceAlias: string, targetAlias: string) => void;
+  /** anchor = viewport position of the completing gesture, for the relation popover. */
+  onCreateConnection?: (sourceAlias: string, targetAlias: string, anchor?: { x: number; y: number }) => void;
   onEditNode?:     (node: MinigraphNode) => void;
   onDeleteNode?:   (node: MinigraphNode) => void;
   onDeleteNodes?:  (nodes: MinigraphNode[]) => void;
@@ -110,7 +111,7 @@ export default function GraphView({
   const canEditNode = Boolean(supportsAuthoring && onEditNode && isConnected);
   const canDeleteNode = Boolean(supportsAuthoring && onDeleteNode && isConnected);
   const canDeleteNodes = Boolean(supportsAuthoring && onDeleteNodes && isConnected);
-  const canOpenSingleNodeContextMenu = canClipNode || canEditNode || canDeleteNode;
+  const canOpenSingleNodeContextMenu = canClipNode || canEditNode || canDeleteNode || canCreateConnection;
   const canOpenMultiNodeContextMenu = canClipNodes || canDeleteNodes;
   const canOpenNodeContextMenu = canOpenSingleNodeContextMenu || canOpenMultiNodeContextMenu;
   const canAcceptClipboardDrop = Boolean(onClipboardDrop && isConnected);
@@ -373,11 +374,44 @@ export default function GraphView({
       connection.targetHandle === AUTHORING_TARGET_HANDLE_ID;
   }, [canCreateConnection, graphNodeAliases]);
 
+  // Last pointer-up position in viewport coordinates: the capture-phase
+  // listener runs before React Flow's own handlers, so when onConnect fires
+  // the ref already holds the drop position — the relation popover anchors there.
+  const lastPointerUpRef = useRef<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    const handlePointerUp = (event: PointerEvent) => {
+      lastPointerUpRef.current = { x: event.clientX, y: event.clientY };
+    };
+    document.addEventListener('pointerup', handlePointerUp, true);
+    return () => document.removeEventListener('pointerup', handlePointerUp, true);
+  }, []);
+
   const handleConnect = useCallback<OnConnect>((connection) => {
     if (!isConnectionValid(connection)) return;
     if (!connection.source || !connection.target) return;
-    onCreateConnection?.(connection.source, connection.target);
+    onCreateConnection?.(connection.source, connection.target, lastPointerUpRef.current ?? undefined);
   }, [isConnectionValid, onCreateConnection]);
+
+  // ── Click-to-connect (alternative to the halo drag) ───────────────────────
+  // "Connect to…" in the node context menu arms this mode: the next click on
+  // any other node creates the connection; Esc, a pane click, or a graph
+  // change cancels it.
+  const [connectFromAlias, setConnectFromAlias] = useState<string | null>(null);
+
+  useEffect(() => {
+    setConnectFromAlias(null);
+  }, [graphData, canCreateConnection]);
+
+  useEffect(() => {
+    if (connectFromAlias === null) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      setConnectFromAlias(null);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [connectFromAlias]);
 
   const handleConnectStart = useCallback<OnConnectStart>((_event, params) => {
     if (params.handleId !== AUTHORING_SOURCE_HANDLE_ID || params.handleType !== 'source') return;
@@ -419,6 +453,7 @@ export default function GraphView({
 
         <div
           className={styles.graphSurface}
+          data-connect-picking={connectFromAlias !== null || undefined}
           onDragEnter={handleClipboardDragEnter}
           onDragOver={handleClipboardDragOver}
           onDragLeave={handleClipboardDragLeave}
@@ -478,8 +513,22 @@ export default function GraphView({
                 dismissMultiSelectTip();
                 setContextMenu(null);
                 setPaneMenu(null);
+                setConnectFromAlias(null);
               }}
-              onNodeClick={() => dismissMultiSelectTip()}
+              onNodeClick={(event, node) => {
+                dismissMultiSelectTip();
+                if (connectFromAlias === null) return;
+                event.preventDefault();
+                event.stopPropagation();
+                const targetAlias = node.data.alias;
+                if (targetAlias !== connectFromAlias) {
+                  onCreateConnection?.(connectFromAlias, targetAlias, {
+                    x: event.clientX,
+                    y: event.clientY,
+                  });
+                }
+                setConnectFromAlias(null);
+              }}
               onNodeDragStart={() => dismissMultiSelectTip()}
               onSelectionStart={() => dismissMultiSelectTip()}
               onMoveStart={(event) => {
@@ -540,6 +589,21 @@ export default function GraphView({
             onDismiss={dismissMultiSelectTip}
           />
 
+          {connectFromAlias !== null && (
+            <div className={styles.connectBanner} role="status">
+              <span>
+                Connecting from <strong>{connectFromAlias}</strong> — click a target node
+              </span>
+              <button
+                type="button"
+                className={styles.connectBannerCancel}
+                onClick={() => setConnectFromAlias(null)}
+              >
+                Cancel (Esc)
+              </button>
+            </div>
+          )}
+
           {isRefreshing && (
             <div className={styles.refreshingOverlay}>
               <div
@@ -598,8 +662,13 @@ export default function GraphView({
               y={contextMenu?.y ?? 0}
               nodeAlias={contextMenu?.target.kind === 'single-node' ? contextMenu.target.alias : ''}
               canClipNode={canClipNode && contextNode !== null}
+              canConnectNode={canCreateConnection && contextNode !== null}
               canEditNode={canEditNode && contextNode !== null}
               canDeleteNode={canDeleteNode && contextNode !== null}
+              onConnectNode={() => {
+                if (!contextNode) return;
+                setConnectFromAlias(contextNode.alias);
+              }}
               onClipNode={() => {
                 if (!contextNode || !graphData) return;
                 const connections = extractDirectConnections(graphData, contextNode.alias);

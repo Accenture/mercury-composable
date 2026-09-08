@@ -75,6 +75,18 @@
   HTML5 DnD — verify with dispatched DragEvents.
   <!-- id: webapp-edit-node-inplace-panel | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
 
+- **Connect gesture is Neo4j-style: body = move, halo ring = connect; no modal (2026-09-08,
+  Eric's direction — "borrow the Neo4j graph browser UX").** The connect source Handle is a
+  perimeter band with an evenodd clip-path (node body excluded from hit-testing); the halo
+  shows on hover/selected; ring z sits under NodeResizer so resize keeps the border of a
+  selected node. Mid-drag, every other node's full-body target overlay activates (inert
+  otherwise). Alternative path: context-menu "Connect to…" arms click-a-target mode.
+  Both paths end in `ConnectionPopover` anchored at the drop point (relation vocabulary as
+  one-click colored chips + free text) — `ConnectionDialog`/`GraphAuthoringModals` deleted;
+  the Playground has zero modals. React Flow gotchas: Handles listen to mouse/touch (not
+  pointer) events; verify body-vs-ring hit-testing with `document.elementFromPoint`.
+  <!-- id: webapp-connect-ux-neo4j-halo | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
+
 ## Open Threads
 
 - [ ] Review MiniGraph webapp architecture after the UI PR stack and graph suspend/resume engine work.
