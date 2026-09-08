@@ -8,6 +8,67 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.12.4, 9/8/2026
+
+### Added
+
+1. The `eq` and `ne` simple plugins accept **optional `ignoreCase` / `ignoreType`
+   modifiers** in argument positions 3 and 4: `text(ignoreCase)` compares two strings
+   case-insensitively; `text(ignoreType)` compares the text forms of the two values,
+   allowing the relaxed comparison of numbers and booleans — `"123" == 123`,
+   `"123.456" == 123.456` and `"true" == true`; both together compare the text forms
+   case-insensitively. This removes the need for `:text` cast workarounds when
+   serialization type drift makes strict cross-type equality brittle. Lock-step with
+   the Rust engine, including error messages.
+
+2. **MiniGraph Playground UI overhaul (part 1 — editing).** A console hide/restore
+   toggle; an overlap-free, content-sized graph layout with measured relayout (nodes
+   never overlap regardless of content); thumbnail/expanded node detail modes with a
+   view-control toggle; and an in-place "magnified node" editor for both **Edit Node
+   and Create Node** — a side panel that renders like a node with sorted keys,
+   `[]` array-append signatures and drag-to-reorder — replacing the old pop-up
+   dialogs. The Playground now has zero modal dialogs.
+
+3. **MiniGraph Playground UI overhaul (part 2 — connections).** Neo4j-style connection
+   authoring: the node body moves the node while a halo ring around it starts a
+   connection drag (with a context-menu "Connect to…" click-to-connect alternative),
+   ending in a relation popover anchored at the drop point with one-click relation
+   chips. Connections are selectable and deletable — Delete/Backspace removes selected
+   edges, and a right-click edge menu offers **per-relation deletion**
+   (`Delete 'fetch'` / `Delete 'test'` / `Delete all (n)`), planned as
+   direction-correct compounds so removing one direction never disturbs the reverse
+   connection. Every UI edit is undoable — Ctrl/Cmd+Z and per-toast Undo buttons replay
+   compensating console commands, keeping the backend a lightweight command executor.
+   The graph auto-fits when panel toggles reshape its pane.
+
+4. **Claims-fixture gate (ADR-0023).** `docs/guides/claims-registry.json` registers
+   high-value documentation behavior claims; each claim names the engine test that pins
+   it, the `Claim*Test` pins run in the normal build, and the doc-canon check verifies
+   the normative sentence still appears on its page and the pin still exists. Born from
+   the AI-grammar coverage study's finding that doc drift lives in ungated prose.
+   Engine-neutral format shared with the Rust repo.
+
+### Changed
+
+1. **`eq` and `ne` compare exactly two values**, consistent with `gt`/`lt`. The
+   previous open-ended chained form (three or more plain values, all equal to the
+   first) is removed — a 3rd/4th argument must now be a modifier. Breaking only for
+   flows that used the chained form; none exist in the repository, and the two-value
+   form is unchanged.
+
+2. Dependency updates for the field security gate (merged 2026-09-04, deliberately
+   riding main until this regular release): vertx-core 5.1.6 and Jackson 2 BOM 2.22.2
+   clear the reported CVEs; proactive Jackson 3 BOM 3.2.2 and Tomcat 11.0.25 pins stay
+   ahead of the next scan wave.
+
+3. Documentation: the white paper and deck are finalized as **the Mercury Story**
+   (`docs/mercury-story.md` + `docs/mercury-story.html`, retitled Intent-Driven
+   Development with agent-memory attribution and a cross-engine benchmark study); the
+   Event Script syntax guide presents the simple-plugin catalog as a single 3-column
+   table matching the Rust documentation site; and the flow-schema reference gains the
+   previously missing `f:ne` row.
+
+---
 ## Version 4.12.3, 9/4/2026
 
 ### Added

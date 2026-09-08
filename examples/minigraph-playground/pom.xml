@@ -5,7 +5,7 @@
 
     <groupId>com.accenture</groupId>
     <artifactId>minigraph-playground</artifactId>
-    <version>4.12.3</version>
+    <version>4.12.4</version>
     <packaging>jar</packaging>
     <name>MiniGraph Playground</name>
 
@@ -52,7 +52,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minigraph-playground-engine</artifactId>
-            <version>4.12.3</version>
+            <version>4.12.4</version>
         </dependency>
 
         <!-- Redis state store for graph suspend/resume: including this jar registers
@@ -62,7 +62,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minigraph-state-redis</artifactId>
-            <version>4.12.3</version>
+            <version>4.12.4</version>
         </dependency>
 
         <!-- Embedded Redis (real redis-server binary, incl. arm64 macOS) for the
