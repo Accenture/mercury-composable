@@ -27,6 +27,7 @@ import GraphSaveButton from './GraphSaveButton/GraphSaveButton';
 import SavedGraphsMenu from './SavedGraphsMenu/SavedGraphsMenu';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
+import NodeEditPanel from './NodeEditPanel/NodeEditPanel';
 import { MockUploadModal } from './MockUploadModal/MockUploadModal';
 import GraphAuthoringModals from './GraphAuthoring/GraphAuthoringModals';
 import { useGraphAuthoring } from './GraphAuthoring/useGraphAuthoring';
@@ -236,6 +237,11 @@ export default function Playground({ config }: PlaygroundProps) {
     addToast,
   });
 
+  // ── Console panel visibility ─────────────────────────────────────────────
+  // Hiding the console gives the right panel the full width, so the graph
+  // view can use the whole screen. Persisted like the other panel toggles.
+  const [consoleOpen, setConsoleOpen] = useLocalStorage<boolean>('console-panel-open', true);
+
   // ── Clipboard integration ────────────────────────────────────────────────
   const clipboardCtx = useClipboardContext();
 
@@ -377,6 +383,31 @@ export default function Playground({ config }: PlaygroundProps) {
     onUserMessage: addToast,
   });
 
+  // ── In-place node authoring panel ─────────────────────────────────────────
+  // An open create-node or edit-node session takes over the left panel slot
+  // (the console's space) with the magnified-node editor — the console hides
+  // while authoring. consoleOpen itself is never touched, so Esc / Cancel / a
+  // successful submit simply unmounts the editor and the slot returns to its
+  // previous state (console back if it was open, full-width graph if hidden).
+  const authoringState = graphAuthoring.state;
+  const nodeEditSession =
+    supportsAuthoring && authoringState.status === 'open' &&
+    (authoringState.action === 'edit-node' || authoringState.action === 'create-node')
+      ? authoringState
+      : null;
+
+  // Restore the scroll position when the console re-mounts (console toggle or
+  // node editor closing): the message-driven auto-scroll in useWebSocket only
+  // fires on new messages, so an unchanged backlog would otherwise reappear
+  // scrolled to the top.
+  const consoleRef = ws.consoleRef;
+  const consoleVisible = consoleOpen && nodeEditSession === null;
+  useEffect(() => {
+    if (consoleVisible && consoleRef.current) {
+      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+    }
+  }, [consoleVisible, consoleRef]);
+
   // ── Session collaboration ────────────────────────────────────────────────
   // The Session dropdown is rendered from Navigation, but this hook is created
   // here because Playground owns the Minigraph ProtocolBus and classification map.
@@ -481,9 +512,33 @@ export default function Playground({ config }: PlaygroundProps) {
               connected={ws.connected}
             />
           )}
+          <button
+            className={styles.panelToggle}
+            onClick={() => {
+              // While the node editor occupies the console's slot, this button
+              // means "give me the console back": close the editor (same
+              // discard semantics as Esc/Cancel) and show the console. A save
+              // in flight blocks closing, exactly like Esc/Cancel.
+              if (nodeEditSession !== null) {
+                if (nodeEditSession.phase !== 'sending') {
+                  graphAuthoring.close();
+                  setConsoleOpen(true);
+                }
+                return;
+              }
+              setConsoleOpen(prev => !prev);
+            }}
+            aria-label={nodeEditSession !== null
+              ? 'Show console panel and close the node editor'
+              : consoleOpen ? 'Hide console panel' : 'Show console panel'}
+            aria-pressed={consoleVisible}
+            title={nodeEditSession !== null ? 'Closes the node editor' : undefined}
+          >
+            Console
+          </button>
           {supportsClipboard && (
             <button
-              className={styles.clipboardToggle}
+              className={styles.panelToggle}
               onClick={() => setClipboardOpen(prev => !prev)}
               aria-label={clipboardOpen ? 'Close workspace sidebar' : 'Open workspace sidebar'}
               aria-pressed={clipboardOpen}
@@ -548,28 +603,52 @@ export default function Playground({ config }: PlaygroundProps) {
         defaultLayout={defaultLayout}
         onLayoutChanged={onLayoutChanged}
       >
-        <Panel defaultSize={(helpOpen || clipboardOpen) ? "50%" : "60%"} minSize="25%">
-          <LeftPanel
-            messages={ws.messages}
-            classificationMap={classificationMap}
-            onCopy={ws.copyMessages}
-            onClear={handleClearMessages}
-            consoleRef={ws.consoleRef}
-            command={ws.command}
-            onCommandChange={ws.setCommand}
-            onCommandKeyDown={ws.handleKeyDown}
-            onSend={ws.sendCommand}
-            sendDisabled={!ws.connected || !ws.command.trim()}
-            inputDisabled={!ws.connected}
-            commandHistory={ws.history}
-            onGraphLinkMessage={handleGraphLinkMessage}
-            onCopyMessage={() => addToast('Copied to clipboard', 'success')}
-            onSendToJsonPath={handleSendToJsonPath}
-            onUploadMockData={handleOpenUploadModal}
-            successfulUploadPaths={successfulUploadPaths}
-          />
-        </Panel>
-        <Separator className={styles.resizeHandle} aria-label="Resize panels" />
+        {(consoleOpen || nodeEditSession !== null) && (
+          <>
+            <Panel defaultSize={(helpOpen || clipboardOpen) ? "50%" : "60%"} minSize="25%">
+              {nodeEditSession !== null ? (
+                <NodeEditPanel
+                  mode={nodeEditSession.action === 'edit-node' ? 'edit' : 'create'}
+                  formState={nodeEditSession.formState}
+                  phase={nodeEditSession.phase}
+                  lockReason={
+                    nodeEditSession.phase === 'sending'
+                      ? 'sending'
+                      : nodeEditSession.connectionLost
+                        ? 'disconnected'
+                        : null
+                  }
+                  serverMessage={nodeEditSession.serverMessage}
+                  validationErrors={graphAuthoring.validationErrors}
+                  onFormStateChange={graphAuthoring.updateFormState}
+                  onSubmit={graphAuthoring.submit}
+                  onClose={graphAuthoring.close}
+                />
+              ) : (
+                <LeftPanel
+                  messages={ws.messages}
+                  classificationMap={classificationMap}
+                  onCopy={ws.copyMessages}
+                  onClear={handleClearMessages}
+                  consoleRef={ws.consoleRef}
+                  command={ws.command}
+                  onCommandChange={ws.setCommand}
+                  onCommandKeyDown={ws.handleKeyDown}
+                  onSend={ws.sendCommand}
+                  sendDisabled={!ws.connected || !ws.command.trim()}
+                  inputDisabled={!ws.connected}
+                  commandHistory={ws.history}
+                  onGraphLinkMessage={handleGraphLinkMessage}
+                  onCopyMessage={() => addToast('Copied to clipboard', 'success')}
+                  onSendToJsonPath={handleSendToJsonPath}
+                  onUploadMockData={handleOpenUploadModal}
+                  successfulUploadPaths={successfulUploadPaths}
+                />
+              )}
+            </Panel>
+            <Separator className={styles.resizeHandle} aria-label="Resize panels" />
+          </>
+        )}
         <Panel defaultSize={helpOpen ? "50%" : clipboardOpen ? "30%" : "40%"} minSize="20%">
           <RightPanel
             tabs={tabs}

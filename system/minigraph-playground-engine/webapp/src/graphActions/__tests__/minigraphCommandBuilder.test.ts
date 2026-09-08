@@ -67,10 +67,17 @@ describe('buildCreateNodeCommand', () => {
     }))).toThrow();
   });
 
-  it('rejects property value newline injection', () => {
-    expect(() => buildCreateNodeCommand(formState({
-      properties: [{ id: 'p1', key: 'name', value: 'demo\nwith properties' }],
-    }))).toThrow();
+  it('serializes multiline property values with triple-quote blocks', () => {
+    expect(buildCreateNodeCommand(formState({
+      properties: [{ id: 'p1', key: 'statement', value: 'IF: true\nTHEN: next' }],
+    }))).toBe([
+      'create node root',
+      'with type Root',
+      'with properties',
+      "statement='''",
+      'IF: true\nTHEN: next',
+      "'''",
+    ].join('\n'));
   });
 
   it('rejects multiline property delimiters', () => {
@@ -123,6 +130,25 @@ describe('buildUpdateNodeCommand', () => {
       "statement[0]='''",
       'IF: true\nTHEN: next',
       "'''",
+    ].join('\n'));
+  });
+
+  it('passes [] append-signature keys through in row order', () => {
+    expect(buildUpdateNodeCommand(formState({
+      nodeType: 'Fetcher',
+      properties: [
+        { id: 'p1', key: 'input[]', value: 'person_id' },
+        { id: 'p2', key: 'input[]', value: 'exception:false' },
+        { id: 'p3', key: 'provider', value: 'mdm-profile' },
+      ],
+      source: 'edit-node',
+    }), 'person-name')).toBe([
+      'update node person-name',
+      'with type Fetcher',
+      'with properties',
+      'input[]=person_id',
+      'input[]=exception:false',
+      'provider=mdm-profile',
     ].join('\n'));
   });
 });

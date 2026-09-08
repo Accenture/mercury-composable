@@ -69,6 +69,7 @@ function MinigraphNode({ data, isConnectable, selected }: NodeProps<MinigraphRFN
         alias={data.alias}
         nodeType={data.nodeType}
         properties={data.properties}
+        compact={data.compact}
       />
 
       {showConnectionAuthoring && (

@@ -1,4 +1,3 @@
-import NodeDialog from '../NodeDialog/NodeDialog';
 import ConnectionDialog from '../ConnectionDialog/ConnectionDialog';
 import type { NodeFormState } from '../../graphActions/nodeAuthoringTypes';
 import type { ConnectionFormState } from '../../graphActions/connectionAuthoringTypes';
@@ -21,6 +20,11 @@ export default function GraphAuthoringModals({
 }: GraphAuthoringModalsProps) {
   if (state.status === 'closed') return null;
 
+  // Create-node and edit-node sessions render as the in-place NodeEditPanel
+  // in the left panel slot (hosted by Playground), not as modals. Only the
+  // connection dialog remains modal.
+  if (state.action !== 'create-connection') return null;
+
   const lockReason =
     state.phase === 'sending'
       ? 'sending'
@@ -28,27 +32,9 @@ export default function GraphAuthoringModals({
         ? 'disconnected'
         : null;
 
-  if (state.action === 'create-connection') {
-    return (
-      <ConnectionDialog
-        open
-        formState={state.formState}
-        phase={state.phase}
-        lockReason={lockReason}
-        serverMessage={state.serverMessage}
-        validationErrors={validationErrors}
-        onFormStateChange={(formState) => onFormStateChange(formState)}
-        onSubmit={onSubmit}
-        onClose={onClose}
-      />
-    );
-  }
-
   return (
-    <NodeDialog
+    <ConnectionDialog
       open
-      mode={state.action === 'edit-node' ? 'edit' : 'create'}
-      aliasReadOnly={state.action === 'edit-node'}
       formState={state.formState}
       phase={state.phase}
       lockReason={lockReason}

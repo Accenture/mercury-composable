@@ -5,7 +5,7 @@
 - **scope:** MiniGraph Playground React/Vite webapp
 - **root:** `system/minigraph-playground-engine/webapp`
 - **served bundle:** `system/minigraph-playground-engine/src/main/resources/public`
-- **last_session:** 2026-08-19 | agent: Codex (2026-08-19-163020)
+- **last_session:** 2026-09-08 | agent: Claude Code (2026-09-08-164102)
 
 ## Current Facts
 
@@ -40,6 +40,40 @@
   authoring; a focused happy-dom test renders the real node type, applies the production CSS, and pins
   the controls' visible computed style.
   <!-- id: webapp-node-resize-regression-fix | created: 2026-08-19 | last_used: 2026-08-19 | uses: 1 | tier: working | origin: 2026-08-19-163020 -->
+
+- **Graph nodes are content-sized with a measured re-layout (2026-09-08).** Nodes carry no fixed
+  `height`: `initialHeight` (content-aware estimate) sizes the pre-measurement paint,
+  `style.minHeight` keeps the handle-count floor, and React Flow v12 drops `initialHeight` from
+  inline styles after measurement so the DOM height follows content (a fixed `height` returns only
+  via NodeResizer). GraphView re-runs the layout once per graphData with real measured heights
+  (`computeMeasuredPositions`) and re-fits — this is the non-overlap guarantee. A bounded intrusion
+  relief pass (computeLayout step 4.5) shifts a column chain vertically when no slot ordering can
+  route a long edge around a tall node; it shares the geometry-pair budget with scoring. Stale-window
+  guard for refreshes: RF node `data.properties` must be reference-identical to the current
+  graphData node's before relaying out. Previously heights were fixed at ~100px and clipped 200–440px
+  of content, which is also why older bundles showed overlapping nodes. A thumbnail/expanded toggle
+  (React Flow `ControlButton`, persisted `graph-nodes-compact`) renders header-only cards via
+  `transformGraphData({ compactNodes })`; toggling rebuilds the nodes and re-enters the same
+  measure-then-relayout cycle (done-key = graphData + mode; fitView on every completed pass).
+  <!-- id: webapp-content-sized-nodes-measured-relayout | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
+
+- **Node authoring (create AND edit) is an in-place panel, not a modal (2026-09-08, Eric's UX
+  direction — same look-n-feel, nothing to learn; `NodeDialog` deleted).** The
+  `NodeEditPanel` (mode 'create' | 'edit'; create edits the alias in the ribbon) renders in
+  the left panel slot (the console's space) as a "magnified node":
+  accent ribbon = node header (icon + alias + type badge, recolored live from the Node Type
+  field), node-style aligned key/value grid rows, scrollable body. Esc / Cancel / successful
+  save closes the session and the slot returns to its previous content — `consoleOpen` is
+  never mutated by the editor. Create node/connection keep their modals
+  (`GraphAuthoringModals` returns null for edit-node). useGraphAuthoring stayed the single
+  owner of validation/transport; the panel is presentational, mirroring NodeDialog's contract.
+  Key presentation mirrors the backend `edit node` listing: rows sorted ascending (zero-fill
+  index compare) with array indices as the [] append signature — row order IS the array order
+  on submit (`update node` clears properties; MultiLevelMap `[]` appends in line order).
+  Per-row drag grips reorder; a drop re-sorts by key with a STABLE sort so same-key groups
+  reform around the user's new relative order. CDP-synthesized mouse drags don't trigger
+  HTML5 DnD — verify with dispatched DragEvents.
+  <!-- id: webapp-edit-node-inplace-panel | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
 
 ## Open Threads
 
