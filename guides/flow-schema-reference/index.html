@@ -5907,9 +5907,14 @@ argument.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>f:eq(a, b)</code></td>
-<td><code>a == b</code> → boolean</td>
-<td><code>f:eq(model.status, text(ok)) -&gt; is_ok</code></td>
+<td><code>f:eq(a, b, ...)</code></td>
+<td><code>a == b</code> → boolean; optional <code>text(ignoreCase)</code> and/or <code>text(ignoreType)</code> modifiers compare case-insensitively / by text form (<code>"123" == 123</code>, <code>"true" == true</code>)</td>
+<td><code>f:eq(model.status, text(ok), text(ignoreCase)) -&gt; is_ok</code></td>
+</tr>
+<tr>
+<td><code>f:ne(a, b, ...)</code></td>
+<td><code>a != b</code> → boolean; same optional modifiers as <code>f:eq</code></td>
+<td><code>f:ne(model.status, text(deleted)) -&gt; is_live</code></td>
 </tr>
 <tr>
 <td><code>f:gt(a, b)</code></td>

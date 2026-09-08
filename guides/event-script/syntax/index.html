@@ -5618,9 +5618,15 @@ double enters, precision follows IEEE-754 (integers exact to 2^53).</p>
 <h4 id="logical">Logical<a class="headerlink" href="#logical" title="Permanent link">&para;</a></h4>
 <dl>
 <dt><code>eq</code></dt>
-<dd>At least two Objects</dd>
+<dd>Two Objects, plus up to two optional modifiers. <code>text(ignoreCase)</code> compares two
+strings case-insensitively; <code>text(ignoreType)</code> compares the text forms of the two
+values, allowing relaxed comparison of numbers and booleans so that <code>"123" == 123</code>,
+<code>"123.456" == 123.456</code> and <code>"true" == true</code>. Use both modifiers together for a
+case-insensitive text-form comparison.
+e.g. <code>f:eq(model.a, model.b, text(ignoreCase))</code>, <code>f:eq(model.str, model.n, text(ignoreType))</code></dd>
 <dt><code>ne</code></dt>
-<dd>At least two Objects</dd>
+<dd>Two Objects, plus the same optional <code>text(ignoreCase)</code> / <code>text(ignoreType)</code>
+modifiers as <code>eq</code> — returns the exact complement of <code>eq</code>.</dd>
 <dt><code>isNull</code></dt>
 <dd>A single Object</dd>
 <dt><code>notNull</code></dt>
