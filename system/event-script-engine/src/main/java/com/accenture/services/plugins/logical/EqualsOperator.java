@@ -18,11 +18,9 @@
 
 package com.accenture.services.plugins.logical;
 
+import com.accenture.util.SimplePluginUtils;
 import com.accenture.models.SimplePlugin;
 import com.accenture.models.PluginFunction;
-
-import java.util.Arrays;
-import java.util.Objects;
 
 @SimplePlugin
 public class EqualsOperator implements PluginFunction {
@@ -37,7 +35,6 @@ public class EqualsOperator implements PluginFunction {
         if (input.length < 2) {
             throw new IllegalArgumentException("Input is required to check for equality");
         }
-        Object first = input[0];
-        return Arrays.stream(input).skip(1).allMatch(v -> Objects.equals(first, v));
+        return SimplePluginUtils.equalsWithModifiers(input);
     }
 }

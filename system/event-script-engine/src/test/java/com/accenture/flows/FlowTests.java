@@ -2036,6 +2036,16 @@ class FlowTests extends TestBase {
         assertEquals(" World!", result.get("negative_ternary"));
         assertEquals(true, result.get("positive_eq"));
         assertEquals(false, result.get("negative_eq"));
+        // eq/ne modifiers: 'ignoreCase' for strings, 'ignoreType' for text-form comparison
+        assertEquals(false, result.get("eq_case_sensitive"));
+        assertEquals(true, result.get("eq_ignore_case"));
+        assertEquals(true, result.get("eq_int_ignore_type"));
+        assertEquals(true, result.get("eq_decimal_ignore_type"));
+        assertEquals(true, result.get("eq_bool_ignore_type"));
+        assertEquals(false, result.get("eq_bool_case_sensitive"));
+        assertEquals(true, result.get("eq_both_modifiers"));
+        assertEquals(true, result.get("ne_case_sensitive"));
+        assertEquals(false, result.get("ne_ignore_case"));
         assertEquals(true, result.get("greater_than_positive"));
         assertEquals(false, result.get("greater_than_negative"));
         assertEquals(true, result.get("less_than_positive"));
