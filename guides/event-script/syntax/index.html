@@ -1701,78 +1701,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Built-in Plugins">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arithmetic" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Arithmetic
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#generator" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Generator
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#logical" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Logical
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#collection" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Collection
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#type-conversion" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Type Conversion
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -3907,78 +3835,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Built-in Plugins">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arithmetic" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Arithmetic
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#generator" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Generator
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#logical" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Logical
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#collection" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Collection
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#type-conversion" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Type Conversion
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -5587,127 +5443,252 @@ arguments before folding — any floating-point argument promotes the whole comp
 double; all-integral inputs keep exact 64-bit arithmetic, including integer division. Once a
 double enters, precision follows IEEE-754 (integers exact to 2^53).</p>
 </blockquote>
-<h4 id="arithmetic">Arithmetic<a class="headerlink" href="#arithmetic" title="Permanent link">&para;</a></h4>
-<dl>
-<dt><code>add</code></dt>
-<dd>At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)</dd>
-<dt><code>subtract</code></dt>
-<dd>At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)</dd>
-<dt><code>multiply</code></dt>
-<dd>At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)</dd>
-<dt><code>div</code></dt>
-<dd>At least two numbers (all whole ⇒ integer division; any decimal ⇒ double division)</dd>
-<dt><code>mod</code></dt>
-<dd>Two individual numbers (all whole ⇒ long; any decimal ⇒ double)</dd>
-<dt><code>increment</code></dt>
-<dd>A single number (whole ⇒ long; decimal ⇒ double)</dd>
-<dt><code>decrement</code></dt>
-<dd>A single number (whole ⇒ long; decimal ⇒ double)</dd>
-<dt><code>round</code></dt>
-<dd>A number and optional decimal places (whole ≥ 0, default 0) — half-up rounding on the decimal representation (1.005 → 1.01 at 2 places)</dd>
-</dl>
-<h4 id="generator">Generator<a class="headerlink" href="#generator" title="Permanent link">&para;</a></h4>
-<dl>
-<dt><code>uuid</code></dt>
-<dd>None</dd>
-<dt><code>dateTime</code></dt>
-<dd>None.</dd>
-<dt><code>now</code></dt>
-<dd>text(iso), text(local) or text(ms)</dd>
-</dl>
-<h4 id="logical">Logical<a class="headerlink" href="#logical" title="Permanent link">&para;</a></h4>
-<dl>
-<dt><code>eq</code></dt>
-<dd>Two Objects, plus up to two optional modifiers. <code>text(ignoreCase)</code> compares two
-strings case-insensitively; <code>text(ignoreType)</code> compares the text forms of the two
-values, allowing relaxed comparison of numbers and booleans so that <code>"123" == 123</code>,
-<code>"123.456" == 123.456</code> and <code>"true" == true</code>. Use both modifiers together for a
-case-insensitive text-form comparison.
-e.g. <code>f:eq(model.a, model.b, text(ignoreCase))</code>, <code>f:eq(model.str, model.n, text(ignoreType))</code></dd>
-<dt><code>ne</code></dt>
-<dd>Two Objects, plus the same optional <code>text(ignoreCase)</code> / <code>text(ignoreType)</code>
-modifiers as <code>eq</code> — returns the exact complement of <code>eq</code>.</dd>
-<dt><code>isNull</code></dt>
-<dd>A single Object</dd>
-<dt><code>notNull</code></dt>
-<dd>A single Object</dd>
-<dt><code>ternary</code></dt>
-<dd>Three variables, the first variable must evaluate to a Boolean</dd>
-<dt><code>and</code></dt>
-<dd>At least two boolean</dd>
-<dt><code>or</code></dt>
-<dd>At least two boolean</dd>
-<dt><code>not</code></dt>
-<dd>A single boolean</dd>
-<dt><code>gt</code></dt>
-<dd>Two individual whole numbers</dd>
-<dt><code>lt</code></dt>
-<dd>Two individual whole numbers</dd>
-<dt><code>startsWith</code></dt>
-<dd>Two strings, case insensitive.</dd>
-<dt><code>endsWith</code></dt>
-<dd>Two strings, case insensitive.</dd>
-<dt><code>includes</code></dt>
-<dd>Two strings, case insensitive OR one list and one string</dd>
-</dl>
-<h4 id="collection">Collection<a class="headerlink" href="#collection" title="Permanent link">&para;</a></h4>
-<dl>
-<dt><code>isEmpty</code></dt>
-<dd>A single Collection, Map, String or array — true when it has no elements. Use <code>isNull</code> /
-<code>notNull</code> for null checks; a null or unsupported input is an error.</dd>
-<dt><code>getFirst</code></dt>
-<dd>A single non-empty List — returns its first element.</dd>
-<dt><code>getLast</code></dt>
-<dd>A single non-empty List — returns its last element.</dd>
-</dl>
-<h4 id="type-conversion">Type Conversion<a class="headerlink" href="#type-conversion" title="Permanent link">&para;</a></h4>
-<dl>
-<dt><code>b64</code></dt>
-<dd>Either a base64 encoded String, OR a byte array.</dd>
-<dt><code>binary</code></dt>
-<dd>Either a byte[], Map or String</dd>
-<dt><code>length</code></dt>
-<dd>Either a byte[], List or String</dd>
-<dt><code>substring</code></dt>
-<dd>Two to three variables. The first must be a String; the second must be an integer; the third is optional.</dd>
-<dt><code>concat</code></dt>
-<dd>At least two Strings to be concatenated</dd>
-<dt><code>boolean</code></dt>
-<dd>A list of variables that can evaluate to a boolean</dd>
-<dt><code>double</code></dt>
-<dd>A list of variables that can evaluate to a double</dd>
-<dt><code>float</code></dt>
-<dd>A list of variables that can evaluate to a float</dd>
-<dt><code>int</code></dt>
-<dd>A list of variables that can evaluate to an integer</dd>
-<dt><code>long</code></dt>
-<dd>A list of variables that can evaluate to a long integer</dd>
-<dt><code>text</code></dt>
-<dd>A list of variables that can evaluate to a String</dd>
-<dt><code>json</code></dt>
-<dd>A single JSON text (String or byte[]) — an object <code>{...}</code> becomes a map, an array <code>[...]</code> becomes a list. See details below.</dd>
-<dt><code>listOfMap</code></dt>
-<dd>Convert "a map of lists" to "a list of maps" — <strong>order-preserving</strong>: list order follows array index order (guaranteed)</dd>
-<dt><code>updateListOfMap</code></dt>
-<dd>Update "a list of maps" with "maps of lists"</dd>
-<dt><code>removeKey</code></dt>
-<dd>Remove one or more keys from a map or "list of maps". Syntax: <code>f:removeKey(source, text(key1), text(key2), …)</code> — see the worked example below.</dd>
-<dt><code>defaultValue</code></dt>
-<dd>If the first argument is null, return the 2nd argument</dd>
-<dt><code>parseDate</code></dt>
-<dd>Parse a date string to ISO, Local or Milliseconds.</dd>
-<dt><code>parseDateTime</code></dt>
-<dd>Parse a date-time string to ISO, Local or Milliseconds.</dd>
-<dt><code>validate</code></dt>
-<dd>Perform simple field validation. See details below.</dd>
-</dl>
-<h4 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h4>
-<dl>
-<dt><code>setConfig</code></dt>
-<dd>A parameter name (non-empty string) and its value (any object, converted to text). Sets the
-value as a system property so that it overrides the corresponding base configuration
-parameter at run-time. Returns true when applied, false for invalid input. See details below.</dd>
-</dl>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Type</th>
+<th style="text-align: left;">Plugin <code>name</code></th>
+<th style="text-align: left;">Expected Inputs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Arithmetic</strong></td>
+<td style="text-align: left;">add</td>
+<td style="text-align: left;">At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Arithmetic</strong></td>
+<td style="text-align: left;">subtract</td>
+<td style="text-align: left;">At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Arithmetic</strong></td>
+<td style="text-align: left;">multiply</td>
+<td style="text-align: left;">At least two numbers (all whole ⇒ exact long result; any decimal ⇒ double)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Arithmetic</strong></td>
+<td style="text-align: left;">div</td>
+<td style="text-align: left;">At least two numbers (all whole ⇒ integer division; any decimal ⇒ double division)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Arithmetic</strong></td>
+<td style="text-align: left;">mod</td>
+<td style="text-align: left;">Two individual numbers (all whole ⇒ long; any decimal ⇒ double)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Arithmetic</strong></td>
+<td style="text-align: left;">increment</td>
+<td style="text-align: left;">A single number (whole ⇒ long; decimal ⇒ double)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Arithmetic</strong></td>
+<td style="text-align: left;">decrement</td>
+<td style="text-align: left;">A single number (whole ⇒ long; decimal ⇒ double)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Arithmetic</strong></td>
+<td style="text-align: left;">round</td>
+<td style="text-align: left;">A number and optional decimal places (whole ≥ 0, default 0) — half-up rounding on the decimal representation (1.005 → 1.01 at 2 places)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Generator</strong></td>
+<td style="text-align: left;">uuid</td>
+<td style="text-align: left;">None</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Generator</strong></td>
+<td style="text-align: left;">dateTime</td>
+<td style="text-align: left;">None.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Generator</strong></td>
+<td style="text-align: left;">now</td>
+<td style="text-align: left;">text(iso), text(local) or text(ms)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">eq</td>
+<td style="text-align: left;">Two Objects, plus up to two optional modifiers: <code>text(ignoreCase)</code> compares two strings case-insensitively; <code>text(ignoreType)</code> compares the text forms of the two values, allowing relaxed comparison of numbers and booleans so that <code>"123" == 123</code>, <code>"123.456" == 123.456</code> and <code>"true" == true</code>; use both together for a case-insensitive text-form comparison. e.g. <code>f:eq(model.a, model.b, text(ignoreCase))</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">ne</td>
+<td style="text-align: left;">Two Objects, plus the same optional <code>text(ignoreCase)</code> / <code>text(ignoreType)</code> modifiers as <code>eq</code> — returns the exact complement of <code>eq</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">isNull</td>
+<td style="text-align: left;">A single Object</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">notNull</td>
+<td style="text-align: left;">A single Object</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">ternary</td>
+<td style="text-align: left;">Three variables, the first variable must evaluate to a Boolean</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">and</td>
+<td style="text-align: left;">At least two boolean</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">or</td>
+<td style="text-align: left;">At least two boolean</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">not</td>
+<td style="text-align: left;">A single boolean</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">gt</td>
+<td style="text-align: left;">Two individual whole numbers</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">lt</td>
+<td style="text-align: left;">Two individual whole numbers</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">startsWith</td>
+<td style="text-align: left;">Two strings, case insensitive.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">endsWith</td>
+<td style="text-align: left;">Two strings, case insensitive.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logical</strong></td>
+<td style="text-align: left;">includes</td>
+<td style="text-align: left;">Two strings, case insensitive OR one list and one string</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Collection</strong></td>
+<td style="text-align: left;">isEmpty</td>
+<td style="text-align: left;">A single Collection, Map, String or array — true when it has no elements. Use <code>isNull</code> / <code>notNull</code> for null checks; a null or unsupported input is an error.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Collection</strong></td>
+<td style="text-align: left;">getFirst</td>
+<td style="text-align: left;">A single non-empty List — returns its first element.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Collection</strong></td>
+<td style="text-align: left;">getLast</td>
+<td style="text-align: left;">A single non-empty List — returns its last element.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">b64</td>
+<td style="text-align: left;">Either a base64 encoded String, OR a byte array.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">binary</td>
+<td style="text-align: left;">Either a byte[], Map or String</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">length</td>
+<td style="text-align: left;">Either a byte[], List or String</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">substring</td>
+<td style="text-align: left;">Two to three variables.<br/>The first must be a String;<br/>the second must be an integer;<br/>the third is optional.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">concat</td>
+<td style="text-align: left;">At least two Strings to be concatenated</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">boolean</td>
+<td style="text-align: left;">A list of variables that can evaluate to a boolean</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">double</td>
+<td style="text-align: left;">A list of variables that can evaluate to a double</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">float</td>
+<td style="text-align: left;">A list of variables that can evaluate to a float</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">int</td>
+<td style="text-align: left;">A list of variables that can evaluate to an integer</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">long</td>
+<td style="text-align: left;">A list of variables that can evaluate to a long integer</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">text</td>
+<td style="text-align: left;">A list of variables that can evaluate to a String</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">json</td>
+<td style="text-align: left;">A single JSON text (String or byte[]) — an object <code>{...}</code> becomes a map, an array <code>[...]</code> becomes a list. See details below.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">listOfMap</td>
+<td style="text-align: left;">Convert "a map of lists" to "a list of maps" — <strong>order-preserving</strong>: list order follows array index order (guaranteed)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">updateListOfMap</td>
+<td style="text-align: left;">Update "a list of maps" with "maps of lists"</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">removeKey</td>
+<td style="text-align: left;">Remove one or more keys from a map or "list of maps". Syntax: <code>f:removeKey(source, text(key1), text(key2), …)</code> — see the worked example below.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">defaultValue</td>
+<td style="text-align: left;">If the first argument is null, return the 2nd argument</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">parseDate</td>
+<td style="text-align: left;">Parse a date string to ISO, Local or Milliseconds.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">parseDateTime</td>
+<td style="text-align: left;">Parse a date-time string to ISO, Local or Milliseconds.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Type Conversion</strong></td>
+<td style="text-align: left;">validate</td>
+<td style="text-align: left;">Perform simple field validation. See details below.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Configuration</strong></td>
+<td style="text-align: left;">setConfig</td>
+<td style="text-align: left;">A parameter name (non-empty string) and its value (any object, converted to text). Sets the value as a system property so that it overrides the corresponding base configuration parameter at run-time. Returns true when applied, false for invalid input. See details below.</td>
+</tr>
+</tbody>
+</table>
 <p><em>DateTime plugins</em></p>
 <ul>
 <li>f:dateTime() will yield a timestamp with local timezone.</li>
