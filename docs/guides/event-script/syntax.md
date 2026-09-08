@@ -1560,10 +1560,16 @@ For example:
 #### Logical
 
 `eq`
-:   At least two Objects
+:   Two Objects, plus up to two optional modifiers. `text(ignoreCase)` compares two
+    strings case-insensitively; `text(ignoreType)` compares the text forms of the two
+    values, allowing relaxed comparison of numbers and booleans so that `"123" == 123`,
+    `"123.456" == 123.456` and `"true" == true`. Use both modifiers together for a
+    case-insensitive text-form comparison.
+    e.g. `f:eq(model.a, model.b, text(ignoreCase))`, `f:eq(model.str, model.n, text(ignoreType))`
 
 `ne`
-:   At least two Objects
+:   Two Objects, plus the same optional `text(ignoreCase)` / `text(ignoreType)`
+    modifiers as `eq` — returns the exact complement of `eq`.
 
 `isNull`
 :   A single Object

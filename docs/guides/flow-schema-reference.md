@@ -970,7 +970,8 @@ argument.
 
 | Function | Description | Example |
 |----------|-------------|---------|
-| `f:eq(a, b)` | `a == b` → boolean | `f:eq(model.status, text(ok)) -> is_ok` |
+| `f:eq(a, b, ...)` | `a == b` → boolean; optional `text(ignoreCase)` and/or `text(ignoreType)` modifiers compare case-insensitively / by text form (`"123" == 123`, `"true" == true`) | `f:eq(model.status, text(ok), text(ignoreCase)) -> is_ok` |
+| `f:ne(a, b, ...)` | `a != b` → boolean; same optional modifiers as `f:eq` | `f:ne(model.status, text(deleted)) -> is_live` |
 | `f:gt(a, b)` | `a > b` → boolean | `f:gt(model.n, int(10)) -> over_limit` |
 | `f:lt(a, b)` | `a < b` → boolean | `f:lt(model.n, int(0)) -> negative` |
 | `f:and(a, b, ...)` | Logical AND | `f:and(model.ready, model.valid) -> ok` |

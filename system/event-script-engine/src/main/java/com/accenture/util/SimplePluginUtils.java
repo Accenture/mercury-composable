@@ -20,6 +20,7 @@ package com.accenture.util;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.LongBinaryOperator;
 import java.util.stream.Stream;
@@ -69,6 +70,51 @@ public class SimplePluginUtils {
                 throw new IllegalArgumentException("Cannot convert the object to a number: " + s);
             }
         }
+    }
+
+    /**
+     * Two-value equality for the {@code eq} and {@code ne} operators.
+     * Arguments 3 and 4 are optional modifiers, each {@code ignoreCase}
+     * or {@code ignoreType}:
+     * <ul>
+     * <li>{@code ignoreCase} compares two strings case-insensitively; for
+     *     non-string values it has no effect (types still matter).</li>
+     * <li>{@code ignoreType} compares the {@code String.valueOf} text forms,
+     *     allowing the relaxed comparison of numbers and booleans -
+     *     "123" == 123, "123.456" == 123.456 and "true" == true.</li>
+     * <li>Both together compare the text forms case-insensitively.</li>
+     * </ul>
+     *
+     * @param input two values, optionally followed by one or two modifiers
+     * @return true when the two values are equal under the given modifiers
+     */
+    public static boolean equalsWithModifiers(Object... input) {
+        if (input.length > 4) {
+            throw new IllegalArgumentException(
+                    "Expected two values plus optional 'ignoreCase' and/or 'ignoreType' modifiers");
+        }
+        boolean ignoreCase = false;
+        boolean ignoreType = false;
+        for (int i = 2; i < input.length; i++) {
+            String modifier = String.valueOf(input[i]);
+            switch (modifier) {
+                case "ignoreCase" -> ignoreCase = true;
+                case "ignoreType" -> ignoreType = true;
+                default -> throw new IllegalArgumentException(
+                        "Unknown modifier '" + modifier + "' - only 'ignoreCase' and 'ignoreType' are supported");
+            }
+        }
+        Object a = input[0];
+        Object b = input[1];
+        if (ignoreType) {
+            String first = String.valueOf(a);
+            String second = String.valueOf(b);
+            return ignoreCase ? first.equalsIgnoreCase(second) : first.equals(second);
+        }
+        if (ignoreCase && a instanceof String first && b instanceof String second) {
+            return first.equalsIgnoreCase(second);
+        }
+        return Objects.equals(a, b);
     }
 
     /**
