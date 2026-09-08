@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NodeFormState } from '../../graphActions/nodeAuthoringTypes';
-import { createPropertyRow } from '../../graphActions/propertyRows';
+import { createPropertyRow, sortPropertyRowsByKey } from '../../graphActions/propertyRows';
 import { getValidationErrorKeyForProperty } from '../../graphActions/validation';
 import { getMinigraphNodeAccent, getMinigraphNodeTypeMeta } from '../../utils/minigraphNodeTheme';
 import CloseIcon from '../../icons/CloseIcon.svg?react';
@@ -117,6 +117,68 @@ export default function NodeEditPanel({
     });
   }, [formState, onFormStateChange]);
 
+  // ── Row drag-and-drop ─────────────────────────────────────────────────────
+  // Rows sharing a key use the [] append signature, so their ORDER is the
+  // array order ([0], [1], … on submit).  After a drop the rows re-sort by key
+  // ascending (stable), which regroups same-key rows while keeping the user's
+  // new relative order inside the group.
+  const dragRowIdRef = useRef<string | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null); // row id, or 'end'
+
+  const clearDragState = useCallback(() => {
+    dragRowIdRef.current = null;
+    setDropTargetId(null);
+  }, []);
+
+  const handleGripDragStart = useCallback((rowId: string) => (event: React.DragEvent<HTMLElement>) => {
+    dragRowIdRef.current = rowId;
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', rowId);
+      const rowElement = (event.currentTarget as HTMLElement).closest('[data-row-id]');
+      if (rowElement instanceof HTMLElement && typeof event.dataTransfer.setDragImage === 'function') {
+        event.dataTransfer.setDragImage(rowElement, 16, 16);
+      }
+    }
+  }, []);
+
+  const handleRowDragOver = useCallback((targetId: string) => (event: React.DragEvent<HTMLElement>) => {
+    if (dragRowIdRef.current === null) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    setDropTargetId((current) => (current === targetId ? current : targetId));
+  }, []);
+
+  const dropDraggedRow = useCallback((targetId: string | null) => {
+    const draggedId = dragRowIdRef.current;
+    clearDragState();
+    if (draggedId === null || draggedId === targetId) return;
+
+    const dragged = formState.properties.find((row) => row.id === draggedId);
+    if (!dragged) return;
+    const remaining = formState.properties.filter((row) => row.id !== draggedId);
+    let insertAt = remaining.length;
+    if (targetId !== null) {
+      const targetIndex = remaining.findIndex((row) => row.id === targetId);
+      if (targetIndex !== -1) insertAt = targetIndex;
+    }
+    const reordered = [
+      ...remaining.slice(0, insertAt),
+      dragged,
+      ...remaining.slice(insertAt),
+    ];
+    onFormStateChange({
+      ...formState,
+      properties: sortPropertyRowsByKey(reordered),
+    });
+  }, [clearDragState, formState, onFormStateChange]);
+
+  const handleRowDrop = useCallback((targetId: string | null) => (event: React.DragEvent<HTMLElement>) => {
+    if (dragRowIdRef.current === null) return;
+    event.preventDefault();
+    dropDraggedRow(targetId);
+  }, [dropDraggedRow]);
+
   return (
     <div className={styles.root}>
       <form
@@ -155,6 +217,8 @@ export default function NodeEditPanel({
           )}
 
           <div className={styles.row}>
+            {/* spacer keeps the grid columns aligned with property rows */}
+            <span aria-hidden="true" />
             <label className={styles.rowLabel} htmlFor="node-edit-type">type</label>
             <div className={styles.rowValue}>
               <input
@@ -170,7 +234,6 @@ export default function NodeEditPanel({
                 <span className={styles.errorText}>{validationErrors.nodeType}</span>
               )}
             </div>
-            {/* spacer keeps the grid columns aligned with property rows */}
             <span className={styles.rowSpacer} aria-hidden="true" />
           </div>
 
@@ -178,7 +241,24 @@ export default function NodeEditPanel({
             const keyError = validationErrors[getValidationErrorKeyForProperty(row.id, 'key')];
             const valueError = validationErrors[getValidationErrorKeyForProperty(row.id, 'value')];
             return (
-              <div key={row.id} className={styles.row}>
+              <div
+                key={row.id}
+                data-row-id={row.id}
+                className={dropTargetId === row.id ? `${styles.row} ${styles.rowDropTarget}` : styles.row}
+                onDragOver={handleRowDragOver(row.id)}
+                onDrop={handleRowDrop(row.id)}
+              >
+                <span
+                  className={styles.dragGrip}
+                  role="button"
+                  aria-label={`Reorder property ${row.key.trim() || '(empty)'}`}
+                  title="Drag to reorder — same keys append as [0], [1], … in row order"
+                  draggable={!controlsDisabled}
+                  onDragStart={handleGripDragStart(row.id)}
+                  onDragEnd={clearDragState}
+                >
+                  ⠿
+                </span>
                 <div className={styles.rowKey}>
                   <input
                     ref={(element) => {
@@ -224,7 +304,11 @@ export default function NodeEditPanel({
             );
           })}
 
-          <div className={styles.addRow}>
+          <div
+            className={dropTargetId === 'end' ? `${styles.addRow} ${styles.rowDropTarget}` : styles.addRow}
+            onDragOver={handleRowDragOver('end')}
+            onDrop={handleRowDrop(null)}
+          >
             <button
               type="button"
               className={styles.addButton}

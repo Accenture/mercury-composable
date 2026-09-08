@@ -7,7 +7,9 @@ import type { NodeFormState, NodeFormValidationErrors } from './nodeAuthoringTyp
 // The backend remains authoritative; this only blocks obviously invalid form
 // input before it can become raw command text.
 export const NODE_NAME_RE = /^[A-Za-z0-9_-]+$/;
-const PROPERTY_PATH_SEGMENT_RE = /^[A-Za-z0-9_-]+(?:\[(?:0|[1-9]\d*)\])*$/;
+// Bracket indices may be numeric (absolute) or empty — the [] append signature
+// used by the backend's own `edit node` output and MultiLevelMap.setElement.
+const PROPERTY_PATH_SEGMENT_RE = /^[A-Za-z0-9_-]+(?:\[(?:0|[1-9]\d*)?\])*$/;
 
 // Mirrors MiniGraph's reserved alias list so the modal can show immediate field
 // feedback instead of relying on a later generic backend ERROR response.
@@ -91,7 +93,7 @@ export function validateNodeFormState(
       errors[getValidationErrorKeyForProperty(row.id, 'key')] = 'Property key is required when value is present.';
     } else if (!isValidPropertyKey(key, mode)) {
       errors[getValidationErrorKeyForProperty(row.id, 'key')] = mode === 'edit'
-        ? 'Use a property name or dot/bracket path, for example mapping[0] or config.value.'
+        ? 'Use a property name or dot/bracket path, for example mapping[] or config.value.'
         : 'Use only letters, numbers, underscore, and hyphen.';
     }
 

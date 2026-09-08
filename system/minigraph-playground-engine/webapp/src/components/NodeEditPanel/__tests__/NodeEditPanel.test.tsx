@@ -79,4 +79,65 @@ describe('NodeEditPanel', () => {
       expect((input as HTMLInputElement).disabled).toBe(true);
     }
   });
+
+  it('re-sorts and regroups rows by key after a drag-and-drop reorder', () => {
+    // input[] rows separated by an output[] row: dragging the stray input[]
+    // onto the first input[] row must move it before that row, and the
+    // post-drop stable sort regroups keys ascending.
+    const { props } = renderPanel({
+      formState: {
+        alias: 'fetcher',
+        nodeType: 'Fetcher',
+        properties: [
+          { id: 'row-a', key: 'input[]', value: 'first' },
+          { id: 'row-b', key: 'output[]', value: 'mapped' },
+          { id: 'row-c', key: 'input[]', value: 'second' },
+        ],
+        source: 'edit-node',
+      },
+    });
+
+    const grips = screen.getAllByRole('button', { name: /Reorder property/ });
+    fireEvent.dragStart(grips[2]); // row-c (input[] "second")
+    const firstRow = grips[0].closest('[data-row-id]')!;
+    fireEvent.dragOver(firstRow);
+    fireEvent.drop(firstRow);
+
+    expect(props.onFormStateChange).toHaveBeenCalledWith(expect.objectContaining({
+      properties: [
+        expect.objectContaining({ id: 'row-c', key: 'input[]', value: 'second' }),
+        expect.objectContaining({ id: 'row-a', key: 'input[]', value: 'first' }),
+        expect.objectContaining({ id: 'row-b', key: 'output[]', value: 'mapped' }),
+      ],
+    }));
+  });
+
+  it('moves a row to the end when dropped on the add-property zone', () => {
+    const { props } = renderPanel({
+      formState: {
+        alias: 'fetcher',
+        nodeType: 'Fetcher',
+        properties: [
+          { id: 'row-a', key: 'input[]', value: 'first' },
+          { id: 'row-b', key: 'input[]', value: 'second' },
+        ],
+        source: 'edit-node',
+      },
+    });
+
+    const grips = screen.getAllByRole('button', { name: /Reorder property/ });
+    const addZone = screen.getByRole('button', { name: 'Add Property' }).parentElement!;
+    fireEvent.dragStart(grips[0]); // row-a
+    fireEvent.dragOver(addZone);
+    fireEvent.drop(addZone);
+
+    // row-a moves after row-b; the stable key sort keeps that order since
+    // both rows share the input[] key.
+    expect(props.onFormStateChange).toHaveBeenCalledWith(expect.objectContaining({
+      properties: [
+        expect.objectContaining({ id: 'row-b', value: 'second' }),
+        expect.objectContaining({ id: 'row-a', value: 'first' }),
+      ],
+    }));
+  });
 });

@@ -104,8 +104,33 @@
   border-bottom: 1px solid var(--border-color);
   display: grid;
   gap: 0.5rem;
-  grid-template-columns: minmax(90px, 130px) 1fr 1.6rem;
+  grid-template-columns: 1rem minmax(90px, 122px) 1fr 1.6rem;
   padding: 0.4rem 0;
+}
+
+/* Drop indicator: the dragged row will be inserted before this row. */
+.rowDropTarget {
+  box-shadow: 0 -2px 0 0 var(--node-accent, var(--primary-color));
+}
+
+.dragGrip {
+  align-self: center;
+  color: var(--text-secondary);
+  cursor: grab;
+  font-size: 0.9rem;
+  line-height: 1;
+  opacity: 0.45;
+  text-align: center;
+  user-select: none;
+}
+
+.dragGrip:hover {
+  color: var(--node-accent, var(--text-primary));
+  opacity: 1;
+}
+
+.dragGrip:active {
+  cursor: grabbing;
 }
 
 .row:last-of-type {

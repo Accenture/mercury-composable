@@ -65,6 +65,12 @@
   never mutated by the editor. Create node/connection keep their modals
   (`GraphAuthoringModals` returns null for edit-node). useGraphAuthoring stayed the single
   owner of validation/transport; the panel is presentational, mirroring NodeDialog's contract.
+  Key presentation mirrors the backend `edit node` listing: rows sorted ascending (zero-fill
+  index compare) with array indices as the [] append signature — row order IS the array order
+  on submit (`update node` clears properties; MultiLevelMap `[]` appends in line order).
+  Per-row drag grips reorder; a drop re-sorts by key with a STABLE sort so same-key groups
+  reform around the user's new relative order. CDP-synthesized mouse drags don't trigger
+  HTML5 DnD — verify with dispatched DragEvents.
   <!-- id: webapp-edit-node-inplace-panel | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
 
 ## Open Threads

@@ -125,6 +125,25 @@ describe('buildUpdateNodeCommand', () => {
       "'''",
     ].join('\n'));
   });
+
+  it('passes [] append-signature keys through in row order', () => {
+    expect(buildUpdateNodeCommand(formState({
+      nodeType: 'Fetcher',
+      properties: [
+        { id: 'p1', key: 'input[]', value: 'person_id' },
+        { id: 'p2', key: 'input[]', value: 'exception:false' },
+        { id: 'p3', key: 'provider', value: 'mdm-profile' },
+      ],
+      source: 'edit-node',
+    }), 'person-name')).toBe([
+      'update node person-name',
+      'with type Fetcher',
+      'with properties',
+      'input[]=person_id',
+      'input[]=exception:false',
+      'provider=mdm-profile',
+    ].join('\n'));
+  });
 });
 
 describe('buildDeleteNodeCommand', () => {
