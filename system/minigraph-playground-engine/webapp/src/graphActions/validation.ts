@@ -134,6 +134,27 @@ export function validateDeleteNodeAlias(
   return { valid: Object.keys(errors).length === 0, errors };
 }
 
+export function validateDeleteConnectionAliases(
+  sourceInput: string,
+  targetInput: string,
+): NodeFormValidationResult {
+  const errors: NodeFormValidationErrors = {};
+  const source = sourceInput.trim();
+  const target = targetInput.trim();
+
+  if (!source || !NODE_NAME_RE.test(source)) {
+    errors.sourceAlias = 'Use only letters, numbers, underscore, and hyphen.';
+  }
+  if (!target || !NODE_NAME_RE.test(target)) {
+    errors.targetAlias = 'Use only letters, numbers, underscore, and hyphen.';
+  }
+  if (!errors.sourceAlias && !errors.targetAlias && source === target) {
+    errors.targetAlias = 'Source and target must be different nodes.';
+  }
+
+  return { valid: Object.keys(errors).length === 0, errors };
+}
+
 function graphHasAlias(graphData: MinigraphGraphData | null | undefined, alias: string): boolean {
   return Boolean(graphData?.nodes.some((node) => node.alias.toLowerCase() === alias.toLowerCase()));
 }
