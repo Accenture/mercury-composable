@@ -8,6 +8,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.12.5, 9/9/2026
+
+### Fixed
+
+1. `Utility.str2date` parsed two legitimate `java.time` string shapes to the epoch,
+   silently corrupting timestamps. A minute-boundary value (second and nanosecond both
+   zero) serializes without the `":ss"` component — `OffsetDateTime.toString()` emits
+   `"2026-09-09T01:26+08:00"` — and the ISO branch rejected it, returning
+   `new Date(0)`; this also surfaced as a rare flaky `EventEnvelope` round-trip test in
+   CI. A second, older hole: the no-fractional path never stripped the colon from a
+   `"+HH:MM"` zone offset, so any second-precision non-UTC ISO string (nanosecond zero —
+   the other shape `java.time` emits) also parsed to the epoch. The parser now inserts
+   the missing seconds component and strips the zone colon on both paths. Contributed
+   from the field.
+
+2. The `f:concat` and `f:text` simple plugins threw NPE on a null operand — the text
+   conversion is a pattern switch, which is null-hostile without an explicit
+   `case null` — where the pre-plugin built-ins appended `"null"`. A null operand now
+   renders as `"null"` text (`String.valueOf` semantics, matching the Rust engine's
+   existing behavior), and the binary conversion relaxes null to an empty byte array.
+   Contributed from the field.
+
+### Changed
+
+1. Registering a route pool prints **one INFO line per pool lifecycle** — "Route pool
+   {prefix} with {n} instances started as {kernel|virtual} thread" and "Route pool
+   {prefix} stopped" — instead of one line per member (500 lines for the SSE reply-lane
+   pool); per-member start/stop lines demote to DEBUG. A pool now requires at least 2
+   lanes, and direct updates to a member are tolerated silently (the per-touch warnings
+   are removed). Lock-step with the Rust engine.
+
+2. MiniGraph Playground graph view tuning (community contribution, PR #339): a freshly
+   loaded graph fills more of the panel (fit padding 0.25 → 0.1 at every fit path), the
+   zoom ceiling rises from 2.5 to 4 so dense property lists are readable, and the
+   zoom/pinch behaviors are pinned explicitly so a library upgrade cannot change them
+   silently. The packaged webapp bundle is rebuilt with the change.
+
+3. Playground webapp dev-dependency refresh (Dependabot): js-yaml 4.3.2,
+   vitest/@vitest/mocker 4.1.11 — test tooling only, not part of the shipped bundle.
+
+---
 ## Version 4.12.4, 9/8/2026
 
 ### Added

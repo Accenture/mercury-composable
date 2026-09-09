@@ -9,7 +9,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>schema-registry-standalone</artifactId>
     <packaging>jar</packaging>
-    <version>4.12.4</version>
+    <version>4.12.5</version>
     <name>Standalone Schema Registry server for dev</name>
 
     <parent>
@@ -55,7 +55,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.12.4</version>
+            <version>4.12.5</version>
         </dependency>
 
         <dependency>
