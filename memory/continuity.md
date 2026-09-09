@@ -23,8 +23,8 @@
   instead of NPE (binary → empty array), matching the Rust engine; route pools log one INFO
   per lifecycle (count ≥ 2, lock-step); Playground graph-view tuning — the FIRST community
   contribution to the Playground UI (PR #339 by @skofgar) — with the packaged bundle rebuilt.
-  Lock-step with Rust v4.12.5 released same-day; **crates.io publish of the seven crates
-  PENDING at last check** (registry still at 4.12.4 right after the tags). Prior: v4.12.4
+  Lock-step with Rust v4.12.5 released same-day; all seven mercury-* crates on crates.io
+  at 4.12.5, API-verified. Prior: v4.12.4
   (2026-09-08 — the parked field Snyk remediation, the eq/ne modifiers, the two Playground UI
   arcs, the claims-fixture gate; all seven crates reached crates.io at 4.12.4, API-verified).
   The live version source stays the root pom.xml. python/node packs stay at 4.12.1 — no
