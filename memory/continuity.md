@@ -17,18 +17,18 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.4 (2026-09-08 — the regular release the parked 2026-09-04 field
-  Snyk remediation was waiting for: vertx-core 5.1.6 + Jackson-2 BOM 2.22.2 clear the reported
-  CVEs, proactive Jackson-3 BOM 3.2.2 + Tomcat 11.0.25. Plus the week's work: `eq`/`ne` now
-  compare exactly two values with optional `ignoreCase`/`ignoreType` modifiers (chained form
-  removed; engine lock-step incl. error messages), the two MiniGraph Playground UI arcs
-  (in-place magnified-node editor, zero modals; Neo4j-style connections with per-relation
-  delete and compensating-command undo), the claims-fixture gate (ADR-0023), and the Mercury
-  Story docs finalization (plugin catalog now a table matching the Rust site). Prior: v4.12.3
-  (2026-09-04, the field-fix triple; its field pipeline passed and deployed same-day).
-  The live version source stays the root pom.xml. Lock-step with Rust v4.12.4 (released
-  same-day 2026-09-08; all seven mercury-* crates on crates.io at 4.12.4, API-verified).
-  python/node packs stay at 4.12.1 — no wrapper changes.)
+- **latest_release:** v4.12.5 (2026-09-09 — the field-fix patch release: `str2date` no longer
+  parses minute-boundary or second-precision colon-offset ISO strings to the epoch (the flaky
+  CI test was this bug's symptom); `f:concat`/`f:text` render a null operand as "null" text
+  instead of NPE (binary → empty array), matching the Rust engine; route pools log one INFO
+  per lifecycle (count ≥ 2, lock-step); Playground graph-view tuning — the FIRST community
+  contribution to the Playground UI (PR #339 by @skofgar) — with the packaged bundle rebuilt.
+  Lock-step with Rust v4.12.5 released same-day; **crates.io publish of the seven crates
+  PENDING at last check** (registry still at 4.12.4 right after the tags). Prior: v4.12.4
+  (2026-09-08 — the parked field Snyk remediation, the eq/ne modifiers, the two Playground UI
+  arcs, the claims-fixture gate; all seven crates reached crates.io at 4.12.4, API-verified).
+  The live version source stays the root pom.xml. python/node packs stay at 4.12.1 — no
+  wrapper changes.)
 - **last_enabled:** 2026-06-20
 - **last_review:** 2026-09-07 | through 2026-09-07-055024.md
 - **last_invariant_check:** 2026-09-04 | 2026-09-04-043732.md (all 15 confirmed by Eric + the Vision — one-by-one walkthrough with live-tree evidence; no supersessions; stack-messaging-kafka re-checked after PR #315 added Kafka config keys additively; ot-reverify-invariants-20260904 closed. Prior: 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed))
