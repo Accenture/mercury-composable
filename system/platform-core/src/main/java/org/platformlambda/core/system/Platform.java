@@ -25,6 +25,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import org.platformlambda.core.annotations.CloudConnector;
 import org.platformlambda.core.annotations.CloudService;
+import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.models.*;
 import org.platformlambda.core.util.*;
 import org.slf4j.Logger;
@@ -57,6 +58,7 @@ public class Platform {
     private static final String NOT_FOUND = " not found";
     private static final String INVALID_ROUTE = "Invalid route ";
     private static final String RELOADING = "Reloading";
+    private static final int POOL_SIGNATURE = crypto.nextInt(10_000, 1_000_000) * -1;
     private static final AtomicBoolean LOADED = new AtomicBoolean(false);
     private static final ReentrantLock SAFETY1 = new ReentrantLock();
     private static final ReentrantLock SAFETY2 = new ReentrantLock();
@@ -561,12 +563,15 @@ public class Platform {
             throw new IllegalArgumentException("Missing LambdaFunction instance");
         }
         String path = getValidatedRoute(route);
-        warnIfPoolMember("Registering", path);
         if (registry.containsKey(path)) {
             log.warn("{} LambdaFunction {}", RELOADING, path);
             release(path);
         }
-        ServiceDef service = new ServiceDef(path, lambda).setConcurrency(instances).setPrivate(isPrivate);
+        var concurrency = instances > 0? instances : 1;
+        ServiceDef service = new ServiceDef(path, lambda).setConcurrency(concurrency).setPrivate(isPrivate);
+        if (isPrivate && instances == POOL_SIGNATURE) {
+            service.setPool(true);
+        }
         ServiceQueue manager = new ServiceQueue(service);
         service.setManager(manager);
         // save into local registry
@@ -592,7 +597,6 @@ public class Platform {
             throw new IllegalArgumentException("Missing StreamFunction instance");
         }
         String path = getValidatedRoute(route);
-        warnIfPoolMember("Registering", path);
         if (registry.containsKey(path)) {
             log.warn("{} StreamFunction {}", RELOADING, path);
             release(path);
@@ -616,16 +620,16 @@ public class Platform {
      *
      * @param prefix route name base in canonical form, e.g. "async.http.response.stream"
      * @param lambda function shared by all members of the pool
-     * @param count number of lanes, at least 1
+     * @param count number of lanes, at least 2
      * @return the generated member routes in order
-     * @throws IllegalArgumentException for missing lambda, count less than 1 or an invalid prefix
+     * @throws IllegalArgumentException for missing lambda, count less than 2 or an invalid prefix
      */
     public List<String> registerRoutePool(String prefix, TypedLambdaFunction<?, ?> lambda, int count) {
         if (lambda == null) {
             throw new IllegalArgumentException("Missing LambdaFunction instance");
         }
-        if (count < 1) {
-            throw new IllegalArgumentException("Route pool count must be at least 1");
+        if (count < 2) {
+            throw new IllegalArgumentException("Route pool count must be at least 2");
         }
         // the prefix must be canonical so the generated names are exactly "{prefix}.{n}" -
         // silent name filtering would break the returned member-list contract
@@ -643,10 +647,12 @@ public class Platform {
             List<String> members = new ArrayList<>(count);
             for (int n = 0; n < count; n++) {
                 String member = prefix + "." + n;
-                register(member, lambda, true, 1);
+                register(member, lambda, true, POOL_SIGNATURE);
                 members.add(member);
             }
             poolRegistry.put(prefix, count);
+            var type = lambda.getClass().getAnnotation(KernelThreadRunner.class) != null? "kernel" : "virtual";
+            log.info("Route pool {} with {} instances started as {} thread", prefix, count, type);
             return members;
         } finally {
             POOL_LOCK.unlock();
@@ -669,6 +675,7 @@ public class Platform {
                 return false;
             }
             releasePoolMembers(prefix, count);
+            log.info("Route pool {} stopped", prefix);
             return true;
         } finally {
             POOL_LOCK.unlock();
@@ -679,33 +686,6 @@ public class Platform {
         for (int n = 0; n < count; n++) {
             release(prefix + "." + n);
         }
-    }
-
-    private void warnIfPoolMember(String action, String route) {
-        String pool = getPoolOf(route);
-        if (pool != null) {
-            log.warn("{} {} which belongs to route pool {}", action, route, pool);
-        }
-    }
-
-    private String getPoolOf(String route) {
-        int dot = route.lastIndexOf('.');
-        if (dot > 0) {
-            String prefix = route.substring(0, dot);
-            Integer count = poolRegistry.get(prefix);
-            if (count != null) {
-                String suffix = route.substring(dot + 1);
-                // a member's suffix is canonical digits (no leading zeros) within the pool's range
-                if (!suffix.isEmpty() && suffix.length() < 10 &&
-                        suffix.chars().allMatch(Character::isDigit)) {
-                    int n = Utility.getInstance().str2int(suffix);
-                    if (suffix.equals(String.valueOf(n)) && n < count) {
-                        return prefix;
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     private String getValidatedRoute(String route) {
@@ -754,7 +734,6 @@ public class Platform {
      */
     public boolean release(String route) {
         if (route != null && registry.containsKey(route)) {
-            warnIfPoolMember("Releasing", route);
             ServiceDef def = registry.get(route);
             if (!def.isPrivate()) {
                 TargetRoute cloud = EventEmitter.getInstance().getCloudRoute();

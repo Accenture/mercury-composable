@@ -105,9 +105,12 @@ class RoutePoolTest extends TestBase {
                 platform.registerRoutePool("unit.test.pool.d", null, 1));
         assertThrows(IllegalArgumentException.class, () ->
                 platform.registerRoutePool("unit.test.pool.d", ECHO, 0));
+        // a pool needs at least 2 lanes - a single lane is just a private function
+        assertThrows(IllegalArgumentException.class, () ->
+                platform.registerRoutePool("unit.test.pool.d", ECHO, 1));
         // non-canonical prefixes are rejected so member names are exactly "{prefix}.{n}"
         assertThrows(IllegalArgumentException.class, () ->
-                platform.registerRoutePool("Unit.Test.Pool", ECHO, 1));
+                platform.registerRoutePool("Unit.Test.Pool", ECHO, 2));
         assertFalse(platform.hasRoute("unit.test.pool.d.0"));
     }
 
@@ -115,10 +118,10 @@ class RoutePoolTest extends TestBase {
     void individualUpdatesToMembersAreToleratedAndCleanedUp() {
         Platform platform = Platform.getInstance();
         platform.registerRoutePool("unit.test.pool.e", ECHO, 3);
-        // an individual release of a member is warned, never refused (house semantics)
+        // an individual release of a member is tolerated, never refused (house semantics)
         assertTrue(platform.release("unit.test.pool.e.1"));
         assertFalse(platform.hasRoute("unit.test.pool.e.1"));
-        // an individual re-registration over a member reloads it, also warned
+        // an individual re-registration over a member reloads it, also tolerated
         platform.registerPrivate("unit.test.pool.e.2", ECHO, 1);
         assertTrue(platform.hasRoute("unit.test.pool.e.2"));
         // pool release still cleans the remainder, holes included
