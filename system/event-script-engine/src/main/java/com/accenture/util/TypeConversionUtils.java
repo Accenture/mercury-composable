@@ -124,7 +124,11 @@ public class TypeConversionUtils {
     }
 
     public static String getTextValue(Object value) {
+        // a pattern switch is null-hostile without an explicit case null: the default arm
+        // intends String.valueOf semantics, so a null operand renders as "null" - the
+        // behavior of the pre-plugin built-ins and of the Rust engine's get_text_value
         return switch (value) {
+            case null -> "null";
             case String str -> str;
             case byte[] b -> util.getUTF(b);
             case Map<?, ?> map -> SimpleMapper.getInstance().getMapper().writeValueAsString(map);
@@ -133,7 +137,10 @@ public class TypeConversionUtils {
     }
 
     public static byte[] getBinaryValue(Object value) {
+        // same pattern-switch null-hostility as getTextValue; for byte arrays a
+        // null operand relaxes to an empty array
         return switch (value) {
+            case null -> new byte[0];
             case byte[] b -> b;
             case String str -> util.getUTF(str);
             case Map<?, ?> map -> SimpleMapper.getInstance().getMapper().writeValueAsBytes(map);

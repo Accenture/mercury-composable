@@ -260,6 +260,22 @@ class UtilityTests {
     }
 
     @Test
+    void secondlessIso8601Test() {
+        // java.time toString() omits the ":ss" component for a minute-boundary value
+        // (second == 0 and nano == 0) - the parser must accept the second-less form
+        Utility util = Utility.getInstance();
+        Date expected = util.str2date("2026-09-09T01:26:00Z");
+        assertEquals(expected, util.str2date("2026-09-09T01:26Z"));
+        assertEquals(expected, util.str2date("2026-09-09T01:26+00:00"));
+        // the offset applies: 09:26 at +08:00 is 01:26 UTC
+        assertEquals(expected, util.str2date("2026-09-09T09:26+08:00"));
+        // second precision with a colon offset and no fractional part - the other
+        // shape java.time toString() emits (nano == 0, second != 0)
+        Date withSeconds = util.str2date("2026-09-09T01:26:45Z");
+        assertEquals(withSeconds, util.str2date("2026-09-09T09:26:45+08:00"));
+    }
+
+    @Test
     void fileTest() {
         Utility util = Utility.getInstance();
         File temp = new File("/tmp");
