@@ -5,7 +5,7 @@
 - **scope:** MiniGraph Playground React/Vite webapp
 - **root:** `system/minigraph-playground-engine/webapp`
 - **served bundle:** `system/minigraph-playground-engine/src/main/resources/public`
-- **last_session:** 2026-09-08 | agent: Claude Code (2026-09-08-164102)
+- **last_session:** 2026-09-09 | agent: Claude Code (2026-09-09-231740)
 
 ## Current Facts
 
@@ -117,6 +117,86 @@
   queue FIFO behind the running one and share the busy flag with undo, so edits and undos
   never interleave.
   <!-- id: webapp-undo-compensating-commands | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
+
+- **Playground Help is profile-based (2026-09-09).** MiniGraph keeps its full bundled topic tree;
+  JSON-Path uses the same resizable/maximizable Help shell but exposes only its focused Overview.
+  Bare JSON-Path `help` resolves locally, while unsupported MiniGraph topics continue to the backend.
+  Configuration, local-command interception, and auto-navigation all carry the same content profile.
+  <!-- id: webapp-playground-help-profiles | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: working | origin: 2026-09-09-153221 -->
+
+- **The graph minimap is optional local UI state (2026-09-09).** It is collapsed by default,
+  pannable when open, and shares the single native React Flow Controls stack with zoom/fit and the
+  existing thumbnail/detail toggle. `Ctrl+M` works only on the active usable Graph tab and ignores
+  editable targets. A one-shot three-second hint pauses while hidden/focused, and mobile toasts use
+  the graph-overlay safe area so they do not cover the minimap lane.
+  <!-- id: webapp-toggleable-minimap | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: superseded | superseded-by: webapp-minimap-floating-island | origin: 2026-09-09-153221 -->
+
+- **The open minimap is a draggable floating island; no onboarding hint (2026-09-09, Eric's
+  post-regression direction — the promo hint "sold the feature" and the fixed lane consumed graph
+  real estate).** Toggle semantics carry over from [[webapp-toggleable-minimap]] (collapsed by
+  default, native Controls stack, `Ctrl+M` on the active Graph tab only, editable-target guard),
+  but the map now renders in an absolutely-positioned island: a grip title bar drags it anywhere
+  in the graph pane (window-level pointer listeners), position persists in localStorage
+  (`graph-minimap-position`, default beside the control stack) and re-clamps on pane resize via
+  ResizeObserver. Chosen over flowing it outside the pane: island works in every layout including
+  fullscreen and steals no console/help space. React Flow gotcha: `<MiniMap>` renders its own
+  absolutely-positioned `react-flow__panel` — neutralize with inline
+  `style={{position:'relative', margin:0}}` so the wrapper owns placement; the map surface keeps
+  `pannable` viewport-dragging (only the grip moves the island). `useMinimapHint` and the
+  `minimapHintEligible` prop chain are deleted.
+  <!-- id: webapp-minimap-floating-island | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: working | supersedes: webapp-toggleable-minimap | origin: 2026-09-09-223126 -->
+
+- **MiniGraph toolbar execution mirrors backend lifecycle (2026-09-09).** Separate Instantiate and
+  Run actions precede Copy; Run unlocks only after the instance acknowledgement and any required
+  `input.body` upload. Typed ProtocolBus events, graph/session/connection invalidation, host-session
+  gating, and stale-response quarantine keep the backend authoritative. Upload invitations use an
+  active-path plus deduplicated FIFO: exact-path success/cancel/invalidation cannot affect another
+  upload panel, and a workflow prompt is not lost behind a manual one. The text protocol still has
+  no correlation id, so a workflow serially claims the next invitation after its request.
+  (Presentation moved from a modal to the in-place [[webapp-mock-input-inplace-panel]] 2026-09-09;
+  the lifecycle machine was untouched.)
+  <!-- id: webapp-graph-toolbar-run-controls | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: working | origin: 2026-09-09-153221 -->
+
+- **Mock-data input (create AND the graph-run workflow step) is an in-place left-slot panel, not
+  a modal (2026-09-09, Eric's direction — same in-place convention as the node editor; the
+  Playground is back to ZERO modals).** `MockUploadPanel` mirrors the
+  [[webapp-edit-node-inplace-panel]] contract: renders in the console's slot, Esc / Cancel / a
+  successful upload closes the session and the slot returns to its previous content, `consoleOpen`
+  never mutated, and the header Console button unwinds the panel first. Both entry points share it:
+  the graph-run workflow step (titled **"▶ Mock Graph Input"** — Eric: we are MOCKING input for a
+  dry-run, not adding; the awaiting-input disabled-reason says "mock graph input panel") and the
+  manual console-row re-open ("⬆️ Upload Mock Data"). Slot priority: node editor > upload panel >
+  console — a hidden upload session survives and reappears when the editor closes. **Left-slot
+  default widths (Eric's spec): console 40%, node editor 30%, mock input 30%** — applied on every
+  slot-content change via the react-resizable-panels v4 imperative `panelRef.resize()` (deferred
+  one rAF for closed→open mounts); `useDefaultLayout` uses `onlySaveAfterUserInteractions: true`
+  so imperative resizes never overwrite the user's persisted drag, and `panelLayoutKey` carries
+  the slot mode so the graph re-fits on width changes. The layout storage key is VERSIONED
+  (`-panel-split-v2`, 2026-09-09): a persisted layout beats `defaultSize` at mount and the mode
+  resize only fires on changes, so pre-defaults splits had to be orphaned — bump the suffix again
+  if the default scheme ever changes.
+  <!-- id: webapp-mock-input-inplace-panel | created: 2026-09-09 | last_used: 2026-09-09 | uses: 2 | tier: working | origin: 2026-09-09-223126 -->
+
+- **The live session graph survives temp-model expiry — restore it, don't toast (2026-09-09,
+  Eric's direction).** Described temp-model paths (`/api/graph/model/…`) expire server-side about
+  a minute after `describe graph`, while the SESSION's live graph stays at
+  `GET /api/graph/session/{id}` for the WebSocket session's lifetime. `useSessionGraphRestore`
+  quietly fetches it when the pinned model path is a dead end (HTTP failure OR an HTTP-200
+  error-envelope body) or none is pinned — one attempt per (session, pinned-path) pair, same
+  shape guard and graph-tab auto-switch as a pinned load; `useGraphData` suppresses the failure
+  toast where the restore owns it (`quietInitialFetchFailure`) and exposes `initialFetchFailed`.
+  The session id arrives via the mount-time `session` round-trip (react to LATE arrival), each
+  playground has its OWN ws-session id, and the pinned path re-arms on the next
+  describe/mutation auto-refresh. Known backend bug (Eric, queued engine-side, Java+Rust
+  lock-step): the model endpoint answers 200 with the current draft for a bogus id — should 404.
+  <!-- id: webapp-session-live-graph-restore | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: working | origin: 2026-09-09-231740 -->
+
+- **JSON-Path is a payload-only playground (2026-09-09, Eric's direction — the tool has no graph
+  surface).** Its `tabs` config is just `['payload']`; the `tabs` list in `PLAYGROUND_CONFIGS`
+  is the single authority for right-panel composition, and RightPanel hides the tab strip
+  entirely for single-tab playgrounds. Stale persisted tab selections are already normalized by
+  `normalizeRightTab`, so removing tabs from a config is safe without migrations.
+  <!-- id: webapp-jsonpath-payload-only | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: working | origin: 2026-09-09-223126 -->
 
 ## Open Threads
 
