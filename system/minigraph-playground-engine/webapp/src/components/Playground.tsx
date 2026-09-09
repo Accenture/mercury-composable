@@ -8,6 +8,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useGraphData } from '../hooks/useGraphData';
+import { useSessionGraphRestore } from '../hooks/useSessionGraphRestore';
 import { useAutoGraphRefresh } from '../hooks/useAutoGraphRefresh';
 import { useAutoHelpNavigate } from '../hooks/useAutoHelpNavigate';
 import { useSendToJsonPath } from '../hooks/useSendToJsonPath';
@@ -159,13 +160,19 @@ export default function Playground({ config }: PlaygroundProps) {
   // matching the server session lifetime (WebSocket-bound).
   const [pinnedGraphPath, setPinnedGraphPath] = usePinnedGraphPath(wsPath);
 
+  // The session live-graph restore (below) owns expired-model failures for
+  // playgrounds that have a graph view and a session lifecycle (MiniGraph):
+  // an expired temp-model 400 is expected there, not toast-worthy.
+  const sessionGraphRestoreEnabled = supportsSessionCollaboration === true && tabs.includes('graph');
+
   // Fetch + parse graph data, auto-switch to Graph tab — logic lives in the hook.
-  const { graphData, setGraphData, rightTab, setRightTab, isRefreshing } = useGraphData(
+  const { graphData, setGraphData, rightTab, setRightTab, isRefreshing, initialFetchFailed } = useGraphData(
     pinnedGraphPath,
     addToast,
     tabs[0],
     tabs,
     storageKeyTab,
+    sessionGraphRestoreEnabled,
   );
 
   // ── Mock-upload panel (left slot) ────────────────────────────────────────
@@ -587,6 +594,23 @@ export default function Playground({ config }: PlaygroundProps) {
     addToast,
   });
 
+  // ── Session live-graph restore ───────────────────────────────────────────
+  // Returning from another playground can find the pinned temp-model path
+  // expired (HTTP 400) while the session still holds the live graph; restore
+  // it quietly from GET /api/graph/session/{id}. The session id arrives via
+  // the `session` round-trip on mount, so the hook reacts to its late arrival.
+  useSessionGraphRestore({
+    enabled: sessionGraphRestoreEnabled,
+    sessionGraphPath: sessionCollaboration.state.sessionId !== null
+      ? `/api/graph/session/${sessionCollaboration.state.sessionId}`
+      : null,
+    pinnedGraphPath,
+    initialFetchFailed,
+    graphData,
+    setGraphData,
+    setRightTab,
+  });
+
   // ── Graph run workflow ───────────────────────────────────────────────────
   // The backend graph instance is authoritative. This hook only mirrors
   // acknowledged lifecycle state and serializes the existing text commands.
@@ -635,9 +659,11 @@ export default function Playground({ config }: PlaygroundProps) {
 
   // Persist panel split ratio per playground route. Only user drags are
   // persisted: the per-mode default widths applied imperatively above must
-  // not overwrite the user's remembered console split.
+  // not overwrite the user's remembered console split. The storage id is
+  // versioned (-v2) so layouts persisted BEFORE the per-mode defaults existed
+  // are orphaned — a first load lands on the new defaults, not a stale split.
   const { defaultLayout, onLayoutChanged } = useDefaultLayout({
-    id: config.path + '-panel-split',
+    id: config.path + '-panel-split-v2',
     storage: localStorage,
     onlySaveAfterUserInteractions: true,
   });
