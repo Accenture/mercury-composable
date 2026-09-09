@@ -62,6 +62,29 @@
   border-color: var(--primary-color);
 }
 
+/* ── Console panel collapse toggle ── */
+.consoleToggle {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.consoleToggle:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.consoleToggle[aria-pressed="true"] {
+  background: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
+}
+
 /* ── Help toggle button ── */
 .helpToggle {
   background: none;

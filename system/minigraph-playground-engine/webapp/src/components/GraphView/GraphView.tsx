@@ -373,9 +373,18 @@ export default function GraphView({
               onConnectEnd={handleConnectEnd}
               nodeTypes={nodeTypes}
               fitView
-              fitViewOptions={{ padding: 0.25 }}
+              fitViewOptions={{ padding: 0.1 }}
               minZoom={0.2}
-              maxZoom={2.5}
+              maxZoom={4}
+              // Trackpad pinch sends wheel events with ctrlKey set; zoomOnPinch
+              // (mobile/tablet multi-touch) and zoomOnScroll (desktop wheel +
+              // trackpad pinch) are spelled out explicitly here — rather than
+              // left as library defaults — so a future React Flow upgrade
+              // can't silently change this behaviour.
+              zoomOnScroll
+              zoomOnPinch
+              zoomOnDoubleClick
+              panOnScroll={false}
               selectionKeyCode="Shift"
               multiSelectionKeyCode={NODE_MULTI_SELECTION_KEYS}
               selectionOnDrag={false}

@@ -18,7 +18,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-08-21 | agent: Claude Code (2026-08-21-005515)
+- **last_session:** 2026-09-08 | agent: Claude Code (2026-09-08-141522)
 - **last_review:** 2026-08-21 | through 2026-08-21-005515.md
 - **last_invariant_check:** 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed)
 
@@ -205,6 +205,39 @@
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-14 | uses: 2 | tier: working -->
 ## Open Threads
+
+- [x] (fix — webapp-only, no PR gate run yet; committed by Roland when ready)
+  **Minigraph Playground graph visualization: node content cropping, a cramped default
+  panel, and complex-graph legibility.** Reported by Roland while dry-running the
+  `vermont-aco-py2024` model. Root cause: every React Flow node in
+  `graphTransformer.ts` carried an explicit `height` (a rough constant, only adjusted
+  for handle count, never property-row count), which defeats React Flow's own
+  auto-measure-to-content sizing and left `overflow: hidden` clipping any node whose
+  property/mapping list was taller than the estimate (confirmed against `aco_cap_amount`
+  and the `end` node's ~14-row output mapping). Fix: drop the explicit node `height` —
+  nodes now auto-size to content (width stays fixed for column layout; `data.minHeight`
+  keeps its layout-spacing/NodeResizer-floor role, matching what
+  `graphTransformer.test.ts` had already anticipated via its `node.height ?? data.minHeight`
+  fallback). Also: the left console panel gained a collapse toggle
+  (`react-resizable-panels` `collapsible`+`panelRef`) so the Graph/Payload panel can take
+  the full window; `zoomOnScroll`/`zoomOnPinch`/`panOnScroll` made explicit on the
+  `ReactFlow` element (was implicit library default) as an upgrade guard, plus a smaller
+  `fitView` padding and higher `maxZoom` so a freshly loaded complex graph starts more
+  legible. Verified: typecheck clean, 213/213 tests green, live before/after against
+  `vermont-aco-py2024`. Trackpad pinch itself unverified physically (no real trackpad in
+  the browser-automation harness used) — code-level guard only.
+  **Follow-up same session: the auto-sizing fix surfaced a pre-existing conflict** —
+  `NodeTypes.tsx`'s connection-authoring drag strips and React Flow's `NodeResizer` line
+  controls occupy the same left/right node edges, with resize (CSS z-index 4, active only
+  while `selected`) always winning over connection authoring (z-index 2) — so a selected
+  node's border always resized, never connected (Roland's report: "dragging from the
+  border is broken"). Fix: `showConnectionAuthoring` now also requires `!selected`, so
+  the authoring handles are absent from the DOM while selected — border-drag connects on
+  an unselected/hovered node, resizes on a selected one. Verified live both ways (DOM
+  `getBoundingClientRect` measurement + an actual Create Connection dialog trigger).
+  Residual known trade-off: dropping a connection's target onto an already-selected node
+  no longer works either (deselect first) — not yet reported as an issue.
+  <!-- id: minigraph-graphview-crop-and-panel-fix | created: 2026-09-08 | last_used: 2026-09-08 | uses: 2 | tier: working | origin: 2026-09-08-141522 -->
 
 - [x] **Re-verify invariants (due):** confirm stack-language-java21, stack-build-maven,
   stack-integration-spring, stack-messaging-kafka, stack-ci-gha, functions-decoupled-routes,

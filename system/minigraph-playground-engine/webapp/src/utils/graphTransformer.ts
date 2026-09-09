@@ -1320,7 +1320,12 @@ export function transformGraphData(
       className: 'nokey',
       position: positions.get(n.alias) ?? { x: 0, y: 0 },
       width:  NODE_WIDTH,
-      height: nodeHeight,
+      // No explicit `height` here: an unset height lets React Flow size the
+      // wrapper to its actual rendered content (the official "node-resizer"
+      // pattern — see the comment on MinigraphNode in NodeTypes.tsx). A fixed
+      // height cropped node bodies whenever a node had more properties than
+      // the layout's rough estimate assumed. `nodeHeight` remains the layout
+      // pass's spacing estimate, carried via `data.minHeight` below.
       style: getMinigraphNodeShellStyle(n.types[0] ?? 'unknown'),
       data: {
         alias:         n.alias,

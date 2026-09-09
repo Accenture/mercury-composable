@@ -21,7 +21,13 @@ export const AUTHORING_TARGET_HANDLE_ID = 'authoring-target';
 //     .react-flow__node-default, overflow:visible hacks, etc.).
 function MinigraphNode({ data, isConnectable, selected }: NodeProps<MinigraphRFNode>) {
   const [isResizing, setIsResizing] = useState(false);
-  const showConnectionAuthoring = data.supportsConnectionAuthoring && !isResizing;
+  // NodeResizer's edge/corner controls (visible only while selected) sit on
+  // the same full-height left/right strip as the connection-drag handles,
+  // above them in z-index — so a selected node's border always resizes,
+  // never connects. Hiding connection authoring while selected removes the
+  // ambiguity: hover an unselected node to draw a connection from its
+  // border; select it to resize.
+  const showConnectionAuthoring = data.supportsConnectionAuthoring && !isResizing && !selected;
 
   return (
     <>

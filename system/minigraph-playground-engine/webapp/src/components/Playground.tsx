@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
+import { Group, Panel, Separator, useDefaultLayout, type PanelImperativeHandle } from 'react-resizable-panels';
 import styles from './Playground.module.css';
 import { validatePayload, formatJSON } from '../utils/validators';
 import { useToast } from '../hooks/useToast';
@@ -423,6 +423,24 @@ export default function Playground({ config }: PlaygroundProps) {
     storage: localStorage,
   });
 
+  // ── Console panel collapse ──────────────────────────────────────────────
+  // The left panel (console + command input) can be collapsed to give the
+  // Graph/Payload tabs on the right the full window width — useful for
+  // complex graphs that need more room than the default 60/40 split leaves.
+  // `leftCollapsed` mirrors the panel's own size (derived in onResize) so the
+  // header button's label/icon stays correct even if the user drags the
+  // resize handle to 0 manually instead of clicking the button.
+  const leftPanelRef = useRef<PanelImperativeHandle | null>(null);
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+
+  const toggleLeftPanel = useCallback(() => {
+    if (leftPanelRef.current?.isCollapsed()) {
+      leftPanelRef.current.expand();
+    } else {
+      leftPanelRef.current?.collapse();
+    }
+  }, []);
+
   const handleFormatPayload = useCallback(() => setPayload(formatJSON(payload)), [payload]);
 
   const handleClearMessages = useCallback(() => {
@@ -491,6 +509,15 @@ export default function Playground({ config }: PlaygroundProps) {
               Workspace{clipboardCtx.items.length > 0 ? ` (${clipboardCtx.items.length})` : ''}
             </button>
           )}
+          <button
+            className={styles.consoleToggle}
+            onClick={toggleLeftPanel}
+            aria-label={leftCollapsed ? 'Show console panel' : 'Hide console panel, giving the Graph/Payload panel the full window'}
+            aria-pressed={leftCollapsed}
+            title={leftCollapsed ? 'Show console' : 'Hide console for more graph room'}
+          >
+            {leftCollapsed ? '▶ Console' : '◀ Console'}
+          </button>
           <Navigation
             addToast={addToast}
             sessionCollaboration={supportsSessionCollaboration ? sessionCollaboration : null}
@@ -548,7 +575,14 @@ export default function Playground({ config }: PlaygroundProps) {
         defaultLayout={defaultLayout}
         onLayoutChanged={onLayoutChanged}
       >
-        <Panel defaultSize={(helpOpen || clipboardOpen) ? "50%" : "60%"} minSize="25%">
+        <Panel
+          panelRef={leftPanelRef}
+          collapsible
+          collapsedSize="0%"
+          defaultSize={(helpOpen || clipboardOpen) ? "50%" : "60%"}
+          minSize="25%"
+          onResize={(size) => setLeftCollapsed(size.asPercentage <= 0.5)}
+        >
           <LeftPanel
             messages={ws.messages}
             classificationMap={classificationMap}
