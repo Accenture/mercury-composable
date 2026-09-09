@@ -49,6 +49,7 @@ public class ServiceDef {
     private final boolean interceptor;
     private final Date created = new Date();
     private boolean isPrivateFunction = false;
+    private boolean isPool = false;
     private ServiceQueue manager;
     private Class<?> inputClass;
     private Class<?> pojoClass;
@@ -117,6 +118,10 @@ public class ServiceDef {
         return isPrivateFunction;
     }
 
+    public boolean isPool() {
+        return isPool;
+    }
+
     public boolean isTrackable() {
         return trackable;
     }
@@ -142,12 +147,17 @@ public class ServiceDef {
     }
 
     public ServiceDef setConcurrency(int instances) {
-        this.instances = Math.max(1, (Math.min(instances, MAX_INSTANCES)));
+        this.instances = Math.clamp(instances, 1, MAX_INSTANCES);
         return this;
     }
 
     public ServiceDef setPrivate(boolean isPrivateFunction) {
         this.isPrivateFunction = isPrivateFunction;
+        return this;
+    }
+
+    public ServiceDef setPool(boolean isPool) {
+        this.isPool = isPool;
         return this;
     }
 

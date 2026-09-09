@@ -102,7 +102,7 @@ public class ServiceQueue {
     }
 
     private static boolean isControlRoute(ServiceDef service, String route) {
-        return service.isStream()
+        return service.isStream() || service.isPool()
                 || (route.startsWith(CALLBACK_PREFIX) && route.length() == CALLBACK_LENGTH)
                 || (route.startsWith(STREAM_PREFIX) && route.length() == STREAM_IN_LENGTH && route.endsWith(STREAM_IN));
     }
