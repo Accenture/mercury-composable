@@ -101,6 +101,53 @@
   gap: 0.5rem;
 }
 
+.description {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.inputHints {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+}
+
+.inputHintsLabel {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.inputHintList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.inputHintList code,
+.moreHints {
+  max-width: 100%;
+  padding: 0.12rem 0.35rem;
+  border-radius: var(--radius-xs);
+  background: var(--bg-dark);
+  color: var(--console-text);
+  font-family: var(--font-mono-terminal);
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inputHintsNote {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
 /* ── Drop zone ───────────────────────────────────────────────────────────── */
 .dropZone {
   display: flex;

@@ -5,7 +5,7 @@
 - **scope:** MiniGraph Playground React/Vite webapp
 - **root:** `system/minigraph-playground-engine/webapp`
 - **served bundle:** `system/minigraph-playground-engine/src/main/resources/public`
-- **last_session:** 2026-09-08 | agent: Claude Code (2026-09-08-164102)
+- **last_session:** 2026-09-09 | agent: Codex (2026-09-09-153221)
 
 ## Current Facts
 
@@ -117,6 +117,28 @@
   queue FIFO behind the running one and share the busy flag with undo, so edits and undos
   never interleave.
   <!-- id: webapp-undo-compensating-commands | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
+
+- **Playground Help is profile-based (2026-09-09).** MiniGraph keeps its full bundled topic tree;
+  JSON-Path uses the same resizable/maximizable Help shell but exposes only its focused Overview.
+  Bare JSON-Path `help` resolves locally, while unsupported MiniGraph topics continue to the backend.
+  Configuration, local-command interception, and auto-navigation all carry the same content profile.
+  <!-- id: webapp-playground-help-profiles | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: working | origin: 2026-09-09-153221 -->
+
+- **The graph minimap is optional local UI state (2026-09-09).** It is collapsed by default,
+  pannable when open, and shares the single native React Flow Controls stack with zoom/fit and the
+  existing thumbnail/detail toggle. `Ctrl+M` works only on the active usable Graph tab and ignores
+  editable targets. A one-shot three-second hint pauses while hidden/focused, and mobile toasts use
+  the graph-overlay safe area so they do not cover the minimap lane.
+  <!-- id: webapp-toggleable-minimap | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: working | origin: 2026-09-09-153221 -->
+
+- **MiniGraph toolbar execution mirrors backend lifecycle (2026-09-09).** Separate Instantiate and
+  Run actions precede Copy; Run unlocks only after the instance acknowledgement and any required
+  `input.body` upload. Typed ProtocolBus events, graph/session/connection invalidation, host-session
+  gating, and stale-response quarantine keep the backend authoritative. Upload invitations use an
+  active-path plus deduplicated FIFO: exact-path success/cancel/invalidation cannot affect another
+  modal, and a workflow prompt is not lost behind a manual one. The text protocol still has no
+  correlation id, so a workflow serially claims the next invitation after its request.
+  <!-- id: webapp-graph-toolbar-run-controls | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: working | origin: 2026-09-09-153221 -->
 
 ## Open Threads
 
