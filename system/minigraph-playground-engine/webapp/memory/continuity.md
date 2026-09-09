@@ -5,7 +5,7 @@
 - **scope:** MiniGraph Playground React/Vite webapp
 - **root:** `system/minigraph-playground-engine/webapp`
 - **served bundle:** `system/minigraph-playground-engine/src/main/resources/public`
-- **last_session:** 2026-09-09 | agent: Claude Code (2026-09-09-223126)
+- **last_session:** 2026-09-09 | agent: Claude Code (2026-09-09-231740)
 
 ## Current Facts
 
@@ -171,8 +171,25 @@
   slot-content change via the react-resizable-panels v4 imperative `panelRef.resize()` (deferred
   one rAF for closed→open mounts); `useDefaultLayout` uses `onlySaveAfterUserInteractions: true`
   so imperative resizes never overwrite the user's persisted drag, and `panelLayoutKey` carries
-  the slot mode so the graph re-fits on width changes.
-  <!-- id: webapp-mock-input-inplace-panel | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: working | origin: 2026-09-09-223126 -->
+  the slot mode so the graph re-fits on width changes. The layout storage key is VERSIONED
+  (`-panel-split-v2`, 2026-09-09): a persisted layout beats `defaultSize` at mount and the mode
+  resize only fires on changes, so pre-defaults splits had to be orphaned — bump the suffix again
+  if the default scheme ever changes.
+  <!-- id: webapp-mock-input-inplace-panel | created: 2026-09-09 | last_used: 2026-09-09 | uses: 2 | tier: working | origin: 2026-09-09-223126 -->
+
+- **The live session graph survives temp-model expiry — restore it, don't toast (2026-09-09,
+  Eric's direction).** Described temp-model paths (`/api/graph/model/…`) expire server-side about
+  a minute after `describe graph`, while the SESSION's live graph stays at
+  `GET /api/graph/session/{id}` for the WebSocket session's lifetime. `useSessionGraphRestore`
+  quietly fetches it when the pinned model path is a dead end (HTTP failure OR an HTTP-200
+  error-envelope body) or none is pinned — one attempt per (session, pinned-path) pair, same
+  shape guard and graph-tab auto-switch as a pinned load; `useGraphData` suppresses the failure
+  toast where the restore owns it (`quietInitialFetchFailure`) and exposes `initialFetchFailed`.
+  The session id arrives via the mount-time `session` round-trip (react to LATE arrival), each
+  playground has its OWN ws-session id, and the pinned path re-arms on the next
+  describe/mutation auto-refresh. Known backend bug (Eric, queued engine-side, Java+Rust
+  lock-step): the model endpoint answers 200 with the current draft for a bogus id — should 404.
+  <!-- id: webapp-session-live-graph-restore | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: working | origin: 2026-09-09-231740 -->
 
 - **JSON-Path is a payload-only playground (2026-09-09, Eric's direction — the tool has no graph
   surface).** Its `tabs` config is just `['payload']`; the `tabs` list in `PLAYGROUND_CONFIGS`
