@@ -3,26 +3,26 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ProtocolBus } from '../../protocol/bus';
-import { useMockUploadModal } from '../useMockUploadModal';
+import { useMockUploadPanel } from '../useMockUploadPanel';
 
-describe('useMockUploadModal path ownership', () => {
-  it('closes an invalidated workflow path without closing a different manual modal', () => {
-    const { result } = renderHook(() => useMockUploadModal({
+describe('useMockUploadPanel path ownership', () => {
+  it('closes an invalidated workflow path without closing a different manual upload panel', () => {
+    const { result } = renderHook(() => useMockUploadPanel({
       bus: new ProtocolBus(),
       addToast: vi.fn(),
     }));
 
-    act(() => result.current.handleOpenUploadModal('/api/mock/manual'));
+    act(() => result.current.handleOpenUploadPanel('/api/mock/manual'));
     act(() => expect(result.current.handleCloseUploadPath('/api/mock/workflow')).toBe(false));
-    expect(result.current.modalUploadPath).toBe('/api/mock/manual');
+    expect(result.current.uploadPanelPath).toBe('/api/mock/manual');
 
     act(() => expect(result.current.handleCloseUploadPath('/api/mock/manual')).toBe(true));
-    expect(result.current.modalUploadPath).toBeNull();
+    expect(result.current.uploadPanelPath).toBeNull();
   });
 
   it('can open a later invitation after an invalidated invitation is opened and closed in one event', () => {
     const bus = new ProtocolBus();
-    const { result } = renderHook(() => useMockUploadModal({
+    const { result } = renderHook(() => useMockUploadPanel({
       bus,
       addToast: vi.fn(),
     }));
@@ -36,7 +36,7 @@ describe('useMockUploadModal path ownership', () => {
       raw: 'You may upload JSON payload -> POST /api/mock/stale',
       uploadPath: '/api/mock/stale',
     }));
-    expect(result.current.modalUploadPath).toBeNull();
+    expect(result.current.uploadPanelPath).toBeNull();
 
     offInvalidate();
     act(() => bus.emit({
@@ -45,17 +45,17 @@ describe('useMockUploadModal path ownership', () => {
       raw: 'You may upload JSON payload -> POST /api/mock/current',
       uploadPath: '/api/mock/current',
     }));
-    expect(result.current.modalUploadPath).toBe('/api/mock/current');
+    expect(result.current.uploadPanelPath).toBe('/api/mock/current');
   });
 
-  it('queues a later invitation instead of losing it behind an open modal', () => {
+  it('queues a later invitation instead of losing it behind an open panel', () => {
     const bus = new ProtocolBus();
-    const { result } = renderHook(() => useMockUploadModal({
+    const { result } = renderHook(() => useMockUploadPanel({
       bus,
       addToast: vi.fn(),
     }));
 
-    act(() => result.current.handleOpenUploadModal('/api/mock/manual'));
+    act(() => result.current.handleOpenUploadPanel('/api/mock/manual'));
     act(() => bus.emit({
       kind: 'upload.invitation',
       msgId: 1,
@@ -63,21 +63,21 @@ describe('useMockUploadModal path ownership', () => {
       uploadPath: '/api/mock/workflow',
     }));
 
-    expect(result.current.modalUploadPath).toBe('/api/mock/manual');
-    act(() => result.current.handleCloseUploadModal());
-    expect(result.current.modalUploadPath).toBe('/api/mock/workflow');
-    act(() => result.current.handleCloseUploadModal());
-    expect(result.current.modalUploadPath).toBeNull();
+    expect(result.current.uploadPanelPath).toBe('/api/mock/manual');
+    act(() => result.current.handleCloseUploadPanel());
+    expect(result.current.uploadPanelPath).toBe('/api/mock/workflow');
+    act(() => result.current.handleCloseUploadPanel());
+    expect(result.current.uploadPanelPath).toBeNull();
   });
 
-  it('can invalidate a queued workflow invitation without closing the current modal', () => {
+  it('can invalidate a queued workflow invitation without closing the current panel', () => {
     const bus = new ProtocolBus();
-    const { result } = renderHook(() => useMockUploadModal({
+    const { result } = renderHook(() => useMockUploadPanel({
       bus,
       addToast: vi.fn(),
     }));
 
-    act(() => result.current.handleOpenUploadModal('/api/mock/manual'));
+    act(() => result.current.handleOpenUploadPanel('/api/mock/manual'));
     act(() => bus.emit({
       kind: 'upload.invitation',
       msgId: 1,
@@ -86,8 +86,8 @@ describe('useMockUploadModal path ownership', () => {
     }));
     act(() => expect(result.current.handleCloseUploadPath('/api/mock/workflow')).toBe(true));
 
-    expect(result.current.modalUploadPath).toBe('/api/mock/manual');
-    act(() => result.current.handleCloseUploadModal());
-    expect(result.current.modalUploadPath).toBeNull();
+    expect(result.current.uploadPanelPath).toBe('/api/mock/manual');
+    act(() => result.current.handleCloseUploadPanel());
+    expect(result.current.uploadPanelPath).toBeNull();
   });
 });

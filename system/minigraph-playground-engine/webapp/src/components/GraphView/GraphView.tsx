@@ -32,7 +32,6 @@ import GraphContextMenu from './GraphContextMenu';
 import NodeContextMenu from './NodeContextMenu';
 import EdgeContextMenu from './EdgeContextMenu';
 import GraphMinimap from './GraphMinimap';
-import { useMinimapHint } from './useMinimapHint';
 import GraphMultiSelectTip from './GraphMultiSelectTip';
 import {
   filterAliasesToGraphNodes,
@@ -60,8 +59,6 @@ interface GraphViewProps {
   onClipboardDrop?: (itemId: string) => void;
   /** Whether the Graph tab is currently visible and may handle graph-only hotkeys. */
   isActive:        boolean;
-  /** Whether the graph canvas has usable visible space for the one-shot minimap hint. */
-  minimapHintEligible: boolean;
   isConnected:     boolean;
   supportsAuthoring?: boolean;
   onCreateNode?:   (source: 'empty-graph' | 'pane-context-menu') => void;
@@ -107,7 +104,6 @@ export default function GraphView({
   onClipNodes,
   onClipboardDrop,
   isActive,
-  minimapHintEligible,
   isConnected,
   supportsAuthoring = false,
   onCreateNode,
@@ -236,18 +232,6 @@ export default function GraphView({
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<GraphEdgeData>>(initialEdges);
   const connectionDragSourceRef = useRef<string | null>(null);
   const hasGraphData = Boolean(graphData && graphData.nodes.length > 0);
-  const {
-    hintVisible: minimapHintVisible,
-    hintFading: minimapHintFading,
-    dismissHint: dismissMinimapHint,
-    dismissHintImmediately: dismissMinimapHintImmediately,
-    setHintFocused: setMinimapHintFocused,
-  } = useMinimapHint(Boolean(hasGraphData && minimapHintEligible && !transformError));
-
-  const handleMinimapOpenChange = useCallback((nextOpen: boolean) => {
-    setMinimapOpen(nextOpen);
-    if (nextOpen) dismissMinimapHintImmediately();
-  }, [dismissMinimapHintImmediately]);
 
   // React Flow can notify selection while it initializes controlled nodes.
   // Keep the handler stable and avoid writing an equivalent alias snapshot,
@@ -671,12 +655,8 @@ export default function GraphView({
               <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="rgba(255,255,255,0.07)" />
               <GraphMinimap
                 open={minimapOpen}
-                onOpenChange={handleMinimapOpenChange}
+                onOpenChange={setMinimapOpen}
                 hotkeyEnabled={isActive}
-                hintVisible={minimapHintVisible}
-                hintFading={minimapHintFading}
-                onDismissHint={dismissMinimapHint}
-                onHintFocusChange={setMinimapHintFocused}
               >
                 {/* Thumbnail / expanded node detail toggle — lives with the
                     other view controls (+ / − / fit). */}

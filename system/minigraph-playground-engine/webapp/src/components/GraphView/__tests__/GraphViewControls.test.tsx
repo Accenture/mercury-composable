@@ -68,7 +68,6 @@ describe('GraphView viewport controls composition', () => {
           connections: [],
         }}
         isActive
-        minimapHintEligible
         isConnected
       />
     );
@@ -92,7 +91,6 @@ describe('GraphView viewport controls composition', () => {
           onRun: vi.fn(),
         }}
         isActive
-        minimapHintEligible
         isConnected
       />
     );

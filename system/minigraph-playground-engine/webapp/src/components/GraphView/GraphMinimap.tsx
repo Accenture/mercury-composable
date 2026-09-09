@@ -1,15 +1,19 @@
-import { useCallback, useEffect, useId, useRef, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react';
 import { ControlButton, Controls, MiniMap, type Node } from '@xyflow/react';
+import { useLocalStorage } from '../../hooks/useLocalStorage';
 import styles from './GraphMinimap.module.css';
 
 interface GraphMinimapProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   hotkeyEnabled: boolean;
-  hintVisible: boolean;
-  hintFading: boolean;
-  onDismissHint: () => void;
-  onHintFocusChange: (focused: boolean) => void;
   /** Additional graph controls that share the native React Flow control stack. */
   children?: ReactNode;
 }
@@ -29,9 +33,21 @@ const NODE_COLORS: Record<string, string> = {
   Decision:   '#b45309',
 };
 
-// React Flow adds a 15px panel margin: 35px places the minimap at x=50px,
-// leaving 9px after the 26px-wide controls that begin at x=15px.
-const MINIMAP_LEFT_OFFSET = '35px';
+interface IslandPosition {
+  left:   number;
+  bottom: number;
+}
+
+/**
+ * The minimap is a floating island: grab the title bar to move it anywhere in
+ * the graph pane, so it never has to cover a graph node. The default anchor
+ * sits beside the control stack (15px panel margin + 26px controls + 9px gap),
+ * and the position persists across sessions.
+ */
+const DEFAULT_ISLAND_POSITION: IslandPosition = { left: 50, bottom: 15 };
+/** Minimum gap kept between the island and the pane edges when clamping. */
+const ISLAND_EDGE_MARGIN = 8;
+const ISLAND_POSITION_STORAGE_KEY = 'graph-minimap-position';
 
 function minimapNodeColor(node: Node): string {
   return NODE_COLORS[node.type ?? ''] ?? '#6c7086';
@@ -43,35 +59,38 @@ function isEditableTarget(target: EventTarget | null): boolean {
   ) !== null;
 }
 
+/**
+ * Keep the island inside its positioned host (the React Flow pane). Layouts
+ * without real dimensions (pre-layout mounts, happy-dom) are left unclamped.
+ */
+function clampIslandPosition(
+  position: IslandPosition,
+  host: HTMLElement,
+  island: HTMLElement,
+): IslandPosition {
+  if (host.clientWidth <= 0 || host.clientHeight <= 0
+    || island.offsetWidth <= 0 || island.offsetHeight <= 0) {
+    return position;
+  }
+  const maxLeft   = Math.max(host.clientWidth  - island.offsetWidth  - ISLAND_EDGE_MARGIN, ISLAND_EDGE_MARGIN);
+  const maxBottom = Math.max(host.clientHeight - island.offsetHeight - ISLAND_EDGE_MARGIN, ISLAND_EDGE_MARGIN);
+  return {
+    left:   Math.min(Math.max(position.left,   ISLAND_EDGE_MARGIN), maxLeft),
+    bottom: Math.min(Math.max(position.bottom, ISLAND_EDGE_MARGIN), maxBottom),
+  };
+}
+
 export default function GraphMinimap({
   open,
   onOpenChange,
   hotkeyEnabled,
-  hintVisible,
-  hintFading,
-  onDismissHint,
-  onHintFocusChange,
   children,
 }: GraphMinimapProps) {
   const toggleLabel = open ? 'Hide minimap' : 'Show minimap';
-  const hintId = useId();
-  const showHint = hintVisible && !open;
-  const toggleIconRef = useRef<SVGSVGElement | null>(null);
-
-  const focusToggle = useCallback(() => {
-    toggleIconRef.current?.closest('button')?.focus();
-  }, []);
 
   const toggleMinimap = useCallback(() => {
-    const nextOpen = !open;
-    if (nextOpen && showHint) focusToggle();
-    onOpenChange(nextOpen);
-  }, [focusToggle, onOpenChange, open, showHint]);
-
-  const dismissHint = useCallback(() => {
-    focusToggle();
-    onDismissHint();
-  }, [focusToggle, onDismissHint]);
+    onOpenChange(!open);
+  }, [onOpenChange, open]);
 
   useEffect(() => {
     if (!hotkeyEnabled) return;
@@ -98,17 +117,111 @@ export default function GraphMinimap({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [hotkeyEnabled, toggleMinimap]);
 
+  // ── Floating island position ──────────────────────────────────────────────
+  const [islandPosition, setIslandPosition] = useLocalStorage<IslandPosition>(
+    ISLAND_POSITION_STORAGE_KEY,
+    DEFAULT_ISLAND_POSITION,
+  );
+  const islandRef = useRef<HTMLDivElement | null>(null);
+  const [dragState, setDragState] = useState<{
+    pointerId: number;
+    startX:    number;
+    startY:    number;
+    origin:    IslandPosition;
+  } | null>(null);
+
+  const handleGripPointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    event.preventDefault();
+    setDragState({
+      pointerId: event.pointerId,
+      startX:    event.clientX,
+      startY:    event.clientY,
+      origin:    islandPosition,
+    });
+  }, [islandPosition]);
+
+  // Window-level listeners track the drag even when the pointer leaves the
+  // island; `bottom` grows upward, so the Y delta is subtracted.
+  useEffect(() => {
+    if (dragState === null) return;
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerId !== dragState.pointerId) return;
+      const island = islandRef.current;
+      const host = island?.offsetParent instanceof HTMLElement ? island.offsetParent : null;
+      const next = {
+        left:   dragState.origin.left   + (event.clientX - dragState.startX),
+        bottom: dragState.origin.bottom - (event.clientY - dragState.startY),
+      };
+      setIslandPosition(island && host ? clampIslandPosition(next, host, island) : next);
+    };
+    const endDrag = (event: PointerEvent) => {
+      if (event.pointerId !== dragState.pointerId) return;
+      setDragState(null);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointercancel', endDrag);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', endDrag);
+      window.removeEventListener('pointercancel', endDrag);
+    };
+  }, [dragState, setIslandPosition]);
+
+  // Keep the island reachable when the graph pane shrinks (panel toggles,
+  // window resizes): re-clamp whenever the pane resizes while open.
+  useEffect(() => {
+    if (!open) return;
+    const island = islandRef.current;
+    const host = island?.offsetParent instanceof HTMLElement ? island.offsetParent : null;
+    if (!island || !host) return;
+
+    const clampNow = () => {
+      setIslandPosition((current) => {
+        const clamped = clampIslandPosition(current, host, island);
+        return clamped.left === current.left && clamped.bottom === current.bottom
+          ? current
+          : clamped;
+      });
+    };
+    clampNow();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(clampNow);
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, [open, setIslandPosition]);
+
   return (
     <>
       {open && (
-        <MiniMap
-          className={styles.minimap}
-          nodeColor={minimapNodeColor}
-          maskColor="rgba(0,0,0,0.3)"
-          pannable
-          position="bottom-left"
-          style={{ background: '#fff', left: MINIMAP_LEFT_OFFSET }}
-        />
+        <div
+          ref={islandRef}
+          className={dragState !== null ? `${styles.island} ${styles.islandDragging}` : styles.island}
+          style={{ left: islandPosition.left, bottom: islandPosition.bottom }}
+          role="group"
+          aria-label="Graph minimap"
+        >
+          <div
+            className={styles.islandGrip}
+            role="button"
+            aria-label="Move minimap"
+            title="Drag to move the minimap"
+            onPointerDown={handleGripPointerDown}
+          >
+            <span className={styles.islandGripDots} aria-hidden="true">⠿</span>
+            <span className={styles.islandGripLabel}>Minimap</span>
+          </div>
+          <MiniMap
+            className={styles.minimap}
+            nodeColor={minimapNodeColor}
+            maskColor="rgba(0,0,0,0.3)"
+            pannable
+            style={{ position: 'relative', margin: 0, background: '#fff' }}
+          />
+        </div>
       )}
       <Controls
         position="bottom-left"
@@ -116,31 +229,8 @@ export default function GraphMinimap({
         className={styles.controls}
       >
         {children}
-        {showHint && (
-          <div
-            id={hintId}
-            className={`${styles.hint}${hintFading ? ` ${styles.hintFading}` : ''} nodrag nopan`}
-            onFocus={() => onHintFocusChange(true)}
-            onBlur={(event) => {
-              if (!event.currentTarget.contains(event.relatedTarget)) {
-                onHintFocusChange(false);
-              }
-            }}
-            role="status"
-          >
-            <button
-              type="button"
-              className={styles.hintDismissButton}
-              aria-label="Dismiss minimap shortcut hint"
-              onClick={dismissHint}
-            >
-              <kbd className={styles.hintKbd}>Ctrl + M</kbd> to toggle minimap
-            </button>
-          </div>
-        )}
         <ControlButton
-          className={`${styles.toggleButton}${showHint && !hintFading ? ` ${styles.toggleButtonPulsing}` : ''} nodrag nopan`}
-          aria-describedby={showHint ? hintId : undefined}
+          className={`${styles.toggleButton} nodrag nopan`}
           aria-label={toggleLabel}
           aria-keyshortcuts="Control+M"
           aria-pressed={open}
@@ -148,7 +238,6 @@ export default function GraphMinimap({
           onClick={toggleMinimap}
         >
           <svg
-            ref={toggleIconRef}
             className={styles.toggleIcon}
             viewBox="1.5 2 17 16"
             fill="none"

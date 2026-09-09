@@ -7,7 +7,7 @@ import { ProtocolBus } from '../../protocol/bus';
 import { classifyMessage } from '../../protocol/classifier';
 import { GRAPH_RUN_COMMANDS } from '../../graphRun/graphRunProtocol';
 import { GRAPH_RUN_SETUP_TIMEOUT_MS, useGraphRunWorkflow } from '../useGraphRunWorkflow';
-import { useMockUploadModal } from '../useMockUploadModal';
+import { useMockUploadPanel } from '../useMockUploadPanel';
 
 const graphWithoutInput: MinigraphGraphData = {
   nodes: [{ alias: 'root', types: ['Root'], properties: { name: 'hello' } }],
@@ -96,7 +96,7 @@ describe('useGraphRunWorkflow', () => {
 
     act(() => emitRaw(bus, 2, 'You may upload JSON payload -> POST /api/mock/ws-123-1'));
     expect(result.current.phase).toBe('awaiting-input');
-    expect(result.current.isWorkflowInputModal).toBe(true);
+    expect(result.current.isWorkflowInputPanel).toBe(true);
     expect(result.current.inputBodyPaths).toEqual(['input.body.user.id']);
 
     act(() => expect(result.current.handleInputUploadSuccess('/api/mock/ws-123-1')).toBe(true));
@@ -202,7 +202,7 @@ describe('useGraphRunWorkflow', () => {
     expect(result.current.phase).toBe('idle');
   });
 
-  it('does not let an unrelated upload modal complete or cancel graph input', () => {
+  it('does not let an unrelated upload panel complete or cancel graph input', () => {
     const { result, bus } = setup(graphWithInput);
 
     act(() => result.current.instantiateGraph());
@@ -220,12 +220,12 @@ describe('useGraphRunWorkflow', () => {
     expect(result.current.canRun).toBe(true);
   });
 
-  it('queues workflow input behind an open manual modal and resumes it after close', () => {
+  it('queues workflow input behind an open manual upload panel and resumes it after close', () => {
     const bus = new ProtocolBus();
     const sendRawText = vi.fn(() => true);
     const addToast = vi.fn();
     const { result } = renderHook(() => {
-      const modal = useMockUploadModal({ bus, addToast });
+      const uploadPanel = useMockUploadPanel({ bus, addToast });
       const graphRun = useGraphRunWorkflow({
         enabled: true,
         bus,
@@ -236,29 +236,29 @@ describe('useGraphRunWorkflow', () => {
         isPrimary: true,
         sendRawText,
         addToast,
-        onWorkflowInputInvalidated: modal.handleCloseUploadPath,
+        onWorkflowInputInvalidated: uploadPanel.handleCloseUploadPath,
       });
-      return { modal, graphRun };
+      return { uploadPanel, graphRun };
     });
 
-    act(() => result.current.modal.handleOpenUploadModal('/api/mock/manual'));
+    act(() => result.current.uploadPanel.handleOpenUploadPanel('/api/mock/manual'));
     act(() => result.current.graphRun.instantiateGraph());
     act(() => emitRaw(bus, 1, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
     act(() => emitRaw(bus, 2, 'You may upload JSON payload -> POST /api/mock/workflow'));
 
-    expect(result.current.modal.modalUploadPath).toBe('/api/mock/manual');
+    expect(result.current.uploadPanel.uploadPanelPath).toBe('/api/mock/manual');
     expect(result.current.graphRun.phase).toBe('awaiting-input');
     act(() => {
-      result.current.modal.handleCloseUploadModal();
+      result.current.uploadPanel.handleCloseUploadPanel();
       expect(result.current.graphRun.handleInputCancelled('/api/mock/manual')).toBe(false);
     });
-    expect(result.current.modal.modalUploadPath).toBe('/api/mock/workflow');
+    expect(result.current.uploadPanel.uploadPanelPath).toBe('/api/mock/workflow');
 
     act(() => {
-      result.current.modal.handleUploadSuccess('ok');
+      result.current.uploadPanel.handleUploadSuccess('ok');
       expect(result.current.graphRun.handleInputUploadSuccess('/api/mock/workflow')).toBe(true);
     });
-    expect(result.current.modal.modalUploadPath).toBeNull();
+    expect(result.current.uploadPanel.uploadPanelPath).toBeNull();
     expect(result.current.graphRun.phase).toBe('ready');
     expect(result.current.graphRun.canRun).toBe(true);
   });

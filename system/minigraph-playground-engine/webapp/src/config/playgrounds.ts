@@ -82,8 +82,8 @@ export const PLAYGROUND_CONFIGS: PlaygroundConfig[] = [
     supportsUpload: true,
     supportsHelp: true,
     helpContentProfile: 'json-path',
-    // JSON-Path needs a payload input and graph views.
-    tabs: ['payload', 'graph', 'graph-data'],
+    // JSON-Path is a payload tool — it renders no graph views.
+    tabs: ['payload'],
   },
   {
     path: '/',

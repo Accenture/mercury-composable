@@ -99,8 +99,6 @@ export default function RightPanel({
   const graphPanelId     = `${uid}-tab-graph`;
   const graphDataPanelId = `${uid}-tab-graph-data`;
 
-  // Help split state is declared before tabContent because GraphView uses it
-  // to pause the minimap hint while Help occupies the full panel.
   const helpPanelActive = !!helpPanel;
   const helpSizeRef = useRef(
     Number(sessionStorage.getItem(STORAGE_KEY)) || DEFAULT_HELP_PCT
@@ -111,12 +109,12 @@ export default function RightPanel({
     () => sessionStorage.getItem(MAXIMIZED_KEY) === '1'
   );
   const helpMaximizedRef = useRef(helpMaximized);
-  const minimapHintEligible = activeTab === 'graph'
-    && (!helpPanelActive || !helpMaximized);
 
   const tabContent = (
     <div className={styles.rightPanel}>
-      {/* Tab strip — only tabs listed in `tabs` are rendered */}
+      {/* Tab strip — only tabs listed in `tabs` are rendered; a single-tab
+          playground needs no strip at all (nothing to switch between). */}
+      {tabs.length > 1 && (
       <div className={styles.tabStrip} role="tablist" aria-label="Right panel tabs">
         {tabs.includes('payload') && (
           <button
@@ -155,6 +153,7 @@ export default function RightPanel({
           </button>
         )}
       </div>
+      )}
 
       {/* Payload Editor tab body — only mounted when enabled for this playground */}
       {tabs.includes('payload') && (
@@ -195,7 +194,6 @@ export default function RightPanel({
               onClipNodes={onClipNodes}
               onClipboardDrop={onClipboardDrop}
               isActive={activeTab === 'graph'}
-              minimapHintEligible={minimapHintEligible}
               isConnected={isConnected}
               supportsAuthoring={supportsAuthoring}
               onCreateNode={onCreateNode}

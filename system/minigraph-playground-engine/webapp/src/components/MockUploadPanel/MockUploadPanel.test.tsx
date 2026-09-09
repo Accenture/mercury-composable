@@ -2,14 +2,14 @@
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MockUploadModal } from './MockUploadModal';
+import MockUploadPanel from './MockUploadPanel';
 
 afterEach(cleanup);
 
-describe('MockUploadModal graph-run context', () => {
+describe('MockUploadPanel graph-run context', () => {
   it('preserves the existing manual upload action label by default', () => {
     render(
-      <MockUploadModal
+      <MockUploadPanel
         uploadPath="/api/mock/ws-123-1"
         onSuccess={vi.fn()}
         onClose={vi.fn()}
@@ -22,7 +22,7 @@ describe('MockUploadModal graph-run context', () => {
 
   it('can explain the derived graph inputs and next action without changing upload mechanics', () => {
     render(
-      <MockUploadModal
+      <MockUploadPanel
         uploadPath="/api/mock/ws-123-1"
         title="Add graph input"
         description="These paths are referenced by the graph."
@@ -41,10 +41,41 @@ describe('MockUploadModal graph-run context', () => {
     expect((screen.getByRole('button', { name: 'Upload & Run' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('keeps the upload modal open when the nested file picker is cancelled', () => {
+  it('renders in place — a left-slot panel region, not a dialog', () => {
+    render(
+      <MockUploadPanel
+        uploadPath="/api/mock/ws-123-1"
+        onSuccess={vi.fn()}
+        onClose={vi.fn()}
+        onError={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('region', { name: '⬆️ Upload Mock Data' })).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByLabelText('JSON Payload'));
+  });
+
+  it('closes on Escape with the owning upload path, like the node editor', () => {
+    const onClose = vi.fn();
+    render(
+      <MockUploadPanel
+        uploadPath="/api/mock/ws-123-1"
+        onSuccess={vi.fn()}
+        onClose={onClose}
+        onError={vi.fn()}
+      />,
+    );
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(onClose).toHaveBeenCalledWith('/api/mock/ws-123-1');
+  });
+
+  it('does not close when the nested file picker dispatches a cancel event', () => {
     const onClose = vi.fn();
     const { container } = render(
-      <MockUploadModal
+      <MockUploadPanel
         uploadPath="/api/mock/ws-123-1"
         onSuccess={vi.fn()}
         onClose={onClose}
@@ -57,22 +88,6 @@ describe('MockUploadModal graph-run context', () => {
     fireEvent(fileInput!, new Event('cancel', { bubbles: true, cancelable: true }));
 
     expect(onClose).not.toHaveBeenCalled();
-    expect(screen.getByRole('dialog')).toBeTruthy();
-  });
-
-  it('still closes when the dialog itself owns the cancel event', () => {
-    const onClose = vi.fn();
-    render(
-      <MockUploadModal
-        uploadPath="/api/mock/ws-123-1"
-        onSuccess={vi.fn()}
-        onClose={onClose}
-        onError={vi.fn()}
-      />,
-    );
-
-    fireEvent(screen.getByRole('dialog'), new Event('cancel', { bubbles: true, cancelable: true }));
-
-    expect(onClose).toHaveBeenCalledWith('/api/mock/ws-123-1');
+    expect(screen.getByRole('region', { name: '⬆️ Upload Mock Data' })).toBeTruthy();
   });
 });

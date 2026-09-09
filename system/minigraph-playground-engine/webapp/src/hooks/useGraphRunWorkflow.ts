@@ -41,7 +41,7 @@ export interface UseGraphRunWorkflowOptions {
   isPrimary: boolean;
   sendRawText: (text: string) => boolean;
   addToast: (message: string, type?: ToastType) => void;
-  /** Close the upload modal only when it still belongs to this workflow path. */
+  /** Close the upload panel only when it still belongs to this workflow path. */
   onWorkflowInputInvalidated?: (uploadPath: string) => void;
 }
 
@@ -55,12 +55,12 @@ export interface UseGraphRunWorkflowReturn {
   disabledReason: string;
   inputBodyPaths: string[];
   inputIntent: GraphRunIntent;
-  isWorkflowInputModal: boolean;
+  isWorkflowInputPanel: boolean;
   runGraph: () => boolean;
   instantiateGraph: () => boolean;
-  /** Complete the workflow only when the submitted modal owns this exact path. */
+  /** Complete the workflow only when the submitted panel owns this exact path. */
   handleInputUploadSuccess: (uploadPath: string) => boolean;
-  /** Cancel the workflow only when the dismissed modal owns this exact path. */
+  /** Cancel the workflow only when the dismissed panel owns this exact path. */
   handleInputCancelled: (uploadPath: string) => boolean;
   /** The invitation path claimed by this workflow, or null before/after input. */
   workflowUploadPath: string | null;
@@ -397,7 +397,7 @@ export function useGraphRunWorkflow({
     inputBodyPaths,
     inputIntent: state.intent,
     workflowUploadPath: workflowUploadPathRef.current,
-    isWorkflowInputModal:
+    isWorkflowInputPanel:
       state.intent !== null &&
       (state.phase === 'requesting-input' || state.phase === 'awaiting-input'),
     runGraph,

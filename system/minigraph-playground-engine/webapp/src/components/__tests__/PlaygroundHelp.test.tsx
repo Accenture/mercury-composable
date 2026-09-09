@@ -83,12 +83,12 @@ vi.mock('../../hooks/useAutoHelpNavigate', () => ({
 vi.mock('../../hooks/useSendToJsonPath', () => ({
   useSendToJsonPath: () => ({ handleSendToJsonPath: testDoubles.noop }),
 }));
-vi.mock('../../hooks/useMockUploadModal', () => ({
-  useMockUploadModal: () => ({
-    modalUploadPath: null,
+vi.mock('../../hooks/useMockUploadPanel', () => ({
+  useMockUploadPanel: () => ({
+    uploadPanelPath: null,
     successfulUploadPaths: new Set(),
-    handleOpenUploadModal: testDoubles.noop,
-    handleCloseUploadModal: testDoubles.noop,
+    handleOpenUploadPanel: testDoubles.noop,
+    handleCloseUploadPanel: testDoubles.noop,
     handleCloseUploadPath: testDoubles.noop,
     handleUploadSuccess: testDoubles.noop,
     handleUploadError: testDoubles.noop,
@@ -154,8 +154,7 @@ vi.mock('../GraphSaveButton/GraphSaveButton', () => ({
 }));
 vi.mock('../SavedGraphsMenu/SavedGraphsMenu', () => ({ default: () => null }));
 vi.mock('../LeftPanel/LeftPanel', () => ({ default: () => null }));
-vi.mock('../MockUploadModal/MockUploadModal', () => ({ MockUploadModal: () => null }));
-vi.mock('../GraphAuthoring/GraphAuthoringModals', () => ({ default: () => null }));
+vi.mock('../MockUploadPanel/MockUploadPanel', () => ({ default: () => null }));
 vi.mock('../ClipboardSidebar/ClipboardSidebar', () => ({ default: () => null }));
 vi.mock('../ClipboardSidebar/ClipboardDuplicateDialog', () => ({ ClipboardDuplicateDialog: () => null }));
 vi.mock('../HelpBrowser/HelpBrowser', () => ({

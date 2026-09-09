@@ -43,7 +43,7 @@ function busyTitle(phase: GraphRunPhase): string {
   switch (phase) {
     case 'instantiating': return 'Graph is being instantiated';
     case 'requesting-input': return 'Preparing graph input';
-    case 'awaiting-input': return 'Complete or cancel the graph input dialog';
+    case 'awaiting-input': return 'Complete or cancel the mock graph input panel';
     case 'running': return 'Graph is running';
     case 'outcome-uncertain': return 'Waiting for the backend graph outcome';
     default: return '';

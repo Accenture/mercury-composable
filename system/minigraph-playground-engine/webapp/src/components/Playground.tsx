@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
+import { Group, Panel, Separator, useDefaultLayout, type PanelImperativeHandle } from 'react-resizable-panels';
 import styles from './Playground.module.css';
 import { validatePayload, formatJSON } from '../utils/validators';
 import { useToast } from '../hooks/useToast';
@@ -11,7 +11,7 @@ import { useGraphData } from '../hooks/useGraphData';
 import { useAutoGraphRefresh } from '../hooks/useAutoGraphRefresh';
 import { useAutoHelpNavigate } from '../hooks/useAutoHelpNavigate';
 import { useSendToJsonPath } from '../hooks/useSendToJsonPath';
-import { useMockUploadModal } from '../hooks/useMockUploadModal';
+import { useMockUploadPanel } from '../hooks/useMockUploadPanel';
 import { useLargePayloadDownload } from '../hooks/useLargePayloadDownload';
 import { useSavedGraphs } from '../hooks/useSavedGraphs';
 import { useGraphSaveName } from '../hooks/useGraphSaveName';
@@ -43,7 +43,7 @@ import SavedGraphsMenu from './SavedGraphsMenu/SavedGraphsMenu';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
 import NodeEditPanel from './NodeEditPanel/NodeEditPanel';
-import { MockUploadModal } from './MockUploadModal/MockUploadModal';
+import MockUploadPanel from './MockUploadPanel/MockUploadPanel';
 import ConnectionPopover from './ConnectionPopover/ConnectionPopover';
 import { useGraphAuthoring } from './GraphAuthoring/useGraphAuthoring';
 import { useSessionCollaboration } from '../session/useSessionCollaboration';
@@ -65,6 +65,25 @@ import type { GraphClipItem } from './GraphView/selectionTargets';
 interface PlaygroundProps {
   config: PlaygroundConfig;
 }
+
+/**
+ * What currently occupies the left panel slot. The node editor and the
+ * mock-upload form take the console's space in turn; the console itself
+ * is the resting state.
+ */
+type LeftPanelMode = 'console' | 'node-edit' | 'upload';
+
+/**
+ * Default left-panel widths per slot content (Eric's spec, 2026-09-09):
+ * the console reads best at 40%, while the two in-place forms are narrow
+ * cards that only need 30%. Applied on every slot-content change; manual
+ * separator drags hold until the content changes again.
+ */
+const LEFT_PANEL_DEFAULT_SIZES: Record<LeftPanelMode, string> = {
+  'console':   '40%',
+  'node-edit': '30%',
+  'upload':    '30%',
+};
 
 export default function Playground({ config }: PlaygroundProps) {
   const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, supportsClipboard, supportsHelp, helpContentProfile = 'minigraph', supportsAuthoring, supportsGraphRun, supportsSessionCollaboration, tabs } = config;
@@ -149,12 +168,12 @@ export default function Playground({ config }: PlaygroundProps) {
     storageKeyTab,
   );
 
-  // ── Mock-upload modal ────────────────────────────────────────────────────
+  // ── Mock-upload panel (left slot) ────────────────────────────────────────
   const {
-    modalUploadPath, successfulUploadPaths,
-    handleOpenUploadModal, handleCloseUploadModal,
+    uploadPanelPath, successfulUploadPaths,
+    handleOpenUploadPanel, handleCloseUploadPanel,
     handleCloseUploadPath, handleUploadSuccess, handleUploadError, resetSuccessfulPaths,
-  } = useMockUploadModal({ bus, addToast });
+  } = useMockUploadPanel({ bus, addToast });
 
   // ── Auto-refresh on mutation commands ────────────────────────────────────
   useAutoGraphRefresh({
@@ -545,11 +564,11 @@ export default function Playground({ config }: PlaygroundProps) {
   }, [graphAuthoring.deleteNode, graphData]);
 
   // Restore the scroll position when the console re-mounts (console toggle or
-  // node editor closing): the message-driven auto-scroll in useWebSocket only
-  // fires on new messages, so an unchanged backlog would otherwise reappear
-  // scrolled to the top.
+  // an in-place panel closing): the message-driven auto-scroll in useWebSocket
+  // only fires on new messages, so an unchanged backlog would otherwise
+  // reappear scrolled to the top.
   const consoleRef = ws.consoleRef;
-  const consoleVisible = consoleOpen && nodeEditSession === null;
+  const consoleVisible = consoleOpen && nodeEditSession === null && uploadPanelPath === null;
   useEffect(() => {
     if (consoleVisible && consoleRef.current) {
       consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
@@ -614,11 +633,49 @@ export default function Playground({ config }: PlaygroundProps) {
   // Responsive layout: stack panels vertically on narrow viewports
   const isMobile = useMediaQuery('(max-width: 768px)');
 
-  // Persist panel split ratio per playground route
+  // Persist panel split ratio per playground route. Only user drags are
+  // persisted: the per-mode default widths applied imperatively above must
+  // not overwrite the user's remembered console split.
   const { defaultLayout, onLayoutChanged } = useDefaultLayout({
     id: config.path + '-panel-split',
     storage: localStorage,
+    onlySaveAfterUserInteractions: true,
   });
+
+  // ── Left panel slot mode + default widths ─────────────────────────────────
+  // Priority: the node editor wins the slot, then the upload form, then the
+  // console. Each content type opens at its own default width (console 40%,
+  // editor/upload 30%); a manual separator drag holds until the slot content
+  // changes again.
+  const leftPanelMode: LeftPanelMode | null =
+    nodeEditSession !== null ? 'node-edit'
+    : uploadPanelPath !== null ? 'upload'
+    : consoleOpen ? 'console' : null;
+
+  const leftPanelRef = useRef<PanelImperativeHandle | null>(null);
+  const previousLeftModeRef = useRef(leftPanelMode);
+  useEffect(() => {
+    const previous = previousLeftModeRef.current;
+    previousLeftModeRef.current = leftPanelMode;
+    if (leftPanelMode === null || leftPanelMode === previous) return;
+    // Defer one frame: on a closed→open transition the Panel mounts in this
+    // commit and its imperative handle is populated after the mount pass.
+    const frame = requestAnimationFrame(() => {
+      leftPanelRef.current?.resize(LEFT_PANEL_DEFAULT_SIZES[leftPanelMode]);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [leftPanelMode]);
+
+  // The clipboard sidebar only occupies layout space where it is supported
+  // (its open flag is shared in localStorage across playgrounds).
+  const clipboardVisible = Boolean(supportsClipboard) && clipboardOpen;
+
+  // First-mount complement of the left panel's default width; thereafter the
+  // persisted layout (user drags) wins. Help splits vertically inside the
+  // right panel, so it does not affect this horizontal default.
+  const rightPanelDefaultSize = leftPanelMode !== null
+    ? (clipboardVisible ? '40%' : '60%')
+    : (clipboardVisible ? '80%' : '100%');
 
   const handleFormatPayload = useCallback(() => setPayload(formatJSON(payload)), [payload]);
 
@@ -627,48 +684,30 @@ export default function Playground({ config }: PlaygroundProps) {
     setPinnedGraphPath(null);
     setGraphData(null);
     // Reset mock-upload session state so ✅ badges clear with the console.
-    // Modal upload path is NOT reset here — if the modal is open while the
+    // The upload panel path is NOT reset here — if the panel is open while the
     // user clears the console, it remains open for the current upload attempt.
     resetSuccessfulPaths();
     // Advance the untitled counter so the next saved graph gets a fresh name.
     resetSaveName();
   }, [ws.clearMessages, setGraphData, resetSuccessfulPaths, resetSaveName]);
 
-  const handleModalUploadSuccess = useCallback((responseBody: string, uploadPath: string) => {
+  const handleUploadPanelSuccess = useCallback((responseBody: string, uploadPath: string) => {
     handleUploadSuccess(responseBody);
     graphRun.handleInputUploadSuccess(uploadPath);
   }, [graphRun.handleInputUploadSuccess, handleUploadSuccess]);
 
-  const handleModalClose = useCallback((uploadPath: string) => {
-    handleCloseUploadModal();
+  const handleUploadPanelClose = useCallback((uploadPath: string) => {
+    handleCloseUploadPanel();
     graphRun.handleInputCancelled(uploadPath);
-  }, [graphRun.handleInputCancelled, handleCloseUploadModal]);
+  }, [graphRun.handleInputCancelled, handleCloseUploadPanel]);
 
-  const isGraphRunInputModal = modalUploadPath !== null
-    && graphRun.isWorkflowInputModal
-    && graphRun.workflowUploadPath === modalUploadPath;
+  const isGraphRunInputPanel = uploadPanelPath !== null
+    && graphRun.isWorkflowInputPanel
+    && graphRun.workflowUploadPath === uploadPanelPath;
 
   return (
     <div className={styles.wrapper}>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
-
-      {modalUploadPath && (
-        <MockUploadModal
-          key={modalUploadPath}
-          uploadPath={modalUploadPath}
-          onSuccess={handleModalUploadSuccess}
-          onClose={handleModalClose}
-          onError={handleUploadError}
-          title={isGraphRunInputModal ? '▶ Add Graph Input' : undefined}
-          description={
-            isGraphRunInputModal
-              ? 'Add the JSON body and keep this graph instantiated for a later run.'
-              : undefined
-          }
-          inputPathHints={isGraphRunInputModal ? graphRun.inputBodyPaths : undefined}
-          submitLabel={isGraphRunInputModal ? 'Upload & Instantiate' : undefined}
-        />
-      )}
 
       {connectionSession !== null && (
         <ConnectionPopover
@@ -714,10 +753,10 @@ export default function Playground({ config }: PlaygroundProps) {
           <button
             className={styles.panelToggle}
             onClick={() => {
-              // While the node editor occupies the console's slot, this button
-              // means "give me the console back": close the editor (same
-              // discard semantics as Esc/Cancel) and show the console. A save
-              // in flight blocks closing, exactly like Esc/Cancel.
+              // While an in-place panel occupies the console's slot, this
+              // button means "give me the console back": close the panel
+              // (same discard semantics as Esc/Cancel) and show the console.
+              // A submit in flight blocks closing, exactly like Esc/Cancel.
               if (nodeEditSession !== null) {
                 if (nodeEditSession.phase !== 'sending') {
                   graphAuthoring.close();
@@ -725,13 +764,22 @@ export default function Playground({ config }: PlaygroundProps) {
                 }
                 return;
               }
+              if (uploadPanelPath !== null) {
+                handleUploadPanelClose(uploadPanelPath);
+                setConsoleOpen(true);
+                return;
+              }
               setConsoleOpen(prev => !prev);
             }}
             aria-label={nodeEditSession !== null
               ? 'Show console panel and close the node editor'
-              : consoleOpen ? 'Hide console panel' : 'Show console panel'}
+              : uploadPanelPath !== null
+                ? 'Show console panel and close the upload form'
+                : consoleOpen ? 'Hide console panel' : 'Show console panel'}
             aria-pressed={consoleVisible}
-            title={nodeEditSession !== null ? 'Closes the node editor' : undefined}
+            title={nodeEditSession !== null
+              ? 'Closes the node editor'
+              : uploadPanelPath !== null ? 'Closes the upload form' : undefined}
           >
             Console
           </button>
@@ -802,9 +850,9 @@ export default function Playground({ config }: PlaygroundProps) {
         defaultLayout={defaultLayout}
         onLayoutChanged={onLayoutChanged}
       >
-        {(consoleOpen || nodeEditSession !== null) && (
+        {leftPanelMode !== null && (
           <>
-            <Panel defaultSize={(helpOpen || clipboardOpen) ? "50%" : "60%"} minSize="25%">
+            <Panel panelRef={leftPanelRef} defaultSize={LEFT_PANEL_DEFAULT_SIZES[leftPanelMode]} minSize="25%">
               {nodeEditSession !== null ? (
                 <NodeEditPanel
                   mode={nodeEditSession.action === 'edit-node' ? 'edit' : 'create'}
@@ -823,6 +871,22 @@ export default function Playground({ config }: PlaygroundProps) {
                   onSubmit={graphAuthoring.submit}
                   onClose={graphAuthoring.close}
                 />
+              ) : uploadPanelPath !== null ? (
+                <MockUploadPanel
+                  key={uploadPanelPath}
+                  uploadPath={uploadPanelPath}
+                  onSuccess={handleUploadPanelSuccess}
+                  onClose={handleUploadPanelClose}
+                  onError={handleUploadError}
+                  title={isGraphRunInputPanel ? '▶ Mock Graph Input' : undefined}
+                  description={
+                    isGraphRunInputPanel
+                      ? 'Add the JSON body and keep this graph instantiated for a later run.'
+                      : undefined
+                  }
+                  inputPathHints={isGraphRunInputPanel ? graphRun.inputBodyPaths : undefined}
+                  submitLabel={isGraphRunInputPanel ? 'Upload & Instantiate' : undefined}
+                />
               ) : (
                 <LeftPanel
                   messages={ws.messages}
@@ -840,7 +904,7 @@ export default function Playground({ config }: PlaygroundProps) {
                   onGraphLinkMessage={handleGraphLinkMessage}
                   onCopyMessage={() => addToast('Copied to clipboard', 'success')}
                   onSendToJsonPath={handleSendToJsonPath}
-                  onUploadMockData={handleOpenUploadModal}
+                  onUploadMockData={handleOpenUploadPanel}
                   successfulUploadPaths={successfulUploadPaths}
                 />
               )}
@@ -848,7 +912,7 @@ export default function Playground({ config }: PlaygroundProps) {
             <Separator className={styles.resizeHandle} aria-label="Resize panels" />
           </>
         )}
-        <Panel defaultSize={helpOpen ? "50%" : clipboardOpen ? "30%" : "40%"} minSize="20%">
+        <Panel defaultSize={rightPanelDefaultSize} minSize="20%">
           <RightPanel
             tabs={tabs}
             payload={payload}
@@ -883,7 +947,7 @@ export default function Playground({ config }: PlaygroundProps) {
             onDeleteNode={supportsAuthoring ? handleDeleteNode : undefined}
             onDeleteNodes={supportsAuthoring ? graphAuthoring.deleteNodes : undefined}
             onDeleteConnections={supportsAuthoring ? handleDeleteConnections : undefined}
-            panelLayoutKey={`${consoleOpen || nodeEditSession !== null}|${clipboardOpen}|${helpOpen}`}
+            panelLayoutKey={`${leftPanelMode ?? 'closed'}|${clipboardOpen}|${helpOpen}`}
             helpPanel={supportsHelp && helpOpen ? (
               (onToggleMaximize: () => void, isMaximized: boolean) => (
                 <HelpBrowser

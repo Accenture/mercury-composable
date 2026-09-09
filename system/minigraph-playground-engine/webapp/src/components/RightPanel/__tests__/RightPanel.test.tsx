@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 
 import { type CSSProperties, type ReactNode } from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import RightPanel from '../RightPanel';
+import type { RightTab } from '../RightPanel';
 
 const graphViewRender = vi.hoisted(() => vi.fn());
 
@@ -30,7 +31,10 @@ vi.mock('react-resizable-panels', () => ({
   Separator: () => <div />,
 }));
 
-function renderRightPanel() {
+function renderRightPanel({
+  tabs = ['graph'] as RightTab[],
+  activeTab = 'graph' as RightTab,
+} = {}) {
   const graphRunControls = {
     phase: 'idle' as const,
     canInstantiate: true,
@@ -41,26 +45,21 @@ function renderRightPanel() {
   };
   return render(
     <RightPanel
-      tabs={['graph']}
+      tabs={tabs}
       payload=""
       onChange={() => {}}
       validation={{ valid: true, error: null, type: null }}
       onFormat={() => {}}
       graphData={{ nodes: [], connections: [] }}
-      activeTab="graph"
+      activeTab={activeTab}
       onTabChange={() => {}}
       isConnected
       graphRunControls={graphRunControls}
-      helpPanel={(onToggleMaximize, isMaximized) => (
-        <button type="button" onClick={onToggleMaximize}>
-          {isMaximized ? 'Restore help' : 'Maximize help'}
-        </button>
-      )}
     />
   );
 }
 
-describe('RightPanel minimap hint eligibility', () => {
+describe('RightPanel tab strip', () => {
   beforeEach(() => {
     graphViewRender.mockClear();
     sessionStorage.clear();
@@ -68,27 +67,26 @@ describe('RightPanel minimap hint eligibility', () => {
 
   afterEach(cleanup);
 
-  it('waits while maximized Help clips the graph, then enables the hint after restore', () => {
-    sessionStorage.setItem('help-split-maximized', '1');
-    renderRightPanel();
+  it('hides the tab strip entirely for a single-tab playground', () => {
+    renderRightPanel({ tabs: ['payload'], activeTab: 'payload' });
 
-    expect(graphViewRender.mock.lastCall?.[0]).toMatchObject({
-      isActive: true,
-      minimapHintEligible: false,
-    });
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(screen.queryByRole('tab')).toBeNull();
+  });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Restore help' }));
+  it('renders the tab strip when the playground declares multiple tabs', () => {
+    renderRightPanel({ tabs: ['graph', 'graph-data'], activeTab: 'graph' });
 
-    expect(graphViewRender.mock.lastCall?.[0]).toMatchObject({
-      isActive: true,
-      minimapHintEligible: true,
-    });
+    expect(screen.getByRole('tablist', { name: 'Right panel tabs' })).toBeTruthy();
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent))
+      .toEqual(['Graph🕸️', 'Graph Data (Raw)']);
   });
 
   it('forwards graph-local run controls to GraphView', () => {
     renderRightPanel();
 
     expect(graphViewRender.mock.lastCall?.[0]).toMatchObject({
+      isActive: true,
       graphRunControls: {
         phase: 'idle',
         canInstantiate: true,
