@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -55,6 +56,20 @@ class EventEnvelopeTest {
         var utc1 = util.str2date(now.toString());
         var utc2 = util.str2date(o.getOffsetDateTime().toString());
         assertEquals(utc1, utc2);
+    }
+
+    @Test
+    void offsetDateTimeMinuteBoundaryTest() {
+        // second == 0 and nano == 0 makes OffsetDateTime.toString() omit the seconds
+        // component ("2026-09-09T01:26+08:00") - this used to fail str2date and restore
+        // as the epoch, surfacing as a once-per-minute-boundary flaky round trip
+        var event = new EventEnvelope();
+        var po = new PoJo();
+        var boundary = OffsetDateTime.now().truncatedTo(ChronoUnit.MINUTES);
+        po.setOffsetDateTime(boundary);
+        event.setBody(po);
+        var restored = new EventEnvelope(event.toBytes()).getBody(PoJo.class);
+        assertEquals(boundary.toInstant(), restored.getOffsetDateTime().toInstant());
     }
 
     @Test

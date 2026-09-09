@@ -2053,6 +2053,8 @@ class FlowTests extends TestBase {
         assertEquals("World!", result.get("substring_one"));
         assertEquals("World", result.get("substring_two"));
         assertEquals("Hello World!", result.get("concat"));
+        // a null operand renders as "null" (String.valueOf semantics; Rust-engine parity)
+        assertEquals("Hellonull World!", result.get("concat_null"));
         var b64String = "SGVsbG8=";
         var bytes = Base64.getDecoder().decode(b64String);
         List<Integer> byteList = IntStream.range(0, bytes.length)

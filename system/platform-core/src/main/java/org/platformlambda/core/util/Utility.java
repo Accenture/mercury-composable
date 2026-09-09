@@ -112,7 +112,7 @@ public class Utility {
      * Primarily a convenience for tests that poll for an asynchronous condition, but safe for any
      * interruptible pause (e.g. a retry back-off).
      *
-     * @param ms milliseconds to wait; a value of zero or less returns immediately
+     * @param ms milliseconds to wait; zero or a negative value returns immediately
      */
     public void sleep(long ms) {
         if (ms <= 0) {
@@ -459,7 +459,7 @@ public class Utility {
     }
 
     /**
-     * Generate a RFC 7231 timestamp
+     * Generate an RFC 7231 timestamp
      * <p>
      * @param date object
      * @return timestamp for use in an HTTP header (Example: Tue, 11 May 2021 03:42:46 GMT)
@@ -470,7 +470,7 @@ public class Utility {
     }
 
     /**
-     * Parse a RFC 7231 HTML timestamp
+     * Parse an RFC 7231 HTML timestamp
      * <p>
      * @param timestamp from an HTTP header
      * @return converted date object
@@ -951,17 +951,23 @@ public class Utility {
             var local = str2LocalDateTime(str, throwException);
             return Date.from(local.atZone(ZoneId.systemDefault()).toInstant());
         }
-        /*
-         * Variances of ISO-8601
-         * 1. 2015-01-06T01:02:03Z
-         * 2. 2015-01-06T01:02:03+0000
-         * 3. 2015-01-06T01:02:03+00:00
-         * 4. 2015-01-06T01:02:03.123Z
-         * 5. 2015-01-06T01:02:03.123+0000
-         * 6. 2015-01-06T01:02:03.123+00:00
-         *
-         * DO NOT CHANGE the string substitution sequence below
-         */
+        String normalized = normalizeIso8601(str);
+        return parseZonedDateTime(normalized, normalized.lastIndexOf('.'), throwException);
+    }
+
+    /*
+     * Variances of ISO-8601
+     * 1. 2015-01-06T01:02:03Z
+     * 2. 2015-01-06T01:02:03+0000
+     * 3. 2015-01-06T01:02:03+00:00
+     * 4. 2015-01-06T01:02:03.123Z
+     * 5. 2015-01-06T01:02:03.123+0000
+     * 6. 2015-01-06T01:02:03.123+00:00
+     * 7. 2015-01-06T01:02Z (java.time toString() omits ":ss" at a minute boundary)
+     *
+     * DO NOT CHANGE the string substitution sequence below
+     */
+    private String normalizeIso8601(String str) {
         if (str.length() > 11) {
             // ensure T as a separator between date and time
             str = str.substring(0, 10) + "T" + str.substring(11);
@@ -970,26 +976,46 @@ public class Utility {
         if (str.endsWith("Z")) {
             str = str.substring(0, str.length()-1)+ZERO_TIMEZONE;
         }
+        // insert the seconds component when absent - java.time toString() omits ":ss" for a
+        // minute-boundary value (e.g. OffsetDateTime "2026-09-09T01:26+08:00"), which would
+        // otherwise fail the formatters below and fall back to the epoch
+        if (str.length() > 16 && str.charAt(16) != ':') {
+            str = str.substring(0, 16) + ":00" + str.substring(16);
+        }
         // precision up to milliseconds only and drop microseconds if any
         int dot = str.lastIndexOf('.');
+        int sep = zoneSeparator(str);
         if (dot == 19) {
             // validation for "isLocalDateTime" above guarantees there is a time zone ("Z", "+" or "-")
-            int sep = str.indexOf('+', 19);
-            if (sep == -1) {
-                sep = str.indexOf('-', 19);
-            }
             String ms = normalizeMs(sep > 0? str.substring(dot, sep) : str.substring(dot));
             // remove colon from timezone
             String timezone = str.substring(sep).replace(":", "");
             str = str.substring(0, dot) + ms + timezone;
+        } else if (sep > 0) {
+            // no fractional seconds: still remove the colon from a "+HH:MM" zone offset
+            // (the form java.time toString() emits) so the formatter below accepts it
+            str = str.substring(0, sep) + str.substring(sep).replace(":", "");
         }
-        return parseZonedDateTime(str, dot, throwException);
+        return str;
+    }
+
+    /**
+     * Position of the zone-offset sign in a normalized ISO-8601 string,
+     * or -1 when absent (the time component ends at index 18, so the
+     * sign of a zone offset never appears before index 19)
+     *
+     * @param str normalized ISO-8601 timestamp
+     * @return index of the zone sign or -1
+     */
+    private int zoneSeparator(String str) {
+        int sep = str.indexOf('+', 19);
+        return sep == -1? str.indexOf('-', 19) : sep;
     }
 
     private Date parseZonedDateTime(String str, int dot, boolean throwException) {
         // parse the normalized time string
         try {
-            ZonedDateTime zdt = dot==19? ZonedDateTime.parse(str, ISO_DATE_MS) : ZonedDateTime.parse(str, ISO_DATE);
+            ZonedDateTime zdt = ZonedDateTime.parse(str, dot == 19? ISO_DATE_MS : ISO_DATE);
             return Date.from(zdt.toInstant());
         } catch (IllegalArgumentException | DateTimeParseException e) {
             if (throwException) {
