@@ -27,8 +27,8 @@
   Story docs finalization (plugin catalog now a table matching the Rust site). Prior: v4.12.3
   (2026-09-04, the field-fix triple; its field pipeline passed and deployed same-day).
   The live version source stays the root pom.xml. Lock-step with Rust v4.12.4 (released
-  same-day 2026-09-08; its crates.io publish of the seven mercury-* crates still pending at
-  last check). python/node packs stay at 4.12.1 — no wrapper changes.)
+  same-day 2026-09-08; all seven mercury-* crates on crates.io at 4.12.4, API-verified).
+  python/node packs stay at 4.12.1 — no wrapper changes.)
 - **last_enabled:** 2026-06-20
 - **last_review:** 2026-09-07 | through 2026-09-07-055024.md
 - **last_invariant_check:** 2026-09-04 | 2026-09-04-043732.md (all 15 confirmed by Eric + the Vision — one-by-one walkthrough with live-tree evidence; no supersessions; stack-messaging-kafka re-checked after PR #315 added Kafka config keys additively; ot-reverify-invariants-20260904 closed. Prior: 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed))
