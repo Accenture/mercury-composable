@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class GraphInstance {
     private static final String FLOW_INSTANCE = "flow_instance";
     private static final String REPLY_TO = "reply_to";
+    private static final String TRACE_ID = "trace_id";
     private static final String WS_INSTANCE = "ws_instance";
     private static final String RUN_WATCHER = "run_watcher";
     private static final String CID = "cid";
@@ -56,6 +57,22 @@ public class GraphInstance {
 
     public String getFlowInstanceId() {
         return metadata.get(FLOW_INSTANCE) instanceof String v? v : NONE;
+    }
+
+    /**
+     * The distributed trace id of the event that started this run, when tracing
+     * is on — the traversal log's preferred correlation label.
+     *
+     * @return the trace id, or null when the run is untraced
+     */
+    public String getTraceId() {
+        return metadata.get(TRACE_ID) instanceof String v? v : null;
+    }
+
+    public void setTraceId(String traceId) {
+        if (traceId != null && !traceId.isBlank()) {
+            metadata.put(TRACE_ID, traceId);
+        }
     }
 
     public void setFlowInstanceId(String instanceId) {
