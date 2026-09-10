@@ -6978,8 +6978,13 @@ the Playground dry-run prints to its console (<code>Walk to {node}</code>, <code
 aborted: {reason}</code> on error), emitted as INFO log lines suffixed with the graph id and the
 run's <strong>trace id</strong> (fallback: the flow instance id when tracing is off) — so an
 OpenTelemetry dashboard can join these app-log lines with the exported spans and metrics.
-On by default; set it to <code>false</code> (for example with the runtime override
-<code>-Dgraph.traversal.log=false</code>) to reduce log volume on busy installations.</p>
+The inline label complements the platform's app-context-log feature: with
+<code>log.format=json</code> or <code>compact</code>, each record additionally carries the structured <code>context</code>
+key-values (span id, business correlation id); app-context-log is disabled in plain
+<code>text</code> format (to reduce log volume), where the inline trace id keeps the correlation
+visible regardless. On by default; set it to <code>false</code> (for
+example with the runtime override <code>-Dgraph.traversal.log=false</code>) to reduce log volume on
+busy installations.</p>
 <hr />
 <h2 id="component-scanning-startup">Component Scanning &amp; Startup<a class="headerlink" href="#component-scanning-startup" title="Permanent link">&para;</a></h2>
 <h3 id="modulesautostart"><code>modules.autostart</code><a class="headerlink" href="#modulesautostart" title="Permanent link">&para;</a></h3>
