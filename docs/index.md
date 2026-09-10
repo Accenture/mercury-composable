@@ -4,6 +4,8 @@ summary: A Java framework for building composable, event-driven backend applicat
   increasingly, Active Knowledge Graphs you evolve by editing a model rather than rewriting code.
 audience: [developer, architect, business, ai-agent]
 keywords: [composable, event-driven, active knowledge graph, semantic application, event script, ai collaboration]
+hide:
+  - navigation
 ---
 
 # Mercury Composable for Java
@@ -16,9 +18,12 @@ virtual threads, so straightforward synchronous code performs on par with reacti
 event-driven core descends from the **Scala/Akka actor model**, realized on the **Eclipse Vert.x**
 event bus.
 
+<div class="hero-buttons" markdown>
 [Get started](guides/getting-started.md){ .md-button .md-button--primary }
 [Read the white paper](https://accenture.github.io/mercury-composable/mercury-story/){ .md-button }
 [View the deck](https://accenture.github.io/mercury-composable/presentations/mercury-story.html){ .md-button }
+[The Mercury Family](https://accenture.github.io/mercury-composable/mercury-family/){ .md-button }
+</div>
 
 *The white paper — **Intent-Driven Development and the Architecture of Human-AI Collaboration** —
 presents the collaboration model the AI era needs and the Mercury story that proved it: shared
