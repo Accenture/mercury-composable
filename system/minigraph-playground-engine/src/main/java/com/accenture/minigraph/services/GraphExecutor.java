@@ -170,7 +170,7 @@ public class GraphExecutor extends GraphLambdaFunction {
         var stateMachine = graphInstance.stateMachine;
         var node = graphInstance.graph.findNodeByAlias(nodeName);
         checkFrequency(po, graphInstance, nodeName, parentSpanId);
-        if (traversalLog) {
+        if (traversalLog && log.isInfoEnabled()) {
             log.info("Executed {} with skill {} in {} ms - {} ({})", nodeName, node.getProperty(SKILL),
                     response.getExecutionTime(), graphInstance.graphId, correlationLabel(graphInstance));
         }
@@ -249,7 +249,7 @@ public class GraphExecutor extends GraphLambdaFunction {
             var isJoin = GraphJoin.ROUTE.equals(skill);
             var seen = graphInstance.nodeSeen.putIfAbsent(nodeName, true) != null;
             if (isJoin || !seen) {
-                if (traversalLog) {
+                if (traversalLog && log.isInfoEnabled()) {
                     log.info("Walk to {} - {} ({})", nodeName,
                             graphInstance.graphId, correlationLabel(graphInstance));
                 }
@@ -298,7 +298,7 @@ public class GraphExecutor extends GraphLambdaFunction {
         }
         po.send(response.setBody(body));
         graphInstance.complete.set(true);
-        if (traversalLog) {
+        if (traversalLog && log.isInfoEnabled()) {
             var elapsed = System.currentTimeMillis() - graphInstance.getStartTime();
             log.info("Graph traversal completed in {} ms - {} ({})",
                     elapsed, graphInstance.graphId, correlationLabel(graphInstance));
@@ -436,7 +436,7 @@ public class GraphExecutor extends GraphLambdaFunction {
     }
 
     private void logAborted(GraphInstance graphInstance, String reason) {
-        if (traversalLog) {
+        if (traversalLog && log.isInfoEnabled()) {
             log.info("Graph traversal aborted: {} - {} ({})",
                     reason, graphInstance.graphId, correlationLabel(graphInstance));
         }
