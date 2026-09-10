@@ -45,11 +45,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Pins the stepwise traversal log trail of the production walker
- * (graph.traversal.log=true, the default): the same vocabulary the dry-run
- * GraphTraveler prints to the Playground console, suffixed with the graph id
- * and the run's trace id (fallback: flow instance id when tracing is off) so
- * OTel dashboards can join app logs with exported spans. The Rust engine
- * emits the identical lines (telemetry presentation parity).
+ * (graph.traversal.log=true, the default): each step is logged as a structured
+ * record - log.info("{}", map) - so the json and compact formats render it as
+ * a nested structure that log-analytics dashboards index as key-values. Keys:
+ * "text" carries the same vocabulary the dry-run GraphTraveler prints to the
+ * Playground console, "graph" the graph id, and "id" the run's trace id
+ * (fallback: flow instance id when tracing is off) so OTel dashboards can join
+ * app logs with exported spans. The Rust engine emits the identical record
+ * (telemetry presentation parity).
  */
 class GraphTraversalLoggingTest {
     private static final String ASYNC_HTTP_CLIENT = "async.http.request";
@@ -87,23 +90,27 @@ class GraphTraversalLoggingTest {
         var response = po.request(event, TIMEOUT).get();
         assertEquals(200, response.getStatus());
 
-        List<String> lines = appender.messages.stream()
-                .filter(line -> line.contains(" - hello (")).toList();
+        List<Map<?, ?>> records = appender.records.stream()
+                .filter(record -> "hello".equals(record.get("graph"))).toList();
+        // Every record carries the correlation label (trace id, or flow instance id).
+        assertTrue(records.stream().allMatch(record ->
+                        record.get("id") instanceof String id && !id.isBlank()),
+                "expected every record to carry a non-blank 'id', got: " + records);
         // The trail starts at the root node...
-        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Walk to root - hello (")),
-                "expected a 'Walk to root' line, got: " + lines);
+        assertTrue(records.stream().anyMatch(record -> "Walk to root".equals(record.get("text"))),
+                "expected a 'Walk to root' record, got: " + records);
         // ...reports each skill with its execution time (same wording as the dry-run console)...
-        assertTrue(lines.stream().anyMatch(line ->
-                        line.matches("Executed \\S+ with skill \\S+ in \\S+ ms - hello \\(.+\\)")),
-                "expected an 'Executed {node} with skill {skill} in {time} ms' line, got: " + lines);
+        assertTrue(records.stream().anyMatch(record -> record.get("text") instanceof String text &&
+                        text.matches("Executed \\S+ with skill \\S+ in \\S+ ms")),
+                "expected an 'Executed {node} with skill {skill} in {time} ms' record, got: " + records);
         // ...and closes with the total elapsed time.
-        assertTrue(lines.stream().anyMatch(line ->
-                        line.matches("Graph traversal completed in \\d+ ms - hello \\(.+\\)")),
-                "expected a 'Graph traversal completed in {time} ms' line, got: " + lines);
+        assertTrue(records.stream().anyMatch(record -> record.get("text") instanceof String text &&
+                        text.matches("Graph traversal completed in \\d+ ms")),
+                "expected a 'Graph traversal completed in {time} ms' record, got: " + records);
     }
 
     private static class CapturingAppender extends AbstractAppender {
-        private final List<String> messages = new CopyOnWriteArrayList<>();
+        private final List<Map<?, ?>> records = new CopyOnWriteArrayList<>();
 
         CapturingAppender() {
             super("graph-traversal-capture", null, null, true, Property.EMPTY_ARRAY);
@@ -111,7 +118,12 @@ class GraphTraversalLoggingTest {
 
         @Override
         public void append(LogEvent logEvent) {
-            messages.add(logEvent.getMessage().getFormattedMessage());
+            // the traversal log's contract is log.info("{}", map) - capture the map itself,
+            // exactly what the json/compact appenders receive as the nested message
+            var parameters = logEvent.getMessage().getParameters();
+            if (parameters != null && parameters.length > 0 && parameters[0] instanceof Map<?, ?> map) {
+                records.add(map);
+            }
         }
     }
 }
