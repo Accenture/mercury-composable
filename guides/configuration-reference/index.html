@@ -6973,18 +6973,21 @@ path (read/write requirement).</p>
 </tbody>
 </table>
 <p>Stepwise traversal logging for deployed graph execution (<code>graph.executor</code>) — the same trail
-the Playground dry-run prints to its console (<code>Walk to {node}</code>, <code>Executed {node} with skill
-{skill} in {time} ms</code>, <code>Graph traversal completed in {time} ms</code>, and <code>Graph traversal
-aborted: {reason}</code> on error), emitted as INFO log lines suffixed with the graph id and the
-run's <strong>trace id</strong> (fallback: the flow instance id when tracing is off) — so an
-OpenTelemetry dashboard can join these app-log lines with the exported spans and metrics.
-The inline label complements the platform's app-context-log feature: with
-<code>log.format=json</code> or <code>compact</code>, each record additionally carries the structured <code>context</code>
-key-values (span id, business correlation id); app-context-log is disabled in plain
-<code>text</code> format (to reduce log volume), where the inline trace id keeps the correlation
-visible regardless. On by default; set it to <code>false</code> (for
-example with the runtime override <code>-Dgraph.traversal.log=false</code>) to reduce log volume on
-busy installations.</p>
+the Playground dry-run prints to its console, emitted as INFO <strong>structured records</strong>
+(<code>log.info("{}", map)</code>). Each record carries three keys: <code>text</code> — the traveler-style
+message (<code>Walk to {node}</code>, <code>Executed {node} with skill {skill} in {time} ms</code>,
+<code>Graph traversal completed in {time} ms</code>, or <code>Graph traversal aborted: {reason}</code>),
+<code>graph</code> — the graph id, and <code>id</code> — the run's <strong>trace id</strong> (fallback: the flow instance id
+when tracing is off), so an OpenTelemetry dashboard can join these app-log lines with the
+exported spans and metrics. With <code>log.format=json</code> or <code>compact</code> the record renders as a
+nested structure that log-analytics platforms (Dynatrace, Splunk, ...) index as
+key-values; in plain <code>text</code> format the map prints as its string form. Note that the
+executor deliberately runs as a <code>@ZeroTracing</code> interceptor (the trace is captured once
+from the initiating event, not re-spanned per node), so its worker thread holds no trace
+bracket and the app-context-log <code>context</code> block does <strong>not</strong> accompany these lines in any
+format — the record's <code>id</code> key is the correlation surface. On by default; set it to
+<code>false</code> (for example with the runtime override <code>-Dgraph.traversal.log=false</code>) to reduce
+log volume on busy installations.</p>
 <hr />
 <h2 id="component-scanning-startup">Component Scanning &amp; Startup<a class="headerlink" href="#component-scanning-startup" title="Permanent link">&para;</a></h2>
 <h3 id="modulesautostart"><code>modules.autostart</code><a class="headerlink" href="#modulesautostart" title="Permanent link">&para;</a></h3>
