@@ -17,18 +17,20 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.5 (2026-09-09 — the field-fix patch release: `str2date` no longer
-  parses minute-boundary or second-precision colon-offset ISO strings to the epoch (the flaky
-  CI test was this bug's symptom); `f:concat`/`f:text` render a null operand as "null" text
-  instead of NPE (binary → empty array), matching the Rust engine; route pools log one INFO
-  per lifecycle (count ≥ 2, lock-step); Playground graph-view tuning — the FIRST community
-  contribution to the Playground UI (PR #339 by @skofgar) — with the packaged bundle rebuilt.
-  Lock-step with Rust v4.12.5 released same-day; all seven mercury-* crates on crates.io
-  at 4.12.5, API-verified. Prior: v4.12.4
-  (2026-09-08 — the parked field Snyk remediation, the eq/ne modifiers, the two Playground UI
-  arcs, the claims-fixture gate; all seven crates reached crates.io at 4.12.4, API-verified).
-  The live version source stays the root pom.xml. python/node packs stay at 4.12.1 — no
-  wrapper changes.)
+- **latest_release:** v4.12.6 (2026-09-10 — the same-day sprint release, seven PRs: the
+  Playground UX modernization (community contribution PR #341 with maintainer-guided rounds —
+  in-place left-slot panels, draggable minimap island, payload-only JSON-Path, frontend-only
+  undo) and the UI's switch to the LIVE session graph (`GET /api/graph/session/{id}`) as its
+  single source (describe/export stay operator commands); stepwise GraphExecutor traversal
+  logging shipped as structured records `{id, text, graph}` with trace-id correlation
+  (`graph.traversal.log`, default true); the temp graph-model endpoint answers 404 for a
+  missing draft ({sequence} = artificial cache-buster); the f:camelCase/f:snakeCase
+  key-normalization plugins (legacy key convergence + impedance matching between key
+  conventions). Lock-step with Rust v4.12.6 released same-day; all seven mercury-* crates on
+  crates.io at 4.12.6, API-verified. Prior: v4.12.5 (2026-09-09 — the field-fix patch:
+  str2date epoch holes, concat/text null parity, route-pool lifecycle logging, the community
+  graph-view tuning PR #339). The live version source stays the root pom.xml. python/node
+  packs stay at 4.12.1 — no wrapper changes.)
 - **last_enabled:** 2026-06-20
 - **last_review:** 2026-09-10 | through 2026-09-10-030636.md
 - **last_invariant_check:** 2026-09-04 | 2026-09-04-043732.md (all 15 confirmed by Eric + the Vision — one-by-one walkthrough with live-tree evidence; no supersessions; stack-messaging-kafka re-checked after PR #315 added Kafka config keys additively; ot-reverify-invariants-20260904 closed. Prior: 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed))
