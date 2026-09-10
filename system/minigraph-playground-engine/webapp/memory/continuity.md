@@ -5,7 +5,7 @@
 - **scope:** MiniGraph Playground React/Vite webapp
 - **root:** `system/minigraph-playground-engine/webapp`
 - **served bundle:** `system/minigraph-playground-engine/src/main/resources/public`
-- **last_session:** 2026-09-09 | agent: Claude Code (2026-09-09-231740)
+- **last_session:** 2026-09-10 | agent: Claude Code (2026-09-10-033122)
 
 ## Current Facts
 
@@ -178,18 +178,28 @@
   <!-- id: webapp-mock-input-inplace-panel | created: 2026-09-09 | last_used: 2026-09-09 | uses: 2 | tier: working | origin: 2026-09-09-223126 -->
 
 - **The live session graph survives temp-model expiry — restore it, don't toast (2026-09-09,
-  Eric's direction).** Described temp-model paths (`/api/graph/model/…`) expire server-side about
-  a minute after `describe graph`, while the SESSION's live graph stays at
-  `GET /api/graph/session/{id}` for the WebSocket session's lifetime. `useSessionGraphRestore`
-  quietly fetches it when the pinned model path is a dead end (HTTP failure OR an HTTP-200
-  error-envelope body) or none is pinned — one attempt per (session, pinned-path) pair, same
-  shape guard and graph-tab auto-switch as a pinned load; `useGraphData` suppresses the failure
-  toast where the restore owns it (`quietInitialFetchFailure`) and exposes `initialFetchFailed`.
-  The session id arrives via the mount-time `session` round-trip (react to LATE arrival), each
-  playground has its OWN ws-session id, and the pinned path re-arms on the next
-  describe/mutation auto-refresh. Known backend bug (Eric, queued engine-side, Java+Rust
-  lock-step): the model endpoint answers 200 with the current draft for a bogus id — should 404.
-  <!-- id: webapp-session-live-graph-restore | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: working | origin: 2026-09-09-231740 -->
+  Eric's direction).** SUPERSEDED 2026-09-10: the restore fallback became the primary source —
+  see webapp-live-session-graph-source. (Historic design: `useSessionGraphRestore` fetched
+  `GET /api/graph/session/{id}` only when the pinned temp-model path was a dead end; the
+  model-endpoint 404 bug it noted was fixed engine-side in Java #346 / Rust #249.)
+  <!-- id: webapp-session-live-graph-restore | created: 2026-09-09 | last_used: 2026-09-10 | uses: 2 | tier: superseded | superseded-by: webapp-live-session-graph-source | origin: 2026-09-09-231740 -->
+
+- **The graph view's single source is the live session endpoint; describe/export links are a
+  human surface (2026-09-10, Eric's design).** `useGraphData` fetches
+  `GET /api/graph/session/{id}` (session id from `sessionCollaboration.state.sessionId`, async
+  via the mount-time `session` round-trip — the hook must be called ABOVE the graph state in
+  Playground.tsx); `useAutoGraphRefresh` re-fetches it on `graph.mutation` (300 ms debounce,
+  import immediate) with NO `describe graph` round-trip and NO `graph.link` listener; the
+  initial load is always quiet (fresh session = zero-node export, unknown session = 404 — both
+  map to the canvas empty state via `toRenderableGraph`, never a toast or tab yank); the Graph
+  tab is revealed only when a fetch delivers the FIRST content; mutation refetches ride the
+  `isRefreshing` overlay. `usePinnedGraphPath` and `useSessionGraphRestore` are deleted;
+  `graphIdentity` = the session path (mutations invalidate via the run workflow's own bus
+  subscription). `describe graph` / `export graph` stay console commands minting temp snapshot
+  links for humans and companion agents — a 🕸️ row click triggers a live refetch + Graph tab,
+  and the URL still opens the raw snapshot. Collaboration needs no link forwarding: propagated
+  commands execute in every member's own session, so each member re-fetches its own replica.
+  <!-- id: webapp-live-session-graph-source | created: 2026-09-10 | last_used: 2026-09-10 | uses: 1 | tier: working | supersedes: webapp-session-live-graph-restore | origin: 2026-09-10-033122 -->
 
 - **JSON-Path is a payload-only playground (2026-09-09, Eric's direction — the tool has no graph
   surface).** Its `tabs` config is just `['payload']`; the `tabs` list in `PLAYGROUND_CONFIGS`
