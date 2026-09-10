@@ -30,7 +30,7 @@
   The live version source stays the root pom.xml. python/node packs stay at 4.12.1 — no
   wrapper changes.)
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-07 | through 2026-09-07-055024.md
+- **last_review:** 2026-09-10 | through 2026-09-10-030636.md
 - **last_invariant_check:** 2026-09-04 | 2026-09-04-043732.md (all 15 confirmed by Eric + the Vision — one-by-one walkthrough with live-tree evidence; no supersessions; stack-messaging-kafka re-checked after PR #315 added Kafka config keys additively; ot-reverify-invariants-20260904 closed. Prior: 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed))
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -80,7 +80,7 @@
   coordinates by Jackson-3 design (one copy serves both lanes). platform-core excludes only
   vertx's lane-2 `jackson-core`; Mercury itself is Gson/MsgPack and never touches vertx
   JSON. The field Snyk gate watches both lanes independently.
-  <!-- id: jackson-dual-lane-coexistence | created: 2026-09-04 | last_used: 2026-09-04 | uses: 1 | tier: archive-candidate | origin: 2026-09-04-225035 -->
+  <!-- id: jackson-dual-lane-coexistence | created: 2026-09-04 | last_used: 2026-09-08 | uses: 2 | tier: archive-candidate | origin: 2026-09-04-225035 -->
 - CI: GitHub Actions (`.github/workflows/`)
   <!-- id: stack-ci-gha | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 ## Architectural Invariants
@@ -115,31 +115,7 @@
   merge `76b8f282`: 20 claims via `scripts/check-doc-claims.py` in BOTH docs.yml and rust.yml,
   Rust ADR-0018 accepted same-PR; the Rust-side sweep thread is closed). New claims enter via
   the feedback circuit.
-  <!-- id: claims-fixture-gate | created: 2026-09-06 | last_used: 2026-09-07 | uses: 2 | tier: active | origin: 2026-09-07-030526 -->
-
-- **Polyglot functions = Event-over-HTTP wrappers, NOT subprocesses (Eric's design; D0–D8
-  ratified 2026-08-22).** python/node functions run as long-lived Event API peers speaking the
-  standard envelope wire format, addressed through the declarative `yaml.event.over.http` map —
-  flows and graph.task call them as if local; non-blocking on the JVM (interceptor relay, zero
-  threads per in-flight call); no subprocess stability surface. **Scope fence:** wrappers =
-  envelope codec + `/api/event` host + preload registry + thin PostOffice client + dev CLI +
-  the minimalist utilities (config with the engines' `resources/` convention and `-Dkey=value`
-  override syntax, engine-format logging, trace context) — NO orchestration. **Fence amended 2026-08-23 (Eric):** + the primitive in-process event bus (per-route
-  FIFO mailboxes, faithful `instances`, deliver/publish only, NO spill tier/queue cap —
-  back-pressure stays with the engines' flows/graphs) + the engines' actuator endpoints
-  (/info, /info/routes, /env, /health, /livenessprobe; type=info/type=health
-  health-function contract) + log.format text|json|compact.
-  Engine-parity behaviors pinned: handler errors ride HTTP 200 with envelope status; transport
-  errors 400/403/404/408; engine-identical messages; my_cid tag → my_correlation_id; compact
-  format rejected (standard only). **One engine gap approved for fix (D5): graph.task's
-  po.exists guard doesn't consult the event-over-http map** (GraphTask.java:74, Rust
-  skills.rs:362) — surgical relaxation, Java+Rust lock-step. stdio-subprocess alternative
-  investigated and SHELVED (niche: single-artifact embedded scripting; revisit only on field
-  demand). The node wrapper is the sanctioned "fresh node.js re-port" answer. Golden envelope
-  vectors are the conformance gate; interop report per wrapper release (D6). Spec:
-  draft-design-specs/polyglot-script-runner.md. Delivered by [[thread-polyglot-initiative]];
-  serves [[bp-polyglot-functions]].
-  <!-- id: polyglot-event-over-http-design | created: 2026-08-22 | last_used: 2026-09-04 | uses: 14 | tier: archive-candidate | origin: 2026-08-22-164936 -->
+  <!-- id: claims-fixture-gate | created: 2026-09-06 | last_used: 2026-09-08 | uses: 4 | tier: archive-candidate | origin: 2026-09-07-030526 -->
 
 - **CompileGraph is the MANDATORY deployment gate for graph models — CompileFlows parity
   (Eric's rulings 2026-07-29; ADR-0011 ACCEPTED via the PR #240 merge, squash `4348b0da`).**
@@ -153,7 +129,7 @@
   playground `run` pre-run check — also the landing pad for
   [[thread-compilegraph-syntax-validation]]. Hot-dropping JSON into the deploy folder no longer
   executes (deployment = explicit act). Full detail: origin log.
-  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-09-07 | uses: 18 | tier: active | origin: 2026-07-29-190328 -->
+  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-09-07 | uses: 18 | tier: archive-candidate | origin: 2026-07-29-190328 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -211,17 +187,6 @@
   `hello.remote.relay`). Recorded in the progressive-rendering interop report.
   <!-- id: event-api-local-routes-only | created: 2026-08-30 | last_used: 2026-08-30 | uses: 1 | tier: core | origin: 2026-08-30-050040 -->
 
-- **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
-  design, contributed from ai-enabled-repo-demo).**
-  `examples/minigraph-playground/scripts/playground-session-broker.mjs` (zero-dependency,
-  Node ≥ 22) holds a `/ws/graph/playground` session with the UI's own welcome/ping handshake,
-  auto-reconnects across app restarts (new session id captured), and exposes a localhost control
-  API (`GET /session`, `POST /start|/stop`). Humans join with `session subscribe <id>` as equal
-  co-authors (session sync is symmetric — all commands except `session` topology propagate to
-  primary and subscribers alike); the agent drives via companion `/sync`. Identical copy in the
-  Rust repo — both engines share the WS handshake. Dev-only, like the Playground itself.
-  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-04 | uses: 5 | tier: archive-candidate | origin: 2026-09-03-172753 -->
-
 ## Conventions
 
 - **Telemetry/log presentation parity across language engines is a field requirement (Eric,
@@ -247,7 +212,7 @@
   loops); **graph.js work is never a Rust lock-step item** — the Rust validator's
   deadline-skill set legitimately names three skills where Java names four.
   Relates [[thread-task-ttl-override]].
-  <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-09-07 | uses: 12 | tier: active | origin: 2026-08-01-035647 -->
+  <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-09-07 | uses: 12 | tier: archive-candidate | origin: 2026-08-01-035647 -->
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
   (Eric's feedback, 2026-08-19).** GitHub pre-fills the dialog with title-plus-body text,
@@ -260,7 +225,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-05 | uses: 14 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-10 | uses: 16 | tier: active | origin: 2026-08-19-195244 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
@@ -269,25 +234,7 @@
   examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-04 | uses: 6 | tier: archive-candidate | origin: 2026-09-01-022524 -->
-- **Positioning rule: do NOT claim the "Streamable HTTP" protocol until an MCP
-  facade/wrapper feature ships (Eric, 2026-09-02).** Streamable HTTP is the MCP-spec
-  NAMED transport (JSON-RPC 2.0 framing, `Mcp-Session-Id` session management, a
-  GET-opened server-initiated stream, `Last-Event-ID` resumability) — the progressive
-  rendering feature implements none of those, deliberately (verified against the tree:
-  no Last-Event-ID anywhere; the SSE client ignores `id:`/`retry:` by pinned test).
-  Approved wording claims the PATTERN: "modern single-endpoint streaming design — one
-  endpoint; `Accept: text/event-stream` upgrades the same connection to a
-  standards-compliant SSE stream, otherwise a buffered JSON reply; no legacy
-  two-endpoint SSE pair", or the short form "Streamable-HTTP-style". Applies
-  product-wide (both engines' docs). **Off-the-shelf-consumer claim VERIFIED
-  2026-09-03** against live lambda-example `/api/hello/sse`: browser-native
-  `EventSource` (Chromium) and the `eventsource` npm package (v5.1.1) both consume it
-  with correct default + named-event dispatch and progressive arrival — no custom
-  parsing (complementing Eric's curl + hand-rolled .mjs tests, which prove the
-  zero-dependency wire). The literal checkbox is a bounded MCP adapter on the
-  existing shape — a future [[bp-agent-orchestration]] item, not a redesign.
-  <!-- id: conv-no-streamable-http-claim | created: 2026-09-03 | last_used: 2026-09-04 | uses: 3 | tier: archive-candidate | origin: 2026-09-03-004215 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-09 | uses: 8 | tier: active | origin: 2026-09-01-022524 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -331,7 +278,7 @@
   [[bp-agent-orchestration]], not this gap. Lesson: the scope fence (wrappers = peers, never
   orchestrators) is what kept four codebases in lock-step. origin: 2026-08-22-164936 + the
   archived [[thread-polyglot-initiative]] close. → served: vision-mercury-composable
-  <!-- id: bp-polyglot-functions | created: 2026-08-22 | last_used: 2026-09-07 | uses: 12 | tier: active -->
+  <!-- id: bp-polyglot-functions | created: 2026-08-22 | last_used: 2026-09-07 | uses: 12 | tier: archive-candidate -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
   <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
