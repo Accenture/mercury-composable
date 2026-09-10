@@ -1971,6 +1971,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#key-normalization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key normalization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#generators" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4137,6 +4148,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#key-normalization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key normalization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#generators" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6083,6 +6105,43 @@ payloads; only supplementary-plane characters (e.g. emoji) differ: 2 code units 
 </tr>
 </tbody>
 </table>
+<h3 id="key-normalization">Key normalization<a class="headerlink" href="#key-normalization" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f:camelCase(mapOrList)</code></td>
+<td>Normalize every key of a map (recursively, incl. maps inside lists) to camelCase</td>
+<td><code>f:camelCase(input.body) -&gt; normalized</code></td>
+</tr>
+<tr>
+<td><code>f:snakeCase(mapOrList)</code></td>
+<td>Normalize every key of a map (recursively, incl. maps inside lists) to snake_case</td>
+<td><code>f:snakeCase(input.body.list) -&gt; normalized</code></td>
+</tr>
+</tbody>
+</table>
+<p>Legacy systems — often XML-to-JSON transformations — deliver key formats that vary per
+source: <code>MyExampleKey</code>, <code>My_Example_key</code> and <code>my_example_Key</code> are the same logical key.
+Both plugins segmentize each key and re-case the segments: underscore, hyphen and dot are
+separators; a lower-case-or-digit to upper-case transition starts a new segment; and an
+upper-case run followed by a lower-case letter splits before its last upper-case letter
+(the acronym rule — <code>myXMLKey</code> becomes <code>myXmlKey</code> / <code>my_xml_key</code>). Digits ride with their
+segment (<code>address1Line</code>). Values are never touched — only keys, at every nesting depth.
+Two distinct source keys can normalize to the same target (<code>MyKey</code> and <code>my_key</code> both
+become <code>myKey</code>); the later entry in map order wins. Normalization is idempotent, and a
+key with no letter or digit segments at all (e.g. <code>"___"</code>) is kept as-is. Both engines
+ship the identical algorithm and error messages (portable-flow contract).</p>
+<p>Beyond legacy cleanup, the plugins also do <strong>impedance matching</strong> between systems with
+different key conventions: an incoming camelCase request payload can be transformed to
+snake_case for processing and forwarding to a downstream system that expects it — one
+mapping statement at either boundary, no per-field mapping.</p>
 <h3 id="generators">Generators<a class="headerlink" href="#generators" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
