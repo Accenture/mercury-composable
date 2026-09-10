@@ -2008,6 +2008,17 @@ class FlowTests extends TestBase {
         // break into another function to satisfy SonarQube requirement
         checkTypeAssertion(result);
         checkJsonPluginAssertion(result);
+        checkKeyNormalizationAssertion(result);
+    }
+
+    private void checkKeyNormalizationAssertion(Map<String, Object> result) {
+        // f:camelCase / f:snakeCase converge legacy key variants; keys normalize
+        // recursively (incl. maps inside lists) and values are never touched
+        assertEquals(Map.of("myExampleKey", "1", "customerId", "2"), result.get("camel_map"));
+        assertEquals(Map.of("my_example_key", "1", "customer_id", "2"), result.get("snake_map"));
+        assertEquals(Map.of("myExampleKey", 3,
+                "nestedList", List.of(Map.of("itemName", "Some_Value"))), result.get("camel_dotted"));
+        assertEquals(List.of(Map.of("item_name", "Some_Value")), result.get("snake_list"));
     }
 
     @SuppressWarnings("unchecked")
