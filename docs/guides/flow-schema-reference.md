@@ -1039,6 +1039,11 @@ become `myKey`); the later entry in map order wins. Normalization is idempotent,
 key with no letter or digit segments at all (e.g. `"___"`) is kept as-is. Both engines
 ship the identical algorithm and error messages (portable-flow contract).
 
+Beyond legacy cleanup, the plugins also do **impedance matching** between systems with
+different key conventions: an incoming camelCase request payload can be transformed to
+snake_case for processing and forwarding to a downstream system that expects it — one
+mapping statement at either boundary, no per-field mapping.
+
 ### Generators
 
 | Function | Description | Example |
