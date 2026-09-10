@@ -171,8 +171,8 @@ public class GraphExecutor extends GraphLambdaFunction {
         var node = graphInstance.graph.findNodeByAlias(nodeName);
         checkFrequency(po, graphInstance, nodeName, parentSpanId);
         if (traversalLog && log.isInfoEnabled()) {
-            log.info("Executed {} with skill {} in {} ms - {} ({})", nodeName, node.getProperty(SKILL),
-                    response.getExecutionTime(), graphInstance.graphId, correlationLabel(graphInstance));
+            log.info("{}", traversalRecord("Executed " + nodeName + " with skill " + node.getProperty(SKILL) +
+                    " in " + response.getExecutionTime() + " ms", graphInstance));
         }
         // Skill handler can also set status and error in its node properties instead of throwing exception
         var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
@@ -250,8 +250,7 @@ public class GraphExecutor extends GraphLambdaFunction {
             var seen = graphInstance.nodeSeen.putIfAbsent(nodeName, true) != null;
             if (isJoin || !seen) {
                 if (traversalLog && log.isInfoEnabled()) {
-                    log.info("Walk to {} - {} ({})", nodeName,
-                            graphInstance.graphId, correlationLabel(graphInstance));
+                    log.info("{}", traversalRecord("Walk to " + nodeName, graphInstance));
                 }
                 walkTo(po, skill, graphInstance, node, from, parentSpanId);
             }
@@ -300,8 +299,7 @@ public class GraphExecutor extends GraphLambdaFunction {
         graphInstance.complete.set(true);
         if (traversalLog && log.isInfoEnabled()) {
             var elapsed = System.currentTimeMillis() - graphInstance.getStartTime();
-            log.info("Graph traversal completed in {} ms - {} ({})",
-                    elapsed, graphInstance.graphId, correlationLabel(graphInstance));
+            log.info("{}", traversalRecord("Graph traversal completed in " + elapsed + " ms", graphInstance));
         }
     }
 
@@ -437,9 +435,28 @@ public class GraphExecutor extends GraphLambdaFunction {
 
     private void logAborted(GraphInstance graphInstance, String reason) {
         if (traversalLog && log.isInfoEnabled()) {
-            log.info("Graph traversal aborted: {} - {} ({})",
-                    reason, graphInstance.graphId, correlationLabel(graphInstance));
+            log.info("{}", traversalRecord("Graph traversal aborted: " + reason, graphInstance));
         }
+    }
+
+    /**
+     * A traversal log record, logged as a map ({@code log.info("{}", map)}) so the
+     * json and compact formats render it as a nested structure that log-analytics
+     * dashboards (Dynatrace, Splunk, ...) index as key-values; the text format
+     * prints the map's toString. Keys: {@code id} = the correlation label,
+     * {@code text} = the traveler-style message, {@code graph} = the graph id.
+     * <p>
+     * Note: this executor is a {@code @ZeroTracing} interceptor, so its worker
+     * thread carries no trace bracket and the app-log-context {@code context}
+     * block never accompanies these lines in any format - the record's {@code id}
+     * key is the correlation surface.
+     *
+     * @param text the traveler-style message
+     * @param graphInstance the running graph instance
+     * @return the structured record
+     */
+    private Map<String, Object> traversalRecord(String text, GraphInstance graphInstance) {
+        return Map.of("id", correlationLabel(graphInstance), "text", text, "graph", graphInstance.graphId);
     }
 
     /**

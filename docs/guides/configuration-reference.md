@@ -330,18 +330,21 @@ path (read/write requirement).
 | `boolean` | `true` |
 
 Stepwise traversal logging for deployed graph execution (`graph.executor`) — the same trail
-the Playground dry-run prints to its console (`Walk to {node}`, `Executed {node} with skill
-{skill} in {time} ms`, `Graph traversal completed in {time} ms`, and `Graph traversal
-aborted: {reason}` on error), emitted as INFO log lines suffixed with the graph id and the
-run's **trace id** (fallback: the flow instance id when tracing is off) — so an
-OpenTelemetry dashboard can join these app-log lines with the exported spans and metrics.
-The inline label complements the platform's app-context-log feature: with
-`log.format=json` or `compact`, each record additionally carries the structured `context`
-key-values (span id, business correlation id); app-context-log is disabled in plain
-`text` format (to reduce log volume), where the inline trace id keeps the correlation
-visible regardless. On by default; set it to `false` (for
-example with the runtime override `-Dgraph.traversal.log=false`) to reduce log volume on
-busy installations.
+the Playground dry-run prints to its console, emitted as INFO **structured records**
+(`log.info("{}", map)`). Each record carries three keys: `text` — the traveler-style
+message (`Walk to {node}`, `Executed {node} with skill {skill} in {time} ms`,
+`Graph traversal completed in {time} ms`, or `Graph traversal aborted: {reason}`),
+`graph` — the graph id, and `id` — the run's **trace id** (fallback: the flow instance id
+when tracing is off), so an OpenTelemetry dashboard can join these app-log lines with the
+exported spans and metrics. With `log.format=json` or `compact` the record renders as a
+nested structure that log-analytics platforms (Dynatrace, Splunk, ...) index as
+key-values; in plain `text` format the map prints as its string form. Note that the
+executor deliberately runs as a `@ZeroTracing` interceptor (the trace is captured once
+from the initiating event, not re-spanned per node), so its worker thread holds no trace
+bracket and the app-context-log `context` block does **not** accompany these lines in any
+format — the record's `id` key is the correlation surface. On by default; set it to
+`false` (for example with the runtime override `-Dgraph.traversal.log=false`) to reduce
+log volume on busy installations.
 
 ---
 
