@@ -8,6 +8,64 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.12.6, 9/10/2026
+
+### Added
+
+1. `f:camelCase` and `f:snakeCase` key-normalization simple plugins: legacy systems —
+   often XML-to-JSON transformations — deliver the same logical key as `MyExampleKey`,
+   `My_Example_key`, or `my_example_Key`. The plugins segmentize each key (underscore,
+   hyphen and dot separators; case transitions with the acronym rule — `myXMLKey`
+   becomes `myXmlKey` / `my_xml_key`) and re-case recursively through nested maps and
+   lists; values are never touched, and normalization is idempotent. Beyond legacy
+   cleanup they do impedance matching between key conventions (e.g. a camelCase request
+   payload transformed to snake_case for a downstream system). Lock-step with the Rust
+   engine — identical algorithm, error messages, and shared flow fixture.
+
+2. Stepwise traversal logging for deployed graph execution (field request): the
+   production `graph.executor` emits the same trail the Playground dry-run narrates —
+   `Walk to {node}`, `Executed {node} with skill {skill} in {time} ms`,
+   `Graph traversal completed in {time} ms`, `Graph traversal aborted: {reason}` — as
+   INFO structured records (`{id, text, graph}`, where `id` is the run's trace id,
+   falling back to the flow instance id) so OpenTelemetry dashboards can join app logs
+   with exported spans, and log-analytics platforms index the keys directly in the
+   json/compact formats. Gated by `graph.traversal.log` (default `true`;
+   `-Dgraph.traversal.log=false` to reduce log volume). The executor runs zero-traced,
+   so the app-log-context block never accompanies these lines — the record's `id` key
+   is the correlation surface. Lock-step with the Rust engine.
+
+3. MiniGraph Playground UX modernization (community contribution, PR #341, refined
+   through maintainer-guided rounds): the Help panel, minimap, and graph run controls
+   forward-ported to the modernized webapp — node create/edit and mock graph input as
+   in-place left-slot panels (no modals) with per-mode default widths, the minimap as a
+   draggable floating island with a `Ctrl+M` toggle, JSON-Path simplified to a
+   payload-only tool, and frontend-only undo via compensating commands.
+
+### Fixed
+
+1. The temp graph-model endpoint (`GET /api/graph/model/{graph_id}/{sequence}`)
+   answered 400 for a nonexistent or housekeeping-expired draft — a missing resource
+   now answers **404** as if it is not there, matching the deployed-graph
+   "compiled or 404" precedent. The `{sequence}` path parameter is documented as what
+   it is: an artificial cache-buster minted per describe/export reply, deliberately not
+   part of the resource identity.
+
+2. Playground webapp build: the vendor-router chunk had silently vanished from the
+   bundle chunking after the react-router v8 package consolidation — the matcher is
+   fixed and the chunk restored; nanoid is bumped past a high-severity npm audit
+   finding (dev tooling and bundle hygiene, no runtime behavior change).
+
+### Changed
+
+1. The Playground UI reads the **live session graph** (`GET /api/graph/session/{id}`)
+   as its single graph source — initial load, navigation restore, and mutation
+   auto-refresh fetch it directly, with no `describe graph` round-trip and no temp-file
+   link for the view. `describe graph` / `export graph` stay human-operator (and
+   companion-agent) console commands with their snapshot + link unchanged; clicking a
+   console link row brings the current graph forward. The packaged webapp bundle
+   carries the change.
+
+---
 ## Version 4.12.5, 9/9/2026
 
 ### Fixed
