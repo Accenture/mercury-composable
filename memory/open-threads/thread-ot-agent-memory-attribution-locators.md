@@ -1,10 +1,7 @@
-- [ ] (docs) **Add the agent-memory locators to the white paper once agent-memory is promoted
-  to official Accenture open source** — the deferred half of the agent-memory-maintainer
-  review (`draft-design-specs/review-ai-grammar-methodology-agent-memory-attribution.md`):
-  F3 option A (append the official repository URL to the closing note's agent-memory
-  sentence) and F4 (References entry #20 for the agent-memory whitepaper, at the official
-  URL). Apply to BOTH engines' `docs/mercury-story.md` in lock-step. The now-phase
-  (F1/F2/F3-B/F5 — naming and describing the tool, no links) shipped 2026-09-05 on Eric's
-  ruling: no direct URLs to personal-GitHub research inside an official Accenture
-  publication until the promotion lands. Trigger: Eric announces the promotion.
+- [x] **(docs) agent-memory locators — DONE 2026-09-10.** agent-memory joined the Mercury family
+  (official home `github.com/Accenture/mercury-go`); F3 option A (closing note: "part of the
+  Mercury family (github.com/Accenture/mercury-go)") and F4 (References #20 → the agent-memory
+  whitepaper v1.7 at accenture.github.io/mercury-go) landed in both engines' `docs/mercury-story.md`
+  via `docs/agent-memory-official-locators` PRs. Lesson: deferring the locators until the official
+  URL existed cost nothing and avoided a rewrite. origin: 2026-09-10-164247
   <!-- id: ot-agent-memory-attribution-locators | created: 2026-09-05 | last_used: 2026-09-06 | uses: 2 | tier: working | origin: 2026-09-05-174738 -->
