@@ -17,7 +17,7 @@
 
 ## Layer 1 — Event-driven foundation (Platform Core)
 - [Architecture Overview](https://accenture.github.io/mercury-composable/guides/architecture/): layers, components, the in-memory event bus, threading, core APIs.
-- [Methodology](https://accenture.github.io/mercury-composable/guides/methodology/): the four composable design principles.
+- [Methodology](https://accenture.github.io/mercury-composable/guides/methodology/): Intent-Driven Development — the human-AI collaboration methodology — then the knowledge-graph path and the four composable design principles beneath it.
 - [Event-driven Foundation](https://accenture.github.io/mercury-composable/guides/event-driven/): Layer 1 overview — functions, route names, PostOffice, EventEnvelope, the in-memory event bus.
 - [Write your first function](https://accenture.github.io/mercury-composable/guides/event-driven/write-your-first-function/): step-by-step — define a function, expose it over HTTP, call it via PostOffice, test it.
 - [Function Execution Strategies](https://accenture.github.io/mercury-composable/guides/event-driven/function-execution/): virtual vs. kernel threads, Mono/Flux.
