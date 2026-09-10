@@ -1020,6 +1020,25 @@ argument.
 | `f:updateListOfMap(list, extra)` | Merge additional fields into each map in the list | `f:updateListOfMap(model.rows, model.extra) -> augmented` |
 | `f:removeKey(map, key)` | Remove a key from a map or each map in a list | `f:removeKey(model.obj, text(secret)) -> clean` |
 
+### Key normalization
+
+| Function | Description | Example |
+|----------|-------------|---------|
+| `f:camelCase(mapOrList)` | Normalize every key of a map (recursively, incl. maps inside lists) to camelCase | `f:camelCase(input.body) -> normalized` |
+| `f:snakeCase(mapOrList)` | Normalize every key of a map (recursively, incl. maps inside lists) to snake_case | `f:snakeCase(input.body.list) -> normalized` |
+
+Legacy systems — often XML-to-JSON transformations — deliver key formats that vary per
+source: `MyExampleKey`, `My_Example_key` and `my_example_Key` are the same logical key.
+Both plugins segmentize each key and re-case the segments: underscore, hyphen and dot are
+separators; a lower-case-or-digit to upper-case transition starts a new segment; and an
+upper-case run followed by a lower-case letter splits before its last upper-case letter
+(the acronym rule — `myXMLKey` becomes `myXmlKey` / `my_xml_key`). Digits ride with their
+segment (`address1Line`). Values are never touched — only keys, at every nesting depth.
+Two distinct source keys can normalize to the same target (`MyKey` and `my_key` both
+become `myKey`); the later entry in map order wins. Normalization is idempotent, and a
+key with no letter or digit segments at all (e.g. `"___"`) is kept as-is. Both engines
+ship the identical algorithm and error messages (portable-flow contract).
+
 ### Generators
 
 | Function | Description | Example |
