@@ -48,10 +48,18 @@ public class GraphExecutor extends GraphLambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(GraphExecutor.class);
     private static final String INSTANCE = "instance";
     private final boolean isDevEnv;
+    // Stepwise traversal logging (field request 2026-09-09): the same trail the
+    // dry-run GraphTraveler prints to the Playground console, as INFO log lines
+    // labeled with the graph id and the run's trace id (fallback: flow instance
+    // id) so OTel dashboards can join app logs with exported spans. On by
+    // default; DevOps can override the runtime parameter
+    // (graph.traversal.log=false) to reduce log noise.
+    private final boolean traversalLog;
 
     public GraphExecutor() {
         var config = AppConfigReader.getInstance();
         this.isDevEnv = "dev".equals(config.getProperty("app.env", "dev"));
+        this.traversalLog = "true".equals(config.getProperty("graph.traversal.log", "true"));
     }
 
     @Override
@@ -74,6 +82,9 @@ public class GraphExecutor extends GraphLambdaFunction {
         var parentSpanId = event.getSpanId();
         try {
             var graphInstance = createInstance(headers, event.getReplyTo(), event.getCorrelationId());
+            // the traversal log labels each line with the run's trace id (fallback:
+            // flow instance id when tracing is off) - capture it once at the start
+            graphInstance.setTraceId(event.getTraceId());
             var flowInstanceId = headers.get(INSTANCE);
             var flowInstance = Flows.getFlowInstance(flowInstanceId);
             beginTraversal(po, flowInstance, graphInstance, parentSpanId);
@@ -159,6 +170,10 @@ public class GraphExecutor extends GraphLambdaFunction {
         var stateMachine = graphInstance.stateMachine;
         var node = graphInstance.graph.findNodeByAlias(nodeName);
         checkFrequency(po, graphInstance, nodeName, parentSpanId);
+        if (traversalLog) {
+            log.info("Executed {} with skill {} in {} ms - {} ({})", nodeName, node.getProperty(SKILL),
+                    response.getExecutionTime(), graphInstance.graphId, correlationLabel(graphInstance));
+        }
         // Skill handler can also set status and error in its node properties instead of throwing exception
         var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
         var resultError = stateMachine.getElement(nodeName + "." + ERROR);
@@ -234,6 +249,10 @@ public class GraphExecutor extends GraphLambdaFunction {
             var isJoin = GraphJoin.ROUTE.equals(skill);
             var seen = graphInstance.nodeSeen.putIfAbsent(nodeName, true) != null;
             if (isJoin || !seen) {
+                if (traversalLog) {
+                    log.info("Walk to {} - {} ({})", nodeName,
+                            graphInstance.graphId, correlationLabel(graphInstance));
+                }
                 walkTo(po, skill, graphInstance, node, from, parentSpanId);
             }
         }
@@ -279,6 +298,11 @@ public class GraphExecutor extends GraphLambdaFunction {
         }
         po.send(response.setBody(body));
         graphInstance.complete.set(true);
+        if (traversalLog) {
+            var elapsed = System.currentTimeMillis() - graphInstance.getStartTime();
+            log.info("Graph traversal completed in {} ms - {} ({})",
+                    elapsed, graphInstance.graphId, correlationLabel(graphInstance));
+        }
     }
 
     private void executeSkill(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node,
@@ -399,6 +423,7 @@ public class GraphExecutor extends GraphLambdaFunction {
                                         .setSpanId(parentSpanId);
         po.send(error);
         graphInstance.complete.set(true);
+        logAborted(graphInstance, String.valueOf(response.getBody()));
     }
 
     private void sendError(PostOffice po, GraphInstance graphInstance, String message, String parentSpanId) {
@@ -407,5 +432,26 @@ public class GraphExecutor extends GraphLambdaFunction {
                             .setSpanId(parentSpanId);
         po.send(error);
         graphInstance.complete.set(true);
+        logAborted(graphInstance, message);
+    }
+
+    private void logAborted(GraphInstance graphInstance, String reason) {
+        if (traversalLog) {
+            log.info("Graph traversal aborted: {} - {} ({})",
+                    reason, graphInstance.graphId, correlationLabel(graphInstance));
+        }
+    }
+
+    /**
+     * The traversal log's correlation label: the run's distributed trace id, so an
+     * OTel dashboard can join these app-log lines with the exported spans and
+     * metrics; falls back to the flow instance id when tracing is off.
+     *
+     * @param graphInstance the running graph instance
+     * @return trace id, or flow instance id when the run is untraced
+     */
+    private String correlationLabel(GraphInstance graphInstance) {
+        var traceId = graphInstance.getTraceId();
+        return traceId != null? traceId : graphInstance.getFlowInstanceId();
     }
 }

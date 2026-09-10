@@ -323,6 +323,21 @@ call answers 404 ("compiled or 404", ADR-0011).
 Where the Playground's `export graph` command writes model JSON. Must be a local filesystem
 path (read/write requirement).
 
+### `graph.traversal.log`
+
+| Type | Default |
+|------|---------|
+| `boolean` | `true` |
+
+Stepwise traversal logging for deployed graph execution (`graph.executor`) — the same trail
+the Playground dry-run prints to its console (`Walk to {node}`, `Executed {node} with skill
+{skill} in {time} ms`, `Graph traversal completed in {time} ms`, and `Graph traversal
+aborted: {reason}` on error), emitted as INFO log lines suffixed with the graph id and the
+run's **trace id** (fallback: the flow instance id when tracing is off) — so an
+OpenTelemetry dashboard can join these app-log lines with the exported spans and metrics.
+On by default; set it to `false` (for example with the runtime override
+`-Dgraph.traversal.log=false`) to reduce log volume on busy installations.
+
 ---
 
 ## Component Scanning & Startup
