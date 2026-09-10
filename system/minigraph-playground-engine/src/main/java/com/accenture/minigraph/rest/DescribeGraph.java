@@ -20,6 +20,7 @@ package com.accenture.minigraph.rest;
 
 import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
@@ -51,17 +52,22 @@ public class DescribeGraph implements TypedLambdaFunction<AsyncHttpRequest, Obje
     }
 
     @Override
-    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
+    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) throws AppException {
         var filename = input.getPathParameter("graph_id");
         if (filename == null) {
             throw new IllegalArgumentException("Missing path parameter 'graph_id'");
         }
+        // The {sequence} path parameter is deliberately NOT part of the resource
+        // identity: it is an artificial counter minted per describe/export reply
+        // to defeat browser caching of this URL. The draft file alone decides.
         var file = new File(tempDir, filename + ".json");
         if (file.exists()) {
             var text = Utility.getInstance().file2str(file);
             return SimpleMapper.getInstance().getMapper().readValue(text, Map.class);
         } else {
-            throw new IllegalArgumentException(String.format("Draft graph '%s' does not exist", filename));
+            // a nonexistent (or expired) draft answers 404 as if it does not
+            // exist - the deployed-graph "compiled or 404" precedent
+            throw new AppException(404, String.format("Draft graph '%s' does not exist", filename));
         }
     }
 }
