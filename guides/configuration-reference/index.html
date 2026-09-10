@@ -2569,6 +2569,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#graphtraversallog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.traversal.log
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4894,6 +4905,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#graphtraversallog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.traversal.log
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -6935,6 +6957,29 @@ call answers 404 ("compiled or 404", ADR-0011).</p>
 </table>
 <p>Where the Playground's <code>export graph</code> command writes model JSON. Must be a local filesystem
 path (read/write requirement).</p>
+<h3 id="graphtraversallog"><code>graph.traversal.log</code><a class="headerlink" href="#graphtraversallog" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<p>Stepwise traversal logging for deployed graph execution (<code>graph.executor</code>) — the same trail
+the Playground dry-run prints to its console (<code>Walk to {node}</code>, <code>Executed {node} with skill
+{skill} in {time} ms</code>, <code>Graph traversal completed in {time} ms</code>, and <code>Graph traversal
+aborted: {reason}</code> on error), emitted as INFO log lines suffixed with the graph id and the
+run's <strong>trace id</strong> (fallback: the flow instance id when tracing is off) — so an
+OpenTelemetry dashboard can join these app-log lines with the exported spans and metrics.
+On by default; set it to <code>false</code> (for example with the runtime override
+<code>-Dgraph.traversal.log=false</code>) to reduce log volume on busy installations.</p>
 <hr />
 <h2 id="component-scanning-startup">Component Scanning &amp; Startup<a class="headerlink" href="#component-scanning-startup" title="Permanent link">&para;</a></h2>
 <h3 id="modulesautostart"><code>modules.autostart</code><a class="headerlink" href="#modulesautostart" title="Permanent link">&para;</a></h3>
