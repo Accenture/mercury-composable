@@ -18,12 +18,10 @@ virtual threads, so straightforward synchronous code performs on par with reacti
 event-driven core descends from the **Scala/Akka actor model**, realized on the **Eclipse Vert.x**
 event bus.
 
-<div class="hero-buttons" markdown>
 [Get started](guides/getting-started.md){ .md-button .md-button--primary }
 [Read the white paper](https://accenture.github.io/mercury-composable/mercury-story/){ .md-button }
 [View the deck](https://accenture.github.io/mercury-composable/presentations/mercury-story.html){ .md-button }
 [The Mercury Family](https://accenture.github.io/mercury-composable/mercury-family/){ .md-button }
-</div>
 
 *The white paper — **Intent-Driven Development and the Architecture of Human-AI Collaboration** —
 presents the collaboration model the AI era needs and the Mercury story that proved it: shared
@@ -36,9 +34,9 @@ application — drop down a layer exactly where you need more control, and no fu
 
 | Layer | You express behavior as… | What you write |
 |:------|:--------------------------|:---------------|
-| **Event-driven**<br>[Platform Core](guides/event-driven/index.md) | decoupled functions reacting<br>to events | Java functions,<br>addressed by route name |
-| **Composable**<br>[Event Script](guides/event-script/index.md) | YAML flows that choreograph<br>functions | ~50% config,<br>50% code |
-| **Semantic**<br>[Active Knowledge Graph](guides/knowledge-graph/index.md) | a graph whose nodes *execute*<br>during traversal | a model —<br>little or no code |
+| **Event-driven** — [Platform Core](guides/event-driven/index.md) | decoupled functions reacting to events | Java functions, addressed by route name |
+| **Composable** — [Event Script](guides/event-script/index.md) | YAML flows that choreograph functions | ~50% config, 50% code |
+| **Semantic** — [Active Knowledge Graph](guides/knowledge-graph/index.md) | a graph whose nodes *execute* during traversal | a model — little or no code |
 
 ## Knowledge Graph as application
 
