@@ -367,6 +367,15 @@ class PlaygroundTest {
         assertEquals(200, response3.getStatus());
         var text = String.valueOf(response3.getBody());
         log.info("Describe graph endpoint response - {} characters", text.length());
+        // the {sequence} is an artificial cache-buster (not resource identity);
+        // a draft that does not exist answers 404 as if it is not there
+        var request3b = new AsyncHttpRequest();
+        request3b.setTargetHost("http://127.0.0.1:" + port).setUrl("/api/graph/model/{graph_id}/{sequence}");
+        request3b.setHeader("accept", "application/json").setMethod("GET");
+        request3b.setPathParameter("graph_id", "no-such-draft").setPathParameter("sequence", "1");
+        var event3b = new EventEnvelope().setTo("async.http.request").setBody(request3b.toMap());
+        var response3b = po.request(event3b, 8000).get();
+        assertEquals(404, response3b.getStatus());
         var request4 = new AsyncHttpRequest();
         request4.setTargetHost("http://127.0.0.1:" + port).setUrl("/api/graph/session/{id}");
         request4.setHeader("accept", "application/json").setMethod("GET");
