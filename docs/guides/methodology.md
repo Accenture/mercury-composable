@@ -76,6 +76,10 @@ partners fell back to reading source.
 
 > To an AI partner, undocumented capability is absent capability.
 
+If you are an AI agent starting a collaboration, the
+[AI developer guide](ai-developer-guide.md) carries the entry-point playbook — the greenfield
+conversation, and AI-enabling an existing repository first.
+
 ## Knowledge graph — model as the application
 
 The recommended altitude for applications is the top of the ladder: capture business intent,
