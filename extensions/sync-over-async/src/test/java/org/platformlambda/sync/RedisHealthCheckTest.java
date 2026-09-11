@@ -19,7 +19,7 @@
 package org.platformlambda.sync;
 
 import org.junit.jupiter.api.Test;
-import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.support.RedisConfig;
 import org.platformlambda.support.RedisHealthCheck;
@@ -106,15 +106,21 @@ class RedisHealthCheckTest extends RedisTestBase {
         assertEquals("127.0.0.1:" + redisPort, live.get("href"));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void unreachableRedisFailsTheHealthCheck() {
         // closed port = fast connection-refused failure: a genuine outage, not a waiting condition
         var health = new RedisHealthCheck(
                 () -> new RedisConfig("127.0.0.1", 1, "", false, 0, TIMEOUT_MS), TIMEOUT_MS, 0);
-        AppException offline = assertThrows(AppException.class,
-                () -> health.handleEvent(HEALTH, null, 1));
+        Object result = health.handleEvent(HEALTH, null, 1);
+        // an outage is a 503 response carrying a key-value map - the status code for the health
+        // aggregation to detect, text + status for the DevOps reader
+        assertInstanceOf(EventEnvelope.class, result);
+        EventEnvelope offline = (EventEnvelope) result;
         assertEquals(503, offline.getStatus());
-        assertTrue(offline.getMessage().contains("not reachable"));
+        Map<String, Object> body = (Map<String, Object>) offline.getBody();
+        assertEquals(503, body.get("status"));
+        assertTrue(body.get("text").toString().contains("not reachable"));
     }
 
     @Test

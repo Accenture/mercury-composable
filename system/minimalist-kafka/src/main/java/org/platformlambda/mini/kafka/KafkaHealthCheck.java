@@ -22,7 +22,7 @@ import org.apache.kafka.clients.consumer.CloseOptions;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.KafkaException;
 import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
@@ -47,7 +47,9 @@ import java.util.function.Supplier;
  * {@code optional.health.dependencies}) in application.properties and the {@code /health}
  * endpoint will include the Kafka cluster status. The function follows the standard health
  * contract: {@code type=info} describes the dependency, {@code type=health} returns a status
- * map when the cluster is reachable and throws {@code AppException} when it is not. While the
+ * map when the cluster is reachable and a 503 response carrying a key-value map
+ * ({@code text} + {@code status}) when it is not - the status code is what the health
+ * aggregation (and Kubernetes) detects; the map is for the DevOps reader. While the
  * client configuration is still incomplete - a late credential not yet published - it returns a
  * passing {@code Waiting for Kafka connection} status instead of failing (see below).
  *
@@ -91,7 +93,7 @@ import java.util.function.Supplier;
  * Kafka client and the rest of the start-up sequence are still coming up. After the first
  * successful probe - or once the grace period ({@code kafka.health.startup.grace}, default
  * {@code 30s}) has elapsed - every check is a live probe and an unreachable cluster fails
- * {@code /health} with HTTP 503.
+ * the check with status 503.
  */
 // multiple workers because /health is polled concurrently (operations tooling plus the container
 // platform's liveness/readiness probes): info and placeholder responses run in parallel, while the
@@ -107,6 +109,7 @@ public class KafkaHealthCheck implements LambdaFunction {
     private static final String SERVICE = "service";
     private static final String HREF = "href";
     private static final String STATUS = "status";
+    private static final String TEXT = "text";
     private static final String TOPICS = "topics";
     private static final String BOOTSTRAP_SERVERS = "bootstrap.servers";
     private static final String TIMEOUT_KEY = "kafka.health.timeout";
@@ -262,7 +265,7 @@ public class KafkaHealthCheck implements LambdaFunction {
     // S2093 (try-with-resources): the try/finally releases the ReentrantLock; the KafkaConsumer is
     // deliberately long-lived - cached across health checks and closed via closeQuietly on failure
     @SuppressWarnings("java:S2093")
-    private Map<String, Object> probe() throws AppException {
+    private Object probe() {
         lock.lock();
         try {
             if (consumer == null) {
@@ -293,7 +296,12 @@ public class KafkaHealthCheck implements LambdaFunction {
             return result;
         } catch (Exception e) {
             closeQuietly();
-            throw new AppException(503, "Kafka cluster is not reachable - " + e.getMessage());
+            // a genuine outage: the 503 status is what the health aggregation (and Kubernetes)
+            // detects; the key-value body keeps the code visible to the DevOps reader too
+            Map<String, Object> down = new HashMap<>();
+            down.put(TEXT, "Kafka cluster is not reachable - " + e.getMessage());
+            down.put(STATUS, 503);
+            return new EventEnvelope().setStatus(503).setBody(down);
         } finally {
             lock.unlock();
         }
