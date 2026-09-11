@@ -15,4 +15,11 @@
   sentence ("Mercury framework packages") with the enforced list. Java-only — the Rust
   engine's no-allowlist divergence stands (compiled/linked code, no runtime class loading).
   Not a release blocker: the gap predates v4.12.6 entirely.
-  <!-- id: ot-simple-plugin-gate-body-scan | created: 2026-09-10 | last_used: 2026-09-10 | uses: 2 | tier: working | origin: 2026-09-10-150848 -->
+  IMPLEMENTED 2026-09-11 per the ruled shape (origin of the implementation record:
+  2026-09-11-024330): real MethodVisitor incl. invokedynamic/ldc/try-catch; SKIP_CODE
+  dropped; the two helpers allowlisted; two soundness rules added by the body scan —
+  analyzed classes excluded from the disallowed set (self/lambda references) and nested
+  classes recursively analyzed; SimplePluginGateTest + three fixtures prove skip/register
+  behavior through the real loader; registry ≥ 50 pins the built-ins; doc sentence
+  aligned. Module 224 tests green. Pending PR + merge; close then.
+  <!-- id: ot-simple-plugin-gate-body-scan | created: 2026-09-10 | last_used: 2026-09-11 | uses: 3 | tier: working | origin: 2026-09-10-150848 -->

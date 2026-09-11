@@ -1062,8 +1062,13 @@ mapping statement at either boundary, no per-field mapping.
 > flow. The typical use case is hydrating secrets from a secret manager at start-up; components
 > that already consumed a parameter will not see a later override.
 
-> Plugins are validated at compile time. They may only use classes from `java.lang`,
-> `java.util`, `java.math`, `java.time`, and Mercury framework packages.
+> Plugins are validated at application startup by the loader's allowlist gate, which scans
+> the full class — method bodies included — before registration. A plugin may only reference
+> `java.lang`, `java.util`, `java.math`, `java.time`, and the framework's plugin surface
+> (`SimplePlugin`, `PluginFunction`, `MultiLevelMap`, `SimplePluginUtils`,
+> `TypeConversionUtils`, `KeyNormalizationUtils`). Anything else — `java.io`, `java.net`,
+> threads — causes the plugin to be skipped with a warning. This enforces the design goal
+> that every simple plugin executes in sub-millisecond time with no side effects.
 
 ---
 
