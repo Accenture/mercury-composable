@@ -7,4 +7,4 @@
   Central (mavenLocal is the resolution path — ci.yml templates-gradle job installs
   engines first), and release sweeps must now cover the templates
   ([[conv-template-version-sweep]]). origin: 2026-09-11-005808
-  <!-- id: ot-three-layer-starter-templates | created: 2026-09-10 | last_used: 2026-09-11 | uses: 3 | tier: working | origin: 2026-09-10-234940 -->
+  <!-- id: ot-three-layer-starter-templates | created: 2026-09-10 | last_used: 2026-09-11 | uses: 2 | tier: active | origin: 2026-09-10-234940 -->

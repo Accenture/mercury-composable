@@ -158,3 +158,7 @@
 - playground-session-broker — Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's — faded — not referenced in over archive_window (20) sessions (sslu 31) — 2026-Q3.md
 - conv-no-streamable-http-claim — Positioning rule: do NOT claim the "Streamable HTTP" protocol until an MCP — faded — not referenced in over archive_window (20) sessions (sslu 31) — 2026-Q3.md
 - ot-reverify-invariants-20260904 — (invariant re-verification — DONE 2026-09-04) All 15 never-decay facts re-confirmed by — completed thread past archive_window (sslu 34); invariants all confirmed 2026-09-04 — 2026-Q3.md
+- jackson-dual-lane-coexistence — Jackson runs as two coexisting lanes (established at the 2026-09-04 field Snyk — faded — 2026-Q3.md
+- claims-fixture-gate — The claims-fixture gate drift-tests documentation BEHAVIOR claims (ADR-0023, accepted — faded — 2026-Q3.md
+- graphjs-phase-out-direction — graph.js is FORMALLY DEPRECATED (Eric, 2026-09-02; ADR-0022) — backward compatibility — faded — 2026-Q3.md
+- bp-polyglot-functions — (blueprint) Polyglot function execution — GAP CLOSED (Eric, 2026-09-07). python/node — faded — 2026-Q3.md

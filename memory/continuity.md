@@ -32,8 +32,11 @@
   graph-view tuning PR #339). The live version source stays the root pom.xml. python/node
   packs stay at 4.12.1 — no wrapper changes.)
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-10 | through 2026-09-10-030636.md
-- **last_invariant_check:** 2026-09-04 | 2026-09-04-043732.md (all 15 confirmed by Eric + the Vision — one-by-one walkthrough with live-tree evidence; no supersessions; stack-messaging-kafka re-checked after PR #315 added Kafka config keys additively; ot-reverify-invariants-20260904 closed. Prior: 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed))
+- **last_review:** 2026-09-11 | through 2026-09-11-005808.md
+- **last_invariant_check:** 2026-09-11 | 2026-09-11-005808.md (PROMPT RAISED — 18 core facts +
+  the Vision listed in [[ot-reverify-invariants-20260911]], awaiting Eric's walkthrough; the
+  review never auto-confirms. Prior confirmed check: 2026-09-04 | 2026-09-04-043732.md (all 15
+  confirmed by Eric + the Vision — one-by-one walkthrough with live-tree evidence; no supersessions; stack-messaging-kafka re-checked after PR #315 added Kafka config keys additively; ot-reverify-invariants-20260904 closed. Prior: 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed))
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
 > environment, carrying forward only the confirmed Vision + Blueprint and the
@@ -68,21 +71,6 @@
   (+ demos); MsgPack wire serialization; customized Gson. (Wording refreshed 2026-08-21 at
   invariant re-verify — substance unchanged.)
   <!-- id: stack-messaging-kafka | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
-- **Jackson runs as two coexisting lanes (established at the 2026-09-04 field Snyk
-  remediation, vertx 5.1.6 + Jackson-2 BOM 2.22.2).** Lane 2 = `com.fasterxml.jackson.*`
-  (Kafka 4.3.x broker modules, Confluent 8.3.x serdes, Boot legacy management) — the single
-  fix lever is the per-pom `jackson-2-bom.version` Spring Boot property (management beats
-  nearest-wins; kafka-standalone's two direct pins reference the property, never literals —
-  a direct version would beat dependencyManagement and silently stay vulnerable). Lane 3 =
-  `tools.jackson.*` (Jackson 3; new Maven coordinates AND Java packages, so the lanes cannot
-  conflict) — rides in via vertx-core 5.1.x's deliberately dual-stack JSON codec and is pinned
-  by the per-pom `jackson-bom.version` Boot property (Boot 4 imports `tools.jackson:jackson-bom`
-  at that property; currently 3.2.2, proactively ahead of the Jackson-LTS 3.1.x that both Boot
-  4.1.1 and vertx-dependencies default to). `jackson-annotations` stays on 2.x
-  coordinates by Jackson-3 design (one copy serves both lanes). platform-core excludes only
-  vertx's lane-2 `jackson-core`; Mercury itself is Gson/MsgPack and never touches vertx
-  JSON. The field Snyk gate watches both lanes independently.
-  <!-- id: jackson-dual-lane-coexistence | created: 2026-09-04 | last_used: 2026-09-08 | uses: 2 | tier: archive-candidate | origin: 2026-09-04-225035 -->
 - CI: GitHub Actions (`.github/workflows/`)
   <!-- id: stack-ci-gha | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 ## Architectural Invariants
@@ -106,19 +94,6 @@
 
 ## Key Decisions
 
-- **The claims-fixture gate drift-tests documentation BEHAVIOR claims (ADR-0023, accepted
-  2026-09-06).** `docs/guides/claims-registry.json` registers high-value prose claims — a claim
-  states exactly what its named engine test pins, never more; doc-canon check 8 verifies the
-  normative sentence still appears on its page AND the test pin still exists as a method
-  definition; the `Claim*Test` pins run in the normal build. Born from the coverage study's
-  core finding: all doc drift lived in ungated prose while gated surfaces held. The registry
-  ships in the packaged contract and llms.txt (agents may treat registered claims as
-  source-verified). Engine-neutral format — the Rust twin LANDED 2026-09-07 (Rust PR #238,
-  merge `76b8f282`: 20 claims via `scripts/check-doc-claims.py` in BOTH docs.yml and rust.yml,
-  Rust ADR-0018 accepted same-PR; the Rust-side sweep thread is closed). New claims enter via
-  the feedback circuit.
-  <!-- id: claims-fixture-gate | created: 2026-09-06 | last_used: 2026-09-08 | uses: 4 | tier: archive-candidate | origin: 2026-09-07-030526 -->
-
 - **CompileGraph is the MANDATORY deployment gate for graph models — CompileFlows parity
   (Eric's rulings 2026-07-29; ADR-0011 ACCEPTED via the PR #240 merge, squash `4348b0da`).**
   A deployed graph is executable at `POST /api/graph/{graph-id}` only when listed in the manifest
@@ -131,7 +106,7 @@
   playground `run` pre-run check — also the landing pad for
   [[thread-compilegraph-syntax-validation]]. Hot-dropping JSON into the deploy folder no longer
   executes (deployment = explicit act). Full detail: origin log.
-  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-09-07 | uses: 18 | tier: archive-candidate | origin: 2026-07-29-190328 -->
+  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-09-11 | uses: 19 | tier: active | origin: 2026-07-29-190328 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -202,20 +177,6 @@
   closely matching error messages), or flows stop being portable.
   <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-09-02 | uses: 42 | tier: core | origin: 2026-07-23-145132 | note: promoted to core 2026-09-04 (Eric): the cross-engine contract is a standing field requirement, not a fading decision; it fell to archive-candidate only because one window was docs work -->
 
-- **graph.js is FORMALLY DEPRECATED (Eric, 2026-09-02; ADR-0022) — backward compatibility
-  only; the field is refactoring off it; AI agents must never use it; the Rust port does
-  not carry it at all.** (Originally slated for phase-out 2026-07-31; a field AI-agent
-  exercise reported a silent quoted-string-equality defect — documented, not fixed.) The skill is troublesome by nature — it is
-  code injection; developers have been warned to use it with caution — and the newer
-  graph.task can express very complex logic, so at some point graph.js will be retired.
-  Operating consequences: don't invest in hardening graph.js beyond containment (its 5s
-  default execution deadline exists to bound damage, not to bless long scripts); prefer
-  graph.task in examples and guidance; graph.math stays (safe expression engine, no
-  loops); **graph.js work is never a Rust lock-step item** — the Rust validator's
-  deadline-skill set legitimately names three skills where Java names four.
-  Relates [[thread-task-ttl-override]].
-  <!-- id: graphjs-phase-out-direction | created: 2026-08-01 | last_used: 2026-09-07 | uses: 12 | tier: archive-candidate | origin: 2026-08-01-035647 -->
-
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
   (Eric's feedback, 2026-08-19).** GitHub pre-fills the dialog with title-plus-body text,
   and stray words can survive into the immutable commit title — PR #283's squash
@@ -227,7 +188,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-10 | uses: 16 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-10 | uses: 17 | tier: active | origin: 2026-08-19-195244 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
@@ -236,7 +197,7 @@
   examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-09 | uses: 8 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-10 | uses: 9 | tier: active | origin: 2026-09-01-022524 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -280,15 +241,6 @@
   waits on Eric's cloud account. Next: E1 (suspend checkpoint on an LLM verdict), Q8's
   second half (graph-run streaming). → serves: vision-mercury-composable
   <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-04 | uses: 11 | tier: working | origin: 2026-08-25-213703 -->
-- [x] (blueprint) **Polyglot function execution — GAP CLOSED (Eric, 2026-09-07).** python/node
-  functions join flows and graphs as Event-over-HTTP peers: design D0–D8 (2026-08-22) delivered
-  by the polyglot initiative, P1–P5 complete 2026-09-01 — wrappers published from
-  Accenture/mercury-python + mercury-nodejs (packs at 4.12.1), golden-vector conformance +
-  interop reports, graph.task D5 fix. Residual streaming/agent phases ride
-  [[bp-agent-orchestration]], not this gap. Lesson: the scope fence (wrappers = peers, never
-  orchestrators) is what kept four codebases in lock-step. origin: 2026-08-22-164936 + the
-  archived [[thread-polyglot-initiative]] close. → served: vision-mercury-composable
-  <!-- id: bp-polyglot-functions | created: 2026-08-22 | last_used: 2026-09-07 | uses: 12 | tier: archive-candidate -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
   <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->

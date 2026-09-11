@@ -15,4 +15,4 @@
   sentence ("Mercury framework packages") with the enforced list. Java-only — the Rust
   engine's no-allowlist divergence stands (compiled/linked code, no runtime class loading).
   Not a release blocker: the gap predates v4.12.6 entirely.
-  <!-- id: ot-simple-plugin-gate-body-scan | created: 2026-09-10 | last_used: 2026-09-10 | uses: 1 | tier: working | origin: 2026-09-10-150848 -->
+  <!-- id: ot-simple-plugin-gate-body-scan | created: 2026-09-10 | last_used: 2026-09-10 | uses: 2 | tier: working | origin: 2026-09-10-150848 -->
