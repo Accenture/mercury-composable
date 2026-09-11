@@ -1,0 +1,51 @@
+/*
+ * Gradle build for the Layer 2 starter. The template supports BOTH build tools:
+ * keep this file (and settings.gradle) for Gradle, or pom.xml for Maven, and
+ * delete the other after copying the template out.
+ *
+ * Run "gradle wrapper" once in your copy to pin a Gradle version for the team.
+ */
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.1.1'
+}
+
+// single-source version literal - the Mercury release sweep updates it
+def mercuryVersion = '4.12.6'
+
+group = 'com.accenture'
+version = mercuryVersion
+description = 'Layer 2 starter - Event Script flows'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    // Mercury artifacts are not published to Maven Central: build the
+    // mercury-composable repository once with "mvn clean install" (which
+    // installs them into the local Maven repository), or replace mavenLocal
+    // with your organization's artifact repository
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.platformlambda:platform-core:${mercuryVersion}"
+    implementation "org.platformlambda:event-script-engine:${mercuryVersion}"
+
+    testImplementation platform('org.junit:junit-bom:6.0.3')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+springBoot {
+    // AutoStart will find your Main Application(s)
+    mainClass = 'org.platformlambda.core.system.AutoStart'
+}

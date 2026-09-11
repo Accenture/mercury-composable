@@ -240,6 +240,14 @@
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
+- **Release version sweeps must include the starter templates (2026-09-11).** The Java
+  sweep's grep must cover `--include=build.gradle` alongside `--include=pom.xml`: each
+  `templates/*` module carries a standalone pom (literal engine versions, like the Snyk
+  placeholders) AND a Gradle build with a single `def mercuryVersion = '<version>'`
+  literal. Mercury artifacts are NOT on Maven Central — the templates' Gradle builds
+  resolve engine artifacts from mavenLocal (the reactor `mvn install`), which is also why
+  ci.yml's templates-gradle job installs the engine modules first.
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-11 | uses: 1 | tier: working | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - **Declare a Memory Reference when a fact is CONSULTED to make a decision — not only when it is

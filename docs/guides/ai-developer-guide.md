@@ -75,15 +75,18 @@ conversation with questions, never assumptions.
    dial explicitly: Event Script when the shape is a known transaction flow; a
    platform-core function when the need is genuinely custom logic
    ([Choosing the right layer](#layer-choice)).
-4. **Scaffold on a yes — never on silence.** Start from the chosen layer's reference
-   application in `examples/` —
-   [`lambda-example`](https://github.com/Accenture/mercury-composable/tree/main/examples/lambda-example)
+4. **Scaffold on a yes — never on silence.** Copy the chosen layer's starter template out
+   of the repository's `templates/` directory —
+   [`starter-function`](https://github.com/Accenture/mercury-composable/tree/main/templates/starter-function)
    (Layer 1 functions),
-   [`composable-example`](https://github.com/Accenture/mercury-composable/tree/main/examples/composable-example)
-   (Layer 2 flows, the primary demo), or
-   [`minigraph-playground`](https://github.com/Accenture/mercury-composable/tree/main/examples/minigraph-playground)
-   (Layer 3 graphs with the Playground) — and pin the Mercury version the environment
-   reports (`GET /api/discovery` → `mercury_version`) rather than assuming one.
+   [`starter-flow`](https://github.com/Accenture/mercury-composable/tree/main/templates/starter-flow)
+   (Layer 2 flows), or
+   [`starter-graph`](https://github.com/Accenture/mercury-composable/tree/main/templates/starter-graph)
+   (Layer 3, a zero-code knowledge-graph application). Each is standalone-buildable and
+   ships BOTH build files: ask which build tool the team uses — **Maven or Gradle** —
+   keep that one and delete the other. Pin the Mercury version the environment reports
+   (`GET /api/discovery` → `mercury_version`) rather than assuming one; the reference
+   applications in `examples/` remain the richer worked demos.
 5. **Hand off to the layer's guide.** The [DSL-specific AI guides](#dsl-guides) carry the
    authoring contracts from here.
 

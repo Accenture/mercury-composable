@@ -1,0 +1,4 @@
+flows:
+  - 'graph-executor.yml'
+
+location: 'classpath:/flows/'

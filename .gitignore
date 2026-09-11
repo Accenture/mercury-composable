@@ -76,3 +76,11 @@ site/
 .aider.input.history
 .aider.tags.cache*
 *.py[cod]
+
+# Gradle (starter templates ship dual build files; wrapper files are
+# generated per-copy with "gradle wrapper" and never committed here)
+templates/**/build/
+templates/**/.gradle/
+templates/**/gradle/
+templates/**/gradlew
+templates/**/gradlew.bat
