@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
@@ -122,12 +123,13 @@ public class KafkaHealthCheck implements LambdaFunction {
     private final String serviceName;
     private final Supplier<Properties> probeConfig;
     // what the current probe client was built from; also the href source - replaced on every rebuild
-    private volatile Properties consumerProperties;
+    private final AtomicReference<Properties> consumerProperties = new AtomicReference<>();
     private final long timeoutMs;
     private final long graceDeadline;
     private KafkaConsumer<String, byte[]> consumer;
     private volatile boolean ready = false;
 
+    /** Instantiated reflectively when the platform's {@code @PreLoad} scanner registers the route. */
     public KafkaHealthCheck() {
         this(PRIMARY_SERVICE_NAME,
              () -> KafkaClientConfig.healthProbeProperties(AppConfigReader.getInstance()),
@@ -261,7 +263,7 @@ public class KafkaHealthCheck implements LambdaFunction {
                 // re-resolved, not cached from the constructor: a credential published by a later
                 // @MainApplication bootstrap is not visible while this @PreLoad function is constructed
                 Properties config = probeConfig.get();
-                consumerProperties = config;
+                consumerProperties.set(config);
                 try {
                     consumer = new KafkaConsumer<>(config);
                 } catch (KafkaException e) {
@@ -297,10 +299,10 @@ public class KafkaHealthCheck implements LambdaFunction {
      * not depend on a late credential, so the first resolve's answer stays valid.
      */
     private String href() {
-        Properties config = consumerProperties;
+        Properties config = consumerProperties.get();
         if (config == null) {
             config = probeConfig.get();
-            consumerProperties = config;
+            consumerProperties.set(config);
         }
         return config.getProperty(BOOTSTRAP_SERVERS, PRIMARY_SERVICE_NAME);
     }

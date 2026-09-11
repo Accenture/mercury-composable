@@ -33,6 +33,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
@@ -108,13 +109,14 @@ public class RedisHealthCheck implements LambdaFunction {
     private final AtomicBoolean warmingUp = new AtomicBoolean(false);
     private final Supplier<RedisConfig> probeConfig;
     // what the current probe client was built from; also the href source - replaced on every rebuild
-    private volatile RedisConfig currentConfig;
+    private final AtomicReference<RedisConfig> currentConfig = new AtomicReference<>();
     private final long timeoutMs;
     private final long graceDeadline;
     private RedisClient client;
     private StatefulRedisConnection<String, String> connection;
     private volatile boolean ready = false;
 
+    /** Instantiated reflectively when the platform's {@code @PreLoad} scanner registers the route. */
     public RedisHealthCheck() {
         this(() -> RedisConfig.from(AppConfigReader.getInstance()),
              resolveDurationMs(TIMEOUT_KEY, DEFAULT_TIMEOUT),
@@ -202,7 +204,7 @@ public class RedisHealthCheck implements LambdaFunction {
                 // re-resolved, not cached from the constructor: a credential published by a later
                 // @MainApplication bootstrap is not visible while this @PreLoad function is constructed
                 RedisConfig config = probeConfig.get();
-                currentConfig = config;
+                currentConfig.set(config);
                 RedisURI uri = config.toUri();
                 uri.setTimeout(Duration.ofMillis(timeoutMs));
                 client = RedisClient.create(uri);
@@ -261,10 +263,10 @@ public class RedisHealthCheck implements LambdaFunction {
      * depend on a late credential, so the first resolve's answer stays valid.
      */
     private String href() {
-        RedisConfig config = currentConfig;
+        RedisConfig config = currentConfig.get();
         if (config == null) {
             config = probeConfig.get();
-            currentConfig = config;
+            currentConfig.set(config);
         }
         return config.host() + ":" + config.port();
     }

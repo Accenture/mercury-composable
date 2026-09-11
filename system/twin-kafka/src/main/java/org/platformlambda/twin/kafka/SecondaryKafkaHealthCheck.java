@@ -58,6 +58,7 @@ public class SecondaryKafkaHealthCheck extends KafkaHealthCheck {
     private static final String PRIMARY_TIMEOUT_KEY = "kafka.health.timeout";
     private static final String PRIMARY_GRACE_KEY = "kafka.health.startup.grace";
 
+    /** Instantiated reflectively when the platform's {@code @PreLoad} scanner registers the route. */
     public SecondaryKafkaHealthCheck() {
         this(() -> KafkaClientConfig.healthProbeProperties(AppConfigReader.getInstance(),
                         SecondaryKafkaAutoStart.CONSUMER_ENABLED, CONSUMER_LOCATION, DEFAULT_CONSUMER,
