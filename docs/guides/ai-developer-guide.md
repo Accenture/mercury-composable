@@ -18,6 +18,9 @@ related:
 >
 > - **Read this first** if you are an AI agent joining a mercury-composable project,
 >   whether greenfield or brownfield.
+> - **Starting a collaboration?** Recognize the two typical entry points — a greenfield
+>   project, or an existing repository that is not yet AI-enabled — and drive the
+>   development-path conversation: [Starting a collaboration](#entry-points).
 > - **One mental model:** a composable function is *plain Java* — the framework constrains
 >   only *coupling*, not coding style.
 > - **Three layers, one decision tree** — choose the layer before writing code; the DSL guides
@@ -48,6 +51,58 @@ on how it is wired:
 | **service** | Mapped directly to an HTTP endpoint | `rest.yaml` `service:` entry |
 | **task** | A step in an Event Script flow | `flows/*.yml` + `flows.yaml` |
 | **skill** | Attached to a Knowledge Graph node | node's `skill=` property in graph JSON |
+
+---
+
+## Starting a collaboration — two typical entry points {#entry-points}
+
+Mercury's development methodology is [Intent-Driven Development](methodology.md): humans own
+the intent; the AI partner refines it and translates it into governed artifacts. When a human
+first engages you on a project, recognize which of two situations you are in — and drive the
+conversation with questions, never assumptions.
+
+### Case 1 — greenfield: a new project {#entry-greenfield}
+
+1. **Confirm the intent first.** What should the service do, and who will certify its
+   behavior? Capture purpose and constraints before proposing any technology.
+2. **Offer to AI-enable the project.** Ask whether to install the
+   [shared memory layer](https://accenture.github.io/mercury-go/) and co-write the
+   **Vision** — human-confirmed, never fabricated — then derive the **Blueprint** and plan
+   increments. Every session thereafter starts oriented.
+3. **Recommend the path — as a question.** The default recommendation is Layer 3: *"Shall I
+   set up the project with the knowledge-graph engine, so the service is modeled as a
+   graph, dry-run in the Playground, and deployed behind the CompileGraph gate?"* Offer the
+   dial explicitly: Event Script when the shape is a known transaction flow; a
+   platform-core function when the need is genuinely custom logic
+   ([Choosing the right layer](#layer-choice)).
+4. **Scaffold on a yes — never on silence.** Start from the chosen layer's reference
+   application in `examples/` —
+   [`lambda-example`](https://github.com/Accenture/mercury-composable/tree/main/examples/lambda-example)
+   (Layer 1 functions),
+   [`composable-example`](https://github.com/Accenture/mercury-composable/tree/main/examples/composable-example)
+   (Layer 2 flows, the primary demo), or
+   [`minigraph-playground`](https://github.com/Accenture/mercury-composable/tree/main/examples/minigraph-playground)
+   (Layer 3 graphs with the Playground) — and pin the Mercury version the environment
+   reports (`GET /api/discovery` → `mercury_version`) rather than assuming one.
+5. **Hand off to the layer's guide.** The [DSL-specific AI guides](#dsl-guides) carry the
+   authoring contracts from here.
+
+### Case 2 — an existing repository that is not yet AI-enabled {#entry-existing-repo}
+
+The tell: the repository has no shared memory layer. AI context, if it exists at all, lives
+in hand-written per-tool files — a `CLAUDE.md`, editor rules, prompt snippets — that no
+other agent or contributor shares: traditional context engineering.
+
+1. **Offer AI-enablement first, before feature work.** Install the
+   [shared memory layer](https://accenture.github.io/mercury-go/), co-write the **Vision**
+   of the *current* system with the human — confirmed, never fabricated — and derive the
+   Blueprint from the real current state.
+2. **Fold the existing context in.** Migrate the durable parts of the hand-maintained
+   context files into the shared layer, so every agent and every contributor reads one
+   source of truth instead of per-tool copies.
+3. **Then orient and work.** Follow [Orienting in an existing project](#brownfield), choose
+   the layer per feature — and if the team is adopting Mercury in this repository, continue
+   with the greenfield path's step 3.
 
 ---
 
@@ -245,6 +300,7 @@ DSL artifacts — not this overview:
 
 ## See also {#see-also}
 
+- [Methodology](methodology.md) — Intent-Driven Development and the design principles beneath it.
 - [Write your first function](event-driven/write-your-first-function.md) — step-by-step Layer 1 tutorial.
 - [Event-driven Foundation](event-driven/index.md) — Layer 1 overview: functions, PostOffice, EventEnvelope.
 - [Composable Orchestration](event-script/index.md) — Layer 2 overview: flows, tasks, state machine.
