@@ -17,20 +17,20 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.6 (2026-09-10 — the same-day sprint release, seven PRs: the
-  Playground UX modernization (community contribution PR #341 with maintainer-guided rounds —
-  in-place left-slot panels, draggable minimap island, payload-only JSON-Path, frontend-only
-  undo) and the UI's switch to the LIVE session graph (`GET /api/graph/session/{id}`) as its
-  single source (describe/export stay operator commands); stepwise GraphExecutor traversal
-  logging shipped as structured records `{id, text, graph}` with trace-id correlation
-  (`graph.traversal.log`, default true); the temp graph-model endpoint answers 404 for a
-  missing draft ({sequence} = artificial cache-buster); the f:camelCase/f:snakeCase
-  key-normalization plugins (legacy key convergence + impedance matching between key
-  conventions). Lock-step with Rust v4.12.6 released same-day; all seven mercury-* crates on
-  crates.io at 4.12.6, API-verified. Prior: v4.12.5 (2026-09-09 — the field-fix patch:
-  str2date epoch holes, concat/text null parity, route-pool lifecycle logging, the community
-  graph-view tuning PR #339). The live version source stays the root pom.xml. python/node
-  packs stay at 4.12.1 — no wrapper changes.)
+- **latest_release:** v4.12.7 (2026-09-11 — the field release, PRs #352–#358 via release PR
+  #359: the simple-plugin allowlist gate now scans METHOD BODIES — enforced sub-millisecond
+  containment, a plugin can no longer reach java.io/java.net/threads from inside
+  calculate(); the three-layer starter templates under `templates/` (copy-out projects,
+  Maven or Gradle, templates-gradle CI job); the fresh-agent entry-point playbook in the AI
+  developer guide; the Mercury Family page; the IDD methodology synthesis and the
+  plain-language story deck. Lock-step with Rust v4.12.7 same-day (docs + template crates,
+  Increments 116–117 — no engine behavior change there); all seven mercury-* crates on
+  crates.io at 4.12.7, API-verified. First exercise of the grown sweep surface: 37 poms +
+  3 build.gradle literals + template READMEs (Java) and 8 manifests (Rust). Prior: v4.12.6
+  (2026-09-10 — the same-day sprint release: Playground UX modernization, the live session
+  graph as the UI's single source, structured traversal records, the temp-endpoint 404,
+  the key-normalization plugins). The live version source stays the root pom.xml.
+  python/node packs stay at 4.12.1 — no wrapper changes.)
 - **last_enabled:** 2026-06-20
 - **last_review:** 2026-09-11 | through 2026-09-11-005808.md
 - **last_invariant_check:** 2026-09-11 | 2026-09-11-005808.md (all 18 core facts + the Vision
