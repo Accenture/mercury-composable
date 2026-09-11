@@ -19,8 +19,10 @@
 package com.accenture.automation;
 
 import com.accenture.models.SimplePlugin;
+import com.accenture.util.KeyNormalizationUtils;
 import com.accenture.util.RecursiveClassTypeExaminer;
 import com.accenture.util.SimplePluginUtils;
+import com.accenture.util.TypeConversionUtils;
 import io.github.classgraph.ClassInfo;
 import org.objectweb.asm.*;
 import org.platformlambda.core.annotations.BeforeApplication;
@@ -60,7 +62,9 @@ public class SimplePluginLoader implements EntryPoint {
                                                             SimplePlugin.class.getName(),
                                                             PluginFunction.class.getName(),
                                                             MultiLevelMap.class.getName(),
-                                                            SimplePluginUtils.class.getName());
+                                                            SimplePluginUtils.class.getName(),
+                                                            TypeConversionUtils.class.getName(),
+                                                            KeyNormalizationUtils.class.getName());
     /**
      * Internal API that returns loaded Plugins
      *
@@ -110,7 +114,8 @@ public class SimplePluginLoader implements EntryPoint {
             try (stream) {
                 ClassReader reader = new ClassReader(stream);
                 RecursiveClassTypeExaminer visitor = new RecursiveClassTypeExaminer();
-                reader.accept(visitor, ClassReader.SKIP_CODE);
+                // method BODIES are scanned too - keep the code attribute, skip only debug/frames
+                reader.accept(visitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
                 // Add types from this class
                 allTypes.addAll(visitor.getTypes());
                 // Recursively analyze superclass
@@ -120,6 +125,13 @@ public class SimplePluginLoader implements EntryPoint {
                 // Recursively analyze interfaces
                 for (String iFace : visitor.getInterfaces()) {
                     analyzeClass(iFace, allTypes, visitedClasses);
+                }
+                // Recursively analyze nested classes - they are part of the plugin, so their
+                // bodies are validated instead of being flagged as foreign types
+                for (String type : visitor.getTypes()) {
+                    if (type.startsWith(className + "$")) {
+                        analyzeClass(type, allTypes, visitedClasses);
+                    }
                 }
             } catch (IOException e) {
                 log.error("Unable to analyze class ({})", className, e);
@@ -131,12 +143,18 @@ public class SimplePluginLoader implements EntryPoint {
         Set<String> allTypes = new HashSet<>();
         Set<String> visitedClasses = new HashSet<>();
         analyzeClass(clazz.getName(), allTypes, visitedClasses);
+        // every analyzed class had its own body validated, so self-references
+        // (lambdas, private helpers, nested classes) are not foreign types
+        allTypes.removeAll(visitedClasses);
         return allTypes;
     }
 
     /**
      * Determines whether we should register plugin. This method is designed to be future-proof.
-     * Currently, the only restriction is based on the type of packages included.
+     * Currently, the only restriction is based on the type of packages included. The scan covers
+     * the FULL class - superclass, interfaces, signatures and method bodies (call/field owners,
+     * new/cast types, lambda handles, class literals, catch types) - so a plugin cannot reach
+     * outside the allowlist from inside its calculate() body.
      * @param clazz The clazz we are introspecting
      * @return true if we should register this plugin, false otherwise
      */
