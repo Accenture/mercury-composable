@@ -27,7 +27,7 @@ import java.util.Properties;
 import java.util.function.Supplier;
 
 /**
- * Health-check function for the SECONDARY Kafka cluster - the twin of minimalist-kafka's
+ * Health check for the SECONDARY Kafka cluster - the twin of minimalist-kafka's
  * {@code kafka.health}, probing the cluster configured by the secondary consumer template.
  *
  * <p>A dual-cluster bridge application lists both clusters as health dependencies:
@@ -39,8 +39,7 @@ import java.util.function.Supplier;
  * grace with a placeholder healthy status, HTTP 503 when unreachable) - including the
  * produce-only fallback: with {@code secondary.kafka.consumer.enabled=false} the probe is built
  * from the secondary PRODUCER template instead, so a one-way bridge leg stays health-checkable.
- * Tunables follow the
- * twin-kafka fallback convention: {@code secondary.kafka.health.timeout} and
+ * Tuning keys follow the twin-kafka fallback convention: {@code secondary.kafka.health.timeout} and
  * {@code secondary.kafka.health.startup.grace} fall back to the {@code kafka.health.*}
  * globals, then to the built-in defaults (5s / 30s).
  */
@@ -85,5 +84,21 @@ public class SecondaryKafkaHealthCheck extends KafkaHealthCheck {
     SecondaryKafkaHealthCheck(Properties consumerProperties, long graceMs) {
         super(SERVICE_NAME, consumerProperties,
               resolveDurationMs(TIMEOUT_KEY, PRIMARY_TIMEOUT_KEY, DEFAULT_TIMEOUT), graceMs);
+    }
+
+    /**
+     * Resolve a duration configuration key to milliseconds, consulting the primary cluster's key
+     * before the built-in default - the twin-kafka convention where secondary.* keys fall back to
+     * the kafka.health.* globals. Lives here (not in the base class) because this fallback
+     * convention is the twin's own concern - and this class is its only user.
+     *
+     * @param key          the configuration key (e.g. "secondary.kafka.health.timeout")
+     * @param fallbackKey  the primary cluster's fallback key (e.g. "kafka.health.timeout")
+     * @param defaultValue the built-in default duration (e.g. "5s")
+     * @return the resolved duration in milliseconds
+     */
+    private static long resolveDurationMs(String key, String fallbackKey, String defaultValue) {
+        var config = AppConfigReader.getInstance();
+        return resolveDurationMs(key, config.getProperty(fallbackKey, defaultValue));
     }
 }

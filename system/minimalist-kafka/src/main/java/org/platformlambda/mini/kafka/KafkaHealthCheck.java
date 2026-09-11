@@ -77,7 +77,7 @@ import java.util.function.Supplier;
  * {@code @MainApplication} start-up logic runs. A credential bootstrap that fetches secrets from a
  * vault and publishes them as system properties has therefore not executed yet, and a template whose
  * {@code sasl.jaas.config} interpolates such a credential would be frozen with the credential
- * missing - every probe then fails forever with Kafka's {@code ConfigException: The OAuth
+ * missing. Every probe then fails forever with Kafka's {@code ConfigException: The OAuth
  * configuration option clientId value is required}, no matter what the environment does. Because a
  * failed probe closes the client, the next probe re-resolves the template and the check heals
  * itself as soon as the credential lands.
@@ -170,8 +170,8 @@ public class KafkaHealthCheck implements LambdaFunction {
     /**
      * Reuse seam for a library probing ANOTHER Kafka cluster (e.g. twin-kafka's
      * {@code secondary.kafka.health}): subclass with the other cluster's probe template, a distinct
-     * service name for the /health dependency list, and its own tunables. The supplier is invoked
-     * when the probe client is built - and again on every rebuild after a failure - so a template
+     * service name for the /health dependency list, and its own tuning keys. The supplier is invoked
+     * when the probe client is built - and again on every rebuild after a failure. Therefore, a template
      * that interpolates a credential published later in the start-up sequence is resolved correctly
      * on the next probe instead of being frozen at construction time.
      *
@@ -190,21 +190,6 @@ public class KafkaHealthCheck implements LambdaFunction {
         this.probeConfig = Objects.requireNonNull(probeConfig, "probeConfig supplier is required");
         this.timeoutMs = timeoutMs;
         this.graceDeadline = System.currentTimeMillis() + graceMs;
-    }
-
-    /**
-     * Resolve a duration configuration key to milliseconds, consulting an optional fallback key
-     * before the built-in default - the twin-kafka convention where secondary.* keys fall back
-     * to the primary cluster's globals.
-     *
-     * @param key          the configuration key (e.g. "secondary.kafka.health.timeout")
-     * @param fallbackKey  optional fallback key (e.g. "kafka.health.timeout"); null for none
-     * @param defaultValue the built-in default duration (e.g. "5s")
-     * @return the resolved duration in milliseconds
-     */
-    protected static long resolveDurationMs(String key, String fallbackKey, String defaultValue) {
-        var config = AppConfigReader.getInstance();
-        return resolveDurationMs(key, config.getProperty(fallbackKey, defaultValue));
     }
 
     /**
@@ -273,15 +258,12 @@ public class KafkaHealthCheck implements LambdaFunction {
                 // @MainApplication bootstrap is not visible while this @PreLoad function is constructed
                 Properties config = probeConfig.get();
                 consumerProperties.set(config);
-                try {
-                    consumer = new KafkaConsumer<>(config);
-                } catch (KafkaException e) {
+                consumer = buildClient(config);
+                if (consumer == null) {
                     // the template is still incomplete (e.g. that credential has not landed yet):
                     // report a PASSING waiting status - failing /health would invite the container
                     // orchestrator to restart the pod, and a restart cannot produce the credential.
                     // The next probe re-resolves, so the check goes live once construction succeeds.
-                    log.warn("{} health check waiting for a usable client configuration - {}",
-                            serviceName, rootCause(e));
                     Map<String, Object> result = new HashMap<>();
                     result.put(STATUS, WAITING);
                     return result;
@@ -324,6 +306,21 @@ public class KafkaHealthCheck implements LambdaFunction {
             consumerProperties.set(config);
         }
         return config.getProperty(BOOTSTRAP_SERVERS, PRIMARY_SERVICE_NAME);
+    }
+
+    /**
+     * Build the probe client from a freshly resolved template - or null when the client cannot even
+     * be constructed from it, i.e. the template is still incomplete (a late credential not yet
+     * published). The caller reports that as the passing waiting status.
+     */
+    private KafkaConsumer<String, byte[]> buildClient(Properties config) {
+        try {
+            return new KafkaConsumer<>(config);
+        } catch (KafkaException e) {
+            log.warn("{} health check waiting for a usable client configuration - {}",
+                    serviceName, rootCause(e));
+            return null;
+        }
     }
 
     /** The most specific reason - client construction failures arrive wrapped in a generic KafkaException. */
