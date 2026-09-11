@@ -828,6 +828,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#entry-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Starting a collaboration — two typical entry points
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Starting a collaboration — two typical entry points">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entry-greenfield" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Case 1 — greenfield: a new project
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#entry-existing-repo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Case 2 — an existing repository that is not yet AI-enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#brownfield" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2751,6 +2790,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#entry-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Starting a collaboration — two typical entry points
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Starting a collaboration — two typical entry points">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entry-greenfield" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Case 1 — greenfield: a new project
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#entry-existing-repo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Case 2 — an existing repository that is not yet AI-enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#brownfield" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2892,6 +2970,9 @@
 <ul>
 <li><strong>Read this first</strong> if you are an AI agent joining a mercury-composable project,
   whether greenfield or brownfield.</li>
+<li><strong>Starting a collaboration?</strong> Recognize the two typical entry points — a greenfield
+  project, or an existing repository that is not yet AI-enabled — and drive the
+  development-path conversation: <a href="#entry-points">Starting a collaboration</a>.</li>
 <li><strong>One mental model:</strong> a composable function is <em>plain Java</em> — the framework constrains
   only <em>coupling</em>, not coding style.</li>
 <li><strong>Three layers, one decision tree</strong> — choose the layer before writing code; the DSL guides
@@ -2943,6 +3024,54 @@ on how it is wired:</p>
 </tr>
 </tbody>
 </table>
+<hr />
+<h2 id="entry-points">Starting a collaboration — two typical entry points<a class="headerlink" href="#entry-points" title="Permanent link">&para;</a></h2>
+<p>Mercury's development methodology is <a href="../methodology/">Intent-Driven Development</a>: humans own
+the intent; the AI partner refines it and translates it into governed artifacts. When a human
+first engages you on a project, recognize which of two situations you are in — and drive the
+conversation with questions, never assumptions.</p>
+<h3 id="entry-greenfield">Case 1 — greenfield: a new project<a class="headerlink" href="#entry-greenfield" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Confirm the intent first.</strong> What should the service do, and who will certify its
+   behavior? Capture purpose and constraints before proposing any technology.</li>
+<li><strong>Offer to AI-enable the project.</strong> Ask whether to install the
+   <a href="https://accenture.github.io/mercury-go/">shared memory layer</a> and co-write the
+   <strong>Vision</strong> — human-confirmed, never fabricated — then derive the <strong>Blueprint</strong> and plan
+   increments. Every session thereafter starts oriented.</li>
+<li><strong>Recommend the path — as a question.</strong> The default recommendation is Layer 3: <em>"Shall I
+   set up the project with the knowledge-graph engine, so the service is modeled as a
+   graph, dry-run in the Playground, and deployed behind the CompileGraph gate?"</em> Offer the
+   dial explicitly: Event Script when the shape is a known transaction flow; a
+   platform-core function when the need is genuinely custom logic
+   (<a href="#layer-choice">Choosing the right layer</a>).</li>
+<li><strong>Scaffold on a yes — never on silence.</strong> Start from the chosen layer's reference
+   application in <code>examples/</code> —
+   <a href="https://github.com/Accenture/mercury-composable/tree/main/examples/lambda-example"><code>lambda-example</code></a>
+   (Layer 1 functions),
+   <a href="https://github.com/Accenture/mercury-composable/tree/main/examples/composable-example"><code>composable-example</code></a>
+   (Layer 2 flows, the primary demo), or
+   <a href="https://github.com/Accenture/mercury-composable/tree/main/examples/minigraph-playground"><code>minigraph-playground</code></a>
+   (Layer 3 graphs with the Playground) — and pin the Mercury version the environment
+   reports (<code>GET /api/discovery</code> → <code>mercury_version</code>) rather than assuming one.</li>
+<li><strong>Hand off to the layer's guide.</strong> The <a href="#dsl-guides">DSL-specific AI guides</a> carry the
+   authoring contracts from here.</li>
+</ol>
+<h3 id="entry-existing-repo">Case 2 — an existing repository that is not yet AI-enabled<a class="headerlink" href="#entry-existing-repo" title="Permanent link">&para;</a></h3>
+<p>The tell: the repository has no shared memory layer. AI context, if it exists at all, lives
+in hand-written per-tool files — a <code>CLAUDE.md</code>, editor rules, prompt snippets — that no
+other agent or contributor shares: traditional context engineering.</p>
+<ol>
+<li><strong>Offer AI-enablement first, before feature work.</strong> Install the
+   <a href="https://accenture.github.io/mercury-go/">shared memory layer</a>, co-write the <strong>Vision</strong>
+   of the <em>current</em> system with the human — confirmed, never fabricated — and derive the
+   Blueprint from the real current state.</li>
+<li><strong>Fold the existing context in.</strong> Migrate the durable parts of the hand-maintained
+   context files into the shared layer, so every agent and every contributor reads one
+   source of truth instead of per-tool copies.</li>
+<li><strong>Then orient and work.</strong> Follow <a href="#brownfield">Orienting in an existing project</a>, choose
+   the layer per feature — and if the team is adopting Mercury in this repository, continue
+   with the greenfield path's step 3.</li>
+</ol>
 <hr />
 <h2 id="brownfield">Orienting in an existing project (brownfield)<a class="headerlink" href="#brownfield" title="Permanent link">&para;</a></h2>
 <p>Start with the config files — they are the application's surface area:</p>
@@ -3185,6 +3314,7 @@ DSL artifacts — not this overview:</p>
 <hr />
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
+<li><a href="../methodology/">Methodology</a> — Intent-Driven Development and the design principles beneath it.</li>
 <li><a href="../event-driven/write-your-first-function/">Write your first function</a> — step-by-step Layer 1 tutorial.</li>
 <li><a href="../event-driven/">Event-driven Foundation</a> — Layer 1 overview: functions, PostOffice, EventEnvelope.</li>
 <li><a href="../event-script/">Composable Orchestration</a> — Layer 2 overview: flows, tasks, state machine.</li>
