@@ -59,6 +59,13 @@ class KafkaHealthCheckLazyConfigTest {
     }
 
     @Test
+    void aNullSupplierFailsFastAtConstruction() {
+        NullPointerException error = assertThrows(NullPointerException.class,
+                () -> new KafkaHealthCheck("kafka", (Supplier<Properties>) null, TIMEOUT_MS, PROBE_IMMEDIATELY));
+        assertEquals("probeConfig supplier is required", error.getMessage());
+    }
+
+    @Test
     void constructionResolvesNothing() {
         AtomicInteger resolves = new AtomicInteger();
         probing(() -> {

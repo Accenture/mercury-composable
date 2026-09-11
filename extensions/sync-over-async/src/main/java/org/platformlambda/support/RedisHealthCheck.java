@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
@@ -130,12 +131,16 @@ public class RedisHealthCheck implements LambdaFunction {
      * sequence (e.g. a vault-fetched {@code redis.password}) is resolved correctly on the next probe
      * instead of being frozen at construction time.
      *
+     * <p>The supplier itself must not be null (enforced here, at construction) and must return a
+     * non-null config: when the real values have not been published yet, return your best-known
+     * ones - an unusable result is handled by the waiting semantics, never by returning null.
+     *
      * @param probeConfig supplies the Redis connection parameters, re-invoked on every rebuild
      * @param timeoutMs   probe timeout in milliseconds (bounds connect and command round trips)
      * @param graceMs     start-up grace period in milliseconds (0 = probe immediately)
      */
     public RedisHealthCheck(Supplier<RedisConfig> probeConfig, long timeoutMs, long graceMs) {
-        this.probeConfig = probeConfig;
+        this.probeConfig = Objects.requireNonNull(probeConfig, "probeConfig supplier is required");
         this.timeoutMs = timeoutMs;
         this.graceDeadline = System.currentTimeMillis() + graceMs;
     }
@@ -259,9 +264,14 @@ public class RedisHealthCheck implements LambdaFunction {
     }
 
     /**
-     * The dependency's href - the configured host:port. Reported before the first probe too, so it
-     * resolves the configuration on demand when no client has been built yet; host and port do not
-     * depend on a late credential, so the first resolve's answer stays valid.
+     * The dependency's href - the configured host:port. Lifecycle: {@code probeConfig} is the
+     * supplier itself, assigned final in the constructor, so it always exists by the time any event
+     * arrives (the platform registers the route only after construction) - what starts out null is
+     * the RESOLVED config in {@code currentConfig}, because nothing is resolved at {@code @PreLoad}
+     * time by design. A {@code type=info} call that arrives before the first probe therefore
+     * resolves on demand (the supplier's first invocation) and caches the answer; every probe that
+     * builds a client overwrites the cache with its own fresh resolve. Host and port do not depend
+     * on a late credential, so one resolve serves every info call between rebuilds.
      */
     private String href() {
         RedisConfig config = currentConfig.get();

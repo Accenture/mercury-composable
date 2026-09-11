@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -171,6 +172,10 @@ public class KafkaHealthCheck implements LambdaFunction {
      * that interpolates a credential published later in the start-up sequence is resolved correctly
      * on the next probe instead of being frozen at construction time.
      *
+     * <p>The supplier itself must not be null (enforced here, at construction) and must return a
+     * non-null template: when the real values have not been published yet, return your best-known
+     * ones - an unusable result is handled by the waiting semantics, never by returning null.
+     *
      * @param serviceName the dependency name reported by type=info (e.g. "secondary.kafka")
      * @param probeConfig supplies this cluster's probe client configuration, re-invoked on every rebuild
      * @param timeoutMs   probe timeout in milliseconds
@@ -179,7 +184,7 @@ public class KafkaHealthCheck implements LambdaFunction {
     protected KafkaHealthCheck(String serviceName, Supplier<Properties> probeConfig,
                                long timeoutMs, long graceMs) {
         this.serviceName = serviceName;
-        this.probeConfig = probeConfig;
+        this.probeConfig = Objects.requireNonNull(probeConfig, "probeConfig supplier is required");
         this.timeoutMs = timeoutMs;
         this.graceDeadline = System.currentTimeMillis() + graceMs;
     }
@@ -295,9 +300,14 @@ public class KafkaHealthCheck implements LambdaFunction {
     }
 
     /**
-     * The dependency's href - this cluster's bootstrap.servers. Reported before the first probe too,
-     * so it resolves the template on demand when no client has been built yet; bootstrap.servers does
-     * not depend on a late credential, so the first resolve's answer stays valid.
+     * The dependency's href - this cluster's bootstrap.servers. Lifecycle: {@code probeConfig} is the
+     * supplier itself, assigned final in the constructor, so it always exists by the time any event
+     * arrives (the platform registers the route only after construction) - what starts out null is
+     * the RESOLVED template in {@code consumerProperties}, because nothing is resolved at
+     * {@code @PreLoad} time by design. A {@code type=info} call that arrives before the first probe
+     * therefore resolves on demand (the supplier's first invocation) and caches the answer; every
+     * probe that builds a client overwrites the cache with its own fresh resolve. bootstrap.servers
+     * does not depend on a late credential, so one resolve serves every info call between rebuilds.
      */
     private String href() {
         Properties config = consumerProperties.get();
