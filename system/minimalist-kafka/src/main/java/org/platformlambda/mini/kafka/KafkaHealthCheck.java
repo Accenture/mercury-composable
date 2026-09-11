@@ -24,6 +24,7 @@ import org.apache.kafka.common.KafkaException;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.LambdaFunction;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -235,7 +236,7 @@ public class KafkaHealthCheck implements LambdaFunction {
 
     private void warmUp() {
         if (warmingUp.compareAndSet(false, true)) {
-            Thread.startVirtualThread(() -> {
+            Platform.getInstance().getVirtualThreadExecutor().execute(() -> {
                 try {
                     probe();
                     if (ready) {
