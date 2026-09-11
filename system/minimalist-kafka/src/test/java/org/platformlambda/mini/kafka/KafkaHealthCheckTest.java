@@ -26,6 +26,7 @@ import org.platformlambda.core.util.Utility;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -98,6 +99,23 @@ class KafkaHealthCheckTest {
         var health = new KafkaHealthCheck(consumerProps(kafka.bootstrapServers()), 0);
         Map<String, Object> result = (Map<String, Object>) health.handleEvent(HEALTH, null, 1);
         assertEquals("Kafka cluster is reachable", result.get("status"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void reportsWaitingUntilTheLateCredentialLandsThenGoesLive() {
+        // simulate a @MainApplication credential bootstrap that has not run yet: the template is
+        // unusable at first (the client cannot be built), then completes while the app is running
+        AtomicReference<Properties> template = new AtomicReference<>(new Properties());
+        var health = new KafkaHealthCheck("kafka", template::get, 5000, 0);
+        Map<String, Object> waiting = (Map<String, Object>) health.handleEvent(HEALTH, null, 1);
+        assertEquals("Waiting for Kafka connection", waiting.get("status"));
+        // the bootstrap publishes the missing values - the next probe re-resolves and goes live,
+        // with no restart and no failed /health in between
+        template.set(consumerProps(kafka.bootstrapServers()));
+        Map<String, Object> live = (Map<String, Object>) health.handleEvent(HEALTH, null, 1);
+        assertEquals("Kafka cluster is reachable", live.get("status"));
+        assertEquals(kafka.bootstrapServers(), live.get("href"));
     }
 
     @Test

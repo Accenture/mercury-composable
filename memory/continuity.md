@@ -113,6 +113,17 @@
   executes (deployment = explicit act). Full detail: origin log.
   <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-09-11 | uses: 19 | tier: active | origin: 2026-07-29-190328 -->
 
+- **@PreLoad functions are constructed BEFORE @MainApplication runs — never freeze late-arriving
+  config in a @PreLoad constructor (2026-09-11, upstreamed field MR + Eric's ruling).** AppStarter's
+  order is BeforeApplication → preload() → MainApplication, so a constructor-resolved template that
+  interpolates system properties published by a start-up credential bootstrap (vault pattern) freezes
+  them as missing for the life of the instance. `kafka.health`/`secondary.kafka.health` now resolve
+  probe config through a `Supplier` at client build time (re-resolved on every rebuild) and, while
+  the client cannot even be BUILT, report a passing "Waiting for Kafka connection" status instead of
+  failing /health — a pod restart cannot produce a credential (Eric's ruling); only a real round-trip
+  failure (client built, cluster unreachable) fails /health with 503.
+  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-11 | uses: 1 | tier: working | origin: 2026-09-11-185752 -->
+
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
   `WorkerHandler` calls `stopTracing` (removing it) as soon as `processEvent` returns. So any work that

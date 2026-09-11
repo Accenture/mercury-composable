@@ -612,6 +612,18 @@ check is live. Two keys tune the behavior: `kafka.health.timeout` (default `5s`)
 `kafka.health.startup.grace` (default `30s`) - see the
 [Configuration Reference](configuration-reference.md#observability).
 
+The probe's client configuration is resolved **lazily** - when the probe client is built, and again
+whenever a failed probe forces a rebuild - never at construction time. `kafka.health` is registered
+before your `@MainApplication` runs, so a bootstrap that fetches secrets and publishes them as system
+properties (the vault pattern) has not executed yet - a config template frozen at construction would
+interpolate such a credential as *missing* and fail every probe from then on. With lazy resolution
+the first probe after the credential lands simply succeeds; nothing needs a restart. While the
+template is still incomplete - the client cannot even be built from it - `type=health` reports a
+**passing** `Waiting for Kafka connection` status rather than a failure: failing `/health` would
+invite the container orchestrator to restart the pod, and a restart cannot produce the credential.
+Only a real connectivity failure (client built, cluster unreachable) fails `/health` with HTTP 503.
+The same applies to `secondary.kafka.health`.
+
 > **On a produce-only leg the probe uses the producer template.** With
 > [`kafka.consumer.enabled=false`](#opt-out) there are no consumer credentials to build a probe from,
 > yet a bridge is healthy only when both clusters are reachable. So the probe follows whichever client
