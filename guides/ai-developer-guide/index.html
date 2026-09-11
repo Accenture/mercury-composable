@@ -3044,15 +3044,18 @@ conversation with questions, never assumptions.</p>
    dial explicitly: Event Script when the shape is a known transaction flow; a
    platform-core function when the need is genuinely custom logic
    (<a href="#layer-choice">Choosing the right layer</a>).</li>
-<li><strong>Scaffold on a yes — never on silence.</strong> Start from the chosen layer's reference
-   application in <code>examples/</code> —
-   <a href="https://github.com/Accenture/mercury-composable/tree/main/examples/lambda-example"><code>lambda-example</code></a>
+<li><strong>Scaffold on a yes — never on silence.</strong> Copy the chosen layer's starter template out
+   of the repository's <code>templates/</code> directory —
+   <a href="https://github.com/Accenture/mercury-composable/tree/main/templates/starter-function"><code>starter-function</code></a>
    (Layer 1 functions),
-   <a href="https://github.com/Accenture/mercury-composable/tree/main/examples/composable-example"><code>composable-example</code></a>
-   (Layer 2 flows, the primary demo), or
-   <a href="https://github.com/Accenture/mercury-composable/tree/main/examples/minigraph-playground"><code>minigraph-playground</code></a>
-   (Layer 3 graphs with the Playground) — and pin the Mercury version the environment
-   reports (<code>GET /api/discovery</code> → <code>mercury_version</code>) rather than assuming one.</li>
+   <a href="https://github.com/Accenture/mercury-composable/tree/main/templates/starter-flow"><code>starter-flow</code></a>
+   (Layer 2 flows), or
+   <a href="https://github.com/Accenture/mercury-composable/tree/main/templates/starter-graph"><code>starter-graph</code></a>
+   (Layer 3, a zero-code knowledge-graph application). Each is standalone-buildable and
+   ships BOTH build files: ask which build tool the team uses — <strong>Maven or Gradle</strong> —
+   keep that one and delete the other. Pin the Mercury version the environment reports
+   (<code>GET /api/discovery</code> → <code>mercury_version</code>) rather than assuming one; the reference
+   applications in <code>examples/</code> remain the richer worked demos.</li>
 <li><strong>Hand off to the layer's guide.</strong> The <a href="#dsl-guides">DSL-specific AI guides</a> carry the
    authoring contracts from here.</li>
 </ol>
