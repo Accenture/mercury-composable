@@ -1284,6 +1284,22 @@ Logical Redis database index.
 
 Default Redis command timeout.
 
+### `redis.health.timeout`
+
+| Type | Default |
+|------|---------|
+| `duration` | `5s` |
+
+Timeout for the `redis.health` probe - a single Redis PING on a dedicated connection built from the `redis.*` parameters (one successful call proves connectivity, TLS, and authentication). Add `redis.health` to `mandatory.health.dependencies` (or the optional list) to include the server in `/health`.
+
+### `redis.health.startup.grace`
+
+| Type | Default |
+|------|---------|
+| `duration` | `30s` |
+
+Start-up grace period for `redis.health`: within it the check reports a placeholder healthy status while the Redis client warms up in the background, so `/health` never fails or blocks during application start-up. The probe's configuration is resolved lazily and re-resolved on every rebuild, and an unusable configuration (unbuildable values, or credentials the server rejects - the signature of a vault-published password that has not landed yet) is a passing `Waiting for Redis connection` status; only a genuine connectivity failure fails `/health` with 503.
+
 ### `sync.return.channel.prefix`
 
 | Type | Default |
