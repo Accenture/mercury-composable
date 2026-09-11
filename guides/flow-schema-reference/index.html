@@ -6220,8 +6220,13 @@ mapping statement at either boundary, no per-field mapping.</p>
 <p><code>f:setConfig</code> changes run-time state for the whole application instance, not just the calling
 flow. The typical use case is hydrating secrets from a secret manager at start-up; components
 that already consumed a parameter will not see a later override.</p>
-<p>Plugins are validated at compile time. They may only use classes from <code>java.lang</code>,
-<code>java.util</code>, <code>java.math</code>, <code>java.time</code>, and Mercury framework packages.</p>
+<p>Plugins are validated at application startup by the loader's allowlist gate, which scans
+the full class — method bodies included — before registration. A plugin may only reference
+<code>java.lang</code>, <code>java.util</code>, <code>java.math</code>, <code>java.time</code>, and the framework's plugin surface
+(<code>SimplePlugin</code>, <code>PluginFunction</code>, <code>MultiLevelMap</code>, <code>SimplePluginUtils</code>,
+<code>TypeConversionUtils</code>, <code>KeyNormalizationUtils</code>). Anything else — <code>java.io</code>, <code>java.net</code>,
+threads — causes the plugin to be skipped with a warning. This enforces the design goal
+that every simple plugin executes in sub-millisecond time with no side effects.</p>
 </blockquote>
 <hr />
 <h2 id="external-state-machine">External state machine<a class="headerlink" href="#external-state-machine" title="Permanent link">&para;</a></h2>
