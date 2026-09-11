@@ -8,6 +8,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.12.7, 9/11/2026
+
+### Added
+
+1. Three-layer starter templates under `templates/` — `starter-function` (Layer 1),
+   `starter-flow` (Layer 2) and `starter-graph` (Layer 3, a zero-code knowledge-graph
+   service behind the CompileGraph gate): copy-out projects with standalone build files
+   that ship BOTH Maven and Gradle (keep one, delete the other — the Gradle option
+   applies to templates only; the engine reactor stays Maven). Each template carries a
+   README and an AGENTS.md that routes a fresh AI agent to the entry-point playbook.
+   Reactor-listed so every build proves them, with a new `templates-gradle` CI job
+   verifying the Gradle side. Lock-step with the Rust engine's template crates — the
+   Layer 2 flow YAML and the Layer 3 graph model are byte-identical across engines.
+
+2. Fresh-agent entry-point playbook in the AI developer guide ("Starting a
+   collaboration — two typical entry points"): the greenfield conversation (confirm
+   intent, offer AI-enablement, recommend the knowledge-graph path as a question,
+   scaffold from a starter template) and the existing-repository case (offer
+   AI-enablement first, fold hand-written per-tool context into the shared memory
+   layer, then orient). Packaged in the AI contract, so fresh agents receive it
+   version-matched.
+
+3. The Mercury Family page (`docs/mercury-family.md`) — the five-member family
+   (agent-memory, mercury-composable, mercury, mercury-python, mercury-nodejs) with a
+   home-page hero button and an Orientation nav entry, following agent-memory's
+   promotion into the family at github.com/Accenture/mercury-go.
+
+### Fixed
+
+1. The simple-plugin allowlist gate now scans method bodies, not just class shape:
+   `RecursiveClassTypeExaminer` walks call and field owners, `new`/cast/`instanceof`
+   types, lambda and method-reference handles (invokedynamic, including
+   `ConstantDynamic`), class literals and try/catch types, and the loader keeps the
+   code attribute (`SKIP_CODE` dropped). A plugin whose signature is clean can no
+   longer reach `java.io`, `java.net` or threads from inside `calculate()` — the
+   sub-millisecond, no-side-effects containment the allowlist declares is now
+   enforced. `TypeConversionUtils` and `KeyNormalizationUtils` are formally
+   allowlisted; nested classes are analyzed as part of the plugin. Proven through the
+   real loader by `SimplePluginGateTest`, with the ~50 built-ins as the regression net.
+
+### Changed
+
+1. The Methodology guide is synthesized around Intent-Driven Development — IDD leads
+   (the three developer steps and the grammar-composition recursion from the story
+   deck), followed by the knowledge-graph path, the composable design principles and
+   the event-driven core. The flow-schema-reference plugin-allowlist note now states
+   the enforced behavior.
+
+2. Documentation site polish: two-column home page with default-size hero buttons and
+   a relaxed layered-ascent table; story-deck slide 7 states its essence in plain
+   language ("Change what AI generates: artifacts a human can read."); the Orientation
+   nav label simplified to "White Paper".
+
+---
 ## Version 4.12.6, 9/10/2026
 
 ### Added

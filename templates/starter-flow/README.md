@@ -25,11 +25,11 @@ build at your organization's artifact repository.
 ```bash
 # Maven
 mvn clean package
-java -jar target/starter-flow-4.12.6.jar
+java -jar target/starter-flow-4.12.7.jar
 
 # Gradle
 gradle build
-java -jar build/libs/starter-flow-4.12.6.jar
+java -jar build/libs/starter-flow-4.12.7.jar
 ```
 
 Then:
