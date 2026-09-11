@@ -121,7 +121,11 @@
   probe config through a `Supplier` at client build time (re-resolved on every rebuild) and, while
   the client cannot even be BUILT, report a passing "Waiting for Kafka connection" status instead of
   failing /health — a pod restart cannot produce a credential (Eric's ruling); only a real round-trip
-  failure (client built, cluster unreachable) fails /health with 503.
+  failure (client built, cluster unreachable) fails /health with 503. (Shipped via PR #360.) Applied
+  again by `redis.health` (sync-over-async; one probe also covers minigraph-state-redis — same
+  `redis.*` keys), with the Redis wrinkle: a late credential surfaces as a server-side auth rejection
+  (NOAUTH/WRONGPASS) at connect time, not at client construction, so those classify as waiting too.
+  Eric's standing rule: every critical infrastructure component needs a health check service.
   <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-11 | uses: 1 | tier: working | origin: 2026-09-11-185752 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
