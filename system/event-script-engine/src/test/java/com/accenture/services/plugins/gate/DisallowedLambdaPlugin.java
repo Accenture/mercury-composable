@@ -38,13 +38,12 @@ public class DisallowedLambdaPlugin implements PluginFunction {
 
     @Override
     public Object calculate(Object... input) {
-        Supplier<Object> hidden = () -> {
+        return (Supplier<Object>) () -> {
             try {
                 return new java.net.Socket("127.0.0.1", 80);
             } catch (java.io.IOException e) {
                 return null;
             }
         };
-        return hidden;
     }
 }

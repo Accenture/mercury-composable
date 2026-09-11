@@ -27,7 +27,7 @@ import java.util.Set;
  * Collects every class a class file references — superclass, interfaces, field and
  * method signatures, declared exceptions, AND method-body references (call and field
  * owners, new/cast/instanceof types, lambda and method-reference handles, class
- * literals, catch types) — so the SimplePluginLoader's allowlist gate validates what
+ * literals, catch types). Therefore, the SimplePluginLoader's allowlist gate validates what
  * a plugin actually does, not just its shape.
  */
 public class RecursiveClassTypeExaminer extends ClassVisitor {
