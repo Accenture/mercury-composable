@@ -24,6 +24,7 @@ import org.platformlambda.mini.kafka.KafkaClientConfig;
 import org.platformlambda.mini.kafka.KafkaHealthCheck;
 
 import java.util.Properties;
+import java.util.function.Supplier;
 
 /**
  * Health-check function for the SECONDARY Kafka cluster - the twin of minimalist-kafka's
@@ -58,10 +59,20 @@ public class SecondaryKafkaHealthCheck extends KafkaHealthCheck {
     private static final String PRIMARY_GRACE_KEY = "kafka.health.startup.grace";
 
     public SecondaryKafkaHealthCheck() {
-        this(KafkaClientConfig.healthProbeProperties(AppConfigReader.getInstance(),
+        this(() -> KafkaClientConfig.healthProbeProperties(AppConfigReader.getInstance(),
                         SecondaryKafkaAutoStart.CONSUMER_ENABLED, CONSUMER_LOCATION, DEFAULT_CONSUMER,
                         SecondaryKafkaAutoStart.PRODUCER_ENABLED, PRODUCER_LOCATION, DEFAULT_PRODUCER),
              resolveDurationMs(GRACE_KEY, PRIMARY_GRACE_KEY, DEFAULT_GRACE));
+    }
+
+    /**
+     * A supplier rather than a resolved snapshot: the secondary cluster's templates can interpolate a
+     * credential that a {@code @MainApplication} bootstrap publishes long after this {@code @PreLoad}
+     * function is constructed - see the note on lazy resolution in {@link KafkaHealthCheck}.
+     */
+    private SecondaryKafkaHealthCheck(Supplier<Properties> probeConfig, long graceMs) {
+        super(SERVICE_NAME, probeConfig,
+              resolveDurationMs(TIMEOUT_KEY, PRIMARY_TIMEOUT_KEY, DEFAULT_TIMEOUT), graceMs);
     }
 
     /**
