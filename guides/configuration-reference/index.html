@@ -3921,6 +3921,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#redishealthtimeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.health.timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#redishealthstartupgrace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.health.startup.grace
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#syncreturnchannelprefix" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6250,6 +6272,28 @@
     <span class="md-ellipsis">
       
         redis.timeout.ms
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#redishealthtimeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.health.timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#redishealthstartupgrace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.health.startup.grace
       
     </span>
   </a>
@@ -8717,6 +8761,38 @@ off by default and starts (eagerly connecting to Redis) only when <code>sync.ove
 </tbody>
 </table>
 <p>Default Redis command timeout.</p>
+<h3 id="redishealthtimeout"><code>redis.health.timeout</code><a class="headerlink" href="#redishealthtimeout" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>duration</code></td>
+<td><code>5s</code></td>
+</tr>
+</tbody>
+</table>
+<p>Timeout for the <code>redis.health</code> probe - a single Redis PING on a dedicated connection built from the <code>redis.*</code> parameters (one successful call proves connectivity, TLS, and authentication). Add <code>redis.health</code> to <code>mandatory.health.dependencies</code> (or the optional list) to include the server in <code>/health</code>.</p>
+<h3 id="redishealthstartupgrace"><code>redis.health.startup.grace</code><a class="headerlink" href="#redishealthstartupgrace" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>duration</code></td>
+<td><code>30s</code></td>
+</tr>
+</tbody>
+</table>
+<p>Start-up grace period for <code>redis.health</code>: within it the check reports a placeholder healthy status while the Redis client warms up in the background, so <code>/health</code> never fails or blocks during application start-up. The probe's configuration is resolved lazily and re-resolved on every rebuild, and an unusable configuration (unbuildable values, or credentials the server rejects - the signature of a vault-published password that has not landed yet) is a passing <code>Waiting for Redis connection</code> status; only a genuine connectivity failure fails <code>/health</code> with 503.</p>
 <h3 id="syncreturnchannelprefix"><code>sync.return.channel.prefix</code><a class="headerlink" href="#syncreturnchannelprefix" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
