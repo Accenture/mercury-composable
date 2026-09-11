@@ -55,6 +55,13 @@
         <module>examples/sync-over-async-demo</module>
         <module>examples/twin-kafka-demo</module>
 
+        <!-- Starter templates for the three layers (copy one out to begin a new
+             project; standalone poms - no reactor parent - listed here so every
+             build proves they stay current) -->
+        <module>templates/starter-function</module>
+        <module>templates/starter-flow</module>
+        <module>templates/starter-graph</module>
+
         <!-- Executable for benchmark tests
         <module>benchmark/benchmark-reporter</module>-->
     </modules>

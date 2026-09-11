@@ -47,6 +47,8 @@ connectors/                ← Kafka pub/sub adapters + presence/service monitor
 helpers/                   ← standalone dev servers, no Docker (kafka-standalone, redis-standalone)
 examples/                  ← reference apps; composable-example is the primary demo
   (lambda, rest-spring-4, composable, kotlin, scheduler, minigraph, kafka-demo)
+templates/                 ← copy-out starter projects for the three layers, Maven or Gradle
+  (starter-function, starter-flow, starter-graph — reactor-built, standalone poms)
 benchmark/benchmark-reporter ← self-contained perf harness (benchmark-client retired 4.6.2)
 docs/ (guides/, arch-decisions/)  ← docs (mkdocs `docs_dir: docs`);
                                   arch-decisions/ADR.md = the ADR ledger (holds durable design rationale)

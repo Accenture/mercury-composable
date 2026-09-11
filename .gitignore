@@ -76,3 +76,7 @@ site/
 .aider.input.history
 .aider.tags.cache*
 *.py[cod]
+
+# Gradle (starter templates ship dual build files)
+templates/**/build/
+templates/**/.gradle/
