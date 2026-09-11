@@ -33,10 +33,12 @@
   packs stay at 4.12.1 — no wrapper changes.)
 - **last_enabled:** 2026-06-20
 - **last_review:** 2026-09-11 | through 2026-09-11-005808.md
-- **last_invariant_check:** 2026-09-11 | 2026-09-11-005808.md (PROMPT RAISED — 18 core facts +
-  the Vision listed in [[ot-reverify-invariants-20260911]], awaiting Eric's walkthrough; the
-  review never auto-confirms. Prior confirmed check: 2026-09-04 | 2026-09-04-043732.md (all 15
-  confirmed by Eric + the Vision — one-by-one walkthrough with live-tree evidence; no supersessions; stack-messaging-kafka re-checked after PR #315 added Kafka config keys additively; ot-reverify-invariants-20260904 closed. Prior: 2026-08-21 | 2026-08-21-005515.md (all 15 confirmed by Eric — one-by-one walkthrough with live-tree evidence; stack-messaging-kafka wording refreshed to name the grown Kafka family; ot-reverify-invariants-20260821 closed))
+- **last_invariant_check:** 2026-09-11 | 2026-09-11-005808.md (all 18 core facts + the Vision
+  confirmed by Eric — walkthrough with live-tree evidence; no supersessions;
+  stack-build-maven reworded (reactor stays Maven; consumer templates ship Maven-or-Gradle)
+  and thread-add-gradle-build ruled complete; ot-reverify-invariants-20260911 closed.
+  Prior: 2026-09-04 | 2026-09-04-043732.md (all 15 confirmed by Eric + the Vision;
+  stack-messaging-kafka re-checked after PR #315; ot-reverify-invariants-20260904 closed))
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
 > environment, carrying forward only the confirmed Vision + Blueprint and the
@@ -55,9 +57,12 @@
   STAYS on 21 until the majority of field installations run Java 25** — Java version
   migration is slow across enterprise customers; do not bump it ahead of the field.
   <!-- id: stack-language-java21 | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
-- Build: Maven 3.9.7+ is the current build tool (multi-module reactor, `com.accenture.mercury:parent-mercury`).
-  **Gradle support is planned to be added alongside it** (Eric, 2026-06-24 — see Open Thread `thread-add-gradle-build`).
-  <!-- id: stack-build-maven | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
+- Build: Maven 3.9.7+ — the engine's multi-module reactor (`com.accenture.mercury:parent-mercury`)
+  stays Maven by design. **Consumer applications choose Maven or Gradle**: the starter templates
+  ship both build files, CI-verified (PR #357, 2026-09-11; thread-add-gradle-build closed —
+  Gradle applies to templates only, never the reactor). (Reworded 2026-09-11 at invariant
+  re-verify, Eric-confirmed.)
+  <!-- id: stack-build-maven | created: 2026-06-20 | last_used: 2026-09-11 | uses: 3 | tier: core -->
 - Integration: Spring Boot 4 only — `system/rest-spring-4` (+ its example). The Boot 3
   lane (rest-spring-3 + rest-spring-3-example) was RETIRED 2026-08-27 (Eric's directive:
   the Spring community no longer issues Boot 3 security patches, and field Snyk now
