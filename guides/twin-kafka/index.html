@@ -3071,6 +3071,9 @@ the embedded id would be meaningless on the other registry.</p>
 topology in one process - set <code>dual.servers=true</code> (in its <code>application.properties</code> or as
 <code>-Ddual.servers=true</code>) and it starts broker 1 on <code>127.0.0.1:9092</code> and broker 2 on <code>127.0.0.1:8092</code>
 with separate log directories:</p>
+<blockquote>
+<p><strong>Note</strong>: <code>x.y.z</code> denotes the current Mercury version shown in the root <code>pom.xml</code>.</p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">cd</span><span class="w"> </span>helpers/kafka-standalone<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>java<span class="w"> </span>-Ddual.servers<span class="o">=</span><span class="nb">true</span><span class="w"> </span>-jar<span class="w"> </span>target/kafka-standalone-x.y.z-exec.jar
 </code></pre></div>
 <p>The shipped templates' defaults (<code>127.0.0.1:9092</code> primary, <code>127.0.0.1:8092</code> secondary) line up with
