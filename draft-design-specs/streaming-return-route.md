@@ -227,10 +227,11 @@ paths that already remove on every other exit: `awaitResponse`'s `finally`, and 
 exhaustive, so a completed-but-unawaited entry cannot leak. The existing await-by-cid
 test pins the behavior.
 
-**Migration note (release-notes item):** the Redis key shape changes — an old pod GETs
-`response:{cid}` while a new pod pushes to `queue:{cid}` — so in-flight cross-version
-requests during a rolling upgrade time out (408) until the fleet converges. Bounded to
-the upgrade window, and called out deliberately while the module is young.
+**No backward-compatibility issue (Eric's ruling):** the Redis key shape changes, but
+sync-over-async's use case is near real-time — rendezvous keys live for seconds and
+nothing persists across versions, so there is no state to migrate. At worst, a rolling
+upgrade re-times a handful of in-flight cross-version requests (408), indistinguishable
+from ordinary timeout behavior.
 
 ## 5. Contracts and invariants
 
@@ -316,9 +317,11 @@ the use-case discussion (§2).
   for one message and for a list of messages: `response:{cid}` retires, `deliver` posts
   a terminal entry, the recovery paths unify, and duplicate delivery becomes
   structurally impossible. Requires the complete-in-place adjustment in
-  `PendingRequests` (§4.7) and carries the rolling-upgrade migration note. The
-  acceptance proof is the existing one-shot regression suite passing unchanged on the
-  unified mechanism — the degenerate case shown to be truly degenerate.
+  `PendingRequests` (§4.7). No backward-compatibility concern: the use case is near
+  real-time, so rendezvous state is ephemeral and nothing persists across versions
+  (Eric's ruling). The acceptance proof is the existing one-shot regression suite
+  passing unchanged on the unified mechanism — the degenerate case shown to be truly
+  degenerate.
 
 ## 9. Experiment plan (E-series)
 
