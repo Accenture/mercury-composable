@@ -23,7 +23,9 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.support.RedisConfig;
 import org.platformlambda.sync.ReturnRouteStore;
@@ -46,6 +48,10 @@ import java.util.Map;
  * {"cid": "...", "mode": "stall"}                             two tokens, NO terminal (producer-death chaos)
  * {"cid": "...", "mode": "lost", "type": "data|eof", ...}     CHAOS: store the segment but suppress the
  *                                                             wake-up - simulates a lost notification
+ * {"cid": "...", "mode": "llm", "prompt": "..."}              REAL LLM tokens (experiment E4): pull the
+ *                                                             provider's SSE stream through the shipped
+ *                                                             SSE consumer; LlmStreamBridge forwards each
+ *                                                             token batch into the rendezvous
  * </pre>
  *
  * The response reports {@code live}: {@code false} means the rendezvous is over (the UI pod closed,
@@ -65,7 +71,8 @@ public class StreamProducer implements TypedLambdaFunction<Map<String, Object>, 
     private static volatile StreamResponder responder;
     private static volatile StatefulRedisConnection<String, String> chaosConnection;
 
-    private static StreamResponder responder() {
+    /** Shared with {@link LlmStreamBridge}, which forwards provider tokens into the same rendezvous. */
+    static StreamResponder responder() {
         if (responder == null) {
             synchronized (StreamProducer.class) {
                 if (responder == null) {
@@ -139,6 +146,44 @@ public class StreamProducer implements TypedLambdaFunction<Map<String, Object>, 
                         && responder().post(cid, StreamSegment.DATA, null, "second");
                 result.put("live", live);
                 result.put("posted", 2);
+            }
+            case "llm" -> {
+                // E4: a real LLM token stream, cross-pod. The provider's SSE endpoint is consumed by
+                // the platform's own SSE-capable HTTP client (Accept: text/event-stream + reply_to),
+                // and each relayed x-event-stream envelope reaches LlmStreamBridge with this cid as
+                // its correlation id - the bridge posts the tokens into the rendezvous as they arrive.
+                AppConfigReader config = AppConfigReader.getInstance();
+                String apiKey = config.getProperty("llm.api.key", "");
+                if (apiKey.isBlank()) {
+                    throw new AppException(503, "llm.api.key is not configured (set GEMINI_API_KEY)");
+                }
+                String model = config.getProperty("llm.gemini.model", "gemini-flash-latest");
+                String host = config.getProperty("llm.gemini.host", "https://generativelanguage.googleapis.com");
+                String prompt = asText(request.get("prompt"));
+                if (prompt == null || prompt.isBlank()) {
+                    prompt = "In one short sentence, why do event-driven systems scale well?";
+                }
+                AsyncHttpRequest upstream = new AsyncHttpRequest()
+                        .setMethod("POST").setTargetHost(host)
+                        .setUrl("/v1beta/models/" + model + ":streamGenerateContent")
+                        .setQueryParameter("alt", "sse")
+                        .setHeader("accept", "text/event-stream")
+                        .setHeader("content-type", "application/json")
+                        .setHeader("x-goog-api-key", apiKey)   // from the environment; never logged
+                        .setTimeoutSeconds(30)
+                        .setBody(Map.of(
+                                "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
+                                "generationConfig", Map.of(
+                                        // a short direct answer: no thinking budget (flash aliases resolve
+                                        // to thinking models that would otherwise spend the whole budget
+                                        // on reasoning), bounded output for quota etiquette
+                                        "maxOutputTokens", 200,
+                                        "thinkingConfig", Map.of("thinkingBudget", 0))));
+                EventEmitter.getInstance().send(new EventEnvelope()
+                        .setTo("async.http.request").setBody(upstream.toMap())
+                        .setReplyTo(LlmStreamBridge.ROUTE).setCorrelationId(cid));
+                result.put("streaming", true);
+                result.put("model", model);
             }
             case "lost" -> {
                 // CHAOS ONLY: store-first happens, the wake-up never does - a lost Pub/Sub notification.
