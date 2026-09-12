@@ -15,7 +15,7 @@
   `segment:{cid}:{seq}` replace the Redis Stream** (seq = retrieval index; MAXLEN/trim
   dissolve). **Refined to D7 same day** (log 2026-09-12-044817; D7 merged via PR #367, squash
   `04603fdd` — its title says "D7 and D8" but a merge race caught the D7-only branch;
-  D8 + the compat ruling follow in the next PR) after Eric articulated
+  D8 + the compat ruling landed via PR #368, squash `69865966`) after Eric articulated
   the driving use cases (event notification: SEVERAL backends post to one SSE session,
   unordered, either side closes; AI chat: one sequential source, strict order): **no
   sequence number at all — a Redis List per cid** (`RPUSH queue:{cid}` store-first,
