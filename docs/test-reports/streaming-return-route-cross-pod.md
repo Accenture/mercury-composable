@@ -140,9 +140,13 @@ instantaneously, and the abandoned queue remnant ages out on its own TTL. ✅
   channels; deployments with chatty producers may prefer a smaller value (this run used 30s
   to make the bound observable).
 - **One demo-side fix during the round** (not a mechanism issue): a function addressed
-  *directly* by a rest.yaml entry receives the whole `AsyncHttpRequest` map as its input —
+  *directly* by a rest.yaml entry receives the whole `AsyncHttpRequest` object as its input —
   the JSON body is inside it — unlike a flow task, whose input mapping extracts
-  `input.body`. The demo's producer endpoint now unwraps accordingly.
+  `input.body`. The demo's producer endpoint now unwraps accordingly
+  (`new AsyncHttpRequest(request.getBody())`), and the
+  [REST automation guide](../guides/rest-automation/index.md) now states the contract
+  explicitly for interceptor/untyped functions (gap closed in the same round, confirmed by
+  the maintainer).
 - The demo's `stream-ui` / `stream-producer` profiles are permanent: the runbook in the
   [sync-over-async-demo README](https://github.com/Accenture/mercury-composable/tree/main/examples/sync-over-async-demo)
   reproduces this report end-to-end with three terminals and `curl`.
