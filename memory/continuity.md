@@ -144,7 +144,7 @@
   <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-11 | uses: 1 | tier: working | origin: 2026-09-11-191200 -->
 
 - **sync-over-async is transport-neutral — its correlation-id key is self-contained (Eric's direction,
-  2026-09-12).** The facade tasks speak only the module's own flow-level `cid` key (`SyncRuntime.CID`);
+  2026-09-12; PR #364, squash `628a1778`).** The facade tasks speak only the module's own flow-level `cid` key (`SyncRuntime.CID`);
   the Kafka wire header belongs to the transport and is configurable there
   (`kafka.correlation.id.header`, with per-binding overrides — inbound flow adapters seed `model.cid`
   from the effective wire header, whatever its name), so the tasks never reference the transport's
