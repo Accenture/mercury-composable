@@ -2969,17 +2969,40 @@ granularity, by design — and <strong>any</strong> of them may close the channe
 <code>exception</code>) entry: "the end signal is also an event". Cleanup is eager on completion and TTL-driven
 otherwise; a <code>false</code> from <code>post</code> always means stop — the consumer disconnected, timed out, or another
 producer already closed the channel.</p>
+<p>On the consuming side, the facade is an <code>@EventInterceptor</code> addressed directly by a <code>stream: true</code>
+endpoint — the same shape as every shipped streaming producer (see the
+<a href="../http-streaming/">HTTP Response Streaming guide</a>) — and <code>StreamBridge</code> is its generic half: it opens
+the rendezvous, forwards each drained segment into the request's reply lane (<code>data</code> → SSE event,
+<code>eof</code> → the terminal <code>done</code> event, <code>exception</code> → the in-band <code>error</code> event), and owns the lifecycle:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"my.chat.facade"</span><span class="p">,</span><span class="w"> </span><span class="n">instances</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">50</span><span class="p">)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nd">@EventInterceptor</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ChatFacade</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TypedLambdaFunction</span><span class="o">&lt;</span><span class="n">EventEnvelope</span><span class="p">,</span><span class="w"> </span><span class="n">Void</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Void</span><span class="w"> </span><span class="nf">handleEvent</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">request</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">instance</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">        </span><span class="n">String</span><span class="w"> </span><span class="n">cid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">request</span><span class="p">.</span><span class="na">getCorrelationId</span><span class="p">();</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">        </span><span class="n">StreamBridge</span><span class="p">.</span><span class="na">open</span><span class="p">(</span><span class="n">SyncRuntime</span><span class="p">.</span><span class="na">coordinator</span><span class="p">(),</span><span class="w"> </span><span class="n">request</span><span class="p">,</span><span class="w"> </span><span class="n">cid</span><span class="p">,</span><span class="w"> </span><span class="mi">30</span><span class="p">);</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">        </span><span class="c1">// ... start the backend work however the application likes (the request leg) ...</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="p">}</span>
+</code></pre></div>
+<p>The <code>idleSeconds</code> argument is the idle allowance, applied to the HTTP edge and the bridge's watchdog
+alike (widen it for a deliberately quiet notification channel — a notification facade typically reads it
+from a request header and announces the session's cid to the UI as its first SSE event). At idle expiry
+the watchdog performs <strong>one final drain</strong> — the streaming analogue of the one-shot final read, so a
+dropped <em>final</em> notification still completes the render — and only if that drain does not complete the
+stream does it fail in-band (408) and close the rendezvous, which is also what reclaims a disconnected
+client's stream. At stream capacity (<code>sync.max.pending.streams</code>) the exchange fails with a proper
+HTTP 503 before the head is committed.</p>
 <p>The design rationale, decision record and failure analysis live in the
-<a href="https://github.com/Accenture/mercury-composable/blob/main/draft-design-specs/streaming-return-route.md">streaming-return-route design spec</a>;
-the endpoint-level facade that forwards a drained stream into an SSE (<code>stream: true</code>) endpoint arrives
-with the follow-up experiments.</p>
+<a href="https://github.com/Accenture/mercury-composable/blob/main/draft-design-specs/streaming-return-route.md">streaming-return-route design spec</a>.</p>
 <h2 id="health">Health check<a class="headerlink" href="#health" title="Permanent link">&para;</a></h2>
 <p>The module ships a ready-made health-check function at route <strong><code>redis.health</code></strong> (auto-registered when
 the jar is on the classpath) - every critical infrastructure dependency deserves one. Opt in by listing
 it as a health dependency in <code>application.properties</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="na">mandatory.health.dependencies</span><span class="o">=</span><span class="s">redis.health</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># or, when Redis should be reported but not fail /health:</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># optional.health.dependencies=redis.health</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="na">mandatory.health.dependencies</span><span class="o">=</span><span class="s">redis.health</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1"># or, when Redis should be reported but not fail /health:</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># optional.health.dependencies=redis.health</span>
 </code></pre></div>
 <p>The probe is a single Redis <strong>PING</strong> on a dedicated connection built from the <code>redis.*</code> parameters -
 the lightest round trip the protocol offers, and one successful call proves connectivity, TLS, and
