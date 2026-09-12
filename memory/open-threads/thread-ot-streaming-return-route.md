@@ -31,8 +31,15 @@
   near-real-time state, nothing persists across versions (Eric's ruling); acceptance =
   existing one-shot suite unchanged.
   One nuance awaiting Eric's confirmation: a single final drain at edge idle expiry
-  (the one-shot "final read before timeout" analogue). Serves
+  (the one-shot "final read before timeout" analogue) — E1 implements and DEMONSTRATES
+  it (`finalDrainAtIdleExpiryRecoversADroppedClose`) for his verdict. **E1 IMPLEMENTED
+  2026-09-12** (branch `feat/srr-e1-unified-list-mechanism`, commit `600dbe75`; PR
+  pending): store re-platformed to `queue:{cid}` (atomic RPUSH+EXPIRE via Lua),
+  `StreamResponder`/`StreamSegment`/`PendingStreams` shipped, complete-in-place landed
+  (plus one E1-found race fix: the timeout path consults the future after an empty
+  final drain, spec §4.7 note); D8 gate PASSED — module 73/73 (was 46), demo flows 4/4
+  against the unified module; guide/config-reference/README updated. Serves
   [[bp-agent-orchestration]] Q8 second half (graph-run streaming); inherits
-  [[soa-transport-neutral-cid]]. Next: E1 (coordinator + responder primitives,
-  embedded-Redis unit tests).
+  [[soa-transport-neutral-cid]]. Next: E2 (single-JVM end-to-end, both use cases
+  behind `stream: true` endpoints).
   <!-- id: ot-streaming-return-route | created: 2026-09-12 | last_used: 2026-09-12 | uses: 1 | tier: working | origin: 2026-09-12-021649 -->
