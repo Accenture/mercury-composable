@@ -25,8 +25,9 @@
   response is the degenerate stream (first entry terminal); `response:{cid}` retires,
   deliver() ≡ terminal post, one drain path, final-read == final-drain; requires
   PendingRequests.complete-in-place (early-arrival path survives destructive pops;
-  removal via awaitResponse finally + abort, exhaustive); rolling-upgrade key-shape
-  migration note for release notes; acceptance = existing one-shot suite unchanged.
+  removal via awaitResponse finally + abort, exhaustive); no backward-compat issue —
+  near-real-time state, nothing persists across versions (Eric's ruling); acceptance =
+  existing one-shot suite unchanged.
   One nuance awaiting Eric's confirmation: a single final drain at edge idle expiry
   (the one-shot "final read before timeout" analogue). Serves
   [[bp-agent-orchestration]] Q8 second half (graph-run streaming); inherits
