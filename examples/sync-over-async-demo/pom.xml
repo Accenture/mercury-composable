@@ -49,9 +49,9 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- Converge Guava to platform-core's version: Confluent's serdes (via sync-over-async ->
-                 minimalist-kafka) otherwise win with an older 32.0.1. The failureaccess companion already
-                 arrives transitively; this keeps the demo on the same Guava as the reactor. -->
+            <!-- Converge Guava to platform-core's version: Confluent's serdes (via minimalist-kafka)
+                 otherwise win with an older 32.0.1. The failureaccess companion already arrives
+                 transitively; this keeps the demo on the same Guava as the reactor. -->
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
@@ -62,10 +62,20 @@
 
     <dependencies>
         <!-- sync-over-async brings the facade tasks (sync.prepare/sync.await/soa.reply) + the Redis
-             return-route coordinator, and transitively minimalist-kafka + event-script + platform-core. -->
+             return-route coordinator (platform-core arrives transitively). It is transport-neutral,
+             so the application declares its Kafka library itself - see minimalist-kafka below. -->
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>sync-over-async</artifactId>
+            <version>4.12.8</version>
+        </dependency>
+
+        <!-- The Kafka legs: notification function + flow adapter (brings event-script-engine and the
+             Kafka client). Composed with the facade by this application - the extension does not
+             impose a transport. -->
+        <dependency>
+            <groupId>org.platformlambda</groupId>
+            <artifactId>minimalist-kafka</artifactId>
             <version>4.12.8</version>
         </dependency>
 

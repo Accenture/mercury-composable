@@ -27,7 +27,9 @@ Redis return route.*
 In a cloud-native deployment the REST caller and the backend that answers may be different pods, and the
 backend is reached **asynchronously** over Kafka. Sync-over-async bridges that gap: the HTTP thread waits
 while the request fans out over Kafka and the answer is routed back — without coupling the two pods beyond a
-shared Redis and topic pair. It builds on the [Minimalist Kafka](minimalist-kafka.md) for the Kafka legs.
+shared Redis and topic pair. It builds on the [Minimalist Kafka](minimalist-kafka.md) for the Kafka legs —
+by composition, not by dependency: the extension carries no Kafka library of its own, so the application
+declares `minimalist-kafka` alongside `sync-over-async`.
 
 > **Opt-in.** The return-route coordinator eagerly connects to Redis, so it starts only when
 > `sync.over.async.enabled=true`. Leave it off unless you are using the pattern.
@@ -58,6 +60,13 @@ The correlation-id threads the whole round trip. Redis holds two short-lived key
 (which pod's channel to wake) and the **response** payload.
 
 ## Enabling and configuring {#config}
+
+The extension is **transport-neutral**: it brings only platform-core and the Lettuce Redis client, so the
+application declares its Kafka library (`minimalist-kafka`) alongside `sync-over-async` in the build. The
+facade tasks exchange the correlation-id through the module's own flow-level `cid` key (the
+`model.cid -> header.cid` flow mappings) — deliberately independent of the transport's configurable wire
+header (`kafka.correlation.id.header`), which the flow adapter maps into `model.cid` whatever its name.
+Then enable the coordinator and point it at Redis:
 
 ```properties
 sync.over.async.enabled=true

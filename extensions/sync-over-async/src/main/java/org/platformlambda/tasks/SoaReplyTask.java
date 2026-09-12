@@ -20,7 +20,6 @@ package org.platformlambda.tasks;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.mini.kafka.KafkaHeaders;
 import org.platformlambda.sync.SyncRuntime;
 
 import java.nio.charset.StandardCharsets;
@@ -32,6 +31,10 @@ import java.util.Map;
  * coordinator, which completes the awaiting REST request - cross-pod via the Redis return route, so the
  * pod that consumed the reply need not be the one that originated the request.
  *
+ * <p>The reply flow's input mapping supplies the correlation-id under the module's self-contained
+ * {@link SyncRuntime#CID} key ({@code model.cid -> header.cid}; the flow adapter seeds {@code model.cid}
+ * from its configured wire header), so this task never reads the transport's header name.</p>
+ *
  * <p>This is generic boilerplate every sync-over-async application needs, so it ships with the extension
  * alongside {@link SyncPrepareTask} and {@link SyncAwaitTask}; an application only supplies its own
  * backend (system-of-record) logic. Sized for user-facing concurrency ({@code instances = 250}).</p>
@@ -41,9 +44,9 @@ public class SoaReplyTask implements TypedLambdaFunction<byte[], Map<String, Obj
 
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, byte[] input, int instance) {
-        String cid = headers.get(KafkaHeaders.CORRELATION_ID);
+        String cid = headers.get(SyncRuntime.CID);
         String payload = new String(input, StandardCharsets.UTF_8);
         boolean delivered = SyncRuntime.coordinator().deliver(cid, payload);
-        return Map.of("cid", cid, "delivered", delivered);
+        return Map.of(SyncRuntime.CID, cid, "delivered", delivered);
     }
 }
