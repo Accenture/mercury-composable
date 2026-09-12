@@ -209,6 +209,10 @@
          <lastmod>2026-09-12</lastmod>
     </url>
     <url>
+         <loc>https://accenture.github.io/mercury-composable/test-reports/streaming-return-route-cross-pod/</loc>
+         <lastmod>2026-09-12</lastmod>
+    </url>
+    <url>
          <loc>https://accenture.github.io/mercury-composable/test-reports/suspend-resume-interop/</loc>
          <lastmod>2026-09-12</lastmod>
     </url>

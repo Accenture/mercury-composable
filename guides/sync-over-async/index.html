@@ -2107,6 +2107,8 @@
       
         
       
+        
+      
     
     
     
@@ -2419,6 +2421,34 @@
     
   
     Interop Test Report — Suspend/Resume
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../test-reports/streaming-return-route-cross-pod/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — Streaming Return Route (cross-pod)
   
 
     
@@ -2995,7 +3025,12 @@ stream does it fail in-band (408) and close the rendezvous, which is also what r
 client's stream. At stream capacity (<code>sync.max.pending.streams</code>) the exchange fails with a proper
 HTTP 503 before the head is committed.</p>
 <p>The design rationale, decision record and failure analysis live in the
-<a href="https://github.com/Accenture/mercury-composable/blob/main/draft-design-specs/streaming-return-route.md">streaming-return-route design spec</a>.</p>
+<a href="https://github.com/Accenture/mercury-composable/blob/main/draft-design-specs/streaming-return-route.md">streaming-return-route design spec</a>;
+the live two-pod validation — ordered cross-pod rendering plus the chaos checks (lost notifications, a
+producer killed mid-stream, a killed UI pod) — is recorded in the
+<a href="../../test-reports/streaming-return-route-cross-pod/">cross-pod test report</a>, reproducible via the
+<a href="https://github.com/Accenture/mercury-composable/tree/main/examples/sync-over-async-demo">sync-over-async-demo</a>
+<code>stream-ui</code> / <code>stream-producer</code> profiles.</p>
 <h2 id="health">Health check<a class="headerlink" href="#health" title="Permanent link">&para;</a></h2>
 <p>The module ships a ready-made health-check function at route <strong><code>redis.health</code></strong> (auto-registered when
 the jar is on the classpath) - every critical infrastructure dependency deserves one. Opt in by listing
