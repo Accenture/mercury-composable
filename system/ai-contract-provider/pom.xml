@@ -108,6 +108,7 @@
                     <include>guides/**</include>
                     <include>test-reports/event-over-http-interop.md</include>
                     <include>test-reports/progressive-rendering-interop.md</include>
+                    <include>test-reports/streaming-return-route-cross-pod.md</include>
                 </includes>
             </resource>
             <!-- The canonical rest.yaml fixture is owned by platform-core, where

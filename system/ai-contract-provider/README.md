@@ -16,7 +16,10 @@ The served contract is a **product of the runtime, not a description of it**:
   class fails the reactor build — the catalog cannot drift from the code.
 - The packaged guide closure is inventoried in `skill/files.list`, which a test asserts
   equals the real `docs/guides` tree — adding a guide page without updating the inventory
-  fails this module's tests with a one-line fix.
+  fails this module's tests with a one-line fix. A packaged doc *outside* `docs/guides`
+  (e.g. a test report a guide links to) is a **fixed extra** and takes three touches:
+  the `files.list` line, a pom `<include>` (only `guides/**` is globbed automatically),
+  and the expected-extras list in `SkillSnapshotTest`.
 
 ## Run the discovery server
 
