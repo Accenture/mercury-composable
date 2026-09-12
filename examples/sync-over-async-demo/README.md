@@ -220,6 +220,75 @@ Confluent Schema Registry skews heavily toward Avro and JSON Schema already — 
 gRPC/polyglot microservices, a different ecosystem from Schema-Registry-backed Kafka — so this narrows
 scope rather than dropping the most common path.)
 
+## Streaming return route (cross-pod progressive rendering)
+
+The same jar also demonstrates the **streaming** generalization of the return route: the pod holding a
+user's SSE connection is not the pod producing the progressive events, and Redis alone bridges them —
+**no Kafka in this part of the demo at all** (the streaming path is broker-free by design; both roles run
+with the Kafka building blocks switched off). Two additional profiles:
+
+```
+  curl -N --SSE-->  stream-ui pod (8600)                      stream-producer pod (8601)
+                      demo.stream.facade (StreamBridge)
+                      event: cid ─────────► the UI quotes it ──POST /api/produce {cid, ...}──►
+                      ◄── segments render     StreamResponder posts to Redis (queue:{cid} + wake-up)
+                      event: done / error
+```
+
+### Run it (three terminals, Redis only)
+
+```shell
+# Terminal A - Redis
+cd helpers/redis-standalone && java -jar target/redis-standalone-x.y.z.jar
+
+# Terminal B - the UI pod (holds the SSE connection)
+cd examples/sync-over-async-demo
+java -Dspring.profiles.active=stream-ui -jar target/sync-over-async-demo-x.y.z.jar
+
+# Terminal C - the producer pod (posts the events)
+java -Dspring.profiles.active=stream-producer -jar target/sync-over-async-demo-x.y.z.jar
+```
+
+Open the notification channel (terminal D) — the first SSE event announces the session's `cid`:
+
+```shell
+curl -sN -H 'accept: text/event-stream' http://127.0.0.1:8600/api/notifications
+```
+
+Then post to the **producer pod**, quoting that cid (terminal E):
+
+```shell
+# five ordered tokens + eof - the chat shape; watch them render in terminal D in exact order
+curl -X POST http://127.0.0.1:8601/api/produce -H 'content-type: application/json' \
+  -d '{"cid":"<cid>","mode":"chat"}'
+
+# or individual notifications and an explicit close (any producer may end the channel)
+curl -X POST http://127.0.0.1:8601/api/produce -H 'content-type: application/json' \
+  -d '{"cid":"<cid>","mode":"notify","name":"orders","body":"order 42 shipped"}'
+curl -X POST http://127.0.0.1:8601/api/produce -H 'content-type: application/json' \
+  -d '{"cid":"<cid>","mode":"close"}'
+```
+
+The producer's response reports `live`: `false` means the rendezvous is over (the UI closed, timed out,
+or died) — the signal to stop producing.
+
+### Chaos checks
+
+The producer endpoint ships two failure modes for experimenting with the reliability design (a short idle
+allowance makes the endings quick — open the channel with `-H 'x-stream-idle-seconds: 6'`):
+
+- `{"cid":"...","mode":"lost","name":"orders","body":"..."}` stores a segment but **suppresses its
+  wake-up** (a lost Pub/Sub notification). It stays invisible until the next real post's drain delivers
+  it — and a lost **close** (`"type":"eof"`) is recovered by the facade's single final drain at idle
+  expiry, so the render still completes.
+- `{"cid":"...","mode":"stall"}` posts two tokens and no terminal (a producer dying mid-stream): the
+  render fails in-band with `event: error` `{"status":408,...}` at idle expiry.
+
+Killing the **UI pod** mid-channel shows the orphan contract from the producer side: posts are accepted
+into the void while the route key's TTL lasts (`sync.stream.ttl.seconds`), then return `live: false`.
+The full validated run — all five scenarios with timestamped evidence — is recorded in the
+[cross-pod test report](../../docs/test-reports/streaming-return-route-cross-pod.md).
+
 ## How it maps to the pattern
 
 | Piece | Role | What it shows |
