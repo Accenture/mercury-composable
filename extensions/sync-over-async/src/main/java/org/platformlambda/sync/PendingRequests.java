@@ -25,13 +25,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Per-pod registry of in-flight synchronous requests, keyed by correlation-id. The REST handler
- * registers a future before publishing to Kafka and blocks on it; the return-channel subscriber (or
- * the final-read fallback) completes it when the response arrives.
+ * registers a future before publishing the request and blocks on it; the return-channel subscriber (or
+ * the final-drain fallback) completes it when the response arrives.
  * <p>
  * Completion is race-safe and idempotent: whichever of the subscriber thread and the timeout path wins,
- * the future is completed exactly once and the entry removed - duplicate or late responses are no-ops.
- * Growth is bounded by {@code maxPending} to protect a pod under load; the cap is reserved atomically
- * (increment-then-check), so concurrent {@code register} calls cannot oversubscribe it.
+ * the future is completed exactly once - duplicate or late responses are no-ops. {@link #complete}
+ * deliberately completes the future <b>in place</b> without removing the entry: the response segment is
+ * destructively popped from Redis before completion, so the completed future is the only remaining copy,
+ * and the await-by-cid path (begin and await as separate flow tasks) must still find it by lookup.
+ * Removal belongs to the paths that end every request's life - {@code awaitResponse}'s finally block and
+ * the exception handler's {@code abort} - which are together exhaustive, so a completed-but-unawaited
+ * entry cannot leak. Growth is bounded by {@code maxPending} to protect a pod under load; the cap is
+ * reserved atomically (increment-then-check), so concurrent {@code register} calls cannot oversubscribe it.
  */
 public class PendingRequests {
 
@@ -44,7 +49,7 @@ public class PendingRequests {
     }
 
     /**
-     * Register a pending request. Call before publishing the Kafka request.
+     * Register a pending request. Call before publishing the request to the async backend.
      *
      * @throws IllegalStateException if the pod is at capacity or the correlation-id is already in flight
      */
@@ -63,11 +68,14 @@ public class PendingRequests {
     }
 
     /**
-     * Complete the waiting future for this correlation-id. Idempotent: returns {@code false} (a no-op)
-     * if no request is pending - i.e. an orphan, duplicate, or already-completed/timed-out response.
+     * Complete the waiting future for this correlation-id <b>in place</b> - the entry stays registered
+     * (holding its capacity slot) until the awaiting or aborting path removes it, so an await-by-cid that
+     * runs after the response arrived still finds the completed future. Idempotent: returns {@code false}
+     * (a no-op) if no request is pending or it was already completed - i.e. an orphan, duplicate, or
+     * timed-out response.
      */
     public boolean complete(String businessCorrelationId, String response) {
-        CompletableFuture<String> future = remove(businessCorrelationId);
+        CompletableFuture<String> future = pending.get(businessCorrelationId);
         return future != null && future.complete(response);
     }
 

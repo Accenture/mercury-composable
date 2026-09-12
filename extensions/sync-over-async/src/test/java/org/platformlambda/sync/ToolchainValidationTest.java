@@ -29,11 +29,13 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * Validates the Phase-1 toolchain: embedded Redis starts on this platform and Lettuce can do the two
- * operations the return-route mechanism relies on - a TTL'd value round-trip ({@code SETEX}/{@code GET})
- * and a Pub/Sub wake-up.
+ * Validates the Phase-1 toolchain: embedded Redis starts on this platform and Lettuce can do the three
+ * operations the return-route mechanism relies on - a TTL'd value round-trip ({@code SETEX}/{@code GET}
+ * for the route key), a FIFO list with destructive pops ({@code RPUSH}/{@code LPOP} for the rendezvous
+ * queue) and a Pub/Sub wake-up.
  */
 class ToolchainValidationTest extends RedisTestBase {
 
@@ -41,8 +43,22 @@ class ToolchainValidationTest extends RedisTestBase {
     void setexAndGetRoundTrip() {
         try (StatefulRedisConnection<String, String> conn = redisClient.connect()) {
             RedisCommands<String, String> redis = conn.sync();
-            redis.setex("response:cid-1", 30, "payload");
-            assertEquals("payload", redis.get("response:cid-1"));
+            redis.setex("request:cid-1", 30, "svc-return:origin-1");
+            assertEquals("svc-return:origin-1", redis.get("request:cid-1"));
+        }
+    }
+
+    @Test
+    void listPushPopSemantics() {
+        try (StatefulRedisConnection<String, String> conn = redisClient.connect()) {
+            RedisCommands<String, String> redis = conn.sync();
+            redis.rpush("queue:cid-1", "one", "two");
+            redis.expire("queue:cid-1", 30);
+            assertEquals(2, redis.llen("queue:cid-1"));
+            assertEquals("one", redis.lpop("queue:cid-1"));   // FIFO: pop order == push order
+            assertEquals("two", redis.lpop("queue:cid-1"));
+            assertNull(redis.lpop("queue:cid-1"), "an empty queue pops null");
+            assertEquals(0, redis.exists("queue:cid-1"), "a fully drained list ceases to exist");
         }
     }
 

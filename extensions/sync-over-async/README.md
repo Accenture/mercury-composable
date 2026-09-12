@@ -1,11 +1,14 @@
-# Sync-over-async (Redis-assisted Kafka request/reply)
+# Sync-over-async (Redis-assisted request/reply and streaming for async backends)
 
-A self-initializing extension that exposes **synchronous REST semantics over asynchronous Kafka
-processing** across horizontally scaled pods. The pod that consumes the Kafka response is usually not
-the pod holding the original HTTP connection, so Redis carries the cross-pod return route: the response
-payload is stored in Redis (`SETEX`) and a per-pod Pub/Sub channel wakes the originating pod, keyed by a
-correlation-id. Kafka remains the durable business transport; Redis Pub/Sub is only a low-latency
-wake-up signal.
+A self-initializing extension that exposes **synchronous REST semantics over asynchronous
+processing** across horizontally scaled pods. The pod that produces the response is usually not
+the pod holding the original HTTP connection, so Redis carries the cross-pod return route: every
+segment is appended to a short-lived per-correlation-id **rendezvous queue** (a Redis List,
+`RPUSH` before any signal) and a per-pod Pub/Sub channel wakes the originating pod, which drains
+the queue destructively (`LPOP`). One mechanism serves two patterns — a **one-shot** response is
+the degenerate stream (a queue whose first entry is terminal), and a **streaming** rendezvous
+carries progressive events until an `eof`/`exception` entry. The application's async transport
+(e.g. Kafka) remains the durable business leg; Redis Pub/Sub is only a low-latency wake-up signal.
 
 > **Status: shipped, opt-in.** The feature is **off by default**; enable it with
 > `sync.over.async.enabled=true` plus the `redis.*` connection settings. The
@@ -16,26 +19,40 @@ wake-up signal.
 
 ## What ships in this module
 
-The module contains the Redis return-route engine and the three composable tasks that form the
-synchronous facade. The Kafka legs come from `system/minimalist-kafka`, which this module depends on:
+The module contains the Redis return-route engine, the three composable tasks that form the
+synchronous facade, and the streaming producer API. It is **transport-neutral by composition**: its
+compile footprint is platform-core + Lettuce only; the Kafka legs of the reference wiring come from
+`system/minimalist-kafka`, which the application declares itself (here it is a test-scope dependency
+used by the end-to-end regression):
 
-- **`ReturnRouteCoordinator`** — the per-pod engine: `begin` registers the return route,
-  `awaitResponse` blocks with a final Redis read before timeout (a missed notification cannot lose
-  the request), and `deliver` stores the response (`SETEX`, data before signal) then publishes the
-  Pub/Sub wake-up to the originating pod's channel.
-- **`ReturnRouteStore`** — Redis key storage (`request:{cid}` return route, `response:{cid}`
-  payload, short TTLs as the crash safety net) over a single shared [Lettuce](https://lettuce.io/)
-  connection.
-- **`PendingRequests`** — race-safe in-flight registry: each waiting request completes exactly once
-  (duplicate and orphan deliveries are no-ops) under an atomically enforced per-pod ceiling
-  (`sync.max.pending.requests`).
+- **`ReturnRouteCoordinator`** — the per-pod engine. One-shot: `begin` registers the return route,
+  `awaitResponse` blocks with a final drain before timeout (a missed notification cannot lose
+  the request), and `deliver` posts one terminal segment (`RPUSH` + TTL, data before signal) then
+  publishes the Pub/Sub wake-up to the originating pod's channel. Streaming: `beginStream`
+  registers a segment sink, each wake-up drains the queue into it — serialized per cid, so forward
+  order equals list order — until a terminal entry, `finalDrain` is the last-chance drain at edge
+  idle expiry, and `closeStream` is the consumer-side close (client disconnect).
+- **`ReturnRouteStore`** — Redis key storage (`request:{cid}` return route, `queue:{cid}`
+  rendezvous queue with an atomically refreshed TTL as the crash safety net) over a single shared
+  [Lettuce](https://lettuce.io/) connection.
+- **`StreamResponder`** — the segment-producer API a backend service constructs from plain
+  `redis.*` parameters (no coordinator, no subscriber): `post(cid, type, name, body)` appends
+  store-first and wakes the consuming pod; `false` means the rendezvous is over — stop producing.
+  There is **no sequence number**: ordering, where required, is the posting discipline (Redis
+  executes each connection's commands in arrival order), and any producer may post the terminal
+  entry.
+- **`PendingRequests` / `PendingStreams`** — race-safe in-flight registries: each waiting request
+  completes exactly once — in place, so the await-by-cid path survives destructive pops — and each
+  stream drains on a single loop at a time, under atomically enforced per-pod ceilings
+  (`sync.max.pending.requests`, `sync.max.pending.streams`).
 - **Composable tasks `sync.prepare`, `sync.await` and `soa.reply`** (`SyncPrepareTask`,
   `SyncAwaitTask`, `SoaReplyTask`) — the building blocks an application wires into its own Event
   Script flow. The reference wiring lives in this module's test resources (`rest.yaml`,
   `flows/sync-to-async.yml`, `flows/soa-reply.yml`, `kafka-flow-adapter.yaml`) and in the demo app.
 - **`SyncOverAsyncAutoStart` / `SyncRuntime`** — self-initialization gated by
   `@OptionalService("sync.over.async.enabled")`, so nothing loads (and no Redis connection is
-  opened) unless the feature is switched on.
+  opened) unless the feature is switched on. (`StreamResponder` needs neither — the producer side
+  has no switch.)
 
 ## Threading model & virtual-thread safety
 
@@ -79,8 +96,9 @@ pins** and is verified green on JDK 21 and JDK 26.
 
 ## Request/response legs (Kafka)
 
-The Kafka legs are the reusable building blocks of `system/minimalist-kafka` (this module's direct
-dependency), not classes of this module:
+The reference wiring's Kafka legs are the reusable building blocks of `system/minimalist-kafka` — a
+test-scope dependency here, exercised by the end-to-end regression; an application that wants them
+declares the library itself (the extension does not impose a transport):
 
 - **Outbound** — `simple.kafka.notification` publishes the request to the request topic with `cid`
   + `traceparent` headers. It returns a `Mono` that completes on broker acknowledgment, so inside

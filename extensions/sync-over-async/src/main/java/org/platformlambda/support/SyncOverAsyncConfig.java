@@ -26,20 +26,38 @@ import org.platformlambda.core.util.common.ConfigBase;
  * (the per-request REST timeout is supplied separately, from the {@code rest.yaml} entry).
  *
  * @param returnChannelPrefix prefix for the per-pod Pub/Sub return channel, e.g. {@code svc-return}
- * @param routeTtlSeconds     TTL for {@code request:{cid}} (should cover REST timeout + buffer)
- * @param responseTtlSeconds  TTL for {@code response:{cid}} (short rendezvous window)
+ * @param routeTtlSeconds     TTL for a one-shot {@code request:{cid}} route (should cover REST timeout + buffer)
+ * @param responseTtlSeconds  TTL for a one-shot rendezvous queue (short rendezvous window)
  * @param maxPendingRequests  per-pod ceiling on in-flight synchronous requests
+ * @param streamTtlSeconds    TTL for a streaming rendezvous's route and queue, refreshed on every post -
+ *                            session-scale (an SSE notification channel legitimately idles), the crash
+ *                            safety net behind the eager deletes
+ * @param maxPendingStreams   per-pod ceiling on concurrently open streams
  */
 public record SyncOverAsyncConfig(
         String returnChannelPrefix,
         long routeTtlSeconds,
         long responseTtlSeconds,
-        int maxPendingRequests) {
+        int maxPendingRequests,
+        long streamTtlSeconds,
+        int maxPendingStreams) {
 
     private static final String RETURN_CHANNEL_PREFIX = "sync.return.channel.prefix";
     private static final String ROUTE_TTL_SECONDS = "sync.route.ttl.seconds";
     private static final String RESPONSE_TTL_SECONDS = "sync.response.ttl.seconds";
     private static final String MAX_PENDING_REQUESTS = "sync.max.pending.requests";
+    private static final String STREAM_TTL_SECONDS = "sync.stream.ttl.seconds";
+    private static final String MAX_PENDING_STREAMS = "sync.max.pending.streams";
+
+    private static final long DEFAULT_STREAM_TTL_SECONDS = 1800;
+    private static final int DEFAULT_MAX_PENDING_STREAMS = 1000;
+
+    /** Convenience form for the one-shot tunables, with the streaming tunables at their defaults. */
+    public SyncOverAsyncConfig(String returnChannelPrefix, long routeTtlSeconds, long responseTtlSeconds,
+                               int maxPendingRequests) {
+        this(returnChannelPrefix, routeTtlSeconds, responseTtlSeconds, maxPendingRequests,
+                DEFAULT_STREAM_TTL_SECONDS, DEFAULT_MAX_PENDING_STREAMS);
+    }
 
     public static SyncOverAsyncConfig defaults() {
         return new SyncOverAsyncConfig("svc-return", 90, 30, 10_000);
@@ -52,6 +70,8 @@ public record SyncOverAsyncConfig(
                 config.getProperty(RETURN_CHANNEL_PREFIX, "svc-return"),
                 util.str2long(config.getProperty(ROUTE_TTL_SECONDS, "90")),
                 util.str2long(config.getProperty(RESPONSE_TTL_SECONDS, "30")),
-                util.str2int(config.getProperty(MAX_PENDING_REQUESTS, "10000")));
+                util.str2int(config.getProperty(MAX_PENDING_REQUESTS, "10000")),
+                util.str2long(config.getProperty(STREAM_TTL_SECONDS, String.valueOf(DEFAULT_STREAM_TTL_SECONDS))),
+                util.str2int(config.getProperty(MAX_PENDING_STREAMS, String.valueOf(DEFAULT_MAX_PENDING_STREAMS))));
     }
 }

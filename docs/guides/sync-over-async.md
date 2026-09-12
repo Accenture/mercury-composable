@@ -57,7 +57,10 @@ sequenceDiagram
 ```
 
 The correlation-id threads the whole round trip. Redis holds two short-lived keys per request: the **route**
-(which pod's channel to wake) and the **response** payload.
+(which pod's channel to wake) and the **rendezvous queue** — a Redis List the responder appends to and the
+originating pod drains destructively. A one-shot response is simply a queue whose first entry is terminal;
+the same queue carries a whole sequence of progressive segments for the
+[streaming return route](#streaming) below.
 
 ## Enabling and configuring {#config}
 
@@ -90,23 +93,60 @@ id, from discrete `redis.*` connection parameters and `sync.*` engine tunables. 
 | `redis.health.timeout` | `5s` | Timeout for the [`redis.health`](#health) probe. |
 | `redis.health.startup.grace` | `30s` | Start-up grace for [`redis.health`](#health) (placeholder healthy status while the client warms up). |
 | `sync.return.channel.prefix` | `svc-return` | Prefix for the per-pod Pub/Sub return channel. |
-| `sync.route.ttl.seconds` | `90` | TTL for the return-route key (cover the REST timeout + buffer). |
-| `sync.response.ttl.seconds` | `30` | TTL for the response key (short rendezvous window). |
+| `sync.route.ttl.seconds` | `90` | TTL for a one-shot return-route key (cover the REST timeout + buffer). |
+| `sync.response.ttl.seconds` | `30` | TTL for a one-shot rendezvous queue (short rendezvous window). |
 | `sync.max.pending.requests` | `10000` | Per-pod ceiling on in-flight synchronous requests (backpressure). |
+| `sync.stream.ttl.seconds` | `1800` | TTL for a [streaming](#streaming) rendezvous's route and queue, refreshed on every post (session-scale — an SSE notification channel legitimately idles). |
+| `sync.max.pending.streams` | `1000` | Per-pod ceiling on concurrently open streams. |
 
 ## Reliability cornerstones {#reliability}
 
 The design is correct independent of Pub/Sub timing:
 
-- **Redis is the source of truth.** The responder writes the response to Redis (`SETEX`) **before** sending
-  the Pub/Sub wake-up, so a signal can never arrive before the data.
-- **Final read before timeout.** If the wake-up is missed, the waiting pod does one last Redis read before
-  giving up — so a dropped notification still resolves the request rather than failing it.
-- **Exactly-once completion.** The pending-request registry completes each waiting future once, whichever of
-  the wake-up path and the timeout path wins; duplicates and orphans are no-ops.
-- **Bounded growth.** `sync.max.pending.requests` caps in-flight requests to protect a pod under load.
+- **Redis is the source of truth.** The responder appends to the rendezvous queue (`RPUSH`, with an
+  atomically refreshed TTL) **before** sending the Pub/Sub wake-up, so a signal can never arrive before
+  the data.
+- **Final drain before timeout.** If the wake-up is missed, the waiting pod does one last drain of the
+  queue before giving up — so a dropped notification still resolves the request rather than failing it.
+  (The streaming path applies the same recovery at edge idle expiry.)
+- **Exactly-once delivery, structurally.** The queue is drained by destructive pops, so a duplicate or
+  spurious wake-up pops nothing; each waiting future completes once, whichever of the wake-up path and
+  the timeout path wins, and orphans are no-ops.
+- **Bounded growth.** `sync.max.pending.requests` and `sync.max.pending.streams` cap in-flight rendezvous
+  to protect a pod under load.
 - **Timeout → 408.** A request with no answer in its budget returns HTTP 408, and its Redis keys are cleaned
   up (TTLs are the safety net for crashes).
+
+## Streaming return route {#streaming}
+
+The same rendezvous generalizes from one response to **a sequence of segments with a terminal signal**,
+bridging progressive rendering across pods: whichever pod holds the user's HTTP connection opens the
+stream (`beginStream(cid, sink)`), and any backend pod posts progressive events straight to Redis with
+the lightweight producer API — no coordinator, no subscriber, no enable switch on the producer side:
+
+```java
+try (var responder = new StreamResponder(RedisConfig.from(config))) {
+    responder.post(cid, StreamSegment.DATA, null, "Hello");
+    responder.post(cid, StreamSegment.DATA, "tokens", "{...}");
+    boolean live = responder.post(cid, StreamSegment.EOF, null, metadata);
+    // false = the rendezvous is over (orphan) - stop producing for that cid
+}
+```
+
+The producer's whole contract is *post in the order you mean* — there is **no sequence number** to stamp
+and no per-cid state to hold. A single producer that requires strict ordering (e.g. an AI-chat token
+stream) posts sequentially over one connection: Redis executes each connection's commands in arrival
+order and the consuming pod drains serialized per cid, so delivery order equals posting order end-to-end.
+Several producers on one cid (e.g. backend services notifying one SSE session) interleave at segment
+granularity, by design — and **any** of them may close the channel by posting the terminal `eof` (or
+`exception`) entry: "the end signal is also an event". Cleanup is eager on completion and TTL-driven
+otherwise; a `false` from `post` always means stop — the consumer disconnected, timed out, or another
+producer already closed the channel.
+
+The design rationale, decision record and failure analysis live in the
+[streaming-return-route design spec](https://github.com/Accenture/mercury-composable/blob/main/draft-design-specs/streaming-return-route.md);
+the endpoint-level facade that forwards a drained stream into an SSE (`stream: true`) endpoint arrives
+with the follow-up experiments.
 
 ## Health check {#health}
 

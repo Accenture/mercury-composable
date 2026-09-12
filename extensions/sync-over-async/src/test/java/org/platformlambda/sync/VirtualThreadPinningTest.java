@@ -151,8 +151,8 @@ class VirtualThreadPinningTest extends RedisTestBase {
                         String cid = "pin-" + id + "-" + i;
                         store.saveRoute(cid, "svc-return:pod-X", 30);
                         store.getRoute(cid);
-                        store.saveResponse(cid, "payload", 30);
-                        store.getResponse(cid);
+                        store.appendSegment(cid, "{\"type\":\"eof\",\"body\":\"payload\"}", 30);
+                        store.popSegment(cid);
                     }
                 }));
             }
