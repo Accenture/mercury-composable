@@ -50,7 +50,7 @@ public class SyncAwaitTask implements TypedLambdaFunction<Map<String, Object>, M
     @SuppressWarnings("unchecked")
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
             throws InterruptedException {
-        String businessCorrelationId = String.valueOf(input.get("cid"));
+        String businessCorrelationId = String.valueOf(input.get(SyncRuntime.CID));
         long timeoutMillis = parseTimeout(headers.get(TIMEOUT_HEADER));
         try {
             String responseJson = SyncRuntime.coordinator().awaitResponse(businessCorrelationId, timeoutMillis);

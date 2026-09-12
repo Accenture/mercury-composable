@@ -27,6 +27,16 @@ import io.lettuce.core.RedisClient;
  */
 public final class SyncRuntime {
 
+    /**
+     * The module's self-contained correlation-id key ({@code "cid"}) - the flow-level contract shared by
+     * the facade tasks ({@code sync.prepare}, {@code sync.await}, {@code soa.reply}) and the flow data
+     * mappings ({@code model.cid -> header.cid}). Deliberately NOT the transport's wire header name: the
+     * Kafka header that carries the id between pods belongs to the Kafka library and is configurable there
+     * ({@code kafka.correlation.id.header}, default also {@code cid}); inbound flow adapters seed
+     * {@code model.cid} from the effective wire header, whatever it is named.
+     */
+    public static final String CID = "cid";
+
     private static ReturnRouteCoordinator coordinator;
     private static RedisClient client;
 

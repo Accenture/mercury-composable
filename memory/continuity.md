@@ -143,6 +143,17 @@
   sequential multi-thread access under external sync (the checks' ReentrantLock) is its contract.
   <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-11 | uses: 1 | tier: working | origin: 2026-09-11-191200 -->
 
+- **sync-over-async is transport-neutral — its correlation-id key is self-contained (Eric's direction,
+  2026-09-12).** The facade tasks speak only the module's own flow-level `cid` key (`SyncRuntime.CID`);
+  the Kafka wire header belongs to the transport and is configurable there
+  (`kafka.correlation.id.header`, with per-binding overrides — inbound flow adapters seed `model.cid`
+  from the effective wire header, whatever its name), so the tasks never reference the transport's
+  constant. minimalist-kafka is test scope (e2e regression only); platform-core is the declared compile
+  backbone; applications compose the facade with their own Kafka library (the demo shows the shape).
+  Consumer note for the next release: apps that leaned on the transitive minimalist-kafka must now
+  declare it. Extends [[functions-decoupled-routes]] to the dependency graph.
+  <!-- id: soa-transport-neutral-cid | created: 2026-09-12 | last_used: 2026-09-12 | uses: 1 | tier: working | origin: 2026-09-12-011438 -->
+
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
   `WorkerHandler` calls `stopTracing` (removing it) as soon as `processEvent` returns. So any work that

@@ -23,7 +23,6 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;
-import org.platformlambda.mini.kafka.KafkaHeaders;
 import org.platformlambda.sync.SyncRuntime;
 
 import java.util.Map;
@@ -39,6 +38,10 @@ import java.util.Map;
  * at the edge: REST automation reads the configured {@code http.correlation.id.header} (default
  * {@code X-Correlation-Id}) and generates a fresh UUID when it is absent. So the upstream correlation-id
  * threads the round trip with no extra config.</p>
+ *
+ * <p>{@code cid} is the module's own key ({@link SyncRuntime#CID}), self-contained by design: the Kafka
+ * wire header that carries the id between pods belongs to the transport and is configurable there
+ * ({@code kafka.correlation.id.header}), so these tasks never reference the transport's header name.</p>
  *
  * <p>Deployments that use a proprietary correlation-id header can either set {@code http.correlation.id.header}
  * to that name, or override the mapping in the flow YAML. For example:
@@ -61,9 +64,9 @@ public class SyncPrepareTask implements TypedLambdaFunction<Map<String, Object>,
     public EventEnvelope handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         // model.cid is the business correlation-id captured at the edge (from http.correlation.id.header,
         // default X-Correlation-Id, or a fresh UUID). The flow maps it here as header.cid.
-        String businessCorrelationId = headers.getOrDefault("cid", Utility.getInstance().getUuid());
+        String businessCorrelationId = headers.getOrDefault(SyncRuntime.CID, Utility.getInstance().getUuid());
         SyncRuntime.coordinator().begin(businessCorrelationId);   // register the return route before publishing
         byte[] payload = SimpleMapper.getInstance().getMapper().writeValueAsBytes(input);
-        return new EventEnvelope().setHeader(KafkaHeaders.CORRELATION_ID, businessCorrelationId).setBody(payload);
+        return new EventEnvelope().setHeader(SyncRuntime.CID, businessCorrelationId).setBody(payload);
     }
 }

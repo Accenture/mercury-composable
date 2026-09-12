@@ -29,7 +29,8 @@
         <jackson-bom.version>3.2.2</jackson-bom.version>
         <log4j2.version>2.26.1</log4j2.version>
         <!-- Security override for the transitive httpcore5/httpcore5-h2 (Snyk HIGH, CWE-770) pulled
-             in via minimalist-kafka's Confluent registry client. Spring Boot's dependencyManagement
+             in via minimalist-kafka's Confluent registry client - a test-classpath path here now that
+             minimalist-kafka is test scope, kept patched all the same. Spring Boot's dependencyManagement
              pins the vulnerable 5.4.2 (management beats nearest-wins), so each module resolving the
              Confluent chain must override the property itself - see minimalist-kafka's pom. -->
         <httpcore5.version>5.4.3</httpcore5.version>
@@ -47,9 +48,9 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- Converge Guava to platform-core's version: Confluent's serdes (via minimalist-kafka)
-                 otherwise win with an older 32.0.1, leaving this module on a different Guava (and
-                 failureaccess) than the rest of the reactor. Pinning here keeps one Guava companion. -->
+            <!-- Converge Guava to platform-core's version: Confluent's serdes (via the test-scoped
+                 minimalist-kafka) otherwise win with an older 32.0.1 on the test classpath, leaving
+                 the tests on a different Guava (and failureaccess) than the runtime. -->
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
@@ -66,19 +67,30 @@
     </repositories>
 
     <dependencies>
-        <!-- The minimalist-kafka building blocks (Kafka notification function + flow adapter). It brings
-             event-script-engine (flow runtime + REST automation, and platform-core) and the Kafka client
-             transitively, so the facade only adds the Redis return-route engine on top. -->
+        <!-- The facade is transport-neutral: production code speaks only the module's self-contained
+             correlation-id key (SyncRuntime.CID) and the platform-core function contract, so the
+             application declares its own Kafka library next to this extension (minimalist-kafka;
+             twin-kafka for a second cluster). platform-core supplies the function runtime here. -->
+        <dependency>
+            <groupId>org.platformlambda</groupId>
+            <artifactId>platform-core</artifactId>
+            <version>4.12.8</version>
+        </dependency>
+
+        <!-- Kafka building blocks for the end-to-end regression only (notification function + flow
+             adapter, bringing event-script-engine and the Kafka client onto the test classpath).
+             Test scope keeps the published artifact free of any transport dependency. -->
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minimalist-kafka</artifactId>
             <version>4.12.8</version>
+            <scope>test</scope>
         </dependency>
 
-        <!-- Guava's failureaccess companion is required at runtime by Confluent's serdes (Guava
-             LocalCache -> InternalFutureFailureAccess), reached transitively via minimalist-kafka.
-             Declared explicitly so it is a first-class classpath entry and cannot be dropped by
-             strict/curated dependency resolution in the field. -->
+        <!-- Guava's failureaccess companion is required at runtime by Guava itself (arriving with
+             platform-core; Confluent's serdes exercise the same Guava LocalCache path on the test
+             classpath). Declared explicitly so it is a first-class classpath entry and cannot be
+             dropped by strict/curated dependency resolution in the field. -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>failureaccess</artifactId>
