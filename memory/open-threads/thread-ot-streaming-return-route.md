@@ -1,5 +1,6 @@
 - [ ] **Streaming return route — cross-pod progressive rendering for sync-over-async.**
-  Spec drafted 2026-09-12 (`draft-design-specs/streaming-return-route.md`): generalize the
+  Spec drafted 2026-09-12 (`draft-design-specs/streaming-return-route.md`; PR #365,
+  squash `705d2117`): generalize the
   Redis return route from one-shot response to a per-cid segment stream — segments XADDed
   to `stream:{cid}` as the source of truth (store-first invariant kept; Pub/Sub stays a
   wake-up signal, never the payload carrier), the existing `request:{cid}` registry and
