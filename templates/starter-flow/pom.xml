@@ -12,7 +12,7 @@
     <groupId>com.accenture</groupId>
     <artifactId>starter-flow</artifactId>
     <packaging>jar</packaging>
-    <version>4.12.7</version>
+    <version>4.12.8</version>
     <name>Layer 2 starter - Event Script flows</name>
 
     <parent>
@@ -56,13 +56,13 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.12.7</version>
+            <version>4.12.8</version>
         </dependency>
 
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>event-script-engine</artifactId>
-            <version>4.12.7</version>
+            <version>4.12.8</version>
         </dependency>
 
         <dependency>

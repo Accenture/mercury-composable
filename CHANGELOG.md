@@ -8,6 +8,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.12.8, 9/12/2026
+
+### Added
+
+1. `redis.health` — a ready-made health check for the Redis used by the sync-over-async
+   extension (route auto-registers when the jar is on the classpath; opt in via
+   `mandatory.health.dependencies` / `optional.health.dependencies`). One PING on a
+   dedicated connection proves connectivity, TLS and authentication; the
+   `minigraph-state-redis` extension reads the same `redis.*` parameters, so one probe
+   covers a deployment using either or both. Tunables: `redis.health.timeout` (5s) and
+   `redis.health.startup.grace` (30s). Every critical infrastructure component needs a
+   health check service.
+
+### Fixed
+
+1. `kafka.health` and `secondary.kafka.health` resolve their probe client configuration
+   **lazily** — at client build time, re-resolved on every rebuild — never in the
+   constructor (upstreamed from a field merge request). A `@PreLoad` function is
+   constructed before any `@MainApplication` credential bootstrap publishes its system
+   properties (the vault pattern), so a constructor-resolved `sasl.jaas.config` template
+   froze the credential as missing for the life of the instance and every probe failed
+   forever with Kafka's `ConfigException: The OAuth configuration option clientId value
+   is required`; deployments had to demote `kafka.health` out of
+   `mandatory.health.dependencies`. The check now heals on the first probe after the
+   credential lands — no restart.
+
+2. While a health probe's configuration is still **unusable** — the client cannot be
+   built from it, or the server rejects the credentials (Redis `NOAUTH`/`WRONGPASS`, the
+   signature of a password that has not landed yet) — `type=health` reports a **passing**
+   `Waiting for ... connection` status instead of failing `/health`: an orchestrator
+   restart cannot produce a missing credential. Only a genuine connectivity failure
+   (client built, server unreachable) fails the check with status 503.
+
+### Changed
+
+1. The Kafka health checks run on **kernel threads** (`@KernelThreadRunner`), joining
+   `SimpleKafkaNotification` and `SchemaCodec`: the Kafka consumer performs network I/O
+   on the calling thread inside `synchronized` sections, which pins a virtual-thread
+   carrier on Java 21 (JEP 491 lifts that only in JDK 24+). `redis.health` deliberately
+   stays on virtual threads — Lettuce does its I/O on its own event-loop threads and the
+   caller merely awaits a future, which unmounts cleanly.
+
+2. A failed health probe returns a 503 response carrying a key-value message —
+   `{"text": "<reason>", "code": 503}` — instead of a bare exception string: the status
+   code is what the health aggregation (and Kubernetes) detects; the map is for the
+   DevOps reader.
+
+3. Health-check hardening from the review round: `AtomicReference` instead of volatile
+   reference fields, fail-fast `Objects.requireNonNull` on the probe-config suppliers
+   (with the non-null result contract documented), the background warm-up on the
+   platform's managed executors, and the twin's fallback tunable helper relocated to its
+   only user (`SecondaryKafkaHealthCheck`).
+
+---
 ## Version 4.12.7, 9/11/2026
 
 ### Added
