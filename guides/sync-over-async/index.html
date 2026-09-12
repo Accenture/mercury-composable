@@ -2783,7 +2783,9 @@ Redis return route.</em></p>
 <p>In a cloud-native deployment the REST caller and the backend that answers may be different pods, and the
 backend is reached <strong>asynchronously</strong> over Kafka. Sync-over-async bridges that gap: the HTTP thread waits
 while the request fans out over Kafka and the answer is routed back — without coupling the two pods beyond a
-shared Redis and topic pair. It builds on the <a href="../minimalist-kafka/">Minimalist Kafka</a> for the Kafka legs.</p>
+shared Redis and topic pair. It builds on the <a href="../minimalist-kafka/">Minimalist Kafka</a> for the Kafka legs —
+by composition, not by dependency: the extension carries no Kafka library of its own, so the application
+declares <code>minimalist-kafka</code> alongside <code>sync-over-async</code>.</p>
 <blockquote>
 <p><strong>Opt-in.</strong> The return-route coordinator eagerly connects to Redis, so it starts only when
 <code>sync.over.async.enabled=true</code>. Leave it off unless you are using the pattern.</p>
@@ -2809,6 +2811,12 @@ shared Redis and topic pair. It builds on the <a href="../minimalist-kafka/">Min
 <p>The correlation-id threads the whole round trip. Redis holds two short-lived keys per request: the <strong>route</strong>
 (which pod's channel to wake) and the <strong>response</strong> payload.</p>
 <h2 id="config">Enabling and configuring<a class="headerlink" href="#config" title="Permanent link">&para;</a></h2>
+<p>The extension is <strong>transport-neutral</strong>: it brings only platform-core and the Lettuce Redis client, so the
+application declares its Kafka library (<code>minimalist-kafka</code>) alongside <code>sync-over-async</code> in the build. The
+facade tasks exchange the correlation-id through the module's own flow-level <code>cid</code> key (the
+<code>model.cid -&gt; header.cid</code> flow mappings) — deliberately independent of the transport's configurable wire
+header (<code>kafka.correlation.id.header</code>), which the flow adapter maps into <code>model.cid</code> whatever its name.
+Then enable the coordinator and point it at Redis:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">sync.over.async.enabled</span><span class="o">=</span><span class="s">true</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="na">redis.host</span><span class="o">=</span><span class="s">${REDIS_HOST:127.0.0.1}</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="na">redis.port</span><span class="o">=</span><span class="s">${REDIS_PORT:6379}</span>
