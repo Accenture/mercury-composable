@@ -37,8 +37,16 @@
   `StreamResponder`/`StreamSegment`/`PendingStreams` shipped, complete-in-place landed
   (plus one E1-found race fix: the timeout path consults the future after an empty
   final drain, spec §4.7 note); D8 gate PASSED — module 73/73 (was 46), demo flows 4/4
-  against the unified module; guide/config-reference/README updated. Serves
-  [[bp-agent-orchestration]] Q8 second half (graph-run streaming); inherits
-  [[soa-transport-neutral-cid]]. Next: E2 (single-JVM end-to-end, both use cases
-  behind `stream: true` endpoints).
+  against the unified module; guide/config-reference/README updated. **E2 IMPLEMENTED
+  2026-09-12** (branch `feat/srr-e2-stream-bridge`, commits `aa864f1a` + `e3301618`; PR
+  pending): `StreamBridge` (facade lifecycle — SSE head + watchdog share one idle number;
+  expiry = single final drain then in-band 408 + closeStream; capacity → real 503) +
+  `EventStreamSink`; broker-free e2e `StreamingRestE2eTest` proves both use cases behind
+  real `stream: true` endpoints through the shipped SSE consumer — chat exact-order,
+  notification multi-producer + backend close, idle expiry BOTH ways (lost-close
+  recovered by the final drain — the D4 nuance observable end-to-end — and empty → 408 +
+  orphan stop); surefire reuseForks=false (two AutoStart-booting classes); module 77/77,
+  demo 4/4. Serves [[bp-agent-orchestration]] Q8 second half (graph-run streaming);
+  inherits [[soa-transport-neutral-cid]]. Next: E3 (cross-pod dry-run — two JVMs against
+  redis-standalone, chaos checks).
   <!-- id: ot-streaming-return-route | created: 2026-09-12 | last_used: 2026-09-12 | uses: 1 | tier: working | origin: 2026-09-12-021649 -->
