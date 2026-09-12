@@ -12,7 +12,7 @@
     <groupId>com.accenture</groupId>
     <artifactId>starter-function</artifactId>
     <packaging>jar</packaging>
-    <version>4.12.7</version>
+    <version>4.12.8</version>
     <name>Layer 1 starter - composable functions with REST automation</name>
 
     <parent>
@@ -56,7 +56,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.12.7</version>
+            <version>4.12.8</version>
         </dependency>
 
         <dependency>

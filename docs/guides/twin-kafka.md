@@ -174,6 +174,8 @@ topology in one process - set `dual.servers=true` (in its `application.propertie
 `-Ddual.servers=true`) and it starts broker 1 on `127.0.0.1:9092` and broker 2 on `127.0.0.1:8092`
 with separate log directories:
 
+> **Note**: `x.y.z` denotes the current Mercury version shown in the root `pom.xml`.
+
 ```shell
 cd helpers/kafka-standalone && java -Ddual.servers=true -jar target/kafka-standalone-x.y.z-exec.jar
 ```

@@ -243,7 +243,10 @@
   placeholders) AND a Gradle build with a single `def mercuryVersion = '<version>'`
   literal. Mercury artifacts are NOT on Maven Central — the templates' Gradle builds
   resolve engine artifacts from mavenLocal (the reactor `mvn install`), which is also why
-  ci.yml's templates-gradle job installs the engine modules first.
+  ci.yml's templates-gradle job installs the engine modules first. Since v4.12.8 the sweep
+  is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
+  `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
+  version bump again).
   <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-11 | uses: 1 | tier: working | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->

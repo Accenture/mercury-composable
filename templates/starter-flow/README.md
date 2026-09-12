@@ -22,14 +22,16 @@ build at your organization's artifact repository.
 
 ## Build, test, run
 
+> **Note**: `x.y.z` denotes the project version set in `pom.xml` / `build.gradle` — the current Mercury version.
+
 ```bash
 # Maven
 mvn clean package
-java -jar target/starter-flow-4.12.7.jar
+java -jar target/starter-flow-x.y.z.jar
 
 # Gradle
 gradle build
-java -jar build/libs/starter-flow-4.12.7.jar
+java -jar build/libs/starter-flow-x.y.z.jar
 ```
 
 Then:
