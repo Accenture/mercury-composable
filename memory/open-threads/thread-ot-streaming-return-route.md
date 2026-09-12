@@ -45,8 +45,10 @@
   notification multi-producer + backend close, idle expiry BOTH ways (lost-close
   recovered by the final drain — the D4 nuance observable end-to-end — and empty → 408 +
   orphan stop); surefire reuseForks=false (two AutoStart-booting classes); module 77/77,
-  demo 4/4. **E3 EXECUTED 2026-09-12** (branch `feat/srr-e3-cross-pod-dry-run`, commit
-  `1c247872`; PR pending): live two-JVM dry-run against redis-standalone — demo gained
+  demo 4/4. **E3 SHIPPED 2026-09-12** (merged via PR #371, squash `b1e57537`, title clean —
+  3 commits trimmed: dry-run `1c247872` + guide contract fix `7065e5d0` +
+  contract-provider closure registration `3b3b0326`): live two-JVM dry-run against
+  redis-standalone — demo gained
   `stream-ui`/`stream-producer` profiles (broker-free) + a `lost` chaos mode; five
   scenarios green first run (ordered chat cross-pod; lost notification healed; lost
   close recovered by the final drain at idle + 1 ms; producer kill -9 → in-band 408;
