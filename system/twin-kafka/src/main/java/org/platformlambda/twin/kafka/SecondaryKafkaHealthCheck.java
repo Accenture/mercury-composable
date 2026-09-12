@@ -18,6 +18,7 @@
 
 package org.platformlambda.twin.kafka;
 
+import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.mini.kafka.KafkaClientConfig;
@@ -42,8 +43,12 @@ import java.util.function.Supplier;
  * Tuning keys follow the twin-kafka fallback convention: {@code secondary.kafka.health.timeout} and
  * {@code secondary.kafka.health.startup.grace} fall back to the {@code kafka.health.*}
  * globals, then to the built-in defaults (5s / 30s).
+ *
+ * <p>Runs on kernel threads like its twin - see the {@code @KernelThreadRunner} note on
+ * {@link KafkaHealthCheck} (the consumer's calling-thread I/O would pin a virtual-thread carrier).
  */
 // multiple workers for concurrent /health callers - same lock-guarded consumer as kafka.health
+@KernelThreadRunner
 @PreLoad(route = "secondary.kafka.health", instances = 5)
 public class SecondaryKafkaHealthCheck extends KafkaHealthCheck {
 

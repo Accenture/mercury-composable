@@ -21,6 +21,7 @@ package org.platformlambda.mini.kafka;
 import org.apache.kafka.clients.consumer.CloseOptions;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.KafkaException;
+import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
@@ -94,10 +95,22 @@ import java.util.function.Supplier;
  * successful probe - or once the grace period ({@code kafka.health.startup.grace}, default
  * {@code 30s}) has elapsed - every check is a live probe and an unreachable cluster fails
  * the check with status 503.
+ *
+ * <p><b>{@code @KernelThreadRunner}.</b> The Kafka consumer performs its network I/O on the CALLING
+ * thread inside {@code synchronized} sections, and on Java 21 a virtual thread that blocks inside
+ * {@code synchronized} pins its carrier - a probe waiting out {@code kafka.health.timeout} against an
+ * unreachable cluster would pin a carrier for the full wait. Kernel threads avoid that, matching the
+ * module convention for functions that drive Kafka clients ({@code SimpleKafkaNotification},
+ * {@code SchemaCodec}); the warm-up probe uses the kernel-thread executor for the same reason.
+ * (JDK 24's JEP 491 removes synchronized pinning, but the build targets Java 21 and field
+ * installations run it.) Contrast {@code redis.health}, which deliberately stays on virtual threads:
+ * Lettuce does its I/O on its own event-loop threads and the caller merely awaits a future, which
+ * unmounts a virtual thread cleanly.
  */
 // multiple workers because /health is polled concurrently (operations tooling plus the container
 // platform's liveness/readiness probes): info and placeholder responses run in parallel, while the
 // non-thread-safe KafkaConsumer stays protected - every probe serializes on the ReentrantLock below
+@KernelThreadRunner
 @PreLoad(route = "kafka.health", instances = 5)
 public class KafkaHealthCheck implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(KafkaHealthCheck.class);
@@ -120,9 +133,9 @@ public class KafkaHealthCheck implements LambdaFunction {
     private static final String WAITING = "Waiting for Kafka connection";
     private static final String REACHABLE = "Kafka cluster is reachable";
 
-    // virtual-thread friendly: a ReentrantLock does not pin the carrier thread like 'synchronized'.
-    // The lock also serializes access to the KafkaConsumer, which is not thread-safe (the health
-    // worker and the background warm-up thread would otherwise race).
+    // the ReentrantLock serializes access to the KafkaConsumer, which is NOT thread-safe: the health
+    // workers and the background warm-up thread would otherwise race. Sequential multi-thread access
+    // under external synchronization is what the consumer's contract allows.
     private final ReentrantLock lock = new ReentrantLock();
     private final AtomicBoolean warmingUp = new AtomicBoolean(false);
     private final String serviceName;
@@ -229,7 +242,8 @@ public class KafkaHealthCheck implements LambdaFunction {
 
     private void warmUp() {
         if (warmingUp.compareAndSet(false, true)) {
-            Platform.getInstance().getVirtualThreadExecutor().execute(() -> {
+            // kernel thread, not virtual: the consumer's calling-thread I/O would pin a carrier
+            Platform.getInstance().getKernelThreadExecutor().execute(() -> {
                 try {
                     probe();
                     if (ready) {

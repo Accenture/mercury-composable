@@ -83,6 +83,11 @@ import java.util.function.Supplier;
  * successful probe - or once the grace period ({@code redis.health.startup.grace}, default
  * {@code 30s}) has elapsed - every check is a live probe. {@code redis.health.timeout}
  * (default {@code 5s}) bounds the probe's connect and command round trips.
+ *
+ * <p>This function deliberately stays on virtual threads (no {@code @KernelThreadRunner}, unlike
+ * {@code kafka.health}): Lettuce performs network I/O on its own event-loop threads, and the calling
+ * thread merely awaits a future - which unmounts a virtual thread cleanly instead of pinning its
+ * carrier.
  */
 // multiple workers because /health is polled concurrently (operations tooling plus the container
 // platform's liveness/readiness probes): info and placeholder responses run in parallel, while the
