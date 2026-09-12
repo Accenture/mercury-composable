@@ -162,3 +162,4 @@
 - claims-fixture-gate — The claims-fixture gate drift-tests documentation BEHAVIOR claims (ADR-0023, accepted — faded — 2026-Q3.md
 - graphjs-phase-out-direction — graph.js is FORMALLY DEPRECATED (Eric, 2026-09-02; ADR-0022) — backward compatibility — faded — 2026-Q3.md
 - bp-polyglot-functions — (blueprint) Polyglot function execution — GAP CLOSED (Eric, 2026-09-07). python/node — faded — 2026-Q3.md
+- ot-agent-memory-attribution-locators — (docs) agent-memory locators — DONE 2026-09-10. agent-memory joined the Mercury family — completed; swept after archive_window (21 sessions since last use) — 2026-Q3.md

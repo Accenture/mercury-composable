@@ -5,4 +5,4 @@
   reactor stays as-is by design, so no engine-side Gradle work remains. Durable lesson:
   Mercury artifacts are not on Maven Central, so template Gradle builds resolve engine
   artifacts from mavenLocal. origin: 2026-09-11-005808
-  <!-- id: thread-add-gradle-build | created: 2026-06-24 | last_used: 2026-09-11 | uses: 2 | tier: active -->
+  <!-- id: thread-add-gradle-build | created: 2026-06-24 | last_used: 2026-09-11 | uses: 2 | tier: archive-candidate -->

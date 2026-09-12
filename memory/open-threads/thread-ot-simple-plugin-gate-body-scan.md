@@ -9,4 +9,4 @@
   containment allowlist that skips the code attribute is declared, not enforced — the
   body scan is what makes it real. Java-only (Rust has no runtime plugin loading).
   origin: 2026-09-11-024330
-  <!-- id: ot-simple-plugin-gate-body-scan | created: 2026-09-10 | last_used: 2026-09-11 | uses: 3 | tier: active | origin: 2026-09-10-150848 -->
+  <!-- id: ot-simple-plugin-gate-body-scan | created: 2026-09-10 | last_used: 2026-09-11 | uses: 3 | tier: archive-candidate | origin: 2026-09-10-150848 -->
