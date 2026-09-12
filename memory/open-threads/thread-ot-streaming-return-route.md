@@ -54,7 +54,20 @@
   close recovered by the final drain at idle + 1 ms; producer kill -9 → in-band 408;
   UI pod kill -9 → TTL-bounded orphan stop — spec §6 row tightened to name the timing);
   permanent record docs/test-reports/streaming-return-route-cross-pod.md; no mechanism
-  defects. Serves [[bp-agent-orchestration]] Q8 second half (graph-run streaming);
-  inherits [[soa-transport-neutral-cid]]. Next: E4 (the blueprint payoff — LLM/graph-run
-  token stream through the bridge), on Eric's word.
+  defects. **E4 SHIPPED 2026-09-12 — E-SERIES COMPLETE** (colon fix merged via PR #372, squash
+  `b9d20d52`; E4 merged via PR #373, squash `04224cb9`, titles clean; follow-up on
+  Eric's ask — the emulated-LLM round-trip as a committed CI test, keyless/offline,
+  merged via PR #374, squash `e08f28ca`): REAL Gemini tokens
+  cross-pod — pod B pulls the
+  provider's SSE stream through the shipped SSE consumer, a ~40-line bridge
+  (`demo.llm.bridge`, instances=1 BY CONTRACT — a multi-instance reply consumer posts out
+  of order and a batch behind the terminal is silently discarded) forwards into the
+  rendezvous; terminal `done` carries provider usage (report scenario 6). Round findings:
+  platform-core HTTP client percent-encoded `:` in path segments (RFC 3986 pchar; 404s
+  Google `:verb` APIs — fixed + pinned, own PR); thinking-model budget gotcha; stale
+  gemini model default → `gemini-flash-latest`. Serves [[bp-agent-orchestration]] Q8
+  second half — the TRANSPORT is delivered; the in-graph-run drive is that thread's next
+  experiment. Inherits [[soa-transport-neutral-cid]]. Remaining on this thread: Eric's
+  final-drain confirmation (demonstrated at unit/single-JVM/cross-pod), then the thread
+  closes with the next release.
   <!-- id: ot-streaming-return-route | created: 2026-09-12 | last_used: 2026-09-12 | uses: 1 | tier: working | origin: 2026-09-12-021649 -->

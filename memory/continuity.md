@@ -287,8 +287,13 @@
   graph.task→wrapper drive, real Gemini verdicts, one distributed trace. Enterprise LLM
   access is platform-mediated only (Bedrock/Vertex/Foundry — concept doc Q2); the
   Anthropic SDK covers all three, so the switch is client-construction only — re-drive
-  waits on Eric's cloud account. Next: E1 (suspend checkpoint on an LLM verdict), Q8's
-  second half (graph-run streaming). → serves: vision-mercury-composable
+  waits on Eric's cloud account. **Q8 second half: the TRANSPORT delivered 2026-09-12** —
+  the streaming return route ([[ot-streaming-return-route]], E-series complete incl.
+  E4's real-Gemini cross-pod token stream) carries a wrapper/graph node's tokens to
+  whichever pod holds the user's connection, zero engine change; what remains here is
+  driving that bridge from an LLM node INSIDE a live graph run. Next: E1 (suspend
+  checkpoint on an LLM verdict), the in-graph-run streaming drive.
+  → serves: vision-mercury-composable
   <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-04 | uses: 11 | tier: working | origin: 2026-08-25-213703 -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
