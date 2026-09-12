@@ -21,8 +21,14 @@
   session-scale TTL 1800s default). Per-seq keys would collide across uncoordinated
   producers; a single sequential producer gets ordering free from Redis per-connection
   command order. Producer contract = post-in-order, no header stamping, no per-cid
-  state. One nuance awaiting Eric's confirmation: a single final drain at edge idle
-  expiry (the one-shot "final read before timeout" analogue). Serves
+  state. **D8 (same day): the one-shot path adopts the list mechanism** — a one-shot
+  response is the degenerate stream (first entry terminal); `response:{cid}` retires,
+  deliver() ≡ terminal post, one drain path, final-read == final-drain; requires
+  PendingRequests.complete-in-place (early-arrival path survives destructive pops;
+  removal via awaitResponse finally + abort, exhaustive); rolling-upgrade key-shape
+  migration note for release notes; acceptance = existing one-shot suite unchanged.
+  One nuance awaiting Eric's confirmation: a single final drain at edge idle expiry
+  (the one-shot "final read before timeout" analogue). Serves
   [[bp-agent-orchestration]] Q8 second half (graph-run streaming); inherits
   [[soa-transport-neutral-cid]]. Next: E1 (coordinator + responder primitives,
   embedded-Redis unit tests).
