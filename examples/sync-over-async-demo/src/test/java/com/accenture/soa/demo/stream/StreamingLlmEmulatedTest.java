@@ -74,12 +74,18 @@ class StreamingLlmEmulatedTest {
     private static final String X_EVENT_STREAM = "x-event-stream";
     private static final String X_EVENT_NAME = "x-event-name";
 
+    // Not a credential: mode "llm" requires a non-blank key before it proceeds, and the emulated
+    // provider never reads it. Injected as a system property (resolved before the properties file)
+    // so no config file carries a credential-shaped literal for secret scanners to flag.
+    private static final String DUMMY_KEY_FOR_EMULATION = "emulated";
+
     private static RedisServer redisServer;
 
     // S5443: the fixed transient /tmp working dir mirrors the redis-standalone helper (wiped per run)
     @SuppressWarnings("java:S5443")
     @BeforeAll
     static void boot() throws Exception {
+        System.setProperty("llm.api.key", DUMMY_KEY_FOR_EMULATION);
         File dir = new File(REDIS_DATA_DIR);
         Utility.getInstance().cleanupDir(dir);
         dir.mkdirs();
@@ -105,6 +111,7 @@ class StreamingLlmEmulatedTest {
         if (redisServer != null) {
             redisServer.stop();
         }
+        System.clearProperty("llm.api.key");
     }
 
     private record Frame(Map<String, String> headers, Object body) {
