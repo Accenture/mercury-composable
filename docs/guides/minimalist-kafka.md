@@ -603,7 +603,7 @@ topics the principal may Describe rather than rejecting the request, so under a 
 principal the probe still succeeds (with a visible topic count of 0) - the successful round trip proves
 connectivity, TLS/SASL authentication, and a served API request. A reachable cluster reports a status map
 (including the visible topic count, which may be 0 under restrictive ACLs); an unreachable one fails the
-check with a **503** status and a key-value message (`text` for the DevOps reader, `status` for the code),
+check with a **503** status and a key-value message (`text` for the DevOps reader, `code` for the status code),
 so `/health` marks the dependency down and the endpoint answers non-2xx while the application is DOWN.
 
 During application start-up the check returns a **placeholder healthy** status while the Kafka client

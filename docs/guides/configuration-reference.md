@@ -635,7 +635,7 @@ Timeout for the `kafka.health` probe - a single Kafka Metadata request (`KafkaCo
 |------|---------|
 | `String` (duration) | `30s` |
 
-Start-up grace period for `kafka.health`: within it the check reports a placeholder healthy status while the Kafka client warms up in the background, so `/health` never fails or blocks during application start-up. After the first successful probe (or once the grace expires) every check is live and an unreachable cluster fails the check with a 503 status and a key-value message (`text` + `status`).
+Start-up grace period for `kafka.health`: within it the check reports a placeholder healthy status while the Kafka client warms up in the background, so `/health` never fails or blocks during application start-up. After the first successful probe (or once the grace expires) every check is live and an unreachable cluster fails the check with a 503 status and a key-value message (`text` + `code`).
 
 ### `otel.trace.forwarder.enabled`
 
@@ -1298,7 +1298,7 @@ Timeout for the `redis.health` probe - a single Redis PING on a dedicated connec
 |------|---------|
 | `duration` | `30s` |
 
-Start-up grace period for `redis.health`: within it the check reports a placeholder healthy status while the Redis client warms up in the background, so `/health` never fails or blocks during application start-up. The probe's configuration is resolved lazily and re-resolved on every rebuild, and an unusable configuration (unbuildable values, or credentials the server rejects - the signature of a vault-published password that has not landed yet) is a passing `Waiting for Redis connection` status; only a genuine connectivity failure fails the check, with a 503 status and a key-value message (`text` + `status`).
+Start-up grace period for `redis.health`: within it the check reports a placeholder healthy status while the Redis client warms up in the background, so `/health` never fails or blocks during application start-up. The probe's configuration is resolved lazily and re-resolved on every rebuild, and an unusable configuration (unbuildable values, or credentials the server rejects - the signature of a vault-published password that has not landed yet) is a passing `Waiting for Redis connection` status; only a genuine connectivity failure fails the check, with a 503 status and a key-value message (`text` + `code`).
 
 ### `sync.return.channel.prefix`
 

@@ -99,12 +99,12 @@ class SecondaryKafkaHealthCheckTest {
         bad.setProperty("default.api.timeout.ms", "2000");
         var offline = new SecondaryKafkaHealthCheck(bad, 0);
         Object result = offline.handleEvent(HEALTH, null, 1);
-        // an outage is a 503 response carrying a key-value map (text + status)
+        // an outage is a 503 response carrying a key-value map (text + code)
         assertInstanceOf(EventEnvelope.class, result);
         EventEnvelope down = (EventEnvelope) result;
         assertEquals(503, down.getStatus());
         Map<String, Object> body = (Map<String, Object>) down.getBody();
-        assertEquals(503, body.get("status"));
+        assertEquals(503, body.get("code"));
         assertTrue(body.get("text").toString().contains("not reachable"));
         Map<String, Object> alive = (Map<String, Object>) healthy.handleEvent(HEALTH, null, 1);
         assertEquals("Kafka cluster is reachable", alive.get("status"));

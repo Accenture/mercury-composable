@@ -49,7 +49,7 @@ import java.util.function.Supplier;
  * endpoint will include the Kafka cluster status. The function follows the standard health
  * contract: {@code type=info} describes the dependency, {@code type=health} returns a status
  * map when the cluster is reachable and a 503 response carrying a key-value map
- * ({@code text} + {@code status}) when it is not - the status code is what the health
+ * ({@code text} + {@code code}) when it is not - the status code is what the health
  * aggregation (and Kubernetes) detects; the map is for the DevOps reader. While the
  * client configuration is still incomplete - a late credential not yet published - it returns a
  * passing {@code Waiting for Kafka connection} status instead of failing (see below).
@@ -125,6 +125,7 @@ public class KafkaHealthCheck implements LambdaFunction {
     private static final String HREF = "href";
     private static final String STATUS = "status";
     private static final String TEXT = "text";
+    private static final String CODE = "code";
     private static final String TOPICS = "topics";
     private static final String BOOTSTRAP_SERVERS = "bootstrap.servers";
     private static final String TIMEOUT_KEY = "kafka.health.timeout";
@@ -298,7 +299,7 @@ public class KafkaHealthCheck implements LambdaFunction {
             // detects; the key-value body keeps the code visible to the DevOps reader too
             Map<String, Object> down = new HashMap<>();
             down.put(TEXT, "Kafka cluster is not reachable - " + e.getMessage());
-            down.put(STATUS, 503);
+            down.put(CODE, 503);
             return new EventEnvelope().setStatus(503).setBody(down);
         } finally {
             lock.unlock();

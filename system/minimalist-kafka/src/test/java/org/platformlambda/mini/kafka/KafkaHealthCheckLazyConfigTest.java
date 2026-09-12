@@ -87,11 +87,11 @@ class KafkaHealthCheckLazyConfigTest {
         Map<String, String> probe = Map.of("type", "health");
         Object first = health.handleEvent(probe, null, 1);
         // an outage is a 503 response carrying a key-value map - the status code for the health
-        // aggregation to detect, text + status for the DevOps reader
+        // aggregation to detect, text + code for the DevOps reader
         assertInstanceOf(EventEnvelope.class, first);
         assertEquals(503, ((EventEnvelope) first).getStatus());
         Map<String, Object> body = asMap(((EventEnvelope) first).getBody());
-        assertEquals(503, body.get("status"));
+        assertEquals(503, body.get("code"));
         assertInstanceOf(EventEnvelope.class, health.handleEvent(probe, null, 1));
         assertEquals(2, resolves.get(),
                 "a failed probe closes the client, so the next one re-resolves and the check can heal");

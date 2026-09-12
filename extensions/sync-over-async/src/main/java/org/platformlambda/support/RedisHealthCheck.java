@@ -47,7 +47,7 @@ import java.util.function.Supplier;
  * endpoint will include the Redis server status. The function follows the standard health
  * contract: {@code type=info} describes the dependency, {@code type=health} returns a status
  * map when the server is reachable and a 503 response carrying a key-value map
- * ({@code text} + {@code status}) when it is not - the status code is what the health
+ * ({@code text} + {@code code}) when it is not - the status code is what the health
  * aggregation (and Kubernetes) detects; the map is for the DevOps reader. While the
  * client configuration is still incomplete - a late credential not yet published, or not yet
  * accepted by the server - it returns a passing {@code Waiting for Redis connection} status
@@ -104,6 +104,7 @@ public class RedisHealthCheck implements LambdaFunction {
     private static final String HREF = "href";
     private static final String STATUS = "status";
     private static final String TEXT = "text";
+    private static final String CODE = "code";
     private static final String TIMEOUT_KEY = "redis.health.timeout";
     private static final String GRACE_KEY = "redis.health.startup.grace";
     private static final String DEFAULT_TIMEOUT = "5s";
@@ -247,7 +248,7 @@ public class RedisHealthCheck implements LambdaFunction {
             // detects; the key-value body keeps the code visible to the DevOps reader too
             Map<String, Object> down = new HashMap<>();
             down.put(TEXT, "Redis is not reachable - " + rootCause(e));
-            down.put(STATUS, 503);
+            down.put(CODE, 503);
             return new EventEnvelope().setStatus(503).setBody(down);
         } finally {
             lock.unlock();

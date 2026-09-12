@@ -114,12 +114,12 @@ class RedisHealthCheckTest extends RedisTestBase {
                 () -> new RedisConfig("127.0.0.1", 1, "", false, 0, TIMEOUT_MS), TIMEOUT_MS, 0);
         Object result = health.handleEvent(HEALTH, null, 1);
         // an outage is a 503 response carrying a key-value map - the status code for the health
-        // aggregation to detect, text + status for the DevOps reader
+        // aggregation to detect, text + code for the DevOps reader
         assertInstanceOf(EventEnvelope.class, result);
         EventEnvelope offline = (EventEnvelope) result;
         assertEquals(503, offline.getStatus());
         Map<String, Object> body = (Map<String, Object>) offline.getBody();
-        assertEquals(503, body.get("status"));
+        assertEquals(503, body.get("code"));
         assertTrue(body.get("text").toString().contains("not reachable"));
     }
 
