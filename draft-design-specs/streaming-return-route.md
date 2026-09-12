@@ -4,7 +4,9 @@
 answered by Eric the same day (decisions D1–D6, §8), then refined once more after the
 driving use cases were articulated: **D7 removes the sequence number entirely — a Redis
 List per cid replaces the per-seq keys** (supersedes D6's mechanism, keeps its
-no-MAXLEN ruling). Next gate: experiment E1.
+no-MAXLEN ruling) — and **D8 unifies the module: the one-shot path adopts the same list
+mechanism**, so one message and a list of messages ride one store (`response:{cid}`
+retires; `deliver` becomes a terminal post). Next gate: experiment E1.
 **Blueprint:** serves `bp-agent-orchestration` (Q8 second half — graph-run streaming)
 → serves `vision-mercury-composable`.
 **Repo scope:** `extensions/sync-over-async` only. Java-only like the extension itself
@@ -39,7 +41,9 @@ look it up and wake the right subscriber. This spec generalizes that return rout
 *one response* to *a sequence of segments with a terminal signal*. By decision D3, the
 segments ride **Redis only** — the producing server posts them straight into the return
 route, so the streaming path has no broker dependency at all (the request leg reaches
-the backend however the application likes).
+the backend however the application likes). And by decision D8 the generalization folds
+back onto the original: a one-shot response is the **degenerate stream** — a queue whose
+first entry is terminal — so the module keeps one storage mechanism, not two.
 
 ## 2. Driving use cases (Eric, 2026-09-12)
 
@@ -92,7 +96,7 @@ drained or its TTL expires.
 |-----|------|---------|----------|
 | `request:{cid}` | string (unchanged) | the originating pod's return channel | streaming rendezvous: `sync.stream.ttl.seconds` (session-scale — an SSE notification channel outlives a one-shot's route window); eagerly deleted on close |
 | `queue:{cid}` | Redis List (new) | one entry per segment: compact JSON `{"type":"data\|eof\|exception","name":"<optional SSE event name>","body":...}` | `EXPIRE sync.stream.ttl.seconds`, refreshed on every `RPUSH`; a fully drained list ceases to exist on its own |
-| `response:{cid}` | string | one-shot only — unused on the streaming path | unchanged |
+| `response:{cid}` | string | **retired (D8)** — the one-shot path posts its single terminal entry to `queue:{cid}` instead | replaced; the one-shot queue's TTL comes from the existing `sync.response.ttl.seconds` |
 
 There is **no sequence number** (D7). Ordering, where required, comes from *how* the
 producer posts (§5, contract 2), and reads are destructive pops, so the consumer keeps
@@ -106,8 +110,9 @@ the UI side is stalled, and that window is bounded by the TTL, not by a trim pol
 
 ### 4.3 Coordinator additions (`ReturnRouteCoordinator`)
 
-The existing class gains a streaming sibling for each one-shot member; nothing existing
-changes behavior.
+The existing class gains a streaming sibling for each one-shot member — and by D8 the
+one-shot members keep their signatures while re-platforming onto the same queue
+underneath (§4.7).
 
 | One-shot (today) | Streaming (new) | Notes |
 |------------------|-----------------|-------|
@@ -192,6 +197,42 @@ confirmation.)
 | `sync.stream.ttl.seconds` | `1800` | TTL of a streaming rendezvous's route key and of `queue:{cid}` (refreshed on every post) — the crash safety net, sized for session-scale SSE channels; eager deletes do the real cleanup |
 | `sync.max.pending.streams` | `1000` | per-pod ceiling on concurrently open streams (the reply-lane pool of 500 is the natural upper bound per pod) |
 
+The one-shot path's existing keys are untouched: `sync.response.ttl.seconds` now sets
+the queue TTL for a one-shot `deliver`, and `sync.route.ttl.seconds` still governs its
+route.
+
+### 4.7 One mechanism for both — the one-shot path adopts the list (D8)
+
+A one-shot response is the degenerate stream: a queue whose first entry is terminal. So
+the one-shot path re-platforms onto the same store:
+
+- `deliver(cid, payload)` keeps its signature and becomes, internally, a post of one
+  terminal entry with the one-shot's own TTL (`sync.response.ttl.seconds`);
+  `response:{cid}` and its SETEX/GET path retire.
+- The signal handler always drains the queue; the only difference is the consumer — a
+  one-shot cid's first entry completes the pending future, a stream's entries feed the
+  sink until terminal.
+- The one-shot "final read before timeout" and the streaming "final drain at idle
+  expiry" become literally the same operation — one recovery cornerstone, two callers.
+- Duplicate delivery becomes structurally impossible (the second drain pops nothing),
+  where today it relies on `complete()` being idempotent.
+
+One behavioral adjustment makes this correct — the **early-arrival path**. Today, a
+response landing between `sync.prepare` and `sync.await` completes and removes the
+pending future, and `awaitResponse` recovers by re-reading `response:{cid}` (GET is
+non-destructive). Under destructive pops that Redis re-read disappears, so
+`PendingRequests.complete()` completes the future **in place** and removal moves to the
+paths that already remove on every other exit: `awaitResponse`'s `finally`, and the
+`abort(cid)` the flow's exception handler already calls on the fail-fast path — together
+exhaustive, so a completed-but-unawaited entry cannot leak. The existing await-by-cid
+test pins the behavior.
+
+**No backward-compatibility issue (Eric's ruling):** the Redis key shape changes, but
+sync-over-async's use case is near real-time — rendezvous keys live for seconds and
+nothing persists across versions, so there is no state to migrate. At worst, a rolling
+upgrade re-times a handful of in-flight cross-version requests (408), indistinguishable
+from ordinary timeout behavior.
+
 ## 5. Contracts and invariants
 
 1. **Store-first, notify-after (D1).** A segment is appended before its wake-up is
@@ -272,6 +313,15 @@ the use-case discussion (§2).
   from Redis's per-connection command ordering. So nothing is stamped: `RPUSH` to
   `queue:{cid}`, destructive `LPOP` drains, ordering by posting discipline (§5,
   contract 2), and the channel may be closed by either side. Supersedes D6's mechanism.
+- **D8 — The one-shot path adopts the list mechanism (Eric, 2026-09-12).** One store
+  for one message and for a list of messages: `response:{cid}` retires, `deliver` posts
+  a terminal entry, the recovery paths unify, and duplicate delivery becomes
+  structurally impossible. Requires the complete-in-place adjustment in
+  `PendingRequests` (§4.7). No backward-compatibility concern: the use case is near
+  real-time, so rendezvous state is ephemeral and nothing persists across versions
+  (Eric's ruling). The acceptance proof is the existing one-shot regression suite
+  passing unchanged on the unified mechanism — the degenerate case shown to be truly
+  degenerate.
 
 ## 9. Experiment plan (E-series)
 
@@ -281,7 +331,10 @@ the use-case discussion (§2).
   concurrent producers (order-free), terminal entry from a *non-originating* producer
   closing the channel, orphan stop, missed-notification healing (suppress a publish,
   verify the next drain recovers), final drain at idle expiry, capacity rejection,
-  duplicate wake-up idempotence.
+  duplicate wake-up idempotence — **plus the D8 acceptance gate: the entire existing
+  one-shot regression suite (module and demo flows) passes unchanged on the unified
+  mechanism**, with the early-arrival await-by-cid test proving the complete-in-place
+  semantics.
 - **E2 — Single-JVM end-to-end.** Both use cases behind `stream: true` endpoints (no
   broker anywhere): a chat-style render (N ordered segments + `eof`, verified in exact
   order with `curl -N`) and a notification channel (several posting services, UI-side

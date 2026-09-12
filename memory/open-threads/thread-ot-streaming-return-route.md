@@ -13,7 +13,9 @@
   (new `StreamResponder` producer API; kills the ordering contract and the duplicate
   question); D4 no re-drain, TTL expiry is the cleanup; D5 no fan-out; D6 **per-seq keys
   `segment:{cid}:{seq}` replace the Redis Stream** (seq = retrieval index; MAXLEN/trim
-  dissolve). **Refined to D7 same day** (log 2026-09-12-044817) after Eric articulated
+  dissolve). **Refined to D7 same day** (log 2026-09-12-044817; D7 merged via PR #367, squash
+  `04603fdd` — its title says "D7 and D8" but a merge race caught the D7-only branch;
+  D8 + the compat ruling follow in the next PR) after Eric articulated
   the driving use cases (event notification: SEVERAL backends post to one SSE session,
   unordered, either side closes; AI chat: one sequential source, strict order): **no
   sequence number at all — a Redis List per cid** (`RPUSH queue:{cid}` store-first,
@@ -21,8 +23,15 @@
   session-scale TTL 1800s default). Per-seq keys would collide across uncoordinated
   producers; a single sequential producer gets ordering free from Redis per-connection
   command order. Producer contract = post-in-order, no header stamping, no per-cid
-  state. One nuance awaiting Eric's confirmation: a single final drain at edge idle
-  expiry (the one-shot "final read before timeout" analogue). Serves
+  state. **D8 (same day): the one-shot path adopts the list mechanism** — a one-shot
+  response is the degenerate stream (first entry terminal); `response:{cid}` retires,
+  deliver() ≡ terminal post, one drain path, final-read == final-drain; requires
+  PendingRequests.complete-in-place (early-arrival path survives destructive pops;
+  removal via awaitResponse finally + abort, exhaustive); no backward-compat issue —
+  near-real-time state, nothing persists across versions (Eric's ruling); acceptance =
+  existing one-shot suite unchanged.
+  One nuance awaiting Eric's confirmation: a single final drain at edge idle expiry
+  (the one-shot "final read before timeout" analogue). Serves
   [[bp-agent-orchestration]] Q8 second half (graph-run streaming); inherits
   [[soa-transport-neutral-cid]]. Next: E1 (coordinator + responder primitives,
   embedded-Redis unit tests).
