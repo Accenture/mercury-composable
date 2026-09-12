@@ -285,7 +285,10 @@ curl -X POST http://127.0.0.1:8601/api/produce -H 'content-type: application/jso
   -d '{"cid":"<cid>","mode":"llm","prompt":"In two short sentences, why do event-driven systems scale well?"}'
 ```
 
-Without a key the mode answers 503 with an explicit message. The bridge is deliberately a
+Without a key the mode answers 503 with an explicit message. CI needs no key either: the emulated
+round-trip test (`StreamingLlmEmulatedTest`) points `llm.gemini.host` back at the application itself,
+where a stub endpoint serves Gemini-shaped SSE frames - the complete circle runs against embedded
+Redis with no network. The bridge is deliberately a
 single-instance function: the rendezvous producer contract is *post in order*, and a
 multi-instance reply consumer would forward frames concurrently (see the bridge's javadoc).
 

@@ -83,6 +83,20 @@ public class StreamProducer implements TypedLambdaFunction<Map<String, Object>, 
         return responder;
     }
 
+    /** Test-lifecycle hook: release the shared Redis clients at class teardown. */
+    public static void closeSharedClients() {
+        synchronized (StreamProducer.class) {
+            if (responder != null) {
+                responder.close();
+                responder = null;
+            }
+            if (chaosConnection != null) {
+                chaosConnection.close();
+                chaosConnection = null;
+            }
+        }
+    }
+
     /** Chaos-mode plumbing: a store handle of our own, so a segment can be appended with NO wake-up. */
     private static ReturnRouteStore chaosStore() {
         if (chaosConnection == null) {

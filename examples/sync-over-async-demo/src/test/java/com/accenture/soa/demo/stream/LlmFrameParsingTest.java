@@ -25,22 +25,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Token-free pin of the LLM bridge's provider-frame parsing (the live Gemini leg is exercised by
- * the E4 dry-run, not by CI - same principle as the agent-orchestration E0's mock-by-config CI).
- * Fixtures mirror the {@code streamGenerateContent?alt=sse} frame shape.
+ * Token-free pin of the LLM bridge's provider-frame parsing. The fixtures live in
+ * {@link MockGeminiEndpoint} and mirror the {@code streamGenerateContent?alt=sse} frame shape, so
+ * these pins and the emulated round-trip ({@link StreamingLlmEmulatedTest}) speak the same wire
+ * dialect; the live-provider leg is the cross-pod dry-run's job (test report, scenario 6).
  */
 class LlmFrameParsingTest {
 
-    private static final String MID_STREAM_FRAME = """
-            {"candidates":[{"content":{"parts":[{"text":"Event-driven systems scale"}],"role":"model"}}],
-             "usageMetadata":{"promptTokenCount":12,"totalTokenCount":12},
-             "modelVersion":"gemini-2.5-flash"}""";
-
-    private static final String FINAL_FRAME = """
-            {"candidates":[{"content":{"parts":[{"text":" because components decouple."}],"role":"model"},
-              "finishReason":"STOP"}],
-             "usageMetadata":{"promptTokenCount":12,"candidatesTokenCount":19,"totalTokenCount":31},
-             "modelVersion":"gemini-2.5-flash"}""";
+    private static final String MID_STREAM_FRAME = MockGeminiEndpoint.MID_STREAM_FRAME;
+    private static final String FINAL_FRAME = MockGeminiEndpoint.FINAL_FRAME;
 
     @Test
     void extractsTokenTextFromAFrame() {
