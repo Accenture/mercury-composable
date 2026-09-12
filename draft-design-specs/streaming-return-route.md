@@ -1,12 +1,14 @@
 # Streaming return route — cross-pod progressive rendering — design spec
 
-**Status:** DESIGN RATIFIED — drafted 2026-09-12 from Eric's direction; the Q-series was
-answered by Eric the same day (decisions D1–D6, §8), then refined once more after the
+**Status:** DESIGN RATIFIED, **E1 IMPLEMENTED** — drafted 2026-09-12 from Eric's direction; the
+Q-series was answered by Eric the same day (decisions D1–D6, §8), then refined once more after the
 driving use cases were articulated: **D7 removes the sequence number entirely — a Redis
 List per cid replaces the per-seq keys** (supersedes D6's mechanism, keeps its
 no-MAXLEN ruling) — and **D8 unifies the module: the one-shot path adopts the same list
 mechanism**, so one message and a list of messages ride one store (`response:{cid}`
-retires; `deliver` becomes a terminal post). Next gate: experiment E1.
+retires; `deliver` becomes a terminal post). E1 (coordinator + responder primitives with the
+D8 acceptance gate, §9) landed the same day in `extensions/sync-over-async`. Next gate:
+experiment E2.
 **Blueprint:** serves `bp-agent-orchestration` (Q8 second half — graph-run streaming)
 → serves `vision-mercury-composable`.
 **Repo scope:** `extensions/sync-over-async` only. Java-only like the extension itself
@@ -233,6 +235,16 @@ nothing persists across versions, so there is no state to migrate. At worst, a r
 upgrade re-times a handful of in-flight cross-version requests (408), indistinguishable
 from ordinary timeout behavior.
 
+*Two implementation notes from E1.* (1) The append and its TTL refresh execute as one
+atomic server-side step (a two-command Lua `RPUSH`+`EXPIRE`), so a client crash between
+them cannot leave a TTL-less queue key — every key the module creates ages out — and the
+hot path spends one round-trip per post instead of two. (2) Destructive pops open one
+narrow race the old non-destructive `GET` did not have: a wake-up landing exactly between
+the await's timeout and its final drain pops the segment and completes the future in
+place, leaving the drain empty. The timeout path therefore consults the future itself
+after an empty final drain — with in-place completion, the future is then the only
+remaining copy, and the response is still returned rather than mis-reported as a 408.
+
 ## 5. Contracts and invariants
 
 1. **Store-first, notify-after (D1).** A segment is appended before its wake-up is
@@ -325,16 +337,20 @@ the use-case discussion (§2).
 
 ## 9. Experiment plan (E-series)
 
-- **E1 — Coordinator + responder primitives.** `PendingStreams`, `beginStream`, the
-  serialized drain loop, `StreamResponder.post`, cleanup + unit tests on the embedded
-  Redis: in-order delivery for a sequential single producer, interleaved delivery from
-  concurrent producers (order-free), terminal entry from a *non-originating* producer
-  closing the channel, orphan stop, missed-notification healing (suppress a publish,
-  verify the next drain recovers), final drain at idle expiry, capacity rejection,
-  duplicate wake-up idempotence — **plus the D8 acceptance gate: the entire existing
-  one-shot regression suite (module and demo flows) passes unchanged on the unified
-  mechanism**, with the early-arrival await-by-cid test proving the complete-in-place
-  semantics.
+- **E1 — Coordinator + responder primitives. ✅ DONE (2026-09-12).** `PendingStreams`,
+  `beginStream`, the serialized drain loop, `StreamResponder.post`, cleanup + unit tests
+  on the embedded Redis: in-order delivery for a sequential single producer, interleaved
+  delivery from concurrent producers (order-free, per-producer subsequence order
+  preserved), terminal entry from a *non-originating* producer closing the channel,
+  orphan stop, missed-notification healing (suppress a publish, verify the next drain
+  recovers), final drain at idle expiry, capacity rejection, duplicate wake-up
+  idempotence — **plus the D8 acceptance gate: the entire existing one-shot regression
+  suite (module and demo flows) passes unchanged on the unified mechanism**, with the
+  early-arrival await-by-cid test proving the complete-in-place semantics. Landed in
+  `extensions/sync-over-async` (`StreamResponder`, `StreamSegment`, `PendingStreams`;
+  behavioral suite `StreamReturnRouteTest`, incl. a one-shot request completed by a
+  stream producer's terminal post — the degenerate case shown degenerate); module suite
+  73/73 green, demo flows green against the unified module.
 - **E2 — Single-JVM end-to-end.** Both use cases behind `stream: true` endpoints (no
   broker anywhere): a chat-style render (N ordered segments + `eof`, verified in exact
   order with `curl -N`) and a notification channel (several posting services, UI-side

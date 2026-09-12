@@ -1225,7 +1225,8 @@ validation rules.
 ## Sync-over-Async (`sync-over-async` extension) {#sync-over-async}
 
 The opt-in `sync-over-async` extension exposes a synchronous REST request/response over an asynchronous,
-cross-pod Kafka backend using a Redis return route. See the [Sync-over-Async guide](sync-over-async.md). It is
+cross-pod backend using a Redis return route - and generalizes the same rendezvous to a streaming return
+route for cross-pod progressive rendering. See the [Sync-over-Async guide](sync-over-async.md). It is
 off by default and starts (eagerly connecting to Redis) only when `sync.over.async.enabled=true`.
 
 ### `sync.over.async.enabled`
@@ -1314,7 +1315,7 @@ Prefix for the per-pod Pub/Sub return channel.
 |------|---------|
 | `long` (s) | `90` |
 
-TTL for the return-route key; should cover the REST timeout plus a buffer.
+TTL for a one-shot return-route key; should cover the REST timeout plus a buffer.
 
 ### `sync.response.ttl.seconds`
 
@@ -1322,7 +1323,7 @@ TTL for the return-route key; should cover the REST timeout plus a buffer.
 |------|---------|
 | `long` (s) | `30` |
 
-TTL for the response key (short rendezvous window).
+TTL for a one-shot rendezvous queue (short rendezvous window).
 
 ### `sync.max.pending.requests`
 
@@ -1331,6 +1332,24 @@ TTL for the response key (short rendezvous window).
 | `int` | `10000` |
 
 Per-pod ceiling on in-flight synchronous requests (backpressure).
+
+### `sync.stream.ttl.seconds`
+
+| Type | Default |
+|------|---------|
+| `long` (s) | `1800` |
+
+TTL for a streaming rendezvous's route key and segment queue, refreshed on every post. Session-scale
+by design - an SSE notification channel legitimately idles for long stretches - and only the crash
+safety net: completed or closed streams delete their keys eagerly.
+
+### `sync.max.pending.streams`
+
+| Type | Default |
+|------|---------|
+| `int` | `1000` |
+
+Per-pod ceiling on concurrently open streaming rendezvous (backpressure).
 
 All `redis.*` and `sync.*` values support `${ENV_VAR:default}` substitution.
 

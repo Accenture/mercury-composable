@@ -58,19 +58,25 @@ class ReturnRouteStoreTest extends RedisTestBase {
     }
 
     @Test
-    void responseRoundTripWithTtl() {
-        store.saveResponse("cid-1", "{\"status\":\"200\"}", 30);
-        assertEquals("{\"status\":\"200\"}", store.getResponse("cid-1"));
-        long ttl = connection.sync().ttl("response:cid-1");
-        assertTrue(ttl > 0 && ttl <= 30, "response TTL should be set, got " + ttl);
+    void segmentQueueIsFifoWithTtl() {
+        store.appendSegment("cid-1", "{\"type\":\"data\",\"body\":\"first\"}", 30);
+        store.appendSegment("cid-1", "{\"type\":\"eof\"}", 30);
+        assertEquals(2, store.queueLength("cid-1"));
+        long ttl = connection.sync().ttl("queue:cid-1");
+        assertTrue(ttl > 0 && ttl <= 30, "queue TTL should be set atomically with the append, got " + ttl);
+        // destructive pops drain in append (list) order; a fully drained list ceases to exist
+        assertEquals("{\"type\":\"data\",\"body\":\"first\"}", store.popSegment("cid-1"));
+        assertEquals("{\"type\":\"eof\"}", store.popSegment("cid-1"));
+        assertNull(store.popSegment("cid-1"), "empty queue pops null");
+        assertEquals(0, store.queueLength("cid-1"), "drained list auto-deletes");
     }
 
     @Test
     void cleanupDeletesBothKeys() {
         store.saveRoute("cid-1", "svc-return:origin-1", 90);
-        store.saveResponse("cid-1", "{\"status\":\"200\"}", 30);
+        store.appendSegment("cid-1", "{\"type\":\"eof\",\"body\":\"{}\"}", 30);
         store.cleanup("cid-1");
         assertNull(store.getRoute("cid-1"), "route deleted on cleanup");
-        assertNull(store.getResponse("cid-1"), "response deleted on cleanup");
+        assertEquals(0, store.queueLength("cid-1"), "queue deleted on cleanup");
     }
 }

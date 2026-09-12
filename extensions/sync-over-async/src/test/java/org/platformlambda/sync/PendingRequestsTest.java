@@ -31,13 +31,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PendingRequestsTest {
 
     @Test
-    void registerThenCompleteResolvesTheFuture() throws Exception {
+    void registerThenCompleteResolvesTheFutureInPlace() throws Exception {
         PendingRequests pending = new PendingRequests(100);
         CompletableFuture<String> future = pending.register("cid-1");
         assertTrue(pending.isPending("cid-1"));
         assertTrue(pending.complete("cid-1", "ok"));
         assertEquals("ok", future.get(1, TimeUnit.SECONDS));
-        assertFalse(pending.isPending("cid-1"), "entry is removed on completion");
+        // D8: completion is IN PLACE - the entry stays until the awaiting (or aborting) path removes it,
+        // because the response was destructively popped from Redis and the future is the only copy left;
+        // an await-by-cid arriving after completion must still find it.
+        assertTrue(pending.isPending("cid-1"), "completed entry stays registered for the await-by-cid lookup");
+        assertEquals(future, pending.get("cid-1"), "await-by-cid finds the completed future");
+        pending.cancel("cid-1");   // the awaiting path's finally block
+        assertFalse(pending.isPending("cid-1"));
     }
 
     @Test
@@ -73,14 +79,18 @@ class PendingRequestsTest {
     }
 
     @Test
-    void capacityIsReleasedOnCompleteAndCancel() {
+    void capacityIsReleasedOnCancelNotOnComplete() {
         PendingRequests pending = new PendingRequests(1);
         pending.register("cid-1");
-        pending.complete("cid-1", "ok");                      // slot freed
-        pending.register("cid-2");                            // can register again at cap 1
-        pending.cancel("cid-2");                              // slot freed
-        pending.register("cid-3");
-        assertTrue(pending.isPending("cid-3"));
+        pending.complete("cid-1", "ok");
+        // D8: in-place completion keeps the slot reserved - the request is not over until awaited/aborted
+        assertThrows(IllegalStateException.class, () -> pending.register("cid-2"),
+                "a completed-but-unawaited request still holds its capacity slot");
+        pending.cancel("cid-1");                              // the awaiting path releases the slot
+        pending.register("cid-3");                            // can register again at cap 1
+        pending.cancel("cid-3");
+        pending.register("cid-4");
+        assertTrue(pending.isPending("cid-4"));
     }
 
     @Test

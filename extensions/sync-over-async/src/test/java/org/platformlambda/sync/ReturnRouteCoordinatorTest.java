@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -79,8 +80,27 @@ class ReturnRouteCoordinatorTest extends RedisTestBase {
         try (StatefulRedisConnection<String, String> c = redisClient.connect()) {
             ReturnRouteStore store = new ReturnRouteStore(c);
             assertNull(store.getRoute(cid), "route key deleted after a successful rendezvous");
-            assertNull(store.getResponse(cid), "response key deleted after a successful rendezvous");
+            assertEquals(0, store.queueLength(cid), "rendezvous queue deleted after a successful rendezvous");
         }
+    }
+
+    /**
+     * The await-by-cid early-arrival path (D8 complete-in-place pin): when the response lands between
+     * {@code begin} and the await - the two run as separate flow tasks - the wake-up destructively pops
+     * the only stored copy and completes the pending future IN PLACE, so the later await-by-cid must
+     * still find it by lookup. (Before D8 this recovery re-read {@code response:{cid}}, which no longer
+     * exists under destructive pops.)
+     */
+    @Test
+    void earlyArrivalIsRecoveredByAwaitByCid() throws Exception {
+        String cid = newCid();
+        CompletableFuture<String> future = podA.begin(cid);
+        assertTrue(podB.deliver(cid, RESPONSE));
+        // wait until the wake-up handler has fully processed the delivery (popped + completed in place)
+        assertEquals(RESPONSE, future.get(5, TimeUnit.SECONDS));
+        assertEquals(1, podA.pendingCount(), "completed entry stays registered until the awaiting task collects it");
+        assertEquals(RESPONSE, podA.awaitResponse(cid, 1000));   // by-cid lookup finds the completed future
+        assertEquals(0, podA.pendingCount(), "awaitResponse releases the entry on its way out");
     }
 
     @Test
@@ -100,11 +120,12 @@ class ReturnRouteCoordinatorTest extends RedisTestBase {
     void missedNotificationRecoveredByFinalRead() throws Exception {
         String cid = newCid();
         CompletableFuture<String> future = podA.begin(cid);
-        // simulate a lost wake-up: the response is written to Redis, but NO notification is published
+        // simulate a lost wake-up: the response is queued in Redis, but NO notification is published
         try (StatefulRedisConnection<String, String> c = redisClient.connect()) {
-            new ReturnRouteStore(c).saveResponse(cid, RESPONSE, 30);
+            new ReturnRouteStore(c).appendSegment(cid,
+                    StreamSegment.of(StreamSegment.EOF, null, RESPONSE).toJson(), 30);
         }
-        // the subscriber never fires; awaitResponse times out, then the final read recovers the payload
+        // the subscriber never fires; awaitResponse times out, then the final drain recovers the payload
         assertEquals(RESPONSE, podA.awaitResponse(cid, future, 400));
     }
 

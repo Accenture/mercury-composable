@@ -33,6 +33,8 @@ class SyncOverAsyncConfigTest {
         assertEquals(90, config.routeTtlSeconds());
         assertEquals(30, config.responseTtlSeconds());
         assertEquals(10_000, config.maxPendingRequests());
+        assertEquals(1800, config.streamTtlSeconds());
+        assertEquals(1000, config.maxPendingStreams());
     }
 
     @Test
@@ -47,10 +49,14 @@ class SyncOverAsyncConfigTest {
                 "sync.return.channel.prefix", "orders-return",
                 "sync.route.ttl.seconds", "120",
                 "sync.response.ttl.seconds", "45",
-                "sync.max.pending.requests", "500")));
+                "sync.max.pending.requests", "500",
+                "sync.stream.ttl.seconds", "900",
+                "sync.max.pending.streams", "250")));
         assertEquals("orders-return", config.returnChannelPrefix());
         assertEquals(120, config.routeTtlSeconds());
         assertEquals(45, config.responseTtlSeconds());
         assertEquals(500, config.maxPendingRequests());
+        assertEquals(900, config.streamTtlSeconds());
+        assertEquals(250, config.maxPendingStreams());
     }
 }
