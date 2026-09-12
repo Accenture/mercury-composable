@@ -32,9 +32,8 @@
   existing one-shot suite unchanged.
   One nuance awaiting Eric's confirmation: a single final drain at edge idle expiry
   (the one-shot "final read before timeout" analogue) — E1 implements and DEMONSTRATES
-  it (`finalDrainAtIdleExpiryRecoversADroppedClose`) for his verdict. **E1 IMPLEMENTED
-  2026-09-12** (branch `feat/srr-e1-unified-list-mechanism`, commit `600dbe75`; PR
-  pending): store re-platformed to `queue:{cid}` (atomic RPUSH+EXPIRE via Lua),
+  it (`finalDrainAtIdleExpiryRecoversADroppedClose`) for his verdict. **E1 SHIPPED
+  2026-09-12** (merged via PR #369, squash `adc62997`, title clean): store re-platformed to `queue:{cid}` (atomic RPUSH+EXPIRE via Lua),
   `StreamResponder`/`StreamSegment`/`PendingStreams` shipped, complete-in-place landed
   (plus one E1-found race fix: the timeout path consults the future after an empty
   final drain, spec §4.7 note); D8 gate PASSED — module 73/73 (was 46), demo flows 4/4
