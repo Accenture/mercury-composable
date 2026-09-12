@@ -12,8 +12,11 @@ D8 acceptance gate, §9) landed the same day in `extensions/sync-over-async` (PR
 single-JVM end-to-end proof of both driving use cases behind real `stream: true` endpoints,
 broker-free — and **E3 completed the dry-run**: two JVMs against `redis-standalone`, the
 actual gap scenario with chaos checks, all green
-([test report](../docs/test-reports/streaming-return-route-cross-pod.md)). Next gate:
-experiment E4 (the blueprint payoff).
+([test report](../docs/test-reports/streaming-return-route-cross-pod.md)) — and **E4
+delivered the blueprint payoff**: real Gemini tokens produced on one pod and rendered on
+another through the rendezvous (test report, scenario 6). **The E-series is COMPLETE.**
+One flag remains open for Eric's confirmation: the single final drain at edge idle expiry
+(§4.5, D4's nuance — demonstrated at unit, single-JVM, and cross-pod level).
 **Blueprint:** serves `bp-agent-orchestration` (Q8 second half — graph-run streaming)
 → serves `vision-mercury-composable`.
 **Repo scope:** `extensions/sync-over-async` only. Java-only like the extension itself
@@ -398,9 +401,21 @@ the use-case discussion (§2).
   [streaming-return-route-cross-pod test report](../docs/test-reports/streaming-return-route-cross-pod.md);
   the runbook is reproducible via the demo's new `stream-ui` / `stream-producer` profiles
   (`examples/sync-over-async-demo`). No mechanism defects found.
-- **E4 — Blueprint payoff.** An LLM/graph-run token stream through the bridge: the
-  agent-orchestration wrapper posts token segments via the responder API while the HTTP
-  edge renders on a different pod (the E0 demo, made horizontal).
+- **E4 — Blueprint payoff. ✅ DONE (2026-09-12).** An LLM token stream through the
+  bridge: pod B pulls the provider's own SSE stream (Gemini
+  `streamGenerateContent?alt=sse`) through the platform's shipped SSE consumer, and a
+  ~40-line bridge function forwards each relayed `x-event-stream` envelope into the
+  rendezvous via `StreamResponder` - real tokens rendered in generation order on the
+  other pod, terminal `done` carrying the provider's usage metadata; provider refusals
+  ride the same path in-band (test report, scenario 6). Two findings: the platform-core
+  HTTP client percent-encoded `:` in path segments (RFC 3986 pchar; broke Google-style
+  `:verb` custom methods - fixed with a regression pin, own PR), and the producer
+  contract applies to forwarders (the bridge must be a single-instance route, or relayed
+  frames post out of order and a batch sequenced behind the terminal is discarded - the
+  same reason the edge's reply lanes are single-instance). Graph-run attachment: this is
+  the wrapper-side shape a `graph.task` node drives (E0's proven leg) - the node streams
+  out-of-band while its graph edge stays request/response, zero engine change; driving it
+  from inside a live graph run is the agent-orchestration thread's next experiment.
 
 ## 10. Relation to the blueprint
 

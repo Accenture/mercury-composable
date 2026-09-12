@@ -272,6 +272,23 @@ curl -X POST http://127.0.0.1:8601/api/produce -H 'content-type: application/jso
 The producer's response reports `live`: `false` means the rendezvous is over (the UI closed, timed out,
 or died) — the signal to stop producing.
 
+### Real LLM tokens (optional)
+
+With a Gemini developer key in the environment (`export GEMINI_API_KEY=...` before starting the
+producer pod), mode `llm` streams a **real LLM answer** across the pods: the producer pod pulls the
+provider's SSE token stream through the platform's own SSE-capable HTTP client and a bridge function
+(`demo.llm.bridge`) forwards each token batch into the rendezvous — watch the tokens render in
+terminal D, ending with an `event: done` that carries the provider's usage metadata:
+
+```shell
+curl -X POST http://127.0.0.1:8601/api/produce -H 'content-type: application/json' \
+  -d '{"cid":"<cid>","mode":"llm","prompt":"In two short sentences, why do event-driven systems scale well?"}'
+```
+
+Without a key the mode answers 503 with an explicit message. The bridge is deliberately a
+single-instance function: the rendezvous producer contract is *post in order*, and a
+multi-instance reply consumer would forward frames concurrently (see the bridge's javadoc).
+
 ### Chaos checks
 
 The producer endpoint ships two failure modes for experimenting with the reliability design (a short idle

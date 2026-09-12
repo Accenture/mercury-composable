@@ -130,6 +130,61 @@ doing exactly its job (contract 5). The spec's failure table has been tightened 
 timing explicitly: the producer stops *within the route TTL* of a UI-pod crash, not
 instantaneously, and the abandoned queue remnant ages out on its own TTL. ✅
 
+## Scenario 6 — real LLM tokens across pods (experiment E4, the blueprint payoff)
+
+The reason this transport exists (agent-orchestration Q8, second half): an LLM's token stream
+produced on one pod, rendered on another. Same topology, one more composition — **pod B pulls the
+provider's own SSE stream through the platform's shipped SSE consumer** (`async.http.request` with
+`Accept: text/event-stream` + a reply route) **and a bridge function forwards each relayed
+`x-event-stream` envelope into the rendezvous** via `StreamResponder`. No SDK, no new
+infrastructure: the request leg is one event, and the bridge is ~40 lines of forwarding.
+
+```text
+  pod A (SSE render)      Redis       pod B: async.http.request ──SSE──► Gemini
+    event: cid ────────────────────────► POST /api/produce {cid, mode: "llm", prompt}
+    ◄── token batches ◄── queue:{cid} ◄── demo.llm.bridge (reply route, instances=1)
+    event: done {usage}
+```
+
+Live run (Gemini `streamGenerateContent?alt=sse`, `gemini-flash-latest` resolving to
+`gemini-3.8-flash`, developer key from the environment):
+
+```text
+15:57:56.709  event: cid
+15:57:56.709  data: 4b6345d72a73466c990e93c6265169df
+15:58:01.108  data: They decouple components, allowing individual services to scale
+              independently based on demand. Additionally, asynchronous communication
+15:58:01.109  data:  prevents bottlenecks by letting producers and consumers process
+              tasks at their own pace.
+15:58:01.113  event: done
+15:58:01.114  data: {"provider":"gemini","model":"gemini-3.8-flash","finishReason":"STOP",
+              "promptTokenCount":14,"candidatesTokenCount":32,"totalTokenCount":46}
+```
+
+Real tokens, in generation order, terminal `done` carrying the provider's usage metadata — and the
+provider's early refusals (a 404 during the round) rode the same path in-band as `event: error`. ✅
+
+This is also the wrapper-side shape a `graph.task` node drives (E0 proved the live
+`graph.task → wrapper` leg): the node streams progress out-of-band through the rendezvous while its
+own graph edge stays plain request/response — graph-run streaming with **zero engine change**.
+
+**Two findings from this round:**
+
+1. **platform-core: the HTTP client percent-encoded `:` in URI path segments** (form encoding via
+   `URLEncoder`), which Google-style custom methods (`…/models/<model>:streamGenerateContent` —
+   every Google Cloud `:verb` API) reject with 404. RFC 3986 allows `:` in a path segment (pchar);
+   fixed in `Utility.encodeUriSegments` with a regression pin (its own PR).
+2. **The producer contract bites forwarders too:** the bridge initially ran 50 function instances,
+   so relayed frames were posted concurrently — and a token batch sequenced *behind* the terminal
+   in the queue is discarded by design (the first live run rendered a mid-sentence answer).
+   `instances = 1` restores post-in-order (design D7) — the same reason the HTTP edge's reply
+   lanes are single-instance routes. A high-fanout application would mint one temporary route per
+   stream.
+
+(Demo note: current flash aliases resolve to *thinking* models — the demo disables the thinking
+budget and bounds `maxOutputTokens`, or a short generation spends its whole budget on reasoning
+and returns `MAX_TOKENS` with no visible text.)
+
 ## Observations and round notes
 
 - **No mechanism defects found.** All five scenarios behaved per the ratified design on the
@@ -153,6 +208,8 @@ instantaneously, and the abandoned queue remnant ages out on its own TTL. ✅
 
 ## What remains
 
-E4 — the blueprint payoff: an LLM/graph-run token stream through this bridge (the
-agent-orchestration wrapper posting via `StreamResponder` while the HTTP edge renders on a
-different pod), which is the second half of the concept's Q8.
+Nothing — scenario 6 completed the E-series (E4, the blueprint payoff). The transport half of
+agent-orchestration Q8's second question is delivered: a graph/LLM wrapper posts its token stream
+to the return route as it works, and whichever pod holds the user's connection renders it. Driving
+this bridge from an LLM node *inside* a live graph run is the agent-orchestration thread's next
+experiment, on the foundation recorded here.
