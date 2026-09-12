@@ -3986,6 +3986,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#syncstreamttlseconds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sync.stream.ttl.seconds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#syncmaxpendingstreams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sync.max.pending.streams
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -6344,6 +6366,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#syncstreamttlseconds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sync.stream.ttl.seconds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#syncmaxpendingstreams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sync.max.pending.streams
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -8647,7 +8691,8 @@ validation rules.</p>
 <hr />
 <h2 id="sync-over-async">Sync-over-Async (<code>sync-over-async</code> extension)<a class="headerlink" href="#sync-over-async" title="Permanent link">&para;</a></h2>
 <p>The opt-in <code>sync-over-async</code> extension exposes a synchronous REST request/response over an asynchronous,
-cross-pod Kafka backend using a Redis return route. See the <a href="../sync-over-async/">Sync-over-Async guide</a>. It is
+cross-pod backend using a Redis return route - and generalizes the same rendezvous to a streaming return
+route for cross-pod progressive rendering. See the <a href="../sync-over-async/">Sync-over-Async guide</a>. It is
 off by default and starts (eagerly connecting to Redis) only when <code>sync.over.async.enabled=true</code>.</p>
 <h3 id="syncoverasyncenabled"><code>sync.over.async.enabled</code><a class="headerlink" href="#syncoverasyncenabled" title="Permanent link">&para;</a></h3>
 <table>
@@ -8824,7 +8869,7 @@ off by default and starts (eagerly connecting to Redis) only when <code>sync.ove
 </tr>
 </tbody>
 </table>
-<p>TTL for the return-route key; should cover the REST timeout plus a buffer.</p>
+<p>TTL for a one-shot return-route key; should cover the REST timeout plus a buffer.</p>
 <h3 id="syncresponsettlseconds"><code>sync.response.ttl.seconds</code><a class="headerlink" href="#syncresponsettlseconds" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -8840,7 +8885,7 @@ off by default and starts (eagerly connecting to Redis) only when <code>sync.ove
 </tr>
 </tbody>
 </table>
-<p>TTL for the response key (short rendezvous window).</p>
+<p>TTL for a one-shot rendezvous queue (short rendezvous window).</p>
 <h3 id="syncmaxpendingrequests"><code>sync.max.pending.requests</code><a class="headerlink" href="#syncmaxpendingrequests" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -8857,6 +8902,40 @@ off by default and starts (eagerly connecting to Redis) only when <code>sync.ove
 </tbody>
 </table>
 <p>Per-pod ceiling on in-flight synchronous requests (backpressure).</p>
+<h3 id="syncstreamttlseconds"><code>sync.stream.ttl.seconds</code><a class="headerlink" href="#syncstreamttlseconds" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>long</code> (s)</td>
+<td><code>1800</code></td>
+</tr>
+</tbody>
+</table>
+<p>TTL for a streaming rendezvous's route key and segment queue, refreshed on every post. Session-scale
+by design - an SSE notification channel legitimately idles for long stretches - and only the crash
+safety net: completed or closed streams delete their keys eagerly.</p>
+<h3 id="syncmaxpendingstreams"><code>sync.max.pending.streams</code><a class="headerlink" href="#syncmaxpendingstreams" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int</code></td>
+<td><code>1000</code></td>
+</tr>
+</tbody>
+</table>
+<p>Per-pod ceiling on concurrently open streaming rendezvous (backpressure).</p>
 <p>All <code>redis.*</code> and <code>sync.*</code> values support <code>${ENV_VAR:default}</code> substitution.</p>
 <hr />
 <h2 id="serialization-content-types">Serialization &amp; Content Types<a class="headerlink" href="#serialization-content-types" title="Permanent link">&para;</a></h2>
