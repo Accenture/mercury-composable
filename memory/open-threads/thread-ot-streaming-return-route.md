@@ -7,7 +7,7 @@
   per-pod channel reused as the pod-discovery rendezvous, eof/exception as stream entries,
   and the UI pod draining into the shipped x-event-stream edge via EventStreamWriter.
   **Direction RATIFIED 2026-09-12 — Q1–Q6 answered by Eric, folded in as D1–D6**
-  (log 2026-09-12-032830): D1 store-first/pub-sub-wake-up-only; D2 interceptor facade,
+  (log 2026-09-12-032830; PR #366, squash `b700b4f0`): D1 store-first/pub-sub-wake-up-only; D2 interceptor facade,
   NO Event Script composition (UI app on an SSE-enabled REST endpoint); D3 **Kafka
   decoupled — Redis is the sole transport**, the producing server posts segments directly
   (new `StreamResponder` producer API; kills the ordering contract and the duplicate
