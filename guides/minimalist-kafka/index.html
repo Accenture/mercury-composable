@@ -3968,8 +3968,9 @@ no admin privileges. The Metadata request itself requires <strong>no ACL</strong
 topics the principal may Describe rather than rejecting the request, so under a fully locked-down
 principal the probe still succeeds (with a visible topic count of 0) - the successful round trip proves
 connectivity, TLS/SASL authentication, and a served API request. A reachable cluster reports a status map
-(including the visible topic count, which may be 0 under restrictive ACLs); an unreachable one fails
-<code>/health</code> with HTTP 503.</p>
+(including the visible topic count, which may be 0 under restrictive ACLs); an unreachable one fails the
+check with a <strong>503</strong> status and a key-value message (<code>text</code> for the DevOps reader, <code>code</code> for the status code),
+so <code>/health</code> marks the dependency down and the endpoint answers non-2xx while the application is DOWN.</p>
 <p>During application start-up the check returns a <strong>placeholder healthy</strong> status while the Kafka client
 warms up in the background - <code>/health</code> neither fails nor blocks before the client and the rest of the
 start-up sequence complete. After the first successful probe, or once the grace period expires, every
@@ -3985,7 +3986,7 @@ the first probe after the credential lands simply succeeds; nothing needs a rest
 template is still incomplete - the client cannot even be built from it - <code>type=health</code> reports a
 <strong>passing</strong> <code>Waiting for Kafka connection</code> status rather than a failure: failing <code>/health</code> would
 invite the container orchestrator to restart the pod, and a restart cannot produce the credential.
-Only a real connectivity failure (client built, cluster unreachable) fails <code>/health</code> with HTTP 503.
+Only a real connectivity failure (client built, cluster unreachable) fails the check with status 503.
 The same applies to <code>secondary.kafka.health</code>.</p>
 <blockquote>
 <p><strong>On a produce-only leg the probe uses the producer template.</strong> With

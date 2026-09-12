@@ -7576,7 +7576,7 @@ the migration back to the standard header (e.g. fixing the gateway allow-list).<
 </tr>
 </tbody>
 </table>
-<p>Start-up grace period for <code>kafka.health</code>: within it the check reports a placeholder healthy status while the Kafka client warms up in the background, so <code>/health</code> never fails or blocks during application start-up. After the first successful probe (or once the grace expires) every check is live and an unreachable cluster fails <code>/health</code> with 503.</p>
+<p>Start-up grace period for <code>kafka.health</code>: within it the check reports a placeholder healthy status while the Kafka client warms up in the background, so <code>/health</code> never fails or blocks during application start-up. After the first successful probe (or once the grace expires) every check is live and an unreachable cluster fails the check with a 503 status and a key-value message (<code>text</code> + <code>code</code>).</p>
 <h3 id="oteltraceforwarderenabled"><code>otel.trace.forwarder.enabled</code><a class="headerlink" href="#oteltraceforwarderenabled" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -8792,7 +8792,7 @@ off by default and starts (eagerly connecting to Redis) only when <code>sync.ove
 </tr>
 </tbody>
 </table>
-<p>Start-up grace period for <code>redis.health</code>: within it the check reports a placeholder healthy status while the Redis client warms up in the background, so <code>/health</code> never fails or blocks during application start-up. The probe's configuration is resolved lazily and re-resolved on every rebuild, and an unusable configuration (unbuildable values, or credentials the server rejects - the signature of a vault-published password that has not landed yet) is a passing <code>Waiting for Redis connection</code> status; only a genuine connectivity failure fails <code>/health</code> with 503.</p>
+<p>Start-up grace period for <code>redis.health</code>: within it the check reports a placeholder healthy status while the Redis client warms up in the background, so <code>/health</code> never fails or blocks during application start-up. The probe's configuration is resolved lazily and re-resolved on every rebuild, and an unusable configuration (unbuildable values, or credentials the server rejects - the signature of a vault-published password that has not landed yet) is a passing <code>Waiting for Redis connection</code> status; only a genuine connectivity failure fails the check, with a 503 status and a key-value message (<code>text</code> + <code>code</code>).</p>
 <h3 id="syncreturnchannelprefix"><code>sync.return.channel.prefix</code><a class="headerlink" href="#syncreturnchannelprefix" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
