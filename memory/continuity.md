@@ -126,7 +126,23 @@
   same `redis.*` keys), with the Redis wrinkle: a late credential surfaces as a server-side auth rejection
   (NOAUTH/WRONGPASS) at connect time, not at client construction, so those classify as waiting too.
   Eric's standing rule: every critical infrastructure component needs a health check service.
+  Hardened via PR #362 (squash `88bdff3a`): kernel threads for the Kafka checks (see
+  [[kafka-clients-kernel-threads]]), AtomicReference fields, supplier guards, and the failure
+  message as a `{text, code}` map — `code` for the aggregation/Kubernetes, `text` for the DevOps
+  reader (the healthy shape keeps `status` as its human string).
   <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-11 | uses: 1 | tier: working | origin: 2026-09-11-185752 -->
+
+- **Kafka-driving functions run on kernel threads — `@KernelThreadRunner` (2026-09-11, Eric's
+  question → PR #362).** The Kafka consumer performs network I/O on the CALLING thread inside
+  `synchronized` sections, and Confluent serializers are synchronized too — on Java 21 a virtual
+  thread blocking there PINS its carrier (JEP 491 lifts that only in JDK 24+; the build targets 21
+  and the field runs it). Module rule: functions that drive Kafka clients carry `@KernelThreadRunner`
+  (SimpleKafkaNotification, SchemaCodec, SecondaryKafkaNotification, and now both kafka health
+  checks — live probes AND the warm-up spawn via getKernelThreadExecutor). Event-loop clients are
+  the counter-case: Lettuce does I/O on its own netty threads and callers only await futures, so
+  `redis.health` deliberately stays on virtual threads. KafkaConsumer itself is NOT thread-safe;
+  sequential multi-thread access under external sync (the checks' ReentrantLock) is its contract.
+  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-11 | uses: 1 | tier: working | origin: 2026-09-11-191200 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
