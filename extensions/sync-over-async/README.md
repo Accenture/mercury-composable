@@ -41,6 +41,14 @@ used by the end-to-end regression):
   There is **no sequence number**: ordering, where required, is the posting discipline (Redis
   executes each connection's commands in arrival order), and any producer may post the terminal
   entry.
+- **`StreamBridge` / `EventStreamSink`** — the generic half of a UI-pod streaming facade: an
+  `@EventInterceptor` addressed by a `stream: true` endpoint calls `StreamBridge.open(coordinator,
+  request, cid, idleSeconds)` and the bridge does the rest — commits the SSE head, forwards each
+  drained segment into the request's reply lane (`data` → SSE event, `eof` → the terminal `done`
+  event, `exception` → the in-band `error` event), and owns the idle watchdog whose expiry performs
+  one final drain (a dropped final notification still completes the render) before failing in-band
+  and closing the rendezvous. Stream capacity rejects with a proper HTTP 503 before the head is
+  committed.
 - **`PendingRequests` / `PendingStreams`** — race-safe in-flight registries: each waiting request
   completes exactly once — in place, so the await-by-cid path survives destructive pops — and each
   stream drains on a single loop at a time, under atomically enforced per-pod ceilings

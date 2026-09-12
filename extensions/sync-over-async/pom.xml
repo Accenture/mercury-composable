@@ -234,6 +234,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.4</version>
+                <configuration>
+                    <!-- One JVM per test class: two classes boot the whole application (AutoStart with
+                         REST automation on a fixed port) - RestFlowMvpTest and StreamingRestE2eTest -
+                         and the platform is a per-JVM singleton, so they must not share a fork. -->
+                    <reuseForks>false</reuseForks>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>

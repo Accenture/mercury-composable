@@ -143,10 +143,37 @@ granularity, by design — and **any** of them may close the channel by posting 
 otherwise; a `false` from `post` always means stop — the consumer disconnected, timed out, or another
 producer already closed the channel.
 
+On the consuming side, the facade is an `@EventInterceptor` addressed directly by a `stream: true`
+endpoint — the same shape as every shipped streaming producer (see the
+[HTTP Response Streaming guide](http-streaming.md)) — and `StreamBridge` is its generic half: it opens
+the rendezvous, forwards each drained segment into the request's reply lane (`data` → SSE event,
+`eof` → the terminal `done` event, `exception` → the in-band `error` event), and owns the lifecycle:
+
+```java
+@PreLoad(route = "my.chat.facade", instances = 50)
+@EventInterceptor
+public class ChatFacade implements TypedLambdaFunction<EventEnvelope, Void> {
+    @Override
+    public Void handleEvent(Map<String, String> headers, EventEnvelope request, int instance) {
+        String cid = request.getCorrelationId();
+        StreamBridge.open(SyncRuntime.coordinator(), request, cid, 30);
+        // ... start the backend work however the application likes (the request leg) ...
+        return null;
+    }
+}
+```
+
+The `idleSeconds` argument is the idle allowance, applied to the HTTP edge and the bridge's watchdog
+alike (widen it for a deliberately quiet notification channel — a notification facade typically reads it
+from a request header and announces the session's cid to the UI as its first SSE event). At idle expiry
+the watchdog performs **one final drain** — the streaming analogue of the one-shot final read, so a
+dropped *final* notification still completes the render — and only if that drain does not complete the
+stream does it fail in-band (408) and close the rendezvous, which is also what reclaims a disconnected
+client's stream. At stream capacity (`sync.max.pending.streams`) the exchange fails with a proper
+HTTP 503 before the head is committed.
+
 The design rationale, decision record and failure analysis live in the
-[streaming-return-route design spec](https://github.com/Accenture/mercury-composable/blob/main/draft-design-specs/streaming-return-route.md);
-the endpoint-level facade that forwards a drained stream into an SSE (`stream: true`) endpoint arrives
-with the follow-up experiments.
+[streaming-return-route design spec](https://github.com/Accenture/mercury-composable/blob/main/draft-design-specs/streaming-return-route.md).
 
 ## Health check {#health}
 
