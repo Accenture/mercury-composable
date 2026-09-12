@@ -13,7 +13,15 @@
   (new `StreamResponder` producer API; kills the ordering contract and the duplicate
   question); D4 no re-drain, TTL expiry is the cleanup; D5 no fan-out; D6 **per-seq keys
   `segment:{cid}:{seq}` replace the Redis Stream** (seq = retrieval index; MAXLEN/trim
-  dissolve). One nuance awaiting Eric's confirmation: a single final drain at edge idle
+  dissolve). **Refined to D7 same day** (log 2026-09-12-044817) after Eric articulated
+  the driving use cases (event notification: SEVERAL backends post to one SSE session,
+  unordered, either side closes; AI chat: one sequential source, strict order): **no
+  sequence number at all — a Redis List per cid** (`RPUSH queue:{cid}` store-first,
+  destructive LPOP drains serialized per cid, any producer may post the terminal entry,
+  session-scale TTL 1800s default). Per-seq keys would collide across uncoordinated
+  producers; a single sequential producer gets ordering free from Redis per-connection
+  command order. Producer contract = post-in-order, no header stamping, no per-cid
+  state. One nuance awaiting Eric's confirmation: a single final drain at edge idle
   expiry (the one-shot "final read before timeout" analogue). Serves
   [[bp-agent-orchestration]] Q8 second half (graph-run streaming); inherits
   [[soa-transport-neutral-cid]]. Next: E1 (coordinator + responder primitives,
