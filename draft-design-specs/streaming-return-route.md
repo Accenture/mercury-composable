@@ -10,7 +10,10 @@ retires; `deliver` becomes a terminal post). E1 (coordinator + responder primiti
 D8 acceptance gate, §9) landed the same day in `extensions/sync-over-async` (PR #369), and
 **E2 followed** — the facade half (`StreamBridge`/`EventStreamSink`, §4.5) plus the
 single-JVM end-to-end proof of both driving use cases behind real `stream: true` endpoints,
-broker-free. Next gate: experiment E3.
+broker-free — and **E3 completed the dry-run**: two JVMs against `redis-standalone`, the
+actual gap scenario with chaos checks, all green
+([test report](../docs/test-reports/streaming-return-route-cross-pod.md)). Next gate:
+experiment E4 (the blueprint payoff).
 **Blueprint:** serves `bp-agent-orchestration` (Q8 second half — graph-run streaming)
 → serves `vision-mercury-composable`.
 **Repo scope:** `extensions/sync-over-async` only. Java-only like the extension itself
@@ -287,7 +290,7 @@ remaining copy, and the response is still returned rather than mis-reported as a
 | Failure | Behavior |
 |---------|----------|
 | Wake-up notification dropped | The next wake-up's drain pops everything queued; a dropped *final* notification is caught by the facade's single final drain at idle expiry (§4.5) |
-| UI pod dies mid-stream | Route key gone with the pod (or expired); every producer's next `post` returns `false` and it stops; the queue remnant ages out on TTL |
+| UI pod dies mid-stream | The route key is Redis state, so it survives the pod until its TTL: posts inside that window are accepted into the void (stored + published to a subscriber-less channel), and every producer's `post` returns `false` — the orphan stop — once the route expires, within `sync.stream.ttl.seconds` of the crash. The queue remnant ages out on its own TTL. (Timing observed in E3, scenario 5.) |
 | Producer dies mid-stream (chat case) | No terminal entry ever arrives; the edge idle timeout fails the render in-band with 408; keys age out on TTL |
 | One producer closes while others are active (notification case) | The terminal entry completes the rendezvous and deletes the route; the other producers stop on their next `post` (orphan) |
 | Producer outruns a slow UI client | The edge buffers up to its 1 MB slow-client bound; undelivered entries wait in the list under its TTL (destructive drains keep it near-empty otherwise) |
@@ -384,10 +387,17 @@ the use-case discussion (§2).
   module suite 77/77 green, demo flows 4/4. The consumer-side close is exercised through
   the idle-expiry path (a socket-level client disconnect is not scriptable through the
   in-JVM HTTP client; E3's cross-pod chaos checks cover the remaining physical cases).
-- **E3 — Cross-pod dry-run.** Two JVMs against `redis-standalone`: the UI request lands
-  on pod A; producers run on pod B posting to Redis — the actual gap scenario. Chaos
-  checks: suppress one notification, kill the producer mid-stream (idle 408), kill the
-  UI pod (orphan stop on the producer).
+- **E3 — Cross-pod dry-run. ✅ DONE (2026-09-12).** Two JVMs against `redis-standalone`:
+  the UI request lands on pod A; producers run on pod B posting to Redis — the actual gap
+  scenario. Five scenarios, all green on the first complete run — ordered chat tokens
+  cross-pod (no sequence number anywhere), lost notification healed by the next drain,
+  lost *close* recovered by the final drain at idle expiry (fired at idle + 1 ms),
+  producer `kill -9` mid-stream → in-band 408, UI pod `kill -9` → producer orphan stop
+  bounded by the route TTL (posts inside the window are accepted into the void — failure
+  table §6 tightened accordingly). Permanent record:
+  [streaming-return-route-cross-pod test report](../docs/test-reports/streaming-return-route-cross-pod.md);
+  the runbook is reproducible via the demo's new `stream-ui` / `stream-producer` profiles
+  (`examples/sync-over-async-demo`). No mechanism defects found.
 - **E4 — Blueprint payoff.** An LLM/graph-run token stream through the bridge: the
   agent-orchestration wrapper posts token segments via the responder API while the HTTP
   edge renders on a different pod (the E0 demo, made horizontal).

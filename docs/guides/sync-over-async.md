@@ -173,7 +173,12 @@ client's stream. At stream capacity (`sync.max.pending.streams`) the exchange fa
 HTTP 503 before the head is committed.
 
 The design rationale, decision record and failure analysis live in the
-[streaming-return-route design spec](https://github.com/Accenture/mercury-composable/blob/main/draft-design-specs/streaming-return-route.md).
+[streaming-return-route design spec](https://github.com/Accenture/mercury-composable/blob/main/draft-design-specs/streaming-return-route.md);
+the live two-pod validation — ordered cross-pod rendering plus the chaos checks (lost notifications, a
+producer killed mid-stream, a killed UI pod) — is recorded in the
+[cross-pod test report](../test-reports/streaming-return-route-cross-pod.md), reproducible via the
+[sync-over-async-demo](https://github.com/Accenture/mercury-composable/tree/main/examples/sync-over-async-demo)
+`stream-ui` / `stream-producer` profiles.
 
 ## Health check {#health}
 
