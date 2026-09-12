@@ -1304,7 +1304,7 @@ public class Utility {
         } else {
             for (String s: segments) {
                 sb.append('/');
-                sb.append(encodeUri(s));
+                sb.append(encodePathSegment(s));
             }
         }
         if (uri.endsWith("/")) {
@@ -1313,15 +1313,29 @@ public class Utility {
         return sb.toString();
     }
 
+    /**
+     * Encode one URI path segment. RFC 3986 (section 3.3) allows ':' inside a path segment
+     * (pchar), and some servers route on the raw colon - notably Google-style custom methods
+     * such as {@code /v1beta/models/gemini:streamGenerateContent}, which reject the
+     * percent-encoded form. URLEncoder performs form encoding and over-encodes it, so the
+     * colon is restored after encoding; everything else keeps the strict encoding.
+     *
+     * @param segment one path segment
+     * @return the encoded segment with ':' preserved
+     */
+    private String encodePathSegment(String segment) {
+        return encodeUri(segment).replace("%3A", ":");
+    }
+
     private void handleMatrixParams(List<String> segments, StringBuilder sb) {
         for (String s: segments) {
             sb.append('/');
             int semiColon = s.indexOf(';');
             if (semiColon == -1) {
-                sb.append(encodeUri(s));
+                sb.append(encodePathSegment(s));
             } else {
                 var pathPortion = s.substring(0, semiColon);
-                sb.append(encodeUri(pathPortion));
+                sb.append(encodePathSegment(pathPortion));
                 // matrix parameters
                 List<String> parts = split(s.substring(semiColon+1), ";");
                 for (String p: parts) {

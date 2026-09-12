@@ -553,6 +553,12 @@ class UtilityTests {
         assertEquals("/api/hello/%40.%28world%29", util.getEncodedUri(s3));
         var s4 = "/api/hello/world &nbsp;";
         assertEquals("/api/hello/world%20%26nbsp", util.getEncodedUri(s4));
+        // ':' is pchar (RFC 3986 section 3.3) and must survive raw - Google-style custom methods
+        // (e.g. streamGenerateContent) route on the literal colon and reject %3A
+        var s5 = "/v1beta/models/gemini-flash-latest:streamGenerateContent?alt=sse";
+        assertEquals(s5, util.getEncodedUri(s5));
+        var s6 = "/api/hello/a b:c;k=1 1";
+        assertEquals("/api/hello/a%20b:c;k=1%201", util.getEncodedUri(s6));
     }
 
     @Test
