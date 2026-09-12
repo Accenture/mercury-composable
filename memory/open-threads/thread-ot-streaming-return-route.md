@@ -45,7 +45,14 @@
   notification multi-producer + backend close, idle expiry BOTH ways (lost-close
   recovered by the final drain — the D4 nuance observable end-to-end — and empty → 408 +
   orphan stop); surefire reuseForks=false (two AutoStart-booting classes); module 77/77,
-  demo 4/4. Serves [[bp-agent-orchestration]] Q8 second half (graph-run streaming);
-  inherits [[soa-transport-neutral-cid]]. Next: E3 (cross-pod dry-run — two JVMs against
-  redis-standalone, chaos checks).
+  demo 4/4. **E3 EXECUTED 2026-09-12** (branch `feat/srr-e3-cross-pod-dry-run`, commit
+  `1c247872`; PR pending): live two-JVM dry-run against redis-standalone — demo gained
+  `stream-ui`/`stream-producer` profiles (broker-free) + a `lost` chaos mode; five
+  scenarios green first run (ordered chat cross-pod; lost notification healed; lost
+  close recovered by the final drain at idle + 1 ms; producer kill -9 → in-band 408;
+  UI pod kill -9 → TTL-bounded orphan stop — spec §6 row tightened to name the timing);
+  permanent record docs/test-reports/streaming-return-route-cross-pod.md; no mechanism
+  defects. Serves [[bp-agent-orchestration]] Q8 second half (graph-run streaming);
+  inherits [[soa-transport-neutral-cid]]. Next: E4 (the blueprint payoff — LLM/graph-run
+  token stream through the bridge), on Eric's word.
   <!-- id: ot-streaming-return-route | created: 2026-09-12 | last_used: 2026-09-12 | uses: 1 | tier: working | origin: 2026-09-12-021649 -->
