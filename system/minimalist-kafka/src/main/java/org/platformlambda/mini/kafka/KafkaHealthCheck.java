@@ -21,9 +21,11 @@ package org.platformlambda.mini.kafka;
 import org.apache.kafka.clients.consumer.CloseOptions;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.KafkaException;
+import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -32,8 +34,10 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
@@ -44,7 +48,9 @@ import java.util.function.Supplier;
  * {@code optional.health.dependencies}) in application.properties and the {@code /health}
  * endpoint will include the Kafka cluster status. The function follows the standard health
  * contract: {@code type=info} describes the dependency, {@code type=health} returns a status
- * map when the cluster is reachable and throws {@code AppException} when it is not. While the
+ * map when the cluster is reachable and a 503 response carrying a key-value map
+ * ({@code text} + {@code code}) when it is not - the status code is what the health
+ * aggregation (and Kubernetes) detects; the map is for the DevOps reader. While the
  * client configuration is still incomplete - a late credential not yet published - it returns a
  * passing {@code Waiting for Kafka connection} status instead of failing (see below).
  *
@@ -72,7 +78,7 @@ import java.util.function.Supplier;
  * {@code @MainApplication} start-up logic runs. A credential bootstrap that fetches secrets from a
  * vault and publishes them as system properties has therefore not executed yet, and a template whose
  * {@code sasl.jaas.config} interpolates such a credential would be frozen with the credential
- * missing - every probe then fails forever with Kafka's {@code ConfigException: The OAuth
+ * missing. Every probe then fails forever with Kafka's {@code ConfigException: The OAuth
  * configuration option clientId value is required}, no matter what the environment does. Because a
  * failed probe closes the client, the next probe re-resolves the template and the check heals
  * itself as soon as the credential lands.
@@ -88,11 +94,25 @@ import java.util.function.Supplier;
  * Kafka client and the rest of the start-up sequence are still coming up. After the first
  * successful probe - or once the grace period ({@code kafka.health.startup.grace}, default
  * {@code 30s}) has elapsed - every check is a live probe and an unreachable cluster fails
- * {@code /health} with HTTP 503.
+ * the check with status 503.
+ *
+ * <p><b>Multiple workers.</b> {@code /health} is polled concurrently - operations tooling plus the
+ * container platform's liveness/readiness probes - so the function runs several worker instances:
+ * info and placeholder responses serve in parallel, while the non-thread-safe {@code KafkaConsumer}
+ * stays protected because every probe serializes on the internal lock.
+ *
+ * <p><b>{@code @KernelThreadRunner}.</b> The Kafka consumer performs its network I/O on the CALLING
+ * thread inside {@code synchronized} sections, and on Java 21 a virtual thread that blocks inside
+ * {@code synchronized} pins its carrier - a probe waiting out {@code kafka.health.timeout} against an
+ * unreachable cluster would pin a carrier for the full wait. Kernel threads avoid that, matching the
+ * module convention for functions that drive Kafka clients ({@code SimpleKafkaNotification},
+ * {@code SchemaCodec}); the warm-up probe uses the kernel-thread executor for the same reason.
+ * (JDK 24's JEP 491 removes synchronized pinning, but the build targets Java 21 and field
+ * installations run it.) Contrast {@code redis.health}, which deliberately stays on virtual threads:
+ * Lettuce does its I/O on its own event-loop threads and the caller merely awaits a future, which
+ * unmounts a virtual thread cleanly.
  */
-// multiple workers because /health is polled concurrently (operations tooling plus the container
-// platform's liveness/readiness probes): info and placeholder responses run in parallel, while the
-// non-thread-safe KafkaConsumer stays protected - every probe serializes on the ReentrantLock below
+@KernelThreadRunner
 @PreLoad(route = "kafka.health", instances = 5)
 public class KafkaHealthCheck implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(KafkaHealthCheck.class);
@@ -104,6 +124,8 @@ public class KafkaHealthCheck implements LambdaFunction {
     private static final String SERVICE = "service";
     private static final String HREF = "href";
     private static final String STATUS = "status";
+    private static final String TEXT = "text";
+    private static final String CODE = "code";
     private static final String TOPICS = "topics";
     private static final String BOOTSTRAP_SERVERS = "bootstrap.servers";
     private static final String TIMEOUT_KEY = "kafka.health.timeout";
@@ -114,20 +136,21 @@ public class KafkaHealthCheck implements LambdaFunction {
     private static final String WAITING = "Waiting for Kafka connection";
     private static final String REACHABLE = "Kafka cluster is reachable";
 
-    // virtual-thread friendly: a ReentrantLock does not pin the carrier thread like 'synchronized'.
-    // The lock also serializes access to the KafkaConsumer, which is not thread-safe (the health
-    // worker and the background warm-up thread would otherwise race).
+    // the ReentrantLock serializes access to the KafkaConsumer, which is NOT thread-safe: the health
+    // workers and the background warm-up thread would otherwise race. Sequential multi-thread access
+    // under external synchronization is what the consumer's contract allows.
     private final ReentrantLock lock = new ReentrantLock();
     private final AtomicBoolean warmingUp = new AtomicBoolean(false);
     private final String serviceName;
     private final Supplier<Properties> probeConfig;
     // what the current probe client was built from; also the href source - replaced on every rebuild
-    private volatile Properties consumerProperties;
+    private final AtomicReference<Properties> consumerProperties = new AtomicReference<>();
     private final long timeoutMs;
     private final long graceDeadline;
     private KafkaConsumer<String, byte[]> consumer;
     private volatile boolean ready = false;
 
+    /** Instantiated reflectively when the platform's {@code @PreLoad} scanner registers the route. */
     public KafkaHealthCheck() {
         this(PRIMARY_SERVICE_NAME,
              () -> KafkaClientConfig.healthProbeProperties(AppConfigReader.getInstance()),
@@ -163,10 +186,14 @@ public class KafkaHealthCheck implements LambdaFunction {
     /**
      * Reuse seam for a library probing ANOTHER Kafka cluster (e.g. twin-kafka's
      * {@code secondary.kafka.health}): subclass with the other cluster's probe template, a distinct
-     * service name for the /health dependency list, and its own tunables. The supplier is invoked
-     * when the probe client is built - and again on every rebuild after a failure - so a template
+     * service name for the /health dependency list, and its own tuning keys. The supplier is invoked
+     * when the probe client is built - and again on every rebuild after a failure. Therefore, a template
      * that interpolates a credential published later in the start-up sequence is resolved correctly
      * on the next probe instead of being frozen at construction time.
+     *
+     * <p>The supplier itself must not be null (enforced here, at construction) and must return a
+     * non-null template: when the real values have not been published yet, return your best-known
+     * ones - an unusable result is handled by the waiting semantics, never by returning null.
      *
      * @param serviceName the dependency name reported by type=info (e.g. "secondary.kafka")
      * @param probeConfig supplies this cluster's probe client configuration, re-invoked on every rebuild
@@ -176,24 +203,9 @@ public class KafkaHealthCheck implements LambdaFunction {
     protected KafkaHealthCheck(String serviceName, Supplier<Properties> probeConfig,
                                long timeoutMs, long graceMs) {
         this.serviceName = serviceName;
-        this.probeConfig = probeConfig;
+        this.probeConfig = Objects.requireNonNull(probeConfig, "probeConfig supplier is required");
         this.timeoutMs = timeoutMs;
         this.graceDeadline = System.currentTimeMillis() + graceMs;
-    }
-
-    /**
-     * Resolve a duration configuration key to milliseconds, consulting an optional fallback key
-     * before the built-in default - the twin-kafka convention where secondary.* keys fall back
-     * to the primary cluster's globals.
-     *
-     * @param key          the configuration key (e.g. "secondary.kafka.health.timeout")
-     * @param fallbackKey  optional fallback key (e.g. "kafka.health.timeout"); null for none
-     * @param defaultValue the built-in default duration (e.g. "5s")
-     * @return the resolved duration in milliseconds
-     */
-    protected static long resolveDurationMs(String key, String fallbackKey, String defaultValue) {
-        var config = AppConfigReader.getInstance();
-        return resolveDurationMs(key, config.getProperty(fallbackKey, defaultValue));
     }
 
     /**
@@ -233,7 +245,8 @@ public class KafkaHealthCheck implements LambdaFunction {
 
     private void warmUp() {
         if (warmingUp.compareAndSet(false, true)) {
-            Thread.startVirtualThread(() -> {
+            // kernel thread, not virtual: the consumer's calling-thread I/O would pin a carrier
+            Platform.getInstance().getKernelThreadExecutor().execute(() -> {
                 try {
                     probe();
                     if (ready) {
@@ -254,23 +267,20 @@ public class KafkaHealthCheck implements LambdaFunction {
     // S2093 (try-with-resources): the try/finally releases the ReentrantLock; the KafkaConsumer is
     // deliberately long-lived - cached across health checks and closed via closeQuietly on failure
     @SuppressWarnings("java:S2093")
-    private Map<String, Object> probe() throws AppException {
+    private Object probe() {
         lock.lock();
         try {
             if (consumer == null) {
                 // re-resolved, not cached from the constructor: a credential published by a later
                 // @MainApplication bootstrap is not visible while this @PreLoad function is constructed
                 Properties config = probeConfig.get();
-                consumerProperties = config;
-                try {
-                    consumer = new KafkaConsumer<>(config);
-                } catch (KafkaException e) {
+                consumerProperties.set(config);
+                consumer = buildClient(config);
+                if (consumer == null) {
                     // the template is still incomplete (e.g. that credential has not landed yet):
                     // report a PASSING waiting status - failing /health would invite the container
                     // orchestrator to restart the pod, and a restart cannot produce the credential.
                     // The next probe re-resolves, so the check goes live once construction succeeds.
-                    log.warn("{} health check waiting for a usable client configuration - {}",
-                            serviceName, rootCause(e));
                     Map<String, Object> result = new HashMap<>();
                     result.put(STATUS, WAITING);
                     return result;
@@ -285,24 +295,49 @@ public class KafkaHealthCheck implements LambdaFunction {
             return result;
         } catch (Exception e) {
             closeQuietly();
-            throw new AppException(503, "Kafka cluster is not reachable - " + e.getMessage());
+            // a genuine outage: the 503 status is what the health aggregation (and Kubernetes)
+            // detects; the key-value body keeps the code visible to the DevOps reader too
+            Map<String, Object> down = new HashMap<>();
+            down.put(TEXT, "Kafka cluster is not reachable - " + e.getMessage());
+            down.put(CODE, 503);
+            return new EventEnvelope().setStatus(503).setBody(down);
         } finally {
             lock.unlock();
         }
     }
 
     /**
-     * The dependency's href - this cluster's bootstrap.servers. Reported before the first probe too,
-     * so it resolves the template on demand when no client has been built yet; bootstrap.servers does
-     * not depend on a late credential, so the first resolve's answer stays valid.
+     * The dependency's href - this cluster's bootstrap.servers. Lifecycle: {@code probeConfig} is the
+     * supplier itself, assigned final in the constructor, so it always exists by the time any event
+     * arrives (the platform registers the route only after construction) - what starts out null is
+     * the RESOLVED template in {@code consumerProperties}, because nothing is resolved at
+     * {@code @PreLoad} time by design. A {@code type=info} call that arrives before the first probe
+     * therefore resolves on demand (the supplier's first invocation) and caches the answer; every
+     * probe that builds a client overwrites the cache with its own fresh resolve. bootstrap.servers
+     * does not depend on a late credential, so one resolve serves every info call between rebuilds.
      */
     private String href() {
-        Properties config = consumerProperties;
+        Properties config = consumerProperties.get();
         if (config == null) {
             config = probeConfig.get();
-            consumerProperties = config;
+            consumerProperties.set(config);
         }
         return config.getProperty(BOOTSTRAP_SERVERS, PRIMARY_SERVICE_NAME);
+    }
+
+    /**
+     * Build the probe client from a freshly resolved template - or null when the client cannot even
+     * be constructed from it, i.e. the template is still incomplete (a late credential not yet
+     * published). The caller reports that as the passing waiting status.
+     */
+    private KafkaConsumer<String, byte[]> buildClient(Properties config) {
+        try {
+            return new KafkaConsumer<>(config);
+        } catch (KafkaException e) {
+            log.warn("{} health check waiting for a usable client configuration - {}",
+                    serviceName, rootCause(e));
+            return null;
+        }
     }
 
     /** The most specific reason - client construction failures arrive wrapped in a generic KafkaException. */

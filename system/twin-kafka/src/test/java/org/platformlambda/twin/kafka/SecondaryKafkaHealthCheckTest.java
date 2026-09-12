@@ -21,7 +21,7 @@ package org.platformlambda.twin.kafka;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.util.Utility;
 
 import java.util.Map;
@@ -98,10 +98,14 @@ class SecondaryKafkaHealthCheckTest {
         bad.setProperty("request.timeout.ms", "1000");
         bad.setProperty("default.api.timeout.ms", "2000");
         var offline = new SecondaryKafkaHealthCheck(bad, 0);
-        AppException down = assertThrows(AppException.class,
-                () -> offline.handleEvent(HEALTH, null, 1));
+        Object result = offline.handleEvent(HEALTH, null, 1);
+        // an outage is a 503 response carrying a key-value map (text + code)
+        assertInstanceOf(EventEnvelope.class, result);
+        EventEnvelope down = (EventEnvelope) result;
         assertEquals(503, down.getStatus());
-        assertTrue(down.getMessage().contains("not reachable"));
+        Map<String, Object> body = (Map<String, Object>) down.getBody();
+        assertEquals(503, body.get("code"));
+        assertTrue(body.get("text").toString().contains("not reachable"));
         Map<String, Object> alive = (Map<String, Object>) healthy.handleEvent(HEALTH, null, 1);
         assertEquals("Kafka cluster is reachable", alive.get("status"));
     }

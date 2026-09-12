@@ -114,7 +114,9 @@ mandatory.health.dependencies=redis.health
 The probe is a single Redis **PING** on a dedicated connection built from the `redis.*` parameters -
 the lightest round trip the protocol offers, and one successful call proves connectivity, TLS, and
 authentication in a single request. A reachable server reports a status map; an unreachable one fails
-`/health` with HTTP 503. During application start-up the check returns a **placeholder healthy** status
+the check with a **503** status and a key-value message (`text` for the DevOps reader, `status` for the
+code), so `/health` marks the dependency down and the endpoint answers non-2xx while the application is
+DOWN. During application start-up the check returns a **placeholder healthy** status
 while the client warms up in the background (`redis.health.startup.grace`, default `30s`), and
 `redis.health.timeout` (default `5s`) bounds the probe's connect and command round trips.
 
@@ -127,7 +129,7 @@ the client cannot be built from it, or the server rejects the credentials (`NOAU
 the signature of a password that has not landed yet) - `type=health` reports a **passing**
 `Waiting for Redis connection` status rather than a failure: failing `/health` would invite the
 container orchestrator to restart the pod, and a restart cannot produce the credential. Only a genuine
-connectivity failure (connection refused, timed-out round trip) fails `/health` with HTTP 503. The
+connectivity failure (connection refused, timed-out round trip) fails the check with status 503. The
 check goes live on the first probe after the real values land; nothing needs a restart. Same design as
 [`kafka.health`](minimalist-kafka.md#health).
 

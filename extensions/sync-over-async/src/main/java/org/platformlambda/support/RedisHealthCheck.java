@@ -22,8 +22,9 @@ import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
 import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -32,7 +33,9 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
@@ -43,7 +46,9 @@ import java.util.function.Supplier;
  * {@code optional.health.dependencies}) in application.properties and the {@code /health}
  * endpoint will include the Redis server status. The function follows the standard health
  * contract: {@code type=info} describes the dependency, {@code type=health} returns a status
- * map when the server is reachable and throws {@code AppException} when it is not. While the
+ * map when the server is reachable and a 503 response carrying a key-value map
+ * ({@code text} + {@code code}) when it is not - the status code is what the health
+ * aggregation (and Kubernetes) detects; the map is for the DevOps reader. While the
  * client configuration is still incomplete - a late credential not yet published, or not yet
  * accepted by the server - it returns a passing {@code Waiting for Redis connection} status
  * instead of failing (see below).
@@ -78,6 +83,11 @@ import java.util.function.Supplier;
  * successful probe - or once the grace period ({@code redis.health.startup.grace}, default
  * {@code 30s}) has elapsed - every check is a live probe. {@code redis.health.timeout}
  * (default {@code 5s}) bounds the probe's connect and command round trips.
+ *
+ * <p>This function deliberately stays on virtual threads (no {@code @KernelThreadRunner}, unlike
+ * {@code kafka.health}): Lettuce performs network I/O on its own event-loop threads, and the calling
+ * thread merely awaits a future - which unmounts a virtual thread cleanly instead of pinning its
+ * carrier.
  */
 // multiple workers because /health is polled concurrently (operations tooling plus the container
 // platform's liveness/readiness probes): info and placeholder responses run in parallel, while the
@@ -93,6 +103,8 @@ public class RedisHealthCheck implements LambdaFunction {
     private static final String SERVICE = "service";
     private static final String HREF = "href";
     private static final String STATUS = "status";
+    private static final String TEXT = "text";
+    private static final String CODE = "code";
     private static final String TIMEOUT_KEY = "redis.health.timeout";
     private static final String GRACE_KEY = "redis.health.startup.grace";
     private static final String DEFAULT_TIMEOUT = "5s";
@@ -108,13 +120,14 @@ public class RedisHealthCheck implements LambdaFunction {
     private final AtomicBoolean warmingUp = new AtomicBoolean(false);
     private final Supplier<RedisConfig> probeConfig;
     // what the current probe client was built from; also the href source - replaced on every rebuild
-    private volatile RedisConfig currentConfig;
+    private final AtomicReference<RedisConfig> currentConfig = new AtomicReference<>();
     private final long timeoutMs;
     private final long graceDeadline;
     private RedisClient client;
     private StatefulRedisConnection<String, String> connection;
     private volatile boolean ready = false;
 
+    /** Instantiated reflectively when the platform's {@code @PreLoad} scanner registers the route. */
     public RedisHealthCheck() {
         this(() -> RedisConfig.from(AppConfigReader.getInstance()),
              resolveDurationMs(TIMEOUT_KEY, DEFAULT_TIMEOUT),
@@ -127,12 +140,16 @@ public class RedisHealthCheck implements LambdaFunction {
      * sequence (e.g. a vault-fetched {@code redis.password}) is resolved correctly on the next probe
      * instead of being frozen at construction time.
      *
+     * <p>The supplier itself must not be null (enforced here, at construction) and must return a
+     * non-null config: when the real values have not been published yet, return your best-known
+     * ones - an unusable result is handled by the waiting semantics, never by returning null.
+     *
      * @param probeConfig supplies the Redis connection parameters, re-invoked on every rebuild
      * @param timeoutMs   probe timeout in milliseconds (bounds connect and command round trips)
      * @param graceMs     start-up grace period in milliseconds (0 = probe immediately)
      */
     public RedisHealthCheck(Supplier<RedisConfig> probeConfig, long timeoutMs, long graceMs) {
-        this.probeConfig = probeConfig;
+        this.probeConfig = Objects.requireNonNull(probeConfig, "probeConfig supplier is required");
         this.timeoutMs = timeoutMs;
         this.graceDeadline = System.currentTimeMillis() + graceMs;
     }
@@ -174,7 +191,7 @@ public class RedisHealthCheck implements LambdaFunction {
 
     private void warmUp() {
         if (warmingUp.compareAndSet(false, true)) {
-            Thread.startVirtualThread(() -> {
+            Platform.getInstance().getVirtualThreadExecutor().execute(() -> {
                 try {
                     probe();
                     if (ready) {
@@ -195,14 +212,14 @@ public class RedisHealthCheck implements LambdaFunction {
     // S2093 (try-with-resources): the try/finally releases the ReentrantLock; the Redis connection is
     // deliberately long-lived - cached across health checks and closed via closeQuietly on failure
     @SuppressWarnings("java:S2093")
-    private Map<String, Object> probe() throws AppException {
+    private Object probe() {
         lock.lock();
         try {
             if (connection == null) {
                 // re-resolved, not cached from the constructor: a credential published by a later
                 // @MainApplication bootstrap is not visible while this @PreLoad function is constructed
                 RedisConfig config = probeConfig.get();
-                currentConfig = config;
+                currentConfig.set(config);
                 RedisURI uri = config.toUri();
                 uri.setTimeout(Duration.ofMillis(timeoutMs));
                 client = RedisClient.create(uri);
@@ -227,7 +244,12 @@ public class RedisHealthCheck implements LambdaFunction {
                 result.put(STATUS, WAITING);
                 return result;
             }
-            throw new AppException(503, "Redis is not reachable - " + rootCause(e));
+            // a genuine outage: the 503 status is what the health aggregation (and Kubernetes)
+            // detects; the key-value body keeps the code visible to the DevOps reader too
+            Map<String, Object> down = new HashMap<>();
+            down.put(TEXT, "Redis is not reachable - " + rootCause(e));
+            down.put(CODE, 503);
+            return new EventEnvelope().setStatus(503).setBody(down);
         } finally {
             lock.unlock();
         }
@@ -256,15 +278,20 @@ public class RedisHealthCheck implements LambdaFunction {
     }
 
     /**
-     * The dependency's href - the configured host:port. Reported before the first probe too, so it
-     * resolves the configuration on demand when no client has been built yet; host and port do not
-     * depend on a late credential, so the first resolve's answer stays valid.
+     * The dependency's href - the configured host:port. Lifecycle: {@code probeConfig} is the
+     * supplier itself, assigned final in the constructor, so it always exists by the time any event
+     * arrives (the platform registers the route only after construction) - what starts out null is
+     * the RESOLVED config in {@code currentConfig}, because nothing is resolved at {@code @PreLoad}
+     * time by design. A {@code type=info} call that arrives before the first probe therefore
+     * resolves on demand (the supplier's first invocation) and caches the answer; every probe that
+     * builds a client overwrites the cache with its own fresh resolve. Host and port do not depend
+     * on a late credential, so one resolve serves every info call between rebuilds.
      */
     private String href() {
-        RedisConfig config = currentConfig;
+        RedisConfig config = currentConfig.get();
         if (config == null) {
             config = probeConfig.get();
-            currentConfig = config;
+            currentConfig.set(config);
         }
         return config.host() + ":" + config.port();
     }

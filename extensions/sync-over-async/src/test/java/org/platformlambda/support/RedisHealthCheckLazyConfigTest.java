@@ -21,7 +21,7 @@ package org.platformlambda.support;
 import io.lettuce.core.RedisCommandExecutionException;
 import io.lettuce.core.RedisConnectionException;
 import org.junit.jupiter.api.Test;
-import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.models.EventEnvelope;
 
 import java.net.ConnectException;
 import java.util.Map;
@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -64,6 +65,13 @@ class RedisHealthCheckLazyConfigTest {
     }
 
     @Test
+    void aNullSupplierFailsFastAtConstruction() {
+        NullPointerException error = assertThrows(NullPointerException.class,
+                () -> new RedisHealthCheck(null, TIMEOUT_MS, PROBE_IMMEDIATELY));
+        assertEquals("probeConfig supplier is required", error.getMessage());
+    }
+
+    @Test
     void constructionResolvesNothing() {
         AtomicInteger resolves = new AtomicInteger();
         probing(() -> {
@@ -82,8 +90,14 @@ class RedisHealthCheckLazyConfigTest {
             return unreachable();
         });
         Map<String, String> probe = Map.of("type", "health");
-        assertThrows(AppException.class, () -> health.handleEvent(probe, null, 1));
-        assertThrows(AppException.class, () -> health.handleEvent(probe, null, 1));
+        Object first = health.handleEvent(probe, null, 1);
+        // an outage is a 503 response carrying a key-value map - the status code for the health
+        // aggregation to detect, text + code for the DevOps reader
+        assertInstanceOf(EventEnvelope.class, first);
+        assertEquals(503, ((EventEnvelope) first).getStatus());
+        Map<String, Object> body = asMap(((EventEnvelope) first).getBody());
+        assertEquals(503, body.get("code"));
+        assertInstanceOf(EventEnvelope.class, health.handleEvent(probe, null, 1));
         assertEquals(2, resolves.get(),
                 "a failed probe closes the client, so the next one re-resolves and the check can heal");
     }
