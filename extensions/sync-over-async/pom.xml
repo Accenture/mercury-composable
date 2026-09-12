@@ -7,12 +7,15 @@
     <artifactId>sync-over-async</artifactId>
     <version>4.12.8</version>
     <packaging>jar</packaging>
-    <name>Sync-over-async (Redis-assisted Kafka request/reply)</name>
+    <name>Sync-over-async (Redis-assisted request/reply and streaming for async backends)</name>
     <description>
-        A self-initializing extension that exposes synchronous REST semantics over asynchronous Kafka
-        processing across horizontally scaled pods. Redis carries the cross-pod return route: the
-        response payload lands in Redis (SETEX) and a per-pod Pub/Sub channel wakes the originating pod,
-        keyed by correlation-id.
+        A self-initializing extension that exposes synchronous REST semantics over asynchronous
+        processing across horizontally scaled pods, and generalizes the same rendezvous to a streaming
+        return route for cross-pod progressive rendering. Redis carries the return route: segments are
+        appended to a per-correlation-id rendezvous queue (a Redis List, stored before any signal) and a
+        per-pod Pub/Sub channel wakes the originating pod, which drains the queue destructively. A
+        one-shot response is the degenerate stream; transport-neutral by composition (platform-core +
+        Lettuce only).
     </description>
 
     <parent>
