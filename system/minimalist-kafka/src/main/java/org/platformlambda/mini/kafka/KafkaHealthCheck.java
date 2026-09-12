@@ -96,6 +96,11 @@ import java.util.function.Supplier;
  * {@code 30s}) has elapsed - every check is a live probe and an unreachable cluster fails
  * the check with status 503.
  *
+ * <p><b>Multiple workers.</b> {@code /health} is polled concurrently - operations tooling plus the
+ * container platform's liveness/readiness probes - so the function runs several worker instances:
+ * info and placeholder responses serve in parallel, while the non-thread-safe {@code KafkaConsumer}
+ * stays protected because every probe serializes on the internal lock.
+ *
  * <p><b>{@code @KernelThreadRunner}.</b> The Kafka consumer performs its network I/O on the CALLING
  * thread inside {@code synchronized} sections, and on Java 21 a virtual thread that blocks inside
  * {@code synchronized} pins its carrier - a probe waiting out {@code kafka.health.timeout} against an
@@ -107,9 +112,6 @@ import java.util.function.Supplier;
  * Lettuce does its I/O on its own event-loop threads and the caller merely awaits a future, which
  * unmounts a virtual thread cleanly.
  */
-// multiple workers because /health is polled concurrently (operations tooling plus the container
-// platform's liveness/readiness probes): info and placeholder responses run in parallel, while the
-// non-thread-safe KafkaConsumer stays protected - every probe serializes on the ReentrantLock below
 @KernelThreadRunner
 @PreLoad(route = "kafka.health", instances = 5)
 public class KafkaHealthCheck implements LambdaFunction {
