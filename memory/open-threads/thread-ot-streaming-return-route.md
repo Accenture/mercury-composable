@@ -37,9 +37,8 @@
   `StreamResponder`/`StreamSegment`/`PendingStreams` shipped, complete-in-place landed
   (plus one E1-found race fix: the timeout path consults the future after an empty
   final drain, spec §4.7 note); D8 gate PASSED — module 73/73 (was 46), demo flows 4/4
-  against the unified module; guide/config-reference/README updated. **E2 IMPLEMENTED
-  2026-09-12** (branch `feat/srr-e2-stream-bridge`, commits `aa864f1a` + `e3301618`; PR
-  pending): `StreamBridge` (facade lifecycle — SSE head + watchdog share one idle number;
+  against the unified module; guide/config-reference/README updated. **E2 SHIPPED
+  2026-09-12** (merged via PR #370, squash `4bd5bd11`, title clean): `StreamBridge` (facade lifecycle — SSE head + watchdog share one idle number;
   expiry = single final drain then in-band 408 + closeStream; capacity → real 503) +
   `EventStreamSink`; broker-free e2e `StreamingRestE2eTest` proves both use cases behind
   real `stream: true` endpoints through the shipped SSE consumer — chat exact-order,
