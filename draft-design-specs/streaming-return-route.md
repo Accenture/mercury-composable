@@ -7,8 +7,10 @@ List per cid replaces the per-seq keys** (supersedes D6's mechanism, keeps its
 no-MAXLEN ruling) — and **D8 unifies the module: the one-shot path adopts the same list
 mechanism**, so one message and a list of messages ride one store (`response:{cid}`
 retires; `deliver` becomes a terminal post). E1 (coordinator + responder primitives with the
-D8 acceptance gate, §9) landed the same day in `extensions/sync-over-async`. Next gate:
-experiment E2.
+D8 acceptance gate, §9) landed the same day in `extensions/sync-over-async` (PR #369), and
+**E2 followed** — the facade half (`StreamBridge`/`EventStreamSink`, §4.5) plus the
+single-JVM end-to-end proof of both driving use cases behind real `stream: true` endpoints,
+broker-free. Next gate: experiment E3.
 **Blueprint:** serves `bp-agent-orchestration` (Q8 second half — graph-run streaming)
 → serves `vision-mercury-composable`.
 **Repo scope:** `extensions/sync-over-async` only. Java-only like the extension itself
@@ -192,6 +194,20 @@ cornerstone, so a dropped *final* notification still completes the render. (A si
 last-chance read, not the periodic re-drain rejected in D4 — flagged for Eric's
 confirmation.)
 
+*Implemented in E2 as `StreamBridge` (the generic facade half) + `EventStreamSink` (the
+segment→writer adapter).* `StreamBridge.open(coordinator, request, cid, idleSeconds)`
+commits the SSE head with `idleSeconds` as the edge idle allowance and arms a watchdog
+with the same allowance — one number drives both, so the bridge's expiry and the edge's
+never disagree. Every drained segment re-arms the watchdog; the terminal segment disarms
+it. Expiry = the single final drain, then (only if the stream did not complete) the
+in-band 408 and `closeStream`. The watchdog is also what reclaims an abandoned/
+disconnected client's stream — the edge drops late writes on its own, and the idle expiry
+then releases the `PendingStreams` slot and the keys. Capacity rejection surfaces as a
+real HTTP 503 (the head is not yet committed), mirroring the edge's reply-lane
+back-pressure. An application interceptor is one `open(...)` call plus its own request
+leg; a notification facade may use the returned writer to announce the session's cid
+before any producer knows it.
+
 ### 4.6 Configuration keys (proposed)
 
 | Key | Default (proposed) | Meaning |
@@ -351,10 +367,23 @@ the use-case discussion (§2).
   behavioral suite `StreamReturnRouteTest`, incl. a one-shot request completed by a
   stream producer's terminal post — the degenerate case shown degenerate); module suite
   73/73 green, demo flows green against the unified module.
-- **E2 — Single-JVM end-to-end.** Both use cases behind `stream: true` endpoints (no
-  broker anywhere): a chat-style render (N ordered segments + `eof`, verified in exact
-  order with `curl -N`) and a notification channel (several posting services, UI-side
-  and backend-side close).
+- **E2 — Single-JVM end-to-end. ✅ DONE (2026-09-12).** Both use cases behind
+  `stream: true` endpoints (no broker anywhere — the Kafka building blocks switched off
+  for the run): a chat-style render (5 ordered tokens + `eof` metadata, exact order
+  asserted end-to-end) and a notification channel (cid announced to the UI as the first
+  SSE event, two posting services with their own connections, backend-side close, orphan
+  stop for the remaining producer). Consumed progressively with the shipped SSE client
+  (`async.http.request` with `Accept: text/event-stream` + reply_to), so the run
+  exercises the full circle: facade interceptor → `StreamBridge` → Redis → serialized
+  drain → reply lane → SSE edge → SSE consumer envelopes. Both idle-expiry endings
+  demonstrated: the final drain RECOVERING a fully-lost close (every notification
+  suppressed; the render still completes — D4's nuance made observable), and the in-band
+  408 with rendezvous cleanup + producer orphan stop when nothing was queued. Landed in
+  `extensions/sync-over-async` (`StreamBridge`, `EventStreamSink`; test app
+  `ChatStreamFacade`/`NotificationStreamFacade`/`MockAiBackend` + `StreamingRestE2eTest`);
+  module suite 77/77 green, demo flows 4/4. The consumer-side close is exercised through
+  the idle-expiry path (a socket-level client disconnect is not scriptable through the
+  in-JVM HTTP client; E3's cross-pod chaos checks cover the remaining physical cases).
 - **E3 — Cross-pod dry-run.** Two JVMs against `redis-standalone`: the UI request lands
   on pod A; producers run on pod B posting to Redis — the actual gap scenario. Chaos
   checks: suppress one notification, kill the producer mid-stream (idle 408), kill the

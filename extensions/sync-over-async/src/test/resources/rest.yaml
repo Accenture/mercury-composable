@@ -10,3 +10,21 @@ rest:
     flow: 'sync-to-async'
     timeout: 30s
     tracing: true
+  #
+  # Streaming return route (E2): the facades are @EventInterceptor functions addressed
+  # directly by stream:true endpoints (design D2 - no Event Script composition on this path).
+  # The endpoint timeout is the edge idle allowance; the facade overrides it per request
+  # via EventStreamWriter.first(status, contentType, ttlSeconds) through StreamBridge.
+  #
+  - service: "chat.stream.facade"
+    methods: ['POST']
+    url: "/api/chat"
+    timeout: 15s
+    stream: true
+    tracing: true
+  - service: "notify.stream.facade"
+    methods: ['GET']
+    url: "/api/notifications"
+    timeout: 15s
+    stream: true
+    tracing: true
