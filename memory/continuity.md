@@ -17,20 +17,19 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.7 (2026-09-11 — the field release, PRs #352–#358 via release PR
-  #359: the simple-plugin allowlist gate now scans METHOD BODIES — enforced sub-millisecond
-  containment, a plugin can no longer reach java.io/java.net/threads from inside
-  calculate(); the three-layer starter templates under `templates/` (copy-out projects,
-  Maven or Gradle, templates-gradle CI job); the fresh-agent entry-point playbook in the AI
-  developer guide; the Mercury Family page; the IDD methodology synthesis and the
-  plain-language story deck. Lock-step with Rust v4.12.7 same-day (docs + template crates,
-  Increments 116–117 — no engine behavior change there); all seven mercury-* crates on
-  crates.io at 4.12.7, API-verified. First exercise of the grown sweep surface: 37 poms +
-  3 build.gradle literals + template READMEs (Java) and 8 manifests (Rust). Prior: v4.12.6
-  (2026-09-10 — the same-day sprint release: Playground UX modernization, the live session
-  graph as the UI's single source, structured traversal records, the temp-endpoint 404,
-  the key-normalization plugins). The live version source stays the root pom.xml.
-  python/node packs stay at 4.12.1 — no wrapper changes.)
+- **latest_release:** v4.12.8 (2026-09-12 — the health-check release, PRs #360–#362 via
+  release PR #363, squash `e7379c5b`, GitHub release 00:50Z: kafka.health/
+  secondary.kafka.health resolve probe config LAZILY and report a passing "Waiting for
+  ... connection" status until late vault credentials land (upstreamed field MR + Eric's
+  ruling); the new redis.health for sync-over-async (auth rejections classify as waiting;
+  one probe also covers minigraph-state-redis); the Kafka checks run on kernel threads
+  ([[kafka-clients-kernel-threads]]); a failed probe returns the {text, code} key-value
+  message. **Java only — NO Rust lock-step** (no Kafka modules there; Rust stays v4.12.7);
+  python/node packs stay 4.12.1. Sweep surface from this release on: BUILD FILES ONLY
+  (40 — READMEs and guide prose use x.y.z placeholders). Prior: v4.12.7 (2026-09-11 —
+  plugin-gate body scan, starter templates, entry-point playbook, Mercury Family, IDD
+  synthesis; lock-step Rust v4.12.7, seven crates on crates.io). The live version source
+  stays the root pom.xml.)
 - **last_enabled:** 2026-06-20
 - **last_review:** 2026-09-11 | through 2026-09-11-005808.md
 - **last_invariant_check:** 2026-09-11 | 2026-09-11-005808.md (all 18 core facts + the Vision
