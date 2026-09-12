@@ -79,6 +79,15 @@
             <version>4.12.8</version>
         </dependency>
 
+        <!-- Embedded Redis (real redis-server binary) for the emulated-LLM round-trip test:
+             the whole streaming path runs in CI against a real rendezvous, no network, no key. -->
+        <dependency>
+            <groupId>com.github.codemonstur</groupId>
+            <artifactId>embedded-redis</artifactId>
+            <version>1.4.3</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.junit</groupId>
             <artifactId>junit-bom</artifactId>

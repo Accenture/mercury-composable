@@ -1,0 +1,25 @@
+#
+# REST automation for the emulated-LLM round-trip test: the notification channel and the
+# producer endpoint exactly as the live demo wires them, plus the stub provider endpoint.
+# The stub's {invocation} path parameter captures the whole final segment
+# ("emulated-model:streamGenerateContent" - Google's custom-method shape), so the producer's
+# real URL contract is exercised verbatim.
+#
+rest:
+  - service: "demo.stream.facade"
+    methods: ['GET']
+    url: "/api/notifications"
+    timeout: 30s
+    stream: true
+    tracing: true
+  - service: "demo.stream.producer"
+    methods: ['POST']
+    url: "/api/produce"
+    timeout: 15s
+    tracing: true
+  - service: "mock.gemini.stream"
+    methods: ['POST']
+    url: "/v1beta/models/{invocation}"
+    timeout: 15s
+    stream: true
+    tracing: true
