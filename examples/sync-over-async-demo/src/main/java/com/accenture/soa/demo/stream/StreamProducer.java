@@ -77,7 +77,7 @@ public class StreamProducer implements TypedLambdaFunction<Map<String, Object>, 
     private static StatefulRedisConnection<String, String> chaosConnection;
 
     /**
-     * Post one segment through the pod's shared responder. Also the forwarding path of
+     * Post one segment through the pod's shared responder. The forwarding path of
      * {@link LlmStreamBridge}, which relays provider tokens into the same rendezvous.
      *
      * @return {@code true} while the rendezvous is live; {@code false} for an orphan (stop producing)
@@ -193,7 +193,7 @@ public class StreamProducer implements TypedLambdaFunction<Map<String, Object>, 
      * Mode {@code llm} (experiment E4): a real LLM token stream, cross-pod. The provider's SSE endpoint
      * is consumed by the platform's own SSE-capable HTTP client ({@code Accept: text/event-stream} plus
      * a reply route), and each relayed x-event-stream envelope reaches {@link LlmStreamBridge} with this
-     * cid as its correlation id - the bridge posts the tokens into the rendezvous as they arrive.
+     * cid as its correlation id. The bridge posts the tokens into the rendezvous as they arrive.
      */
     private static void startLlmStream(String cid, Map<?, ?> request, Map<String, Object> result)
             throws AppException {

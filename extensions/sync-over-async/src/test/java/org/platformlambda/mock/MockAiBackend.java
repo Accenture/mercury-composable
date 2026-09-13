@@ -55,9 +55,9 @@ public class MockAiBackend implements TypedLambdaFunction<Map<String, Object>, V
         }
     }
 
-    private static boolean post(String cid, String type, String name, String body) {
+    private static boolean post(String cid, String type, String body) {
         ensureResponder();
-        return responder.post(cid, type, name, body);
+        return responder.post(cid, type, null, body);   // the chat stream posts unnamed segments only
     }
 
     /** Test-lifecycle hook: release the responder's Redis client at class teardown. */
@@ -72,11 +72,11 @@ public class MockAiBackend implements TypedLambdaFunction<Map<String, Object>, V
     public Void handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         String cid = headers.get(SyncRuntime.CID);
         for (String token : TOKENS) {
-            if (!post(cid, StreamSegment.DATA, null, token)) {
+            if (!post(cid, StreamSegment.DATA, token)) {
                 return null;   // orphan - the rendezvous is over, stop producing
             }
         }
-        post(cid, StreamSegment.EOF, null, EOT_METADATA);
+        post(cid, StreamSegment.EOF, EOT_METADATA);
         return null;
     }
 }
