@@ -1291,7 +1291,7 @@ Default Redis command timeout.
 |------|---------|
 | `duration` | `5s` |
 
-Timeout for the `redis.health` probe - a single Redis PING on a dedicated connection built from the `redis.*` parameters (one successful call proves connectivity, TLS, and authentication). Add `redis.health` to `mandatory.health.dependencies` (or the optional list) to include the server in `/health`.
+Timeout for the `soa.redis.health` probe - a single Redis PING on a dedicated connection built from the `redis.*` parameters (one successful call proves connectivity, TLS, and authentication). Add `soa.redis.health` to `mandatory.health.dependencies` (or the optional list) to include the server in `/health`. (The plain `redis.health` route name is reserved for the health check of the planned generic Redis distributed-cache module.)
 
 ### `redis.health.startup.grace`
 
@@ -1299,7 +1299,7 @@ Timeout for the `redis.health` probe - a single Redis PING on a dedicated connec
 |------|---------|
 | `duration` | `30s` |
 
-Start-up grace period for `redis.health`: within it the check reports a placeholder healthy status while the Redis client warms up in the background, so `/health` never fails or blocks during application start-up. The probe's configuration is resolved lazily and re-resolved on every rebuild, and an unusable configuration (unbuildable values, or credentials the server rejects - the signature of a vault-published password that has not landed yet) is a passing `Waiting for Redis connection` status; only a genuine connectivity failure fails the check, with a 503 status and a key-value message (`text` + `code`).
+Start-up grace period for `soa.redis.health`: within it the check reports a placeholder healthy status while the Redis client warms up in the background, so `/health` never fails or blocks during application start-up. The probe's configuration is resolved lazily and re-resolved on every rebuild, and an unusable configuration (unbuildable values, or credentials the server rejects - the signature of a vault-published password that has not landed yet) is a passing `Waiting for Redis connection` status; only a genuine connectivity failure fails the check, with a 503 status and a key-value message (`text` + `code`).
 
 ### `sync.return.channel.prefix`
 

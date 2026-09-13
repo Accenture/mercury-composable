@@ -108,7 +108,7 @@ import java.util.function.Supplier;
  * module convention for functions that drive Kafka clients ({@code SimpleKafkaNotification},
  * {@code SchemaCodec}); the warm-up probe uses the kernel-thread executor for the same reason.
  * (JDK 24's JEP 491 removes synchronized pinning, but the build targets Java 21 and field
- * installations run it.) Contrast {@code redis.health}, which deliberately stays on virtual threads:
+ * installations run it.) Contrast {@code soa.redis.health}, which deliberately stays on virtual threads:
  * Lettuce does its I/O on its own event-loop threads and the caller merely awaits a future, which
  * unmounts a virtual thread cleanly.
  */
