@@ -90,8 +90,8 @@ id, from discrete `redis.*` connection parameters and `sync.*` engine tunables. 
 | `redis.ssl` | `false` | Use TLS (`rediss://`). |
 | `redis.database` | `0` | Logical database index. |
 | `redis.timeout.ms` | `5000` | Default command timeout. |
-| `redis.health.timeout` | `5s` | Timeout for the [`redis.health`](#health) probe. |
-| `redis.health.startup.grace` | `30s` | Start-up grace for [`redis.health`](#health) (placeholder healthy status while the client warms up). |
+| `redis.health.timeout` | `5s` | Timeout for the [`soa.redis.health`](#health) probe. |
+| `redis.health.startup.grace` | `30s` | Start-up grace for [`soa.redis.health`](#health) (placeholder healthy status while the client warms up). |
 | `sync.return.channel.prefix` | `svc-return` | Prefix for the per-pod Pub/Sub return channel. |
 | `sync.route.ttl.seconds` | `90` | TTL for a one-shot return-route key (cover the REST timeout + buffer). |
 | `sync.response.ttl.seconds` | `30` | TTL for a one-shot rendezvous queue (short rendezvous window). |
@@ -182,15 +182,19 @@ producer killed mid-stream, a killed UI pod) — is recorded in the
 
 ## Health check {#health}
 
-The module ships a ready-made health-check function at route **`redis.health`** (auto-registered when
+The module ships a ready-made health-check function at route **`soa.redis.health`** (auto-registered when
 the jar is on the classpath) - every critical infrastructure dependency deserves one. Opt in by listing
 it as a health dependency in `application.properties`:
 
 ```properties
-mandatory.health.dependencies=redis.health
+mandatory.health.dependencies=soa.redis.health
 # or, when Redis should be reported but not fail /health:
-# optional.health.dependencies=redis.health
+# optional.health.dependencies=soa.redis.health
 ```
+
+> The route carries the `soa.` prefix deliberately: the plain `redis.health` name is reserved for the
+> health check of the planned generic Redis distributed-cache module, so both features can coexist
+> against the same Redis server.
 
 The probe is a single Redis **PING** on a dedicated connection built from the `redis.*` parameters -
 the lightest round trip the protocol offers, and one successful call proves connectivity, TLS, and
@@ -202,7 +206,7 @@ while the client warms up in the background (`redis.health.startup.grace`, defau
 `redis.health.timeout` (default `5s`) bounds the probe's connect and command round trips.
 
 The probe's client configuration is resolved **lazily** - when the probe client is built, and again
-whenever a failed probe forces a rebuild - never at construction time. `redis.health` is registered
+whenever a failed probe forces a rebuild - never at construction time. `soa.redis.health` is registered
 before your `@MainApplication` runs, so a bootstrap that fetches secrets and publishes them as system
 properties (the vault pattern) has not executed yet - a `redis.password` frozen at construction would
 be captured as *missing* for the life of the check. And while the configuration is still unusable -
@@ -215,7 +219,7 @@ check goes live on the first probe after the real values land; nothing needs a r
 [`kafka.health`](minimalist-kafka.md#health).
 
 > The `minigraph-state-redis` extension reads the same `redis.*` connection parameters, so one
-> `redis.health` covers a deployment using either or both modules against the same server.
+> `soa.redis.health` covers a deployment using either or both modules against the same server.
 
 ## When to use it {#when}
 

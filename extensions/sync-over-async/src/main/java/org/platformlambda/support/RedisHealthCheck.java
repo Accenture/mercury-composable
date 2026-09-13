@@ -42,7 +42,7 @@ import java.util.function.Supplier;
 /**
  * Redis health check function for the platform's health endpoint.
  *
- * <p>Add {@code redis.health} to {@code mandatory.health.dependencies} (or
+ * <p>Add {@code soa.redis.health} to {@code mandatory.health.dependencies} (or
  * {@code optional.health.dependencies}) in application.properties and the {@code /health}
  * endpoint will include the Redis server status. The function follows the standard health
  * contract: {@code type=info} describes the dependency, {@code type=health} returns a status
@@ -57,7 +57,11 @@ import java.util.function.Supplier;
  * discrete {@code redis.*} startup parameters ({@link RedisConfig}) - the lightest round trip
  * the protocol offers, and one successful call proves connectivity, TLS, and authentication in
  * a single request. The {@code minigraph-state-redis} extension reads the same {@code redis.*}
- * parameters, so one {@code redis.health} covers a deployment using either or both modules.
+ * parameters, so one {@code soa.redis.health} covers a deployment using either or both modules.
+ *
+ * <p>The route carries the {@code soa.} prefix deliberately: the plain {@code redis.health} name
+ * is reserved for the health check of the planned generic Redis distributed-cache module, so both
+ * features can coexist against the same Redis server.
  *
  * <p>The probe's client configuration is resolved <b>lazily - when the probe client is built,
  * and again whenever a failed probe forces a rebuild</b> - never in the constructor. This
@@ -92,7 +96,7 @@ import java.util.function.Supplier;
 // multiple workers because /health is polled concurrently (operations tooling plus the container
 // platform's liveness/readiness probes): info and placeholder responses run in parallel, while the
 // probe connection stays protected - every probe serializes on the ReentrantLock below
-@PreLoad(route = "redis.health", instances = 5)
+@PreLoad(route = "soa.redis.health", instances = 5)
 public class RedisHealthCheck implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(RedisHealthCheck.class);
 
