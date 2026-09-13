@@ -126,6 +126,23 @@ class StreamReturnRouteTest extends RedisTestBase {
         fail("expected a first segment, got none in time");
     }
 
+    /**
+     * Post a <b>terminal</b> segment without asserting liveness.
+     *
+     * <p>A closing post races its own consumption by construction: the segment is appended
+     * store-first, so a drain already in flight (woken by an earlier post) may pop it, deliver it,
+     * and close the rendezvous - deleting the route - before the producer's own route check runs.
+     * {@code post} then answers {@code false} although the segment <em>was</em> delivered. That
+     * answer is still correct under the contract ("false = stop producing", and a producer has
+     * nothing to send after a terminal segment), so these scenarios assert on what actually
+     * matters: the sink saw the terminal segment, and the rendezvous closed. Liveness stays
+     * asserted on DATA posts, where a {@code false} would mean lost segments - and on a terminal
+     * post that provably cannot race (see the call sites that keep it).</p>
+     */
+    private static void postTerminal(StreamResponder responder, String cid, String body) {
+        responder.post(cid, StreamSegment.EOF, null, body);
+    }
+
     // ------------------------------------------------------------------
     // Use case: chat with an AI agent - one sequential producer, strict order
     // ------------------------------------------------------------------
@@ -140,7 +157,7 @@ class StreamReturnRouteTest extends RedisTestBase {
             for (String token : tokens) {
                 assertTrue(responder.post(cid, StreamSegment.DATA, null, token), "rendezvous is live");
             }
-            assertTrue(responder.post(cid, StreamSegment.EOF, null, "{\"total\":8}"), "closing post is live");
+            postTerminal(responder, cid, "{\"total\":8}");
         }
         assertTrue(sink.closed.await(5, TimeUnit.SECONDS), "terminal segment delivered");
         // no sequence number anywhere: posting discipline -> list order -> serialized drain == exact order
@@ -186,7 +203,7 @@ class StreamReturnRouteTest extends RedisTestBase {
             }
         }
         try (StreamResponder closer = new StreamResponder(responderConfig())) {
-            assertTrue(closer.post(cid, StreamSegment.EOF, null, null));
+            postTerminal(closer, cid, null);
         }
         assertTrue(sink.closed.await(5, TimeUnit.SECONDS), "terminal segment delivered");
         List<StreamSegment> delivered = sink.segments;
@@ -216,7 +233,7 @@ class StreamReturnRouteTest extends RedisTestBase {
             assertTrue(notifier.post(cid, StreamSegment.DATA, "orders", "order 42 shipped"));
             assertTrue(notifier.post(cid, StreamSegment.DATA, "orders", "order 43 shipped"));
             // a NON-originating producer posts the terminal entry - "the end signal is also an event"
-            assertTrue(other.post(cid, StreamSegment.EOF, null, null));
+            postTerminal(other, cid, null);
             assertTrue(sink.closed.await(5, TimeUnit.SECONDS), "close from another producer completes the stream");
             awaitRouteGone(cid);
             // the still-active producer learns the rendezvous is over from its next post: orphan -> stop
@@ -278,6 +295,8 @@ class StreamReturnRouteTest extends RedisTestBase {
         assertEquals(0, sink.segments.size(), "no wake-up, no drain - the segment waits in the queue");
         // the NEXT post's wake-up drains everything queued, in order - the dropped signal costs latency only
         try (StreamResponder responder = new StreamResponder(responderConfig())) {
+            // liveness is sound to assert here: no wake-up was ever published for this cid, so no
+            // drain can be in flight to consume this terminal segment before the route check
             assertTrue(responder.post(cid, StreamSegment.EOF, null, null));
         }
         assertTrue(sink.closed.await(5, TimeUnit.SECONDS));
@@ -332,7 +351,7 @@ class StreamReturnRouteTest extends RedisTestBase {
             }
             Utility.getInstance().sleep(200);   // give the spurious drains time to (not) deliver
             assertEquals(List.of("once"), sink.bodies(), "no duplicate delivery");
-            assertTrue(responder.post(cid, StreamSegment.EOF, null, null));
+            postTerminal(responder, cid, null);
         }
         assertTrue(sink.closed.await(5, TimeUnit.SECONDS));
     }
@@ -375,6 +394,9 @@ class StreamReturnRouteTest extends RedisTestBase {
         String cid = newCid();
         CompletableFuture<String> future = uiPod.begin(cid);
         try (StreamResponder responder = new StreamResponder(responderConfig())) {
+            // a one-shot route is deleted only by awaitResponse's cleanup, which runs after this
+            // post returns - so liveness is sound here, and it proves the wake-up path was taken
+            // rather than the final-drain fallback
             assertTrue(responder.post(cid, StreamSegment.EOF, null, "{\"result\":\"accepted\"}"));
         }
         assertEquals("{\"result\":\"accepted\"}", uiPod.awaitResponse(cid, future, 5000));
@@ -391,8 +413,11 @@ class StreamReturnRouteTest extends RedisTestBase {
         uiPod.beginStream(streamCid, sink);
         try (StreamResponder responder = new StreamResponder(responderConfig())) {
             assertTrue(responder.post(streamCid, StreamSegment.DATA, null, "progress 50%"));
+            // the one-shot route survives until awaitResponse cleans it up (sound to assert);
+            // the stream's terminal post can be consumed by the drain the line above woke, so it
+            // does not assert liveness - see postTerminal
             assertTrue(responder.post(oneShotCid, StreamSegment.EOF, null, "{\"status\":\"200\"}"));
-            assertTrue(responder.post(streamCid, StreamSegment.EOF, null, null));
+            postTerminal(responder, streamCid, null);
         }
         assertEquals("{\"status\":\"200\"}", uiPod.awaitResponse(oneShotCid, future, 5000));
         assertTrue(sink.closed.await(5, TimeUnit.SECONDS));
