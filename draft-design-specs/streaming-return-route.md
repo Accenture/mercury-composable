@@ -15,8 +15,9 @@ actual gap scenario with chaos checks, all green
 ([test report](../docs/test-reports/streaming-return-route-cross-pod.md)) — and **E4
 delivered the blueprint payoff**: real Gemini tokens produced on one pod and rendered on
 another through the rendezvous (test report, scenario 6). **The E-series is COMPLETE.**
-One flag remains open for Eric's confirmation: the single final drain at edge idle expiry
-(§4.5, D4's nuance — demonstrated at unit, single-JVM, and cross-pod level).
+The last open flag — the single final drain at edge idle expiry (§4.5, D4's nuance) — was
+**CONFIRMED by Eric on 2026-09-12** after demonstrations at unit, single-JVM, and cross-pod
+level. The design is fully ratified with no open flags.
 **Blueprint:** serves `bp-agent-orchestration` (Q8 second half — graph-run streaming)
 → serves `vision-mercury-composable`.
 **Repo scope:** `extensions/sync-over-async` only. Java-only like the extension itself
@@ -197,8 +198,8 @@ deletes the route, so nothing leaks; the route's disappearance is what tells eve
 producer to stop. At idle expiry the facade performs **one final drain** before failing
 in-band — the streaming analogue of the one-shot "final read before timeout"
 cornerstone, so a dropped *final* notification still completes the render. (A single
-last-chance read, not the periodic re-drain rejected in D4 — flagged for Eric's
-confirmation.)
+last-chance read, not the periodic re-drain rejected in D4 — CONFIRMED by Eric 2026-09-12
+after the unit, single-JVM, and cross-pod demonstrations.)
 
 *Implemented in E2 as `StreamBridge` (the generic facade half) + `EventStreamSink` (the
 segment→writer adapter).* `StreamBridge.open(coordinator, request, cid, idleSeconds)`
@@ -332,7 +333,7 @@ the use-case discussion (§2).
   the at-least-once duplicate question of the first draft — fewer moving parts. The
   responder gains one requirement: Redis connectivity plus the producer API (§4.4).
 - **D4 (from Q4) — No re-drain mechanism; Redis expiry serves the purpose.** TTL is
-  the cleanup and the crash backstop. The spec retains one nuance for confirmation: a
+  the cleanup and the crash backstop. One retained nuance — CONFIRMED by Eric 2026-09-12: a
   *single* final drain at edge idle expiry (the one-shot "final read before timeout"
   pattern), which is a last-chance read on the failure path, not a sweeper.
 - **D5 (from Q5) — No fan-out / broadcast.** Recorded as a non-goal.
