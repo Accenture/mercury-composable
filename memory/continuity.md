@@ -121,7 +121,9 @@
   the client cannot even be BUILT, report a passing "Waiting for Kafka connection" status instead of
   failing /health — a pod restart cannot produce a credential (Eric's ruling); only a real round-trip
   failure (client built, cluster unreachable) fails /health with 503. (Shipped via PR #360.) Applied
-  again by `redis.health` (PR #361; sync-over-async — one probe also covers minigraph-state-redis,
+  again by `soa.redis.health` (PR #361, shipped as `redis.health`, renamed 2026-09-13 — the plain
+  name is reserved for the planned generic Redis distributed-cache module's check; sync-over-async —
+  one probe also covers minigraph-state-redis,
   same `redis.*` keys), with the Redis wrinkle: a late credential surfaces as a server-side auth rejection
   (NOAUTH/WRONGPASS) at connect time, not at client construction, so those classify as waiting too.
   Eric's standing rule: every critical infrastructure component needs a health check service.
@@ -139,7 +141,7 @@
   (SimpleKafkaNotification, SchemaCodec, SecondaryKafkaNotification, and now both kafka health
   checks — live probes AND the warm-up spawn via getKernelThreadExecutor). Event-loop clients are
   the counter-case: Lettuce does I/O on its own netty threads and callers only await futures, so
-  `redis.health` deliberately stays on virtual threads. KafkaConsumer itself is NOT thread-safe;
+  `soa.redis.health` deliberately stays on virtual threads. KafkaConsumer itself is NOT thread-safe;
   sequential multi-thread access under external sync (the checks' ReentrantLock) is its contract.
   <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-12 | uses: 1 | tier: archive-candidate | origin: 2026-09-11-191200 -->
 
