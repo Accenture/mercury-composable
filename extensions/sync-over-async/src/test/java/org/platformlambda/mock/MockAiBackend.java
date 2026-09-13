@@ -45,39 +45,38 @@ public class MockAiBackend implements TypedLambdaFunction<Map<String, Object>, V
     // one responder per backend service, reused across requests (each instance owns a Redis connection).
     // Lazily built on first use: @PreLoad construction runs BEFORE @MainApplication bootstrap, so a
     // constructor-frozen configuration is the known trap (see preload-before-mainapp-lazy-config).
-    private static volatile StreamResponder responder;
+    // Plain field guarded by the class monitor: every write happens inside the synchronized ensure
+    // method, and every reader calls it first on its own thread before touching the field.
+    private static StreamResponder responder;
 
-    private static StreamResponder responder() {
+    private static synchronized void ensureResponder() {
         if (responder == null) {
-            synchronized (MockAiBackend.class) {
-                if (responder == null) {
-                    responder = new StreamResponder(RedisConfig.from(AppConfigReader.getInstance()));
-                }
-            }
+            responder = new StreamResponder(RedisConfig.from(AppConfigReader.getInstance()));
         }
-        return responder;
+    }
+
+    private static boolean post(String cid, String type, String name, String body) {
+        ensureResponder();
+        return responder.post(cid, type, name, body);
     }
 
     /** Test-lifecycle hook: release the responder's Redis client at class teardown. */
-    public static void closeResponder() {
-        synchronized (MockAiBackend.class) {
-            if (responder != null) {
-                responder.close();
-                responder = null;
-            }
+    public static synchronized void closeResponder() {
+        if (responder != null) {
+            responder.close();
+            responder = null;
         }
     }
 
     @Override
     public Void handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         String cid = headers.get(SyncRuntime.CID);
-        StreamResponder producer = responder();
         for (String token : TOKENS) {
-            if (!producer.post(cid, StreamSegment.DATA, null, token)) {
+            if (!post(cid, StreamSegment.DATA, null, token)) {
                 return null;   // orphan - the rendezvous is over, stop producing
             }
         }
-        producer.post(cid, StreamSegment.EOF, null, EOT_METADATA);
+        post(cid, StreamSegment.EOF, null, EOT_METADATA);
         return null;
     }
 }

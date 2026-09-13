@@ -22,6 +22,7 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.platformlambda.core.util.Utility;
 import org.platformlambda.support.RedisConfig;
 import org.platformlambda.support.SyncOverAsyncConfig;
 
@@ -101,28 +102,28 @@ class StreamReturnRouteTest extends RedisTestBase {
     }
 
     /** Poll until the route key is gone - i.e. the drain's terminal cleanup has fully completed. */
-    private void awaitRouteGone(String cid) throws InterruptedException {
+    private void awaitRouteGone(String cid) {
         try (StatefulRedisConnection<String, String> c = redisClient.connect()) {
             ReturnRouteStore probe = new ReturnRouteStore(c);
             for (int i = 0; i < 500; i++) {
                 if (probe.getRoute(cid) == null) {
                     return;
                 }
-                Thread.sleep(10);
+                Utility.getInstance().sleep(10);
             }
         }
         fail("route key for " + cid + " was not cleaned up in time");
     }
 
-    /** Poll until the sink has received {@code count} segments (for expectations with no terminal latch). */
-    private static void awaitSegmentCount(CollectingSink sink, int count) throws InterruptedException {
+    /** Poll until the sink has received its first segment (for expectations with no terminal latch). */
+    private static void awaitFirstSegment(CollectingSink sink) {
         for (int i = 0; i < 500; i++) {
-            if (sink.segments.size() >= count) {
+            if (!sink.segments.isEmpty()) {
                 return;
             }
-            Thread.sleep(10);
+            Utility.getInstance().sleep(10);
         }
-        fail("expected " + count + " segments, got " + sink.segments.size());
+        fail("expected a first segment, got none in time");
     }
 
     // ------------------------------------------------------------------
@@ -144,7 +145,7 @@ class StreamReturnRouteTest extends RedisTestBase {
         assertTrue(sink.closed.await(5, TimeUnit.SECONDS), "terminal segment delivered");
         // no sequence number anywhere: posting discipline -> list order -> serialized drain == exact order
         assertEquals(tokens, sink.bodies().subList(0, tokens.size()), "forward order equals posting order");
-        StreamSegment terminal = sink.segments.get(sink.segments.size() - 1);
+        StreamSegment terminal = sink.segments.getLast();
         assertEquals(StreamSegment.EOF, terminal.type());
         assertEquals("{\"total\":8}", terminal.body());
         assertEquals(tokens.size() + 1, sink.segments.size(), "nothing lost, nothing duplicated");
@@ -244,13 +245,13 @@ class StreamReturnRouteTest extends RedisTestBase {
     }
 
     @Test
-    void consumerSideCloseStopsProducers() throws Exception {
+    void consumerSideCloseStopsProducers() {
         String cid = newCid();
         CollectingSink sink = new CollectingSink();
         uiPod.beginStream(cid, sink);
         try (StreamResponder responder = new StreamResponder(responderConfig())) {
             assertTrue(responder.post(cid, StreamSegment.DATA, null, "before the client left"));
-            awaitSegmentCount(sink, 1);
+            awaitFirstSegment(sink);
             // client disconnect (or edge idle expiry): the facade closes from the consumer side
             uiPod.closeStream(cid);
             assertEquals(0, uiPod.activeStreams());
@@ -284,7 +285,7 @@ class StreamReturnRouteTest extends RedisTestBase {
     }
 
     @Test
-    void finalDrainAtIdleExpiryRecoversADroppedClose() throws Exception {
+    void finalDrainAtIdleExpiryRecoversADroppedClose() {
         String cid = newCid();
         CollectingSink sink = new CollectingSink();
         uiPod.beginStream(cid, sink);
@@ -323,13 +324,13 @@ class StreamReturnRouteTest extends RedisTestBase {
         uiPod.beginStream(cid, sink);
         try (StreamResponder responder = new StreamResponder(responderConfig())) {
             assertTrue(responder.post(cid, StreamSegment.DATA, null, "once"));
-            awaitSegmentCount(sink, 1);
+            awaitFirstSegment(sink);
             // duplicate/spurious wake-ups pop nothing: destructive reads need no consumer bookkeeping
             try (StatefulRedisConnection<String, String> c = redisClient.connect()) {
                 c.sync().publish("svc-return:pod-UI", cid);
                 c.sync().publish("svc-return:pod-UI", cid);
             }
-            Thread.sleep(200);   // give the spurious drains time to (not) deliver
+            Utility.getInstance().sleep(200);   // give the spurious drains time to (not) deliver
             assertEquals(List.of("once"), sink.bodies(), "no duplicate delivery");
             assertTrue(responder.post(cid, StreamSegment.EOF, null, null));
         }
@@ -350,7 +351,7 @@ class StreamReturnRouteTest extends RedisTestBase {
     }
 
     @Test
-    void sinkFailureClosesTheStream() throws Exception {
+    void sinkFailureClosesTheStream() {
         String cid = newCid();
         uiPod.beginStream(cid, segment -> {
             throw new IllegalStateException("simulated: the HTTP edge is gone");

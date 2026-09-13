@@ -58,6 +58,8 @@ class KafkaToolchainValidationTest {
         }
     }
 
+    private static final String MESSAGE_KEY = "cid-1";
+
     @Test
     void produceConsumeRoundTripPreservesHeaders() throws Exception {
         String topic = "validate.topic";
@@ -65,14 +67,14 @@ class KafkaToolchainValidationTest {
         KafkaTestSupport.createTopic(bootstrap, topic);
 
         try (Producer<String, byte[]> producer = KafkaTestSupport.newProducer(bootstrap)) {
-            ProducerRecord<String, byte[]> producerRecord = new ProducerRecord<>(topic, "cid-1", "hello".getBytes(UTF_8));
+            ProducerRecord<String, byte[]> producerRecord = new ProducerRecord<>(topic, MESSAGE_KEY, "hello".getBytes(UTF_8));
             producerRecord.headers().add("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01".getBytes(UTF_8));
             producer.send(producerRecord).get(10, TimeUnit.SECONDS);
         }
 
-        try (Consumer<String, byte[]> consumer = KafkaTestSupport.newConsumer(bootstrap, "validate-group")) {
+        try (Consumer<String, byte[]> consumer = KafkaTestSupport.newConsumer(bootstrap)) {
             consumer.subscribe(List.of(topic));
-            ConsumerRecord<String, byte[]> consumerRecord = pollForKey(consumer, "cid-1");
+            ConsumerRecord<String, byte[]> consumerRecord = pollForMessageKey(consumer);
             assertEquals("hello", new String(consumerRecord.value(), UTF_8));
             Header traceparent = consumerRecord.headers().lastHeader("traceparent");
             assertNotNull(traceparent, "traceparent header must survive the round-trip");
@@ -81,16 +83,16 @@ class KafkaToolchainValidationTest {
         }
     }
 
-    private static ConsumerRecord<String, byte[]> pollForKey(Consumer<String, byte[]> consumer, String key) {
+    private static ConsumerRecord<String, byte[]> pollForMessageKey(Consumer<String, byte[]> consumer) {
         long deadline = System.currentTimeMillis() + 15_000;
         while (System.currentTimeMillis() < deadline) {
             ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofMillis(500));
             for (ConsumerRecord<String, byte[]> consumerRecord : records) {
-                if (key.equals(consumerRecord.key())) {
+                if (MESSAGE_KEY.equals(consumerRecord.key())) {
                     return consumerRecord;
                 }
             }
         }
-        return fail("did not receive a record with key '" + key + "' within the timeout");
+        return fail("did not receive a record with key '" + MESSAGE_KEY + "' within the timeout");
     }
 }

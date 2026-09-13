@@ -168,13 +168,13 @@ class StreamingRestE2eTest extends RedisTestBase {
     }
 
     /** Poll for the notification facade's cid announcement (the first SSE event of the channel). */
-    private static String awaitAnnouncedCid(SseCollector collector) throws InterruptedException {
+    private static String awaitAnnouncedCid(SseCollector collector) {
         for (int i = 0; i < 500; i++) {
             List<Frame> announce = collector.named(NotificationStreamFacade.CID_EVENT);
             if (!announce.isEmpty()) {
-                return String.valueOf(announce.get(0).body());
+                return String.valueOf(announce.getFirst().body());
             }
-            Thread.sleep(10);
+            Utility.getInstance().sleep(10);
         }
         fail("the notification facade did not announce the session cid in time");
         return null;   // unreachable
@@ -185,14 +185,14 @@ class StreamingRestE2eTest extends RedisTestBase {
     }
 
     /** Poll until the route key is gone - the rendezvous is fully closed. */
-    private static void awaitRouteGone(String cid) throws InterruptedException {
+    private static void awaitRouteGone(String cid) {
         try (StatefulRedisConnection<String, String> c = redisClient.connect()) {
             ReturnRouteStore probe = new ReturnRouteStore(c);
             for (int i = 0; i < 500; i++) {
                 if (probe.getRoute(cid) == null) {
                     return;
                 }
-                Thread.sleep(10);
+                Utility.getInstance().sleep(10);
             }
         }
         fail("route key for " + cid + " was not cleaned up in time");
@@ -215,11 +215,11 @@ class StreamingRestE2eTest extends RedisTestBase {
         assertEquals(MockAiBackend.TOKENS, collector.dataBodies(), "token order preserved end-to-end");
         List<Frame> done = collector.named("done");
         assertEquals(1, done.size(), "close(metadata) renders as the terminal SSE done event");
-        assertEquals(MockAiBackend.EOT_METADATA, done.get(0).body(), "eof metadata rides the done event");
+        assertEquals(MockAiBackend.EOT_METADATA, done.getFirst().body(), "eof metadata rides the done event");
         assertTrue(collector.endedWithEof(), "a clean upstream end relays as eof");
         assertTrue(collector.frames.size() >= MockAiBackend.TOKENS.size() + 2,
                 "segments arrived multi-shot (progressive), not as one buffered response");
-        assertEquals(0, SyncRuntime.coordinator().activeStreams(), "rendezvous closed by its terminal segment");
+        assertEquals(0, SyncRuntime.activeStreams(), "rendezvous closed by its terminal segment");
     }
 
     // ------------------------------------------------------------------
@@ -241,15 +241,15 @@ class StreamingRestE2eTest extends RedisTestBase {
             assertTrue(billing.post(cid, StreamSegment.EOF, null, null));
 
             assertTrue(collector.ended.await(15, TimeUnit.SECONDS), "backend-side close ends the SSE render");
-            assertEquals("order 42 shipped", collector.named("orders").get(0).body());
-            assertEquals("invoice 7 ready", collector.named("billing").get(0).body());
+            assertEquals("order 42 shipped", collector.named("orders").getFirst().body());
+            assertEquals("invoice 7 ready", collector.named("billing").getFirst().body());
             assertTrue(collector.endedWithEof());
 
             awaitRouteGone(cid);
             assertFalse(orders.post(cid, StreamSegment.DATA, "orders", "order 43 shipped"),
                     "the other producer stops on its next post (orphan)");
         }
-        assertEquals(0, SyncRuntime.coordinator().activeStreams());
+        assertEquals(0, SyncRuntime.activeStreams());
     }
 
     // ------------------------------------------------------------------
@@ -273,13 +273,13 @@ class StreamingRestE2eTest extends RedisTestBase {
         // nothing wakes the pod; at idle expiry the watchdog performs ONE final drain - and the render
         // completes successfully despite the lost notifications
         assertTrue(collector.ended.await(15, TimeUnit.SECONDS), "final drain completes the render");
-        assertEquals("the lost one", collector.named("orders").get(0).body(), "queued segment recovered");
+        assertEquals("the lost one", collector.named("orders").getFirst().body(), "queued segment recovered");
         List<Frame> done = collector.named("done");
         assertEquals(1, done.size(), "the recovered eof closes the stream normally");
-        assertEquals("{\"recovered\":true}", done.get(0).body());
+        assertEquals("{\"recovered\":true}", done.getFirst().body());
         assertTrue(collector.endedWithEof());
         awaitRouteGone(cid);
-        assertEquals(0, SyncRuntime.coordinator().activeStreams());
+        assertEquals(0, SyncRuntime.activeStreams());
     }
 
     // ------------------------------------------------------------------
@@ -297,7 +297,7 @@ class StreamingRestE2eTest extends RedisTestBase {
         assertTrue(collector.ended.await(15, TimeUnit.SECONDS), "idle expiry ends the SSE render");
         List<Frame> error = collector.named("error");
         assertEquals(1, error.size(), "the in-band failure renders as the SSE error event");
-        String errorBody = String.valueOf(error.get(0).body());
+        String errorBody = String.valueOf(error.getFirst().body());
         assertTrue(errorBody.contains("408") && errorBody.contains("Stream idle timeout"),
                 "the error event carries the 408 timeout, got: " + errorBody);
 
@@ -307,6 +307,6 @@ class StreamingRestE2eTest extends RedisTestBase {
             assertFalse(late.post(cid, StreamSegment.DATA, "orders", "too late"),
                     "producers learn the rendezvous is over from their next post");
         }
-        assertEquals(0, SyncRuntime.coordinator().activeStreams());
+        assertEquals(0, SyncRuntime.activeStreams());
     }
 }

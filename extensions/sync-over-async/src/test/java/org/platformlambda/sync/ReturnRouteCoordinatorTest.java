@@ -86,7 +86,7 @@ class ReturnRouteCoordinatorTest extends RedisTestBase {
 
     /**
      * The await-by-cid early-arrival path (D8 complete-in-place pin): when the response lands between
-     * {@code begin} and the await - the two run as separate flow tasks - the wake-up destructively pops
+     * {@code begin} and await - the two run as separate flow tasks - the wake-up destructively pops
      * the only stored copy and completes the pending future IN PLACE, so the later await-by-cid must
      * still find it by lookup. (Before D8 this recovery re-read {@code response:{cid}}, which no longer
      * exists under destructive pops.)

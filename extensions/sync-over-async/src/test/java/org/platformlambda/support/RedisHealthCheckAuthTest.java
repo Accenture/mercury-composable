@@ -57,7 +57,9 @@ class RedisHealthCheckAuthTest {
     static void startRedis() throws IOException {
         File dir = new File(DATA_DIR);
         Utility.getInstance().cleanupDir(dir);
-        dir.mkdirs();
+        if (!dir.mkdirs()) {
+            throw new IllegalStateException("Unable to create " + DATA_DIR);
+        }
         redisServer = RedisServer.newRedisServer()
                 .port(AUTH_PORT)
                 .setting("dir " + DATA_DIR)

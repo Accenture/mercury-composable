@@ -67,11 +67,16 @@ class PendingStreamsTest {
     void rejectedRegistrationDoesNotConsumeASlot() {
         PendingStreams streams = new PendingStreams(1);
         streams.register("cid-1", NO_OP_SINK);
-        assertThrows(IllegalStateException.class, () -> streams.register("cid-2", NO_OP_SINK));   // over cap
+        // repeated over-cap attempts must not consume anything
+        assertThrows(IllegalStateException.class, () -> streams.register("cid-2", NO_OP_SINK));
+        assertThrows(IllegalStateException.class, () -> streams.register("cid-2", NO_OP_SINK));
         streams.remove("cid-1");
-        // the over-cap attempt must not have leaked a reserved slot
+        // the rejected attempts must not have leaked reserved slots: the freed slot is fully usable...
         streams.register("cid-3", NO_OP_SINK);
         assertTrue(streams.contains("cid-3"));
+        // ...and the cap is still exactly 1 - no phantom capacity in either direction
+        assertThrows(IllegalStateException.class, () -> streams.register("cid-4", NO_OP_SINK));
+        assertEquals(1, streams.size());
     }
 
     @Test

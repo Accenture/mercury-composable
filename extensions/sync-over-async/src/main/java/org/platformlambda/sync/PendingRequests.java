@@ -71,7 +71,7 @@ public class PendingRequests {
      * Complete the waiting future for this correlation-id <b>in place</b> - the entry stays registered
      * (holding its capacity slot) until the awaiting or aborting path removes it, so an await-by-cid that
      * runs after the response arrived still finds the completed future. Idempotent: returns {@code false}
-     * (a no-op) if no request is pending or it was already completed - i.e. an orphan, duplicate, or
+     * (a no-op) if no request is pending, or it was already completed - i.e. an orphan, duplicate, or
      * timed-out response.
      */
     public boolean complete(String businessCorrelationId, String response) {

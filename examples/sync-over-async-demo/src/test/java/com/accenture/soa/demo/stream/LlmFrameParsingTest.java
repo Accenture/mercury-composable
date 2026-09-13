@@ -21,6 +21,7 @@ package com.accenture.soa.demo.stream;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -50,6 +51,7 @@ class LlmFrameParsingTest {
     @Test
     void usageMetadataBecomesCompactEofMetadata() {
         String usage = LlmStreamBridge.extractUsage(FINAL_FRAME);
+        assertNotNull(usage, "the final frame carries usage metadata");
         assertTrue(usage.contains("\"provider\":\"gemini\""), usage);
         assertTrue(usage.contains("\"model\":\"gemini-2.5-flash\""), usage);
         assertTrue(usage.contains("\"finishReason\":\"STOP\""), usage);

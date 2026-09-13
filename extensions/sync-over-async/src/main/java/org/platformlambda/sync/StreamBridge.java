@@ -54,7 +54,7 @@ import java.util.function.Consumer;
  * {@code beginStream}, and arms an idle watchdog with the same allowance. Every drained segment resets
  * the watchdog; the terminal segment disarms it (the drain already closed the stream and freed the keys).
  * At idle expiry the watchdog performs <b>one final drain</b> - the streaming analogue of the one-shot
- * final read before timeout, recovering a dropped final notification - and only if that drain does not
+ * final read before timeout, recovering a dropped final notification. And only if that drain does not
  * complete the stream does it fail the render in-band (408) and close the rendezvous, deleting the route
  * so every producer stops. This single watchdog is also what reclaims an abandoned stream: the edge
  * drops late writes after a client disconnect on its own, and the idle expiry then releases the

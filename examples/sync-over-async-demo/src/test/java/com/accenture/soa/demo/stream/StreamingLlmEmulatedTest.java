@@ -88,7 +88,9 @@ class StreamingLlmEmulatedTest {
         System.setProperty("llm.api.key", DUMMY_KEY_FOR_EMULATION);
         File dir = new File(REDIS_DATA_DIR);
         Utility.getInstance().cleanupDir(dir);
-        dir.mkdirs();
+        if (!dir.mkdirs()) {
+            throw new IllegalStateException("Unable to create " + REDIS_DATA_DIR);
+        }
         redisServer = RedisServer.newRedisServer()
                 .port(REDIS_PORT)
                 .setting("dir " + REDIS_DATA_DIR)
@@ -150,13 +152,13 @@ class StreamingLlmEmulatedTest {
         }
     }
 
-    private static String awaitAnnouncedCid(SseCollector collector) throws InterruptedException {
+    private static String awaitAnnouncedCid(SseCollector collector) {
         for (int i = 0; i < 500; i++) {
             List<Frame> announce = collector.named(StreamNotifyFacade.CID_EVENT);
             if (!announce.isEmpty()) {
-                return String.valueOf(announce.get(0).body());
+                return String.valueOf(announce.getFirst().body());
             }
-            Thread.sleep(10);
+            Utility.getInstance().sleep(10);
         }
         fail("the notification facade did not announce the session cid in time");
         return null;   // unreachable
@@ -199,11 +201,11 @@ class StreamingLlmEmulatedTest {
                 collector.dataBodies(), "token order preserved through the whole circle");
         List<Frame> done = collector.named("done");
         assertEquals(1, done.size(), "the recovered usage metadata rides the terminal done event");
-        String usage = String.valueOf(done.get(0).body());
+        String usage = String.valueOf(done.getFirst().body());
         assertTrue(usage.contains("\"provider\":\"gemini\""), usage);
         assertTrue(usage.contains("\"model\":\"gemini-2.5-flash\""), usage);
         assertTrue(usage.contains("\"finishReason\":\"STOP\""), usage);
         assertTrue(usage.contains("\"totalTokenCount\":31"), usage);
-        assertEquals(0, SyncRuntime.coordinator().activeStreams(), "rendezvous closed by its terminal");
+        assertEquals(0, SyncRuntime.activeStreams(), "rendezvous closed by its terminal");
     }
 }

@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
  *
  * <ul>
  *   <li><b>facade</b> - a synchronous REST endpoint ({@code POST /api/sync-to-async}) backed by the
- *       {@code sync-to-async} flow (sync.prepare -> simple.kafka.notification -> sync.await), plus the
+ *       {@code sync-to-async} flow (sync.prepare -> simple.kafka.notification -> 'sync.await'), plus the
  *       {@code soa-reply} flow and the Redis return-route coordinator. It publishes the request to the
  *       {@code soa.request} topic and blocks until the reply arrives on {@code soa.response}.</li>
  *   <li><b>backend</b> - the {@code system-of-record} flow: consumes {@code soa.request}, processes it,
