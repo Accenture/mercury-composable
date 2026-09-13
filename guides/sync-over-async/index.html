@@ -2922,12 +2922,12 @@ id, from discrete <code>redis.*</code> connection parameters and <code>sync.*</c
 <tr>
 <td><code>redis.health.timeout</code></td>
 <td><code>5s</code></td>
-<td>Timeout for the <a href="#health"><code>redis.health</code></a> probe.</td>
+<td>Timeout for the <a href="#health"><code>soa.redis.health</code></a> probe.</td>
 </tr>
 <tr>
 <td><code>redis.health.startup.grace</code></td>
 <td><code>30s</code></td>
-<td>Start-up grace for <a href="#health"><code>redis.health</code></a> (placeholder healthy status while the client warms up).</td>
+<td>Start-up grace for <a href="#health"><code>soa.redis.health</code></a> (placeholder healthy status while the client warms up).</td>
 </tr>
 <tr>
 <td><code>sync.return.channel.prefix</code></td>
@@ -3032,13 +3032,18 @@ producer killed mid-stream, a killed UI pod) — is recorded in the
 <a href="https://github.com/Accenture/mercury-composable/tree/main/examples/sync-over-async-demo">sync-over-async-demo</a>
 <code>stream-ui</code> / <code>stream-producer</code> profiles.</p>
 <h2 id="health">Health check<a class="headerlink" href="#health" title="Permanent link">&para;</a></h2>
-<p>The module ships a ready-made health-check function at route <strong><code>redis.health</code></strong> (auto-registered when
+<p>The module ships a ready-made health-check function at route <strong><code>soa.redis.health</code></strong> (auto-registered when
 the jar is on the classpath) - every critical infrastructure dependency deserves one. Opt in by listing
 it as a health dependency in <code>application.properties</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="na">mandatory.health.dependencies</span><span class="o">=</span><span class="s">redis.health</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="na">mandatory.health.dependencies</span><span class="o">=</span><span class="s">soa.redis.health</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1"># or, when Redis should be reported but not fail /health:</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># optional.health.dependencies=redis.health</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># optional.health.dependencies=soa.redis.health</span>
 </code></pre></div>
+<blockquote>
+<p>The route carries the <code>soa.</code> prefix deliberately: the plain <code>redis.health</code> name is reserved for the
+health check of the planned generic Redis distributed-cache module, so both features can coexist
+against the same Redis server.</p>
+</blockquote>
 <p>The probe is a single Redis <strong>PING</strong> on a dedicated connection built from the <code>redis.*</code> parameters -
 the lightest round trip the protocol offers, and one successful call proves connectivity, TLS, and
 authentication in a single request. A reachable server reports a status map; an unreachable one fails
@@ -3048,7 +3053,7 @@ DOWN. During application start-up the check returns a <strong>placeholder health
 while the client warms up in the background (<code>redis.health.startup.grace</code>, default <code>30s</code>), and
 <code>redis.health.timeout</code> (default <code>5s</code>) bounds the probe's connect and command round trips.</p>
 <p>The probe's client configuration is resolved <strong>lazily</strong> - when the probe client is built, and again
-whenever a failed probe forces a rebuild - never at construction time. <code>redis.health</code> is registered
+whenever a failed probe forces a rebuild - never at construction time. <code>soa.redis.health</code> is registered
 before your <code>@MainApplication</code> runs, so a bootstrap that fetches secrets and publishes them as system
 properties (the vault pattern) has not executed yet - a <code>redis.password</code> frozen at construction would
 be captured as <em>missing</em> for the life of the check. And while the configuration is still unusable -
@@ -3061,7 +3066,7 @@ check goes live on the first probe after the real values land; nothing needs a r
 <a href="../minimalist-kafka/#health"><code>kafka.health</code></a>.</p>
 <blockquote>
 <p>The <code>minigraph-state-redis</code> extension reads the same <code>redis.*</code> connection parameters, so one
-<code>redis.health</code> covers a deployment using either or both modules against the same server.</p>
+<code>soa.redis.health</code> covers a deployment using either or both modules against the same server.</p>
 </blockquote>
 <h2 id="when">When to use it<a class="headerlink" href="#when" title="Permanent link">&para;</a></h2>
 <p>Reach for sync-over-async when you need a <strong>synchronous REST facade over an asynchronous, cross-pod backend</strong>

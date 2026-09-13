@@ -8851,7 +8851,7 @@ off by default and starts (eagerly connecting to Redis) only when <code>sync.ove
 </tr>
 </tbody>
 </table>
-<p>Timeout for the <code>redis.health</code> probe - a single Redis PING on a dedicated connection built from the <code>redis.*</code> parameters (one successful call proves connectivity, TLS, and authentication). Add <code>redis.health</code> to <code>mandatory.health.dependencies</code> (or the optional list) to include the server in <code>/health</code>.</p>
+<p>Timeout for the <code>soa.redis.health</code> probe - a single Redis PING on a dedicated connection built from the <code>redis.*</code> parameters (one successful call proves connectivity, TLS, and authentication). Add <code>soa.redis.health</code> to <code>mandatory.health.dependencies</code> (or the optional list) to include the server in <code>/health</code>. (The plain <code>redis.health</code> route name is reserved for the health check of the planned generic Redis distributed-cache module.)</p>
 <h3 id="redishealthstartupgrace"><code>redis.health.startup.grace</code><a class="headerlink" href="#redishealthstartupgrace" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -8867,7 +8867,7 @@ off by default and starts (eagerly connecting to Redis) only when <code>sync.ove
 </tr>
 </tbody>
 </table>
-<p>Start-up grace period for <code>redis.health</code>: within it the check reports a placeholder healthy status while the Redis client warms up in the background, so <code>/health</code> never fails or blocks during application start-up. The probe's configuration is resolved lazily and re-resolved on every rebuild, and an unusable configuration (unbuildable values, or credentials the server rejects - the signature of a vault-published password that has not landed yet) is a passing <code>Waiting for Redis connection</code> status; only a genuine connectivity failure fails the check, with a 503 status and a key-value message (<code>text</code> + <code>code</code>).</p>
+<p>Start-up grace period for <code>soa.redis.health</code>: within it the check reports a placeholder healthy status while the Redis client warms up in the background, so <code>/health</code> never fails or blocks during application start-up. The probe's configuration is resolved lazily and re-resolved on every rebuild, and an unusable configuration (unbuildable values, or credentials the server rejects - the signature of a vault-published password that has not landed yet) is a passing <code>Waiting for Redis connection</code> status; only a genuine connectivity failure fails the check, with a 503 status and a key-value message (<code>text</code> + <code>code</code>).</p>
 <h3 id="syncreturnchannelprefix"><code>sync.return.channel.prefix</code><a class="headerlink" href="#syncreturnchannelprefix" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
