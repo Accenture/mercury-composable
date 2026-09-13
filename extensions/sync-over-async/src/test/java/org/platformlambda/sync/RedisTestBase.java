@@ -59,7 +59,9 @@ public abstract class RedisTestBase {
         // wipe the transient store and recreate it, so each run begins from a clean slate
         File dir = new File(REDIS_DATA_DIR);
         Utility.getInstance().cleanupDir(dir);
-        dir.mkdirs();
+        if (!dir.mkdirs()) {
+            throw new IllegalStateException("Unable to create " + REDIS_DATA_DIR);
+        }
         redisServer = RedisServer.newRedisServer()
                 .port(redisPort)
                 .setting("dir " + REDIS_DATA_DIR)   // transient /tmp working dir

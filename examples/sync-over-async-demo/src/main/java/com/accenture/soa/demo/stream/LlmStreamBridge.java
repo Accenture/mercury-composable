@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentMap;
  * {@code async.http.request} SSE consumption of a provider's token stream (Gemini
  * {@code streamGenerateContent?alt=sse}). Each relayed {@code x-event-stream} envelope arrives here
  * with the rendezvous cid as its correlation id, and the bridge forwards it into the streaming
- * return route via {@link StreamProducer#responder()} - token text as {@code data} segments, the
+ * return route via {@link StreamProducer#postSegment} - token text as {@code data} segments, the
  * clean upstream end as {@code eof} carrying the provider's usage metadata, failures as
  * {@code exception}. Whichever pod holds the user's SSE connection renders the tokens - the LLM
  * stream made horizontal.
@@ -52,7 +52,7 @@ import java.util.concurrent.ConcurrentMap;
 // frames concurrently - a token batch sequenced behind the terminal is silently discarded. One
 // instance = one sequential poster, the same reason the HTTP edge's reply lanes are
 // single-instance routes. (A high-fanout application would mint one temporary route per stream.)
-@PreLoad(route = LlmStreamBridge.ROUTE, instances = 1)
+@PreLoad(route = LlmStreamBridge.ROUTE)
 @EventInterceptor
 public class LlmStreamBridge implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final Logger log = LoggerFactory.getLogger(LlmStreamBridge.class);
@@ -74,7 +74,7 @@ public class LlmStreamBridge implements TypedLambdaFunction<EventEnvelope, Void>
             // the SSE consumer answers single-shot, so fail the rendezvous in-band with the reason
             if (event.getStatus() >= 400) {
                 lastUsage.remove(cid);
-                StreamProducer.responder().post(cid, StreamSegment.EXCEPTION, null,
+                StreamProducer.postSegment(cid, StreamSegment.EXCEPTION, null,
                         "LLM request failed with status " + event.getStatus());
                 log.warn("LLM request for {} failed with status {}", cid, event.getStatus());
             }
@@ -89,17 +89,17 @@ public class LlmStreamBridge implements TypedLambdaFunction<EventEnvelope, Void>
                 }
                 String text = extractText(frame);
                 if (text != null && !text.isEmpty()
-                        && !StreamProducer.responder().post(cid, StreamSegment.DATA, null, text)) {
+                        && !StreamProducer.postSegment(cid, StreamSegment.DATA, null, text)) {
                     // rendezvous over (UI closed/timed out) - drop the remainder; the upstream
                     // generation is already bounded by maxOutputTokens
                     log.info("Rendezvous {} is over - dropping remaining LLM tokens", cid);
                 }
             }
             case StreamSegment.EOF ->
-                    StreamProducer.responder().post(cid, StreamSegment.EOF, null, lastUsage.remove(cid));
+                    StreamProducer.postSegment(cid, StreamSegment.EOF, null, lastUsage.remove(cid));
             case StreamSegment.EXCEPTION -> {
                 lastUsage.remove(cid);
-                StreamProducer.responder().post(cid, StreamSegment.EXCEPTION, null,
+                StreamProducer.postSegment(cid, StreamSegment.EXCEPTION, null,
                         event.getBody() == null ? "LLM stream failed" : String.valueOf(event.getBody()));
             }
             default -> log.warn("Unexpected stream marker {} for {}", marker, cid);

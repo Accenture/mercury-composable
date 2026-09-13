@@ -275,26 +275,9 @@ public class ReturnRouteCoordinator implements AutoCloseable {
             if (entry == null || !entry.tryAcquireDrain()) {
                 return false;   // stream closed, or another drain is active (it re-checks before exiting)
             }
-            boolean terminal = false;
             try {
-                String json;
-                while ((json = store.popSegment(businessCorrelationId)) != null) {
-                    StreamSegment segment;
-                    try {
-                        segment = StreamSegment.fromJson(json);
-                        entry.sink().accept(segment);
-                    } catch (RuntimeException failure) {
-                        log.warn("Closing stream {} - segment could not be delivered", businessCorrelationId,
-                                failure);
-                        terminal = true;
-                        break;
-                    }
-                    if (segment.isTerminal()) {
-                        terminal = true;
-                        break;
-                    }
-                }
-                if (terminal) {
+                if (forwardQueuedSegments(businessCorrelationId, entry)) {
+                    // still under the drain hold: no segment can be forwarded after the terminal one
                     closeStream(businessCorrelationId);
                     return true;
                 }
@@ -306,6 +289,30 @@ public class ReturnRouteCoordinator implements AutoCloseable {
             }
             // lost-wakeup guard: a segment landed while this drain was finishing - loop and re-acquire
         }
+    }
+
+    /**
+     * Forward queued segments to the sink in list order until the queue is empty or a terminal condition
+     * is reached. Runs entirely under the caller's drain hold.
+     *
+     * @return {@code true} on a terminal condition (terminal segment delivered, or sink failure)
+     */
+    private boolean forwardQueuedSegments(String businessCorrelationId, PendingStreams.StreamEntry entry) {
+        String json;
+        while ((json = store.popSegment(businessCorrelationId)) != null) {
+            StreamSegment segment;
+            try {
+                segment = StreamSegment.fromJson(json);
+                entry.sink().accept(segment);
+            } catch (RuntimeException failure) {
+                log.warn("Closing stream {} - segment could not be delivered", businessCorrelationId, failure);
+                return true;
+            }
+            if (segment.isTerminal()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public int pendingCount() {

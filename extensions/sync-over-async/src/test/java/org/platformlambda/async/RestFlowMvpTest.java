@@ -45,10 +45,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  *
  * <pre>
  *   HTTP POST /api/sync-to-async -> http.flow.adapter -> flow sync-to-async
- *     sync.prepare: begin(cid) [Redis] -> simple.kafka.notification -> Kafka topic-1 -> sync.await (blocks)
+ *     sync.prepare: begin(cid) [Redis] -> simple.kafka.notification -> Kafka topic-1 -> 'sync.await' (blocks)
  *       -> Kafka Flow Adapter -> flow system-of-record (echo + notify topic-2)
- *         -> Kafka topic-2 -> Kafka Flow Adapter -> flow soa-reply -> coordinator.deliver
- *           -> Redis return route wakes sync.await -> HTTP 200 + body
+ *         -> Kafka topic-2 -> Kafka Flow Adapter -> flow soa-reply -> 'coordinator.deliver'
+ *           -> Redis return route wakes 'sync.await' -> HTTP 200 + body
  * </pre>
  *
  * Runs against embedded Redis ({@link RedisTestBase}) and an embedded KRaft Kafka broker. The Kafka

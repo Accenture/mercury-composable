@@ -31,7 +31,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * Last task of a composable sync-over-async REST facade flow. It blocks on its virtual thread until the
  * asynchronous backend's response arrives via the response topic and the Redis return route, then returns
- * the response body (HTTP 200). On timeout it raises {@link AppException} 408, which the flow's exception
+ * the response body (HTTP 200). On timeout, it raises {@link AppException} 408, which the flow's exception
  * handler maps to an HTTP 408.
  *
  * <p>The correlation-id was allocated and registered by {@code sync.prepare}; this task awaits by

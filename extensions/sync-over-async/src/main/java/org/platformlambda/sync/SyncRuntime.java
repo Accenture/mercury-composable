@@ -52,6 +52,15 @@ public final class SyncRuntime {
         return coordinator;
     }
 
+    /**
+     * Diagnostic: the number of open streaming rendezvous on this pod ({@code 0} when sync-over-async is
+     * not enabled). A field-read delegate so observers need not obtain the {@link AutoCloseable}
+     * coordinator, whose lifecycle this holder owns.
+     */
+    public static int activeStreams() {
+        return coordinator == null ? 0 : coordinator.activeStreams();
+    }
+
     /** Close the coordinator and shut down the Redis client (idempotent). */
     public static void shutdown() {
         if (coordinator != null) {

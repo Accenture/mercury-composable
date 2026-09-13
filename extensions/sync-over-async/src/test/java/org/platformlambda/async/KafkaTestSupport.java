@@ -44,6 +44,9 @@ import java.util.concurrent.TimeoutException;
  */
 final class KafkaTestSupport {
 
+    /** One consumer group serves the whole test suite - consumers subscribe to distinct topics. */
+    private static final String GROUP_ID = "validate-group";
+
     private KafkaTestSupport() {}
 
     static Producer<String, byte[]> newProducer(String bootstrapServers) {
@@ -55,10 +58,10 @@ final class KafkaTestSupport {
         return new KafkaProducer<>(p);
     }
 
-    static Consumer<String, byte[]> newConsumer(String bootstrapServers, String groupId) {
+    static Consumer<String, byte[]> newConsumer(String bootstrapServers) {
         Properties p = new Properties();
         p.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        p.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        p.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
         p.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         p.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
         p.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");

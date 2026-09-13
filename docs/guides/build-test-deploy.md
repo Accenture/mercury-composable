@@ -234,6 +234,31 @@ than JSON-Path of `map.getElement("$.body.complex[*]")`. Example-4 is for
 illustration purpose only. You should use JSON-Path syntax for more sophisticated
 search only when the basic retrieval method does not address your need.
 
+### Pausing in a unit test
+
+An asynchronous expectation sometimes needs a short poll-and-wait loop. When a completion signal
+exists, await it directly — `CountDownLatch.await`, `Future.get` or `BlockingQueue.poll` with a
+timeout. For a condition with no signal to await (e.g. an external state that another thread will
+eventually change), poll it with `Utility.getInstance().sleep(milliseconds)` between checks instead
+of `Thread.sleep()`:
+
+```java
+// poll until the collector has received its first frame
+for (int i = 0; i < 500; i++) {
+    if (!collector.frames.isEmpty()) {
+        return;
+    }
+    Utility.getInstance().sleep(10);
+}
+fail("expected a first frame, got none in time");
+```
+
+Static analysis discourages `Thread.sleep()` in test code (for example, SonarQube rule `java:S2925`),
+and the platform helper keeps the quality gate green without a rule waiver: it waits on a timed queue
+poll rather than calling `Thread.sleep()` directly. It also handles `InterruptedException` for you
+(restoring the thread's interrupt flag), so the enclosing test method does not need a
+`throws InterruptedException` clause for the pause.
+
 ## Event Flow mocking framework
 
 We recommend using Event Script to write Composable application for highest level of decoupling.

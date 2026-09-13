@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * That latch is built on {@code AbstractQueuedSynchronizer} / {@code LockSupport.park}, which Java 21
  * retrofitted to be virtual-thread-aware: the virtual thread <em>unmounts</em> from its carrier for the
  * duration of the round-trip rather than holding it. Pinning would only occur if the thread blocked
- * while holding a {@code synchronized} monitor (or inside a native frame), which this await path does
+ * while holding a {@code synchronized} monitor (or inside a native frame), which this 'await' path does
  * not. Blocking sync on a virtual thread is therefore the recommended idiom here - simpler than the
  * reactive API and with the same throughput.</p>
  *
