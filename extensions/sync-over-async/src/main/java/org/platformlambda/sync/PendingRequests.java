@@ -85,12 +85,10 @@ public class PendingRequests {
     }
 
     /** Remove the entry and release its reserved slot, exactly once. */
-    private CompletableFuture<String> remove(String businessCorrelationId) {
-        CompletableFuture<String> future = pending.remove(businessCorrelationId);
-        if (future != null) {
+    private void remove(String businessCorrelationId) {
+        if (pending.remove(businessCorrelationId) != null) {
             inFlight.decrementAndGet();
         }
-        return future;
     }
 
     public boolean isPending(String businessCorrelationId) {

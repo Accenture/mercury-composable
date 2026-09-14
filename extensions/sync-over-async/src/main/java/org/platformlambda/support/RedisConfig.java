@@ -34,7 +34,7 @@ import java.util.List;
  *
  * <p>The keys carry the {@code soa.} prefix so sync-over-async owns its own Redis configuration and does not
  * collide with another Redis consumer in the same application (a distributed-cache library, the
- * {@code minigraph-state-redis} extension) that reads the plain {@code redis.*} keys - the two can target
+ * {@code minigraph-state-redis} extension) that reads the plain {@code redis.*} keys. The two can target
  * different servers, auth, or topologies. For backward compatibility each key <b>falls back to the
  * un-prefixed {@code redis.*} form</b> when the {@code soa.} one is absent, so a pre-existing {@code redis.*}
  * deployment keeps working with no migration; set the {@code soa.redis.*} key to override the fallback (and

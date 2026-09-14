@@ -55,8 +55,8 @@ public final class RedisBackendFactory {
      * waiting semantics still apply.
      */
     private static boolean detectCluster(RedisConfig config, boolean fallback) {
-        RedisClient probe = RedisClient.create(config.toUri());
-        try (StatefulRedisConnection<String, String> c = probe.connect()) {
+        try (RedisClient probe = RedisClient.create(config.toUri());
+             StatefulRedisConnection<String, String> c = probe.connect()) {
             String info = c.sync().info("cluster");
             boolean cluster = info != null && info.contains("cluster_enabled:1");
             log.debug("Redis auto-detect at {}:{} -> {}", config.host(), config.port(),
@@ -64,10 +64,8 @@ public final class RedisBackendFactory {
             return cluster;
         } catch (RuntimeException e) {
             log.debug("Redis cluster auto-detect at {}:{} inconclusive ({}); using configured cluster.mode={}",
-                    config.host(), config.port(), e.toString(), fallback);
+                    config.host(), config.port(), e, fallback);
             return fallback;
-        } finally {
-            probe.close();
         }
     }
 }

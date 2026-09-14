@@ -25,6 +25,7 @@ import org.platformlambda.support.RedisConfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Verifies {@link RedisBackendFactory} against a real (embedded, single-node) Redis: auto-detection
@@ -59,5 +60,14 @@ class RedisBackendFactoryTest extends RedisTestBase {
             assertEquals("value", backend.commands().get("soa-standalone-probe"));
             backend.commands().del("soa-standalone-probe");
         }
+    }
+
+    @Test
+    void explicitClusterModeRoutesToTheClusterBranch() {
+        // detect off, cluster.mode true: the factory takes the cluster branch and builds a cluster client,
+        // which cannot form a topology against the single-node embedded server and fails fast - proving the
+        // boolean routes to cluster. (A real cluster's success path is validated in the field; no embedded
+        // cluster fixture exists.)
+        assertThrows(RuntimeException.class, () -> RedisBackendFactory.create(config(false, true)));
     }
 }
