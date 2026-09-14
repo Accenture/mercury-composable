@@ -156,6 +156,25 @@
   declare it. Extends [[functions-decoupled-routes]] to the dependency graph.
   <!-- id: soa-transport-neutral-cid | created: 2026-09-12 | last_used: 2026-09-12 | uses: 7 | tier: active | origin: 2026-09-12-011438 -->
 
+- **sync-over-async runs on standalone OR clustered Redis behind one seam (2026-09-14, field
+  request; Eric ruled auto-detect the default).** `RedisBackend` (StandaloneRedisBackend /
+  ClusterRedisBackend, built by `RedisBackendFactory`) hides the topology; `redis.cluster.mode`
+  = auto|standalone|cluster (auto probes `INFO` → `cluster_enabled:1`, with a standalone
+  fallback). The seam is clean because in Lettuce the standalone `RedisCommands` and the cluster
+  `RedisAdvancedClusterCommands` BOTH extend `RedisClusterCommands` — the single command type the
+  store programs against (all ops single-key + `publish`). Cluster-safe by construction: the sole
+  two-key `DEL` (cleanup) is split into two single-key DELs, so the **wire key format is
+  UNCHANGED** (`request:{cid}` / `queue:{cid}`, no hash tags) — existing standalone polyglot
+  interop is unaffected and there is no Rust wire break. Classic Pub/Sub wake-ups cross the
+  cluster bus. Auth is identical for both topologies (AWS applies one credential set to the whole
+  replication group): a new optional `redis.username` (ACL/RBAC) beside `redis.password`, both
+  resolving `${ENV_VAR}` from a lower-`sequence` credential bootstrap
+  ([[preload-before-mainapp-lazy-config]]); no IAM SDK in core (Lettuce's
+  `withAuthentication(RedisCredentialsProvider)` is the future seam if rotating IAM tokens are
+  ever needed). Rust parity for cluster (a cluster-client option + the same DEL split) is a parked
+  follow-up, NOT a break. Extends [[soa-transport-neutral-cid]].
+  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-14 | uses: 1 | tier: working | origin: 2026-09-14-181948 -->
+
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
   `WorkerHandler` calls `stopTracing` (removing it) as soon as `processEvent` returns. So any work that
