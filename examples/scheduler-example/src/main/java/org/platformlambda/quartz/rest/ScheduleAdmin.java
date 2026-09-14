@@ -114,11 +114,18 @@ public class ScheduleAdmin implements TypedLambdaFunction<AsyncHttpRequest, Even
     private Map<String, Object> getJobTime(String json) {
         var map = getJob(json);
         Map<String, Object> result = new HashMap<>();
-        if (map.containsKey(START)) {
-            result.put(START, map.get(START));
-        }
-        if (map.containsKey(END)) {
-            result.put(END, map.get(END));
+        // A scheduled job may be rewriting this state file at the instant we read it: the sample
+        // resolver's str2file truncates the file before writing (not atomic), so a concurrent read
+        // can see an empty file, which parses to a null map. Treat that as "timing not available
+        // yet" - the same tolerance the single-job GET path already has - instead of failing the
+        // whole list with a 500.
+        if (map != null) {
+            if (map.containsKey(START)) {
+                result.put(START, map.get(START));
+            }
+            if (map.containsKey(END)) {
+                result.put(END, map.get(END));
+            }
         }
         return result;
     }
