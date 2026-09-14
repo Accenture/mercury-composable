@@ -16,9 +16,8 @@
 
  */
 
-package org.platformlambda.support;
+package org.platformlambda.redis;
 
-import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.Platform;
@@ -36,66 +35,49 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 /**
- * Redis health check function for the platform's health endpoint.
+ * Reusable Redis health-check logic for the platform's {@code /health} endpoint — the shared PING probe
+ * behind each module's own health route. It is <b>not</b> a {@code @PreLoad} function itself (a foundation
+ * function would auto-register in every consumer under {@code web.component.scan=org.platformlambda}); each
+ * module supplies a thin {@code @PreLoad} subclass fixing its route and config prefix — {@code soa.redis.health}
+ * for sync-over-async, {@code redis.health} for the distributed cache — over this one probe.
  *
- * <p>Add {@code soa.redis.health} to {@code mandatory.health.dependencies} (or
- * {@code optional.health.dependencies}) in application.properties and the {@code /health}
- * endpoint will include the Redis server status. The function follows the standard health
- * contract: {@code type=info} describes the dependency, {@code type=health} returns a status
- * map when the server is reachable and a 503 response carrying a key-value map
- * ({@code text} + {@code code}) when it is not - the status code is what the health
- * aggregation (and Kubernetes) detects; the map is for the DevOps reader. While the
- * client configuration is still incomplete - a late credential not yet published, or not yet
- * accepted by the server - it returns a passing {@code Waiting for Redis connection} status
- * instead of failing (see below).
+ * <p>The function follows the standard health contract: {@code type=info} describes the dependency,
+ * {@code type=health} returns a status map when the server is reachable and a 503 response carrying a
+ * key-value map ({@code text} + {@code code}) when it is not — the status code is what the health
+ * aggregation (and Kubernetes) detects; the map is for the DevOps reader. While the client configuration is
+ * still incomplete — a late credential not yet published, or not yet accepted by the server — it returns a
+ * passing {@code Waiting for Redis connection} status instead of failing (see below).
  *
- * <p>The probe is a single Redis <b>PING</b> on a dedicated connection built from the module's
- * discrete {@code soa.redis.*} startup parameters ({@link RedisConfig}) - the lightest round trip
- * the protocol offers, and one successful call proves connectivity, TLS, and authentication in
- * a single request. It reports on the sync-over-async Redis specifically; another Redis consumer in
- * the same application (a distributed-cache library reading the plain {@code redis.*} keys, or the
- * {@code minigraph-state-redis} extension) is a separate server/config with its own health check.
+ * <p>The probe is a single Redis <b>PING</b> on a dedicated connection built from the module's discrete
+ * connection parameters ({@link RedisConfig}) — the lightest round trip the protocol offers, and one
+ * successful call proves connectivity, TLS, and authentication in a single request.
  *
- * <p>Both the route and the config keys carry the {@code soa.} prefix deliberately, so sync-over-async
- * owns its own Redis namespace and coexists with a distributed-cache library (or any other
- * {@code redis.*} consumer) in the same application without config or route collisions.
- *
- * <p>The probe's client configuration is resolved <b>lazily - when the probe client is built,
- * and again whenever a failed probe forces a rebuild</b> - never in the constructor. This
- * function is {@code @PreLoad}, so it is constructed while the platform registers routes,
- * before any {@code @MainApplication} start-up logic runs. A credential bootstrap that fetches
- * secrets from a vault and publishes them as system properties has therefore not executed yet -
- * a {@code soa.redis.password} resolved at construction time would be frozen as missing for the
- * life of the instance. Because a failed probe closes the client, the next probe re-resolves
+ * <p>The probe's client configuration is resolved <b>lazily — when the probe client is built, and again
+ * whenever a failed probe forces a rebuild</b> — never in the constructor. The subclass is {@code @PreLoad},
+ * so it is constructed while the platform registers routes, before any {@code @MainApplication} start-up
+ * logic runs. A credential bootstrap that fetches secrets from a vault and publishes them as system
+ * properties has therefore not executed yet — a password resolved at construction time would be frozen as
+ * missing for the life of the instance. Because a failed probe closes the client, the next probe re-resolves
  * the configuration and the check heals itself as soon as the credential lands.
  *
- * <p>Until it lands, an unusable configuration is reported as a passing
- * {@code Waiting for Redis connection} status rather than a failure: failing {@code /health}
- * would invite the container orchestrator to restart the pod, and a restart cannot produce the
- * missing credential. "Unusable" means the client cannot even be built from the resolved values
- * (e.g. an unresolved placeholder), or the server rejects the credentials
- * ({@code NOAUTH} / {@code WRONGPASS} - the signature of a password that has not landed yet).
- * Only a real connectivity failure - connection refused or a timed-out round trip - fails
- * {@code /health} with HTTP 503.
+ * <p>Until it lands, an unusable configuration is reported as a passing {@code Waiting for Redis connection}
+ * status rather than a failure: failing {@code /health} would invite the container orchestrator to restart
+ * the pod, and a restart cannot produce the missing credential. "Unusable" means the client cannot even be
+ * built from the resolved values (e.g. an unresolved placeholder), or the server rejects the credentials
+ * ({@code NOAUTH} / {@code WRONGPASS} — the signature of a password that has not landed yet). Only a real
+ * connectivity failure — connection refused or a timed-out round trip — fails {@code /health} with HTTP 503.
  *
- * <p>During application start-up the function returns a <b>placeholder healthy</b> status and
- * warms up the client in the background, so {@code /health} does not fail (or block) while the
- * Redis client and the rest of the start-up sequence are still coming up. After the first
- * successful probe - or once the grace period ({@code soa.redis.health.startup.grace}, default
- * {@code 30s}) has elapsed - every check is a live probe. {@code soa.redis.health.timeout}
- * (default {@code 5s}) bounds the probe's connect and command round trips.
+ * <p>During application start-up the function returns a <b>placeholder healthy</b> status and warms up the
+ * client in the background, so {@code /health} does not fail (or block) while the Redis client and the rest
+ * of the start-up sequence are still coming up. After the first successful probe — or once the grace period
+ * has elapsed — every check is a live probe.
  *
- * <p>This function deliberately stays on virtual threads (no {@code @KernelThreadRunner}, unlike
- * {@code kafka.health}): Lettuce performs network I/O on its own event-loop threads, and the calling
- * thread merely awaits a future - which unmounts a virtual thread cleanly instead of pinning its
- * carrier.
+ * <p>This probe deliberately stays on virtual threads (no {@code @KernelThreadRunner}, unlike
+ * {@code kafka.health}): Lettuce performs network I/O on its own event-loop threads, and the calling thread
+ * merely awaits a future — which unmounts a virtual thread cleanly instead of pinning its carrier.
  */
-// multiple workers because /health is polled concurrently (operations tooling plus the container
-// platform's liveness/readiness probes): info and placeholder responses run in parallel, while the
-// probe connection stays protected - every probe serializes on the ReentrantLock below
-@PreLoad(route = "soa.redis.health", instances = 5)
-public class RedisHealthCheck implements LambdaFunction {
-    private static final Logger log = LoggerFactory.getLogger(RedisHealthCheck.class);
+public class RedisHealthProbe implements LambdaFunction {
+    private static final Logger log = LoggerFactory.getLogger(RedisHealthProbe.class);
 
     private static final String SERVICE_NAME = "redis";
     private static final String TYPE = "type";
@@ -106,13 +88,6 @@ public class RedisHealthCheck implements LambdaFunction {
     private static final String STATUS = "status";
     private static final String TEXT = "text";
     private static final String CODE = "code";
-    private static final String TIMEOUT_KEY = "soa.redis.health.timeout";
-    private static final String GRACE_KEY = "soa.redis.health.startup.grace";
-    // legacy un-prefixed fallbacks (read only when the soa. key is absent) - same policy as RedisConfig
-    private static final String LEGACY_TIMEOUT_KEY = "redis.health.timeout";
-    private static final String LEGACY_GRACE_KEY = "redis.health.startup.grace";
-    private static final String DEFAULT_TIMEOUT = "5s";
-    private static final String DEFAULT_GRACE = "30s";
     private static final String PLACEHOLDER = "Redis client is starting up";
     private static final String WAITING = "Waiting for Redis connection";
     private static final String REACHABLE = "Redis is reachable";
@@ -123,35 +98,24 @@ public class RedisHealthCheck implements LambdaFunction {
     private final ReentrantLock lock = new ReentrantLock();
     private final AtomicBoolean warmingUp = new AtomicBoolean(false);
     private final Supplier<RedisConfig> probeConfig;
-    // what the current probe client was built from; also the href source - replaced on every rebuild
+    // what the current probe client was built from; also the href source — replaced on every rebuild
     private final AtomicReference<RedisConfig> currentConfig = new AtomicReference<>();
     private final long timeoutMs;
     private final long graceDeadline;
-    private RedisBackend backend;
+    private RedisBackend<String> backend;
     private volatile boolean ready = false;
 
-    /** Instantiated reflectively when the platform's {@code @PreLoad} scanner registers the route. */
-    public RedisHealthCheck() {
-        this(() -> RedisConfig.from(AppConfigReader.getInstance()),
-             resolveDurationMs(TIMEOUT_KEY, LEGACY_TIMEOUT_KEY, DEFAULT_TIMEOUT),
-             resolveDurationMs(GRACE_KEY, LEGACY_GRACE_KEY, DEFAULT_GRACE));
-    }
-
     /**
-     * Reuse/test seam. The supplier is invoked when the probe client is built - and again on every
-     * rebuild after a failure - so a configuration whose values are published later in the start-up
-     * sequence (e.g. a vault-fetched {@code redis.password}) is resolved correctly on the next probe
-     * instead of being frozen at construction time.
-     *
-     * <p>The supplier itself must not be null (enforced here, at construction) and must return a
-     * non-null config: when the real values have not been published yet, return your best-known
-     * ones - an unusable result is handled by the waiting semantics, never by returning null.
-     *
-     * @param probeConfig supplies the Redis connection parameters, re-invoked on every rebuild
+     * @param probeConfig supplies the Redis connection parameters, re-invoked on every rebuild — so a
+     *                    configuration whose values are published later in the start-up sequence (e.g. a
+     *                    vault-fetched password) is resolved correctly on the next probe instead of being
+     *                    frozen at construction time. Must not be null, and must return a non-null config:
+     *                    when the real values have not been published yet, return your best-known ones — an
+     *                    unusable result is handled by the waiting semantics, never by returning null.
      * @param timeoutMs   probe timeout in milliseconds (bounds connect and command round trips)
      * @param graceMs     start-up grace period in milliseconds (0 = probe immediately)
      */
-    public RedisHealthCheck(Supplier<RedisConfig> probeConfig, long timeoutMs, long graceMs) {
+    public RedisHealthProbe(Supplier<RedisConfig> probeConfig, long timeoutMs, long graceMs) {
         this.probeConfig = Objects.requireNonNull(probeConfig, "probeConfig supplier is required");
         this.timeoutMs = timeoutMs;
         this.graceDeadline = System.currentTimeMillis() + graceMs;
@@ -159,15 +123,16 @@ public class RedisHealthCheck implements LambdaFunction {
 
     /**
      * Resolve a duration configuration key to milliseconds with a built-in default, preferring the
-     * {@code soa.}-prefixed key and falling back to the legacy un-prefixed one when it is absent (the
-     * same backward-compatible policy {@link RedisConfig} applies to the connection keys).
+     * module's own key and falling back to the un-prefixed one when it is absent (the same
+     * backward-compatible policy {@link RedisConfig} applies to the connection keys). A subclass calls this
+     * from its constructor to build the {@code timeoutMs} / {@code graceMs} arguments.
      *
      * @param key          the preferred configuration key (e.g. "soa.redis.health.timeout")
      * @param legacyKey    the legacy fallback key (e.g. "redis.health.timeout")
      * @param defaultValue the built-in default duration (e.g. "5s")
      * @return the resolved duration in milliseconds
      */
-    private static long resolveDurationMs(String key, String legacyKey, String defaultValue) {
+    protected static long resolveDurationMs(String key, String legacyKey, String defaultValue) {
         var util = Utility.getInstance();
         var config = AppConfigReader.getInstance();
         return util.getDurationInSeconds(config.getProperty(key, config.getProperty(legacyKey, defaultValue))) * 1000L;
@@ -203,7 +168,7 @@ public class RedisHealthCheck implements LambdaFunction {
                     if (ready) {
                         log.info("{} health check is ready", SERVICE_NAME);
                     } else {
-                        // the client configuration is still incomplete - allow another warm-up attempt
+                        // the client configuration is still incomplete — allow another warm-up attempt
                         warmingUp.set(false);
                     }
                 } catch (Exception e) {
@@ -216,18 +181,18 @@ public class RedisHealthCheck implements LambdaFunction {
     }
 
     // S2093 (try-with-resources): the try/finally releases the ReentrantLock; the Redis connection is
-    // deliberately long-lived - cached across health checks and closed via closeQuietly on failure
+    // deliberately long-lived — cached across health checks and closed via closeQuietly on failure
     @SuppressWarnings("java:S2093")
     private Object probe() {
         lock.lock();
         try {
             if (backend == null) {
                 // re-resolved, not cached from the constructor: a credential published by a later
-                // @MainApplication bootstrap is not visible while this @PreLoad function is constructed
+                // @MainApplication bootstrap is not visible while the @PreLoad subclass is constructed
                 RedisConfig config = probeConfig.get();
                 currentConfig.set(config);
                 // the health check bounds its probe with its own timeout; the factory selects standalone or
-                // cluster per redis.cluster.mode (auto-detecting when so configured)
+                // cluster per cluster.mode (auto-detecting when so configured)
                 backend = RedisBackendFactory.create(config.withTimeout(timeoutMs));
             }
             backend.commands().ping();
@@ -240,7 +205,7 @@ public class RedisHealthCheck implements LambdaFunction {
             closeQuietly();
             if (waitingOnConfig(e)) {
                 // the configuration is not yet usable (unbuildable values, or credentials the server
-                // rejects): report a PASSING waiting status - failing /health would invite the container
+                // rejects): report a PASSING waiting status — failing /health would invite the container
                 // orchestrator to restart the pod, and a restart cannot produce the credential.
                 // The next probe re-resolves, so the check goes live once the real values land.
                 log.warn("{} health check waiting for a usable client configuration - {}",
@@ -263,9 +228,9 @@ public class RedisHealthCheck implements LambdaFunction {
     /**
      * The waiting-vs-outage boundary. True when the failure is a configuration that is not yet usable:
      * the client cannot be built from the resolved values (IllegalArgument/IllegalState while mapping
-     * them onto a RedisURI - e.g. an unresolved placeholder port), or the server rejected the
+     * them onto a RedisURI — e.g. an unresolved placeholder port), or the server rejected the
      * credentials ({@code NOAUTH} / {@code WRONGPASS} / {@code ERR Client sent AUTH} anywhere in the
-     * cause chain) - the signature of a password that has not landed yet, which a pod restart cannot
+     * cause chain) — the signature of a password that has not landed yet, which a pod restart cannot
      * fix. Everything else (connection refused, timeout) is a genuine outage and fails /health.
      */
     static boolean waitingOnConfig(Throwable e) {
@@ -283,14 +248,12 @@ public class RedisHealthCheck implements LambdaFunction {
     }
 
     /**
-     * The dependency's href - the configured host:port. Lifecycle: {@code probeConfig} is the
-     * supplier itself, assigned final in the constructor, so it always exists by the time any event
-     * arrives (the platform registers the route only after construction) - what starts out null is
-     * the RESOLVED config in {@code currentConfig}, because nothing is resolved at {@code @PreLoad}
-     * time by design. A {@code type=info} call that arrives before the first probe therefore
-     * resolves on demand (the supplier's first invocation) and caches the answer; every probe that
-     * builds a client overwrites the cache with its own fresh resolve. Host and port do not depend
-     * on a late credential, so one resolve serves every info call between rebuilds.
+     * The dependency's href — the configured host:port. {@code probeConfig} is assigned final in the
+     * constructor, so it always exists by the time any event arrives; what starts out null is the RESOLVED
+     * config in {@code currentConfig}, because nothing is resolved at {@code @PreLoad} time by design. A
+     * {@code type=info} call that arrives before the first probe therefore resolves on demand and caches the
+     * answer; every probe that builds a client overwrites the cache. Host and port do not depend on a late
+     * credential, so one resolve serves every info call between rebuilds.
      */
     private String href() {
         RedisConfig config = currentConfig.get();
@@ -301,7 +264,7 @@ public class RedisHealthCheck implements LambdaFunction {
         return config.host() + ":" + config.port();
     }
 
-    /** The most specific reason - Lettuce wraps connect failures in generic outer exceptions. */
+    /** The most specific reason — Lettuce wraps connect failures in generic outer exceptions. */
     private static String rootCause(Throwable e) {
         Throwable t = e;
         while (t.getCause() != null) {

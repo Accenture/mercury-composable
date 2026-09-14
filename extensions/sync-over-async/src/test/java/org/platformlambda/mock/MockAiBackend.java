@@ -21,7 +21,7 @@ package org.platformlambda.mock;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.util.AppConfigReader;
-import org.platformlambda.support.RedisConfig;
+import org.platformlambda.redis.RedisConfig;
 import org.platformlambda.sync.StreamResponder;
 import org.platformlambda.sync.StreamSegment;
 import org.platformlambda.sync.SyncRuntime;

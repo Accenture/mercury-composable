@@ -16,13 +16,11 @@
 
  */
 
-package org.platformlambda.sync;
+package org.platformlambda.redis;
 
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.util.Utility;
-import org.platformlambda.support.RedisConfig;
-import org.platformlambda.support.RedisHealthCheck;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -30,11 +28,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The health contract against a real (embedded) Redis server: info, live probe, placeholder
- * during the start-up grace, outage failure - and the self-healing path where an unusable
- * configuration completes while the application is running.
+ * The health contract against a real (embedded) Redis server: info, live probe, placeholder during the
+ * start-up grace, outage failure — and the self-healing path where an unusable configuration completes
+ * while the application is running. Exercises {@link RedisHealthProbe} directly (the reusable base); each
+ * module's {@code @PreLoad} subclass merely fixes the route and config prefix.
  */
-class RedisHealthCheckTest extends RedisTestBase {
+class RedisHealthProbeTest extends RedisTestBase {
 
     private static final Map<String, String> INFO = Map.of("type", "info");
     private static final Map<String, String> HEALTH = Map.of("type", "health");
@@ -47,7 +46,7 @@ class RedisHealthCheckTest extends RedisTestBase {
     @SuppressWarnings("unchecked")
     @Test
     void infoDescribesTheRedisDependency() {
-        var health = new RedisHealthCheck(RedisHealthCheckTest::serverConfig, TIMEOUT_MS, 0);
+        var health = new RedisHealthProbe(RedisHealthProbeTest::serverConfig, TIMEOUT_MS, 0);
         var result = health.handleEvent(INFO, null, 1);
         assertInstanceOf(Map.class, result);
         Map<String, Object> map = (Map<String, Object>) result;
@@ -58,7 +57,7 @@ class RedisHealthCheckTest extends RedisTestBase {
     @SuppressWarnings("unchecked")
     @Test
     void probesImmediatelyWhenGraceExpired() {
-        var health = new RedisHealthCheck(RedisHealthCheckTest::serverConfig, TIMEOUT_MS, 0);
+        var health = new RedisHealthProbe(RedisHealthProbeTest::serverConfig, TIMEOUT_MS, 0);
         Map<String, Object> result = (Map<String, Object>) health.handleEvent(HEALTH, null, 1);
         assertEquals("Redis is reachable", result.get("status"));
         assertEquals("127.0.0.1:" + redisPort, result.get("href"));
@@ -67,7 +66,7 @@ class RedisHealthCheckTest extends RedisTestBase {
     @SuppressWarnings("unchecked")
     @Test
     void startupReturnsPlaceholderThenLiveStatus() {
-        var health = new RedisHealthCheck(RedisHealthCheckTest::serverConfig, TIMEOUT_MS, 60000);
+        var health = new RedisHealthProbe(RedisHealthProbeTest::serverConfig, TIMEOUT_MS, 60000);
         // within the grace period, the first check is a placeholder healthy status - the Redis
         // client warms up in the background so /health never blocks during app start-up
         var first = health.handleEvent(HEALTH, null, 1);
@@ -95,7 +94,7 @@ class RedisHealthCheckTest extends RedisTestBase {
         // unusable at first (the client cannot be built), then completes while the app is running
         AtomicReference<RedisConfig> config = new AtomicReference<>(
                 new RedisConfig("127.0.0.1", -1, "", false, 0, TIMEOUT_MS));
-        var health = new RedisHealthCheck(config::get, TIMEOUT_MS, 0);
+        var health = new RedisHealthProbe(config::get, TIMEOUT_MS, 0);
         Map<String, Object> waiting = (Map<String, Object>) health.handleEvent(HEALTH, null, 1);
         assertEquals("Waiting for Redis connection", waiting.get("status"));
         // the bootstrap publishes the missing values - the next probe re-resolves and goes live,
@@ -110,7 +109,7 @@ class RedisHealthCheckTest extends RedisTestBase {
     @Test
     void unreachableRedisFailsTheHealthCheck() {
         // closed port = fast connection-refused failure: a genuine outage, not a waiting condition
-        var health = new RedisHealthCheck(
+        var health = new RedisHealthProbe(
                 () -> new RedisConfig("127.0.0.1", 1, "", false, 0, TIMEOUT_MS), TIMEOUT_MS, 0);
         Object result = health.handleEvent(HEALTH, null, 1);
         // an outage is a 503 response carrying a key-value map - the status code for the health
@@ -125,7 +124,7 @@ class RedisHealthCheckTest extends RedisTestBase {
 
     @Test
     void invalidTypeIsRejected() {
-        var health = new RedisHealthCheck(RedisHealthCheckTest::serverConfig, TIMEOUT_MS, 0);
+        var health = new RedisHealthProbe(RedisHealthProbeTest::serverConfig, TIMEOUT_MS, 0);
         Map<String, String> badType = Map.of("type", "unknown");
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> health.handleEvent(badType, null, 1));

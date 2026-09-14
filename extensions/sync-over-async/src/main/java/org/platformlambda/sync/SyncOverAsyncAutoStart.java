@@ -23,9 +23,9 @@ import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
-import org.platformlambda.support.RedisBackend;
-import org.platformlambda.support.RedisBackendFactory;
-import org.platformlambda.support.RedisConfig;
+import org.platformlambda.redis.RedisBackend;
+import org.platformlambda.redis.RedisBackendFactory;
+import org.platformlambda.redis.RedisConfig;
 import org.platformlambda.support.SyncOverAsyncConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +56,7 @@ public class SyncOverAsyncAutoStart implements EntryPoint {
         SyncOverAsyncConfig syncConfig = SyncOverAsyncConfig.from(config);
         String originId = Platform.getInstance().getOrigin();
 
-        RedisBackend backend = RedisBackendFactory.create(redisConfig);
+        RedisBackend<String> backend = RedisBackendFactory.create(redisConfig);
         ReturnRouteCoordinator coordinator = new ReturnRouteCoordinator(backend, originId, syncConfig);
         coordinator.start();
         SyncRuntime.set(coordinator, backend);

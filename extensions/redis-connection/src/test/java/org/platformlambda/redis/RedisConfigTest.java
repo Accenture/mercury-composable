@@ -16,7 +16,7 @@
 
  */
 
-package org.platformlambda.support;
+package org.platformlambda.redis;
 
 import io.lettuce.core.RedisURI;
 import org.junit.jupiter.api.Test;
@@ -135,6 +135,33 @@ class RedisConfigTest {
                 "soa.redis.password", "soa-secret")));
         assertEquals("soa-host", config.host());
         assertEquals("soa-secret", config.password());
+    }
+
+    @Test
+    void basePrefixReadsPlainRedisKeys() {
+        // the distributed cache uses from(config, BASE_PREFIX): the plain redis.* namespace, read directly
+        // (the prefixed and fallback keys coincide when the prefix is already "redis.")
+        RedisConfig cache = RedisConfig.from(new MapConfig(Map.of(
+                "redis.host", "cache-host",
+                "redis.port", "6395",
+                "redis.password", "cache-secret",
+                "redis.cluster.detect", "off",
+                "redis.cluster.mode", "true")), RedisConfig.BASE_PREFIX);
+        assertEquals("cache-host", cache.host());
+        assertEquals(6395, cache.port());
+        assertEquals("cache-secret", cache.password());
+        assertFalse(cache.autoDetectCluster());
+        assertTrue(cache.clusterEnabled());
+    }
+
+    @Test
+    void explicitPrefixIsIsolatedFromTheOtherNamespace() {
+        // a cache reading BASE_PREFIX must not pick up a co-resident soa.redis.* value, and vice versa
+        MapConfig both = new MapConfig(Map.of(
+                "soa.redis.host", "soa-host",
+                "redis.host", "cache-host"));
+        assertEquals("cache-host", RedisConfig.from(both, RedisConfig.BASE_PREFIX).host());
+        assertEquals("soa-host", RedisConfig.from(both, RedisConfig.SOA_PREFIX).host());
     }
 
     @Test

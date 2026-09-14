@@ -19,9 +19,9 @@
 package org.platformlambda.sync;
 
 import io.lettuce.core.cluster.api.sync.RedisClusterCommands;
-import org.platformlambda.support.RedisBackend;
-import org.platformlambda.support.RedisBackendFactory;
-import org.platformlambda.support.RedisConfig;
+import org.platformlambda.redis.RedisBackend;
+import org.platformlambda.redis.RedisBackendFactory;
+import org.platformlambda.redis.RedisConfig;
 
 /**
  * The segment-producer side of the streaming return route: a backend service posts progressive events
@@ -61,7 +61,7 @@ public class StreamResponder implements AutoCloseable {
     /** Default queue TTL - matches the {@code sync.stream.ttl.seconds} default on the consumer side. */
     public static final long DEFAULT_TTL_SECONDS = 1800;
 
-    private final RedisBackend backend;
+    private final RedisBackend<String> backend;
     private final RedisClusterCommands<String, String> commands;
     private final ReturnRouteStore store;
     private final long ttlSeconds;

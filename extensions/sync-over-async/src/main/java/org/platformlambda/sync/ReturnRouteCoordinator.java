@@ -20,10 +20,11 @@ package org.platformlambda.sync;
 
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.cluster.api.sync.RedisClusterCommands;
+import io.lettuce.core.codec.StringCodec;
 import io.lettuce.core.pubsub.RedisPubSubAdapter;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
-import org.platformlambda.support.RedisBackend;
-import org.platformlambda.support.StandaloneRedisBackend;
+import org.platformlambda.redis.RedisBackend;
+import org.platformlambda.redis.StandaloneRedisBackend;
 import org.platformlambda.support.SyncOverAsyncConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +59,7 @@ import java.util.function.Consumer;
 public class ReturnRouteCoordinator implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(ReturnRouteCoordinator.class);
 
-    private final RedisBackend backend;
+    private final RedisBackend<String> backend;
     private final boolean ownsBackend;
     private final RedisClusterCommands<String, String> commands;
     private final SyncOverAsyncConfig config;
@@ -73,7 +74,7 @@ public class ReturnRouteCoordinator implements AutoCloseable {
      * @param backend the standalone-or-cluster Redis seam; its lifecycle is owned by the caller (typically
      *                {@code SyncRuntime}), so this coordinator uses it but does not close it.
      */
-    public ReturnRouteCoordinator(RedisBackend backend, String originId, SyncOverAsyncConfig config) {
+    public ReturnRouteCoordinator(RedisBackend<String> backend, String originId, SyncOverAsyncConfig config) {
         this(backend, false, originId, config);
     }
 
@@ -82,10 +83,10 @@ public class ReturnRouteCoordinator implements AutoCloseable {
      * non-owning backend that this coordinator closes on {@link #close()}, leaving the shared client alone.
      */
     public ReturnRouteCoordinator(RedisClient client, String originId, SyncOverAsyncConfig config) {
-        this(new StandaloneRedisBackend(client, false), true, originId, config);
+        this(new StandaloneRedisBackend<>(client, StringCodec.UTF8, false), true, originId, config);
     }
 
-    private ReturnRouteCoordinator(RedisBackend backend, boolean ownsBackend, String originId,
+    private ReturnRouteCoordinator(RedisBackend<String> backend, boolean ownsBackend, String originId,
                                    SyncOverAsyncConfig config) {
         this.backend = backend;
         this.ownsBackend = ownsBackend;
