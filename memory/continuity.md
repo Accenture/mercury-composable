@@ -171,7 +171,7 @@
   `withAuthentication(RedisCredentialsProvider)` is the future seam if rotating IAM tokens are ever
   needed. Rust parity for cluster (cluster-client option + the same DEL split) is a parked
   follow-up, NOT a break. Extends [[soa-transport-neutral-cid]].
-  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-14 | uses: 3 | tier: active | origin: 2026-09-14-181948 -->
+  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-14 | uses: 5 | tier: active | origin: 2026-09-14-181948 -->
 
 - **The distributed cache is a SEPARATE module — sync-over-async stays small (Eric, 2026-09-14).**
   sync-over-async is a *rendezvous transport* (correlation-id `request:`/`queue:` keys,
@@ -187,9 +187,13 @@
   consumption patterns are both just "a composable function." Its home was already anticipated:
   the `redis.health` route name is reserved for it (sync-over-async's is `soa.redis.health`).
   Cluster note: Lettuce's cluster client scatter-gathers a cross-slot `MGET` for free. Keeps the
-  lean-module vision and is a chance to converge a field L2 cache library. Builds on
-  [[soa-redis-cluster-support]]; serves [[vision-mercury-composable]].
-  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-14 | uses: 1 | tier: working | origin: 2026-09-14-191748 -->
+  lean-module vision and is a chance to converge a field L2 cache library. **Ruled Q1–Q8 (Eric,
+  2026-09-14):** op set adds `MPUT` (pipelined per-entry `SETEX`, NOT `MSET` — MSET has no TTL) +
+  list push/pop/length; extract a shared `redis-connection` foundation; opaque `byte[]`; app
+  key-prefix; typed helper deferred; **Rust lockstep**. Spec finalized
+  (draft-design-specs/distributed-cache.md); [[ot-distributed-cache]] tracks implementation
+  (gated behind v4.12.9). Builds on [[soa-redis-cluster-support]]; serves [[vision-mercury-composable]].
+  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-14 | uses: 3 | tier: active | origin: 2026-09-14-191748 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
@@ -202,7 +206,7 @@
   Rust repo — both engines share the WS handshake. Dev-only, like the Playground itself.
   Reactivated 2026-09-14: now ALSO shipped in `templates/starter-graph` (both repos), and the AI
   docs are broker-first with the keep-alive failure mode named (mercury-composable#383, mercury#276).
-  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-14 | uses: 6 | tier: active | origin: 2026-09-03-172753 -->
+  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-14 | uses: 7 | tier: active | origin: 2026-09-03-172753 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -293,7 +297,7 @@
   examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-14 | uses: 12 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-14 | uses: 12 | tier: archive-candidate | origin: 2026-09-01-022524 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
