@@ -413,7 +413,7 @@ class StreamReturnRouteTest extends RedisTestBase {
         uiPod.beginStream(streamCid, sink);
         try (StreamResponder responder = new StreamResponder(responderConfig())) {
             assertTrue(responder.post(streamCid, StreamSegment.DATA, null, "progress 50%"));
-            // the one-shot route survives until awaitResponse cleans it up (sound to assert);
+            // the one-shot route survives until awaitResponse cleans it up (sound to assert).
             // the stream's terminal post can be consumed by the drain the line above woke, so it
             // does not assert liveness - see postTerminal
             assertTrue(responder.post(oneShotCid, StreamSegment.EOF, null, "{\"status\":\"200\"}"));

@@ -142,8 +142,8 @@ class RedisConfigTest {
         List<RedisURI> seeds = new RedisConfig("ignored", 6379, "", "", true, 0, 2000,
                 false, true, "node-a:7000, node-b:7001").seedUris();
         assertEquals(2, seeds.size());
-        assertEquals("node-a", seeds.get(0).getHost());
-        assertEquals(7000, seeds.get(0).getPort());
+        assertEquals("node-a", seeds.getFirst().getHost());
+        assertEquals(7000, seeds.getFirst().getPort());
         assertEquals("node-b", seeds.get(1).getHost());
         assertEquals(7001, seeds.get(1).getPort());
         // TLS carries onto every seed; a cluster is database 0 (no index applied)
@@ -155,7 +155,7 @@ class RedisConfigTest {
         List<RedisURI> seeds = new RedisConfig("config-endpoint", 6380, "", "", false, 0, 2000,
                 false, true, "").seedUris();
         assertEquals(1, seeds.size());
-        assertEquals("config-endpoint", seeds.get(0).getHost());
-        assertEquals(6380, seeds.get(0).getPort());
+        assertEquals("config-endpoint", seeds.getFirst().getHost());
+        assertEquals(6380, seeds.getFirst().getPort());
     }
 }

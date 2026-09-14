@@ -29,7 +29,7 @@ import org.platformlambda.core.util.common.ConfigBase;
  * @param routeTtlSeconds     TTL for a one-shot {@code request:{cid}} route (should cover REST timeout + buffer)
  * @param responseTtlSeconds  TTL for a one-shot rendezvous queue (short rendezvous window)
  * @param maxPendingRequests  per-pod ceiling on in-flight synchronous requests
- * @param streamTtlSeconds    TTL for a streaming rendezvous's route and queue, refreshed on every post -
+ * @param streamTtlSeconds    TTL for a streaming rendezvous route and queue, refreshed on every post -
  *                            session-scale (an SSE notification channel legitimately idles), the crash
  *                            safety net behind the eager deletes
  * @param maxPendingStreams   per-pod ceiling on concurrently open streams
