@@ -31,7 +31,9 @@
   synthesis; lock-step Rust v4.12.7, seven crates on crates.io). The live version source
   stays the root pom.xml.)
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-12 | through 2026-09-12-234401.md
+- **last_review:** 2026-09-14 | through 2026-09-14-193941.md (reactivated playground-session-broker;
+  archived compilegraph-mandatory-gate + swept 4 completed threads; refresh-metadata re-tiered 6; kept
+  conv-template-version-sweep for the imminent v4.12.9. Prior: 2026-09-12 | 2026-09-12-234401.md)
 - **last_invariant_check:** 2026-09-11 | 2026-09-11-005808.md (all 18 core facts + the Vision
   confirmed by Eric — walkthrough with live-tree evidence; no supersessions;
   stack-build-maven reworded (reactor stays Maven; consumer templates ship Maven-or-Gradle)
@@ -98,20 +100,6 @@
 
 ## Key Decisions
 
-- **CompileGraph is the MANDATORY deployment gate for graph models — CompileFlows parity
-  (Eric's rulings 2026-07-29; ADR-0011 ACCEPTED via the PR #240 merge, squash `4348b0da`).**
-  A deployed graph is executable at `POST /api/graph/{graph-id}` only when listed in the manifest
-  (`graph.model.automation`) AND passing the gate; failed or unlisted = HTTP-404 as if nonexistent
-  ("compiled or 404" is the whole rule; lazy per-request loading DELETED). The manifest carries its
-  own `location` (default `classpath:/graph`); `location.graph.deployed` retired. **Two-lane
-  validation:** production = models → CompileGraph → GraphExecutor (trusts the gate, keeps only
-  data-driven guards); dry-run = /tmp/graph drafts → UI CLI validation → GraphTraveler with FULL
-  runtime validation. Whole-graph rules modularized in `GraphModelValidator`, reused by the
-  playground `run` pre-run check — also the landing pad for
-  [[thread-compilegraph-syntax-validation]]. Hot-dropping JSON into the deploy folder no longer
-  executes (deployment = explicit act). Full detail: origin log.
-  <!-- id: compilegraph-mandatory-gate | created: 2026-07-29 | last_used: 2026-09-11 | uses: 19 | tier: archive-candidate | origin: 2026-07-29-190328 -->
-
 - **@PreLoad functions are constructed BEFORE @MainApplication runs — never freeze late-arriving
   config in a @PreLoad constructor (2026-09-11, upstreamed field MR + Eric's ruling).** AppStarter's
   order is BeforeApplication → preload() → MainApplication, so a constructor-resolved template that
@@ -131,7 +119,7 @@
   [[kafka-clients-kernel-threads]]), AtomicReference fields, supplier guards, and the failure
   message as a `{text, code}` map — `code` for the aggregation/Kubernetes, `text` for the DevOps
   reader (the healthy shape keeps `status` as its human string).
-  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-12 | uses: 5 | tier: active | origin: 2026-09-11-185752 -->
+  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-14 | uses: 9 | tier: active | origin: 2026-09-11-185752 -->
 
 - **Kafka-driving functions run on kernel threads — `@KernelThreadRunner` (2026-09-11, Eric's
   question → PR #362).** The Kafka consumer performs network I/O on the CALLING thread inside
@@ -143,7 +131,7 @@
   the counter-case: Lettuce does I/O on its own netty threads and callers only await futures, so
   `soa.redis.health` deliberately stays on virtual threads. KafkaConsumer itself is NOT thread-safe;
   sequential multi-thread access under external sync (the checks' ReentrantLock) is its contract.
-  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-12 | uses: 1 | tier: archive-candidate | origin: 2026-09-11-191200 -->
+  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-13 | uses: 3 | tier: archive-candidate | origin: 2026-09-11-191200 -->
 
 - **sync-over-async is transport-neutral — its correlation-id key is self-contained (Eric's direction,
   2026-09-12; PR #364, squash `628a1778`).** The facade tasks speak only the module's own flow-level `cid` key (`SyncRuntime.CID`);
@@ -154,7 +142,7 @@
   backbone; applications compose the facade with their own Kafka library (the demo shows the shape).
   Consumer note for the next release: apps that leaned on the transitive minimalist-kafka must now
   declare it. Extends [[functions-decoupled-routes]] to the dependency graph.
-  <!-- id: soa-transport-neutral-cid | created: 2026-09-12 | last_used: 2026-09-12 | uses: 7 | tier: active | origin: 2026-09-12-011438 -->
+  <!-- id: soa-transport-neutral-cid | created: 2026-09-12 | last_used: 2026-09-14 | uses: 9 | tier: active | origin: 2026-09-12-011438 -->
 
 - **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
   `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
@@ -183,7 +171,7 @@
   `withAuthentication(RedisCredentialsProvider)` is the future seam if rotating IAM tokens are ever
   needed. Rust parity for cluster (cluster-client option + the same DEL split) is a parked
   follow-up, NOT a break. Extends [[soa-transport-neutral-cid]].
-  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-14 | uses: 2 | tier: working | origin: 2026-09-14-181948 -->
+  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-14 | uses: 3 | tier: active | origin: 2026-09-14-181948 -->
 
 - **The distributed cache is a SEPARATE module — sync-over-async stays small (Eric, 2026-09-14).**
   sync-over-async is a *rendezvous transport* (correlation-id `request:`/`queue:` keys,
@@ -201,7 +189,20 @@
   Cluster note: Lettuce's cluster client scatter-gathers a cross-slot `MGET` for free. Keeps the
   lean-module vision and is a chance to converge a field L2 cache library. Builds on
   [[soa-redis-cluster-support]]; serves [[vision-mercury-composable]].
-  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-14 | uses: 1 | tier: working | origin: 2026-09-14-192700 -->
+  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-14 | uses: 1 | tier: working | origin: 2026-09-14-191748 -->
+
+- **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
+  design, contributed from ai-enabled-repo-demo).**
+  `examples/minigraph-playground/scripts/playground-session-broker.mjs` (zero-dependency,
+  Node ≥ 22) holds a `/ws/graph/playground` session with the UI's own welcome/ping handshake,
+  auto-reconnects across app restarts (new session id captured), and exposes a localhost control
+  API (`GET /session`, `POST /start|/stop`). Humans join with `session subscribe <id>` as equal
+  co-authors (session sync is symmetric — all commands except `session` topology propagate to
+  primary and subscribers alike); the agent drives via companion `/sync`. Identical copy in the
+  Rust repo — both engines share the WS handshake. Dev-only, like the Playground itself.
+  Reactivated 2026-09-14: now ALSO shipped in `templates/starter-graph` (both repos), and the AI
+  docs are broker-first with the keep-alive failure mode named (mercury-composable#383, mercury#276).
+  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-14 | uses: 6 | tier: active | origin: 2026-09-03-172753 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -283,7 +284,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-12 | uses: 28 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-14 | uses: 40 | tier: active | origin: 2026-08-19-195244 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
@@ -292,7 +293,7 @@
   examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-12 | uses: 11 | tier: archive-candidate | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-14 | uses: 12 | tier: active | origin: 2026-09-01-022524 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -330,7 +331,7 @@
   library. Verify either arm with a reactor-wide `mvn dependency:tree -Dincludes=...` —
   per-module trees mislead by resolving stale ~/.m2 siblings. Each pin's/exclusion's
   comment names the CVE and the removal condition.
-  <!-- id: conv-kafka-transitive-pin-placement | created: 2026-09-14 | last_used: 2026-09-14 | uses: 1 | tier: working | origin: 2026-09-14-050451 -->
+  <!-- id: conv-kafka-transitive-pin-placement | created: 2026-09-14 | last_used: 2026-09-14 | uses: 2 | tier: active | origin: 2026-09-14-050451 -->
 - **Declare a Memory Reference when a fact is CONSULTED to make a decision — not only when it is
   edited (Eric agreed, 2026-09-04).** A session log's `## Memory References` is the sole input to
   `refresh-metadata`, so an undeclared consultation reads as non-use and decays the fact. This is
@@ -365,7 +366,7 @@
   driving that bridge from an LLM node INSIDE a live graph run. Next: E1 (suspend
   checkpoint on an LLM verdict), the in-graph-run streaming drive.
   → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-12 | uses: 13 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-13 | uses: 14 | tier: working | origin: 2026-08-25-213703 -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
   <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->

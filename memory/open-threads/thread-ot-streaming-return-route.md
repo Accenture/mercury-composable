@@ -10,4 +10,4 @@
   FORWARDERS too — an ordered reply consumer must be a single-instance route, the same
   reason the HTTP edge's reply lanes are. Full narrative: origin + logs 2026-09-12-032830 /
   -044817 / -192109 / -213254 / -220504 / -230025.
-  <!-- id: ot-streaming-return-route | created: 2026-09-12 | last_used: 2026-09-12 | uses: 7 | tier: active | origin: 2026-09-12-021649 -->
+  <!-- id: ot-streaming-return-route | created: 2026-09-12 | last_used: 2026-09-13 | uses: 9 | tier: archive-candidate | origin: 2026-09-12-021649 -->

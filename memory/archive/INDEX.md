@@ -155,7 +155,6 @@
 - ot-json-plugin — `json` simple plugin — land the PR pair (Java + Rust lock-step). DONE 2026-09-02: — faded (completed threads past archive_window: sslu 30, 28, 32 > 20) — 2026-Q3.md
 - thread-polyglot-initiative — (feature — INITIATIVE COMPLETE 2026-09-01: P1–P5 all done. P5 publication: — faded (completed threads past archive_window: sslu 30, 28, 32 > 20) — 2026-Q3.md
 - polyglot-event-over-http-design — Polyglot functions = Event-over-HTTP wrappers, NOT subprocesses (Eric's design; D0–D8 — faded — not referenced in over archive_window (20) sessions (sslu 31) — 2026-Q3.md
-- playground-session-broker — Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's — faded — not referenced in over archive_window (20) sessions (sslu 31) — 2026-Q3.md
 - conv-no-streamable-http-claim — Positioning rule: do NOT claim the "Streamable HTTP" protocol until an MCP — faded — not referenced in over archive_window (20) sessions (sslu 31) — 2026-Q3.md
 - ot-reverify-invariants-20260904 — (invariant re-verification — DONE 2026-09-04) All 15 never-decay facts re-confirmed by — completed thread past archive_window (sslu 34); invariants all confirmed 2026-09-04 — 2026-Q3.md
 - jackson-dual-lane-coexistence — Jackson runs as two coexisting lanes (established at the 2026-09-04 field Snyk — faded — 2026-Q3.md
@@ -163,3 +162,8 @@
 - graphjs-phase-out-direction — graph.js is FORMALLY DEPRECATED (Eric, 2026-09-02; ADR-0022) — backward compatibility — faded — 2026-Q3.md
 - bp-polyglot-functions — (blueprint) Polyglot function execution — GAP CLOSED (Eric, 2026-09-07). python/node — faded — 2026-Q3.md
 - ot-agent-memory-attribution-locators — (docs) agent-memory locators — DONE 2026-09-10. agent-memory joined the Mercury family — completed; swept after archive_window (21 sessions since last use) — 2026-Q3.md
+- compilegraph-mandatory-gate — CompileGraph is the MANDATORY deployment gate for graph models — CompileFlows parity — faded — 2026-Q3.md
+- ot-reverify-invariants-20260911 — Re-verify invariants — CONFIRMED (Eric, 2026-09-11). All 18 core facts + the — faded — 2026-Q3.md
+- ot-simple-plugin-gate-body-scan — Simple-plugin allowlist gate: method bodies scanned — SHIPPED. PR #358 (squash — faded — 2026-Q3.md
+- ot-three-layer-starter-templates — First-class starter templates for the three layers — SHIPPED. Java PR #357 — faded — 2026-Q3.md
+- thread-add-gradle-build — Add Gradle build support — COMPLETE (Eric's ruling, 2026-09-11). Delivered on the — faded — 2026-Q3.md
