@@ -82,6 +82,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    1.5.7-16. Remove the pins when kafka-clients ships zstd-jni ≥ 1.5.7-14. (The Rust
    port is not exposed: its Kafka client builds without the zstd codec.)
 
+2. **CVE-2026-90559 / SNYK-JAVA-ORGXERIALSNAPPY-19778376** (CWE-787 out-of-bounds write
+   in `Snappy.uncompress(ByteBuffer, ByteBuffer)` — destination buffer capacity is never
+   validated against the decompressed size; CVSS 8.7, no known exploit): `kafka-clients`
+   pulls `org.xerial.snappy:snappy-java` 1.1.10.7 transitively, and NVD records every
+   version **through 1.1.10.8 — the newest release (2025-07-19)** as affected, so unlike
+   the zstd-jni finding there is nothing to pin to. The snappy codec is **excluded**
+   instead at all six Kafka artifact declaration sites (kafka-connector,
+   minimalist-kafka's client and embedded test broker, twin-kafka, sync-over-async,
+   kafka-standalone) — extending the same opt-in codec contract as lz4: no framework
+   module enables Kafka compression, codecs load lazily and the producer default is
+   `none`. An application that produces or consumes snappy-compressed records must
+   declare `org.xerial.snappy:snappy-java` itself, as it already must for lz4. Drop the
+   exclusions once a fixed snappy-java is released. (Upstreamed from a field-authored
+   patch. The Rust port does not use snappy-java — librdkafka's snappy support is its
+   own C implementation, a different codebase not covered by this CVE.)
+
 ---
 ## Version 4.12.8, 9/12/2026
 

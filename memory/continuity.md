@@ -262,17 +262,27 @@
   <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-12 | uses: 4 | tier: archive-candidate | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
-- **A transitive CVE in the Kafka stack is remediated by a direct runtime pin in the
-  client-declaring poms — root-pom dependencyManagement cannot do it (2026-09-14, the
-  zstd-jni round).** The Kafka modules parent to `spring-boot-starter-parent`, not
-  `parent-mercury` (the reactor only aggregates them), so a root `dependencyManagement`
-  never reaches their resolution. When the newest kafka-clients still carries a vulnerable
-  transitive (Snyk "no supported fix"), pin the fixed version as a DIRECT dependency
-  (runtime scope, matching the transitive it replaces) in the three client-declaring poms
-  — `system/minimalist-kafka`, `connectors/.../kafka-connector`, `helpers/kafka-standalone`
-  — and Maven nearest-wins propagates it to every downstream consumer (verify with a
-  reactor-wide `mvn dependency:tree -Dincludes=...`; per-module trees mislead by resolving
-  stale ~/.m2 siblings). Each pin's comment names the CVE and the removal condition.
+- **A transitive CVE in the Kafka stack: PIN when a fixed release exists, EXCLUDE the
+  codec when none does — root-pom dependencyManagement can do neither (2026-09-14, the
+  zstd-jni and snappy-java rounds).** The Kafka modules parent to
+  `spring-boot-starter-parent`, not `parent-mercury` (the reactor only aggregates them),
+  so a root `dependencyManagement` never reaches their resolution. **Pin arm (zstd-jni):**
+  when the newest kafka-clients still carries a vulnerable transitive and a fixed release
+  EXISTS (Snyk "no supported fix" = no kafka-clients upgrade), pin the fixed version as a
+  DIRECT dependency (runtime scope, matching the transitive it replaces) in the three
+  client-declaring poms — `system/minimalist-kafka`, `connectors/.../kafka-connector`,
+  `helpers/kafka-standalone` — and Maven nearest-wins propagates it to every downstream
+  consumer. **Exclusion arm (snappy-java, upstreamed from a field-authored patch):** when
+  NO fixed release exists (NVD "through 1.1.10.8" = the newest version), exclude the codec
+  — an exclusion rides only its own declaration edge and never propagates by nearest-wins,
+  so it goes on ALL six direct Kafka-artifact declaration sites, the lz4 exclusion's exact
+  set (kafka-clients in kafka-connector + minimalist-kafka; kafka_2.13 in kafka-standalone
+  + the minimalist-kafka/twin-kafka/sync-over-async test brokers). Safe by the opt-in
+  codec contract: kafka-clients 4.3.1 references org.xerial from exactly one class
+  (SnappyCompression), loaded only when snappy data flows; codec users re-declare the
+  library. Verify either arm with a reactor-wide `mvn dependency:tree -Dincludes=...` —
+  per-module trees mislead by resolving stale ~/.m2 siblings. Each pin's/exclusion's
+  comment names the CVE and the removal condition.
   <!-- id: conv-kafka-transitive-pin-placement | created: 2026-09-14 | last_used: 2026-09-14 | uses: 1 | tier: working | origin: 2026-09-14-050451 -->
 - **Declare a Memory Reference when a fact is CONSULTED to make a decision — not only when it is
   edited (Eric agreed, 2026-09-04).** A session log's `## Memory References` is the sole input to
