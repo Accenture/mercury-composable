@@ -107,6 +107,17 @@
                     <groupId>at.yawk.lz4</groupId>
                     <artifactId>lz4-java</artifactId>
                 </exclusion>
+                <!-- CVE-2026-90559 (out-of-bounds write in Snappy.uncompress(ByteBuffer, ByteBuffer),
+                     CVSS 8.7): NVD records snappy-java as affected "through 1.1.10.8", which is the
+                     NEWEST release (2025-07-19) - there is no version to upgrade to, so the codec is
+                     excluded like lz4 above rather than pinned. Mercury configures no compression.type,
+                     so nothing here produces snappy-compressed records; an application that produces
+                     or consumes snappy-compressed records must declare snappy-java itself. Drop this
+                     exclusion once a fixed snappy-java is released. -->
+                <exclusion>
+                    <groupId>org.xerial.snappy</groupId>
+                    <artifactId>snappy-java</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -211,6 +222,17 @@
                 <exclusion>
                     <groupId>at.yawk.lz4</groupId>
                     <artifactId>lz4-java</artifactId>
+                </exclusion>
+                <!-- CVE-2026-90559 (out-of-bounds write in Snappy.uncompress(ByteBuffer, ByteBuffer),
+                     CVSS 8.7): NVD records snappy-java as affected "through 1.1.10.8", which is the
+                     NEWEST release (2025-07-19) - there is no version to upgrade to, so the codec is
+                     excluded like lz4 above rather than pinned. Mercury configures no compression.type,
+                     so nothing here produces snappy-compressed records; an application that produces
+                     or consumes snappy-compressed records must declare snappy-java itself. Drop this
+                     exclusion once a fixed snappy-java is released. -->
+                <exclusion>
+                    <groupId>org.xerial.snappy</groupId>
+                    <artifactId>snappy-java</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>commons-collections</groupId>
