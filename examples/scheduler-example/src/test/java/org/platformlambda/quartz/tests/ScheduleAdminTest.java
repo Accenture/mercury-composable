@@ -28,6 +28,8 @@ import org.platformlambda.core.util.Utility;
 import org.platformlambda.quartz.common.TestBase;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -120,5 +122,31 @@ class ScheduleAdminTest extends TestBase {
         assertTrue(!state.exists() || state.delete());
         EventEnvelope response = adminRequest("GET", "demo-flow", null);
         assertEquals(400, response.getStatus());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void jobListToleratesAStateFileCaughtMidWrite()
+            throws InterruptedException, ExecutionException, IOException {
+        // Reproduce the concurrent-write race deterministically. The sample resolver's str2file
+        // truncates the state file before writing (not atomic), so a scheduled job's file can be
+        // momentarily empty; an empty file parses to a null map. Before the fix, the list endpoint
+        // NPE'd on that null map and answered 500 (the field CI flake). A 0-byte file is exactly
+        // what that write window exposes.
+        File probe = new File("/tmp/scheduler-states", "race-probe");
+        assertTrue(probe.exists() || probe.createNewFile());
+        try {
+            EventEnvelope response = adminRequest("GET", null, null);
+            assertEquals(200, response.getStatus());
+            var body = (Map<String, Object>) response.getBody();
+            var jobs = (List<Map<String, Object>>) body.get("jobs");
+            var probeEntry = jobs.stream()
+                    .filter(j -> "race-probe".equals(j.get("name")))
+                    .findFirst().orElse(null);
+            assertNotNull(probeEntry, "an empty (mid-write) state file must still be listed, not 500");
+            assertFalse(probeEntry.containsKey("start"), "an unreadable record carries no timing");
+        } finally {
+            assertTrue(!probe.exists() || probe.delete());
+        }
     }
 }
