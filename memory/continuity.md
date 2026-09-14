@@ -119,7 +119,7 @@
   [[kafka-clients-kernel-threads]]), AtomicReference fields, supplier guards, and the failure
   message as a `{text, code}` map — `code` for the aggregation/Kubernetes, `text` for the DevOps
   reader (the healthy shape keeps `status` as its human string).
-  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-14 | uses: 9 | tier: active | origin: 2026-09-11-185752 -->
+  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-14 | uses: 10 | tier: active | origin: 2026-09-11-185752 -->
 
 - **Kafka-driving functions run on kernel threads — `@KernelThreadRunner` (2026-09-11, Eric's
   question → PR #362).** The Kafka consumer performs network I/O on the CALLING thread inside
@@ -131,7 +131,7 @@
   the counter-case: Lettuce does I/O on its own netty threads and callers only await futures, so
   `soa.redis.health` deliberately stays on virtual threads. KafkaConsumer itself is NOT thread-safe;
   sequential multi-thread access under external sync (the checks' ReentrantLock) is its contract.
-  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-13 | uses: 3 | tier: archive-candidate | origin: 2026-09-11-191200 -->
+  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-14 | uses: 4 | tier: active | origin: 2026-09-11-191200 -->
 
 - **sync-over-async is transport-neutral — its correlation-id key is self-contained (Eric's direction,
   2026-09-12; PR #364, squash `628a1778`).** The facade tasks speak only the module's own flow-level `cid` key (`SyncRuntime.CID`);
@@ -171,7 +171,7 @@
   `withAuthentication(RedisCredentialsProvider)` is the future seam if rotating IAM tokens are ever
   needed. Rust parity for cluster (cluster-client option + the same DEL split) is a parked
   follow-up, NOT a break. Extends [[soa-transport-neutral-cid]].
-  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-14 | uses: 5 | tier: active | origin: 2026-09-14-181948 -->
+  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-14 | uses: 6 | tier: active | origin: 2026-09-14-181948 -->
 
 - **The distributed cache is a SEPARATE module — sync-over-async stays small (Eric, 2026-09-14).**
   sync-over-async is a *rendezvous transport* (correlation-id `request:`/`queue:` keys,
@@ -190,10 +190,29 @@
   lean-module vision and is a chance to converge a field L2 cache library. **Ruled Q1–Q8 (Eric,
   2026-09-14):** op set adds `MPUT` (pipelined per-entry `SETEX`, NOT `MSET` — MSET has no TTL) +
   list push/pop/length; extract a shared `redis-connection` foundation; opaque `byte[]`; app
-  key-prefix; typed helper deferred; **Rust lockstep**. Spec finalized
-  (draft-design-specs/distributed-cache.md); [[ot-distributed-cache]] tracks implementation
-  (gated behind v4.12.9). Builds on [[soa-redis-cluster-support]]; serves [[vision-mercury-composable]].
-  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-14 | uses: 3 | tier: active | origin: 2026-09-14-191748 -->
+  key-prefix; typed helper deferred; **Rust lockstep**. **IMPLEMENTED (Java) for v4.12.9** on the
+  extracted [[redis-connection-foundation]] (spec draft-design-specs/distributed-cache.md);
+  [[ot-distributed-cache]] tracks the remaining Rust lockstep. Builds on [[soa-redis-cluster-support]];
+  serves [[vision-mercury-composable]].
+  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-14 | uses: 4 | tier: active | origin: 2026-09-14-191748 -->
+
+- **The Redis client layer is a shared `extensions/redis-connection` foundation (2026-09-14; Java
+  shipped for v4.12.9).** Extracted from sync-over-async's `support/`: `RedisBackend<V>` (generic in the
+  value type — `<String>` for sync-over-async's text payloads, `<byte[]>` for the cache's opaque values;
+  the standalone `RedisCommands<K,V>` and cluster `RedisAdvancedClusterCommands<K,V>` both extend
+  `RedisClusterCommands<K,V>` for ANY V, so generification preserves the one-command-type seam; `async()`
+  added for pipelining), prefix-parameterised `RedisConfig.from(config, prefix)` (`soa.redis.*` or
+  `redis.*`, both falling back to un-prefixed `redis.*`), `RedisBackendFactory`, and `RedisHealthProbe` —
+  the probe logic **de-annotated** (NO `@PreLoad`, else it would auto-register in every consumer under
+  `web.component.scan=org.platformlambda`) and bound per-module by a thin `@PreLoad` subclass
+  (`SoaRedisHealthCheck`→`soa.redis.health`, `CacheRedisHealthCheck`→`redis.health`). Two consumers:
+  sync-over-async (`RedisBackend<String>`, behaviour unchanged) and distributed-cache
+  (`RedisBackend<byte[]>`, `v1.cache.redis`). Pure refactor — no wire/behaviour change; the sole external
+  consumer touched was the demo's `StreamProducer` import. Commits `5b73f311` (refactor) + `bb88e65c`
+  (cache). Realizes the "extract the foundation" half of [[cache-separate-from-soa]]; tracked by
+  [[ot-distributed-cache]]; applied [[preload-before-mainapp-lazy-config]] and
+  [[conv-reentrantlock-not-synchronized]].
+  <!-- id: redis-connection-foundation | created: 2026-09-14 | last_used: 2026-09-14 | uses: 1 | tier: working | origin: 2026-09-14-230259 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
@@ -345,6 +364,16 @@
   is forward-looking. Rule of thumb: if you would have decided differently without the fact, it is
   a reference. Surfaced by the 2026-09-04 smoke test; the two facts it endangered are now `core`.
   <!-- id: conv-declare-consulted-references | created: 2026-09-04 | last_used: 2026-09-04 | uses: 1 | tier: core -->
+
+- **Use `ReentrantLock`, not `synchronized`, for locks/critical sections while the build targets Java 21
+  (Eric's directive, 2026-09-14).** On Java 21 a virtual thread that blocks inside a `synchronized` block
+  PINS its carrier thread; JEP 491 lifts that only in JDK 24+, and the toolchain intentionally stays on 21
+  until the field runs Java 25 ([[stack-language-java21]]). So lazy-init and shared-state guards use a
+  `ReentrantLock` (try/finally) — it does not pin. Precedent: `RedisHealthProbe` (carries the explicit
+  comment) and the return-route coordinator; applied to the distributed cache's `CacheRuntime`. This
+  decays once the toolchain moves to Java 25 (JEP 491 makes `synchronized` non-pinning). Relates
+  [[virtual-threads-rpc]], [[kafka-clients-kernel-threads]]; applied in [[redis-connection-foundation]].
+  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-09-14 | uses: 1 | tier: working | origin: 2026-09-14-230259 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
