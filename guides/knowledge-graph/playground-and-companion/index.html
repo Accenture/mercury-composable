@@ -2874,6 +2874,12 @@ be shared so several people model the same graph together:</p>
 <code>session</code> topology commands propagates to the primary and all subscribers alike, so all parties
 (human or AI) are equal co-authors of one shared model. (You can't subscribe to yourself or to a
 non-primary session; a primary session has nothing to unsubscribe.)</p>
+<p><strong>An AI agent asked to host a session</strong> should run the shipped session broker
+(<code>scripts/playground-session-broker.mjs</code>, in the <code>starter-graph</code> template and the
+<code>minigraph-playground</code> example) rather than hand-roll a WebSocket client — the session contract
+includes a keep-alive (ping every ~20 s) that hand-rolled clients typically miss, and a client
+without it dies silently at the idle timeout. See
+<a href="../ai-agent-guide/#hosting">Hosting the session yourself</a>.</p>
 <h2 id="companion">The companion endpoint<a class="headerlink" href="#companion" title="Permanent link">&para;</a></h2>
 <p>The <strong>companion endpoint</strong> lets an HTTP client — a script, a test harness, or an AI agent —
 dispatch a Playground command into an <strong>already-open</strong> session. The command runs as if typed;

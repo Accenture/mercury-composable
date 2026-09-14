@@ -2936,23 +2936,30 @@ seen by everyone. It is collaboration, not a one-way broadcast.</p>
 agent hosts the session and humans subscribe to it.</strong> If a human's tab drops (backgrounded past
 the idle timeout, laptop lid closed), they simply re-subscribe and the current work-in-progress
 graph syncs back to them — nothing lives in anyone's browser.</p>
-<p>The WebSocket contract a host needs (identical in the Java and Rust engines):</p>
+<p><strong>Use the shipped session broker — do not hand-roll a WebSocket client.</strong> The session contract
+carries a keep-alive obligation, and a hand-rolled client that misses it appears to work, then
+dies silently at the server's idle timeout — typically mid-collaboration. The zero-dependency
+reference broker, <code>scripts/playground-session-broker.mjs</code> (Node ≥ 22), ships in the
+<code>starter-graph</code> template and in the <code>minigraph-playground</code> example. It holds the session, keeps
+it alive with the web UI's own ping cadence, auto-reconnects across app restarts, and exposes a
+localhost control API (<code>GET /session</code>, <code>GET /console</code>, <code>POST /start</code>, <code>POST /stop</code>) so the agent
+reads the session id over HTTP, hands it to the humans (<code>session subscribe {id}</code> in their
+browsers), and keeps driving commands through <code>/sync</code> as usual — the broker owns the session's
+lifecycle, never its commands. See <code>scripts/README.md</code> next to the script, and pass <code>--target</code>
+for your app's port (e.g. <code>--target http://127.0.0.1:8303</code> for the starter template's default).</p>
+<p>For reference, the WebSocket contract the broker implements (identical in the Java and Rust
+engines):</p>
 <ol>
 <li>Connect to <code>ws://{host}/ws/graph/playground</code>.</li>
 <li>On open, send <code>{"type":"welcome"}</code>.</li>
 <li>The server announces the id as a plain-text frame: <code>session ws-NNNNNN-N started</code>.</li>
 <li>Keep-alive: send <code>{"type":"ping","message":"keep alive","time":"..."}</code> on an interval
    (the web UI uses 20 s); the server answers <code>{"type":"pong"}</code>. Filter ping/pong frames from
-   any console you render.</li>
+   any console you render. <strong>Skipping this step is the classic hand-rolled-client failure — the
+   session dies at the idle timeout.</strong></li>
 <li>A restart of the app destroys the session (and any unexported graph — export first);
    reconnect and parse the <strong>new</strong> id.</li>
 </ol>
-<p>You do not need to implement this: the template ships a zero-dependency reference,
-<code>scripts/playground-session-broker.mjs</code> (Node ≥ 22). It holds the session, keeps it alive,
-auto-reconnects across app restarts, and exposes a localhost control API (<code>GET /session</code>,
-<code>GET /console</code>, <code>POST /start</code>, <code>POST /stop</code>) so the agent reads the session id over HTTP, hands
-it to the humans (<code>session subscribe {id}</code> in their browsers), and keeps driving commands
-through <code>/sync</code> as usual. See <code>scripts/README.md</code> in the template.</p>
 <h2 id="deterministic">Generate deterministically<a class="headerlink" href="#deterministic" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>Use the grammar as source of truth</strong> — <a href="../command-reference/"><code>command-reference.md</code></a> for the
