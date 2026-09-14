@@ -23,7 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.util.Utility;
-import org.platformlambda.support.RedisConfig;
+import org.platformlambda.redis.RedisConfig;
 import org.platformlambda.support.SyncOverAsyncConfig;
 
 import java.util.ArrayList;

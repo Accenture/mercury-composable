@@ -1,8 +1,9 @@
 # Distributed cache — a generic Redis-backed L2 cache module — design spec
 
-**Status:** DESIGN RULED — Q1–Q8 answered by Eric 2026-09-14 (§8); implementation gated behind the
-v4.12.9 release. Drafted 2026-09-14 after a field installation asked whether the sync-over-async
-module is "generic enough" to also cover distributed-cache use cases.
+**Status:** IMPLEMENTED (Java) — Q1–Q8 ruled by Eric 2026-09-14 (§8); shipped for v4.12.9 as
+`extensions/distributed-cache` (route `v1.cache.redis`) on the extracted `extensions/redis-connection`
+foundation. The Rust port follows in lockstep (Q8). Drafted 2026-09-14 after a field installation asked
+whether the sync-over-async module is "generic enough" to also cover distributed-cache use cases.
 
 **Ruled shape (Eric, 2026-09-14):** module `extensions/distributed-cache`, route **`v1.cache.redis`**;
 the Redis client layer is **extracted to a shared foundation** both modules depend on (Q2); values are

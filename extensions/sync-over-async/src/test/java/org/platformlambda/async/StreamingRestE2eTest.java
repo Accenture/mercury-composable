@@ -32,7 +32,7 @@ import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.mock.MockAiBackend;
 import org.platformlambda.mock.NotificationStreamFacade;
-import org.platformlambda.support.RedisConfig;
+import org.platformlambda.redis.RedisConfig;
 import org.platformlambda.sync.RedisTestBase;
 import org.platformlambda.sync.ReturnRouteStore;
 import org.platformlambda.sync.StreamResponder;

@@ -16,46 +16,58 @@
 
  */
 
-package org.platformlambda.support;
+package org.platformlambda.redis;
 
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.cluster.api.async.RedisClusterAsyncCommands;
 import io.lettuce.core.cluster.api.sync.RedisClusterCommands;
+import io.lettuce.core.codec.RedisCodec;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
 
 /**
- * {@link RedisBackend} over a single-node {@link RedisClient} - the original topology. {@code commands()}
- * returns the connection's {@code RedisCommands}, which <em>is a</em> {@link RedisClusterCommands}.
+ * {@link RedisBackend} over a single-node {@link RedisClient} — the original topology. {@code commands()}
+ * returns the connection's {@code RedisCommands}, which <em>is a</em> {@link RedisClusterCommands}; likewise
+ * {@code async()} returns its {@code RedisAsyncCommands}, which <em>is a</em> {@link RedisClusterAsyncCommands}.
+ * The connection (and every pub/sub connection) is opened with the supplied {@link RedisCodec}, so the value
+ * type is whatever the codec encodes ({@code String} or opaque {@code byte[]}).
  *
  * <p>{@code ownsClient} governs {@link #close()}: a backend built by {@link RedisBackendFactory} owns the
  * client it created and shuts it down on close; a backend wrapping a client owned by someone else (a test
  * sharing one client across pods) closes only its own command connection and leaves the client alone.
  */
-public class StandaloneRedisBackend implements RedisBackend {
+public class StandaloneRedisBackend<V> implements RedisBackend<V> {
 
     private final RedisClient client;
-    private final StatefulRedisConnection<String, String> connection;
+    private final RedisCodec<String, V> codec;
+    private final StatefulRedisConnection<String, V> connection;
     private final boolean ownsClient;
 
     /** Own the client (the factory path): {@link #close()} shuts it down. */
-    public StandaloneRedisBackend(RedisClient client) {
-        this(client, true);
+    public StandaloneRedisBackend(RedisClient client, RedisCodec<String, V> codec) {
+        this(client, codec, true);
     }
 
-    public StandaloneRedisBackend(RedisClient client, boolean ownsClient) {
+    public StandaloneRedisBackend(RedisClient client, RedisCodec<String, V> codec, boolean ownsClient) {
         this.client = client;
-        this.connection = client.connect();
+        this.codec = codec;
+        this.connection = client.connect(codec);
         this.ownsClient = ownsClient;
     }
 
     @Override
-    public RedisClusterCommands<String, String> commands() {
+    public RedisClusterCommands<String, V> commands() {
         return connection.sync();
     }
 
     @Override
-    public StatefulRedisPubSubConnection<String, String> openPubSub() {
-        return client.connectPubSub();
+    public RedisClusterAsyncCommands<String, V> async() {
+        return connection.async();
+    }
+
+    @Override
+    public StatefulRedisPubSubConnection<String, V> openPubSub() {
+        return client.connectPubSub(codec);
     }
 
     @Override

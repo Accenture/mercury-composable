@@ -27,7 +27,7 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.AppConfigReader;
-import org.platformlambda.support.RedisConfig;
+import org.platformlambda.redis.RedisConfig;
 import org.platformlambda.sync.ReturnRouteStore;
 import org.platformlambda.sync.StreamResponder;
 import org.platformlambda.sync.StreamSegment;

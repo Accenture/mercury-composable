@@ -80,6 +80,16 @@
             <version>4.12.8</version>
         </dependency>
 
+        <!-- The shared Redis client layer (standalone/cluster seam, config, auth, health probe). This
+             module is a consumer of the foundation: it programs against RedisBackend<String> and binds the
+             health probe to soa.redis.health. lettuce-core is still declared directly below because the
+             return-route engine uses the Lettuce API (RedisClient, Pub/Sub, StringCodec) beyond the seam. -->
+        <dependency>
+            <groupId>org.platformlambda</groupId>
+            <artifactId>redis-connection</artifactId>
+            <version>4.12.8</version>
+        </dependency>
+
         <!-- Kafka building blocks for the end-to-end regression only (notification function + flow
              adapter, bringing event-script-engine and the Kafka client onto the test classpath).
              Test scope keeps the published artifact free of any transport dependency. -->

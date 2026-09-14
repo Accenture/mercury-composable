@@ -16,7 +16,7 @@
 
  */
 
-package org.platformlambda.support;
+package org.platformlambda.redis;
 
 import io.lettuce.core.RedisCommandExecutionException;
 import io.lettuce.core.RedisConnectionException;
@@ -35,17 +35,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * WHEN the probe's client configuration is resolved, and how failures are classified. This function
- * is {@code @PreLoad}, so it is constructed before a {@code @MainApplication} credential bootstrap
- * (e.g. fetching secrets from a vault and publishing them as system properties) has run - resolving
- * the configuration in the constructor would freeze a late-published {@code redis.password} as
- * missing for the life of the instance.
+ * WHEN the probe's client configuration is resolved, and how failures are classified. The subclass is
+ * {@code @PreLoad}, so it is constructed before a {@code @MainApplication} credential bootstrap has run -
+ * resolving the configuration in the constructor would freeze a late-published password as missing for the
+ * life of the instance.
  *
- * <p>No Redis server is involved: probes are pointed at a closed port or at unbuildable values, so
- * each attempt fails immediately and the assertions are about how often the supplier is consulted
- * and which failures count as "waiting" rather than an outage.
+ * <p>No Redis server is involved: probes are pointed at a closed port or at unbuildable values, so each
+ * attempt fails immediately and the assertions are about how often the supplier is consulted and which
+ * failures count as "waiting" rather than an outage.
  */
-class RedisHealthCheckLazyConfigTest {
+class RedisHealthProbeLazyConfigTest {
 
     private static final long PROBE_IMMEDIATELY = 0L;
     private static final long TIMEOUT_MS = 500L;
@@ -60,14 +59,14 @@ class RedisHealthCheckLazyConfigTest {
         return new RedisConfig("127.0.0.1", -1, "", false, 0, TIMEOUT_MS);
     }
 
-    private static RedisHealthCheck probing(Supplier<RedisConfig> config) {
-        return new RedisHealthCheck(config, TIMEOUT_MS, PROBE_IMMEDIATELY);
+    private static RedisHealthProbe probing(Supplier<RedisConfig> config) {
+        return new RedisHealthProbe(config, TIMEOUT_MS, PROBE_IMMEDIATELY);
     }
 
     @Test
     void aNullSupplierFailsFastAtConstruction() {
         NullPointerException error = assertThrows(NullPointerException.class,
-                () -> new RedisHealthCheck(null, TIMEOUT_MS, PROBE_IMMEDIATELY));
+                () -> new RedisHealthProbe(null, TIMEOUT_MS, PROBE_IMMEDIATELY));
         assertEquals("probeConfig supplier is required", error.getMessage());
     }
 
@@ -134,16 +133,16 @@ class RedisHealthCheckLazyConfigTest {
     @Test
     void authRejectionsCountAsWaitingButOutagesDoNot() {
         // Lettuce surfaces a rejected handshake as a connection exception wrapping the server's error
-        assertTrue(RedisHealthCheck.waitingOnConfig(new RedisConnectionException("Unable to connect",
+        assertTrue(RedisHealthProbe.waitingOnConfig(new RedisConnectionException("Unable to connect",
                         new RedisCommandExecutionException("NOAUTH Authentication required."))),
                 "no credential sent yet = the bootstrap has not landed - waiting");
-        assertTrue(RedisHealthCheck.waitingOnConfig(new RedisConnectionException("Unable to connect",
+        assertTrue(RedisHealthProbe.waitingOnConfig(new RedisConnectionException("Unable to connect",
                         new RedisCommandExecutionException("WRONGPASS invalid username-password pair"))),
                 "credential rejected = not yet the real one - a restart cannot fix it - waiting");
-        assertTrue(RedisHealthCheck.waitingOnConfig(new RedisCommandExecutionException(
+        assertTrue(RedisHealthProbe.waitingOnConfig(new RedisCommandExecutionException(
                         "ERR Client sent AUTH, but no password is set")),
                 "a stale credential against an auth-less server is also a config condition - waiting");
-        assertFalse(RedisHealthCheck.waitingOnConfig(new RedisConnectionException("Unable to connect",
+        assertFalse(RedisHealthProbe.waitingOnConfig(new RedisConnectionException("Unable to connect",
                         new ConnectException("Connection refused"))),
                 "a genuine connectivity failure is an outage and must fail /health");
     }

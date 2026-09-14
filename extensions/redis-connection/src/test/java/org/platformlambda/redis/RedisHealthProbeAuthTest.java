@@ -16,7 +16,7 @@
 
  */
 
-package org.platformlambda.support;
+package org.platformlambda.redis;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,17 +33,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * The late-credential scenario end to end, against an embedded Redis that REQUIRES a password
- * ({@code requirepass}): a probe whose {@code redis.password} has not been published yet is a
- * passing "waiting" status - never a failed {@code /health} - and the check goes live on the
- * first probe after the credential lands, with no restart in between. This is the vault-bootstrap
- * pattern: a {@code @MainApplication} fetches secrets and publishes them as system properties
- * long after this {@code @PreLoad} function is constructed.
+ * ({@code requirepass}): a probe whose password has not been published yet is a passing "waiting" status -
+ * never a failed {@code /health} - and the check goes live on the first probe after the credential lands,
+ * with no restart in between. This is the vault-bootstrap pattern: a {@code @MainApplication} fetches secrets
+ * and publishes them as system properties long after the {@code @PreLoad} subclass is constructed.
  */
-class RedisHealthCheckAuthTest {
+class RedisHealthProbeAuthTest {
 
-    private static final String DATA_DIR = "/tmp/soa-redis-auth";
+    private static final String DATA_DIR = "/tmp/redis-conn-auth";
     // fixed high port, distinct from RedisTestBase's server (both may run in one surefire JVM)
-    private static final int AUTH_PORT = 16380;
+    private static final int AUTH_PORT = 16382;
     // the fixture credential is GENERATED per test run - the embedded server below is started
     // with this value, so it is authoritative by construction and no credential literal exists
     // anywhere in the repository (CWE-798, field Snyk Code policy)
@@ -86,9 +85,9 @@ class RedisHealthCheckAuthTest {
     @SuppressWarnings("unchecked")
     @Test
     void missingCredentialWaitsThenHealsWhenItLands() {
-        // the bootstrap has not run: redis.password resolves blank, and the server says NOAUTH
+        // the bootstrap has not run: the password resolves blank, and the server says NOAUTH
         AtomicReference<RedisConfig> config = new AtomicReference<>(withPassword(""));
-        var health = new RedisHealthCheck(config::get, TIMEOUT_MS, 0);
+        var health = new RedisHealthProbe(config::get, TIMEOUT_MS, 0);
         Map<String, Object> waiting = (Map<String, Object>) health.handleEvent(HEALTH, null, 1);
         assertEquals("Waiting for Redis connection", waiting.get("status"),
                 "a credential that has not landed is a start-up condition - /health must pass");
@@ -103,7 +102,7 @@ class RedisHealthCheckAuthTest {
     void rejectedCredentialIsAlsoWaitingNotAnOutage() {
         // WRONGPASS: still not the real credential - a pod restart cannot fix it either.
         // Derived by suffix, so it is guaranteed unequal and still not a literal.
-        var health = new RedisHealthCheck(() -> withPassword(PASSWORD + "-stale"), TIMEOUT_MS, 0);
+        var health = new RedisHealthProbe(() -> withPassword(PASSWORD + "-stale"), TIMEOUT_MS, 0);
         Map<String, Object> waiting = (Map<String, Object>) health.handleEvent(HEALTH, null, 1);
         assertEquals("Waiting for Redis connection", waiting.get("status"));
     }

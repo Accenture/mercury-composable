@@ -55,6 +55,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    the same seam. Standalone deployments are unchanged. (Config keys use the `soa.redis.*`
    namespace — see Changed.)
 
+4. **Distributed cache module** (`extensions/distributed-cache`) — a generic Redis-backed L2
+   cache exposed as one composable action function, route `v1.cache.redis`. Opt in with
+   `redis.cache.enabled=true`; the same function then serves Layer 1 (PostOffice), Layer 2 (an
+   Event Script task with output data mapping) and Layer 3 (a `graph.task` node). Operations:
+   `PUT`/`GET`/`MGET`/`MPUT`/`DELETE`/`PUT_IF_NOT_PRESENT` plus FIFO `LIST_PUSH`/`LIST_POP`/
+   `LIST_LEN`, over opaque `byte[]` values (the caller owns serialisation, for cross-layer and
+   cross-language interop). Every stored key carries a TTL from birth — `SETEX`, atomic
+   `SET NX EX`, atomic `RPUSH`+`EXPIRE` — and `MPUT` is a pipelined per-entry `SETEX`
+   (TTL-preserving, unlike a raw `MSET`). Cluster-safe by construction: single-key ops route to
+   their slot, a cross-slot `MGET` is scatter-gathered by the Lettuce cluster client, and `MPUT`
+   pipelines independent single-key writes. Tunables: `redis.cache.instances` (worker
+   concurrency, all sharing one multiplexed connection — no pool), `redis.cache.default.ttl`
+   (default `1h`), `redis.cache.key.prefix` (an app namespace). The reserved `redis.health`
+   check ships with it. Reuses the shared `redis-connection` foundation under the plain
+   `redis.*` namespace, so it coexists with sync-over-async's `soa.redis.*` or shares one Redis
+   via the fallback. Design: `draft-design-specs/distributed-cache.md`. Rust port in lockstep.
+
 ### Changed
 
 1. **sync-over-async adopts a `soa.redis.*` config namespace (backward-compatible).** The
@@ -81,6 +98,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    (`kafka.correlation.id.header`, with per-binding overrides). **Consumer note:** an
    application that relied on sync-over-async's transitive `minimalist-kafka` dependency
    must now declare `minimalist-kafka` itself.
+
+3. **Redis client layer extracted to a shared `redis-connection` foundation.** The
+   standalone/cluster seam (`RedisBackend`), connection config (`RedisConfig`), factory, auth,
+   TLS, and the PING health-probe now live in `extensions/redis-connection`, which both
+   sync-over-async and the new distributed cache depend on — no module re-implements Redis
+   wiring. `RedisBackend` is generic in its value type (`RedisBackend<String>` for
+   sync-over-async's text payloads, `RedisBackend<byte[]>` for the cache's opaque values), and
+   `RedisConfig.from(config, prefix)` reads a module's namespace (`soa.redis.*` or `redis.*`)
+   with the same `redis.*` fallback. Each module binds the shared health-probe with a thin
+   `@PreLoad` subclass fixing its own route (`soa.redis.health` / `redis.health`). Pure
+   refactor — no wire-format or behaviour change, and no config change for existing
+   sync-over-async deployments.
 
 ### Fixed
 

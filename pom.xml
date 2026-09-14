@@ -25,8 +25,10 @@
         <!-- Extensions -->
         <module>extensions/reactive-postgres</module>
         <module>extensions/opentelemetry-forwarder</module>
+        <module>extensions/redis-connection</module>
         <module>extensions/sync-over-async</module>
         <module>extensions/minigraph-state-redis</module>
+        <module>extensions/distributed-cache</module>
 
         <!-- Core cloud libraries -->
         <module>connectors/core/cloud-connector</module>

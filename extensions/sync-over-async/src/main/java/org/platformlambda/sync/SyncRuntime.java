@@ -18,7 +18,7 @@
 
 package org.platformlambda.sync;
 
-import org.platformlambda.support.RedisBackend;
+import org.platformlambda.redis.RedisBackend;
 
 /**
  * Process-wide holder for the running {@link ReturnRouteCoordinator} and its {@link RedisBackend}, populated
@@ -38,11 +38,11 @@ public final class SyncRuntime {
     public static final String CID = "cid";
 
     private static ReturnRouteCoordinator coordinator;
-    private static RedisBackend backend;
+    private static RedisBackend<String> backend;
 
     private SyncRuntime() {}
 
-    static void set(ReturnRouteCoordinator coordinatorInstance, RedisBackend backendInstance) {
+    static void set(ReturnRouteCoordinator coordinatorInstance, RedisBackend<String> backendInstance) {
         coordinator = coordinatorInstance;
         backend = backendInstance;
     }
