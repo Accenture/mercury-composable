@@ -1961,6 +1961,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Enabling and configuring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standalone or cluster Redis
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2739,6 +2756,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Enabling and configuring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standalone or cluster Redis
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2873,12 +2907,24 @@ facade tasks exchange the correlation-id through the module's own flow-level <co
 header (<code>kafka.correlation.id.header</code>), which the flow adapter maps into <code>model.cid</code> whatever its name.
 Then enable the coordinator and point it at Redis:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">sync.over.async.enabled</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="na">redis.host</span><span class="o">=</span><span class="s">${REDIS_HOST:127.0.0.1}</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="na">redis.port</span><span class="o">=</span><span class="s">${REDIS_PORT:6379}</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="na">redis.password</span><span class="o">=</span><span class="s">${REDIS_PASSWORD:}     # blank = no auth; keep secrets in the environment</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="na">soa.redis.host</span><span class="o">=</span><span class="s">${REDIS_HOST:127.0.0.1}</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="na">soa.redis.port</span><span class="o">=</span><span class="s">${REDIS_PORT:6379}</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="na">soa.redis.username</span><span class="o">=</span><span class="s">${REDIS_USERNAME:}     # blank = default user; set for an ACL/RBAC user</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="na">soa.redis.password</span><span class="o">=</span><span class="s">${REDIS_PASSWORD:}     # blank = no auth; keep secrets in the environment</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="na">soa.redis.cluster.detect</span><span class="o">=</span><span class="s">auto             # auto = detect at start-up; else use the boolean below</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="na">soa.redis.cluster.mode</span><span class="o">=</span><span class="s">false              # true = cluster, false = standalone (when detect is not auto)</span>
 </code></pre></div>
+<blockquote>
+<p><strong><code>soa.redis.*</code> namespace, with a <code>redis.*</code> fallback.</strong> The Redis keys carry the <code>soa.</code> prefix so
+sync-over-async owns its own Redis configuration and never collides with another <code>redis.*</code> consumer in
+the same application — a distributed-cache library, or the <code>minigraph-state-redis</code> extension — which may
+point at a different server, auth, or topology. <strong>No migration is required:</strong> each key falls back to the
+un-prefixed <code>redis.*</code> form when the <code>soa.</code> one is absent, so an existing <code>redis.*</code> deployment keeps
+working; set <code>soa.redis.*</code> only to override the fallback or to decouple from a co-resident <code>redis.*</code>
+consumer.</p>
+</blockquote>
 <p>On startup the extension builds a Redis client and the return-route coordinator, keyed by this pod's origin
-id, from discrete <code>redis.*</code> connection parameters and <code>sync.*</code> engine tunables. See the
+id, from discrete <code>soa.redis.*</code> connection parameters and <code>sync.*</code> engine tunables. See the
 <a href="../configuration-reference/#sync-over-async">Configuration Reference</a> for the full list; the essentials:</p>
 <table>
 <thead>
@@ -2895,37 +2941,57 @@ id, from discrete <code>redis.*</code> connection parameters and <code>sync.*</c
 <td>Master switch; <code>true</code> starts the return-route coordinator.</td>
 </tr>
 <tr>
-<td><code>redis.host</code> / <code>redis.port</code></td>
+<td><code>soa.redis.host</code> / <code>soa.redis.port</code></td>
 <td><code>127.0.0.1</code> / <code>6379</code></td>
-<td>Redis connection.</td>
+<td>Redis connection (or the cluster configuration endpoint).</td>
 </tr>
 <tr>
-<td><code>redis.password</code></td>
+<td><code>soa.redis.username</code></td>
+<td>— (blank)</td>
+<td>ACL/RBAC username; blank = the default user. Source from the environment.</td>
+</tr>
+<tr>
+<td><code>soa.redis.password</code></td>
 <td>— (blank)</td>
 <td>Auth password; source from the environment.</td>
 </tr>
 <tr>
-<td><code>redis.ssl</code></td>
+<td><code>soa.redis.ssl</code></td>
 <td><code>false</code></td>
 <td>Use TLS (<code>rediss://</code>).</td>
 </tr>
 <tr>
-<td><code>redis.database</code></td>
+<td><code>soa.redis.database</code></td>
 <td><code>0</code></td>
-<td>Logical database index.</td>
+<td>Logical database index (standalone only; a cluster is database 0).</td>
 </tr>
 <tr>
-<td><code>redis.timeout.ms</code></td>
+<td><code>soa.redis.cluster.detect</code></td>
+<td><code>auto</code></td>
+<td><code>auto</code> = probe the seed at start-up; anything else defers to <code>soa.redis.cluster.mode</code>. See <a href="#cluster">Standalone or cluster</a>.</td>
+</tr>
+<tr>
+<td><code>soa.redis.cluster.mode</code></td>
+<td><code>false</code></td>
+<td>Boolean <code>true</code> (cluster) / <code>false</code> (standalone) when <code>detect</code> is not <code>auto</code>, and the fallback when an <code>auto</code> probe is inconclusive.</td>
+</tr>
+<tr>
+<td><code>soa.redis.cluster.nodes</code></td>
+<td>— (blank)</td>
+<td>Cluster seeds <code>host:port,host:port</code>; blank = the single <code>soa.redis.host:soa.redis.port</code>.</td>
+</tr>
+<tr>
+<td><code>soa.redis.timeout.ms</code></td>
 <td><code>5000</code></td>
 <td>Default command timeout.</td>
 </tr>
 <tr>
-<td><code>redis.health.timeout</code></td>
+<td><code>soa.redis.health.timeout</code></td>
 <td><code>5s</code></td>
 <td>Timeout for the <a href="#health"><code>soa.redis.health</code></a> probe.</td>
 </tr>
 <tr>
-<td><code>redis.health.startup.grace</code></td>
+<td><code>soa.redis.health.startup.grace</code></td>
 <td><code>30s</code></td>
 <td>Start-up grace for <a href="#health"><code>soa.redis.health</code></a> (placeholder healthy status while the client warms up).</td>
 </tr>
@@ -2961,6 +3027,36 @@ id, from discrete <code>redis.*</code> connection parameters and <code>sync.*</c
 </tr>
 </tbody>
 </table>
+<h3 id="cluster">Standalone or cluster Redis<a class="headerlink" href="#cluster" title="Permanent link">&para;</a></h3>
+<p>The return route runs against a <strong>single-node</strong> Redis or a <strong>Redis Cluster</strong> (e.g. AWS ElastiCache
+cluster-mode-enabled) with no code change. Two keys select the client:</p>
+<ul>
+<li><strong><code>soa.redis.cluster.detect</code></strong> — <code>auto</code> (the default) probes the seed at start-up (<code>INFO</code> →
+  <code>cluster_enabled:1</code> = cluster, otherwise standalone); one extra probe connection, nothing else changes.
+  Any other value (e.g. <code>off</code>) skips the probe and defers to the boolean below.</li>
+<li><strong><code>soa.redis.cluster.mode</code></strong> — the boolean <code>true</code> (cluster) / <code>false</code> (standalone), used when
+  <code>detect</code> is not <code>auto</code>, <strong>and</strong> as the fallback when an <code>auto</code> probe cannot decide (for example <code>INFO</code> is
+  restricted on a managed Redis). The boolean form matches a common cache-config convention, so it can be
+  shared with a co-resident <code>redis.cluster.mode</code> through the fallback.</li>
+<li><strong><code>soa.redis.cluster.nodes</code></strong> — cluster seeds <code>host:port,host:port</code>; blank uses the single
+  <code>soa.redis.host:soa.redis.port</code>. A single seed is enough: Lettuce discovers the shard topology from it, so
+  pointing <code>soa.redis.host</code> at an ElastiCache <strong>configuration endpoint</strong> works.</li>
+</ul>
+<p>So the default (nothing set) auto-detects; <code>soa.redis.cluster.detect=off</code> with <code>soa.redis.cluster.mode=true</code>
+forces a cluster client by config; and <code>detect=auto</code> with <code>mode=true</code> auto-detects but assumes cluster if the
+probe is blocked.</p>
+<p>The return route is cluster-safe by construction: every key operation is single-key, and the one two-key
+delete is split so no command ever spans two hash slots. Classic Pub/Sub wake-ups still reach the waiting
+pod across the cluster bus.</p>
+<p><strong>Authentication is identical for both topologies.</strong> AWS applies one AUTH token or RBAC user to the whole
+replication group, and the cluster client presents it on every node connection exactly as the standalone
+client does — so <code>soa.redis.username</code> (for an RBAC user) and <code>soa.redis.password</code> are all you set either way, and
+<code>soa.redis.ssl=true</code> (TLS, required for AUTH on ElastiCache) carries over unchanged. Keep the secrets out of the
+file: a credential bootstrap running in a <strong>lower-<code>sequence</code> <code>@MainApplication</code></strong> (so it runs before
+sync-over-async starts) publishes them as environment variables that the <code>${REDIS_PASSWORD}</code> /
+<code>${REDIS_USERNAME}</code> placeholders resolve. IAM-token authentication — where the password is a short-lived
+signed token — is a different mechanism (the same for standalone and cluster) and is not covered by these
+static keys.</p>
 <h2 id="reliability">Reliability cornerstones<a class="headerlink" href="#reliability" title="Permanent link">&para;</a></h2>
 <p>The design is correct independent of Pub/Sub timing:</p>
 <ul>
@@ -3044,18 +3140,18 @@ it as a health dependency in <code>application.properties</code>:</p>
 health check of the planned generic Redis distributed-cache module, so both features can coexist
 against the same Redis server.</p>
 </blockquote>
-<p>The probe is a single Redis <strong>PING</strong> on a dedicated connection built from the <code>redis.*</code> parameters -
+<p>The probe is a single Redis <strong>PING</strong> on a dedicated connection built from the <code>soa.redis.*</code> parameters -
 the lightest round trip the protocol offers, and one successful call proves connectivity, TLS, and
 authentication in a single request. A reachable server reports a status map; an unreachable one fails
 the check with a <strong>503</strong> status and a key-value message (<code>text</code> for the DevOps reader, <code>status</code> for the
 code), so <code>/health</code> marks the dependency down and the endpoint answers non-2xx while the application is
 DOWN. During application start-up the check returns a <strong>placeholder healthy</strong> status
-while the client warms up in the background (<code>redis.health.startup.grace</code>, default <code>30s</code>), and
-<code>redis.health.timeout</code> (default <code>5s</code>) bounds the probe's connect and command round trips.</p>
+while the client warms up in the background (<code>soa.redis.health.startup.grace</code>, default <code>30s</code>), and
+<code>soa.redis.health.timeout</code> (default <code>5s</code>) bounds the probe's connect and command round trips.</p>
 <p>The probe's client configuration is resolved <strong>lazily</strong> - when the probe client is built, and again
 whenever a failed probe forces a rebuild - never at construction time. <code>soa.redis.health</code> is registered
 before your <code>@MainApplication</code> runs, so a bootstrap that fetches secrets and publishes them as system
-properties (the vault pattern) has not executed yet - a <code>redis.password</code> frozen at construction would
+properties (the vault pattern) has not executed yet - a <code>soa.redis.password</code> frozen at construction would
 be captured as <em>missing</em> for the life of the check. And while the configuration is still unusable -
 the client cannot be built from it, or the server rejects the credentials (<code>NOAUTH</code> / <code>WRONGPASS</code>:
 the signature of a password that has not landed yet) - <code>type=health</code> reports a <strong>passing</strong>
@@ -3065,7 +3161,7 @@ connectivity failure (connection refused, timed-out round trip) fails the check 
 check goes live on the first probe after the real values land; nothing needs a restart. Same design as
 <a href="../minimalist-kafka/#health"><code>kafka.health</code></a>.</p>
 <blockquote>
-<p>The <code>minigraph-state-redis</code> extension reads the same <code>redis.*</code> connection parameters, so one
+<p>The <code>minigraph-state-redis</code> extension reads the same <code>soa.redis.*</code> connection parameters, so one
 <code>soa.redis.health</code> covers a deployment using either or both modules against the same server.</p>
 </blockquote>
 <h2 id="when">When to use it<a class="headerlink" href="#when" title="Permanent link">&para;</a></h2>
@@ -3078,7 +3174,7 @@ behind <code>rest.yaml</code>.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../minimalist-kafka/">Minimalist Kafka</a> — the inbound/outbound Kafka building blocks this pattern uses.</li>
-<li><a href="../configuration-reference/#sync-over-async">Configuration Reference</a> — every <code>redis.*</code> / <code>sync.*</code> key.</li>
+<li><a href="../configuration-reference/#sync-over-async">Configuration Reference</a> — every <code>soa.redis.*</code> / <code>sync.*</code> key.</li>
 <li><a href="../service-mesh/">Minimalist Service Mesh</a> — the heavier <code>cloud.connector=kafka</code> alternative with service discovery.</li>
 <li><a href="../observability/">Observability</a> — tracing the round trip end-to-end.</li>
 </ul>
