@@ -15,4 +15,4 @@
   [[cache-separate-from-soa]] + [[soa-redis-cluster-support]]; a chance to converge a field L2 cache
   library.
   → serves: vision-mercury-composable
-  <!-- id: ot-distributed-cache | created: 2026-09-14 | last_used: 2026-09-14 | uses: 1 | tier: working | origin: 2026-09-14-214619 -->
+  <!-- id: ot-distributed-cache | created: 2026-09-14 | last_used: 2026-09-14 | uses: 2 | tier: working | origin: 2026-09-14-214619 -->

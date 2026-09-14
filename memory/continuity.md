@@ -335,7 +335,7 @@
   library. Verify either arm with a reactor-wide `mvn dependency:tree -Dincludes=...` —
   per-module trees mislead by resolving stale ~/.m2 siblings. Each pin's/exclusion's
   comment names the CVE and the removal condition.
-  <!-- id: conv-kafka-transitive-pin-placement | created: 2026-09-14 | last_used: 2026-09-14 | uses: 2 | tier: active | origin: 2026-09-14-050451 -->
+  <!-- id: conv-kafka-transitive-pin-placement | created: 2026-09-14 | last_used: 2026-09-14 | uses: 2 | tier: archive-candidate | origin: 2026-09-14-050451 -->
 - **Declare a Memory Reference when a fact is CONSULTED to make a decision — not only when it is
   edited (Eric agreed, 2026-09-04).** A session log's `## Memory References` is the sole input to
   `refresh-metadata`, so an undeclared consultation reads as non-use and decays the fact. This is
