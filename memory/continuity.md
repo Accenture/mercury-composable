@@ -185,6 +185,24 @@
   follow-up, NOT a break. Extends [[soa-transport-neutral-cid]].
   <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-14 | uses: 2 | tier: working | origin: 2026-09-14-181948 -->
 
+- **The distributed cache is a SEPARATE module — sync-over-async stays small (Eric, 2026-09-14).**
+  sync-over-async is a *rendezvous transport* (correlation-id `request:`/`queue:` keys,
+  `RPUSH`/`LPOP`/`EVAL` drains), NOT a key-value cache; do not add cache operations to it. The
+  reusable, generic asset is its **Redis client layer** — `RedisBackend` (standalone/cluster) +
+  `RedisConfig` + `RedisBackendFactory` + auth + health — which the planned generic Redis
+  distributed-cache module should share (extract to a small foundation, prefix-parameterised:
+  `redis.*` for the cache, `soa.redis.*` for sync-over-async; the `redis.*` fallback already lets
+  them coexist or share one server). The cache module is a composable **action function**
+  (PUT→`setex`, GET→`get`, MGET→`mget`, DELETE→`del`, PUT_IF_NOT_PRESENT→atomic `SET NX EX` (not
+  `setnx`+`expire`), PING) taking action+key+value+ttl — usable as an Event Script task / L3
+  `graph.task` with output data mapping AND directly `PostOffice`-callable (L1); the field's two
+  consumption patterns are both just "a composable function." Its home was already anticipated:
+  the `redis.health` route name is reserved for it (sync-over-async's is `soa.redis.health`).
+  Cluster note: Lettuce's cluster client scatter-gathers a cross-slot `MGET` for free. Keeps the
+  lean-module vision and is a chance to converge a field L2 cache library. Builds on
+  [[soa-redis-cluster-support]]; serves [[vision-mercury-composable]].
+  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-14 | uses: 1 | tier: working | origin: 2026-09-14-192700 -->
+
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
   `WorkerHandler` calls `stopTracing` (removing it) as soon as `processEvent` returns. So any work that
