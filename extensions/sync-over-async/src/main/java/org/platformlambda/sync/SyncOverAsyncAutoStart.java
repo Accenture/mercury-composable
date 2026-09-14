@@ -18,12 +18,13 @@
 
 package org.platformlambda.sync;
 
-import io.lettuce.core.RedisClient;
 import org.platformlambda.core.annotations.MainApplication;
 import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
+import org.platformlambda.support.RedisBackend;
+import org.platformlambda.support.RedisBackendFactory;
 import org.platformlambda.support.RedisConfig;
 import org.platformlambda.support.SyncOverAsyncConfig;
 import org.slf4j.Logger;
@@ -38,8 +39,9 @@ import org.slf4j.LoggerFactory;
  * loads and runs it when {@code sync.over.async.enabled=true}, so {@link #start} never runs in the disabled
  * case (no manual flag check needed). When enabled it reads the discrete {@code redis.*} startup parameters
  * ({@link RedisConfig}) and the engine tunables ({@link SyncOverAsyncConfig}) from
- * {@code application.properties}, builds the {@link RedisClient} and the coordinator keyed by this pod's
- * {@link Platform#getOrigin() origin-id}, starts it, and publishes it via {@link SyncRuntime}.</p>
+ * {@code application.properties}, builds the {@link RedisBackend} (standalone or cluster, per
+ * {@code redis.cluster.mode}) and the coordinator keyed by this pod's {@link Platform#getOrigin() origin-id},
+ * starts it, and publishes it via {@link SyncRuntime}.</p>
  */
 @MainApplication
 @OptionalService("sync.over.async.enabled")
@@ -54,11 +56,12 @@ public class SyncOverAsyncAutoStart implements EntryPoint {
         SyncOverAsyncConfig syncConfig = SyncOverAsyncConfig.from(config);
         String originId = Platform.getInstance().getOrigin();
 
-        RedisClient client = RedisClient.create(redisConfig.toUri());
-        ReturnRouteCoordinator coordinator = new ReturnRouteCoordinator(client, originId, syncConfig);
+        RedisBackend backend = RedisBackendFactory.create(redisConfig);
+        ReturnRouteCoordinator coordinator = new ReturnRouteCoordinator(backend, originId, syncConfig);
         coordinator.start();
-        SyncRuntime.set(coordinator, client);
-        log.info("Return-route coordinator started for pod {} (redis {}:{}, ssl={})",
-                originId, redisConfig.host(), redisConfig.port(), redisConfig.ssl());
+        SyncRuntime.set(coordinator, backend);
+        log.info("Return-route coordinator started for pod {} (redis {}:{}, ssl={}, detect={}, cluster={})",
+                originId, redisConfig.host(), redisConfig.port(), redisConfig.ssl(),
+                redisConfig.autoDetectCluster() ? "auto" : "off", backend.cluster());
     }
 }

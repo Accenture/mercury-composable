@@ -19,9 +19,11 @@
 package org.platformlambda.sync;
 
 import io.lettuce.core.RedisClient;
-import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.cluster.api.sync.RedisClusterCommands;
 import io.lettuce.core.pubsub.RedisPubSubAdapter;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
+import org.platformlambda.support.RedisBackend;
+import org.platformlambda.support.StandaloneRedisBackend;
 import org.platformlambda.support.SyncOverAsyncConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,24 +58,43 @@ import java.util.function.Consumer;
 public class ReturnRouteCoordinator implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(ReturnRouteCoordinator.class);
 
-    private final RedisClient client;
+    private final RedisBackend backend;
+    private final boolean ownsBackend;
+    private final RedisClusterCommands<String, String> commands;
     private final SyncOverAsyncConfig config;
     private final String returnChannel;
     private final PendingRequests pending;
     private final PendingStreams streams;
-    private final StatefulRedisConnection<String, String> commandConnection;
     private final ReturnRouteStore store;
     private final ExecutorService signalWorkers = Executors.newVirtualThreadPerTaskExecutor();
     private StatefulRedisPubSubConnection<String, String> subscription;
 
+    /**
+     * @param backend the standalone-or-cluster Redis seam; its lifecycle is owned by the caller (typically
+     *                {@code SyncRuntime}), so this coordinator uses it but does not close it.
+     */
+    public ReturnRouteCoordinator(RedisBackend backend, String originId, SyncOverAsyncConfig config) {
+        this(backend, false, originId, config);
+    }
+
+    /**
+     * Convenience for a standalone {@link RedisClient} (single-node callers and tests): wraps it in a
+     * non-owning backend that this coordinator closes on {@link #close()}, leaving the shared client alone.
+     */
     public ReturnRouteCoordinator(RedisClient client, String originId, SyncOverAsyncConfig config) {
-        this.client = client;
+        this(new StandaloneRedisBackend(client, false), true, originId, config);
+    }
+
+    private ReturnRouteCoordinator(RedisBackend backend, boolean ownsBackend, String originId,
+                                   SyncOverAsyncConfig config) {
+        this.backend = backend;
+        this.ownsBackend = ownsBackend;
+        this.commands = backend.commands();
         this.config = config;
         this.returnChannel = config.returnChannelPrefix() + ":" + originId;
         this.pending = new PendingRequests(config.maxPendingRequests());
         this.streams = new PendingStreams(config.maxPendingStreams());
-        this.commandConnection = client.connect();
-        this.store = new ReturnRouteStore(commandConnection);
+        this.store = new ReturnRouteStore(commands);
     }
 
     /** Subscribe to this pod's return channel. Call once at startup. */
@@ -81,7 +102,7 @@ public class ReturnRouteCoordinator implements AutoCloseable {
         if (subscription != null) {
             throw new IllegalStateException("Return-route coordinator already started");
         }
-        subscription = client.connectPubSub();
+        subscription = backend.openPubSub();
         subscription.addListener(new RedisPubSubAdapter<>() {
             @Override
             public void message(String channel, String businessCorrelationId) {
@@ -188,7 +209,7 @@ public class ReturnRouteCoordinator implements AutoCloseable {
             log.debug("Orphan response for {} - no return route", businessCorrelationId);
             return false;
         }
-        commandConnection.sync().publish(channel, businessCorrelationId);
+        commands.publish(channel, businessCorrelationId);
         return true;
     }
 
@@ -339,6 +360,10 @@ public class ReturnRouteCoordinator implements AutoCloseable {
             Thread.currentThread().interrupt();
             signalWorkers.shutdownNow();
         }
-        commandConnection.close();
+        // close only a backend this coordinator created (the RedisClient convenience path); a backend passed
+        // in is owned and closed by the caller (SyncRuntime), after this returns
+        if (ownsBackend) {
+            backend.close();
+        }
     }
 }

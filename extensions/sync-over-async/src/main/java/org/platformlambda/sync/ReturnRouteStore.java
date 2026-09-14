@@ -20,7 +20,7 @@ package org.platformlambda.sync;
 
 import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.api.StatefulRedisConnection;
-import io.lettuce.core.api.sync.RedisCommands;
+import io.lettuce.core.cluster.api.sync.RedisClusterCommands;
 
 /**
  * Redis-backed cross-pod state, keyed by correlation-id:
@@ -46,19 +46,28 @@ public class ReturnRouteStore {
     private static final String APPEND_WITH_TTL =
             "redis.call('RPUSH', KEYS[1], ARGV[1]) return redis.call('EXPIRE', KEYS[1], ARGV[2])";
 
-    private final StatefulRedisConnection<String, String> connection;
+    private final RedisClusterCommands<String, String> commands;
 
+    /**
+     * @param commands the synchronous command API - the common super-type of standalone {@code RedisCommands}
+     *                 and cluster {@code RedisAdvancedClusterCommands}, so one store serves both topologies.
+     */
+    public ReturnRouteStore(RedisClusterCommands<String, String> commands) {
+        this.commands = commands;
+    }
+
+    /** Convenience for a standalone connection (single-node callers and tests). */
     public ReturnRouteStore(StatefulRedisConnection<String, String> connection) {
-        this.connection = connection;
+        this(connection.sync());
     }
 
     public void saveRoute(String businessCorrelationId, String returnChannel, long ttlSeconds) {
-        commands().setex(ROUTE_PREFIX + businessCorrelationId, ttlSeconds, returnChannel);
+        commands.setex(ROUTE_PREFIX + businessCorrelationId, ttlSeconds, returnChannel);
     }
 
     /** @return the return channel for this correlation-id, or {@code null} if absent/expired (orphan). */
     public String getRoute(String businessCorrelationId) {
-        return commands().get(ROUTE_PREFIX + businessCorrelationId);
+        return commands.get(ROUTE_PREFIX + businessCorrelationId);
     }
 
     /**
@@ -66,7 +75,7 @@ public class ReturnRouteStore {
      * (store-first: call this <em>before</em> publishing the wake-up).
      */
     public void appendSegment(String businessCorrelationId, String segmentJson, long ttlSeconds) {
-        commands().eval(APPEND_WITH_TTL, ScriptOutputType.INTEGER,
+        commands.eval(APPEND_WITH_TTL, ScriptOutputType.INTEGER,
                 new String[]{QUEUE_PREFIX + businessCorrelationId}, segmentJson, String.valueOf(ttlSeconds));
     }
 
@@ -77,12 +86,12 @@ public class ReturnRouteStore {
      * @return the serialized segment, or {@code null} when the queue is empty (a drained list auto-deletes)
      */
     public String popSegment(String businessCorrelationId) {
-        return commands().lpop(QUEUE_PREFIX + businessCorrelationId);
+        return commands.lpop(QUEUE_PREFIX + businessCorrelationId);
     }
 
     /** @return the number of queued segments (0 for an absent queue) - used by the drain's lost-wakeup re-check. */
     public long queueLength(String businessCorrelationId) {
-        Long length = commands().llen(QUEUE_PREFIX + businessCorrelationId);
+        Long length = commands.llen(QUEUE_PREFIX + businessCorrelationId);
         return length == null ? 0 : length;
     }
 
@@ -92,10 +101,11 @@ public class ReturnRouteStore {
      * The route's disappearance is also what tells every remaining producer to stop ({@code post} orphan).
      */
     public void cleanup(String businessCorrelationId) {
-        commands().del(ROUTE_PREFIX + businessCorrelationId, QUEUE_PREFIX + businessCorrelationId);
-    }
-
-    private RedisCommands<String, String> commands() {
-        return connection.sync();
+        // Two single-key deletes, not one two-key DEL: request:{cid} and queue:{cid} hash to different
+        // slots on a Redis Cluster, so a combined DEL would fail with CROSSSLOT. On a standalone server the
+        // two calls behave identically. A rendezvous whose cleanup is interrupted still ages out via each
+        // key's TTL, so splitting the delete costs nothing but the extra round trip on the cold path.
+        commands.del(ROUTE_PREFIX + businessCorrelationId);
+        commands.del(QUEUE_PREFIX + businessCorrelationId);
     }
 }

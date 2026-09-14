@@ -18,9 +18,6 @@
 
 package org.platformlambda.support;
 
-import io.lettuce.core.RedisClient;
-import io.lettuce.core.RedisURI;
-import io.lettuce.core.api.StatefulRedisConnection;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
@@ -30,7 +27,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -54,21 +50,22 @@ import java.util.function.Supplier;
  * instead of failing (see below).
  *
  * <p>The probe is a single Redis <b>PING</b> on a dedicated connection built from the module's
- * discrete {@code redis.*} startup parameters ({@link RedisConfig}) - the lightest round trip
+ * discrete {@code soa.redis.*} startup parameters ({@link RedisConfig}) - the lightest round trip
  * the protocol offers, and one successful call proves connectivity, TLS, and authentication in
- * a single request. The {@code minigraph-state-redis} extension reads the same {@code redis.*}
- * parameters, so one {@code soa.redis.health} covers a deployment using either or both modules.
+ * a single request. It reports on the sync-over-async Redis specifically; another Redis consumer in
+ * the same application (a distributed-cache library reading the plain {@code redis.*} keys, or the
+ * {@code minigraph-state-redis} extension) is a separate server/config with its own health check.
  *
- * <p>The route carries the {@code soa.} prefix deliberately: the plain {@code redis.health} name
- * is reserved for the health check of the planned generic Redis distributed-cache module, so both
- * features can coexist against the same Redis server.
+ * <p>Both the route and the config keys carry the {@code soa.} prefix deliberately, so sync-over-async
+ * owns its own Redis namespace and coexists with a distributed-cache library (or any other
+ * {@code redis.*} consumer) in the same application without config or route collisions.
  *
  * <p>The probe's client configuration is resolved <b>lazily - when the probe client is built,
  * and again whenever a failed probe forces a rebuild</b> - never in the constructor. This
  * function is {@code @PreLoad}, so it is constructed while the platform registers routes,
  * before any {@code @MainApplication} start-up logic runs. A credential bootstrap that fetches
  * secrets from a vault and publishes them as system properties has therefore not executed yet -
- * a {@code redis.password} resolved at construction time would be frozen as missing for the
+ * a {@code soa.redis.password} resolved at construction time would be frozen as missing for the
  * life of the instance. Because a failed probe closes the client, the next probe re-resolves
  * the configuration and the check heals itself as soon as the credential lands.
  *
@@ -84,8 +81,8 @@ import java.util.function.Supplier;
  * <p>During application start-up the function returns a <b>placeholder healthy</b> status and
  * warms up the client in the background, so {@code /health} does not fail (or block) while the
  * Redis client and the rest of the start-up sequence are still coming up. After the first
- * successful probe - or once the grace period ({@code redis.health.startup.grace}, default
- * {@code 30s}) has elapsed - every check is a live probe. {@code redis.health.timeout}
+ * successful probe - or once the grace period ({@code soa.redis.health.startup.grace}, default
+ * {@code 30s}) has elapsed - every check is a live probe. {@code soa.redis.health.timeout}
  * (default {@code 5s}) bounds the probe's connect and command round trips.
  *
  * <p>This function deliberately stays on virtual threads (no {@code @KernelThreadRunner}, unlike
@@ -109,8 +106,11 @@ public class RedisHealthCheck implements LambdaFunction {
     private static final String STATUS = "status";
     private static final String TEXT = "text";
     private static final String CODE = "code";
-    private static final String TIMEOUT_KEY = "redis.health.timeout";
-    private static final String GRACE_KEY = "redis.health.startup.grace";
+    private static final String TIMEOUT_KEY = "soa.redis.health.timeout";
+    private static final String GRACE_KEY = "soa.redis.health.startup.grace";
+    // legacy un-prefixed fallbacks (read only when the soa. key is absent) - same policy as RedisConfig
+    private static final String LEGACY_TIMEOUT_KEY = "redis.health.timeout";
+    private static final String LEGACY_GRACE_KEY = "redis.health.startup.grace";
     private static final String DEFAULT_TIMEOUT = "5s";
     private static final String DEFAULT_GRACE = "30s";
     private static final String PLACEHOLDER = "Redis client is starting up";
@@ -127,15 +127,14 @@ public class RedisHealthCheck implements LambdaFunction {
     private final AtomicReference<RedisConfig> currentConfig = new AtomicReference<>();
     private final long timeoutMs;
     private final long graceDeadline;
-    private RedisClient client;
-    private StatefulRedisConnection<String, String> connection;
+    private RedisBackend backend;
     private volatile boolean ready = false;
 
     /** Instantiated reflectively when the platform's {@code @PreLoad} scanner registers the route. */
     public RedisHealthCheck() {
         this(() -> RedisConfig.from(AppConfigReader.getInstance()),
-             resolveDurationMs(TIMEOUT_KEY, DEFAULT_TIMEOUT),
-             resolveDurationMs(GRACE_KEY, DEFAULT_GRACE));
+             resolveDurationMs(TIMEOUT_KEY, LEGACY_TIMEOUT_KEY, DEFAULT_TIMEOUT),
+             resolveDurationMs(GRACE_KEY, LEGACY_GRACE_KEY, DEFAULT_GRACE));
     }
 
     /**
@@ -159,16 +158,19 @@ public class RedisHealthCheck implements LambdaFunction {
     }
 
     /**
-     * Resolve a duration configuration key to milliseconds with a built-in default.
+     * Resolve a duration configuration key to milliseconds with a built-in default, preferring the
+     * {@code soa.}-prefixed key and falling back to the legacy un-prefixed one when it is absent (the
+     * same backward-compatible policy {@link RedisConfig} applies to the connection keys).
      *
-     * @param key          the configuration key (e.g. "redis.health.timeout")
+     * @param key          the preferred configuration key (e.g. "soa.redis.health.timeout")
+     * @param legacyKey    the legacy fallback key (e.g. "redis.health.timeout")
      * @param defaultValue the built-in default duration (e.g. "5s")
      * @return the resolved duration in milliseconds
      */
-    private static long resolveDurationMs(String key, String defaultValue) {
+    private static long resolveDurationMs(String key, String legacyKey, String defaultValue) {
         var util = Utility.getInstance();
         var config = AppConfigReader.getInstance();
-        return util.getDurationInSeconds(config.getProperty(key, defaultValue)) * 1000L;
+        return util.getDurationInSeconds(config.getProperty(key, config.getProperty(legacyKey, defaultValue))) * 1000L;
     }
 
     @Override
@@ -219,17 +221,16 @@ public class RedisHealthCheck implements LambdaFunction {
     private Object probe() {
         lock.lock();
         try {
-            if (connection == null) {
+            if (backend == null) {
                 // re-resolved, not cached from the constructor: a credential published by a later
                 // @MainApplication bootstrap is not visible while this @PreLoad function is constructed
                 RedisConfig config = probeConfig.get();
                 currentConfig.set(config);
-                RedisURI uri = config.toUri();
-                uri.setTimeout(Duration.ofMillis(timeoutMs));
-                client = RedisClient.create(uri);
-                connection = client.connect();
+                // the health check bounds its probe with its own timeout; the factory selects standalone or
+                // cluster per redis.cluster.mode (auto-detecting when so configured)
+                backend = RedisBackendFactory.create(config.withTimeout(timeoutMs));
             }
-            connection.sync().ping();
+            backend.commands().ping();
             ready = true;
             Map<String, Object> result = new HashMap<>();
             result.put(STATUS, REACHABLE);
@@ -310,21 +311,13 @@ public class RedisHealthCheck implements LambdaFunction {
     }
 
     private void closeQuietly() {
-        if (connection != null) {
+        if (backend != null) {
             try {
-                connection.close();
+                backend.close();
             } catch (Exception e) {
-                log.debug("Ignorable error while closing Redis health-check connection - {}", e.getMessage());
+                log.debug("Ignorable error while closing the Redis health-check backend - {}", e.getMessage());
             }
-            connection = null;
-        }
-        if (client != null) {
-            try {
-                client.shutdown(Duration.ZERO, Duration.ofSeconds(2));
-            } catch (Exception e) {
-                log.debug("Ignorable error while shutting down Redis health-check client - {}", e.getMessage());
-            }
-            client = null;
+            backend = null;
         }
     }
 }

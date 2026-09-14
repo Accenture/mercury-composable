@@ -73,31 +73,80 @@ Then enable the coordinator and point it at Redis:
 
 ```properties
 sync.over.async.enabled=true
-redis.host=${REDIS_HOST:127.0.0.1}
-redis.port=${REDIS_PORT:6379}
-redis.password=${REDIS_PASSWORD:}     # blank = no auth; keep secrets in the environment
+soa.redis.host=${REDIS_HOST:127.0.0.1}
+soa.redis.port=${REDIS_PORT:6379}
+soa.redis.username=${REDIS_USERNAME:}     # blank = default user; set for an ACL/RBAC user
+soa.redis.password=${REDIS_PASSWORD:}     # blank = no auth; keep secrets in the environment
+soa.redis.cluster.detect=auto             # auto = detect at start-up; else use the boolean below
+soa.redis.cluster.mode=false              # true = cluster, false = standalone (when detect is not auto)
 ```
 
+> **`soa.redis.*` namespace, with a `redis.*` fallback.** The Redis keys carry the `soa.` prefix so
+> sync-over-async owns its own Redis configuration and never collides with another `redis.*` consumer in
+> the same application — a distributed-cache library, or the `minigraph-state-redis` extension — which may
+> point at a different server, auth, or topology. **No migration is required:** each key falls back to the
+> un-prefixed `redis.*` form when the `soa.` one is absent, so an existing `redis.*` deployment keeps
+> working; set `soa.redis.*` only to override the fallback or to decouple from a co-resident `redis.*`
+> consumer.
+
 On startup the extension builds a Redis client and the return-route coordinator, keyed by this pod's origin
-id, from discrete `redis.*` connection parameters and `sync.*` engine tunables. See the
+id, from discrete `soa.redis.*` connection parameters and `sync.*` engine tunables. See the
 [Configuration Reference](configuration-reference.md#sync-over-async) for the full list; the essentials:
 
 | Key | Default | Description |
 |-----|---------|-------------|
 | `sync.over.async.enabled` | `false` | Master switch; `true` starts the return-route coordinator. |
-| `redis.host` / `redis.port` | `127.0.0.1` / `6379` | Redis connection. |
-| `redis.password` | — (blank) | Auth password; source from the environment. |
-| `redis.ssl` | `false` | Use TLS (`rediss://`). |
-| `redis.database` | `0` | Logical database index. |
-| `redis.timeout.ms` | `5000` | Default command timeout. |
-| `redis.health.timeout` | `5s` | Timeout for the [`soa.redis.health`](#health) probe. |
-| `redis.health.startup.grace` | `30s` | Start-up grace for [`soa.redis.health`](#health) (placeholder healthy status while the client warms up). |
+| `soa.redis.host` / `soa.redis.port` | `127.0.0.1` / `6379` | Redis connection (or the cluster configuration endpoint). |
+| `soa.redis.username` | — (blank) | ACL/RBAC username; blank = the default user. Source from the environment. |
+| `soa.redis.password` | — (blank) | Auth password; source from the environment. |
+| `soa.redis.ssl` | `false` | Use TLS (`rediss://`). |
+| `soa.redis.database` | `0` | Logical database index (standalone only; a cluster is database 0). |
+| `soa.redis.cluster.detect` | `auto` | `auto` = probe the seed at start-up; anything else defers to `soa.redis.cluster.mode`. See [Standalone or cluster](#cluster). |
+| `soa.redis.cluster.mode` | `false` | Boolean `true` (cluster) / `false` (standalone) when `detect` is not `auto`, and the fallback when an `auto` probe is inconclusive. |
+| `soa.redis.cluster.nodes` | — (blank) | Cluster seeds `host:port,host:port`; blank = the single `soa.redis.host:soa.redis.port`. |
+| `soa.redis.timeout.ms` | `5000` | Default command timeout. |
+| `soa.redis.health.timeout` | `5s` | Timeout for the [`soa.redis.health`](#health) probe. |
+| `soa.redis.health.startup.grace` | `30s` | Start-up grace for [`soa.redis.health`](#health) (placeholder healthy status while the client warms up). |
 | `sync.return.channel.prefix` | `svc-return` | Prefix for the per-pod Pub/Sub return channel. |
 | `sync.route.ttl.seconds` | `90` | TTL for a one-shot return-route key (cover the REST timeout + buffer). |
 | `sync.response.ttl.seconds` | `30` | TTL for a one-shot rendezvous queue (short rendezvous window). |
 | `sync.max.pending.requests` | `10000` | Per-pod ceiling on in-flight synchronous requests (backpressure). |
 | `sync.stream.ttl.seconds` | `1800` | TTL for a [streaming](#streaming) rendezvous's route and queue, refreshed on every post (session-scale — an SSE notification channel legitimately idles). |
 | `sync.max.pending.streams` | `1000` | Per-pod ceiling on concurrently open streams. |
+
+### Standalone or cluster Redis {#cluster}
+
+The return route runs against a **single-node** Redis or a **Redis Cluster** (e.g. AWS ElastiCache
+cluster-mode-enabled) with no code change. Two keys select the client:
+
+- **`soa.redis.cluster.detect`** — `auto` (the default) probes the seed at start-up (`INFO` →
+  `cluster_enabled:1` = cluster, otherwise standalone); one extra probe connection, nothing else changes.
+  Any other value (e.g. `off`) skips the probe and defers to the boolean below.
+- **`soa.redis.cluster.mode`** — the boolean `true` (cluster) / `false` (standalone), used when
+  `detect` is not `auto`, **and** as the fallback when an `auto` probe cannot decide (for example `INFO` is
+  restricted on a managed Redis). The boolean form matches a common cache-config convention, so it can be
+  shared with a co-resident `redis.cluster.mode` through the fallback.
+- **`soa.redis.cluster.nodes`** — cluster seeds `host:port,host:port`; blank uses the single
+  `soa.redis.host:soa.redis.port`. A single seed is enough: Lettuce discovers the shard topology from it, so
+  pointing `soa.redis.host` at an ElastiCache **configuration endpoint** works.
+
+So the default (nothing set) auto-detects; `soa.redis.cluster.detect=off` with `soa.redis.cluster.mode=true`
+forces a cluster client by config; and `detect=auto` with `mode=true` auto-detects but assumes cluster if the
+probe is blocked.
+
+The return route is cluster-safe by construction: every key operation is single-key, and the one two-key
+delete is split so no command ever spans two hash slots. Classic Pub/Sub wake-ups still reach the waiting
+pod across the cluster bus.
+
+**Authentication is identical for both topologies.** AWS applies one AUTH token or RBAC user to the whole
+replication group, and the cluster client presents it on every node connection exactly as the standalone
+client does — so `soa.redis.username` (for an RBAC user) and `soa.redis.password` are all you set either way, and
+`soa.redis.ssl=true` (TLS, required for AUTH on ElastiCache) carries over unchanged. Keep the secrets out of the
+file: a credential bootstrap running in a **lower-`sequence` `@MainApplication`** (so it runs before
+sync-over-async starts) publishes them as environment variables that the `${REDIS_PASSWORD}` /
+`${REDIS_USERNAME}` placeholders resolve. IAM-token authentication — where the password is a short-lived
+signed token — is a different mechanism (the same for standalone and cluster) and is not covered by these
+static keys.
 
 ## Reliability cornerstones {#reliability}
 
@@ -196,19 +245,19 @@ mandatory.health.dependencies=soa.redis.health
 > health check of the planned generic Redis distributed-cache module, so both features can coexist
 > against the same Redis server.
 
-The probe is a single Redis **PING** on a dedicated connection built from the `redis.*` parameters -
+The probe is a single Redis **PING** on a dedicated connection built from the `soa.redis.*` parameters -
 the lightest round trip the protocol offers, and one successful call proves connectivity, TLS, and
 authentication in a single request. A reachable server reports a status map; an unreachable one fails
 the check with a **503** status and a key-value message (`text` for the DevOps reader, `status` for the
 code), so `/health` marks the dependency down and the endpoint answers non-2xx while the application is
 DOWN. During application start-up the check returns a **placeholder healthy** status
-while the client warms up in the background (`redis.health.startup.grace`, default `30s`), and
-`redis.health.timeout` (default `5s`) bounds the probe's connect and command round trips.
+while the client warms up in the background (`soa.redis.health.startup.grace`, default `30s`), and
+`soa.redis.health.timeout` (default `5s`) bounds the probe's connect and command round trips.
 
 The probe's client configuration is resolved **lazily** - when the probe client is built, and again
 whenever a failed probe forces a rebuild - never at construction time. `soa.redis.health` is registered
 before your `@MainApplication` runs, so a bootstrap that fetches secrets and publishes them as system
-properties (the vault pattern) has not executed yet - a `redis.password` frozen at construction would
+properties (the vault pattern) has not executed yet - a `soa.redis.password` frozen at construction would
 be captured as *missing* for the life of the check. And while the configuration is still unusable -
 the client cannot be built from it, or the server rejects the credentials (`NOAUTH` / `WRONGPASS`:
 the signature of a password that has not landed yet) - `type=health` reports a **passing**
@@ -218,7 +267,7 @@ connectivity failure (connection refused, timed-out round trip) fails the check 
 check goes live on the first probe after the real values land; nothing needs a restart. Same design as
 [`kafka.health`](minimalist-kafka.md#health).
 
-> The `minigraph-state-redis` extension reads the same `redis.*` connection parameters, so one
+> The `minigraph-state-redis` extension reads the same `soa.redis.*` connection parameters, so one
 > `soa.redis.health` covers a deployment using either or both modules against the same server.
 
 ## When to use it {#when}
@@ -233,6 +282,6 @@ behind `rest.yaml`.
 ## See also
 
 - [Minimalist Kafka](minimalist-kafka.md) — the inbound/outbound Kafka building blocks this pattern uses.
-- [Configuration Reference](configuration-reference.md#sync-over-async) — every `redis.*` / `sync.*` key.
+- [Configuration Reference](configuration-reference.md#sync-over-async) — every `soa.redis.*` / `sync.*` key.
 - [Minimalist Service Mesh](service-mesh.md) — the heavier `cloud.connector=kafka` alternative with service discovery.
 - [Observability](observability.md) — tracing the round trip end-to-end.

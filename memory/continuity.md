@@ -156,6 +156,53 @@
   declare it. Extends [[functions-decoupled-routes]] to the dependency graph.
   <!-- id: soa-transport-neutral-cid | created: 2026-09-12 | last_used: 2026-09-12 | uses: 7 | tier: active | origin: 2026-09-12-011438 -->
 
+- **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
+  `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
+  `RedisBackend` (StandaloneRedisBackend / ClusterRedisBackend, built by `RedisBackendFactory`)
+  hides the topology. The seam is clean because in Lettuce the standalone `RedisCommands` and the
+  cluster `RedisAdvancedClusterCommands` BOTH extend `RedisClusterCommands` — the single command
+  type the store programs against (all ops single-key + `publish`). Cluster-safe by construction:
+  the sole two-key `DEL` (cleanup) is split into two single-key DELs, so the **wire key format is
+  UNCHANGED** (`request:{cid}` / `queue:{cid}`, no hash tags) — existing standalone polyglot
+  interop is unaffected and there is no Rust wire break. Classic Pub/Sub wake-ups cross the
+  cluster bus. **Cluster selection = TWO keys** (Eric, to keep a cache-style boolean intact):
+  `soa.redis.cluster.detect=auto` (default) probes `INFO`→`cluster_enabled:1`; otherwise the
+  boolean `soa.redis.cluster.mode` (true/false) decides — and the boolean is also the
+  inconclusive-probe fallback (robust when INFO is restricted). **Config namespace:** all keys are
+  `soa.redis.*` so sync-over-async never collides with a co-resident `redis.*` consumer (a
+  distributed cache, or minigraph-state-redis), and **each key falls back to the un-prefixed
+  `redis.*`** via the config reader's nested-default (`get(soaKey, get(redisKey, default))`) — so
+  NO breaking change (the earlier `soa.redis.health` ROUTE rename #377 has no fallback and stands).
+  **Auth is identical for both topologies AND matches the field's cache client** (verified against
+  the field design extract): token → `withPassword` (my username-blank + password path); RBAC
+  username+password → `withAuthentication` (my username-set path) — same Lettuce calls, same wire
+  AUTH, no AWS SDK. New optional `soa.redis.username` (RBAC). Credentials resolve `${ENV_VAR}` from
+  a lower-`sequence` credential bootstrap ([[preload-before-mainapp-lazy-config]]); the field's
+  loader is `@MainApplication(sequence=9)` < the autostart's default 10, so it runs first (must
+  publish resolved creds to the `redis.*`/`soa.redis.*` property names). Lettuce's
+  `withAuthentication(RedisCredentialsProvider)` is the future seam if rotating IAM tokens are ever
+  needed. Rust parity for cluster (cluster-client option + the same DEL split) is a parked
+  follow-up, NOT a break. Extends [[soa-transport-neutral-cid]].
+  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-14 | uses: 2 | tier: working | origin: 2026-09-14-181948 -->
+
+- **The distributed cache is a SEPARATE module — sync-over-async stays small (Eric, 2026-09-14).**
+  sync-over-async is a *rendezvous transport* (correlation-id `request:`/`queue:` keys,
+  `RPUSH`/`LPOP`/`EVAL` drains), NOT a key-value cache; do not add cache operations to it. The
+  reusable, generic asset is its **Redis client layer** — `RedisBackend` (standalone/cluster) +
+  `RedisConfig` + `RedisBackendFactory` + auth + health — which the planned generic Redis
+  distributed-cache module should share (extract to a small foundation, prefix-parameterised:
+  `redis.*` for the cache, `soa.redis.*` for sync-over-async; the `redis.*` fallback already lets
+  them coexist or share one server). The cache module is a composable **action function**
+  (PUT→`setex`, GET→`get`, MGET→`mget`, DELETE→`del`, PUT_IF_NOT_PRESENT→atomic `SET NX EX` (not
+  `setnx`+`expire`), PING) taking action+key+value+ttl — usable as an Event Script task / L3
+  `graph.task` with output data mapping AND directly `PostOffice`-callable (L1); the field's two
+  consumption patterns are both just "a composable function." Its home was already anticipated:
+  the `redis.health` route name is reserved for it (sync-over-async's is `soa.redis.health`).
+  Cluster note: Lettuce's cluster client scatter-gathers a cross-slot `MGET` for free. Keeps the
+  lean-module vision and is a chance to converge a field L2 cache library. Builds on
+  [[soa-redis-cluster-support]]; serves [[vision-mercury-composable]].
+  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-14 | uses: 1 | tier: working | origin: 2026-09-14-192700 -->
+
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
   `WorkerHandler` calls `stopTracing` (removing it) as soon as `processEvent` returns. So any work that
