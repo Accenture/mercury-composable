@@ -1,15 +1,23 @@
 # Distributed cache — a generic Redis-backed L2 cache module — design spec
 
-**Status:** DRAFT — open questions Q1–Q8 await Eric's ruling; no code yet. Drafted 2026-09-14
-after a field installation asked whether the sync-over-async module is "generic enough" to also
-cover distributed-cache use cases.
+**Status:** DESIGN RULED — Q1–Q8 answered by Eric 2026-09-14 (§8); implementation gated behind the
+v4.12.9 release. Drafted 2026-09-14 after a field installation asked whether the sync-over-async
+module is "generic enough" to also cover distributed-cache use cases.
+
+**Ruled shape (Eric, 2026-09-14):** module `extensions/distributed-cache`, route **`v1.cache.redis`**;
+the Redis client layer is **extracted to a shared foundation** both modules depend on (Q2); values are
+opaque `byte[]` (Q3); the operation set is the **five key-value actions + bulk `MPUT` + PING + list push/pop/length**
+(Q5 — `MPUT` is a pipelined per-entry `SETEX` so bulk write keeps per-key TTLs where raw `MSET` cannot,
+and the list ops reuse the append-with-TTL + destructive-pop machinery already built for the return
+route); an **app key-prefix namespace** (Q6); the typed Java helper is **deferred** (Q7 — the function +
+flow surfaces already cover L1/L2/L3); and the **Rust port ships in lockstep** with the Java module (Q8).
 
 **Direction (ruled):** *Keep sync-over-async small.* sync-over-async is a cross-pod **rendezvous
 transport** (correlation-id `request:`/`queue:` keys, `RPUSH`/`LPOP`/`EVAL` drains), **not** a
 key-value cache. The distributed cache is a **separate opt-in module** that **reuses
 sync-over-async's Redis client layer** (Eric, 2026-09-14; memory `cache-separate-from-soa`).
 
-**Repo scope:** Java (`mercury-composable`) first; a Rust port is a later follow-up (Q8). The
+**Repo scope:** Java (`mercury-composable`) and the Rust port (`mercury`) in **lockstep** (Q8). The
 `redis.health` route name was reserved for exactly this module when sync-over-async took
 `soa.redis.health` (PR #377).
 
@@ -51,16 +59,26 @@ standard Mercury add-a-capability shape):
 2. **Directly via PostOffice (Layer 1).** Because a composable function backs the task, the same
    function is route-addressable — `po.request(...)` — for code that wants the cache without a flow.
 
-Representative operation set (from the field's cache surface, generalised):
+Operation set (Q5 — the field's five key-value actions, the bulk `MPUT` pair for `MGET`, `PING`, plus
+the FIFO **list** ops whose Redis machinery the return route already built):
 
 | Action | Redis op | Result |
 |---|---|---|
 | `PUT` | `SETEX key ttl value` | ack |
 | `GET` | `GET key` | value, or null (miss) |
 | `MGET` | `MGET k1 k2 …` | `Map<key, value>` (misses omitted) |
+| `MPUT` | pipelined `SETEX key ttl value` per map entry (one round trip) | ack (per-entry, non-atomic) |
 | `DELETE` | `DEL key` | count removed |
 | `PUT_IF_NOT_PRESENT` | `SET key value NX EX ttl` (atomic) | true if stored, false if key existed |
-| `PING` | `PING` | liveness (health) |
+| `LIST_PUSH` | `RPUSH key value` + `EXPIRE key ttl` (one atomic Lua step) | new list length |
+| `LIST_POP` | `LPOP key` | oldest value, or null (empty) |
+| `LIST_LEN` | `LLEN key` | list length |
+| `PING` | `PING` | liveness (backs the `redis.health` check) |
+
+The list ops (`LIST_PUSH`/`LIST_POP`/`LIST_LEN`) are the same **append-with-TTL** (`RPUSH`+`EXPIRE` as
+one server-side atomic step), **destructive `LPOP`**, and `LLEN` the return-route store already
+implements — a FIFO queue on top of a Redis List, every key carrying a TTL from birth. `PING` is used
+by the `redis.health` check rather than exposed as a general cache action.
 
 ## 3. Current state — what already exists to reuse
 
@@ -124,14 +142,16 @@ for the cache) with no collision — the namespacing done in PR #385 is what mak
 - **Route:** `v1.cache.redis` (Q4). `@PreLoad(instances=N)` — N is a pool of workers (Q: default,
   e.g. 20) so concurrent cache calls do not serialise on one Lettuce connection; each instance reuses
   one cached connection (the connection-reuse contract; a known leak class to guard with a test).
-- **Input:** `action` (header or field) + `key` / `keys` + `value` + `ttl`. A typed input PoJo is
-  preferred over loose headers for clarity and for Event Script data mapping.
+- **Input:** `action` (header or field) + `key` / `keys` (for `MGET`) / `entries` (a `Map` for `MPUT`) +
+  `value` + `ttl`. A typed input PoJo is preferred over loose headers for clarity and for Event Script
+  data mapping.
 - **Value type (Q3):** opaque **`byte[]`** — the cache stores and returns bytes; the caller owns
-  serialisation (a typed convenience helper can wrap it, §4.6). Opaque bytes maximise interop
+  serialisation (a typed convenience helper is deferred, §4.6 / Q7). Opaque bytes maximise interop
   (any layer, any language) and match `MGET -> Map<key, byte[]>`.
 - **Output:** per action — `GET` → value or null; `MGET` → `Map<key, byte[]>` (misses omitted);
-  `PUT` → ack; `PUT_IF_NOT_PRESENT` → boolean; `DELETE` → count. Shaped so **output data mapping**
-  (L2) and `graph.task` output (L3) can consume it directly.
+  `PUT`/`MPUT` → ack; `PUT_IF_NOT_PRESENT` → boolean; `DELETE` → count; `LIST_PUSH`/`LIST_LEN` → length;
+  `LIST_POP` → value or null. Shaped so **output data mapping** (L2) and `graph.task` output (L3) can
+  consume it directly.
 
 ### 4.5 Cluster-safe operation mapping
 
@@ -141,9 +161,16 @@ Every op maps to a cluster-correct Redis call through the `RedisBackend` seam:
 - `PUT_IF_NOT_PRESENT` — **atomic `SET key value NX EX ttl`**, not `SETNX` + `EXPIRE` (two commands
   leave a TTL-less key if the process dies between them — the same "every key carries a TTL from
   birth" discipline the return route follows).
+- `LIST_PUSH`/`LIST_POP`/`LIST_LEN` — single-key, cluster-safe as-is; `LIST_PUSH` reuses the return
+  route's atomic `RPUSH`+`EXPIRE` Lua step so the list key is never left TTL-less.
 - `MGET` — keys may span hash slots; **Lettuce's cluster client scatter-gathers a cross-slot `MGET`
   for free** (`RedisAdvancedClusterCommands.mget` splits by slot and merges), so the cluster backend
   handles it where a naive standalone client would `CROSSSLOT`.
+- `MPUT` — a **pipelined batch of single-key `SETEX`**, not `MSET` (which sets no TTL): each `SETEX`
+  routes to its own slot, so the map's keys may span slots freely and every key keeps its TTL. The
+  batch is **not atomic** across the map — acceptable for a cache (entries are independent; a partial
+  write is just cache misses), and unavoidable on a cluster anyway (an atomic multi-key write hits
+  `CROSSSLOT` unless all keys share a slot).
 - A multi-key `DELETE`, if offered, is split into single-key `DEL`s on cluster (as the return-route
   `cleanup` does).
 
@@ -153,9 +180,10 @@ Every op maps to a cluster-correct Redis call through the `RedisBackend` seam:
 - **L2 (Event Script):** a task with `v1.cache.redis`, input data mapping sets `action`/`key`/`value`/
   `ttl`, output data mapping maps the result into `model`.
 - **L3 (Knowledge Graph):** a `graph.task` node driving the same route.
-- **Optional Java helper (Q7):** a `CacheUtility`-style typed facade
-  (`put(po,key,value,ttl)` / `get(po,key,Class)` / `mget(...)` / `putIfAbsent(...)` / `delete(...)` +
-  key-namespacing helpers) that wraps the PostOffice call and serialisation.
+- **Typed Java helper — DEFERRED (Q7).** A `CacheUtility`-style facade
+  (`put(po,key,value,ttl)` / `get(po,key,Class)` / `mget(...)` / `mput(...)` / `putIfAbsent(...)` /
+  `delete(...)` / list helpers + key-namespacing) wrapping the PostOffice call and serialisation can
+  follow later; the function + flow surfaces above already cover all three layers.
 
 ### 4.7 Configuration (proposed)
 
@@ -206,27 +234,31 @@ semantics as `soa.redis.health`. Opt in via `mandatory.health.dependencies` /
 - **Not** a general Redis client for arbitrary commands — a bounded, cache-shaped operation set (Q5),
   not `EVAL`/pub-sub/streams (those are other modules' concerns).
 
-## 8. Open questions (for Eric to rule)
+## 8. Decisions (Q1–Q8, ruled by Eric 2026-09-14)
 
-- **Q1 — Module home & name.** `extensions/distributed-cache` (opt-in add-on, like sync-over-async /
-  minigraph-state-redis) vs `system/…`? Working route `v1.cache.redis`. *Recommend: `extensions/`.*
-- **Q2 — Extract the shared client layer now?** Extract `RedisBackend`/`RedisConfig`/factory/health
-  into a `redis-connection` foundation (prefix-parameterised) that both modules depend on — vs the
-  cache depending on sync-over-async temporarily, vs duplicating. *Recommend: extract now* (a small,
-  contained refactor of sync-over-async's `support/` package; avoids duplication and a wrong
-  dependency direction).
-- **Q3 — Value type.** Opaque `byte[]` (max interop; caller serialises) vs typed via `EventEnvelope`.
-  *Recommend: opaque `byte[]` + an optional typed helper (§4.6).*
-- **Q4 — Route name.** `v1.cache.redis` vs `distributed.cache` vs other.
-- **Q5 — v1 operation set.** The five (`PUT`/`GET`/`MGET`/`DELETE`/`PUT_IF_NOT_PRESENT`) + `PING`; add
-  any of `EXISTS`/`INCR`/`EXPIRE`/`TTL`? *Recommend: the five + `PING` for v1; defer the rest.*
-- **Q6 — Key namespacing.** Provide a configurable `redis.cache.key.prefix` and/or `buildCacheKey`
-  helpers to isolate apps sharing one Redis? *Recommend: yes, an optional prefix.*
-- **Q7 — Consumer Java helper.** Ship a `CacheUtility`-style typed facade in v1, or defer to the
-  function + Event Script surfaces first? *Recommend: defer; the function + flows cover both patterns.*
-- **Q8 — Cross-engine.** Java first, Rust port as a follow-up (the established port rhythm)? Cache
-  keys are plain Redis keys, so a Java cache and a future Rust cache interoperate on the same keys
-  with no wire change. *Recommend: Java first; Rust port later.*
+- **Q1 — Module home & name → ACCEPTED.** `extensions/distributed-cache` (opt-in add-on, like
+  sync-over-async / minigraph-state-redis); route `v1.cache.redis`.
+- **Q2 — Extract the shared client layer → YES.** Extract `RedisBackend` / `RedisConfig` /
+  `RedisBackendFactory` / the health-probe logic into a `redis-connection` foundation
+  (prefix-parameterised) that both sync-over-async and the cache depend on — a contained refactor of
+  sync-over-async's `support/` package; no duplication, correct dependency direction.
+- **Q3 — Value type → ACCEPTED.** Opaque `byte[]`; the caller owns serialisation. The typed helper is
+  deferred (Q7).
+- **Q4 — Route name → `v1.cache.redis`.**
+- **Q5 — Operation set → the five key-value actions + bulk `MPUT` + `PING` + list push/pop/length.**
+  Eric's rulings: `PING` backs the `redis.health` service (not a general action); the FIFO **list** ops
+  (`LIST_PUSH`/`LIST_POP`/`LIST_LEN`) are added because their Redis machinery — atomic `RPUSH`+`EXPIRE`,
+  destructive `LPOP`, `LLEN` — is already built for the return route; and **`MPUT`** is added as
+  `MGET`'s bulk-write pair, implemented as a **pipelined per-entry `SETEX`** (not raw `MSET`, which sets
+  no TTL) so every key keeps a TTL — non-atomic across the map (correct for a cache; unavoidable on a
+  cluster). Deferred still: `EXISTS`/`INCR`/`EXPIRE`/`TTL`, and the whole-map Redis-Hash model
+  (`HSET`/`HGETALL`) — a different data structure from the individual-keys `MPUT`/`MGET` model.
+- **Q6 — Key namespacing → YES.** An app namespace via a configurable `redis.cache.key.prefix`.
+- **Q7 — Consumer Java helper → DEFER.** The action function + Event Script / graph surfaces already
+  cover all three layers; a typed `CacheUtility` facade can follow later.
+- **Q8 — Cross-engine → RUST LOCKSTEP.** The Java module and the Rust port (`mercury`) ship together, as
+  the engines do for shared features. Cache keys are plain Redis keys, so the two caches interoperate on
+  the same keys with no wire change.
 
 ## 9. Relation to the blueprint
 
