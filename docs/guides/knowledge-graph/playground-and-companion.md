@@ -83,6 +83,13 @@ When you subscribe to a primary session, commands mirror **both ways** — every
 (human or AI) are equal co-authors of one shared model. (You can't subscribe to yourself or to a
 non-primary session; a primary session has nothing to unsubscribe.)
 
+**An AI agent asked to host a session** should run the shipped session broker
+(`scripts/playground-session-broker.mjs`, in the `starter-graph` template and the
+`minigraph-playground` example) rather than hand-roll a WebSocket client — the session contract
+includes a keep-alive (ping every ~20 s) that hand-rolled clients typically miss, and a client
+without it dies silently at the idle timeout. See
+[Hosting the session yourself](ai-agent-guide.md#hosting).
+
 ## The companion endpoint {#companion}
 
 The **companion endpoint** lets an HTTP client — a script, a test harness, or an AI agent —
