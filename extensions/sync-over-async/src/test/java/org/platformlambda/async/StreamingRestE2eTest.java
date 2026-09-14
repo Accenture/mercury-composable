@@ -81,7 +81,7 @@ class StreamingRestE2eTest extends RedisTestBase {
 
     @BeforeAll
     static void boot() throws Exception {
-        System.setProperty("redis.port", String.valueOf(redisPort));
+        System.setProperty("soa.redis.port", String.valueOf(redisPort));
         // E2 is deliberately broker-free: the streaming path has no Kafka dependency (design D3),
         // so the Kafka building blocks are switched off and no broker runs in this JVM at all
         System.setProperty("kafka.producer.enabled", "false");
@@ -98,7 +98,7 @@ class StreamingRestE2eTest extends RedisTestBase {
     static void cleanup() {
         MockAiBackend.closeResponder();
         SyncRuntime.shutdown();
-        System.clearProperty("redis.port");
+        System.clearProperty("soa.redis.port");
         System.clearProperty("kafka.producer.enabled");
         System.clearProperty("kafka.consumer.enabled");
     }

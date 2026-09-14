@@ -38,27 +38,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 3. **Clustered Redis for sync-over-async** — the return route now runs against a single-node
    Redis or a Redis Cluster (e.g. AWS ElastiCache cluster-mode-enabled) with no code change.
-   `redis.cluster.mode` selects the client: `auto` (default) probes the seed at start-up
-   (`INFO` → `cluster_enabled:1`) and falls back to standalone if it cannot decide;
-   `standalone` and `cluster` force the choice. `redis.cluster.nodes` lists cluster seeds
-   (`host:port,…`), or a single seed / configuration endpoint suffices — the client discovers
-   the shard topology. The route is cluster-safe by construction: every key operation is
+   Two keys select the client: `soa.redis.cluster.detect=auto` (default) probes the seed at
+   start-up (`INFO` → `cluster_enabled:1`); anything else defers to the boolean
+   `soa.redis.cluster.mode` (`true` = cluster, `false` = standalone), which is also the
+   fallback when an `auto` probe is inconclusive. The boolean form matches a common
+   cache-config convention, so it can be shared with a co-resident `redis.cluster.mode`.
+   `soa.redis.cluster.nodes` lists cluster seeds (`host:port,…`), or a single seed /
+   configuration endpoint suffices — the client discovers the shard topology. The route is
+   cluster-safe by construction: every key operation is
    single-key, and the one two-key delete is split so no command spans two hash slots; classic
    Pub/Sub wake-ups still cross the cluster bus. Authentication is identical for both
-   topologies — a new optional `redis.username` supports an ACL/RBAC user (AWS applies one
-   credential set to the whole replication group), sourced like `redis.password` from the
+   topologies — a new optional `soa.redis.username` supports an ACL/RBAC user (AWS applies one
+   credential set to the whole replication group), sourced like `soa.redis.password` from the
    environment (a lower-`sequence` credential bootstrap publishes the vault secrets first). The
    producer-side `StreamResponder` and the `soa.redis.health` check are cluster-aware through
-   the same seam. Standalone deployments are unchanged.
+   the same seam. Standalone deployments are unchanged. (Config keys use the `soa.redis.*`
+   namespace — see Changed.)
 
 ### Changed
 
-1. **Health route rename: `redis.health` → `soa.redis.health`** (PR #377). The plain
-   `redis.health` name is reserved for the planned generic Redis distributed-cache
-   module's check, so sync-over-async and that future module can coexist against one
-   Redis server. Configuration keys are unchanged (`redis.health.timeout`,
-   `redis.health.startup.grace`) — update `mandatory.health.dependencies` /
-   `optional.health.dependencies` entries to the new route name.
+1. **sync-over-async adopts a `soa.redis.*` config namespace (backward-compatible).** The
+   module's Redis keys now have preferred `soa.`-prefixed forms — `soa.redis.host`,
+   `soa.redis.port`, `soa.redis.username`, `soa.redis.password`, `soa.redis.ssl`,
+   `soa.redis.database`, `soa.redis.timeout.ms`, `soa.redis.cluster.detect`,
+   `soa.redis.cluster.mode`, `soa.redis.cluster.nodes`, `soa.redis.health.timeout`,
+   `soa.redis.health.startup.grace` —
+   so sync-over-async owns its own Redis configuration and does not collide with another
+   `redis.*` consumer in the same application (a distributed-cache library, or
+   `minigraph-state-redis`) that may point at a different server, auth, or topology. **No
+   migration required:** each key falls back to the un-prefixed `redis.*` form when the `soa.`
+   one is absent, so existing deployments keep working; set `soa.redis.*` only to override the
+   fallback or to decouple from a co-resident `redis.*` consumer. The health **route** rename
+   from PR #377 (`redis.health` → `soa.redis.health`, freeing the plain name for the planned
+   generic Redis distributed-cache module) still stands — update
+   `mandatory.health.dependencies` / `optional.health.dependencies` to `soa.redis.health`
+   (route names have no fallback). `soa.redis.health` probes the sync-over-async Redis; a
+   `minigraph-state-redis` deployment needs its own check for its `redis.*` server.
 
 2. **sync-over-async is transport-neutral, and minimalist-kafka moves to test scope
    there** (PR #364). The facade tasks speak the module's own flow-level `cid` key; the

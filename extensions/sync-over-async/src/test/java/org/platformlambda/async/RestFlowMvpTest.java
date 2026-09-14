@@ -74,7 +74,7 @@ class RestFlowMvpTest extends RedisTestBase {
         // file value (ConfigReader resolves a system property before the file). sync.over.async.enabled=true
         // is in the test application.properties.
         System.setProperty("KAFKA_BOOTSTRAP_SERVERS", kafka.bootstrapServers());
-        System.setProperty("redis.port", String.valueOf(redisPort));
+        System.setProperty("soa.redis.port", String.valueOf(redisPort));
 
         // Platform start registers all functions, then the autoloaders run: SyncOverAsyncAutoStart builds the
         // Redis client + return-route coordinator from config; KafkaFlowAutoStart builds the Kafka publisher
@@ -100,7 +100,7 @@ class RestFlowMvpTest extends RedisTestBase {
             kafka.close();
         }
         System.clearProperty("KAFKA_BOOTSTRAP_SERVERS");
-        System.clearProperty("redis.port");
+        System.clearProperty("soa.redis.port");
     }
 
     @Test

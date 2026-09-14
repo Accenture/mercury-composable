@@ -25,11 +25,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Builds the {@link RedisBackend} for a {@link RedisConfig}, choosing standalone or cluster per
- * {@link RedisConfig#clusterMode()}. In {@link RedisClusterMode#AUTO} mode it probes the seed node once
- * ({@code INFO cluster} -> {@code cluster_enabled:1}) and falls back to standalone if the probe cannot
- * decide (for example when {@code INFO} is restricted on a managed Redis). Credentials and TLS are carried
- * by the config for both topologies, so nothing here is auth-aware.
+ * Builds the {@link RedisBackend} for a {@link RedisConfig}, choosing standalone or cluster from the two
+ * cluster keys: when {@link RedisConfig#autoDetectCluster()} ({@code soa.redis.cluster.detect=auto}) it
+ * probes the seed node once ({@code INFO} -> {@code cluster_enabled:1}); otherwise the boolean
+ * {@link RedisConfig#clusterEnabled()} ({@code soa.redis.cluster.mode}) decides. If the auto-detect probe
+ * cannot decide (for example when {@code INFO} is restricted on a managed Redis), it falls back to that same
+ * boolean. Credentials and TLS are carried by the config for both topologies, so nothing here is auth-aware.
  */
 public final class RedisBackendFactory {
     private static final Logger log = LoggerFactory.getLogger(RedisBackendFactory.class);
@@ -37,11 +38,9 @@ public final class RedisBackendFactory {
     private RedisBackendFactory() {}
 
     public static RedisBackend create(RedisConfig config) {
-        boolean cluster = switch (config.clusterMode()) {
-            case STANDALONE -> false;
-            case CLUSTER -> true;
-            case AUTO -> detectCluster(config);
-        };
+        boolean cluster = config.autoDetectCluster()
+                ? detectCluster(config, config.clusterEnabled())
+                : config.clusterEnabled();
         if (cluster) {
             return new ClusterRedisBackend(RedisClusterClient.create(config.seedUris()));
         }
@@ -51,10 +50,11 @@ public final class RedisBackendFactory {
     /**
      * Probe the seed node to decide whether it is a cluster. A dedicated short-lived client runs
      * {@code INFO cluster}; {@code cluster_enabled:1} means cluster. Any failure (unreachable, or
-     * {@code INFO} not permitted) is inconclusive and resolves to standalone - the caller's own
-     * connection then surfaces a genuine outage, and the health check's waiting semantics still apply.
+     * {@code INFO} not permitted) is inconclusive and resolves to the configured {@code cluster.mode}
+     * boolean - the caller's own connection then surfaces a genuine outage, and the health check's
+     * waiting semantics still apply.
      */
-    private static boolean detectCluster(RedisConfig config) {
+    private static boolean detectCluster(RedisConfig config, boolean fallback) {
         RedisClient probe = RedisClient.create(config.toUri());
         try (StatefulRedisConnection<String, String> c = probe.connect()) {
             String info = c.sync().info("cluster");
@@ -63,9 +63,9 @@ public final class RedisBackendFactory {
                     cluster ? "cluster" : "standalone");
             return cluster;
         } catch (RuntimeException e) {
-            log.debug("Redis cluster auto-detect at {}:{} inconclusive ({}); using standalone",
-                    config.host(), config.port(), e.toString());
-            return false;
+            log.debug("Redis cluster auto-detect at {}:{} inconclusive ({}); using configured cluster.mode={}",
+                    config.host(), config.port(), e.toString(), fallback);
+            return fallback;
         } finally {
             probe.close();
         }

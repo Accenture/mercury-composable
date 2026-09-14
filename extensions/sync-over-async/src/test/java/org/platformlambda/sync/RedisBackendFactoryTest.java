@@ -21,7 +21,6 @@ package org.platformlambda.sync;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.support.RedisBackend;
 import org.platformlambda.support.RedisBackendFactory;
-import org.platformlambda.support.RedisClusterMode;
 import org.platformlambda.support.RedisConfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,14 +35,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  */
 class RedisBackendFactoryTest extends RedisTestBase {
 
-    private RedisConfig config(RedisClusterMode mode) {
-        return new RedisConfig("127.0.0.1", redisPort, "", "", false, 0, 2000, mode, "");
+    private RedisConfig config(boolean autoDetect, boolean clusterEnabled) {
+        return new RedisConfig("127.0.0.1", redisPort, "", "", false, 0, 2000, autoDetect, clusterEnabled, "");
     }
 
     @Test
     void autoDetectResolvesAStandaloneServerAndRoundTrips() {
-        try (RedisBackend backend = RedisBackendFactory.create(config(RedisClusterMode.AUTO))) {
-            // the embedded server reports cluster_enabled:0, so auto-detection must pick standalone
+        // detect=auto: the embedded server reports cluster_enabled:0, so detection must pick standalone
+        try (RedisBackend backend = RedisBackendFactory.create(config(true, false))) {
             assertFalse(backend.cluster(), "a single-node server must auto-detect as standalone");
             backend.commands().set("soa-factory-probe", "value");
             assertEquals("value", backend.commands().get("soa-factory-probe"));
@@ -53,7 +52,8 @@ class RedisBackendFactoryTest extends RedisTestBase {
 
     @Test
     void explicitStandaloneModeSkipsDetectionAndRoundTrips() {
-        try (RedisBackend backend = RedisBackendFactory.create(config(RedisClusterMode.STANDALONE))) {
+        // detect off, cluster.mode false: standalone by config, no probe
+        try (RedisBackend backend = RedisBackendFactory.create(config(false, false))) {
             assertFalse(backend.cluster());
             backend.commands().set("soa-standalone-probe", "value");
             assertEquals("value", backend.commands().get("soa-standalone-probe"));

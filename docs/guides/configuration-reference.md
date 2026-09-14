@@ -1237,7 +1237,7 @@ off by default and starts (eagerly connecting to Redis) only when `sync.over.asy
 
 Master switch. `true` starts the Redis return-route coordinator at boot.
 
-### `redis.host`
+### `soa.redis.host`
 
 | Type | Default |
 |------|---------|
@@ -1245,7 +1245,7 @@ Master switch. `true` starts the Redis return-route coordinator at boot.
 
 Redis host.
 
-### `redis.port`
+### `soa.redis.port`
 
 | Type | Default |
 |------|---------|
@@ -1253,7 +1253,7 @@ Redis host.
 
 Redis port.
 
-### `redis.username`
+### `soa.redis.username`
 
 | Type | Default |
 |------|---------|
@@ -1261,7 +1261,7 @@ Redis port.
 
 ACL/RBAC username; blank = the default user (password-only or no auth). Set it for a named user such as an AWS ElastiCache RBAC user. Source from the environment (`${REDIS_USERNAME}`). Authentication is identical for standalone and cluster - AWS applies one credential set to the whole replication group.
 
-### `redis.password`
+### `soa.redis.password`
 
 | Type | Default |
 |------|---------|
@@ -1269,7 +1269,7 @@ ACL/RBAC username; blank = the default user (password-only or no auth). Set it f
 
 Auth password; blank = no auth. Source from the environment (`${REDIS_PASSWORD}`).
 
-### `redis.ssl`
+### `soa.redis.ssl`
 
 | Type | Default |
 |------|---------|
@@ -1277,7 +1277,7 @@ Auth password; blank = no auth. Source from the environment (`${REDIS_PASSWORD}`
 
 Use TLS (`rediss://`).
 
-### `redis.database`
+### `soa.redis.database`
 
 | Type | Default |
 |------|---------|
@@ -1285,7 +1285,7 @@ Use TLS (`rediss://`).
 
 Logical Redis database index (standalone only; a Redis Cluster is database 0).
 
-### `redis.timeout.ms`
+### `soa.redis.timeout.ms`
 
 | Type | Default |
 |------|---------|
@@ -1293,31 +1293,39 @@ Logical Redis database index (standalone only; a Redis Cluster is database 0).
 
 Default Redis command timeout.
 
-### `redis.cluster.mode`
+### `soa.redis.cluster.detect`
 
 | Type | Default |
 |------|---------|
-| `String` (`auto` \| `standalone` \| `cluster`) | `auto` |
+| `String` (`auto` \| _other_) | `auto` |
 
-Selects the Redis client. `auto` probes the seed at start-up (`INFO` -> `cluster_enabled:1` = cluster) and falls back to standalone if the probe cannot decide; `standalone` always uses a single-node client (no probe); `cluster` always uses a cluster client. The return route is cluster-safe (every operation single-key; the one two-key delete is split so no command spans two hash slots). See the [Sync-over-Async guide](sync-over-async.md#cluster).
+Cluster auto-detection switch. `auto` probes the seed at start-up (`INFO` -> `cluster_enabled:1` = cluster, otherwise standalone). Any other value (e.g. `off`) skips the probe and defers to `soa.redis.cluster.mode`. Falls back to the un-prefixed `redis.cluster.detect` when absent. See the [Sync-over-Async guide](sync-over-async.md#cluster).
 
-### `redis.cluster.nodes`
+### `soa.redis.cluster.mode`
+
+| Type | Default |
+|------|---------|
+| `boolean` | `false` |
+
+Cluster on/off used when `soa.redis.cluster.detect` is not `auto`, and the fallback when an `auto` probe is inconclusive (e.g. `INFO` restricted): `true` = cluster client, `false` = standalone. The boolean form matches a common cache-config convention, so it can be shared with a co-resident `redis.cluster.mode` through the fallback. The return route is cluster-safe (every operation single-key; the one two-key delete is split so no command spans two hash slots).
+
+### `soa.redis.cluster.nodes`
 
 | Type | Default |
 |------|---------|
 | `String` | — (blank) |
 
-Cluster seed nodes as `host:port,host:port`. Blank = the single `redis.host:redis.port` seed - enough on its own, since the client discovers the shard topology from any seed (point it at an AWS ElastiCache configuration endpoint). Ignored unless the effective mode is `cluster`.
+Cluster seed nodes as `host:port,host:port`. Blank = the single `soa.redis.host:soa.redis.port` seed - enough on its own, since the client discovers the shard topology from any seed (point it at an AWS ElastiCache configuration endpoint). Used only when the resolved selection is cluster.
 
-### `redis.health.timeout`
+### `soa.redis.health.timeout`
 
 | Type | Default |
 |------|---------|
 | `duration` | `5s` |
 
-Timeout for the `soa.redis.health` probe - a single Redis PING on a dedicated connection built from the `redis.*` parameters (one successful call proves connectivity, TLS, and authentication). Add `soa.redis.health` to `mandatory.health.dependencies` (or the optional list) to include the server in `/health`. (The plain `redis.health` route name is reserved for the health check of the planned generic Redis distributed-cache module.)
+Timeout for the `soa.redis.health` probe - a single Redis PING on a dedicated connection built from the `soa.redis.*` parameters (one successful call proves connectivity, TLS, and authentication). Add `soa.redis.health` to `mandatory.health.dependencies` (or the optional list) to include the server in `/health`. (The plain `redis.health` route name is reserved for the health check of the planned generic Redis distributed-cache module.)
 
-### `redis.health.startup.grace`
+### `soa.redis.health.startup.grace`
 
 | Type | Default |
 |------|---------|
@@ -1375,7 +1383,7 @@ safety net: completed or closed streams delete their keys eagerly.
 
 Per-pod ceiling on concurrently open streaming rendezvous (backpressure).
 
-All `redis.*` and `sync.*` values support `${ENV_VAR:default}` substitution.
+All `soa.redis.*` and `sync.*` values support `${ENV_VAR:default}` substitution.
 
 ---
 

@@ -60,8 +60,8 @@ public class SyncOverAsyncAutoStart implements EntryPoint {
         ReturnRouteCoordinator coordinator = new ReturnRouteCoordinator(backend, originId, syncConfig);
         coordinator.start();
         SyncRuntime.set(coordinator, backend);
-        log.info("Return-route coordinator started for pod {} (redis {}:{}, ssl={}, mode={}, cluster={})",
+        log.info("Return-route coordinator started for pod {} (redis {}:{}, ssl={}, detect={}, cluster={})",
                 originId, redisConfig.host(), redisConfig.port(), redisConfig.ssl(),
-                redisConfig.clusterMode(), backend.cluster());
+                redisConfig.autoDetectCluster() ? "auto" : "off", backend.cluster());
     }
 }
