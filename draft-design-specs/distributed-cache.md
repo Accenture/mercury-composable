@@ -11,6 +11,7 @@ opaque `byte[]` (Q3); the operation set is the **five key-value actions + bulk `
 and the list ops reuse the append-with-TTL + destructive-pop machinery already built for the return
 route); an **app key-prefix namespace** (Q6); the typed Java helper is **deferred** (Q7 — the function +
 flow surfaces already cover L1/L2/L3); and the **Rust port ships in lockstep** with the Java module (Q8).
+The client uses a **single shared, multiplexed Lettuce connection — no pool** (§4.4).
 
 **Direction (ruled):** *Keep sync-over-async small.* sync-over-async is a cross-pod **rendezvous
 transport** (correlation-id `request:`/`queue:` keys, `RPUSH`/`LPOP`/`EVAL` drains), **not** a
@@ -139,9 +140,20 @@ for the cache) with no collision — the namespacing done in PR #385 is what mak
 
 ### 4.4 The cache action function
 
-- **Route:** `v1.cache.redis` (Q4). `@PreLoad(instances=N)` — N is a pool of workers (Q: default,
-  e.g. 20) so concurrent cache calls do not serialise on one Lettuce connection; each instance reuses
-  one cached connection (the connection-reuse contract; a known leak class to guard with a test).
+- **Route:** `v1.cache.redis` (Q4). `@PreLoad(instances=N)` — N is the number of virtual-thread
+  **worker instances** handling cache requests in parallel (function-level concurrency), *not* a
+  Redis connection count. All instances share the backend's **one connection** (see below).
+- **Connection model: a single shared Lettuce connection, no pool.** Lettuce is thread-safe and
+  **multiplexes** — any number of threads pipeline their commands over one TCP connection, and Lettuce
+  correlates the ordered replies back to each caller (Redis needs no special support; it sees one
+  connection and executes/replies in arrival order — the RESP contract). A `commons-pool2` pool would
+  be needed only for genuinely **blocking** commands (`BLPOP`/`BRPOP`/`WAIT`) or `MULTI`/`EXEC`
+  transactions — and this op set has none (`LPOP` not `BLPOP`; the append-with-TTL is a single atomic
+  `EVAL`; Pub/Sub, if ever needed, uses its own connection as sync-over-async does). So the module uses
+  the `RedisBackend`'s single shared connection, exactly as sync-over-async already runs in production.
+  (Add a small fixed number of round-robin connections only if profiling ever shows the single
+  connection's netty event-loop thread saturating at extreme throughput — a later tuning knob, never a
+  20-slot pool.)
 - **Input:** `action` (header or field) + `key` / `keys` (for `MGET`) / `entries` (a `Map` for `MPUT`) +
   `value` + `ttl`. A typed input PoJo is preferred over loose headers for clarity and for Event Script
   data mapping.
@@ -192,7 +204,8 @@ cluster.detect/cluster.mode/cluster.nodes), plus cache tunables:
 
 ```properties
 redis.cache.enabled=true            # opt-in master switch (@OptionalService)
-redis.cache.instances=20            # worker pool (concurrency)
+redis.cache.instances=20            # virtual-thread worker instances (function concurrency), NOT connections;
+                                    #   all share the backend's one multiplexed Lettuce connection (no pool)
 redis.cache.default.ttl=1h          # default TTL when a PUT omits one (Q5)
 redis.cache.key.prefix=             # optional namespace to isolate apps sharing one Redis (Q6)
 redis.health.timeout=5s
@@ -222,8 +235,9 @@ semantics as `soa.redis.health`. Opt in via `mandatory.health.dependencies` /
   error surfaced to the caller (the flow's exception handler decides fallback — cache-aside is the
   app's concern, not the module's).
 - **Cluster `MOVED`/`ASK` redirects, topology change** — handled by the Lettuce cluster client.
-- **Connection leak** — each worker instance reuses one cached connection; guard with a
-  connection-reuse test (a known historical leak class).
+- **Connection lifecycle** — the single shared connection is owned by the `RedisBackend` and closed
+  once on shutdown; there is no per-request or per-instance connection creation, so the per-instance
+  connection-leak class a pooled/per-worker design can hit does not arise here.
 
 ## 7. Non-goals
 
