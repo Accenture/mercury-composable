@@ -156,24 +156,34 @@
   declare it. Extends [[functions-decoupled-routes]] to the dependency graph.
   <!-- id: soa-transport-neutral-cid | created: 2026-09-12 | last_used: 2026-09-12 | uses: 7 | tier: active | origin: 2026-09-12-011438 -->
 
-- **sync-over-async runs on standalone OR clustered Redis behind one seam (2026-09-14, field
-  request; Eric ruled auto-detect the default).** `RedisBackend` (StandaloneRedisBackend /
-  ClusterRedisBackend, built by `RedisBackendFactory`) hides the topology; `redis.cluster.mode`
-  = auto|standalone|cluster (auto probes `INFO` → `cluster_enabled:1`, with a standalone
-  fallback). The seam is clean because in Lettuce the standalone `RedisCommands` and the cluster
-  `RedisAdvancedClusterCommands` BOTH extend `RedisClusterCommands` — the single command type the
-  store programs against (all ops single-key + `publish`). Cluster-safe by construction: the sole
-  two-key `DEL` (cleanup) is split into two single-key DELs, so the **wire key format is
+- **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
+  `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
+  `RedisBackend` (StandaloneRedisBackend / ClusterRedisBackend, built by `RedisBackendFactory`)
+  hides the topology. The seam is clean because in Lettuce the standalone `RedisCommands` and the
+  cluster `RedisAdvancedClusterCommands` BOTH extend `RedisClusterCommands` — the single command
+  type the store programs against (all ops single-key + `publish`). Cluster-safe by construction:
+  the sole two-key `DEL` (cleanup) is split into two single-key DELs, so the **wire key format is
   UNCHANGED** (`request:{cid}` / `queue:{cid}`, no hash tags) — existing standalone polyglot
   interop is unaffected and there is no Rust wire break. Classic Pub/Sub wake-ups cross the
-  cluster bus. Auth is identical for both topologies (AWS applies one credential set to the whole
-  replication group): a new optional `redis.username` (ACL/RBAC) beside `redis.password`, both
-  resolving `${ENV_VAR}` from a lower-`sequence` credential bootstrap
-  ([[preload-before-mainapp-lazy-config]]); no IAM SDK in core (Lettuce's
-  `withAuthentication(RedisCredentialsProvider)` is the future seam if rotating IAM tokens are
-  ever needed). Rust parity for cluster (a cluster-client option + the same DEL split) is a parked
+  cluster bus. **Cluster selection = TWO keys** (Eric, to keep a cache-style boolean intact):
+  `soa.redis.cluster.detect=auto` (default) probes `INFO`→`cluster_enabled:1`; otherwise the
+  boolean `soa.redis.cluster.mode` (true/false) decides — and the boolean is also the
+  inconclusive-probe fallback (robust when INFO is restricted). **Config namespace:** all keys are
+  `soa.redis.*` so sync-over-async never collides with a co-resident `redis.*` consumer (a
+  distributed cache, or minigraph-state-redis), and **each key falls back to the un-prefixed
+  `redis.*`** via the config reader's nested-default (`get(soaKey, get(redisKey, default))`) — so
+  NO breaking change (the earlier `soa.redis.health` ROUTE rename #377 has no fallback and stands).
+  **Auth is identical for both topologies AND matches the field's cache client** (verified against
+  the field design extract): token → `withPassword` (my username-blank + password path); RBAC
+  username+password → `withAuthentication` (my username-set path) — same Lettuce calls, same wire
+  AUTH, no AWS SDK. New optional `soa.redis.username` (RBAC). Credentials resolve `${ENV_VAR}` from
+  a lower-`sequence` credential bootstrap ([[preload-before-mainapp-lazy-config]]); the field's
+  loader is `@MainApplication(sequence=9)` < the autostart's default 10, so it runs first (must
+  publish resolved creds to the `redis.*`/`soa.redis.*` property names). Lettuce's
+  `withAuthentication(RedisCredentialsProvider)` is the future seam if rotating IAM tokens are ever
+  needed. Rust parity for cluster (cluster-client option + the same DEL split) is a parked
   follow-up, NOT a break. Extends [[soa-transport-neutral-cid]].
-  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-14 | uses: 1 | tier: working | origin: 2026-09-14-181948 -->
+  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-14 | uses: 2 | tier: working | origin: 2026-09-14-181948 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
