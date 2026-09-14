@@ -44,8 +44,10 @@ class RedisHealthCheckAuthTest {
     private static final String DATA_DIR = "/tmp/soa-redis-auth";
     // fixed high port, distinct from RedisTestBase's server (both may run in one surefire JVM)
     private static final int AUTH_PORT = 16380;
-    // an obviously local fixture credential for the embedded test server
-    private static final String PASSWORD = "local-test-secret";
+    // the fixture credential is GENERATED per test run - the embedded server below is started
+    // with this value, so it is authoritative by construction and no credential literal exists
+    // anywhere in the repository (CWE-798, field Snyk Code policy)
+    private static final String PASSWORD = Utility.getInstance().getUuid();
     private static final Map<String, String> HEALTH = Map.of("type", "health");
     private static final long TIMEOUT_MS = 2000L;
 
@@ -99,8 +101,9 @@ class RedisHealthCheckAuthTest {
     @SuppressWarnings("unchecked")
     @Test
     void rejectedCredentialIsAlsoWaitingNotAnOutage() {
-        // WRONGPASS: still not the real credential - a pod restart cannot fix it either
-        var health = new RedisHealthCheck(() -> withPassword("not-the-real-one"), TIMEOUT_MS, 0);
+        // WRONGPASS: still not the real credential - a pod restart cannot fix it either.
+        // Derived by suffix, so it is guaranteed unequal and still not a literal.
+        var health = new RedisHealthCheck(() -> withPassword(PASSWORD + "-stale"), TIMEOUT_MS, 0);
         Map<String, Object> waiting = (Map<String, Object>) health.handleEvent(HEALTH, null, 1);
         assertEquals("Waiting for Redis connection", waiting.get("status"));
     }
