@@ -75,7 +75,9 @@ Then enable the coordinator and point it at Redis:
 sync.over.async.enabled=true
 redis.host=${REDIS_HOST:127.0.0.1}
 redis.port=${REDIS_PORT:6379}
+redis.username=${REDIS_USERNAME:}     # blank = default user; set for an ACL/RBAC user
 redis.password=${REDIS_PASSWORD:}     # blank = no auth; keep secrets in the environment
+redis.cluster.mode=auto               # auto | standalone | cluster
 ```
 
 On startup the extension builds a Redis client and the return-route coordinator, keyed by this pod's origin
@@ -85,10 +87,13 @@ id, from discrete `redis.*` connection parameters and `sync.*` engine tunables. 
 | Key | Default | Description |
 |-----|---------|-------------|
 | `sync.over.async.enabled` | `false` | Master switch; `true` starts the return-route coordinator. |
-| `redis.host` / `redis.port` | `127.0.0.1` / `6379` | Redis connection. |
+| `redis.host` / `redis.port` | `127.0.0.1` / `6379` | Redis connection (or the cluster configuration endpoint). |
+| `redis.username` | — (blank) | ACL/RBAC username; blank = the default user. Source from the environment. |
 | `redis.password` | — (blank) | Auth password; source from the environment. |
 | `redis.ssl` | `false` | Use TLS (`rediss://`). |
-| `redis.database` | `0` | Logical database index. |
+| `redis.database` | `0` | Logical database index (standalone only; a cluster is database 0). |
+| `redis.cluster.mode` | `auto` | `auto` (detect at start-up), `standalone`, or `cluster`. See [Standalone or cluster](#cluster). |
+| `redis.cluster.nodes` | — (blank) | Cluster seeds `host:port,host:port`; blank = the single `redis.host:redis.port`. |
 | `redis.timeout.ms` | `5000` | Default command timeout. |
 | `redis.health.timeout` | `5s` | Timeout for the [`soa.redis.health`](#health) probe. |
 | `redis.health.startup.grace` | `30s` | Start-up grace for [`soa.redis.health`](#health) (placeholder healthy status while the client warms up). |
@@ -98,6 +103,34 @@ id, from discrete `redis.*` connection parameters and `sync.*` engine tunables. 
 | `sync.max.pending.requests` | `10000` | Per-pod ceiling on in-flight synchronous requests (backpressure). |
 | `sync.stream.ttl.seconds` | `1800` | TTL for a [streaming](#streaming) rendezvous's route and queue, refreshed on every post (session-scale — an SSE notification channel legitimately idles). |
 | `sync.max.pending.streams` | `1000` | Per-pod ceiling on concurrently open streams. |
+
+### Standalone or cluster Redis {#cluster}
+
+The return route runs against a **single-node** Redis or a **Redis Cluster** (e.g. AWS ElastiCache
+cluster-mode-enabled) with no code change — `redis.cluster.mode` selects the client:
+
+- **`auto`** (default) — at start-up the extension runs `INFO` against the seed and builds a cluster client
+  when the server reports `cluster_enabled:1`, otherwise a standalone client. If the probe cannot decide
+  (for example `INFO` is restricted on a managed Redis) it falls back to standalone. One extra probe
+  connection at start-up; nothing else changes.
+- **`standalone`** — always a single-node client (the original behaviour; no probe).
+- **`cluster`** — always a cluster client, seeded from `redis.cluster.nodes` (`host:port,host:port`) or, when
+  that is blank, from the single `redis.host:redis.port`. A single seed is enough: Lettuce discovers the
+  shard topology from it, so pointing `redis.host` at an ElastiCache **configuration endpoint** works.
+
+The return route is cluster-safe by construction: every key operation is single-key, and the one two-key
+delete is split so no command ever spans two hash slots. Classic Pub/Sub wake-ups still reach the waiting
+pod across the cluster bus.
+
+**Authentication is identical for both topologies.** AWS applies one AUTH token or RBAC user to the whole
+replication group, and the cluster client presents it on every node connection exactly as the standalone
+client does — so `redis.username` (for an RBAC user) and `redis.password` are all you set either way, and
+`redis.ssl=true` (TLS, required for AUTH on ElastiCache) carries over unchanged. Keep the secrets out of the
+file: a credential bootstrap running in a **lower-`sequence` `@MainApplication`** (so it runs before
+sync-over-async starts) publishes them as environment variables that the `${REDIS_PASSWORD}` /
+`${REDIS_USERNAME}` placeholders resolve. IAM-token authentication — where the password is a short-lived
+signed token — is a different mechanism (the same for standalone and cluster) and is not covered by these
+static keys.
 
 ## Reliability cornerstones {#reliability}
 

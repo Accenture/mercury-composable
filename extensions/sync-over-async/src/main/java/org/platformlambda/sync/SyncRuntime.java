@@ -18,10 +18,10 @@
 
 package org.platformlambda.sync;
 
-import io.lettuce.core.RedisClient;
+import org.platformlambda.support.RedisBackend;
 
 /**
- * Process-wide holder for the running {@link ReturnRouteCoordinator} and its {@link RedisClient}, populated
+ * Process-wide holder for the running {@link ReturnRouteCoordinator} and its {@link RedisBackend}, populated
  * once at startup by {@link SyncOverAsyncAutoStart}. Composable functions (the synchronous facade entry and
  * the reply task) obtain the coordinator from here - the analogue of the minimalist-kafka {@code KafkaRuntime}.
  */
@@ -38,13 +38,13 @@ public final class SyncRuntime {
     public static final String CID = "cid";
 
     private static ReturnRouteCoordinator coordinator;
-    private static RedisClient client;
+    private static RedisBackend backend;
 
     private SyncRuntime() {}
 
-    static void set(ReturnRouteCoordinator coordinatorInstance, RedisClient clientInstance) {
+    static void set(ReturnRouteCoordinator coordinatorInstance, RedisBackend backendInstance) {
         coordinator = coordinatorInstance;
-        client = clientInstance;
+        backend = backendInstance;
     }
 
     /** @return the running coordinator, or {@code null} if sync-over-async was not enabled at startup. */
@@ -61,15 +61,15 @@ public final class SyncRuntime {
         return coordinator == null ? 0 : coordinator.activeStreams();
     }
 
-    /** Close the coordinator and shut down the Redis client (idempotent). */
+    /** Close the coordinator and shut down the Redis backend, in that order (idempotent). */
     public static void shutdown() {
         if (coordinator != null) {
             coordinator.close();
             coordinator = null;
         }
-        if (client != null) {
-            client.shutdown();
-            client = null;
+        if (backend != null) {
+            backend.close();
+            backend = null;
         }
     }
 }

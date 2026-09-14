@@ -36,6 +36,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    `Thread.sleep(ms)` in test code (SonarQube `java:S2925`), part of the PR #376 quality
    round.
 
+3. **Clustered Redis for sync-over-async** — the return route now runs against a single-node
+   Redis or a Redis Cluster (e.g. AWS ElastiCache cluster-mode-enabled) with no code change.
+   `redis.cluster.mode` selects the client: `auto` (default) probes the seed at start-up
+   (`INFO` → `cluster_enabled:1`) and falls back to standalone if it cannot decide;
+   `standalone` and `cluster` force the choice. `redis.cluster.nodes` lists cluster seeds
+   (`host:port,…`), or a single seed / configuration endpoint suffices — the client discovers
+   the shard topology. The route is cluster-safe by construction: every key operation is
+   single-key, and the one two-key delete is split so no command spans two hash slots; classic
+   Pub/Sub wake-ups still cross the cluster bus. Authentication is identical for both
+   topologies — a new optional `redis.username` supports an ACL/RBAC user (AWS applies one
+   credential set to the whole replication group), sourced like `redis.password` from the
+   environment (a lower-`sequence` credential bootstrap publishes the vault secrets first). The
+   producer-side `StreamResponder` and the `soa.redis.health` check are cluster-aware through
+   the same seam. Standalone deployments are unchanged.
+
 ### Changed
 
 1. **Health route rename: `redis.health` → `soa.redis.health`** (PR #377). The plain

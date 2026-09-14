@@ -18,9 +18,6 @@
 
 package org.platformlambda.support;
 
-import io.lettuce.core.RedisClient;
-import io.lettuce.core.RedisURI;
-import io.lettuce.core.api.StatefulRedisConnection;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
@@ -30,7 +27,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -127,8 +123,7 @@ public class RedisHealthCheck implements LambdaFunction {
     private final AtomicReference<RedisConfig> currentConfig = new AtomicReference<>();
     private final long timeoutMs;
     private final long graceDeadline;
-    private RedisClient client;
-    private StatefulRedisConnection<String, String> connection;
+    private RedisBackend backend;
     private volatile boolean ready = false;
 
     /** Instantiated reflectively when the platform's {@code @PreLoad} scanner registers the route. */
@@ -219,17 +214,16 @@ public class RedisHealthCheck implements LambdaFunction {
     private Object probe() {
         lock.lock();
         try {
-            if (connection == null) {
+            if (backend == null) {
                 // re-resolved, not cached from the constructor: a credential published by a later
                 // @MainApplication bootstrap is not visible while this @PreLoad function is constructed
                 RedisConfig config = probeConfig.get();
                 currentConfig.set(config);
-                RedisURI uri = config.toUri();
-                uri.setTimeout(Duration.ofMillis(timeoutMs));
-                client = RedisClient.create(uri);
-                connection = client.connect();
+                // the health check bounds its probe with its own timeout; the factory selects standalone or
+                // cluster per redis.cluster.mode (auto-detecting when so configured)
+                backend = RedisBackendFactory.create(config.withTimeout(timeoutMs));
             }
-            connection.sync().ping();
+            backend.commands().ping();
             ready = true;
             Map<String, Object> result = new HashMap<>();
             result.put(STATUS, REACHABLE);
@@ -310,21 +304,13 @@ public class RedisHealthCheck implements LambdaFunction {
     }
 
     private void closeQuietly() {
-        if (connection != null) {
+        if (backend != null) {
             try {
-                connection.close();
+                backend.close();
             } catch (Exception e) {
-                log.debug("Ignorable error while closing Redis health-check connection - {}", e.getMessage());
+                log.debug("Ignorable error while closing the Redis health-check backend - {}", e.getMessage());
             }
-            connection = null;
-        }
-        if (client != null) {
-            try {
-                client.shutdown(Duration.ZERO, Duration.ofSeconds(2));
-            } catch (Exception e) {
-                log.debug("Ignorable error while shutting down Redis health-check client - {}", e.getMessage());
-            }
-            client = null;
+            backend = null;
         }
     }
 }

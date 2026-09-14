@@ -1253,6 +1253,14 @@ Redis host.
 
 Redis port.
 
+### `redis.username`
+
+| Type | Default |
+|------|---------|
+| `String` | — (blank) |
+
+ACL/RBAC username; blank = the default user (password-only or no auth). Set it for a named user such as an AWS ElastiCache RBAC user. Source from the environment (`${REDIS_USERNAME}`). Authentication is identical for standalone and cluster - AWS applies one credential set to the whole replication group.
+
 ### `redis.password`
 
 | Type | Default |
@@ -1275,7 +1283,7 @@ Use TLS (`rediss://`).
 |------|---------|
 | `int` | `0` |
 
-Logical Redis database index.
+Logical Redis database index (standalone only; a Redis Cluster is database 0).
 
 ### `redis.timeout.ms`
 
@@ -1284,6 +1292,22 @@ Logical Redis database index.
 | `long` (ms) | `5000` |
 
 Default Redis command timeout.
+
+### `redis.cluster.mode`
+
+| Type | Default |
+|------|---------|
+| `String` (`auto` \| `standalone` \| `cluster`) | `auto` |
+
+Selects the Redis client. `auto` probes the seed at start-up (`INFO` -> `cluster_enabled:1` = cluster) and falls back to standalone if the probe cannot decide; `standalone` always uses a single-node client (no probe); `cluster` always uses a cluster client. The return route is cluster-safe (every operation single-key; the one two-key delete is split so no command spans two hash slots). See the [Sync-over-Async guide](sync-over-async.md#cluster).
+
+### `redis.cluster.nodes`
+
+| Type | Default |
+|------|---------|
+| `String` | — (blank) |
+
+Cluster seed nodes as `host:port,host:port`. Blank = the single `redis.host:redis.port` seed - enough on its own, since the client discovers the shard topology from any seed (point it at an AWS ElastiCache configuration endpoint). Ignored unless the effective mode is `cluster`.
 
 ### `redis.health.timeout`
 

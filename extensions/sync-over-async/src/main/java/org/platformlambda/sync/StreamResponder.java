@@ -18,8 +18,9 @@
 
 package org.platformlambda.sync;
 
-import io.lettuce.core.RedisClient;
-import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.cluster.api.sync.RedisClusterCommands;
+import org.platformlambda.support.RedisBackend;
+import org.platformlambda.support.RedisBackendFactory;
 import org.platformlambda.support.RedisConfig;
 
 /**
@@ -60,8 +61,8 @@ public class StreamResponder implements AutoCloseable {
     /** Default queue TTL - matches the {@code sync.stream.ttl.seconds} default on the consumer side. */
     public static final long DEFAULT_TTL_SECONDS = 1800;
 
-    private final RedisClient client;
-    private final StatefulRedisConnection<String, String> connection;
+    private final RedisBackend backend;
+    private final RedisClusterCommands<String, String> commands;
     private final ReturnRouteStore store;
     private final long ttlSeconds;
 
@@ -70,14 +71,15 @@ public class StreamResponder implements AutoCloseable {
     }
 
     /**
-     * @param config     the discrete {@code redis.*} connection parameters
+     * @param config     the discrete {@code redis.*} connection parameters (standalone or cluster, per
+     *                   {@code redis.cluster.mode})
      * @param ttlSeconds queue TTL refreshed on every post (the crash safety net; align it with the
      *                   consumer side's {@code sync.stream.ttl.seconds})
      */
     public StreamResponder(RedisConfig config, long ttlSeconds) {
-        this.client = RedisClient.create(config.toUri());
-        this.connection = client.connect();
-        this.store = new ReturnRouteStore(connection);
+        this.backend = RedisBackendFactory.create(config);
+        this.commands = backend.commands();
+        this.store = new ReturnRouteStore(commands);
         this.ttlSeconds = ttlSeconds;
     }
 
@@ -100,13 +102,12 @@ public class StreamResponder implements AutoCloseable {
         if (channel == null) {
             return false;
         }
-        connection.sync().publish(channel, businessCorrelationId);
+        commands.publish(channel, businessCorrelationId);
         return true;
     }
 
     @Override
     public void close() {
-        connection.close();
-        client.shutdown();
+        backend.close();
     }
 }
