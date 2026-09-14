@@ -86,6 +86,18 @@
             </exclusions>
         </dependency>
 
+        <!-- CVE-2026-87823 (CWE-190 integer overflow, CVSS 8.8): kafka-clients 4.3.1 - the
+             newest release - ships zstd-jni 1.5.6-10, and no kafka-clients upgrade carries the
+             fix, so the fixed zstd-jni is pinned DIRECTLY (runtime, like the transitive it
+             replaces). Nearest-wins resolution makes this pin effective for every downstream
+             consumer of this module too. Remove when kafka-clients ships zstd-jni >= 1.5.7-14. -->
+        <dependency>
+            <groupId>com.github.luben</groupId>
+            <artifactId>zstd-jni</artifactId>
+            <version>1.5.7-16</version>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- KRaft storage Formatter (org.apache.kafka.metadata.storage.Formatter). It ships transitively
              with kafka_2.13 at runtime; declared explicitly here because it is used at compile time. -->
         <dependency>
