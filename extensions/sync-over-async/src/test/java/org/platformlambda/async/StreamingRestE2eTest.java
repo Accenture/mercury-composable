@@ -198,6 +198,19 @@ class StreamingRestE2eTest extends RedisTestBase {
         fail("route key for " + cid + " was not cleaned up in time");
     }
 
+    /**
+     * Post a <b>terminal</b> segment without asserting liveness - the twin of
+     * {@code StreamReturnRouteTest.postTerminal}, whose javadoc carries the full reasoning:
+     * a closing post races its own consumption by construction (an in-flight drain woken by an
+     * earlier post may deliver the terminal and delete the route before the producer's own route
+     * check runs), so {@code post} may answer {@code false} although the segment <em>was</em>
+     * delivered. The scenario asserts on what actually matters instead: the collector saw the
+     * terminal event, and the rendezvous closed.
+     */
+    private static void postTerminal(StreamResponder responder, String cid) {
+        responder.post(cid, StreamSegment.EOF, null, null);
+    }
+
     // ------------------------------------------------------------------
     // use case: chat with an AI agent - strict order, single sequential producer
     // ------------------------------------------------------------------
@@ -238,7 +251,8 @@ class StreamingRestE2eTest extends RedisTestBase {
             assertTrue(orders.post(cid, StreamSegment.DATA, "orders", "order 42 shipped"));
             assertTrue(billing.post(cid, StreamSegment.DATA, "billing", "invoice 7 ready"));
             // a backend service - not the UI - ends the channel: any producer may post the terminal
-            assertTrue(billing.post(cid, StreamSegment.EOF, null, null));
+            // (liveness deliberately not asserted - the data posts above may have a drain in flight)
+            postTerminal(billing, cid);
 
             assertTrue(collector.ended.await(15, TimeUnit.SECONDS), "backend-side close ends the SSE render");
             assertEquals("order 42 shipped", collector.named("orders").getFirst().body());
