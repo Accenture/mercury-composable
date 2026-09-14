@@ -8,6 +8,81 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+> Accumulating for v4.12.9 — the release waits for a successful field deployment of the
+> security fix below.
+
+### Added
+
+1. **Streaming return route — cross-pod progressive rendering** (sync-over-async;
+   design decisions D1–D8 and experiments E1–E4, PRs #365–#374). In a horizontally
+   scaled deployment the pod that produces progressive events is generally not the pod
+   holding the user's HTTP connection; this closes that gap with Redis alone — no broker
+   on the path. A UI pod opens a streaming *rendezvous* keyed by a business
+   correlation-id; any pod (or any engine — the wire contract is shared with the Rust
+   port) posts ordered segments through `StreamResponder`, and the UI pod renders them
+   progressively out its SSE edge. One Redis List mechanism serves both patterns — a
+   one-shot response is the degenerate stream — with store-first appends, atomic
+   append+TTL, destructive drains, best-effort wake-ups healed by final drains, and
+   TTL-bounded crash recovery. `StreamBridge` + `EventStreamSink` wire a rendezvous to a
+   `stream: true` endpoint in one call (SSE head, idle watchdog with the single final
+   drain, 503 back-pressure before the head commits). The demo ships permanent
+   `stream-ui` / `stream-producer` profiles with a chaos runbook, and the cross-pod test
+   report records the live validation — including a real LLM token stream produced on
+   one pod through the platform's SSE consumer and rendered by another.
+
+2. Developer guide: *Pausing in a unit test* — `Utility.getInstance().sleep(ms)` replaces
+   `Thread.sleep(ms)` in test code (SonarQube `java:S2925`), part of the PR #376 quality
+   round.
+
+### Changed
+
+1. **Health route rename: `redis.health` → `soa.redis.health`** (PR #377). The plain
+   `redis.health` name is reserved for the planned generic Redis distributed-cache
+   module's check, so sync-over-async and that future module can coexist against one
+   Redis server. Configuration keys are unchanged (`redis.health.timeout`,
+   `redis.health.startup.grace`) — update `mandatory.health.dependencies` /
+   `optional.health.dependencies` entries to the new route name.
+
+2. **sync-over-async is transport-neutral, and minimalist-kafka moves to test scope
+   there** (PR #364). The facade tasks speak the module's own flow-level `cid` key; the
+   Kafka wire header belongs to the transport and is configurable there
+   (`kafka.correlation.id.header`, with per-binding overrides). **Consumer note:** an
+   application that relied on sync-over-async's transitive `minimalist-kafka` dependency
+   must now declare `minimalist-kafka` itself.
+
+### Fixed
+
+1. platform-core HTTP client: `:` stays raw in URI path segments (RFC 3986 allows it as
+   `pchar`), so Google-style custom methods (`.../models/<model>:streamGenerateContent` —
+   every Google Cloud `:verb` API) no longer 404 (PR #372, with a regression pin).
+
+2. Test suites no longer assert liveness on a racy **closing** post (PRs #378, #379): a
+   drain already in flight can pop the terminal segment, deliver it, and close the
+   rendezvous before the producer's own route check runs, so `post` may answer `false`
+   although the segment WAS delivered. The producer contract holds ("false = stop
+   producing") — the assertions, not the engine, were wrong. Surfaced by the Rust port
+   running the same scenarios under a different scheduler.
+
+3. Sonar/IDE quality round across the sync-over-async extension and demo (PR #376) —
+   cognitive-complexity and duplicate-literal cleanups, `synchronized` lazy-init for
+   plain fields, and the `SyncRuntime.activeStreams()` observer accessor so diagnostics
+   never obtain the closeable coordinator.
+
+### Security
+
+1. **CVE-2026-87823 / SNYK-JAVA-COMGITHUBLUBEN-19659584** (CWE-190 integer overflow,
+   CVSS 8.8, no known exploit): `kafka-clients` 4.3.1 — the newest release — ships the
+   vulnerable transitive `com.github.luben:zstd-jni` 1.5.6-10 and no kafka-clients
+   upgrade carries the fix, so the fixed **zstd-jni 1.5.7-16** is pinned directly
+   (runtime scope, like the transitive it replaces) in `minimalist-kafka`,
+   `kafka-connector` and `kafka-standalone`. Maven nearest-wins resolution makes the pin
+   effective for every downstream consumer — all ten Snyk-flagged projects re-resolve
+   1.5.7-16. Remove the pins when kafka-clients ships zstd-jni ≥ 1.5.7-14. (The Rust
+   port is not exposed: its Kafka client builds without the zstd codec.)
+
+---
 ## Version 4.12.8, 9/12/2026
 
 ### Added
