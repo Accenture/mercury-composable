@@ -1,0 +1,59 @@
+{
+  "nodes": [
+    {
+      "types": [
+        "UnitTest"
+      ],
+      "alias": "end",
+      "properties": {}
+    },
+    {
+      "types": [
+        "Task"
+      ],
+      "alias": "bad-output-task",
+      "properties": {
+        "task": "v1.demo.task",
+        "input": [
+          "input.body -> *"
+        ],
+        "output": [
+          "input.body.hello -> output.body.echo"
+        ],
+        "skill": "graph.task"
+      }
+    },
+    {
+      "types": [
+        "UnitTest"
+      ],
+      "alias": "root",
+      "properties": {
+        "purpose": "deliberately illegal output mapping LHS (input.*): the task call succeeds, then the output mapping throws inside the async completion callback - guardedCompletion must surface it as the node's error instead of leaving the caller to time out",
+        "name": "unit-test-task-8"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": "root",
+      "relations": [
+        {
+          "type": "test",
+          "properties": {}
+        }
+      ],
+      "target": "bad-output-task"
+    },
+    {
+      "source": "bad-output-task",
+      "relations": [
+        {
+          "type": "test",
+          "properties": {}
+        }
+      ],
+      "target": "end"
+    }
+  ]
+}

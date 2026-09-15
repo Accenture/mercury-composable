@@ -34,6 +34,10 @@ graphs:
   - 'unit-test-task-6'
   # foreign route: the task exists only as a declarative event-over-http target
   - 'unit-test-task-7'
+  # deliberately illegal output mapping LHS (input.*) on a task node: it compiles, the task
+  # call succeeds, then the mapping throws inside the async completion callback - the
+  # guarded completion must surface the error instead of leaving the caller to time out
+  - 'unit-test-task-8'
   - 'unit-test-join-retry'
   - 'unit-test-join-chain'
   - 'unit-test-cache-key'
