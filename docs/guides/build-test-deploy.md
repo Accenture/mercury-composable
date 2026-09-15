@@ -60,6 +60,16 @@ java -jar target/lambda-example-x.y.z.jar
 The lambda-example is a sample application that you can use as a template to write your own code. Please review
 the pom.xml and the source directory structure.
 
+> **Building the whole repository**: from the repo root, use `mvn clean install` — not `mvn test`.
+> Some modules resolve a dependency's version from its *packaged jar*; the AI contract provider, for
+> example, reads `/META-INF/maven/org.platformlambda/platform-core/pom.properties`, which Maven writes
+> only when the module is packaged. A reactor-wide `mvn test` never packages upstream modules — they
+> resolve as bare `target/classes` directories — so that module aborts at start-up with
+> *"the Mercury dependency assembly is incomplete"*, no matter what change you are verifying.
+> `mvn clean install` packages and installs each module in dependency order, which is also what CI runs.
+> (Testing a single module with `mvn test -f <module>/pom.xml` is fine: its dependencies then resolve
+> from your local Maven repository as jars.)
+
 In the lambda-example project root, you will find the following directories:
 
 ```shell
