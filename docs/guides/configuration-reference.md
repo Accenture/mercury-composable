@@ -1323,7 +1323,7 @@ Cluster seed nodes as `host:port,host:port`. Blank = the single `soa.redis.host:
 |------|---------|
 | `duration` | `5s` |
 
-Timeout for the `soa.redis.health` probe - a single Redis PING on a dedicated connection built from the `soa.redis.*` parameters (one successful call proves connectivity, TLS, and authentication). Add `soa.redis.health` to `mandatory.health.dependencies` (or the optional list) to include the server in `/health`. (The plain `redis.health` route name is reserved for the health check of the planned generic Redis distributed-cache module.)
+Timeout for the `soa.redis.health` probe - a single Redis PING on a dedicated connection built from the `soa.redis.*` parameters (one successful call proves connectivity, TLS, and authentication). Add `soa.redis.health` to `mandatory.health.dependencies` (or the optional list) to include the server in `/health`. (The plain `redis.health` route name is the health check of the [distributed cache](distributed-cache.md) module - see [Distributed Cache](#distributed-cache).)
 
 ### `soa.redis.health.startup.grace`
 
@@ -1384,6 +1384,62 @@ safety net: completed or closed streams delete their keys eagerly.
 Per-pod ceiling on concurrently open streaming rendezvous (backpressure).
 
 All `soa.redis.*` and `sync.*` values support `${ENV_VAR:default}` substitution.
+
+---
+
+## Distributed Cache {#distributed-cache}
+
+The [distributed cache](distributed-cache.md) (`v1.cache.redis`) uses the plain `redis.*` connection namespace — the same keys as `soa.redis.*` above without the `soa.` prefix (`redis.host`, `redis.port`, `redis.username`, `redis.password`, `redis.ssl`, `redis.database`, `redis.timeout.ms`, `redis.cluster.detect`, `redis.cluster.mode`, `redis.cluster.nodes`) — plus the cache tunables below. Set only `redis.*` to share one server with sync-over-async, or also set `soa.redis.*` to decouple them.
+
+### `redis.cache.enabled`
+
+| Type | Default |
+|------|---------|
+| `boolean` | `false` |
+
+Master switch. `true` registers the cache action function `v1.cache.redis` and the `redis.health` check; `false` (default) loads neither.
+
+### `redis.cache.instances`
+
+| Type | Default |
+|------|---------|
+| `int` | `20` |
+
+Number of virtual-thread worker instances for `v1.cache.redis` (function concurrency) - **not** a connection count. Every instance shares the module's one multiplexed Lettuce connection.
+
+### `redis.cache.default.ttl`
+
+| Type | Default |
+|------|---------|
+| `duration` | `1h` |
+
+Default TTL applied to a write (`PUT` / `MPUT` / `LIST_PUSH`) that omits a `ttl` header. Every stored key carries a TTL from creation.
+
+### `redis.cache.key.prefix`
+
+| Type | Default |
+|------|---------|
+| `String` | — (blank) |
+
+Optional namespace prepended to every cache key (and stripped again from `MGET` results), so multiple applications can share one Redis without colliding.
+
+### `redis.health.timeout`
+
+| Type | Default |
+|------|---------|
+| `duration` | `5s` |
+
+Timeout for the `redis.health` probe (a single Redis PING on a dedicated `redis.*` connection). Add `redis.health` to `mandatory.health.dependencies` (or the optional list) to include the cache's Redis in `/health`. Same semantics as `soa.redis.health.timeout`.
+
+### `redis.health.startup.grace`
+
+| Type | Default |
+|------|---------|
+| `duration` | `30s` |
+
+Start-up grace period for `redis.health` - a placeholder healthy status while the client warms up, with the same lazy-config / waiting-on-credential semantics as `soa.redis.health.startup.grace`.
+
+All `redis.cache.*` and `redis.*` values support `${ENV_VAR:default}` substitution.
 
 ---
 

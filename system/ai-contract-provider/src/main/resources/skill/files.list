@@ -10,6 +10,7 @@ references/guides/build-test-deploy.md
 references/guides/claims-registry.json
 references/guides/code-conventions.md
 references/guides/configuration-reference.md
+references/guides/distributed-cache.md
 references/guides/documentation-conventions.md
 references/guides/event-driven/ai-agent-guide.md
 references/guides/event-driven/function-execution.md
