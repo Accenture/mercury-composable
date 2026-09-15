@@ -55,7 +55,7 @@ class GraphLambdaFunctionGuardTest {
             assertThrows(IllegalArgumentException.class,
                     () -> probe.assertMutableModelTarget("worker", rhs), rhs + " must be rejected");
         }
-        // composite forms cannot smuggle a write into a reserved key either
+        // composite forms cannot smuggle a write target into a reserved key either
         assertThrows(IllegalArgumentException.class,
                 () -> probe.assertMutableModelTarget("worker", "model.cid.x"));
         assertThrows(IllegalArgumentException.class,
@@ -98,14 +98,14 @@ class GraphLambdaFunctionGuardTest {
         // an exceptionally completed future must terminate the Mono too, unwrapped
         var direct = new CompletableFuture<EventEnvelope>();
         direct.completeExceptionally(new IllegalStateException("connection lost"));
-        var e1 = assertThrows(IllegalStateException.class,
-                () -> probe.guardedCompletion(direct, response -> "next").block());
+        var directMono = probe.guardedCompletion(direct, response -> "next");
+        var e1 = assertThrows(IllegalStateException.class, directMono::block);
         assertEquals("connection lost", e1.getMessage());
         // the same when the failure arrives wrapped in a CompletionException (dependent stage)
         var wrapped = new CompletableFuture<EventEnvelope>();
         wrapped.completeExceptionally(new CompletionException(new IllegalStateException("wrapped loss")));
-        var e2 = assertThrows(IllegalStateException.class,
-                () -> probe.guardedCompletion(wrapped, response -> "next").block());
+        var wrappedMono = probe.guardedCompletion(wrapped, response -> "next");
+        var e2 = assertThrows(IllegalStateException.class, wrappedMono::block);
         assertEquals("wrapped loss", e2.getMessage());
     }
 }
