@@ -44,6 +44,30 @@ curl -s -X POST http://127.0.0.1:8303/api/graph/starter-quote \
 # → {"item": "widget", "unit_price": 100, "currency": "USD", "status": "quoted"}
 ```
 
+**One endpoint serves every graph.** `/api/graph/{graph_id}` takes the id from the URL path, so
+deploying a second model means adding its id to `graphs.yaml` — never a second REST entry.
+
+## Dev mode is on — build graphs with an AI agent
+
+`application.properties` ships with **`app.env=dev`**, so the app serves the MiniGraph Playground
+alongside your graph endpoint: the UI at <http://127.0.0.1:8303>, the session WebSocket, and the
+AI companion endpoint `POST /api/companion/{session-id}/sync`. Open the URL and you are in the
+workbench; there is nothing else to install.
+
+To have an AI agent **host** the session — so you and the agent co-author one live model as equals,
+and a dropped browser tab loses nothing — start the bundled broker and subscribe to the id it
+prints:
+
+```bash
+node scripts/playground-session-broker.mjs --target http://127.0.0.1:8303
+# → session id: ws-NNNNNN-N   ·  in the Playground console, type: session subscribe ws-NNNNNN-N
+```
+
+Every Playground service is gated by `@OptionalService("app.env=dev")`, so **deleting that one
+line from `application.properties` closes the whole surface** — the matching `rest.yaml` entries
+are then skipped at start-up. Do that before you ship to production; there is no auth on these
+endpoints.
+
 ## What to look at
 
 | File | Role |
@@ -52,6 +76,8 @@ curl -s -X POST http://127.0.0.1:8303/api/graph/starter-quote \
 | `src/main/resources/graphs.yaml` | The deployment manifest: only listed graphs that pass the CompileGraph gate are executable ("compiled or 404") |
 | `src/main/resources/flows/graph-executor.yml` | The standard exposure flow behind `/api/graph/{graph_id}` |
 | `src/test/java/com/accenture/starter/QuoteGraphTest.java` | End-to-end graph tests, including the 404 gate behavior |
+| `src/main/resources/rest.yaml` | The one graph endpoint, plus the dev-mode Playground / companion routes |
+| `src/main/resources/application.properties` | App config — including the `app.env=dev` switch that opens the Playground |
 | `scripts/playground-session-broker.mjs` | Lets an AI agent **host** a Playground session for you (keep-alive, auto-reconnect, localhost control API) — see `scripts/README.md` |
 
 ## Next steps
@@ -59,11 +85,10 @@ curl -s -X POST http://127.0.0.1:8303/api/graph/starter-quote \
 - Evolve the model: add nodes, decisions, and skills — the
   [built-in skills reference](https://accenture.github.io/mercury-composable/guides/knowledge-graph/skills-reference/)
   catalogs what nodes can do without code.
-- Draft and dry-run models interactively in the Playground — see
-  [Playground & AI companion](https://accenture.github.io/mercury-composable/guides/knowledge-graph/playground-and-companion/).
-  An AI agent can host the session with
-  `node scripts/playground-session-broker.mjs --target http://127.0.0.1:8303`
-  (use the broker rather than a hand-rolled WebSocket client — the keep-alive is easy to miss).
+- Draft and dry-run models interactively in the Playground (already enabled — see above) — the
+  [Playground & AI companion guide](https://accenture.github.io/mercury-composable/guides/knowledge-graph/playground-and-companion/)
+  covers the command grammar; use the bundled broker rather than a hand-rolled WebSocket client,
+  because the keep-alive is easy to miss.
 - Custom logic when the model needs it: attach a skill function (`@PreLoad`) to a node —
   the deliberate seam between the model and code. See the
   [AI developer guide](https://accenture.github.io/mercury-composable/guides/ai-developer-guide/).

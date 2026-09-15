@@ -150,6 +150,35 @@ trusted dev environments** (there is no auth).
 > session, not on disk: `export graph as {name}` before any restart (deploying a graph requires
 > one), or the unexported work is lost.
 
+## Turning dev mode on in your own app {#enabling}
+
+The Playground is not a separate application — it rides along in any Mercury app that depends on
+`minigraph-playground-engine`. Two things switch it on:
+
+1. **`app.env=dev`** in `application.properties`. Every Playground service is annotated
+   `@OptionalService("app.env=dev")`, so without this line none of them register.
+2. **The dev-mode `rest.yaml` entries** — the companion endpoint, the live-model and
+   describe-model reads, the two upload dialogs, and the state-machine inspector. A REST entry
+   whose service is not registered is **skipped with a warning at start-up**, so the two settings
+   belong together: `app.env=dev` without the routes gives you a WebSocket and no HTTP surface;
+   the routes without `app.env=dev` give you a start-up log full of
+   `Skip [POST] /api/companion/{id}/sync - Service ... not available`.
+
+Both ship pre-wired in [`templates/starter-graph`](https://github.com/Accenture/mercury-composable/tree/main/templates/starter-graph)
+— copy that directory and the Playground is live on first run. The
+[distributed-cache example](https://github.com/Accenture/mercury-composable/tree/main/examples/distributed-cache-example)
+shows the same wiring inside an app that also serves ordinary Layer 1 and Layer 2 endpoints: dev
+mode is additive, so a real application can be co-authored in the Playground and still serve its
+production routes. Remove the single `app.env=dev` line to close the whole surface for production.
+
+> **Depend on the graph engine alone.** `minigraph-playground-engine` pulls in
+> `event-script-engine` and `platform-core` transitively — one dependency, all three layers. Adding
+> the other two by hand introduces a resource collision: the Playground UI is bundled in the engine
+> jar as `classpath:/public/index.html` and `platform-core` ships a placeholder welcome page at the
+> same resource path, so whichever jar comes first on the classpath wins. The symptom is narrow and
+> easy to misread — every test, `curl`, and companion command still succeeds, while the browser
+> shows the placeholder instead of the Playground.
+
 ## User–AI collaboration {#collaboration}
 
 Put the two together and you get the seed of the framework's collaboration vision: a person watches

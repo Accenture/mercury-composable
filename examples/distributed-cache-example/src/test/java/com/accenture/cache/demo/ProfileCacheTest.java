@@ -103,11 +103,11 @@ class ProfileCacheTest extends TestBase {
         save.put("action", "save");
         save.put("id", "erin");
         save.put("profile", profile("Erin", "erin@example.com"));
-        EventEnvelope saved = http("POST", "/api/l3/profile", save);
+        EventEnvelope saved = http("POST", "/api/graph/profile-cache", save);
         assertEquals(200, saved.getStatus());
         assertEquals(3, ((Map<String, Object>) saved.getBody()).get("layer"));
         // GET -> the stored profile
-        EventEnvelope found = http("POST", "/api/l3/profile", get);
+        EventEnvelope found = http("POST", "/api/graph/profile-cache", get);
         assertEquals(200, found.getStatus());
         Map<String, Object> body = (Map<String, Object>) found.getBody();
         assertEquals("Erin", body.get("name"));
@@ -116,8 +116,45 @@ class ProfileCacheTest extends TestBase {
         Map<String, Object> del = new HashMap<>();
         del.put("action", "delete");
         del.put("id", "erin");
-        assertEquals(200, http("POST", "/api/l3/profile", del).getStatus());
-        assertEquals(404, http("POST", "/api/l3/profile", get).getStatus());
+        assertEquals(200, http("POST", "/api/graph/profile-cache", del).getStatus());
+        assertEquals(404, http("POST", "/api/graph/profile-cache", get).getStatus());
+    }
+
+    /**
+     * The graph's dispatch table is closed: an unknown or missing action is rejected by the reject node
+     * with HTTP-400 rather than falling through to whichever branch happens to be last.
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    void layer3RejectsAnUnknownAction() throws Exception {
+        Map<String, Object> save = new HashMap<>();
+        save.put("action", "save");
+        save.put("id", "frank");
+        save.put("profile", profile("Frank", "frank@example.com"));
+        assertEquals(200, http("POST", "/api/graph/profile-cache", save).getStatus());
+        // an unrecognised action is rejected, and the profile must survive it
+        Map<String, Object> bogus = new HashMap<>();
+        bogus.put("action", "purge");
+        bogus.put("id", "frank");
+        EventEnvelope rejected = http("POST", "/api/graph/profile-cache", bogus);
+        assertEquals(400, rejected.getStatus());
+        assertEquals("Invalid action. Use get, save or delete",
+                ((Map<String, Object>) rejected.getBody()).get("message"));
+        // a missing action is rejected the same way
+        Map<String, Object> noAction = new HashMap<>();
+        noAction.put("id", "frank");
+        assertEquals(400, http("POST", "/api/graph/profile-cache", noAction).getStatus());
+        // the record is still there - neither rejection reached the delete branch
+        Map<String, Object> get = new HashMap<>();
+        get.put("action", "get");
+        get.put("id", "frank");
+        EventEnvelope found = http("POST", "/api/graph/profile-cache", get);
+        assertEquals(200, found.getStatus());
+        assertEquals("Frank", ((Map<String, Object>) found.getBody()).get("name"));
+        Map<String, Object> del = new HashMap<>();
+        del.put("action", "delete");
+        del.put("id", "frank");
+        assertEquals(200, http("POST", "/api/graph/profile-cache", del).getStatus());
     }
 
     /** A profile written through Layer 1 is readable through Layer 2 - one cache, one wire format. */

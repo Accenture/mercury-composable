@@ -192,6 +192,13 @@ tasks:
 
 > `graph.exception.handler` is an engine **built-in** — you reference it, you do not write it.
 
+> **One endpoint, every graph.** The graph id is a URL *path parameter*, so this single `rest.yaml`
+> entry and this single flow serve every model the application deploys. Adding a graph means adding
+> its id to `graphs.yaml` — never a new endpoint. A Layer 3 application that has grown a
+> `/api/my-thing` route per graph has duplicated the exposure layer; collapse it back to
+> `/api/graph/{graph_id}`. (The flow file is identical in `templates/starter-graph` and in every
+> example that deploys a graph — copy it unchanged.)
+
 So a request flows: `http.flow.adapter` → `graph-executor` flow → `graph.executor` (loads the model
 by `graph_id`, traverses it) → `async.http.response`. Calling it:
 

@@ -7,7 +7,7 @@
     <artifactId>twin-kafka-demo</artifactId>
     <packaging>jar</packaging>
     <version>4.12.8</version>
-    <name>Worked example: profile management bridged across two Kafka clusters</name>
+    <name>Worked example: bridge across two Kafka clusters</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>

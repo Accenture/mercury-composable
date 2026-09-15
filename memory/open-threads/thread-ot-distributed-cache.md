@@ -19,6 +19,11 @@
   `EventEnvelope.toBytes()` encoding is a Java-side wire format the Rust port cannot read, so the
   polyglot value must be plain MsgPack key-values — **the Rust cache client must pack/unpack the same
   format for the example to stay an interop harness.**
+  **Polish round (2026-09-15, uncommitted at log time):** L3 collapsed onto the standard
+  `/api/graph/{graph_id}` endpoint + stock `graph-executor` flow (bespoke `l3-profile.yml` deleted), dev
+  mode + `scripts/` pre-wired in both the example and `templates/starter-graph`, and the `profile-cache`
+  decision node turned into a CLOSED dispatch table — an unknown or absent action now answers HTTP-400
+  from a `reject` node instead of falling through to DELETE. See [[minigraph-dev-mode-app-shape]].
   **Release path (Eric, 2026-09-15):** field Sonar scan of the new v4.12.9 code → successful field
   deployment → then cut the v4.12.9 release (per [[eric-release-rhythm]]); the Rust lockstep begins
   AFTER the release, not before.

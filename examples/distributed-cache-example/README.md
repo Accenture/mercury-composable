@@ -10,7 +10,7 @@ The app is a profile store with GET / POST / DELETE, exposed three times — one
 | --- | --- | --- | --- |
 | **1 — Platform Core** | event-driven **code** (PostOffice RPC) | `…/api/l1/profile/{id}` | the function switches on the HTTP method |
 | **2 — Event Script** | one **YAML flow** + a decision | `…/api/l2/profile/{id}` | a tiny task maps `input.method` → an action, a decision routes |
-| **3 — Knowledge Graph** | one **graph** + a decision node | `…/api/l3/profile` | the action rides in the JSON payload (`{ "action", "id", "profile" }`) |
+| **3 — Knowledge Graph** | one **graph** + a decision node | `…/api/graph/profile-cache` | the action rides in the JSON payload (`{ "action", "id", "profile" }`) |
 
 ```
                           ┌───────────────────────────────────────────────┐
@@ -20,7 +20,7 @@ The app is a profile store with GET / POST / DELETE, exposed three times — one
   GET/POST/DELETE ──L2──▶ │  l2-profile flow  (method→action, decision)    │─┼──▶│   v1.cache.redis   │──▶ Redis
                           └───────────────────────────────────────────────┘ │   │  (distributed-cache│    cache-demo:{id}
                           ┌───────────────────────────────────────────────┐ │   │     extension)     │
-  POST {action,id,…} ─L3─▶│  l3-profile flow → profile-cache graph         │─┘   └───────────────────┘
+  POST {action,id,…} ─L3─▶│  graph-executor flow → profile-cache graph     │─┘   └───────────────────┘
                           └───────────────────────────────────────────────┘
      value at rest = the profile Map packed with MsgPack (MsgPack.packMapOrList) — just the map, no envelope wrapper
 ```
@@ -65,6 +65,8 @@ Written here (five small functions + three config files); everything else is the
 | [`ProfileEncoder`](src/main/java/com/accenture/cache/demo/functions/ProfileEncoder.java) / [`ProfileDecoder`](src/main/java/com/accenture/cache/demo/functions/ProfileDecoder.java) | the MsgPack pack / unpack helpers (+ the 404-on-miss contract) |
 | [`ProfileExceptionHandler`](src/main/java/com/accenture/cache/demo/functions/ProfileExceptionHandler.java) | renders a flow error as `{type, status, message}` (Layer 2) |
 | [`rest.yaml`](src/main/resources/rest.yaml) · [`flows/l2-profile.yml`](src/main/resources/flows/l2-profile.yml) · [`graph/profile-cache.json`](src/main/resources/graph/profile-cache.json) | the L1/L2/L3 wiring |
+| [`flows/graph-executor.yml`](src/main/resources/flows/graph-executor.yml) | the standard Layer 3 exposure flow — copied unchanged from `templates/starter-graph`, not written for this app |
+| [`scripts/playground-session-broker.mjs`](scripts/playground-session-broker.mjs) | lets an AI agent **host** a Playground session against this app — also copied from the template |
 
 Reused from the platform: `v1.cache.redis` (the **distributed-cache** extension), `http.flow.adapter` +
 the Event Script engine, and `graph.executor` + `graph.math` + `graph.task` (the **minigraph** engine).
@@ -110,17 +112,30 @@ curl -sS http://127.0.0.1:8305/api/l1/profile/alice
 curl -sS -X DELETE http://127.0.0.1:8305/api/l1/profile/alice
 ```
 
-### Layer 3 — the action is in the payload
+### Layer 3 — one endpoint for every graph, the action is in the payload
+
+Layer 3 has **no endpoint of its own**. The standard graph API `POST /api/graph/{graph_id}` serves every
+graph the app deploys in [`graphs.yaml`](src/main/resources/graphs.yaml) — here that is `profile-cache`,
+so the URL is `/api/graph/profile-cache`. Deploying a second graph adds no REST configuration.
 
 ```shell
-curl -sS -X POST http://127.0.0.1:8305/api/l3/profile \
+curl -sS -X POST http://127.0.0.1:8305/api/graph/profile-cache \
      -H 'content-type: application/json' \
      -d '{"action":"save","id":"alice","profile":{"name":"Alice","email":"alice@example.com"}}'
-curl -sS -X POST http://127.0.0.1:8305/api/l3/profile -H 'content-type: application/json' -d '{"action":"get","id":"alice"}'
-curl -sS -X POST http://127.0.0.1:8305/api/l3/profile -H 'content-type: application/json' -d '{"action":"delete","id":"alice"}'
+curl -sS -X POST http://127.0.0.1:8305/api/graph/profile-cache -H 'content-type: application/json' -d '{"action":"get","id":"alice"}'
+curl -sS -X POST http://127.0.0.1:8305/api/graph/profile-cache -H 'content-type: application/json' -d '{"action":"delete","id":"alice"}'
 ```
 The `save` and `delete` acknowledgements carry `"layer": 3`, so you can see which surface answered; `get`
 returns the stored profile itself (`{name, email}`) — identical to what L1 and L2 return.
+
+The dispatch table is **closed**: an action that is not `get`, `save` or `delete` — including a missing
+one — is rejected by the graph itself, rather than falling through to whichever branch happens to be last.
+
+```shell
+# → HTTP 400 {"message":"Invalid action. Use get, save or delete","status":400}
+curl -sS -i -X POST http://127.0.0.1:8305/api/graph/profile-cache \
+     -H 'content-type: application/json' -d '{"action":"purge","id":"alice"}'
+```
 
 ### The interop demo — write on one layer, read on another
 
@@ -132,9 +147,32 @@ curl -sS -X POST http://127.0.0.1:8305/api/l1/profile/bob \
 # ... read the same record through Layer 2 ...
 curl -sS http://127.0.0.1:8305/api/l2/profile/bob
 # ... and through Layer 3
-curl -sS -X POST http://127.0.0.1:8305/api/l3/profile -H 'content-type: application/json' -d '{"action":"get","id":"bob"}'
+curl -sS -X POST http://127.0.0.1:8305/api/graph/profile-cache -H 'content-type: application/json' -d '{"action":"get","id":"bob"}'
 ```
 All three return the same `{"name":"Bob","email":"bob@example.com"}` — one cache, one wire format.
+
+## Co-author the graph with an AI agent (dev mode)
+
+[`application.properties`](src/main/resources/application.properties) sets **`app.env=dev`**, which opens
+the MiniGraph Playground alongside the three CRUD layers: the UI at <http://127.0.0.1:8305>, the session
+WebSocket at `/ws/graph/playground`, and the AI companion endpoint `POST /api/companion/{id}/sync`. Every
+one of those services is gated by `@OptionalService("app.env=dev")`, so **removing that one line closes
+the whole surface** for production — the matching `rest.yaml` entries are then skipped at start-up.
+
+That is how the `profile-cache` graph itself is meant to be evolved: import the model into a Playground
+session, edit a node, dry-run it, and export it back — with an AI agent hosting the session through
+the bundled broker rather than borrowing your browser session:
+
+```shell
+node scripts/playground-session-broker.mjs --target http://127.0.0.1:8305
+# → prints the session id; join it in the browser with: session subscribe <id>
+# the agent then drives: POST /api/companion/<id>/sync   (one command per request, text/plain)
+```
+
+Inside the session, `import graph from profile-cache` brings the deployed model in, `run` dry-runs it,
+and `export graph as profile-cache` writes it back for the next restart to redeploy through the
+CompileGraph gate. See [`scripts/README.md`](scripts/README.md) and
+[Playground & AI companion](../../docs/guides/knowledge-graph/playground-and-companion.md).
 
 ## Tracing & app-context logging
 
@@ -156,14 +194,19 @@ GET fan out through `method.to.action → get.cache.read → get.decode`, or an 
   branch. Two branches call `v1.cache.redis`, so each task carries a distinct `name:` alias.
 - **Layer 3** — [`profile-cache.json`](src/main/resources/graph/profile-cache.json) is one graph. A
   `graph.math` **decision** node routes on the payload `action`; `graph.task` nodes drive `v1.cache.redis`
-  and the encode/decode functions. It is deployed via [`graphs.yaml`](src/main/resources/graphs.yaml)
-  and run by the [`l3-profile.yml`](src/main/resources/flows/l3-profile.yml) flow through `graph.executor`.
+  and the encode/decode functions, and a `graph.data.mapper` **reject** node answers HTTP 400 for anything
+  that is not `get` / `save` / `delete` (`int(400) -> output.status` — a status of 400+ staged in the graph
+  becomes the standard error response). It is deployed via
+  [`graphs.yaml`](src/main/resources/graphs.yaml) and reached through the standard
+  [`graph-executor.yml`](src/main/resources/flows/graph-executor.yml) flow — the *same* flow every Mercury
+  graph application uses, taking the graph id from the URL path parameter.
 
 > **Graph gotcha worth knowing.** A `graph.task` *output* mapping LHS may only be a constant or a
 > `result.` / `model.` / `<node>.` element — **not** `input.*`. So the graph copies the id into the model
 > at the decision node (`MAPPING: input.body.id -> model.id`) and the branches echo it back with
-> `model.id -> output.body.id`. (An illegal `input.*` on the output side throws inside the task's async
-> callback and the flow simply times out — no error is logged.)
+> `model.id -> output.body.id`. (An illegal `input.*` on the output side now aborts the node with a named
+> error — before the async-callback guard landed it threw inside the task's callback and the flow simply
+> timed out with nothing logged.)
 
 ## Test it
 
@@ -171,5 +214,5 @@ GET fan out through `method.to.action → get.cache.read → get.decode`, or an 
 mvn test -f examples/distributed-cache-example/pom.xml
 ```
 [`ProfileCacheTest`](src/test/java/com/accenture/cache/demo/ProfileCacheTest.java) runs the full CRUD cycle
-against **all three layers** on an embedded Redis (no external server), including the 404-on-miss contract
-and the write-on-L1 / read-on-L2 interop check.
+against **all three layers** on an embedded Redis (no external server), including the 404-on-miss contract,
+the graph's 400-on-unknown-action rejection, and the write-on-L1 / read-on-L2 interop check.

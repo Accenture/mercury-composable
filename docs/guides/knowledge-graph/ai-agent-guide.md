@@ -235,9 +235,17 @@ watcher (and any `session subscribe`d session) follows along live.
 
 ## Scaffolding a project from the template {#scaffolding}
 
-Start every knowledge-graph project from `examples/minigraph-playground` and trim — **against
-this manifest, not against your build passing** (`mvn test` and `curl` both stay green with
-Playground UI routes missing; only the browser notices).
+**Start from `templates/starter-graph`.** It is the copy-out starter for Layer 3 and it already
+ships the whole `playground-enabled` surface below — the dev-mode endpoints, `app.env=dev`, the
+standard `graph-executor` flow, and the session broker script — so a fresh project can be
+co-authored with an AI agent from the first run. Copy the directory, rename the ids, replace the
+graph model, and you are done; the manifest and route list here are then a **checklist for what
+you must not delete**, not a trimming exercise.
+
+If you instead derive from a fuller app (`examples/minigraph-playground`, which additionally
+demonstrates LLM streaming and Event-over-HTTP), trim — **against this manifest, not against your
+build passing** (`mvn test` and `curl` both stay green with Playground UI routes missing; only the
+browser notices).
 
 **Boilerplate manifest** — what a derived project keeps:
 
@@ -250,6 +258,19 @@ Playground UI routes missing; only the browser notices).
 | `flows/flow-11.yml` and other example flows | Support-triage demo flows | drop unless used |
 | `graphs.yaml` + `graph/*.json` | Your deployed graph models — list every id you serve | replace with yours |
 | Main class annotated `@MainApplication` | App entry point | keep (rename) |
+
+> **One endpoint serves every graph.** `POST /api/graph/{graph_id}` takes the graph id from the URL
+> path, so a Layer 3 application needs exactly **one** REST entry no matter how many graphs it
+> deploys. Do not add a per-graph endpoint — list the new id in `graphs.yaml` and it is live.
+
+> **Declare the graph engine and nothing else.** `minigraph-playground-engine` brings
+> `event-script-engine` and `platform-core` transitively, so **one** dependency covers all three
+> layers. Listing them individually is not merely redundant — it creates a resource collision: the
+> Playground UI ships inside the engine as `classpath:/public/index.html` and `platform-core`
+> carries a placeholder welcome page at the *same* path, and the first jar on the classpath wins
+> (for `HttpRouter`'s static route and for `GetIndexHtml` alike). Declaring `platform-core` first is
+> enough to serve the placeholder instead of the Playground, and everything else still passes —
+> `mvn test`, `curl`, even the companion endpoint — so only a browser reveals it.
 
 **`rest.yaml` — two named profiles.** The template's route list mixes three kinds of routes;
 know which bar you are building to:
@@ -352,7 +373,7 @@ rest:
     tracing: true
 ```
 
-When in doubt, diff your trimmed `rest.yaml` against the template's.
+When in doubt, diff your `rest.yaml` against `templates/starter-graph/src/main/resources/rest.yaml`.
 
 ## See also {#see-also}
 
