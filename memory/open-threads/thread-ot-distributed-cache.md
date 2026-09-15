@@ -15,6 +15,9 @@
   (L1 code / L2 one flow with `v1.http.method.action` mapper + decision / L3 one graph with a
   payload-action decision node); 4/4 e2e tests on embedded Redis incl. cross-layer interop; its L3
   debugging yielded the engine guard [[minigraph-guarded-async-completion]].
+  **Release path (Eric, 2026-09-15):** field Sonar scan of the new v4.12.9 code → successful field
+  deployment → then cut the v4.12.9 release (per [[eric-release-rhythm]]); the Rust lockstep begins
+  AFTER the release, not before.
   **REMAINING:** (4) Rust lockstep port in the `mercury` repo (Q8) — cache keys are plain Redis keys, so the
   two caches interoperate with no wire change (the example doubles as the interop harness once the
   Rust twin lands). Builds on [[cache-separate-from-soa]] +
