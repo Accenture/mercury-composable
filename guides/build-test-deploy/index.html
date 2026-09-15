@@ -3133,6 +3133,17 @@ You can "right-click" the main method and select "run".</p>
 </code></pre></div>
 <p>The lambda-example is a sample application that you can use as a template to write your own code. Please review
 the pom.xml and the source directory structure.</p>
+<blockquote>
+<p><strong>Building the whole repository</strong>: from the repo root, use <code>mvn clean install</code> — not <code>mvn test</code>.
+Some modules resolve a dependency's version from its <em>packaged jar</em>; the AI contract provider, for
+example, reads <code>/META-INF/maven/org.platformlambda/platform-core/pom.properties</code>, which Maven writes
+only when the module is packaged. A reactor-wide <code>mvn test</code> never packages upstream modules — they
+resolve as bare <code>target/classes</code> directories — so that module aborts at start-up with
+<em>"the Mercury dependency assembly is incomplete"</em>, no matter what change you are verifying.
+<code>mvn clean install</code> packages and installs each module in dependency order, which is also what CI runs.
+(Testing a single module with <code>mvn test -f &lt;module&gt;/pom.xml</code> is fine: its dependencies then resolve
+from your local Maven repository as jars.)</p>
+</blockquote>
 <p>In the lambda-example project root, you will find the following directories:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>src/main/java
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>src/test/java

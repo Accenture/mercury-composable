@@ -4950,8 +4950,10 @@ prerequisite for advanced function patterns, error handling, and distributed tra
 </tr>
 </tbody>
 </table>
-<p>The framework serializes and deserializes the body automatically. User code never calls
-MsgPack directly.</p>
+<p>The framework serializes and deserializes the body automatically — user code never calls MsgPack
+directly for event transport. (For an application's <em>own</em> binary serialization, such as a cached
+value, <code>MsgPack.packMapOrList</code> / <code>unpackMapOrList</code> are available as a general purpose codec — see
+<a href="../api-overview/#binary-serialization-with-msgpack">API Overview → Binary serialization with MsgPack</a>.)</p>
 <hr />
 <h2 id="creating-an-eventenvelope">Creating an EventEnvelope<a class="headerlink" href="#creating-an-eventenvelope" title="Permanent link">&para;</a></h2>
 <h3 id="constructors">Constructors<a class="headerlink" href="#constructors" title="Permanent link">&para;</a></h3>

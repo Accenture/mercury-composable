@@ -2475,6 +2475,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#binary-serialization-with-msgpack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Binary serialization with MsgPack
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Binary serialization with MsgPack">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-not-pack-unpack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why not pack / unpack?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#minimalist-api-design" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3390,6 +3418,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#binary-serialization-with-msgpack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Binary serialization with MsgPack
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Binary serialization with MsgPack">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-not-pack-unpack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why not pack / unpack?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#minimalist-api-design" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4015,6 +4071,47 @@ custom serializer, you can create a PostOffice instance like this:</p>
 <p>To interpret an event response from a RPC call, you can use the following PostOffice API:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="n">MyPoJo</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">getEventBodyAsPoJo</span><span class="p">(</span><span class="n">responseEvent</span><span class="p">,</span><span class="w"> </span><span class="n">MyPoJo</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
 </code></pre></div>
+<h2 id="binary-serialization-with-msgpack">Binary serialization with MsgPack<a class="headerlink" href="#binary-serialization-with-msgpack" title="Permanent link">&para;</a></h2>
+<p>The platform serializes event payloads for you, so user code rarely touches the serializer. When your
+application needs its own compact binary format - for example, storing a value in a distributed cache
+or a database blob - you can use the <code>MsgPack</code> class directly as a general purpose serializer:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="kd">public</span><span class="w"> </span><span class="kt">byte</span><span class="o">[]</span><span class="w"> </span><span class="nf">packMapOrList</span><span class="p">(</span><span class="n">Object</span><span class="w"> </span><span class="n">obj</span><span class="p">)</span><span class="w"> </span><span class="kd">throws</span><span class="w"> </span><span class="n">IOException</span><span class="p">;</span>
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="kd">public</span><span class="w"> </span><span class="n">Object</span><span class="w"> </span><span class="nf">unpackMapOrList</span><span class="p">(</span><span class="kt">byte</span><span class="o">[]</span><span class="w"> </span><span class="n">bytes</span><span class="p">)</span><span class="w"> </span><span class="kd">throws</span><span class="w"> </span><span class="n">IOException</span><span class="p">;</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="kd">private</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">MsgPack</span><span class="w"> </span><span class="n">msgPack</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">MsgPack</span><span class="p">();</span>
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">profile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Map</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">"name"</span><span class="p">,</span><span class="w"> </span><span class="s">"Alice"</span><span class="p">,</span><span class="w"> </span><span class="s">"email"</span><span class="p">,</span><span class="w"> </span><span class="s">"alice@example.com"</span><span class="p">);</span>
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="kt">byte</span><span class="o">[]</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">msgPack</span><span class="p">.</span><span class="na">packMapOrList</span><span class="p">(</span><span class="n">profile</span><span class="p">);</span><span class="w">          </span><span class="c1">// store this</span>
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">restored</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="n">msgPack</span><span class="p">.</span><span class="na">unpackMapOrList</span><span class="p">(</span><span class="n">value</span><span class="p">);</span>
+</code></pre></div>
+<p><code>MsgPack</code> is stateless and thread-safe - a single <code>static final</code> instance is the recommended usage.</p>
+<blockquote>
+<p><strong>Only a Map or a List is accepted.</strong> A PoJo or a Java primitive is not supported directly: encode
+it in your application first. For a PoJo, convert it into a Map:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">asMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SimpleMapper</span><span class="p">.</span><span class="na">getInstance</span><span class="p">().</span><span class="na">getMapper</span><span class="p">().</span><span class="na">readValue</span><span class="p">(</span><span class="n">pojo</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="kt">byte</span><span class="o">[]</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">msgPack</span><span class="p">.</span><span class="na">packMapOrList</span><span class="p">(</span><span class="n">asMap</span><span class="p">);</span>
+</code></pre></div>
+Passing anything else throws <code>IllegalArgumentException</code>.</p>
+</blockquote>
+<h3 id="why-not-pack-unpack">Why not <code>pack</code> / <code>unpack</code>?<a class="headerlink" href="#why-not-pack-unpack" title="Permanent link">&para;</a></h3>
+<p>The older pair is the <strong>event payload codec</strong>, not a general purpose serializer:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="kd">public</span><span class="w"> </span><span class="kt">byte</span><span class="o">[]</span><span class="w"> </span><span class="nf">pack</span><span class="p">(</span><span class="n">Object</span><span class="w"> </span><span class="n">obj</span><span class="p">)</span><span class="w"> </span><span class="kd">throws</span><span class="w"> </span><span class="n">IOException</span><span class="p">;</span>
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="kd">public</span><span class="w"> </span><span class="n">Object</span><span class="w"> </span><span class="nf">unpack</span><span class="p">(</span><span class="kt">byte</span><span class="o">[]</span><span class="w"> </span><span class="n">bytes</span><span class="p">)</span><span class="w"> </span><span class="kd">throws</span><span class="w"> </span><span class="n">IOException</span><span class="p">;</span>
+</code></pre></div>
+<p>It accepts a PoJo or a primitive by wrapping the value with its type information under the reserved
+keys <code>_T</code> (type) and <code>_D</code> (data), which <code>unpack</code> then strips. That is correct for event transport, but
+it leaks into general use: a map of your own that happens to contain a <code>_T</code> key would be <em>unwrapped</em>
+by <code>unpack</code> instead of being returned as you stored it. <code>packMapOrList</code> / <code>unpackMapOrList</code> never add
+or interpret those keys, so what you pack is exactly what you get back.</p>
+<p>Use <code>pack</code> / <code>unpack</code> for event payload transport; use <code>packMapOrList</code> / <code>unpackMapOrList</code> for your
+application's own serialization.</p>
+<blockquote>
+<p><strong>Cross-language note.</strong> <code>packMapOrList</code> writes plain MsgPack key-values with no framework-specific
+wrapper, so any MsgPack-capable language (Rust, Python, Node.js, Go, …) can read the value. Prefer it
+over <code>EventEnvelope.toBytes()</code> when a stored value must be read by another language pack - the
+envelope's compacted encoding is a Java-side wire format. A worked example is the
+<a href="../distributed-cache/">distributed cache guide</a>, where all three layers share one cached value.</p>
+</blockquote>
 <h2 id="minimalist-api-design">Minimalist API design<a class="headerlink" href="#minimalist-api-design" title="Permanent link">&para;</a></h2>
 <p>As a best practice, we advocate a minimalist approach in API integration.
 To build powerful composable applications, the above set of APIs is sufficient to perform
