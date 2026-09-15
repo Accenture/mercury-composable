@@ -654,16 +654,18 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
                     lhs = "$." + nodeName + lhs.substring(1);
                 } else if (!lhs.startsWith(nodeName + ".") &&
                         !lhs.startsWith(MODEL_NAMESPACE) && !lhs.startsWith("$.model.")) {
-                    throw new IllegalArgumentException("Invalid output data mapping in API fetcher " + nodeName +
-                            " - LHS must start with 'model.', 'result.' namespace or '" + nodeName + ".'");
+                    throw new IllegalArgumentException("Invalid output mapping '" + lhs + " -> " + rhs +
+                            "' in node " + nodeName + ": the left side must be a constant or start with " +
+                            "'result.', 'model.', or the node's own namespace '" + nodeName +
+                            ".' ('input.*' is valid only on the input side)");
                 }
             }
             value = helper.getLhsElement(lhs, stateMachine);
         }
         if (value != null) {
             if (!rhs.startsWith(MODEL_NAMESPACE) && !rhs.startsWith(OUTPUT_NAMESPACE)) {
-                throw new IllegalArgumentException("Invalid output data mapping in data dictionary "+nodeName +
-                        " - RHS must start with 'model.' or 'output.' namespace");
+                throw new IllegalArgumentException("Invalid output mapping '" + lhs + " -> " + rhs +
+                        "' in node " + nodeName + ": the right side must start with 'model.' or 'output.'");
             }
             assertMutableModelTarget(nodeName, rhs);
             stateMachine.setElement(rhs, value);
