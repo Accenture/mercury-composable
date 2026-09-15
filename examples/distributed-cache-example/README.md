@@ -22,7 +22,7 @@ The app is a profile store with GET / POST / DELETE, exposed three times — one
                           ┌───────────────────────────────────────────────┐ │   │     extension)     │
   POST {action,id,…} ─L3─▶│  l3-profile flow → profile-cache graph         │─┘   └───────────────────┘
                           └───────────────────────────────────────────────┘
-     value at rest = the profile Map packed with MsgPack (MsgPack.pack) — just the map, no envelope wrapper
+     value at rest = the profile Map packed with MsgPack (MsgPack.packMapOrList) — just the map, no envelope wrapper
 ```
 
 All three call the **same** `v1.cache.redis` action function, under the **same** key namespace
@@ -37,9 +37,9 @@ A profile is a `Map<String,Object>` (`{name, email}`). To keep a Map in Redis as
 packs it directly with `MsgPack` — the same wire format Mercury uses between functions, but just the map:
 
 - **store**: [`ProfileEncoder`](src/main/java/com/accenture/cache/demo/functions/ProfileEncoder.java) —
-  `msgPack.pack(profile)`
+  `msgPack.packMapOrList(profile)`
 - **restore**: [`ProfileDecoder`](src/main/java/com/accenture/cache/demo/functions/ProfileDecoder.java) —
-  `msgPack.unpack(bytes)`, or **HTTP 404 "Profile not found"** when the bytes are absent (a miss)
+  `msgPack.unpackMapOrList(bytes)`, or **HTTP 404 "Profile not found"** when the bytes are absent (a miss)
 
 Because the format is identical everywhere, the bytes L1 writes are exactly the bytes L2 and L3 read.
 
@@ -48,6 +48,11 @@ Because the format is identical everywhere, the bytes L1 writes are exactly the 
 > **(2) Language portability** — the compacted `EventEnvelope` encoding is a Java-side wire format the Rust
 > port does not read, and storing the envelope as ordinary key-values would waste space. Plain MsgPack
 > key-values is both compact and the form every language pack reads, so the cache stays polyglot-ready.
+>
+> Note the method pair: `packMapOrList` / `unpackMapOrList` is the **general purpose** codec. The older
+> `pack` / `unpack` is the *event payload* codec — it wraps a PoJo or primitive under the reserved `_T` /
+> `_D` keys and strips them on the way back, which would mean a stored map containing a `_T` key came back
+> changed. See [API Overview → Binary serialization with MsgPack](../../docs/guides/api-overview.md#binary-serialization-with-msgpack).
 
 ## What's app-specific vs. reused
 

@@ -351,4 +351,80 @@ class MsgPackTest {
         assertEquals(input.getName(), result.getName());
         assertEquals(input.getAddress(), result.getAddress());
     }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void packMapOrListRoundTripsAMap() throws IOException {
+        Map<String, Object> input = new HashMap<>();
+        input.put("name", "general purpose serialization");
+        input.put("count", 100);
+        input.put("nested", Map.of("hello", "world"));
+        input.put("items", List.of(1, 2, 3));
+        byte[] b = msgPack.packMapOrList(input);
+        Object o = msgPack.unpackMapOrList(b);
+        assertInstanceOf(Map.class, o);
+        Map<String, Object> result = (Map<String, Object>) o;
+        assertEquals("general purpose serialization", result.get("name"));
+        assertEquals(100, result.get("count"));
+        assertEquals(Map.of("hello", "world"), result.get("nested"));
+        assertEquals(List.of(1, 2, 3), result.get("items"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void packMapOrListRoundTripsAList() throws IOException {
+        List<Object> input = List.of("alpha", 2, Map.of("k", "v"));
+        byte[] b = msgPack.packMapOrList(input);
+        Object o = msgPack.unpackMapOrList(b);
+        assertInstanceOf(List.class, o);
+        List<Object> result = (List<Object>) o;
+        assertEquals(3, result.size());
+        assertEquals("alpha", result.getFirst());
+        assertEquals(2, result.get(1));
+        assertEquals(Map.of("k", "v"), result.get(2));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void packMapOrListDoesNotApplyTheTypeEncoding() throws IOException {
+        // "_T"/"_D" are the event-payload type encoding used by pack/unpack. A general purpose
+        // serializer must treat them as ordinary user data - this is why the new methods exist.
+        Map<String, Object> input = new HashMap<>();
+        input.put("_T", "not-a-type-marker");
+        input.put("_D", "not-a-payload");
+        byte[] b = msgPack.packMapOrList(input);
+        Object o = msgPack.unpackMapOrList(b);
+        assertInstanceOf(Map.class, o);
+        Map<String, Object> result = (Map<String, Object>) o;
+        assertEquals(2, result.size(), "the map must be restored verbatim");
+        assertEquals("not-a-type-marker", result.get("_T"));
+        assertEquals("not-a-payload", result.get("_D"));
+        // the envelope-aware unpack() would have unwrapped the same bytes to the "_D" value
+        assertEquals("not-a-payload", msgPack.unpack(b));
+    }
+
+    @Test
+    void packMapOrListRejectsPoJoAndPrimitives() {
+        PoJo pojo = new PoJo();
+        pojo.setName("pojo is not supported directly");
+        assertThrows(IllegalArgumentException.class, () -> msgPack.packMapOrList(pojo));
+        assertThrows(IllegalArgumentException.class, () -> msgPack.packMapOrList("a string"));
+        assertThrows(IllegalArgumentException.class, () -> msgPack.packMapOrList(42));
+        assertThrows(IllegalArgumentException.class, () -> msgPack.packMapOrList(null));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void packMapOrListTakesAPoJoConvertedToMap() throws IOException {
+        // the documented path for a PoJo: convert it into a Map with SimpleMapper first
+        PoJo pojo = new PoJo();
+        pojo.setName("converted pojo");
+        pojo.setAddress("100 Planet Earth");
+        Map<String, Object> asMap = SimpleMapper.getInstance().getMapper().readValue(pojo, Map.class);
+        byte[] b = msgPack.packMapOrList(asMap);
+        Map<String, Object> restored = (Map<String, Object>) msgPack.unpackMapOrList(b);
+        PoJo result = SimpleMapper.getInstance().getMapper().readValue(restored, PoJo.class);
+        assertEquals(pojo.getName(), result.getName());
+        assertEquals(pojo.getAddress(), result.getAddress());
+    }
 }

@@ -80,14 +80,18 @@ public class ProfileCacheL1 implements TypedLambdaFunction<AsyncHttpRequest, Obj
         EventEnvelope res = po.request(new EventEnvelope().setTo(CACHE)
                 .setHeader(ACTION, "GET").setHeader(KEY, id), TIMEOUT).get();
         if (res.getBody() instanceof byte[] bytes && bytes.length > 0) {
-            return msgPack.unpack(bytes);   // the profile Map -> HTTP 200
+            return msgPack.unpackMapOrList(bytes);   // the profile Map -> HTTP 200
         }
         throw new AppException(404, "Profile not found");
     }
 
     private Object post(PostOffice po, String id, Object profile)
-            throws ExecutionException, InterruptedException, IOException {
-        byte[] value = msgPack.pack(profile);
+            throws ExecutionException, InterruptedException, IOException, AppException {
+        // packMapOrList accepts only a Map or List, so reject anything else as a bad request
+        if (!(profile instanceof Map)) {
+            throw new AppException(400, "Profile must be a JSON object");
+        }
+        byte[] value = msgPack.packMapOrList(profile);
         po.request(new EventEnvelope().setTo(CACHE)
                 .setHeader(ACTION, "PUT").setHeader(KEY, id).setBody(value), TIMEOUT).get();
         Map<String, Object> ack = new HashMap<>();

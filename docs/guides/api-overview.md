@@ -687,6 +687,59 @@ To interpret an event response from a RPC call, you can use the following PostOf
 MyPoJo result = po.getEventBodyAsPoJo(responseEvent, MyPoJo.class);
 ```
 
+## Binary serialization with MsgPack
+
+The platform serializes event payloads for you, so user code rarely touches the serializer. When your
+application needs its own compact binary format - for example, storing a value in a distributed cache
+or a database blob - you can use the `MsgPack` class directly as a general purpose serializer:
+
+```java
+public byte[] packMapOrList(Object obj) throws IOException;
+public Object unpackMapOrList(byte[] bytes) throws IOException;
+```
+
+```java
+private static final MsgPack msgPack = new MsgPack();
+
+Map<String, Object> profile = Map.of("name", "Alice", "email", "alice@example.com");
+byte[] value = msgPack.packMapOrList(profile);          // store this
+Map<String, Object> restored = (Map<String, Object>) msgPack.unpackMapOrList(value);
+```
+
+`MsgPack` is stateless and thread-safe - a single `static final` instance is the recommended usage.
+
+> **Only a Map or a List is accepted.** A PoJo or a Java primitive is not supported directly: encode
+> it in your application first. For a PoJo, convert it into a Map:
+> ```java
+> Map<String, Object> asMap = SimpleMapper.getInstance().getMapper().readValue(pojo, Map.class);
+> byte[] value = msgPack.packMapOrList(asMap);
+> ```
+> Passing anything else throws `IllegalArgumentException`.
+
+### Why not `pack` / `unpack`?
+
+The older pair is the **event payload codec**, not a general purpose serializer:
+
+```java
+public byte[] pack(Object obj) throws IOException;
+public Object unpack(byte[] bytes) throws IOException;
+```
+
+It accepts a PoJo or a primitive by wrapping the value with its type information under the reserved
+keys `_T` (type) and `_D` (data), which `unpack` then strips. That is correct for event transport, but
+it leaks into general use: a map of your own that happens to contain a `_T` key would be *unwrapped*
+by `unpack` instead of being returned as you stored it. `packMapOrList` / `unpackMapOrList` never add
+or interpret those keys, so what you pack is exactly what you get back.
+
+Use `pack` / `unpack` for event payload transport; use `packMapOrList` / `unpackMapOrList` for your
+application's own serialization.
+
+> **Cross-language note.** `packMapOrList` writes plain MsgPack key-values with no framework-specific
+> wrapper, so any MsgPack-capable language (Rust, Python, Node.js, Go, …) can read the value. Prefer it
+> over `EventEnvelope.toBytes()` when a stored value must be read by another language pack - the
+> envelope's compacted encoding is a Java-side wire format. A worked example is the
+> [distributed cache guide](distributed-cache.md), where all three layers share one cached value.
+
 ## Minimalist API design
 
 As a best practice, we advocate a minimalist approach in API integration.
