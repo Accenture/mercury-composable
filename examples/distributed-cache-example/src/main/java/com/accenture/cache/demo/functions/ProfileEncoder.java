@@ -28,12 +28,14 @@ import java.util.Map;
 /**
  * Serialise a profile Map into the opaque {@code byte[]} value the cache stores.
  *
- * <p>The profile (a Map of key-values) is packed directly with {@link MsgPack#pack(Object)} - just the
- * map, with no {@code EventEnvelope} id/header wrapper - so the value is compact and the exact same wire
- * format is read back by {@link ProfileDecoder}, by the Layer 1 function in code, and - once it ships - by
- * the Rust port. Plain MsgPack key-values is the storage-efficient, language-portable form: the compacted
- * {@code EventEnvelope} encoding is a Java wire format the Rust port does not read. The Layer 2 flows and
- * Layer 3 graphs compose this helper with the {@code v1.cache.redis} PUT; Layer 1 does the same inline in code.
+ * <p>The profile (a Map of key-values) is packed with {@link MsgPack#packMapOrList(Object)} - the general
+ * purpose codec, which adds neither an {@code EventEnvelope} id/header wrapper nor the {@code _T}/{@code _D}
+ * type encoding that {@link MsgPack#pack(Object)} uses for event payloads. So the value is compact, a
+ * profile is restored exactly as stored, and the same bytes are read back by {@link ProfileDecoder}, by the
+ * Layer 1 function in code, and - once it ships - by the Rust port. Plain MsgPack key-values is the
+ * storage-efficient, language-portable form: the compacted {@code EventEnvelope} encoding is a Java wire
+ * format the Rust port does not read. The Layer 2 flows and Layer 3 graphs compose this helper with the
+ * {@code v1.cache.redis} PUT; Layer 1 does the same inline in code.
  */
 @PreLoad(route = "v1.profile.encode", instances = 10)
 public class ProfileEncoder implements TypedLambdaFunction<Map<String, Object>, byte[]> {
@@ -41,6 +43,6 @@ public class ProfileEncoder implements TypedLambdaFunction<Map<String, Object>, 
 
     @Override
     public byte[] handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) throws IOException {
-        return msgPack.pack(input);
+        return msgPack.packMapOrList(input);
     }
 }
