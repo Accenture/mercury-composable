@@ -142,7 +142,7 @@
   backbone; applications compose the facade with their own Kafka library (the demo shows the shape).
   Consumer note for the next release: apps that leaned on the transitive minimalist-kafka must now
   declare it. Extends [[functions-decoupled-routes]] to the dependency graph.
-  <!-- id: soa-transport-neutral-cid | created: 2026-09-12 | last_used: 2026-09-14 | uses: 9 | tier: active | origin: 2026-09-12-011438 -->
+  <!-- id: soa-transport-neutral-cid | created: 2026-09-12 | last_used: 2026-09-14 | uses: 9 | tier: archive-candidate | origin: 2026-09-12-011438 -->
 
 - **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
   `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
@@ -194,7 +194,7 @@
   extracted [[redis-connection-foundation]] (spec draft-design-specs/distributed-cache.md);
   [[ot-distributed-cache]] tracks the remaining Rust lockstep. Builds on [[soa-redis-cluster-support]];
   serves [[vision-mercury-composable]].
-  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-15 | uses: 5 | tier: active | origin: 2026-09-14-191748 -->
+  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-15 | uses: 6 | tier: active | origin: 2026-09-14-191748 -->
 
 - **The Redis client layer is a shared `extensions/redis-connection` foundation (2026-09-14; Java
   shipped for v4.12.9).** Extracted from sync-over-async's `support/`: `RedisBackend<V>` (generic in the
@@ -212,7 +212,7 @@
   (cache). Realizes the "extract the foundation" half of [[cache-separate-from-soa]]; tracked by
   [[ot-distributed-cache]]; applied [[preload-before-mainapp-lazy-config]] and
   [[conv-reentrantlock-not-synchronized]].
-  <!-- id: redis-connection-foundation | created: 2026-09-14 | last_used: 2026-09-15 | uses: 2 | tier: active | origin: 2026-09-14-230259 -->
+  <!-- id: redis-connection-foundation | created: 2026-09-14 | last_used: 2026-09-15 | uses: 3 | tier: active | origin: 2026-09-14-230259 -->
 
 - **platform-core has a lightweight shutdown lifecycle — `Platform.getInstance().onShutdown(Runnable)`
   (2026-09-14, Eric's minimalist-principle ruling; for v4.12.9).** The platform owns ONE JVM shutdown hook
@@ -229,6 +229,32 @@
   [[conv-reentrantlock-not-synchronized]]; used by [[redis-connection-foundation]].
   <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-15 | uses: 1 | tier: working | origin: 2026-09-15-011235 -->
 
+- **MiniGraph async skill callbacks are guarded — a failure surfaces as the node's error, never a
+  silent hang (2026-09-15; found building the distributed-cache example, PR #392).** A
+  `graph.task`/`graph.extension`/`graph.api.fetcher` OUTPUT-mapping LHS may only be a constant or a
+  `result.`/`model.`/`<node>.` element (`setOutputMappingEntry`, renamed from `setFetcherOutputEntry`
+  in PR #394; its sibling `performFetcherOutputMapping`→`performOutputMapping`) — `input.*` is INPUT-side only; to
+  echo an input value, stage it at a mapper/decision node (`MAPPING: input.body.id -> model.id` —
+  graph.math MAPPING uses the unrestricted `getLhsOrConstant`) and map `model.id` out. Before the
+  fix, that IllegalArgumentException threw inside `Mono.create(sink -> pending.thenAccept(...))`,
+  was swallowed by the unobserved CompletableFuture stage, the sink never completed, and the caller
+  timed out with ZERO diagnostics (graph traversed, Redis PUT logged 200 — it looked like a
+  transport bug). Both async skills now complete through `GraphLambdaFunction.guardedCompletion`
+  (failed future unwrapped + throwing handler → sink.error), so the failure renders exactly like a
+  synchronous skill throw, trace context intact (WorkerHandler's Mono error path). Regression:
+  `unit-test-task-8` + `GraphLambdaFunctionGuardTest`; PR #393 (`1df13078`, merged squash `6b5b5cf1`).
+  Follow-up PR #394 (merged squash `3f3ef3fe`, Eric's review of the surfaced error) reworded the two mapping errors — drop the
+  stale "API fetcher"/"data dictionary" labels, name the node, quote the offending `lhs -> rhs`, add
+  the clue `'input.*' is valid only on the input side` — and renamed the helpers (above). Verified
+  end-to-end in a live Playground: the distributed-cache-example run in dev mode (`app.env=dev` +
+  `com.accenture.minigraph` scan + a trimmed companion/UI `rest.yaml`) hosted by the
+  [[playground-session-broker]], driven via `/api/companion/{id}/sync` — a broken `cache-get` output
+  mapping aborted the dry-run with the reworded error in the UI console (screenshot proof, 2026-09-15).
+  Parked: CompileGraph static LHS check (dynamic `{…}` limits it to static cases);
+  Rust-twin parity check of the same callback pattern. Relates [[trace-thread-keyed-mono-gotcha]]
+  (the same async-callback minefield).
+  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-15 | uses: 1 | tier: working | origin: 2026-09-15-040141 -->
+
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
   `examples/minigraph-playground/scripts/playground-session-broker.mjs` (zero-dependency,
@@ -240,7 +266,7 @@
   Rust repo — both engines share the WS handshake. Dev-only, like the Playground itself.
   Reactivated 2026-09-14: now ALSO shipped in `templates/starter-graph` (both repos), and the AI
   docs are broker-first with the keep-alive failure mode named (mercury-composable#383, mercury#276).
-  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-14 | uses: 7 | tier: active | origin: 2026-09-03-172753 -->
+  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-15 | uses: 8 | tier: active | origin: 2026-09-03-172753 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -322,7 +348,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-14 | uses: 40 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-15 | uses: 41 | tier: active | origin: 2026-08-19-195244 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
@@ -345,7 +371,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-12 | uses: 4 | tier: archive-candidate | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-15 | uses: 5 | tier: active | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - **A transitive CVE in the Kafka stack: PIN when a fixed release exists, EXCLUDE the

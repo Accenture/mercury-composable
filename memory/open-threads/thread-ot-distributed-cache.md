@@ -10,9 +10,15 @@
   `synchronized`** (Java-21 VT carrier pinning — Eric's mid-session directive). Commits `5b73f311` (refactor)
   + `bb88e65c` (cache) on branch `feat/redis-cache-foundation`; redis-connection 30 tests, distributed-cache
   32, sync-over-async 62, full reactor green. PR-open is Eric's gate (two logical commits, splittable).
+  **Worked example MERGED (2026-09-15, PR #392, squash `f66ac3f3`):** `examples/distributed-cache-example` — the same
+  profile CRUD on all three layers over one `cache-demo:` cache with the EventEnvelope byte holder
+  (L1 code / L2 one flow with `v1.http.method.action` mapper + decision / L3 one graph with a
+  payload-action decision node); 4/4 e2e tests on embedded Redis incl. cross-layer interop; its L3
+  debugging yielded the engine guard [[minigraph-guarded-async-completion]].
   **REMAINING:** (4) Rust lockstep port in the `mercury` repo (Q8) — cache keys are plain Redis keys, so the
-  two caches interoperate with no wire change. Builds on [[cache-separate-from-soa]] +
+  two caches interoperate with no wire change (the example doubles as the interop harness once the
+  Rust twin lands). Builds on [[cache-separate-from-soa]] +
   [[soa-redis-cluster-support]]; applied [[preload-before-mainapp-lazy-config]] and
   [[conv-reentrantlock-not-synchronized]]. See [[redis-connection-foundation]].
   → serves: vision-mercury-composable
-  <!-- id: ot-distributed-cache | created: 2026-09-14 | last_used: 2026-09-15 | uses: 4 | tier: working | origin: 2026-09-14-214619 -->
+  <!-- id: ot-distributed-cache | created: 2026-09-14 | last_used: 2026-09-15 | uses: 5 | tier: working | origin: 2026-09-14-214619 -->
