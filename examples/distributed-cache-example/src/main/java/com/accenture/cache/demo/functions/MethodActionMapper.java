@@ -55,8 +55,8 @@ public class MethodActionMapper implements TypedLambdaFunction<Map<String, Objec
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
             throws AppException {
         String method = input.get(METHOD) == null ? "" : String.valueOf(input.get(METHOD)).toUpperCase();
-        String action;
-        int decision;
+        final String action;
+        final int decision;
         switch (method) {
             case "GET" -> { action = "get"; decision = 1; }
             case "POST" -> { action = "save"; decision = 2; }

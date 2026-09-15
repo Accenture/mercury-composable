@@ -19,25 +19,28 @@
 package com.accenture.cache.demo.functions;
 
 import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.serializers.MsgPack;
 
+import java.io.IOException;
 import java.util.Map;
 
 /**
  * Serialise a profile Map into the opaque {@code byte[]} value the cache stores.
  *
- * <p>The profile (a Map of key-values) is held in an {@link EventEnvelope} and serialised with
- * {@link EventEnvelope#toBytes()}. Using the envelope as the holder means the exact same wire format is
- * read back by {@link ProfileDecoder#restore}, by the Layer 1 function in code, and - once it ships - by the
- * Rust port: one MsgPack envelope, portable across layers and languages. The Layer 2 flows and Layer 3 graphs
- * compose this helper with the {@code v1.cache.redis} PUT; Layer 1 does the same inline in code.
+ * <p>The profile (a Map of key-values) is packed directly with {@link MsgPack#pack(Object)} - just the
+ * map, with no {@code EventEnvelope} id/header wrapper - so the value is compact and the exact same wire
+ * format is read back by {@link ProfileDecoder}, by the Layer 1 function in code, and - once it ships - by
+ * the Rust port. Plain MsgPack key-values is the storage-efficient, language-portable form: the compacted
+ * {@code EventEnvelope} encoding is a Java wire format the Rust port does not read. The Layer 2 flows and
+ * Layer 3 graphs compose this helper with the {@code v1.cache.redis} PUT; Layer 1 does the same inline in code.
  */
 @PreLoad(route = "v1.profile.encode", instances = 10)
 public class ProfileEncoder implements TypedLambdaFunction<Map<String, Object>, byte[]> {
+    private static final MsgPack msgPack = new MsgPack();
 
     @Override
-    public byte[] handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
-        return new EventEnvelope().setBody(input).toBytes();
+    public byte[] handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) throws IOException {
+        return msgPack.pack(input);
     }
 }
