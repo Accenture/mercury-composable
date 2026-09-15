@@ -629,21 +629,21 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         }));
     }
 
-    protected void performFetcherOutputMapping(String nodeName, MultiLevelMap stateMachine, List<String> mapping) {
+    protected void performOutputMapping(String nodeName, MultiLevelMap stateMachine, List<String> mapping) {
         for (var output : mapping) {
             var text = String.valueOf(output).trim();
             int sep = text.lastIndexOf(MAP_TO);
             if (sep != -1) {
                 var lhs = substituteVarIfAny(text.substring(0, sep).trim(), stateMachine);
                 var rhs = text.substring(sep + MAP_TO.length()).trim();
-                setFetcherOutputEntry(nodeName, lhs, rhs, stateMachine);
+                setOutputMappingEntry(nodeName, lhs, rhs, stateMachine);
             } else {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " - invalid output mapping: "+text);
             }
         }
     }
 
-    private void setFetcherOutputEntry(String nodeName, String lhs, String rhs, MultiLevelMap stateMachine) {
+    private void setOutputMappingEntry(String nodeName, String lhs, String rhs, MultiLevelMap stateMachine) {
         var value = helper.getConstantValue(lhs);
         if (value == null) {
             if (!lhs.startsWith(PLUGIN_PREFIX)) {

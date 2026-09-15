@@ -186,7 +186,7 @@ public class GraphTask extends GraphLambdaFunction {
             } else {
                 stateMachine.setElement(nodeName + "." + RESULT, response.getBody());
                 var outputMapping = getEntries(node.getProperty(OUTPUT));
-                performFetcherOutputMapping(nodeName, stateMachine, outputMapping);
+                performOutputMapping(nodeName, stateMachine, outputMapping);
                 return NEXT;
             }
         });
@@ -226,7 +226,7 @@ public class GraphTask extends GraphLambdaFunction {
             }
         }
         var outputMapping = getEntries(node.getProperty(OUTPUT));
-        performFetcherOutputMapping(nodeName, stateMachine, outputMapping);
+        performOutputMapping(nodeName, stateMachine, outputMapping);
     }
 
     private void doForkJoin(PostOffice po, SimpleNode node, MultiLevelMap stateMachine,
