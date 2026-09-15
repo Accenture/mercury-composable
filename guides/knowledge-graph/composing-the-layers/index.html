@@ -2963,6 +2963,12 @@ REST endpoint while keeping execution decoupled from the protocol.</p>
 </code></pre></div>
 <blockquote>
 <p><code>graph.exception.handler</code> is an engine <strong>built-in</strong> — you reference it, you do not write it.</p>
+<p><strong>One endpoint, every graph.</strong> The graph id is a URL <em>path parameter</em>, so this single <code>rest.yaml</code>
+entry and this single flow serve every model the application deploys. Adding a graph means adding
+its id to <code>graphs.yaml</code> — never a new endpoint. A Layer 3 application that has grown a
+<code>/api/my-thing</code> route per graph has duplicated the exposure layer; collapse it back to
+<code>/api/graph/{graph_id}</code>. (The flow file is identical in <code>templates/starter-graph</code> and in every
+example that deploys a graph — copy it unchanged.)</p>
 </blockquote>
 <p>So a request flows: <code>http.flow.adapter</code> → <code>graph-executor</code> flow → <code>graph.executor</code> (loads the model
 by <code>graph_id</code>, traverses it) → <code>async.http.response</code>. Calling it:</p>

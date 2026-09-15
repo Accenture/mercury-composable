@@ -3094,9 +3094,16 @@ self-correct on failure:</p>
 need to relay the WebSocket console. The same lines are still teed to the human's console, so a
 watcher (and any <code>session subscribe</code>d session) follows along live.</p>
 <h2 id="scaffolding">Scaffolding a project from the template<a class="headerlink" href="#scaffolding" title="Permanent link">&para;</a></h2>
-<p>Start every knowledge-graph project from <code>examples/minigraph-playground</code> and trim — <strong>against
-this manifest, not against your build passing</strong> (<code>mvn test</code> and <code>curl</code> both stay green with
-Playground UI routes missing; only the browser notices).</p>
+<p><strong>Start from <code>templates/starter-graph</code>.</strong> It is the copy-out starter for Layer 3 and it already
+ships the whole <code>playground-enabled</code> surface below — the dev-mode endpoints, <code>app.env=dev</code>, the
+standard <code>graph-executor</code> flow, and the session broker script — so a fresh project can be
+co-authored with an AI agent from the first run. Copy the directory, rename the ids, replace the
+graph model, and you are done; the manifest and route list here are then a <strong>checklist for what
+you must not delete</strong>, not a trimming exercise.</p>
+<p>If you instead derive from a fuller app (<code>examples/minigraph-playground</code>, which additionally
+demonstrates LLM streaming and Event-over-HTTP), trim — <strong>against this manifest, not against your
+build passing</strong> (<code>mvn test</code> and <code>curl</code> both stay green with Playground UI routes missing; only the
+browser notices).</p>
 <p><strong>Boilerplate manifest</strong> — what a derived project keeps:</p>
 <table>
 <thead>
@@ -3144,6 +3151,19 @@ Playground UI routes missing; only the browser notices).</p>
 </tr>
 </tbody>
 </table>
+<blockquote>
+<p><strong>One endpoint serves every graph.</strong> <code>POST /api/graph/{graph_id}</code> takes the graph id from the URL
+path, so a Layer 3 application needs exactly <strong>one</strong> REST entry no matter how many graphs it
+deploys. Do not add a per-graph endpoint — list the new id in <code>graphs.yaml</code> and it is live.</p>
+<p><strong>Declare the graph engine and nothing else.</strong> <code>minigraph-playground-engine</code> brings
+<code>event-script-engine</code> and <code>platform-core</code> transitively, so <strong>one</strong> dependency covers all three
+layers. Listing them individually is not merely redundant — it creates a resource collision: the
+Playground UI ships inside the engine as <code>classpath:/public/index.html</code> and <code>platform-core</code>
+carries a placeholder welcome page at the <em>same</em> path, and the first jar on the classpath wins
+(for <code>HttpRouter</code>'s static route and for <code>GetIndexHtml</code> alike). Declaring <code>platform-core</code> first is
+enough to serve the placeholder instead of the Playground, and everything else still passes —
+<code>mvn test</code>, <code>curl</code>, even the companion endpoint — so only a browser reveals it.</p>
+</blockquote>
 <p><strong><code>rest.yaml</code> — two named profiles.</strong> The template's route list mixes three kinds of routes;
 know which bar you are building to:</p>
 <ul>
@@ -3242,7 +3262,7 @@ blocks verbatim (every entry references them):</p>
 <a id="__codelineno-3-82" name="__codelineno-3-82" href="#__codelineno-3-82"></a><span class="w">    </span><span class="nt">headers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">header_1</span>
 <a id="__codelineno-3-83" name="__codelineno-3-83" href="#__codelineno-3-83"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
-<p>When in doubt, diff your trimmed <code>rest.yaml</code> against the template's.</p>
+<p>When in doubt, diff your <code>rest.yaml</code> against <code>templates/starter-graph/src/main/resources/rest.yaml</code>.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../command-reference/">MiniGraph command grammar</a> + <a href="../minigraph-commands.json"><code>minigraph-commands.json</code></a> — the source of truth.</li>

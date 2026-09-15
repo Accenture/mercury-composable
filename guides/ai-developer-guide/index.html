@@ -3113,7 +3113,10 @@ conversation with questions, never assumptions.</p>
    <a href="https://github.com/Accenture/mercury-composable/tree/main/templates/starter-graph"><code>starter-graph</code></a>
    (Layer 3, a zero-code knowledge-graph application). Each is standalone-buildable and
    ships BOTH build files: ask which build tool the team uses — <strong>Maven or Gradle</strong> —
-   keep that one and delete the other. Pin the Mercury version the environment reports
+   keep that one and delete the other. <code>starter-graph</code> additionally ships <strong>dev mode
+   pre-wired</strong> (<code>app.env=dev</code>, the Playground UI, the companion endpoint, and the session
+   broker script), so you can co-author the graph model with the human from the first run;
+   tell them to remove the single <code>app.env=dev</code> line before production. Pin the Mercury version the environment reports
    (<code>GET /api/discovery</code> → <code>mercury_version</code>) rather than assuming one; the reference
    applications in <code>examples/</code> remain the richer worked demos.</li>
 <li><strong>Hand off to the layer's guide.</strong> The <a href="#dsl-guides">DSL-specific AI guides</a> carry the

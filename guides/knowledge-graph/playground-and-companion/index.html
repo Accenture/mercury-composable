@@ -1584,6 +1584,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#enabling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Turning dev mode on in your own app
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#collaboration" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2761,6 +2772,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#enabling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Turning dev mode on in your own app
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#collaboration" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2958,6 +2980,34 @@ trusted dev environments</strong> (there is no auth).</p>
 <p><strong>Restarting the app ends every session — export first.</strong> The working graph lives in the
 session, not on disk: <code>export graph as {name}</code> before any restart (deploying a graph requires
 one), or the unexported work is lost.</p>
+</blockquote>
+<h2 id="enabling">Turning dev mode on in your own app<a class="headerlink" href="#enabling" title="Permanent link">&para;</a></h2>
+<p>The Playground is not a separate application — it rides along in any Mercury app that depends on
+<code>minigraph-playground-engine</code>. Two things switch it on:</p>
+<ol>
+<li><strong><code>app.env=dev</code></strong> in <code>application.properties</code>. Every Playground service is annotated
+   <code>@OptionalService("app.env=dev")</code>, so without this line none of them register.</li>
+<li><strong>The dev-mode <code>rest.yaml</code> entries</strong> — the companion endpoint, the live-model and
+   describe-model reads, the two upload dialogs, and the state-machine inspector. A REST entry
+   whose service is not registered is <strong>skipped with a warning at start-up</strong>, so the two settings
+   belong together: <code>app.env=dev</code> without the routes gives you a WebSocket and no HTTP surface;
+   the routes without <code>app.env=dev</code> give you a start-up log full of
+   <code>Skip [POST] /api/companion/{id}/sync - Service ... not available</code>.</li>
+</ol>
+<p>Both ship pre-wired in <a href="https://github.com/Accenture/mercury-composable/tree/main/templates/starter-graph"><code>templates/starter-graph</code></a>
+— copy that directory and the Playground is live on first run. The
+<a href="https://github.com/Accenture/mercury-composable/tree/main/examples/distributed-cache-example">distributed-cache example</a>
+shows the same wiring inside an app that also serves ordinary Layer 1 and Layer 2 endpoints: dev
+mode is additive, so a real application can be co-authored in the Playground and still serve its
+production routes. Remove the single <code>app.env=dev</code> line to close the whole surface for production.</p>
+<blockquote>
+<p><strong>Depend on the graph engine alone.</strong> <code>minigraph-playground-engine</code> pulls in
+<code>event-script-engine</code> and <code>platform-core</code> transitively — one dependency, all three layers. Adding
+the other two by hand introduces a resource collision: the Playground UI is bundled in the engine
+jar as <code>classpath:/public/index.html</code> and <code>platform-core</code> ships a placeholder welcome page at the
+same resource path, so whichever jar comes first on the classpath wins. The symptom is narrow and
+easy to misread — every test, <code>curl</code>, and companion command still succeeds, while the browser
+shows the placeholder instead of the Playground.</p>
 </blockquote>
 <h2 id="collaboration">User–AI collaboration<a class="headerlink" href="#collaboration" title="Permanent link">&para;</a></h2>
 <p>Put the two together and you get the seed of the framework's collaboration vision: a person watches
