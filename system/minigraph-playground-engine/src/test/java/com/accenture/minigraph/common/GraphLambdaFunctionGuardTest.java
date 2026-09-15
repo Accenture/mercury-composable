@@ -22,14 +22,19 @@ import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Unit tests for the runtime model-metadata immutability guard - the shared check every
- * model-writing mapping path calls (data-mapping RHS validation, fetcher input/output
- * mappings, for_each expansion) in both walker lanes.
+ * Unit tests for the shared runtime guards in GraphLambdaFunction: the model-metadata
+ * immutability check every model-writing mapping path calls (data-mapping RHS validation,
+ * fetcher input/output mappings, for_each expansion) in both walker lanes, and the guarded
+ * async completion that turns a failure inside a skill's completion callback into the node's
+ * error instead of a silently pending Mono.
  */
 class GraphLambdaFunctionGuardTest {
 
@@ -67,5 +72,40 @@ class GraphLambdaFunctionGuardTest {
         // non-model targets are outside this guard's scope
         assertDoesNotThrow(() -> probe.assertMutableModelTarget("worker", "worker.result"));
         assertDoesNotThrow(() -> probe.assertMutableModelTarget("worker", "output.body"));
+    }
+
+    @Test
+    void guardedCompletionReturnsNextPath() {
+        var pending = CompletableFuture.completedFuture(new EventEnvelope().setBody("ok"));
+        assertEquals("next", probe.guardedCompletion(pending, response -> "next").block());
+    }
+
+    @Test
+    void guardedCompletionSurfacesCallbackException() {
+        // a RuntimeException thrown while handling the response (e.g. an invalid output data
+        // mapping) must terminate the Mono with that error - the naive thenAccept form let the
+        // CompletableFuture swallow it, the sink never completed, and the caller timed out
+        var pending = CompletableFuture.completedFuture(new EventEnvelope().setBody("ok"));
+        var mono = probe.guardedCompletion(pending, response -> {
+            throw new IllegalArgumentException("Invalid output data mapping");
+        });
+        var e = assertThrows(IllegalArgumentException.class, mono::block);
+        assertEquals("Invalid output data mapping", e.getMessage());
+    }
+
+    @Test
+    void guardedCompletionSurfacesFailedFuture() {
+        // an exceptionally completed future must terminate the Mono too, unwrapped
+        var direct = new CompletableFuture<EventEnvelope>();
+        direct.completeExceptionally(new IllegalStateException("connection lost"));
+        var e1 = assertThrows(IllegalStateException.class,
+                () -> probe.guardedCompletion(direct, response -> "next").block());
+        assertEquals("connection lost", e1.getMessage());
+        // the same when the failure arrives wrapped in a CompletionException (dependent stage)
+        var wrapped = new CompletableFuture<EventEnvelope>();
+        wrapped.completeExceptionally(new CompletionException(new IllegalStateException("wrapped loss")));
+        var e2 = assertThrows(IllegalStateException.class,
+                () -> probe.guardedCompletion(wrapped, response -> "next").block());
+        assertEquals("wrapped loss", e2.getMessage());
     }
 }

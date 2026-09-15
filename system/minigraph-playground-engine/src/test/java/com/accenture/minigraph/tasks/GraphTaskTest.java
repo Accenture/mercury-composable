@@ -219,6 +219,19 @@ class GraphTaskTest {
     }
 
     @Test
+    void invalidOutputMappingSurfacesAsError() throws TimeoutException {
+        // an output-mapping LHS may only be a constant or a result./model./<node>. element.
+        // An illegal 'input.*' LHS throws while handling the task response, INSIDE the async
+        // completion callback - before guardedCompletion the Mono never terminated, so the
+        // caller waited out its TTL with no error logged; now it returns the mapping error
+        var response = runGraph("unit-test-task-8", Map.of("hello", "world"), Map.of());
+        assertNotEquals(200, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("Invalid output data mapping"),
+                "unexpected error response: " + response.getBody());
+        log.info("graph.task invalid output mapping surfaces as an error instead of a timeout");
+    }
+
+    @Test
     void helpFileFollowsNamingConvention() {
         // 'describe skill graph.task' resolves the file name by replacing dots with hyphens
         assertNotNull(GraphTaskTest.class.getResourceAsStream("/help/help graph-task.md"),

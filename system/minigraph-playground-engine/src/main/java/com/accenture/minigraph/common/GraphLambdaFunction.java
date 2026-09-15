@@ -28,10 +28,15 @@ import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
+import reactor.core.publisher.Mono;
+
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
 public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEnvelope, Object> {
     protected static final ConcurrentMap<String, GraphSession> sessions = new ConcurrentHashMap<>();
@@ -592,6 +597,36 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             result.put(entry.getKey(), entry.getValue().get(i));
         }
         return result;
+    }
+
+    /**
+     * Wrap a pending asynchronous call into a Mono that is guaranteed to terminate.
+     * <p>
+     * The naive form - {@code Mono.create(sink -> pending.thenAccept(response -> ...))} - has a
+     * silent failure mode: a RuntimeException thrown inside the callback (e.g. an invalid output
+     * data mapping) is captured by the CompletableFuture stage that nobody observes, so the sink
+     * never completes and the caller waits out its TTL with no error logged anywhere. This helper
+     * routes an exceptionally completed future AND a throwing response handler to
+     * {@code sink.error}, so the failure surfaces as the node's error response - exactly as if
+     * the skill had thrown synchronously on the worker thread.
+     *
+     * @param pending the in-flight request, issued on the worker thread
+     * @param onResponse handles the response and returns the walker's next path
+     * @return a Mono that always terminates - with the next path, or with the underlying error
+     */
+    protected Mono<String> guardedCompletion(CompletableFuture<EventEnvelope> pending,
+                                             Function<EventEnvelope, String> onResponse) {
+        return Mono.create(sink -> pending.whenComplete((response, ex) -> {
+            if (ex != null) {
+                sink.error(ex instanceof CompletionException && ex.getCause() != null ? ex.getCause() : ex);
+            } else {
+                try {
+                    sink.success(onResponse.apply(response));
+                } catch (RuntimeException e) {
+                    sink.error(e);
+                }
+            }
+        }));
     }
 
     protected void performFetcherOutputMapping(String nodeName, MultiLevelMap stateMachine, List<String> mapping) {
