@@ -7,7 +7,7 @@
     <artifactId>distributed-cache</artifactId>
     <version>4.12.8</version>
     <packaging>jar</packaging>
-    <name>Distributed cache (generic Redis-backed L2 cache as a composable function)</name>
+    <name>Distributed cache (composable function for Redis)</name>
     <description>
         A generic Redis-backed L2 distributed cache exposed as one composable action function
         (v1.cache.redis): PUT / GET / MGET / MPUT / DELETE / PUT_IF_NOT_PRESENT plus FIFO list

@@ -7,7 +7,7 @@
     <artifactId>redis-connection</artifactId>
     <version>4.12.8</version>
     <packaging>jar</packaging>
-    <name>Redis connection foundation (standalone/cluster client layer shared by Redis extensions)</name>
+    <name>Redis connection foundation shared by extensions</name>
     <description>
         The shared Redis client layer, extracted from sync-over-async so more than one extension can
         reuse it without re-implementing Redis wiring. Standalone-or-cluster selection behind one
