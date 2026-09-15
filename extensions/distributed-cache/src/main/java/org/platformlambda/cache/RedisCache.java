@@ -100,7 +100,7 @@ public class RedisCache implements LambdaFunction {
         };
     }
 
-    /** The write TTL: the {@code ttl} header (a duration string) when present, else the configured default. */
+    /** The write-TTL: the {@code ttl} header (a duration string) when present, else the configured default. */
     private static long ttl(Map<String, String> headers, RedisCacheStore cache) {
         String ttl = headers.get(TTL);
         return ttl == null || ttl.isBlank()

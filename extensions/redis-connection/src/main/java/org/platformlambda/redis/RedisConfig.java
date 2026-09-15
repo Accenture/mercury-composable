@@ -95,17 +95,18 @@ public record RedisConfig(String host, int port, String username, String passwor
 
     private static final String AUTO = "auto";
 
-    // key suffixes appended to a prefix (e.g. SOA_PREFIX + HOST = "soa.redis.host")
-    private static final String HOST = "host";
-    private static final String PORT = "port";
-    private static final String USERNAME = "username";
-    private static final String PASSWORD = "password";
-    private static final String SSL = "ssl";
-    private static final String DATABASE = "database";
-    private static final String TIMEOUT_MS = "timeout.ms";
-    private static final String CLUSTER_DETECT = "cluster.detect";
-    private static final String CLUSTER_MODE = "cluster.mode";
-    private static final String CLUSTER_NODES = "cluster.nodes";
+    // un-prefixed key names, appended to a prefix (e.g. SOA_PREFIX + HOST_KEY = "soa.redis.host").
+    // The _KEY suffix keeps these distinct from the record's like-named components (Sonar S1845).
+    private static final String HOST_KEY = "host";
+    private static final String PORT_KEY = "port";
+    private static final String USERNAME_KEY = "username";
+    private static final String PASSWORD_KEY = "password";
+    private static final String SSL_KEY = "ssl";
+    private static final String DATABASE_KEY = "database";
+    private static final String TIMEOUT_MS_KEY = "timeout.ms";
+    private static final String CLUSTER_DETECT_KEY = "cluster.detect";
+    private static final String CLUSTER_MODE_KEY = "cluster.mode";
+    private static final String CLUSTER_NODES_KEY = "cluster.nodes";
 
     /**
      * Backward-compatible standalone constructor (default user, no cluster, no probe): keeps callers and
@@ -130,19 +131,19 @@ public record RedisConfig(String host, int port, String username, String passwor
         // Each key prefers the <prefix> form and falls back to the un-prefixed redis.* form when absent
         // (the config reader's own nested-default pattern), so an existing redis.* deployment keeps working
         // and two consumers can decouple by setting their prefixed keys.
-        boolean autoDetect = AUTO.equalsIgnoreCase(get(config, prefix, CLUSTER_DETECT, AUTO));
-        boolean clusterEnabled = "true".equalsIgnoreCase(get(config, prefix, CLUSTER_MODE, "false"));
+        boolean autoDetect = AUTO.equalsIgnoreCase(get(config, prefix, CLUSTER_DETECT_KEY, AUTO));
+        boolean clusterEnabled = "true".equalsIgnoreCase(get(config, prefix, CLUSTER_MODE_KEY, "false"));
         return new RedisConfig(
-                get(config, prefix, HOST, "127.0.0.1"),
-                util.str2int(get(config, prefix, PORT, "6379")),
-                get(config, prefix, USERNAME, ""),
-                get(config, prefix, PASSWORD, ""),
-                "true".equalsIgnoreCase(get(config, prefix, SSL, "false")),
-                util.str2int(get(config, prefix, DATABASE, "0")),
-                util.str2long(get(config, prefix, TIMEOUT_MS, "5000")),
+                get(config, prefix, HOST_KEY, "127.0.0.1"),
+                util.str2int(get(config, prefix, PORT_KEY, "6379")),
+                get(config, prefix, USERNAME_KEY, ""),
+                get(config, prefix, PASSWORD_KEY, ""),
+                "true".equalsIgnoreCase(get(config, prefix, SSL_KEY, "false")),
+                util.str2int(get(config, prefix, DATABASE_KEY, "0")),
+                util.str2long(get(config, prefix, TIMEOUT_MS_KEY, "5000")),
                 autoDetect,
                 clusterEnabled,
-                get(config, prefix, CLUSTER_NODES, ""));
+                get(config, prefix, CLUSTER_NODES_KEY, ""));
     }
 
     /**

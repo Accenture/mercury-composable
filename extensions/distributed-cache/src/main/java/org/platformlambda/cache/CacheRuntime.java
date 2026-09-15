@@ -21,6 +21,7 @@ package org.platformlambda.cache;
 import io.lettuce.core.codec.ByteArrayCodec;
 import io.lettuce.core.codec.RedisCodec;
 import io.lettuce.core.codec.StringCodec;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.redis.RedisBackend;
 import org.platformlambda.redis.RedisBackendFactory;
@@ -28,6 +29,7 @@ import org.platformlambda.redis.RedisConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -43,6 +45,10 @@ import java.util.concurrent.locks.ReentrantLock;
  * start-up when Redis is briefly unreachable</b>. So there is no eager autoloader: while the connection
  * cannot be built the store stays null and each call retries (a config change, e.g. a late credential, is
  * picked up); once built, Lettuce owns reconnection under it and the store is reused.
+ *
+ * <p>The one connection is released on shutdown through the platform's lifecycle
+ * ({@link Platform#onShutdown}), registered from {@link #build()} so the cleanup is wired only when a
+ * connection has actually been opened.
  */
 public final class CacheRuntime {
     private static final Logger log = LoggerFactory.getLogger(CacheRuntime.class);
@@ -51,11 +57,13 @@ public final class CacheRuntime {
     static final RedisCodec<String, byte[]> CODEC = RedisCodec.of(StringCodec.UTF8, ByteArrayCodec.INSTANCE);
 
     // a ReentrantLock, not 'synchronized': on Java 21 a virtual thread that blocks inside a synchronized
-    // block PINS its carrier (JEP 491 lifts that only in JDK 24+; the build targets 21). Lettuce's own
-    // connect can block briefly, so the lazy build must not pin - matching RedisHealthProbe's lock.
+    // block PINS its carrier (JEP 491 lifts that only in JDK 24+; the build targets 21). Lettuce's connect
+    // can block briefly, so the lazy build must not pin - matching RedisHealthProbe's lock.
     private static final ReentrantLock LOCK = new ReentrantLock();
-    private static volatile RedisCacheStore store;
-    private static RedisBackend<byte[]> backend;
+    // AtomicReferences (not volatile object fields, Sonar S3077): the references are published safely for
+    // the lock-free fast path in store() and for the shutdown hook.
+    private static final AtomicReference<RedisCacheStore> STORE = new AtomicReference<>();
+    private static final AtomicReference<RedisBackend<byte[]>> BACKEND = new AtomicReference<>();
 
     private CacheRuntime() {}
 
@@ -65,14 +73,14 @@ public final class CacheRuntime {
      * the caller's concern via the flow's exception handler) and the next call retries with a fresh config.
      */
     static RedisCacheStore store() {
-        RedisCacheStore current = store;
+        RedisCacheStore current = STORE.get();
         if (current == null) {
             LOCK.lock();
             try {
-                current = store;
+                current = STORE.get();
                 if (current == null) {
                     current = build();
-                    store = current;
+                    STORE.set(current);
                 }
             } finally {
                 LOCK.unlock();
@@ -84,27 +92,30 @@ public final class CacheRuntime {
     private static RedisCacheStore build() {
         CacheConfig config = CacheConfig.from(AppConfigReader.getInstance());
         RedisConfig redis = config.redisConfig();
-        RedisBackend<byte[]> connected = RedisBackendFactory.create(redis, CODEC);
-        backend = connected;
+        RedisBackend<byte[]> backend = RedisBackendFactory.create(redis, CODEC);
+        BACKEND.set(backend);
+        // register cleanup now that a connection exists, via the platform's shutdown lifecycle (one shared
+        // JVM hook). build() runs once under the lock, so this registers exactly once.
+        Platform.getInstance().onShutdown(CacheRuntime::shutdown);
         log.info("Redis cache connected (redis {}:{}, ssl={}, cluster={}, keyPrefix='{}', defaultTtl={}s)",
-                redis.host(), redis.port(), redis.ssl(), connected.cluster(),
+                redis.host(), redis.port(), redis.ssl(), backend.cluster(),
                 config.keyPrefix(), config.defaultTtlSeconds());
-        return new RedisCacheStore(connected, config.keyPrefix(), config.defaultTtlSeconds(), redis.timeoutMs());
+        return new RedisCacheStore(backend, config.keyPrefix(), config.defaultTtlSeconds(), redis.timeoutMs());
     }
 
-    /** Close the shared backend and reset (clean shutdown, and the reuse/reset seam for tests). Idempotent. */
-    public static void shutdown() {
+    /** Close the shared backend on shutdown — registered with {@link Platform#onShutdown} when it opens. */
+    private static void shutdown() {
         LOCK.lock();
         try {
+            RedisBackend<byte[]> backend = BACKEND.getAndSet(null);
             if (backend != null) {
                 try {
                     backend.close();
                 } catch (Exception e) {
                     log.debug("Ignorable error while closing the Redis cache backend - {}", e.getMessage());
                 }
-                backend = null;
             }
-            store = null;
+            STORE.set(null);
         } finally {
             LOCK.unlock();
         }

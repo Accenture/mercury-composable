@@ -200,7 +200,7 @@ class StreamingRestE2eTest extends RedisTestBase {
 
     /**
      * Post a <b>terminal</b> segment without asserting liveness - the twin of
-     * {@code StreamReturnRouteTest.postTerminal}, whose javadoc carries the full reasoning:
+     * {@code StreamReturnRouteTest.postTerminal}, whose Javadoc carries the full reasoning:
      * a closing post races its own consumption by construction (an in-flight drain woken by an
      * earlier post may deliver the terminal and delete the route before the producer's own route
      * check runs), so {@code post} may answer {@code false} although the segment <em>was</em>

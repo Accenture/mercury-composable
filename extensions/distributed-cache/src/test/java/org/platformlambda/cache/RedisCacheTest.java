@@ -159,27 +159,31 @@ class RedisCacheTest extends RedisTestBase {
 
     @Test
     void missingActionIsRejected() {
+        Map<String, String> noAction = headers("key", "k1");
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-                () -> function.handleEvent(headers("key", "k1"), null, INSTANCE));
+                () -> function.handleEvent(noAction, null, INSTANCE));
         assertTrue(error.getMessage().contains("action"));
     }
 
     @Test
     void unsupportedActionIsRejected() {
+        Map<String, String> unsupported = headers("action", "INCR", "key", "k1");
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-                () -> function.handleEvent(headers("action", "INCR", "key", "k1"), null, INSTANCE));
+                () -> function.handleEvent(unsupported, null, INSTANCE));
         assertTrue(error.getMessage().contains("INCR"));
     }
 
     @Test
     void putWithoutAValueIsRejected() {
+        Map<String, String> put = headers("action", "PUT", "key", "k1");
         assertThrows(IllegalArgumentException.class,
-                () -> function.handleEvent(headers("action", "PUT", "key", "k1"), null, INSTANCE));
+                () -> function.handleEvent(put, null, INSTANCE));
     }
 
     @Test
     void mgetWithoutAListBodyIsRejected() {
+        Map<String, String> mget = headers("action", "MGET");
         assertThrows(IllegalArgumentException.class,
-                () -> function.handleEvent(headers("action", "MGET"), "not-a-list", INSTANCE));
+                () -> function.handleEvent(mget, "not-a-list", INSTANCE));
     }
 }

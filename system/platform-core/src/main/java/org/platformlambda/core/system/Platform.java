@@ -65,6 +65,9 @@ public class Platform {
     // route pools (prefix -> lane count): lifecycle metadata only, never consulted for routing
     private static final ConcurrentMap<String, Integer> poolRegistry = new ConcurrentHashMap<>();
     private static final ReentrantLock POOL_LOCK = new ReentrantLock();
+    // platform-owned shutdown lifecycle: one JVM hook runs every registered callback (see onShutdown)
+    private static final List<Runnable> SHUTDOWN_HOOKS = new CopyOnWriteArrayList<>();
+    private static final AtomicBoolean SHUTDOWN_HOOK_INSTALLED = new AtomicBoolean(false);
     private static String originId;
     private static String appId;
     private static Vertx vertx;
@@ -685,6 +688,48 @@ public class Platform {
     private void releasePoolMembers(String prefix, int count) {
         for (int n = 0; n < count; n++) {
             release(prefix + "." + n);
+        }
+    }
+
+    /**
+     * Register a callback to run when the JVM shuts down - the platform's lightweight shutdown lifecycle.
+     * The platform owns a single JVM shutdown hook (installed on the first registration); every registered
+     * callback runs on shutdown in reverse registration order (last registered runs first, so a resource
+     * opened later is released first), and each is isolated so one failing callback cannot block the rest.
+     * <p>
+     * Prefer this to a hand-rolled {@code Runtime.getRuntime().addShutdownHook(new Thread(...))}: one hook,
+     * ordered and error-isolated, instead of many uncoordinated threads. A module that opens a resource
+     * lazily should register from where it opens the resource, so the cleanup is registered only when there
+     * is something to release.
+     *
+     * @param callback the cleanup to run on shutdown (must not be null)
+     */
+    public void onShutdown(Runnable callback) {
+        if (callback == null) {
+            throw new IllegalArgumentException("Shutdown callback cannot be null");
+        }
+        SHUTDOWN_HOOKS.add(callback);
+        if (SHUTDOWN_HOOK_INSTALLED.compareAndSet(false, true)) {
+            Runtime.getRuntime().addShutdownHook(
+                    new Thread(() -> runShutdownHooks(SHUTDOWN_HOOKS), "platform-shutdown"));
+        }
+    }
+
+    /**
+     * Run each shutdown callback in reverse registration order, isolating failures so one cannot block the
+     * rest. Package-private and parameterized so it can be unit-tested without triggering a real JVM shutdown.
+     */
+    static void runShutdownHooks(List<Runnable> callbacks) {
+        // reverse view (Java 21 SequencedCollection.reversed()): last registered runs first, with no in-place
+        // reverse or defensive copy - the source is a CopyOnWriteArrayList (snapshot-safe iteration).
+        for (Runnable callback : callbacks.reversed()) {
+            try {
+                callback.run();
+            } catch (RuntimeException e) {
+                // Runnable.run() throws no checked exceptions, so RuntimeException is the precise catch
+                // (S2221): isolate a hook's runtime failure and log it, but let an Error propagate.
+                log.warn("Shutdown hook failed - {}", e.getMessage());
+            }
         }
     }
 
