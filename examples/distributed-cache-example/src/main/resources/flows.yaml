@@ -1,0 +1,5 @@
+flows:
+  - 'l2-profile.yml'
+  - 'l3-profile.yml'
+
+location: 'classpath:/flows/'

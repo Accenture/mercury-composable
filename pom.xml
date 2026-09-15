@@ -55,6 +55,7 @@
         <module>examples/minigraph-playground</module>
         <module>examples/kafka-demo</module>
         <module>examples/sync-over-async-demo</module>
+        <module>examples/distributed-cache-example</module>
         <module>examples/twin-kafka-demo</module>
 
         <!-- Starter templates for the three layers (copy one out to begin a new
