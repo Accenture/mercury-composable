@@ -1,0 +1,4 @@
+graphs:
+  - 'profile-cache'
+
+location: 'classpath:/graph'

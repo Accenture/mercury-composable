@@ -1,0 +1,34 @@
+#
+# REST automation for the distributed-cache example. The same profile GET/POST/DELETE CRUD is exposed
+# three times - one route family per layer - all backed by the shared v1.cache.redis cache.
+#
+rest:
+  # ---- Layer 1: Platform Core / PostOffice -------------------------------------------------------
+  # One event-driven function bound directly to the endpoint (no flow): it drives the cache with the
+  # PostOffice RPC API in code and dispatches on the HTTP method.
+  - service: 'v1.profile.l1'
+    methods: ['GET', 'POST', 'DELETE']
+    url: '/api/l1/profile/{profile_id}'
+    timeout: 10s
+    tracing: true
+
+  # ---- Layer 2: Event Script ---------------------------------------------------------------------
+  # ONE flow serves all three methods: a small mapper task turns the HTTP method into an action and a
+  # decision task routes to the get / save / delete branch, composing the cache task with the
+  # encode/decode helpers declaratively.
+  - service: 'http.flow.adapter'
+    methods: ['GET', 'POST', 'DELETE']
+    url: '/api/l2/profile/{profile_id}'
+    flow: 'l2-profile'
+    timeout: 10s
+    tracing: true
+
+  # ---- Layer 3: Knowledge Graph ------------------------------------------------------------------
+  # One graph serves get/save/delete; the action + id (+ profile for save) ride in the JSON payload,
+  # e.g. { "action": "get", "id": "carol" }. The l3-profile flow runs the profile-cache graph.
+  - service: 'http.flow.adapter'
+    methods: ['POST']
+    url: '/api/l3/profile'
+    flow: 'l3-profile'
+    timeout: 15s
+    tracing: true
