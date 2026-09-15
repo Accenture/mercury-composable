@@ -13,7 +13,7 @@
     <artifactId>starter-graph</artifactId>
     <packaging>jar</packaging>
     <version>4.12.8</version>
-    <name>Layer 3 starter - Active Knowledge Graph as the application</name>
+    <name>Layer 3 starter - Knowledge Graph as Application</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -53,9 +53,16 @@
     </dependencyManagement>
 
     <dependencies>
+        <!--
+            The three layers, declared Layer 3 first ON PURPOSE. The Playground UI ships inside
+            minigraph-playground-engine as classpath:/public/index.html, and platform-core carries a
+            placeholder welcome page at the same resource path. The first jar on the classpath wins,
+            so listing the engine ahead of platform-core is what makes the browser land on the
+            Playground rather than the placeholder. Keep this order (mirrored in build.gradle).
+        -->
         <dependency>
             <groupId>org.platformlambda</groupId>
-            <artifactId>platform-core</artifactId>
+            <artifactId>minigraph-playground-engine</artifactId>
             <version>4.12.8</version>
         </dependency>
 
@@ -67,7 +74,7 @@
 
         <dependency>
             <groupId>org.platformlambda</groupId>
-            <artifactId>minigraph-playground-engine</artifactId>
+            <artifactId>platform-core</artifactId>
             <version>4.12.8</version>
         </dependency>
 

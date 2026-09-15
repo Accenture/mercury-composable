@@ -255,6 +255,28 @@
   (the same async-callback minefield).
   <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-15 | uses: 2 | tier: active | origin: 2026-09-15-040141 -->
 
+- **A Layer 3 application is one graph endpoint plus dev mode — and the Playground UI hides behind a
+  classpath-order trap (2026-09-15, Eric's polish round on the starter template + the cache example).**
+  Two shape rules. **(1) One endpoint, every graph:** `POST /api/graph/{graph_id}` takes the id from the
+  URL path, so a Layer 3 app needs exactly one `rest.yaml` entry and the one stock `graph-executor` flow
+  no matter how many models it deploys — adding a graph means adding its id to `graphs.yaml`, never a
+  bespoke route (the cache example's `/api/l3/profile` + `l3-profile.yml` were deleted for this).
+  **(2) Dev mode is two settings that must travel together:** `app.env=dev` AND the dev-mode rest.yaml
+  entries. Every Playground/companion service is `@OptionalService("app.env=dev")`, and
+  `RoutingEntry.resolveServices` SKIPS a rest entry whose service is unregistered (warn "Service ... not
+  available"), so routes without the switch are dead on arrival and the switch without routes leaves only
+  a WebSocket. Both now ship pre-wired in `templates/starter-graph` (plus `scripts/`), and in
+  `examples/distributed-cache-example` alongside its ordinary L1/L2 routes — removing the one line closes
+  the surface for production. **The trap:** the Playground UI is `classpath:/public/index.html` inside
+  minigraph-playground-engine and platform-core ships a PLACEHOLDER page at the same resource path;
+  first jar on the classpath wins, for `HttpRouter`'s static route and `GetIndexHtml` alike. Declare the
+  engine BEFORE platform-core (or only transitively, as the examples do). Everything else stays green —
+  tests, curl, the companion endpoint — and only the browser shows the wrong page, which is why it
+  survived until a live run. Documented in `playground-and-companion.md` (#enabling) and
+  `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]]; applies to
+  [[ot-distributed-cache]]'s worked example.
+  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-15 | uses: 1 | tier: working | origin: 2026-09-15-221451 -->
+
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
   `examples/minigraph-playground/scripts/playground-session-broker.mjs` (zero-dependency,

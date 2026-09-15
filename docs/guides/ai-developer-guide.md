@@ -84,7 +84,10 @@ conversation with questions, never assumptions.
    [`starter-graph`](https://github.com/Accenture/mercury-composable/tree/main/templates/starter-graph)
    (Layer 3, a zero-code knowledge-graph application). Each is standalone-buildable and
    ships BOTH build files: ask which build tool the team uses — **Maven or Gradle** —
-   keep that one and delete the other. Pin the Mercury version the environment reports
+   keep that one and delete the other. `starter-graph` additionally ships **dev mode
+   pre-wired** (`app.env=dev`, the Playground UI, the companion endpoint, and the session
+   broker script), so you can co-author the graph model with the human from the first run;
+   tell them to remove the single `app.env=dev` line before production. Pin the Mercury version the environment reports
    (`GET /api/discovery` → `mercury_version`) rather than assuming one; the reference
    applications in `examples/` remain the richer worked demos.
 5. **Hand off to the layer's guide.** The [DSL-specific AI guides](#dsl-guides) carry the

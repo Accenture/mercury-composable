@@ -13,7 +13,7 @@
     <artifactId>starter-flow</artifactId>
     <packaging>jar</packaging>
     <version>4.12.8</version>
-    <name>Layer 2 starter - Event Script flows</name>
+    <name>Layer 2 starter - Event Script</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>

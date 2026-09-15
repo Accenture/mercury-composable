@@ -33,13 +33,14 @@ import org.slf4j.LoggerFactory;
  *       ({@code v1.profile.l1}) calls the cache with the PostOffice RPC API in code.</li>
  *   <li><b>Layer 2 (Event Script)</b> - {@code /api/l2/profile/{profile_id}}: a flow composes the cache task
  *       with the encode/decode helper functions declaratively.</li>
- *   <li><b>Layer 3 (Knowledge Graph)</b> - {@code /api/l3/profile/{profile_id}}: a graph node drives the same
- *       route through {@code graph.task}.</li>
+ *   <li><b>Layer 3 (Knowledge Graph)</b> - {@code /api/graph/profile-cache}: a graph node drives the same
+ *       route through {@code graph.task}. Layer 3 needs no endpoint of its own - the standard graph API
+ *       {@code /api/graph/{graph_id}} serves every graph deployed in the app.</li>
  * </ul>
  *
  * A profile POSTed through one layer is readable through the other two - the cache key is the profile id and
- * the value is the profile Map held in an {@code EventEnvelope} (one wire format across all layers, and across
- * the Rust port). Run a standalone Redis first (helpers/redis-standalone); see README.md.
+ * the value is the profile Map packed as plain MsgPack (one wire format across all layers, and across the
+ * Rust port). Run a standalone Redis first (helpers/redis-standalone); see README.md.
  */
 @MainApplication
 public class MainApp implements EntryPoint {

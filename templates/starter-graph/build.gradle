@@ -33,9 +33,12 @@ repositories {
 }
 
 dependencies {
-    implementation "org.platformlambda:platform-core:${mercuryVersion}"
-    implementation "org.platformlambda:event-script-engine:${mercuryVersion}"
+    // Layer 3 first ON PURPOSE: the Playground UI ships inside minigraph-playground-engine as
+    // classpath:/public/index.html and platform-core carries a placeholder page at the same path.
+    // The first jar on the classpath wins, so this order is what serves the Playground. See pom.xml.
     implementation "org.platformlambda:minigraph-playground-engine:${mercuryVersion}"
+    implementation "org.platformlambda:event-script-engine:${mercuryVersion}"
+    implementation "org.platformlambda:platform-core:${mercuryVersion}"
 
     testImplementation platform('org.junit:junit-bom:6.0.3')
     testImplementation 'org.junit.jupiter:junit-jupiter'
