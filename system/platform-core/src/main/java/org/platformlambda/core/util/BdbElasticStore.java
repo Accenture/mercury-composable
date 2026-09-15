@@ -98,7 +98,7 @@ class BdbElasticStore implements ElasticStore {
                 LOADED.set(true);
                 Platform platform = Platform.getInstance();
                 platform.registerPrivate(CLEAN_UP_TASK, new Cleanup(), 1);
-                Runtime.getRuntime().addShutdownHook(new Thread(BdbElasticStore::shutdown));
+                platform.onShutdown(BdbElasticStore::shutdown);
                 AppConfigReader config = AppConfigReader.getInstance();
                 runningInCloud = "true".equals(config.getProperty("running.in.cloud", "false"));
                 File tmpRoot = new File(config.getProperty("transient.data.store", "/tmp/reactive"));

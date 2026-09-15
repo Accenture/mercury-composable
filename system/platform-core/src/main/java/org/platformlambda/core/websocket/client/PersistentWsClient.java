@@ -90,7 +90,7 @@ public class PersistentWsClient extends Thread {
     public void run() {
         vertx = Vertx.vertx();
         client = vertx.createWebSocketClient();
-        Runtime.getRuntime().addShutdownHook(new Thread(this::close));
+        Platform.getInstance().onShutdown(this::close);
         Utility util = Utility.getInstance();
         AppConfigReader reader = AppConfigReader.getInstance();
         int idleSeconds = Math.max(20, util.str2int(reader.getProperty(IDLE_TIMEOUT, DEFAULT_IDLE_TIMEOUT)));

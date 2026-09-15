@@ -113,7 +113,7 @@ class FileElasticStore implements ElasticStore {
                     if (!runningInCloud) {
                         scanExpiredStores(tmpRoot, baseDir);
                     }
-                    Runtime.getRuntime().addShutdownHook(new Thread(FileElasticStore::shutdown));
+                    platform.onShutdown(FileElasticStore::shutdown);
                     platform.getVertx().setPeriodic(KEEP_ALIVE_INTERVAL, t -> keepAlive());
                     log.info("Elastic file store ready ({})", baseDir);
                 }
