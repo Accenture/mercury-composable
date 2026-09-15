@@ -1573,6 +1573,8 @@
       
         
       
+        
+      
     
     
     
@@ -1829,6 +1831,34 @@
     
   
     Twin Kafka (dual cluster)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../distributed-cache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Distributed Cache
   
 
     
@@ -4048,6 +4078,89 @@
     <span class="md-ellipsis">
       
         sync.max.pending.streams
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#distributed-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Distributed Cache
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Distributed Cache">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rediscacheenabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.cache.enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rediscacheinstances" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.cache.instances
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rediscachedefaultttl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.cache.default.ttl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rediscachekeyprefix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.cache.key.prefix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#redishealthtimeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.health.timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#redishealthstartupgrace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.health.startup.grace
       
     </span>
   </a>
@@ -6500,6 +6613,89 @@
     <span class="md-ellipsis">
       
         sync.max.pending.streams
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#distributed-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Distributed Cache
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Distributed Cache">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rediscacheenabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.cache.enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rediscacheinstances" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.cache.instances
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rediscachedefaultttl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.cache.default.ttl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rediscachekeyprefix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.cache.key.prefix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#redishealthtimeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.health.timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#redishealthstartupgrace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redis.health.startup.grace
       
     </span>
   </a>
@@ -9003,7 +9199,7 @@ off by default and starts (eagerly connecting to Redis) only when <code>sync.ove
 </tr>
 </tbody>
 </table>
-<p>Timeout for the <code>soa.redis.health</code> probe - a single Redis PING on a dedicated connection built from the <code>soa.redis.*</code> parameters (one successful call proves connectivity, TLS, and authentication). Add <code>soa.redis.health</code> to <code>mandatory.health.dependencies</code> (or the optional list) to include the server in <code>/health</code>. (The plain <code>redis.health</code> route name is reserved for the health check of the planned generic Redis distributed-cache module.)</p>
+<p>Timeout for the <code>soa.redis.health</code> probe - a single Redis PING on a dedicated connection built from the <code>soa.redis.*</code> parameters (one successful call proves connectivity, TLS, and authentication). Add <code>soa.redis.health</code> to <code>mandatory.health.dependencies</code> (or the optional list) to include the server in <code>/health</code>. (The plain <code>redis.health</code> route name is the health check of the <a href="../distributed-cache/">distributed cache</a> module - see <a href="#distributed-cache">Distributed Cache</a>.)</p>
 <h3 id="soaredishealthstartupgrace"><code>soa.redis.health.startup.grace</code><a class="headerlink" href="#soaredishealthstartupgrace" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -9119,6 +9315,106 @@ safety net: completed or closed streams delete their keys eagerly.</p>
 </table>
 <p>Per-pod ceiling on concurrently open streaming rendezvous (backpressure).</p>
 <p>All <code>soa.redis.*</code> and <code>sync.*</code> values support <code>${ENV_VAR:default}</code> substitution.</p>
+<hr />
+<h2 id="distributed-cache">Distributed Cache<a class="headerlink" href="#distributed-cache" title="Permanent link">&para;</a></h2>
+<p>The <a href="../distributed-cache/">distributed cache</a> (<code>v1.cache.redis</code>) uses the plain <code>redis.*</code> connection namespace — the same keys as <code>soa.redis.*</code> above without the <code>soa.</code> prefix (<code>redis.host</code>, <code>redis.port</code>, <code>redis.username</code>, <code>redis.password</code>, <code>redis.ssl</code>, <code>redis.database</code>, <code>redis.timeout.ms</code>, <code>redis.cluster.detect</code>, <code>redis.cluster.mode</code>, <code>redis.cluster.nodes</code>) — plus the cache tunables below. Set only <code>redis.*</code> to share one server with sync-over-async, or also set <code>soa.redis.*</code> to decouple them.</p>
+<h3 id="rediscacheenabled"><code>redis.cache.enabled</code><a class="headerlink" href="#rediscacheenabled" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>Master switch. <code>true</code> registers the cache action function <code>v1.cache.redis</code> and the <code>redis.health</code> check; <code>false</code> (default) loads neither.</p>
+<h3 id="rediscacheinstances"><code>redis.cache.instances</code><a class="headerlink" href="#rediscacheinstances" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int</code></td>
+<td><code>20</code></td>
+</tr>
+</tbody>
+</table>
+<p>Number of virtual-thread worker instances for <code>v1.cache.redis</code> (function concurrency) - <strong>not</strong> a connection count. Every instance shares the module's one multiplexed Lettuce connection.</p>
+<h3 id="rediscachedefaultttl"><code>redis.cache.default.ttl</code><a class="headerlink" href="#rediscachedefaultttl" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>duration</code></td>
+<td><code>1h</code></td>
+</tr>
+</tbody>
+</table>
+<p>Default TTL applied to a write (<code>PUT</code> / <code>MPUT</code> / <code>LIST_PUSH</code>) that omits a <code>ttl</code> header. Every stored key carries a TTL from creation.</p>
+<h3 id="rediscachekeyprefix"><code>redis.cache.key.prefix</code><a class="headerlink" href="#rediscachekeyprefix" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code></td>
+<td>— (blank)</td>
+</tr>
+</tbody>
+</table>
+<p>Optional namespace prepended to every cache key (and stripped again from <code>MGET</code> results), so multiple applications can share one Redis without colliding.</p>
+<h3 id="redishealthtimeout"><code>redis.health.timeout</code><a class="headerlink" href="#redishealthtimeout" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>duration</code></td>
+<td><code>5s</code></td>
+</tr>
+</tbody>
+</table>
+<p>Timeout for the <code>redis.health</code> probe (a single Redis PING on a dedicated <code>redis.*</code> connection). Add <code>redis.health</code> to <code>mandatory.health.dependencies</code> (or the optional list) to include the cache's Redis in <code>/health</code>. Same semantics as <code>soa.redis.health.timeout</code>.</p>
+<h3 id="redishealthstartupgrace"><code>redis.health.startup.grace</code><a class="headerlink" href="#redishealthstartupgrace" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>duration</code></td>
+<td><code>30s</code></td>
+</tr>
+</tbody>
+</table>
+<p>Start-up grace period for <code>redis.health</code> - a placeholder healthy status while the client warms up, with the same lazy-config / waiting-on-credential semantics as <code>soa.redis.health.startup.grace</code>.</p>
+<p>All <code>redis.cache.*</code> and <code>redis.*</code> values support <code>${ENV_VAR:default}</code> substitution.</p>
 <hr />
 <h2 id="serialization-content-types">Serialization &amp; Content Types<a class="headerlink" href="#serialization-content-types" title="Permanent link">&para;</a></h2>
 <h3 id="customcontenttypes"><code>custom.content.types</code><a class="headerlink" href="#customcontenttypes" title="Permanent link">&para;</a></h3>

@@ -1575,6 +1575,8 @@
       
         
       
+        
+      
     
     
     
@@ -1834,6 +1836,34 @@
     
   
     Twin Kafka (dual cluster)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../distributed-cache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Distributed Cache
   
 
     
@@ -2917,7 +2947,8 @@ Then enable the coordinator and point it at Redis:</p>
 <blockquote>
 <p><strong><code>soa.redis.*</code> namespace, with a <code>redis.*</code> fallback.</strong> The Redis keys carry the <code>soa.</code> prefix so
 sync-over-async owns its own Redis configuration and never collides with another <code>redis.*</code> consumer in
-the same application — a distributed-cache library, or the <code>minigraph-state-redis</code> extension — which may
+the same application — the <a href="../distributed-cache/">distributed cache</a>, or the <code>minigraph-state-redis</code>
+extension — which may
 point at a different server, auth, or topology. <strong>No migration is required:</strong> each key falls back to the
 un-prefixed <code>redis.*</code> form when the <code>soa.</code> one is absent, so an existing <code>redis.*</code> deployment keeps
 working; set <code>soa.redis.*</code> only to override the fallback or to decouple from a co-resident <code>redis.*</code>
@@ -3136,9 +3167,9 @@ it as a health dependency in <code>application.properties</code>:</p>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># optional.health.dependencies=soa.redis.health</span>
 </code></pre></div>
 <blockquote>
-<p>The route carries the <code>soa.</code> prefix deliberately: the plain <code>redis.health</code> name is reserved for the
-health check of the planned generic Redis distributed-cache module, so both features can coexist
-against the same Redis server.</p>
+<p>The route carries the <code>soa.</code> prefix deliberately: the plain <code>redis.health</code> name is the health check of
+the <a href="../distributed-cache/">distributed cache</a> module, so both features can coexist against the same
+Redis server.</p>
 </blockquote>
 <p>The probe is a single Redis <strong>PING</strong> on a dedicated connection built from the <code>soa.redis.*</code> parameters -
 the lightest round trip the protocol offers, and one successful call proves connectivity, TLS, and
@@ -3174,6 +3205,7 @@ behind <code>rest.yaml</code>.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../minimalist-kafka/">Minimalist Kafka</a> — the inbound/outbound Kafka building blocks this pattern uses.</li>
+<li><a href="../distributed-cache/">Distributed Cache</a> — the sibling opt-in module that shares the same Redis client layer.</li>
 <li><a href="../configuration-reference/#sync-over-async">Configuration Reference</a> — every <code>soa.redis.*</code> / <code>sync.*</code> key.</li>
 <li><a href="../service-mesh/">Minimalist Service Mesh</a> — the heavier <code>cloud.connector=kafka</code> alternative with service discovery.</li>
 <li><a href="../observability/">Observability</a> — tracing the round trip end-to-end.</li>

@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/code-conventions/">
+        <link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/distributed-cache/">
       
       
-        <link rel="prev" href="../actuators-and-http-client/">
+        <link rel="prev" href="../twin-kafka/">
       
       
-        <link rel="next" href="../documentation-conventions/">
+        <link rel="next" href="../schema-registry-mock/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Code Conventions - Composable for Java</title>
+        <title>Distributed Cache - Composable for Java</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#code-conventions" class="md-skip">
+        <a href="#distributed-cache" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Code Conventions
+              Distributed Cache
             
           </span>
         </div>
@@ -364,10 +364,12 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
+      <li class="md-tabs__item md-tabs__item--active">
         <a href="../build-test-deploy/" class="md-tabs__link">
           
   
@@ -386,12 +388,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href="../../arch-decisions/ADR/" class="md-tabs__link">
           
   
@@ -1546,8 +1546,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -1579,19 +1581,22 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
             
   
   
@@ -1609,7 +1614,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1848,10 +1853,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../distributed-cache/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Distributed Cache
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1867,6 +1899,153 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enabling and configuring
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using the cache
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using the cache">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#layer1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 1 — PostOffice
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#layer2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 2 — Event Script task
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#layer3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 3 — Knowledge Graph node
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Value type &amp; serialisation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standalone or cluster Redis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#health" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Health check
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to use it
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1967,10 +2146,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -2016,22 +2193,19 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -2049,7 +2223,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2428,37 +2602,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Conventions
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../code-conventions/" class="md-nav__link">
         
   
   
@@ -2474,81 +2621,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#altitude-where-this-fits" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Altitude — where this fits
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#package-organization" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Package organization
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#route-naming" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Route naming
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#function-granularity" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Function granularity
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        See also
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2728,10 +2800,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#altitude-where-this-fits" class="md-nav__link">
+  <a href="#operations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Altitude — where this fits
+        Operations
       
     </span>
   </a>
@@ -2739,10 +2811,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#package-organization" class="md-nav__link">
+  <a href="#config" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Package organization
+        Enabling and configuring
       
     </span>
   </a>
@@ -2750,10 +2822,60 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#route-naming" class="md-nav__link">
+  <a href="#usage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Route naming
+        Using the cache
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using the cache">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#layer1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 1 — PostOffice
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#layer2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 2 — Event Script task
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#layer3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 3 — Knowledge Graph node
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Value type &amp; serialisation
       
     </span>
   </a>
@@ -2761,10 +2883,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#function-granularity" class="md-nav__link">
+  <a href="#cluster" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Function granularity
+        Standalone or cluster Redis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#health" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Health check
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to use it
       
     </span>
   </a>
@@ -2802,69 +2946,329 @@
   
 
 
-<h1 id="code-conventions">Code Conventions<a class="headerlink" href="#code-conventions" title="Permanent link">&para;</a></h1>
-<p><em>Reference: Recommended conventions for organizing and naming Mercury application code.</em></p>
+<h1 id="distributed-cache">Distributed Cache<a class="headerlink" href="#distributed-cache" title="Permanent link">&para;</a></h1>
+<p><em>Guide: a generic Redis-backed L2 distributed cache, exposed as one composable function you call from
+any layer.</em></p>
 <blockquote>
 <p><strong>At a glance</strong></p>
 <ul>
-<li><strong>What</strong> — soft, evolving recommendations for how to organize and name code in a composable
-  application: package layout, route naming, function granularity.</li>
-<li><strong>Why it matters</strong> — composable apps are many small functions wired by route names; a little naming
-  and layout discipline keeps the whole readable and keeps route collisions out.</li>
-<li><strong>For</strong> developers and AI agents writing functions, flows, and the classes around them.</li>
+<li><strong>What</strong> — a shared key-value cache backed by Redis, exposed as a single composable action function at
+  route <strong><code>v1.cache.redis</code></strong>. One <code>action</code> header selects the operation; values are opaque <code>byte[]</code>.</li>
+<li><strong>How</strong> — <code>PUT</code>/<code>GET</code>/<code>MGET</code>/<code>MPUT</code>/<code>DELETE</code>/<code>PUT_IF_NOT_PRESENT</code> plus FIFO <code>LIST_PUSH</code>/<code>LIST_POP</code>/
+  <code>LIST_LEN</code>. Every stored key carries a TTL from creation. One shared, multiplexed Lettuce connection —
+  no pool.</li>
+<li><strong>Advanced &amp; opt-in</strong> — off by default; enable with <code>redis.cache.enabled=true</code>. Standalone or
+  Redis Cluster with no code change.</li>
+<li><strong>For</strong> developers who need a cache shared across pods and across the three layers (Platform Core,
+  Event Script, Knowledge Graph).</li>
 </ul>
 </blockquote>
-<h2 id="altitude-where-this-fits">Altitude — where this fits<a class="headerlink" href="#altitude-where-this-fits" title="Permanent link">&para;</a></h2>
-<p>These are <strong>recommendations</strong>, not hard rules. They sit below the two harder tiers:</p>
+<p>The cache is a thin composable module over the same Redis client layer that powers
+<a href="../sync-over-async/">sync-over-async</a> — the shared <strong><code>redis-connection</code></strong> foundation (standalone/cluster
+selection, auth, TLS, health probe). It adds only the cache <em>operations</em> and the composability surfaces;
+it is <strong>not</strong> a rendezvous transport (that is sync-over-async) and <strong>not</strong> a cache-aside framework — your
+flow orchestrates read-through / write-through, the module just stores and returns bytes.</p>
+<blockquote>
+<p><strong>Opt-in.</strong> The cache function and its health check register only when <code>redis.cache.enabled=true</code>. The
+connection is built <strong>lazily on first use</strong>, so enabling it does not fail application start-up when Redis
+is briefly unreachable — a cache call then fails fast and the flow's exception handler decides the
+fallback.</p>
+</blockquote>
+<h2 id="operations">Operations<a class="headerlink" href="#operations" title="Permanent link">&para;</a></h2>
+<p>The <code>action</code> header (case-insensitive) selects the operation. The key(s) and TTL ride in headers; the
+value(s) ride in the body:</p>
+<table>
+<thead>
+<tr>
+<th><code>action</code></th>
+<th>Other headers</th>
+<th>Body (input)</th>
+<th>Result</th>
+<th>Redis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PUT</code></td>
+<td><code>key</code>, <code>ttl</code>?</td>
+<td>value (<code>byte[]</code>)</td>
+<td><code>true</code></td>
+<td><code>SETEX</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>key</code></td>
+<td>—</td>
+<td>value (<code>byte[]</code>), or <code>null</code> on a miss</td>
+<td><code>GET</code></td>
+</tr>
+<tr>
+<td><code>DELETE</code></td>
+<td><code>key</code></td>
+<td>—</td>
+<td>count removed (<code>long</code>)</td>
+<td><code>DEL</code></td>
+</tr>
+<tr>
+<td><code>PUT_IF_NOT_PRESENT</code></td>
+<td><code>key</code>, <code>ttl</code>?</td>
+<td>value (<code>byte[]</code>)</td>
+<td><code>boolean</code> — <code>true</code> if stored, <code>false</code> if the key existed</td>
+<td><code>SET NX EX</code></td>
+</tr>
+<tr>
+<td><code>MGET</code></td>
+<td>—</td>
+<td>keys (<code>List&lt;String&gt;</code>)</td>
+<td><code>Map&lt;String, byte[]&gt;</code> (misses omitted)</td>
+<td><code>MGET</code></td>
+</tr>
+<tr>
+<td><code>MPUT</code></td>
+<td><code>ttl</code>?</td>
+<td>entries (<code>Map&lt;String, byte[]&gt;</code>)</td>
+<td><code>true</code></td>
+<td>pipelined per-entry <code>SETEX</code></td>
+</tr>
+<tr>
+<td><code>LIST_PUSH</code></td>
+<td><code>key</code>, <code>ttl</code>?</td>
+<td>value (<code>byte[]</code>)</td>
+<td>new list length (<code>long</code>)</td>
+<td><code>RPUSH</code> + <code>EXPIRE</code> (atomic)</td>
+</tr>
+<tr>
+<td><code>LIST_POP</code></td>
+<td><code>key</code></td>
+<td>—</td>
+<td>oldest value (<code>byte[]</code>), or <code>null</code> if empty</td>
+<td><code>LPOP</code></td>
+</tr>
+<tr>
+<td><code>LIST_LEN</code></td>
+<td><code>key</code></td>
+<td>—</td>
+<td>list length (<code>long</code>)</td>
+<td><code>LLEN</code></td>
+</tr>
+</tbody>
+</table>
+<p>Notes for callers:</p>
 <ul>
-<li><strong><a href="../../arch-decisions/ADR/">Architectural Decision Records</a></strong> — durable architecture <em>decisions</em> with
-  rationale (the <em>why</em>); changing one is a governed event.</li>
-<li><strong><a href="../methodology/">Methodology</a></strong> — the four composable design <em>principles</em> (the philosophy).</li>
-<li><strong>Code conventions (this page)</strong> — evolving "how we organize and name code." Add here when a practice is
-  worth sharing but is a matter of readability or team convention rather than a binding decision.</li>
+<li><strong><code>ttl</code></strong> is a duration string (<code>30s</code>, <code>5m</code>, <code>1h</code>). When a write omits it, the cache uses
+  <code>redis.cache.default.ttl</code> (default <code>1h</code>). <strong>Every stored key carries a TTL from creation</strong> — there are no
+  un-expiring keys; <code>PUT_IF_NOT_PRESENT</code> is atomic (<code>SET … NX EX</code>, never <code>SETNX</code> then <code>EXPIRE</code>).</li>
+<li><strong><code>MPUT</code></strong> is a pipelined batch of single-key <code>SETEX</code> — one round trip, and each key keeps its own TTL
+  (a raw <code>MSET</code> sets none). It is <strong>not atomic</strong> across the map (a partial failure is just cache misses),
+  which is correct for a cache and unavoidable on a cluster.</li>
+<li><strong><code>MGET</code></strong> keys may span cluster hash slots — the Lettuce cluster client scatter-gathers them for you.</li>
+<li>An unknown <code>action</code>, a missing <code>key</code>, or a missing value raises <code>IllegalArgumentException</code>, surfaced to
+  the caller as the event's error.</li>
 </ul>
-<p>If a guideline turns out to be load-bearing (breaking it breaks the system), promote it to an ADR instead.</p>
-<h2 id="package-organization">Package organization<a class="headerlink" href="#package-organization" title="Permanent link">&para;</a></h2>
-<p>Group classes by their <strong>role in the composable model</strong>, not by technical type:</p>
+<h2 id="config">Enabling and configuring<a class="headerlink" href="#config" title="Permanent link">&para;</a></h2>
+<p>Add the <code>distributed-cache</code> jar to the classpath and enable it. The connection uses the plain <strong><code>redis.*</code></strong>
+namespace (the base namespace of the shared foundation), so it never collides with sync-over-async's
+<code>soa.redis.*</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">redis.cache.enabled</span><span class="o">=</span><span class="s">true              # master switch: registers v1.cache.redis + redis.health</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="na">redis.cache.default.ttl</span><span class="o">=</span><span class="s">1h            # default TTL when a write omits 'ttl'</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="na">redis.cache.key.prefix</span><span class="o">=</span><span class="s">app1:          # optional: prepended to every key (namespace apps sharing one Redis)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="na">redis.host</span><span class="o">=</span><span class="s">${REDIS_HOST:127.0.0.1}</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="na">redis.port</span><span class="o">=</span><span class="s">${REDIS_PORT:6379}</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="na">redis.username</span><span class="o">=</span><span class="s">${REDIS_USERNAME:}     # blank = default user; set for an ACL/RBAC user</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="na">redis.password</span><span class="o">=</span><span class="s">${REDIS_PASSWORD:}     # blank = no auth; keep secrets in the environment</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="na">redis.cluster.detect</span><span class="o">=</span><span class="s">auto             # auto = detect at start-up; else use the boolean below</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="na">redis.cluster.mode</span><span class="o">=</span><span class="s">false              # true = cluster, false = standalone (when detect is not auto)</span>
+</code></pre></div>
+<p>The essentials — see the <a href="../configuration-reference/#distributed-cache">Configuration Reference</a> for the
+full list:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>redis.cache.enabled</code></td>
+<td><code>false</code></td>
+<td>Master switch; <code>true</code> registers <code>v1.cache.redis</code> and <code>redis.health</code>.</td>
+</tr>
+<tr>
+<td><code>redis.cache.instances</code></td>
+<td><code>20</code></td>
+<td>Virtual-thread <strong>worker instances</strong> (function concurrency), <strong>not</strong> a connection count — every instance shares the one multiplexed connection.</td>
+</tr>
+<tr>
+<td><code>redis.cache.default.ttl</code></td>
+<td><code>1h</code></td>
+<td>TTL applied when a <code>PUT</code> / <code>MPUT</code> / <code>LIST_PUSH</code> omits <code>ttl</code>.</td>
+</tr>
+<tr>
+<td><code>redis.cache.key.prefix</code></td>
+<td>— (blank)</td>
+<td>Prepended to every key; stripped again from <code>MGET</code> results. Isolate apps sharing one Redis.</td>
+</tr>
+<tr>
+<td><code>redis.host</code> / <code>redis.port</code></td>
+<td><code>127.0.0.1</code> / <code>6379</code></td>
+<td>Redis connection (or the cluster configuration endpoint).</td>
+</tr>
+<tr>
+<td><code>redis.username</code> / <code>redis.password</code></td>
+<td>— (blank)</td>
+<td>ACL/RBAC username / auth password. Source from the environment.</td>
+</tr>
+<tr>
+<td><code>redis.ssl</code></td>
+<td><code>false</code></td>
+<td>Use TLS (<code>rediss://</code>).</td>
+</tr>
+<tr>
+<td><code>redis.cluster.detect</code> / <code>redis.cluster.mode</code> / <code>redis.cluster.nodes</code></td>
+<td><code>auto</code> / <code>false</code> / —</td>
+<td>Standalone-or-cluster selection — the same two-key scheme as <a href="../sync-over-async/#cluster">sync-over-async</a>.</td>
+</tr>
+<tr>
+<td><code>redis.timeout.ms</code></td>
+<td><code>5000</code></td>
+<td>Default command timeout.</td>
+</tr>
+<tr>
+<td><code>redis.health.timeout</code></td>
+<td><code>5s</code></td>
+<td>Timeout for the <a href="#health"><code>redis.health</code></a> probe.</td>
+</tr>
+<tr>
+<td><code>redis.health.startup.grace</code></td>
+<td><code>30s</code></td>
+<td>Start-up grace for <a href="#health"><code>redis.health</code></a>.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>One Redis, or two?</strong> Because <code>soa.redis.*</code> falls back to <code>redis.*</code>, a deployment can point <strong>both</strong>
+sync-over-async and the cache at one server by setting only <code>redis.*</code>, or <strong>decouple</strong> them by also
+setting <code>soa.redis.*</code>. Credentials follow the same pattern as sync-over-async — resolved from the
+environment by a lower-<code>sequence</code> <code>@MainApplication</code> credential bootstrap (see
+<a href="../sync-over-async/#cluster">sync-over-async → auth</a>).</p>
+</blockquote>
+<h2 id="usage">Using the cache<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
+<p>The same function is reachable from all three layers — it is just "call a route".</p>
+<h3 id="layer1">Layer 1 — PostOffice<a class="headerlink" href="#layer1" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">var</span><span class="w"> </span><span class="n">po</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PostOffice</span><span class="p">.</span><span class="na">trackable</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">instance</span><span class="p">);</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1">// PUT: the value is the body; ttl is optional (defaults to redis.cache.default.ttl)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="kt">byte</span><span class="o">[]</span><span class="w"> </span><span class="n">payload</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SimpleMapper</span><span class="p">.</span><span class="na">getInstance</span><span class="p">().</span><span class="na">getMapper</span><span class="p">().</span><span class="na">writeValueAsBytes</span><span class="p">(</span><span class="n">profile</span><span class="p">);</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">po</span><span class="p">.</span><span class="na">request</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="p">().</span><span class="na">setTo</span><span class="p">(</span><span class="s">"v1.cache.redis"</span><span class="p">)</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="p">.</span><span class="na">setHeader</span><span class="p">(</span><span class="s">"action"</span><span class="p">,</span><span class="w"> </span><span class="s">"PUT"</span><span class="p">).</span><span class="na">setHeader</span><span class="p">(</span><span class="s">"key"</span><span class="p">,</span><span class="w"> </span><span class="s">"profile:42"</span><span class="p">).</span><span class="na">setHeader</span><span class="p">(</span><span class="s">"ttl"</span><span class="p">,</span><span class="w"> </span><span class="s">"10m"</span><span class="p">)</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">        </span><span class="p">.</span><span class="na">setBody</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span><span class="w"> </span><span class="mi">5000</span><span class="p">).</span><span class="na">get</span><span class="p">();</span><span class="w">               </span><span class="c1">// .get() suspends the virtual thread, no kernel-thread block</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1">// GET: a miss returns a null body</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">EventEnvelope</span><span class="w"> </span><span class="n">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">request</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="p">().</span><span class="na">setTo</span><span class="p">(</span><span class="s">"v1.cache.redis"</span><span class="p">)</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="p">.</span><span class="na">setHeader</span><span class="p">(</span><span class="s">"action"</span><span class="p">,</span><span class="w"> </span><span class="s">"GET"</span><span class="p">).</span><span class="na">setHeader</span><span class="p">(</span><span class="s">"key"</span><span class="p">,</span><span class="w"> </span><span class="s">"profile:42"</span><span class="p">),</span><span class="w"> </span><span class="mi">5000</span><span class="p">).</span><span class="na">get</span><span class="p">();</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="kt">byte</span><span class="o">[]</span><span class="w"> </span><span class="n">cached</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">res</span><span class="p">.</span><span class="na">getBody</span><span class="p">()</span><span class="w"> </span><span class="k">instanceof</span><span class="w"> </span><span class="kt">byte</span><span class="o">[]</span><span class="w"> </span><span class="n">bytes</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">bytes</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span><span class="w">   </span><span class="c1">// null = cache miss</span>
+</code></pre></div>
+<h3 id="layer2">Layer 2 — Event Script task<a class="headerlink" href="#layer2" title="Permanent link">&para;</a></h3>
+<p>Drive it from a flow with input/output data mapping — a constant sets the <code>action</code>, <code>model.*</code> supplies the
+key, and the <code>byte[]</code> value rides the whole-body <code>*</code> passthrough:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">tasks</span><span class="p">:</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="c1"># write-through: cache the serialized profile under a 10-minute TTL</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(PUT)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.action'</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'model.cacheKey</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.key'</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(10m)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.ttl'</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'model.profileBytes</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">*'</span><span class="w">          </span><span class="c1"># the byte[] value rides in the body</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'v1.cache.redis'</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'result</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.stored'</span><span class="w">           </span><span class="c1"># the PUT ack (true)</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Cache</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">profile'</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sequential</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">    </span><span class="nt">next</span><span class="p">:</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'read.back'</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">  </span><span class="c1"># read: GET returns the value, or null on a miss</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(GET)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.action'</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'model.cacheKey</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.key'</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'v1.cache.redis'</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'result</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.cached'</span><span class="w">           </span><span class="c1"># byte[] value, or null on a miss (branch on it with a decision task)</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Read</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">cached</span><span class="nv"> </span><span class="s">profile'</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sequential</span>
+</code></pre></div>
+<h3 id="layer3">Layer 3 — Knowledge Graph node<a class="headerlink" href="#layer3" title="Permanent link">&para;</a></h3>
+<p>A <code>graph.task</code> node calls the same route with the same mapping syntax:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">"route"</span><span class="p">:</span><span class="w"> </span><span class="s2">"graph.task"</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">"task"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v1.cache.redis"</span><span class="p">,</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="s2">"text(GET) -&gt; header.action"</span><span class="p">,</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="s2">"model.cacheKey -&gt; header.key"</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">  </span><span class="p">],</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span><span class="nt">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">    </span><span class="s2">"result -&gt; model.cached"</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">  </span><span class="p">]</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="values">Value type &amp; serialisation<a class="headerlink" href="#values" title="Permanent link">&para;</a></h2>
+<p>Values are <strong>opaque <code>byte[]</code></strong> — the cache stores and returns raw bytes and the caller owns serialisation.
+This maximises interop: any layer, and any language (the Rust port reads and writes the same keys). A
+<code>String</code> body is accepted as a UTF-8 convenience, but the canonical value type is <code>byte[]</code>; use
+<code>SimpleMapper</code> (or your own codec) to (de)serialise your objects. A typed convenience helper is deliberately
+<strong>not</strong> provided — the function plus the flow/graph surfaces already cover all three layers.</p>
+<h2 id="cluster">Standalone or cluster Redis<a class="headerlink" href="#cluster" title="Permanent link">&para;</a></h2>
+<p>The cache runs against a <strong>single-node</strong> Redis or a <strong>Redis Cluster</strong> with no code change — it reuses
+sync-over-async's client layer, so the two-key selection (<code>redis.cluster.detect</code> / <code>redis.cluster.mode</code> /
+<code>redis.cluster.nodes</code>) and authentication work identically; see
+<a href="../sync-over-async/#cluster">sync-over-async → Standalone or cluster Redis</a> for the full detail.</p>
+<p>Every operation is <strong>cluster-safe by construction</strong>: <code>PUT</code>/<code>GET</code>/<code>DELETE</code>/<code>PUT_IF_NOT_PRESENT</code> and the list
+ops are single-key; <code>MGET</code> keys may span slots and are scatter-gathered by the cluster client; <code>MPUT</code> is a
+pipeline of independent single-key <code>SETEX</code> (each routes to its own slot). The module uses <strong>one shared,
+multiplexed</strong> Lettuce connection — <strong>no connection pool</strong>: Lettuce pipelines any number of concurrent
+callers over one in-order TCP connection, and this op set has no blocking commands (<code>LPOP</code>, not <code>BLPOP</code>)
+or <code>MULTI</code>/<code>EXEC</code> transactions that would warrant a pool. <code>redis.cache.instances</code> is virtual-thread worker
+concurrency, not a connection count.</p>
+<h2 id="health">Health check<a class="headerlink" href="#health" title="Permanent link">&para;</a></h2>
+<p>The module ships a health-check function at route <strong><code>redis.health</code></strong> (registered with the cache when
+<code>redis.cache.enabled=true</code>). Opt in as a health dependency:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="na">mandatory.health.dependencies</span><span class="o">=</span><span class="s">redis.health</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1"># or, to report Redis without failing /health:</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># optional.health.dependencies=redis.health</span>
+</code></pre></div>
+<p>The probe is a single Redis <strong>PING</strong> on a dedicated connection built from the <code>redis.*</code> parameters — one
+round trip proves connectivity, TLS, and authentication. Its semantics match
+<a href="../sync-over-async/#health"><code>soa.redis.health</code></a> exactly: config is resolved <strong>lazily</strong> (so a
+vault-published credential that lands after start-up is picked up), an unusable configuration or a rejected
+credential (<code>NOAUTH</code> / <code>WRONGPASS</code>) reports a <strong>passing</strong> <code>Waiting for Redis connection</code> status rather than
+failing <code>/health</code>, and only a genuine connectivity failure returns <strong>503</strong>. <code>redis.health.timeout</code>
+(default <code>5s</code>) bounds the probe; <code>redis.health.startup.grace</code> (default <code>30s</code>) is the start-up placeholder
+window.</p>
+<blockquote>
+<p><code>redis.health</code> is the plain-named counterpart to sync-over-async's <code>soa.redis.health</code>; the two coexist,
+each reporting on its own <code>redis.*</code> / <code>soa.redis.*</code> server.</p>
+</blockquote>
+<h2 id="when">When to use it<a class="headerlink" href="#when" title="Permanent link">&para;</a></h2>
+<p>Reach for the distributed cache when you need a <strong>shared L2 key-value cache</strong> — cross-pod, cross-instance,
+and reachable from any of the three layers — with TTL'd entries and a small, cache-shaped operation set.
+It is opt-in: if a per-instance in-memory cache suffices, use that instead. It is <strong>not</strong>:</p>
 <ul>
-<li><strong>Flow-task functions</strong> — functions that exist to be wired as Event Script tasks (a flow's <code>process:</code>
-  steps) go in a <strong><code>tasks</code> package</strong> (e.g. <code>org.platformlambda.tasks</code>). Collecting them in one place makes
-  the set of "things a flow can call" obvious at a glance and separates them from runtime plumbing. The
-  <code>sync-over-async</code> extension follows this: <code>SyncPrepareTask</code> and <code>SyncAwaitTask</code> (the <code>sync.prepare</code> /
-  <code>sync.await</code> facade tasks) live under <code>tasks</code>, while the return-route coordinator and its helpers stay in
-  the feature package.</li>
-<li><strong>Runtime / engine classes</strong> — coordinators, stores, autoloaders, and other plumbing stay in the
-  <strong>feature package</strong> (e.g. <code>org.platformlambda.sync</code>), not under <code>tasks</code>.</li>
-<li><strong>Configuration holders</strong> — config readers and constants go in a <strong><code>support</code></strong> (or <code>config</code>) package.</li>
+<li>a <strong>rendezvous / streaming transport</strong> — that is <a href="../sync-over-async/">sync-over-async</a>;</li>
+<li>a <strong>cache-aside framework</strong> — there is no automatic DB read-through/write-through or invalidation; your
+  flow orchestrates that (a cache-miss branch calling the source of truth);</li>
+<li>a <strong>general Redis client</strong> — the operation set is bounded and cache-shaped, not arbitrary <code>EVAL</code> /
+  pub-sub / streams.</li>
 </ul>
-<p>This is a readability convention; the framework does not require it — <code>@PreLoad</code> discovery scans the
-configured <code>web.component.scan</code> base regardless of sub-package, so a function registers wherever it lives.</p>
-<h2 id="route-naming">Route naming<a class="headerlink" href="#route-naming" title="Permanent link">&para;</a></h2>
-<p>A function's <strong>route name is its whole contract</strong> with every flow that calls it (see
-<a href="../../arch-decisions/ADR/">ADR-0001</a> and <a href="../../arch-decisions/ADR/">ADR-0005 — one atom, four roles</a>),
-so name with care:</p>
-<ul>
-<li>Use <strong>lowercase dotted</strong> names: <code>v1.get.profile</code>, <code>sync.prepare</code>, <code>system.of.record</code>.</li>
-<li>Prefer a <strong>stable, intent-revealing</strong> name over an implementation detail — flows reference the string,
-  so renaming a route is a breaking change to every flow that uses it.</li>
-<li><strong>Do not overload a reserved route.</strong> Library and extension functions register their own routes; see
-  <a href="../reserved-names-and-headers/">Reserved Names &amp; Headers</a> for the do-not-collide list (which includes
-  the shipped <code>sync.prepare</code> / <code>sync.await</code> / <code>simple.kafka.notification</code> routes).</li>
-</ul>
-<h2 id="function-granularity">Function granularity<a class="headerlink" href="#function-granularity" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Keep a function a <strong>single unit of work</strong> (input → process → output). Sequencing, branching, and
-  failure handling are <strong>orchestration</strong> and belong in the Event Script flow, not inside the function
-  (see <a href="../../arch-decisions/ADR/">ADR-0007</a>).</li>
-<li>Reserve in-function logic for what a flat task chain genuinely cannot express — e.g. a synchronous
-  blocking rendezvous that must wrap an asynchronous call.</li>
-</ul>
+<p>The design rationale and the ruled decisions (Q1–Q8) live in the
+<a href="https://github.com/Accenture/mercury-composable/blob/main/draft-design-specs/distributed-cache.md">distributed-cache design spec</a>.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../arch-decisions/ADR/">Architectural Decision Records</a> — the durable decisions these conventions realize.</li>
-<li><a href="../methodology/">Methodology</a> — the four composable design principles.</li>
-<li><a href="../reserved-names-and-headers/">Reserved Names &amp; Headers</a> — routes and headers not to overload.</li>
-<li><a href="../event-driven/ai-agent-guide/">Function AI agent guide</a> — the <code>@PreLoad</code> + <code>TypedLambdaFunction</code> contract.</li>
+<li><a href="../sync-over-async/">Sync-over-Async</a> — the sibling opt-in module that shares the same Redis client layer.</li>
+<li><a href="../configuration-reference/#distributed-cache">Configuration Reference</a> — every <code>redis.cache.*</code> / <code>redis.*</code> key.</li>
+<li><a href="../event-script/syntax/">Event Script Syntax</a> — the input/output data-mapping syntax the Layer 2 / Layer 3 examples use.</li>
+<li><a href="../observability/">Observability</a> — tracing a cache call end-to-end.</li>
 </ul>
 
 
@@ -2906,7 +3310,7 @@ so name with care:</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../actuators-and-http-client/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Actuators &amp; HTTP Client">
+          <a href="../twin-kafka/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Twin Kafka (dual cluster)">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2916,20 +3320,20 @@ so name with care:</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Actuators & HTTP Client
+                Twin Kafka (dual cluster)
               </div>
             </div>
           </a>
         
         
           
-          <a href="../documentation-conventions/" class="md-footer__link md-footer__link--next" aria-label="Next: Documentation Conventions">
+          <a href="../schema-registry-mock/" class="md-footer__link md-footer__link--next" aria-label="Next: Schema Registry Mock">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Documentation Conventions
+                Schema Registry Mock
               </div>
             </div>
             <div class="md-footer__button md-icon">
