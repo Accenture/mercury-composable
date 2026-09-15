@@ -53,28 +53,12 @@
     </dependencyManagement>
 
     <dependencies>
-        <!--
-            The three layers, declared Layer 3 first ON PURPOSE. The Playground UI ships inside
-            minigraph-playground-engine as classpath:/public/index.html, and platform-core carries a
-            placeholder welcome page at the same resource path. The first jar on the classpath wins,
-            so listing the engine ahead of platform-core is what makes the browser land on the
-            Playground rather than the placeholder. Keep this order (mirrored in build.gradle).
-        -->
+        <!-- The graph engine brings platform-core (Layer 1 + REST automation) and event-script-engine
+             (Layer 2 flows) transitively, and adds the knowledge-graph runtime (Layer 3). One dependency
+             covers all three layers. -->
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minigraph-playground-engine</artifactId>
-            <version>4.12.8</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.platformlambda</groupId>
-            <artifactId>event-script-engine</artifactId>
-            <version>4.12.8</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.platformlambda</groupId>
-            <artifactId>platform-core</artifactId>
             <version>4.12.8</version>
         </dependency>
 

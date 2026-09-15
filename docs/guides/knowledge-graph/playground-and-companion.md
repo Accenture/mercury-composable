@@ -171,12 +171,13 @@ shows the same wiring inside an app that also serves ordinary Layer 1 and Layer 
 mode is additive, so a real application can be co-authored in the Playground and still serve its
 production routes. Remove the single `app.env=dev` line to close the whole surface for production.
 
-> **Watch the dependency order.** The Playground UI is bundled in the engine jar as
-> `classpath:/public/index.html` and `platform-core` ships a placeholder welcome page at the same
-> resource path — whichever jar comes first on the classpath wins. Declare
-> `minigraph-playground-engine` **before** `platform-core` (or let it come in transitively). The
-> symptom of getting it wrong is narrow and easy to misread: every test, `curl`, and companion
-> command still succeeds, but the browser shows the placeholder page instead of the Playground.
+> **Depend on the graph engine alone.** `minigraph-playground-engine` pulls in
+> `event-script-engine` and `platform-core` transitively — one dependency, all three layers. Adding
+> the other two by hand introduces a resource collision: the Playground UI is bundled in the engine
+> jar as `classpath:/public/index.html` and `platform-core` ships a placeholder welcome page at the
+> same resource path, so whichever jar comes first on the classpath wins. The symptom is narrow and
+> easy to misread — every test, `curl`, and companion command still succeeds, while the browser
+> shows the placeholder instead of the Playground.
 
 ## User–AI collaboration {#collaboration}
 

@@ -263,12 +263,14 @@ browser notices).
 > path, so a Layer 3 application needs exactly **one** REST entry no matter how many graphs it
 > deploys. Do not add a per-graph endpoint — list the new id in `graphs.yaml` and it is live.
 
-> **Dependency order decides which `index.html` you get.** The Playground UI ships inside
-> `minigraph-playground-engine` as `classpath:/public/index.html`, and `platform-core` carries a
-> placeholder welcome page at the *same* resource path. The first jar on the classpath wins, so
-> **declare `minigraph-playground-engine` before `platform-core`** (or rely on it transitively and
-> do not declare `platform-core` at all). Get this wrong and everything still passes — `mvn test`,
-> `curl`, even the companion endpoint — while the browser quietly shows the placeholder page.
+> **Declare the graph engine and nothing else.** `minigraph-playground-engine` brings
+> `event-script-engine` and `platform-core` transitively, so **one** dependency covers all three
+> layers. Listing them individually is not merely redundant — it creates a resource collision: the
+> Playground UI ships inside the engine as `classpath:/public/index.html` and `platform-core`
+> carries a placeholder welcome page at the *same* path, and the first jar on the classpath wins
+> (for `HttpRouter`'s static route and for `GetIndexHtml` alike). Declaring `platform-core` first is
+> enough to serve the placeholder instead of the Playground, and everything else still passes —
+> `mvn test`, `curl`, even the companion endpoint — so only a browser reveals it.
 
 **`rest.yaml` — two named profiles.** The template's route list mixes three kinds of routes;
 know which bar you are building to:

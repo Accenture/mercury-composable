@@ -267,12 +267,17 @@
   available"), so routes without the switch are dead on arrival and the switch without routes leaves only
   a WebSocket. Both now ship pre-wired in `templates/starter-graph` (plus `scripts/`), and in
   `examples/distributed-cache-example` alongside its ordinary L1/L2 routes — removing the one line closes
-  the surface for production. **The trap:** the Playground UI is `classpath:/public/index.html` inside
-  minigraph-playground-engine and platform-core ships a PLACEHOLDER page at the same resource path;
-  first jar on the classpath wins, for `HttpRouter`'s static route and `GetIndexHtml` alike. Declare the
-  engine BEFORE platform-core (or only transitively, as the examples do). Everything else stays green —
-  tests, curl, the companion endpoint — and only the browser shows the wrong page, which is why it
-  survived until a live run. Documented in `playground-and-companion.md` (#enabling) and
+  the surface for production. **(3) A graph app declares ONE Mercury dependency —
+  `minigraph-playground-engine`** — which brings event-script-engine and platform-core transitively
+  (compile scope, verified by `dependency:tree`; Gradle too). Listing all three is not just redundant, it
+  creates a resource collision: the Playground UI is `classpath:/public/index.html` inside the engine and
+  platform-core ships a PLACEHOLDER page at the same path, first jar on the classpath wins (for
+  `HttpRouter`'s static route and `GetIndexHtml` alike). The template declared platform-core first and
+  therefore served the placeholder; Eric collapsed it to the single dependency (2026-09-15) rather than
+  relying on declaration order, which a future tidy-up would silently undo. Everything else stays green —
+  tests, curl, the companion endpoint — and only a browser shows the wrong page, which is why it
+  survived until a live run. Parked structural option if it recurs elsewhere: move the UI off the
+  colliding resource path in the engine (needs Rust lockstep). Documented in `playground-and-companion.md` (#enabling) and
   `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]]; applies to
   [[ot-distributed-cache]]'s worked example.
   <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-15 | uses: 1 | tier: working | origin: 2026-09-15-221451 -->
