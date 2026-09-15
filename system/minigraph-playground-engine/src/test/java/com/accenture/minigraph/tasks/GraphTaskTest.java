@@ -226,8 +226,12 @@ class GraphTaskTest {
         // caller waited out its TTL with no error logged; now it returns the mapping error
         var response = runGraph("unit-test-task-8", Map.of("hello", "world"), Map.of());
         assertNotEquals(200, response.getStatus());
-        assertTrue(String.valueOf(response.getBody()).contains("Invalid output data mapping"),
-                "unexpected error response: " + response.getBody());
+        var error = String.valueOf(response.getBody());
+        // the message names the node and the offending mapping, and points at the input-side-only rule
+        assertTrue(error.contains("Invalid output mapping 'input.body.hello -> output.body.echo' in node bad-output-task"),
+                "unexpected error response: " + error);
+        assertTrue(error.contains("'input.*' is valid only on the input side"),
+                "message should name the input-side-only rule: " + error);
         log.info("graph.task invalid output mapping surfaces as an error instead of a timeout");
     }
 

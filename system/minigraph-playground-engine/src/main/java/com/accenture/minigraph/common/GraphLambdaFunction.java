@@ -629,21 +629,21 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         }));
     }
 
-    protected void performFetcherOutputMapping(String nodeName, MultiLevelMap stateMachine, List<String> mapping) {
+    protected void performOutputMapping(String nodeName, MultiLevelMap stateMachine, List<String> mapping) {
         for (var output : mapping) {
             var text = String.valueOf(output).trim();
             int sep = text.lastIndexOf(MAP_TO);
             if (sep != -1) {
                 var lhs = substituteVarIfAny(text.substring(0, sep).trim(), stateMachine);
                 var rhs = text.substring(sep + MAP_TO.length()).trim();
-                setFetcherOutputEntry(nodeName, lhs, rhs, stateMachine);
+                setOutputMappingEntry(nodeName, lhs, rhs, stateMachine);
             } else {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " - invalid output mapping: "+text);
             }
         }
     }
 
-    private void setFetcherOutputEntry(String nodeName, String lhs, String rhs, MultiLevelMap stateMachine) {
+    private void setOutputMappingEntry(String nodeName, String lhs, String rhs, MultiLevelMap stateMachine) {
         var value = helper.getConstantValue(lhs);
         if (value == null) {
             if (!lhs.startsWith(PLUGIN_PREFIX)) {
@@ -654,16 +654,18 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
                     lhs = "$." + nodeName + lhs.substring(1);
                 } else if (!lhs.startsWith(nodeName + ".") &&
                         !lhs.startsWith(MODEL_NAMESPACE) && !lhs.startsWith("$.model.")) {
-                    throw new IllegalArgumentException("Invalid output data mapping in API fetcher " + nodeName +
-                            " - LHS must start with 'model.', 'result.' namespace or '" + nodeName + ".'");
+                    throw new IllegalArgumentException("Invalid output mapping '" + lhs + " -> " + rhs +
+                            "' in node " + nodeName + ": the left side must be a constant or start with " +
+                            "'result.', 'model.', or the node's own namespace '" + nodeName +
+                            ".' ('input.*' is valid only on the input side)");
                 }
             }
             value = helper.getLhsElement(lhs, stateMachine);
         }
         if (value != null) {
             if (!rhs.startsWith(MODEL_NAMESPACE) && !rhs.startsWith(OUTPUT_NAMESPACE)) {
-                throw new IllegalArgumentException("Invalid output data mapping in data dictionary "+nodeName +
-                        " - RHS must start with 'model.' or 'output.' namespace");
+                throw new IllegalArgumentException("Invalid output mapping '" + lhs + " -> " + rhs +
+                        "' in node " + nodeName + ": the right side must start with 'model.' or 'output.'");
             }
             assertMutableModelTarget(nodeName, rhs);
             stateMachine.setElement(rhs, value);

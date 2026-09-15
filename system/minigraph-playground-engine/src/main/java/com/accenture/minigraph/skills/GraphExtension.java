@@ -126,7 +126,7 @@ public class GraphExtension extends GraphLambdaFunction {
         }
         runConcurrentRequests(po, graphInstance, node, extension, concurrency, stack, timeout);
         var outputMapping = getEntries(node.getProperty(OUTPUT));
-        performFetcherOutputMapping(nodeName, stateMachine, outputMapping);
+        performOutputMapping(nodeName, stateMachine, outputMapping);
         // clear temporary dataset
         stateMachine.removeElement(nodeName + FETCH);
         stateMachine.removeElement(nodeName + EACH);
@@ -237,7 +237,7 @@ public class GraphExtension extends GraphLambdaFunction {
             } else {
                 stateMachine.setElement(nodeName + "." + RESULT, response.getBody());
                 var outputMapping = getEntries(node.getProperty(OUTPUT));
-                performFetcherOutputMapping(nodeName, stateMachine, outputMapping);
+                performOutputMapping(nodeName, stateMachine, outputMapping);
                 return NEXT;
             }
         });

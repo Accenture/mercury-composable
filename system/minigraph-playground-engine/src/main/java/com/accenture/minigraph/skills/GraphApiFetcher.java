@@ -137,7 +137,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             }
         }
         var outputMapping = getEntries(fetcher.getProperty(OUTPUT));
-        performFetcherOutputMapping(nodeName, stateMachine, outputMapping);
+        performOutputMapping(nodeName, stateMachine, outputMapping);
         // clear temporary dataset
         stateMachine.removeElement(nodeName + DD);
         stateMachine.removeElement(nodeName + DOT_RESPONSE);
@@ -196,7 +196,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             runConcurrentRequests(concurrency, stack, md);
         }
         var outputMapping = getEntries(fetcher.getProperty(OUTPUT));
-        performFetcherOutputMapping(nodeName, stateMachine, outputMapping);
+        performOutputMapping(nodeName, stateMachine, outputMapping);
         // clear temporary dataset
         stateMachine.removeElement(nodeName + FETCH);
         stateMachine.removeElement(nodeName + EACH);
