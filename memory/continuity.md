@@ -194,7 +194,7 @@
   extracted [[redis-connection-foundation]] (spec draft-design-specs/distributed-cache.md);
   [[ot-distributed-cache]] tracks the remaining Rust lockstep. Builds on [[soa-redis-cluster-support]];
   serves [[vision-mercury-composable]].
-  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-15 | uses: 6 | tier: active | origin: 2026-09-14-191748 -->
+  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-15 | uses: 7 | tier: active | origin: 2026-09-14-191748 -->
 
 - **The Redis client layer is a shared `extensions/redis-connection` foundation (2026-09-14; Java
   shipped for v4.12.9).** Extracted from sync-over-async's `support/`: `RedisBackend<V>` (generic in the
@@ -227,7 +227,7 @@
   also makes the cache's `shutdown()` a used method, resolving the field Sonar "never used" finding without
   deleting it). Rust parity is a lockstep follow-up (internal lifecycle API, not a wire contract). Applies
   [[conv-reentrantlock-not-synchronized]]; used by [[redis-connection-foundation]].
-  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-15 | uses: 1 | tier: working | origin: 2026-09-15-011235 -->
+  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-15 | uses: 1 | tier: active | origin: 2026-09-15-011235 -->
 
 - **MiniGraph async skill callbacks are guarded — a failure surfaces as the node's error, never a
   silent hang (2026-09-15; found building the distributed-cache example, PR #392).** A
@@ -253,7 +253,7 @@
   Parked: CompileGraph static LHS check (dynamic `{…}` limits it to static cases);
   Rust-twin parity check of the same callback pattern. Relates [[trace-thread-keyed-mono-gotcha]]
   (the same async-callback minefield).
-  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-15 | uses: 1 | tier: working | origin: 2026-09-15-040141 -->
+  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-15 | uses: 2 | tier: active | origin: 2026-09-15-040141 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
@@ -348,7 +348,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-15 | uses: 41 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-15 | uses: 42 | tier: active | origin: 2026-08-19-195244 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
