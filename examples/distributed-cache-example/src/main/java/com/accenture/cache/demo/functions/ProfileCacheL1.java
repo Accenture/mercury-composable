@@ -23,10 +23,13 @@ import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.serializers.MsgPack;
 import org.platformlambda.core.system.PostOffice;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * <b>Layer 1 (Platform Core / PostOffice).</b> The whole profile CRUD in one event-driven function: it is
@@ -36,22 +39,24 @@ import java.util.Map;
  *
  * <ul>
  *   <li><b>GET</b> - read the value; a miss (null body from {@code v1.cache.redis}) is HTTP 404.</li>
- *   <li><b>POST</b> - hold the JSON body (a Map) in an {@link EventEnvelope}, store its bytes, return 201.</li>
+ *   <li><b>POST</b> - pack the JSON body (a Map) to bytes with {@link MsgPack}, store them, return 201.</li>
  *   <li><b>DELETE</b> - evict the key and report whether anything was removed.</li>
  * </ul>
  *
  * The {@link PostOffice} is built from the request headers, so the cache RPC inherits this request's trace -
  * the span / parent-span chain stays continuous across the L1 -&gt; {@code v1.cache.redis} hop - and
  * {@code updateContext} adds a {@code layer} field to the app-context log. The key is the raw profile id
- * ({@code redis.cache.key.prefix=cache-demo:} namespaces it), and the value is the EventEnvelope wire format
+ * ({@code redis.cache.key.prefix=cache-demo:} namespaces it), and the value is the MsgPack wire format
  * shared with Layers 2 and 3, so a profile written here reads back through the other two layers unchanged.
  */
 @PreLoad(route = "v1.profile.l1", instances = 20)
 public class ProfileCacheL1 implements TypedLambdaFunction<AsyncHttpRequest, Object> {
+    private static final MsgPack msgPack = new MsgPack();
 
     private static final String CACHE = "v1.cache.redis";
     private static final String ACTION = "action";
     private static final String KEY = "key";
+    private static final String LAYER = "layer";
     private static final long TIMEOUT = 5000;
 
     @Override
@@ -62,7 +67,7 @@ public class ProfileCacheL1 implements TypedLambdaFunction<AsyncHttpRequest, Obj
             throw new AppException(400, "Missing profile_id");
         }
         PostOffice po = new PostOffice(headers, instance);
-        po.updateContext("layer", "1");   // app-context logging: tag this request's log with its layer
+        po.updateContext(LAYER, "1");   // app-context logging: tag this request's log with its layer
         return switch (method) {
             case "GET" -> get(po, id);
             case "POST" -> post(po, id, input.getBody());
@@ -71,33 +76,34 @@ public class ProfileCacheL1 implements TypedLambdaFunction<AsyncHttpRequest, Obj
         };
     }
 
-    private Object get(PostOffice po, String id) throws Exception {
+    private Object get(PostOffice po, String id) throws ExecutionException, InterruptedException, IOException {
         EventEnvelope res = po.request(new EventEnvelope().setTo(CACHE)
                 .setHeader(ACTION, "GET").setHeader(KEY, id), TIMEOUT).get();
         if (res.getBody() instanceof byte[] bytes && bytes.length > 0) {
-            return EventEnvelope.of(bytes).getBody();   // the profile Map -> HTTP 200
+            return msgPack.unpack(bytes);   // the profile Map -> HTTP 200
         }
         throw new AppException(404, "Profile not found");
     }
 
-    private Object post(PostOffice po, String id, Object profile) throws Exception {
-        byte[] value = new EventEnvelope().setBody(profile).toBytes();
+    private Object post(PostOffice po, String id, Object profile)
+            throws ExecutionException, InterruptedException, IOException {
+        byte[] value = msgPack.pack(profile);
         po.request(new EventEnvelope().setTo(CACHE)
                 .setHeader(ACTION, "PUT").setHeader(KEY, id).setBody(value), TIMEOUT).get();
         Map<String, Object> ack = new HashMap<>();
         ack.put("id", id);
-        ack.put("layer", 1);
+        ack.put(LAYER, 1);
         ack.put("status", "stored");
         return new EventEnvelope().setStatus(201).setBody(ack);
     }
 
-    private Object delete(PostOffice po, String id) throws Exception {
+    private Object delete(PostOffice po, String id) throws ExecutionException, InterruptedException {
         EventEnvelope res = po.request(new EventEnvelope().setTo(CACHE)
                 .setHeader(ACTION, "DELETE").setHeader(KEY, id), TIMEOUT).get();
         long removed = res.getBody() instanceof Number number ? number.longValue() : 0;
         Map<String, Object> ack = new HashMap<>();
         ack.put("id", id);
-        ack.put("layer", 1);
+        ack.put(LAYER, 1);
         ack.put("deleted", removed > 0);
         return ack;
     }

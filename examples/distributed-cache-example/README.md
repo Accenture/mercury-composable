@@ -22,26 +22,32 @@ The app is a profile store with GET / POST / DELETE, exposed three times — one
                           ┌───────────────────────────────────────────────┐ │   │     extension)     │
   POST {action,id,…} ─L3─▶│  l3-profile flow → profile-cache graph         │─┘   └───────────────────┘
                           └───────────────────────────────────────────────┘
-     value at rest = an EventEnvelope holding the profile Map, serialised with envelope.toBytes()
+     value at rest = the profile Map packed with MsgPack (MsgPack.pack) — just the map, no envelope wrapper
 ```
 
 All three call the **same** `v1.cache.redis` action function, under the **same** key namespace
 (`redis.cache.key.prefix=cache-demo:`), storing the **same** value shape — so they interoperate. This is
 the point of the example: *event-driven programming, Event Script, and the knowledge graph are three views
-of one composable function, not three different systems.* (Once the Rust twin lands, the byte-for-byte
-`EventEnvelope` wire format makes the same cache interoperate across languages too.)
+of one composable function, not three different systems.* (Once the Rust twin lands, the plain-MsgPack
+value makes the same cache interoperate across languages too — see below.)
 
-## The shared value: an EventEnvelope as a holder
+## The shared value: a MsgPack-packed Map
 
 A profile is a `Map<String,Object>` (`{name, email}`). To keep a Map in Redis as opaque bytes, the example
-uses an `EventEnvelope` as the container — the same MsgPack wire format Mercury uses between functions:
+packs it directly with `MsgPack` — the same wire format Mercury uses between functions, but just the map:
 
 - **store**: [`ProfileEncoder`](src/main/java/com/accenture/cache/demo/functions/ProfileEncoder.java) —
-  `new EventEnvelope().setBody(profile).toBytes()`
+  `msgPack.pack(profile)`
 - **restore**: [`ProfileDecoder`](src/main/java/com/accenture/cache/demo/functions/ProfileDecoder.java) —
-  `EventEnvelope.of(bytes).getBody()`, or **HTTP 404 "Profile not found"** when the bytes are absent (a miss)
+  `msgPack.unpack(bytes)`, or **HTTP 404 "Profile not found"** when the bytes are absent (a miss)
 
-Because the holder format is identical everywhere, the bytes L1 writes are exactly the bytes L2 and L3 read.
+Because the format is identical everywhere, the bytes L1 writes are exactly the bytes L2 and L3 read.
+
+> **Why plain MsgPack and not an `EventEnvelope` holder?** Two reasons. **(1) Efficiency** — the value is
+> just the key-values; it needs none of the envelope's id or headers, so packing the bare map is smaller.
+> **(2) Language portability** — the compacted `EventEnvelope` encoding is a Java-side wire format the Rust
+> port does not read, and storing the envelope as ordinary key-values would waste space. Plain MsgPack
+> key-values is both compact and the form every language pack reads, so the cache stays polyglot-ready.
 
 ## What's app-specific vs. reused
 
@@ -51,7 +57,7 @@ Written here (five small functions + three config files); everything else is the
 | --- | --- |
 | [`ProfileCacheL1`](src/main/java/com/accenture/cache/demo/functions/ProfileCacheL1.java) | **Layer 1** — the whole CRUD as one event-driven function |
 | [`MethodActionMapper`](src/main/java/com/accenture/cache/demo/functions/MethodActionMapper.java) | **Layer 2** — maps `input.method` → `{action, decision}` (the "small composable task") |
-| [`ProfileEncoder`](src/main/java/com/accenture/cache/demo/functions/ProfileEncoder.java) / [`ProfileDecoder`](src/main/java/com/accenture/cache/demo/functions/ProfileDecoder.java) | the EventEnvelope holder (encode / decode + the 404-on-miss contract) |
+| [`ProfileEncoder`](src/main/java/com/accenture/cache/demo/functions/ProfileEncoder.java) / [`ProfileDecoder`](src/main/java/com/accenture/cache/demo/functions/ProfileDecoder.java) | the MsgPack pack / unpack helpers (+ the 404-on-miss contract) |
 | [`ProfileExceptionHandler`](src/main/java/com/accenture/cache/demo/functions/ProfileExceptionHandler.java) | renders a flow error as `{type, status, message}` (Layer 2) |
 | [`rest.yaml`](src/main/resources/rest.yaml) · [`flows/l2-profile.yml`](src/main/resources/flows/l2-profile.yml) · [`graph/profile-cache.json`](src/main/resources/graph/profile-cache.json) | the L1/L2/L3 wiring |
 

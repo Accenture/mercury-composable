@@ -49,17 +49,17 @@ tasks:
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
-    description: 'Restore the profile Map from the EventEnvelope bytes (or raise 404 Profile not found)'
+    description: 'Restore the profile Map from the MsgPack bytes (or raise 404 Profile not found)'
     execution: end
 
-  # ---- SAVE branch: encode to EventEnvelope bytes, then PUT --------------------------------------
+  # ---- SAVE branch: encode to MsgPack bytes, then PUT -------------------------------------------
   - name: 'save.encode'
     input:
       - 'input.body -> *'
     process: 'v1.profile.encode'
     output:
       - 'result -> model.bytes'
-    description: 'Hold the profile Map in an EventEnvelope and serialise to byte[]'
+    description: 'Pack the profile Map to a MsgPack byte[]'
     execution: sequential
     next:
       - 'save.cache.write'
