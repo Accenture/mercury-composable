@@ -119,7 +119,7 @@
   [[kafka-clients-kernel-threads]]), AtomicReference fields, supplier guards, and the failure
   message as a `{text, code}` map — `code` for the aggregation/Kubernetes, `text` for the DevOps
   reader (the healthy shape keeps `status` as its human string).
-  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-14 | uses: 10 | tier: active | origin: 2026-09-11-185752 -->
+  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-15 | uses: 11 | tier: active | origin: 2026-09-11-185752 -->
 
 - **Kafka-driving functions run on kernel threads — `@KernelThreadRunner` (2026-09-11, Eric's
   question → PR #362).** The Kafka consumer performs network I/O on the CALLING thread inside
@@ -194,7 +194,7 @@
   extracted [[redis-connection-foundation]] (spec draft-design-specs/distributed-cache.md);
   [[ot-distributed-cache]] tracks the remaining Rust lockstep. Builds on [[soa-redis-cluster-support]];
   serves [[vision-mercury-composable]].
-  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-14 | uses: 4 | tier: active | origin: 2026-09-14-191748 -->
+  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-15 | uses: 5 | tier: active | origin: 2026-09-14-191748 -->
 
 - **The Redis client layer is a shared `extensions/redis-connection` foundation (2026-09-14; Java
   shipped for v4.12.9).** Extracted from sync-over-async's `support/`: `RedisBackend<V>` (generic in the
@@ -212,7 +212,22 @@
   (cache). Realizes the "extract the foundation" half of [[cache-separate-from-soa]]; tracked by
   [[ot-distributed-cache]]; applied [[preload-before-mainapp-lazy-config]] and
   [[conv-reentrantlock-not-synchronized]].
-  <!-- id: redis-connection-foundation | created: 2026-09-14 | last_used: 2026-09-14 | uses: 1 | tier: working | origin: 2026-09-14-230259 -->
+  <!-- id: redis-connection-foundation | created: 2026-09-14 | last_used: 2026-09-15 | uses: 2 | tier: active | origin: 2026-09-14-230259 -->
+
+- **platform-core has a lightweight shutdown lifecycle — `Platform.getInstance().onShutdown(Runnable)`
+  (2026-09-14, Eric's minimalist-principle ruling; for v4.12.9).** The platform owns ONE JVM shutdown hook
+  (installed lazily on the first registration); registered callbacks run in reverse registration order
+  (last opened, first released), each isolated (`catch RuntimeException` + log — `Runnable.run()` throws
+  nothing checked, so an Error propagates rather than being swallowed). `runShutdownHooks(List)` is
+  package-private + parameterized for unit tests (no real JVM shutdown needed) and uses Java 21
+  `SequencedCollection.reversed()`. It fills the gap where components hand-rolled their own
+  `Runtime.getRuntime().addShutdownHook(new Thread(...))`: the three in-tree cases (`PersistentWsClient`,
+  `BdbElasticStore`, `FileElasticStore`) were migrated onto it, and the distributed cache's `CacheRuntime`
+  registers its Redis-connection close from `build()` (so only when a connection actually opened — which
+  also makes the cache's `shutdown()` a used method, resolving the field Sonar "never used" finding without
+  deleting it). Rust parity is a lockstep follow-up (internal lifecycle API, not a wire contract). Applies
+  [[conv-reentrantlock-not-synchronized]]; used by [[redis-connection-foundation]].
+  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-15 | uses: 1 | tier: working | origin: 2026-09-15-011235 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
@@ -373,7 +388,7 @@
   comment) and the return-route coordinator; applied to the distributed cache's `CacheRuntime`. This
   decays once the toolchain moves to Java 25 (JEP 491 makes `synchronized` non-pinning). Relates
   [[virtual-threads-rpc]], [[kafka-clients-kernel-threads]]; applied in [[redis-connection-foundation]].
-  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-09-14 | uses: 1 | tier: working | origin: 2026-09-14-230259 -->
+  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-09-15 | uses: 2 | tier: active | origin: 2026-09-14-230259 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
