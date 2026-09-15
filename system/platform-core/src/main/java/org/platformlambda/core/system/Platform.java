@@ -725,7 +725,9 @@ public class Platform {
         for (Runnable callback : callbacks.reversed()) {
             try {
                 callback.run();
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
+                // Runnable.run() throws no checked exceptions, so RuntimeException is the precise catch
+                // (S2221): isolate a hook's runtime failure and log it, but let an Error propagate.
                 log.warn("Shutdown hook failed - {}", e.getMessage());
             }
         }

@@ -95,6 +95,11 @@ class RedisBackendFactoryTest extends RedisTestBase {
         // which cannot form a topology against the single-node embedded server and fails fast — proving the
         // boolean routes to cluster. (A real cluster's success path is validated in the field; no embedded
         // cluster fixture exists.)
-        assertThrows(RuntimeException.class, () -> RedisBackendFactory.create(config(false, true)));
+        RedisConfig clusterConfig = config(false, true);
+        assertThrows(RuntimeException.class, () -> {
+            try (RedisBackend<String> ignored = RedisBackendFactory.create(clusterConfig)) {
+                // create() throws before returning; a returned backend would be closed by try-with-resources
+            }
+        });
     }
 }
