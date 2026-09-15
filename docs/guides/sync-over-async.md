@@ -83,7 +83,8 @@ soa.redis.cluster.mode=false              # true = cluster, false = standalone (
 
 > **`soa.redis.*` namespace, with a `redis.*` fallback.** The Redis keys carry the `soa.` prefix so
 > sync-over-async owns its own Redis configuration and never collides with another `redis.*` consumer in
-> the same application — a distributed-cache library, or the `minigraph-state-redis` extension — which may
+> the same application — the [distributed cache](distributed-cache.md), or the `minigraph-state-redis`
+> extension — which may
 > point at a different server, auth, or topology. **No migration is required:** each key falls back to the
 > un-prefixed `redis.*` form when the `soa.` one is absent, so an existing `redis.*` deployment keeps
 > working; set `soa.redis.*` only to override the fallback or to decouple from a co-resident `redis.*`
@@ -241,9 +242,9 @@ mandatory.health.dependencies=soa.redis.health
 # optional.health.dependencies=soa.redis.health
 ```
 
-> The route carries the `soa.` prefix deliberately: the plain `redis.health` name is reserved for the
-> health check of the planned generic Redis distributed-cache module, so both features can coexist
-> against the same Redis server.
+> The route carries the `soa.` prefix deliberately: the plain `redis.health` name is the health check of
+> the [distributed cache](distributed-cache.md) module, so both features can coexist against the same
+> Redis server.
 
 The probe is a single Redis **PING** on a dedicated connection built from the `soa.redis.*` parameters -
 the lightest round trip the protocol offers, and one successful call proves connectivity, TLS, and
@@ -282,6 +283,7 @@ behind `rest.yaml`.
 ## See also
 
 - [Minimalist Kafka](minimalist-kafka.md) — the inbound/outbound Kafka building blocks this pattern uses.
+- [Distributed Cache](distributed-cache.md) — the sibling opt-in module that shares the same Redis client layer.
 - [Configuration Reference](configuration-reference.md#sync-over-async) — every `soa.redis.*` / `sync.*` key.
 - [Minimalist Service Mesh](service-mesh.md) — the heavier `cloud.connector=kafka` alternative with service discovery.
 - [Observability](observability.md) — tracing the round trip end-to-end.
