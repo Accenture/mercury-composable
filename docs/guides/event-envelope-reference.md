@@ -38,8 +38,10 @@ An envelope has three distinct, independent parts:
 | **Headers** | `Map<String, String>` | User-defined key-value parameters passed directly to `handleEvent`. Keys and values are always strings. |
 | **Metadata** | Various fields | Routing address, trace ID, correlation ID, status code, execution timing, exception state. Managed by the framework; user code reads but rarely writes. |
 
-The framework serializes and deserializes the body automatically. User code never calls
-MsgPack directly.
+The framework serializes and deserializes the body automatically — user code never calls MsgPack
+directly for event transport. (For an application's *own* binary serialization, such as a cached
+value, `MsgPack.packMapOrList` / `unpackMapOrList` are available as a general purpose codec — see
+[API Overview → Binary serialization with MsgPack](api-overview.md#binary-serialization-with-msgpack).)
 
 ---
 

@@ -47,7 +47,12 @@ public class MsgPack {
                                 config.getProperty("serializer.null.transport", "false"));
     }
     /**
-     * Unpack method for generic map or list object
+     * Unpack method for an event payload that may carry the "_T"/"_D" type encoding.
+     * <p>
+     * This is the counterpart of {@link #pack(Object)} and is used for event payload transport,
+     * where a PoJo or a primitive is wrapped with its type information. If the packed value is a
+     * plain Map or List, prefer {@link #unpackMapOrList(byte[])} - it does no type unwrapping, so a
+     * map that happens to contain a "_T" key is restored verbatim.
      *
      * @param bytes - packed structure
      * @return result - Map, List or PoJo object
@@ -56,7 +61,7 @@ public class MsgPack {
      */
     @SuppressWarnings("unchecked")
     public Object unpack(byte[] bytes) throws IOException  {
-        Object result = unpackData(bytes);
+        Object result = unpackMapOrList(bytes);
         if (result instanceof Map) {
             // is this an encoded payload
             Map<String, Object> map = (Map<String, Object>) result;
@@ -72,13 +77,18 @@ public class MsgPack {
         return result;
     }
     /**
-     * Optimized unpack method for generic map or list object
+     * Unpack a byte array into a Map or List - general purpose binary serialization.
+     * <p>
+     * Unlike {@link #unpack(byte[])}, this method does no "_T"/"_D" type unwrapping, so a map that
+     * happens to contain a "_T" key is restored exactly as it was packed. Use this with
+     * {@link #packMapOrList(Object)} when MsgPack is your application's own serializer rather than
+     * the event payload codec.
      *
      * @param bytes - packed structure
      * @return result - Map or List
-     * @throws IOException for mapping exception
+     * @throws IOException for mapping exception, or if the packed value is not a Map or List
      */
-    private Object unpackData(byte[] bytes) throws IOException  {
+    public Object unpackMapOrList(byte[] bytes) throws IOException  {
         MessageUnpacker handler = null;
         try {
             handler = MessagePack.newDefaultUnpacker(bytes, 0, bytes.length);
@@ -189,7 +199,11 @@ public class MsgPack {
         }
     }
     /**
-     * Pack input into a byte array.
+     * Pack an event payload into a byte array, wrapping a PoJo or a primitive with its type
+     * information ("_T"/"_D") so that {@link #unpack(byte[])} can restore the original object.
+     * <p>
+     * For general purpose serialization of a Map or List, prefer {@link #packMapOrList(Object)} -
+     * it never adds the type encoding.
      *
      * @param obj - Map, List or a PoJo Object that contains get/set methods for variables
      * @return packed byte array
@@ -197,6 +211,36 @@ public class MsgPack {
      * @throws IOException for msgpack object mapping exception
      */
     public byte[] pack(Object obj) throws IOException {
+        if (obj instanceof Map || obj instanceof List) {
+            return packMapOrList(obj);
+        } else {
+            TypedPayload typed = converter.encode(obj, true);
+            Map<String, Object> map = new HashMap<>();
+            map.put(TYPE, typed.type());
+            map.put(DATA, typed.payload());
+            return packMapOrList(map);
+        }
+    }
+
+    /**
+     * Pack a Map or List into a byte array - general purpose binary serialization.
+     * <p>
+     * Unlike {@link #pack(Object)}, this method never adds the "_T"/"_D" type encoding, so the
+     * bytes hold exactly the given structure and {@link #unpackMapOrList(byte[])} restores it
+     * verbatim - even when the map itself contains a "_T" key. This makes it a plain, portable
+     * MsgPack codec that any language can read.
+     * <p>
+     * Only a Map or a List is accepted. A PoJo or a Java primitive must be encoded by the
+     * application first - for example, convert a PoJo into a Map with
+     * {@code SimpleMapper.getInstance().getMapper().readValue(pojo, Map.class)}.
+     *
+     * @param obj - Map or List
+     * @return packed byte array
+     *
+     * @throws IOException for msgpack object mapping exception
+     * @throws IllegalArgumentException if the input is not a Map or a List
+     */
+    public byte[] packMapOrList(Object obj) throws IOException {
         if (obj instanceof Map || obj instanceof List) {
             // select low level processing for faster performance
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -211,13 +255,9 @@ public class MsgPack {
                 }
             }
             return out.toByteArray();
-        } else {
-            TypedPayload typed = converter.encode(obj, true);
-            Map<String, Object> map = new HashMap<>();
-            map.put(TYPE, typed.type());
-            map.put(DATA, typed.payload());
-            return pack(map);
         }
+        throw new IllegalArgumentException("Input must be a Map or List. Encode a PoJo or a " +
+                "primitive in your application first (e.g. convert a PoJo into a Map with SimpleMapper)");
     }
 
     private MessagePacker pack(MessagePacker packer, Object o) throws IOException {
