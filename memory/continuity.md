@@ -135,7 +135,7 @@
   [[kafka-clients-kernel-threads]]), AtomicReference fields, supplier guards, and the failure
   message as a `{text, code}` map — `code` for the aggregation/Kubernetes, `text` for the DevOps
   reader (the healthy shape keeps `status` as its human string).
-  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-15 | uses: 11 | tier: archive-candidate | origin: 2026-09-11-185752 -->
+  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-16 | uses: 12 | tier: active | origin: 2026-09-11-185752 -->
 
 - **Kafka-driving functions run on kernel threads — `@KernelThreadRunner` (2026-09-11, Eric's
   question → PR #362).** The Kafka consumer performs network I/O on the CALLING thread inside
@@ -147,7 +147,7 @@
   the counter-case: Lettuce does I/O on its own netty threads and callers only await futures, so
   `soa.redis.health` deliberately stays on virtual threads. KafkaConsumer itself is NOT thread-safe;
   sequential multi-thread access under external sync (the checks' ReentrantLock) is its contract.
-  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-14 | uses: 4 | tier: archive-candidate | origin: 2026-09-11-191200 -->
+  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-16 | uses: 5 | tier: active | origin: 2026-09-11-191200 -->
 
 - **sync-over-async is transport-neutral — its correlation-id key is self-contained (Eric's direction,
   2026-09-12; PR #364, squash `628a1778`).** The facade tasks speak only the module's own flow-level `cid` key (`SyncRuntime.CID`);
@@ -459,7 +459,7 @@
   comment) and the return-route coordinator; applied to the distributed cache's `CacheRuntime`. This
   decays once the toolchain moves to Java 25 (JEP 491 makes `synchronized` non-pinning). Relates
   [[virtual-threads-rpc]], [[kafka-clients-kernel-threads]]; applied in [[redis-connection-foundation]].
-  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-09-16 | uses: 3 | tier: active | origin: 2026-09-14-230259 -->
+  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-09-16 | uses: 4 | tier: active | origin: 2026-09-14-230259 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
