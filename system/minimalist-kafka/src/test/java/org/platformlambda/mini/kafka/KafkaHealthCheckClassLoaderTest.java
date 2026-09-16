@@ -73,7 +73,11 @@ class KafkaHealthCheckClassLoaderTest {
     private static final long PROBE_IMMEDIATELY = 0L;
     private static final long TIMEOUT_MS = 1L;
 
-    /** Config with the deserializers given as class NAMES, exactly as KafkaClientConfig writes them. */
+    /**
+     * Config with the deserializers given as class NAMES - deliberately the HARDER case. KafkaClientConfig
+     * puts {@code Class} objects, which need no loader at all; names are what exposes a wrong one, so the
+     * fix is proven against them rather than against the easier shape production actually ships.
+     */
     private static Properties probeConfig() {
         Properties p = new Properties();
         p.setProperty("bootstrap.servers", "localhost:1");
@@ -113,21 +117,21 @@ class KafkaHealthCheckClassLoaderTest {
     @Test
     void theProbeClientBuildsEvenWhenTheContextClassLoaderCannotSeeKafka() throws InterruptedException {
         var health = probing(KafkaHealthCheckClassLoaderTest::probeConfig);
-        KafkaConsumer<String, byte[]> consumer =
-                onThreadWithBlindContextClassLoader(() -> health.buildClient(probeConfig()));
-        assertNotNull(consumer,
-                "a pooled kernel thread's context classloader must not decide whether the probe can be "
-                        + "built - pass deserializer INSTANCES so Kafka never resolves a class name");
-        consumer.close();
+        try (KafkaConsumer<String, byte[]> consumer =
+                     onThreadWithBlindContextClassLoader(() -> health.buildClient(probeConfig()))) {
+            assertNotNull(consumer,
+                    "a pooled kernel thread's context classloader must not decide whether the probe can "
+                            + "be built - buildClient overrides the loader for the construction");
+        }
     }
 
     @Test
     void theSameConfigStillBuildsOnAnOrdinaryThread() {
         // guards against "fixing" the blind-loader case by breaking the normal one
         var health = probing(KafkaHealthCheckClassLoaderTest::probeConfig);
-        KafkaConsumer<String, byte[]> consumer = health.buildClient(probeConfig());
-        assertNotNull(consumer, "the ordinary path must be unaffected");
-        consumer.close();
+        try (KafkaConsumer<String, byte[]> consumer = health.buildClient(probeConfig())) {
+            assertNotNull(consumer, "the ordinary path must be unaffected");
+        }
     }
 
     @Test
@@ -158,7 +162,7 @@ class KafkaHealthCheckClassLoaderTest {
     }
 
     @Test
-    void agenuinelyUnusableTemplateStillReturnsNull() {
+    void aGenuinelyUnusableTemplateStillReturnsNull() {
         // the waiting-status contract must survive the fix: an empty template is still unbuildable
         var health = probing(Properties::new);
         assertNull(health.buildClient(new Properties()),

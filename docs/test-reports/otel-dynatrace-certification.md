@@ -198,9 +198,64 @@ The per-span millisecond offsets in the UI match the exporting side's log exactl
 `.658`, `.664`, `.666`, `.669`); the wall-clock hour differs only because the tenant renders in its
 own timezone rather than UTC.
 
+## Scenario 6 — field acceptance on the release build
+
+Scenarios 1–5 ran against the feature branch. Field acceptance re-runs the round against the
+**artifacts that actually ship** — the v4.12.11 reactor output — because the thing certified and the
+thing released are only the same if you check.
+
+The discriminator is free and backend-visible: the forwarder resolves its instrumentation scope
+version at runtime from the running application, so a trace submitted by the release build reports
+**`OTel scope version 4.12.11`** in Dynatrace. Given that a stale fat jar cost two dead ends earlier
+in this work, a version stamp the backend can show is better evidence than any local check.
+
+| Check | Result |
+|-------|--------|
+| Nested jar in the shipped fat jar | `opentelemetry-forwarder-4.12.11.jar`, carrying `@OptionalService` + `otel.forwarding` |
+| Retired key absent from the shipped class | 0 occurrences of `trace.forwarder.enabled` |
+| **Default off** — launched with no `-D` flag | route **not** registered; the gate logs its decision: `Skip optional class …OpenTelemetryForwarder during PreLoad phase` |
+| Switch on — `-Dotel.forwarding=true` | `distributed.trace.forwarder started as virtual thread` |
+| Write transaction | `POST /api/profile` → **HTTP 201** in 28 ms |
+| Read transaction | `GET /api/profile/{id}` → **HTTP 200** in 9 ms |
+| `OTLP export failed` | **0**, across both |
+| Dynatrace UI | *pending* — submitted for confirmation (see below) |
+
+Two transactions rather than two of the same, because the **shapes differ** and that is the part a
+repeat could not show:
+
+```text
+trace 45a6e43c67ef4087b9351956f50130d7 — create-profile, 6 spans, 20:42:35.685Z
+   http.flow.adapter · task.executor · v1.create.profile · async.http.response
+   · v1.encrypt.fields · v1.save.profile
+
+trace 1c32bbe5e6b44f12aec201ce78faca3e — get-profile, 5 spans, 20:45:07.727Z
+   http.flow.adapter · v1.get.profile · task.executor · v1.decrypt.fields
+   · async.http.response
+```
+
+The forwarder maps what each flow actually did — a different function set and a different span count
+per flow — rather than emitting a fixed structure. The pair also exercises the data path end to end:
+the POST response masked `address` and `telephone` as `***` while the GET returned them in clear, so
+encrypt-on-save and decrypt-on-read each ran and each appears as its own span.
+
+The default-off leg is worth calling out on its own. It is the property an application team relies
+on when they add the dependency ahead of a decision, and it is now confirmed three ways: a unit test
+in the example app, the absence of the route at runtime, and an explicit log line stating that the
+optional class was skipped. DevOps reading a startup log can see the feature was considered and
+declined, rather than inferring it from silence.
+
 ## What remains
 
-Nothing for the forwarder — the loop is closed, exporting side and backend side.
+**One open item: backend confirmation of the two acceptance traces.** Both were submitted with zero
+export failures, so Dynatrace returned 2xx for all eleven spans — but the UI check is with Dynatrace
+support, who are locating `45a6e43c67ef4087b9351956f50130d7` and `1c32bbe5e6b44f12aec201ce78faca3e`.
+The field to read is **`OTel scope version`**: it should be **4.12.11**, against 4.12.10 for the
+Scenario 1–5 traces. That value is resolved at runtime from the running application, which makes it
+proof that the *released* artifacts submitted these traces rather than a leftover build — the failure
+that cost two dead ends earlier in this work.
+
+Nothing else. The forwarder's loop is closed on the exporting side, on the backend side
+(Scenario 5), and on the released artifacts locally (Scenario 6).
 
 Two unrelated follow-ups were noted during the round and are tracked elsewhere: the guides still
 show `OTEL_EXPORTER_OTLP_HEADERS` and `OTEL_SERVICE_NAME` in generic examples while this reference

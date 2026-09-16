@@ -12,4 +12,4 @@
   token → 0/6/0 failures) turned an inconclusive report into a conclusive one, and incidentally
   demonstrated that a telemetry outage leaves the transaction at HTTP 201.
   origin: `memory/sessions/2026-09-16-193203.md`
-  <!-- id: ot-otel-dynatrace-certification | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: working | origin: 2026-09-16-175425 -->
+  <!-- id: ot-otel-dynatrace-certification | created: 2026-09-16 | last_used: 2026-09-16 | uses: 3 | tier: active | origin: 2026-09-16-175425 -->

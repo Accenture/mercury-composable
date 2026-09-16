@@ -135,7 +135,10 @@
   [[kafka-clients-kernel-threads]]), AtomicReference fields, supplier guards, and the failure
   message as a `{text, code}` map — `code` for the aggregation/Kubernetes, `text` for the DevOps
   reader (the healthy shape keeps `status` as its human string).
-  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-16 | uses: 12 | tier: active | origin: 2026-09-11-185752 -->
+  **Bounded 2026-09-16:** the passing "waiting" status covers ONLY a value that has not landed yet —
+  a config that can never work fails the check instead, because reporting it as passing is how a real
+  defect hid in the field for hours. See [[kafka-class-objects-over-names]].
+  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-16 | uses: 14 | tier: active | origin: 2026-09-11-185752 -->
 
 - **Kafka-driving functions run on kernel threads — `@KernelThreadRunner` (2026-09-11, Eric's
   question → PR #362).** The Kafka consumer performs network I/O on the CALLING thread inside
@@ -147,7 +150,59 @@
   the counter-case: Lettuce does I/O on its own netty threads and callers only await futures, so
   `soa.redis.health` deliberately stays on virtual threads. KafkaConsumer itself is NOT thread-safe;
   sequential multi-thread access under external sync (the checks' ReentrantLock) is its contract.
-  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-16 | uses: 5 | tier: active | origin: 2026-09-11-191200 -->
+  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-16 | uses: 6 | tier: active | origin: 2026-09-11-191200 -->
+
+- **Kafka class-valued config is set as `Class` OBJECTS, and a config that can never work must FAIL a
+  health check (2026-09-16, field bug → PR #403; Eric ruled both halves).** Kafka resolves a class
+  *name* through `Utils.getContextOrKafkaClassLoader()`, which prefers the thread context classloader
+  and falls back to Kafka's own loader **only when the TCCL is `null`** — so a non-null but *wrong*
+  TCCL fails a lookup that a null one would have completed. A `Class` object short-circuits
+  `ConfigDef.parseType` (`if (value instanceof Class) return value`), so no loader is consulted at
+  all; `KafkaClientConfig` now puts objects (via `put`, not `setProperty` — so those keys leave
+  `stringPropertyNames()`, which `healthProbeProperties` accounts for), converging with
+  kafka-connector, which always did. A template naming its own `partitioner.class` still wins as a
+  String, resolved by Kafka on the app's own startup thread. **The durable lesson is broader than
+  Kafka: a pooled kernel thread changes what code can SEE, not just when it runs** — `kafka.health`
+  is `@KernelThreadRunner` and built its client on a pooled thread whose loader could not see
+  `kafka-clients`, while the same JVM's flow-adapter consumers, same config and same jar on ordinary
+  threads, were fine; that A/B *was* the diagnosis. Fix the loader, not the setting: with the TCCL
+  override disabled, the blind-loader test fails on the deserializers, then `metric.reporters` →
+  `JmxReporter`, then `sasl.oauthbearer.jwt.retriever.class` — Kafka resolves many configs this way.
+  **Second half — the leniency boundary:** the passing "waiting" status exists for ONE case, a value a
+  later `@MainApplication` bootstrap will publish; a class absent from the classpath will not appear
+  because we waited, so it answers 503 naming the *configuration*, not the network. Detection is by
+  message text (Kafka's `ConfigException` carries no cause) and defaults to *waiting*, so a reworded
+  message degrades to leniency rather than to spurious outages. Bounds
+  [[preload-before-mainapp-lazy-config]]; extends [[kafka-clients-kernel-threads]].
+  <!-- id: kafka-class-objects-over-names | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: working | origin: 2026-09-16-185851 -->
+
+- **A jar under a base scan package needs an `@OptionalService` master switch, and a vendor
+  integration is not done until a negative control proves the happy path (2026-09-16, Eric's design
+  → PR #404, v4.12.11).** `opentelemetry-forwarder` lives under `org.platformlambda`, so the jar
+  alone auto-registered `distributed.trace.forwarder` — carrying the dependency silently turned trace
+  export on. It is now `@OptionalService("otel.forwarding")`, default **off**: one artifact ships and
+  DevOps decides per environment, in properties or `-Dotel.forwarding=true` at launch. That is the
+  reusable shape for any scanned extension whose behaviour is an operational choice, and
+  `composable-example` pins it ("dependency present, feature off") so it cannot regress. The legacy
+  `otel.trace.forwarder.enabled` was RETIRED with it — a second switch whose only reachable use was
+  the contradictory `otel.forwarding=true` + `…enabled=false`, and `Telemetry` already no-ops on an
+  unregistered route (`hasRoute`). Credentials resolve **per export** through a `Supplier` (applies
+  [[preload-before-mainapp-lazy-config]]) and the exporter closes via
+  [[platform-onshutdown-lifecycle]], which this extension had been missed by.
+  **The method is the durable half.** Certified live against Dynatrace SaaS and confirmed queryable
+  in its UI (6 spans, one trace, parent/child reconstructed, `server`/`internal` kinds, scope version
+  resolved at runtime). Getting there needed an **A-B-A credential experiment** — real token 0/6
+  export failures, bogus token 6/6, real token 0/6 — because *zero failures proves nothing until a
+  failure is shown to be possible*: a forwarder that skipped export, or never attached the
+  credential, yields the identical zero. Generalize it: **when a verification is blocked on access
+  you do not have, ask what your evidence would look like if the thing were broken; if broken and
+  working look the same, a negative control is the experiment, not a garnish.** Two by-products worth
+  keeping — the app returned HTTP 201 in all three legs (a telemetry outage degrades observability
+  and nothing else, previously asserted and now shown), and the backend-visible instrumentation scope
+  version is a free check that the artifact under test is the one that shipped. Report:
+  `docs/test-reports/otel-dynatrace-certification.md`; closes [[ot-otel-dynatrace-certification]].
+  Splunk's header form is parsed and documented but NOT run live.
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: working | origin: 2026-09-16-193203 -->
 
 - **sync-over-async is transport-neutral — its correlation-id key is self-contained (Eric's direction,
   2026-09-12; PR #364, squash `628a1778`).** The facade tasks speak only the module's own flow-level `cid` key (`SyncRuntime.CID`);
@@ -243,7 +298,7 @@
   also makes the cache's `shutdown()` a used method, resolving the field Sonar "never used" finding without
   deleting it). Rust parity is a lockstep follow-up (internal lifecycle API, not a wire contract). Applies
   [[conv-reentrantlock-not-synchronized]]; used by [[redis-connection-foundation]].
-  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-15-011235 -->
+  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-16 | uses: 3 | tier: active | origin: 2026-09-15-011235 -->
 
 - **MiniGraph async skill callbacks are guarded — a failure surfaces as the node's error, never a
   silent hang (2026-09-15; found building the distributed-cache example, PR #392).** A
@@ -331,7 +386,7 @@
   Rust repo — both engines share the WS handshake. Dev-only, like the Playground itself.
   Reactivated 2026-09-14: now ALSO shipped in `templates/starter-graph` (both repos), and the AI
   docs are broker-first with the keep-alive failure mode named (mercury-composable#383, mercury#276).
-  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-15 | uses: 9 | tier: active | origin: 2026-09-03-172753 -->
+  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-15 | uses: 9 | tier: archive-candidate | origin: 2026-09-03-172753 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -402,7 +457,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-16 | uses: 45 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-16 | uses: 46 | tier: active | origin: 2026-08-19-195244 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
@@ -411,7 +466,7 @@
   examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-16 | uses: 14 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-16 | uses: 16 | tier: active | origin: 2026-09-01-022524 -->
 - **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
   sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
   identifies **content**, not "this engine's Nth release". This covers the Rust port AND the python
@@ -424,7 +479,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-16 | uses: 4 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -438,7 +493,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-16 | uses: 7 | tier: active | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-16 | uses: 9 | tier: active | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - **Declare a Memory Reference when a fact is CONSULTED to make a decision — not only when it is
