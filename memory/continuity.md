@@ -17,19 +17,25 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.8 (2026-09-12 — the health-check release, PRs #360–#362 via
-  release PR #363, squash `e7379c5b`, GitHub release 00:50Z: kafka.health/
-  secondary.kafka.health resolve probe config LAZILY and report a passing "Waiting for
-  ... connection" status until late vault credentials land (upstreamed field MR + Eric's
-  ruling); the new redis.health for sync-over-async (auth rejections classify as waiting;
-  one probe also covers minigraph-state-redis); the Kafka checks run on kernel threads
-  ([[kafka-clients-kernel-threads]]); a failed probe returns the {text, code} key-value
-  message. **Java only — NO Rust lock-step** (no Kafka modules there; Rust stays v4.12.7);
-  python/node packs stay 4.12.1. Sweep surface from this release on: BUILD FILES ONLY
-  (40 — READMEs and guide prose use x.y.z placeholders). Prior: v4.12.7 (2026-09-11 —
-  plugin-gate body scan, starter templates, entry-point playbook, Mercury Family, IDD
-  synthesis; lock-step Rust v4.12.7, seven crates on crates.io). The live version source
-  stays the root pom.xml.)
+- **latest_release:** v4.12.9 (2026-09-16 01:29Z — the distributed-Redis release, **34 PRs
+  #364–#397** via release PR #398, squash `9274cf92`, tag `v4.12.9`: the cross-pod **streaming
+  return route** for sync-over-async (Redis alone, no broker — D1–D8 / E1–E4); the generic
+  **distributed cache** `v1.cache.redis` on the extracted [[redis-connection-foundation]];
+  **clustered Redis** for both, auto-detected; `Platform.onShutdown`
+  ([[platform-onshutdown-lifecycle]]); general purpose **MsgPack** `packMapOrList`/`unpackMapOrList`;
+  the three-layer distributed-cache worked example and dev mode pre-wired in `templates/starter-graph`
+  ([[minigraph-dev-mode-app-shape]]); the MiniGraph async-callback guard
+  ([[minigraph-guarded-async-completion]]); and three field Snyk fixes (zstd-jni pin, snappy-java
+  exclusion, CWE-798 test literals). **Action required on upgrade:** the `soa.redis.health` ROUTE
+  rename has no fallback, and sync-over-async no longer exports `minimalist-kafka` (declare it).
+  Config keys are backward-compatible via the `redis.*` fallback. **Java first — Rust lockstep for
+  the distributed cache follows** ([[ot-distributed-cache]]) and will catch up to this number
+  ([[conv-ports-adopt-java-release-number]]); the python/node packs still carry 4.12.1 content and
+  catch up to the Java number on their next update, by the same convention. Sweep surface: BUILD
+  FILES ONLY, **43** at this release (40 at v4.12.8 + redis-connection, distributed-cache,
+  distributed-cache-example). A **v4.12.10 follow-up is expected** (field artifact-stamping
+  logistics; first content queued is [[ot-redis-client-separation]]). The live version source stays
+  the root pom.xml.)
 - **last_enabled:** 2026-06-20
 - **last_review:** 2026-09-14 | through 2026-09-14-193941.md (reactivated playground-session-broker;
   archived compilegraph-mandatory-gate + swept 4 completed threads; refresh-metadata re-tiered 6; kept
@@ -385,6 +391,18 @@
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
   <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-16 | uses: 13 | tier: active | origin: 2026-09-01-022524 -->
+- **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
+  sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
+  identifies **content**, not "this engine's Nth release". This covers the Rust port AND the python
+  and node language packs alike: whenever one is next updated, it is tagged at the Java number it
+  caught up to — never at an intermediate number invented to represent partial catch-up. Consequence
+  to read correctly: a port sitting below Java (Rust at v4.12.7, the python/node packs at 4.12.1,
+  while Java shipped v4.12.9) is **lag awaiting catch-up, not divergence**, and the gap is not a
+  compatibility signal. Corollary for release notes and continuity entries: state a port's number as
+  the content it currently carries, never as a separate cadence. Extends
+  [[conv-telemetry-presentation-parity]] (the same reference-implementation principle, applied to
+  versioning rather than telemetry); governs the Rust half of [[ot-distributed-cache]].
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: working | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
