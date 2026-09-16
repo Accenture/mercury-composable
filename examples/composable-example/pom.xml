@@ -56,6 +56,19 @@
             <version>4.12.10</version>
         </dependency>
 
+        <!--
+            OpenTelemetry trace forwarding. Carrying the dependency does NOT turn the feature on:
+            the forwarder is @OptionalService("otel.forwarding") and the default is false, so this
+            app behaves exactly as before until DevOps opts in per environment. That "dependency
+            present, feature off" shape is the thing this example demonstrates - and it is why the
+            app doubles as the regression harness for the forwarder.
+        -->
+        <dependency>
+            <groupId>org.platformlambda</groupId>
+            <artifactId>opentelemetry-forwarder</artifactId>
+            <version>4.12.10</version>
+        </dependency>
+
         <dependency>
             <groupId>org.junit</groupId>
             <artifactId>junit-bom</artifactId>
