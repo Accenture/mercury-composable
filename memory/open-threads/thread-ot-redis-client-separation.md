@@ -5,4 +5,4 @@
   change — `RedisBackendFactory` already builds a client per call. PR #399, squash `9aa40089`.
   Lesson: a backward-compatibility affordance reads as a recommendation unless the docs say what it
   is *for*. origin: 2026-09-15-221451.
-  <!-- id: ot-redis-client-separation | created: 2026-09-15 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: ot-redis-client-separation | created: 2026-09-15 | last_used: 2026-09-16 | uses: 2 | tier: archive-candidate | origin: 2026-09-16-003354 -->

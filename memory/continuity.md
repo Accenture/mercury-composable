@@ -45,10 +45,16 @@
   there: the `soa.redis.health` ROUTE rename and `minimalist-kafka` no longer transitive). The live
   version source stays the root pom.xml.)
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-16 | through 2026-09-16-032012.md (15-session window, 5 overdue: archived
-  conv-kafka-transitive-pin-placement (sslu 21) and swept the completed ot-streaming-return-route
-  (sslu 25); condensed 3 recently-closed threads to stubs (67→25 narrative lines); invariant re-verify
-  DUE at 44 sessions → raised ot-reverify-invariants-20260916. Prior: 2026-09-14 | 2026-09-14-193941.md)
+- **last_review:** 2026-09-16 | through 2026-09-16-211927.md (ON COMMAND, not cadence — 6 sessions
+  since the last one, review_every is 10; the SIZE trigger was marginally live at 36 decaying facts
+  vs continuity_max_facts 35 — and STAYS at 36, because archiving one and raising one nets zero and
+  NOTHING else is past the window. Being 1 over with 0 overdue is the honest outcome; do not archive
+  a fact that is merely a candidate to hit a count. Archived 1: soa-transport-neutral-cid (sslu 23, shipped v4.12.9
+  PR #364, design realized in code + guide). Swept 0 — all five completed threads closed within the
+  window and already condensed to stubs. Raised ot-otel-acceptance-traces-pending: the Dynatrace
+  acceptance-trace confirmation lived ONLY in latest_release, which is rewritten each release, so a
+  live commitment had no durable home. Invariant re-verify NOT due (5 sessions since, cadence 40).
+  memory-lint 0/0. Prior: 2026-09-16 | 2026-09-16-032012.md)
 - **last_invariant_check:** 2026-09-16 | 2026-09-16-041500.md (COMPLETE — Eric walked the set against
   live-tree evidence: 3 invariants + 5 stack + 5 key decisions + 3 conventions + eric-release-rhythm +
   the Vision all confirmed. `stack-language-java21` re-confirmed (Java 21 baseline, Java 25 now LTS =
@@ -213,18 +219,7 @@
   version is a free check that the artifact under test is the one that shipped. Report:
   `docs/test-reports/otel-dynatrace-certification.md`; closes [[ot-otel-dynatrace-certification]].
   Splunk's header form is parsed and documented but NOT run live.
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-16-193203 -->
-
-- **sync-over-async is transport-neutral — its correlation-id key is self-contained (Eric's direction,
-  2026-09-12; PR #364, squash `628a1778`).** The facade tasks speak only the module's own flow-level `cid` key (`SyncRuntime.CID`);
-  the Kafka wire header belongs to the transport and is configurable there
-  (`kafka.correlation.id.header`, with per-binding overrides — inbound flow adapters seed `model.cid`
-  from the effective wire header, whatever its name), so the tasks never reference the transport's
-  constant. minimalist-kafka is test scope (e2e regression only); platform-core is the declared compile
-  backbone; applications compose the facade with their own Kafka library (the demo shows the shape).
-  Consumer note for the next release: apps that leaned on the transitive minimalist-kafka must now
-  declare it. Extends [[functions-decoupled-routes]] to the dependency graph.
-  <!-- id: soa-transport-neutral-cid | created: 2026-09-12 | last_used: 2026-09-14 | uses: 9 | tier: archive-candidate | origin: 2026-09-12-011438 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-16 | uses: 3 | tier: active | origin: 2026-09-16-193203 -->
 
 - **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
   `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
@@ -253,7 +248,7 @@
   `withAuthentication(RedisCredentialsProvider)` is the future seam if rotating IAM tokens are ever
   needed. Rust parity for cluster (cluster-client option + the same DEL split) is a parked
   follow-up, NOT a break. Extends [[soa-transport-neutral-cid]].
-  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-16 | uses: 7 | tier: active | origin: 2026-09-14-181948 -->
+  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-16 | uses: 7 | tier: archive-candidate | origin: 2026-09-14-181948 -->
 
 - **The distributed cache is a SEPARATE module — sync-over-async stays small (Eric, 2026-09-14).**
   sync-over-async is a *rendezvous transport* (correlation-id `request:`/`queue:` keys,
@@ -276,7 +271,7 @@
   extracted [[redis-connection-foundation]] (spec draft-design-specs/distributed-cache.md);
   [[ot-distributed-cache]] tracks the remaining Rust lockstep. Builds on [[soa-redis-cluster-support]];
   serves [[vision-mercury-composable]].
-  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-16 | uses: 10 | tier: active | origin: 2026-09-14-191748 -->
+  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-16 | uses: 10 | tier: archive-candidate | origin: 2026-09-14-191748 -->
 
 - **The Redis client layer is a shared `extensions/redis-connection` foundation (2026-09-14; Java
   shipped for v4.12.9).** Extracted from sync-over-async's `support/`: `RedisBackend<V>` (generic in the
@@ -294,7 +289,7 @@
   (cache). Realizes the "extract the foundation" half of [[cache-separate-from-soa]]; tracked by
   [[ot-distributed-cache]]; applied [[preload-before-mainapp-lazy-config]] and
   [[conv-reentrantlock-not-synchronized]].
-  <!-- id: redis-connection-foundation | created: 2026-09-14 | last_used: 2026-09-16 | uses: 5 | tier: active | origin: 2026-09-14-230259 -->
+  <!-- id: redis-connection-foundation | created: 2026-09-14 | last_used: 2026-09-16 | uses: 5 | tier: archive-candidate | origin: 2026-09-14-230259 -->
 
 - **platform-core has a lightweight shutdown lifecycle — `Platform.getInstance().onShutdown(Runnable)`
   (2026-09-14, Eric's minimalist-principle ruling; for v4.12.9).** The platform owns ONE JVM shutdown hook
