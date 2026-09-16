@@ -622,8 +622,27 @@ the first probe after the credential lands simply succeeds; nothing needs a rest
 template is still incomplete - the client cannot even be built from it - `type=health` reports a
 **passing** `Waiting for Kafka connection` status rather than a failure: failing `/health` would
 invite the container orchestrator to restart the pod, and a restart cannot produce the credential.
-Only a real connectivity failure (client built, cluster unreachable) fails the check with status 503.
+A real connectivity failure (client built, cluster unreachable) fails the check with status 503.
 The same applies to `secondary.kafka.health`.
+
+> **Waiting is only for a value that has not landed yet — a broken template fails.** The leniency above
+> exists for exactly one situation: a credential a later bootstrap will publish. A template referring to
+> a class that is not on the classpath will never become usable by waiting, so `type=health` fails with
+> 503 and says `Kafka client configuration is unusable - <reason>` rather than reporting healthy. The
+> distinction matters because the passing-while-broken case is genuinely hard to spot: a field
+> deployment logged an unresolvable deserializer class every five seconds for hours while `/health`
+> reported healthy throughout. The message deliberately names the *configuration* rather than the
+> network, so the reader looks at the classpath instead of the cluster.
+>
+> **Class-valued settings are supplied as class objects, not names.** Kafka resolves a class *name*
+> through the thread context classloader, falling back to its own loader only when that is `null` — so
+> a non-null but wrong context loader turns a present class into `Class ... could not be found`. That is
+> what bit the field: `kafka.health` is a `@KernelThreadRunner` and builds its client on a pooled kernel
+> thread, while the flow adapter's consumers — same config, same jar, ordinary threads — were fine. The
+> module now puts `Class` objects into the client properties and the probe additionally pins the thread
+> context loader for the duration of construction, so no client's construction depends on which thread
+> happens to run it. Nothing to configure; a template that names its own partitioner, assignor or
+> interceptors still wins as before.
 
 > **On a produce-only leg the probe uses the producer template.** With
 > [`kafka.consumer.enabled=false`](#opt-out) there are no consumer credentials to build a probe from,

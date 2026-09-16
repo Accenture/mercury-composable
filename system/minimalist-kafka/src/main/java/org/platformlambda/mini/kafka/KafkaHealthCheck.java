@@ -21,6 +21,8 @@ package org.platformlambda.mini.kafka;
 import org.apache.kafka.clients.consumer.CloseOptions;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
@@ -293,6 +295,13 @@ public class KafkaHealthCheck implements LambdaFunction {
             result.put(TOPICS, topics.size());
             result.put(HREF, href());
             return result;
+        } catch (UnusableConfigException e) {
+            // a deployment defect, not an outage and not a start-up condition - say which, because
+            // "cluster is not reachable" would send the reader to the network instead of the classpath
+            Map<String, Object> broken = new HashMap<>();
+            broken.put(TEXT, "Kafka client configuration is unusable - " + e.getMessage());
+            broken.put(CODE, 503);
+            return new EventEnvelope().setStatus(503).setBody(broken);
         } catch (Exception e) {
             closeQuietly();
             // a genuine outage: the 503 status is what the health aggregation (and Kubernetes)
@@ -329,15 +338,85 @@ public class KafkaHealthCheck implements LambdaFunction {
      * Build the probe client from a freshly resolved template - or null when the client cannot even
      * be constructed from it, i.e. the template is still incomplete (a late credential not yet
      * published). The caller reports that as the passing waiting status.
+     * <p>
+     * <b>Construction runs with this class's own classloader as the thread context loader.</b> Kafka
+     * resolves class-name configuration values through {@code Utils.getContextOrKafkaClassLoader()},
+     * which prefers the thread context classloader and falls back to Kafka's own loader only when the
+     * TCCL is {@code null} - so a non-null but wrong TCCL fails the lookup, where a null one would have
+     * worked. This function is {@code @KernelThreadRunner} and warms up on the platform's kernel-thread
+     * executor, and a pooled kernel thread need not have inherited the application's loader. A field
+     * deployment logged
+     * {@code Class org.apache.kafka.common.serialization.StringDeserializer could not be found} every
+     * 5 seconds while the same JVM's real producers and consumers used the same jar without trouble
+     * ({@code KafkaFlowAdapter} builds a consumer from the identical class-name config and is not a
+     * kernel-thread runner - that difference was the diagnosis).
+     * <p>
+     * Passing deserializer <b>instances</b> alone is not enough, which a blind-classloader test makes
+     * plain: it removes the two deserializer lookups, and the very next class-name config fails instead
+     * ({@code metric.reporters} -> {@code JmxReporter}, from the same jar). Kafka resolves several
+     * configs this way - metric reporters, the partition assignor, interceptors, SASL callback handlers
+     * - so the classloader is the thing to fix, not one config at a time. The instances are passed
+     * anyway: they are what the probe always used, and they spare two lookups.
+     * <p>
+     * The override is scoped to this construction and restored in a {@code finally}, so nothing leaks
+     * back to a pooled thread's next task.
+     * Pinned by {@code KafkaHealthCheckClassLoaderTest}.
      */
-    private KafkaConsumer<String, byte[]> buildClient(Properties config) {
+    KafkaConsumer<String, byte[]> buildClient(Properties config) {
+        Thread current = Thread.currentThread();
+        ClassLoader original = current.getContextClassLoader();
         try {
-            return new KafkaConsumer<>(config);
+            current.setContextClassLoader(KafkaHealthCheck.class.getClassLoader());
+            return new KafkaConsumer<>(config, new StringDeserializer(), new ByteArrayDeserializer());
         } catch (KafkaException e) {
-            log.warn("{} health check waiting for a usable client configuration - {}",
-                    serviceName, rootCause(e));
+            String reason = rootCause(e);
+            if (neverHeals(e)) {
+                // NOT a start-up condition: waiting cannot conjure a class onto the classpath, so
+                // reporting this as passing would hide a deployment defect indefinitely - which is
+                // exactly what happened in the field.
+                log.error("{} health check has an unusable client configuration - {}", serviceName, reason);
+                throw new UnusableConfigException(reason);
+            }
+            log.warn("{} health check waiting for a usable client configuration - {}", serviceName, reason);
             return null;
+        } finally {
+            current.setContextClassLoader(original);
         }
+    }
+
+    /** A template the client can NEVER be built from - as opposed to one whose values have not landed. */
+    static class UnusableConfigException extends RuntimeException {
+        UnusableConfigException(String reason) {
+            super(reason);
+        }
+    }
+
+    /**
+     * Does this construction failure mean the template can never produce a client?
+     * <p>
+     * The waiting status exists for ONE situation: a value that a later {@code @MainApplication}
+     * credential bootstrap will publish. Reporting anything else as passing is how a real defect stays
+     * invisible - a field deployment logged an unresolvable deserializer class every 5 seconds for
+     * hours while {@code /health} reported healthy throughout. A class that is not on the classpath
+     * will not appear because we waited, so that failure belongs in the 503.
+     * <p>
+     * Detection is by message text because Kafka discards the {@code ClassNotFoundException} when it
+     * wraps it ({@code ConfigException(name, value, "Class ... could not be found.")} carries no
+     * cause), so the cause chain is checked too for the cases where one survives. The default is
+     * {@code false} - i.e. today's waiting behaviour - so if Kafka ever rewords the message this
+     * degrades to the previous semantics rather than to spurious outages.
+     */
+    private static boolean neverHeals(Throwable e) {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t instanceof ClassNotFoundException || t instanceof NoClassDefFoundError) {
+                return true;
+            }
+            String message = t.getMessage();
+            if (message != null && message.contains("Class ") && message.contains("could not be found")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** The most specific reason - client construction failures arrive wrapped in a generic KafkaException. */

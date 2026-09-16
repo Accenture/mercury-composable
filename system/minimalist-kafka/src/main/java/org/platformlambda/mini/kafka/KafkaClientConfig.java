@@ -118,11 +118,12 @@ public final class KafkaClientConfig {
      */
     public static Properties producerProperties(ConfigBase appConfig, String locationKey, String defaultLocations) {
         Properties p = load(appConfig.getProperty(locationKey, defaultLocations));
-        p.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        p.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
+        // Class OBJECTS, not names - see the note on setClass below
+        setClass(p, ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        setClass(p, ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
         // default (not pinned): random distribution instead of Kafka's sticky default, which skews
         // low-volume traffic onto one partition; a template that sets partitioner.class wins
-        p.putIfAbsent(ProducerConfig.PARTITIONER_CLASS_CONFIG, SimpleRandomPartitioner.class.getName());
+        p.putIfAbsent(ProducerConfig.PARTITIONER_CLASS_CONFIG, SimpleRandomPartitioner.class);
         return p;
     }
 
@@ -149,8 +150,8 @@ public final class KafkaClientConfig {
      */
     public static Properties consumerProperties(ConfigBase appConfig, String locationKey, String defaultLocations) {
         Properties p = load(appConfig.getProperty(locationKey, defaultLocations));
-        p.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        p.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
+        setClass(p, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        setClass(p, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
         // a template's group.protocol=auto becomes consumer|classic from the cluster's own
         // finalized group.version feature (KIP-848) - one probe per cluster, stated in the log
         GroupProtocolResolver.resolve(p);
@@ -205,9 +206,32 @@ public final class KafkaClientConfig {
         producer.stringPropertyNames().stream()
                 .filter(ConsumerConfig.configNames()::contains)
                 .forEach(k -> p.setProperty(k, producer.getProperty(k)));
-        p.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        p.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
+        setClass(p, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        setClass(p, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
         return p;
+    }
+
+    /**
+     * Put a class-valued config as a {@code Class} OBJECT rather than a class name.
+     * <p>
+     * Kafka accepts either, but a NAME is resolved through
+     * {@code Utils.getContextOrKafkaClassLoader()}, which prefers the thread context classloader and
+     * falls back to Kafka's own loader only when the TCCL is {@code null} - so a non-null but wrong TCCL
+     * turns a perfectly present class into
+     * {@code ConfigException: Class ... could not be found}. That is not hypothetical: it took down a
+     * field deployment's {@code kafka.health} probe, which builds its client on a pooled kernel thread
+     * whose loader could not see {@code kafka-clients}, while the same JVM's real clients - built on
+     * ordinary threads - used the same jar without trouble. A {@code Class} object short-circuits
+     * {@code ConfigDef.parseType} ({@code if (value instanceof Class) return value}), so no classloader
+     * is consulted and the value cannot be lost to whichever thread happens to build the client. The
+     * kafka-connector module has always done it this way.
+     * <p>
+     * {@code put}, not {@code setProperty}: the latter only accepts String values. The consequence is
+     * that these keys no longer appear in {@code stringPropertyNames()}, which is why
+     * {@link #healthProbeProperties} copies through that method and then sets the deserializers itself.
+     */
+    private static void setClass(Properties p, String key, Class<?> value) {
+        p.put(key, value);
     }
 
     /**

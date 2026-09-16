@@ -49,8 +49,9 @@ class KafkaClientConfigTest {
     @Test
     void producerLoadsTemplateAndPinsSerializers() {
         Properties p = KafkaClientConfig.producerProperties(EMPTY);
-        assertEquals(StringSerializer.class.getName(), p.getProperty("key.serializer"));
-        assertEquals(ByteArraySerializer.class.getName(), p.getProperty("value.serializer"));
+        assertEquals(StringSerializer.class, p.get("key.serializer"),
+                "set as a Class object, not a name, so no classloader lookup can lose it");
+        assertEquals(ByteArraySerializer.class, p.get("value.serializer"));
         assertEquals("all", p.getProperty("acks"), "non-pinned value comes from the template");
         assertNotNull(p.getProperty("bootstrap.servers"), "connection comes from the template");
     }
@@ -58,8 +59,9 @@ class KafkaClientConfigTest {
     @Test
     void producerDefaultsToSimpleRandomPartitioner() {
         Properties p = KafkaClientConfig.producerProperties(EMPTY);
-        assertEquals(SimpleRandomPartitioner.class.getName(), p.getProperty("partitioner.class"),
-                "random distribution is the default when the template does not choose a partitioner");
+        assertEquals(SimpleRandomPartitioner.class, p.get("partitioner.class"),
+                "random distribution is the default when the template does not choose a partitioner, "
+                        + "supplied as a Class object so no classloader lookup can lose it");
     }
 
     @Test
@@ -73,8 +75,9 @@ class KafkaClientConfigTest {
     @Test
     void consumerLoadsTemplateAndPinsDeserializers() {
         Properties p = KafkaClientConfig.consumerProperties(EMPTY);
-        assertEquals(StringDeserializer.class.getName(), p.getProperty("key.deserializer"));
-        assertEquals(ByteArrayDeserializer.class.getName(), p.getProperty("value.deserializer"));
+        assertEquals(StringDeserializer.class, p.get("key.deserializer"),
+                "set as a Class object, not a name, so no classloader lookup can lose it");
+        assertEquals(ByteArrayDeserializer.class, p.get("value.deserializer"));
         assertNotNull(p.getProperty("bootstrap.servers"));
     }
 
@@ -110,7 +113,8 @@ class KafkaClientConfigTest {
     @Test
     void healthProbeUsesTheConsumerTemplateByDefault() {
         Properties p = KafkaClientConfig.healthProbeProperties(EMPTY);
-        assertEquals(StringDeserializer.class.getName(), p.getProperty("key.deserializer"));
+        assertEquals(StringDeserializer.class, p.get("key.deserializer"),
+                "set as a Class object, not a name, so no classloader lookup can lose it");
         assertNotNull(p.getProperty("auto.offset.reset"), "the consumer template is used verbatim");
     }
 
@@ -120,7 +124,7 @@ class KafkaClientConfigTest {
                 Map.of("kafka.consumer.enabled", "false")));
         assertNotNull(p.getProperty("bootstrap.servers"),
                 "connection settings are named identically in both client surfaces");
-        assertEquals(ByteArrayDeserializer.class.getName(), p.getProperty("value.deserializer"),
+        assertEquals(ByteArrayDeserializer.class, p.get("value.deserializer"),
                 "the probe is still a consumer, so the wire contract is pinned");
         assertNull(p.getProperty("acks"),
                 "producer-only settings are filtered out rather than logged as unknown config");
