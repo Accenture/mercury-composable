@@ -21,8 +21,6 @@ package org.platformlambda.mini.kafka;
 import org.apache.kafka.clients.consumer.CloseOptions;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.KafkaException;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
@@ -105,7 +103,7 @@ import java.util.function.Supplier;
  *
  * <p><b>{@code @KernelThreadRunner}.</b> The Kafka consumer performs its network I/O on the CALLING
  * thread inside {@code synchronized} sections, and on Java 21 a virtual thread that blocks inside
- * {@code synchronized} pins its carrier - a probe waiting out {@code kafka.health.timeout} against an
+ * {@code synchronized} pins its carrier. A probe waiting out {@code kafka.health.timeout} against an
  * unreachable cluster would pin a carrier for the full wait. Kernel threads avoid that, matching the
  * module convention for functions that drive Kafka clients ({@code SimpleKafkaNotification},
  * {@code SchemaCodec}); the warm-up probe uses the kernel-thread executor for the same reason.
@@ -342,7 +340,7 @@ public class KafkaHealthCheck implements LambdaFunction {
      * <b>Construction runs with this class's own classloader as the thread context loader.</b> Kafka
      * resolves class-name configuration values through {@code Utils.getContextOrKafkaClassLoader()},
      * which prefers the thread context classloader and falls back to Kafka's own loader only when the
-     * TCCL is {@code null} - so a non-null but wrong TCCL fails the lookup, where a null one would have
+     * TCCL is {@code null}. Therefore, a non-null but wrong TCCL fails the lookup, where a null one would have
      * worked. This function is {@code @KernelThreadRunner} and warms up on the platform's kernel-thread
      * executor, and a pooled kernel thread need not have inherited the application's loader. A field
      * deployment logged
@@ -351,23 +349,23 @@ public class KafkaHealthCheck implements LambdaFunction {
      * ({@code KafkaFlowAdapter} builds a consumer from the identical class-name config and is not a
      * kernel-thread runner - that difference was the diagnosis).
      * <p>
-     * Passing deserializer <b>instances</b> alone is not enough, which a blind-classloader test makes
-     * plain: it removes the two deserializer lookups, and the very next class-name config fails instead
-     * ({@code metric.reporters} -> {@code JmxReporter}, from the same jar). Kafka resolves several
+     * Passing deserializer <b>instances</b> instead is not enough, which a blind-classloader test makes
+     * plain: it removes the two deserializer lookups, and the very next class-name config fails in their
+     * place ({@code metric.reporters} -> {@code JmxReporter}, from the same jar). Kafka resolves several
      * configs this way - metric reporters, the partition assignor, interceptors, SASL callback handlers
-     * - so the classloader is the thing to fix, not one config at a time. The instances are passed
-     * anyway: they are what the probe always used, and they spare two lookups.
+     * - so the classloader is the thing to fix, not one config at a time. With the loader fixed the
+     * instances add nothing and are not passed: Kafka constructs the deserializers itself, from the
+     * {@code Class} objects {@link KafkaClientConfig} puts in the properties, consulting no loader at
+     * all. Handing them in would also leave this method holding two {@code Closeable}s it must not
+     * close, since the returned consumer owns them.
      * <p>
-     * The override is scoped to this construction and restored in a {@code finally}, so nothing leaks
-     * back to a pooled thread's next task.
+     * The override is scoped to this construction and restored afterwards, so nothing leaks back to a
+     * pooled thread's next task - see {@link #withModuleClassLoader}.
      * Pinned by {@code KafkaHealthCheckClassLoaderTest}.
      */
     KafkaConsumer<String, byte[]> buildClient(Properties config) {
-        Thread current = Thread.currentThread();
-        ClassLoader original = current.getContextClassLoader();
         try {
-            current.setContextClassLoader(KafkaHealthCheck.class.getClassLoader());
-            return new KafkaConsumer<>(config, new StringDeserializer(), new ByteArrayDeserializer());
+            return withModuleClassLoader(() -> new KafkaConsumer<>(config));
         } catch (KafkaException e) {
             String reason = rootCause(e);
             if (neverHeals(e)) {
@@ -379,6 +377,26 @@ public class KafkaHealthCheck implements LambdaFunction {
             }
             log.warn("{} health check waiting for a usable client configuration - {}", serviceName, reason);
             return null;
+        }
+    }
+
+    /**
+     * Run {@code work} with THIS module's classloader as the thread context loader, restoring the
+     * caller's loader in a {@code finally} so nothing leaks back to a pooled thread's next task.
+     * <p>
+     * The scoping lives here, apart from the construction it wraps, for a reason beyond tidiness: a
+     * {@code try}/{@code finally} that both creates a {@code Closeable} and hands it back is the exact
+     * shape static analysis reads as a missing try-with-resources ({@code java:S2093}), which cannot
+     * apply to a factory - closing the consumer before returning it is precisely the bug. Separating
+     * the two leaves each one honest: this method scopes a thread-local and closes nothing,
+     * {@link #buildClient} creates a resource and transfers ownership to its caller.
+     */
+    private static <T> T withModuleClassLoader(Supplier<T> work) {
+        Thread current = Thread.currentThread();
+        ClassLoader original = current.getContextClassLoader();
+        try {
+            current.setContextClassLoader(KafkaHealthCheck.class.getClassLoader());
+            return work.get();
         } finally {
             current.setContextClassLoader(original);
         }
@@ -403,7 +421,7 @@ public class KafkaHealthCheck implements LambdaFunction {
      * Detection is by message text because Kafka discards the {@code ClassNotFoundException} when it
      * wraps it ({@code ConfigException(name, value, "Class ... could not be found.")} carries no
      * cause), so the cause chain is checked too for the cases where one survives. The default is
-     * {@code false} - i.e. today's waiting behaviour - so if Kafka ever rewords the message this
+     * {@code false} - i.e. today's waiting behavior - so if Kafka ever rewords the message this
      * degrades to the previous semantics rather than to spurious outages.
      */
     private static boolean neverHeals(Throwable e) {
