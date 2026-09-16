@@ -138,7 +138,7 @@
   **Bounded 2026-09-16:** the passing "waiting" status covers ONLY a value that has not landed yet —
   a config that can never work fails the check instead, because reporting it as passing is how a real
   defect hid in the field for hours. See [[kafka-class-objects-over-names]].
-  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-16 | uses: 13 | tier: active | origin: 2026-09-11-185752 -->
+  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-16 | uses: 14 | tier: active | origin: 2026-09-11-185752 -->
 
 - **Kafka-driving functions run on kernel threads — `@KernelThreadRunner` (2026-09-11, Eric's
   question → PR #362).** The Kafka consumer performs network I/O on the CALLING thread inside
@@ -175,6 +175,34 @@
   message degrades to leniency rather than to spurious outages. Bounds
   [[preload-before-mainapp-lazy-config]]; extends [[kafka-clients-kernel-threads]].
   <!-- id: kafka-class-objects-over-names | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: working | origin: 2026-09-16-185851 -->
+
+- **A jar under a base scan package needs an `@OptionalService` master switch, and a vendor
+  integration is not done until a negative control proves the happy path (2026-09-16, Eric's design
+  → PR #404, v4.12.11).** `opentelemetry-forwarder` lives under `org.platformlambda`, so the jar
+  alone auto-registered `distributed.trace.forwarder` — carrying the dependency silently turned trace
+  export on. It is now `@OptionalService("otel.forwarding")`, default **off**: one artifact ships and
+  DevOps decides per environment, in properties or `-Dotel.forwarding=true` at launch. That is the
+  reusable shape for any scanned extension whose behaviour is an operational choice, and
+  `composable-example` pins it ("dependency present, feature off") so it cannot regress. The legacy
+  `otel.trace.forwarder.enabled` was RETIRED with it — a second switch whose only reachable use was
+  the contradictory `otel.forwarding=true` + `…enabled=false`, and `Telemetry` already no-ops on an
+  unregistered route (`hasRoute`). Credentials resolve **per export** through a `Supplier` (applies
+  [[preload-before-mainapp-lazy-config]]) and the exporter closes via
+  [[platform-onshutdown-lifecycle]], which this extension had been missed by.
+  **The method is the durable half.** Certified live against Dynatrace SaaS and confirmed queryable
+  in its UI (6 spans, one trace, parent/child reconstructed, `server`/`internal` kinds, scope version
+  resolved at runtime). Getting there needed an **A-B-A credential experiment** — real token 0/6
+  export failures, bogus token 6/6, real token 0/6 — because *zero failures proves nothing until a
+  failure is shown to be possible*: a forwarder that skipped export, or never attached the
+  credential, yields the identical zero. Generalize it: **when a verification is blocked on access
+  you do not have, ask what your evidence would look like if the thing were broken; if broken and
+  working look the same, a negative control is the experiment, not a garnish.** Two by-products worth
+  keeping — the app returned HTTP 201 in all three legs (a telemetry outage degrades observability
+  and nothing else, previously asserted and now shown), and the backend-visible instrumentation scope
+  version is a free check that the artifact under test is the one that shipped. Report:
+  `docs/test-reports/otel-dynatrace-certification.md`; closes [[ot-otel-dynatrace-certification]].
+  Splunk's header form is parsed and documented but NOT run live.
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: working | origin: 2026-09-16-193203 -->
 
 - **sync-over-async is transport-neutral — its correlation-id key is self-contained (Eric's direction,
   2026-09-12; PR #364, squash `628a1778`).** The facade tasks speak only the module's own flow-level `cid` key (`SyncRuntime.CID`);
@@ -270,7 +298,7 @@
   also makes the cache's `shutdown()` a used method, resolving the field Sonar "never used" finding without
   deleting it). Rust parity is a lockstep follow-up (internal lifecycle API, not a wire contract). Applies
   [[conv-reentrantlock-not-synchronized]]; used by [[redis-connection-foundation]].
-  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-15-011235 -->
+  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-16 | uses: 3 | tier: active | origin: 2026-09-15-011235 -->
 
 - **MiniGraph async skill callbacks are guarded — a failure surfaces as the node's error, never a
   silent hang (2026-09-15; found building the distributed-cache example, PR #392).** A

@@ -10,6 +10,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Version 4.12.11, 9/16/2026
 
+### Added
+
+1. **OpenTelemetry trace forwarding is now an opt-in feature with a master switch — and it is
+   certified against a real vendor backend.** `otel.forwarding` (default **false**) gates the
+   forwarder through `@OptionalService`, so carrying the `opentelemetry-forwarder` dependency
+   registers nothing: an application ships one artifact and DevOps decides per environment whether
+   traces leave the process, either in `application.properties` or at launch with
+   `-Dotel.forwarding=true` and no rebuild. `composable-example` demonstrates exactly that shape —
+   dependency present, feature off — and doubles as the regression harness for it.
+
+   Two hardening changes travel with it. **Credentials resolve per export**, through a `Supplier`
+   rather than once in the constructor: a `@PreLoad` function is built before any
+   `@MainApplication` credential bootstrap runs, so a token published later by a vault loader would
+   otherwise be frozen out for the life of the process. And **export failures diagnose themselves** —
+   the SDK's HTTP failure renders as a bare class name, so the forwarder now names the span, the
+   trace, the HTTP status, the backend's own message, and the configuration key to look at. The two
+   rejections that actually happen get explicit hints: a 404 is nearly always the signal path
+   missing from the endpoint (the exporter wants the full `.../v1/traces` URL, not the vendor's base
+   URL), and a 401/403 is the credential.
+
+   **Certified end to end against Dynatrace SaaS**, exporting side *and* backend: six spans in one
+   trace, queryable in the Dynatrace UI under the configured service name, with the span tree
+   reconstructed from `parent_span_id`, span kinds mapped (`server` at the HTTP edge, `internal`
+   downstream), and the instrumentation scope reporting the running release's version. An **A-B-A
+   credential experiment** (real token → 0 of 6 export failures, bogus token → 6 of 6, real token →
+   0 of 6) establishes that a clean run means the backend accepted the spans rather than the
+   forwarder silently skipping them; the application returned HTTP 201 in all three legs, so a
+   telemetry backend outage degrades observability and nothing else. Full record:
+   [Test Report — OpenTelemetry forwarder against Dynatrace](docs/test-reports/otel-dynatrace-certification.md).
+   Splunk Observability Cloud's header form is documented and parsed but has not been run live.
+
 ### Fixed
 
 1. **`kafka.health` builds its probe client regardless of the thread context classloader.** A field
@@ -78,9 +109,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    The classloader override — the actual fix — is unchanged and still load-bearing: with it
    disabled, all six tests in `KafkaHealthCheckClassLoaderTest` fail.
 
-4. Internal only: cleared IDE and SonarQube findings in `platform-core` **test** code — two unused
+4. **The `opentelemetry-forwarder` now releases its exporter through the platform's shutdown
+   lifecycle** — `Platform.onShutdown(...)` instead of a hand-rolled
+   `Runtime.getRuntime().addShutdownHook(new Thread(...))`. The extension had been missed when the
+   in-tree cases were migrated in v4.12.9, so its final flush raced every other component's teardown
+   on its own thread; it is now ordered and error-isolated with the rest. No configuration change.
+
+5. Internal only: cleared IDE and SonarQube findings in `platform-core` **test** code — two unused
    imports, a redundant `@SuppressWarnings`, and javadoc corrections (unformatted blocks, a stale
    cross-reference). No runtime code, no test logic and no coverage was changed.
+
+### Removed
+
+1. **`otel.trace.forwarder.enabled` is retired**, superseded by `otel.forwarding`. It was a
+   second-level in-process disable that made an already-registered forwarder a no-op; with the
+   `@OptionalService` gate in front of it, the only way to *use* it became the contradictory pair
+   `otel.forwarding=true` + `otel.trace.forwarder.enabled=false`. The gate does the same job more
+   cheaply — no exporter, no thread pool, no shutdown hook — and `Telemetry` already skips a
+   forwarder route that is not registered, so nothing logs or warns.
+
+   **No action required, and no way to be surprised into exporting:** an application that sets it to
+   `false` today lands on `otel.forwarding`'s default of *off* after upgrading. An application that
+   wants forwarding off simply leaves the master switch alone.
 
 ---
 ## Version 4.12.10, 9/15/2026
