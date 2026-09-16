@@ -471,13 +471,24 @@ Add the dependency and it auto-registers (no code):
 </dependency>
 ```
 
-Configure the collector endpoint and service name in `application.properties`:
+Then turn it on and configure the collector endpoint and service name in `application.properties`:
 
 ```properties
+# master switch - the jar alone exports nothing; the default is false
+otel.forwarding=true
 otel.exporter.otlp.endpoint=http://localhost:4318/v1/traces
 otel.service.name=my-application
-# otel.trace.forwarder.enabled=false   # disable export without removing the jar
 ```
+
+The endpoint must include the **signal path** (`/v1/traces`), not just the collector's base URL — a
+vendor base URL answers 404, and the forwarder says so in the failure it logs.
+
+`otel.forwarding` is what lets an application carry the dependency while DevOps decides, per
+environment, whether traces leave the process: leave it unset (or `false`) to deploy the same
+artifact with export off, and turn it on at launch with `-Dotel.forwarding=true` — no rebuild. See
+[Exporting telemetry](observability.md#otel-forwarder) for backend credentials, and the
+[Dynatrace certification report](../test-reports/otel-dynatrace-certification.md) for a worked
+end-to-end run.
 
 See `extensions/opentelemetry-forwarder/README.md` for the full metric-to-span mapping.
 
