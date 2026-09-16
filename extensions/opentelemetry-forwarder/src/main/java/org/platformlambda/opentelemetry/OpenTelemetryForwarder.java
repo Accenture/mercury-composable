@@ -23,6 +23,7 @@ import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.models.LambdaFunction;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.opentelemetry.support.OtelForwarderContext;
@@ -66,9 +67,6 @@ import java.util.function.Supplier;
 public class OpenTelemetryForwarder implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(OpenTelemetryForwarder.class);
 
-    // Legacy in-process disable, kept for backward compatibility. The master switch is now
-    // otel.forwarding (the @OptionalService gate above), which skips registration entirely.
-    private static final String ENABLED = "otel.trace.forwarder.enabled";
     private static final String ENDPOINT = "otel.exporter.otlp.endpoint";
     private static final String TIMEOUT = "otel.exporter.otlp.timeout";
     private static final String CONNECT_TIMEOUT = "otel.exporter.otlp.connect.timeout";
@@ -90,19 +88,14 @@ public class OpenTelemetryForwarder implements LambdaFunction {
      */
     public OpenTelemetryForwarder() {
         AppConfigReader config = AppConfigReader.getInstance();
-        boolean enabled = !"false".equalsIgnoreCase(config.getProperty(ENABLED, "true"));
         String serviceName = config.getProperty(SERVICE_NAME, config.getProperty(APP_NAME, DEFAULT_SERVICE));
-        if (!enabled) {
-            log.info("distributed.trace.forwarder present but disabled ({}=false)", ENABLED);
-            this.context = new OtelForwarderContext(false, null, serviceName);
-            return;
-        }
         String endpoint = config.getProperty(ENDPOINT, DEFAULT_ENDPOINT);
         Utility util = Utility.getInstance();
         long timeoutMs = util.str2long(config.getProperty(TIMEOUT, DEFAULT_TIMEOUT));
         long connectTimeoutMs = util.str2long(config.getProperty(CONNECT_TIMEOUT, DEFAULT_CONNECT_TIMEOUT));
         String compression = config.getProperty(COMPRESSION, DEFAULT_COMPRESSION);
-        // Credentials come from the environment via ${OTEL_EXPORTER_OTLP_HEADERS} in application.properties.
+        // Credentials come from the environment, interpolated into otel.exporter.otlp.headers in
+        // application.properties (the variable name is the application's choice - see the module README).
         // No hard-coded default (static-analysis-safe): an unset variable -> null -> "null" -> no header.
         // Read through a supplier so a credential published AFTER this @PreLoad constructor (a vault
         // bootstrap at @MainApplication) is picked up rather than frozen out.
@@ -110,10 +103,14 @@ public class OpenTelemetryForwarder implements LambdaFunction {
                 () -> String.valueOf(AppConfigReader.getInstance().getProperty(HEADERS)));
         SpanExporter exporter =
                 OtelForwarderContext.buildExporter(endpoint, timeoutMs, connectTimeoutMs, compression, headers);
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        // The platform owns ONE JVM shutdown hook and runs registered callbacks in reverse
+        // registration order, each error-isolated. Registering here - where the exporter is actually
+        // opened - rather than hand-rolling addShutdownHook means this flush is ordered with every
+        // other component's teardown instead of racing it on its own thread.
+        Platform.getInstance().onShutdown(() -> {
             exporter.flush().join(timeoutMs, TimeUnit.MILLISECONDS);
             exporter.shutdown();
-        }));
+        });
         var headerKeys = headers.get().keySet();
         log.info("OpenTelemetry trace forwarder ready - service={}, OTLP endpoint={}, compression={}, "
                 + "credential headers={}", serviceName, endpoint, compression, headerKeys);
@@ -122,7 +119,7 @@ public class OpenTelemetryForwarder implements LambdaFunction {
                     + "credential published later by a @MainApplication bootstrap takes effect without "
                     + "a restart", HEADERS);
         }
-        this.context = new OtelForwarderContext(true, exporter, serviceName);
+        this.context = new OtelForwarderContext(exporter, serviceName);
     }
 
     /**

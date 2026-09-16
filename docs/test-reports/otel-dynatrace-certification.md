@@ -1,8 +1,8 @@
 ---
 title: Test Report — OpenTelemetry forwarder against Dynatrace
 summary: Permanent record of the live certification run - the opentelemetry-forwarder exporting
-  real Mercury spans to a Dynatrace SaaS OTLP endpoint, with an A-B-A credential experiment
-  that establishes what a clean run actually proves.
+  real Mercury spans to a Dynatrace SaaS OTLP endpoint, confirmed queryable in the Dynatrace UI,
+  with an A-B-A credential experiment that establishes what a clean run actually proves.
 layer: reference
 audience: [developer, architect, devops]
 keywords: [opentelemetry, otlp, dynatrace, splunk, tracing, forwarder, certification, test report]
@@ -75,15 +75,19 @@ One transaction, HTTP 201 in 20 ms. Mercury's own trace contains six spans, and 
 exports each one individually as it arrives:
 
 ```text
-http.flow.adapter        8d63c9fd65984a73
-└─ v1.create.profile     95e4510fe14d6419
-   ├─ async.http.response   8177b74c744778e3
-   └─ v1.encrypt.fields     8dbf4257826c107f
-      └─ v1.save.profile    a1df2ce1039869c9
-task.executor            81e9b286325117c7
+http.flow.adapter          8d63c9fd65984a73   server
+├─ task.executor           81e9b286325117c7   internal
+└─ v1.create.profile       95e4510fe14d6419   internal
+   ├─ async.http.response  8177b74c744778e3   internal
+   └─ v1.encrypt.fields    8dbf4257826c107f   internal
+      └─ v1.save.profile   a1df2ce1039869c9   internal
 
 trace 4815a9a3f2cb4768b4b479a90687ee5a — 2026-09-16T19:22:37.656Z
 ```
+
+The nesting above is **as Dynatrace reconstructed it** from the `parent_span_id` values Mercury
+propagated, not as inferred locally — the backend is the authority on parentage, and it is what
+proves the W3C context survived the wire.
 
 Zero `OTLP export failed` lines. Because the forwarder exports one span per call and attaches a
 completion callback (`exporter.export(singletonList(span))` + `whenComplete`), there is no batch
@@ -156,14 +160,50 @@ exception with a status code buried in it — told the reader nothing actionable
   thereafter checked directly (`unzip -p …/BOOT-INF/lib/opentelemetry-forwarder-*.jar … | strings`)
   before every run.
 
+## Scenario 5 — confirmed queryable in Dynatrace
+
+The exporting side can only prove that Dynatrace *accepted* the spans. Ingest and visibility are
+different claims — OpenPipeline processing, sampling and retention all sit between them — so the
+round was held open until the traces could be queried in the Dynatrace UI. They can.
+
+Filtering Distributed Tracing on `"Trace id" = 4815a9a3f2cb4768b4b479a90687ee5a` — leg A's trace —
+returns **6 spans**, all under service `mercury-otel-cert`, all with span status **Ok**:
+
+| Span | Duration | Span kind |
+|------|----------|-----------|
+| `http.flow.adapter` | 456 µs | **server** |
+| `task.executor` | 28 ms | internal |
+| `v1.create.profile` | 1.81 ms | internal |
+| `async.http.response` | 509 µs | internal |
+| `v1.encrypt.fields` | 1.34 ms | internal |
+| `v1.save.profile` | 15.58 ms | internal |
+
+Trace duration 29 ms. Four things in that view are worth naming, because each is a separate part of
+the contract holding:
+
+- **The span tree reconstructed correctly.** Dynatrace renders the waterfall from `parent_span_id`,
+  and the shape it drew is the flow's actual shape (above). The W3C context Mercury propagates
+  survived the OTLP mapping.
+- **Span kinds mapped, not defaulted.** The HTTP entry point is `server` and every downstream
+  function is `internal` — so a Mercury trace arrives as a *structured* trace, not a flat list of
+  identical spans.
+- **The instrumentation scope is right, and self-versioning.** `OTel scope name`
+  `org.platformlambda.opentelemetry-forwarder`, `OTel scope version` **4.12.10** — resolved at
+  runtime from the running application rather than a hard-coded constant, which is what keeps it
+  from going stale across releases. Confirmed here against a real backend for the first time.
+- **Dynatrace treats it as a first-class service entity** (Smartscape), not an unattributed span
+  source, so the application appears in service-level views alongside natively instrumented ones.
+
+The per-span millisecond offsets in the UI match the exporting side's log exactly (`.656`, `.657`,
+`.658`, `.664`, `.666`, `.669`); the wall-clock hour differs only because the tenant renders in its
+own timezone rather than UTC.
+
 ## What remains
 
-**Backend-side visibility is not yet confirmed.** Everything in this report is established from the
-exporting side: Dynatrace returned success for every span in legs A and A′, and provably rejects a
-bad credential in leg B. What has *not* been confirmed is that the traces are queryable in the
-Dynatrace UI under `mercury-otel-cert` — "accepted for ingest" and "visible after pipeline
-processing" are different claims, and the dashboard access needed to check the second is still
-pending with Dynatrace support.
+Nothing for the forwarder — the loop is closed, exporting side and backend side.
 
-This report will be updated with that confirmation rather than rewritten; the evidence above stands
-on its own and is what a consumer of the forwarder needs in order to trust it.
+Two unrelated follow-ups were noted during the round and are tracked elsewhere: the guides still
+show `OTEL_EXPORTER_OTLP_HEADERS` and `OTEL_SERVICE_NAME` in generic examples while this reference
+app uses the `OTLP_`-prefixed split (both work; the split keeps the token a bare secret and avoids
+inheriting a machine-wide `OTEL_*` value), and Splunk Observability Cloud has not been exercised
+live — its header form is documented and parsed, but only Dynatrace has been run end to end.

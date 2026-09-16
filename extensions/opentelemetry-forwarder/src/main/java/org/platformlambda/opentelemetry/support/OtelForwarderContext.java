@@ -54,13 +54,11 @@ public class OtelForwarderContext {
     public static final String INSTRUMENTATION_NAME = "org.platformlambda.opentelemetry-forwarder";
     private static final String SERVICE_NAME_KEY = "service.name";
 
-    private final boolean enabled;
     private final SpanExporter exporter;
     private final Resource resource;
     private final InstrumentationScopeInfo scope;
 
-    public OtelForwarderContext(boolean enabled, SpanExporter exporter, String serviceName) {
-        this.enabled = enabled;
+    public OtelForwarderContext(SpanExporter exporter, String serviceName) {
         this.exporter = exporter;
         this.resource = Resource.create(Attributes.builder().put(SERVICE_NAME_KEY, serviceName).build());
         // The instrumentation-scope version is resolved at runtime from the running application
@@ -71,15 +69,20 @@ public class OtelForwarderContext {
                                              .setVersion(util.getVersion()).build();
     }
 
+    /**
+     * Whether this context can export. There is no separate enable flag: reaching this class at all
+     * already means {@code otel.forwarding=true} let the {@code @OptionalService} gate register the
+     * forwarder, so having somewhere to send is the only remaining condition.
+     */
     public boolean isEnabled() {
-        return enabled;
+        return exporter != null;
     }
 
     /**
      * Map a Mercury trace dataset to an OpenTelemetry span and export it (non-blocking).
      */
     public void forward(Map<String, Object> dataset) {
-        if (!enabled || exporter == null) {
+        if (exporter == null) {
             return;
         }
         SpanData span = TraceMetricsSpanData.map(dataset, resource, scope);

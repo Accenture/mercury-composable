@@ -33,7 +33,6 @@ to your collector.
 | Key | Default | Description |
 |-----|---------|-------------|
 | `otel.forwarding` | `false` | **Master switch.** `@OptionalService("otel.forwarding")` means the route is not registered at all unless this is `true` — adding the jar does not turn forwarding on. Set it per environment, or at launch with `-Dotel.forwarding=true`. |
-| `otel.trace.forwarder.enabled` | `true` | Legacy in-process disable: `false` makes an already-registered forwarder a no-op. Superseded by `otel.forwarding`; only has an effect when that is `true`. |
 | `otel.exporter.otlp.endpoint` | `http://localhost:4318/v1/traces` | OTLP/HTTP traces endpoint of your collector. |
 | `otel.exporter.otlp.timeout` | `10000` | Per-export timeout in milliseconds. |
 | `otel.exporter.otlp.connect.timeout` | `10000` | TCP/TLS connect timeout in milliseconds (separate from the export timeout). |

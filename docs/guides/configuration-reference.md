@@ -655,14 +655,6 @@ Start-up grace period for `kafka.health`: within it the check reports a placehol
 
 **Master switch for OpenTelemetry trace forwarding.** The `opentelemetry-forwarder` extension lives under `org.platformlambda`, a base scan package, so the jar alone would auto-register its route — the forwarder is therefore annotated `@OptionalService("otel.forwarding")` and **nothing is registered unless this is `true`**. That lets an application carry the dependency while DevOps decides, per environment, whether traces leave the process. Set it in `application.properties`, or at runtime without rebuilding: `java -Dotel.forwarding=true -jar your-app.jar`.
 
-### `otel.trace.forwarder.enabled`
-
-| Type | Default |
-|------|---------|
-| `boolean` | `true` |
-
-Legacy in-process disable for the `opentelemetry-forwarder` extension: `false` makes an already-registered forwarder a no-op. Superseded by [`otel.forwarding`](#otelforwarding), which is the preferred switch because it skips registration entirely rather than registering a do-nothing route. Kept for backward compatibility; it only has an effect when `otel.forwarding=true`.
-
 ### `otel.exporter.otlp.endpoint`
 
 | Type | Default |

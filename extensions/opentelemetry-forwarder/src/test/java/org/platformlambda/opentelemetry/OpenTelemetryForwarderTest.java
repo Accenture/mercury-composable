@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -60,9 +61,9 @@ class OpenTelemetryForwarderTest {
     }
 
     @Test
-    void contextReportsEnabledFlag() {
-        assertTrue(new OtelForwarderContext(true, InMemorySpanExporter.create(), "x").isEnabled());
-        assertFalse(new OtelForwarderContext(false, null, "x").isEnabled());
+    void contextIsEnabledOnlyWhenItHasSomewhereToSend() {
+        assertTrue(new OtelForwarderContext(InMemorySpanExporter.create(), "x").isEnabled());
+        assertFalse(new OtelForwarderContext(null, "x").isEnabled());
     }
 
     @Test
@@ -70,7 +71,7 @@ class OpenTelemetryForwarderTest {
         // the scope version is resolved at runtime (jar manifest, else info.app.version) instead of
         // a hard-coded constant, so it can never go stale across releases - this pins the contract
         InMemorySpanExporter mem = InMemorySpanExporter.create();
-        new OtelForwarderContext(true, mem, "x").forward(dataset());
+        new OtelForwarderContext(mem, "x").forward(dataset());
         List<SpanData> spans = mem.getFinishedSpanItems();
         assertEquals(1, spans.size());
         var scope = spans.getFirst().getInstrumentationScopeInfo();
@@ -87,16 +88,16 @@ class OpenTelemetryForwarderTest {
         // a dataset that cannot map to a span (no span_id) must export nothing
         Map<String, Object> noSpan = dataset();
         ((Map<String, Object>) noSpan.get("trace")).remove("span_id");
-        new OtelForwarderContext(true, mem, "x").forward(noSpan);
+        new OtelForwarderContext(mem, "x").forward(noSpan);
         assertTrue(mem.getFinishedSpanItems().isEmpty());
         // enabled but no exporter configured -> no-op, no NPE
-        new OtelForwarderContext(true, null, "x").forward(dataset());
+        new OtelForwarderContext(null, "x").forward(dataset());
     }
 
     @Test
     void exportsSpanThroughTheForwarderFunction() {
         InMemorySpanExporter mem = InMemorySpanExporter.create();
-        OpenTelemetryForwarder forwarder = new OpenTelemetryForwarder(new OtelForwarderContext(true, mem, "unit-test"));
+        OpenTelemetryForwarder forwarder = new OpenTelemetryForwarder(new OtelForwarderContext(mem, "unit-test"));
 
         forwarder.handleEvent(Map.of(), dataset(), 1);
 
@@ -110,19 +111,22 @@ class OpenTelemetryForwarderTest {
     }
 
     @Test
-    void disabledForwarderExportsNothing() {
-        InMemorySpanExporter mem = InMemorySpanExporter.create();
-        OpenTelemetryForwarder forwarder = new OpenTelemetryForwarder(new OtelForwarderContext(false, mem, "unit-test"));
+    void aForwarderWithNowhereToSendExportsNothing() {
+        // The only "off" state left. otel.forwarding gates REGISTRATION, so a forwarder that exists
+        // at all is meant to export; having no exporter is the one remaining reason it cannot. The
+        // retired otel.trace.forwarder.enabled used to create a second, registered-but-inert state.
+        OtelForwarderContext context = new OtelForwarderContext(null, "unit-test");
+        OpenTelemetryForwarder forwarder = new OpenTelemetryForwarder(context);
 
-        forwarder.handleEvent(Map.of(), dataset(), 1);
-
-        assertTrue(mem.getFinishedSpanItems().isEmpty());
+        assertFalse(context.isEnabled());
+        assertDoesNotThrow(() -> forwarder.handleEvent(Map.of(), dataset(), 1),
+                "an exporter-less forwarder must be a safe no-op, not an NPE on every trace");
     }
 
     @Test
     void nonMapInputIsIgnored() {
         InMemorySpanExporter mem = InMemorySpanExporter.create();
-        OpenTelemetryForwarder forwarder = new OpenTelemetryForwarder(new OtelForwarderContext(true, mem, "unit-test"));
+        OpenTelemetryForwarder forwarder = new OpenTelemetryForwarder(new OtelForwarderContext(mem, "unit-test"));
 
         forwarder.handleEvent(Map.of(), "not-a-map", 1);
 
