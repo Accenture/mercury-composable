@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>redis-connection</artifactId>
-    <version>4.12.9</version>
+    <version>4.12.10</version>
     <packaging>jar</packaging>
     <name>Redis connection foundation shared by extensions</name>
     <description>
@@ -46,7 +46,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.12.9</version>
+            <version>4.12.10</version>
         </dependency>
 
         <!-- Reactor-native, battle-tested Redis client with robust Pub/Sub + auto-reconnect.

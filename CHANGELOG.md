@@ -8,9 +8,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Unreleased
+## Version 4.12.10, 9/15/2026
 
-> Accumulating for v4.12.10.
+### Added
+
+1. **A release-over-release benchmark log** — `benchmark/benchmark-reporter/BENCHMARK-LOG.md`, with
+   the first milestone entry recorded against this release. `benchmark-reporter` was built as a
+   one-off A/B harness for the two elastic-queue stores; it is now a single-store benchmark of the
+   in-memory event system, and the log makes performance a tracked property of each milestone rather
+   than something measured once. Each run saves a timestamped report and finding under `analysis/`.
+
+   The v4.12.10 entry is also the regression check on this release's riskiest change — collapsing
+   `ServiceQueue` to one dispatch mode. **No regression:** the latency probe measured *while* a
+   different route's spill runs improved at every percentile against the July baseline (p99.9
+   1.54 → 1.141 ms), which is the isolation property ADR-0024 commits to. The log keeps the original
+   Berkeley-DB-vs-file comparison too, because its result is counter-intuitive and no longer
+   reproducible: Berkeley DB won most of the *isolated* benchmarks — 64% faster on one, 2.7× on
+   overload throughput — and was still the wrong choice, because a latency-sensitive route's tail was
+   8× worse at p99.9 while another route spilled.
 
 ### Changed
 
