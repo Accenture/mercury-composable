@@ -107,7 +107,7 @@ class OtlpComposableExportTest {
     void gzipCompressionIsAppliedOnTheWire() throws Exception {
         // otel.exporter.otlp.compression=gzip must make the exporter gzip the request body. The mock's
         // HTTP layer doesn't surface a compressed body to the function (getBody() is null for a gzip
-        // request), so we prove the knob by the Content-Encoding header the exporter set on the wire -
+        // request). Therefore, we prove the knob by the Content-Encoding header the exporter set on the wire -
         // a real collector inflates that body natively.
         MockOtlpCollector.CAPTURED.clear();
         String endpoint = "http://127.0.0.1:" + port + "/api/v2/otlp/v1/traces";
@@ -133,7 +133,7 @@ class OtlpComposableExportTest {
         // freeze it as absent and 401 forever. Headers are supplied per export instead.
         //
         // The AtomicReference stands in for the config value a vault loader publishes late: it is EMPTY
-        // when the exporter is built (exactly the @PreLoad moment) and filled only afterwards.
+        // when the exporter is built (exactly the @PreLoad moment) and filled only afterward.
         AtomicReference<String> rawHeaders = new AtomicReference<>("");
         Supplier<Map<String, String>> headers = OtelForwarderContext.reloadingHeaders(rawHeaders::get);
         String endpoint = "http://127.0.0.1:" + port + "/api/v2/otlp/v1/traces";

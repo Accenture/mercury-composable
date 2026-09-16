@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -221,7 +222,7 @@ public class OtelForwarderContext {
 
     /**
      * Wrap a raw {@code OTEL_EXPORTER_OTLP_HEADERS}-style supplier as a credential-header supplier that
-     * re-parses on every call, and announces ONCE when a credential first resolves.
+     * reparses on every call, and announces ONCE when a credential first resolves.
      * <p>
      * The announcement matters for the late-credential case: an operator whose vault bootstrap publishes
      * the token after start-up sees "no credential yet" at boot and then a single confirmation line when
@@ -293,17 +294,10 @@ public class OtelForwarderContext {
      * {@code ExecutorService} as unmanaged and leaves it running on shutdown, which would leak
      * two threads per exporter (tests build many). Everything else delegates verbatim.
      */
-    private static final class PooledSpanExporter implements SpanExporter {
-        private final SpanExporter delegate;
-        private final ThreadPoolExecutor pool;
-
-        private PooledSpanExporter(SpanExporter delegate, ThreadPoolExecutor pool) {
-            this.delegate = delegate;
-            this.pool = pool;
-        }
+    private record PooledSpanExporter(SpanExporter delegate, ThreadPoolExecutor pool) implements SpanExporter {
 
         @Override
-        public CompletableResultCode export(java.util.Collection<SpanData> spans) {
+        public CompletableResultCode export(Collection<SpanData> spans) {
             return delegate.export(spans);
         }
 
