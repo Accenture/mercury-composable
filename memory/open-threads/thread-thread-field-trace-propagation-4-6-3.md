@@ -1,15 +1,16 @@
-- [ ] (field support — 2026-07-13; ROOT CAUSE FOUND) **Trace-propagation report: the internal API
-  gateway strips `traceparent` AND `X-Trace-Id` (neither on its allow-list); only
-  `X-Correlation-Id` passes.** 4.4.11 "worked" because the legacy conflation rode the allow-listed
-  header. A proposed `legacy.trace.id` flag was **REJECTED by Eric — re-mixing the business cid
-  with the trace id makes things worse**; THE fix = gateway allow-list change (traceparent +
-  X-Trace-Id), which Eric took to the infra team. Interim: the field runs legacy conflation
-  (`http.trace.id.header` = `http.correlation.id.header` = X-Correlation-Id) — safe when the edge
-  supplies the header; the absent-header divergence was FIXED (PR #179: colliding names + absent
-  header → ONE id, trace authoritative, both ingress paths) and validated live by Eric. Support
-  nuance: with conflation the outbound trace id rides the configured header name; traceparent is
-  stamped only for W3C-shaped (32-hex) ids — cross-app SPAN parenting still needs traceparent, so
-  tooling stitches by trace id until the gateway passes it. **Pending: gateway team's allow-list
-  change (asked 2026-07-14; Eric updates after the devops cloud-dev test).** Diagnosis +
-  checklist: [[field-trace-propagation-4-6-3-diagnosis]]. Full detail: origin log.
-  <!-- id: thread-field-trace-propagation-4-6-3 | created: 2026-07-13 | last_used: 2026-08-01 | uses: 8 | tier: working | origin: 2026-07-13-142021 -->
+- [x] (field support → **RESOLVED 2026-09-16, Eric**) **Trace-propagation: the internal API gateway
+  stripped `traceparent` and `X-Trace-Id`; only `X-Correlation-Id` passed.** Closed because **the
+  field accepted our header-standardization proposal** — the gateway allow-list now carries the
+  standard trace headers, so the interim legacy conflation is no longer the only path and cross-app
+  span parenting works on `traceparent` as designed.
+  The engine-side half shipped long before: PR #179 fixed the absent-header divergence (colliding
+  names + absent header → ONE id, trace authoritative, both ingress paths), validated live. Eric
+  **rejected** the proposed `legacy.trace.id` flag on principle — re-mixing the business
+  correlation-id with the trace id makes things worse — and the gateway allow-list was always THE
+  fix; standardization is that fix, accepted.
+  **Durable lesson:** the right fix was in someone else's system, and holding the line on that
+  (rather than shipping a compatibility flag that would have entrenched the conflation) is what
+  made standardization possible. Diagnosis + checklist retained in
+  [[field-trace-propagation-4-6-3-diagnosis]].
+  origin: `memory/sessions/2026-07-13-142021.md`
+  <!-- id: thread-field-trace-propagation-4-6-3 | created: 2026-07-13 | last_used: 2026-08-01 | uses: 8 | tier: archive-candidate | origin: 2026-07-13-142021 -->
