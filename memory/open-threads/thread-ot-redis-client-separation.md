@@ -1,4 +1,4 @@
-- [ ] (docs) **Document that sync-over-async and distributed-cache SHOULD use separate
+- [x] (docs — shipped 2026-09-16 for v4.12.10) **Document that sync-over-async and distributed-cache SHOULD use separate
   `RedisClient` instances — the `redis.*` fallback is backward compatibility, not a peer option
   (Eric, 2026-09-15; for v4.12.10, after v4.12.9 ships).** Verified in code: `RedisBackendFactory.create()`
   is a plain static factory building a NEW `RedisClient` per call — no singleton, no client cache — and
@@ -20,5 +20,10 @@
   v4.12.10. Note `database` is standalone-only (Redis Cluster is db 0), so "one cluster, two logical
   databases" is NOT an alternative to two instances. Builds on [[redis-connection-foundation]] and
   [[soa-redis-cluster-support]]; relates [[cache-separate-from-soa]].
+  **DONE:** new *Separate Redis clients, by design* section in `distributed-cache.md` (#separation)
+  replacing the neutral "One Redis, or two?" note; the matching reframe in `sync-over-async.md`; pointers
+  from both `configuration-reference.md` sections. All three points landed, the eviction-mid-request one
+  as the decisive argument. Durable lesson: a backward-compatibility affordance reads as a recommendation
+  unless the docs say otherwise — state what a fallback is *for*.
   → serves: vision-mercury-composable
-  <!-- id: ot-redis-client-separation | created: 2026-09-15 | last_used: 2026-09-16 | uses: 1 | tier: working | origin: 2026-09-16-003354 -->
+  <!-- id: ot-redis-client-separation | created: 2026-09-15 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-16-003354 -->

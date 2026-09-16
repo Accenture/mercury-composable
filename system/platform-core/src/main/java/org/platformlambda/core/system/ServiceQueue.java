@@ -69,10 +69,11 @@ public class ServiceQueue {
     private MessageConsumer<Object> consumer;
     private boolean buffering = true;
     private volatile boolean stopped = false;
-    // Off-loop dispatch, used when the elastic store is virtual-thread-safe (the file store): the Vert.x
-    // consumer enqueues to this bounded mailbox (blocking only when full for back-pressure) and a per-route
-    // virtual thread runs the state machine + blocking spill I/O. In loop-dispatch mode (bdb) the mailbox is
-    // null and the state machine runs inline on the event loop.
+    // Off-loop dispatch: the Vert.x consumer enqueues to this bounded mailbox (blocking only when full,
+    // for back-pressure) and a per-route virtual thread runs the state machine + blocking spill I/O. The
+    // elastic store is a per-route segmented file FIFO, so a blocking segment op parks the virtual thread's
+    // carrier cleanly instead of pinning it. (Before v4.12.10 a carrier-pinning Berkeley DB store was
+    // selectable and forced an inline-on-the-loop alternative; retiring it left this one mode.)
     private final BlockingQueue<Object> mailbox;
     private final AtomicBoolean mailboxBackPressureLogged = new AtomicBoolean(false);
     private Thread dispatchThread;
@@ -85,12 +86,8 @@ public class ServiceQueue {
         this.streamRoute = service.isStream() ? route + HASH + 1 : null;
         this.elasticQueue = new ElasticQueue(route);
         this.system = Platform.getInstance().getEventSystem();
-        // Dispatch mode is derived from the store: a virtual-thread-safe store (file) runs off the loop on a
-        // per-route VT; a carrier-pinning store (bdb) runs inline on the loop. One knob (the store), two safe
-        // modes — the unsafe vthread+bdb combo is unreachable.
-        boolean vthreadDispatch = elasticQueue.supportsVirtualThreadDispatch();
-        this.mailbox = vthreadDispatch ? new LinkedBlockingQueue<>(dispatchMailboxSize()) : null;
-        initConsumer(route, vthreadDispatch, new ServiceHandler());
+        this.mailbox = new LinkedBlockingQueue<>(dispatchMailboxSize());
+        initConsumer(route, new ServiceHandler());
         setupWorkers(route);
     }
 
@@ -107,26 +104,21 @@ public class ServiceQueue {
                 || (route.startsWith(STREAM_PREFIX) && route.length() == STREAM_IN_LENGTH && route.endsWith(STREAM_IN));
     }
 
-    private void initConsumer(String route, boolean vthreadDispatch, ServiceHandler handler) {
-        if (vthreadDispatch) {
-            if (DISPATCH_MODE_LOGGED.compareAndSet(false, true)) {
-                log.info("ServiceQueue dispatch = vthread (per-route virtual thread; store is virtual-thread-safe)");
-            }
-            // event loop enqueues; if the bounded mailbox fills, block here to apply back-pressure, not drops
-            consumer = system.localConsumer(route, message -> {
-                if (!stopped) {
-                    enqueue(route, message.body());
-                }
-            });
-            dispatchThread = Thread.ofVirtual().name("dispatch." + route).start(() -> drainLoop(handler));
-        } else {
-            // default: the state machine runs inline on the event-loop thread (unchanged behaviour)
-            consumer = system.localConsumer(route, handler);
+    private void initConsumer(String route, ServiceHandler handler) {
+        if (DISPATCH_MODE_LOGGED.compareAndSet(false, true)) {
+            log.info("ServiceQueue dispatch = vthread (per-route virtual thread)");
         }
+        // event loop enqueues; if the bounded mailbox fills, block here to apply back-pressure, not drops
+        consumer = system.localConsumer(route, message -> {
+            if (!stopped) {
+                enqueue(route, message.body());
+            }
+        });
+        dispatchThread = Thread.ofVirtual().name("dispatch." + route).start(() -> drainLoop(handler));
     }
 
     int getDispatchMailboxRemainingCapacity() {
-        return mailbox == null ? 0 : mailbox.remainingCapacity();
+        return mailbox.remainingCapacity();
     }
 
     private void enqueue(String route, Object body) {

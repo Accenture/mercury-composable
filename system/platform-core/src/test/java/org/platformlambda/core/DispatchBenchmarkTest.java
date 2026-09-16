@@ -33,14 +33,17 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * P5 fast-path benchmark: end-to-end dispatch throughput of a ServiceQueue. Fires N fire-and-forget events
- * at a fast multi-instance sink and times how long until all N are processed. Dispatch mode follows the
- * store (bdb⇒loop, file⇒vthread), so the two valid modes are compared by selecting the store. Fire-and-forget
- * (no RPC reply routing) keeps the harness simple and robust.
+ * Fast-path benchmark: end-to-end dispatch throughput of a ServiceQueue. Fires N fire-and-forget events at
+ * a fast multi-instance sink and times how long until all N are processed. Fire-and-forget (no RPC reply
+ * routing) keeps the harness simple and robust.
  *
- * Gated on -Dbench.run=true. Run each mode:
- *   mvn -pl system/platform-core test -Dtest=DispatchBenchmarkTest -Dbench.run=true                          (bdb+loop)
- *   mvn -pl system/platform-core test -Dtest=DispatchBenchmarkTest -Dbench.run=true -Delastic.queue.store=file (file+vthread)
+ * <p>Dispatch is a per-route virtual thread. It used to be selectable - a carrier-pinning Berkeley DB store
+ * forced an inline-on-the-event-loop alternative, and this benchmark compared the two by selecting the
+ * store. That store was retired in v4.12.10, leaving one mode, so this is now a straight throughput
+ * baseline for tracking regressions across releases.</p>
+ *
+ * Gated on -Dbench.run=true:
+ *   mvn -pl system/platform-core test -Dtest=DispatchBenchmarkTest -Dbench.run=true
  */
 class DispatchBenchmarkTest {
 
@@ -57,8 +60,7 @@ class DispatchBenchmarkTest {
     void dispatchThroughput() {
         int warmup = Integer.getInteger("bench.warmup", 20000);
         int iterations = Integer.getInteger("bench.iterations", 500000);
-        String store = AppConfigReader.getInstance().getProperty("elastic.queue.store", "bdb");
-        String mode = "file".equalsIgnoreCase(store) ? "vthread" : "loop";
+        String mode = "vthread";
 
         Platform platform = Platform.getInstance();
         if (!platform.hasRoute(ROUTE)) {
@@ -95,8 +97,7 @@ class DispatchBenchmarkTest {
     void fastPathDispatchOverhead() {
         int warmup = Integer.getInteger("bench.warmup", 10000);
         int n = Integer.getInteger("bench.iterations", 200000);
-        String store = AppConfigReader.getInstance().getProperty("elastic.queue.store", "bdb");
-        String mode = "file".equalsIgnoreCase(store) ? "vthread" : "loop";
+        String mode = "vthread";
         Platform platform = Platform.getInstance();
         if (!platform.hasRoute(TIMED_ROUTE)) {
             LambdaFunction sink = (headers, input, instance) -> {

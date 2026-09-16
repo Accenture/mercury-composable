@@ -23,10 +23,11 @@ land at the same disk-spill throughput ceiling, and the system stays stable and 
 
 **Mixed workload (latency isolation under load)** — the production-critical question:
 - **Latency probe under background flood** — a paced RPC on a *separate* route (`benchmark.probe`) measured
-  *while* a background flood hammers `benchmark.worker`'s ElasticQueue. With **file+vthread** the spill runs
-  **off** the event loop, so the probe stays fast; with **bdb+loop** the spill runs **inline** on the shared
-  event loop, inflating the probe's tail. Run this under both stores — it's where the isolation win shows,
-  which a single isolated workload cannot reveal.
+  *while* a background flood hammers `benchmark.worker`'s ElasticQueue. Spill runs **off** the event loop on
+  the flooded route's own virtual thread, so the probe should stay fast no matter how hard the background
+  route is pushed. This is the scenario that justified off-loop dispatch in the first place (see the
+  [historical store analysis](analysis/README.md)), and it is the most valuable regression signal here: if a
+  future change puts blocking work back on the shared loop, this probe's tail is where it shows.
 
 Because it needs only the in-JVM event bus, it runs anywhere a JRE does — a laptop, a real deployed
 environment, or a benchmark pipeline. Use it to estimate framework performance across environments and to
@@ -64,17 +65,23 @@ mixed into the working tree — the committed reference reports live in [`analys
 | `bench.timeout`                | 30000   | per-request timeout (ms)                                      |
 | `bench.report`                 | /tmp/benchmark-report.html | output HTML path                           |
 
-### A/B the ElasticQueue store
-The report records the active store and dispatch mode. Compare the default file FIFO against the legacy
-Berkeley DB store (a saved A/B lives in [`analysis/`](analysis/README.md)):
+### Validating a milestone release
+Run the suite on the release candidate and compare against the previous milestone's report — same machine,
+same flags, otherwise the comparison is noise:
 ```bash
-# default: file + off-loop vthread
-java -Dbench.report=/tmp/file-vthread.html -jar benchmark/benchmark-reporter/target/benchmark-reporter.jar
-# legacy: bdb + inline loop
-java -Delastic.queue.store=bdb -Dbench.report=/tmp/bdb-loop.html -jar benchmark/benchmark-reporter/target/benchmark-reporter.jar
+mvn -pl benchmark/benchmark-reporter -am package -DskipTests
+java -Dbench.report=/tmp/v4.12.10.html -jar benchmark/benchmark-reporter/target/benchmark-reporter.jar
 ```
-For latency-sensitive perf runs, point the spill at tmpfs: `-Dtransient.data.store=/dev/shm/reactive`.
+The report records the framework version and environment metadata in its header, so a saved HTML file stays
+interpretable long after the run. For latency-sensitive perf runs, point the spill at tmpfs:
+`-Dtransient.data.store=/dev/shm/reactive`.
 
 ## Scope
 This module supersedes the retired `benchmark-client` (a REST/WebSocket load client): it is a self-contained,
 single-JVM performance harness that needs no external load generator.
+
+It began as an A/B harness for the two ElasticQueue stores. Berkeley DB was retired in **v4.12.10**, so
+there is one store and one dispatch mode now, and this is a **single-store benchmark of the in-memory event
+system** — a documented performance baseline for validating milestone releases. The original A/B analysis
+and both report snapshots are kept in [`analysis/`](analysis/README.md) as the historical record of why the
+store changed.

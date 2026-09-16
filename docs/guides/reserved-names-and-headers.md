@@ -35,7 +35,6 @@ to avoid breaking the system unintentionally.
 | env.actuator.service         | Environment actuator endpoint         | platform-core    |
 | health.actuator.service      | Health actuator endpoint              | platform-core    |
 | liveness.actuator.service    | Liveness actuator endpoint            | platform-core    |
-| elastic.queue.cleanup        | Elastic event buffer clean up task    | platform-core    |
 | distributed.tracing          | Distributed tracing logger            | platform-core    |
 | system.ws.server.cleanup     | Websocket server cleanup service      | platform-core    |
 | http.auth.handler            | REST automation authentication router | platform-core    |

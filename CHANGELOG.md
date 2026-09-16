@@ -8,6 +8,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+> Accumulating for v4.12.10.
+
+### Changed
+
+1. **Separate Redis clients for sync-over-async and the distributed cache — documented as the
+   intended design.** The guides presented shared-vs-separate as an even choice; it is not. Each
+   module should own its Redis client (`soa.redis.*` and `redis.*` respectively), and the
+   `soa.redis.*` → `redis.*` fallback exists for **backward compatibility** — sync-over-async
+   predates the cache and was configured under plain `redis.*`, and applications running it alone
+   still may be. No code change: `RedisBackendFactory` already builds a client per call and every
+   endpoint-defining key resolves per namespace, so two instances differing in server, credentials,
+   TLS, and even topology already work. New *Separate Redis clients, by design* section in the
+   distributed-cache guide names the decisive operational reason — a cache with an eviction policy
+   can evict a `request:{cid}` rendezvous key **mid-request** — plus the partial-override trap (the
+   fallback is per key) and the need to list both health probes.
+
+### Removed
+
+1. **The Berkeley DB elastic-queue store is retired** (`BdbElasticStore`), completing the migration
+   begun in v4.11. Every route's back-pressure overflow buffer now spills to the dependency-free
+   per-route segmented file FIFO unconditionally, and **platform-core no longer depends on
+   `com.sleepycat:je`**. Retired with it: the `elastic.queue.store` switch, the
+   `deferred.commit.log` property, and the `elastic.queue.cleanup` reserved route — all of which
+   existed only to serve the Berkeley DB store.
+
+   **No action required.** `file` has been the default since the store became selectable, and the
+   field canary reported no ElasticQueue issues, which is what gated this removal. An application
+   that still sets `elastic.queue.store` is unaffected: the property is no longer read, and the
+   value it would have selected is what runs unconditionally. Nothing in the buffer was ever
+   durable across a restart, so there is no data migration.
+
+   **`ServiceQueue` now has one dispatch mode.** The store determined it — a carrier-pinning store
+   had to run inline on the event loop, a virtual-thread-safe one could run off it — so retiring
+   the pinning store collapses the branch: every route dispatches on its own virtual thread via a
+   bounded mailbox, always. Tunables are unchanged (`elastic.queue.dispatch.mailbox.size`,
+   `elastic.queue.segment.size.bytes`, both now documented in the Configuration Reference).
+   See **ADR-0024**, and the measured comparison that justified the switch, retained at
+   `benchmark/benchmark-reporter/analysis/`.
+
+2. `benchmark-reporter` is now a **single-store benchmark of the in-memory event system** rather
+   than an A/B harness — a documented performance baseline for validating milestone releases. The
+   original Berkeley-DB-vs-file analysis and both report snapshots are kept in `analysis/` as the
+   historical record of why the store changed.
+
+---
 ## Version 4.12.9, 9/15/2026
 
 ### Added

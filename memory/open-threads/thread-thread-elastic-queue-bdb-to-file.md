@@ -1,17 +1,15 @@
-- [ ] (P0–P5 code-complete — 2026-07-05, branch `feature/elastic-queue-file-fifo`, submitted as
-  [PR #137](https://github.com/Accenture/mercury-composable/pull/137); remaining = field canary →
-  P4 retire-BDB) **Replace ElasticQueue's Berkeley DB spill tier with a portable file-backed
-  segmented FIFO.** State: `ElasticQueue` = facade over an `ElasticStore` strategy; **ONE switch**
-  `elastic.queue.store` (`file` ⇒ per-route virtual-thread dispatch, `bdb` ⇒ event loop — derived,
-  vthread+bdb unreachable since BDB pins VT carriers); **default flipped to `file`** (Eric chose:
-  fold into #137 + re-frame). Results: throughput +56%, write p99.9 ~47× better, stalls>20ms
-  90→3; the one `file` blemish is a rare OS dirty-page-flush outlier (document tmpfs). The
-  `elastic.queue.cleanup` BDB work is `@KernelThreadRunner`-isolated (closes a live in-field
-  VT-pinning vector). Copilot review hardening applied (bounded dispatch mailbox with no-drop
-  back-pressure, O(1) segment channels, stale-dir cleanup). `benchmark/benchmark-reporter` module
-  added — self-contained field A/B harness → HTML report. **Next = field steps: run
-  benchmark-reporter on real envs, then P4 retire BDB.** Design spec + field notes:
-  draft-design-specs/ (committed and public since the 2026-08 specs-go-public round; the
-  earlier "gitignored" status here predated it). Docs/ADR sync:
-  [[thread-elastic-queue-docs-adr]]. Full detail: origin log.
-  <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-09-01 | uses: 13 | tier: working | origin: 2026-07-05-033922 -->
+- [x] (complete — P4 landed 2026-09-16) **Replace ElasticQueue's Berkeley DB spill tier with a
+  portable file-backed segmented FIFO.** Outcome: `FileElasticStore` is now the only store —
+  `BdbElasticStore`, the `elastic.queue.store` switch, `deferred.commit.log`, the
+  `elastic.queue.cleanup` route and the `com.sleepycat:je` dependency are all gone, and
+  ServiceQueue's dual dispatch collapsed to one per-route virtual thread. P0–P3 shipped via
+  [PR #137](https://github.com/Accenture/mercury-composable/pull/137) (throughput +56%, write
+  p99.9 ~47× better, stalls>20ms 90→3); P4 gated on a field canary that reported no ElasticQueue
+  issues (Eric, 2026-09-16), shipped for v4.12.10. **Durable lesson:** the microbenchmark favoured
+  the store we removed — BDB was competitive-to-faster on a *single isolated route*. Only the
+  mixed-workload probe (a latency-sensitive route measured while another route's spill runs)
+  exposed the property that actually mattered: keeping spill off the shared event loop. Benchmark
+  the interference, not just the component. Analysis retained at
+  `benchmark/benchmark-reporter/analysis/`; formalized as ADR-0024 (accepted by Eric, 2026-09-16);
+  see [[elastic-queue-file-store]]. origin: 2026-07-05-033922.
+  <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-09-16 | uses: 15 | tier: active | origin: 2026-07-05-033922 -->

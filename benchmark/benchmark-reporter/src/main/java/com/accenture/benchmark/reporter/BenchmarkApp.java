@@ -332,19 +332,19 @@ public class BenchmarkApp implements EntryPoint {
 
     /**
      * Mixed workload: run a latency-sensitive probe (a paced RPC on the separate {@link #PROBE} route) while a
-     * background callback flood saturates {@link #WORKER}'s ElasticQueue. The reported stats are the PROBE's —
-     * they show whether the background spill leaks into a latency-sensitive path. With file+vthread the spill
-     * is off the event loop (probe stays fast); with bdb+loop it is inline on the shared loop (probe tail
-     * inflates). Run under both stores to compare.
+     * background callback flood saturates {@link #WORKER}'s ElasticQueue. The reported stats are the PROBE's -
+     * they show whether the background spill leaks into a latency-sensitive path. Spill runs on the flooded
+     * route's own virtual thread, off the shared event loop, so the probe should stay fast; a probe tail that
+     * tracks the background load means blocking work has found its way back onto the loop.
      */
     private WorkloadResult runMixed(EventEmitter po, byte[] payload, int bgInflight, int probeCount, long probePace) {
         String name = "Latency probe under background flood";
         String desc = "The real production question: a latency-sensitive probe — a paced RPC on a SEPARATE route ("
                 + PROBE + ") — measured WHILE a background callback flood hammers " + WORKER + "'s "
-                + "ElasticQueue. With file+vthread the spill runs OFF the event loop, so the probe "
-                + "stays fast; with bdb+loop the spill runs INLINE on the shared event loop, inflating "
-                + "the probe's tail. Watch the probe's p99.9/max, and compare this scenario across "
-                + "stores (-Delastic.queue.store=bdb) — this is where the isolation win shows.";
+                + "ElasticQueue. Spill runs OFF the event loop on the flooded route's own virtual thread, "
+                + "so the probe should stay fast however hard the background route is pushed. Watch the "
+                + "probe's p99.9/max: this is the scenario that justified off-loop dispatch, and the first "
+                + "place a regression that puts blocking work back on the shared loop would show.";
         AtomicBoolean stop = new AtomicBoolean(false);
         Semaphore permits = new Semaphore(bgInflight);
         AtomicLong bgOps = new AtomicLong();
@@ -407,7 +407,6 @@ public class BenchmarkApp implements EntryPoint {
 
     private Map<String, String> environment() {
         AppConfigReader config = AppConfigReader.getInstance();
-        String store = config.getProperty("elastic.queue.store", "file");
         Map<String, String> env = new LinkedHashMap<>();
         env.put("Generated", ZonedDateTime.now(java.time.ZoneId.systemDefault())
                 .format(DateTimeFormatter.RFC_1123_DATE_TIME));
@@ -416,8 +415,8 @@ public class BenchmarkApp implements EntryPoint {
                 + " / " + System.getProperty("os.arch"));
         env.put("Available processors", String.valueOf(Runtime.getRuntime().availableProcessors()));
         env.put("Max heap", (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + " MB");
-        env.put("ElasticQueue store", store);
-        env.put("Dispatch", "bdb".equalsIgnoreCase(store) ? "event-loop (inline)" : "virtual-thread (off-loop)");
+        env.put("ElasticQueue store", "file (segmented FIFO)");
+        env.put("Dispatch", "virtual-thread (off-loop)");
         env.put("transient.data.store", config.getProperty("transient.data.store", "/tmp/reactive"));
         return env;
     }

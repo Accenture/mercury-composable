@@ -29,18 +29,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ServiceQueueTest {
 
-    private static final String STORE_PROP = "elastic.queue.store";
     private static final String MAILBOX_PROP = "elastic.queue.dispatch.mailbox.size";
 
     @AfterEach
     void clearOverrides() {
-        System.clearProperty(STORE_PROP);
         System.clearProperty(MAILBOX_PROP);
     }
 
     @Test
-    void fileDispatchMailboxUsesBoundedConfiguredCapacity() {
-        System.setProperty(STORE_PROP, "file");
+    void dispatchMailboxUsesBoundedConfiguredCapacity() {
         System.setProperty(MAILBOX_PROP, "64");
         String route = "service.queue.mailbox." + Utility.getInstance().getUuid();
         TypedLambdaFunction<Object, Object> fn = (headers, input, instance) -> true;

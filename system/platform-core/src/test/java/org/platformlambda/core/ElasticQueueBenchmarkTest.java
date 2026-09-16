@@ -40,18 +40,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   mvn -pl system/platform-core test -Dtest=ElasticQueueBenchmarkTest -Dbench.run=true \
  *       -Dbench.seconds=120 -Dbench.payload=1024 -Dbench.backlog=10000
  *
- * It sustains a backlog above ElasticQueue.MEMORY_BUFFER so every write/read hits the BDB disk tier,
- * and records the wall-clock latency of each write() and read() call. Because ServiceQueue invokes
- * write()/read() INLINE on the Vert.x event-loop thread, that per-op latency is exactly what blocks
- * the event loop. The tail (p99/p999/max) + the stall timeline is the thing we want to see: BDB's
- * checkpointer (every 1 min here) and log cleaner run on background threads but contend with the
- * inline put/get for latches, I/O and GC — surfacing as latency spikes.
+ * It sustains a backlog above ElasticQueue.MEMORY_BUFFER so every write/read hits the disk tier, and
+ * records the wall-clock latency of each write() and read() call. The tail (p99/p999/max) plus the stall
+ * timeline is the thing to watch - a spill outlier shows up there, typically an OS dirty-page flush (mount
+ * the spill directory on tmpfs to remove that variable).
+ *
+ * <p>Historical note: this profile was written when ServiceQueue invoked write()/read() INLINE on the
+ * Vert.x event-loop thread, so per-op latency was exactly what blocked the loop. Since v4.12.10 dispatch
+ * always runs on a per-route virtual thread, so a spill stall parks that thread instead of the loop - the
+ * numbers are still the store's latency profile, but they no longer translate one-for-one into event-loop
+ * blocking.</p>
  */
 class ElasticQueueBenchmarkTest {
 
     @Test
     @EnabledIfSystemProperty(named = "bench.run", matches = "true")
-    void bdbSpillLatencyProfile() {
+    void spillLatencyProfile() {
         int seconds = Integer.getInteger("bench.seconds", 120);
         int payload = Integer.getInteger("bench.payload", 1024);
         int backlog = Integer.getInteger("bench.backlog", 10000);
@@ -118,9 +122,8 @@ class ElasticQueueBenchmarkTest {
 
             assertTrue(ops > 0, "the spill benchmark should have performed at least one op");
             double elapsed = (System.currentTimeMillis() - start) / 1000.0;
-            String storeType = AppConfigReader.getInstance().getProperty("elastic.queue.store", "bdb");
             StringBuilder rpt = new StringBuilder();
-            rpt.append(String.format("%n============ ElasticQueue spill latency [store=%s] ============%n", storeType));
+            rpt.append(String.format("%n============ ElasticQueue spill latency [store=file] ============%n"));
             rpt.append(String.format("params: payload=%dB backlog=%d stallThreshold=%dms%n",
                     payload, backlog, stallNs / 1_000_000L));
             rpt.append(String.format("duration=%.0fs  ops=%,d  throughput=%,.0f ops/s%n", elapsed, ops, ops / elapsed));

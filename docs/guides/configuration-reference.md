@@ -393,13 +393,23 @@ sequential code performs like reactive with none of the ceremony. Use `@KernelTh
 function to the kernel thread pool for blocking-I/O operations that are incompatible with
 virtual threads.
 
-### `deferred.commit.log`
+### `elastic.queue.segment.size.bytes`
 
 | Type | Default |
 |------|---------|
-| `boolean` | `false` |
+| `long` | `16777216` (16 MB) |
 
-Defer write commits in the ElasticQueue overflow buffer. For unit-test use only — do not set in production.
+Size of each spill segment file in the ElasticQueue overflow buffer. The buffer holds the first 20 events per route in memory and spills the overflow to a per-route sequence of append-only segment files under the temp directory; a segment is deleted as soon as it is fully read. Larger segments mean fewer file rolls and fewer deletes; smaller segments reclaim disk sooner under a long backlog. Rarely needs changing.
+
+> **Tip: put the spill directory on tmpfs.** Spill I/O is transient — nothing in the buffer survives a restart — so durability buys nothing here. The one latency blemish measured for the file store is a rare OS dirty-page-flush outlier, which a memory-backed filesystem removes entirely. On Linux, point the JVM temp directory at a tmpfs mount (`-Djava.io.tmpdir=/dev/shm/mercury`) and size it for your worst-case backlog.
+
+### `elastic.queue.dispatch.mailbox.size`
+
+| Type | Default |
+|------|---------|
+| `int` | `1024` |
+
+Capacity of the per-route dispatch mailbox. The Vert.x event loop enqueues to this bounded queue and a per-route virtual thread drains it, running the state machine and the blocking spill I/O off the loop. When the mailbox fills, the enqueueing loop **blocks** rather than dropping — back-pressure, not loss — and a warning is logged once per route. Floored at the 20-event memory buffer size.
 
 ### `kernel.thread.pool`
 
@@ -1229,6 +1239,8 @@ cross-pod backend using a Redis return route - and generalizes the same rendezvo
 route for cross-pod progressive rendering. See the [Sync-over-Async guide](sync-over-async.md). It is
 off by default and starts (eagerly connecting to Redis) only when `sync.over.async.enabled=true`.
 
+> **Every `soa.redis.*` key below falls back to the un-prefixed `redis.*` form when absent.** That is backward compatibility for deployments predating the namespace, and for applications running sync-over-async alone. When the [distributed cache](#distributed-cache) also runs, configure the two separately and set the **whole** `soa.redis.*` connection set — a partial override inherits the other module's credentials through the fallback. See [Separate Redis clients, by design](distributed-cache.md#separation).
+
 ### `sync.over.async.enabled`
 
 | Type | Default |
@@ -1389,7 +1401,9 @@ All `soa.redis.*` and `sync.*` values support `${ENV_VAR:default}` substitution.
 
 ## Distributed Cache {#distributed-cache}
 
-The [distributed cache](distributed-cache.md) (`v1.cache.redis`) uses the plain `redis.*` connection namespace — the same keys as `soa.redis.*` above without the `soa.` prefix (`redis.host`, `redis.port`, `redis.username`, `redis.password`, `redis.ssl`, `redis.database`, `redis.timeout.ms`, `redis.cluster.detect`, `redis.cluster.mode`, `redis.cluster.nodes`) — plus the cache tunables below. Set only `redis.*` to share one server with sync-over-async, or also set `soa.redis.*` to decouple them.
+The [distributed cache](distributed-cache.md) (`v1.cache.redis`) uses the plain `redis.*` connection namespace — the same keys as `soa.redis.*` above without the `soa.` prefix (`redis.host`, `redis.port`, `redis.username`, `redis.password`, `redis.ssl`, `redis.database`, `redis.timeout.ms`, `redis.cluster.detect`, `redis.cluster.mode`, `redis.cluster.nodes`) — plus the cache tunables below.
+
+> **Running the cache alongside sync-over-async?** Give each module its own Redis client: `redis.*` here, the **complete** `soa.redis.*` set there. See [Separate Redis clients, by design](distributed-cache.md#separation). The `soa.redis.*` → `redis.*` fallback exists for backward compatibility (sync-over-async deployed alone), so leaving `soa.redis.*` unset points **both** modules at this server — workable, but you then own the eviction risk and share one memory budget. Two clients also mean two probes: `mandatory.health.dependencies=redis.health, soa.redis.health`.
 
 ### `redis.cache.enabled`
 
