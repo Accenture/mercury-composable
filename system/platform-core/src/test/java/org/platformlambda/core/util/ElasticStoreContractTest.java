@@ -89,7 +89,6 @@ class ElasticStoreContractTest {
         readWrite("contract.large", 90000);
     }
 
-    @SuppressWarnings("unchecked")
     private void readWrite(String path, int size) {
         String target = "hello.world";
         String baseText = "0123456789".repeat(Math.max(0, size)) + ": ";

@@ -29,10 +29,11 @@ import java.nio.file.Files;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * P2 hardening for {@link FileElasticStore} — the file-specific behaviours the parity test does not stress
- * (parity uses the 16 MB default segment, so it never rolls). Uses a tiny segment size to force many segment
- * rolls, then asserts: FIFO across segment boundaries, O(1) reclamation (bounded disk), no leftover files
- * across reuse cycles, clean reuse after close, and degenerate inputs.
+ * P2 hardening for {@link FileElasticStore} — the file-specific behaviors {@link ElasticStoreContractTest}
+ * does not stress (the contract test uses the 16 MB default segment, so it never rolls). Uses a tiny
+ * segment size to force many segment rolls, then asserts: FIFO across segment boundaries, O(1)
+ * reclamation (bounded disk), no leftover files across reuse cycles, clean reuse after close, and
+ * degenerate inputs.
  */
 class FileElasticStoreTest {
 
