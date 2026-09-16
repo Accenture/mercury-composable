@@ -137,7 +137,7 @@
   the counter-case: Lettuce does I/O on its own netty threads and callers only await futures, so
   `soa.redis.health` deliberately stays on virtual threads. KafkaConsumer itself is NOT thread-safe;
   sequential multi-thread access under external sync (the checks' ReentrantLock) is its contract.
-  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-14 | uses: 4 | tier: active | origin: 2026-09-11-191200 -->
+  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-14 | uses: 4 | tier: archive-candidate | origin: 2026-09-11-191200 -->
 
 - **sync-over-async is transport-neutral — its correlation-id key is self-contained (Eric's direction,
   2026-09-12; PR #364, squash `628a1778`).** The facade tasks speak only the module's own flow-level `cid` key (`SyncRuntime.CID`);
@@ -262,7 +262,7 @@
   <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-16 | uses: 4 | tier: active | origin: 2026-09-15-040141 -->
 
 - **The elastic queue spills to a dependency-free file FIFO, and that choice sets the dispatch model
-  (2026-09-16, P4 of the BDB migration; ADR-0024 proposed).** Every route's back-pressure overflow buffer
+  (2026-09-16, P4 of the BDB migration). (ADR-0024)** Every route's back-pressure overflow buffer
   holds 20 events in memory then spills to per-route append-only segment files under the temp dir
   (`FileElasticStore`), transient, segment deleted once fully read. **Berkeley DB is RETIRED** — with it
   went the `elastic.queue.store` switch, `deferred.commit.log`, the `elastic.queue.cleanup` reserved route,
@@ -281,7 +281,7 @@
   setting `elastic.queue.store` is unaffected (unread), and nothing in the buffer was ever durable.
   Closes [[thread-elastic-queue-bdb-to-file]] + [[thread-elastic-queue-docs-adr]]; relates
   [[virtual-threads-rpc]] and [[conv-reentrantlock-not-synchronized]] (the same carrier-pinning concern).
-  <!-- id: elastic-queue-file-store | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: working | origin: 2026-09-16-020051 -->
+  <!-- id: elastic-queue-file-store | created: 2026-09-16 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-16-020051 -->
 
 - **A Layer 3 application is one graph endpoint plus dev mode — and the Playground UI hides behind a
   classpath-order trap (2026-09-15, Eric's polish round on the starter template + the cache example).**

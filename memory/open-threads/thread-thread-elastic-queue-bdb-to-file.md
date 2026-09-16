@@ -10,6 +10,6 @@
   mixed-workload probe (a latency-sensitive route measured while another route's spill runs)
   exposed the property that actually mattered: keeping spill off the shared event loop. Benchmark
   the interference, not just the component. Analysis retained at
-  `benchmark/benchmark-reporter/analysis/`; formalized as ADR-0024 (proposed);
+  `benchmark/benchmark-reporter/analysis/`; formalized as ADR-0024 (accepted by Eric, 2026-09-16);
   see [[elastic-queue-file-store]]. origin: 2026-07-05-033922.
-  <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-09-16 | uses: 14 | tier: active | origin: 2026-07-05-033922 -->
+  <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-09-16 | uses: 15 | tier: active | origin: 2026-07-05-033922 -->

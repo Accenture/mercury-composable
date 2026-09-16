@@ -46,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    the pinning store collapses the branch: every route dispatches on its own virtual thread via a
    bounded mailbox, always. Tunables are unchanged (`elastic.queue.dispatch.mailbox.size`,
    `elastic.queue.segment.size.bytes`, both now documented in the Configuration Reference).
-   See **ADR-0024** (proposed), and the measured comparison that justified the switch, retained at
+   See **ADR-0024**, and the measured comparison that justified the switch, retained at
    `benchmark/benchmark-reporter/analysis/`.
 
 2. `benchmark-reporter` is now a **single-store benchmark of the in-memory event system** rather

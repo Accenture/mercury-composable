@@ -23,8 +23,8 @@ in that ADR's own *Rationale* section.
 ---
 
 ## ADR-0024 — The elastic queue spills to a dependency-free file FIFO, and that choice sets the dispatch model {#adr-0024}
-**Status:** Proposed · **Date:** 2026-09-16 · **Serves:** vision-mercury-composable · **Formalizes:** elastic-queue-file-store
-<!-- id: adr-0024 | status: proposed -->
+**Status:** Accepted · **Date:** 2026-09-16 · **Serves:** vision-mercury-composable · **Formalizes:** elastic-queue-file-store
+<!-- id: adr-0024 | status: accepted -->
 
 **Abstract.** Every route's back-pressure overflow buffer (`ElasticQueue`) holds the
 first 20 events in memory and spills the overflow to a **per-route sequence of
