@@ -169,3 +169,4 @@
 - thread-add-gradle-build — Add Gradle build support — COMPLETE (Eric's ruling, 2026-09-11). Delivered on the — faded — 2026-Q3.md
 - conv-kafka-transitive-pin-placement — A transitive CVE in the Kafka stack: PIN when a fixed release exists, EXCLUDE the — faded (sslu 21 / 25 > archive_window 20) — 2026-Q3.md
 - ot-streaming-return-route — Streaming return route — cross-pod progressive rendering for sync-over-async. DONE — faded (sslu 21 / 25 > archive_window 20) — 2026-Q3.md
+- conv-telemetry-presentation-parity — Telemetry/log presentation parity across language engines is a field requirement (Eric, — retired 2026-09-16 by Eric at the invariant re-verification — pure invalidation, no successor — 2026-Q3.md

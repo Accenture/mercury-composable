@@ -38,10 +38,14 @@
   conv-kafka-transitive-pin-placement (sslu 21) and swept the completed ot-streaming-return-route
   (sslu 25); condensed 3 recently-closed threads to stubs (67→25 narrative lines); invariant re-verify
   DUE at 44 sessions → raised ot-reverify-invariants-20260916. Prior: 2026-09-14 | 2026-09-14-193941.md)
-- **last_invariant_check:** 2026-09-16 | 2026-09-16-032012.md (PROMPTED, awaiting Eric —
-  ot-reverify-invariants-20260916 lists the 18 core facts + the Vision; two flagged for a closer look:
-  stack-language-java21's field-state claim and the conv-reentrantlock-not-synchronized decay tied to
-  it. Prior: 2026-09-11 | 2026-09-11-005808.md (all 18 + the Vision confirmed by Eric))
+- **last_invariant_check:** 2026-09-16 | 2026-09-16-041500.md (COMPLETE — Eric walked the set against
+  live-tree evidence: 3 invariants + 5 stack + 5 key decisions + 3 conventions + eric-release-rhythm +
+  the Vision all confirmed. `stack-language-java21` re-confirmed (Java 21 baseline, Java 25 now LTS =
+  recommended runtime, toolchain stays until Java 25 is mainstream); `virtual-threads-rpc` ENRICHED
+  from ADR-0024 (dispatch is a per-route virtual thread, one mode); **`conv-telemetry-presentation-parity`
+  RETIRED** — pure invalidation, archived, no successor (the Java-is-reference principle survives in
+  [[conv-ports-adopt-java-release-number]]). Core count 18 → 17.
+  Prior: 2026-09-11 | 2026-09-11-005808.md)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
 > environment, carrying forward only the confirmed Vision + Blueprint and the
@@ -59,6 +63,9 @@
   virtual-thread technology). **The toolchain (`.java-version`, CI setup-java) intentionally
   STAYS on 21 until the majority of field installations run Java 25** — Java version
   migration is slow across enterprise customers; do not bump it ahead of the field.
+  **Re-confirmed 2026-09-16 (Eric, invariant re-verification):** Java 21 remains the **baseline**;
+  Java 25 is now the LTS and therefore the **recommended runtime**; keep the toolchain on 21 until
+  Java 25 is mainstream. Unchanged in substance — the trigger is still field adoption, not a date.
   <!-- id: stack-language-java21 | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - Build: Maven 3.9.7+ — the engine's multi-module reactor (`com.accenture.mercury:parent-mercury`)
   stays Maven by design. **Consumer applications choose Maven or Gradle**: the starter templates
@@ -98,6 +105,13 @@
   PostOffice RPC (`po.request`) suspends the virtual thread and releases its carrier, so sequential
   blocking-style code performs on par with reactive — and a function may still return `Mono`/`Flux`.
   This is why e.g. 250 instances of a blocking `sync.await` are cheap. (ADR-0002)
+  **Since v4.12.10 the DISPATCH path is virtual-threaded too (ADR-0024; enrichment confirmed by Eric
+  2026-09-16):** the Vert.x event loop only enqueues to a bounded per-route mailbox, and a per-route
+  virtual thread runs the ServiceQueue state machine *and* the elastic-queue spill I/O. There is ONE
+  dispatch mode — there used to be two, because a carrier-pinning spill store had to run inline on
+  the loop. So the loop is now reserved for handing off work, and a slow consumer's spill parks its
+  own virtual thread instead of blocking every route that shares that loop. See
+  [[elastic-queue-file-store]].
   <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-27 | uses: 4 | tier: core -->
 
 ## Key Decisions
@@ -377,17 +391,6 @@
 
 ## Conventions
 
-- **Telemetry/log presentation parity across language engines is a field requirement (Eric,
-  2026-07-23).** Installations will be POLYGLOT for a long time — DevSecOps teams see both engines'
-  telemetry and logs in one aggregation, and any presentation difference is a support burden.
-  Operating rule: the Java engine is the REFERENCE implementation; a same-language interop run must
-  be an exact structural replica after normalizing volatile fields — then cross-language runs are
-  symmetric by construction (reference-signature procedure: session 2026-07-23-145132).
-  **Scope extension: the Event Script surface is part of the cross-engine contract** — flows are
-  engine-portable YAML, so any new built-in simple plugin ships in lock-step on both engines (with
-  closely matching error messages), or flows stop being portable.
-  <!-- id: conv-telemetry-presentation-parity | created: 2026-07-23 | last_used: 2026-09-02 | uses: 42 | tier: core | origin: 2026-07-23-145132 | note: promoted to core 2026-09-04 (Eric): the cross-engine contract is a standing field requirement, not a fading decision; it fell to archive-candidate only because one window was docs work -->
-
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
   (Eric's feedback, 2026-08-19).** GitHub pre-fills the dialog with title-plus-body text,
   and stray words can survive into the immutable commit title — PR #283's squash
@@ -417,9 +420,10 @@
   to read correctly: a port sitting below Java (Rust at v4.12.7, the python/node packs at 4.12.1,
   while Java shipped v4.12.9) is **lag awaiting catch-up, not divergence**, and the gap is not a
   compatibility signal. Corollary for release notes and continuity entries: state a port's number as
-  the content it currently carries, never as a separate cadence. Extends
-  [[conv-telemetry-presentation-parity]] (the same reference-implementation principle, applied to
-  versioning rather than telemetry); governs the Rust half of [[ot-distributed-cache]].
+  the content it currently carries, never as a separate cadence. The Java-is-reference principle this
+  rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
+  directly when giving this convention, so it stands on its own. Governs the Rust half of
+  [[ot-distributed-cache]].
   <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.

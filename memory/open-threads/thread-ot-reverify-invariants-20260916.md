@@ -1,21 +1,12 @@
-- [ ] Re-verify invariants (due — 44 sessions since 2026-09-11, `verify_invariants_every` 40):
-  confirm the **18 core facts** and **the Vision** still hold, or supersede any that don't
-  (DECAY.md §9). The review never auto-invalidates an invariant — it only prompts; Eric confirms by
-  checking this off, or supersedes the false ones.
-  **Architectural Invariants (3):** functions-decoupled-routes · typed-io-map-or-pojo ·
-  virtual-threads-rpc.
-  **Stack (5):** stack-language-java21 · stack-build-maven · stack-integration-spring-boot4 ·
-  stack-messaging-kafka · stack-ci-gha.
-  **Key Decisions (5):** kafka-mesh-opt-in · event-script-over-code · event-api-local-routes-only ·
-  trace-thread-keyed-mono-gotcha · instant-serialization.
-  **Conventions (4):** conv-telemetry-presentation-parity · conv-add-capability ·
-  conv-serialization-gotchas · conv-declare-consulted-references.
-  **User Preferences (1):** eric-release-rhythm.
-  **Plus the Vision** (`memory/vision.md`).
-  Two worth a closer look this round, flagged rather than pre-judged — the review does not rule on
-  them: (a) **stack-language-java21** carries "the toolchain STAYS on 21 until the majority of field
-  installations run Java 25", which is a field-state claim that ages; (b)
-  **conv-reentrantlock-not-synchronized** (not core, but tied to it) is explicitly written to decay
-  once the toolchain moves to Java 25 — so (a) and (b) resolve together.
-  → serves: vision-mercury-composable
+- [x] Re-verify invariants (2026-09-16, **complete** — Eric walked the 17+1 set against live-tree
+  evidence). **Confirmed unchanged:** the 3 Architectural Invariants, the 5 Stack facts, the 5 Key
+  Decisions, conv-add-capability, conv-serialization-gotchas, conv-declare-consulted-references,
+  eric-release-rhythm, and the Vision. **Two changes:** `stack-language-java21` re-confirmed with
+  Eric's framing (Java 21 baseline, Java 25 now the LTS and the recommended runtime, toolchain stays
+  on 21 until Java 25 is mainstream — substance unchanged, the trigger is still field adoption);
+  `virtual-threads-rpc` **enriched** from ADR-0024 (dispatch itself is now a per-route virtual thread,
+  one mode, event loop only enqueues). **One retirement:** `conv-telemetry-presentation-parity`
+  retired as a pure invalidation and archived. Lesson: a fact promoted to `core` can still be wrong
+  12 days later — core means "does not decay", not "cannot be retired"; only the cadence prompt
+  surfaced it. origin: 2026-09-16-041500.
   <!-- id: ot-reverify-invariants-20260916 | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: working | origin: 2026-09-16-041500 -->
