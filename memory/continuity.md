@@ -17,35 +17,31 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.9 (2026-09-16 01:29Z — the distributed-Redis release, **34 PRs
-  #364–#397** via release PR #398, squash `9274cf92`, tag `v4.12.9`: the cross-pod **streaming
-  return route** for sync-over-async (Redis alone, no broker — D1–D8 / E1–E4); the generic
-  **distributed cache** `v1.cache.redis` on the extracted [[redis-connection-foundation]];
-  **clustered Redis** for both, auto-detected; `Platform.onShutdown`
-  ([[platform-onshutdown-lifecycle]]); general purpose **MsgPack** `packMapOrList`/`unpackMapOrList`;
-  the three-layer distributed-cache worked example and dev mode pre-wired in `templates/starter-graph`
-  ([[minigraph-dev-mode-app-shape]]); the MiniGraph async-callback guard
-  ([[minigraph-guarded-async-completion]]); and three field Snyk fixes (zstd-jni pin, snappy-java
-  exclusion, CWE-798 test literals). **Action required on upgrade:** the `soa.redis.health` ROUTE
-  rename has no fallback, and sync-over-async no longer exports `minimalist-kafka` (declare it).
-  Config keys are backward-compatible via the `redis.*` fallback. **Java first — Rust lockstep for
-  the distributed cache follows** ([[ot-distributed-cache]]) and will catch up to this number
-  ([[conv-ports-adopt-java-release-number]]); the python/node packs still carry 4.12.1 content and
-  catch up to the Java number on their next update, by the same convention. Sweep surface: BUILD
-  FILES ONLY, **43** at this release (40 at v4.12.8 + redis-connection, distributed-cache,
-  distributed-cache-example). A **v4.12.10 follow-up is expected** (field artifact-stamping
-  logistics; first content queued is [[ot-redis-client-separation]]). The live version source stays
-  the root pom.xml.)
+- **latest_release:** v4.12.10 (2026-09-16 04:01Z — the cleanup release, **2 PRs #399–#400** via
+  release PR #401, squash `92e94f2b`, tag `v4.12.10`: **Berkeley DB elastic-queue store RETIRED**
+  (ADR-0024 accepted) — with it the `elastic.queue.store` switch, `deferred.commit.log`,
+  `elastic.queue.cleanup` and platform-core's `com.sleepycat:je` dependency; `ServiceQueue` collapsed
+  to ONE dispatch mode ([[elastic-queue-file-store]]); separate-Redis-client guidance for
+  sync-over-async vs distributed-cache; and `BENCHMARK-LOG.md`, the release-over-release benchmark
+  record whose first entry is this release's own no-regression evidence. **No upgrade action** — no
+  wire/behaviour change, `file` was already the default, config unchanged. **Java only — no lockstep
+  needed** (platform-core internals + docs, no wire contract); the outstanding lockstep is v4.12.9's
+  distributed cache ([[ot-distributed-cache]]). Ports adopt this number on catch-up
+  ([[conv-ports-adopt-java-release-number]]). Sweep surface: BUILD FILES ONLY, **43**. Prior: v4.12.9
+  (2026-09-16 01:29Z — the distributed-Redis release, 34 PRs #364–#397, squash `9274cf92`: streaming
+  return route, distributed cache, clustered Redis, `Platform.onShutdown`, MsgPack
+  `packMapOrList`/`unpackMapOrList`, three-layer cache example + dev-mode template, the MiniGraph
+  async-callback guard, three field Snyk fixes; action required there: the `soa.redis.health` ROUTE
+  rename and `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.)
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-14 | through 2026-09-14-193941.md (reactivated playground-session-broker;
-  archived compilegraph-mandatory-gate + swept 4 completed threads; refresh-metadata re-tiered 6; kept
-  conv-template-version-sweep for the imminent v4.12.9. Prior: 2026-09-12 | 2026-09-12-234401.md)
-- **last_invariant_check:** 2026-09-11 | 2026-09-11-005808.md (all 18 core facts + the Vision
-  confirmed by Eric — walkthrough with live-tree evidence; no supersessions;
-  stack-build-maven reworded (reactor stays Maven; consumer templates ship Maven-or-Gradle)
-  and thread-add-gradle-build ruled complete; ot-reverify-invariants-20260911 closed.
-  Prior: 2026-09-04 | 2026-09-04-043732.md (all 15 confirmed by Eric + the Vision;
-  stack-messaging-kafka re-checked after PR #315; ot-reverify-invariants-20260904 closed))
+- **last_review:** 2026-09-16 | through 2026-09-16-032012.md (15-session window, 5 overdue: archived
+  conv-kafka-transitive-pin-placement (sslu 21) and swept the completed ot-streaming-return-route
+  (sslu 25); condensed 3 recently-closed threads to stubs (67→25 narrative lines); invariant re-verify
+  DUE at 44 sessions → raised ot-reverify-invariants-20260916. Prior: 2026-09-14 | 2026-09-14-193941.md)
+- **last_invariant_check:** 2026-09-16 | 2026-09-16-032012.md (PROMPTED, awaiting Eric —
+  ot-reverify-invariants-20260916 lists the 18 core facts + the Vision; two flagged for a closer look:
+  stack-language-java21's field-state claim and the conv-reentrantlock-not-synchronized decay tied to
+  it. Prior: 2026-09-11 | 2026-09-11-005808.md (all 18 + the Vision confirmed by Eric))
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
 > environment, carrying forward only the confirmed Vision + Blueprint and the
@@ -281,7 +277,7 @@
   setting `elastic.queue.store` is unaffected (unread), and nothing in the buffer was ever durable.
   Closes [[thread-elastic-queue-bdb-to-file]] + [[thread-elastic-queue-docs-adr]]; relates
   [[virtual-threads-rpc]] and [[conv-reentrantlock-not-synchronized]] (the same carrier-pinning concern).
-  <!-- id: elastic-queue-file-store | created: 2026-09-16 | last_used: 2026-09-16 | uses: 3 | tier: active | origin: 2026-09-16-020051 -->
+  <!-- id: elastic-queue-file-store | created: 2026-09-16 | last_used: 2026-09-16 | uses: 4 | tier: active | origin: 2026-09-16-020051 -->
 
 - **A Layer 3 application is one graph endpoint plus dev mode — and the Playground UI hides behind a
   classpath-order trap (2026-09-15, Eric's polish round on the starter template + the cache example).**
@@ -308,7 +304,7 @@
   colliding resource path in the engine (needs Rust lockstep). Documented in `playground-and-companion.md` (#enabling) and
   `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]]; applies to
   [[ot-distributed-cache]]'s worked example.
-  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-16 | uses: 3 | tier: active | origin: 2026-09-15-221451 -->
+  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-16 | uses: 4 | tier: active | origin: 2026-09-15-221451 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
@@ -424,7 +420,7 @@
   the content it currently carries, never as a separate cadence. Extends
   [[conv-telemetry-presentation-parity]] (the same reference-implementation principle, applied to
   versioning rather than telemetry); governs the Rust half of [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: working | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -441,28 +437,6 @@
   <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-16 | uses: 7 | tier: active | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
-- **A transitive CVE in the Kafka stack: PIN when a fixed release exists, EXCLUDE the
-  codec when none does — root-pom dependencyManagement can do neither (2026-09-14, the
-  zstd-jni and snappy-java rounds).** The Kafka modules parent to
-  `spring-boot-starter-parent`, not `parent-mercury` (the reactor only aggregates them),
-  so a root `dependencyManagement` never reaches their resolution. **Pin arm (zstd-jni):**
-  when the newest kafka-clients still carries a vulnerable transitive and a fixed release
-  EXISTS (Snyk "no supported fix" = no kafka-clients upgrade), pin the fixed version as a
-  DIRECT dependency (runtime scope, matching the transitive it replaces) in the three
-  client-declaring poms — `system/minimalist-kafka`, `connectors/.../kafka-connector`,
-  `helpers/kafka-standalone` — and Maven nearest-wins propagates it to every downstream
-  consumer. **Exclusion arm (snappy-java, upstreamed from a field-authored patch):** when
-  NO fixed release exists (NVD "through 1.1.10.8" = the newest version), exclude the codec
-  — an exclusion rides only its own declaration edge and never propagates by nearest-wins,
-  so it goes on ALL six direct Kafka-artifact declaration sites, the lz4 exclusion's exact
-  set (kafka-clients in kafka-connector + minimalist-kafka; kafka_2.13 in kafka-standalone
-  + the minimalist-kafka/twin-kafka/sync-over-async test brokers). Safe by the opt-in
-  codec contract: kafka-clients 4.3.1 references org.xerial from exactly one class
-  (SnappyCompression), loaded only when snappy data flows; codec users re-declare the
-  library. Verify either arm with a reactor-wide `mvn dependency:tree -Dincludes=...` —
-  per-module trees mislead by resolving stale ~/.m2 siblings. Each pin's/exclusion's
-  comment names the CVE and the removal condition.
-  <!-- id: conv-kafka-transitive-pin-placement | created: 2026-09-14 | last_used: 2026-09-14 | uses: 2 | tier: archive-candidate | origin: 2026-09-14-050451 -->
 - **Declare a Memory Reference when a fact is CONSULTED to make a decision — not only when it is
   edited (Eric agreed, 2026-09-04).** A session log's `## Memory References` is the sole input to
   `refresh-metadata`, so an undeclared consultation reads as non-use and decays the fact. This is

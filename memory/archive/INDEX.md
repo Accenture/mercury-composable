@@ -167,3 +167,5 @@
 - ot-simple-plugin-gate-body-scan — Simple-plugin allowlist gate: method bodies scanned — SHIPPED. PR #358 (squash — faded — 2026-Q3.md
 - ot-three-layer-starter-templates — First-class starter templates for the three layers — SHIPPED. Java PR #357 — faded — 2026-Q3.md
 - thread-add-gradle-build — Add Gradle build support — COMPLETE (Eric's ruling, 2026-09-11). Delivered on the — faded — 2026-Q3.md
+- conv-kafka-transitive-pin-placement — A transitive CVE in the Kafka stack: PIN when a fixed release exists, EXCLUDE the — faded (sslu 21 / 25 > archive_window 20) — 2026-Q3.md
+- ot-streaming-return-route — Streaming return route — cross-pod progressive rendering for sync-over-async. DONE — faded (sslu 21 / 25 > archive_window 20) — 2026-Q3.md
