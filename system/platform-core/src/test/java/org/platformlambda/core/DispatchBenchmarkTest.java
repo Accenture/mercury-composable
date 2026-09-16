@@ -24,7 +24,6 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
-import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 
 import java.util.Arrays;

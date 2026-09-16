@@ -59,7 +59,7 @@ class ModelTest {
         // header, cookie, path and query's get methods are case-insensitive
         assertEquals(world, restored.getHeader("hElLo"));
         assertEquals(world, restored.getCookie("heLLO"));
-        // prove that the invalid cookie will be pass thru
+        // prove that the invalid cookie will be pass through
         assertEquals(1, restored.getCookies().size());
         assertEquals(world, restored.getPathParameter("Hello"));
         assertEquals(world, restored.getQueryParameter("HellO"));

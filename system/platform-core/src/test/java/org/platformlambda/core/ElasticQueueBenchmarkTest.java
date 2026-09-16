@@ -21,7 +21,6 @@ package org.platformlambda.core;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.platformlambda.core.models.EventEnvelope;
-import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ElasticQueue;
 
 import java.io.IOException;
@@ -35,15 +34,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * P0 benchmark (design: draft-design-specs/elastic_queue_file_fifo_design.md).
  *
- * NOT part of the normal suite — a measurement harness gated on -Dbench.run=true via
- * @EnabledIfSystemProperty, so `mvn test` skips it (disabled) unless that flag is set. Run manually:
+ * <p>NOT part of the normal suite — a measurement harness gated on -Dbench.run=true via
+ * {@code @EnabledIfSystemProperty}, so {@code mvn test} skips it (disabled) unless that flag is set.
+ * Run manually:</p>
+ * <pre>
  *   mvn -pl system/platform-core test -Dtest=ElasticQueueBenchmarkTest -Dbench.run=true \
  *       -Dbench.seconds=120 -Dbench.payload=1024 -Dbench.backlog=10000
+ * </pre>
  *
- * It sustains a backlog above ElasticQueue.MEMORY_BUFFER so every write/read hits the disk tier, and
+ * <p>It sustains a backlog above ElasticQueue.MEMORY_BUFFER so every write/read hits the disk tier, and
  * records the wall-clock latency of each write() and read() call. The tail (p99/p999/max) plus the stall
  * timeline is the thing to watch - a spill outlier shows up there, typically an OS dirty-page flush (mount
- * the spill directory on tmpfs to remove that variable).
+ * the spill directory on tmpfs to remove that variable).</p>
  *
  * <p>Historical note: this profile was written when ServiceQueue invoked write()/read() INLINE on the
  * Vert.x event-loop thread, so per-op latency was exactly what blocked the loop. Since v4.12.10 dispatch
@@ -155,7 +157,7 @@ class ElasticQueueBenchmarkTest {
 
     /** Fixed 1-microsecond-resolution histogram up to 1s, with a true max for the >1s tail. */
     private static final class Histogram {
-        private static final int BUCKETS = 1_000_000; // 1us .. 1s
+        private static final int BUCKETS = 1_000_000; // 1us to 1s
         private final long[] us = new long[BUCKETS];
         private long count = 0;
         private long maxNs = 0;
