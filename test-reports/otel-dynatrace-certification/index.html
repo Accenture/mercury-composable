@@ -2514,6 +2514,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scenario-6-field-acceptance-on-the-release-build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 6 — field acceptance on the release build
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-remains" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2868,6 +2879,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scenario-6-field-acceptance-on-the-release-build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 6 — field acceptance on the release build
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-remains" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3160,8 +3182,85 @@ the contract holding:</p>
 <p>The per-span millisecond offsets in the UI match the exporting side's log exactly (<code>.656</code>, <code>.657</code>,
 <code>.658</code>, <code>.664</code>, <code>.666</code>, <code>.669</code>); the wall-clock hour differs only because the tenant renders in its
 own timezone rather than UTC.</p>
+<h2 id="scenario-6-field-acceptance-on-the-release-build">Scenario 6 — field acceptance on the release build<a class="headerlink" href="#scenario-6-field-acceptance-on-the-release-build" title="Permanent link">&para;</a></h2>
+<p>Scenarios 1–5 ran against the feature branch. Field acceptance re-runs the round against the
+<strong>artifacts that actually ship</strong> — the v4.12.11 reactor output — because the thing certified and the
+thing released are only the same if you check.</p>
+<p>The discriminator is free and backend-visible: the forwarder resolves its instrumentation scope
+version at runtime from the running application, so a trace submitted by the release build reports
+<strong><code>OTel scope version 4.12.11</code></strong> in Dynatrace. Given that a stale fat jar cost two dead ends earlier
+in this work, a version stamp the backend can show is better evidence than any local check.</p>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nested jar in the shipped fat jar</td>
+<td><code>opentelemetry-forwarder-4.12.11.jar</code>, carrying <code>@OptionalService</code> + <code>otel.forwarding</code></td>
+</tr>
+<tr>
+<td>Retired key absent from the shipped class</td>
+<td>0 occurrences of <code>trace.forwarder.enabled</code></td>
+</tr>
+<tr>
+<td><strong>Default off</strong> — launched with no <code>-D</code> flag</td>
+<td>route <strong>not</strong> registered; the gate logs its decision: <code>Skip optional class …OpenTelemetryForwarder during PreLoad phase</code></td>
+</tr>
+<tr>
+<td>Switch on — <code>-Dotel.forwarding=true</code></td>
+<td><code>distributed.trace.forwarder started as virtual thread</code></td>
+</tr>
+<tr>
+<td>Write transaction</td>
+<td><code>POST /api/profile</code> → <strong>HTTP 201</strong> in 28 ms</td>
+</tr>
+<tr>
+<td>Read transaction</td>
+<td><code>GET /api/profile/{id}</code> → <strong>HTTP 200</strong> in 9 ms</td>
+</tr>
+<tr>
+<td><code>OTLP export failed</code></td>
+<td><strong>0</strong>, across both</td>
+</tr>
+<tr>
+<td>Dynatrace UI</td>
+<td><em>pending</em> — submitted for confirmation (see below)</td>
+</tr>
+</tbody>
+</table>
+<p>Two transactions rather than two of the same, because the <strong>shapes differ</strong> and that is the part a
+repeat could not show:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>trace 45a6e43c67ef4087b9351956f50130d7 — create-profile, 6 spans, 20:42:35.685Z
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>   http.flow.adapter · task.executor · v1.create.profile · async.http.response
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>   · v1.encrypt.fields · v1.save.profile
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>trace 1c32bbe5e6b44f12aec201ce78faca3e — get-profile, 5 spans, 20:45:07.727Z
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>   http.flow.adapter · v1.get.profile · task.executor · v1.decrypt.fields
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>   · async.http.response
+</code></pre></div>
+<p>The forwarder maps what each flow actually did — a different function set and a different span count
+per flow — rather than emitting a fixed structure. The pair also exercises the data path end to end:
+the POST response masked <code>address</code> and <code>telephone</code> as <code>***</code> while the GET returned them in clear, so
+encrypt-on-save and decrypt-on-read each ran and each appears as its own span.</p>
+<p>The default-off leg is worth calling out on its own. It is the property an application team relies
+on when they add the dependency ahead of a decision, and it is now confirmed three ways: a unit test
+in the example app, the absence of the route at runtime, and an explicit log line stating that the
+optional class was skipped. DevOps reading a startup log can see the feature was considered and
+declined, rather than inferring it from silence.</p>
 <h2 id="what-remains">What remains<a class="headerlink" href="#what-remains" title="Permanent link">&para;</a></h2>
-<p>Nothing for the forwarder — the loop is closed, exporting side and backend side.</p>
+<p><strong>One open item: backend confirmation of the two acceptance traces.</strong> Both were submitted with zero
+export failures, so Dynatrace returned 2xx for all eleven spans — but the UI check is with Dynatrace
+support, who are locating <code>45a6e43c67ef4087b9351956f50130d7</code> and <code>1c32bbe5e6b44f12aec201ce78faca3e</code>.
+The field to read is <strong><code>OTel scope version</code></strong>: it should be <strong>4.12.11</strong>, against 4.12.10 for the
+Scenario 1–5 traces. That value is resolved at runtime from the running application, which makes it
+proof that the <em>released</em> artifacts submitted these traces rather than a leftover build — the failure
+that cost two dead ends earlier in this work.</p>
+<p>Nothing else. The forwarder's loop is closed on the exporting side, on the backend side
+(Scenario 5), and on the released artifacts locally (Scenario 6).</p>
 <p>Two unrelated follow-ups were noted during the round and are tracked elsewhere: the guides still
 show <code>OTEL_EXPORTER_OTLP_HEADERS</code> and <code>OTEL_SERVICE_NAME</code> in generic examples while this reference
 app uses the <code>OTLP_</code>-prefixed split (both work; the split keeps the token a bare secret and avoids
