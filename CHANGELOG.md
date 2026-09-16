@@ -8,10 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Unreleased
-
-> Accumulating for v4.12.9 — the release waits for a successful field deployment of the
-> security fix below.
+## Version 4.12.9, 9/15/2026
 
 ### Added
 
@@ -72,6 +69,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    `redis.*` namespace, so it coexists with sync-over-async's `soa.redis.*` or shares one Redis
    via the fallback. Design: `draft-design-specs/distributed-cache.md`. Rust port in lockstep.
 
+5. **Platform shutdown lifecycle** — `Platform.getInstance().onShutdown(Runnable)` (PR #390). The
+   platform owns a single JVM shutdown hook, installed lazily on the first registration; callbacks
+   run in reverse registration order (last opened, first released) and each is isolated, so one
+   failing callback cannot block the rest. It replaces hand-rolled
+   `Runtime.getRuntime().addShutdownHook(new Thread(...))` calls — uncoordinated threads with no
+   ordering and no error isolation — and the three in-tree cases (`PersistentWsClient`,
+   `BdbElasticStore`, `FileElasticStore`) are migrated onto it. The distributed cache registers its
+   Redis-connection close the same way, so the connection is released only when one was actually
+   opened.
+
+6. **General purpose MsgPack serialization** — `MsgPack.packMapOrList(Object)` /
+   `MsgPack.unpackMapOrList(byte[])` (PR #396). `MsgPack.pack`/`unpack` are the *event payload*
+   codec: they wrap a PoJo or primitive with its type under the reserved `_T`/`_D` keys and strip
+   them on the way back, so a user Map that happens to carry a `_T` key comes back changed. The new
+   pair never applies that encoding — a Map or List round-trips verbatim — making `MsgPack` usable
+   as an application's own portable binary serializer. Map or List only; encode a PoJo yourself
+   first (for example with `SimpleMapper`). The two roles are now layered rather than tangled: the
+   new methods are the primitives and `pack`/`unpack` delegate to them, so `pack`/`unpack`
+   behaviour is unchanged. Prefer this pair over `EventEnvelope.toBytes()` for a value another
+   language pack must read. See *API Overview → Binary serialization with MsgPack*.
+
+7. **Worked example: one distributed cache across all three layers**
+   (`examples/distributed-cache-example`, PRs #392, #395, #397). The same profile GET/POST/DELETE
+   CRUD exposed three times over one shared `cache-demo:` cache — Layer 1 as a single PostOffice
+   function, Layer 2 as one Event Script flow (an `input.method` → action mapper plus a decision),
+   Layer 3 as one graph with a decision node — so a profile written through one layer reads back
+   unchanged through the other two. The cache value is a plain MsgPack-packed Map (item 6), which
+   is both compact and the form every language pack reads, so the example doubles as the interop
+   harness for the Rust port. End-to-end tests run on an embedded Redis; the runnable app uses
+   `helpers/redis-standalone`.
+
+8. **The Layer 3 starter template ships dev mode** (`templates/starter-graph`, PR #397). The
+   template now carries the MiniGraph Playground UI, the session WebSocket, the AI companion
+   endpoint, and the `scripts/playground-session-broker.mjs` broker, gated by a single
+   `app.env=dev` line — so a new knowledge-graph project can be co-authored with an AI agent from
+   its first run, and removing that one line closes the whole surface for production. The
+   distributed-cache example enables the same surface alongside its ordinary Layer 1 and Layer 2
+   routes, showing that dev mode is additive rather than a separate application.
+
 ### Changed
 
 1. **sync-over-async adopts a `soa.redis.*` config namespace (backward-compatible).** The
@@ -111,6 +147,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    refactor — no wire-format or behaviour change, and no config change for existing
    sync-over-async deployments.
 
+4. **A Layer 3 application needs one graph endpoint, not one per graph** (PR #397). The graph id in
+   `POST /api/graph/{graph_id}` is a URL path parameter, so a single `rest.yaml` entry and the stock
+   `graph-executor` flow serve every model an application deploys — adding a graph means adding its
+   id to `graphs.yaml`, never a bespoke route. The distributed-cache example's hand-written
+   `/api/l3/profile` endpoint and its per-graph flow were removed in favour of the standard pair,
+   and the AI agent guide now scaffolds from `templates/starter-graph` (which ships the complete
+   surface) rather than trimming a fuller example down.
+
+   A related packaging note for graph applications: depend on **`minigraph-playground-engine`
+   alone**. It brings `event-script-engine` and `platform-core` transitively, and declaring all
+   three creates a resource collision — the Playground UI is `classpath:/public/index.html` inside
+   the engine while `platform-core` ships a placeholder page at the same path, so whichever jar
+   comes first on the classpath wins. Tests, `curl`, and the companion endpoint all stay green when
+   this goes wrong; only a browser reveals it.
+
 ### Fixed
 
 1. platform-core HTTP client: `:` stays raw in URI path segments (RFC 3986 allows it as
@@ -127,7 +178,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 3. Sonar/IDE quality round across the sync-over-async extension and demo (PR #376) —
    cognitive-complexity and duplicate-literal cleanups, `synchronized` lazy-init for
    plain fields, and the `SyncRuntime.activeStreams()` observer accessor so diagnostics
-   never obtain the closeable coordinator.
+   never obtain the closeable coordinator. A follow-up round after the clustered-Redis work
+   (PR #386) cleared three more: an unused return from `PendingRequests.remove()`,
+   try-with-resources for the cluster-detection probe client, and coverage for the explicit
+   `cluster.mode` branch.
+
+4. **A failure inside a MiniGraph async skill callback now surfaces as the node's error instead of
+   hanging silently** (PRs #393, #394). `graph.task`, `graph.extension` and `graph.api.fetcher`
+   completed through `Mono.create(sink -> pending.thenAccept(...))`, so an exception thrown inside
+   that callback was swallowed by the unobserved `CompletableFuture` stage: the sink never
+   completed and the caller timed out with **zero diagnostics** — the graph appeared to traverse
+   fully and downstream calls logged success, so it read as a transport fault. Both async skills
+   now complete through a guarded path that unwraps a failed future and routes a throwing handler
+   to `sink.error`, rendering the failure exactly like a synchronous skill throw with trace context
+   intact. The two output-mapping errors were reworded to name the offending node, quote the
+   `lhs -> rhs`, and state the rule directly: an output-mapping left side must be a constant or a
+   `result.` / `model.` / `<node>.` element — `input.*` is valid only on the input side. To echo an
+   input value, stage it at a mapper or decision node and map it out from `model.`.
+
+5. The `mini-scheduler` job-list endpoint tolerates a state file caught mid-write (PR #384).
+   `ScheduleAdmin.getJobList()` answered 500 when a scheduled job was concurrently rewriting a
+   state file: the sample writer truncates before writing, so a concurrent read sees 0 bytes, Gson
+   returns a null map, and the timing lookup threw an NPE. The single-job GET path already
+   tolerated the same transient read; the list path now does too, contributing an entry with no
+   timing rather than failing the whole list.
 
 ### Security
 
@@ -156,6 +230,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    exclusions once a fixed snappy-java is released. (Upstreamed from a field-authored
    patch. The Rust port does not use snappy-java — librdkafka's snappy support is its
    own C implementation, a different codebase not covered by this CVE.)
+
+3. **No credential literals in test fixtures** (CWE-798, PR #381). The field's Snyk Code policy
+   escalates hard-coded-credential findings to High, and two test literals in the Redis
+   health-check auth suite tripped it. Rather than suppress the findings, the literals are gone:
+   the fixture credential is generated per test run and the embedded server is started with that
+   value (authoritative by construction), and the deliberately-wrong credential for the WRONGPASS
+   scenario is derived from it by suffix — guaranteed unequal, still not a literal. A repo-wide
+   sweep confirms no credential literal remains.
 
 ---
 ## Version 4.12.8, 9/12/2026

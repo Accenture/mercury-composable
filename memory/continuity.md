@@ -194,7 +194,7 @@
   extracted [[redis-connection-foundation]] (spec draft-design-specs/distributed-cache.md);
   [[ot-distributed-cache]] tracks the remaining Rust lockstep. Builds on [[soa-redis-cluster-support]];
   serves [[vision-mercury-composable]].
-  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-15 | uses: 7 | tier: active | origin: 2026-09-14-191748 -->
+  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-16 | uses: 9 | tier: active | origin: 2026-09-14-191748 -->
 
 - **The Redis client layer is a shared `extensions/redis-connection` foundation (2026-09-14; Java
   shipped for v4.12.9).** Extracted from sync-over-async's `support/`: `RedisBackend<V>` (generic in the
@@ -212,7 +212,7 @@
   (cache). Realizes the "extract the foundation" half of [[cache-separate-from-soa]]; tracked by
   [[ot-distributed-cache]]; applied [[preload-before-mainapp-lazy-config]] and
   [[conv-reentrantlock-not-synchronized]].
-  <!-- id: redis-connection-foundation | created: 2026-09-14 | last_used: 2026-09-15 | uses: 3 | tier: active | origin: 2026-09-14-230259 -->
+  <!-- id: redis-connection-foundation | created: 2026-09-14 | last_used: 2026-09-16 | uses: 4 | tier: active | origin: 2026-09-14-230259 -->
 
 - **platform-core has a lightweight shutdown lifecycle — `Platform.getInstance().onShutdown(Runnable)`
   (2026-09-14, Eric's minimalist-principle ruling; for v4.12.9).** The platform owns ONE JVM shutdown hook
@@ -227,7 +227,7 @@
   also makes the cache's `shutdown()` a used method, resolving the field Sonar "never used" finding without
   deleting it). Rust parity is a lockstep follow-up (internal lifecycle API, not a wire contract). Applies
   [[conv-reentrantlock-not-synchronized]]; used by [[redis-connection-foundation]].
-  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-15 | uses: 1 | tier: active | origin: 2026-09-15-011235 -->
+  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-15-011235 -->
 
 - **MiniGraph async skill callbacks are guarded — a failure surfaces as the node's error, never a
   silent hang (2026-09-15; found building the distributed-cache example, PR #392).** A
@@ -253,7 +253,7 @@
   Parked: CompileGraph static LHS check (dynamic `{…}` limits it to static cases);
   Rust-twin parity check of the same callback pattern. Relates [[trace-thread-keyed-mono-gotcha]]
   (the same async-callback minefield).
-  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-15 | uses: 2 | tier: active | origin: 2026-09-15-040141 -->
+  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-16 | uses: 4 | tier: active | origin: 2026-09-15-040141 -->
 
 - **A Layer 3 application is one graph endpoint plus dev mode — and the Playground UI hides behind a
   classpath-order trap (2026-09-15, Eric's polish round on the starter template + the cache example).**
@@ -280,7 +280,7 @@
   colliding resource path in the engine (needs Rust lockstep). Documented in `playground-and-companion.md` (#enabling) and
   `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]]; applies to
   [[ot-distributed-cache]]'s worked example.
-  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-15 | uses: 1 | tier: working | origin: 2026-09-15-221451 -->
+  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-15-221451 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
@@ -293,7 +293,7 @@
   Rust repo — both engines share the WS handshake. Dev-only, like the Playground itself.
   Reactivated 2026-09-14: now ALSO shipped in `templates/starter-graph` (both repos), and the AI
   docs are broker-first with the keep-alive failure mode named (mercury-composable#383, mercury#276).
-  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-15 | uses: 8 | tier: active | origin: 2026-09-03-172753 -->
+  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-15 | uses: 9 | tier: active | origin: 2026-09-03-172753 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -375,7 +375,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-15 | uses: 42 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-16 | uses: 44 | tier: active | origin: 2026-08-19-195244 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
@@ -384,7 +384,7 @@
   examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-14 | uses: 12 | tier: archive-candidate | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-16 | uses: 13 | tier: active | origin: 2026-09-01-022524 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -398,7 +398,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-15 | uses: 5 | tier: active | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-16 | uses: 6 | tier: active | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - **A transitive CVE in the Kafka stack: PIN when a fixed release exists, EXCLUDE the
