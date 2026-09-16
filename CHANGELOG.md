@@ -8,6 +8,81 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.12.11, 9/16/2026
+
+### Fixed
+
+1. **`kafka.health` builds its probe client regardless of the thread context classloader.** A field
+   deployment logged `Class org.apache.kafka.common.serialization.StringDeserializer could not be
+   found` every five seconds, for hours, while the same JVM's real producers and consumers used the
+   same `kafka-clients` jar without trouble. Kafka resolves a class-*name* configuration value
+   through `Utils.getContextOrKafkaClassLoader()`, which prefers the thread context classloader and
+   falls back to Kafka's own loader **only when the TCCL is `null`** — so a non-null but *wrong*
+   context loader fails a lookup that a null one would have completed. `kafka.health` is a
+   `@KernelThreadRunner` and warms up on the platform's kernel-thread executor, where a pooled thread
+   need not have inherited the application's loader; `KafkaFlowAdapter` builds a consumer from the
+   identical configuration on an ordinary thread and was unaffected — that difference was the
+   diagnosis.
+
+   Client construction now runs with the module's own loader as the context loader, scoped and
+   restored in a `finally` so nothing leaks back to the pooled thread's next task.
+   `secondary.kafka.health` extends the same class and inherits the fix.
+
+   Passing deserializer *instances* instead — the first remedy proposed — is provably incomplete:
+   with a blind-classloader test in place it removes the two deserializer lookups and the very next
+   class-name setting fails instead (`metric.reporters` → `JmxReporter`, from the same jar). Kafka
+   resolves metric reporters, the partition assignor, interceptors and SASL callback handlers the
+   same way, so the classloader is the thing to fix rather than one setting at a time. The
+   regression test needs no broker and no container: `KafkaHealthCheckClassLoaderTest` builds the
+   probe on a thread whose context loader is a parentless, empty `URLClassLoader`, which reproduces
+   the field's message verbatim against the pre-fix code.
+
+### Changed
+
+1. **A Kafka template that can never work now fails `/health` instead of reporting healthy forever.**
+   The passing `Waiting for Kafka connection` status exists for exactly one situation — a credential
+   a later `@MainApplication` bootstrap will publish, where failing the check would invite the
+   orchestrator to restart a pod that cannot possibly produce the value. Everything else reported as
+   passing is how a real defect hides, which is precisely what happened above: an unresolvable class
+   logged every five seconds while `/health` stayed green throughout. A class that is absent from the
+   classpath will not appear because we waited, so that case now answers **503** with
+   `Kafka client configuration is unusable - <reason>`, deliberately naming the *configuration*
+   rather than the network so the reader looks at the classpath instead of the cluster.
+
+   **Worth a glance after upgrading**, in one narrow case: an application whose Kafka template
+   genuinely cannot build a client has been reporting healthy and will now report 503. That is the
+   correction, not a regression — but it is the one behaviour change in this release that a
+   deployment can notice. Detection is by message text, because Kafka discards the
+   `ClassNotFoundException` when it wraps it, and the default is *waiting* — so a reworded Kafka
+   message degrades to the previous, lenient semantics rather than to spurious outages.
+
+2. **Class-valued Kafka client settings are supplied as class objects, not names.**
+   `KafkaClientConfig` wrote the serializers, deserializers and default partitioner as class names,
+   so every client built from those templates depended on the building thread's context loader
+   resolving them — the failure mode above. A `Class` object short-circuits `ConfigDef.parseType`
+   (`if (value instanceof Class) return value`), so no classloader is consulted at all. The
+   `kafka-connector` module has always done it this way; this converges `minimalist-kafka` with it.
+   Nothing to configure, and a template that names its own `partitioner.class` still wins.
+
+3. **The health probe's client construction was tidied to hold no resource it does not own.** Two
+   changes, neither altering behaviour. The probe no longer hands deserializer *instances* to its
+   consumer — once the properties carry `Class` objects those are redundant, since Kafka constructs
+   the deserializers itself without consulting a loader, and handing them in left the method holding
+   two `Closeable`s it must *not* close (the returned consumer owns them). And the classloader
+   scoping moved into its own `withModuleClassLoader` helper, so the method that *creates* the
+   consumer no longer wraps it in a `try`/`finally`: that shape reads as a missing
+   try-with-resources, which cannot apply to a factory — closing the consumer before returning it is
+   precisely the bug. Each half is now honest about what it does, which clears SonarQube
+   `java:S2095` and `java:S2093` by construction rather than by suppression.
+
+   The classloader override — the actual fix — is unchanged and still load-bearing: with it
+   disabled, all six tests in `KafkaHealthCheckClassLoaderTest` fail.
+
+4. Internal only: cleared IDE and SonarQube findings in `platform-core` **test** code — two unused
+   imports, a redundant `@SuppressWarnings`, and javadoc corrections (unformatted blocks, a stale
+   cross-reference). No runtime code, no test logic and no coverage was changed.
+
+---
 ## Version 4.12.10, 9/15/2026
 
 ### Added
