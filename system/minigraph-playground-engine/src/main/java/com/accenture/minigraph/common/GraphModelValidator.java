@@ -69,13 +69,20 @@ public class GraphModelValidator {
     private static final String MODEL_PREFIX = "model";
     private static final String STATEMENT = "statement";
     private static final String MAP_TO = "->";
+    // the skills that CONSUME a 'task' route. graph.suspend and graph.resume are documented
+    // supersets of graph.task - their 'task' names the pluggable state-store function - so all
+    // three legitimately carry one, and no other skill does.
+    private static final Set<String> TASK_CONSUMING_SKILLS =
+            Set.of(GraphTask.ROUTE, GraphSuspend.ROUTE, GraphResume.ROUTE);
     // skills whose 'ttl' node parameter is the DEADLINE override: a child-call deadline
     // on graph.extension / graph.api.fetcher / graph.task, and the script execution
     // deadline (GraalVM context interrupt) on graph.js
     private static final Set<String> DEADLINE_TTL_SKILLS =
             Set.of(GraphExtension.ROUTE, GraphApiFetcher.ROUTE, GraphTask.ROUTE, GraphJs.ROUTE);
+    private static final String INPUT = "input";
+    private static final String OUTPUT = "output";
     // the mapping-list node properties a data mapping can appear in
-    private static final List<String> MAPPING_PROPERTIES = List.of("mapping", "input", "output", "for_each");
+    private static final List<String> MAPPING_PROPERTIES = List.of("mapping", INPUT, OUTPUT, "for_each");
 
     private GraphModelValidator() {}
 
@@ -91,9 +98,72 @@ public class GraphModelValidator {
      * @throws IllegalArgumentException describing the first violated rule
      */
     public static void validate(MiniGraph graph) {
+        validateWorkingNodeHasSkill(graph);
         validateSuspendResume(graph);
         validateNodeTtl(graph);
         validateModelMetadataImmutability(graph);
+    }
+
+    /**
+     * A node that names a composable function must say which skill runs it. A node carrying a
+     * {@code task} route but no {@code skill} used to compile and pass silently as a structural
+     * node: the graph traverses it, nothing executes, and nothing is reported. That cost a
+     * debugging round in the E0 round (2026-09-01), where the model looked correct and did nothing.
+     * <p>
+     * Hard error, not a gate warning (Eric's ruling, 2026-09-16): a {@code task} route is a
+     * composable function the author intends to call, so the node is <em>incomplete</em> rather than
+     * unusual, and a warning on a silently-inert node is easy to scroll past - which is how the
+     * original case survived.
+     * <p>
+     * <b>Only {@code task} is the signal - deliberately not {@code input}/{@code output}.</b> Those
+     * are descriptor fields on non-executing node types: a {@code Provider} node uses {@code input}
+     * for its HTTP request shape and a {@code Dictionary} node uses {@code output} for its
+     * projection, and neither carries a skill by design. Broadening this check to the mapping
+     * properties rejects valid models - it was tried, and the tutorial graphs caught it. Across
+     * every graph model in this repository, {@code task} without {@code skill} occurs zero times.
+     * <p>
+     * The second rule is the same defect one step later: a {@code task} paired with a skill that
+     * never reads one is equally inert. Only {@link GraphTask}, {@link GraphSuspend} and
+     * {@link GraphResume} consume a task route - the latter two are documented supersets of
+     * graph.task whose {@code task} names the pluggable state-store function.
+     * <p>
+     * The rule is <b>bidirectional</b> (Eric, 2026-09-16): those three skills each call a composable
+     * function, so each one <em>requires</em> a task route as well. A {@code graph.task} node with no
+     * task is the same inert node arrived at from the other side. Both directions hold without
+     * exception across every model in this repository - 67 nodes carry one of the three skills and
+     * all 67 carry a task; no node carries a task under any other skill.
+     *
+     * @param graph an imported MiniGraph
+     * @throws IllegalArgumentException naming the node and its unreachable task route
+     */
+    private static void validateWorkingNodeHasSkill(MiniGraph graph) {
+        for (SimpleNode node : graph.getNodes()) {
+            var task = node.getProperty(TASK);
+            var skill = node.getProperty(SKILL);
+            boolean consumesTask = skill != null && TASK_CONSUMING_SKILLS.contains(String.valueOf(skill));
+            if (task != null && skill == null) {
+                throw new IllegalArgumentException(NODE_NAME + node.getAlias() + " has task '"
+                        + task + "' but no '" + SKILL + "' - a node that names a composable function "
+                        + "must name the skill that calls it, or the graph traverses the node and "
+                        + "nothing runs");
+            }
+            if (task != null && !consumesTask) {
+                throw new IllegalArgumentException(NODE_NAME + node.getAlias() + " has task '"
+                        + task + "' but skill '" + skill + "' does not call a task - use "
+                        + taskConsumingSkills() + "; the route would be ignored");
+            }
+            if (task == null && consumesTask) {
+                throw new IllegalArgumentException(NODE_NAME + node.getAlias() + " uses skill '"
+                        + skill + "' but has no '" + TASK + "' - " + taskConsumingSkills()
+                        + " each call a composable function, so the route is required");
+            }
+        }
+    }
+
+    /** The task-consuming skills, rendered for an error message. */
+    private static String taskConsumingSkills() {
+        return GraphTask.ROUTE + " (or " + GraphSuspend.ROUTE + " / " + GraphResume.ROUTE
+                + ", whose task names the state-store function)";
     }
 
     /**

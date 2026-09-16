@@ -130,6 +130,43 @@ class CompileGraphTest {
         }
     }
 
+    @Test
+    void aTaskRouteAndItsSkillMustAgree() {
+        // The pairing is bidirectional: a 'task' route is called ONLY by graph.task, graph.suspend
+        // and graph.resume (the latter two are supersets whose task names the state-store function),
+        // and each of those three requires one. Either half broken leaves an inert node - the graph
+        // traverses it, nothing executes, and nothing is reported. That cost a debugging round in
+        // the E0 round, which is why this is a hard error rather than a gate warning.
+        //
+        // err1 a task with no skill at all, err2 a task claimed by a skill that never reads one
+        // (graph.math), err3 graph.task with no task route - the same defect from the other side.
+        // The message is asserted, not just the throw: a malformed fixture would throw for an
+        // unrelated reason and still satisfy assertThrows.
+        var expected = Map.of("unit-test-task-skill-err1", "but no 'skill'",
+                              "unit-test-task-skill-err2", "does not call a task",
+                              "unit-test-task-skill-err3", "but has no 'task'");
+        for (var entry : expected.entrySet()) {
+            var graph = importGraph(entry.getKey());
+            var ex = assertThrows(IllegalArgumentException.class,
+                    () -> GraphModelValidator.validate(graph),
+                    entry.getKey() + " must fail the static validator");
+            assertTrue(ex.getMessage().contains(entry.getValue()),
+                    entry.getKey() + " must fail on the task/skill pairing, not incidentally - got: "
+                            + ex.getMessage());
+        }
+    }
+
+    @Test
+    void descriptorNodesMayCarryInputOutputWithoutASkill() {
+        // Guards the narrowing: 'input'/'output' are NOT the signal. A Provider node uses 'input'
+        // for its HTTP request shape and a Dictionary node uses 'output' for its projection, and
+        // neither carries a skill by design - an earlier draft keyed on those properties and
+        // rejected these valid tutorial models.
+        var graph = importGraph("tutorial-113");
+        assertDoesNotThrow(() -> GraphModelValidator.validate(graph),
+                "Provider/Dictionary nodes carry input/output with no skill and must stay valid");
+    }
+
     private MiniGraph importGraph(String id) {
         var reader = new ConfigReader("classpath:/graph/" + id + ".json");
         var graph = new MiniGraph();

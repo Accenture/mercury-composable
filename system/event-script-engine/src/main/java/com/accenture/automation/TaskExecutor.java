@@ -1160,6 +1160,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
     private Object getInputDataMappingLhsValue(InputMappingMetadata md, int dynamicListIndex, String dynamicListKey) {
         Object value = helper.getLhsElement(md.lhs, md.source);
+        if (value == null && md.lhs.startsWith(INPUT_HEADER_NAMESPACE)) {
+            value = getHeaderIgnoringCase(md, md.lhs.substring(INPUT_HEADER_NAMESPACE.length()));
+        }
         // special case for a dynamic list in fork and join
         if (value == null && dynamicListKey != null) {
             if (md.lhs.equals(dynamicListKey + ITEM_SUFFIX)) {
@@ -1170,6 +1173,46 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             }
         }
         return value;
+    }
+
+    /**
+     * Resolve an {@code input.header.*} reference against a header that arrived in its original
+     * wire casing.
+     * <p>
+     * Event Script lowercases the reference, which matches the HTTP adapter because that adapter
+     * ingests headers lowercased - the two agree and the direct lookup above always succeeds. The
+     * <b>Kafka</b> flow adapter delivers record headers in original wire casing, so a producer-sent
+     * {@code Content-Type} header could not be addressed by ANY {@code input.header.*} mapping.
+     * <p>
+     * The fix is a case-insensitive <em>lookup</em> rather than lowercasing at the Kafka adapter
+     * (Eric's ruling, 2026-09-16): normalizing at the adapter would change what the {@code *}
+     * whole-body passthrough hands a function and break flows that match exact casing today. This
+     * runs only when the direct lookup missed, so the HTTP path is untouched and pays nothing.
+     *
+     * @param md   the mapping being resolved
+     * @param name the header name, already lowercased with the namespace stripped
+     * @return the header value under any casing, or null when absent
+     */
+    private Object getHeaderIgnoringCase(InputMappingMetadata md, String name) {
+        var namespace = INPUT_HEADER_NAMESPACE.substring(0, INPUT_HEADER_NAMESPACE.length() - 1);
+        return helper.getLhsElement(namespace, md.source) instanceof Map<?, ?> headers
+                ? headerIgnoringCase(headers, name) : null;
+    }
+
+    /**
+     * The case-insensitive scan itself, separated so it can be tested directly.
+     *
+     * @param headers the delivered header map, in whatever casing the transport used
+     * @param name    the header name to find, compared without regard to case
+     * @return the value under the first key matching {@code name}, or null when absent
+     */
+    static Object headerIgnoringCase(Map<?, ?> headers, String name) {
+        for (Map.Entry<?, ?> header : headers.entrySet()) {
+            if (name.equalsIgnoreCase(String.valueOf(header.getKey()))) {
+                return header.getValue();
+            }
+        }
+        return null;
     }
 
     @SuppressWarnings("unchecked")

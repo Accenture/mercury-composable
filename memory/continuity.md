@@ -330,7 +330,7 @@
   Parked: CompileGraph static LHS check (dynamic `{…}` limits it to static cases);
   Rust-twin parity check of the same callback pattern. Relates [[trace-thread-keyed-mono-gotcha]]
   (the same async-callback minefield).
-  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-16 | uses: 4 | tier: archive-candidate | origin: 2026-09-15-040141 -->
+  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-16 | uses: 5 | tier: active | origin: 2026-09-15-040141 -->
 
 - **The elastic queue spills to a dependency-free file FIFO, and that choice sets the dispatch model
   (2026-09-16, P4 of the BDB migration). (ADR-0024)** Every route's back-pressure overflow buffer
