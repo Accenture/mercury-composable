@@ -125,7 +125,7 @@
   [[kafka-clients-kernel-threads]]), AtomicReference fields, supplier guards, and the failure
   message as a `{text, code}` map — `code` for the aggregation/Kubernetes, `text` for the DevOps
   reader (the healthy shape keeps `status` as its human string).
-  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-15 | uses: 11 | tier: active | origin: 2026-09-11-185752 -->
+  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-15 | uses: 11 | tier: archive-candidate | origin: 2026-09-11-185752 -->
 
 - **Kafka-driving functions run on kernel threads — `@KernelThreadRunner` (2026-09-11, Eric's
   question → PR #362).** The Kafka consumer performs network I/O on the CALLING thread inside
@@ -281,7 +281,7 @@
   setting `elastic.queue.store` is unaffected (unread), and nothing in the buffer was ever durable.
   Closes [[thread-elastic-queue-bdb-to-file]] + [[thread-elastic-queue-docs-adr]]; relates
   [[virtual-threads-rpc]] and [[conv-reentrantlock-not-synchronized]] (the same carrier-pinning concern).
-  <!-- id: elastic-queue-file-store | created: 2026-09-16 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-16-020051 -->
+  <!-- id: elastic-queue-file-store | created: 2026-09-16 | last_used: 2026-09-16 | uses: 3 | tier: active | origin: 2026-09-16-020051 -->
 
 - **A Layer 3 application is one graph endpoint plus dev mode — and the Playground UI hides behind a
   classpath-order trap (2026-09-15, Eric's polish round on the starter template + the cache example).**
@@ -308,7 +308,7 @@
   colliding resource path in the engine (needs Rust lockstep). Documented in `playground-and-companion.md` (#enabling) and
   `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]]; applies to
   [[ot-distributed-cache]]'s worked example.
-  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-15-221451 -->
+  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-16 | uses: 3 | tier: active | origin: 2026-09-15-221451 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
@@ -403,7 +403,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-16 | uses: 44 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-16 | uses: 45 | tier: active | origin: 2026-08-19-195244 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
@@ -412,7 +412,7 @@
   examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-16 | uses: 13 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-16 | uses: 14 | tier: active | origin: 2026-09-01-022524 -->
 - **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
   sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
   identifies **content**, not "this engine's Nth release". This covers the Rust port AND the python
@@ -438,7 +438,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-16 | uses: 6 | tier: active | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-16 | uses: 7 | tier: active | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - **A transitive CVE in the Kafka stack: PIN when a fixed release exists, EXCLUDE the
