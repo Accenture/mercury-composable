@@ -4046,9 +4046,26 @@ the first probe after the credential lands simply succeeds; nothing needs a rest
 template is still incomplete - the client cannot even be built from it - <code>type=health</code> reports a
 <strong>passing</strong> <code>Waiting for Kafka connection</code> status rather than a failure: failing <code>/health</code> would
 invite the container orchestrator to restart the pod, and a restart cannot produce the credential.
-Only a real connectivity failure (client built, cluster unreachable) fails the check with status 503.
+A real connectivity failure (client built, cluster unreachable) fails the check with status 503.
 The same applies to <code>secondary.kafka.health</code>.</p>
 <blockquote>
+<p><strong>Waiting is only for a value that has not landed yet — a broken template fails.</strong> The leniency above
+exists for exactly one situation: a credential a later bootstrap will publish. A template referring to
+a class that is not on the classpath will never become usable by waiting, so <code>type=health</code> fails with
+503 and says <code>Kafka client configuration is unusable - &lt;reason&gt;</code> rather than reporting healthy. The
+distinction matters because the passing-while-broken case is genuinely hard to spot: a field
+deployment logged an unresolvable deserializer class every five seconds for hours while <code>/health</code>
+reported healthy throughout. The message deliberately names the <em>configuration</em> rather than the
+network, so the reader looks at the classpath instead of the cluster.</p>
+<p><strong>Class-valued settings are supplied as class objects, not names.</strong> Kafka resolves a class <em>name</em>
+through the thread context classloader, falling back to its own loader only when that is <code>null</code> — so
+a non-null but wrong context loader turns a present class into <code>Class ... could not be found</code>. That is
+what bit the field: <code>kafka.health</code> is a <code>@KernelThreadRunner</code> and builds its client on a pooled kernel
+thread, while the flow adapter's consumers — same config, same jar, ordinary threads — were fine. The
+module now puts <code>Class</code> objects into the client properties and the probe additionally pins the thread
+context loader for the duration of construction, so no client's construction depends on which thread
+happens to run it. Nothing to configure; a template that names its own partitioner, assignor or
+interceptors still wins as before.</p>
 <p><strong>On a produce-only leg the probe uses the producer template.</strong> With
 <a href="#opt-out"><code>kafka.consumer.enabled=false</code></a> there are no consumer credentials to build a probe from,
 yet a bridge is healthy only when both clusters are reachable. So the probe follows whichever client
