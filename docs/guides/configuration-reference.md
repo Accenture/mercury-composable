@@ -393,13 +393,23 @@ sequential code performs like reactive with none of the ceremony. Use `@KernelTh
 function to the kernel thread pool for blocking-I/O operations that are incompatible with
 virtual threads.
 
-### `deferred.commit.log`
+### `elastic.queue.segment.size.bytes`
 
 | Type | Default |
 |------|---------|
-| `boolean` | `false` |
+| `long` | `16777216` (16 MB) |
 
-Defer write commits in the ElasticQueue overflow buffer. For unit-test use only — do not set in production.
+Size of each spill segment file in the ElasticQueue overflow buffer. The buffer holds the first 20 events per route in memory and spills the overflow to a per-route sequence of append-only segment files under the temp directory; a segment is deleted as soon as it is fully read. Larger segments mean fewer file rolls and fewer deletes; smaller segments reclaim disk sooner under a long backlog. Rarely needs changing.
+
+> **Tip: put the spill directory on tmpfs.** Spill I/O is transient — nothing in the buffer survives a restart — so durability buys nothing here. The one latency blemish measured for the file store is a rare OS dirty-page-flush outlier, which a memory-backed filesystem removes entirely. On Linux, point the JVM temp directory at a tmpfs mount (`-Djava.io.tmpdir=/dev/shm/mercury`) and size it for your worst-case backlog.
+
+### `elastic.queue.dispatch.mailbox.size`
+
+| Type | Default |
+|------|---------|
+| `int` | `1024` |
+
+Capacity of the per-route dispatch mailbox. The Vert.x event loop enqueues to this bounded queue and a per-route virtual thread drains it, running the state machine and the blocking spill I/O off the loop. When the mailbox fills, the enqueueing loop **blocks** rather than dropping — back-pressure, not loss — and a warning is logged once per route. Floored at the 20-event memory buffer size.
 
 ### `kernel.thread.pool`
 

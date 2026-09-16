@@ -20,14 +20,11 @@ package org.platformlambda.core.util;
 
 /**
  * The back-pressure overflow buffer's storage strategy: a per-route two-tier FIFO (memory head, then
- * transient disk spill). {@link ElasticQueue} is a thin facade that delegates to one implementation,
- * selected by the {@code elastic.queue.store} config:
- * <ul>
- *   <li>{@code bdb} (default) — {@link BdbElasticStore}, backed by Berkeley DB JE (the long-standing impl);</li>
- *   <li>{@code file} — {@link FileElasticStore}, a dependency-free per-route segmented append FIFO.</li>
- * </ul>
- * Both are transient (not durable across restart), FIFO, and single-threaded per route (each route's
- * Vert.x consumer is one event-loop thread). See draft-design-specs/elastic_queue_file_fifo_design.md.
+ * transient disk spill). {@link ElasticQueue} is a thin facade that delegates to the sole
+ * implementation, {@link FileElasticStore} - a dependency-free per-route segmented append FIFO. The
+ * interface is kept as the seam that made the Berkeley DB store swappable, and retired, without touching
+ * callers. The store is transient (not durable across restart), FIFO, and single-threaded per route. See
+ * draft-design-specs/elastic_queue_file_fifo_design.md.
  */
 interface ElasticStore extends AutoCloseable {
 
@@ -53,13 +50,4 @@ interface ElasticStore extends AutoCloseable {
     void destroy();
 
     boolean isClosed();
-
-    /**
-     * Whether this store is safe to drive from a per-route virtual thread. When true, ServiceQueue runs
-     * its dispatch + spill I/O on a per-route virtual thread (off the event loop); when false it must run
-     * inline on the event loop. This is what couples the two valid modes — {@code file}+vthread and
-     * {@code bdb}+loop — so the unsafe combination (a carrier-pinning store on a virtual thread) is
-     * unreachable via configuration.
-     */
-    boolean supportsVirtualThreadDispatch();
 }

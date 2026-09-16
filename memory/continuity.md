@@ -177,7 +177,7 @@
   `withAuthentication(RedisCredentialsProvider)` is the future seam if rotating IAM tokens are ever
   needed. Rust parity for cluster (cluster-client option + the same DEL split) is a parked
   follow-up, NOT a break. Extends [[soa-transport-neutral-cid]].
-  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-14 | uses: 6 | tier: active | origin: 2026-09-14-181948 -->
+  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-16 | uses: 7 | tier: active | origin: 2026-09-14-181948 -->
 
 - **The distributed cache is a SEPARATE module — sync-over-async stays small (Eric, 2026-09-14).**
   sync-over-async is a *rendezvous transport* (correlation-id `request:`/`queue:` keys,
@@ -200,7 +200,7 @@
   extracted [[redis-connection-foundation]] (spec draft-design-specs/distributed-cache.md);
   [[ot-distributed-cache]] tracks the remaining Rust lockstep. Builds on [[soa-redis-cluster-support]];
   serves [[vision-mercury-composable]].
-  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-16 | uses: 9 | tier: active | origin: 2026-09-14-191748 -->
+  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-16 | uses: 10 | tier: active | origin: 2026-09-14-191748 -->
 
 - **The Redis client layer is a shared `extensions/redis-connection` foundation (2026-09-14; Java
   shipped for v4.12.9).** Extracted from sync-over-async's `support/`: `RedisBackend<V>` (generic in the
@@ -218,7 +218,7 @@
   (cache). Realizes the "extract the foundation" half of [[cache-separate-from-soa]]; tracked by
   [[ot-distributed-cache]]; applied [[preload-before-mainapp-lazy-config]] and
   [[conv-reentrantlock-not-synchronized]].
-  <!-- id: redis-connection-foundation | created: 2026-09-14 | last_used: 2026-09-16 | uses: 4 | tier: active | origin: 2026-09-14-230259 -->
+  <!-- id: redis-connection-foundation | created: 2026-09-14 | last_used: 2026-09-16 | uses: 5 | tier: active | origin: 2026-09-14-230259 -->
 
 - **platform-core has a lightweight shutdown lifecycle — `Platform.getInstance().onShutdown(Runnable)`
   (2026-09-14, Eric's minimalist-principle ruling; for v4.12.9).** The platform owns ONE JVM shutdown hook
@@ -260,6 +260,28 @@
   Rust-twin parity check of the same callback pattern. Relates [[trace-thread-keyed-mono-gotcha]]
   (the same async-callback minefield).
   <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-16 | uses: 4 | tier: active | origin: 2026-09-15-040141 -->
+
+- **The elastic queue spills to a dependency-free file FIFO, and that choice sets the dispatch model
+  (2026-09-16, P4 of the BDB migration; ADR-0024 proposed).** Every route's back-pressure overflow buffer
+  holds 20 events in memory then spills to per-route append-only segment files under the temp dir
+  (`FileElasticStore`), transient, segment deleted once fully read. **Berkeley DB is RETIRED** — with it
+  went the `elastic.queue.store` switch, `deferred.commit.log`, the `elastic.queue.cleanup` reserved route,
+  and platform-core's `com.sleepycat:je` dependency. `ElasticStore` stays as the seam, one implementation.
+  **The architectural half:** because the file store's blocking I/O parks a virtual thread instead of
+  pinning its carrier, `ServiceQueue` has exactly ONE dispatch mode — every route dispatches off the event
+  loop on its own virtual thread via a bounded mailbox (`elastic.queue.dispatch.mailbox.size`, 1024,
+  blocks-not-drops). Store and dispatch are not independently configurable; the dual-mode branch is gone.
+  Remaining tunables: that key + `elastic.queue.segment.size.bytes` (16 MB). **Durable lesson worth more
+  than the outcome:** the microbenchmark favoured the store we removed — BDB was competitive-to-faster on a
+  single isolated route. Only the mixed-workload probe (a latency-sensitive route measured *while* another
+  route's spill runs) exposed what mattered: keeping spill off the shared Vert.x loop. Benchmark the
+  interference, not just the component. Evidence retained at `benchmark/benchmark-reporter/analysis/` (the
+  A/B is no longer reproducible — kept as the historical record); the tool is now a single-store baseline
+  for validating milestone releases. No consumer action: `file` was already the default, an app still
+  setting `elastic.queue.store` is unaffected (unread), and nothing in the buffer was ever durable.
+  Closes [[thread-elastic-queue-bdb-to-file]] + [[thread-elastic-queue-docs-adr]]; relates
+  [[virtual-threads-rpc]] and [[conv-reentrantlock-not-synchronized]] (the same carrier-pinning concern).
+  <!-- id: elastic-queue-file-store | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: working | origin: 2026-09-16-020051 -->
 
 - **A Layer 3 application is one graph endpoint plus dev mode — and the Playground UI hides behind a
   classpath-order trap (2026-09-15, Eric's polish round on the starter template + the cache example).**
@@ -459,7 +481,7 @@
   comment) and the return-route coordinator; applied to the distributed cache's `CacheRuntime`. This
   decays once the toolchain moves to Java 25 (JEP 491 makes `synchronized` non-pinning). Relates
   [[virtual-threads-rpc]], [[kafka-clients-kernel-threads]]; applied in [[redis-connection-foundation]].
-  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-09-15 | uses: 2 | tier: active | origin: 2026-09-14-230259 -->
+  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-09-16 | uses: 3 | tier: active | origin: 2026-09-14-230259 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 

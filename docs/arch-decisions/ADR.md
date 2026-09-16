@@ -22,6 +22,57 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0024 — The elastic queue spills to a dependency-free file FIFO, and that choice sets the dispatch model {#adr-0024}
+**Status:** Proposed · **Date:** 2026-09-16 · **Serves:** vision-mercury-composable · **Formalizes:** elastic-queue-file-store
+<!-- id: adr-0024 | status: proposed -->
+
+**Abstract.** Every route's back-pressure overflow buffer (`ElasticQueue`) holds the
+first 20 events in memory and spills the overflow to a **per-route sequence of
+append-only segment files** under the temp directory (`FileElasticStore`), with a segment
+deleted as soon as it is fully read. The spill tier is transient — nothing survives a
+restart — and carries no third-party dependency. The Berkeley DB JE store that preceded
+it, and the `elastic.queue.store` switch that selected between them, are **retired**
+(v4.12.10); so are the `deferred.commit.log` property and the `elastic.queue.cleanup`
+reserved route, which existed only to serve it. `ElasticStore` remains as the interface
+seam, now with a single implementation.
+
+The second half of this decision is the consequence that makes it architectural rather
+than an implementation detail: **because the file store's blocking I/O parks a virtual
+thread instead of pinning its carrier, every route dispatches off the event loop on its
+own virtual thread.** The Vert.x consumer enqueues to a bounded per-route mailbox and a
+per-route virtual thread runs the state machine and the spill I/O. There is one dispatch
+mode; the store and the dispatch model are not independently configurable.
+
+**Rationale.** Berkeley DB worked and, on a *single isolated route*, benchmarked
+competitively — faster on some scenarios. That is precisely why the decision needed
+evidence beyond a microbenchmark. In a real multi-route service sharing one Vert.x event
+loop, a carrier-pinning store forces spill I/O to run **inline on that shared loop**, so a
+burst on one route inflates the tail latency of unrelated latency-sensitive routes. The
+measured comparison (retained at `benchmark/benchmark-reporter/analysis/`) showed +56%
+throughput, a ~47× better write p99.9, and stalls over 20 ms falling from 90 to 3 — but
+the decisive result was the mixed-workload probe, which isolates exactly the property a
+single-workload benchmark cannot reveal.
+
+Alternatives considered. *Keep both stores permanently* — rejected: two spill
+implementations, two dispatch modes, and a configuration combination
+(virtual threads + a pinning store) that had to be made unreachable by construction, all
+to preserve a fallback the field never needed. *Keep the switch but default to `file`* —
+this was in fact the transitional state, carried deliberately through one field-canary
+period so installations could flip back with one property; it ended when no installation
+reported an ElasticQueue issue on the file store. *Make durability an option* — rejected
+as a category error: the buffer exists to absorb a slow consumer within one process
+lifetime, and a durable spill tier would imply replay semantics the event system does not
+offer.
+
+Consequences. platform-core sheds its `com.sleepycat:je` dependency, narrowing the
+dependency surface that field security scanning must clear. `ServiceQueue` loses its
+dual-mode branch. An application that still sets `elastic.queue.store` is unaffected in
+behaviour — the property is simply no longer read — because the value it would have
+selected is what now runs unconditionally. The remaining tunables are
+`elastic.queue.segment.size.bytes` and `elastic.queue.dispatch.mailbox.size`; the one
+measured blemish of the file store, a rare OS dirty-page-flush outlier, is removed by
+pointing the temp directory at tmpfs.
+
 ## ADR-0023 — Claims-fixture gate: documentation behavior claims are drift-tested {#adr-0023}
 **Status:** Accepted · **Date:** 2026-09-06 · **Serves:** vision-mercury-composable · **Formalizes:** claims-fixture-gate
 <!-- id: adr-0023 | status: accepted -->

@@ -1,7 +1,14 @@
-# ElasticQueue store analysis — `file`+vthread vs `bdb`+loop
+# ElasticQueue store analysis — `file`+vthread vs `bdb`+loop *(historical record)*
 
-Reference analysis and result snapshots comparing the two ElasticQueue backends behind the ServiceQueue
-back-pressure buffer, produced with [`benchmark-reporter`](../README.md).
+> **This is the evidence that retired Berkeley DB.** The Berkeley DB store was removed from platform-core
+> in **v4.12.10** after the file store ran clean across field installations, so the comparison below can no
+> longer be reproduced on a current build — `elastic.queue.store` is gone and the file store is the only
+> store. The analysis and both report snapshots are kept deliberately: they document *why* the change was
+> made and what it bought, which is worth more than a reproduce command. For benchmarking a current build,
+> see [`benchmark-reporter`](../README.md).
+
+Reference analysis and result snapshots comparing the two ElasticQueue backends that were once selectable
+behind the ServiceQueue back-pressure buffer, produced with [`benchmark-reporter`](../README.md).
 
 - [`file-vthread.html`](file-vthread.html) — default: file-backed segmented FIFO + off-loop virtual-thread dispatch
 - [`bdb-loop.html`](bdb-loop.html) — legacy fallback: Berkeley DB + inline event-loop dispatch
@@ -9,7 +16,7 @@ back-pressure buffer, produced with [`benchmark-reporter`](../README.md).
 > **These are dev-laptop figures — indicative, not SLAs.** Absolute numbers vary by hardware/OS; re-run
 > `benchmark-reporter` in each target environment. The *relative* findings below are what matter.
 
-## Recommendation
+## Recommendation *(as made at the time)*
 
 **Default to `file`+vthread for production installations; keep `bdb` as a one-flag fallback
 (`elastic.queue.store=bdb`).** Not because it's a faster store — in isolation BDB is actually
@@ -17,6 +24,11 @@ competitive-to-faster — but because in a real **multi-route** service that sha
 file store keeps back-pressure spill **off** that loop, so a burst on one route does not inflate the latency
 of unrelated latency-sensitive routes. That isolation is the robustness property that matters at scale, and
 it is the one thing a single isolated workload cannot show.
+
+> **Outcome.** The default flipped to `file` on this evidence, and the `bdb` fallback was carried for one
+> field-canary period. No installation reported an ElasticQueue issue on the file store, so the fallback and
+> its Berkeley DB dependency were retired in v4.12.10 — which is also what collapsed ServiceQueue's two
+> dispatch modes into the one this analysis recommended.
 
 ## Method
 
@@ -88,15 +100,19 @@ Two further architectural properties reinforce the choice, independent of these 
 - Both stores were loss-free and degraded predictably (Little's law) under overload — the framework itself is
   robust either way; this is about *where* the spill work runs.
 
-## Reproduce
+## Reproduce *(no longer possible — see the note at the top)*
+
+These were the commands, on a build that still had both stores:
 
 ```bash
 mvn -pl benchmark/benchmark-reporter -am package -DskipTests
 # file (default):
 java -Dbench.report=/tmp/file-vthread.html -jar benchmark/benchmark-reporter/target/benchmark-reporter.jar
-# bdb (fallback):
+# bdb (fallback, removed in v4.12.10):
 java -Delastic.queue.store=bdb -Dbench.report=/tmp/bdb-loop.html -jar benchmark/benchmark-reporter/target/benchmark-reporter.jar
 ```
+
+On a current build only the first command runs; `-Delastic.queue.store=bdb` is ignored. The committed
+snapshots stay as they are — re-generating `bdb-loop.html` would require checking out a pre-v4.12.10 tag.
 Open the two HTML files side by side; the **Mixed workload** section's probe histogram tells the story at a
-glance. To refresh the committed reference snapshots, copy `/tmp/file-vthread.html` and `/tmp/bdb-loop.html`
-into this `analysis/` folder.
+glance.
