@@ -10,6 +10,16 @@
 Reference analysis and result snapshots comparing the two ElasticQueue backends that were once selectable
 behind the ServiceQueue back-pressure buffer, produced with [`benchmark-reporter`](../README.md).
 
+## Milestone baselines
+
+Timestamped runs of the current single-store harness, for release-over-release comparison. Each `.md`
+records the finding; the matching `.html` is the full report. The running trend across releases,
+including this study, is in [`../BENCHMARK-LOG.md`](../BENCHMARK-LOG.md).
+
+| Run | Build | Finding |
+|---|---|---|
+| [`v4.12.10-20260916-025610Z`](v4.12.10-20260916-025610Z.md) | `main` @ `9aa40089` — first run after the BDB retirement | No regression from collapsing ServiceQueue dispatch; probe-under-flood p99.9 **1.141 ms** |
+
 - [`file-vthread.html`](file-vthread.html) — default: file-backed segmented FIFO + off-loop virtual-thread dispatch
 - [`bdb-loop.html`](bdb-loop.html) — legacy fallback: Berkeley DB + inline event-loop dispatch
 

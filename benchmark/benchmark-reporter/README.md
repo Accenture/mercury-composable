@@ -65,13 +65,25 @@ mixed into the working tree — the committed reference reports live in [`analys
 | `bench.timeout`                | 30000   | per-request timeout (ms)                                      |
 | `bench.report`                 | /tmp/benchmark-report.html | output HTML path                           |
 
+### Building
+This module is **deliberately not in the reactor** (commented out in the root `pom.xml`), so build it
+standalone — a `-pl … -am` invocation fails with "Could not find the selected project in the reactor":
+```bash
+mvn clean install -DskipTests                 # install the engine into ~/.m2 first
+mvn clean package -DskipTests -f benchmark/benchmark-reporter/pom.xml
+```
+
 ### Validating a milestone release
 Run the suite on the release candidate and compare against the previous milestone's report — same machine,
 same flags, otherwise the comparison is noise:
 ```bash
-mvn -pl benchmark/benchmark-reporter -am package -DskipTests
-java -Dbench.report=/tmp/v4.12.10.html -jar benchmark/benchmark-reporter/target/benchmark-reporter.jar
+TS=$(date -u +%Y%m%d-%H%M%SZ)
+java -Dbench.report=benchmark/benchmark-reporter/analysis/v4.12.10-$TS.html \
+     -jar benchmark/benchmark-reporter/target/benchmark-reporter.jar
 ```
+Record the finding next to the report as `v<version>-$TS.md`, add a row to the milestone table in
+[`analysis/README.md`](analysis/README.md), and add an entry to [`BENCHMARK-LOG.md`](BENCHMARK-LOG.md)
+— the running release-over-release record.
 The report records the framework version and environment metadata in its header, so a saved HTML file stays
 interpretable long after the run. For latency-sensitive perf runs, point the spill at tmpfs:
 `-Dtransient.data.store=/dev/shm/reactive`.
