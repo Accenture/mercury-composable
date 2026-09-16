@@ -2948,11 +2948,18 @@ Then enable the coordinator and point it at Redis:</p>
 <p><strong><code>soa.redis.*</code> namespace, with a <code>redis.*</code> fallback.</strong> The Redis keys carry the <code>soa.</code> prefix so
 sync-over-async owns its own Redis configuration and never collides with another <code>redis.*</code> consumer in
 the same application — the <a href="../distributed-cache/">distributed cache</a>, or the <code>minigraph-state-redis</code>
-extension — which may
-point at a different server, auth, or topology. <strong>No migration is required:</strong> each key falls back to the
-un-prefixed <code>redis.*</code> form when the <code>soa.</code> one is absent, so an existing <code>redis.*</code> deployment keeps
-working; set <code>soa.redis.*</code> only to override the fallback or to decouple from a co-resident <code>redis.*</code>
-consumer.</p>
+extension — which may point at a different server, auth, or topology. <strong>No migration is required:</strong>
+each key falls back to the un-prefixed <code>redis.*</code> form when the <code>soa.</code> one is absent, so an existing
+<code>redis.*</code> deployment keeps working untouched.</p>
+<p><strong>That fallback is backward compatibility, not a recommendation to share.</strong> Sync-over-async predates
+the cache and was configured under plain <code>redis.*</code>; the fallback keeps those deployments — and any
+application running sync-over-async <strong>alone</strong> — working as they are. When an application runs
+sync-over-async <em>and</em> the cache, give each its own Redis client: set the whole <code>soa.redis.*</code>
+connection set here and leave <code>redis.*</code> to the cache. See
+<a href="../distributed-cache/#separation">Separate Redis clients, by design</a> for the reasoning — the decisive
+one being that a cache with an eviction policy can evict a <code>request:{cid}</code> rendezvous key mid-request.
+Override a namespace <strong>completely</strong>: because the fallback is per key, setting <code>soa.redis.host</code> without
+<code>soa.redis.password</code> points this module at the new host carrying the other one's credentials.</p>
 </blockquote>
 <p>On startup the extension builds a Redis client and the return-route coordinator, keyed by this pod's origin
 id, from discrete <code>soa.redis.*</code> connection parameters and <code>sync.*</code> engine tunables. See the

@@ -2127,6 +2127,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0024" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0024 — The elastic queue spills to a dependency-free file FIFO, and that choice sets the dispatch model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0023" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2926,6 +2937,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0024" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0024 — The elastic queue spills to a dependency-free file FIFO, and that choice sets the dispatch model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0023" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3217,6 +3239,52 @@ governing the codebase — verified against the source (<code>platform-core</cod
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
 <hr />
+<h2 id="adr-0024">ADR-0024 — The elastic queue spills to a dependency-free file FIFO, and that choice sets the dispatch model<a class="headerlink" href="#adr-0024" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-09-16 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> elastic-queue-file-store</p>
+<!-- id: adr-0024 | status: accepted -->
+
+<p><strong>Abstract.</strong> Every route's back-pressure overflow buffer (<code>ElasticQueue</code>) holds the
+first 20 events in memory and spills the overflow to a <strong>per-route sequence of
+append-only segment files</strong> under the temp directory (<code>FileElasticStore</code>), with a segment
+deleted as soon as it is fully read. The spill tier is transient — nothing survives a
+restart — and carries no third-party dependency. The Berkeley DB JE store that preceded
+it, and the <code>elastic.queue.store</code> switch that selected between them, are <strong>retired</strong>
+(v4.12.10); so are the <code>deferred.commit.log</code> property and the <code>elastic.queue.cleanup</code>
+reserved route, which existed only to serve it. <code>ElasticStore</code> remains as the interface
+seam, now with a single implementation.</p>
+<p>The second half of this decision is the consequence that makes it architectural rather
+than an implementation detail: <strong>because the file store's blocking I/O parks a virtual
+thread instead of pinning its carrier, every route dispatches off the event loop on its
+own virtual thread.</strong> The Vert.x consumer enqueues to a bounded per-route mailbox and a
+per-route virtual thread runs the state machine and the spill I/O. There is one dispatch
+mode; the store and the dispatch model are not independently configurable.</p>
+<p><strong>Rationale.</strong> Berkeley DB worked and, on a <em>single isolated route</em>, benchmarked
+competitively — faster on some scenarios. That is precisely why the decision needed
+evidence beyond a microbenchmark. In a real multi-route service sharing one Vert.x event
+loop, a carrier-pinning store forces spill I/O to run <strong>inline on that shared loop</strong>, so a
+burst on one route inflates the tail latency of unrelated latency-sensitive routes. The
+measured comparison (retained at <code>benchmark/benchmark-reporter/analysis/</code>) showed +56%
+throughput, a ~47× better write p99.9, and stalls over 20 ms falling from 90 to 3 — but
+the decisive result was the mixed-workload probe, which isolates exactly the property a
+single-workload benchmark cannot reveal.</p>
+<p>Alternatives considered. <em>Keep both stores permanently</em> — rejected: two spill
+implementations, two dispatch modes, and a configuration combination
+(virtual threads + a pinning store) that had to be made unreachable by construction, all
+to preserve a fallback the field never needed. <em>Keep the switch but default to <code>file</code></em> —
+this was in fact the transitional state, carried deliberately through one field-canary
+period so installations could flip back with one property; it ended when no installation
+reported an ElasticQueue issue on the file store. <em>Make durability an option</em> — rejected
+as a category error: the buffer exists to absorb a slow consumer within one process
+lifetime, and a durable spill tier would imply replay semantics the event system does not
+offer.</p>
+<p>Consequences. platform-core sheds its <code>com.sleepycat:je</code> dependency, narrowing the
+dependency surface that field security scanning must clear. <code>ServiceQueue</code> loses its
+dual-mode branch. An application that still sets <code>elastic.queue.store</code> is unaffected in
+behaviour — the property is simply no longer read — because the value it would have
+selected is what now runs unconditionally. The remaining tunables are
+<code>elastic.queue.segment.size.bytes</code> and <code>elastic.queue.dispatch.mailbox.size</code>; the one
+measured blemish of the file store, a rare OS dirty-page-flush outlier, is removed by
+pointing the temp directory at tmpfs.</p>
 <h2 id="adr-0023">ADR-0023 — Claims-fixture gate: documentation behavior claims are drift-tested<a class="headerlink" href="#adr-0023" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-09-06 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> claims-fixture-gate</p>
 <!-- id: adr-0023 | status: accepted -->

@@ -1935,6 +1935,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Enabling and configuring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#separation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Separate Redis clients, by design
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2819,6 +2836,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Enabling and configuring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#separation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Separate Redis clients, by design
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3148,12 +3182,48 @@ full list:</p>
 </tr>
 </tbody>
 </table>
+<h3 id="separation">Separate Redis clients, by design<a class="headerlink" href="#separation" title="Permanent link">&para;</a></h3>
+<p><strong>When an application runs both the cache and <a href="../sync-over-async/">sync-over-async</a>, give each its own
+Redis client — configure the cache under <code>redis.*</code> and sync-over-async under <code>soa.redis.*</code>, fully.</strong>
+That is the intended shape, not merely a supported one. Nothing extra is needed to get it:
+<code>RedisBackendFactory</code> builds a <em>new</em> client from whatever configuration it is handed, and every
+endpoint-defining key — <code>host</code>, <code>port</code>, <code>username</code>, <code>password</code>, <code>ssl</code>, <code>database</code>, <code>timeout.ms</code>, and all
+three <code>cluster.*</code> keys — resolves per namespace. The two can therefore differ in server, credentials,
+TLS, and even topology: one standalone, one cluster-mode-enabled.</p>
+<p>Why it matters:</p>
+<ul>
+<li><strong>Separation of concerns.</strong> They are different things. Sync-over-async is a <em>rendezvous transport</em> whose
+  keys live for the duration of one request; the cache is a <em>store</em> whose keys live for their TTL. Their
+  sizing, eviction, and failure characteristics have nothing to do with each other.</li>
+<li><strong>A cache evicts; a rendezvous must not.</strong> This is the sharp one. A cache under memory pressure with an
+  eviction policy configured will evict whatever fits its policy — including a <code>request:{cid}</code> rendezvous
+  key, <strong>mid-request</strong>. The caller then waits for a reply that can never arrive. Separate instances make
+  that failure mode structurally impossible; a shared instance only avoids it by configuration discipline.</li>
+<li><strong>Independent operations.</strong> Restarting, resizing, or failing over the cache should not disturb in-flight
+  synchronous requests.</li>
+</ul>
 <blockquote>
-<p><strong>One Redis, or two?</strong> Because <code>soa.redis.*</code> falls back to <code>redis.*</code>, a deployment can point <strong>both</strong>
-sync-over-async and the cache at one server by setting only <code>redis.*</code>, or <strong>decouple</strong> them by also
-setting <code>soa.redis.*</code>. Credentials follow the same pattern as sync-over-async — resolved from the
-environment by a lower-<code>sequence</code> <code>@MainApplication</code> credential bootstrap (see
+<p><strong>What the <code>redis.*</code> fallback is for.</strong> Each <code>soa.redis.*</code> key falls back to the un-prefixed <code>redis.*</code>
+form when the prefixed one is absent. That exists for <strong>backward compatibility</strong> — sync-over-async
+predates the cache and was configured under plain <code>redis.*</code>, so those deployments keep working
+untouched, and an application running sync-over-async <strong>alone</strong> may still use <code>redis.*</code> throughout. It
+is not an invitation to share one instance between the two modules.</p>
+<p><strong>Override a namespace completely, or not at all.</strong> Because the fallback is <em>per key</em>, a partial
+override silently mixes the two: setting <code>soa.redis.host</code> but not <code>soa.redis.password</code> points
+sync-over-async at the new host carrying the <strong>cache's</strong> credentials, and authentication fails. When you
+decouple, set the whole <code>soa.redis.*</code> connection set.</p>
+<p><strong>Both probes, both endpoints.</strong> Two clients mean two health checks. List them together —
+<code>mandatory.health.dependencies=redis.health, soa.redis.health</code> — or one endpoint goes unmonitored.</p>
+</blockquote>
+<p>Credentials follow the same pattern in both namespaces — resolved from the environment by a
+lower-<code>sequence</code> <code>@MainApplication</code> credential bootstrap (see
 <a href="../sync-over-async/#cluster">sync-over-async → auth</a>).</p>
+<blockquote>
+<p><strong>Sharing one server anyway?</strong> It is safe for correctness — the key shapes do not collide
+(<code>request:{cid}</code> / <code>queue:{cid}</code> versus your <code>redis.cache.key.prefix</code> namespace) — but you own the
+eviction-policy risk above, and the two workloads share one memory budget. Note also that
+<code>database</code> is <strong>standalone-only</strong>: Redis Cluster is database 0, so "one cluster, two logical databases"
+is not an alternative to two instances.</p>
 </blockquote>
 <h2 id="usage">Using the cache<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
 <p>The same function is reachable from all three layers — it is just "call a route".</p>

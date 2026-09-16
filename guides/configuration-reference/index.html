@@ -2721,10 +2721,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#deferredcommitlog" class="md-nav__link">
+  <a href="#elasticqueuesegmentsizebytes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        deferred.commit.log
+        elastic.queue.segment.size.bytes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#elasticqueuedispatchmailboxsize" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        elastic.queue.dispatch.mailbox.size
       
     </span>
   </a>
@@ -5256,10 +5267,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#deferredcommitlog" class="md-nav__link">
+  <a href="#elasticqueuesegmentsizebytes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        deferred.commit.log
+        elastic.queue.segment.size.bytes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#elasticqueuedispatchmailboxsize" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        elastic.queue.dispatch.mailbox.size
       
     </span>
   </a>
@@ -7494,7 +7516,7 @@ log volume on busy installations.</p>
 sequential code performs like reactive with none of the ceremony. Use <code>@KernelThreadRunner</code> to pin a
 function to the kernel thread pool for blocking-I/O operations that are incompatible with
 virtual threads.</p>
-<h3 id="deferredcommitlog"><code>deferred.commit.log</code><a class="headerlink" href="#deferredcommitlog" title="Permanent link">&para;</a></h3>
+<h3 id="elasticqueuesegmentsizebytes"><code>elastic.queue.segment.size.bytes</code><a class="headerlink" href="#elasticqueuesegmentsizebytes" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -7504,12 +7526,31 @@ virtual threads.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>boolean</code></td>
-<td><code>false</code></td>
+<td><code>long</code></td>
+<td><code>16777216</code> (16 MB)</td>
 </tr>
 </tbody>
 </table>
-<p>Defer write commits in the ElasticQueue overflow buffer. For unit-test use only — do not set in production.</p>
+<p>Size of each spill segment file in the ElasticQueue overflow buffer. The buffer holds the first 20 events per route in memory and spills the overflow to a per-route sequence of append-only segment files under the temp directory; a segment is deleted as soon as it is fully read. Larger segments mean fewer file rolls and fewer deletes; smaller segments reclaim disk sooner under a long backlog. Rarely needs changing.</p>
+<blockquote>
+<p><strong>Tip: put the spill directory on tmpfs.</strong> Spill I/O is transient — nothing in the buffer survives a restart — so durability buys nothing here. The one latency blemish measured for the file store is a rare OS dirty-page-flush outlier, which a memory-backed filesystem removes entirely. On Linux, point the JVM temp directory at a tmpfs mount (<code>-Djava.io.tmpdir=/dev/shm/mercury</code>) and size it for your worst-case backlog.</p>
+</blockquote>
+<h3 id="elasticqueuedispatchmailboxsize"><code>elastic.queue.dispatch.mailbox.size</code><a class="headerlink" href="#elasticqueuedispatchmailboxsize" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int</code></td>
+<td><code>1024</code></td>
+</tr>
+</tbody>
+</table>
+<p>Capacity of the per-route dispatch mailbox. The Vert.x event loop enqueues to this bounded queue and a per-route virtual thread drains it, running the state machine and the blocking spill I/O off the loop. When the mailbox fills, the enqueueing loop <strong>blocks</strong> rather than dropping — back-pressure, not loss — and a warning is logged once per route. Floored at the 20-event memory buffer size.</p>
 <h3 id="kernelthreadpool"><code>kernel.thread.pool</code><a class="headerlink" href="#kernelthreadpool" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -9008,6 +9049,9 @@ validation rules.</p>
 cross-pod backend using a Redis return route - and generalizes the same rendezvous to a streaming return
 route for cross-pod progressive rendering. See the <a href="../sync-over-async/">Sync-over-Async guide</a>. It is
 off by default and starts (eagerly connecting to Redis) only when <code>sync.over.async.enabled=true</code>.</p>
+<blockquote>
+<p><strong>Every <code>soa.redis.*</code> key below falls back to the un-prefixed <code>redis.*</code> form when absent.</strong> That is backward compatibility for deployments predating the namespace, and for applications running sync-over-async alone. When the <a href="#distributed-cache">distributed cache</a> also runs, configure the two separately and set the <strong>whole</strong> <code>soa.redis.*</code> connection set — a partial override inherits the other module's credentials through the fallback. See <a href="../distributed-cache/#separation">Separate Redis clients, by design</a>.</p>
+</blockquote>
 <h3 id="syncoverasyncenabled"><code>sync.over.async.enabled</code><a class="headerlink" href="#syncoverasyncenabled" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -9317,7 +9361,10 @@ safety net: completed or closed streams delete their keys eagerly.</p>
 <p>All <code>soa.redis.*</code> and <code>sync.*</code> values support <code>${ENV_VAR:default}</code> substitution.</p>
 <hr />
 <h2 id="distributed-cache">Distributed Cache<a class="headerlink" href="#distributed-cache" title="Permanent link">&para;</a></h2>
-<p>The <a href="../distributed-cache/">distributed cache</a> (<code>v1.cache.redis</code>) uses the plain <code>redis.*</code> connection namespace — the same keys as <code>soa.redis.*</code> above without the <code>soa.</code> prefix (<code>redis.host</code>, <code>redis.port</code>, <code>redis.username</code>, <code>redis.password</code>, <code>redis.ssl</code>, <code>redis.database</code>, <code>redis.timeout.ms</code>, <code>redis.cluster.detect</code>, <code>redis.cluster.mode</code>, <code>redis.cluster.nodes</code>) — plus the cache tunables below. Set only <code>redis.*</code> to share one server with sync-over-async, or also set <code>soa.redis.*</code> to decouple them.</p>
+<p>The <a href="../distributed-cache/">distributed cache</a> (<code>v1.cache.redis</code>) uses the plain <code>redis.*</code> connection namespace — the same keys as <code>soa.redis.*</code> above without the <code>soa.</code> prefix (<code>redis.host</code>, <code>redis.port</code>, <code>redis.username</code>, <code>redis.password</code>, <code>redis.ssl</code>, <code>redis.database</code>, <code>redis.timeout.ms</code>, <code>redis.cluster.detect</code>, <code>redis.cluster.mode</code>, <code>redis.cluster.nodes</code>) — plus the cache tunables below.</p>
+<blockquote>
+<p><strong>Running the cache alongside sync-over-async?</strong> Give each module its own Redis client: <code>redis.*</code> here, the <strong>complete</strong> <code>soa.redis.*</code> set there. See <a href="../distributed-cache/#separation">Separate Redis clients, by design</a>. The <code>soa.redis.*</code> → <code>redis.*</code> fallback exists for backward compatibility (sync-over-async deployed alone), so leaving <code>soa.redis.*</code> unset points <strong>both</strong> modules at this server — workable, but you then own the eviction risk and share one memory budget. Two clients also mean two probes: <code>mandatory.health.dependencies=redis.health, soa.redis.health</code>.</p>
+</blockquote>
 <h3 id="rediscacheenabled"><code>redis.cache.enabled</code><a class="headerlink" href="#rediscacheenabled" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
