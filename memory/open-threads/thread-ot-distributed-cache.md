@@ -33,4 +33,4 @@
   [[soa-redis-cluster-support]]; applied [[preload-before-mainapp-lazy-config]] and
   [[conv-reentrantlock-not-synchronized]]. See [[redis-connection-foundation]].
   → serves: vision-mercury-composable
-  <!-- id: ot-distributed-cache | created: 2026-09-14 | last_used: 2026-09-16 | uses: 9 | tier: working | origin: 2026-09-14-214619 -->
+  <!-- id: ot-distributed-cache | created: 2026-09-14 | last_used: 2026-09-16 | uses: 10 | tier: working | origin: 2026-09-14-214619 -->

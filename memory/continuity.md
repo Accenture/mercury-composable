@@ -17,22 +17,33 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.10 (2026-09-16 04:01Z — the cleanup release, **2 PRs #399–#400** via
-  release PR #401, squash `92e94f2b`, tag `v4.12.10`: **Berkeley DB elastic-queue store RETIRED**
-  (ADR-0024 accepted) — with it the `elastic.queue.store` switch, `deferred.commit.log`,
-  `elastic.queue.cleanup` and platform-core's `com.sleepycat:je` dependency; `ServiceQueue` collapsed
-  to ONE dispatch mode ([[elastic-queue-file-store]]); separate-Redis-client guidance for
-  sync-over-async vs distributed-cache; and `BENCHMARK-LOG.md`, the release-over-release benchmark
-  record whose first entry is this release's own no-regression evidence. **No upgrade action** — no
-  wire/behaviour change, `file` was already the default, config unchanged. **Java only — no lockstep
-  needed** (platform-core internals + docs, no wire contract); the outstanding lockstep is v4.12.9's
-  distributed cache ([[ot-distributed-cache]]). Ports adopt this number on catch-up
-  ([[conv-ports-adopt-java-release-number]]). Sweep surface: BUILD FILES ONLY, **43**. Prior: v4.12.9
-  (2026-09-16 01:29Z — the distributed-Redis release, 34 PRs #364–#397, squash `9274cf92`: streaming
-  return route, distributed cache, clustered Redis, `Platform.onShutdown`, MsgPack
-  `packMapOrList`/`unpackMapOrList`, three-layer cache example + dev-mode template, the MiniGraph
-  async-callback guard, three field Snyk fixes; action required there: the `soa.redis.health` ROUTE
-  rename and `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.)
+- **latest_release:** v4.12.11 (2026-09-16 21:03Z — the field-unblock release, **3 PRs #402–#404**
+  via release PR #405, squash `06750214`, tag `v4.12.11`, pom verified at the tag): **`kafka.health`
+  builds its probe client regardless of the thread context classloader** — the field bug it exists
+  for, where a pooled kernel thread's loader could not see `kafka-clients` while the same JVM's real
+  clients were fine ([[kafka-class-objects-over-names]]); **OpenTelemetry forwarding is now opt-in
+  and certified against Dynatrace** (`otel.forwarding`, default off, `@OptionalService`; legacy
+  `otel.trace.forwarder.enabled` RETIRED; exporter moved onto [[platform-onshutdown-lifecycle]] —
+  [[otel-optional-service-and-negative-control]]). **ACTION TO READ, not to take:** unlike v4.12.10
+  this is NOT a no-action release — an app whose Kafka template genuinely cannot build a client was
+  reporting `/health` green and now answers 503 `Kafka client configuration is unusable`. That is the
+  correction; nothing else changed in wire, API or config keys, and the retired OTel key cannot
+  surprise anyone into exporting (its users land on the new switch's default of off). **Java only —
+  no lockstep needed** (a JVM classloading concern has no Rust analogue); the outstanding lockstep is
+  still v4.12.9's distributed cache ([[ot-distributed-cache]]). Ports adopt this number on catch-up
+  ([[conv-ports-adopt-java-release-number]]). Sweep surface: BUILD FILES ONLY, **43 files / 98
+  occurrences** (97 → 98 when #404 added a forwarder dependency — re-derive the sweep after a rebase,
+  never trust the prior count). **Open:** Dynatrace support is confirming the two field-acceptance
+  traces in the UI; the report's Scenario 6 records that row as *pending* and is updated on reply.
+  Prior: v4.12.10 (2026-09-16 04:01Z — the cleanup release, 2 PRs #399–#400, squash `92e94f2b`:
+  Berkeley DB elastic-queue store RETIRED (ADR-0024), `ServiceQueue` collapsed to ONE dispatch mode
+  ([[elastic-queue-file-store]]), separate-Redis-client guidance, and `BENCHMARK-LOG.md`; no upgrade
+  action). Prior: v4.12.9 (2026-09-16 01:29Z — the distributed-Redis release, 34 PRs #364–#397,
+  squash `9274cf92`: streaming return route, distributed cache, clustered Redis,
+  `Platform.onShutdown`, MsgPack `packMapOrList`/`unpackMapOrList`, three-layer cache example +
+  dev-mode template, the MiniGraph async-callback guard, three field Snyk fixes; action required
+  there: the `soa.redis.health` ROUTE rename and `minimalist-kafka` no longer transitive). The live
+  version source stays the root pom.xml.)
 - **last_enabled:** 2026-06-20
 - **last_review:** 2026-09-16 | through 2026-09-16-032012.md (15-session window, 5 overdue: archived
   conv-kafka-transitive-pin-placement (sslu 21) and swept the completed ot-streaming-return-route
@@ -174,7 +185,7 @@
   message text (Kafka's `ConfigException` carries no cause) and defaults to *waiting*, so a reworded
   message degrades to leniency rather than to spurious outages. Bounds
   [[preload-before-mainapp-lazy-config]]; extends [[kafka-clients-kernel-threads]].
-  <!-- id: kafka-class-objects-over-names | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: working | origin: 2026-09-16-185851 -->
+  <!-- id: kafka-class-objects-over-names | created: 2026-09-16 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-16-185851 -->
 
 - **A jar under a base scan package needs an `@OptionalService` master switch, and a vendor
   integration is not done until a negative control proves the happy path (2026-09-16, Eric's design
@@ -202,7 +213,7 @@
   version is a free check that the artifact under test is the one that shipped. Report:
   `docs/test-reports/otel-dynatrace-certification.md`; closes [[ot-otel-dynatrace-certification]].
   Splunk's header form is parsed and documented but NOT run live.
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: working | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-16-193203 -->
 
 - **sync-over-async is transport-neutral — its correlation-id key is self-contained (Eric's direction,
   2026-09-12; PR #364, squash `628a1778`).** The facade tasks speak only the module's own flow-level `cid` key (`SyncRuntime.CID`);
@@ -298,7 +309,7 @@
   also makes the cache's `shutdown()` a used method, resolving the field Sonar "never used" finding without
   deleting it). Rust parity is a lockstep follow-up (internal lifecycle API, not a wire contract). Applies
   [[conv-reentrantlock-not-synchronized]]; used by [[redis-connection-foundation]].
-  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-16 | uses: 3 | tier: active | origin: 2026-09-15-011235 -->
+  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-16 | uses: 4 | tier: active | origin: 2026-09-15-011235 -->
 
 - **MiniGraph async skill callbacks are guarded — a failure surfaces as the node's error, never a
   silent hang (2026-09-15; found building the distributed-cache example, PR #392).** A
@@ -324,7 +335,7 @@
   Parked: CompileGraph static LHS check (dynamic `{…}` limits it to static cases);
   Rust-twin parity check of the same callback pattern. Relates [[trace-thread-keyed-mono-gotcha]]
   (the same async-callback minefield).
-  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-16 | uses: 4 | tier: active | origin: 2026-09-15-040141 -->
+  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-16 | uses: 4 | tier: archive-candidate | origin: 2026-09-15-040141 -->
 
 - **The elastic queue spills to a dependency-free file FIFO, and that choice sets the dispatch model
   (2026-09-16, P4 of the BDB migration). (ADR-0024)** Every route's back-pressure overflow buffer
@@ -479,7 +490,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-16 | uses: 4 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-16 | uses: 5 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -493,7 +504,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-16 | uses: 9 | tier: active | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-16 | uses: 10 | tier: active | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - **Declare a Memory Reference when a fact is CONSULTED to make a decision — not only when it is
