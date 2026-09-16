@@ -2261,6 +2261,8 @@
       
         
       
+        
+      
     
     
     
@@ -2601,6 +2603,34 @@
     
   
     Test Report — Streaming Return Route (cross-pod)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../test-reports/otel-dynatrace-certification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — OpenTelemetry forwarder (Dynatrace)
   
 
     
@@ -3483,11 +3513,20 @@ exports them over OTLP/HTTP to a collector (and on to Dynatrace, Splunk, Jaeger,
 <a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>x.y.z<span class="nt">&lt;/version&gt;</span>
 <a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="nt">&lt;/dependency&gt;</span>
 </code></pre></div>
-<p>Configure the collector endpoint and service name in <code>application.properties</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="na">otel.exporter.otlp.endpoint</span><span class="o">=</span><span class="s">http://localhost:4318/v1/traces</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="na">otel.service.name</span><span class="o">=</span><span class="s">my-application</span>
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="c1"># otel.trace.forwarder.enabled=false   # disable export without removing the jar</span>
+<p>Then turn it on and configure the collector endpoint and service name in <code>application.properties</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># master switch - the jar alone exports nothing; the default is false</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="na">otel.forwarding</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="na">otel.exporter.otlp.endpoint</span><span class="o">=</span><span class="s">http://localhost:4318/v1/traces</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="na">otel.service.name</span><span class="o">=</span><span class="s">my-application</span>
 </code></pre></div>
+<p>The endpoint must include the <strong>signal path</strong> (<code>/v1/traces</code>), not just the collector's base URL — a
+vendor base URL answers 404, and the forwarder says so in the failure it logs.</p>
+<p><code>otel.forwarding</code> is what lets an application carry the dependency while DevOps decides, per
+environment, whether traces leave the process: leave it unset (or <code>false</code>) to deploy the same
+artifact with export off, and turn it on at launch with <code>-Dotel.forwarding=true</code> — no rebuild. See
+<a href="../observability/#otel-forwarder">Exporting telemetry</a> for backend credentials, and the
+<a href="../../test-reports/otel-dynatrace-certification/">Dynatrace certification report</a> for a worked
+end-to-end run.</p>
 <p>See <code>extensions/opentelemetry-forwarder/README.md</code> for the full metric-to-span mapping.</p>
 <h2 id="request-response-journaling">Request-response journaling<a class="headerlink" href="#request-response-journaling" title="Permanent link">&para;</a></h2>
 <p>Optionally, you may also implement a custom audit function named <code>transaction.journal.recorder</code> to monitor 

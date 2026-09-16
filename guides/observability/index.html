@@ -2284,6 +2284,8 @@
       
         
       
+        
+      
     
     
     
@@ -2624,6 +2626,34 @@
     
   
     Test Report — Streaming Return Route (cross-pod)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../test-reports/otel-dynatrace-certification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — OpenTelemetry forwarder (Dynatrace)
   
 
     
@@ -3379,11 +3409,29 @@ Tempo, …). Add the dependency and it auto-registers; no code required:</p>
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nt">&lt;/dependency&gt;</span>
 </code></pre></div>
 <p>Configure it in <code>application.properties</code> (values support <code>${ENV_VAR:default}</code> substitution):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="na">otel.exporter.otlp.endpoint</span><span class="o">=</span><span class="s">${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="na">otel.service.name</span><span class="o">=</span><span class="s">${OTEL_SERVICE_NAME:my-app}</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># Backend credentials come from the environment — no secret hard-coded:</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="na">otel.exporter.otlp.headers</span><span class="o">=</span><span class="s">${OTEL_EXPORTER_OTLP_HEADERS}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Master switch - DEFAULT OFF. The dependency alone registers nothing.</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="na">otel.forwarding</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="na">otel.exporter.otlp.endpoint</span><span class="o">=</span><span class="s">${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="na">otel.service.name</span><span class="o">=</span><span class="s">${OTEL_SERVICE_NAME:my-app}</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># Backend credentials come from the environment — no secret hard-coded:</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="na">otel.exporter.otlp.headers</span><span class="o">=</span><span class="s">${OTEL_EXPORTER_OTLP_HEADERS}</span>
 </code></pre></div>
+<blockquote>
+<p><strong>A caution on <code>OTEL_*</code> variable names.</strong> Referencing the OpenTelemetry standard variables
+(<code>OTEL_SERVICE_NAME</code>, <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>, …) is convenient and works, but those names are
+often exported machine-wide on instrumented hosts and CI agents — so an application can silently
+inherit a service name or, worse, an endpoint that redirects its telemetry somewhere unintended. When
+that matters, reference your own prefixed variables instead; <code>examples/composable-example</code> uses
+<code>OTLP_SERVICE_NAME</code> / <code>OTLP_API_ENDPOINT</code> / <code>OTLP_AUTH_HEADER</code> / <code>OTLP_TOKEN</code> for exactly this reason,
+and the forwarder's own tests avoid <code>${OTEL_*}</code> references so a leaked endpoint cannot redirect a
+hermetic test.</p>
+<p><strong>Adding the jar does not turn forwarding on.</strong> The forwarder lives under <code>org.platformlambda</code>, a base
+scan package, so the dependency alone would auto-register it. It is gated by
+<code>@OptionalService("otel.forwarding")</code> with a default of <strong>false</strong>, which separates the two decisions
+that belong to different people: a developer adds the dependency, and DevOps decides per environment
+whether traces leave the process — <code>otel.forwarding=true</code> in the environment's properties, or
+<code>-Dotel.forwarding=true</code> at launch with no rebuild. With it off, the route does not exist at all.</p>
+</blockquote>
 <p>Point the endpoint at an OpenTelemetry Collector, or directly at a SaaS backend with its API token in the headers:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Dynatrace</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OTEL_EXPORTER_OTLP_ENDPOINT</span><span class="o">=</span><span class="s2">"https://{env-id}.live.dynatrace.com/api/v2/otlp/v1/traces"</span>
@@ -3393,6 +3441,17 @@ Tempo, …). Add the dependency and it auto-registers; no code required:</p>
 <a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OTEL_EXPORTER_OTLP_ENDPOINT</span><span class="o">=</span><span class="s2">"https://ingest.{realm}.signalfx.com/v2/trace/otlp"</span>
 <a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OTEL_EXPORTER_OTLP_HEADERS</span><span class="o">=</span><span class="s2">"X-SF-Token=YOUR_ACCESS_TOKEN"</span>
 </code></pre></div>
+<blockquote>
+<p><strong>The credential is re-read on every export, so a late-published token still works.</strong> The forwarder is
+a <code>@PreLoad</code> function, and those are constructed <em>before</em> any <code>@MainApplication</code> runs — so if your
+token comes from a credential bootstrap rather than the process environment, resolving it once at
+construction would freeze it as absent and every export would fail authentication for the life of the
+process. <code>otel.exporter.otlp.headers</code> is therefore resolved per export: a token published after
+start-up takes effect with no restart, and the log records a single <code>OTLP credential header resolved</code>
+line when it first appears. A credential exported the ordinary way — an environment variable set
+before the JVM starts — behaves exactly as it always did. (Same lazy-resolution shape as the Kafka and
+Redis health checks.)</p>
+</blockquote>
 <p>Each span carries the route name (<code>route</code>), <code>path</code>, <code>from</code>, <code>origin</code>, <code>status</code>, timing, and your <code>annotation.*</code>
 values as span attributes, with <code>service.name</code> on the resource. See the full key reference in the
 <a href="../configuration-reference/#observability">Configuration Reference</a>.</p>

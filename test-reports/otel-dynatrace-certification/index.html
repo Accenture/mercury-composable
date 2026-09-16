@@ -10,31 +10,31 @@
       
       
       
-        <link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/knowledge-graph/build-your-first-graph/">
+        <link rel="canonical" href="https://accenture.github.io/mercury-composable/test-reports/otel-dynatrace-certification/">
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../streaming-return-route-cross-pod/">
       
       
-        <link rel="next" href="../workflow-suspension/">
+        <link rel="next" href="../../guides/reserved-names-and-headers/">
       
       
         
       
       
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>Build your first Active Knowledge Graph - Composable for Java</title>
+        <title>Test Report — OpenTelemetry forwarder against Dynatrace - Composable for Java</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,9 +53,9 @@
       
     
     
-      <link rel="stylesheet" href="../../../css/extra.css">
+      <link rel="stylesheet" href="../../css/extra.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#build-your-first-active-knowledge-graph" class="md-skip">
+        <a href="#test-report-opentelemetry-forwarder-against-dynatrace" class="md-skip">
           Skip to content
         </a>
       
@@ -94,7 +94,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="Composable for Java" class="md-header__button md-logo" aria-label="Composable for Java" data-md-component="logo">
+    <a href="../.." title="Composable for Java" class="md-header__button md-logo" aria-label="Composable for Java" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 11a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1M4.22 4.22C5.65 2.79 8.75 3.43 12 5.56c3.25-2.13 6.35-2.77 7.78-1.34s.79 4.53-1.34 7.78c2.13 3.25 2.77 6.35 1.34 7.78s-4.53.79-7.78-1.34c-3.25 2.13-6.35 2.77-7.78 1.34S3.43 15.25 5.56 12C3.43 8.75 2.79 5.65 4.22 4.22m11.32 4.24c.61.62 1.17 1.25 1.69 1.88 1.38-2.13 1.88-3.96 1.13-4.7-.74-.75-2.57-.25-4.7 1.13.63.52 1.26 1.08 1.88 1.69m-7.08 7.08c-.61-.62-1.17-1.25-1.69-1.88-1.38 2.13-1.88 3.96-1.13 4.7.74.75 2.57.25 4.7-1.13-.63-.52-1.26-1.08-1.88-1.69m-2.82-9.9c-.75.74-.25 2.57 1.13 4.7.52-.63 1.08-1.26 1.69-1.88.62-.61 1.25-1.17 1.88-1.69-2.13-1.38-3.96-1.88-4.7-1.13m4.24 8.48c.7.7 1.42 1.34 2.12 1.91.7-.57 1.42-1.21 2.12-1.91s1.34-1.42 1.91-2.12c-.57-.7-1.21-1.42-1.91-2.12S12.7 8.54 12 7.97c-.7.57-1.42 1.21-2.12 1.91S8.54 11.3 7.97 12c.57.7 1.21 1.42 1.91 2.12m8.48 4.24c.75-.74.25-2.57-1.13-4.7-.52.63-1.08 1.26-1.69 1.88-.62.61-1.25 1.17-1.88 1.69 2.13 1.38 3.96 1.88 4.7 1.13"/></svg>
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Build your first Active Knowledge Graph
+              Test Report — OpenTelemetry forwarder against Dynatrace
             
           </span>
         </div>
@@ -237,7 +237,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../.." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -258,7 +258,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../getting-started/" class="md-tabs__link">
+        <a href="../../guides/getting-started/" class="md-tabs__link">
           
   
   
@@ -280,7 +280,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../architecture/" class="md-tabs__link">
+        <a href="../../guides/architecture/" class="md-tabs__link">
           
   
   
@@ -302,7 +302,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../event-driven/" class="md-tabs__link">
+        <a href="../../guides/event-driven/" class="md-tabs__link">
           
   
   
@@ -324,7 +324,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../event-script/" class="md-tabs__link">
+        <a href="../../guides/event-script/" class="md-tabs__link">
           
   
   
@@ -342,13 +342,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../guides/knowledge-graph/" class="md-tabs__link">
           
   
   
@@ -370,7 +368,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../build-test-deploy/" class="md-tabs__link">
+        <a href="../../guides/build-test-deploy/" class="md-tabs__link">
           
   
   
@@ -388,11 +386,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../../arch-decisions/ADR/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../arch-decisions/ADR/" class="md-tabs__link">
           
   
   
@@ -428,7 +428,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Composable for Java" class="md-nav__button md-logo" aria-label="Composable for Java" data-md-component="logo">
+    <a href="../.." title="Composable for Java" class="md-nav__button md-logo" aria-label="Composable for Java" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 11a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1M4.22 4.22C5.65 2.79 8.75 3.43 12 5.56c3.25-2.13 6.35-2.77 7.78-1.34s.79 4.53-1.34 7.78c2.13 3.25 2.77 6.35 1.34 7.78s-4.53.79-7.78-1.34c-3.25 2.13-6.35 2.77-7.78 1.34S3.43 15.25 5.56 12C3.43 8.75 2.79 5.65 4.22 4.22m11.32 4.24c.61.62 1.17 1.25 1.69 1.88 1.38-2.13 1.88-3.96 1.13-4.7-.74-.75-2.57-.25-4.7 1.13.63.52 1.26 1.08 1.88 1.69m-7.08 7.08c-.61-.62-1.17-1.25-1.69-1.88-1.38 2.13-1.88 3.96-1.13 4.7.74.75 2.57.25 4.7-1.13-.63-.52-1.26-1.08-1.88-1.69m-2.82-9.9c-.75.74-.25 2.57 1.13 4.7.52-.63 1.08-1.26 1.69-1.88.62-.61 1.25-1.17 1.88-1.69-2.13-1.38-3.96-1.88-4.7-1.13m4.24 8.48c.7.7 1.42 1.34 2.12 1.91.7-.57 1.42-1.21 2.12-1.91s1.34-1.42 1.91-2.12c-.57-.7-1.21-1.42-1.91-2.12S12.7 8.54 12 7.97c-.7.57-1.42 1.21-2.12 1.91S8.54 11.3 7.97 12c.57.7 1.21 1.42 1.91 2.12m8.48 4.24c.75-.74.25-2.57-1.13-4.7-.52.63-1.08 1.26-1.69 1.88-.62.61-1.25 1.17-1.88 1.69 2.13 1.38 3.96 1.88 4.7 1.13"/></svg>
@@ -458,7 +458,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -545,7 +545,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/" class="md-nav__link">
+      <a href="../../guides/getting-started/" class="md-nav__link">
         
   
   
@@ -573,7 +573,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mercury-story/" class="md-nav__link">
+      <a href="../../mercury-story/" class="md-nav__link">
         
   
   
@@ -601,7 +601,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mercury-family/" class="md-nav__link">
+      <a href="../../mercury-family/" class="md-nav__link">
         
   
   
@@ -696,7 +696,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
+      <a href="../../guides/architecture/" class="md-nav__link">
         
   
   
@@ -724,7 +724,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../methodology/" class="md-nav__link">
+      <a href="../../guides/methodology/" class="md-nav__link">
         
   
   
@@ -752,7 +752,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ai-developer-guide/" class="md-nav__link">
+      <a href="../../guides/ai-developer-guide/" class="md-nav__link">
         
   
   
@@ -822,7 +822,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../event-driven/" class="md-nav__link ">
+            <a href="../../guides/event-driven/" class="md-nav__link ">
               
   
   
@@ -866,7 +866,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../event-driven/write-your-first-function/" class="md-nav__link">
+      <a href="../../guides/event-driven/write-your-first-function/" class="md-nav__link">
         
   
   
@@ -894,7 +894,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../event-driven/function-execution/" class="md-nav__link">
+      <a href="../../guides/event-driven/function-execution/" class="md-nav__link">
         
   
   
@@ -922,7 +922,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../event-driven/ai-agent-guide/" class="md-nav__link">
+      <a href="../../guides/event-driven/ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -950,7 +950,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../rest-automation/" class="md-nav__link">
+      <a href="../../guides/rest-automation/" class="md-nav__link">
         
   
   
@@ -978,7 +978,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../rest-automation/rest-grammar/" class="md-nav__link">
+      <a href="../../guides/rest-automation/rest-grammar/" class="md-nav__link">
         
   
   
@@ -1006,7 +1006,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../rest-automation/ai-agent-guide/" class="md-nav__link">
+      <a href="../../guides/rest-automation/ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -1072,7 +1072,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../event-script/" class="md-nav__link ">
+            <a href="../../guides/event-script/" class="md-nav__link ">
               
   
   
@@ -1116,7 +1116,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../event-script/syntax/" class="md-nav__link">
+      <a href="../../guides/event-script/syntax/" class="md-nav__link">
         
   
   
@@ -1144,7 +1144,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../event-script/flow-grammar/" class="md-nav__link">
+      <a href="../../guides/event-script/flow-grammar/" class="md-nav__link">
         
   
   
@@ -1172,7 +1172,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../event-script/ai-agent-guide/" class="md-nav__link">
+      <a href="../../guides/event-script/ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -1200,7 +1200,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../flow-schema-reference/" class="md-nav__link">
+      <a href="../../guides/flow-schema-reference/" class="md-nav__link">
         
   
   
@@ -1232,8 +1232,6 @@
       
   
   
-    
-  
   
   
     
@@ -1263,23 +1261,20 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../guides/knowledge-graph/" class="md-nav__link ">
               
   
   
@@ -1297,13 +1292,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1320,37 +1315,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Build your first graph
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../guides/knowledge-graph/build-your-first-graph/" class="md-nav__link">
         
   
   
@@ -1366,114 +1334,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#hello-world" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Step 1 — a root and an end
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#echo-input" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Step 2 — make it echo the input
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#export" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Step 3 — export the model
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#deploy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Step 4 — deploy it
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#call-over-rest" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Step 5 — call it over REST
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-it-ran" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What just happened
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#whats-next" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What's next
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        See also
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1486,7 +1346,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../workflow-suspension/" class="md-nav__link">
+      <a href="../../guides/knowledge-graph/workflow-suspension/" class="md-nav__link">
         
   
   
@@ -1514,7 +1374,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../skills-reference/" class="md-nav__link">
+      <a href="../../guides/knowledge-graph/skills-reference/" class="md-nav__link">
         
   
   
@@ -1542,7 +1402,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../command-reference/" class="md-nav__link">
+      <a href="../../guides/knowledge-graph/command-reference/" class="md-nav__link">
         
   
   
@@ -1570,7 +1430,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ai-agent-guide/" class="md-nav__link">
+      <a href="../../guides/knowledge-graph/ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -1598,7 +1458,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../composing-the-layers/" class="md-nav__link">
+      <a href="../../guides/knowledge-graph/composing-the-layers/" class="md-nav__link">
         
   
   
@@ -1626,7 +1486,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../playground-and-companion/" class="md-nav__link">
+      <a href="../../guides/knowledge-graph/playground-and-companion/" class="md-nav__link">
         
   
   
@@ -1654,7 +1514,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../property-graph/" class="md-nav__link">
+      <a href="../../guides/knowledge-graph/property-graph/" class="md-nav__link">
         
   
   
@@ -1767,7 +1627,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../build-test-deploy/" class="md-nav__link">
+      <a href="../../guides/build-test-deploy/" class="md-nav__link">
         
   
   
@@ -1795,7 +1655,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../observability/" class="md-nav__link">
+      <a href="../../guides/observability/" class="md-nav__link">
         
   
   
@@ -1823,7 +1683,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../spring-boot/" class="md-nav__link">
+      <a href="../../guides/spring-boot/" class="md-nav__link">
         
   
   
@@ -1851,7 +1711,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../event-over-http/" class="md-nav__link">
+      <a href="../../guides/event-over-http/" class="md-nav__link">
         
   
   
@@ -1879,7 +1739,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../http-streaming/" class="md-nav__link">
+      <a href="../../guides/http-streaming/" class="md-nav__link">
         
   
   
@@ -1907,7 +1767,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../polyglot-functions/" class="md-nav__link">
+      <a href="../../guides/polyglot-functions/" class="md-nav__link">
         
   
   
@@ -1935,7 +1795,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../minimalist-kafka/" class="md-nav__link">
+      <a href="../../guides/minimalist-kafka/" class="md-nav__link">
         
   
   
@@ -1963,7 +1823,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../twin-kafka/" class="md-nav__link">
+      <a href="../../guides/twin-kafka/" class="md-nav__link">
         
   
   
@@ -1991,7 +1851,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../distributed-cache/" class="md-nav__link">
+      <a href="../../guides/distributed-cache/" class="md-nav__link">
         
   
   
@@ -2019,7 +1879,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../schema-registry-mock/" class="md-nav__link">
+      <a href="../../guides/schema-registry-mock/" class="md-nav__link">
         
   
   
@@ -2047,7 +1907,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../sync-over-async/" class="md-nav__link">
+      <a href="../../guides/sync-over-async/" class="md-nav__link">
         
   
   
@@ -2075,7 +1935,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../service-mesh/" class="md-nav__link">
+      <a href="../../guides/service-mesh/" class="md-nav__link">
         
   
   
@@ -2107,8 +1967,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -2156,19 +2018,22 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
             
   
   
@@ -2186,7 +2051,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2204,7 +2069,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../arch-decisions/ADR/" class="md-nav__link">
+      <a href="../../arch-decisions/ADR/" class="md-nav__link">
         
   
   
@@ -2232,7 +2097,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api-overview/" class="md-nav__link">
+      <a href="../../guides/api-overview/" class="md-nav__link">
         
   
   
@@ -2260,7 +2125,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../annotations-reference/" class="md-nav__link">
+      <a href="../../guides/annotations-reference/" class="md-nav__link">
         
   
   
@@ -2288,7 +2153,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../configuration-reference/" class="md-nav__link">
+      <a href="../../guides/configuration-reference/" class="md-nav__link">
         
   
   
@@ -2316,7 +2181,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../event-envelope-reference/" class="md-nav__link">
+      <a href="../../guides/event-envelope-reference/" class="md-nav__link">
         
   
   
@@ -2344,7 +2209,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../event-envelope-wire-format/" class="md-nav__link">
+      <a href="../../guides/event-envelope-wire-format/" class="md-nav__link">
         
   
   
@@ -2372,7 +2237,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../registration-metadata-contract/" class="md-nav__link">
+      <a href="../../guides/registration-metadata-contract/" class="md-nav__link">
         
   
   
@@ -2400,7 +2265,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../test-reports/event-over-http-interop/" class="md-nav__link">
+      <a href="../event-over-http-interop/" class="md-nav__link">
         
   
   
@@ -2428,7 +2293,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../test-reports/progressive-rendering-interop/" class="md-nav__link">
+      <a href="../progressive-rendering-interop/" class="md-nav__link">
         
   
   
@@ -2456,7 +2321,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../test-reports/suspend-resume-interop/" class="md-nav__link">
+      <a href="../suspend-resume-interop/" class="md-nav__link">
         
   
   
@@ -2484,7 +2349,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../test-reports/streaming-return-route-cross-pod/" class="md-nav__link">
+      <a href="../streaming-return-route-cross-pod/" class="md-nav__link">
         
   
   
@@ -2509,10 +2374,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../../test-reports/otel-dynatrace-certification/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — OpenTelemetry forwarder (Dynatrace)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2528,6 +2420,114 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-scenario-under-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The scenario under test
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-1-the-switch-is-the-only-thing-that-turns-it-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 1 — the switch is the only thing that turns it on
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-2-six-spans-one-trace-zero-export-failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 2 — six spans, one trace, zero export failures
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-3-the-a-b-a-credential-experiment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 3 — the A-B-A credential experiment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-4-failures-that-name-their-own-cause" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 4 — failures that name their own cause
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#observations-and-round-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observations and round notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-5-confirmed-queryable-in-dynatrace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 5 — confirmed queryable in Dynatrace
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-remains" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What remains
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2540,7 +2540,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reserved-names-and-headers/" class="md-nav__link">
+      <a href="../../guides/reserved-names-and-headers/" class="md-nav__link">
         
   
   
@@ -2568,7 +2568,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../actuators-and-http-client/" class="md-nav__link">
+      <a href="../../guides/actuators-and-http-client/" class="md-nav__link">
         
   
   
@@ -2596,7 +2596,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../code-conventions/" class="md-nav__link">
+      <a href="../../guides/code-conventions/" class="md-nav__link">
         
   
   
@@ -2624,7 +2624,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documentation-conventions/" class="md-nav__link">
+      <a href="../../guides/documentation-conventions/" class="md-nav__link">
         
   
   
@@ -2791,10 +2791,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#hello-world" class="md-nav__link">
+  <a href="#the-scenario-under-test" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 1 — a root and an end
+        The scenario under test
       
     </span>
   </a>
@@ -2802,10 +2802,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#echo-input" class="md-nav__link">
+  <a href="#scenario-1-the-switch-is-the-only-thing-that-turns-it-on" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 2 — make it echo the input
+        Scenario 1 — the switch is the only thing that turns it on
       
     </span>
   </a>
@@ -2813,10 +2813,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#export" class="md-nav__link">
+  <a href="#scenario-2-six-spans-one-trace-zero-export-failures" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 3 — export the model
+        Scenario 2 — six spans, one trace, zero export failures
       
     </span>
   </a>
@@ -2824,10 +2824,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#deploy" class="md-nav__link">
+  <a href="#scenario-3-the-a-b-a-credential-experiment" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 4 — deploy it
+        Scenario 3 — the A-B-A credential experiment
       
     </span>
   </a>
@@ -2835,10 +2835,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#call-over-rest" class="md-nav__link">
+  <a href="#scenario-4-failures-that-name-their-own-cause" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 5 — call it over REST
+        Scenario 4 — failures that name their own cause
       
     </span>
   </a>
@@ -2846,10 +2846,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-it-ran" class="md-nav__link">
+  <a href="#observations-and-round-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What just happened
+        Observations and round notes
       
     </span>
   </a>
@@ -2857,10 +2857,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#whats-next" class="md-nav__link">
+  <a href="#scenario-5-confirmed-queryable-in-dynatrace" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What's next
+        Scenario 5 — confirmed queryable in Dynatrace
       
     </span>
   </a>
@@ -2868,10 +2868,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
+  <a href="#what-remains" class="md-nav__link">
     <span class="md-ellipsis">
       
-        See also
+        What remains
       
     </span>
   </a>
@@ -2898,161 +2898,275 @@
   
 
 
-<h1 id="build-your-first-active-knowledge-graph">Build your first Active Knowledge Graph<a class="headerlink" href="#build-your-first-active-knowledge-graph" title="Permanent link">&para;</a></h1>
-<blockquote>
-<p><strong>At a glance</strong></p>
-<ul>
-<li><strong>You'll build</strong> — a tiny service that returns a message, then enhance it to echo its input,
-  then deploy it and call it over REST. No application code, only a graph model.</li>
-<li><strong>You'll use</strong> — the MiniGraph Playground (the interactive workbench) and one skill,
-  <code>graph.data.mapper</code>.</li>
-<li><strong>Prerequisites</strong> — the app running with <code>app.env=dev</code> and the Playground open in a browser
-  (the app's base URL, e.g. <code>http://127.0.0.1:8085/</code> — the Playground UI is the app's web root);
-  about 10 minutes. New to the idea? Read <a href="../">Knowledge Graph as Application</a> first.</li>
-<li><strong>Conventions</strong> — lines you type into the Playground inbox are shown in code blocks; the
-  console's reply follows under <code>&gt;</code>.</li>
-</ul>
-</blockquote>
-<h2 id="hello-world">Step 1 — a root and an end<a class="headerlink" href="#hello-world" title="Permanent link">&para;</a></h2>
-<p>Every graph has a <strong>Root</strong> (entry) and an <strong>End</strong> (exit). Create the root first:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>create node root
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>with type Root
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>with properties
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>purpose=My first graph
-</code></pre></div>
-<p>Now create the end node and give it a <strong>skill</strong> — <code>graph.data.mapper</code> — so it actually does
-something. The <code>mapping[]</code> entry copies the constant <code>hello world</code> into <code>output.body</code>, the
-response payload:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>create node end
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>with type End
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>with properties
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>skill=graph.data.mapper
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>mapping[]=text(hello world) -&gt; output.body
-</code></pre></div>
-<p>Connect them so traversal can flow root → end (the label, here <code>done</code>, names the connection):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>connect root to end with done
-</code></pre></div>
-<p>Run it. <code>instantiate graph</code> creates a runnable instance from the model; <code>run</code> traverses it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>instantiate graph
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>run
-</code></pre></div>
-<p>The console shows the traversal and the result:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>&gt; run
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>Walk to root
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Walk to end
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>Executed end with skill graph.data.mapper in 1.7 ms
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>{
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>  "output": {
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    "body": "hello world"
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>  }
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>}
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>Graph traversal completed in 9 ms
-</code></pre></div>
-<p>That is a complete, working Active Knowledge Graph: a root, an active node carrying a skill, and
-an end — behavior expressed entirely as a model.</p>
-<h2 id="echo-input">Step 2 — make it echo the input<a class="headerlink" href="#echo-input" title="Permanent link">&para;</a></h2>
-<p>A real service reacts to input. Update the end node to map the <em>request</em> body to the <em>response</em>
-body instead of a constant:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>update node end
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>with type End
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>with properties
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>skill=graph.data.mapper
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>mapping[]=input.body -&gt; output.body
-</code></pre></div>
-<p>This time, <strong>dry-run</strong> with mock input — <code>instantiate graph</code> accepts seed values, here putting the
-constant <code>it works</code> into <code>input.body.message</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>instantiate graph
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  text(it works) -&gt; input.body.message
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>run
-</code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>&gt; run
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>Walk to root
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>Walk to end
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>Executed end with skill graph.data.mapper in 0.4 ms
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>{
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  "output": {
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    "body": {
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>      "message": "it works"
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    }
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>  }
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>}
-<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>Graph traversal completed in 2 ms
-</code></pre></div>
-<p>A dry-run needs no live dependencies — it's how you validate a model before deploying it.</p>
-<h2 id="export">Step 3 — export the model<a class="headerlink" href="#export" title="Permanent link">&para;</a></h2>
-<p>Export the graph to JSON so it can be deployed. The engine writes it to the temp graph location
-(<code>location.graph.temp</code>, default <code>file:/tmp/graph</code>) and stamps the graph's name onto the root node:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>export graph as my-first-graph
-</code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>&gt; export graph as my-first-graph
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>Graph exported to /tmp/graph/my-first-graph.json
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>Described in /api/graph/model/my-first-graph/{token}
-</code></pre></div>
-<h2 id="deploy">Step 4 — deploy it<a class="headerlink" href="#deploy" title="Permanent link">&para;</a></h2>
-<p>Deployment is a file copy plus a manifest entry. The relevant <code>application.properties</code> keys:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># temp working location (must be file:/ — read/write)</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="na">location.graph.temp</span><span class="o">=</span><span class="s">file:/tmp/graph</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1"># the graph manifest - the quality gate and the only door to deployed execution</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="na">graph.model.automation</span><span class="o">=</span><span class="s">classpath:/graphs.yaml</span>
-</code></pre></div>
-<p>Copy the model into the deployed-graph folder <strong>and list its ID in the manifest</strong>
-(<code>graphs.yaml</code>), then restart the app.</p>
-<blockquote>
-<p><strong>Export before you restart.</strong> Restarting ends every Playground session, and the working graph
-lives in the session — anything not exported with <code>export graph as {name}</code> is lost. The export
-in the previous step is what makes this restart safe.</p>
-</blockquote>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>cp /tmp/graph/my-first-graph.json src/main/resources/graph/
-</code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nt">graphs</span><span class="p">:</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'my-first-graph'</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="nt">location</span><span class="p">:</span><span class="w"> </span><span class="s">'classpath:/graph'</span>
-</code></pre></div>
-<p>Like <code>flows.yaml</code>, the manifest carries the location of its own models: the optional
-<code>location</code> entry points at the deployed-graph folder (<code>file:/</code> or <code>classpath:/</code> — it is
-read-only) and defaults to <code>classpath:/graph</code>, so most projects can omit it.</p>
-<p>At startup, <code>CompileGraph</code> validates every manifest graph once — structure, the root node's
-<code>purpose</code>, data-mapping syntax, and the suspend/resume contract — and only graphs that pass
-become executable. A graph that fails the gate, or is not listed, answers <strong>HTTP-404</strong> as if
-it does not exist, exactly like an invalid flow under <code>CompileFlows</code>. The startup log tells
-you why a graph was rejected (<code>Rejected graph &lt;id&gt; - &lt;reason&gt;</code>).</p>
-<h2 id="call-over-rest">Step 5 — call it over REST<a class="headerlink" href="#call-over-rest" title="Permanent link">&para;</a></h2>
-<p>A deployed graph is reachable at the generic endpoint <code>POST /api/graph/{graph-id}</code>, where the id is
-the name you exported. Send it some input:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>curl -X POST http://127.0.0.1:8085/api/graph/my-first-graph \
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  -H "Content-Type: application/json" \
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>  -d '{"message": "it is a wonderful day"}'
-</code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"it is a wonderful day"</span><span class="p">}</span>
-</code></pre></div>
-<p>(The port follows your app's configuration; <code>8085</code> is illustrative.)</p>
-<h2 id="how-it-ran">What just happened<a class="headerlink" href="#how-it-ran" title="Permanent link">&para;</a></h2>
-<p>The graph isn't called directly — it's wrapped by an <a href="../../event-script/syntax/">Event Script</a> flow, which is
-how it gets a REST endpoint without coupling execution to the protocol:</p>
+<h1 id="test-report-opentelemetry-forwarder-against-dynatrace">Test Report — OpenTelemetry forwarder against Dynatrace<a class="headerlink" href="#test-report-opentelemetry-forwarder-against-dynatrace" title="Permanent link">&para;</a></h1>
+<p><em>Live validation of the <a href="../../guides/observability/#otel-forwarder">OpenTelemetry forwarder</a>
+against a </em><em>Dynatrace SaaS OTLP endpoint</em><em>, conducted 2026-09-16 on a single developer machine
+running <code>composable-example</code> as the subject application. This report is a permanent record in the
+tradition of the <a href="../streaming-return-route-cross-pod/">streaming return route report</a>: what was
+run, the evidence, and the observations the round produced.</em></p>
+<p><em>No endpoint URL, token, or tenant identifier appears in this report or in any committed file. All
+three come from the environment at launch; the committed configuration keeps the feature off.</em></p>
+<h2 id="the-scenario-under-test">The scenario under test<a class="headerlink" href="#the-scenario-under-test" title="Permanent link">&para;</a></h2>
+<p>Mercury emits its own distributed trace for every transaction. The forwarder extension turns that
+into OTLP and ships it to a vendor backend, so a Mercury application appears in the same tracing
+tool as everything else the enterprise runs. Two things needed proving on real infrastructure
+rather than against a mock:</p>
 <ol>
-<li><code>http.flow.adapter</code> receives <code>POST /api/graph/my-first-graph</code> and runs the <code>graph-executor</code> flow.</li>
-<li><code>graph.executor</code> builds a graph instance and traverses root → end.</li>
-<li>At the end node it invokes <code>graph.data.mapper</code>, which writes <code>output.body</code>.</li>
-<li><code>async.http.response</code> returns that body to your <code>curl</code>.</li>
+<li><strong>The opt-in switch does what it claims.</strong> Carrying the dependency must register nothing;
+   <code>otel.forwarding=true</code> must be the only thing that turns the route on.</li>
+<li><strong>A real vendor backend accepts the spans</strong> — the wire format, the endpoint path, the
+   vendor-specific credential header, and gzip compression, all together.</li>
 </ol>
-<p>You can see exactly these steps in the application's telemetry log.</p>
-<h2 id="whats-next">What's next<a class="headerlink" href="#whats-next" title="Permanent link">&para;</a></h2>
-<p>You built behavior with one skill. The graph becomes genuinely <em>active</em> when nodes <strong>decide</strong>,
-<strong>compute</strong>, and <strong>fetch</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Subject application</td>
+<td><code>examples/composable-example</code>, the <code>create-profile</code> flow</td>
+</tr>
+<tr>
+<td>Backend</td>
+<td>Dynatrace SaaS OTLP HTTP endpoint (non-prod tenant)</td>
+</tr>
+<tr>
+<td>Service name</td>
+<td><code>mercury-otel-cert</code> (via <code>OTLP_SERVICE_NAME</code>)</td>
+</tr>
+<tr>
+<td>Credential</td>
+<td><code>Authorization: Api-Token</code> + token, both from the environment</td>
+</tr>
+<tr>
+<td>Compression</td>
+<td>gzip</td>
+</tr>
+<tr>
+<td>Runtime</td>
+<td>Java 21.0.12.1, Maven 3.9.16, macOS</td>
+</tr>
+<tr>
+<td>Build under test</td>
+<td>branch <code>feature/otel-certification</code>, forwarder commit <code>2036b5b4</code></td>
+</tr>
+</tbody>
+</table>
+<p>The transaction is one <code>POST /api/profile</code>. Its <code>id</code> must be <strong>numeric</strong> — <code>Profile.id</code> is an
+<code>Integer</code>, and a string id fails the transaction before any span is emitted.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8100/api/profile<span class="w"> </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"id":20260916,"name":"OTel Certification","address":"1 Trace Street","telephone":"123-456-7890"}'</span>
+</code></pre></div>
+<h2 id="scenario-1-the-switch-is-the-only-thing-that-turns-it-on">Scenario 1 — the switch is the only thing that turns it on<a class="headerlink" href="#scenario-1-the-switch-is-the-only-thing-that-turns-it-on" title="Permanent link">&para;</a></h2>
+<p><code>composable-example</code> declares the forwarder as an ordinary dependency and ships
+<code>otel.forwarding=false</code>. The forwarder class is annotated <code>@OptionalService("otel.forwarding")</code>, so
+with the switch off the class is never registered and the route does not exist — the application
+behaves exactly as it did before the dependency was added. This is pinned by a test in the example
+app itself (<code>OtelForwardingSwitchTest</code>), so the "dependency present, feature off" property cannot
+regress silently.</p>
+<p>Launched with the switch on, the route appears and the forwarder announces its configuration:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>OpenTelemetry trace forwarder ready - service=mercury-otel-cert,
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>OTLP endpoint=&lt;redacted&gt;, compression=gzip, credential headers=[Authorization]
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>PRIVATE distributed.trace.forwarder started as virtual thread
+</code></pre></div>
+<p>Note what that line does <strong>not</strong> contain. It names the credential header but never its value, so
+the startup log of a production pod cannot leak the token.</p>
+<h2 id="scenario-2-six-spans-one-trace-zero-export-failures">Scenario 2 — six spans, one trace, zero export failures<a class="headerlink" href="#scenario-2-six-spans-one-trace-zero-export-failures" title="Permanent link">&para;</a></h2>
+<p>One transaction, HTTP 201 in 20 ms. Mercury's own trace contains six spans, and the forwarder
+exports each one individually as it arrives:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>http.flow.adapter          8d63c9fd65984a73   server
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>├─ task.executor           81e9b286325117c7   internal
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>└─ v1.create.profile       95e4510fe14d6419   internal
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>   ├─ async.http.response  8177b74c744778e3   internal
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>   └─ v1.encrypt.fields    8dbf4257826c107f   internal
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>      └─ v1.save.profile   a1df2ce1039869c9   internal
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>trace 4815a9a3f2cb4768b4b479a90687ee5a — 2026-09-16T19:22:37.656Z
+</code></pre></div>
+<p>The nesting above is <strong>as Dynatrace reconstructed it</strong> from the <code>parent_span_id</code> values Mercury
+propagated, not as inferred locally — the backend is the authority on parentage, and it is what
+proves the W3C context survived the wire.</p>
+<p>Zero <code>OTLP export failed</code> lines. Because the forwarder exports one span per call and attaches a
+completion callback (<code>exporter.export(singletonList(span))</code> + <code>whenComplete</code>), there is no batch
+window in which a failure could still be pending — every span's outcome is known by the time the
+transaction finishes.</p>
+<h2 id="scenario-3-the-a-b-a-credential-experiment">Scenario 3 — the A-B-A credential experiment<a class="headerlink" href="#scenario-3-the-a-b-a-credential-experiment" title="Permanent link">&para;</a></h2>
+<p><strong>Zero failures is only evidence if a failure was possible.</strong> A forwarder that silently skipped
+export, or never attached the credential, would also produce zero failures. So the same run was
+repeated with a deliberately invalid token, then restored:</p>
+<table>
+<thead>
+<tr>
+<th>Leg</th>
+<th>Credential</th>
+<th>Export failures</th>
+<th>App response</th>
+<th>Trace</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A</strong> — clean</td>
+<td>real token</td>
+<td><strong>0</strong> of 6</td>
+<td>HTTP 201</td>
+<td><code>4815a9a3…</code> at 19:22:37Z</td>
+</tr>
+<tr>
+<td><strong>B</strong> — negative control</td>
+<td>bogus token</td>
+<td><strong>6</strong> of 6</td>
+<td>HTTP 201</td>
+<td><code>2bbae37f…</code> at 19:28:50Z</td>
+</tr>
+<tr>
+<td><strong>A′</strong> — restored</td>
+<td>real token</td>
+<td><strong>0</strong> of 6</td>
+<td>HTTP 201</td>
+<td><code>e761110f…</code> at 19:29:41Z</td>
+</tr>
+</tbody>
+</table>
+<p>Leg B's diagnostic, one per span:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>OTLP export failed for span 9ff320a0b0187a10 of trace 2bbae37f1f3446f28cb0984e4032b5f0
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>- HTTP 401 Unauthorized - Token Authentication failed | the backend rejected the credential
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  itself - check otel.exporter.otlp.headers (the header name and any auth scheme must match
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  what the backend expects)
+</code></pre></div>
+<p>Three conclusions follow, none of which the clean run alone could support:</p>
 <ul>
-<li><code>graph.math</code> — inline math and <code>IF/THEN/ELSE</code> branching for decisions.</li>
-<li><code>graph.api.fetcher</code> — call external APIs declaratively via data-dictionary and provider nodes.</li>
-<li><code>graph.extension</code> — delegate to a sub-graph or an Event Script flow.</li>
-<li><code>graph.task</code> — invoke a composable function through its route name.</li>
+<li>The forwarder <strong>really exports</strong> — six attempts, one per span, not a silent no-op.</li>
+<li>The credential <strong>really is sent and validated by Dynatrace</strong>, which means leg A's six clean
+  exports are six 2xx responses from the backend, not six skipped calls.</li>
+<li>The failure path <strong>is self-diagnosing</strong> — the message names the span, the trace, the HTTP
+  status, the backend's own words, and the specific configuration key to look at.</li>
 </ul>
-<p>Each of these gets a worked example in the <a href="../skills-reference/">built-in skills reference</a>.</p>
-<h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
+<p>A fourth observation matters operationally: <strong>leg B still returned HTTP 201.</strong> A telemetry backend
+that is down, or a credential that has expired, degrades observability and nothing else. The
+forwarder is a subscriber to the trace stream, not a participant in the transaction.</p>
+<h2 id="scenario-4-failures-that-name-their-own-cause">Scenario 4 — failures that name their own cause<a class="headerlink" href="#scenario-4-failures-that-name-their-own-cause" title="Permanent link">&para;</a></h2>
+<p>Two failure modes were diagnosed during this round and are recorded because both are easy to spend
+an afternoon on:</p>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause</th>
+<th>What the forwarder now says</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HTTP 404</code> on every export</td>
+<td>The endpoint was the vendor's OTLP <strong>base</strong> URL. <code>OtlpHttpSpanExporter.setEndpoint()</code> wants the full <strong>signal</strong> URL.</td>
+<td><em>check <code>otel.exporter.otlp.endpoint</code> includes the signal path (e.g. <code>.../v1/traces</code>), not just the vendor base URL</em></td>
+</tr>
+<tr>
+<td><code>HTTP 403</code> on every export</td>
+<td>The API token authenticated but lacked the trace-ingest scope.</td>
+<td><em>the credential was accepted but lacks permission - grant the trace-ingest scope on the token (the response body above names it)</em></td>
+</tr>
+</tbody>
+</table>
+<p>The 403 was the substantive blocker for this round: a Dynatrace API token needs
+<code>openpipeline:traces:ingest</code>, and the backend names the missing scope in its response body, which
+the diagnostic prints. Both messages exist because the raw SDK failure — a wrapped internal
+exception with a status code buried in it — told the reader nothing actionable.</p>
+<h2 id="observations-and-round-notes">Observations and round notes<a class="headerlink" href="#observations-and-round-notes" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../">Knowledge Graph as Application</a> — the concepts behind what you just built.</li>
-<li><a href="../../event-script/syntax/">Event Script Syntax</a> — the data-mapping syntax the skills share, and the flow
-  layer that exposes graphs over REST.</li>
+<li><strong>The vendor-specific part is one variable.</strong> <code>OTLP_AUTH_HEADER</code> carries the header name <em>and</em>
+  any auth scheme in literal HTTP syntax (<code>Authorization: Api-Token</code> for Dynatrace,
+  <code>X-SF-Token:</code> for Splunk), which keeps <code>OTLP_TOKEN</code> the bare secret and rotation to a single
+  variable. Switching backends is an environment change, not a rebuild.</li>
+<li><strong>The credential is resolved per export, not once at construction.</strong> <code>@PreLoad</code> classes are
+  constructed before <code>@MainApplication</code> runs, so a forwarder that froze its headers in its
+  constructor would freeze them as missing in any deployment that fetches secrets from a vault at
+  start-up. The headers are supplied as a <code>Supplier</code>, re-read on every export.</li>
+<li><strong><code>OTLP_SERVICE_NAME</code>, deliberately not <code>OTEL_SERVICE_NAME</code>.</strong> <code>OTEL_*</code> variables are often
+  exported machine-wide on instrumented hosts and CI agents; inheriting one by accident would
+  silently rename this application's traces.</li>
+<li><strong>Verify the fat jar, not the build command.</strong> Two dead ends in this round came from running a
+  stale <code>composable-example</code> jar whose nested forwarder predated the change. The nested jar was
+  thereafter checked directly (<code>unzip -p …/BOOT-INF/lib/opentelemetry-forwarder-*.jar … | strings</code>)
+  before every run.</li>
 </ul>
+<h2 id="scenario-5-confirmed-queryable-in-dynatrace">Scenario 5 — confirmed queryable in Dynatrace<a class="headerlink" href="#scenario-5-confirmed-queryable-in-dynatrace" title="Permanent link">&para;</a></h2>
+<p>The exporting side can only prove that Dynatrace <em>accepted</em> the spans. Ingest and visibility are
+different claims — OpenPipeline processing, sampling and retention all sit between them — so the
+round was held open until the traces could be queried in the Dynatrace UI. They can.</p>
+<p>Filtering Distributed Tracing on <code>"Trace id" = 4815a9a3f2cb4768b4b479a90687ee5a</code> — leg A's trace —
+returns <strong>6 spans</strong>, all under service <code>mercury-otel-cert</code>, all with span status <strong>Ok</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Span</th>
+<th>Duration</th>
+<th>Span kind</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>http.flow.adapter</code></td>
+<td>456 µs</td>
+<td><strong>server</strong></td>
+</tr>
+<tr>
+<td><code>task.executor</code></td>
+<td>28 ms</td>
+<td>internal</td>
+</tr>
+<tr>
+<td><code>v1.create.profile</code></td>
+<td>1.81 ms</td>
+<td>internal</td>
+</tr>
+<tr>
+<td><code>async.http.response</code></td>
+<td>509 µs</td>
+<td>internal</td>
+</tr>
+<tr>
+<td><code>v1.encrypt.fields</code></td>
+<td>1.34 ms</td>
+<td>internal</td>
+</tr>
+<tr>
+<td><code>v1.save.profile</code></td>
+<td>15.58 ms</td>
+<td>internal</td>
+</tr>
+</tbody>
+</table>
+<p>Trace duration 29 ms. Four things in that view are worth naming, because each is a separate part of
+the contract holding:</p>
+<ul>
+<li><strong>The span tree reconstructed correctly.</strong> Dynatrace renders the waterfall from <code>parent_span_id</code>,
+  and the shape it drew is the flow's actual shape (above). The W3C context Mercury propagates
+  survived the OTLP mapping.</li>
+<li><strong>Span kinds mapped, not defaulted.</strong> The HTTP entry point is <code>server</code> and every downstream
+  function is <code>internal</code> — so a Mercury trace arrives as a <em>structured</em> trace, not a flat list of
+  identical spans.</li>
+<li><strong>The instrumentation scope is right, and self-versioning.</strong> <code>OTel scope name</code>
+  <code>org.platformlambda.opentelemetry-forwarder</code>, <code>OTel scope version</code> <strong>4.12.10</strong> — resolved at
+  runtime from the running application rather than a hard-coded constant, which is what keeps it
+  from going stale across releases. Confirmed here against a real backend for the first time.</li>
+<li><strong>Dynatrace treats it as a first-class service entity</strong> (Smartscape), not an unattributed span
+  source, so the application appears in service-level views alongside natively instrumented ones.</li>
+</ul>
+<p>The per-span millisecond offsets in the UI match the exporting side's log exactly (<code>.656</code>, <code>.657</code>,
+<code>.658</code>, <code>.664</code>, <code>.666</code>, <code>.669</code>); the wall-clock hour differs only because the tenant renders in its
+own timezone rather than UTC.</p>
+<h2 id="what-remains">What remains<a class="headerlink" href="#what-remains" title="Permanent link">&para;</a></h2>
+<p>Nothing for the forwarder — the loop is closed, exporting side and backend side.</p>
+<p>Two unrelated follow-ups were noted during the round and are tracked elsewhere: the guides still
+show <code>OTEL_EXPORTER_OTLP_HEADERS</code> and <code>OTEL_SERVICE_NAME</code> in generic examples while this reference
+app uses the <code>OTLP_</code>-prefixed split (both work; the split keeps the token a bare secret and avoids
+inheriting a machine-wide <code>OTEL_*</code> value), and Splunk Observability Cloud has not been exercised
+live — its header form is documented and parsed, but only Dynatrace has been run end to end.</p>
 
 
 
@@ -3093,7 +3207,7 @@ how it gets a REST endpoint without coupling execution to the protocol:</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Overview">
+          <a href="../streaming-return-route-cross-pod/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Test Report — Streaming Return Route (cross-pod)">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3103,20 +3217,20 @@ how it gets a REST endpoint without coupling execution to the protocol:</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Overview
+                Test Report — Streaming Return Route (cross-pod)
               </div>
             </div>
           </a>
         
         
           
-          <a href="../workflow-suspension/" class="md-footer__link md-footer__link--next" aria-label="Next: Workflow suspension">
+          <a href="../../guides/reserved-names-and-headers/" class="md-footer__link md-footer__link--next" aria-label="Next: Reserved Names &amp; Headers">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Workflow suspension
+                Reserved Names & Headers
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -3157,10 +3271,10 @@ how it gets a REST endpoint without coupling execution to the protocol:</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

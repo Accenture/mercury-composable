@@ -2012,6 +2012,8 @@
       
         
       
+        
+      
     
     
     
@@ -3041,10 +3043,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#oteltraceforwarderenabled" class="md-nav__link">
+  <a href="#otelforwarding" class="md-nav__link">
     <span class="md-ellipsis">
       
-        otel.trace.forwarder.enabled
+        otel.forwarding
       
     </span>
   </a>
@@ -4506,6 +4508,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../test-reports/otel-dynatrace-certification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — OpenTelemetry forwarder (Dynatrace)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reserved-names-and-headers/" class="md-nav__link">
         
   
@@ -5587,10 +5617,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#oteltraceforwarderenabled" class="md-nav__link">
+  <a href="#otelforwarding" class="md-nav__link">
     <span class="md-ellipsis">
       
-        otel.trace.forwarder.enabled
+        otel.forwarding
       
     </span>
   </a>
@@ -7976,7 +8006,7 @@ the migration back to the standard header (e.g. fixing the gateway allow-list).<
 </tbody>
 </table>
 <p>Start-up grace period for <code>kafka.health</code>: within it the check reports a placeholder healthy status while the Kafka client warms up in the background, so <code>/health</code> never fails or blocks during application start-up. After the first successful probe (or once the grace expires) every check is live and an unreachable cluster fails the check with a 503 status and a key-value message (<code>text</code> + <code>code</code>).</p>
-<h3 id="oteltraceforwarderenabled"><code>otel.trace.forwarder.enabled</code><a class="headerlink" href="#oteltraceforwarderenabled" title="Permanent link">&para;</a></h3>
+<h3 id="otelforwarding"><code>otel.forwarding</code><a class="headerlink" href="#otelforwarding" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -7987,11 +8017,11 @@ the migration back to the standard header (e.g. fixing the gateway allow-list).<
 <tbody>
 <tr>
 <td><code>boolean</code></td>
-<td><code>true</code></td>
+<td><code>false</code></td>
 </tr>
 </tbody>
 </table>
-<p>Used by the <code>opentelemetry-forwarder</code> extension. <code>false</code> makes the forwarder a no-op (jar present, no export).</p>
+<p><strong>Master switch for OpenTelemetry trace forwarding.</strong> The <code>opentelemetry-forwarder</code> extension lives under <code>org.platformlambda</code>, a base scan package, so the jar alone would auto-register its route — the forwarder is therefore annotated <code>@OptionalService("otel.forwarding")</code> and <strong>nothing is registered unless this is <code>true</code></strong>. That lets an application carry the dependency while DevOps decides, per environment, whether traces leave the process. Set it in <code>application.properties</code>, or at runtime without rebuilding: <code>java -Dotel.forwarding=true -jar your-app.jar</code>.</p>
 <h3 id="otelexporterotlpendpoint"><code>otel.exporter.otlp.endpoint</code><a class="headerlink" href="#otelexporterotlpendpoint" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
