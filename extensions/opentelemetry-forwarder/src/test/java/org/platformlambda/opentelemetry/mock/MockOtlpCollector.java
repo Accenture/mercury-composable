@@ -53,10 +53,11 @@ import java.util.concurrent.LinkedBlockingQueue;
  * <p>
  * We decode with a tiny hand-rolled protobuf {@link ProtoReader} rather than the generated
  * {@code io.opentelemetry.proto.*} classes: those drag in the {@code com.google.protobuf} runtime,
- * which was retired from this module for security reasons. The OTLP wire format is stable and we only
+ * which was retired from this module for security reasons. The OTLP wire format is stable, and we only
  * need a handful of fields, so walking the bytes directly is cheap and dependency-free. Field numbers
  * below come from the OTLP {@code trace.proto}/{@code common.proto}/{@code resource.proto} schemas; the
- * encoding rules are at https://protobuf.dev/programming-guides/encoding/.
+ * encoding rules are at
+ * <a href="https://protobuf.dev/programming-guides/encoding/">protobuf.dev/programming-guides/encoding</a>.
  */
 @PreLoad(route = "mock.otlp.collector")
 public class MockOtlpCollector implements TypedLambdaFunction<AsyncHttpRequest, EventEnvelope> {
@@ -371,7 +372,7 @@ public class MockOtlpCollector implements TypedLambdaFunction<AsyncHttpRequest, 
             return s;
         }
 
-        /** Advance past a field whose value we do not need, honouring its wire type. */
+        /** Advance past a field whose value we do not need, honoring its wire type. */
         void skip(int wireType) {
             switch (wireType) {
                 // read the length first: readVarint() advances pos, so a "pos += readVarint()"

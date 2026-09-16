@@ -35,9 +35,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -104,7 +107,7 @@ class OtlpComposableExportTest {
     void gzipCompressionIsAppliedOnTheWire() throws Exception {
         // otel.exporter.otlp.compression=gzip must make the exporter gzip the request body. The mock's
         // HTTP layer doesn't surface a compressed body to the function (getBody() is null for a gzip
-        // request), so we prove the knob by the Content-Encoding header the exporter set on the wire -
+        // request). Therefore, we prove the knob by the Content-Encoding header the exporter set on the wire -
         // a real collector inflates that body natively.
         MockOtlpCollector.CAPTURED.clear();
         String endpoint = "http://127.0.0.1:" + port + "/api/v2/otlp/v1/traces";
@@ -124,12 +127,64 @@ class OtlpComposableExportTest {
     }
 
     @Test
+    void aCredentialPublishedAfterConstructionIsPickedUp() throws Exception {
+        // The regression this guards: a @PreLoad function is constructed BEFORE any @MainApplication
+        // credential bootstrap runs, so an exporter that resolved its token once at build time would
+        // freeze it as absent and 401 forever. Headers are supplied per export instead.
+        //
+        // The AtomicReference stands in for the config value a vault loader publishes late: it is EMPTY
+        // when the exporter is built (exactly the @PreLoad moment) and filled only afterward.
+        AtomicReference<String> rawHeaders = new AtomicReference<>("");
+        Supplier<Map<String, String>> headers = OtelForwarderContext.reloadingHeaders(rawHeaders::get);
+        String endpoint = "http://127.0.0.1:" + port + "/api/v2/otlp/v1/traces";
+
+        MockOtlpCollector.CAPTURED.clear();
+        try (SpanExporter exporter = OtelForwarderContext.buildExporter(endpoint, 5000, 5000, "none", headers)) {
+            // 1. export before the credential exists - reaches the collector with no Authorization
+            exporter.export(List.of(sampleSpan())).join(10, TimeUnit.SECONDS);
+            Map<String, Object> before = MockOtlpCollector.CAPTURED.poll(10, TimeUnit.SECONDS);
+            assertNotNull(before, "the collector should have received the un-credentialed export");
+            assertNull(before.get("authorization"),
+                    "no credential is configured yet, so no Authorization header should be sent");
+
+            // 2. the bootstrap publishes the token AFTER the exporter was built
+            rawHeaders.set("Authorization=Api-Token dt0c01.LATE");
+
+            // 3. the very next export carries it - no restart, no rebuild of the exporter
+            exporter.export(List.of(sampleSpan())).join(10, TimeUnit.SECONDS);
+            Map<String, Object> after = MockOtlpCollector.CAPTURED.poll(10, TimeUnit.SECONDS);
+            assertNotNull(after, "the collector should have received the credentialed export");
+            assertEquals("Api-Token dt0c01.LATE", after.get("authorization"),
+                    "a credential published after construction must reach the collector");
+        }
+    }
+
+    @Test
     void parsesCredentialHeaders() {
-        // value may itself contain '=' (e.g. base64) - split only on the first '='
+        // value may itself contain '=' (e.g. base64) - split only on the first separator
         Map<String, String> h = OtelForwarderContext.parseHeaders("Authorization=Api-Token dt0c01.ABC=,X-SF-Token=xyz");
         assertEquals("Api-Token dt0c01.ABC=", h.get("Authorization"));
         assertEquals("xyz", h.get("X-SF-Token"));
         assertTrue(OtelForwarderContext.parseHeaders(null).isEmpty());
         assertTrue(OtelForwarderContext.parseHeaders("  ").isEmpty());
+    }
+
+    @Test
+    void parsesLiteralHttpHeaderSyntax() {
+        // ':' is what a backend's own documentation shows, and what an operator composing the header
+        // from a vendor prefix plus a bare secret naturally writes.
+        Map<String, String> dynatrace = OtelForwarderContext.parseHeaders("Authorization: Api-Token dt0c01.ABC");
+        assertEquals("Api-Token dt0c01.ABC", dynatrace.get("Authorization"),
+                "the scheme stays part of the value; only the header name is split off");
+        Map<String, String> splunk = OtelForwarderContext.parseHeaders("X-SF-Token: xyz");
+        assertEquals("xyz", splunk.get("X-SF-Token"));
+
+        // whichever separator comes FIRST delimits the name, so a value may contain the other one
+        Map<String, String> urlValue = OtelForwarderContext.parseHeaders("X-Endpoint=https://host/path");
+        assertEquals("https://host/path", urlValue.get("X-Endpoint"),
+                "'=' came first, so the ':' inside the URL stays in the value");
+        Map<String, String> base64Value = OtelForwarderContext.parseHeaders("Authorization: Basic YWJjOmRlZg==");
+        assertEquals("Basic YWJjOmRlZg==", base64Value.get("Authorization"),
+                "':' came first, so the '=' padding stays in the value");
     }
 }

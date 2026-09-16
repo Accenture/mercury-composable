@@ -647,13 +647,13 @@ Timeout for the `kafka.health` probe - a single Kafka Metadata request (`KafkaCo
 
 Start-up grace period for `kafka.health`: within it the check reports a placeholder healthy status while the Kafka client warms up in the background, so `/health` never fails or blocks during application start-up. After the first successful probe (or once the grace expires) every check is live and an unreachable cluster fails the check with a 503 status and a key-value message (`text` + `code`).
 
-### `otel.trace.forwarder.enabled`
+### `otel.forwarding`
 
 | Type | Default |
 |------|---------|
-| `boolean` | `true` |
+| `boolean` | `false` |
 
-Used by the `opentelemetry-forwarder` extension. `false` makes the forwarder a no-op (jar present, no export).
+**Master switch for OpenTelemetry trace forwarding.** The `opentelemetry-forwarder` extension lives under `org.platformlambda`, a base scan package, so the jar alone would auto-register its route — the forwarder is therefore annotated `@OptionalService("otel.forwarding")` and **nothing is registered unless this is `true`**. That lets an application carry the dependency while DevOps decides, per environment, whether traces leave the process. Set it in `application.properties`, or at runtime without rebuilding: `java -Dotel.forwarding=true -jar your-app.jar`.
 
 ### `otel.exporter.otlp.endpoint`
 

@@ -32,7 +32,7 @@ to your collector.
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `otel.trace.forwarder.enabled` | `true` | `false` makes the forwarder a no-op (jar present, no export). |
+| `otel.forwarding` | `false` | **Master switch.** `@OptionalService("otel.forwarding")` means the route is not registered at all unless this is `true` — adding the jar does not turn forwarding on. Set it per environment, or at launch with `-Dotel.forwarding=true`. |
 | `otel.exporter.otlp.endpoint` | `http://localhost:4318/v1/traces` | OTLP/HTTP traces endpoint of your collector. |
 | `otel.exporter.otlp.timeout` | `10000` | Per-export timeout in milliseconds. |
 | `otel.exporter.otlp.connect.timeout` | `10000` | TCP/TLS connect timeout in milliseconds (separate from the export timeout). |
@@ -69,8 +69,25 @@ export OTEL_EXPORTER_OTLP_ENDPOINT="https://ingest.{realm}.signalfx.com/v2/trace
 export OTEL_EXPORTER_OTLP_HEADERS="X-SF-Token=YOUR_ACCESS_TOKEN"
 ```
 
+> **Naming caution:** referencing the OpenTelemetry standard variables (`OTEL_SERVICE_NAME`,
+> `OTEL_EXPORTER_OTLP_ENDPOINT`, …) works, but those names are commonly exported machine-wide on
+> instrumented hosts and CI agents, so an app can silently inherit a service name or an endpoint that
+> redirects its telemetry. Prefer your own prefixed variables when that matters — this module's tests
+> deliberately avoid `${OTEL_*}` references for the same reason.
+
 `otel.exporter.otlp.headers` is a comma-separated list of `key=value` pairs (split on the first `=` only,
-so token values may contain `=`); header values are never logged.
+so token values may contain `=`); header values are never logged. A value cannot itself contain a comma —
+the list is split on `,` first — which no common backend token needs.
+
+**Credentials are resolved per export, not once at construction.** This function is `@PreLoad`, and
+`@PreLoad` constructors run *before* any `@MainApplication` (`AppStarter`: BeforeApplication →
+`preload()` → MainApplication). So when the token comes from a credential bootstrap rather than the
+process environment, baking it in at build time would freeze it as absent and every export would 401 for
+the life of the process — visible only as a per-span warning. Re-reading it means such a token takes
+effect without a restart, and a single `OTLP credential header resolved` line is logged when it first
+appears. An environment variable set before the JVM starts behaves exactly as before. Guarded by
+`OtlpComposableExportTest.aCredentialPublishedAfterConstructionIsPickedUp`, which is mutation-proven
+against the old freeze-at-build behaviour.
 
 ## What maps where
 

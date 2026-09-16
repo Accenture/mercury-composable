@@ -228,11 +228,29 @@ Tempo, …). Add the dependency and it auto-registers; no code required:
 Configure it in `application.properties` (values support `${ENV_VAR:default}` substitution):
 
 ```properties
+# Master switch - DEFAULT OFF. The dependency alone registers nothing.
+otel.forwarding=true
 otel.exporter.otlp.endpoint=${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
 otel.service.name=${OTEL_SERVICE_NAME:my-app}
 # Backend credentials come from the environment — no secret hard-coded:
 otel.exporter.otlp.headers=${OTEL_EXPORTER_OTLP_HEADERS}
 ```
+
+> **A caution on `OTEL_*` variable names.** Referencing the OpenTelemetry standard variables
+> (`OTEL_SERVICE_NAME`, `OTEL_EXPORTER_OTLP_ENDPOINT`, …) is convenient and works, but those names are
+> often exported machine-wide on instrumented hosts and CI agents — so an application can silently
+> inherit a service name or, worse, an endpoint that redirects its telemetry somewhere unintended. When
+> that matters, reference your own prefixed variables instead; `examples/composable-example` uses
+> `OTLP_SERVICE_NAME` / `OTLP_API_ENDPOINT` / `OTLP_AUTH_HEADER` / `OTLP_TOKEN` for exactly this reason,
+> and the forwarder's own tests avoid `${OTEL_*}` references so a leaked endpoint cannot redirect a
+> hermetic test.
+
+> **Adding the jar does not turn forwarding on.** The forwarder lives under `org.platformlambda`, a base
+> scan package, so the dependency alone would auto-register it. It is gated by
+> `@OptionalService("otel.forwarding")` with a default of **false**, which separates the two decisions
+> that belong to different people: a developer adds the dependency, and DevOps decides per environment
+> whether traces leave the process — `otel.forwarding=true` in the environment's properties, or
+> `-Dotel.forwarding=true` at launch with no rebuild. With it off, the route does not exist at all.
 
 Point the endpoint at an OpenTelemetry Collector, or directly at a SaaS backend with its API token in the headers:
 
@@ -245,6 +263,16 @@ export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Api-Token dt0c01.XXXX"
 export OTEL_EXPORTER_OTLP_ENDPOINT="https://ingest.{realm}.signalfx.com/v2/trace/otlp"
 export OTEL_EXPORTER_OTLP_HEADERS="X-SF-Token=YOUR_ACCESS_TOKEN"
 ```
+
+> **The credential is re-read on every export, so a late-published token still works.** The forwarder is
+> a `@PreLoad` function, and those are constructed *before* any `@MainApplication` runs — so if your
+> token comes from a credential bootstrap rather than the process environment, resolving it once at
+> construction would freeze it as absent and every export would fail authentication for the life of the
+> process. `otel.exporter.otlp.headers` is therefore resolved per export: a token published after
+> start-up takes effect with no restart, and the log records a single `OTLP credential header resolved`
+> line when it first appears. A credential exported the ordinary way — an environment variable set
+> before the JVM starts — behaves exactly as it always did. (Same lazy-resolution shape as the Kafka and
+> Redis health checks.)
 
 Each span carries the route name (`route`), `path`, `from`, `origin`, `status`, timing, and your `annotation.*`
 values as span attributes, with `service.name` on the resource. See the full key reference in the
