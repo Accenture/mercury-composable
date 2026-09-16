@@ -1,18 +1,19 @@
-- [ ] (next iteration — Eric, 2026-06-24; **design + implement**) **Cross-pod request-response via
-  Redis Pub/Sub RPC + Kafka** — a distributed sync-over-async pattern (advanced opt-in, cf.
-  `kafka-mesh-opt-in`): REST sync request → POD-1 → Kafka outbound; Kafka inbound (response) →
-  POD-2 → Redis return route keyed by correlation-id back to POD-1. **Locked decisions:** return
-  path = Redis (deliberately NOT the full mesh/presence discovery); client = Lettuce; module =
-  `extensions/sync-over-async`; reliability cornerstones — Redis SETEX payload is the source of
-  truth, pub/sub is wake-up only, a final Redis read before timeout is required; race-safe
-  idempotent completion. **State: MVP COMPLETE (2026-06-26) and the Kafka legs promoted to the
-  reusable `system/minimalist-kafka` library** (Eric's call) — sync-over-async is now purely the
-  Redis return-route engine (96% cov). Full round-trip proven incl. OTel span propagation across
-  Kafka (notification stamps its own span into traceparent; consumer chains the flow onto it).
-  Subsequent minimalist-kafka growth (topic-pattern, dlq-topic, auto-commit, metadata.*,
-  cid-header fix, terminology refactor businessCorrelationId/internalCorrelationId — Java
-  identifiers only, wire strings unchanged) delivered via PR #133 + review rounds. **Still open
-  (post-MVP): 503 guardrails/metrics, two-JVM test, per-module README; Gradle build
-  ([[thread-add-gradle-build]]).** → serves `vision-mercury-composable`. Full detail: sessions
-  2026-06-25 → 2026-07-04.
-  <!-- id: thread-redis-kafka-rpc | created: 2026-06-24 | last_used: 2026-07-31 | uses: 8 | tier: working -->
+- [x] (next iteration — Eric, 2026-06-24) **Cross-pod request-response via Redis Pub/Sub RPC +
+  Kafka. DONE — closed 2026-09-16** on a stale-record flag from Copilot (the thread still listed
+  Gradle support as open, long after PR #357 shipped it). MVP completed 2026-06-26; the Kafka legs
+  were promoted to `system/minimalist-kafka` and sync-over-async became purely the Redis
+  return-route engine. Every post-MVP residual is now satisfied or superseded: Gradle build (PR
+  #357, [[thread-add-gradle-build]] archived), per-module README (`extensions/sync-over-async/`),
+  two-JVM test (`docs/test-reports/streaming-return-route-cross-pod.md` — two JVMs, cross-pod, with
+  chaos legs), and 503 guardrails (`StreamBridge` fails the exchange at stream capacity).
+  **NOT done, deliberately dropped:** the "metrics" half of that item — there are no counters in the
+  module. Three months of heavy development passed without anyone wanting them, and the module
+  already exposes a health probe and per-task trace spans. Re-raise as a thread if a field
+  deployment actually asks.
+  **Durable lesson:** a checklist nested *inside* another record has no independent decay signal.
+  This thread never decayed (unchecked threads never do), so its "still open" sub-list sat unread
+  while every item was quietly delivered elsewhere. Second instance in one day — the same shape as
+  the release commitment buried in continuity's `latest_release`. Track a commitment as a thread, or
+  accept that it will go stale unnoticed.
+  origin: sessions 2026-06-25 → 2026-07-04; closed per `memory/sessions/2026-09-16-211927.md`
+  <!-- id: thread-redis-kafka-rpc | created: 2026-06-24 | last_used: 2026-07-31 | uses: 8 | tier: archive-candidate -->
