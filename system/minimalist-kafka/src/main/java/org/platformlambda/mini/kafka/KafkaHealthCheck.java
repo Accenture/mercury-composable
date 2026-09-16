@@ -295,6 +295,13 @@ public class KafkaHealthCheck implements LambdaFunction {
             result.put(TOPICS, topics.size());
             result.put(HREF, href());
             return result;
+        } catch (UnusableConfigException e) {
+            // a deployment defect, not an outage and not a start-up condition - say which, because
+            // "cluster is not reachable" would send the reader to the network instead of the classpath
+            Map<String, Object> broken = new HashMap<>();
+            broken.put(TEXT, "Kafka client configuration is unusable - " + e.getMessage());
+            broken.put(CODE, 503);
+            return new EventEnvelope().setStatus(503).setBody(broken);
         } catch (Exception e) {
             closeQuietly();
             // a genuine outage: the 503 status is what the health aggregation (and Kubernetes)
@@ -362,12 +369,54 @@ public class KafkaHealthCheck implements LambdaFunction {
             current.setContextClassLoader(KafkaHealthCheck.class.getClassLoader());
             return new KafkaConsumer<>(config, new StringDeserializer(), new ByteArrayDeserializer());
         } catch (KafkaException e) {
-            log.warn("{} health check waiting for a usable client configuration - {}",
-                    serviceName, rootCause(e));
+            String reason = rootCause(e);
+            if (neverHeals(e)) {
+                // NOT a start-up condition: waiting cannot conjure a class onto the classpath, so
+                // reporting this as passing would hide a deployment defect indefinitely - which is
+                // exactly what happened in the field.
+                log.error("{} health check has an unusable client configuration - {}", serviceName, reason);
+                throw new UnusableConfigException(reason);
+            }
+            log.warn("{} health check waiting for a usable client configuration - {}", serviceName, reason);
             return null;
         } finally {
             current.setContextClassLoader(original);
         }
+    }
+
+    /** A template the client can NEVER be built from - as opposed to one whose values have not landed. */
+    static class UnusableConfigException extends RuntimeException {
+        UnusableConfigException(String reason) {
+            super(reason);
+        }
+    }
+
+    /**
+     * Does this construction failure mean the template can never produce a client?
+     * <p>
+     * The waiting status exists for ONE situation: a value that a later {@code @MainApplication}
+     * credential bootstrap will publish. Reporting anything else as passing is how a real defect stays
+     * invisible - a field deployment logged an unresolvable deserializer class every 5 seconds for
+     * hours while {@code /health} reported healthy throughout. A class that is not on the classpath
+     * will not appear because we waited, so that failure belongs in the 503.
+     * <p>
+     * Detection is by message text because Kafka discards the {@code ClassNotFoundException} when it
+     * wraps it ({@code ConfigException(name, value, "Class ... could not be found.")} carries no
+     * cause), so the cause chain is checked too for the cases where one survives. The default is
+     * {@code false} - i.e. today's waiting behaviour - so if Kafka ever rewords the message this
+     * degrades to the previous semantics rather than to spurious outages.
+     */
+    private static boolean neverHeals(Throwable e) {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t instanceof ClassNotFoundException || t instanceof NoClassDefFoundError) {
+                return true;
+            }
+            String message = t.getMessage();
+            if (message != null && message.contains("Class ") && message.contains("could not be found")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** The most specific reason - client construction failures arrive wrapped in a generic KafkaException. */

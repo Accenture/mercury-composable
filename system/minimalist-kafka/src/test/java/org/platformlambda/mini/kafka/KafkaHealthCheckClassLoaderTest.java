@@ -20,16 +20,23 @@ package org.platformlambda.mini.kafka;
 
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.junit.jupiter.api.Test;
+import org.platformlambda.core.models.EventEnvelope;
 
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The probe client must be constructible on a thread whose context classloader cannot see
@@ -156,5 +163,34 @@ class KafkaHealthCheckClassLoaderTest {
         var health = probing(Properties::new);
         assertNull(health.buildClient(new Properties()),
                 "an incomplete template is still a start-up condition, reported as passing/waiting");
+    }
+
+    @Test
+    void aClassThatIsNotOnTheClasspathFailsHealthInsteadOfWaitingForever() {
+        // The leniency exists for ONE case: a value a later credential bootstrap will publish. A class
+        // that simply is not there will never arrive by waiting, and reporting it as passing is how the
+        // field's probe stayed "healthy" while logging an unresolvable class every 5 seconds for hours.
+        Properties bad = probeConfig();
+        bad.setProperty("partition.assignment.strategy", "com.example.NoSuchAssignor");
+        var health = probing(() -> bad);
+        assertThrows(KafkaHealthCheck.UnusableConfigException.class, () -> health.buildClient(bad),
+                "a class that cannot be found is a deployment defect, not a start-up condition");
+    }
+
+    @Test
+    void anUnusableConfigSurfacesAs503AndNamesTheConfigurationNotTheNetwork() {
+        Properties bad = probeConfig();
+        bad.setProperty("partition.assignment.strategy", "com.example.NoSuchAssignor");
+        var health = probing(() -> bad);
+        Object answer = health.handleEvent(Map.of("type", "health"), null, 1);
+        assertInstanceOf(EventEnvelope.class, answer, "an unusable configuration must fail /health");
+        EventEnvelope envelope = (EventEnvelope) answer;
+        assertEquals(503, envelope.getStatus());
+        assertInstanceOf(Map.class, envelope.getBody());
+        String text = String.valueOf(((Map<?, ?>) envelope.getBody()).get("text"));
+        assertTrue(text.contains("configuration is unusable"),
+                "point the reader at the classpath, not the network: " + text);
+        assertFalse(text.contains("cluster is not reachable"),
+                "this is not an outage - saying so would send the reader the wrong way: " + text);
     }
 }
