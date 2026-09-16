@@ -84,11 +84,19 @@ soa.redis.cluster.mode=false              # true = cluster, false = standalone (
 > **`soa.redis.*` namespace, with a `redis.*` fallback.** The Redis keys carry the `soa.` prefix so
 > sync-over-async owns its own Redis configuration and never collides with another `redis.*` consumer in
 > the same application — the [distributed cache](distributed-cache.md), or the `minigraph-state-redis`
-> extension — which may
-> point at a different server, auth, or topology. **No migration is required:** each key falls back to the
-> un-prefixed `redis.*` form when the `soa.` one is absent, so an existing `redis.*` deployment keeps
-> working; set `soa.redis.*` only to override the fallback or to decouple from a co-resident `redis.*`
-> consumer.
+> extension — which may point at a different server, auth, or topology. **No migration is required:**
+> each key falls back to the un-prefixed `redis.*` form when the `soa.` one is absent, so an existing
+> `redis.*` deployment keeps working untouched.
+>
+> **That fallback is backward compatibility, not a recommendation to share.** Sync-over-async predates
+> the cache and was configured under plain `redis.*`; the fallback keeps those deployments — and any
+> application running sync-over-async **alone** — working as they are. When an application runs
+> sync-over-async *and* the cache, give each its own Redis client: set the whole `soa.redis.*`
+> connection set here and leave `redis.*` to the cache. See
+> [Separate Redis clients, by design](distributed-cache.md#separation) for the reasoning — the decisive
+> one being that a cache with an eviction policy can evict a `request:{cid}` rendezvous key mid-request.
+> Override a namespace **completely**: because the fallback is per key, setting `soa.redis.host` without
+> `soa.redis.password` points this module at the new host carrying the other one's credentials.
 
 On startup the extension builds a Redis client and the return-route coordinator, keyed by this pod's origin
 id, from discrete `soa.redis.*` connection parameters and `sync.*` engine tunables. See the

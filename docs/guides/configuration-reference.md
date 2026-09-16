@@ -1229,6 +1229,8 @@ cross-pod backend using a Redis return route - and generalizes the same rendezvo
 route for cross-pod progressive rendering. See the [Sync-over-Async guide](sync-over-async.md). It is
 off by default and starts (eagerly connecting to Redis) only when `sync.over.async.enabled=true`.
 
+> **Every `soa.redis.*` key below falls back to the un-prefixed `redis.*` form when absent.** That is backward compatibility for deployments predating the namespace, and for applications running sync-over-async alone. When the [distributed cache](#distributed-cache) also runs, configure the two separately and set the **whole** `soa.redis.*` connection set — a partial override inherits the other module's credentials through the fallback. See [Separate Redis clients, by design](distributed-cache.md#separation).
+
 ### `sync.over.async.enabled`
 
 | Type | Default |
@@ -1389,7 +1391,9 @@ All `soa.redis.*` and `sync.*` values support `${ENV_VAR:default}` substitution.
 
 ## Distributed Cache {#distributed-cache}
 
-The [distributed cache](distributed-cache.md) (`v1.cache.redis`) uses the plain `redis.*` connection namespace — the same keys as `soa.redis.*` above without the `soa.` prefix (`redis.host`, `redis.port`, `redis.username`, `redis.password`, `redis.ssl`, `redis.database`, `redis.timeout.ms`, `redis.cluster.detect`, `redis.cluster.mode`, `redis.cluster.nodes`) — plus the cache tunables below. Set only `redis.*` to share one server with sync-over-async, or also set `soa.redis.*` to decouple them.
+The [distributed cache](distributed-cache.md) (`v1.cache.redis`) uses the plain `redis.*` connection namespace — the same keys as `soa.redis.*` above without the `soa.` prefix (`redis.host`, `redis.port`, `redis.username`, `redis.password`, `redis.ssl`, `redis.database`, `redis.timeout.ms`, `redis.cluster.detect`, `redis.cluster.mode`, `redis.cluster.nodes`) — plus the cache tunables below.
+
+> **Running the cache alongside sync-over-async?** Give each module its own Redis client: `redis.*` here, the **complete** `soa.redis.*` set there. See [Separate Redis clients, by design](distributed-cache.md#separation). The `soa.redis.*` → `redis.*` fallback exists for backward compatibility (sync-over-async deployed alone), so leaving `soa.redis.*` unset points **both** modules at this server — workable, but you then own the eviction risk and share one memory budget. Two clients also mean two probes: `mandatory.health.dependencies=redis.health, soa.redis.health`.
 
 ### `redis.cache.enabled`
 

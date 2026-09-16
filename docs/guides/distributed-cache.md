@@ -101,11 +101,51 @@ full list:
 | `redis.health.timeout` | `5s` | Timeout for the [`redis.health`](#health) probe. |
 | `redis.health.startup.grace` | `30s` | Start-up grace for [`redis.health`](#health). |
 
-> **One Redis, or two?** Because `soa.redis.*` falls back to `redis.*`, a deployment can point **both**
-> sync-over-async and the cache at one server by setting only `redis.*`, or **decouple** them by also
-> setting `soa.redis.*`. Credentials follow the same pattern as sync-over-async — resolved from the
-> environment by a lower-`sequence` `@MainApplication` credential bootstrap (see
-> [sync-over-async → auth](sync-over-async.md#cluster)).
+### Separate Redis clients, by design {#separation}
+
+**When an application runs both the cache and [sync-over-async](sync-over-async.md), give each its own
+Redis client — configure the cache under `redis.*` and sync-over-async under `soa.redis.*`, fully.**
+That is the intended shape, not merely a supported one. Nothing extra is needed to get it:
+`RedisBackendFactory` builds a *new* client from whatever configuration it is handed, and every
+endpoint-defining key — `host`, `port`, `username`, `password`, `ssl`, `database`, `timeout.ms`, and all
+three `cluster.*` keys — resolves per namespace. The two can therefore differ in server, credentials,
+TLS, and even topology: one standalone, one cluster-mode-enabled.
+
+Why it matters:
+
+- **Separation of concerns.** They are different things. Sync-over-async is a *rendezvous transport* whose
+  keys live for the duration of one request; the cache is a *store* whose keys live for their TTL. Their
+  sizing, eviction, and failure characteristics have nothing to do with each other.
+- **A cache evicts; a rendezvous must not.** This is the sharp one. A cache under memory pressure with an
+  eviction policy configured will evict whatever fits its policy — including a `request:{cid}` rendezvous
+  key, **mid-request**. The caller then waits for a reply that can never arrive. Separate instances make
+  that failure mode structurally impossible; a shared instance only avoids it by configuration discipline.
+- **Independent operations.** Restarting, resizing, or failing over the cache should not disturb in-flight
+  synchronous requests.
+
+> **What the `redis.*` fallback is for.** Each `soa.redis.*` key falls back to the un-prefixed `redis.*`
+> form when the prefixed one is absent. That exists for **backward compatibility** — sync-over-async
+> predates the cache and was configured under plain `redis.*`, so those deployments keep working
+> untouched, and an application running sync-over-async **alone** may still use `redis.*` throughout. It
+> is not an invitation to share one instance between the two modules.
+
+> **Override a namespace completely, or not at all.** Because the fallback is *per key*, a partial
+> override silently mixes the two: setting `soa.redis.host` but not `soa.redis.password` points
+> sync-over-async at the new host carrying the **cache's** credentials, and authentication fails. When you
+> decouple, set the whole `soa.redis.*` connection set.
+
+> **Both probes, both endpoints.** Two clients mean two health checks. List them together —
+> `mandatory.health.dependencies=redis.health, soa.redis.health` — or one endpoint goes unmonitored.
+
+Credentials follow the same pattern in both namespaces — resolved from the environment by a
+lower-`sequence` `@MainApplication` credential bootstrap (see
+[sync-over-async → auth](sync-over-async.md#cluster)).
+
+> **Sharing one server anyway?** It is safe for correctness — the key shapes do not collide
+> (`request:{cid}` / `queue:{cid}` versus your `redis.cache.key.prefix` namespace) — but you own the
+> eviction-policy risk above, and the two workloads share one memory budget. Note also that
+> `database` is **standalone-only**: Redis Cluster is database 0, so "one cluster, two logical databases"
+> is not an alternative to two instances.
 
 ## Using the cache {#usage}
 
