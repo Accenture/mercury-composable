@@ -644,7 +644,7 @@
   stays LLM/vendor-free with adapters as functions ON the wrappers: the gateway/MCP edge is where
   vendor specifics live, never in the engine.
   → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-17 | uses: 15 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-17 | uses: 16 | tier: working | origin: 2026-08-25-213703 -->
 - [x] (blueprint) **CLOSED 2026-09-17 (Eric, at the first closure gate)** — integrate a pluggable AI
   companion LLM backend. **Answered:** progressive rendering was driven end-to-end against the live
   Gemini API (E0 — `llm.chat`/`llm.stream` AI nodes, real verdicts, tokens out the engine SSE edge,
@@ -667,7 +667,7 @@
   and human–human collaboration is first-class" is **realized**, and the altitude drift briefly
   flagged against this close does not exist.
   → served: vision-mercury-composable
-  <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: archive-candidate -->
+  <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-09-17 | uses: 4 | tier: active -->
 - [x] (blueprint) **CLOSED 2026-09-17 (Eric, at the first closure gate)** — enterprise governance
   lifecycle for graph models (dry-run → certify → stage → approve → production). **Closed as part of
   AI companion maturity:** this gap *is* the human–AI collaboration and product-owner certification
@@ -676,7 +676,7 @@
   deployment quality gate in the running engine; the certification half is the human process the
   companion now supports. Not a documentation task and not deferred — realized.
   → served: vision-mercury-composable
-  <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: archive-candidate -->
+  <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-09-17 | uses: 4 | tier: active -->
 ## Open Threads
 
 > Open Threads live **one per file** in `memory/open-threads/` (`thread-<id>.md`;
