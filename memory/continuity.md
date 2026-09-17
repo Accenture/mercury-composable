@@ -527,6 +527,26 @@
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-16 | uses: 46 | tier: archive-candidate | origin: 2026-08-19-195244 -->
+- **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
+  did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
+  CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
+  #406 (`e6447ceb`) had landed between the v4.12.11 and v4.12.12 tags in an EARLIER session — the
+  CompileGraph task/skill gate and the case-insensitive `input.header.*` lookup — and went out in the
+  artifact undocumented. A patch release usually *is* one session's work, which is exactly what makes
+  this fail quietly: the habit is right often enough to feel safe. The tag range is the only
+  authority. Scope filter that held up on review: `chore(agent-memory)` tooling upgrades and
+  test-fixture changes are internal and stay out; anything touching shipped behaviour goes in.
+  **Consequence worth more than the omission:** the entry's upgrade note said "no action to
+  configure" for the whole release, and the missing CompileGraph gate *can reject a graph model that
+  deployed yesterday* — so an incomplete CHANGELOG is not merely thin, it can be actively wrong about
+  the one thing a reader checks. Each item now carries its own upgrade note.
+  **Same root cause, second instance, same episode:** the javadoc written during #406 claimed "67
+  nodes carry one of the three skills"; re-counting before repeating it in the CHANGELOG gave **64**,
+  and `e6447ceb~1` shows it was never 67 (the 65th at HEAD is a deliberate negative fixture from that
+  PR). Both errors came from writing out of recollection of my own work instead of out of the
+  repository. Corrected in both places via PR #411. Relates [[conv-template-version-sweep]] (the
+  sibling rule for the version sweep: re-derive, never carry the prior count forward).
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: working | origin: 2026-09-17-183008 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
