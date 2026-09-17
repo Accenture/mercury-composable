@@ -551,13 +551,18 @@
 - [x] (blueprint) **CLOSED 2026-09-17 (Eric, at the first closure gate)** — integrate a pluggable AI
   companion LLM backend. **Answered:** progressive rendering was driven end-to-end against the live
   Gemini API (E0 — `llm.chat`/`llm.stream` AI nodes, real verdicts, tokens out the engine SSE edge,
-  one distributed trace), which settles the pluggable-backend question; the ongoing epic is
-  [[bp-agent-orchestration]], and this gap is not distinct from it.
-  **NOT delivered, deliberately dropped rather than carried:** the second half — maturing
-  `POST /api/companion/{id}` from a dev-only command pipe into a *governed collaboration layer*. The
-  endpoint is still `@OptionalService("app.env=dev")` (`PostCompanionCommandSync`). It is dropped as
-  a standing Blueprint gap, not achieved; re-raise it as its own thread if the companion is ever
-  wanted outside dev. → served: vision-mercury-composable
+  one distributed trace), which settles the pluggable-backend question.
+  **This gap is DISTINCT from [[bp-agent-orchestration]] (Eric, correcting the first close record).**
+  The AI companion is *design-time collaboration* — an AI co-authoring graphs with a human in the
+  minigraph Playground. `bp-agent-orchestration` is the *run-time* epic: using graphs to create an AI
+  SDLC. One is how the model gets written, the other is what the model then runs. An earlier draft of
+  this record said "absorbed by", inferred from the two being ruled on together; that was wrong.
+  **NOT delivered:** maturing `POST /api/companion/{id}` from a dev-only command pipe into a
+  *governed collaboration layer* — the endpoint is still `@OptionalService("app.env=dev")`
+  (`PostCompanionCommandSync`). That half still serves a live Vision bullet ("Human–AI and
+  human–human collaboration is first-class"), so closing this gap leaves that bullet with no
+  Blueprint gap beneath it — an altitude question raised for Eric, not resolved here.
+  → served: vision-mercury-composable
   <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: archive-candidate -->
 - [ ] (blueprint) **Enterprise governance lifecycle** for graph models (dry-run → certify → stage →
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
