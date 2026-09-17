@@ -35,6 +35,10 @@
   occurrences** (97 → 98 when #404 added a forwarder dependency — re-derive the sweep after a rebase,
   never trust the prior count). **Open:** Dynatrace support is confirming the two field-acceptance
   traces in the UI; the report's Scenario 6 records that row as *pending* and is updated on reply.
+  **FIELD REGRESSION (2026-09-17):** the `kafka.health` half of this release is **incomplete** — a
+  produce-only leg (`kafka.consumer.enabled=false`) still answers `/health` with a raw 500, because
+  the loader override did not cover template resolution ([[kafka-config-class-static-init-loader]]).
+  Fix pushed, awaiting a patch release ([[ot-kafka-health-producer-only-fix]]).
   Prior: v4.12.10 (2026-09-16 04:01Z — the cleanup release, 2 PRs #399–#400, squash `92e94f2b`:
   Berkeley DB elastic-queue store RETIRED (ADR-0024), `ServiceQueue` collapsed to ONE dispatch mode
   ([[elastic-queue-file-store]]), separate-Redis-client guidance, and `BENCHMARK-LOG.md`; no upgrade
@@ -201,7 +205,45 @@
   message text (Kafka's `ConfigException` carries no cause) and defaults to *waiting*, so a reworded
   message degrades to leniency rather than to spurious outages. Bounds
   [[preload-before-mainapp-lazy-config]]; extends [[kafka-clients-kernel-threads]].
+  **INCOMPLETE as shipped in v4.12.11 (2026-09-17):** scoping the loader override to client
+  construction left a produce-only leg broken in the field — the loader is consulted earlier still, in
+  a Kafka config class's static initializer, reached while resolving the template. See
+  [[kafka-config-class-static-init-loader]].
   <!-- id: kafka-class-objects-over-names | created: 2026-09-16 | last_used: 2026-09-17 | uses: 3 | tier: active | origin: 2026-09-16-185851 -->
+
+- **Kafka resolves class-valued config DEFAULTS inside its config classes' STATIC INITIALIZERS, so a
+  wrong thread context loader poisons the class for the life of the JVM (2026-09-17, field report on
+  v4.12.11 → `bee2bc51`).** `ConfigDef.define` parses a `Type.CLASS` setting's default the moment the
+  key is defined (`ConfigKey.<init>`: `defaultValue = parseType(...)`), and
+  `SaslConfigs.addClientSaslSupport` defines `sasl.oauthbearer.jwt.retriever.class` with a class NAME
+  default — so merely initializing `ConsumerConfig` is a classloading event through
+  `Utils.getContextOrKafkaClassLoader()`, with **no broker, no SASL and no credentials involved**.
+  v4.12.11 wrapped only `new KafkaConsumer<>()`, and `kafka.health` still failed on a **produce-only**
+  leg, where `healthProbeProperties` reaches that initializer via `ConsumerConfig.configNames()` while
+  resolving the template — before `buildClient`. The consumer path was spared *only because* its
+  references to the same class are compile-time `String` constants that **javac inlines**, so its
+  first touch is the wrapped construction; verified in bytecode. Same jar, same thread, same config:
+  the difference was one inlined constant.
+  **Two properties that change how this class of bug must be handled.** (1) It arrives as an
+  `ExceptionInInitializerError` — an **Error** — so `catch (Exception)` misses it and `/health`
+  answered a raw **500**, not a 503. (2) A class whose initializer threw is erroneous for the life of
+  the JVM (JLS 12.4.2): every later access fails on *every* thread however correct its loader, so the
+  waiting/leniency model of [[preload-before-mainapp-lazy-config]] does not apply — there is nothing
+  to wait for and a restart is the only cure. Fix: `probe()` and `href()` run **entirely** under the
+  module loader, and a `LinkageError` renders as a 503 naming the configuration.
+  `GroupProtocolResolver` reaches `AdminClientConfig`/`Admin.create` the same way and is safe only
+  under that pin (noted in its javadoc).
+  **Durable lesson, broader than the fix:** v4.12.11 taught "a pooled kernel thread changes what code
+  can SEE"; this bounds it — **what a wrong loader can damage is not limited to the operation you
+  wrapped**, because class initialization is one-shot, JVM-wide and irreversible, and the *compiler*
+  decides which constant references are even capable of triggering it. Wrap every path into the
+  library, not the call you think does the work. Method note: the diagnosis came from a 30-line
+  fresh-JVM reproduction printing the field message verbatim — the field report had the mechanism
+  right and the location wrong (it proposed wrapping `listTopics`, which is never reached), and
+  reasoning from Kafka internals would have shipped that. Bounds
+  [[kafka-class-objects-over-names]]; extends [[kafka-clients-kernel-threads]]; tracked by
+  [[ot-kafka-health-producer-only-fix]].
+  <!-- id: kafka-config-class-static-init-loader | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: working | origin: 2026-09-17-183008 -->
 
 - **A jar under a base scan package needs an `@OptionalService` master switch, and a vendor
   integration is not done until a negative control proves the happy path (2026-09-16, Eric's design
