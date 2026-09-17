@@ -8,6 +8,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.12.12, 9/17/2026
+
+### Fixed
+
+1. **`kafka.health` answers correctly on a produce-only leg — 4.12.11 covered only half the path.**
+   With `kafka.consumer.enabled=false` (the produce-only leg of a bridge, where the cluster grants no
+   consumer credentials) a field deployment still failed, now reporting
+   `Class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever could not be found`, and
+   `/health` returned a raw HTTP 500 instead of a status a DevOps reader could act on.
+
+   4.12.11 scoped the module-classloader override to client *construction*. Kafka consults the
+   context classloader earlier than that — inside the **static initializer of its own configuration
+   classes**. `ConfigDef.define` resolves a `Type.CLASS` setting's *default* the moment the key is
+   defined, and `sasl.oauthbearer.jwt.retriever.class` defaults to a class **name**; so merely
+   initializing `ConsumerConfig` is a classloading event, with no broker, no SASL, no credentials and
+   no network involved. The produce-only path reaches that initializer while resolving its template,
+   through `ConsumerConfig.configNames()`, before any client is built. The consumer path was spared
+   only because its references to the same class are compile-time `String` constants that the
+   compiler inlines — leaving client construction as its first touch, already inside the override.
+   Same jar, same thread, same configuration: the difference was one inlined constant.
+
+   Two properties made this worse than an ordinary lookup failure, and both shaped the fix. The
+   failure arrives as an `ExceptionInInitializerError` — an `Error`, not an `Exception` — so it was
+   not caught and escaped the function as a 500. And a class whose initializer threw stays erroneous
+   for the life of the JVM: every later access fails on *every* thread, however correct its loader.
+   One probe on one pooled kernel thread therefore poisons the class permanently, which is why the
+   "waiting for a late credential" leniency cannot apply here — there is nothing to wait for, and
+   only a restart clears it.
+
+   The probe now runs **entirely** under the module's classloader — template resolution, client
+   construction, the metadata round trip and close — as does the `type=info` path, which resolves the
+   same template. A `LinkageError` renders as a 503 naming the *configuration* rather than escaping as
+   an `Error`. `secondary.kafka.health` extends the same class and inherits the fix.
+
+   **Upgrade action:** none to configure. An application on a produce-only leg whose `/health`
+   currently returns 500 will report a correct status after upgrading; no wire, API or configuration
+   key changed. Consumer-enabled applications were unaffected by the original defect and are
+   unaffected by this fix.
+
+---
 ## Version 4.12.11, 9/16/2026
 
 ### Added

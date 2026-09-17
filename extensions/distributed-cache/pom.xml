@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>distributed-cache</artifactId>
-    <version>4.12.11</version>
+    <version>4.12.12</version>
     <packaging>jar</packaging>
     <name>Distributed cache (composable function for Redis)</name>
     <description>
@@ -45,7 +45,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.12.11</version>
+            <version>4.12.12</version>
         </dependency>
 
         <!-- The shared Redis client layer: RedisBackend (standalone/cluster), RedisConfig (redis.*
@@ -53,7 +53,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>redis-connection</artifactId>
-            <version>4.12.11</version>
+            <version>4.12.12</version>
         </dependency>
 
         <!-- Lettuce API used directly beyond the seam: the byte[] codec (RedisCodec / ByteArrayCodec /
