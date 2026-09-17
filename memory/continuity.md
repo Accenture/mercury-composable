@@ -546,6 +546,12 @@
   whichever pod holds the user's connection, zero engine change; what remains here is
   driving that bridge from an LLM node INSIDE a live graph run. Next: E1 (suspend
   checkpoint on an LLM verdict), the in-graph-run streaming drive.
+  **Status framing (Eric, 2026-09-17, at the first closure gate): graph-based AI SDLC is in the
+  DESIGN phase**, with experiments proving the prerequisites — progressive rendering of token
+  batches being the one already demonstrated. This is the sole remaining Blueprint gap and it is
+  deliberately long-horizon: an epic, not a task. Distinct from the AI companion, which is
+  design-time collaboration and now closed as delivered — this epic is the RUN-TIME half, using
+  graphs to create an AI SDLC.
   → serves: vision-mercury-composable
   <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-17 | uses: 15 | tier: working | origin: 2026-08-25-213703 -->
 - [x] (blueprint) **CLOSED 2026-09-17 (Eric, at the first closure gate)** — integrate a pluggable AI
@@ -557,16 +563,29 @@
   minigraph Playground. `bp-agent-orchestration` is the *run-time* epic: using graphs to create an AI
   SDLC. One is how the model gets written, the other is what the model then runs. An earlier draft of
   this record said "absorbed by", inferred from the two being ruled on together; that was wrong.
-  **NOT delivered:** maturing `POST /api/companion/{id}` from a dev-only command pipe into a
-  *governed collaboration layer* — the endpoint is still `@OptionalService("app.env=dev")`
-  (`PostCompanionCommandSync`). That half still serves a live Vision bullet ("Human–AI and
-  human–human collaboration is first-class"), so closing this gap leaves that bullet with no
-  Blueprint gap beneath it — an altitude question raised for Eric, not resolved here.
+  **Both halves are delivered (Eric, 2026-09-17): the AI companion is production quality, with
+  measured success in field installations.** An earlier draft of this record called the maturation
+  half undelivered because `PostCompanionCommandSync` is still `@OptionalService("app.env=dev")` —
+  a wrong inference. In Eric's words: **"the human–AI collaboration for graph prototyping and
+  productization has matured. It runs in dev mode. After promotion to production, the UI is
+  disabled."** Dev-gating is therefore the *designed lifecycle*, not a shortfall — the Playground is
+  where humans and an AI prototype and productize a graph; what promotes is the *graph*, and the
+  authoring surface is switched off behind it ([[minigraph-dev-mode-app-shape]] — removing that one
+  line is how the surface is closed). "Mature into a governed collaboration layer" meant
+  collaboration quality and certification, not un-gating an endpoint. So the Vision bullet "Human–AI
+  and human–human collaboration is first-class" is **realized**, and the altitude drift briefly
+  flagged against this close does not exist.
   → served: vision-mercury-composable
   <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: archive-candidate -->
-- [ ] (blueprint) **Enterprise governance lifecycle** for graph models (dry-run → certify → stage →
-  approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
-  <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
+- [x] (blueprint) **CLOSED 2026-09-17 (Eric, at the first closure gate)** — enterprise governance
+  lifecycle for graph models (dry-run → certify → stage → approve → production). **Closed as part of
+  AI companion maturity:** this gap *is* the human–AI collaboration and product-owner certification
+  process, and that is delivered alongside the companion — production quality, with measured success
+  in field installations ([[bp-ai-companion-llm-backend]], closed the same day). CompileGraph is the
+  deployment quality gate in the running engine; the certification half is the human process the
+  companion now supports. Not a documentation task and not deferred — realized.
+  → served: vision-mercury-composable
+  <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: archive-candidate -->
 ## Open Threads
 
 > Open Threads live **one per file** in `memory/open-threads/` (`thread-<id>.md`;
