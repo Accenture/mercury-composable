@@ -56,6 +56,15 @@
   the review never closes a thread, and closing a blueprint gap is an altitude decision. Invariant
   re-verify NOT due (11 sessions since, cadence 40). memory-lint 0 errors. Live facts 54 → 49.
   Prior: 2026-09-16 | 2026-09-16-211927.md)
+- **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**:
+  Track 1 *knowledge graph as application* (deterministic — rules, business logic, outcome; L3
+  leverages L2 + L1) and Track 2 *knowledge graph as AI SDLC* (governed AI processing for ambiguity
+  a deterministic program cannot handle; L3 is the foundation and **AI is also the runtime for
+  certain nodes**). The tracks echo each other — shared co-design, certification and promotion —
+  and differ only in the nature of the work and where execution goes. AI gains a **run-time
+  participant** role. **The north star MOVED: the next invariant re-verify must check the 2026-09-17
+  text, not the 2026-06-20 one.** [[bp-agent-orchestration]] is Track 2's Blueprint gap; Track 1 and
+  the collaboration foundation are delivered.
 - **last_invariant_check:** 2026-09-16 | 2026-09-16-041500.md (COMPLETE — Eric walked the set against
   live-tree evidence: 3 invariants + 5 stack + 5 key decisions + 3 conventions + eric-release-rhythm +
   the Vision all confirmed. `stack-language-java21` re-confirmed (Java 21 baseline, Java 25 now LTS =
