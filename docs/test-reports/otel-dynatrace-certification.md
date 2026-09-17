@@ -218,7 +218,7 @@ in this work, a version stamp the backend can show is better evidence than any l
 | Write transaction | `POST /api/profile` → **HTTP 201** in 28 ms |
 | Read transaction | `GET /api/profile/{id}` → **HTTP 200** in 9 ms |
 | `OTLP export failed` | **0**, across both |
-| Dynatrace UI | *pending* — submitted for confirmation (see below) |
+| Dynatrace UI | **confirmed 2026-09-17** — both traces located, parentage reconstructed, `OTel scope version` **4.12.11** on both |
 
 Two transactions rather than two of the same, because the **shapes differ** and that is the part a
 repeat could not show:
@@ -246,16 +246,45 @@ declined, rather than inferring it from silence.
 
 ## What remains
 
-**One open item: backend confirmation of the two acceptance traces.** Both were submitted with zero
-export failures, so Dynatrace returned 2xx for all eleven spans — but the UI check is with Dynatrace
-support, who are locating `45a6e43c67ef4087b9351956f50130d7` and `1c32bbe5e6b44f12aec201ce78faca3e`.
-The field to read is **`OTel scope version`**: it should be **4.12.11**, against 4.12.10 for the
-Scenario 1–5 traces. That value is resolved at runtime from the running application, which makes it
-proof that the *released* artifacts submitted these traces rather than a leftover build — the failure
-that cost two dead ends earlier in this work.
+**Nothing.** The last open item — backend confirmation of the two acceptance traces — closed on
+2026-09-17, when Dynatrace support located both in the UI.
 
-Nothing else. The forwarder's loop is closed on the exporting side, on the backend side
-(Scenario 5), and on the released artifacts locally (Scenario 6).
+| Confirmed in the Dynatrace UI | `45a6e43c…` (write) | `1c32bbe5…` (read) |
+|---|---|---|
+| Service | `mercury-otel-cert` | `mercury-otel-cert` |
+| Root span | `http.flow.adapter`, 536 µs | `http.flow.adapter`, 427 µs |
+| Spans | 6 | 5 |
+| Instrumentation scope | `org.platformlambda.opentelemetry-forwarder` | same |
+| **OTel scope version** | **4.12.11** | **4.12.11** |
+| Status | OK | OK |
+
+**The scope version is the whole point of this scenario.** 4.12.11 on both, against 4.12.10 on the
+Scenario 1–5 traces, resolved at runtime from the running application — so the traces the backend
+holds were submitted by the *released* artifacts and not by a leftover build, which is the failure
+that cost two dead ends earlier in this work. Local evidence could not have settled that; only a
+value the backend displays can.
+
+The backend also reconstructed the parentage, which the exporting side could only assert. The two
+shapes differ as predicted, and the write flow nests one level deeper:
+
+```text
+45a6e43c… — POST /api/profile          1c32bbe5… — GET /api/profile/41211
+http.flow.adapter                      http.flow.adapter
+├── task.executor                      ├── v1.get.profile
+└── v1.create.profile                  │   └── v1.decrypt.fields
+    ├── async.http.response            │       └── async.http.response
+    └── v1.encrypt.fields              └── task.executor
+        └── v1.save.profile
+```
+
+Sampled span detail shows the attribute mapping survives the round trip intact: `v1.create.profile`
+reports `exec_time_ms 4.116`, `from task.executor`, `path POST /api/profile`, `status 200`, span kind
+`Internal`, parent `a447c0624a23e550`; `v1.decrypt.fields` reports `exec_time_ms 0.311`,
+`from task.executor`, `path GET /api/profile/41211`, `status 200`, span kind `Internal`, parent
+`8e8a6fd949bc2895`. Both carry `Status OK`.
+
+The forwarder's loop is now closed end to end: on the exporting side, on the backend side
+(Scenario 5), and on the released artifacts both locally *and* in the backend (Scenario 6).
 
 Two unrelated follow-ups were noted during the round and are tracked elsewhere: the guides still
 show `OTEL_EXPORTER_OTLP_HEADERS` and `OTEL_SERVICE_NAME` in generic examples while this reference
