@@ -16,7 +16,18 @@
   the graph.js formal deprecation (ADR-0022), and an 8-guide docs campaign — Java PR #310
   + Rust PR #224, both merged (origin: 2026-09-02-050213). The loop works on external
   input, not just self-captured gaps.
-  **Next:** surface `## Doc Gaps` at next review sweep; measure guide sufficiency rate.
+  **MERGED 2026-09-16 (Eric):** [[thread-docs-improvement-backlog]] folded in here — it was this
+  loop's output queue, not a separate initiative. Its acceptance criteria are now this thread's:
+  **for humans, storytelling** (why before how, a narrative arc); **for AI agents, token-efficient**
+  (shortest path, machine-greppable, "generate from this page alone"). Auditing that queue at merge
+  found **8 of 9 items already shipped** with the record never updated — the same
+  stale-nested-checklist failure reported upstream to the agent-memory team the same day.
+  **Open queue (the only survivor of that audit):**
+  - a request-response **RPC demo in `lambda-example`** — `HelloRemoteRelay` is a hop-through relay
+    returning `Void`, so the RPC idiom still lives only in composable-example's `EventOverHttpRpc`.
+  **Next:** surface `## Doc Gaps` at the next review sweep; measure guide sufficiency rate. **And
+  keep the queue honest** — audit it at each sweep rather than only appending, which is what let the
+  merged backlog rot for three months.
   PR: [#306](https://github.com/Accenture/mercury-composable/pull/306) squash `6f6c3989` — merged.
   **Guide-first rule propagated 2026-09-01 to all four repos** (Rust
   [PR #222](https://github.com/Accenture/mercury/pull/222) squash `c730e17e`; python

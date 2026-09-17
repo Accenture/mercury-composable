@@ -6,4 +6,4 @@
   microbenchmark favoured the store we removed — only the mixed-workload probe exposed the property
   that mattered. **Benchmark the interference, not just the component.** See
   [[elastic-queue-file-store]]. origin: 2026-07-05-033922.
-  <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-09-16 | uses: 15 | tier: active | origin: 2026-07-05-033922 -->
+  <!-- id: thread-elastic-queue-bdb-to-file | created: 2026-07-05 | last_used: 2026-09-16 | uses: 15 | tier: archive-candidate | origin: 2026-07-05-033922 -->
