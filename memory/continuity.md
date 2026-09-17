@@ -191,7 +191,7 @@
   message text (Kafka's `ConfigException` carries no cause) and defaults to *waiting*, so a reworded
   message degrades to leniency rather than to spurious outages. Bounds
   [[preload-before-mainapp-lazy-config]]; extends [[kafka-clients-kernel-threads]].
-  <!-- id: kafka-class-objects-over-names | created: 2026-09-16 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-09-16-185851 -->
+  <!-- id: kafka-class-objects-over-names | created: 2026-09-16 | last_used: 2026-09-17 | uses: 3 | tier: active | origin: 2026-09-16-185851 -->
 
 - **A jar under a base scan package needs an `@OptionalService` master switch, and a vendor
   integration is not done until a negative control proves the happy path (2026-09-16, Eric's design
@@ -520,7 +520,7 @@
   comment) and the return-route coordinator; applied to the distributed cache's `CacheRuntime`. This
   decays once the toolchain moves to Java 25 (JEP 491 makes `synchronized` non-pinning). Relates
   [[virtual-threads-rpc]], [[kafka-clients-kernel-threads]]; applied in [[redis-connection-foundation]].
-  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-09-16 | uses: 4 | tier: active | origin: 2026-09-14-230259 -->
+  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-09-16 | uses: 4 | tier: archive-candidate | origin: 2026-09-14-230259 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 

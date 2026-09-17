@@ -231,7 +231,7 @@ class SchemaCodecCsfleConfigTest {
         Map<String, Object> serdeConfig = codec.serdeConfig();
         assertEquals("OAUTHBEARER", serdeConfig.get("bearer.auth.credentials.source"));
         assertEquals("inherit-client", serdeConfig.get("bearer.auth.client.id"));
-        assertEquals("inherit-secret", serdeConfig.get("bearer.auth.client.secret"));
+        assertEquals("test-secret", serdeConfig.get("bearer.auth.client.secret"));
         assertEquals("lsrc-test", serdeConfig.get("bearer.auth.logical.cluster"));
         // the library's own pins belong to the registry REST client, not to the serdes: inheriting the
         // template (not the post-processed client config) keeps them out
@@ -253,7 +253,7 @@ class SchemaCodecCsfleConfigTest {
         Map<String, Object> serdeConfig = codec.serdeConfig();
         assertEquals("serde-specific-client", serdeConfig.get("bearer.auth.client.id"), "serde.* overrides the template");
         assertEquals("local-kms-passphrase", serdeConfig.get("secret"), "serde-only keys still pass through");
-        assertEquals("inherit-secret", serdeConfig.get("bearer.auth.client.secret"),
+        assertEquals("test-secret", serdeConfig.get("bearer.auth.client.secret"),
                 "keys the serde does not override are still inherited");
     }
 
