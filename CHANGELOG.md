@@ -47,6 +47,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    key changed. Consumer-enabled applications were unaffected by the original defect and are
    unaffected by this fix.
 
+2. **A MiniGraph node that names a composable function must now name the skill that runs it.**
+   CompileGraph accepted a node carrying a `task` route with no `skill` and treated it as a
+   structural node: the graph traversed it, the function was never called, and nothing was reported.
+   The model looked correct and did nothing — a failure mode that cost a debugging round during the
+   agent-orchestration E0 work.
+
+   The deployment gate now rejects that node by name, as a **hard error** rather than a warning: a
+   `task` route is a composable function the author means to call, so the node is *incomplete*, and a
+   warning on a silently inert node is easy to scroll past — which is how the original case survived.
+   The rule is **bidirectional**. Only `graph.task`, `graph.suspend` and `graph.resume` consume a
+   task route (the latter two are documented supersets whose `task` names the pluggable state-store
+   function), so a task under any other skill is equally unreachable, and one of those three skills
+   *without* a task is the same inert node arrived at from the other side.
+
+   Deliberately keyed on `task` alone, not on `input`/`output`: those are descriptor fields on
+   non-executing node types — a `Provider` node uses `input` for its request shape, a `Dictionary`
+   node uses `output` for its projection — and neither carries a skill by design. Keying on them
+   rejects valid models; that was tried, and the tutorial graphs caught it.
+
+   **Upgrade action:** this one can change a deployment outcome. A graph model containing such a node
+   deployed successfully before and will now be **rejected at deployment**, with an error naming the
+   node and its unreachable route. That node was already doing nothing, so the rejection reports a
+   defect that was previously silent rather than removing working behavior — but a model that relied
+   on the node being inert must have it removed or completed. Both directions of the rule hold
+   without exception across every model in this repository: 64 nodes carry one of the three skills
+   and all 64 carry a task, and no node carries a task under any other skill.
+
+3. **Event Script resolves `input.header.*` against Kafka headers in their original casing.** Event
+   Script lowercases a header reference, which matches the HTTP adapter because that adapter ingests
+   headers lowercased — the two agree, and the lookup always succeeded. The **Kafka** flow adapter
+   delivers record headers in original wire casing, so a producer-sent `Content-Type` could not be
+   addressed by *any* `input.header.*` mapping: the reference silently resolved to null and the flow
+   saw nothing.
+
+   The lookup now falls back to a case-insensitive scan, and only when the direct lookup missed — so
+   the HTTP path is untouched and pays nothing. The fix is deliberately in the *lookup* rather than
+   normalizing at the Kafka adapter: lowercasing on ingest would change what the `*` whole-body
+   passthrough hands a function and break flows that match exact casing today.
+
+   **Upgrade action:** none. A mixed-case Kafka header that previously resolved to null now resolves
+   to its value, which is the defect being fixed; nothing that resolved before resolves differently.
+
 ---
 ## Version 4.12.11, 9/16/2026
 

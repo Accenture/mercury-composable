@@ -130,8 +130,9 @@ public class GraphModelValidator {
      * The rule is <b>bidirectional</b> (Eric, 2026-09-16): those three skills each call a composable
      * function, so each one <em>requires</em> a task route as well. A {@code graph.task} node with no
      * task is the same inert node arrived at from the other side. Both directions hold without
-     * exception across every model in this repository - 67 nodes carry one of the three skills and
-     * all 67 carry a task; no node carries a task under any other skill.
+     * exception across every model in this repository - 64 nodes carry one of the three skills and
+     * all 64 carry a task; no node carries a task under any other skill. (The count excludes the
+     * three unit-test-task-skill-err*.json fixtures below, which violate the rule on purpose.)
      *
      * @param graph an imported MiniGraph
      * @throws IllegalArgumentException naming the node and its unreachable task route
