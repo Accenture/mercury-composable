@@ -141,8 +141,8 @@ Platform Core as the foundation beneath it.* Concretely:
   custom skills remain the escape hatch.
 - **Not** a heavyweight runtime — stays lightweight; Spring is optional, never required by core.
 - **Not** a claim of determinism for AI-bearing graphs (Track 2) — an AI node's output is not
-  reproducible. The graph governs *where* nondeterminism is allowed, bounds it, and keeps the
-  traversal inspectable. "Governed nondeterminism", never "deterministic AI".
+  static. The graph governs *where* that variation is allowed, bounds it, and keeps the traversal
+  inspectable. "Governed nondeterminism", never "deterministic AI".
 
 ## Mental model
 
