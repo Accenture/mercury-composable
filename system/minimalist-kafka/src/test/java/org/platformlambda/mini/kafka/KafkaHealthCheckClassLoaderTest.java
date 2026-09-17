@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -102,26 +103,35 @@ class KafkaHealthCheckClassLoaderTest {
     }
 
     /**
-     * Run on a thread whose context classloader is parentless and empty - it can load nothing at all,
-     * which is the strongest form of "cannot see kafka-clients".
+     * Run {@code work} on a thread of its own and wait for it, failing the test with whatever it threw.
+     * Every test here needs a thread it controls, because the thing under test is a property OF the
+     * thread - its context classloader - and the JUnit thread's own must not be disturbed.
      */
-    private static <T> T onThreadWithBlindContextClassLoader(java.util.function.Supplier<T> work)
-            throws InterruptedException {
-        AtomicReference<T> result = new AtomicReference<>();
+    private static void onItsOwnThread(String name, Runnable work) throws InterruptedException {
         AtomicReference<Throwable> failure = new AtomicReference<>();
-        Thread t = new Thread(() -> {
-            try (URLClassLoader blind = new URLClassLoader(new URL[0], null)) {
-                Thread.currentThread().setContextClassLoader(blind);
-                result.set(work.get());
-            } catch (Throwable e) {
-                failure.set(e);
-            }
-        }, "blind-tccl");
+        Thread t = new Thread(work, name);
+        t.setUncaughtExceptionHandler((thread, thrown) -> failure.set(thrown));
         t.start();
         t.join(30_000);
         if (failure.get() != null) {
-            throw new AssertionError("the probe threw instead of building or returning null", failure.get());
+            throw new AssertionError(name + ": the work threw instead of completing", failure.get());
         }
+    }
+
+    /**
+     * Run on a thread whose context classloader is parentless and empty - it can load nothing at all,
+     * which is the strongest form of "cannot see kafka-clients".
+     */
+    private static <T> T onThreadWithBlindContextClassLoader(Supplier<T> work) throws InterruptedException {
+        AtomicReference<T> result = new AtomicReference<>();
+        onItsOwnThread("blind-context-loader", () -> {
+            try (URLClassLoader blind = new URLClassLoader(new URL[0], null)) {
+                Thread.currentThread().setContextClassLoader(blind);
+                result.set(work.get());
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        });
         return result.get();
     }
 
@@ -152,21 +162,18 @@ class KafkaHealthCheckClassLoaderTest {
         var health = probing(KafkaHealthCheckClassLoaderTest::probeConfig);
         AtomicReference<ClassLoader> during = new AtomicReference<>();
         AtomicReference<ClassLoader> after = new AtomicReference<>();
-        Thread t = new Thread(() -> {
+        onItsOwnThread("restore-check", () -> {
             try (URLClassLoader marker = new URLClassLoader(new URL[0], null)) {
                 Thread.currentThread().setContextClassLoader(marker);
                 during.set(marker);
-                KafkaConsumer<String, byte[]> consumer = health.buildClient(probeConfig());
-                if (consumer != null) {
-                    consumer.close();
+                try (KafkaConsumer<String, byte[]> consumer = health.buildClient(probeConfig())) {
+                    assertNotNull(consumer, "the probe must build here - otherwise this proves nothing");
                 }
                 after.set(Thread.currentThread().getContextClassLoader());
-            } catch (Exception e) {
+            } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
-        }, "restore-check");
-        t.start();
-        t.join(30_000);
+        });
         assertSame(during.get(), after.get(),
                 "buildClient must restore the thread's original context classloader, even though it "
                         + "overrode it to construct the client");
@@ -180,6 +187,9 @@ class KafkaHealthCheckClassLoaderTest {
                 "an incomplete template is still a start-up condition, reported as passing/waiting");
     }
 
+    // "resource": buildClient THROWS on this input - the assertion is that it does - so it returns no
+    // consumer to close. The inspection sees only a method whose return type is AutoCloseable.
+    @SuppressWarnings("resource")
     @Test
     void aClassThatIsNotOnTheClasspathFailsHealthInsteadOfWaitingForever() {
         // The leniency exists for ONE case: a value a later credential bootstrap will publish. A class
@@ -289,8 +299,8 @@ class KafkaHealthCheckClassLoaderTest {
     @Test
     void initializingAKafkaConfigClassResolvesClassDefaultsThroughTheContextClassLoader() throws Exception {
         try (URLClassLoader isolated = freshCopyOfKafkaClients()) {
-            // an Error from a class initializer propagates straight out of Method.invoke - it is not
-            // wrapped in InvocationTargetException, which is the same reason catch (Exception) misses it
+            // an Error from a class initializer propagates straight out of Method.invoke instead of
+            // being wrapped - the same reason an Exception-only catch clause fails to hold it
             var failure = assertThrows(ExceptionInInitializerError.class,
                     () -> configNamesOn(isolated, /* blindContextClassLoader */ true));
             assertTrue(String.valueOf(failure.getCause().getMessage())
@@ -309,7 +319,7 @@ class KafkaHealthCheckClassLoaderTest {
     @Test
     void theSameInitializationSucceedsUnderTheModuleClassLoader() throws Exception {
         try (URLClassLoader isolated = freshCopyOfKafkaClients()) {
-            assertTrue((int) configNamesSize(isolated) > 0,
+            assertTrue(configNamesSize(isolated) > 0,
                     "an ordinary loader must initialize ConsumerConfig without trouble - otherwise the "
                             + "test above proves nothing about the loader");
         }

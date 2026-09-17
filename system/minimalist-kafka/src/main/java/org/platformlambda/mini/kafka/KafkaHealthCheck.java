@@ -318,7 +318,7 @@ public class KafkaHealthCheck implements LambdaFunction {
         } catch (LinkageError e) {
             // A Kafka configuration class failed its own static initialization - see
             // withModuleClassLoader. Caught as an Error on purpose: ExceptionInInitializerError and
-            // NoClassDefFoundError are NOT Exceptions, so the catch below never saw them and they
+            // NoClassDefFoundError are NOT Exceptions, so the catch below never saw them, and they
             // escaped the function, answering /health with a raw 500 instead of a diagnosable 503.
             // Nothing heals it either - the JVM marks a class whose initializer threw as erroneous for
             // good, so every later access fails on every thread however correct its loader. Report the
