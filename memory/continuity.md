@@ -548,10 +548,19 @@
   checkpoint on an LLM verdict), the in-graph-run streaming drive.
   **Status framing (Eric, 2026-09-17, at the first closure gate): graph-based AI SDLC is in the
   DESIGN phase**, with experiments proving the prerequisites — progressive rendering of token
-  batches being the one already demonstrated. This is the sole remaining Blueprint gap and it is
-  deliberately long-horizon: an epic, not a task. Distinct from the AI companion, which is
-  design-time collaboration and now closed as delivered — this epic is the RUN-TIME half, using
-  graphs to create an AI SDLC.
+  batches being the one already demonstrated. Sole remaining Blueprint gap, deliberately
+  long-horizon: an epic, not a task.
+  **What it shares with the closed companion gap, and what it does not (Eric's clarification).**
+  *Shared:* the authoring lifecycle. An AI SDLC graph is co-invented by human and AI in the
+  Playground in dev mode — the same prototyping surface, the same maturity, reused rather than
+  rebuilt. *Different:* what survives promotion. For the companion the AI is a **design-time**
+  participant only — after promotion the UI is disabled and the graph runs without it. For AI SDLC
+  **some nodes carry AI skills**, so after promotion those nodes interface with an AI agent through
+  gateways, MCP servers or other tools: the AI is in the **production execution path**, not just the
+  authoring one. That is the whole reason this is a separate epic — the authoring pattern is
+  solved and inherited; the runtime posture is the open problem. It is also why the engine core
+  stays LLM/vendor-free with adapters as functions ON the wrappers: the gateway/MCP edge is where
+  vendor specifics live, never in the engine.
   → serves: vision-mercury-composable
   <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-17 | uses: 15 | tier: working | origin: 2026-08-25-213703 -->
 - [x] (blueprint) **CLOSED 2026-09-17 (Eric, at the first closure gate)** — integrate a pluggable AI
