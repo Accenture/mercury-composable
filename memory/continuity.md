@@ -17,7 +17,18 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.11 (2026-09-16 21:03Z — the field-unblock release, **3 PRs #402–#404**
+- **latest_release:** v4.12.12 (2026-09-17 — the produce-only unblock, **1 fix PR #409** via release
+  PR #410, squash `ebdd2e37`, tag `v4.12.12`, pom verified at the tag): **`kafka.health` works on a
+  produce-only leg** (`kafka.consumer.enabled=false`), where v4.12.11's classloader fix covered only
+  half the path — Kafka resolves class-valued config DEFAULTS in its config classes' STATIC
+  INITIALIZERS, reached while resolving the template, before any client is built
+  ([[kafka-config-class-static-init-loader]]). **ACTION TO READ, not to take:** no action to
+  configure, no wire/API/config-key change. An app on a produce-only leg whose `/health` answered a
+  raw **500** now answers correctly; consumer-enabled apps were unaffected by both the defect and the
+  fix. **Java only — no lockstep** (JVM classloading has no Rust analogue); the outstanding lockstep
+  is still v4.12.9's distributed cache ([[ot-distributed-cache]]). Sweep surface: BUILD FILES ONLY,
+  **43 files / 98 occurrences** — unchanged from v4.12.11 because the fix touched no poms, and
+  re-derived rather than carried forward (never trust the prior count). Prior: v4.12.11 (2026-09-16 21:03Z — the field-unblock release, **3 PRs #402–#404**
   via release PR #405, squash `06750214`, tag `v4.12.11`, pom verified at the tag): **`kafka.health`
   builds its probe client regardless of the thread context classloader** — the field bug it exists
   for, where a pooled kernel thread's loader could not see `kafka-clients` while the same JVM's real
@@ -35,10 +46,10 @@
   occurrences** (97 → 98 when #404 added a forwarder dependency — re-derive the sweep after a rebase,
   never trust the prior count). **Open:** Dynatrace support is confirming the two field-acceptance
   traces in the UI; the report's Scenario 6 records that row as *pending* and is updated on reply.
-  **FIELD REGRESSION (2026-09-17):** the `kafka.health` half of this release is **incomplete** — a
-  produce-only leg (`kafka.consumer.enabled=false`) still answers `/health` with a raw 500, because
-  the loader override did not cover template resolution ([[kafka-config-class-static-init-loader]]).
-  Fix pushed, awaiting a patch release ([[ot-kafka-health-producer-only-fix]]).
+  **FIELD REGRESSION, now fixed:** the `kafka.health` half of this release was **incomplete** — a
+  produce-only leg (`kafka.consumer.enabled=false`) still answered `/health` with a raw 500, because
+  the loader override did not cover template resolution. **Corrected in v4.12.12** (above,
+  [[kafka-config-class-static-init-loader]]); read this release's Kafka claim as consumer-path only.
   Prior: v4.12.10 (2026-09-16 04:01Z — the cleanup release, 2 PRs #399–#400, squash `92e94f2b`:
   Berkeley DB elastic-queue store RETIRED (ADR-0024), `ServiceQueue` collapsed to ONE dispatch mode
   ([[elastic-queue-file-store]]), separate-Redis-client guidance, and `BENCHMARK-LOG.md`; no upgrade
