@@ -112,6 +112,14 @@ final class GroupProtocolResolver {
      * One-time feature probe against the cluster, using only the template's connection and
      * security settings (filtered to the Admin client's own config surface, so consumer-only
      * keys are not passed along).
+     *
+     * <p><b>Thread context classloader.</b> {@code AdminClientConfig.configNames()} and
+     * {@code Admin.create} both resolve classes through the TCCL - including, in the config class's
+     * own static initializer, class-valued config defaults. That is harmless from
+     * {@code KafkaFlowAdapter} (an ordinary application thread) and safe from {@code kafka.health}
+     * only because the health probe pins the module's loader around the whole probe, template
+     * resolution included. Keep it that way: see {@code KafkaHealthCheck.withModuleClassLoader} for
+     * what a pooled kernel thread's loader does here, and why it cannot be undone afterwards.</p>
      */
     private static String probe(Properties template, String bootstrap) {
         Properties adminProps = new Properties();
