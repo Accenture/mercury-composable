@@ -180,7 +180,7 @@
   **Bounded 2026-09-16:** the passing "waiting" status covers ONLY a value that has not landed yet —
   a config that can never work fails the check instead, because reporting it as passing is how a real
   defect hid in the field for hours. See [[kafka-class-objects-over-names]].
-  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-16 | uses: 14 | tier: archive-candidate | origin: 2026-09-11-185752 -->
+  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-17 | uses: 15 | tier: active | origin: 2026-09-11-185752 -->
 
 - **Kafka-driving functions run on kernel threads — `@KernelThreadRunner` (2026-09-11, Eric's
   question → PR #362).** The Kafka consumer performs network I/O on the CALLING thread inside
@@ -192,7 +192,7 @@
   the counter-case: Lettuce does I/O on its own netty threads and callers only await futures, so
   `soa.redis.health` deliberately stays on virtual threads. KafkaConsumer itself is NOT thread-safe;
   sequential multi-thread access under external sync (the checks' ReentrantLock) is its contract.
-  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-16 | uses: 6 | tier: archive-candidate | origin: 2026-09-11-191200 -->
+  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-17 | uses: 7 | tier: active | origin: 2026-09-11-191200 -->
 
 - **Kafka class-valued config is set as `Class` OBJECTS, and a config that can never work must FAIL a
   health check (2026-09-16, field bug → PR #403; Eric ruled both halves).** Kafka resolves a class
@@ -220,7 +220,7 @@
   construction left a produce-only leg broken in the field — the loader is consulted earlier still, in
   a Kafka config class's static initializer, reached while resolving the template. See
   [[kafka-config-class-static-init-loader]].
-  <!-- id: kafka-class-objects-over-names | created: 2026-09-16 | last_used: 2026-09-17 | uses: 3 | tier: active | origin: 2026-09-16-185851 -->
+  <!-- id: kafka-class-objects-over-names | created: 2026-09-16 | last_used: 2026-09-17 | uses: 4 | tier: active | origin: 2026-09-16-185851 -->
 
 - **Kafka resolves class-valued config DEFAULTS inside its config classes' STATIC INITIALIZERS, so a
   wrong thread context loader poisons the class for the life of the JVM (2026-09-17, field report on
@@ -535,7 +535,7 @@
   examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-16 | uses: 16 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-16 | uses: 16 | tier: archive-candidate | origin: 2026-09-01-022524 -->
 - **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
   sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
   identifies **content**, not "this engine's Nth release". This covers the Rust port AND the python
