@@ -7,4 +7,4 @@
   `input`/`output`; `graph.task` only) were caught by running the corpus, not by reading the rule.
   Parked: comprehensive mapping-DSL syntax validation, a separate design pass.
   origin: `memory/sessions/2026-09-16-234646.md`
-  <!-- id: thread-compilegraph-syntax-validation | created: 2026-07-02 | last_used: 2026-09-16 | uses: 6 | tier: active | origin: 2026-07-02-004606 -->
+  <!-- id: thread-compilegraph-syntax-validation | created: 2026-07-02 | last_used: 2026-09-17 | uses: 7 | tier: active | origin: 2026-07-02-004606 -->

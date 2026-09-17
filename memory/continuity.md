@@ -45,16 +45,17 @@
   there: the `soa.redis.health` ROUTE rename and `minimalist-kafka` no longer transitive). The live
   version source stays the root pom.xml.)
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-16 | through 2026-09-16-211927.md (ON COMMAND, not cadence — 6 sessions
-  since the last one, review_every is 10; the SIZE trigger was marginally live at 36 decaying facts
-  vs continuity_max_facts 35 — and STAYS at 36, because archiving one and raising one nets zero and
-  NOTHING else is past the window. Being 1 over with 0 overdue is the honest outcome; do not archive
-  a fact that is merely a candidate to hit a count. Archived 1: soa-transport-neutral-cid (sslu 23, shipped v4.12.9
-  PR #364, design realized in code + guide). Swept 0 — all five completed threads closed within the
-  window and already condensed to stubs. Raised ot-otel-acceptance-traces-pending: the Dynatrace
-  acceptance-trace confirmation lived ONLY in latest_release, which is rewritten each release, so a
-  live commitment had no durable home. Invariant re-verify NOT due (5 sessions since, cadence 40).
-  memory-lint 0/0. Prior: 2026-09-16 | 2026-09-16-032012.md)
+- **last_review:** 2026-09-17 | through 2026-09-17-020650.md (ON COMMAND again — 5 sessions since,
+  review_every 10. **Swept 5** completed threads to the archive: ot-maven-central-later,
+  thread-docs-improvement-backlog, thread-field-trace-propagation-4-6-3,
+  thread-minimalist-kafka-protobuf-revival, thread-redis-kafka-rpc (sslu 114–189). The distinction
+  from the prior review, which swept 0: those five were closed AND recently referenced; these five
+  were closed AND long-unreferenced — they faded months before the audit ticked their boxes.
+  Archived 0 facts; reactivated 0; superseded 0. **First run of the v4.40.0 human closure gate**
+  (step 8) → raised ot-close-stalled-threads-20260917 for the two `(blueprint)` gaps at sslu 135;
+  the review never closes a thread, and closing a blueprint gap is an altitude decision. Invariant
+  re-verify NOT due (11 sessions since, cadence 40). memory-lint 0 errors. Live facts 54 → 49.
+  Prior: 2026-09-16 | 2026-09-16-211927.md)
 - **last_invariant_check:** 2026-09-16 | 2026-09-16-041500.md (COMPLETE — Eric walked the set against
   live-tree evidence: 3 invariants + 5 stack + 5 key decisions + 3 conventions + eric-release-rhythm +
   the Vision all confirmed. `stack-language-java21` re-confirmed (Java 21 baseline, Java 25 now LTS =
@@ -155,7 +156,7 @@
   **Bounded 2026-09-16:** the passing "waiting" status covers ONLY a value that has not landed yet —
   a config that can never work fails the check instead, because reporting it as passing is how a real
   defect hid in the field for hours. See [[kafka-class-objects-over-names]].
-  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-16 | uses: 14 | tier: active | origin: 2026-09-11-185752 -->
+  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-16 | uses: 14 | tier: archive-candidate | origin: 2026-09-11-185752 -->
 
 - **Kafka-driving functions run on kernel threads — `@KernelThreadRunner` (2026-09-11, Eric's
   question → PR #362).** The Kafka consumer performs network I/O on the CALLING thread inside
@@ -167,7 +168,7 @@
   the counter-case: Lettuce does I/O on its own netty threads and callers only await futures, so
   `soa.redis.health` deliberately stays on virtual threads. KafkaConsumer itself is NOT thread-safe;
   sequential multi-thread access under external sync (the checks' ReentrantLock) is its contract.
-  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-16 | uses: 6 | tier: active | origin: 2026-09-11-191200 -->
+  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-16 | uses: 6 | tier: archive-candidate | origin: 2026-09-11-191200 -->
 
 - **Kafka class-valued config is set as `Class` OBJECTS, and a config that can never work must FAIL a
   health check (2026-09-16, field bug → PR #403; Eric ruled both halves).** Kafka resolves a class
@@ -392,7 +393,7 @@
   Rust repo — both engines share the WS handshake. Dev-only, like the Playground itself.
   Reactivated 2026-09-14: now ALSO shipped in `templates/starter-graph` (both repos), and the AI
   docs are broker-first with the keep-alive failure mode named (mercury-composable#383, mercury#276).
-  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-15 | uses: 9 | tier: archive-candidate | origin: 2026-09-03-172753 -->
+  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-17 | uses: 10 | tier: active | origin: 2026-09-03-172753 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -463,7 +464,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-16 | uses: 46 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-16 | uses: 46 | tier: archive-candidate | origin: 2026-08-19-195244 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
@@ -546,7 +547,7 @@
   driving that bridge from an LLM node INSIDE a live graph run. Next: E1 (suspend
   checkpoint on an LLM verdict), the in-graph-run streaming drive.
   → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-13 | uses: 14 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-17 | uses: 15 | tier: working | origin: 2026-08-25-213703 -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
   <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->

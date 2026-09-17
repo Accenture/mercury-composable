@@ -9,4 +9,4 @@
   retired as a pure invalidation and archived. Lesson: a fact promoted to `core` can still be wrong
   12 days later — core means "does not decay", not "cannot be retired"; only the cadence prompt
   surfaced it. origin: 2026-09-16-041500.
-  <!-- id: ot-reverify-invariants-20260916 | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: working | origin: 2026-09-16-041500 -->
+  <!-- id: ot-reverify-invariants-20260916 | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: archive-candidate | origin: 2026-09-16-041500 -->
