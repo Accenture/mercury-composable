@@ -16,4 +16,4 @@
   Does not block anything: v4.12.11 shipped with the feature opt-in and default-off, and the
   certification proper ([[otel-optional-service-and-negative-control]]) was already UI-confirmed.
   → serves: vision-mercury-composable
-  <!-- id: ot-otel-acceptance-traces-pending | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: working | origin: 2026-09-16-211927 -->
+  <!-- id: ot-otel-acceptance-traces-pending | created: 2026-09-16 | last_used: 2026-09-17 | uses: 2 | tier: working | origin: 2026-09-16-211927 -->
