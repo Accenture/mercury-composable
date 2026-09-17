@@ -574,6 +574,18 @@
   in the shared layer.)
   <!-- id: eric-release-rhythm | created: 2026-08-22 | last_used: 2026-09-02 | uses: 29 | tier: core | origin: 2026-08-22-180334 | note: promoted to core 2026-09-04 (Eric): an operating preference that does not decay in relevance — and the sole User Preferences fact, so archiving it would fail the orientation question outright -->
 
+- **Code changes go through a PR; memory-only commits may go straight to main (Eric, 2026-09-16).**
+  Every code change gets a branch and a pull request, so CI runs and the change is reviewable — even
+  a small, fully-verified one. Memory commits (`memory/`: session logs, continuity, threads) continue
+  to land directly on main, which is the long-standing practice the protocol's own
+  `git add memory/ && git commit` guidance assumes and which the history shows throughout.
+  The ruling followed the one exception: `d351b2ab` (test fixtures reading their secret from the
+  environment) was pushed straight to main because the instruction was "commit and push" and the
+  branch was already main. It was locally green, but it bypassed PR CI — so the rule is now explicit
+  rather than inferred from what happened to be convenient. Distinct from
+  [[eric-release-rhythm]], which gates merge/tag/publish; this governs how *any* change reaches main.
+  <!-- id: eric-code-changes-via-pr | created: 2026-09-16 | last_used: 2026-09-16 | uses: 1 | tier: core | origin: 2026-09-17-011049 -->
+
 ## Team / Members
 
 (none recorded yet)
