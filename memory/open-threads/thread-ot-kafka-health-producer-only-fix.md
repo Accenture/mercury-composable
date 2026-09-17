@@ -5,8 +5,10 @@
   (`bee2bc51`): the whole probe runs under the module classloader, and a `LinkageError` renders as a
   503 naming the configuration. Full reactor green; the three regression tests fail on the 4.12.11
   source ([[kafka-config-class-static-init-loader]]).
-  **Open:** PR open + merge (Eric gates), then a patch release for the field — the field is blocked
-  on a produce-only deployment answering 500 on `/health`. Once confirmed in the field, close and
+  **Open:** PR [#409](https://github.com/Accenture/mercury-composable/pull/409) is open (Eric gates
+  merge), then **v4.12.12** — the number is CONFIRMED by Eric (2026-09-17) and already cited in
+  `docs/guides/minimalist-kafka.md`, so the release must carry it rather than pick a fresh one. The
+  field is blocked on a produce-only deployment answering 500 on `/health`. Once confirmed in the field, close and
   record whether the 503 text read usefully to the DevOps reader.
   **Watch for:** the Rust twin has no analogue (JVM classloading), so no lockstep — but the same
   *shape* (a pooled thread's ambient state deciding a one-shot global initialization) is worth a look
