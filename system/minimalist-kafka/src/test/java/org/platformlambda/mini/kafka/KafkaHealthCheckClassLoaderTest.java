@@ -18,10 +18,13 @@
 
 package org.platformlambda.mini.kafka;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
+import org.slf4j.Logger;
 
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Map;
@@ -55,15 +58,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * consumer from the identical class-name config and is <em>not</em> a kernel-thread runner, was
  * unaffected. That difference is the whole diagnosis.</p>
  *
- * <p>The fix is to hand the constructor deserializer <b>instances</b>: Kafka then stores
- * {@code keyDeserializer.getClass()} - a {@code Class} object, not a name - and
- * {@code ConfigDef.parseType} returns it directly instead of asking any classloader. The probe already
- * hardcoded exactly these two deserializers, so it is semantically identical and strictly more robust.
- * The alternative, setting the TCCL around construction, mutates global thread state and was rejected.</p>
+ * <p>The fix is to pin this module's own classloader as the thread context loader for the duration of
+ * the work. Handing the constructor deserializer <b>instances</b> was tried first and is not enough:
+ * it removes two lookups and the next class-name config fails in their place, because Kafka resolves
+ * many configs this way. Fix the loader, not one config at a time.</p>
+ *
+ * <p><b>Second round (v4.12.12): the same trap, one call earlier.</b> Scoping the loader to client
+ * CONSTRUCTION left a produce-only leg still broken in the field, with
+ * {@code Class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever could not be found}.
+ * Kafka consults the loader before any client exists - in the static initializer of its own config
+ * classes, which resolve class-valued config DEFAULTS at {@code ConfigDef.define} time. The probe now
+ * pins the loader across the whole probe, template resolution included; see
+ * {@code KafkaHealthCheck.withModuleClassLoader} for the mechanism and why one bad initialization
+ * cannot be undone.</p>
  *
  * <p>This reproduces the production condition with no broker and no container: a parentless, empty
  * {@link URLClassLoader} as the thread's context loader is a loader that genuinely cannot see
- * {@code kafka-clients}. Before the fix this test fails - {@code buildClient} swallows the
+ * {@code kafka-clients}. Before the first fix these tests fail - {@code buildClient} swallows the
  * {@code ConfigException} (it arrives as a {@code KafkaException}) and returns {@code null}, which the
  * caller reports as a <em>passing</em> "Waiting for Kafka connection" status. That passing-while-broken
  * semantics is what let this hide in the field.</p>
@@ -196,5 +207,147 @@ class KafkaHealthCheckClassLoaderTest {
                 "point the reader at the classpath, not the network: " + text);
         assertFalse(text.contains("cluster is not reachable"),
                 "this is not an outage - saying so would send the reader the wrong way: " + text);
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // The produce-only leg: 4.12.11 fixed the consumer path and left this one broken
+    // ------------------------------------------------------------------------------------------
+
+    /**
+     * Resolving the template is itself a Kafka classloading event, so it must happen under the
+     * override too - not just the construction that follows it.
+     *
+     * <p>On a produce-only leg ({@code kafka.consumer.enabled=false}) {@code healthProbeProperties}
+     * filters the producer template through {@code ConsumerConfig.configNames()}. That static METHOD
+     * call initializes {@code ConsumerConfig}, whose initializer resolves the default value of
+     * {@code sasl.oauthbearer.jwt.retriever.class} through the thread context classloader - and on a
+     * pooled kernel thread that loader cannot see {@code kafka-clients}. The consumer path is spared
+     * only because its references to the same class are compile-time constants that javac inlines.</p>
+     *
+     * <p>Asserting on the loader the supplier SEES is the durable form of this test: it holds whatever
+     * {@code healthProbeProperties} does internally, and it fails on the code as shipped in 4.12.11.</p>
+     */
+    @Test
+    void theTemplateIsResolvedWithTheModuleClassLoaderPinned() throws InterruptedException {
+        AtomicReference<ClassLoader> whileResolving = new AtomicReference<>();
+        var health = probing(() -> {
+            whileResolving.set(Thread.currentThread().getContextClassLoader());
+            return probeConfig();
+        });
+        onThreadWithBlindContextClassLoader(() -> health.handleEvent(Map.of("type", "health"), null, 1));
+        assertSame(KafkaHealthCheck.class.getClassLoader(), whileResolving.get(),
+                "the probe template must be resolved under the module classloader - a pooled kernel "
+                        + "thread's loader decides whether ConsumerConfig can even be initialized");
+    }
+
+    /** The same for {@code type=info}, which resolves the template when it arrives before any probe. */
+    @Test
+    void theInfoPathResolvesWithTheModuleClassLoaderPinned() throws InterruptedException {
+        AtomicReference<ClassLoader> whileResolving = new AtomicReference<>();
+        var health = probing(() -> {
+            whileResolving.set(Thread.currentThread().getContextClassLoader());
+            return probeConfig();
+        });
+        onThreadWithBlindContextClassLoader(() -> health.handleEvent(Map.of("type", "info"), null, 1));
+        assertSame(KafkaHealthCheck.class.getClassLoader(), whileResolving.get(),
+                "type=info resolves the template too, on the same kernel thread");
+    }
+
+    /**
+     * A class whose static initializer threw is erroneous for the life of the JVM, so every later
+     * touch raises {@code NoClassDefFoundError} - an {@code Error}, which {@code catch (Exception)}
+     * does not hold. In the field that escaped the function and {@code /health} answered a raw 500
+     * instead of a 503 the DevOps reader could act on. It must fail the check, and say so.
+     */
+    @Test
+    void anAlreadyPoisonedKafkaClassFailsHealthInsteadOfEscapingAsAnError() {
+        var health = probing(() -> {
+            throw new NoClassDefFoundError(
+                    "Could not initialize class org.apache.kafka.clients.consumer.ConsumerConfig");
+        });
+        Object answer = health.handleEvent(Map.of("type", "health"), null, 1);
+        assertInstanceOf(EventEnvelope.class, answer,
+                "an Error must not escape the function - /health has to render it as a status");
+        EventEnvelope envelope = (EventEnvelope) answer;
+        assertEquals(503, envelope.getStatus());
+        String text = String.valueOf(((Map<?, ?>) envelope.getBody()).get("text"));
+        assertTrue(text.contains("failed to initialize"), "name the real fault: " + text);
+        assertFalse(text.contains("cluster is not reachable"),
+                "this is a classpath/loader fault, not an outage: " + text);
+    }
+
+    /**
+     * The mechanism itself, pinned against future {@code kafka-clients} upgrades.
+     *
+     * <p>{@code ConfigDef.define} resolves a {@code Type.CLASS} config's DEFAULT the moment the key is
+     * defined, and {@code sasl.oauthbearer.jwt.retriever.class} defaults to a class NAME. So
+     * initializing {@code ConsumerConfig} is a classloading event on its own - no broker, no SASL, no
+     * credentials - and the thread that happens to do it first decides the outcome for the whole JVM.
+     * A fresh copy of kafka-clients in an isolated loader is what makes that observable here: the real
+     * {@code ConsumerConfig} was initialized by the first test to touch it and cannot be un-initialized.</p>
+     */
+    @Test
+    void initializingAKafkaConfigClassResolvesClassDefaultsThroughTheContextClassLoader() throws Exception {
+        try (URLClassLoader isolated = freshCopyOfKafkaClients()) {
+            // an Error from a class initializer propagates straight out of Method.invoke - it is not
+            // wrapped in InvocationTargetException, which is the same reason catch (Exception) misses it
+            var failure = assertThrows(ExceptionInInitializerError.class,
+                    () -> configNamesOn(isolated, /* blindContextClassLoader */ true));
+            assertTrue(String.valueOf(failure.getCause().getMessage())
+                            .contains("sasl.oauthbearer.jwt.retriever.class"),
+                    "expected the class-valued config default to be the trigger, but got: "
+                            + failure.getCause());
+
+            // and it never heals: a perfectly ordinary thread with the right loader is refused too
+            assertThrows(NoClassDefFoundError.class, () -> configNamesOn(isolated, false),
+                    "one bad initialization poisons the class for the life of the JVM - which is why "
+                            + "the loader has to be right the first time, not merely eventually");
+        }
+    }
+
+    /** The positive control: the identical call succeeds when the loader is the module's own. */
+    @Test
+    void theSameInitializationSucceedsUnderTheModuleClassLoader() throws Exception {
+        try (URLClassLoader isolated = freshCopyOfKafkaClients()) {
+            assertTrue((int) configNamesSize(isolated) > 0,
+                    "an ordinary loader must initialize ConsumerConfig without trouble - otherwise the "
+                            + "test above proves nothing about the loader");
+        }
+    }
+
+    /**
+     * kafka-clients loaded again, parented to the platform loader so nothing delegates back to the
+     * copy this JVM already initialized.
+     */
+    private static URLClassLoader freshCopyOfKafkaClients() {
+        URL kafka = ConsumerConfig.class.getProtectionDomain().getCodeSource().getLocation();
+        URL slf4j = Logger.class.getProtectionDomain().getCodeSource().getLocation();
+        return new URLClassLoader(new URL[]{kafka, slf4j}, ClassLoader.getPlatformClassLoader());
+    }
+
+    private static void configNamesOn(URLClassLoader isolated, boolean blind) throws Exception {
+        Class<?> consumerConfig =
+                Class.forName("org.apache.kafka.clients.consumer.ConsumerConfig", false, isolated);
+        Method configNames = consumerConfig.getMethod("configNames");
+        ClassLoader original = Thread.currentThread().getContextClassLoader();
+        try (URLClassLoader nothingVisible = new URLClassLoader(new URL[0], null)) {
+            Thread.currentThread().setContextClassLoader(blind ? nothingVisible : isolated);
+            configNames.invoke(null);
+        } finally {
+            Thread.currentThread().setContextClassLoader(original);
+        }
+    }
+
+    private static int configNamesSize(URLClassLoader isolated) throws Exception {
+        Class<?> consumerConfig =
+                Class.forName("org.apache.kafka.clients.consumer.ConsumerConfig", false, isolated);
+        Method configNames = consumerConfig.getMethod("configNames");
+        ClassLoader original = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(isolated);
+            return ((java.util.Set<?>) configNames.invoke(null)).size();
+        } finally {
+            Thread.currentThread().setContextClassLoader(original);
+        }
     }
 }

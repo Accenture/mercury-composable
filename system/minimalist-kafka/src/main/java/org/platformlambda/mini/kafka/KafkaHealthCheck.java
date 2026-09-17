@@ -264,11 +264,29 @@ public class KafkaHealthCheck implements LambdaFunction {
         }
     }
 
-    // S2093 (try-with-resources): the try/finally releases the ReentrantLock; the KafkaConsumer is
-    // deliberately long-lived - cached across health checks and closed via closeQuietly on failure
-    @SuppressWarnings("java:S2093")
+    /**
+     * Serialize on the lock, then run the entire probe with the module classloader pinned.
+     * <p>
+     * <b>The whole probe, not just the client construction.</b> Resolving the template is itself a
+     * Kafka classloading event: on a produce-only leg {@code KafkaClientConfig.healthProbeProperties}
+     * calls {@code ConsumerConfig.configNames()}, and THAT triggers the class initializer described in
+     * {@link #withModuleClassLoader} - before {@link #buildClient} is ever reached. The consumer
+     * template's {@code group.protocol=auto} resolution reaches {@code AdminClientConfig} and builds an
+     * {@code Admin} client the same way. Scoping the loader to construction alone left both exposed.
+     */
     private Object probe() {
         lock.lock();
+        try {
+            return withModuleClassLoader(this::probeWithModuleClassLoader);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    // S2093 (try-with-resources): the KafkaConsumer is deliberately long-lived - cached across health
+    // checks and closed via closeQuietly on failure
+    @SuppressWarnings("java:S2093")
+    private Object probeWithModuleClassLoader() {
         try {
             if (consumer == null) {
                 // re-resolved, not cached from the constructor: a credential published by a later
@@ -296,10 +314,17 @@ public class KafkaHealthCheck implements LambdaFunction {
         } catch (UnusableConfigException e) {
             // a deployment defect, not an outage and not a start-up condition - say which, because
             // "cluster is not reachable" would send the reader to the network instead of the classpath
-            Map<String, Object> broken = new HashMap<>();
-            broken.put(TEXT, "Kafka client configuration is unusable - " + e.getMessage());
-            broken.put(CODE, 503);
-            return new EventEnvelope().setStatus(503).setBody(broken);
+            return unusable("Kafka client configuration is unusable - " + e.getMessage());
+        } catch (LinkageError e) {
+            // A Kafka configuration class failed its own static initialization - see
+            // withModuleClassLoader. Caught as an Error on purpose: ExceptionInInitializerError and
+            // NoClassDefFoundError are NOT Exceptions, so the catch below never saw them and they
+            // escaped the function, answering /health with a raw 500 instead of a diagnosable 503.
+            // Nothing heals it either - the JVM marks a class whose initializer threw as erroneous for
+            // good, so every later access fails on every thread however correct its loader. Report the
+            // configuration, not the network, and never the passing waiting status.
+            log.error("{} health check cannot initialize the Kafka client classes - {}", serviceName, e);
+            return unusable("Kafka client classes failed to initialize (restart required) - " + e);
         } catch (Exception e) {
             closeQuietly();
             // a genuine outage: the 503 status is what the health aggregation (and Kubernetes)
@@ -308,9 +333,15 @@ public class KafkaHealthCheck implements LambdaFunction {
             down.put(TEXT, "Kafka cluster is not reachable - " + e.getMessage());
             down.put(CODE, 503);
             return new EventEnvelope().setStatus(503).setBody(down);
-        } finally {
-            lock.unlock();
         }
+    }
+
+    /** A 503 naming the deployment defect - the shape both unusable-configuration paths answer with. */
+    private static EventEnvelope unusable(String text) {
+        Map<String, Object> broken = new HashMap<>();
+        broken.put(TEXT, text);
+        broken.put(CODE, 503);
+        return new EventEnvelope().setStatus(503).setBody(broken);
     }
 
     /**
@@ -324,6 +355,12 @@ public class KafkaHealthCheck implements LambdaFunction {
      * does not depend on a late credential, so one resolve serves every info call between rebuilds.
      */
     private String href() {
+        // pinned like the probe: a type=info call that lands first is the one resolving the template,
+        // and on a produce-only leg that resolution is itself a Kafka classloading event
+        return withModuleClassLoader(this::resolveHref);
+    }
+
+    private String resolveHref() {
         Properties config = consumerProperties.get();
         if (config == null) {
             config = probeConfig.get();
@@ -359,8 +396,9 @@ public class KafkaHealthCheck implements LambdaFunction {
      * all. Handing them in would also leave this method holding two {@code Closeable}s it must not
      * close, since the returned consumer owns them.
      * <p>
-     * The override is scoped to this construction and restored afterwards, so nothing leaks back to a
-     * pooled thread's next task - see {@link #withModuleClassLoader}.
+     * The override is kept here as well as around the whole probe: {@code buildClient} is a seam other
+     * code (and the tests) call directly, and a nested override is a no-op. It is scoped and restored,
+     * so nothing leaks back to a pooled thread's next task - see {@link #withModuleClassLoader}.
      * Pinned by {@code KafkaHealthCheckClassLoaderTest}.
      */
     KafkaConsumer<String, byte[]> buildClient(Properties config) {
@@ -383,6 +421,33 @@ public class KafkaHealthCheck implements LambdaFunction {
     /**
      * Run {@code work} with THIS module's classloader as the thread context loader, restoring the
      * caller's loader in a {@code finally} so nothing leaks back to a pooled thread's next task.
+     * <p>
+     * <b>Why every Kafka interaction is wrapped, not just client construction.</b> The loader is
+     * consulted well before a client exists, in the <b>static initializer of Kafka's own config
+     * classes</b>. {@code ConfigDef.define} resolves a {@code Type.CLASS} config's DEFAULT value the
+     * moment the key is defined ({@code ConfigKey}: {@code defaultValue = parseType(...)}), and
+     * {@code SaslConfigs.addClientSaslSupport} defines
+     * {@code sasl.oauthbearer.jwt.retriever.class} with the class NAME
+     * {@code org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever} as its default. So
+     * merely initializing {@code ConsumerConfig} loads that class through
+     * {@code Utils.getContextOrKafkaClassLoader()} - no broker, no SASL, no credentials involved.
+     * <p>
+     * Two consequences make this worse than an ordinary lookup failure, and both were seen in the
+     * field on a produce-only leg. First, the failure arrives as an {@code ExceptionInInitializerError}
+     * - an {@code Error}, not an {@code Exception} - so a {@code catch (Exception)} does not hold it
+     * and {@code /health} answers a raw 500 rather than a diagnosable 503. Second, a class whose
+     * initializer threw is <b>erroneous for the life of the JVM</b> (JLS 12.4.2): every later touch
+     * throws {@code NoClassDefFoundError: Could not initialize class ...} on <em>every</em> thread,
+     * however correct its loader. One probe on one pooled thread therefore poisons the class
+     * permanently - which is why the loader must be right the FIRST time, and why waiting cannot help.
+     * <p>
+     * Which call initializes the class first is a packaging accident, and that is exactly how this hid.
+     * On the consumer path the module's only references to {@code ConsumerConfig} are compile-time
+     * {@code String} constants ({@code KEY_DESERIALIZER_CLASS_CONFIG} and friends), which javac inlines
+     * - no class initialization - so the first touch is {@code new KafkaConsumer<>(config)}, already
+     * inside this override. On the produce-only path {@code healthProbeProperties} calls
+     * {@code ConsumerConfig.configNames()}, a real static method call, while resolving the template -
+     * outside it. Same jar, same thread, same config: the difference was one inlined constant.
      * <p>
      * The scoping lives here, apart from the construction it wraps, for a reason beyond tidiness: a
      * {@code try}/{@code finally} that both creates a {@code Closeable} and hands it back is the exact

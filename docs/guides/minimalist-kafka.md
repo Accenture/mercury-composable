@@ -639,10 +639,24 @@ The same applies to `secondary.kafka.health`.
 > a non-null but wrong context loader turns a present class into `Class ... could not be found`. That is
 > what bit the field: `kafka.health` is a `@KernelThreadRunner` and builds its client on a pooled kernel
 > thread, while the flow adapter's consumers — same config, same jar, ordinary threads — were fine. The
-> module now puts `Class` objects into the client properties and the probe additionally pins the thread
-> context loader for the duration of construction, so no client's construction depends on which thread
-> happens to run it. Nothing to configure; a template that names its own partitioner, assignor or
-> interceptors still wins as before.
+> module now puts `Class` objects into the client properties and the probe pins the thread context
+> loader for the duration of **the whole probe**, so nothing it does depends on which thread happens to
+> run it. Nothing to configure; a template that names its own partitioner, assignor or interceptors
+> still wins as before.
+>
+> **Why the whole probe, and not just the client construction.** Kafka consults the context loader
+> before any client exists. A `Type.CLASS` setting's *default* is resolved the moment the key is
+> defined, inside the static initializer of Kafka's own config classes — and
+> `sasl.oauthbearer.jwt.retriever.class` defaults to a class name. So merely initializing
+> `ConsumerConfig` is a classloading event, with no broker, no SASL and no credentials involved. Two
+> things make that worse than an ordinary lookup failure: it surfaces as an `ExceptionInInitializerError`
+> (an `Error`, which a `catch (Exception)` does not hold, so `/health` answered a raw 500 instead of a
+> 503), and a class whose initializer threw stays erroneous for the life of the JVM — every later touch
+> fails on every thread, however correct its loader. The probe therefore has to get the loader right the
+> first time; waiting and retrying cannot help. Fixed in 4.12.12, which is why 4.12.11 still failed on a
+> produce-only leg: that path resolves its template through `ConsumerConfig.configNames()` *before*
+> building anything, whereas the consumer path's references to the same class are compile-time constants
+> the compiler inlines.
 
 > **On a produce-only leg the probe uses the producer template.** With
 > [`kafka.consumer.enabled=false`](#opt-out) there are no consumer credentials to build a probe from,
