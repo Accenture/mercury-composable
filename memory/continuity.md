@@ -380,7 +380,7 @@
   colliding resource path in the engine (needs Rust lockstep). Documented in `playground-and-companion.md` (#enabling) and
   `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]]; applies to
   [[ot-distributed-cache]]'s worked example.
-  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-16 | uses: 4 | tier: archive-candidate | origin: 2026-09-15-221451 -->
+  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-17 | uses: 5 | tier: active | origin: 2026-09-15-221451 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
@@ -548,9 +548,17 @@
   checkpoint on an LLM verdict), the in-graph-run streaming drive.
   → serves: vision-mercury-composable
   <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-17 | uses: 15 | tier: working | origin: 2026-08-25-213703 -->
-- [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
-  from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
-  <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
+- [x] (blueprint) **CLOSED 2026-09-17 (Eric, at the first closure gate)** — integrate a pluggable AI
+  companion LLM backend. **Answered:** progressive rendering was driven end-to-end against the live
+  Gemini API (E0 — `llm.chat`/`llm.stream` AI nodes, real verdicts, tokens out the engine SSE edge,
+  one distributed trace), which settles the pluggable-backend question; the ongoing epic is
+  [[bp-agent-orchestration]], and this gap is not distinct from it.
+  **NOT delivered, deliberately dropped rather than carried:** the second half — maturing
+  `POST /api/companion/{id}` from a dev-only command pipe into a *governed collaboration layer*. The
+  endpoint is still `@OptionalService("app.env=dev")` (`PostCompanionCommandSync`). It is dropped as
+  a standing Blueprint gap, not achieved; re-raise it as its own thread if the companion is ever
+  wanted outside dev. → served: vision-mercury-composable
+  <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: archive-candidate -->
 - [ ] (blueprint) **Enterprise governance lifecycle** for graph models (dry-run → certify → stage →
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-08-25 | uses: 3 | tier: working -->
