@@ -3228,7 +3228,7 @@ in this work, a version stamp the backend can show is better evidence than any l
 </tr>
 <tr>
 <td>Dynatrace UI</td>
-<td><em>pending</em> — submitted for confirmation (see below)</td>
+<td><strong>confirmed 2026-09-17</strong> — both traces located, parentage reconstructed, <code>OTel scope version</code> <strong>4.12.11</strong> on both</td>
 </tr>
 </tbody>
 </table>
@@ -3252,15 +3252,71 @@ in the example app, the absence of the route at runtime, and an explicit log lin
 optional class was skipped. DevOps reading a startup log can see the feature was considered and
 declined, rather than inferring it from silence.</p>
 <h2 id="what-remains">What remains<a class="headerlink" href="#what-remains" title="Permanent link">&para;</a></h2>
-<p><strong>One open item: backend confirmation of the two acceptance traces.</strong> Both were submitted with zero
-export failures, so Dynatrace returned 2xx for all eleven spans — but the UI check is with Dynatrace
-support, who are locating <code>45a6e43c67ef4087b9351956f50130d7</code> and <code>1c32bbe5e6b44f12aec201ce78faca3e</code>.
-The field to read is <strong><code>OTel scope version</code></strong>: it should be <strong>4.12.11</strong>, against 4.12.10 for the
-Scenario 1–5 traces. That value is resolved at runtime from the running application, which makes it
-proof that the <em>released</em> artifacts submitted these traces rather than a leftover build — the failure
-that cost two dead ends earlier in this work.</p>
-<p>Nothing else. The forwarder's loop is closed on the exporting side, on the backend side
-(Scenario 5), and on the released artifacts locally (Scenario 6).</p>
+<p><strong>Nothing.</strong> The last open item — backend confirmation of the two acceptance traces — closed on
+2026-09-17, when Dynatrace support located both in the UI.</p>
+<table>
+<thead>
+<tr>
+<th>Confirmed in the Dynatrace UI</th>
+<th><code>45a6e43c…</code> (write)</th>
+<th><code>1c32bbe5…</code> (read)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Service</td>
+<td><code>mercury-otel-cert</code></td>
+<td><code>mercury-otel-cert</code></td>
+</tr>
+<tr>
+<td>Root span</td>
+<td><code>http.flow.adapter</code>, 536 µs</td>
+<td><code>http.flow.adapter</code>, 427 µs</td>
+</tr>
+<tr>
+<td>Spans</td>
+<td>6</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Instrumentation scope</td>
+<td><code>org.platformlambda.opentelemetry-forwarder</code></td>
+<td>same</td>
+</tr>
+<tr>
+<td><strong>OTel scope version</strong></td>
+<td><strong>4.12.11</strong></td>
+<td><strong>4.12.11</strong></td>
+</tr>
+<tr>
+<td>Status</td>
+<td>OK</td>
+<td>OK</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The scope version is the whole point of this scenario.</strong> 4.12.11 on both, against 4.12.10 on the
+Scenario 1–5 traces, resolved at runtime from the running application — so the traces the backend
+holds were submitted by the <em>released</em> artifacts and not by a leftover build, which is the failure
+that cost two dead ends earlier in this work. Local evidence could not have settled that; only a
+value the backend displays can.</p>
+<p>The backend also reconstructed the parentage, which the exporting side could only assert. The two
+shapes differ as predicted, and the write flow nests one level deeper:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>45a6e43c… — POST /api/profile          1c32bbe5… — GET /api/profile/41211
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>http.flow.adapter                      http.flow.adapter
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>├── task.executor                      ├── v1.get.profile
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>└── v1.create.profile                  │   └── v1.decrypt.fields
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    ├── async.http.response            │       └── async.http.response
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    └── v1.encrypt.fields              └── task.executor
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>        └── v1.save.profile
+</code></pre></div>
+<p>Sampled span detail shows the attribute mapping survives the round trip intact: <code>v1.create.profile</code>
+reports <code>exec_time_ms 4.116</code>, <code>from task.executor</code>, <code>path POST /api/profile</code>, <code>status 200</code>, span kind
+<code>Internal</code>, parent <code>a447c0624a23e550</code>; <code>v1.decrypt.fields</code> reports <code>exec_time_ms 0.311</code>,
+<code>from task.executor</code>, <code>path GET /api/profile/41211</code>, <code>status 200</code>, span kind <code>Internal</code>, parent
+<code>8e8a6fd949bc2895</code>. Both carry <code>Status OK</code>.</p>
+<p>The forwarder's loop is now closed end to end: on the exporting side, on the backend side
+(Scenario 5), and on the released artifacts both locally <em>and</em> in the backend (Scenario 6).</p>
 <p>Two unrelated follow-ups were noted during the round and are tracked elsewhere: the guides still
 show <code>OTEL_EXPORTER_OTLP_HEADERS</code> and <code>OTEL_SERVICE_NAME</code> in generic examples while this reference
 app uses the <code>OTLP_</code>-prefixed split (both work; the split keeps the token a bare secret and avoids
