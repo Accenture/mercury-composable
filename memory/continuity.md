@@ -601,6 +601,28 @@
   repository. Corrected in both places via PR #411. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
   <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: working | origin: 2026-09-17-183008 -->
+- **A thread id names the THING, never its kind — and an existing thread is never renamed (Eric,
+  2026-09-18).** The tool writes every open thread to `memory/open-threads/thread-<id>.md`, so an id
+  that already begins `ot-` or `thread-` stutters: `thread-ot-distributed-cache.md`, and worst,
+  `thread-thread-doc-improvement-feedback-loop.md`. The directory and the tool's prefix already say
+  it is a thread. **New thread ids therefore carry no kind prefix** — `distributed-cache`, not
+  `ot-distributed-cache`.
+  **Existing threads stay as they are, deliberately.** A rename looks free and is not: session logs
+  are immutable and their `## Memory References` are the only input to `refresh-metadata`, so
+  renaming an id orphans every historical declaration — `ot-distributed-cache` alone is declared in
+  **12** logs. Its usage would collapse to ~1, it would decay to `archive-candidate`, and the next
+  review would propose sweeping a live workstream. That is the same failure as the 2026-09-17
+  `[overdue]` advisories, except self-inflicted and unrepairable. The schema agrees for its own
+  reason: "the filename is the identity and **never changes** for the thread's lifetime". The ugly
+  names retire on their own as threads close and the review sweeps them.
+  **The single `thread-` prefix is upstream, not ours** — `memory-lint` hard-codes
+  `expect = f"thread-{fid}.md"` (one production line; `archive-fact` already keys on the footer id
+  and is prefix-agnostic). Reported to the agent-memory team 2026-09-18 as a cosmetic item,
+  explicitly below the bar of the two decay-signal reports that preceded it.
+  Relates [[conv-declare-consulted-references]] (the same immutable-log constraint is why both rules
+  are forward-looking only).
+  <!-- id: conv-thread-id-names-the-thing | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: working | origin: 2026-09-18-174943 -->
+
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
