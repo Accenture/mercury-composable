@@ -7,4 +7,4 @@
   someone else's contract — lowercasing at the adapter would have changed what `*` passthrough hands
   a function.
   origin: `memory/sessions/2026-09-16-234646.md`
-  <!-- id: thread-kafka-header-casing-mismatch | created: 2026-07-30 | last_used: 2026-09-16 | uses: 2 | tier: active | origin: 2026-07-30-233623 -->
+  <!-- id: thread-kafka-header-casing-mismatch | created: 2026-07-30 | last_used: 2026-09-16 | uses: 2 | tier: archive-candidate | origin: 2026-07-30-233623 -->

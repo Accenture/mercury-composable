@@ -5,7 +5,9 @@
 >
 > Each fact carries a metadata footer in an HTML comment, maintained by the review
 > ritual — invisible when rendered, read/written by agents:
-> `<!-- id: kebab-id | created: YYYY-MM-DD | last_used: YYYY-MM-DD | uses: N | tier: active -->`
+> `<!-- id: <kebab-id> | created: YYYY-MM-DD | last_used: YYYY-MM-DD | uses: N | tier: active -->`
+> (the id is a placeholder on purpose — a literal id here is parsed as a live fact and
+> inflates the review's fact count; see `conv-schema-example-not-a-fact`)
 > See `.agent/schema.md` for the fields and `memory/decay-policy.md` for the windows.
 > Condensed 2026-07-31 (line-bloat review advisory): shipped-item narrative compressed
 > to essentials; full detail lives in each fact's `origin` session log.
@@ -62,17 +64,23 @@
   there: the `soa.redis.health` ROUTE rename and `minimalist-kafka` no longer transitive). The live
   version source stays the root pom.xml.)
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-17 | through 2026-09-17-020650.md (ON COMMAND again — 5 sessions since,
-  review_every 10. **Swept 5** completed threads to the archive: ot-maven-central-later,
-  thread-docs-improvement-backlog, thread-field-trace-propagation-4-6-3,
-  thread-minimalist-kafka-protobuf-revival, thread-redis-kafka-rpc (sslu 114–189). The distinction
-  from the prior review, which swept 0: those five were closed AND recently referenced; these five
-  were closed AND long-unreferenced — they faded months before the audit ticked their boxes.
-  Archived 0 facts; reactivated 0; superseded 0. **First run of the v4.40.0 human closure gate**
-  (step 8) → raised ot-close-stalled-threads-20260917 for the two `(blueprint)` gaps at sslu 135;
-  the review never closes a thread, and closing a blueprint gap is an altitude decision. Invariant
-  re-verify NOT due (11 sessions since, cadence 40). memory-lint 0 errors. Live facts 54 → 49.
-  Prior: 2026-09-16 | 2026-09-16-211927.md)
+- **last_review:** 2026-09-18 | through 2026-09-18-174943.md (ON COMMAND — 3 sessions since,
+  review_every 10. **Nothing archived, nothing swept — and that is the correct outcome**: the oldest
+  non-core fact and the oldest closed thread both sit at sslu 18, inside `archive_window` 20 (three
+  threads at 17–18 will sweep next time). **The trigger itself was FALSE** — `memory-lint` parses the
+  schema EXAMPLE in continuity.md's own header as a live fact, so `[continuity-bloat] 36 > 35` was
+  really 35, exactly at the cap; proven by linting a copy with that one line neutralized (58 live /
+  36 eligible / 1 warning → 57 / 35 / 0). Fixed here by making the example id a placeholder and
+  reported upstream — see [[conv-schema-example-not-a-fact]]. Tier changes 0 (refresh-metadata already
+  matched the reference log); reactivated 0; superseded 0; archive-verify pass. Invariant re-verify
+  NOT due (15 sessions since, cadence 40). Stalled threads: none (4 unchecked, oldest at 6, window 40).
+  Doc-gap sweep run for [[thread-doc-improvement-feedback-loop]]: one gap still open (graph.task
+  OUTPUT-mapping LHS) plus four stale store-key surfaces left by `fb171c18`. **Left deliberately at
+  36/35:** removing the phantom put the true count at 35, and this review's own new fact makes it 36 —
+  genuinely over, with nothing yet archivable. It clears itself next review, when the three threads at
+  sslu 17–18 age past the 20-session window; inventing an archival now to silence the advisory is the
+  error the advisory exists to prevent.
+  Prior: 2026-09-17 | 2026-09-17-020650.md)
 - **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**:
   Track 1 *knowledge graph as application* (deterministic — rules, business logic, outcome; L3
   leverages L2 + L1) and Track 2 *knowledge graph as AI SDLC* (governed AI processing for ambiguity
@@ -336,7 +344,7 @@
   reason from what the user does, not from what the engine can detect. Serves
   [[vision-mercury-composable]] (the certification half of the governance lifecycle); applied by
   [[ot-subgraph-for-each-suspend]].
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: working | origin: 2026-09-18-174943 -->
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-18 | uses: 2 | tier: active | origin: 2026-09-18-174943 -->
 
 - **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
   `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
@@ -580,7 +588,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-16 | uses: 46 | tier: archive-candidate | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-18 | uses: 47 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -623,6 +631,24 @@
   are forward-looking only).
   <!-- id: conv-thread-id-names-the-thing | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: working | origin: 2026-09-18-174943 -->
 
+- **`continuity.md`'s header shows the metadata footer as an EXAMPLE, and that example's id must stay a
+  PLACEHOLDER (2026-09-18, found running the review).** `memory-lint`'s `FOOTER_RE` scans the whole
+  file, so a literal-looking `id: kebab-id` in the header's teaching line parses as a live fact — it
+  carries `tier: active`, is not pinned, and therefore counts toward `continuity_max_facts`. That is
+  what fired `[continuity-bloat] 36 > 35` when the true count was 35, exactly at the cap: a **false
+  trigger for the review ritual itself**, which is worse than a noisy advisory, because the review
+  then goes looking for something to archive that does not exist — `REVIEW.md`'s costliest error
+  approached from the other side. The id now reads `<kebab-id>`, consistent with the `YYYY-MM-DD` and
+  `N` placeholders already on that line and failing the `[a-z0-9-]+` capture; it still renders as a
+  real HTML comment, so it teaches the same syntax. **Do not tidy it back to a bare id.** The durable
+  fix is upstream — the parser should skip the header example; every agent-memory repo ships this
+  header and so over-counts by one — reported 2026-09-18. Method note: the diagnosis was a two-copy
+  experiment (lint an untouched copy, lint a copy with the one line neutralized), not a reading of the
+  regex; the regex told me it was *possible*, the copies told me it was *the* cause. Relates
+  [[conv-thread-id-names-the-thing]] — the sibling case, where the tool's behaviour rather than our
+  content was the thing to change.
+  <!-- id: conv-schema-example-not-a-fact | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: working | origin: 2026-09-18-215436 -->
+
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
@@ -644,7 +670,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-18 | uses: 6 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-18 | uses: 7 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
