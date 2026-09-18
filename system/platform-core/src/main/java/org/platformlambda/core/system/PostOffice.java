@@ -303,8 +303,9 @@ public class PostOffice {
      * <p>
      * Unlike annotateTrace (which feeds the distributed-trace telemetry), this is a logging-only
      * sink. The reserved keys (cid, traceId, tracePath, spanId, parentSpanId, service, utc) cannot
-     * be overridden and will throw IllegalArgumentException - in either spelling, so the snake_case
-     * forms the shipped templates emit (trace_id, span_id, parent_span_id, trace_path) are refused too.
+     * be overridden and will throw IllegalArgumentException. This covers either spelling: the
+     * snake_case forms the shipped templates emit (trace_id, span_id, parent_span_id, trace_path)
+     * are refused too.
      * <p>
      * This is available inside a user function that implements LambdaFunction or TypedLambdaFunction.
      * It is a no-op when the request is not traced or the log-context feature is not enabled.
