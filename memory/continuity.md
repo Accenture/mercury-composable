@@ -723,7 +723,8 @@
   *post*-decision stage and stays in `ADR.md`, marked in place, never deleted.
   Adopted in the same sitting that accepted the five ADRs left at `Proposed` (0013–0017), which is
   what exposed the gap: a status that means "not yet decided" had accumulated for a month across
-  decisions that had in fact all shipped. **Raised upstream 2026-09-18** (Eric's direction — keep the
+  decisions that had in fact all shipped. Shipped as PR #421 (squash `92ced8cc`).
+  **Raised upstream 2026-09-18** (Eric's direction — keep the
   engine and the tool consistent) as a guidance-only change, with replacement wording for both
   clauses and the note that the sharper case is the one we did NOT hit: a *withdrawn* proposal has no
   correct status in an ADR ledger — `Superseded` implies a successor, `Deprecated` implies it was
