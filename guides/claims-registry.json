@@ -77,11 +77,11 @@
       "since": "4.12.3+"
     },
     {
-      "id": "reserved-model-keys-nine",
-      "claim": "The reserved model-metadata key set is exactly nine names: cid, instance, flow, ttl, trace, parent, root, none, run.",
+      "id": "reserved-model-keys",
+      "claim": "The reserved model-metadata key set is exactly ten names: cid, instance, flow, ttl, trace, parent, root, none, run, iteration_index.",
       "pages": ["docs/guides/knowledge-graph/workflow-suspension.md"],
-      "quote": "`model.parent`, `model.root`, `model.none`, `model.run`",
-      "test": "system/minigraph-playground-engine::ClaimReservedModelKeysTest#reservedModelMetadataIsExactlyTheDocumentedNineNames",
+      "quote": "`model.parent`, `model.root`, `model.none`, `model.run`,\n  `model.iteration_index`",
+      "test": "system/minigraph-playground-engine::ClaimReservedModelKeysTest#reservedModelMetadataIsExactlyTheDocumentedTenNames",
       "since": "4.12.3+"
     },
     {
