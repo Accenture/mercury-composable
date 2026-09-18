@@ -76,10 +76,15 @@
   NOT due (15 sessions since, cadence 40). Stalled threads: none (4 unchecked, oldest at 6, window 40).
   Doc-gap sweep run for [[thread-doc-improvement-feedback-loop]]: one gap still open (graph.task
   OUTPUT-mapping LHS) plus four stale store-key surfaces left by `fb171c18`. **Left deliberately at
-  36/35:** removing the phantom put the true count at 35, and this review's own new fact makes it 36 —
-  genuinely over, with nothing yet archivable. It clears itself next review, when the three threads at
-  sslu 17–18 age past the 20-session window; inventing an archival now to silence the advisory is the
-  error the advisory exists to prevent.
+  36/35:** removing the phantom put the true count at 35, and this review's own new fact made it 36 —
+  genuinely over, with nothing yet archivable. **Resolved later the same day:** three more session logs
+  pushed four entries past the window, and the sweep took exactly ONE — `ot-redis-client-separation`, a
+  CLOSED thread (step 5, textbook). The other three (`soa-redis-cluster-support`,
+  `cache-separate-from-soa`, `redis-connection-foundation`) are **held deliberately** and will keep
+  reporting `[overdue]`: each is cited by the still-open [[ot-distributed-cache]], whose Rust lockstep
+  is pending, so they are the design record of live work rather than faded context. Sweep them when
+  that thread closes, not before — the metric measures *reference recency*, which is not the same as
+  *still needed*.
   Prior: 2026-09-17 | 2026-09-17-020650.md)
 - **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**:
   Track 1 *knowledge graph as application* (deterministic — rules, business logic, outcome; L3
@@ -588,7 +593,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-18 | uses: 47 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-18 | uses: 48 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -637,7 +642,7 @@
   need this fact to follow it — only to understand why our existing ids look the way they do.
   Relates [[conv-declare-consulted-references]] (the same immutable-log constraint is why both rules
   are forward-looking only).
-  <!-- id: conv-thread-id-names-the-thing | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: working | origin: 2026-09-18-174943 -->
+  <!-- id: conv-thread-id-names-the-thing | created: 2026-09-18 | last_used: 2026-09-18 | uses: 2 | tier: active | origin: 2026-09-18-174943 -->
 
 - **`continuity.md`'s header shows the metadata footer as an EXAMPLE, and that example's id must stay a
   PLACEHOLDER (2026-09-18, found running the review).** `memory-lint`'s `FOOTER_RE` scans the whole

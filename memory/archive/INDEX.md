@@ -176,3 +176,4 @@
 - thread-field-trace-propagation-4-6-3 — (field support → RESOLVED 2026-09-16) The internal API gateway stripped `traceparent` and — completed and faded (sslu 114-189); closed in the 2026-09-16 stale-thread audit, narrative in each origin log — 2026-Q3.md
 - thread-minimalist-kafka-protobuf-revival — (backlog → CLOSED 2026-09-16, Eric — dormant, demand-triggered) Reintroduce Protobuf — completed and faded (sslu 114-189); closed in the 2026-09-16 stale-thread audit, narrative in each origin log — 2026-Q3.md
 - thread-redis-kafka-rpc — (next iteration → DONE, closed 2026-09-16 on a stale-record flag from Copilot) Cross-pod — completed and faded (sslu 114-189); closed in the 2026-09-16 stale-thread audit, narrative in each origin log — 2026-Q3.md
+- ot-redis-client-separation — (docs — shipped 2026-09-16 in v4.12.10) sync-over-async and distributed-cache should use — faded — 2026-Q3.md
