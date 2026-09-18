@@ -1890,6 +1890,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="On by default">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#log-context-utc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        You do not configure the timestamp
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -3095,6 +3112,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="On by default">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#log-context-utc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        You do not configure the timestamp
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -3470,7 +3504,7 @@ rides the same per-request mechanism as the trace itself, keyed to the worker th
 function returns.</p>
 <h3 id="log-context-enable">On by default<a class="headerlink" href="#log-context-enable" title="Permanent link">&para;</a></h3>
 <p>The feature is <strong>on by default</strong>: platform-core ships a built-in <code>default-log-context.yaml</code> that emits the
-standard trace context (<code>cid</code>, <code>traceId</code>, <code>tracePath</code>, <code>spanId</code>, <code>parentSpanId</code>, <code>service</code>, <code>timestamp</code>) on
+standard trace context (<code>cid</code>, <code>trace_id</code>, <code>trace_path</code>, <code>span_id</code>, <code>parent_span_id</code>, <code>service</code>, <code>timestamp</code>) on
 every structured log line. You can adjust it in two ways:</p>
 <ul>
 <li><strong>Customize</strong> — provide your own <code>app-log-context.yaml</code> on the classpath (<code>src/main/resources/</code>); it
@@ -3484,15 +3518,19 @@ appender is unaffected.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># src/main/resources/app-log-context.yaml</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nt">context</span><span class="p">:</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">cid</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$cid</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nt">traceId</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$traceId</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="nt">tracePath</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$tracePath</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="nt">spanId</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$spanId</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="nt">parentSpanId</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$parentSpanId</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nt">trace_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$traceId</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="nt">trace_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$tracePath</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="nt">span_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$spanId</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="nt">parent_span_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$parentSpanId</span>
 <a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">  </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$service</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">  </span><span class="nt">timestamp</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$utc</span>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">  </span><span class="nt">environment</span><span class="p">:</span><span class="w"> </span><span class="s">'${ENV_NAME:dev}'</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">  </span><span class="nt">hello</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">world</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">  </span><span class="nt">environment</span><span class="p">:</span><span class="w"> </span><span class="s">'${ENV_NAME:dev}'</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">  </span><span class="nt">hello</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">world</span>
 </code></pre></div>
+<p>The output keys are <strong>snake_case</strong>, matching the distributed-trace block (<code>span_id</code>, <code>parent_span_id</code>,
+<code>exec_time</code>) so both halves of a log record read the same way. The <code>$token</code> names on the right stay
+camelCase — they are the engine's identifiers, not output — and the two sides are free to differ because
+the left is entirely your choice.</p>
+<p>Note what is <strong>not</strong> in that template: a timestamp. You do not configure one — see below.</p>
 <p>The <strong>left side</strong> is the output key (your choice). The <strong>right side</strong> is one of three forms:</p>
 <table>
 <thead>
@@ -3523,6 +3561,23 @@ appender is unaffected.</p>
 <p>The reserved tokens are <code>$cid</code>, <code>$traceId</code>, <code>$tracePath</code>, <code>$spanId</code>, <code>$parentSpanId</code>, <code>$service</code> (the current
 function's route), and <code>$utc</code> (the log line's UTC timestamp). A token (or env value) that resolves to nothing is
 <strong>omitted</strong> from the block rather than printed as <code>null</code> — so a root span simply has no <code>parentSpanId</code> key.</p>
+<h4 id="log-context-utc">You do not configure the timestamp<a class="headerlink" href="#log-context-utc" title="Permanent link">&para;</a></h4>
+<p><strong><code>$utc</code> is added for you.</strong> If your template does not resolve it under any key, the framework inserts it as
+<code>timestamp</code>, so every context block carries an unambiguous UTC time whether or not you asked for one.</p>
+<p>That guarantee exists because the record's top-level <code>time</code> field is a <strong>local</strong> timestamp with no zone or
+offset. Anything that parses it downstream — a log collector, a forwarder — has to be <em>told</em> the timezone, and
+shifts every line silently when told wrong. Log-to-trace correlation is resolved on trace id <strong>and</strong> a time
+window, so a shifted line can be correctly correlated and still invisible on its trace. <code>$utc</code> removes the
+guesswork.</p>
+<p>You keep control of the name. Map <code>$utc</code> to any key you like and that name is used as-is:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">context</span><span class="p">:</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">traceId</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$traceId</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">loggedAt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$utc</span><span class="w">     </span><span class="c1"># your name, kept - nothing extra is added</span>
+</code></pre></div>
+<p>Only <em>absence</em> is corrected, never your choice. If you have already spent <code>timestamp</code> on something of your
+own, the UTC time is placed under <code>utc</code> instead so your value is never overwritten; if both names are taken,
+the framework leaves your template alone and logs a warning telling you to add <code>$utc</code> under a key of your
+choosing.</p>
 <p><code>$cid</code> is the <strong>business correlation ID</strong> — the value received from the external source or created at the
 edge, the same one <code>PostOffice.getMyCorrelationId()</code> returns. When the delivered event carries no business
 context, the key is simply <strong>omitted</strong>: internal correlation IDs (routing metadata such as RPC inbox
@@ -3532,10 +3587,17 @@ edge guarantees a business correlation ID (a fresh one is generated when the cal
 missing <code>cid</code> on a traced log line indicates a propagation defect worth fixing</strong>, not a normal condition.</p>
 <h3 id="log-context-custom">Adding your own key-values<a class="headerlink" href="#log-context-custom" title="Permanent link">&para;</a></h3>
 <p>Inside a function, add business context with <code>PostOffice.updateContext(key, value)</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kd">var</span><span class="w"> </span><span class="n">po</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">PostOffice</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">instance</span><span class="p">);</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">po</span><span class="p">.</span><span class="na">updateContext</span><span class="p">(</span><span class="s">"user"</span><span class="p">,</span><span class="w"> </span><span class="s">"demo"</span><span class="p">);</span><span class="w">   </span><span class="c1">// appears in the context block of every subsequent log line</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">log</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">"processing request"</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kd">var</span><span class="w"> </span><span class="n">po</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">PostOffice</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">instance</span><span class="p">);</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">po</span><span class="p">.</span><span class="na">updateContext</span><span class="p">(</span><span class="s">"user"</span><span class="p">,</span><span class="w"> </span><span class="s">"demo"</span><span class="p">);</span><span class="w">   </span><span class="c1">// appears in the context block of every subsequent log line</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">log</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">"processing request"</span><span class="p">);</span>
 </code></pre></div>
+<p>Reserved keys are refused in <strong>both spellings</strong> — the <code>$token</code> name and its snake_case form, so
+<code>trace_id</code> and <code>parent_span_id</code> throw just as <code>traceId</code> and <code>parentSpanId</code> do. That matters because
+snake_case is what the shipped templates publish, and therefore what you would most likely reach for.</p>
+<p>Beyond the refused names, a developer key never shadows a template key: if your function sets a key the
+template also emits, the template's value wins. An output key is your free choice, so no list of names
+could cover every case — the precedence is what makes shadowing impossible, and the rejected names are
+the fast, legible error for the two spellings that actually occur.</p>
 <p>The reserved keys (<code>cid</code>, <code>traceId</code>, <code>tracePath</code>, <code>spanId</code>, <code>parentSpanId</code>, <code>service</code>, <code>utc</code>) are protected —
 passing one to <code>updateContext</code> throws <code>IllegalArgumentException</code>. On a non-traced request, or when the feature is
 off, the call is a silent no-op.</p>
@@ -3547,29 +3609,32 @@ off, the call is a silent no-op.</p>
 <h3 id="log-context-output">What it looks like<a class="headerlink" href="#log-context-output" title="Permanent link">&para;</a></h3>
 <p>A log line from a traced function then carries the resolved <code>context</code> (from the worked example above, with
 <code>po.updateContext("user", "demo")</code> added in the function):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">"level"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">"context"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="nt">"cid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"20260630c6ee70d866cb4fae9ab3c44d926ce21a"</span><span class="p">,</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span><span class="nt">"traceId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fbb60df209084531b2b00f6b36a3e651"</span><span class="p">,</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">    </span><span class="nt">"tracePath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GET /api/profile/100"</span><span class="p">,</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="nt">"spanId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"bf8d4b2b6a923d67"</span><span class="p">,</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">    </span><span class="nt">"parentSpanId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"98f8e26ae7d9a422"</span><span class="p">,</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">    </span><span class="nt">"service"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v1.hello.exception"</span><span class="p">,</span>
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">    </span><span class="nt">"environment"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dev"</span><span class="p">,</span>
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">    </span><span class="nt">"hello"</span><span class="p">:</span><span class="w"> </span><span class="s2">"world"</span><span class="p">,</span>
-<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">    </span><span class="nt">"user"</span><span class="p">:</span><span class="w"> </span><span class="s2">"demo"</span><span class="p">,</span>
-<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="w">    </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-06-30T21:17:03Z"</span>
-<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="w">  </span><span class="p">},</span>
-<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="w">  </span><span class="nt">"time"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-06-30 14:17:03.575"</span><span class="p">,</span>
-<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="w">  </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.accenture.demo.tasks.HelloExceptionHandler.handleEvent(HelloExceptionHandler.java:51)"</span><span class="p">,</span>
-<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="w">  </span><span class="nt">"thread"</span><span class="p">:</span><span class="w"> </span><span class="mi">297</span><span class="p">,</span>
-<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"User defined exception handler - status=404 error=Profile 100 not found"</span>
-<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">"level"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">"context"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="nt">"cid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"20260630c6ee70d866cb4fae9ab3c44d926ce21a"</span><span class="p">,</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="nt">"trace_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fbb60df209084531b2b00f6b36a3e651"</span><span class="p">,</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="nt">"trace_path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GET /api/profile/100"</span><span class="p">,</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="nt">"span_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"bf8d4b2b6a923d67"</span><span class="p">,</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">    </span><span class="nt">"parent_span_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"98f8e26ae7d9a422"</span><span class="p">,</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">    </span><span class="nt">"service"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v1.hello.exception"</span><span class="p">,</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">    </span><span class="nt">"environment"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dev"</span><span class="p">,</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">    </span><span class="nt">"hello"</span><span class="p">:</span><span class="w"> </span><span class="s2">"world"</span><span class="p">,</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">    </span><span class="nt">"user"</span><span class="p">:</span><span class="w"> </span><span class="s2">"demo"</span><span class="p">,</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">    </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-06-30T21:17:03Z"</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">  </span><span class="nt">"time"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-06-30 14:17:03.575"</span><span class="p">,</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="w">  </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.accenture.demo.tasks.HelloExceptionHandler.handleEvent(HelloExceptionHandler.java:51)"</span><span class="p">,</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="w">  </span><span class="nt">"thread"</span><span class="p">:</span><span class="w"> </span><span class="mi">297</span><span class="p">,</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"User defined exception handler - status=404 error=Profile 100 not found"</span>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="p">}</span>
 </code></pre></div>
-<p>The <code>traceId</code> and <code>spanId</code> here match the <code>v1.hello.exception</code> span the tracer emitted for the same request, so the
+<p>The <code>trace_id</code> and <code>span_id</code> here match the <code>v1.hello.exception</code> span the tracer emitted for the same request, so the
 log line and the span join up in your backend. (Key order within <code>context</code> is not significant — log viewers reorder
 keys on display.)</p>
+<p><code>timestamp</code> appears even though the template above never asked for it — that is the
+<a href="#log-context-utc">automatic UTC timestamp</a>. Note it is the <em>context's</em> UTC time, distinct from the record's
+top-level <code>time</code>, which is local.</p>
 <h3 id="log-context-scope">Scope and boundaries<a class="headerlink" href="#log-context-scope" title="Permanent link">&para;</a></h3>
 <ul>
 <li>The <code>context</code> block appears <strong>only</strong> when a request is traced and a <code>traceId</code> is present. Framework boot logs and

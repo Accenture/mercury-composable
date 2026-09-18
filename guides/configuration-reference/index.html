@@ -7786,7 +7786,9 @@ below tune it. The <code>otel.*</code> keys are read by the <code>opentelemetry-
 structured JSON appenders (<code>log.format=json</code> or <code>compact</code>) stamp a <code>context</code> block — correlation id,
 trace/span ids, service name — into every log line a traced function emits, using the built-in
 <code>default-log-context.yaml</code> template. Provide your own <code>app-log-context.yaml</code> on the classpath to replace
-the template, or set this key to <code>false</code> to opt out.</p>
+the template, or set this key to <code>false</code> to opt out. A UTC timestamp is
+<a href="../observability/#log-context-utc">added automatically</a> whether or not your template asks for one — you do
+not configure it.</p>
 <h3 id="logformat"><code>log.format</code><a class="headerlink" href="#logformat" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
