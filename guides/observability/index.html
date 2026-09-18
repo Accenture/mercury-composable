@@ -1942,6 +1942,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#log-shipping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting these logs to your backend
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3164,6 +3175,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#log-shipping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting these logs to your backend
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3489,6 +3511,11 @@ Redis health checks.)</p>
 <p>Each span carries the route name (<code>route</code>), <code>path</code>, <code>from</code>, <code>origin</code>, <code>status</code>, timing, and your <code>annotation.*</code>
 values as span attributes, with <code>service.name</code> on the resource. See the full key reference in the
 <a href="../configuration-reference/#observability">Configuration Reference</a>.</p>
+<blockquote>
+<p><strong>The forwarder exports traces, not logs</strong> — deliberately. Application logs reach your backend through
+your platform's log forwarder, not through the engine; see
+<a href="#log-shipping">Getting these logs to your backend</a>.</p>
+</blockquote>
 <h3 id="custom-forwarder">A custom forwarder<a class="headerlink" href="#custom-forwarder" title="Permanent link">&para;</a></h3>
 <p>To target a system without an OTLP path, implement your own function at <code>distributed.trace.forwarder</code> and consume
 the dataset described in <a href="#metrics">What a trace records</a> — for example, write it to a metrics database or a
@@ -3497,7 +3524,7 @@ proprietary APM API.</p>
 <p>Spans tell you the causal path; <strong>application logs</strong> tell you what happened inside each step. The log-context
 feature closes the gap between them: it injects a <code>context</code> block — correlation id, trace/span ids, service name,
 and any business key-values you add — into every structured log line a traced function emits. With the same
-<code>traceId</code>/<code>spanId</code> on both the span and the log line, you can pivot from a Dynatrace/Splunk trace straight to the
+<code>trace_id</code>/<code>span_id</code> on both the span and the log line, you can pivot from a Dynatrace/Splunk trace straight to the
 exact log entries that belong to it.</p>
 <p>It deliberately <strong>avoids the ThreadLocal / Log4j MDC</strong> pattern (heavy for a virtual-thread runtime). The context
 rides the same per-request mechanism as the trace itself, keyed to the worker thread and torn down when the
@@ -3642,6 +3669,55 @@ top-level <code>time</code>, which is local.</p>
   no context — the same boundary distributed tracing has.</li>
 <li>Feature <strong>off</strong> (<code>app.log.context=false</code>) costs one boolean check per log line and nothing else.</li>
 </ul>
+<h3 id="log-shipping">Getting these logs to your backend<a class="headerlink" href="#log-shipping" title="Permanent link">&para;</a></h3>
+<p><strong>Mercury does not ship logs.</strong> The OpenTelemetry forwarder exports <em>traces</em>; it has no log counterpart,
+and that is a deliberate boundary rather than a missing feature.</p>
+<p>Application logs reach your backend the way every other container's logs do — your platform's forwarder or
+collector reads stdout and ships it. That is <strong>infrastructure configuration, not application
+responsibility</strong>, and it is the same pattern whichever backend you use: a Splunk forwarder to Splunk, an
+OpenTelemetry Collector to an OTLP <code>/v1/logs</code> endpoint. Putting an HTTP exporter inside the application
+would instead place a network call in the path of every <code>log.info</code>, with its own credentials, retries and
+back-pressure, for no benefit the platform does not already provide.</p>
+<p><strong>What the engine does is the part that makes correlation work</strong>, and it is already done:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Structured output</td>
+<td><code>log.format=json</code> or <code>compact</code></td>
+</tr>
+<tr>
+<td>Trace correlation</td>
+<td><code>context.trace_id</code> / <code>context.span_id</code>, identical to the values on the exported span</td>
+</tr>
+<tr>
+<td>Shared vocabulary</td>
+<td>snake_case, matching the distributed-trace block, so one mapping covers both</td>
+</tr>
+<tr>
+<td>Unambiguous time</td>
+<td><code>context.timestamp</code>, always present and always UTC</td>
+</tr>
+</tbody>
+</table>
+<p>Two details worth knowing when you configure the collector:</p>
+<ul>
+<li><strong>Promote the ids.</strong> For "view the logs for this trace" to work in an OTLP backend, the collector must map
+  <code>context.trace_id</code> and <code>context.span_id</code> onto the log record's own trace and span fields. Left as ordinary
+  attributes they are searchable but not linked.</li>
+<li><strong>Parse <code>context.timestamp</code>, not <code>time</code>.</strong> The record's top-level <code>time</code> is a <strong>local</strong> timestamp with no
+  zone or offset; anything parsing it must be told the timezone and shifts silently when told wrong. Backends
+  correlate on trace id <em>and</em> a time window, so a shifted line can be correctly correlated and still invisible
+  on its trace. <code>context.timestamp</code> is UTC and needs no assumption.</li>
+</ul>
+<p>Lines emitted outside a traced worker — framework start-up, a <code>Mono</code>/<code>Flux</code> completion after the worker
+returns — carry no <code>context</code> block and therefore no trace id. They still ship; they simply are not linked to a
+trace. A collector configuration must not drop a record that has no <code>context</code>.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../build-test-deploy/">Build, Test &amp; Deploy</a> — enabling tracing and the forwarder hook.</li>
