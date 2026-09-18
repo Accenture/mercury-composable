@@ -14,6 +14,14 @@ deleted**: a decision that no longer holds is marked *Superseded* (replaced by a
 ADR) or *Deprecated* (no longer relevant), with its text left in place. ADR-0001 is the
 foundational decoupling decision; the rest build on it.
 
+**Only decisions are entered here.** This ledger is an immutable journey of what the
+project decided, so an entry is written when a decision is *accepted* — never before. Work
+still under consideration is raised in [`proposed.md`](proposed.md) as `P-NNNN` and is
+written in here only on acceptance; a proposal that is withdrawn never appears, because it
+was never a decision. (Convention adopted 2026-09-18. The five entries carrying
+`Accepted (2026-09-18)` predate it — they were raised as *Proposed* under the older
+practice and were confirmed together when it changed.)
+
 ADR-0001 to 0005 were seeded as a **retrospective** in 2026-06-22 from the decisions already
 governing the codebase — verified against the source (`platform-core`,
 `event-script-engine`, `minigraph-playground-engine`) and the published guides, which are
@@ -279,8 +287,8 @@ standard (RFC 6648 discourages new X- wire headers; the envelope already has a r
 x- vocabulary).
 
 ## ADR-0017 — Spring Boot integration targets Boot 4 only; the Boot 3 lane is retired {#adr-0017}
-**Status:** Proposed · **Date:** 2026-08-27 · **Serves:** vision-mercury-composable · **Formalizes:** stack-integration-spring-boot4
-<!-- id: adr-0017 | status: proposed -->
+**Status:** Accepted (2026-09-18) · **Date:** 2026-08-27 · **Serves:** vision-mercury-composable · **Formalizes:** stack-integration-spring-boot4
+<!-- id: adr-0017 | status: accepted -->
 
 **Abstract.** The optional Spring Boot integration is provided by a single module,
 `system/rest-spring-4` (with `examples/rest-spring-4-example` as its reference
@@ -307,8 +315,8 @@ rest of the build, and the migration cost is a dependency swap. Applications tha
 stay on Spring Boot 3 can remain on Mercury releases up to this one.
 
 ## ADR-0016 — Polyglot functions are Event-over-HTTP peers, not subprocesses or ports {#adr-0016}
-**Status:** Proposed · **Date:** 2026-08-22 · **Serves:** vision-mercury-composable · **Formalizes:** polyglot-event-over-http-design
-<!-- id: adr-0016 | status: proposed -->
+**Status:** Accepted (2026-09-18) · **Date:** 2026-08-22 · **Serves:** vision-mercury-composable · **Formalizes:** polyglot-event-over-http-design
+<!-- id: adr-0016 | status: accepted -->
 
 **Abstract.** Functions written in Python and Node.js join Event Script flows and
 MiniGraph knowledge graphs as long-lived **Event API peers**: each official wrapper
@@ -356,8 +364,8 @@ requirement. The Node.js wrapper is also the sanctioned answer to the retired le
 port — a fresh re-port was never going to stay current; a thin protocol wrapper can.
 
 ## ADR-0015 — AI discovery is a standalone composable app, not a runtime dependency {#adr-0015}
-**Status:** Proposed · **Date:** 2026-08-21 · **Serves:** vision-mercury-composable · **Formalizes:** thread-ai-contract-provider
-<!-- id: adr-0015 | status: proposed -->
+**Status:** Accepted (2026-09-18) · **Date:** 2026-08-21 · **Serves:** vision-mercury-composable · **Formalizes:** thread-ai-contract-provider
+<!-- id: adr-0015 | status: accepted -->
 
 **Abstract.** Mercury serves a version-matched operational contract for AI agents from a
 standalone composable app, `system/ai-contract-provider`: read-only REST discovery endpoints
@@ -388,8 +396,8 @@ the same drift guarantee as runtime provider discovery with far less machinery; 
 export stays a local operator action rather than a remote capability.
 
 ## ADR-0014 — Generic exception context: one handler serves every `exception=` route {#adr-0014}
-**Status:** Proposed · **Date:** 2026-08-10 · **Serves:** vision-mercury-composable · **Formalizes:** thread-field-graph-scoped-state-and-error-context
-<!-- id: adr-0014 | status: proposed -->
+**Status:** Accepted (2026-09-18) · **Date:** 2026-08-10 · **Serves:** vision-mercury-composable · **Formalizes:** thread-field-graph-scoped-state-and-error-context
+<!-- id: adr-0014 | status: accepted -->
 
 **Abstract.** When a failed node routes to its `exception=` handler, the walkers
 (GraphExecutor and GraphTraveler — one staging site each, covering every skill) stage a
@@ -419,15 +427,17 @@ self-containment. Event Script parity naming was chosen over graph-local naming
 reads badly. The context is transient per run and never persisted across suspension.
 
 ## ADR-0013 — A business transaction spans graphs: workflow-state records are scoped by graph + cid, and delegation inherits the correlation ID {#adr-0013}
-**Status:** Proposed · **Date:** 2026-08-10 · **Serves:** vision-mercury-composable · **Formalizes:** thread-field-graph-scoped-state-and-error-context · **Amends:** ADR-0010, ADR-0012
-<!-- id: adr-0013 | status: proposed -->
+**Status:** Accepted (2026-09-18) · **Date:** 2026-08-10 · **Serves:** vision-mercury-composable · **Formalizes:** thread-field-graph-scoped-state-and-error-context · **Amends:** ADR-0010, ADR-0012
+<!-- id: adr-0013 | status: accepted -->
 
 **Abstract.** The suspend/resume state-store contract is scoped by **graph + cid**: the
 persistence envelope gains a `graph` field (`{cid, graph, node, ttl, model, seen, run}`),
 the retrieve body becomes `{cid, graph}`, and the Redis reference implementation keys
-records `graph:{graph_id}:{cid}` (formerly `graph:state:{cid}`). Key composition remains
-store-internal, but every store MUST scope by both — a cid-only key collapses all of a
-transaction's suspensions into one record. Complementarily, **`graph.extension` stamps
+records `graph:{graph_id}:{cid}` (formerly `graph:state:{cid}`) — with a third `:{index}`
+segment when the graph runs as one iteration of a parent's `for_each` fan-out. Key
+composition remains store-internal, but every store MUST scope by graph + cid — a cid-only
+key collapses all of a transaction's suspensions into one record — and MUST append the
+iteration index when the caller supplies one. Complementarily, **`graph.extension` stamps
 the parent's business correlation ID** (`model.cid`) on the delegated call — both
 protocols (`graph://` id and `flow://`), both branches (single and `for_each`) — exactly
 as an Event Script sub-flow launch already did, closing the asymmetry where a subgraph's
@@ -450,11 +460,27 @@ business-cid header, so a subgraph's resume could never find its record even wit
 keys. The graph ID is unique per domain, so `graph + cid` addresses both the domain and
 the subgraph requirement with one convention. Scoping is enforced in the contract (the
 reference stores fail fast on a missing `graph`) rather than by engine-composed opaque
-keys, keeping key layout a store concern. The `for_each` caveat is documented, not
-enforced: one graph × one cid = one record, so a suspendable subgraph is invoked once per
-cid per run. ADR-0010's cid-as-capability note extends naturally: one cid now unlocks
-resume in every graph that suspended under it, scoped per graph id, with endpoint
-authentication unchanged.
+keys, keeping key layout a store concern.
+
+The `for_each` case was first left as a documented caveat — one graph × one cid = one
+record, so a suspendable subgraph was *assumed* to be invoked once per cid per run. The
+field disproved the assumption while this ADR was still proposed, and it is folded in here
+rather than split into a separate decision, because **the cid inheritance decided above is
+exactly what makes the iterations collide**: a parent invoking a suspending subgraph through
+`graph.extension` with `for_each` forks N concurrent invocations under the one inherited
+cid, so the suspensions raced and only the last survived. The array **index** therefore joins
+the key as a third segment — carried on the invocation's header into a reserved
+`model.iteration_index`, and appended only when present, so single delegations and records
+written before the change are untouched. Index alone, not index-and-size: a size guard would
+have failed the ordinary case (appending an item to a list) while never catching the
+corrupting one (reordering). The accompanying constraint is **declared, not enforced** — the
+parent's array must hold positional consistency (appending is safe; reordering, inserting or
+removing is not) — and parent → `for_each` → `flow://` → suspending graph is out of scope.
+(Shipped 2026-09-18: spec PR #415, implementation PR #418, doc sweep PR #420.)
+
+ADR-0010's cid-as-capability note extends naturally: one cid now unlocks resume in every
+graph that suspended under it, scoped per graph id, with endpoint authentication
+unchanged.
 
 ## ADR-0012 — Suspension is a destination: edge-mode checkpoints and jump-mode decisions replace the `suspend=true` property {#adr-0012}
 **Status:** Accepted · **Date:** 2026-08-07T22:50:34.000Z · **Serves:** vision-mercury-composable · **Formalizes:** thread-suspend-resume-rationalization · **Amends:** ADR-0010
