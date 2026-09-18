@@ -264,7 +264,7 @@
   reasoning from Kafka internals would have shipped that. Bounds
   [[kafka-class-objects-over-names]]; extends [[kafka-clients-kernel-threads]]; tracked by
   [[ot-kafka-health-producer-only-fix]].
-  <!-- id: kafka-config-class-static-init-loader | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: working | origin: 2026-09-17-183008 -->
+  <!-- id: kafka-config-class-static-init-loader | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: active | origin: 2026-09-17-183008 -->
 
 - **A jar under a base scan package needs an `@OptionalService` master switch, and a vendor
   integration is not done until a negative control proves the happy path (2026-09-16, Eric's design
@@ -608,7 +608,7 @@
   PR). Both errors came from writing out of recollection of my own work instead of out of the
   repository. Corrected in both places via PR #411. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: working | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: active | origin: 2026-09-17-183008 -->
 - **A thread id names the THING, never its kind — and an existing thread is never renamed (Eric,
   2026-09-18).** The tool writes every open thread to `memory/open-threads/thread-<id>.md`, so an id
   that already begins `ot-` or `thread-` stutters: `thread-ot-distributed-cache.md`, and worst,
@@ -626,7 +626,15 @@
   **The single `thread-` prefix is upstream, not ours** — `memory-lint` hard-codes
   `expect = f"thread-{fid}.md"` (one production line; `archive-fact` already keys on the footer id
   and is prefix-agnostic). Reported to the agent-memory team 2026-09-18 as a cosmetic item,
-  explicitly below the bar of the two decay-signal reports that preceded it.
+  explicitly below the bar of the two decay-signal reports that preceded it — **and it SHIPPED as
+  agent-memory v4.41.1 the same day** (PR #419, squash `c83c5095`), crediting "this team's
+  2026-09-18 note". Both halves landed: the rule is now `DECAY.md` §1 and `.agent/schema.md`, and so
+  is the never-rename constraint, carrying our 12-declarations example; the upgrade's own step 2
+  reported "nothing renamed — 14 of 14 thread files carry a kind-prefixed id and stay as they are".
+  Two things worth reading from that. A report ranked LOWEST of three shipped FASTEST — because it
+  was the one that arrived with a concrete fix attached, not because it mattered most; rank by
+  severity, but attach the fix regardless. And the rule is now upstream, so a future agent does not
+  need this fact to follow it — only to understand why our existing ids look the way they do.
   Relates [[conv-declare-consulted-references]] (the same immutable-log constraint is why both rules
   are forward-looking only).
   <!-- id: conv-thread-id-names-the-thing | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: working | origin: 2026-09-18-174943 -->

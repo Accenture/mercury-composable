@@ -12,4 +12,4 @@
   design-time tool, not evidence of immaturity — what gets promoted is the graph, not the authoring
   surface.
   origin: `memory/sessions/2026-09-17-020650.md`
-  <!-- id: ot-close-stalled-threads-20260917 | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: working | origin: 2026-09-17-020650 -->
+  <!-- id: ot-close-stalled-threads-20260917 | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: active | origin: 2026-09-17-020650 -->
