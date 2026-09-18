@@ -16,7 +16,7 @@
         <link rel="prev" href="../../guides/service-mesh/">
       
       
-        <link rel="next" href="../../guides/api-overview/">
+        <link rel="next" href="../proposed/">
       
       
         
@@ -2014,6 +2014,8 @@
       
         
       
+        
+      
     
     
     
@@ -2396,6 +2398,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../proposed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Proposed Decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -3263,6 +3293,13 @@ read path.</p>
 deleted</strong>: a decision that no longer holds is marked <em>Superseded</em> (replaced by a newer
 ADR) or <em>Deprecated</em> (no longer relevant), with its text left in place. ADR-0001 is the
 foundational decoupling decision; the rest build on it.</p>
+<p><strong>Only decisions are entered here.</strong> This ledger is an immutable journey of what the
+project decided, so an entry is written when a decision is <em>accepted</em> — never before. Work
+still under consideration is raised in <a href="../proposed/"><code>proposed.md</code></a> as <code>P-NNNN</code> and is
+written in here only on acceptance; a proposal that is withdrawn never appears, because it
+was never a decision. (Convention adopted 2026-09-18. The five entries carrying
+<code>Accepted (2026-09-18)</code> predate it — they were raised as <em>Proposed</em> under the older
+practice and were confirmed together when it changed.)</p>
 <p>ADR-0001 to 0005 were seeded as a <strong>retrospective</strong> in 2026-06-22 from the decisions already
 governing the codebase — verified against the source (<code>platform-core</code>,
 <code>event-script-engine</code>, <code>minigraph-playground-engine</code>) and the published guides, which are
@@ -3501,8 +3538,8 @@ custom HTTP header was rejected in favor of the envelope marker so the wire stay
 standard (RFC 6648 discourages new X- wire headers; the envelope already has a reserved
 x- vocabulary).</p>
 <h2 id="adr-0017">ADR-0017 — Spring Boot integration targets Boot 4 only; the Boot 3 lane is retired<a class="headerlink" href="#adr-0017" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-27 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> stack-integration-spring-boot4</p>
-<!-- id: adr-0017 | status: proposed -->
+<p><strong>Status:</strong> Accepted (2026-09-18) · <strong>Date:</strong> 2026-08-27 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> stack-integration-spring-boot4</p>
+<!-- id: adr-0017 | status: accepted -->
 
 <p><strong>Abstract.</strong> The optional Spring Boot integration is provided by a single module,
 <code>system/rest-spring-4</code> (with <code>examples/rest-spring-4-example</code> as its reference
@@ -3527,8 +3564,8 @@ consumers — was rejected: an EOL web stack is a liability regardless of freshn
 rest of the build, and the migration cost is a dependency swap. Applications that must
 stay on Spring Boot 3 can remain on Mercury releases up to this one.</p>
 <h2 id="adr-0016">ADR-0016 — Polyglot functions are Event-over-HTTP peers, not subprocesses or ports<a class="headerlink" href="#adr-0016" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-22 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> polyglot-event-over-http-design</p>
-<!-- id: adr-0016 | status: proposed -->
+<p><strong>Status:</strong> Accepted (2026-09-18) · <strong>Date:</strong> 2026-08-22 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> polyglot-event-over-http-design</p>
+<!-- id: adr-0016 | status: accepted -->
 
 <p><strong>Abstract.</strong> Functions written in Python and Node.js join Event Script flows and
 MiniGraph knowledge graphs as long-lived <strong>Event API peers</strong>: each official wrapper
@@ -3574,8 +3611,8 @@ dashboards in front of one DevSecOps team, so presentation parity is a field
 requirement. The Node.js wrapper is also the sanctioned answer to the retired legacy
 port — a fresh re-port was never going to stay current; a thin protocol wrapper can.</p>
 <h2 id="adr-0015">ADR-0015 — AI discovery is a standalone composable app, not a runtime dependency<a class="headerlink" href="#adr-0015" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-21 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> thread-ai-contract-provider</p>
-<!-- id: adr-0015 | status: proposed -->
+<p><strong>Status:</strong> Accepted (2026-09-18) · <strong>Date:</strong> 2026-08-21 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> thread-ai-contract-provider</p>
+<!-- id: adr-0015 | status: accepted -->
 
 <p><strong>Abstract.</strong> Mercury serves a version-matched operational contract for AI agents from a
 standalone composable app, <code>system/ai-contract-provider</code>: read-only REST discovery endpoints
@@ -3604,8 +3641,8 @@ Mercury modules release together under one version, a build-verified static cata
 the same drift guarantee as runtime provider discovery with far less machinery; filesystem
 export stays a local operator action rather than a remote capability.</p>
 <h2 id="adr-0014">ADR-0014 — Generic exception context: one handler serves every <code>exception=</code> route<a class="headerlink" href="#adr-0014" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-10 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> thread-field-graph-scoped-state-and-error-context</p>
-<!-- id: adr-0014 | status: proposed -->
+<p><strong>Status:</strong> Accepted (2026-09-18) · <strong>Date:</strong> 2026-08-10 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> thread-field-graph-scoped-state-and-error-context</p>
+<!-- id: adr-0014 | status: accepted -->
 
 <p><strong>Abstract.</strong> When a failed node routes to its <code>exception=</code> handler, the walkers
 (GraphExecutor and GraphTraveler — one staging site each, covering every skill) stage a
@@ -3633,15 +3670,17 @@ self-containment. Event Script parity naming was chosen over graph-local naming
 (<code>error.status</code>/<code>error.error</code>) for cross-layer consistency and because <code>error.error</code>
 reads badly. The context is transient per run and never persisted across suspension.</p>
 <h2 id="adr-0013">ADR-0013 — A business transaction spans graphs: workflow-state records are scoped by graph + cid, and delegation inherits the correlation ID<a class="headerlink" href="#adr-0013" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Proposed · <strong>Date:</strong> 2026-08-10 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> thread-field-graph-scoped-state-and-error-context · <strong>Amends:</strong> ADR-0010, ADR-0012</p>
-<!-- id: adr-0013 | status: proposed -->
+<p><strong>Status:</strong> Accepted (2026-09-18) · <strong>Date:</strong> 2026-08-10 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> thread-field-graph-scoped-state-and-error-context · <strong>Amends:</strong> ADR-0010, ADR-0012</p>
+<!-- id: adr-0013 | status: accepted -->
 
 <p><strong>Abstract.</strong> The suspend/resume state-store contract is scoped by <strong>graph + cid</strong>: the
 persistence envelope gains a <code>graph</code> field (<code>{cid, graph, node, ttl, model, seen, run}</code>),
 the retrieve body becomes <code>{cid, graph}</code>, and the Redis reference implementation keys
-records <code>graph:{graph_id}:{cid}</code> (formerly <code>graph:state:{cid}</code>). Key composition remains
-store-internal, but every store MUST scope by both — a cid-only key collapses all of a
-transaction's suspensions into one record. Complementarily, <strong><code>graph.extension</code> stamps
+records <code>graph:{graph_id}:{cid}</code> (formerly <code>graph:state:{cid}</code>) — with a third <code>:{index}</code>
+segment when the graph runs as one iteration of a parent's <code>for_each</code> fan-out. Key
+composition remains store-internal, but every store MUST scope by graph + cid — a cid-only
+key collapses all of a transaction's suspensions into one record — and MUST append the
+iteration index when the caller supplies one. Complementarily, <strong><code>graph.extension</code> stamps
 the parent's business correlation ID</strong> (<code>model.cid</code>) on the delegated call — both
 protocols (<code>graph://</code> id and <code>flow://</code>), both branches (single and <code>for_each</code>) — exactly
 as an Event Script sub-flow launch already did, closing the asymmetry where a subgraph's
@@ -3663,11 +3702,25 @@ business-cid header, so a subgraph's resume could never find its record even wit
 keys. The graph ID is unique per domain, so <code>graph + cid</code> addresses both the domain and
 the subgraph requirement with one convention. Scoping is enforced in the contract (the
 reference stores fail fast on a missing <code>graph</code>) rather than by engine-composed opaque
-keys, keeping key layout a store concern. The <code>for_each</code> caveat is documented, not
-enforced: one graph × one cid = one record, so a suspendable subgraph is invoked once per
-cid per run. ADR-0010's cid-as-capability note extends naturally: one cid now unlocks
-resume in every graph that suspended under it, scoped per graph id, with endpoint
-authentication unchanged.</p>
+keys, keeping key layout a store concern.</p>
+<p>The <code>for_each</code> case was first left as a documented caveat — one graph × one cid = one
+record, so a suspendable subgraph was <em>assumed</em> to be invoked once per cid per run. The
+field disproved the assumption while this ADR was still proposed, and it is folded in here
+rather than split into a separate decision, because <strong>the cid inheritance decided above is
+exactly what makes the iterations collide</strong>: a parent invoking a suspending subgraph through
+<code>graph.extension</code> with <code>for_each</code> forks N concurrent invocations under the one inherited
+cid, so the suspensions raced and only the last survived. The array <strong>index</strong> therefore joins
+the key as a third segment — carried on the invocation's header into a reserved
+<code>model.iteration_index</code>, and appended only when present, so single delegations and records
+written before the change are untouched. Index alone, not index-and-size: a size guard would
+have failed the ordinary case (appending an item to a list) while never catching the
+corrupting one (reordering). The accompanying constraint is <strong>declared, not enforced</strong> — the
+parent's array must hold positional consistency (appending is safe; reordering, inserting or
+removing is not) — and parent → <code>for_each</code> → <code>flow://</code> → suspending graph is out of scope.
+(Shipped 2026-09-18: spec PR #415, implementation PR #418, doc sweep PR #420.)</p>
+<p>ADR-0010's cid-as-capability note extends naturally: one cid now unlocks resume in every
+graph that suspended under it, scoped per graph id, with endpoint authentication
+unchanged.</p>
 <h2 id="adr-0012">ADR-0012 — Suspension is a destination: edge-mode checkpoints and jump-mode decisions replace the <code>suspend=true</code> property<a class="headerlink" href="#adr-0012" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-08-07T22:50:34.000Z · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> thread-suspend-resume-rationalization · <strong>Amends:</strong> ADR-0010</p>
 <!-- id: adr-0012 | status: accepted -->
@@ -4149,13 +4202,13 @@ wiring roles) and realized on the runtime of ADR-0002.</p>
         
         
           
-          <a href="../../guides/api-overview/" class="md-footer__link md-footer__link--next" aria-label="Next: API Overview">
+          <a href="../proposed/" class="md-footer__link md-footer__link--next" aria-label="Next: Proposed Decisions">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                API Overview
+                Proposed Decisions
               </div>
             </div>
             <div class="md-footer__button md-icon">
