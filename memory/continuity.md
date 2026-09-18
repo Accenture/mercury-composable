@@ -44,8 +44,10 @@
   still v4.12.9's distributed cache ([[ot-distributed-cache]]). Ports adopt this number on catch-up
   ([[conv-ports-adopt-java-release-number]]). Sweep surface: BUILD FILES ONLY, **43 files / 98
   occurrences** (97 → 98 when #404 added a forwarder dependency — re-derive the sweep after a rebase,
-  never trust the prior count). **Open:** Dynatrace support is confirming the two field-acceptance
-  traces in the UI; the report's Scenario 6 records that row as *pending* and is updated on reply.
+  never trust the prior count). **CLOSED 2026-09-17:** Dynatrace support confirmed both
+  field-acceptance traces in the UI, `OTel scope version` **4.12.11** on each — so the released
+  artifacts, not a leftover build, submitted them. Scenario 6 updated (PR #412); the OTel
+  certification is closed end to end ([[ot-otel-acceptance-traces-pending]]).
   **FIELD REGRESSION, now fixed:** the `kafka.health` half of this release was **incomplete** — a
   produce-only leg (`kafka.consumer.enabled=false`) still answered `/health` with a raw 500, because
   the loader override did not cover template resolution. **Corrected in v4.12.12** (above,
@@ -279,10 +281,13 @@
   working look the same, a negative control is the experiment, not a garnish.** Two by-products worth
   keeping — the app returned HTTP 201 in all three legs (a telemetry outage degrades observability
   and nothing else, previously asserted and now shown), and the backend-visible instrumentation scope
-  version is a free check that the artifact under test is the one that shipped. Report:
+  version is a free check that the artifact under test is the one that shipped — and on 2026-09-17
+  that check paid out: Dynatrace support confirmed both v4.12.11 field-acceptance traces in the UI
+  reading scope version **4.12.11**, closing the loop on the RELEASED artifacts rather than a branch
+  build ([[ot-otel-acceptance-traces-pending]]). Report:
   `docs/test-reports/otel-dynatrace-certification.md`; closes [[ot-otel-dynatrace-certification]].
   Splunk's header form is parsed and documented but NOT run live.
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-16 | uses: 3 | tier: active | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-17 | uses: 4 | tier: active | origin: 2026-09-16-193203 -->
 
 - **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
   `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
