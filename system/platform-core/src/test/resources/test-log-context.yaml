@@ -9,6 +9,9 @@
 #
 # Reserved tokens: $cid $traceId $tracePath $spanId $parentSpanId $service $utc
 #
+# NOTE: these output keys are deliberately camelCase, unlike the shipped templates, which use
+# snake_case to match the distributed-trace block. The left side is the OPERATOR's choice and the
+# engine must honour whatever it is told - this fixture is what proves no key name is hardcoded.
 context:
   cid: $cid
   traceId: $traceId

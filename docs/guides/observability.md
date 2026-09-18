@@ -299,7 +299,7 @@ function returns.
 ### On by default {#log-context-enable}
 
 The feature is **on by default**: platform-core ships a built-in `default-log-context.yaml` that emits the
-standard trace context (`cid`, `traceId`, `tracePath`, `spanId`, `parentSpanId`, `service`, `timestamp`) on
+standard trace context (`cid`, `trace_id`, `trace_path`, `span_id`, `parent_span_id`, `service`, `timestamp`) on
 every structured log line. You can adjust it in two ways:
 
 - **Customize** — provide your own `app-log-context.yaml` on the classpath (`src/main/resources/`); it
@@ -316,14 +316,19 @@ A custom template looks like this:
 # src/main/resources/app-log-context.yaml
 context:
   cid: $cid
-  traceId: $traceId
-  tracePath: $tracePath
-  spanId: $spanId
-  parentSpanId: $parentSpanId
+  trace_id: $traceId
+  trace_path: $tracePath
+  span_id: $spanId
+  parent_span_id: $parentSpanId
   service: $service
   environment: '${ENV_NAME:dev}'
   hello: world
 ```
+
+The output keys are **snake_case**, matching the distributed-trace block (`span_id`, `parent_span_id`,
+`exec_time`) so both halves of a log record read the same way. The `$token` names on the right stay
+camelCase — they are the engine's identifiers, not output — and the two sides are free to differ because
+the left is entirely your choice.
 
 Note what is **not** in that template: a timestamp. You do not configure one — see below.
 
@@ -381,6 +386,15 @@ po.updateContext("user", "demo");   // appears in the context block of every sub
 log.info("processing request");
 ```
 
+Reserved keys are refused in **both spellings** — the `$token` name and its snake_case form, so
+`trace_id` and `parent_span_id` throw just as `traceId` and `parentSpanId` do. That matters because
+snake_case is what the shipped templates publish, and therefore what you would most likely reach for.
+
+Beyond the refused names, a developer key never shadows a template key: if your function sets a key the
+template also emits, the template's value wins. An output key is your free choice, so no list of names
+could cover every case — the precedence is what makes shadowing impossible, and the rejected names are
+the fast, legible error for the two spellings that actually occur.
+
 The reserved keys (`cid`, `traceId`, `tracePath`, `spanId`, `parentSpanId`, `service`, `utc`) are protected —
 passing one to `updateContext` throws `IllegalArgumentException`. On a non-traced request, or when the feature is
 off, the call is a silent no-op.
@@ -399,10 +413,10 @@ A log line from a traced function then carries the resolved `context` (from the 
   "level": "INFO",
   "context": {
     "cid": "20260630c6ee70d866cb4fae9ab3c44d926ce21a",
-    "traceId": "fbb60df209084531b2b00f6b36a3e651",
-    "tracePath": "GET /api/profile/100",
-    "spanId": "bf8d4b2b6a923d67",
-    "parentSpanId": "98f8e26ae7d9a422",
+    "trace_id": "fbb60df209084531b2b00f6b36a3e651",
+    "trace_path": "GET /api/profile/100",
+    "span_id": "bf8d4b2b6a923d67",
+    "parent_span_id": "98f8e26ae7d9a422",
     "service": "v1.hello.exception",
     "environment": "dev",
     "hello": "world",
@@ -416,7 +430,7 @@ A log line from a traced function then carries the resolved `context` (from the 
 }
 ```
 
-The `traceId` and `spanId` here match the `v1.hello.exception` span the tracer emitted for the same request, so the
+The `trace_id` and `span_id` here match the `v1.hello.exception` span the tracer emitted for the same request, so the
 log line and the span join up in your backend. (Key order within `context` is not significant — log viewers reorder
 keys on display.)
 

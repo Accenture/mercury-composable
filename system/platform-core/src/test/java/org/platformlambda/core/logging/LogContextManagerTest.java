@@ -74,4 +74,23 @@ class LogContextManagerTest {
         }
         assertFalse(LogContext.isReservedKey("orderId"));
     }
+
+    @Test
+    void bothSpellingsOfAReservedKeyAreRefused() {
+        // the shipped templates emit snake_case output keys, so the snake_case spelling is the one a
+        // developer is most likely to reach for - and the one that would have overwritten the real
+        // trace id under the very name the default template publishes
+        for (String snake : new String[] {"trace_id", "trace_path", "span_id", "parent_span_id"}) {
+            assertTrue(LogContext.isReservedKey(snake), snake + " must be refused too");
+        }
+        for (String camel : new String[] {"traceId", "tracePath", "spanId", "parentSpanId"}) {
+            assertTrue(LogContext.isReservedKey(camel), camel + " must stay refused");
+        }
+        // single-word reserved names have no second spelling, and ordinary keys stay allowed
+        assertTrue(LogContext.isReservedKey("cid"));
+        assertTrue(LogContext.isReservedKey("service"));
+        assertTrue(LogContext.isReservedKey("utc"));
+        assertFalse(LogContext.isReservedKey("order_id"));
+        assertFalse(LogContext.isReservedKey("traceid"));
+    }
 }

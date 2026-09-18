@@ -209,6 +209,13 @@ public class LogContextConfig {
     /**
      * Build the context map for one log line. Keys whose value resolves to null are omitted
      * (never emitted as "null").
+     * <p>
+     * <b>The template wins over a developer key of the same name.</b> {@code PostOffice.updateContext}
+     * rejects the reserved TOKEN names ({@code traceId}, {@code spanId}, …), which was sufficient only
+     * while every output key happened to equal its token name. Output keys are the operator's choice —
+     * the built-in template now emits {@code trace_id} — so that guard alone would let
+     * {@code updateContext("trace_id", …)} through and silently overwrite the real trace id. Ordering
+     * closes it for every naming scheme, including ones no guard could enumerate.
      *
      * @param context the current request's log context
      * @param logTimeMillis the log event time (for the per-line utc timestamp)
@@ -216,6 +223,13 @@ public class LogContextConfig {
      */
     public Map<String, Object> render(LogContext context, long logTimeMillis) {
         Map<String, Object> out = new HashMap<>();
+        // developer keys go in FIRST so the template always wins - see the note above on why this
+        // ordering, not the reserved-key guard, is what actually protects the trace context
+        context.getCustomKeys().forEach((key, value) -> {
+            if (value != null) {
+                out.put(key, value);
+            }
+        });
         tokens.forEach((outputKey, tokenName) -> {
             Object value = context.token(tokenName, logTimeMillis);
             if (value != null) {
@@ -223,11 +237,6 @@ public class LogContextConfig {
             }
         });
         out.putAll(constants);
-        context.getCustomKeys().forEach((key, value) -> {
-            if (value != null) {
-                out.put(key, value);
-            }
-        });
         return out;
     }
 }

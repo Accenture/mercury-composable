@@ -14,10 +14,10 @@
 #
 context:
   cid: $cid
-  traceId: $traceId
-  tracePath: $tracePath
-  spanId: $spanId
-  parentSpanId: $parentSpanId
+  trace_id: $traceId
+  trace_path: $tracePath
+  span_id: $spanId
+  parent_span_id: $parentSpanId
   service: $service
   environment: '${ENV_NAME:dev}'
   # this is just for demo - you don't need hard coded key-values
