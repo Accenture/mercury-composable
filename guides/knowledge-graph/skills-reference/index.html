@@ -3333,7 +3333,10 @@ correlation ID. A <strong>superset of <code>graph.task</code></strong>: the <cod
 function, but the persistence envelope (<code>{cid, graph, node, ttl, model, seen, run}</code>) is assembled
 by the skill itself — <strong>no input/output mapping on the node</strong>. The record is scoped by
 <strong>graph + cid</strong> (the Redis reference keys it <code>graph:{graph_id}:{cid}</code>), so one business
-transaction may suspend independently in each domain's graph and in each subgraph.</p>
+transaction may suspend independently in each domain's graph and in each subgraph. When the
+graph runs as one iteration of a parent's <code>for_each</code> fan-out, the iteration index is appended
+as a third segment (<code>graph:{graph_id}:{cid}:{index}</code>) so concurrent iterations do not collide
+— see <a href="../workflow-suspension/#design-rules">Workflow suspension</a>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>skill=graph.suspend
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>task=v1.redis.persist.model
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>ttl=2d

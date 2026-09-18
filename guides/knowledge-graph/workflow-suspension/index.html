@@ -3327,7 +3327,9 @@ store of ~60 lines (<code>FileStateStore</code> in the minigraph test sources).<
 <p><code>extensions/minigraph-state-redis</code> ships <code>v1.redis.persist.model</code> (SETEX, native expiry)
 and <code>v1.redis.retrieve.model</code> (atomic consume-on-retrieve). Records are keyed
 <code>graph:{graph_id}:{cid}</code>, so each domain's graph and each subgraph suspends
-independently under a shared business correlation ID. The consume strategy is
+independently under a shared business correlation ID — plus a third <code>:{index}</code> segment
+when the graph runs as one iteration of a parent's <code>for_each</code> fan-out, so concurrent
+iterations do not collide (see <a href="#design-rules">the <code>for_each</code> rule</a>). The consume strategy is
 <strong>version-aware</strong>: native <code>GETDEL</code> on Redis 6.2+, or an equally atomic <code>MULTI/EXEC</code>
 <code>GET</code>+<code>DEL</code> transaction on older servers — detected once per connection from
 <code>INFO server</code> and stated in the startup log, since enterprise deployments rarely control
