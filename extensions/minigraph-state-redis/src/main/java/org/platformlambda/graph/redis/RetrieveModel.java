@@ -32,10 +32,11 @@ import java.util.Map;
  * Redis implementation of the suspend/resume state-store RETRIEVE contract, invoked by
  * the 'graph.resume' skill through the node's "task" property.
  * <p>
- * Contract: headers type=get; body {cid, graph}. Returns the record persisted under
- * 'graph:{graph_id}:{cid}', or an empty map when absent-or-expired (a fresh transaction
- * is the normal case, not an error). The graph ID scopes the lookup, so a resume only
- * ever sees records written by its own graph. The record is CONSUMED atomically on
+ * Contract: headers type=get; body {cid, graph} plus an OPTIONAL 'index'. Returns the record
+ * persisted under 'graph:{graph_id}:{cid}' - or 'graph:{graph_id}:{cid}:{index}' when an index
+ * is present - or an empty map when absent-or-expired (a fresh transaction is the normal case,
+ * not an error). The graph ID scopes the lookup, so a resume only ever sees records written by
+ * its own graph; the index scopes it to one iteration of a for_each fan-out. The record is CONSUMED atomically on
  * retrieval, so a duplicate resume request cannot execute the continuation twice - via
  * native GETDEL on Redis 6.2+, or a MULTI/EXEC GET+DEL transaction on older servers
  * (the strategy is detected per connection, since enterprise deployments rarely control
