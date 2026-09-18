@@ -289,6 +289,31 @@
   Splunk's header form is parsed and documented but NOT run live.
   <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-17 | uses: 4 | tier: active | origin: 2026-09-16-193203 -->
 
+- **Application log forwarding is an INFRASTRUCTURE task — the engine does not grow that capability
+  (Eric with the field architects, 2026-09-18; CLOSED, not parked).** The field found the gap after
+  the OTel trace certification closed: Dynatrace stores traces and logs in two databases, v4.12.12
+  exports spans to `/v1/traces` and they are queryable, but nothing sends application logs to
+  `/v1/logs` — so "View logs for this trace" is empty and a DQL query on the trace id returns nothing.
+  Investigated and specced; the answer is **not** to build an exporter.
+  **The decisive framing was the field's own Splunk practice:** container stdout is shipped to Splunk
+  by a standard forwarder, configured by the platform, with the application doing nothing. One
+  principle, two backends — a collector reads stdout and ships to `/v1/logs` for Dynatrace exactly as
+  a forwarder does for Splunk. Rejected in-app alternative: an OTLP log appender was *easy* (
+  `OtlpHttpLogRecordExporter` is already in the artifact the span exporter uses, so zero new
+  dependencies) and that convenience is bought in the worst place — an HTTP exporter reachable from
+  every `log.info` in the process, owning credentials, retry and back-pressure on the app's critical
+  path. Dynatrace's own "collector copies spans into the logs store" workaround was also rejected,
+  structurally: span-shaped records cannot contain the application's log messages.
+  **The engine's half is already done and is what makes the infra half work.** `log.format=json|compact`
+  plus `app-log-context.yaml` already emits `trace_id`/`span_id` on every line inside a traced worker —
+  correlation on a virtual-thread runtime where the MDC pattern is an anti-pattern. The v4.12.12
+  snake_case rename aligned those keys with the distributed-trace block, so a collector maps one
+  vocabulary, and the enforced `$utc` gives it an unambiguous timestamp to parse. The gap was never
+  correlation; it was transport, which is the platform's job.
+  Applies [[clean-knowledge-design-over-engine-coverage]] one level up — the same "should the engine
+  absorb this at all" question asked of a *capability* rather than a graph composition.
+  <!-- id: log-forwarding-is-infrastructure | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: working | origin: 2026-09-18-174943 -->
+
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
   produces a hard case, the first question is whether the engine should absorb it at all. Chasing
