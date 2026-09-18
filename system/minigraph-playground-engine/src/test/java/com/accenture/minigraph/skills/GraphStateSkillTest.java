@@ -49,4 +49,28 @@ class GraphStateSkillTest {
         assertThrows(IllegalArgumentException.class,
                 () -> skill.getRequiredCorrelationId(graphInstance, "suspend"));
     }
+
+    @Test
+    void iterationIndexIsAbsentForAnOrdinaryInvocation() {
+        // the whole backward-compatibility story: no index means the store key keeps the two
+        // segments it has always had, so a single delegation and pre-upgrade records are untouched
+        var graphInstance = new GraphInstance("unit-test");
+        var skill = new TestSkill();
+        graphInstance.stateMachine.setElement("model.cid", "order-1001");
+        assertNull(skill.getIterationIndex(graphInstance));
+    }
+
+    @Test
+    void iterationIndexIsReadFromTheReservedModelKey() {
+        var graphInstance = new GraphInstance("unit-test");
+        var skill = new TestSkill();
+        graphInstance.stateMachine.setElement("model.cid", "order-1001");
+        graphInstance.stateMachine.setElement("model.iteration_index", " 2 ");
+        // trimmed like the cid, and for the same reason: it is part of the store key, so padding
+        // would split one iteration's records across two keys
+        assertEquals("2", skill.getIterationIndex(graphInstance));
+
+        graphInstance.stateMachine.setElement("model.iteration_index", "   ");
+        assertNull(skill.getIterationIndex(graphInstance), "a blank index is no index, not an empty segment");
+    }
 }

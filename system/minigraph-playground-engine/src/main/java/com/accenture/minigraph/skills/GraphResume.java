@@ -66,6 +66,17 @@ public class GraphResume extends GraphStateSkill {
     private static final String FRESH = "fresh";
     private static final String RESUMED = "resume";
 
+    /**
+     * The record this run is entitled to. A for_each iteration adds its index, so it sees only the
+     * record its own iteration wrote; a changed index (an item inserted or removed ahead of it)
+     * simply misses and the run starts fresh, which is the declared behaviour.
+     */
+    private Map<String, Object> lookupKey(String cid, GraphInstance graphInstance) {
+        var index = getIterationIndex(graphInstance);
+        return index == null ? Map.of(CID, cid, GRAPH, graphInstance.graphId)
+                : Map.of(CID, cid, GRAPH, graphInstance.graphId, INDEX, index);
+    }
+
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
         var ctx = getContext(headers, instance, ROUTE);
@@ -76,7 +87,7 @@ public class GraphResume extends GraphStateSkill {
         var stateMachine = graphInstance.stateMachine;
         var timeout = getModelTtl(graphInstance);
         var request = new EventEnvelope().setTo(ctx.route()).setCorrelationId(util.getUuid())
-                .setHeader(TYPE, GET).setBody(Map.of(CID, cid, GRAPH, graphInstance.graphId));
+                .setHeader(TYPE, GET).setBody(lookupKey(cid, graphInstance));
         ctx.po().annotateTrace(TASK, ctx.route());
         ctx.po().annotateTrace(CID, cid);
         // issue the request on the worker thread so the outbound event carries this span

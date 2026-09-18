@@ -117,8 +117,14 @@ public class GraphExtension extends GraphLambdaFunction {
                 forward.setHeader(FLOW_ID, flowId);
                 forward.setBody(Map.of(BODY, parameters, HEADER, Map.of(), TTL, timeout));
             } else {
-                var dataset = Map.of(BODY, parameters, HEADER, Map.of(), TTL, timeout,
-                                    PATH_PARAMETER, Map.of(GRAPH_ID, extension));
+                // the iteration's position rides as a header, exactly as the business cid does:
+                // it must not go in BODY, which is the author's own input-mapping contract. The
+                // subgraph's suspend/resume key includes it, so N iterations of one subgraph no
+                // longer collide on one record. Only the for_each path sets it - a single
+                // delegation has no index and keeps its existing store key.
+                var dataset = Map.of(BODY, parameters,
+                                    HEADER, Map.of(ITERATION_INDEX_HEADER, String.valueOf(i)),
+                                    TTL, timeout, PATH_PARAMETER, Map.of(GRAPH_ID, extension));
                 forward.setHeader(FLOW_ID, GRAPH_EXECUTOR);
                 forward.setBody(dataset);
             }

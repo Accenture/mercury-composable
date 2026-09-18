@@ -50,6 +50,8 @@ public class RetrieveModel implements TypedLambdaFunction<Map<String, Object>, O
     private static final String GET = "get";
     private static final String CID = "cid";
     private static final String GRAPH = "graph";
+    // optional: scopes the record to one for_each iteration (absent for an ordinary invocation)
+    private static final String INDEX = "index";
 
     @Override
     public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
@@ -65,7 +67,9 @@ public class RetrieveModel implements TypedLambdaFunction<Map<String, Object>, O
         if (graphId == null) {
             throw new IllegalArgumentException("Missing graph");
         }
-        var data = RedisStateConnection.consume(RedisStateConnection.storeKey(graphId, cid));
+        // optional - present only when the caller is one iteration of a for_each fan-out
+        var index = input.get(INDEX) instanceof String value && !value.isBlank()? value : null;
+        var data = RedisStateConnection.consume(RedisStateConnection.storeKey(graphId, cid, index));
         if (data == null) {
             return new HashMap<String, Object>();
         }

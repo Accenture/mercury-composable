@@ -71,7 +71,25 @@ class RedisStateConnection {
      * @return the Redis key
      */
     static String storeKey(String graphId, String cid) {
-        return KEY_NAMESPACE + graphId + ":" + cid;
+        return storeKey(graphId, cid, null);
+    }
+
+    /**
+     * Compose the store key, optionally scoped to one {@code for_each} iteration:
+     * {@code graph:{graph_id}:{cid}} or {@code graph:{graph_id}:{cid}:{index}}.
+     * <p>
+     * The index is appended ONLY when the subgraph was invoked as one iteration of a parent's
+     * fan-out. Every other record keeps the two-segment key it has always had, so a single
+     * delegation is unaffected and records written before this feature stay reachable.
+     *
+     * @param graphId the graph that owns the record
+     * @param cid the business correlation ID
+     * @param index the for_each iteration index, or null when there is none
+     * @return the Redis key
+     */
+    static String storeKey(String graphId, String cid, String index) {
+        var key = KEY_NAMESPACE + graphId + ":" + cid;
+        return index == null || index.isBlank() ? key : key + ":" + index.trim();
     }
 
     static RedisCommands<String, byte[]> commands() {
