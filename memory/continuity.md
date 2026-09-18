@@ -372,7 +372,7 @@
   also makes the cache's `shutdown()` a used method, resolving the field Sonar "never used" finding without
   deleting it). Rust parity is a lockstep follow-up (internal lifecycle API, not a wire contract). Applies
   [[conv-reentrantlock-not-synchronized]]; used by [[redis-connection-foundation]].
-  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-16 | uses: 4 | tier: active | origin: 2026-09-15-011235 -->
+  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-16 | uses: 4 | tier: archive-candidate | origin: 2026-09-15-011235 -->
 
 - **MiniGraph async skill callbacks are guarded — a failure surfaces as the node's error, never a
   silent hang (2026-09-15; found building the distributed-cache example, PR #392).** A
@@ -573,7 +573,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-16 | uses: 5 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-16 | uses: 5 | tier: archive-candidate | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -587,7 +587,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-16 | uses: 10 | tier: active | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-16 | uses: 10 | tier: archive-candidate | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - **Declare a Memory Reference when a fact is CONSULTED to make a decision — not only when it is

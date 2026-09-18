@@ -1,17 +1,22 @@
-- [ ] **Upstream report: `[undeclared-reference]` check — agent-memory is reviewing (sent 2026-09-17).**
-  Report at `/tmp/agent-memory-undeclared-reference-check.md` (not committed — upstream correspondence).
-  Proposes a `memory-lint` finding over the STAGED index: a continuity fact whose **body text** changed
-  in a commit must be declared in a session log staged in the same commit. Grounded on two verified
-  facts from this repo — every closure-gate commit staged continuity.md and the log together, and
-  `refresh-metadata`'s diff is footer-only (so excluding `<!-- id: ... -->` lines removes the whole
-  false-positive class). Recommended advisory, not blocking.
-  **On their reply — do NOT just read the changelog.** When v4.40.1 shipped our last note, re-running
-  the original reproduction is what confirmed it ([[conv-declare-consulted-references]] is the
-  convention this backs up). If a version lands carrying this check, verify it fires on the motivating
-  case: edit a continuity fact's body, stage it with a session log that omits the id, and confirm the
-  warning — then confirm a `refresh-metadata`-shaped footer-only commit stays silent.
-  **Why it matters beyond tidiness:** the miss decays a fact in active use toward `[overdue]`, and the
-  archival ritual acts on that signal. Today's near-miss was two Blueprint gaps closed by Eric hours
-  earlier reading `sslu 137`; a sweep would have looked identical to the correct outcome.
+- [x] **Upstream `[undeclared-reference]` check — SHIPPED in agent-memory v4.41.0 and VERIFIED
+  2026-09-17.** Our report (2026-09-17) proposed intersecting a change's own diff with its own session
+  logs; v4.41.0 (`a45d7572`, #413) implements it and goes further — a `--range` mode for the CI floor
+  as well as `--staged` for pre-commit, `memory/vision.md` and open-threads as surfaces alongside
+  continuity, and a message that distinguishes "closes the fact" from "edits the fact". Advisory and
+  non-blocking, as recommended.
+  **Verified by reproduction, not by changelog** (the habit from the v4.40.1 round): fires on a
+  continuity/vision/open-thread body edit that no staged log declares; silent on a footer-only
+  refresh, on a commit with no log staged, on a declared edit, on condensing an already-closed record,
+  and on a deletion. Decisively, `--range` over the **actual historical commits** flags
+  `bp-ai-companion-llm-backend` at `903694f0` and `bp-graph-governance-lifecycle` at `41bac544` — the
+  exact two misses — while staying silent on `9e5b5577` and `90c8d9c4`, which were a closed-record
+  edit and a properly-declared one. No false positives on the incident that motivated it.
+  **Durable lesson, and it is about me:** my first verification harness reported four clean passes
+  that were all meaningless — every case edited a fact the log already declared, so nothing tested the
+  positive path; two later runs then mislabelled results through a loose `grep` and a `||` bound to
+  the wrong pipeline stage. Three harness faults, zero tool faults. **A verification harness needs its
+  own positive control: prove it can report failure before trusting it to report success**
+  ([[otel-optional-service-and-negative-control]] says the same about evidence; it applies to the
+  instrument too).
   origin: `memory/sessions/2026-09-17-183008.md`
   <!-- id: ot-undeclared-reference-check | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: working | origin: 2026-09-17-183008 -->
