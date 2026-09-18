@@ -42,6 +42,10 @@ import java.util.Map;
  *       resolved live per log line from the current {@link LogContext}; or</li>
  *   <li>a constant (a literal, or a {@code ${ENV:default}} substitution resolved once here at load).</li>
  * </ul>
+ * The {@code $utc} token is <b>enforced</b>: when a template does not resolve it under any key, one
+ * is inserted (see {@code enforceUtcTimestamp}), so every rendered context carries a
+ * machine-parseable UTC time even when the application's own template omitted it.
+ * <p>
  * Loading is via the standard {@link ConfigReader}, so environment-variable substitution and YAML
  * parsing behave like every other config file. Key order is not preserved and does not matter —
  * log aggregators reorder keys on display.
@@ -58,6 +62,11 @@ public class LogContextConfig {
     private static final String CONTEXT = "context";
     private static final String TOKEN_PREFIX = "$";
     private static final String ENV_PREFIX = "${";
+    private static final String UTC_TOKEN = "utc";
+    /** Preferred output key for the enforced UTC timestamp - the name the built-in default uses. */
+    private static final String UTC_KEY = "timestamp";
+    /** Fallback output key, used only when the application already spends "timestamp" on something else. */
+    private static final String UTC_KEY_FALLBACK = "utc";
 
     // Eager singleton (same pattern as Utility) - thread-safe via class initialization, which the JVM
     // defers until the class is first referenced (the first log line through a JSON appender).
@@ -98,6 +107,9 @@ public class LogContextConfig {
                     parseEntry(reader, String.valueOf(k));
                 }
                 on = !tokens.isEmpty() || !constants.isEmpty();
+                if (on) {
+                    enforceUtcTimestamp();
+                }
             } else {
                 log.warn("Log context config has no '{}' section - feature disabled", CONTEXT);
             }
@@ -144,6 +156,50 @@ public class LogContextConfig {
             // constant - env-resolved value or literal; an unset ${VAR} with no default resolves to null and is dropped
             constants.put(outputKey, value);
         }
+    }
+
+    /**
+     * Guarantee that every rendered context carries an unambiguous UTC timestamp.
+     * <p>
+     * The {@code $utc} token renders an ISO-8601 UTC string. The record's own top-level {@code time}
+     * field does not: it is a LOCAL timestamp with no zone or offset
+     * ({@code Utility.getLocalTimestamp}), so anything downstream that parses it must be told the
+     * timezone and shifts every line silently when told wrong. That matters for log-to-trace
+     * correlation, which backends resolve on trace id <b>and</b> a time window - a shifted line can be
+     * correctly correlated and still invisible on its trace.
+     * <p>
+     * {@code $utc} was previously optional, so a hand-written {@code app-log-context.yaml} that
+     * omitted it left the context with no machine-parseable time at all. It is now inserted when the
+     * template does not already resolve it. An application that maps {@code $utc} to its own key name
+     * keeps that name - only absence is corrected, never the operator's choice.
+     */
+    private void enforceUtcTimestamp() {
+        if (tokens.containsValue(UTC_TOKEN)) {
+            return;
+        }
+        String key = pickUtcKey();
+        if (key == null) {
+            // both candidate names are already spent on other values; inserting would clobber the
+            // application's own config, which is worse than the gap it would close
+            log.warn("Log context has no '${}' token and both '{}' and '{}' are already in use - " +
+                            "add '<your-key>: ${}' to app-log-context.yaml so log records carry an " +
+                            "unambiguous UTC time",
+                    UTC_TOKEN, UTC_KEY, UTC_KEY_FALLBACK, UTC_TOKEN);
+            return;
+        }
+        tokens.put(key, UTC_TOKEN);
+        log.info("Log context has no '${}' token - inserted '{}' so every record carries an " +
+                "unambiguous UTC time", UTC_TOKEN, key);
+    }
+
+    /** The first candidate output key not already spoken for, or null when both are taken. */
+    private String pickUtcKey() {
+        for (String candidate : new String[] {UTC_KEY, UTC_KEY_FALLBACK}) {
+            if (!tokens.containsKey(candidate) && !constants.containsKey(candidate)) {
+                return candidate;
+            }
+        }
+        return null;
     }
 
     public boolean isEnabled() {

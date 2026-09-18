@@ -321,10 +321,11 @@ context:
   spanId: $spanId
   parentSpanId: $parentSpanId
   service: $service
-  timestamp: $utc
   environment: '${ENV_NAME:dev}'
   hello: world
 ```
+
+Note what is **not** in that template: a timestamp. You do not configure one — see below.
 
 The **left side** is the output key (your choice). The **right side** is one of three forms:
 
@@ -337,6 +338,30 @@ The **left side** is the output key (your choice). The **right side** is one of 
 The reserved tokens are `$cid`, `$traceId`, `$tracePath`, `$spanId`, `$parentSpanId`, `$service` (the current
 function's route), and `$utc` (the log line's UTC timestamp). A token (or env value) that resolves to nothing is
 **omitted** from the block rather than printed as `null` — so a root span simply has no `parentSpanId` key.
+
+#### You do not configure the timestamp {#log-context-utc}
+
+**`$utc` is added for you.** If your template does not resolve it under any key, the framework inserts it as
+`timestamp`, so every context block carries an unambiguous UTC time whether or not you asked for one.
+
+That guarantee exists because the record's top-level `time` field is a **local** timestamp with no zone or
+offset. Anything that parses it downstream — a log collector, a forwarder — has to be *told* the timezone, and
+shifts every line silently when told wrong. Log-to-trace correlation is resolved on trace id **and** a time
+window, so a shifted line can be correctly correlated and still invisible on its trace. `$utc` removes the
+guesswork.
+
+You keep control of the name. Map `$utc` to any key you like and that name is used as-is:
+
+```yaml
+context:
+  traceId: $traceId
+  loggedAt: $utc     # your name, kept - nothing extra is added
+```
+
+Only *absence* is corrected, never your choice. If you have already spent `timestamp` on something of your
+own, the UTC time is placed under `utc` instead so your value is never overwritten; if both names are taken,
+the framework leaves your template alone and logs a warning telling you to add `$utc` under a key of your
+choosing.
 
 `$cid` is the **business correlation ID** — the value received from the external source or created at the
 edge, the same one `PostOffice.getMyCorrelationId()` returns. When the delivered event carries no business
@@ -394,6 +419,10 @@ A log line from a traced function then carries the resolved `context` (from the 
 The `traceId` and `spanId` here match the `v1.hello.exception` span the tracer emitted for the same request, so the
 log line and the span join up in your backend. (Key order within `context` is not significant — log viewers reorder
 keys on display.)
+
+`timestamp` appears even though the template above never asked for it — that is the
+[automatic UTC timestamp](#log-context-utc). Note it is the *context's* UTC time, distinct from the record's
+top-level `time`, which is local.
 
 ### Scope and boundaries {#log-context-scope}
 

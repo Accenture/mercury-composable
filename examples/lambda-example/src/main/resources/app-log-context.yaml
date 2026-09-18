@@ -8,6 +8,10 @@
 #
 # Reserved tokens: $cid $traceId $tracePath $spanId $parentSpanId $service $utc
 #
+# You do NOT need to configure a timestamp. When a template does not resolve $utc under any key,
+# the framework inserts it as 'timestamp' - so every context block carries an unambiguous UTC time.
+# Map $utc to your own key name if you want a different one; only absence is corrected.
+#
 context:
   cid: $cid
   traceId: $traceId
@@ -15,5 +19,4 @@ context:
   spanId: $spanId
   parentSpanId: $parentSpanId
   service: $service
-  timestamp: $utc
   environment: '${ENV_NAME:dev}'

@@ -156,4 +156,85 @@ class LogContextConfigTest extends TestBase {
         assertEquals("literal-value", out.get("fixed"));
         assertEquals("staging", out.get("environment"));
     }
+
+    // ------------------------------------------------------------------------------------------
+    // $utc is enforced - every rendered context carries a machine-parseable UTC time
+    // ------------------------------------------------------------------------------------------
+
+    @Test
+    void utcIsInsertedWhenTheTemplateOmitsIt() {
+        // The record's top-level "time" is LOCAL and zone-less, so a template without $utc left the
+        // context with no unambiguous time at all - and a downstream parser told the wrong timezone
+        // shifts every line silently.
+        Map<String, Object> section = new HashMap<>();
+        section.put("traceId", "$traceId");
+        section.put("spanId", "$spanId");
+        LogContextConfig config = configFrom(section);
+
+        TraceInfo trace = new TraceInfo("my.func", "t-1", "GET /x", null);
+        Map<String, Object> out = config.render(new LogContext(trace, "c"), 1_751_252_588_000L);
+
+        Object utc = out.get("timestamp");
+        assertNotNull(utc, "a template without $utc must still render an unambiguous UTC time");
+        assertTrue(String.valueOf(utc).endsWith("Z"),
+                "the enforced timestamp must be UTC-marked, not a local time: " + utc);
+    }
+
+    @Test
+    void anApplicationsOwnKeyNameForUtcIsKept() {
+        // only ABSENCE is corrected - never the operator's choice of output key
+        Map<String, Object> section = new HashMap<>();
+        section.put("traceId", "$traceId");
+        section.put("loggedAt", "$utc");
+        LogContextConfig config = configFrom(section);
+
+        TraceInfo trace = new TraceInfo("my.func", "t-1", "GET /x", null);
+        Map<String, Object> out = config.render(new LogContext(trace, "c"), 1_751_252_588_000L);
+
+        assertTrue(String.valueOf(out.get("loggedAt")).endsWith("Z"));
+        assertFalse(out.containsKey("timestamp"), "the application named the key; do not add a second one");
+    }
+
+    @Test
+    void utcFallsBackWhenTheApplicationSpendsTimestampOnSomethingElse() {
+        Map<String, Object> section = new HashMap<>();
+        section.put("traceId", "$traceId");
+        section.put("timestamp", "a business timestamp, not a log time");
+        LogContextConfig config = configFrom(section);
+
+        TraceInfo trace = new TraceInfo("my.func", "t-1", "GET /x", null);
+        Map<String, Object> out = config.render(new LogContext(trace, "c"), 1_751_252_588_000L);
+
+        assertEquals("a business timestamp, not a log time", out.get("timestamp"),
+                "the application's own value must survive");
+        assertTrue(String.valueOf(out.get("utc")).endsWith("Z"),
+                "the UTC time moves to the fallback key rather than clobbering: " + out);
+    }
+
+    @Test
+    void bothKeysTakenLeavesTheApplicationConfigAlone() {
+        // nothing to insert without overwriting the application's own values, which is worse than the
+        // gap it would close - the config logs a warning naming the fix instead
+        Map<String, Object> section = new HashMap<>();
+        section.put("timestamp", "mine");
+        section.put("utc", "also mine");
+        LogContextConfig config = configFrom(section);
+
+        TraceInfo trace = new TraceInfo("my.func", "t-1", "GET /x", null);
+        Map<String, Object> out = config.render(new LogContext(trace, "c"), 1_751_252_588_000L);
+
+        assertEquals("mine", out.get("timestamp"));
+        assertEquals("also mine", out.get("utc"));
+    }
+
+    @Test
+    void theBuiltInDefaultNeedsNoInsertion() {
+        // it already maps timestamp: $utc - enforcement must be a no-op, not a duplicate
+        LogContextConfig config = new LogContextConfig(new ConfigReader("classpath:/default-log-context.yaml"));
+        TraceInfo trace = new TraceInfo("my.func", "t-1", "GET /x", null);
+        Map<String, Object> out = config.render(new LogContext(trace, "c"), 1_751_252_588_000L);
+
+        assertTrue(String.valueOf(out.get("timestamp")).endsWith("Z"));
+        assertFalse(out.containsKey("utc"), "no fallback key should appear when the default already has one");
+    }
 }
