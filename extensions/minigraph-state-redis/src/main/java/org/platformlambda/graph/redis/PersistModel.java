@@ -31,11 +31,13 @@ import java.util.Map;
  * Redis implementation of the suspend/resume state-store PERSIST contract, invoked by
  * the 'graph.suspend' skill through the node's "task" property.
  * <p>
- * Contract: headers type=put; body {cid, graph, node, ttl, model, seen, run}. The record
- * is stored opaquely (MsgPack bytes) under the key 'graph:{graph_id}:{cid}' with the
- * requested time-to-live (Redis SETEX - expiry is native, no sweeper needed). The graph
- * ID scopes the record so the same business correlation ID may suspend independently in
- * each domain's graph and in each subgraph. A 2xx reply is the durability
+ * Contract: headers type=put; body {cid, graph, node, ttl, model, seen, run} plus an
+ * OPTIONAL 'index'. The record is stored opaquely (MsgPack bytes) under the key
+ * 'graph:{graph_id}:{cid}' - or 'graph:{graph_id}:{cid}:{index}' when an index is present -
+ * with the requested time-to-live (Redis SETEX - expiry is native, no sweeper needed). The
+ * graph ID scopes the record so the same business correlation ID may suspend independently in
+ * each domain's graph and in each subgraph; the index scopes it one level further, because
+ * every iteration of a for_each fan-out inherits the parent's correlation ID by design. A 2xx reply is the durability
  * acknowledgement the suspend skill requires before the graph completes.
  */
 @PreLoad(route = "v1.redis.persist.model", instances = 50,
