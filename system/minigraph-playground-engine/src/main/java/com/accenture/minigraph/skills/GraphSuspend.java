@@ -152,9 +152,15 @@ public class GraphSuspend extends GraphStateSkill {
         NON_PERSISTED_MODEL_KEYS.forEach(modelCopy::remove);
         var dataset = new HashMap<String, Object>();
         dataset.put(CID, cid);
-        // cid + graph form the retrieval key: the same business transaction may suspend
-        // independently in a parent graph and in each subgraph (self-contained per graph)
+        // cid + graph (+ the for_each index, when there is one) form the retrieval key: the same
+        // business transaction may suspend independently in a parent graph and in each subgraph
+        // (self-contained per graph), and independently per iteration of a fan-out
         dataset.put(GRAPH, graphInstance.graphId);
+        // present only for a for_each iteration - see GraphStateSkill.getIterationIndex
+        var index = getIterationIndex(graphInstance);
+        if (index != null) {
+            dataset.put(INDEX, index);
+        }
         dataset.put(NODE, from);
         dataset.put(TTL, ttlSeconds);
         dataset.put(MODEL, modelCopy);

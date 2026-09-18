@@ -47,6 +47,8 @@ public class PersistModel implements TypedLambdaFunction<Map<String, Object>, Ob
     private static final String PUT = "put";
     private static final String CID = "cid";
     private static final String GRAPH = "graph";
+    // optional: scopes the record to one for_each iteration (absent for an ordinary invocation)
+    private static final String INDEX = "index";
     private static final String TTL = "ttl";
 
     @Override
@@ -63,11 +65,13 @@ public class PersistModel implements TypedLambdaFunction<Map<String, Object>, Ob
         if (graphId == null) {
             throw new IllegalArgumentException("Missing graph");
         }
+        // optional - present only when the caller is one iteration of a for_each fan-out
+        var index = input.get(INDEX) instanceof String value && !value.isBlank()? value : null;
         var ttlSeconds = input.get(TTL) instanceof Number n? n.longValue() : 0;
         if (ttlSeconds < 1) {
             throw new IllegalArgumentException("Invalid ttl");
         }
-        RedisStateConnection.commands().setex(RedisStateConnection.storeKey(graphId, cid),
+        RedisStateConnection.commands().setex(RedisStateConnection.storeKey(graphId, cid, index),
                                                 ttlSeconds, msgPack.pack(input));
         log.info("Persisted workflow state for graph {}, cid {}, ttl={}s", graphId, cid, ttlSeconds);
         return Map.of("stored", true);

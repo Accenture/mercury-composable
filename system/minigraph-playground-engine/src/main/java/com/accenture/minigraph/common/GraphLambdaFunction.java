@@ -181,8 +181,22 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     // traveler) - the same nine names as the suspend/resume NON_PERSISTED_MODEL_KEYS and Event
     // Script's reserved model keys. A data mapping may read these but never write them; the
     // sanctioned deadline mechanism is the per-node 'ttl' parameter, not rewriting model.ttl.
+    /**
+     * Engine-managed model key naming a subgraph's position in a parent's {@code for_each} array.
+     * Present only for an iteration of a {@code graph.extension} fan-out; absent otherwise, which is
+     * what keeps a single delegation's store key unchanged.
+     * <p>
+     * It is reserved (so a data mapping may not write it) and non-persisted (so the CURRENT run
+     * supplies it, never a restored record) for the same reason {@code model.cid} is: it identifies
+     * this run, and a resumed run re-derives it by re-forking the same iteration.
+     */
+    public static final String ITERATION_INDEX = "iteration_index";
+    /** Carrier for {@link #ITERATION_INDEX} on a subgraph invocation - see GraphExtension. */
+    public static final String ITERATION_INDEX_HEADER = "x-iteration-index";
+
     protected static final Set<String> RESERVED_MODEL_METADATA =
-            Set.of("cid", "instance", "flow", "ttl", "trace", "parent", "root", "none", "run");
+            Set.of("cid", "instance", "flow", "ttl", "trace", "parent", "root", "none", "run",
+                    ITERATION_INDEX);
     private static final AtomicLong loopInterval = new AtomicLong(-1);
     private static final AtomicLong highFrequency = new AtomicLong(-1);
 

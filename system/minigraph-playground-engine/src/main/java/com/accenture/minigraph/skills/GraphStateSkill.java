@@ -45,6 +45,23 @@ abstract class GraphStateSkill extends GraphLambdaFunction {
     // Same nine names as the runtime-immutability guard - one canonical set in the base class.
     protected static final Set<String> NON_PERSISTED_MODEL_KEYS = RESERVED_MODEL_METADATA;
 
+    /** Store-contract field naming the for_each iteration; absent for an ordinary invocation. */
+    protected static final String INDEX = "index";
+
+    /**
+     * This run's {@code for_each} iteration index, or null when the graph was not invoked as one
+     * iteration of a parent's fan-out.
+     * <p>
+     * It scopes the store record so N concurrent iterations of one subgraph, which all share the
+     * parent's business correlation ID by design, stop colliding on a single key. A resumed run
+     * re-derives the same index because the parent re-forks the same iteration - which only holds
+     * while the array is positionally consistent, a DECLARED constraint the engine cannot check.
+     */
+    protected String getIterationIndex(GraphInstance graphInstance) {
+        return graphInstance.stateMachine.getElement(MODEL_NAMESPACE + ITERATION_INDEX)
+                instanceof String value && !value.isBlank() ? value.trim() : null;
+    }
+
     protected record SkillContext(PostOffice po, GraphInstance graphInstance, SimpleNode node, String route) {}
 
     protected SkillContext getContext(Map<String, String> headers, int instance, String skillRoute) {

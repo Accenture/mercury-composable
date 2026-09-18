@@ -27,7 +27,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Claims-fixture pin for claim id {@code reserved-model-keys-nine}: the engine-managed,
+ * Claims-fixture pin for claim id {@code reserved-model-keys}: the engine-managed,
  * runtime-immutable model-metadata key set has EXACTLY nine names - cid, instance, flow,
  * ttl, trace, parent, root, none, run (GraphLambdaFunction.RESERVED_MODEL_METADATA, the
  * same nine as the suspend/resume NON_PERSISTED_MODEL_KEYS and Event Script's reserved
@@ -51,12 +51,15 @@ class ClaimReservedModelKeysTest {
     private final Probe probe = new Probe();
 
     @Test
-    void reservedModelMetadataIsExactlyTheDocumentedNineNames() {
-        var documented = Set.of("cid", "instance", "flow", "ttl", "trace", "parent", "root", "none", "run");
+    void reservedModelMetadataIsExactlyTheDocumentedTenNames() {
+        var documented = Set.of("cid", "instance", "flow", "ttl", "trace", "parent", "root", "none", "run",
+                // added for subgraph suspend/resume under for_each: engine-managed like the rest,
+                // so a data mapping may not write it and it is never persisted into a record
+                "iteration_index");
         assertEquals(GraphLambdaFunction.RESERVED_MODEL_METADATA, documented,
-                "the reserved model-metadata key set must stay exactly the nine documented names - "
+                "the reserved model-metadata key set must stay exactly the ten documented names - "
                         + "adding or removing one changes the documented contract "
-                        + "(claims-registry: reserved-model-keys-nine)");
+                        + "(claims-registry: reserved-model-keys)");
     }
 
     @Test

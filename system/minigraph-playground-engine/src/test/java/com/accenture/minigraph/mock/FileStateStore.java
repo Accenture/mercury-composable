@@ -38,8 +38,9 @@ import java.util.Map;
  * {cid, graph} returns the persisted map or an empty map when absent-or-expired, and
  * CONSUMES the record on read (delete-on-read - the file analog of Redis GETDEL, so a
  * duplicate resume cannot double-execute the continuation). Like the Redis reference
- * implementation, the record is scoped by graph + cid so the same business transaction
- * may suspend independently in a parent graph and in each subgraph.
+ * implementation, the record is scoped by graph + cid - plus the optional for_each iteration
+ * index - so the same business transaction may suspend independently in a parent graph, in each
+ * subgraph, and in each iteration of a subgraph fan-out.
  */
 @PreLoad(route = "v1.file.state.store", instances = 10)
 public class FileStateStore implements TypedLambdaFunction<Map<String, Object>, Object> {
@@ -50,6 +51,9 @@ public class FileStateStore implements TypedLambdaFunction<Map<String, Object>, 
     private static final String GET = "get";
     private static final String CID = "cid";
     private static final String GRAPH = "graph";
+    // optional: scopes the record to one for_each iteration, so N concurrent iterations of one
+    // subgraph - which share the parent's business cid by design - do not collide on one record
+    private static final String INDEX = "index";
     private static final String TTL = "ttl";
     private static final String DATA = "data";
     private static final String EXPIRES_AT = "expires_at";
@@ -68,7 +72,9 @@ public class FileStateStore implements TypedLambdaFunction<Map<String, Object>, 
             throw new IllegalArgumentException("Missing graph");
         }
         var cid = String.valueOf(input.get(CID));
-        var file = new File(dir, safeFileName(graphId + ":" + cid));
+        var index = input.get(INDEX) instanceof String value && !value.isBlank()? value.trim() : null;
+        var key = index == null? graphId + ":" + cid : graphId + ":" + cid + ":" + index;
+        var file = new File(dir, safeFileName(key));
         if (PUT.equals(type)) {
             var ttlSeconds = input.get(TTL) instanceof Number n? n.longValue() : 30;
             var wrapper = new HashMap<String, Object>();

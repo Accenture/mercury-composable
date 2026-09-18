@@ -62,16 +62,26 @@ class RedisStateConnection {
     private RedisStateConnection() {}
 
     /**
-     * Compose the store key: 'graph:{graph_id}:{cid}'. The graph ID scopes the record,
-     * so the same business correlation ID may suspend independently in each domain's
-     * graph and in each subgraph - and a resume only ever sees its own graph's record.
+     * Compose the store key: {@code graph:{graph_id}:{cid}}, or
+     * {@code graph:{graph_id}:{cid}:{index}} for one iteration of a {@code for_each} fan-out.
+     * <p>
+     * The graph ID scopes the record, so the same business correlation ID may suspend
+     * independently in each domain's graph and in each subgraph - a resume only ever sees its own
+     * graph's record. The index scopes it one level further, because every iteration of a fan-out
+     * inherits the parent's correlation ID by design and would otherwise share one record.
+     * <p>
+     * The index is appended ONLY when there is one. Every other record keeps the two-segment key it
+     * has always had, so a single delegation is unaffected and records written before this feature
+     * stay reachable.
      *
-     * @param graphId the graph that suspended
+     * @param graphId the graph that owns the record
      * @param cid the business correlation ID
+     * @param index the for_each iteration index, or null when there is none
      * @return the Redis key
      */
-    static String storeKey(String graphId, String cid) {
-        return KEY_NAMESPACE + graphId + ":" + cid;
+    static String storeKey(String graphId, String cid, String index) {
+        var key = KEY_NAMESPACE + graphId + ":" + cid;
+        return index == null || index.isBlank() ? key : key + ":" + index.trim();
     }
 
     static RedisCommands<String, byte[]> commands() {

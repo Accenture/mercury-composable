@@ -34,6 +34,7 @@ import org.platformlambda.core.models.SimpleNode;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
+import org.platformlambda.core.util.MultiLevelMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,6 +122,27 @@ public class GraphExecutor extends GraphLambdaFunction {
         return graphInstance;
     }
 
+    /**
+     * Promote a {@code for_each} iteration index from the invocation headers into the reserved
+     * {@code model.iteration_index}.
+     * <p>
+     * It arrives in the header map because that is the only channel a parent graph controls that
+     * reaches here without touching the application-owned {@code graph-executor} flow file - adding
+     * a mapping there would silently do nothing for every already-deployed application. Promoting
+     * it to the model gives the suspend/resume skills one place to read, alongside {@code model.cid}.
+     * <p>
+     * Absent for an ordinary invocation, which is exactly what keeps a single delegation's store key
+     * unchanged and pre-upgrade records reachable.
+     */
+    private void liftIterationIndex(MultiLevelMap stateMachine, Map<String, Object> inputCopy) {
+        if (inputCopy.get(HEADER) instanceof Map<?, ?> headers) {
+            var index = headers.get(ITERATION_INDEX_HEADER);
+            if (index != null && !String.valueOf(index).isBlank()) {
+                stateMachine.setElement(MODEL_NAMESPACE + ITERATION_INDEX, String.valueOf(index).trim());
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private void beginTraversal(PostOffice po, FlowInstance flowInstance, GraphInstance graphInstance, String parentSpanId) {
         var stateMachine = graphInstance.stateMachine;
@@ -130,6 +152,7 @@ public class GraphExecutor extends GraphLambdaFunction {
         var modelCopy = util.deepCopy((Map<String, Object>) flowInstance.dataset.get(MODEL));
         stateMachine.setElement(INPUT, inputCopy);
         stateMachine.setElement(MODEL, modelCopy);
+        liftIterationIndex(stateMachine, inputCopy);
         // map node properties to state machine
         initializeWithNodeProperties(graphInstance);
         // a compiled model is guaranteed to have root and end nodes (the CompileGraph

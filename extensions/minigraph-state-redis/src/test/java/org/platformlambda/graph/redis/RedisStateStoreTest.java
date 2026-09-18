@@ -106,6 +106,75 @@ class RedisStateStoreTest extends RedisStateTestBase {
 
     @SuppressWarnings("unchecked")
     @Test
+    void sameCorrelationIdIsIsolatedPerForEachIteration() throws TimeoutException {
+        // THE defect this feature exists for: a parent fans out to N copies of ONE subgraph with
+        // for_each, and every copy inherits the parent's business correlation ID by design - so
+        // without the iteration segment they all write graph:{id}:{cid} and only the last survives,
+        // concurrently, at random. Same graph, same cid, different iteration.
+        var cid = Utility.getInstance().getUuid();
+        var phone = sampleEnvelope(cid, 30);
+        phone.put("index", "0");
+        phone.put("node", "await-phone-approval");
+        var laptop = sampleEnvelope(cid, 30);
+        laptop.put("index", "1");
+        laptop.put("node", "await-laptop-approval");
+        assertEquals(200, request(PERSIST, "put", phone).getStatus());
+        assertEquals(200, request(PERSIST, "put", laptop).getStatus());
+        // two records, not one - the pre-fix behaviour left exactly one
+        assertNotNull(testConnection.sync().get("graph:" + GRAPH_ID + ":" + cid + ":0"));
+        assertNotNull(testConnection.sync().get("graph:" + GRAPH_ID + ":" + cid + ":1"));
+        // and each iteration resumes its OWN workflow, not its neighbour's
+        var restoredPhone = request(RETRIEVE, "get", Map.of("cid", cid, "graph", GRAPH_ID, "index", "0"));
+        assertEquals("await-phone-approval",
+                new MultiLevelMap((Map<String, Object>) restoredPhone.getBody()).getElement("node"));
+        var restoredLaptop = request(RETRIEVE, "get", Map.of("cid", cid, "graph", GRAPH_ID, "index", "1"));
+        assertEquals("await-laptop-approval",
+                new MultiLevelMap((Map<String, Object>) restoredLaptop.getBody()).getElement("node"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void anIndexedRecordDoesNotDisturbTheUnindexedKey() throws TimeoutException {
+        // backward compatibility: a single delegation writes the two-segment key it always has,
+        // and an indexed sibling neither overwrites nor shadows it
+        var cid = Utility.getInstance().getUuid();
+        var plain = sampleEnvelope(cid, 30);
+        plain.put("node", "single-delegation");
+        var indexed = sampleEnvelope(cid, 30);
+        indexed.put("index", "0");
+        indexed.put("node", "iteration-zero");
+        assertEquals(200, request(PERSIST, "put", plain).getStatus());
+        assertEquals(200, request(PERSIST, "put", indexed).getStatus());
+        assertNotNull(testConnection.sync().get("graph:" + GRAPH_ID + ":" + cid), "the two-segment key stands");
+        // a lookup WITHOUT an index must not find the indexed record, and vice versa
+        var restoredPlain = request(RETRIEVE, "get", Map.of("cid", cid, "graph", GRAPH_ID));
+        assertEquals("single-delegation",
+                new MultiLevelMap((Map<String, Object>) restoredPlain.getBody()).getElement("node"));
+        var restoredIndexed = request(RETRIEVE, "get", Map.of("cid", cid, "graph", GRAPH_ID, "index", "0"));
+        assertEquals("iteration-zero",
+                new MultiLevelMap((Map<String, Object>) restoredIndexed.getBody()).getElement("node"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void aChangedIterationCountMissesRatherThanRestoringTheWrongItem() throws TimeoutException {
+        // the declared constraint's failure mode, pinned: an item inserted or removed shifts
+        // positions, and the shifted iteration simply finds nothing and starts fresh. A miss is
+        // already defined behaviour (model.run=fresh) - what must never happen is a silent hit
+        // on another item's record.
+        var cid = Utility.getInstance().getUuid();
+        var suspended = sampleEnvelope(cid, 30);
+        suspended.put("index", "1");
+        suspended.put("node", "await-approval");
+        assertEquals(200, request(PERSIST, "put", suspended).getStatus());
+        var shifted = request(RETRIEVE, "get", Map.of("cid", cid, "graph", GRAPH_ID, "index", "2"));
+        assertEquals(200, shifted.getStatus());
+        assertTrue(((Map<String, Object>) shifted.getBody()).isEmpty(),
+                "a shifted position must MISS, never restore another item's state");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void transactionalConsumeGivesTheSameContractOnPre62Servers() throws TimeoutException {
         // enterprise Redis versions are outside our control (managed AWS/Azure/GCP servers; the
         // redis-standalone Windows binary is 5.0.14): the pre-6.2 strategy replaces GETDEL with a
