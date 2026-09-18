@@ -1,8 +1,8 @@
 - [ ] **Subgraph suspend/resume under `for_each` — spec RULED, implementation pending.** A parent
   invoking a suspending subgraph via `graph.extension` + `for_each` writes ONE store record for all
   iterations (business-cid + graphId), so concurrent iterations race and only one survives. Spec:
-  `draft-design-specs/subgraph-suspend-resume-for-each.md` (branch `docs/subgraph-for-each-suspend-spec`,
-  `b2cc6d1b`) — shape and Q1–Q5 all ruled by Eric 2026-09-18.
+  `draft-design-specs/subgraph-suspend-resume-for-each.md` — on main via PR #415, squash `6f324943`;
+  shape and Q1–Q5 all ruled by Eric 2026-09-18.
   **To build:** array INDEX as a key segment, carried as a header like the business cid, landing in a
   reserved `model.iteration_index` that joins `RESERVED_MODEL_METADATA`; store key becomes
   `graph:{graph_id}:{cid}:{index}`; keys without an index are unchanged, so pre-upgrade records stay
