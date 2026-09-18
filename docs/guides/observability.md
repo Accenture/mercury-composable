@@ -278,6 +278,10 @@ Each span carries the route name (`route`), `path`, `from`, `origin`, `status`, 
 values as span attributes, with `service.name` on the resource. See the full key reference in the
 [Configuration Reference](configuration-reference.md#observability).
 
+> **The forwarder exports traces, not logs** — deliberately. Application logs reach your backend through
+> your platform's log forwarder, not through the engine; see
+> [Getting these logs to your backend](#log-shipping).
+
 ### A custom forwarder {#custom-forwarder}
 
 To target a system without an OTLP path, implement your own function at `distributed.trace.forwarder` and consume
@@ -289,7 +293,7 @@ proprietary APM API.
 Spans tell you the causal path; **application logs** tell you what happened inside each step. The log-context
 feature closes the gap between them: it injects a `context` block — correlation id, trace/span ids, service name,
 and any business key-values you add — into every structured log line a traced function emits. With the same
-`traceId`/`spanId` on both the span and the log line, you can pivot from a Dynatrace/Splunk trace straight to the
+`trace_id`/`span_id` on both the span and the log line, you can pivot from a Dynatrace/Splunk trace straight to the
 exact log entries that belong to it.
 
 It deliberately **avoids the ThreadLocal / Log4j MDC** pattern (heavy for a virtual-thread runtime). The context
@@ -444,6 +448,41 @@ top-level `time`, which is local.
   logs emitted from a `Mono`/`Flux` completion that runs **after** the worker returns (on a different thread) carry
   no context — the same boundary distributed tracing has.
 - Feature **off** (`app.log.context=false`) costs one boolean check per log line and nothing else.
+
+### Getting these logs to your backend {#log-shipping}
+
+**Mercury does not ship logs.** The OpenTelemetry forwarder exports *traces*; it has no log counterpart,
+and that is a deliberate boundary rather than a missing feature.
+
+Application logs reach your backend the way every other container's logs do — your platform's forwarder or
+collector reads stdout and ships it. That is **infrastructure configuration, not application
+responsibility**, and it is the same pattern whichever backend you use: a Splunk forwarder to Splunk, an
+OpenTelemetry Collector to an OTLP `/v1/logs` endpoint. Putting an HTTP exporter inside the application
+would instead place a network call in the path of every `log.info`, with its own credentials, retries and
+back-pressure, for no benefit the platform does not already provide.
+
+**What the engine does is the part that makes correlation work**, and it is already done:
+
+| | |
+|---|---|
+| Structured output | `log.format=json` or `compact` |
+| Trace correlation | `context.trace_id` / `context.span_id`, identical to the values on the exported span |
+| Shared vocabulary | snake_case, matching the distributed-trace block, so one mapping covers both |
+| Unambiguous time | `context.timestamp`, always present and always UTC |
+
+Two details worth knowing when you configure the collector:
+
+- **Promote the ids.** For "view the logs for this trace" to work in an OTLP backend, the collector must map
+  `context.trace_id` and `context.span_id` onto the log record's own trace and span fields. Left as ordinary
+  attributes they are searchable but not linked.
+- **Parse `context.timestamp`, not `time`.** The record's top-level `time` is a **local** timestamp with no
+  zone or offset; anything parsing it must be told the timezone and shifts silently when told wrong. Backends
+  correlate on trace id *and* a time window, so a shifted line can be correctly correlated and still invisible
+  on its trace. `context.timestamp` is UTC and needs no assumption.
+
+Lines emitted outside a traced worker — framework start-up, a `Mono`/`Flux` completion after the worker
+returns — carry no `context` block and therefore no trace id. They still ship; they simply are not linked to a
+trace. A collector configuration must not drop a record that has no `context`.
 
 ## See also {#see-also}
 
