@@ -289,6 +289,30 @@
   Splunk's header form is parsed and documented but NOT run live.
   <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-17 | uses: 4 | tier: active | origin: 2026-09-16-193203 -->
 
+- **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
+  over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
+  produces a hard case, the first question is whether the engine should absorb it at all. Chasing
+  edge cases into the engine has no natural stopping point, and every guard added becomes a shape the
+  engine must keep working forever. The answer is a model kept simple enough that the question does
+  not arise — exercised in the **design phase** and at the **certification gate**, not at runtime.
+  This is a standing design posture, not a MiniGraph fact: it decided four rulings in one sitting
+  (defer the parent→for_each→flow→suspending-graph case; reject an author-nominated iteration
+  discriminator; reject an index+size store key; decline CompileGraph detection of the risky shape).
+  **Corollary for documentation — constraints are DECLARED, not enforced.** A partial gate is worse
+  than none: it teaches that *unflagged means safe*, which is learned once and applied everywhere,
+  and no gate can see every shape (CompileGraph cannot see through `flow://`). So limits belong in
+  the guide's Design-rules voice, covering the whole surface. The field "designs graphs with a lot of
+  imagination", so an undeclared limit is discovered by losing a suspension.
+  **Method note from the same sitting, worth more than the outcome:** the rejected index+size key
+  *failed safe* — a changed array size missed rather than restoring wrong state — and was still
+  wrong, because the operation it made fail (appending a product to a warranty list) is the ordinary
+  thing a user does, while the hazard it never caught (reordering) is the one that corrupts. **A
+  guard that fails safe is still wrong if the thing it makes fail is the common legitimate case**;
+  reason from what the user does, not from what the engine can detect. Serves
+  [[vision-mercury-composable]] (the certification half of the governance lifecycle); applied by
+  [[ot-subgraph-for-each-suspend]].
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: working | origin: 2026-09-18-174943 -->
+
 - **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
   `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
   `RedisBackend` (StandaloneRedisBackend / ClusterRedisBackend, built by `RedisBackendFactory`)
