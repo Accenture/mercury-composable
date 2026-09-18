@@ -723,7 +723,11 @@
   *post*-decision stage and stays in `ADR.md`, marked in place, never deleted.
   Adopted in the same sitting that accepted the five ADRs left at `Proposed` (0013–0017), which is
   what exposed the gap: a status that means "not yet decided" had accumulated for a month across
-  decisions that had in fact all shipped. Relates [[eric-code-changes-via-pr]] (the sibling rule for
+  decisions that had in fact all shipped. **Raised upstream 2026-09-18** (Eric's direction — keep the
+  engine and the tool consistent) as a guidance-only change, with replacement wording for both
+  clauses and the note that the sharper case is the one we did NOT hit: a *withdrawn* proposal has no
+  correct status in an ADR ledger — `Superseded` implies a successor, `Deprecated` implies it was
+  once in force, and both are false. Relates [[eric-code-changes-via-pr]] (the sibling rule for
   how a change reaches main).
   <!-- id: conv-proposals-not-in-adr-ledger | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: core | origin: 2026-09-18-221732 -->
 
