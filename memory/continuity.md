@@ -710,6 +710,23 @@
   a reference. Surfaced by the 2026-09-04 smoke test; the two facts it endangered are now `core`.
   <!-- id: conv-declare-consulted-references | created: 2026-09-04 | last_used: 2026-09-04 | uses: 1 | tier: core -->
 
+- **A proposal is not a decision: raise it in `docs/arch-decisions/proposed.md` as `P-NNNN`, never
+  as a `Proposed` ADR (Eric, 2026-09-18).** The ADR ledger is an **immutable journey of decisions**,
+  so an entry is written when a decision is *accepted* — never before. A proposal may be reshaped,
+  merged or withdrawn, and a withdrawn proposal is a non-decision that would otherwise sit in the
+  ledger forever looking like one. `P-NNNN` and `ADR-NNNN` are separate sequences: a proposal does
+  not reserve an ADR number, because proposals and decisions do not map one-to-one.
+  **This OVERRIDES the agent-memory protocol's wording**, which says to "propose a newer ADR … and
+  wait for human approval" (`memory/PROTOCOL.md`) — that file is tool-managed and ships from the
+  template, so it is not edited; this fact is the local rule, and the rule is also stated in the ADR
+  ledger's own header and in `proposed.md`. Superseded/Deprecated handling is unchanged — that is the
+  *post*-decision stage and stays in `ADR.md`, marked in place, never deleted.
+  Adopted in the same sitting that accepted the five ADRs left at `Proposed` (0013–0017), which is
+  what exposed the gap: a status that means "not yet decided" had accumulated for a month across
+  decisions that had in fact all shipped. Relates [[eric-code-changes-via-pr]] (the sibling rule for
+  how a change reaches main).
+  <!-- id: conv-proposals-not-in-adr-ledger | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: core | origin: 2026-09-18-221732 -->
+
 - **Use `ReentrantLock`, not `synchronized`, for locks/critical sections while the build targets Java 21
   (Eric's directive, 2026-09-14).** On Java 21 a virtual thread that blocks inside a `synchronized` block
   PINS its carrier thread; JEP 491 lifts that only in JDK 24+, and the toolchain intentionally stays on 21

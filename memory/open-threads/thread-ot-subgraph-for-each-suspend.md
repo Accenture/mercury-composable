@@ -18,12 +18,10 @@
   decided then.
   **REMAINING:** (1) **Rust lockstep** — the store key is an explicit cross-engine contract
   ([[conv-ports-adopt-java-release-number]]); recorded reading is Java leads, twin immediately after.
-  (2) **An amending ADR is owed and NOT yet raised (needs Eric).** ADR-0013 is the decision this
-  feature amends: it set `graph:{graph_id}:{cid}` AND mandated that `graph.extension` stamp the
-  parent's `model.cid` on delegated calls "both branches (single and `for_each`)" — that inheritance
-  is precisely what makes iterations collide. Its core stands (scope by graph + cid); the key gains a
-  third segment, so this is an **amendment**, not a supersession. Next free number is ADR-0025;
-  ADR-0013 is still `Status: Proposed`.
+  (2) ~~amending ADR~~ **DONE 2026-09-18** — Eric accepted ADR-0013 with the `for_each` index folded
+  in **directly**, rather than superseding it, because it had never left `Status: Proposed`. Its
+  rationale now records why the amendment belongs to that decision and not a separate one: the cid
+  inheritance ADR-0013 mandated is exactly what makes the iterations collide.
   **Deliberately NOT built:** parent→for_each→flow→suspending graph, nested `for_each` with
   suspension, CompileGraph detection — see [[clean-knowledge-design-over-engine-coverage]].
   → serves: vision-mercury-composable
