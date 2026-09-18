@@ -45,12 +45,14 @@ class LogContextConfigTest extends TestBase {
         TraceInfo trace = new TraceInfo("my.func", "trace-1", "GET /api/x", "parent-span-1");
         Map<String, Object> out = config.render(new LogContext(trace, "cid-9"), 1_751_252_588_000L);
         assertEquals("cid-9", out.get("cid"));
-        assertEquals("trace-1", out.get("traceId"));
-        assertEquals("GET /api/x", out.get("tracePath"));
-        assertEquals(trace.spanId, out.get("spanId"));
-        assertEquals("parent-span-1", out.get("parentSpanId"));
+        // snake_case, matching the distributed-trace block (span_id / parent_span_id / exec_time)
+        assertEquals("trace-1", out.get("trace_id"));
+        assertEquals("GET /api/x", out.get("trace_path"));
+        assertEquals(trace.spanId, out.get("span_id"));
+        assertEquals("parent-span-1", out.get("parent_span_id"));
         assertEquals("my.func", out.get("service"));
         assertNotNull(out.get("timestamp"));
+        assertFalse(out.containsKey("traceId"), "the camelCase keys are gone, not duplicated");
     }
 
     @Test
@@ -155,5 +157,107 @@ class LogContextConfigTest extends TestBase {
                 System.currentTimeMillis());
         assertEquals("literal-value", out.get("fixed"));
         assertEquals("staging", out.get("environment"));
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // $utc is enforced - every rendered context carries a machine-parseable UTC time
+    // ------------------------------------------------------------------------------------------
+
+    @Test
+    void utcIsInsertedWhenTheTemplateOmitsIt() {
+        // The record's top-level "time" is LOCAL and zone-less, so a template without $utc left the
+        // context with no unambiguous time at all - and a downstream parser told the wrong timezone
+        // shifts every line silently.
+        Map<String, Object> section = new HashMap<>();
+        section.put("traceId", "$traceId");
+        section.put("spanId", "$spanId");
+        LogContextConfig config = configFrom(section);
+
+        TraceInfo trace = new TraceInfo("my.func", "t-1", "GET /x", null);
+        Map<String, Object> out = config.render(new LogContext(trace, "c"), 1_751_252_588_000L);
+
+        Object utc = out.get("timestamp");
+        assertNotNull(utc, "a template without $utc must still render an unambiguous UTC time");
+        assertTrue(String.valueOf(utc).endsWith("Z"),
+                "the enforced timestamp must be UTC-marked, not a local time: " + utc);
+    }
+
+    @Test
+    void anApplicationsOwnKeyNameForUtcIsKept() {
+        // only ABSENCE is corrected - never the operator's choice of output key
+        Map<String, Object> section = new HashMap<>();
+        section.put("traceId", "$traceId");
+        section.put("loggedAt", "$utc");
+        LogContextConfig config = configFrom(section);
+
+        TraceInfo trace = new TraceInfo("my.func", "t-1", "GET /x", null);
+        Map<String, Object> out = config.render(new LogContext(trace, "c"), 1_751_252_588_000L);
+
+        assertTrue(String.valueOf(out.get("loggedAt")).endsWith("Z"));
+        assertFalse(out.containsKey("timestamp"), "the application named the key; do not add a second one");
+    }
+
+    @Test
+    void utcFallsBackWhenTheApplicationSpendsTimestampOnSomethingElse() {
+        Map<String, Object> section = new HashMap<>();
+        section.put("traceId", "$traceId");
+        section.put("timestamp", "a business timestamp, not a log time");
+        LogContextConfig config = configFrom(section);
+
+        TraceInfo trace = new TraceInfo("my.func", "t-1", "GET /x", null);
+        Map<String, Object> out = config.render(new LogContext(trace, "c"), 1_751_252_588_000L);
+
+        assertEquals("a business timestamp, not a log time", out.get("timestamp"),
+                "the application's own value must survive");
+        assertTrue(String.valueOf(out.get("utc")).endsWith("Z"),
+                "the UTC time moves to the fallback key rather than clobbering: " + out);
+    }
+
+    @Test
+    void bothKeysTakenLeavesTheApplicationConfigAlone() {
+        // nothing to insert without overwriting the application's own values, which is worse than the
+        // gap it would close - the config logs a warning naming the fix instead
+        Map<String, Object> section = new HashMap<>();
+        section.put("timestamp", "mine");
+        section.put("utc", "also mine");
+        LogContextConfig config = configFrom(section);
+
+        TraceInfo trace = new TraceInfo("my.func", "t-1", "GET /x", null);
+        Map<String, Object> out = config.render(new LogContext(trace, "c"), 1_751_252_588_000L);
+
+        assertEquals("mine", out.get("timestamp"));
+        assertEquals("also mine", out.get("utc"));
+    }
+
+    @Test
+    void theBuiltInDefaultNeedsNoInsertion() {
+        // it already maps timestamp: $utc - enforcement must be a no-op, not a duplicate
+        LogContextConfig config = new LogContextConfig(new ConfigReader("classpath:/default-log-context.yaml"));
+        TraceInfo trace = new TraceInfo("my.func", "t-1", "GET /x", null);
+        Map<String, Object> out = config.render(new LogContext(trace, "c"), 1_751_252_588_000L);
+
+        assertTrue(String.valueOf(out.get("timestamp")).endsWith("Z"));
+        assertFalse(out.containsKey("utc"), "no fallback key should appear when the default already has one");
+    }
+
+    @Test
+    void aDeveloperKeyCannotShadowATemplateKey() {
+        // updateContext() rejects the reserved TOKEN names (traceId, spanId, ...), which only covered
+        // the output keys while the two happened to be spelled the same. The built-in template now
+        // emits trace_id, so that guard alone would let updateContext("trace_id", ...) overwrite the
+        // real trace id. Render ordering is what actually protects it - for any naming scheme.
+        Map<String, Object> section = new HashMap<>();
+        section.put("trace_id", "$traceId");
+        section.put("environment", "prod");
+        LogContextConfig config = configFrom(section);
+
+        TraceInfo trace = new TraceInfo("my.func", "the-real-trace", "GET /x", null);
+        LogContext ctx = new LogContext(trace, "c");
+        ctx.put("trace_id", "spoofed");        // not a reserved TOKEN name, so the API guard allows it
+        ctx.put("environment", "spoofed");
+        Map<String, Object> out = config.render(ctx, 1_751_252_588_000L);
+
+        assertEquals("the-real-trace", out.get("trace_id"), "a custom key must not shadow the trace context");
+        assertEquals("prod", out.get("environment"), "nor an operator's constant");
     }
 }

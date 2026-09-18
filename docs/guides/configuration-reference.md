@@ -531,7 +531,9 @@ Turns the [application log context](observability.md#log-context) on or off. Whe
 structured JSON appenders (`log.format=json` or `compact`) stamp a `context` block — correlation id,
 trace/span ids, service name — into every log line a traced function emits, using the built-in
 `default-log-context.yaml` template. Provide your own `app-log-context.yaml` on the classpath to replace
-the template, or set this key to `false` to opt out.
+the template, or set this key to `false` to opt out. A UTC timestamp is
+[added automatically](observability.md#log-context-utc) whether or not your template asks for one — you do
+not configure it.
 
 ### `log.format`
 

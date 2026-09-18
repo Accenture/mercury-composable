@@ -299,7 +299,7 @@ function returns.
 ### On by default {#log-context-enable}
 
 The feature is **on by default**: platform-core ships a built-in `default-log-context.yaml` that emits the
-standard trace context (`cid`, `traceId`, `tracePath`, `spanId`, `parentSpanId`, `service`, `timestamp`) on
+standard trace context (`cid`, `trace_id`, `trace_path`, `span_id`, `parent_span_id`, `service`, `timestamp`) on
 every structured log line. You can adjust it in two ways:
 
 - **Customize** — provide your own `app-log-context.yaml` on the classpath (`src/main/resources/`); it
@@ -316,15 +316,21 @@ A custom template looks like this:
 # src/main/resources/app-log-context.yaml
 context:
   cid: $cid
-  traceId: $traceId
-  tracePath: $tracePath
-  spanId: $spanId
-  parentSpanId: $parentSpanId
+  trace_id: $traceId
+  trace_path: $tracePath
+  span_id: $spanId
+  parent_span_id: $parentSpanId
   service: $service
-  timestamp: $utc
   environment: '${ENV_NAME:dev}'
   hello: world
 ```
+
+The output keys are **snake_case**, matching the distributed-trace block (`span_id`, `parent_span_id`,
+`exec_time`) so both halves of a log record read the same way. The `$token` names on the right stay
+camelCase — they are the engine's identifiers, not output — and the two sides are free to differ because
+the left is entirely your choice.
+
+Note what is **not** in that template: a timestamp. You do not configure one — see below.
 
 The **left side** is the output key (your choice). The **right side** is one of three forms:
 
@@ -337,6 +343,30 @@ The **left side** is the output key (your choice). The **right side** is one of 
 The reserved tokens are `$cid`, `$traceId`, `$tracePath`, `$spanId`, `$parentSpanId`, `$service` (the current
 function's route), and `$utc` (the log line's UTC timestamp). A token (or env value) that resolves to nothing is
 **omitted** from the block rather than printed as `null` — so a root span simply has no `parentSpanId` key.
+
+#### You do not configure the timestamp {#log-context-utc}
+
+**`$utc` is added for you.** If your template does not resolve it under any key, the framework inserts it as
+`timestamp`, so every context block carries an unambiguous UTC time whether or not you asked for one.
+
+That guarantee exists because the record's top-level `time` field is a **local** timestamp with no zone or
+offset. Anything that parses it downstream — a log collector, a forwarder — has to be *told* the timezone, and
+shifts every line silently when told wrong. Log-to-trace correlation is resolved on trace id **and** a time
+window, so a shifted line can be correctly correlated and still invisible on its trace. `$utc` removes the
+guesswork.
+
+You keep control of the name. Map `$utc` to any key you like and that name is used as-is:
+
+```yaml
+context:
+  traceId: $traceId
+  loggedAt: $utc     # your name, kept - nothing extra is added
+```
+
+Only *absence* is corrected, never your choice. If you have already spent `timestamp` on something of your
+own, the UTC time is placed under `utc` instead so your value is never overwritten; if both names are taken,
+the framework leaves your template alone and logs a warning telling you to add `$utc` under a key of your
+choosing.
 
 `$cid` is the **business correlation ID** — the value received from the external source or created at the
 edge, the same one `PostOffice.getMyCorrelationId()` returns. When the delivered event carries no business
@@ -356,6 +386,15 @@ po.updateContext("user", "demo");   // appears in the context block of every sub
 log.info("processing request");
 ```
 
+Reserved keys are refused in **both spellings** — the `$token` name and its snake_case form, so
+`trace_id` and `parent_span_id` throw just as `traceId` and `parentSpanId` do. That matters because
+snake_case is what the shipped templates publish, and therefore what you would most likely reach for.
+
+Beyond the refused names, a developer key never shadows a template key: if your function sets a key the
+template also emits, the template's value wins. An output key is your free choice, so no list of names
+could cover every case — the precedence is what makes shadowing impossible, and the rejected names are
+the fast, legible error for the two spellings that actually occur.
+
 The reserved keys (`cid`, `traceId`, `tracePath`, `spanId`, `parentSpanId`, `service`, `utc`) are protected —
 passing one to `updateContext` throws `IllegalArgumentException`. On a non-traced request, or when the feature is
 off, the call is a silent no-op.
@@ -374,10 +413,10 @@ A log line from a traced function then carries the resolved `context` (from the 
   "level": "INFO",
   "context": {
     "cid": "20260630c6ee70d866cb4fae9ab3c44d926ce21a",
-    "traceId": "fbb60df209084531b2b00f6b36a3e651",
-    "tracePath": "GET /api/profile/100",
-    "spanId": "bf8d4b2b6a923d67",
-    "parentSpanId": "98f8e26ae7d9a422",
+    "trace_id": "fbb60df209084531b2b00f6b36a3e651",
+    "trace_path": "GET /api/profile/100",
+    "span_id": "bf8d4b2b6a923d67",
+    "parent_span_id": "98f8e26ae7d9a422",
     "service": "v1.hello.exception",
     "environment": "dev",
     "hello": "world",
@@ -391,9 +430,13 @@ A log line from a traced function then carries the resolved `context` (from the 
 }
 ```
 
-The `traceId` and `spanId` here match the `v1.hello.exception` span the tracer emitted for the same request, so the
+The `trace_id` and `span_id` here match the `v1.hello.exception` span the tracer emitted for the same request, so the
 log line and the span join up in your backend. (Key order within `context` is not significant — log viewers reorder
 keys on display.)
+
+`timestamp` appears even though the template above never asked for it — that is the
+[automatic UTC timestamp](#log-context-utc). Note it is the *context's* UTC time, distinct from the record's
+top-level `time`, which is local.
 
 ### Scope and boundaries {#log-context-scope}
 
