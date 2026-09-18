@@ -154,7 +154,7 @@ nav:
 
   - Reference:
     - Architectural Decision Records: arch-decisions/ADR.md
-    - Proposed Decisions: arch-decisions/proposed.md
+    - Requests for Comments (RFC): arch-decisions/RFC.md
     - API Overview: guides/api-overview.md
     - Annotations Reference: guides/annotations-reference.md
     - Configuration Reference: guides/configuration-reference.md

@@ -51,6 +51,7 @@ class SkillSnapshotTest {
         expected.add("security.json");
         expected.add("references/index.md");
         expected.add("references/arch-decisions/ADR.md");
+        expected.add("references/arch-decisions/RFC.md");
         expected.add("references/test-reports/event-over-http-interop.md");
         expected.add("references/test-reports/otel-dynatrace-certification.md");
         expected.add("references/test-reports/progressive-rendering-interop.md");
