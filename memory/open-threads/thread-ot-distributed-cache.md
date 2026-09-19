@@ -27,8 +27,8 @@
   **Release path (Eric, 2026-09-15):** field Sonar scan of the new v4.12.9 code → successful field
   deployment → then cut the v4.12.9 release (per [[eric-release-rhythm]]); the Rust lockstep begins
   AFTER the release, not before.
-  **Rust lockstep PREPARED 2026-09-19** (`mercury` repo, branch `feat/distributed-cache-lockstep`, commit
-  `b9590012`, Increment 119; PR-open + merge are Eric's gates): `mercury-redis-connection` (the foundation
+  **Rust lockstep PREPARED 2026-09-19** (`mercury` repo, branch `feat/distributed-cache-lockstep`, commits
+  `b9590012` + `d0b0363e`, Increment 119; **mercury PR #285 opened by Eric**, merge is his gate): `mercury-redis-connection` (the foundation
   — sync-over-async refactored onto it with the `soa.redis.*` namespace + `redis.*` fallback, Q2's shape),
   `mercury-distributed-cache` (`v1.cache.redis`: same actions, headers, error messages, key layout and
   config keys — a Java pod and a Rust pod share one cache; `RPUSH`+`EXPIRE` as `MULTI`/`EXEC`, the port's
