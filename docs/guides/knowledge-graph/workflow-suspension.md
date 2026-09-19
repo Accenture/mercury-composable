@@ -388,7 +388,7 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/tutorial-14 \
   correlation ID and is fully resumable on its own; the parent orchestrates —
   see [the orchestrator pattern](#orchestrator-pattern). Under `for_each` the record is scoped by
   the iteration as well, so each iteration resumes independently — with the positional-consistency
-  requirement in the next rule.
+  requirement in the `for_each` rule above.
 - Reserved model keys (`model.cid`, `model.instance`, `model.flow`, `model.ttl`,
   `model.trace`, `model.parent`, `model.root`, `model.none`, `model.run`,
   `model.iteration_index`) are never
@@ -428,9 +428,12 @@ ELSE: done
   checkpoint, and the parent assembles the results. A subgraph is also a deployed graph,
   so a single path can be resumed directly at `POST /api/graph/{subgraph-id}` with the
   same correlation ID — same capability rules as any resume endpoint.
-- **One record per graph per cid.** Invoke a suspendable subgraph once per correlation ID
-  per run — a `for_each` fan-out of the *same* subgraph under one cid would overwrite its
-  own record. Parallel paths belong in *different* subgraphs.
+- **One record per graph per cid — and per iteration under `for_each`.** A single delegation
+  writes one record per subgraph per correlation ID. A `for_each` fan-out of the *same*
+  subgraph under one cid gives each iteration its own record, keyed by its position in the
+  array, so the iterations suspend and resume independently — subject to the
+  positional-consistency rule in [Design rules](#design-rules). Distinct processing paths
+  still belong in *different* subgraphs.
 
 The engine's reference models for this pattern are the `unit-test-orchestrator` /
 `unit-test-sub-suspend` pair in the minigraph test sources, pinned end-to-end by
