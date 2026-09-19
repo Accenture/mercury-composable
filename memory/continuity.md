@@ -28,7 +28,8 @@
   configure, no wire/API/config-key change. An app on a produce-only leg whose `/health` answered a
   raw **500** now answers correctly; consumer-enabled apps were unaffected by both the defect and the
   fix. **Java only — no lockstep** (JVM classloading has no Rust analogue); the outstanding lockstep
-  is still v4.12.9's distributed cache ([[ot-distributed-cache]]). Sweep surface: BUILD FILES ONLY,
+  was v4.12.9's distributed cache ([[ot-distributed-cache]] — Rust MERGED 2026-09-19, mercury #285; the
+  Rust catch-up release is pending). Sweep surface: BUILD FILES ONLY,
   **43 files / 98 occurrences** — unchanged from v4.12.11 because the fix touched no poms, and
   re-derived rather than carried forward (never trust the prior count). Prior: v4.12.11 (2026-09-16 21:03Z — the field-unblock release, **3 PRs #402–#404**
   via release PR #405, squash `06750214`, tag `v4.12.11`, pom verified at the tag): **`kafka.health`
@@ -74,7 +75,8 @@
   reactivated 0; superseded 0; archive-verify pass. **Still held deliberately** (sslu 24 — `[overdue]`
   keeps firing for them by design): `soa-redis-cluster-support`, `cache-separate-from-soa`,
   `redis-connection-foundation` are the design record of the live [[ot-distributed-cache]] Rust
-  lockstep; sweep them when that thread closes, not before. Invariant re-verify not due (21 sessions
+  lockstep; sweep them when that thread closes, not before — **it closed 2026-09-19 (mercury #285
+  merged), so they are sweep-eligible at the next review**. Invariant re-verify not due (21 sessions
   since, cadence 40). Stalled threads: none.
   Prior: 2026-09-18 | 2026-09-18-215436.md (on command — the FALSE `[continuity-bloat]` trigger from the
   header's schema example, fixed locally and upstream in agent-memory v4.41.2; see
