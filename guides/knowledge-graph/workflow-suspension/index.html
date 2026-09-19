@@ -3267,7 +3267,7 @@ come first. Three techniques worth stealing from its model:</p>
   correlation ID and is fully resumable on its own; the parent orchestrates —
   see <a href="#orchestrator-pattern">the orchestrator pattern</a>. Under <code>for_each</code> the record is scoped by
   the iteration as well, so each iteration resumes independently — with the positional-consistency
-  requirement in the next rule.</li>
+  requirement in the <code>for_each</code> rule above.</li>
 <li>Reserved model keys (<code>model.cid</code>, <code>model.instance</code>, <code>model.flow</code>, <code>model.ttl</code>,
   <code>model.trace</code>, <code>model.parent</code>, <code>model.root</code>, <code>model.none</code>, <code>model.run</code>,
   <code>model.iteration_index</code>) are never
@@ -3305,9 +3305,12 @@ own subgraph and let a parent graph orchestrate:</p>
   checkpoint, and the parent assembles the results. A subgraph is also a deployed graph,
   so a single path can be resumed directly at <code>POST /api/graph/{subgraph-id}</code> with the
   same correlation ID — same capability rules as any resume endpoint.</li>
-<li><strong>One record per graph per cid.</strong> Invoke a suspendable subgraph once per correlation ID
-  per run — a <code>for_each</code> fan-out of the <em>same</em> subgraph under one cid would overwrite its
-  own record. Parallel paths belong in <em>different</em> subgraphs.</li>
+<li><strong>One record per graph per cid — and per iteration under <code>for_each</code>.</strong> A single delegation
+  writes one record per subgraph per correlation ID. A <code>for_each</code> fan-out of the <em>same</em>
+  subgraph under one cid gives each iteration its own record, keyed by its position in the
+  array, so the iterations suspend and resume independently — subject to the
+  positional-consistency rule in <a href="#design-rules">Design rules</a>. Distinct processing paths
+  still belong in <em>different</em> subgraphs.</li>
 </ul>
 <p>The engine's reference models for this pattern are the <code>unit-test-orchestrator</code> /
 <code>unit-test-sub-suspend</code> pair in the minigraph test sources, pinned end-to-end by
