@@ -17,7 +17,7 @@
   index; the one that does not is `ADR.md` §ADR-0013, deliberately, because an ADR records what was
   decided then.
   **Rust lockstep PREPARED 2026-09-19** (`mercury` repo, branch `feat/for-each-suspend-resume-lockstep`,
-  commit `3c98043d`, pushed; PR-open + merge are Eric's gates): the three-segment key, the
+  commit `3c98043d`; **mercury PR #284 opened by Eric**, merge is his gate): the three-segment key, the
   `x-iteration-index` header, the reserved `model.iteration_index`, the Redis store + file-store mock,
   the three store negative controls + reserved-key pin + index reader — plus an end-to-end fan-out
   (`rust-orchestrator-foreach`) Java lacks, which caught a Rust-only defect fixed in the same PR (its
@@ -27,10 +27,11 @@
   **Found on the way, THIS repo:** the guide's orchestrator bullet "One record per graph per cid … a
   `for_each` fan-out … would overwrite its own record" survived #418/#420 — a statement of the RULE,
   not the key. Corrected on branch `docs/for-each-orchestrator-rule` (`0c9166ba`, pushed; PR-open is
-  Eric's gate), together with the "in the next rule" pointer that should read "the `for_each` rule above".
-  **REMAINING:** (1) Eric opens + merges the Rust PR (the store key is an explicit cross-engine
-  contract — [[conv-ports-adopt-java-release-number]]; Java led, the twin followed the next session);
-  (2) Eric opens + merges the Java docs PR; then close this thread.
+  **PR #425 opened by Eric**), together with the "in the next rule" pointer that should read "the
+  `for_each` rule above".
+  **REMAINING:** (1) Eric merges mercury #284 (the store key is an explicit cross-engine contract —
+  [[conv-ports-adopt-java-release-number]]; Java led, the twin followed the next session); (2) Eric
+  merges #425; then close this thread.
   (2) ~~amending ADR~~ **DONE 2026-09-18** — Eric accepted ADR-0013 with the `for_each` index folded
   in **directly**, rather than superseding it, because it had never left `Status: Proposed`. Its
   rationale now records why the amendment belongs to that decision and not a separate one: the cid
