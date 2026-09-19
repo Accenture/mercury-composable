@@ -27,11 +27,12 @@
   **Found on the way, THIS repo:** the guide's orchestrator bullet "One record per graph per cid … a
   `for_each` fan-out … would overwrite its own record" survived #418/#420 — a statement of the RULE,
   not the key. Corrected on branch `docs/for-each-orchestrator-rule` (`0c9166ba`, pushed; PR-open is
-  **PR #425 opened by Eric**), together with the "in the next rule" pointer that should read "the
-  `for_each` rule above".
-  **REMAINING:** (1) Eric merges mercury #284 (the store key is an explicit cross-engine contract —
-  [[conv-ports-adopt-java-release-number]]; Java led, the twin followed the next session); (2) Eric
-  merges #425; then close this thread.
+  **PR #425 MERGED 2026-09-19, squash `8c81a295`**, one trailer), together with the "in the next
+  rule" pointer that now reads "the `for_each` rule above". With it, every live statement of the
+  rule AND the key carries the index.
+  **REMAINING:** (1) Eric merges mercury #284 (CI green: build, test, memory; the store key is an
+  explicit cross-engine contract — [[conv-ports-adopt-java-release-number]]; Java led, the twin
+  followed the next session); then close this thread.
   (2) ~~amending ADR~~ **DONE 2026-09-18** — Eric accepted ADR-0013 with the `for_each` index folded
   in **directly**, rather than superseding it, because it had never left `Status: Proposed`. Its
   rationale now records why the amendment belongs to that decision and not a separate one: the cid
