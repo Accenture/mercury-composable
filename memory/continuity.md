@@ -726,7 +726,7 @@
   2026-09-18 to match (Eric: industry convention), and `RFC.md` is the upstream skeleton byte-for-byte
   — status vocabulary `Open · Parked · Promoted → ADR-NNNN · Withdrawn`, entries never deleted, newest
   first — which replaces the first register's remove-on-promotion table. The rule is also stated in
-  the ADR ledger's own header and in `RFC.md`. Superseded/Deprecated handling is unchanged — that is the
+  the ADR ledger's own header and in `RFC.md` — and both files are packaged into the AI contract snapshot (PR #424, squash `5337ee30`), which **link-checks every relative link inside the snapshot**: that check is what turned #421's unpackaged `ADR.md → register` link into a red main. Anything under `docs/` but outside `docs/guides/**` that the snapshot must carry is enumerated in THREE places — the `ai-contract-provider` pom include set, `skill/files.list`, and `SkillSnapshotTest`'s fixed extras — so a new doc page that the ledger links to is a Java change, not a docs-only one. Superseded/Deprecated handling is unchanged — that is the
   *post*-decision stage and stays in `ADR.md`, marked in place, never deleted.
   Adopted in the same sitting that accepted the five ADRs left at `Proposed` (0013–0017), which is
   what exposed the gap: a status that means "not yet decided" had accumulated for a month across
