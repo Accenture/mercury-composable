@@ -6,8 +6,8 @@
 > Each fact carries a metadata footer in an HTML comment, maintained by the review
 > ritual — invisible when rendered, read/written by agents:
 > `<!-- id: <kebab-id> | created: YYYY-MM-DD | last_used: YYYY-MM-DD | uses: N | tier: active -->`
-> (the id is a placeholder on purpose — a literal id here is parsed as a live fact and
-> inflates the review's fact count; see `conv-schema-example-not-a-fact`)
+> (the id is a placeholder on purpose — before agent-memory v4.41.2 a literal id here was parsed as
+> a live fact and inflated the review's fact count; see `conv-schema-example-not-a-fact`)
 > See `.agent/schema.md` for the fields and `memory/decay-policy.md` for the windows.
 > Condensed 2026-07-31 (line-bloat review advisory): shipped-item narrative compressed
 > to essentials; full detail lives in each fact's `origin` session log.
@@ -655,12 +655,12 @@
   `N` placeholders already on that line and failing the `[a-z0-9-]+` capture; it still renders as a
   real HTML comment, so it teaches the same syntax. **Do not tidy it back to a bare id.** The durable
   fix is upstream — the parser should skip the header example; every agent-memory repo ships this
-  header and so over-counts by one — reported 2026-09-18. Method note: the diagnosis was a two-copy
+  header and so over-counts by one — reported 2026-09-18 **and shipped as v4.41.2 the same day**: `memory-lint`, the `[undeclared-reference]` mapper and `archive-fact` now treat a backtick-wrapped footer as documentation (`_in_inline_code`), so the placeholder is belt-and-braces rather than load-bearing — keep it anyway, it is the honest form of the example. Method note: the diagnosis was a two-copy
   experiment (lint an untouched copy, lint a copy with the one line neutralized), not a reading of the
   regex; the regex told me it was *possible*, the copies told me it was *the* cause. Relates
   [[conv-thread-id-names-the-thing]] — the sibling case, where the tool's behaviour rather than our
   content was the thing to change.
-  <!-- id: conv-schema-example-not-a-fact | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: working | origin: 2026-09-18-215436 -->
+  <!-- id: conv-schema-example-not-a-fact | created: 2026-09-18 | last_used: 2026-09-18 | uses: 2 | tier: active | origin: 2026-09-18-215436 -->
 
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
@@ -710,21 +710,28 @@
   a reference. Surfaced by the 2026-09-04 smoke test; the two facts it endangered are now `core`.
   <!-- id: conv-declare-consulted-references | created: 2026-09-04 | last_used: 2026-09-04 | uses: 1 | tier: core -->
 
-- **A proposal is not a decision: raise it in `docs/arch-decisions/proposed.md` as `P-NNNN`, never
+- **A proposal is not a decision: raise it in `docs/arch-decisions/RFC.md` as `RFC-NNNN`, never
   as a `Proposed` ADR (Eric, 2026-09-18).** The ADR ledger is an **immutable journey of decisions**,
   so an entry is written when a decision is *accepted* — never before. A proposal may be reshaped,
   merged or withdrawn, and a withdrawn proposal is a non-decision that would otherwise sit in the
-  ledger forever looking like one. `P-NNNN` and `ADR-NNNN` are separate sequences: a proposal does
+  ledger forever looking like one. `RFC-NNNN` and `ADR-NNNN` are separate sequences: a proposal does
   not reserve an ADR number, because proposals and decisions do not map one-to-one.
-  **This OVERRIDES the agent-memory protocol's wording**, which says to "propose a newer ADR … and
-  wait for human approval" (`memory/PROTOCOL.md`) — that file is tool-managed and ships from the
-  template, so it is not edited; this fact is the local rule, and the rule is also stated in the ADR
-  ledger's own header and in `proposed.md`. Superseded/Deprecated handling is unchanged — that is the
+  **For a few hours this was a local override of the agent-memory protocol's wording** ("propose a
+  newer ADR … and wait for human approval"); raised upstream the same day, it was adopted as protocol
+  **v4.41.2** (`memory/PROTOCOL.md` now says the ledger records decisions only and work under
+  consideration lives in `docs/arch-decisions/RFC.md` with `RFC-NNNN` ids) and then as the optional
+  **governance pair** seed in **v4.42.0** (`ADR.md` + `RFC.md` skeletons; `.agent/schema.md` §RFC.md).
+  So the rule is no longer ours alone — the tool states it; this fact records the local instance and
+  its history. The register was renamed `proposed.md` → `RFC.md` and `P-NNNN` → `RFC-NNNN` on
+  2026-09-18 to match (Eric: industry convention), and `RFC.md` is the upstream skeleton byte-for-byte
+  — status vocabulary `Open · Parked · Promoted → ADR-NNNN · Withdrawn`, entries never deleted, newest
+  first — which replaces the first register's remove-on-promotion table. The rule is also stated in
+  the ADR ledger's own header and in `RFC.md`. Superseded/Deprecated handling is unchanged — that is the
   *post*-decision stage and stays in `ADR.md`, marked in place, never deleted.
   Adopted in the same sitting that accepted the five ADRs left at `Proposed` (0013–0017), which is
   what exposed the gap: a status that means "not yet decided" had accumulated for a month across
   decisions that had in fact all shipped. Shipped as PR #421 (squash `92ced8cc`).
-  **Raised upstream 2026-09-18** (Eric's direction — keep the
+  **Raised upstream 2026-09-18 and adopted as agent-memory v4.41.2 the same day** (Eric's direction — keep the
   engine and the tool consistent) as a guidance-only change, with replacement wording for both
   clauses and the note that the sharper case is the one we did NOT hit: a *withdrawn* proposal has no
   correct status in an ADR ledger — `Superseded` implies a successor, `Deprecated` implies it was
