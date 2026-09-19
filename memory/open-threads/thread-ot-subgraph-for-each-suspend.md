@@ -16,6 +16,10 @@
   `PersistModel`/`RetrieveModel` javadocs. Verified after merge: 14 of 15 live statements now carry the
   index; the one that does not is `ADR.md` §ADR-0013, deliberately, because an ADR records what was
   decided then.
+  **NEXT SESSION STARTS HERE (Eric, at sprint close 2026-09-19):** the Rust lockstep in the `mercury`
+  repo — port the three-segment store key `graph:{graph_id}:{cid}:{index}`, the `x-iteration-index`
+  header from `graph.extension`'s `for_each` branch, the reserved `model.iteration_index`, and the
+  FileStateStore/Redis store changes, then re-run the Java negative-control tests' shape against the twin.
   **REMAINING:** (1) **Rust lockstep** — the store key is an explicit cross-engine contract
   ([[conv-ports-adopt-java-release-number]]); recorded reading is Java leads, twin immediately after.
   (2) ~~amending ADR~~ **DONE 2026-09-18** — Eric accepted ADR-0013 with the `for_each` index folded
