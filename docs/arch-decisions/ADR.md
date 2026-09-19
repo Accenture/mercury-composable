@@ -16,10 +16,13 @@ foundational decoupling decision; the rest build on it.
 
 **Only decisions are entered here.** This ledger is an immutable journey of what the
 project decided, so an entry is written when a decision is *accepted* — never before. Work
-still under consideration is raised in [`proposed.md`](proposed.md) as `P-NNNN` and is
-written in here only on acceptance; a proposal that is withdrawn never appears, because it
-was never a decision. (Convention adopted 2026-09-18. The five entries carrying
-`Accepted (2026-09-18)` predate it — they were raised as *Proposed* under the older
+still under consideration is raised in [`RFC.md`](RFC.md) as `RFC-NNNN` — the proposal
+register that pairs with this ledger — and is written in here only on acceptance, which the
+register records as `Promoted → ADR-NNNN`; a proposal that is withdrawn never appears here,
+because it was never a decision. `RFC-NNNN` and `ADR-NNNN` are separate sequences: a
+proposal does not reserve an ADR number. (Convention adopted 2026-09-18, and the same day
+upstream as agent-memory protocol v4.41.2 / governance pair v4.42.0. The five entries
+carrying `Accepted (2026-09-18)` predate it — they were raised as *Proposed* under the older
 practice and were confirmed together when it changed.)
 
 ADR-0001 to 0005 were seeded as a **retrospective** in 2026-06-22 from the decisions already
