@@ -27,9 +27,19 @@
   **Release path (Eric, 2026-09-15):** field Sonar scan of the new v4.12.9 code → successful field
   deployment → then cut the v4.12.9 release (per [[eric-release-rhythm]]); the Rust lockstep begins
   AFTER the release, not before.
-  **REMAINING:** (4) Rust lockstep port in the `mercury` repo (Q8) — cache keys are plain Redis keys, so the
-  two caches interoperate with no wire change (the example doubles as the interop harness once the
-  Rust twin lands). Builds on [[cache-separate-from-soa]] +
+  **Rust lockstep PREPARED 2026-09-19** (`mercury` repo, branch `feat/distributed-cache-lockstep`, commit
+  `b9590012`, Increment 119; PR-open + merge are Eric's gates): `mercury-redis-connection` (the foundation
+  — sync-over-async refactored onto it with the `soa.redis.*` namespace + `redis.*` fallback, Q2's shape),
+  `mercury-distributed-cache` (`v1.cache.redis`: same actions, headers, error messages, key layout and
+  config keys — a Java pod and a Rust pod share one cache; `RPUSH`+`EXPIRE` as `MULTI`/`EXEC`, the port's
+  ruled Lua equivalent; `redis.health`), `examples/distributed-cache-example` (OUR `l2-profile.yml` and
+  `profile-cache.json` byte-identical; plain-MsgPack values → the interop harness), `Platform::on_shutdown`
+  parity. Found and fixed a Rust REST parity gap on the way: a function's `Err(AppError)` rendered
+  `text/plain` where we render `{status, message, type: error}`. Under recommendation, Eric to confirm
+  (port spec §9): cluster shipped as the seam + `cluster-async` branch (selection-tested; live cluster =
+  certification), the shutdown hook included, publication joins the K5 hold.
+  **REMAINING:** Eric opens + merges the mercury PR (Q8); then a side-by-side run of the two examples
+  against one Redis at certification (the interop proof); then close. Builds on [[cache-separate-from-soa]] +
   [[soa-redis-cluster-support]]; applied [[preload-before-mainapp-lazy-config]] and
   [[conv-reentrantlock-not-synchronized]]. See [[redis-connection-foundation]].
   → serves: vision-mercury-composable
