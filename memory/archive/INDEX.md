@@ -177,3 +177,7 @@
 - thread-minimalist-kafka-protobuf-revival — (backlog → CLOSED 2026-09-16, Eric — dormant, demand-triggered) Reintroduce Protobuf — completed and faded (sslu 114-189); closed in the 2026-09-16 stale-thread audit, narrative in each origin log — 2026-Q3.md
 - thread-redis-kafka-rpc — (next iteration → DONE, closed 2026-09-16 on a stale-record flag from Copilot) Cross-pod — completed and faded (sslu 114-189); closed in the 2026-09-16 stale-thread audit, narrative in each origin log — 2026-Q3.md
 - ot-redis-client-separation — (docs — shipped 2026-09-16 in v4.12.10) sync-over-async and distributed-cache should use — faded — 2026-Q3.md
+- elastic-queue-file-store — The elastic queue spills to a dependency-free file FIFO, and that choice sets the dispatch… — faded — 2026-Q3.md
+- thread-elastic-queue-bdb-to-file — (complete — P4 landed 2026-09-16 in v4.12.10) Replace ElasticQueue's Berkeley DB spill tie… — faded — 2026-Q3.md
+- thread-elastic-queue-docs-adr — (complete — 2026-09-16, with P4) Docs sync + ADR for the ElasticQueue file store / off-loo… — faded — 2026-Q3.md
+- ot-reverify-invariants-20260916 — Re-verify invariants (2026-09-16, complete — Eric walked the 17+1 set against live-tree — faded — 2026-Q3.md

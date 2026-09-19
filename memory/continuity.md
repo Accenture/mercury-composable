@@ -64,28 +64,21 @@
   there: the `soa.redis.health` ROUTE rename and `minimalist-kafka` no longer transitive). The live
   version source stays the root pom.xml.)
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-18 | through 2026-09-18-174943.md (ON COMMAND — 3 sessions since,
-  review_every 10. **Nothing archived, nothing swept — and that is the correct outcome**: the oldest
-  non-core fact and the oldest closed thread both sit at sslu 18, inside `archive_window` 20 (three
-  threads at 17–18 will sweep next time). **The trigger itself was FALSE** — `memory-lint` parses the
-  schema EXAMPLE in continuity.md's own header as a live fact, so `[continuity-bloat] 36 > 35` was
-  really 35, exactly at the cap; proven by linting a copy with that one line neutralized (58 live /
-  36 eligible / 1 warning → 57 / 35 / 0). Fixed here by making the example id a placeholder and
-  reported upstream — see [[conv-schema-example-not-a-fact]]. Tier changes 0 (refresh-metadata already
-  matched the reference log); reactivated 0; superseded 0; archive-verify pass. Invariant re-verify
-  NOT due (15 sessions since, cadence 40). Stalled threads: none (4 unchecked, oldest at 6, window 40).
-  Doc-gap sweep run for [[thread-doc-improvement-feedback-loop]]: one gap still open (graph.task
-  OUTPUT-mapping LHS) plus four stale store-key surfaces left by `fb171c18`. **Left deliberately at
-  36/35:** removing the phantom put the true count at 35, and this review's own new fact made it 36 —
-  genuinely over, with nothing yet archivable. **Resolved later the same day:** three more session logs
-  pushed four entries past the window, and the sweep took exactly ONE — `ot-redis-client-separation`, a
-  CLOSED thread (step 5, textbook). The other three (`soa-redis-cluster-support`,
-  `cache-separate-from-soa`, `redis-connection-foundation`) are **held deliberately** and will keep
-  reporting `[overdue]`: each is cited by the still-open [[ot-distributed-cache]], whose Rust lockstep
-  is pending, so they are the design record of live work rather than faded context. Sweep them when
-  that thread closes, not before — the metric measures *reference recency*, which is not the same as
-  *still needed*.
-  Prior: 2026-09-17 | 2026-09-17-020650.md)
+- **last_review:** 2026-09-19 | through 2026-09-19-020551.md (SIZE TRIGGER — 6 sessions since,
+  review_every 10; `[continuity-bloat] 36 > 35`, genuine this time: closing
+  [[ot-subgraph-for-each-suspend]] made it decay-eligible. Archived 1 faded fact
+  (`elastic-queue-file-store`, sslu 21 — ADR-0024 keeps the durable rationale; the `virtual-threads-rpc`
+  link to it resolves through `archive/INDEX.md`) and swept 3 completed threads past the window
+  (`thread-elastic-queue-bdb-to-file`, `thread-elastic-queue-docs-adr`, `ot-reverify-invariants-20260916`)
+  → 32 eligible; closed-thread narrative back under 150 lines. Tier changes 5 (refresh-metadata);
+  reactivated 0; superseded 0; archive-verify pass. **Still held deliberately** (sslu 24 — `[overdue]`
+  keeps firing for them by design): `soa-redis-cluster-support`, `cache-separate-from-soa`,
+  `redis-connection-foundation` are the design record of the live [[ot-distributed-cache]] Rust
+  lockstep; sweep them when that thread closes, not before. Invariant re-verify not due (21 sessions
+  since, cadence 40). Stalled threads: none.
+  Prior: 2026-09-18 | 2026-09-18-215436.md (on command — the FALSE `[continuity-bloat]` trigger from the
+  header's schema example, fixed locally and upstream in agent-memory v4.41.2; see
+  [[conv-schema-example-not-a-fact]]; nothing archived then, one closed thread swept later that day).
 - **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**:
   Track 1 *knowledge graph as application* (deterministic — rules, business logic, outcome; L3
   leverages L2 + L1) and Track 2 *knowledge graph as AI SDLC* (governed AI processing for ambiguity
@@ -462,28 +455,6 @@
   (the same async-callback minefield).
   <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-18 | uses: 6 | tier: active | origin: 2026-09-15-040141 -->
 
-- **The elastic queue spills to a dependency-free file FIFO, and that choice sets the dispatch model
-  (2026-09-16, P4 of the BDB migration). (ADR-0024)** Every route's back-pressure overflow buffer
-  holds 20 events in memory then spills to per-route append-only segment files under the temp dir
-  (`FileElasticStore`), transient, segment deleted once fully read. **Berkeley DB is RETIRED** — with it
-  went the `elastic.queue.store` switch, `deferred.commit.log`, the `elastic.queue.cleanup` reserved route,
-  and platform-core's `com.sleepycat:je` dependency. `ElasticStore` stays as the seam, one implementation.
-  **The architectural half:** because the file store's blocking I/O parks a virtual thread instead of
-  pinning its carrier, `ServiceQueue` has exactly ONE dispatch mode — every route dispatches off the event
-  loop on its own virtual thread via a bounded mailbox (`elastic.queue.dispatch.mailbox.size`, 1024,
-  blocks-not-drops). Store and dispatch are not independently configurable; the dual-mode branch is gone.
-  Remaining tunables: that key + `elastic.queue.segment.size.bytes` (16 MB). **Durable lesson worth more
-  than the outcome:** the microbenchmark favoured the store we removed — BDB was competitive-to-faster on a
-  single isolated route. Only the mixed-workload probe (a latency-sensitive route measured *while* another
-  route's spill runs) exposed what mattered: keeping spill off the shared Vert.x loop. Benchmark the
-  interference, not just the component. Evidence retained at `benchmark/benchmark-reporter/analysis/` (the
-  A/B is no longer reproducible — kept as the historical record); the tool is now a single-store baseline
-  for validating milestone releases. No consumer action: `file` was already the default, an app still
-  setting `elastic.queue.store` is unaffected (unread), and nothing in the buffer was ever durable.
-  Closes [[thread-elastic-queue-bdb-to-file]] + [[thread-elastic-queue-docs-adr]]; relates
-  [[virtual-threads-rpc]] and [[conv-reentrantlock-not-synchronized]] (the same carrier-pinning concern).
-  <!-- id: elastic-queue-file-store | created: 2026-09-16 | last_used: 2026-09-16 | uses: 4 | tier: archive-candidate | origin: 2026-09-16-020051 -->
-
 - **A Layer 3 application is one graph endpoint plus dev mode — and the Playground UI hides behind a
   classpath-order trap (2026-09-15, Eric's polish round on the starter template + the cache example).**
   Two shape rules. **(1) One endpoint, every graph:** `POST /api/graph/{graph_id}` takes the id from the
@@ -522,7 +493,7 @@
   Rust repo — both engines share the WS handshake. Dev-only, like the Playground itself.
   Reactivated 2026-09-14: now ALSO shipped in `templates/starter-graph` (both repos), and the AI
   docs are broker-first with the keep-alive failure mode named (mercury-composable#383, mercury#276).
-  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-17 | uses: 10 | tier: active | origin: 2026-09-03-172753 -->
+  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-17 | uses: 10 | tier: archive-candidate | origin: 2026-09-03-172753 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -683,7 +654,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-18 | uses: 7 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-19 | uses: 8 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->

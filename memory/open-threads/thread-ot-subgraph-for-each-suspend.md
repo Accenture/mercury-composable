@@ -8,4 +8,4 @@
   surfaces while the rule stated without it survived two sweeps; and re-run a parity assertion on every shape
   a feature has. → serves: vision-mercury-composable
   origin: `memory/sessions/2026-09-18-174943.md` (spec + rulings) → close record: `2026-09-19-020551.md`
-  <!-- id: ot-subgraph-for-each-suspend | created: 2026-09-18 | last_used: 2026-09-18 | uses: 3 | tier: working | origin: 2026-09-18-174943 -->
+  <!-- id: ot-subgraph-for-each-suspend | created: 2026-09-18 | last_used: 2026-09-19 | uses: 4 | tier: active | origin: 2026-09-18-174943 -->
