@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://accenture.github.io/mercury-composable/arch-decisions/proposed/">
+        <link rel="canonical" href="https://accenture.github.io/mercury-composable/arch-decisions/RFC/">
       
       
         <link rel="prev" href="../ADR/">
@@ -27,7 +27,7 @@
     
     
       
-        <title>Proposed Decisions - Composable for Java</title>
+        <title>Requests for Comments (RFC) - Composable for Java</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#proposed-architecture-decisions" class="md-skip">
+        <a href="#requests-for-comments-rfc-the-proposal-register" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Proposed Decisions
+              Requests for Comments (RFC)
             
           </span>
         </div>
@@ -2115,7 +2115,7 @@
   <span class="md-ellipsis">
     
   
-    Proposed Decisions
+    Requests for Comments (RFC)
   
 
     
@@ -2133,7 +2133,7 @@
   <span class="md-ellipsis">
     
   
-    Proposed Decisions
+    Requests for Comments (RFC)
   
 
     
@@ -2159,10 +2159,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#how-it-works" class="md-nav__link">
+  <a href="#rules" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How it works
+        Rules
       
     </span>
   </a>
@@ -2170,32 +2170,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#entry-template" class="md-nav__link">
+  <a href="#format" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Entry template
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#open-proposals" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Open proposals
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#resolved" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Resolved
+        Format
       
     </span>
   </a>
@@ -2777,10 +2755,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#how-it-works" class="md-nav__link">
+  <a href="#rules" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How it works
+        Rules
       
     </span>
   </a>
@@ -2788,32 +2766,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#entry-template" class="md-nav__link">
+  <a href="#format" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Entry template
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#open-proposals" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Open proposals
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#resolved" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Resolved
+        Format
       
     </span>
   </a>
@@ -2840,59 +2796,44 @@
   
 
 
-<h1 id="proposed-architecture-decisions">Proposed architecture decisions<a class="headerlink" href="#proposed-architecture-decisions" title="Permanent link">&para;</a></h1>
-<p>A working register of architecture decisions <strong>under consideration</strong>. Nothing here is
-decided, and nothing here is binding.</p>
-<p>This file exists because <a href="../ADR/"><code>ADR.md</code></a> is an <strong>immutable journey of decisions</strong>. A
-proposal is not a decision: it may be reshaped, merged into another, or withdrawn
-entirely, and a withdrawn proposal is a non-decision that should never have entered the
-ledger in the first place. Writing proposals here keeps the ADR record honest — every
-entry in <code>ADR.md</code> is something the project actually decided.</p>
-<h2 id="how-it-works">How it works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
-<ol>
-<li><strong>Raise</strong> a proposal here with the next free <code>P-NNNN</code> id. Discuss and revise it in
-   place — a proposal is expected to change.</li>
-<li><strong>Accept</strong> it: the maintainer approves, and it is written into <code>ADR.md</code> as a new
-   <code>ADR-NNNN</code> with <code>Status: Accepted</code>. Record the promotion in <em>Resolved</em> below and
-   remove the live entry.</li>
-<li><strong>Withdraw</strong> it: record it in <em>Resolved</em> with the reason. It never reaches <code>ADR.md</code>.</li>
-</ol>
-<p><code>P-NNNN</code> and <code>ADR-NNNN</code> are <strong>separate sequences</strong> — a proposal does not reserve an ADR
-number, because proposals and decisions do not map one-to-one. The <code>P-NNNN</code> id is a
-handle for the conversation; the <code>ADR-NNNN</code> number is assigned on acceptance.</p>
-<p>An ADR that is superseded or deprecated later is handled in <code>ADR.md</code> as it always was —
-marked in place, never deleted. This file is only for the <em>pre-decision</em> stage.</p>
-<h2 id="entry-template">Entry template<a class="headerlink" href="#entry-template" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gu">## P-NNNN — &lt;one-line statement of the decision being proposed&gt;</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gs">**Raised:**</span> YYYY-MM-DD · <span class="gs">**Serves:**</span> &lt;vision or blueprint id&gt; · <span class="gs">**Affects:**</span> &lt;ADR-NNNN, …&gt;
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gs">**Proposal.**</span> What would change, stated as the decision it would become.
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gs">**Why now.**</span> The problem or evidence that raised it.
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="gs">**Alternatives.**</span> What else was considered, and why it is not preferred.
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="gs">**Open questions.**</span> What must be answered before this can be accepted.
+<h1 id="requests-for-comments-rfc-the-proposal-register">Requests for Comments (RFC) — the proposal register<a class="headerlink" href="#requests-for-comments-rfc-the-proposal-register" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p><strong>For humans.</strong> Work under consideration at the Design altitude: proposals that may become
+an Architecture Decision Record, be reshaped, merge with another, or be withdrawn. It is the
+sibling of <code>ADR.md</code> and exists so that <strong>the ledger records decisions only</strong> — an ADR is
+written when a proposal is accepted, never before (<code>memory/PROTOCOL.md</code> <em>Work from intent</em>,
+<code>DECAY.md</code> §12). Read <strong>on demand</strong>, not part of the per-session agent read path (zero
+default token cost, the same footing as <code>ADR.md</code>).</p>
+</blockquote>
+<h2 id="rules">Rules<a class="headerlink" href="#rules" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Separate sequences.</strong> <code>RFC-NNNN</code> and <code>ADR-NNNN</code> never share numbers: a proposal does not
+  reserve an ADR number, because proposals and decisions do not map one-to-one — some merge,
+  some split, some die.</li>
+<li><strong>Two exits, both recorded here.</strong> <em>Promoted:</em> the human accepted it; the ADR is written in
+  <code>ADR.md</code> and this entry keeps a pointer (<code>Promoted → ADR-NNNN</code>, date). <em>Withdrawn:</em> the entry
+  stays with the reason. An entry is <strong>never deleted</strong>; a proposal may be revised freely while
+  open, and only its final form reaches the ledger.</li>
+<li><strong>Status:</strong> <code>Open</code> (under consideration) · <code>Parked</code> (deliberately deferred — reactivate on
+  demand) · <code>Promoted → ADR-NNNN</code> · <code>Withdrawn</code>.</li>
+<li><strong>Map, don't duplicate.</strong> The live work item stays in memory — an Open Thread in
+  <code>memory/open-threads/</code> carrying a <code>→ proposal: RFC-NNNN</code> pointer — exactly as an accepted ADR
+  is pointed to by a <code>(ADR-NNNN)</code> tag on its continuity fact. The register holds the proposal's
+  reasoning (options, trade-offs, what a decision would commit to); the thread holds its state.</li>
+<li><strong>The human decides.</strong> The agent raises and revises proposals here; promotion is the
+  Design-altitude human gate (<code>DECAY.md</code> §12). Newest first.</li>
+</ul>
+<h2 id="format">Format<a class="headerlink" href="#format" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>## RFC-NNNN — &lt;Title&gt;
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>**Status:** Open · **Raised:** YYYY-MM-DD · **Serves:** &lt;vision-id&gt; · **Thread:** `&lt;thread-id&gt;`
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>&lt;!-- id: rfc-NNNN | status: open | thread: &lt;thread-id&gt; --&gt;
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>**Proposal.** What would change, and what a decision would commit the project to.
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>**Options.** The alternatives on the table, with their trade-offs.
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>**Resolution.** Empty while open; `Promoted → ADR-NNNN (date)` or `Withdrawn (date): &lt;reason&gt;`.
 </code></pre></div>
-<h2 id="open-proposals">Open proposals<a class="headerlink" href="#open-proposals" title="Permanent link">&para;</a></h2>
-<p><em>(none)</em></p>
-<h2 id="resolved">Resolved<a class="headerlink" href="#resolved" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>id</th>
-<th>outcome</th>
-<th>note</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>—</td>
-<td>—</td>
-<td><em>(none yet — this register starts 2026-09-18)</em></td>
-</tr>
-</tbody>
-</table>
+<hr />
+<p><em>(No proposals yet. The first one goes here, newest first.)</em></p>
 
 
 
