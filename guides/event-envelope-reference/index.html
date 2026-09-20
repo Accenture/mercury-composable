@@ -5652,11 +5652,14 @@ The <code>AppException</code> class maps Java exceptions to HTTP-compatible stat
 </table>
 <p>Sets the stack trace string. <strong>Reserved for test use only.</strong> Returns <code>this</code>.</p>
 <h3 id="appexception-status-mapping">AppException status mapping<a class="headerlink" href="#appexception-status-mapping" title="Permanent link">&para;</a></h3>
-<p>When <code>setException(Throwable ex)</code> is called, the framework determines the status code:</p>
+<p>When <code>setException(Throwable ex)</code> is called - and whenever the framework turns a function's exception
+into a reply - the status is resolved from the exception's <strong>cause chain</strong>: walking from the exception
+itself down its causes, the first one that carries a status wins (<code>Utility.getStatusFromException</code>).
+The message is the root cause's message, so status and message always describe the same failure.</p>
 <table>
 <thead>
 <tr>
-<th>Exception type</th>
+<th>First status-carrying exception in the chain</th>
 <th>Resulting status</th>
 </tr>
 </thead>
@@ -5666,15 +5669,23 @@ The <code>AppException</code> class maps Java exceptions to HTTP-compatible stat
 <td><code>appException.getStatus()</code> (the value you passed to the constructor)</td>
 </tr>
 <tr>
+<td><code>TimeoutException</code></td>
+<td><code>408</code></td>
+</tr>
+<tr>
 <td><code>IllegalArgumentException</code></td>
 <td><code>400</code></td>
 </tr>
 <tr>
-<td>Any other <code>Throwable</code></td>
+<td>None of the above anywhere in the chain</td>
 <td><code>500</code></td>
 </tr>
 </tbody>
 </table>
+<p>Wrappers therefore never hide a status: a function that awaits <code>po.request(...).get()</code> and lets the
+<code>ExecutionException</code> propagate on a timeout replies <code>408 Timeout for N ms</code>, and a <code>CompletionException</code>
+from <code>CompletableFuture.join()</code> around an <code>AppException(404, ...)</code> replies <code>404</code> - the same codes the
+Rust engine returns for those failures.</p>
 <p>Throw <code>AppException</code> (import <code>org.platformlambda.core.exception.AppException</code>) from user
 functions to return structured error responses:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">AppException</span><span class="p">(</span><span class="mi">404</span><span class="p">,</span><span class="w"> </span><span class="s">"Profile not found"</span><span class="p">);</span>

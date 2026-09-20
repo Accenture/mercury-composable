@@ -3483,6 +3483,10 @@ with the cause text engine-specific: Java <code>Redis is not reachable - Command
 </table>
 <p>Every probe failed as an error — none answered a 404 miss, none acknowledged <code>stored</code>, and the POST
 never landed in Redis (verified after the restart). The latencies are Finding 2; the statuses Finding 3.</p>
+<blockquote>
+<p><strong>Amended after the run:</strong> with the Finding 3 fix in place, the three Java Layer 1 rows read <strong>HTTP 408</strong>
+<code>Timeout for 5000 ms</code> (re-probed 2026-09-20 01:17 UTC); the Java Layer 2 and 3 rows are unchanged.</p>
+</blockquote>
 <h3 id="recovery-redis-restarted-no-application-restart">Recovery — Redis restarted, no application restart<a class="headerlink" href="#recovery-redis-restarted-no-application-restart" title="Permanent link">&para;</a></h3>
 <p>The outage lasted 54 s (Redis stopped at 00:37:07 UTC, listening again at 00:38:01). Both <code>/health</code>
 endpoints answered 200 on the first read after the restart.</p>
@@ -3529,12 +3533,20 @@ first failed in 0 s (<code>broken pipe</code> on the dead multiplexed connection
 <code>ConnectionManager</code>'s reconnect attempts (~4.5 s of exponential retries) or the RPC timeout. Same
 category on both sides — every probe an error — with different latency. Operators of a mixed fleet
 should expect the Java pods to fail slow (bounded by <code>redis.timeout</code>) and the Rust pods to fail faster.</p>
-<p><strong>3. An in-function RPC timeout surfaces as 500 on Java and 408 on Rust.</strong> Java's
-<code>po.request(...).get()</code> completes exceptionally (<code>TimeoutException("Timeout for 5000 ms")</code>), which the
-worker renders as HTTP 500; the Rust <code>po.request</code> returns an error result with status 408
-(<code>Request timeout for 5000 ms</code>), which the function propagates. Both are "the request failed" and
-neither is a miss; a client should treat every 4xx/5xx <em>other than 404</em> from these routes as a
-failure rather than key on one code. Not changed here — both are the engines' documented API styles.</p>
+<p><strong>3. An in-function RPC timeout surfaced as 500 on Java and 408 on Rust — the Java side was a
+platform-core mapping gap, since fixed.</strong> Java's <code>po.request(...).get()</code> rethrows the timeout inside an
+<code>ExecutionException</code>, and both places that turn a function's exception into a reply
+(<code>EventEnvelope.setException</code> and the worker's status mapping) read the status off the <em>outermost</em>
+exception while taking the message from the root cause — so the wrapper's default 500 shipped with the
+cause's message. The status is now resolved from the <strong>cause chain</strong> (<code>Utility.getStatusFromException</code>:
+the first <code>AppException</code>, <code>TimeoutException</code> → 408 or <code>IllegalArgumentException</code> → 400 wins; 500 only
+when none is present), one rule shared by both mappers and by <code>EventStreamWriter.fail</code>, with the
+documented table in the Event Envelope reference updated to match. Re-probed live after the fix with
+Redis stopped (2026-09-20 01:17 UTC): the Java Layer 1 GET, POST and DELETE answer <strong>408
+<code>Timeout for 5000 ms</code></strong> — the code the Rust engine already returned — while Layers 2 and 3 keep
+answering 500 <code>Command timed out after 5 second(s)</code>, because that is Lettuce's own timeout exception,
+which carries no status. The fix ships in the mercury-composable change that carries this amendment
+(the follow-up to PR #426).</p>
 <p><strong>4. Recovery is bounded by the client library's reconnect policy, and health can be green first.</strong>
 The Rust <code>ConnectionManager</code> reconnects on the first command after Redis is back. Lettuce reconnects on
 its own <strong>exponential backoff, capped at 30 s</strong>: in this run its attempts fell at +0, +9, +17 and +34 s
