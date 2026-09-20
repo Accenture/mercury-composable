@@ -2590,6 +2590,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#validation-run-after-the-cache-failure-classification-2026-09-20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation run after the cache-failure classification (2026-09-20)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-to-reproduce" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3065,6 +3076,17 @@
     <span class="md-ellipsis">
       
         Validation run after the Finding 3 fix (2026-09-20)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation-run-after-the-cache-failure-classification-2026-09-20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation run after the cache-failure classification (2026-09-20)
       
     </span>
   </a>
@@ -3565,8 +3587,9 @@ exception while taking the message from the root cause — so the wrapper's defa
 cause's message. The status is now resolved from the <strong>cause chain</strong> (<code>Utility.getStatusFromException</code>: the first <code>AppException</code>, <code>TimeoutException</code> → 408 or <code>IllegalArgumentException</code> → 400 wins; 500 only when none is present), one rule shared by both mappers and by <code>EventStreamWriter.fail</code>, with the documented table in the Event Envelope reference updated to match (PR #427). The full drive was then run again against both mains — the
 <a href="#validation-run-after-the-finding-3-fix-2026-09-20">validation run</a> below: every RPC-timeout failure
 renders <strong>408</strong> on both engines and the pre-fix shape (500 with a timeout message) no longer occurs.
-Java's Layers 2 and 3 keep answering 500 <code>Command timed out after 5 second(s)</code> during an outage, because
-that is Lettuce's own timeout exception, which carries no status.</p>
+Java's Layers 2 and 3 still answered 500 <code>Command timed out after 5 second(s)</code> in that run — Lettuce's own
+timeout exception, which carried no status — until the cache module learned to classify its own failures
+(Finding 6 and the <a href="#validation-run-after-the-cache-failure-classification-2026-09-20">second validation run</a>).</p>
 <p><strong>4. Recovery is bounded by the client library's reconnect policy, and health can be green first.</strong>
 The Rust <code>ConnectionManager</code> reconnects on the first command after Redis is back. Lettuce reconnects on
 its own <strong>exponential backoff, capped at 30 s</strong>: in this run its attempts fell at +0, +9, +17 and +34 s
@@ -3583,6 +3606,19 @@ window. Not changed here.</p>
 <p><strong>5. What matched exactly.</strong> The health contract (<code>UP</code>/<code>DOWN</code>, HTTP 200/400, the dependency block with
 <code>{code, text}</code>), the miss and rejection bodies on all three layers, the key layout, the TTL semantics,
 and — the point of the drive — 36/36 reads and 6/6 deletes across the engine boundary.</p>
+<p><strong>6. The cache module now classifies its own failures — 408 for a timeout, 503 for an unreachable
+Redis — in both engines.</strong> After Finding 3 closed, the Layer 2 and Layer 3 rows still read 500 during an
+outage: the flow and graph engines pass a task's status through faithfully, and the status they were given
+was the one the platform assigns to a client-library exception that carries none — Lettuce's
+<code>RedisCommandTimeoutException</code> on Java, the redis crate's I/O and timeout errors on Rust. Layer 1 read
+408 only because its own RPC timer won a race against Lettuce's command timeout by a few milliseconds.
+So the classification moved to where the failure is known: <code>v1.cache.redis</code> now maps a command timeout
+to <strong>408</strong> (Java keeps Lettuce's <code>Command timed out after N second(s)</code>; Rust <code>Redis request timed out
+after N ms</code>), a refused, dropped or unreachable connection — including a connect failure on the lazy
+build — to <strong>503</strong> <code>Redis unavailable - …</code>, the vocabulary of <code>redis.health</code>, and leaves anything the
+server answered (a wrong type, an unknown command) on the default 500. The classifier lives in the shared <code>redis-connection</code> foundation (<code>RedisFailure</code>) and is applied by <code>RedisCache</code>; the Rust engine classifies in its foundation's command path, so the two engines fail alike. The
+<a href="#validation-run-after-the-cache-failure-classification-2026-09-20">second validation run</a> below shows
+the result: not one outage probe on any layer of either engine answers 500 any more.</p>
 <h2 id="validation-run-after-the-finding-3-fix-2026-09-20">Validation run after the Finding 3 fix (2026-09-20)<a class="headerlink" href="#validation-run-after-the-finding-3-fix-2026-09-20" title="Permanent link">&para;</a></h2>
 <p>The whole drive was run a fourth time against both mains once the Java fix had merged — Java
 mercury-composable <code>6f020544</code> (PR #427), Rust mercury <code>8424bc65</code> — with three assertions added to the
@@ -3685,6 +3721,104 @@ engines. Java's Layer 1 write: attempt 1 → HTTP 408 (the RPC timeout, now 408)
 in sequence after Java's). Cross-engine reads of both post-recovery writes 4/4.</p>
 <p>What changed since the certification run is exactly the three Java Layer 1 rows — 500 → <strong>408</strong> — and
 nothing else.</p>
+<h2 id="validation-run-after-the-cache-failure-classification-2026-09-20">Validation run after the cache-failure classification (2026-09-20)<a class="headerlink" href="#validation-run-after-the-cache-failure-classification-2026-09-20" title="Permanent link">&para;</a></h2>
+<p>Finding 6 changes what an outage looks like on every layer, so the drive ran a fifth time against the two
+classified builds, with four more outage assertions: no probe on any layer of either engine answers 500;
+every timeout is 408; every unreachable-Redis failure is 503; and every probe is classified as one or the
+other. <strong>122/122 hard checks passed</strong>, the same single informational byte comparison
+recorded as before.</p>
+<table>
+<thead>
+<tr>
+<th>Engine</th>
+<th>Probe</th>
+<th>Result</th>
+<th>Latency</th>
+<th>Message</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Java</td>
+<td>L1 GET</td>
+<td>HTTP 408</td>
+<td>5.01 s</td>
+<td><code>Timeout for 5000 ms</code></td>
+</tr>
+<tr>
+<td>Java</td>
+<td>L1 POST</td>
+<td>HTTP 408</td>
+<td>5.01 s</td>
+<td><code>Timeout for 5000 ms</code></td>
+</tr>
+<tr>
+<td>Java</td>
+<td>L1 DELETE</td>
+<td>HTTP 408</td>
+<td>5.01 s</td>
+<td><code>Timeout for 5000 ms</code></td>
+</tr>
+<tr>
+<td>Java</td>
+<td>L2 GET</td>
+<td>HTTP 408</td>
+<td>5.02 s</td>
+<td><code>Command timed out after 5 second(s)</code></td>
+</tr>
+<tr>
+<td>Java</td>
+<td>L3 get</td>
+<td>HTTP 408</td>
+<td>5.03 s</td>
+<td><code>Command timed out after 5 second(s)</code></td>
+</tr>
+<tr>
+<td>Rust</td>
+<td>L1 GET</td>
+<td>HTTP 503</td>
+<td>0.0 s</td>
+<td><code>Redis unavailable - broken pipe</code></td>
+</tr>
+<tr>
+<td>Rust</td>
+<td>L1 POST</td>
+<td>HTTP 408</td>
+<td>5.01 s</td>
+<td><code>Request timeout for 5000 ms</code></td>
+</tr>
+<tr>
+<td>Rust</td>
+<td>L1 DELETE</td>
+<td>HTTP 503</td>
+<td>4.46 s</td>
+<td><code>Redis unavailable - Connection refused (os error 61)</code></td>
+</tr>
+<tr>
+<td>Rust</td>
+<td>L2 GET</td>
+<td>HTTP 408</td>
+<td>5.01 s</td>
+<td><code>Redis request timed out after 5000ms</code></td>
+</tr>
+<tr>
+<td>Rust</td>
+<td>L3 get</td>
+<td>HTTP 503</td>
+<td>4.46 s</td>
+<td><code>Redis unavailable - Connection refused (os error 61)</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Classification.</strong> Timeouts — Java: L1 GET → 408, L1 POST → 408, L1 DELETE → 408, L2 GET → 408, L3 get → 408; Rust: L1 POST → 408, L2 GET → 408.
+Unreachable — Java: none; Rust: L1 GET → 503, L1 DELETE → 503, L3 get → 503. Nothing fell
+to "other", and no probe answered 500. Java's five probes are all timeouts because Lettuce buffers
+commands on a disconnected connection until its command timeout; Rust's mix of 503 and 408 reflects the
+redis crate failing fast on the dead connection and then waiting on its reconnect attempts.</p>
+<p><strong>Recovery, unchanged in shape.</strong> <code>/health</code> back to 200 on the first read on both engines; Java's Layer 1
+write: attempt 1 → HTTP 408, attempt 2 → 201 at +8.3 s
+(Lettuce's scheduled reconnect); Rust's: attempt 1 → 201. Cross-engine reads of both post-recovery writes 4/4.</p>
+<p>What changed since the previous validation run: Java L2 GET 500 → <strong>408</strong>; Java L3 get 500 → <strong>408</strong>; Rust L1 GET 500 → <strong>503</strong>; Rust L1 DELETE 500 → <strong>503</strong>; Rust L2 GET 500 → <strong>408</strong>; Rust L3 get 500 → <strong>503</strong>. Everything else is identical.</p>
 <h2 id="how-to-reproduce">How to reproduce<a class="headerlink" href="#how-to-reproduce" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># 1. one Redis (the Java repository)</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>java<span class="w"> </span>-jar<span class="w"> </span>helpers/redis-standalone/target/redis-standalone-x.y.z.jar

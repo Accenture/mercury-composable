@@ -3188,6 +3188,11 @@ value(s) ride in the body:</p>
 <li><strong><code>MGET</code></strong> keys may span cluster hash slots — the Lettuce cluster client scatter-gathers them for you.</li>
 <li>An unknown <code>action</code>, a missing <code>key</code>, or a missing value raises <code>IllegalArgumentException</code>, surfaced to
   the caller as the event's error.</li>
+<li><strong>Redis client failures are classified</strong>, so a caller — or the flow's / graph's exception handler, which
+  passes the status through — sees the failure for what it is: a command timeout replies <strong>408</strong> (Lettuce's
+  <code>Command timed out after N second(s)</code>), an unreachable Redis replies <strong>503</strong> <code>Redis unavailable - …</code> (the
+  <code>redis.health</code> vocabulary), and a genuine command error answered by the server (e.g. <code>WRONGTYPE</code>) keeps the
+  platform's default 500. The Rust engine classifies the same way, so a mixed fleet fails alike.</li>
 </ul>
 <h2 id="config">Enabling and configuring<a class="headerlink" href="#config" title="Permanent link">&para;</a></h2>
 <p>Add the <code>distributed-cache</code> jar to the classpath and enable it. The connection uses the plain <strong><code>redis.*</code></strong>
