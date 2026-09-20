@@ -235,6 +235,34 @@ class GraphTaskTest {
         log.info("graph.task invalid output mapping surfaces as an error instead of a timeout");
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void staticDecisionTableIsGraphData() throws TimeoutException {
+        // unit-test-task-9: the decision table is a skill-less DecisionTable node whose values are
+        // JSON arrays written as text ('keys=[ "a", "b" ]'). Every node's properties land in the
+        // state machine at instantiation, so 'state-rules -> table' hands the WHOLE table to a
+        // generic lookup function in one input entry (the function reconstructs the lists with
+        // SimpleMapper); a sibling node carries the same table as one JSON text property that
+        // 'f:json(state-rules-json.table)' parses at mapping time. Nothing about the table is
+        // compiled into the function.
+        var response = runGraph("unit-test-task-9", Map.of("state", "TX"), Map.of());
+        assertEquals(200, response.getStatus());
+        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals("community-property", mm.getElement("rule"));
+        assertEquals("community-property", mm.getElement("rule_from_json"));
+        response = runGraph("unit-test-task-9", Map.of("state", "NY"), Map.of());
+        assertEquals(200, response.getStatus());
+        mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals("separate-property", mm.getElement("rule"));
+        assertEquals("separate-property", mm.getElement("rule_from_json"));
+        // a key the table does not know is the function's own 404, returned as the graph output
+        response = runGraph("unit-test-task-9", Map.of("state", "ZZ"), Map.of());
+        assertEquals(404, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("No rule for ZZ"),
+                "unexpected error response: " + response.getBody());
+        log.info("graph.task static decision table is graph data, not function code");
+    }
+
     @Test
     void helpFileFollowsNamingConvention() {
         // 'describe skill graph.task' resolves the file name by replacing dots with hyphens
