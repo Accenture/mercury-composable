@@ -20,8 +20,10 @@ package org.platformlambda.cache;
 
 import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.redis.RedisFailure;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -78,26 +80,37 @@ public class RedisCache implements LambdaFunction {
     }
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws AppException {
         CacheAction action = CacheAction.from(headers.get(ACTION));
-        RedisCacheStore cache = store.get();
-        return switch (action) {
-            case GET -> cache.get(headers.get(KEY));
-            case PUT -> {
-                cache.put(headers.get(KEY), asBytes(input), ttl(headers, cache));
-                yield Boolean.TRUE;
+        try {
+            RedisCacheStore cache = store.get();
+            return switch (action) {
+                case GET -> cache.get(headers.get(KEY));
+                case PUT -> {
+                    cache.put(headers.get(KEY), asBytes(input), ttl(headers, cache));
+                    yield Boolean.TRUE;
+                }
+                case DELETE -> cache.delete(headers.get(KEY));
+                case PUT_IF_NOT_PRESENT -> cache.putIfAbsent(headers.get(KEY), asBytes(input), ttl(headers, cache));
+                case MGET -> cache.mget(asKeyList(input));
+                case MPUT -> {
+                    cache.mput(asEntryMap(input), ttl(headers, cache));
+                    yield Boolean.TRUE;
+                }
+                case LIST_PUSH -> cache.listPush(headers.get(KEY), asBytes(input), ttl(headers, cache));
+                case LIST_POP -> cache.listPop(headers.get(KEY));
+                case LIST_LEN -> cache.listLen(headers.get(KEY));
+            };
+        } catch (RuntimeException e) {
+            // a Redis timeout is a 408 and an unreachable Redis a 503 - never a generic 500 - so a caller, or
+            // the flow's / graph's exception handler that passes the status through, sees the failure for
+            // what it is (found in the Java/Rust interop drive, 2026-09-20); anything else keeps its own mapping
+            AppException classified = RedisFailure.classify(e);
+            if (classified != null) {
+                throw classified;
             }
-            case DELETE -> cache.delete(headers.get(KEY));
-            case PUT_IF_NOT_PRESENT -> cache.putIfAbsent(headers.get(KEY), asBytes(input), ttl(headers, cache));
-            case MGET -> cache.mget(asKeyList(input));
-            case MPUT -> {
-                cache.mput(asEntryMap(input), ttl(headers, cache));
-                yield Boolean.TRUE;
-            }
-            case LIST_PUSH -> cache.listPush(headers.get(KEY), asBytes(input), ttl(headers, cache));
-            case LIST_POP -> cache.listPop(headers.get(KEY));
-            case LIST_LEN -> cache.listLen(headers.get(KEY));
-        };
+            throw e;
+        }
     }
 
     /** The write-TTL: the {@code ttl} header (a duration string) when present, else the configured default. */
