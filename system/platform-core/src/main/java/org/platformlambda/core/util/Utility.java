@@ -22,6 +22,7 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.Resource;
 import io.github.classgraph.ResourceList;
 import io.github.classgraph.ScanResult;
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.VarSegment;
 import org.platformlambda.core.system.EventEmitter;
@@ -36,6 +37,7 @@ import java.nio.file.Files;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.concurrent.TimeoutException;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -1050,6 +1052,39 @@ public class Utility {
     private String normalizeMs(String s) {
         String result = s.length() < 4? s + "000" : s;
         return result.length() == 4? result : result.substring(0, 4);
+    }
+
+    /**
+     * Resolve the HTTP-style status of an exception from its cause chain.
+     * <p>
+     * Walking from the exception itself down its causes, the first one that carries a status wins:
+     * an {@link AppException} contributes its own status, a {@link TimeoutException} 408 and an
+     * {@link IllegalArgumentException} 400. A chain without any of them is a 500. Wrappers such as
+     * {@link java.util.concurrent.ExecutionException} (from {@code Future.get()}) and
+     * {@link java.util.concurrent.CompletionException} (from {@code CompletableFuture.join()}) therefore
+     * never hide the status of the failure they carry - the same rule the error message already follows
+     * through {@link #getRootCause(Throwable)}.
+     *
+     * @param exception the exception thrown by a function, possibly wrapped
+     * @return the status code, 500 when no exception in the chain carries one
+     */
+    public int getStatusFromException(Throwable exception) {
+        Throwable current = exception;
+        while (current != null) {
+            switch (current) {
+                case AppException appException -> {
+                    return appException.getStatus();
+                }
+                case TimeoutException ignored -> {
+                    return 408;
+                }
+                case IllegalArgumentException ignored -> {
+                    return 400;
+                }
+                default -> current = current.getCause() == current ? null : current.getCause();
+            }
+        }
+        return 500;
     }
 
     public Throwable getRootCause(Throwable exception) {

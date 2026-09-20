@@ -13,7 +13,6 @@
 
 package org.platformlambda.core.models;
 
-import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.serializers.MsgPack;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.AppConfigReader;
@@ -653,13 +652,9 @@ public class EventEnvelope {
      */
     public EventEnvelope setException(Throwable ex) {
         if (ex != null) {
-            if (ex instanceof AppException appEx) {
-                setStatus(appEx.getStatus());
-            } else if (ex instanceof IllegalArgumentException) {
-                setStatus(400);
-            } else {
-                setStatus(500);
-            }
+            // status and message follow the same cause-chain rule (Utility.getStatusFromException):
+            // a wrapper such as ExecutionException never hides the status of the failure it carries
+            setStatus(util.getStatusFromException(ex));
             setBody(util.getRootCause(ex).getMessage());
             setStackTrace(getStackTrace(ex));
             ByteArrayOutputStream out = new ByteArrayOutputStream();

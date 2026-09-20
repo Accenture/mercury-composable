@@ -36,7 +36,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.*;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -365,7 +364,8 @@ public class WorkerHandler {
         EventEmitter po = EventEmitter.getInstance();
         md.diff = getExecTime(begin);
         final String replyTo = event.getReplyTo();
-        final int status = getStatusFromException(e);
+        // status and message follow the same cause-chain rule - see Utility.getStatusFromException
+        final int status = util.getStatusFromException(e);
         String error = simplifyCastError(util.getRootCause(e));
         if (f instanceof MappingExceptionHandler handler) {
             try {
@@ -527,15 +527,6 @@ public class WorkerHandler {
             default -> mapper = SimpleMapper.getInstance().getMapper();
         }
         return mapper;
-    }
-
-    private int getStatusFromException(Throwable e) {
-        return switch (e) {
-            case AppException ex -> ex.getStatus();
-            case TimeoutException ignored -> 408;
-            case IllegalArgumentException ignored -> 400;
-            default -> 500;
-        };
     }
 
     private void sendMonoResponse(TraceInfo traceContext, EventEnvelope response, Object result, long begin) {

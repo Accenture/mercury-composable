@@ -445,13 +445,22 @@ Sets the stack trace string. **Reserved for test use only.** Returns `this`.
 
 ### AppException status mapping
 
-When `setException(Throwable ex)` is called, the framework determines the status code:
+When `setException(Throwable ex)` is called - and whenever the framework turns a function's exception
+into a reply - the status is resolved from the exception's **cause chain**: walking from the exception
+itself down its causes, the first one that carries a status wins (`Utility.getStatusFromException`).
+The message is the root cause's message, so status and message always describe the same failure.
 
-| Exception type | Resulting status |
-|---------------|-----------------|
+| First status-carrying exception in the chain | Resulting status |
+|---------------------------------------------|-----------------|
 | `AppException` | `appException.getStatus()` (the value you passed to the constructor) |
+| `TimeoutException` | `408` |
 | `IllegalArgumentException` | `400` |
-| Any other `Throwable` | `500` |
+| None of the above anywhere in the chain | `500` |
+
+Wrappers therefore never hide a status: a function that awaits `po.request(...).get()` and lets the
+`ExecutionException` propagate on a timeout replies `408 Timeout for N ms`, and a `CompletionException`
+from `CompletableFuture.join()` around an `AppException(404, ...)` replies `404` - the same codes the
+Rust engine returns for those failures.
 
 Throw `AppException` (import `org.platformlambda.core.exception.AppException`) from user
 functions to return structured error responses:
