@@ -557,9 +557,27 @@
   before touching the body. Certification record: `docs/test-reports/distributed-cache-interop.md`
   (112/112; twin in the Rust repo). Recorded there, not changed: after a >30 s outage the shared Lettuce
   connection recovers on its 30 s backoff cap while `redis.health` (a fresh connection) is already green —
-  a follow-up ruling (reset on command timeout, lower the cap, or document); the in-function RPC timeout
-  is 500 here vs 408 on Rust, both errors. Relates [[redis-connection-foundation]].
+  a follow-up ruling (reset on command timeout, lower the cap, or document); the in-function RPC timeout WAS 500 here vs 408 on Rust — a platform-core mapping gap, fixed
+  2026-09-20 ([[exception-status-from-cause-chain]]): 408 on both. Relates [[redis-connection-foundation]].
   <!-- id: l1-caller-checks-reply-status | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: working | origin: 2026-09-20-004702 -->
+
+- **A function's error status comes from its CAUSE CHAIN — the first `AppException` (its status),
+  `TimeoutException` (408) or `IllegalArgumentException` (400) wins; 500 only when none is present (Eric,
+  2026-09-20; one rule, `Utility.getStatusFromException`).** Found by the cache interop (Finding 3):
+  `EventEnvelope.setException` and `WorkerHandler` each mapped the OUTERMOST exception, with slightly
+  different tables (the envelope's had no 408 at all), while the message came from `getRootCause` — so
+  `po.request(..).get()`'s `ExecutionException(TimeoutException)` replied 500 "Timeout for N ms" and a
+  `CompletionException(AppException 404)` lost its 404: status and message described different exceptions.
+  Now both mappers and `EventStreamWriter.fail` share the one rule, so JDK and Reactor wrappers never hide a
+  status, and the documented table (`event-envelope-reference.md`) says so. **Behaviour change to READ:**
+  an app that relied on a 500 for a wrapped carrier now sees the inner status; accepted edge — an
+  `IllegalArgumentException` deliberately wrapped in an `IOException` now reports 400. Eric's related
+  convention (`AppException(408, …)` instead of the JDK `TimeoutException` in the four inboxes) is a
+  separate, optional decision, NOT taken: javadoc ×10 and three `PostOfficeTest` assertions name
+  `TimeoutException`, and field `onFailure` handlers may. Verified live: the Java Layer 1 outage replies
+  are 408, matching Rust, whose `AppError` carries its status with no wrapper class to hide it. Relates
+  [[l1-caller-checks-reply-status]].
+  <!-- id: exception-status-from-cause-chain | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: working | origin: 2026-09-20-004702 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
   `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
