@@ -577,8 +577,30 @@
   `TimeoutException`, and field `onFailure` handlers may. Verified live, then by a full two-engine re-run (116/116; RPC-timeout status set {408} on both
   engines, recorded in the report's *Validation run* section): the Java Layer 1 outage replies
   are 408, matching Rust, whose `AppError` carries its status with no wrapper class to hide it. Relates
-  [[l1-caller-checks-reply-status]].
+  [[l1-caller-checks-reply-status]]. The Layer 2/3 500s that remained after this fix were the cache module's own
+  unclassified Lettuce exceptions — closed by [[redis-failure-classification]].
   <!-- id: exception-status-from-cause-chain | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: working | origin: 2026-09-20-004702 -->
+
+- **`v1.cache.redis` classifies its own Redis failures — a command timeout is 408, an unreachable Redis is
+  503, only a server answer stays 500 — in both engines (Eric, 2026-09-20; Java `RedisFailure.classify` in
+  `redis-connection`, applied by `RedisCache`; Rust `classify_command_error` in the foundation's command
+  path).** Found by the interop's outage leg after [[exception-status-from-cause-chain]] landed: Layers 2
+  and 3 still answered 500 because the flow and graph engines pass a task's status through *faithfully* —
+  and the status they were given was the platform's default for Lettuce's `RedisCommandTimeoutException`,
+  which carries none; Layer 1 read 408 only because its 5 s RPC timer beat Lettuce's 5 s command timeout by
+  milliseconds (the L2 flow's 10 s `ttl` never let the engine's own 408 fire). **Rule:** a status is set
+  where the failure is known — in the function that owns the client — never repaired downstream in a
+  handler. Classification walks the cause chain (a wrapper never hides it; an `AppException` on the chain
+  is returned as-is): `RedisCommandTimeoutException` → 408 with Lettuce's message; `RedisConnectionException`
+  / `ConnectException` / `ClosedChannelException` / a closed-or-rejected `RedisException` → 503 `Redis
+  unavailable - …` (the `redis.health` vocabulary); `RedisCommandExecutionException` (e.g. WRONGTYPE) and
+  unrelated failures → unclassified, the default mapping. Rust mirrors it in `RedisBackend::query`, so every
+  consumer of that path inherits it (sync-over-async does not use it). Proven by the fifth full drive: 122/122,
+  no outage probe on any layer of either engine answers 500 (Java all 408 — Lettuce buffers to its command
+  timeout; Rust 408 for its deadline, 503 for refused/broken-pipe). Behaviour change to READ: a caller that
+  keyed on 500 for a Redis outage now sees 408/503. Relates [[redis-connection-foundation]],
+  [[l1-caller-checks-reply-status]].
+  <!-- id: redis-failure-classification | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: working | origin: 2026-09-20-004702 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
   `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
