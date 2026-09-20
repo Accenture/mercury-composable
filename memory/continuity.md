@@ -604,7 +604,8 @@
 - **A static decision table is GRAPH DATA — a skill-less node's properties, handed whole to a generic
   function by ONE `graph.task` input entry; never hard-coded in a function bundled with the graph (Eric,
   2026-09-20; a doc gap, no engine change; branch `docs/static-decision-table-on-a-node` `00283800` +
-  `6ae1a628`; PR #430 open).** Found when an AI agent compiled a rule-by-state table into a composable function shipped
+  `6ae1a628`; PR #430 MERGED 2026-09-20, squash `c5adc58f`; the `lookup` plugin follows on branch
+  `feat/lookup-plugin` `009181d5`, PR pending).** Found when an AI agent compiled a rule-by-state table into a composable function shipped
   with its graph. Both engines already copy every node's properties into the state machine at
   instantiation (`initializeWithNodeProperties`: skill node → non-reserved keys at `{node}.{key}`;
   skill-less node → the whole map at `{node}`) and the shared LHS resolver reads any selector, so
@@ -615,7 +616,21 @@
   text property parsed by `f:json(state-rules.table)` at mapping time. **Why (Eric):** readability — the
   product owner certifies the rules on the graph in the business vocabulary — and one table replaces a
   ladder of IF-THEN-ELSE in `graph.math` or inside a function, so neither a human nor an agent hard-codes
-  it; the engine was fully capable all along, and the recipe is what steers the design choice. **Rule:** the product owner reads and certifies the table
+  it; the engine was fully capable all along, and the recipe is what steers the design choice.
+  **The common case needs no function at all (Eric's `f:lookup(table, value)` simple plugin, same day):** a
+  `graph.data.mapper` decision node resolves the rule — `f:lookup(state-rules, input.body.state) -> model.rule`
+  then `f:defaultValue(model.rule, text(unknown)) -> output.body.rule` — and the composable function stays for a
+  ruling that needs more than a lookup (Eric: even complex rulings generalize into a few decision-table
+  functions in the field). The plugin takes the table as a map or JSON text, `keys`/rule lists as lists or
+  JSON arrays written as text, compares as text case-insensitively, and returns null on a miss. Two traps
+  met while reviewing it: (1) a plugin class may not reference `SimpleMapper` — the loader's bytecode gate
+  (`ALLOWED_PACKAGES`) SKIPS it silently and every `f:lookup` mapping then fails `SimplePlugin 'lookup' not
+  found`; the serializer is reached only through the allowlisted `SimplePluginUtils`, and
+  `SimplePluginGateTest` now pins discovery; (2) **a null mapping source REMOVES the target** in both the
+  graph mapper (`handleDataMappingEntry`) and Event Script (`TaskExecutor`: `keyExists` → set null, else
+  remove) — pinned by a probe in `unit-test-lookup-1` on both engines — so the default must be a second
+  `f:defaultValue` entry; the namespaces doc's "unresolvable source leaves the target untouched" and its
+  default-then-overlay idiom contradict the code (reported to Eric for a ruling, not changed). **Rule:** the product owner reads and certifies the table
   ON the graph, a new table is a new graph version (`v2026-08-prime-rates`) and never a code change, and
   the function stays generic by reading rule names from `table.keys` and ignoring other node properties.
   Nothing in the engine checks mapping sources, so the only place this was ever stated was one row of the
