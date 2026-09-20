@@ -3102,6 +3102,11 @@ engines):</p>
       (<code>root -[contains]-&gt; island -[data]-&gt; dictionary -[provider]-&gt; provider</code>): the island is
       the graph's entity-relationship knowledge layer
       (<a href="../command-reference/#island">required convention</a>).
+- [ ] <strong>Static reference data is a node, not code.</strong> A decision table (a rule by state, a rate by
+      band) is a skill-less node whose properties a <code>graph.task</code> hands whole to a generic function
+      (<code>input[]={table-node} -&gt; table</code>). Never hard-code it as a ladder of IF-THEN-ELSE in
+      <code>graph.math</code> or inside the composable function: the table is more readable, and the product
+      owner certifies it on the graph (<a href="../skills-reference/#task">static decision table</a>).
 - [ ] Multi-line commands (<code>create</code>/<code>update</code>/<code>instantiate</code>) are sent as one block; multi-line
       <em>values</em> use <code>'''…'''</code>.
 - [ ] <code>instantiate graph</code> precedes <code>run</code>/<code>execute</code>/<code>inspect</code>.
@@ -3137,8 +3142,10 @@ engines):</p>
 <li><strong>Wire the knowledge layer:</strong> whenever the graph has <code>Dictionary</code>/<code>Provider</code> or data-entity
    nodes, an <code>Island</code> (<code>skill=graph.island</code>) is <strong>required</strong> — connect
    <code>root -[contains]-&gt; island -[data]-&gt; dictionary -[provider]-&gt; provider</code>; <strong>no node is left
-   unconnected</strong>. For a graph with none, an island with data-entity nodes documenting the domain
-   is <strong>encouraged</strong> (<a href="../command-reference/#island">convention</a>).</li>
+   unconnected</strong>. A <strong>static decision table</strong> is such a data node — a skill-less node holding the
+   table that a <code>graph.task</code> maps whole into a generic function — and is wired under the island too
+   (<a href="../skills-reference/#task">pattern</a>). For a graph with none, an island with data-entity nodes
+   documenting the domain is <strong>encouraged</strong> (<a href="../command-reference/#island">convention</a>).</li>
 <li><strong>Instantiate</strong> with mock input: <code>instantiate graph</code> + <code>{constant} -&gt; input.body.{key}</code> lines.</li>
 <li><strong>Run and inspect:</strong> <code>run</code> (or <code>execute {node}</code>), then <code>inspect output.body</code>; iterate.
    (<code>{node}</code> is a placeholder — you write e.g. <code>execute fetcher</code>, <code>inspect output.body</code>.)</li>
