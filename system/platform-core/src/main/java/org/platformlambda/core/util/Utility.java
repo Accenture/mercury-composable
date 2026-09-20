@@ -1071,16 +1071,18 @@ public class Utility {
     public int getStatusFromException(Throwable exception) {
         Throwable current = exception;
         while (current != null) {
-            if (current instanceof AppException appException) {
-                return appException.getStatus();
+            switch (current) {
+                case AppException appException -> {
+                    return appException.getStatus();
+                }
+                case TimeoutException ignored -> {
+                    return 408;
+                }
+                case IllegalArgumentException ignored -> {
+                    return 400;
+                }
+                default -> current = current.getCause() == current ? null : current.getCause();
             }
-            if (current instanceof TimeoutException) {
-                return 408;
-            }
-            if (current instanceof IllegalArgumentException) {
-                return 400;
-            }
-            current = current.getCause() == current ? null : current.getCause();
         }
         return 500;
     }
