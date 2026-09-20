@@ -238,11 +238,13 @@ class GraphTaskTest {
     @SuppressWarnings("unchecked")
     @Test
     void staticDecisionTableIsGraphData() throws TimeoutException {
-        // unit-test-task-9: the decision table is a skill-less DecisionTable node. Every node's
-        // properties land in the state machine at instantiation, so 'state-rules -> table' hands
-        // the WHOLE table to a generic lookup function in one input entry; a sibling node carries
-        // the same table as one JSON text property that 'f:json(state-rules-json.table)' parses at
-        // mapping time. Nothing about the table is compiled into the function.
+        // unit-test-task-9: the decision table is a skill-less DecisionTable node whose values are
+        // JSON arrays written as text ('keys=[ "a", "b" ]'). Every node's properties land in the
+        // state machine at instantiation, so 'state-rules -> table' hands the WHOLE table to a
+        // generic lookup function in one input entry (the function reconstructs the lists with
+        // SimpleMapper); a sibling node carries the same table as one JSON text property that
+        // 'f:json(state-rules-json.table)' parses at mapping time. Nothing about the table is
+        // compiled into the function.
         var response = runGraph("unit-test-task-9", Map.of("state", "TX"), Map.of());
         assertEquals(200, response.getStatus());
         var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
