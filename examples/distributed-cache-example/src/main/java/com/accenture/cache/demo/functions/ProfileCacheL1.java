@@ -76,9 +76,24 @@ public class ProfileCacheL1 implements TypedLambdaFunction<AsyncHttpRequest, Obj
         };
     }
 
-    private Object get(PostOffice po, String id) throws ExecutionException, InterruptedException, IOException {
-        EventEnvelope res = po.request(new EventEnvelope().setTo(CACHE)
-                .setHeader(ACTION, "GET").setHeader(KEY, id), TIMEOUT).get();
+    /**
+     * A cache reply, or the cache's failure rethrown as this function's own error. A function that throws
+     * replies with the error status and the message as its body, so an error reply must never be read as
+     * "nothing cached": a cache outage is a 5xx, not a miss - found in the live Java/Rust interop drive
+     * (2026-09-19), where this layer answered 404 "Profile not found" while Redis was down.
+     */
+    private EventEnvelope checked(EventEnvelope res) throws AppException {
+        if (res.getStatus() >= 400) {
+            throw new AppException(res.getStatus(),
+                    res.getBody() == null ? "Cache request failed" : String.valueOf(res.getBody()));
+        }
+        return res;
+    }
+
+    private Object get(PostOffice po, String id)
+            throws ExecutionException, InterruptedException, IOException, AppException {
+        EventEnvelope res = checked(po.request(new EventEnvelope().setTo(CACHE)
+                .setHeader(ACTION, "GET").setHeader(KEY, id), TIMEOUT).get());
         if (res.getBody() instanceof byte[] bytes && bytes.length > 0) {
             return msgPack.unpackMapOrList(bytes);   // the profile Map -> HTTP 200
         }
@@ -92,8 +107,8 @@ public class ProfileCacheL1 implements TypedLambdaFunction<AsyncHttpRequest, Obj
             throw new AppException(400, "Profile must be a JSON object");
         }
         byte[] value = msgPack.packMapOrList(profile);
-        po.request(new EventEnvelope().setTo(CACHE)
-                .setHeader(ACTION, "PUT").setHeader(KEY, id).setBody(value), TIMEOUT).get();
+        checked(po.request(new EventEnvelope().setTo(CACHE)
+                .setHeader(ACTION, "PUT").setHeader(KEY, id).setBody(value), TIMEOUT).get());
         Map<String, Object> ack = new HashMap<>();
         ack.put("id", id);
         ack.put(LAYER, 1);
@@ -101,9 +116,10 @@ public class ProfileCacheL1 implements TypedLambdaFunction<AsyncHttpRequest, Obj
         return new EventEnvelope().setStatus(201).setBody(ack);
     }
 
-    private Object delete(PostOffice po, String id) throws ExecutionException, InterruptedException {
-        EventEnvelope res = po.request(new EventEnvelope().setTo(CACHE)
-                .setHeader(ACTION, "DELETE").setHeader(KEY, id), TIMEOUT).get();
+    private Object delete(PostOffice po, String id)
+            throws ExecutionException, InterruptedException, AppException {
+        EventEnvelope res = checked(po.request(new EventEnvelope().setTo(CACHE)
+                .setHeader(ACTION, "DELETE").setHeader(KEY, id), TIMEOUT).get());
         long removed = res.getBody() instanceof Number number ? number.longValue() : 0;
         Map<String, Object> ack = new HashMap<>();
         ack.put("id", id);

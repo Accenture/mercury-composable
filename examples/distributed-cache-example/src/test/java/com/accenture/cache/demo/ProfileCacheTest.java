@@ -19,12 +19,17 @@
 package com.accenture.cache.demo;
 
 import org.junit.jupiter.api.Test;
+import org.platformlambda.cache.RedisCache;
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.models.LambdaFunction;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,6 +44,8 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 class ProfileCacheTest extends TestBase {
     private static final String HTTP_CLIENT = "async.http.request";
     private static final long TIMEOUT = 8000;
+    private static final String CACHE_ROUTE = "v1.cache.redis";
+    private static final String OUTAGE = "Redis unavailable - connection refused";
 
     private EventEnvelope http(String method, String url, Object body) throws Exception {
         PostOffice po = PostOffice.trackable("unit.test", Utility.getInstance().getUuid(), "TEST " + method + " " + url);
@@ -170,5 +177,51 @@ class ProfileCacheTest extends TestBase {
         assertEquals("Dave", body.get("name"));
         assertEquals("dave@example.com", body.get("email"));
         http("DELETE", "/api/l1/profile/shared", null);
+    }
+
+    /**
+     * A cache failure surfaces as the failure on every layer - never as a miss. Found in the live Java/Rust
+     * interop drive (2026-09-19): with Redis down, Layer 1 answered 404 "Profile not found", because it read
+     * the error reply's body as "no bytes" (and a POST would have acknowledged "stored"). Layers 2 and 3 were
+     * already safe - the flow and graph engines check a task's status for the author. The real v1.cache.redis
+     * is swapped for a stub that fails fast, so the assertion depends neither on a Redis outage nor on which
+     * of two timeouts fires first.
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    void aCacheFailureIsNeverAMiss() throws Exception {
+        Platform platform = Platform.getInstance();
+        LambdaFunction failing = (headers, input, instance) -> {
+            throw new AppException(503, OUTAGE);
+        };
+        platform.release(CACHE_ROUTE);
+        platform.register(CACHE_ROUTE, failing, 1);
+        try {
+            // Layer 1 drives the cache in code, so it must check the reply itself:
+            // GET is not a miss, POST is not "stored", DELETE is not "nothing removed"
+            for (String method : List.of("GET", "POST", "DELETE")) {
+                Object body = "POST".equals(method) ? profile("Alice", "alice@example.com") : null;
+                EventEnvelope res = http(method, "/api/l1/profile/alice", body);
+                assertEquals(503, res.getStatus(), "Layer 1 " + method + " surfaces the failure");
+                Map<String, Object> reply = (Map<String, Object>) res.getBody();
+                assertEquals(OUTAGE, reply.get("message"), "Layer 1 " + method);
+                assertEquals("error", reply.get("type"), "Layer 1 " + method);
+            }
+            // Layers 2 and 3: the flow and the graph propagate the task's failure through the exception handler
+            EventEnvelope viaL2 = http("GET", "/api/l2/profile/alice", null);
+            assertEquals(503, viaL2.getStatus(), "Layer 2 surfaces the failure");
+            assertEquals(OUTAGE, ((Map<String, Object>) viaL2.getBody()).get("message"));
+            Map<String, Object> get = new HashMap<>();
+            get.put("action", "get");
+            get.put("id", "alice");
+            EventEnvelope viaL3 = http("POST", "/api/graph/profile-cache", get);
+            assertEquals(503, viaL3.getStatus(), "Layer 3 surfaces the failure");
+            assertEquals(OUTAGE, ((Map<String, Object>) viaL3.getBody()).get("message"));
+        } finally {
+            // put the real cache function back for the other tests, and prove it answers again
+            platform.release(CACHE_ROUTE);
+            platform.register(CACHE_ROUTE, new RedisCache(), 20);
+        }
+        assertEquals(404, http("GET", "/api/l1/profile/alice", null).getStatus(), "the real cache is back");
     }
 }
