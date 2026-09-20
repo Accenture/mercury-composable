@@ -28,8 +28,8 @@
   configure, no wire/API/config-key change. An app on a produce-only leg whose `/health` answered a
   raw **500** now answers correctly; consumer-enabled apps were unaffected by both the defect and the
   fix. **Java only — no lockstep** (JVM classloading has no Rust analogue); the outstanding lockstep
-  was v4.12.9's distributed cache ([[ot-distributed-cache]] — Rust MERGED 2026-09-19, mercury #285; the
-  Rust catch-up release is pending). Sweep surface: BUILD FILES ONLY,
+  was v4.12.9's distributed cache ([[ot-distributed-cache]] — Rust MERGED 2026-09-19, mercury #285; interop
+  CERTIFIED 2026-09-20, `docs/test-reports/distributed-cache-interop.md`; the Rust catch-up release is pending). Sweep surface: BUILD FILES ONLY,
   **43 files / 98 occurrences** — unchanged from v4.12.11 because the fix touched no poms, and
   re-derived rather than carried forward (never trust the prior count). Prior: v4.12.11 (2026-09-16 21:03Z — the field-unblock release, **3 PRs #402–#404**
   via release PR #405, squash `06750214`, tag `v4.12.11`, pom verified at the tag): **`kafka.health`
@@ -543,6 +543,23 @@
   `model` via the `*` passthrough. Distilled from the sync-over-async composable refactoring (2026-06-27,
   Claude Code). (ADR-0007)
   <!-- id: event-script-over-code | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
+- **A function that awaits an RPC must check the reply's STATUS before reading its body — the engines
+  do it for flows and graphs, imperative code must do it itself (Java ⇄ Rust cache interop, 2026-09-20).**
+  A function that throws replies with the error status and the message as a string body (`WorkerHandler`);
+  `po.request(...).get()` returns that envelope normally. `ProfileCacheL1` on both engines tested only the
+  body shape (`byte[]`/`Value::Binary` or null), so with Redis down a fast failure read as 404 *Profile not
+  found* and a POST would have acknowledged `stored`. Ours was masked by the 5 s RPC timeout racing
+  Lettuce's 5 s command timeout — the same code against a fast-failing cache (connection refused, NOAUTH)
+  misreports. Fixed with a `checked()` guard in both examples, pinned by fail-fast stub tests that swap
+  `v1.cache.redis` (`Platform.release` + `register`, restored in `finally`). Layers 2 and 3 never had the
+  gap: the flow and graph engines check task status for the author — [[event-script-over-code]] in the
+  wild. Rule for any PostOffice caller: `if (res.getStatus() >= 400) throw new AppException(status, body)`
+  before touching the body. Certification record: `docs/test-reports/distributed-cache-interop.md`
+  (112/112; twin in the Rust repo). Recorded there, not changed: after a >30 s outage the shared Lettuce
+  connection recovers on its 30 s backoff cap while `redis.health` (a fresh connection) is already green —
+  a follow-up ruling (reset on command timeout, lower the cap, or document); the in-function RPC timeout
+  is 500 here vs 408 on Rust, both errors. Relates [[redis-connection-foundation]].
+  <!-- id: l1-caller-checks-reply-status | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: working | origin: 2026-09-20-004702 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
   `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
