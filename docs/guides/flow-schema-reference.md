@@ -995,6 +995,12 @@ argument.
 | `f:b64(a)` | Base64 encode/decode | `f:b64(model.bytes) -> encoded` |
 | `f:json(a)` | Parse JSON text — object `{...}` → map, array `[...]` → list | `f:json(text([])) -> empty_list` |
 
+### Decision table
+
+| Function | Description | Example |
+|----------|-------------|---------|
+| `f:lookup(table, value, default)` | Name of the first rule of a decision table whose list contains the value (text comparison, case-insensitive); the optional default on a miss, null when omitted. `table.keys` lists the rules in priority order, each rule field lists its values — lists or JSON arrays as text, or the whole table as JSON text | `f:lookup(model.rules, input.body.state, text(unknown)) -> rule` |
+
 ### String operations
 
 | Function | Description | Example |

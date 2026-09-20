@@ -263,6 +263,36 @@ class GraphTaskTest {
         log.info("graph.task static decision table is graph data, not function code");
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void staticDecisionTableCommonCaseNeedsNoFunction() throws TimeoutException {
+        // unit-test-lookup-1: the common case of the same table - a graph.data.mapper decision node
+        // resolves the rule in ONE entry, 'f:lookup(state-rules, input.body.state, text(unknown))',
+        // the optional third argument being the default for a miss; no composable function is
+        // involved. The plugin reads the node's JSON-text values (keys=[ "a", "b" ]) directly.
+        var response = runGraph("unit-test-lookup-1", Map.of("state", "TX"), Map.of());
+        assertEquals(200, response.getStatus());
+        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals("community-property", mm.getElement("rule"));
+        assertEquals("TX", mm.getElement("state"));
+        response = runGraph("unit-test-lookup-1", Map.of("state", "ny"), Map.of());
+        assertEquals(200, response.getStatus());
+        mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        // values are compared as text, case-insensitively
+        assertEquals("separate-property", mm.getElement("rule"));
+        // a miss returns the third argument
+        response = runGraph("unit-test-lookup-1", Map.of("state", "ZZ"), Map.of());
+        assertEquals(200, response.getStatus());
+        mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals("unknown", mm.getElement("rule"));
+        // probe of the mapping semantics a default must respect: a null source REMOVES the target -
+        // 'text(preset)' then an absent 'input.body.missing' leaves no model.probe, so a default is
+        // supplied by the plugin's third argument (or a later f:defaultValue), never by
+        // default-then-overlay
+        assertEquals("removed", mm.getElement("probe"));
+        log.info("graph.data.mapper + f:lookup resolves a static decision table without a function");
+    }
+
     @Test
     void helpFileFollowsNamingConvention() {
         // 'describe skill graph.task' resolves the file name by replacing dots with hyphens
