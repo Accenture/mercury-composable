@@ -563,7 +563,7 @@
 
 - **A function's error status comes from its CAUSE CHAIN — the first `AppException` (its status),
   `TimeoutException` (408) or `IllegalArgumentException` (400) wins; 500 only when none is present (Eric,
-  2026-09-20; one rule, `Utility.getStatusFromException`).** Found by the cache interop (Finding 3):
+  2026-09-20; one rule, `Utility.getStatusFromException`; PR #427 opened, merge pending).** Found by the cache interop (Finding 3):
   `EventEnvelope.setException` and `WorkerHandler` each mapped the OUTERMOST exception, with slightly
   different tables (the envelope's had no 408 at all), while the message came from `getRootCause` — so
   `po.request(..).get()`'s `ExecutionException(TimeoutException)` replied 500 "Timeout for N ms" and a
