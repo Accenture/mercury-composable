@@ -38,6 +38,10 @@ graphs:
   # call succeeds, then the mapping throws inside the async completion callback - the
   # guarded completion must surface the error instead of leaving the caller to time out
   - 'unit-test-task-8'
+  # a static decision table held on a skill-less DecisionTable node, mapped whole into a
+  # generic lookup function ('state-rules -> table') and, on a sibling node, as one JSON
+  # text property parsed by f:json at mapping time - the table is graph data, not function code
+  - 'unit-test-task-9'
   - 'unit-test-join-retry'
   - 'unit-test-join-chain'
   - 'unit-test-cache-key'
