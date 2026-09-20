@@ -3103,10 +3103,11 @@ engines):</p>
       the graph's entity-relationship knowledge layer
       (<a href="../command-reference/#island">required convention</a>).
 - [ ] <strong>Static reference data is a node, not code.</strong> A decision table (a rule by state, a rate by
-      band) is a skill-less node whose properties a <code>graph.task</code> hands whole to a generic function
-      (<code>input[]={table-node} -&gt; table</code>). Never hard-code it as a ladder of IF-THEN-ELSE in
-      <code>graph.math</code> or inside the composable function: the table is more readable, and the product
-      owner certifies it on the graph (<a href="../skills-reference/#task">static decision table</a>).
+      band) is a skill-less node; a <code>graph.data.mapper</code> decision node resolves it with
+      <code>f:lookup({table-node}, {value}, text({default}))</code> (the common case), or a <code>graph.task</code> hands the whole table to
+      a generic function (<code>input[]={table-node} -&gt; table</code>). Never hard-code it as a ladder of
+      IF-THEN-ELSE in <code>graph.math</code> or inside a composable function: the table is more readable, and
+      the product owner certifies it on the graph (<a href="../skills-reference/#task">static decision table</a>).
 - [ ] Multi-line commands (<code>create</code>/<code>update</code>/<code>instantiate</code>) are sent as one block; multi-line
       <em>values</em> use <code>'''…'''</code>.
 - [ ] <code>instantiate graph</code> precedes <code>run</code>/<code>execute</code>/<code>inspect</code>.

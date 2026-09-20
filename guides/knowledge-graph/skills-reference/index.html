@@ -3095,7 +3095,10 @@ building the response.</p>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>mapping[]=source -&gt; target
 </code></pre></div>
 <p>Sources/targets use <code>input.*</code>, <code>model.*</code>, <code>output.*</code>, or a node name (its properties); <code>text(...)</code>,
-<code>int(...)</code> etc. inject constants. <strong><code>mapping[]</code> entries apply in order</strong> within the node, so a
+<code>int(...)</code> etc. inject constants, and <code>f:</code> simple plugins compute a value — a mapper is also the
+natural <strong>decision node</strong> for a static decision table held on a skill-less node
+(<code>mapping[]=f:lookup(state-rules, input.body.state, text(unknown)) -&gt; output.body.rule</code>; see
+<a href="#task">the graph.task recipe</a>). <strong><code>mapping[]</code> entries apply in order</strong> within the node, so a
 later entry may read an earlier entry's target — the chain idiom (ingest → transform → publish
 inside one mapper). Example:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>create node my-mapper
@@ -3369,42 +3372,60 @@ same generic <code>error.source</code>/<code>code</code>/<code>message</code>/<c
 legislation rather than with each request — a restriction rule by state, a rate by band — belongs on
 a <strong>skill-less node</strong>. At instantiation the engine copies every node's properties into the state
 machine, so the node's alias is a mapping source (<code>{node-name}</code> in the
-<a href="../command-reference/#namespaces">namespaces table</a>) and <strong>one <code>input[]</code> entry hands the whole
-table to a generic function</strong>. Two reasons to prefer it. <strong>Readability:</strong> the product owner reads and
+<a href="../command-reference/#namespaces">namespaces table</a>): a <code>graph.data.mapper</code> decision node resolves
+the rule with the <code>lookup</code> simple plugin (the common case, no function at all), and <strong>one <code>input[]</code>
+entry hands the whole table to a generic function</strong> when the ruling needs more than a lookup. Two
+reasons to prefer it. <strong>Readability:</strong> the product owner reads and
 certifies the rules on the graph, in the business vocabulary, and a new table ships as a new graph
 version (<code>v2026-08-prime-rates</code>), never as a code change. <strong>Simplicity:</strong> one table replaces a ladder
 of IF-THEN-ELSE — a chain of <a href="#math"><code>graph.math</code></a> decision nodes, or conditionals inside a composable
 function — that grows a branch per rule and buries the ruling in control flow. Do not hard-code the
 table in <code>graph.math</code> statements or in a function bundled with the graph: neither is reusable, and
 neither is certifiable from the graph.</p>
+<p>The table node, shared by both examples below — <code>keys</code> names the rules in priority order and each
+rule lists the values that select it, every value a JSON array written as text so the node reads as
+a table in the Playground:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>create node state-rules
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>with type DecisionTable
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>with properties
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>keys=[ "community-property", "separate-property" ]
 <a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>community-property=[ "CA", "TX" ]
 <a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>separate-property=[ "NY" ]
-<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>
-<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>create node select-rule
-<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>with type Task
-<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>with properties
-<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>skill=graph.task
-<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>task=v1.decision.table
-<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>input[]=state-rules -&gt; table
-<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>input[]=input.body.state -&gt; key
-<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>output[]=result.rule -&gt; output.body.rule
 </code></pre></div>
-<p><code>keys</code> names the rules in priority order and each rule lists its member keys. Every value is a JSON
-array written as text, so the node reads as a table in the Playground and the function reconstructs
-the lists (Java: <code>SimpleMapper.getInstance().getMapper().readValue(text, List.class)</code>; Rust:
-<code>serde_json::from_str</code>). The function stays generic: it reads the rule names from <code>table.keys</code> and
-ignores any other property on the node (a <code>purpose</code>, a <code>source</code>). Two variations: <code>key[]=member</code>
-lines build a real list property (one row per member in the Playground), and a nested table can be
-<strong>one JSON text property</strong> (a multi-line <code>'''…'''</code> value) that
-<a href="../command-reference/#constants"><code>f:json</code></a> parses at mapping time:
-<code>input[]=f:json(state-rules.table) -&gt; table</code>. Wire the table node under the graph's island
+<p><strong>Common case — the <code>lookup</code> simple plugin, no function.</strong> A <a href="#data-mapper"><code>graph.data.mapper</code></a>
+node is the decision node: <code>f:lookup(table, value, default)</code> returns the name of the first rule that
+lists the value (compared as text, case-insensitively), or the optional third argument on a miss
+(<code>null</code> when it is omitted):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>create node select-rule
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>with type Decision
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>with properties
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>skill=graph.data.mapper
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>mapping[]=f:lookup(state-rules, input.body.state, text(unknown)) -&gt; output.body.rule
+</code></pre></div>
+<p><strong>When the ruling needs more than a lookup — a composable function.</strong> One <code>input[]</code> entry hands the
+whole table to the function; the function stays generic by reading the rule names from <code>table.keys</code>
+and reconstructing the JSON-text lists (Java: <code>SimpleMapper.getInstance().getMapper().readValue(text,
+List.class)</code>; Rust: <code>serde_json::from_str</code>), ignoring any other property on the node (a <code>purpose</code>, a
+<code>source</code>). In the field, even complex rulings generalize into a small number of such decision-table
+functions:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>create node select-rule
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>with type Task
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>with properties
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>skill=graph.task
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>task=v1.decision.table
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>input[]=state-rules -&gt; table
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>input[]=input.body.state -&gt; key
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>output[]=result.rule -&gt; output.body.rule
+</code></pre></div>
+<p>Two variations of the table node: <code>key[]=member</code> lines build a real list property (one row per
+member in the Playground; <code>lookup</code> and the function accept both), and a nested table can be <strong>one
+JSON text property</strong> (a multi-line <code>'''…'''</code> value) that <a href="../command-reference/#constants"><code>f:json</code></a>
+parses at mapping time (<code>input[]=f:json(state-rules.table) -&gt; table</code>) — <code>f:lookup</code> also takes the
+table as JSON text directly. Wire the table node under the graph's island
 (<code>connect knowledge to state-rules with table</code>) so that <a href="#island">no node is left unconnected</a>.
-Pinned by <code>unit-test-task-9</code> on both engines: the JSON-text table and the <code>f:json</code> variation both
-resolve, and an unknown key returns the function's own 404 as the graph output.</p>
+Pinned on both engines by <code>unit-test-lookup-1</code> (the plugin path: TX, ny and a miss defaulting to
+<code>unknown</code>) and <code>unit-test-task-9</code> (the function path, incl. the <code>f:json</code> variation; an unknown key
+returns the function's own 404 as the graph output).</p>
 <p><strong>Gotchas:</strong> the <code>task</code> route must exist at runtime or the node fails fast; a call is bounded by
 <code>model.ttl</code> (default 30 s) — or by the node's optional <code>ttl</code> property (duration syntax, e.g.
 <code>10s</code>), which overrides the propagated value for this node only, the same deadline override as
@@ -3437,9 +3458,9 @@ transaction may suspend independently in each domain's graph and in each subgrap
 graph runs as one iteration of a parent's <code>for_each</code> fan-out, the iteration index is appended
 as a third segment (<code>graph:{graph_id}:{cid}:{index}</code>) so concurrent iterations do not collide
 — see <a href="../workflow-suspension/#design-rules">Workflow suspension</a>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>skill=graph.suspend
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>task=v1.redis.persist.model
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>ttl=2d
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>skill=graph.suspend
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>task=v1.redis.persist.model
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>ttl=2d
 </code></pre></div>
 <p>The node carrying this skill <strong>must be named <code>suspend</code></strong> — a reserved alias like <code>root</code>/<code>end</code>.
 Two patterns reach it, named after the node that pauses: a <strong>checkpoint node</strong> — a working node
@@ -3462,8 +3483,8 @@ the recorded suspension point — <strong>past a checkpoint node without re-exec
 <code>graph.task</code> — the <code>task</code> property names the store function (<code>type=get</code>, body <code>{cid, graph}</code> —
 the graph id scopes the lookup to this graph's own records),
 restoration is encapsulated, no mapping on the node.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>skill=graph.resume
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>task=v1.redis.retrieve.model
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>skill=graph.resume
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>task=v1.redis.retrieve.model
 </code></pre></div>
 <p>Place it early — conventionally named <code>resume</code>, right after <code>root</code> or after setup nodes. Found:
 the persisted model merges into the state machine (the current run's reserved keys always win),
@@ -3485,11 +3506,11 @@ a <code>RESET</code> node stops counting until it re-executes successfully — s
 holds the barrier instead of firing it prematurely. A <strong>chained upstream join</strong> counts only once
 it actually <strong>fired</strong> (an evaluation that sank does not count), so multi-stage joins compose
 safely.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>skill=graph.join
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>skill=graph.join
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>connect fetch-name to join with done
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>connect fetch-address to join with done
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>connect join to combine with proceed
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>connect fetch-name to join with done
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>connect fetch-address to join with done
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>connect join to combine with proceed
 </code></pre></div>
 <p><strong>Gotchas:</strong> needs at least two predecessors to be meaningful; it is the explicit fork-join
 mechanism — without it, traversal proceeds as branches complete. The fork side needs no special
@@ -3507,13 +3528,13 @@ new joiner (or an agent) discovers the domain model by reading the connected dic
 entities, not just the execution path.</p>
 <p><strong>Convention (required): leave no node unconnected</strong> — wire every config node into the island
 structure (see <a href="../command-reference/#island">Island — the knowledge layer</a>):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>skill=graph.island
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>skill=graph.island
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>connect root to dictionary with contains
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>connect dictionary to person-name with data
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>connect dictionary to person-address with data
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>connect person-name to mdm-profile with provider
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>connect person-address to mdm-profile with provider
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>connect root to dictionary with contains
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>connect dictionary to person-name with data
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>connect dictionary to person-address with data
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>connect person-name to mdm-profile with provider
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>connect person-address to mdm-profile with provider
 </code></pre></div>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>

@@ -1979,6 +1979,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#decision-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#string-operations" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4306,6 +4317,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#decision-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#string-operations" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6214,6 +6236,23 @@ argument.</p>
 <td><code>f:json(a)</code></td>
 <td>Parse JSON text — object <code>{...}</code> → map, array <code>[...]</code> → list</td>
 <td><code>f:json(text([])) -&gt; empty_list</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="decision-table">Decision table<a class="headerlink" href="#decision-table" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f:lookup(table, value, default)</code></td>
+<td>Name of the first rule of a decision table whose list contains the value (text comparison, case-insensitive); the optional default on a miss, null when omitted. <code>table.keys</code> lists the rules in priority order, each rule field lists its values — lists or JSON arrays as text, or the whole table as JSON text</td>
+<td><code>f:lookup(model.rules, input.body.state, text(unknown)) -&gt; rule</code></td>
 </tr>
 </tbody>
 </table>
