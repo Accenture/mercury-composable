@@ -18,8 +18,12 @@
 
 package com.accenture.util;
 
+import org.platformlambda.core.serializers.SimpleMapper;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.LongBinaryOperator;
@@ -28,6 +32,46 @@ import java.util.stream.Stream;
 public class SimplePluginUtils {
 
     private SimplePluginUtils() {}
+
+    /**
+     * A decision table is a map; when authored as JSON text (an object written as a string), it is
+     * converted here so that a plugin never reaches for the serializer itself.
+     *
+     * @param data a map, or a JSON object as text
+     * @return the decision table as a map
+     * @throws IllegalArgumentException when the input is neither
+     */
+    public static Map<?, ?> normalizeDecisionTable(Object data) {
+        if (data instanceof Map<?, ?> map) {
+            return map;
+        }
+        if (data instanceof String text) {
+            var message = text.trim();
+            if (message.startsWith("{") && message.endsWith("}")) {
+                return SimpleMapper.getInstance().getMapper().readValue(message, Map.class);
+            }
+        }
+        throw new IllegalArgumentException("First argument must be a decision table as a map or JSON text");
+    }
+
+    public static List<String> normalizeDecisionTableEntry(Object data) {
+        if (data instanceof String text) {
+            var message = text.trim();
+            if (message.startsWith("[") && message.endsWith("]")) {
+                var converted = SimpleMapper.getInstance().getMapper().readValue(message, List.class);
+                return getListOfStrings(converted);
+            }
+        } else if (data instanceof List<?> list) {
+            return getListOfStrings(list);
+        }
+        throw new IllegalArgumentException("Input is not a list of values");
+    }
+
+    private static List<String> getListOfStrings(List<?> list) {
+        var result = new ArrayList<String>();
+        list.forEach(item -> result.add(String.valueOf(item)));
+        return result;
+    }
 
     public static void divideByZeroCheck(Object... input) {
         boolean anyZero = Arrays.stream(input)

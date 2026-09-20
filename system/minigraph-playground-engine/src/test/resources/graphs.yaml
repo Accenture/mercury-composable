@@ -42,6 +42,9 @@ graphs:
   # generic lookup function ('state-rules -> table') and, on a sibling node, as one JSON
   # text property parsed by f:json at mapping time - the table is graph data, not function code
   - 'unit-test-task-9'
+  # the common case of the same table: the 'lookup' simple plugin in a graph.data.mapper decision
+  # node (f:lookup + f:defaultValue), no composable function at all
+  - 'unit-test-lookup-1'
   - 'unit-test-join-retry'
   - 'unit-test-join-chain'
   - 'unit-test-cache-key'

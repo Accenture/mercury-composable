@@ -54,6 +54,26 @@ mapping[]=input.body.join_date -> employee.join_date
 The "[]" syntax is used to create and append a list of one or more data mapping entries
 The "->" signature indicates the direction of mapping where the left-hand-side is source and right-hand-side is target
 
+Decision table lookup
+---------------------
+A data mapper is also the natural decision node for a static decision table held on a skill-less node
+(see "describe skill graph.task" for the table node). The "lookup" simple plugin returns the name of
+the first rule whose list contains the value (compared as text, case-insensitively) and null on a miss,
+so a second entry supplies the default:
+
+```
+create node select-rule
+with type Decision
+with properties
+skill=graph.data.mapper
+mapping[]=f:lookup(state-rules, input.body.state) -> model.rule
+mapping[]=f:defaultValue(model.rule, text(unknown)) -> output.body.rule
+```
+
+The table's "keys" field lists the rule names in priority order and each rule field lists its values;
+each may be a list or a JSON array written as text (keys=[ "a", "b" ]), and the table itself may be
+JSON text. One table replaces a ladder of IF-THEN-ELSE and the product owner certifies it on the graph.
+
 Deprecated syntax
 -----------------
 Event Script's "simple type matching" syntax (e.g. `model.someKey:text`) is deprecated. Use "simple plugin"
