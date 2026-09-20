@@ -64,6 +64,11 @@ Notes for callers:
 - **`MGET`** keys may span cluster hash slots — the Lettuce cluster client scatter-gathers them for you.
 - An unknown `action`, a missing `key`, or a missing value raises `IllegalArgumentException`, surfaced to
   the caller as the event's error.
+- **Redis client failures are classified**, so a caller — or the flow's / graph's exception handler, which
+  passes the status through — sees the failure for what it is: a command timeout replies **408** (Lettuce's
+  `Command timed out after N second(s)`), an unreachable Redis replies **503** `Redis unavailable - …` (the
+  `redis.health` vocabulary), and a genuine command error answered by the server (e.g. `WRONGTYPE`) keeps the
+  platform's default 500. The Rust engine classifies the same way, so a mixed fleet fails alike.
 
 ## Enabling and configuring {#config}
 
