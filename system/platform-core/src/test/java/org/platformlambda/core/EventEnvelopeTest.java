@@ -551,4 +551,23 @@ class EventEnvelopeTest {
         }
         return value;
     }
+
+    @Test
+    void wrappedExceptionKeepsItsStatusAndRootMessage() {
+        // Future.get() wraps the cause in an ExecutionException: the reply must carry the cause's
+        // status (408 for a timeout) and its message, not the wrapper's 500
+        var timeout = new EventEnvelope().setException(new java.util.concurrent.ExecutionException(
+                new java.util.concurrent.TimeoutException("Timeout for 5000 ms")));
+        assertEquals(408, timeout.getStatus());
+        assertEquals("Timeout for 5000 ms", timeout.getBody());
+        // CompletableFuture.join() wraps in a CompletionException: an AppException inside keeps its status
+        var wrapped = new EventEnvelope().setException(new java.util.concurrent.CompletionException(
+                new AppException(404, "Profile not found")));
+        assertEquals(404, wrapped.getStatus());
+        assertEquals("Profile not found", wrapped.getBody());
+        // the existing rules are unchanged
+        assertEquals(400, new EventEnvelope().setException(new IllegalArgumentException("bad")).getStatus());
+        assertEquals(500, new EventEnvelope().setException(new IOException("disk")).getStatus());
+        assertEquals(422, new EventEnvelope().setException(new AppException(422, "invalid")).getStatus());
+    }
 }

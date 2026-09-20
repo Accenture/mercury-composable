@@ -18,8 +18,8 @@
 
 package org.platformlambda.core.system;
 
-import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -175,7 +175,7 @@ public class EventStreamWriter {
      */
     public void fail(Throwable e) {
         if (closed.compareAndSet(false, true)) {
-            int status = e instanceof AppException appEx ? appEx.getStatus() : 500;
+            int status = Utility.getInstance().getStatusFromException(e);
             // the standard error key-values: '{"type": "error", "status": n, "message": text}'
             Map<String, Object> error = new HashMap<>();
             error.put(TYPE, ERROR);

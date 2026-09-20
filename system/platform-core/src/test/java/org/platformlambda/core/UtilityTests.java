@@ -606,4 +606,29 @@ class UtilityTests {
         assertEquals("PUT", restored2.getMethod());
         assertNull(restored2.getBody());
     }
+
+    @Test
+    void statusFollowsTheCauseChain() {
+        var util = Utility.getInstance();
+        // the carriers themselves
+        assertEquals(404, util.getStatusFromException(new AppException(404, "not found")));
+        assertEquals(408, util.getStatusFromException(new java.util.concurrent.TimeoutException("Timeout for 5000 ms")));
+        assertEquals(400, util.getStatusFromException(new IllegalArgumentException("bad input")));
+        assertEquals(500, util.getStatusFromException(new java.io.IOException("disk")));
+        // wrappers never hide the status they carry
+        assertEquals(408, util.getStatusFromException(new java.util.concurrent.ExecutionException(
+                new java.util.concurrent.TimeoutException("Timeout for 5000 ms"))));
+        assertEquals(404, util.getStatusFromException(new java.util.concurrent.CompletionException(
+                new AppException(404, "not found"))));
+        assertEquals(403, util.getStatusFromException(new RuntimeException(new AppException(403, "forbidden"))));
+        assertEquals(400, util.getStatusFromException(new java.util.concurrent.ExecutionException(
+                new IllegalArgumentException("bad input"))));
+        // the FIRST carrier wins: an AppException keeps its status whatever caused it
+        assertEquals(409, util.getStatusFromException(new AppException(409, "conflict", new IllegalArgumentException("x"))));
+        // a chain without a carrier is a 500, however deep
+        assertEquals(500, util.getStatusFromException(new RuntimeException(new java.io.IOException("disk"))));
+        // and the message rule stays the root cause
+        assertEquals("Timeout for 5000 ms", util.getRootCause(new java.util.concurrent.ExecutionException(
+                new java.util.concurrent.TimeoutException("Timeout for 5000 ms"))).getMessage());
+    }
 }

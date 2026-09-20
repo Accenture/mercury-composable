@@ -1915,4 +1915,60 @@ class PostOfficeTest extends TestBase {
             return new EventEnvelope().setBody(input.getBody());
         }
     }
+
+    /**
+     * The status of a function's exception follows its cause chain (Utility.getStatusFromException), so the
+     * wrappers the JDK and Reactor put around a failure never hide it: an in-function RPC timeout awaited
+     * with future.get() replies 408, a joined CompletableFuture carrying an AppException keeps its status,
+     * the Mono error path applies the same rule, and a plain checked exception is still a 500.
+     */
+    @Test
+    void wrappedExceptionsKeepTheirStatusAcrossAnRpc() throws ExecutionException, InterruptedException {
+        var platform = Platform.getInstance();
+        var po = PostOffice.trackable("unit.test", "40801", "TEST /status/from/cause/chain");
+        var slow = "status.chain.slow";
+        var caller = "status.chain.caller";
+        var joined = "status.chain.joined";
+        var mono = "status.chain.mono";
+        var io = "status.chain.io";
+        LambdaFunction slowFunction = (headers, input, instance) -> {
+            Utility.getInstance().sleep(1500);
+            return true;
+        };
+        // future.get() rethrows the timeout as an ExecutionException wrapping the TimeoutException
+        LambdaFunction callerFunction = (headers, input, instance) ->
+                new PostOffice(headers, instance).request(new EventEnvelope().setTo(slow).setBody("x"), 300).get();
+        // CompletableFuture.join() wraps the AppException in a CompletionException
+        LambdaFunction joinedFunction = (headers, input, instance) ->
+                java.util.concurrent.CompletableFuture.failedFuture(new AppException(404, "Profile not found")).join();
+        // the Mono error path takes the same rule
+        LambdaFunction monoFunction = (headers, input, instance) ->
+                reactor.core.publisher.Mono.error(new ExecutionException(new AppException(403, "Access denied")));
+        LambdaFunction ioFunction = (headers, input, instance) -> {
+            throw new IOException("disk full");
+        };
+        platform.registerPrivate(slow, slowFunction, 1);
+        platform.registerPrivate(caller, callerFunction, 1);
+        platform.registerPrivate(joined, joinedFunction, 1);
+        platform.registerPrivate(mono, monoFunction, 1);
+        platform.registerPrivate(io, ioFunction, 1);
+        try {
+            var timeout = po.request(new EventEnvelope().setTo(caller).setBody("go"), 5000).get();
+            assertEquals(408, timeout.getStatus());
+            assertEquals("Timeout for 300 ms", timeout.getBody());
+            var notFound = po.request(new EventEnvelope().setTo(joined).setBody("go"), 5000).get();
+            assertEquals(404, notFound.getStatus());
+            assertEquals("Profile not found", notFound.getBody());
+            var denied = po.request(new EventEnvelope().setTo(mono).setBody("go"), 5000).get();
+            assertEquals(403, denied.getStatus());
+            assertEquals("Access denied", denied.getBody());
+            var failed = po.request(new EventEnvelope().setTo(io).setBody("go"), 5000).get();
+            assertEquals(500, failed.getStatus());
+            assertEquals("disk full", failed.getBody());
+        } finally {
+            for (String route : List.of(slow, caller, joined, mono, io)) {
+                platform.release(route);
+            }
+        }
+    }
 }
