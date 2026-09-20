@@ -601,6 +601,24 @@
   keyed on 500 for a Redis outage now sees 408/503. Relates [[redis-connection-foundation]],
   [[l1-caller-checks-reply-status]].
   <!-- id: redis-failure-classification | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: working | origin: 2026-09-20-004702 -->
+- **A static decision table is GRAPH DATA — a skill-less node's properties, handed whole to a generic
+  function by ONE `graph.task` input entry; never hard-coded in a function bundled with the graph (Eric,
+  2026-09-20; a doc gap, no engine change; branch `docs/static-decision-table-on-a-node` `00283800`, PR
+  pending).** Found when an AI agent compiled a rule-by-state table into a composable function shipped
+  with its graph. Both engines already copy every node's properties into the state machine at
+  instantiation (`initializeWithNodeProperties`: skill node → non-reserved keys at `{node}.{key}`;
+  skill-less node → the whole map at `{node}`) and the shared LHS resolver reads any selector, so
+  `state-rules -> table` maps the table in one entry; `keys[]=` / `rule[]=` list properties render as rows
+  in the Playground (a human-readable table); a nested table is one triple-quoted JSON text property parsed
+  by `f:json(state-rules.table)` at mapping time. **Rule:** the product owner reads and certifies the table
+  ON the graph, a new table is a new graph version (`v2026-08-prime-rates`) and never a code change, and
+  the function stays generic by reading rule names from `table.keys` and ignoring other node properties.
+  Nothing in the engine checks mapping sources, so the only place this was ever stated was one row of the
+  namespaces table — the pattern is now in `skills-reference.md` (graph.task), the in-Playground help and
+  the AI agent guide's pre-send checklist, pinned by `unit-test-task-9` on both engines (twin: mercury
+  Increment 123). Applies [[event-script-over-code]] to DATA (config over code) and
+  [[clean-knowledge-design-over-engine-coverage]] (no engine feature where the design already works).
+  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: working | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
   `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
