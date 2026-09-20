@@ -584,7 +584,7 @@
 - **`v1.cache.redis` classifies its own Redis failures — a command timeout is 408, an unreachable Redis is
   503, only a server answer stays 500 — in both engines (Eric, 2026-09-20; Java `RedisFailure.classify` in
   `redis-connection`, applied by `RedisCache`; Rust `classify_command_error` in the foundation's command
-  path; PRs #429 / mercury #289 opened, merge pending).** Found by the interop's outage leg after [[exception-status-from-cause-chain]] landed: Layers 2
+  path; MERGED 2026-09-20 — #429 squash `aa35d8c6`, mercury #289 merge `017bf8ed`).** Found by the interop's outage leg after [[exception-status-from-cause-chain]] landed: Layers 2
   and 3 still answered 500 because the flow and graph engines pass a task's status through *faithfully* —
   and the status they were given was the platform's default for Lettuce's `RedisCommandTimeoutException`,
   which carries none; Layer 1 read 408 only because its 5 s RPC timer beat Lettuce's 5 s command timeout by
