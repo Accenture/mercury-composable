@@ -631,8 +631,12 @@
   `SimplePluginGateTest` now pins discovery; (2) **a null mapping source REMOVES the target** in both the
   graph mapper (`handleDataMappingEntry`) and Event Script (`TaskExecutor`: `keyExists` → set null, else
   remove) — pinned by a probe in `unit-test-lookup-1` on both engines — so a default comes from the plugin's
-  third argument (or a later `f:defaultValue`), never from default-then-overlay; the namespaces doc's "unresolvable source leaves the target untouched" and its
-  default-then-overlay idiom contradict the code (reported to Eric for a ruling, not changed). **Rule:** the product owner reads and certifies the table
+  third argument (or a later `f:defaultValue`), never from default-then-overlay. **Eric's ruling (2026-09-20): the doc moves to the
+  code** — the namespaces section, the command JSON and the Rust data-mapper help now say *A null source
+  removes the target* (indexed target → null), with the Event Script contrast he stated: a null source
+  applies only to `model.*` targets, where it removes the model variable key, and for any other target the
+  entry is ignored; claim `null-source-removes-target` registered against the probe test on both engines
+  (branch `docs/null-source-removes-target` `f233067f`, PR pending; Rust twin `48111840`). **Rule:** the product owner reads and certifies the table
   ON the graph, a new table is a new graph version (`v2026-08-prime-rates`) and never a code change, and
   the function stays generic by reading rule names from `table.keys` and ignoring other node properties.
   Nothing in the engine checks mapping sources, so the only place this was ever stated was one row of the
