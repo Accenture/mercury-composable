@@ -6,17 +6,17 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="A lightweight, standalone Schema Registry mock for local development">
+        <meta name="description" content="Mercury Composable — Accenture's event-driven, composable application platform for Java: platform-core, Event Script, and the active knowledge graph.">
       
       
       
-        <link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/schema-registry-mock/">
+        <link rel="canonical" href="https://accenture.github.io/mercury-composable/test-reports/distributed-cache-interop/">
       
       
-        <link rel="prev" href="../distributed-cache/">
+        <link rel="prev" href="../suspend-resume-interop/">
       
       
-        <link rel="next" href="../sync-over-async/">
+        <link rel="next" href="../streaming-return-route-cross-pod/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Schema Registry Mock - Composable for Java</title>
+        <title>Interop Test Report — Distributed Cache, Java ⇄ Rust - Composable for Java</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#standalone-schema-registry-mock" class="md-skip">
+        <a href="#interop-test-report-distributed-cache-java-rust" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Schema Registry Mock
+              Interop Test Report — Distributed Cache, Java ⇄ Rust
             
           </span>
         </div>
@@ -258,7 +258,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../getting-started/" class="md-tabs__link">
+        <a href="../../guides/getting-started/" class="md-tabs__link">
           
   
   
@@ -280,7 +280,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../architecture/" class="md-tabs__link">
+        <a href="../../guides/architecture/" class="md-tabs__link">
           
   
   
@@ -302,7 +302,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../event-driven/" class="md-tabs__link">
+        <a href="../../guides/event-driven/" class="md-tabs__link">
           
   
   
@@ -324,7 +324,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../event-script/" class="md-tabs__link">
+        <a href="../../guides/event-script/" class="md-tabs__link">
           
   
   
@@ -346,7 +346,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../knowledge-graph/" class="md-tabs__link">
+        <a href="../../guides/knowledge-graph/" class="md-tabs__link">
           
   
   
@@ -364,13 +364,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../build-test-deploy/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../guides/build-test-deploy/" class="md-tabs__link">
           
   
   
@@ -388,10 +386,12 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
+      <li class="md-tabs__item md-tabs__item--active">
         <a href="../../arch-decisions/ADR/" class="md-tabs__link">
           
   
@@ -545,7 +545,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/" class="md-nav__link">
+      <a href="../../guides/getting-started/" class="md-nav__link">
         
   
   
@@ -696,7 +696,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
+      <a href="../../guides/architecture/" class="md-nav__link">
         
   
   
@@ -724,7 +724,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../methodology/" class="md-nav__link">
+      <a href="../../guides/methodology/" class="md-nav__link">
         
   
   
@@ -752,7 +752,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ai-developer-guide/" class="md-nav__link">
+      <a href="../../guides/ai-developer-guide/" class="md-nav__link">
         
   
   
@@ -822,7 +822,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../event-driven/" class="md-nav__link ">
+            <a href="../../guides/event-driven/" class="md-nav__link ">
               
   
   
@@ -866,7 +866,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../event-driven/write-your-first-function/" class="md-nav__link">
+      <a href="../../guides/event-driven/write-your-first-function/" class="md-nav__link">
         
   
   
@@ -894,7 +894,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../event-driven/function-execution/" class="md-nav__link">
+      <a href="../../guides/event-driven/function-execution/" class="md-nav__link">
         
   
   
@@ -922,7 +922,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../event-driven/ai-agent-guide/" class="md-nav__link">
+      <a href="../../guides/event-driven/ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -950,7 +950,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rest-automation/" class="md-nav__link">
+      <a href="../../guides/rest-automation/" class="md-nav__link">
         
   
   
@@ -978,7 +978,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rest-automation/rest-grammar/" class="md-nav__link">
+      <a href="../../guides/rest-automation/rest-grammar/" class="md-nav__link">
         
   
   
@@ -1006,7 +1006,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rest-automation/ai-agent-guide/" class="md-nav__link">
+      <a href="../../guides/rest-automation/ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -1072,7 +1072,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../event-script/" class="md-nav__link ">
+            <a href="../../guides/event-script/" class="md-nav__link ">
               
   
   
@@ -1116,7 +1116,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../event-script/syntax/" class="md-nav__link">
+      <a href="../../guides/event-script/syntax/" class="md-nav__link">
         
   
   
@@ -1144,7 +1144,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../event-script/flow-grammar/" class="md-nav__link">
+      <a href="../../guides/event-script/flow-grammar/" class="md-nav__link">
         
   
   
@@ -1172,7 +1172,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../event-script/ai-agent-guide/" class="md-nav__link">
+      <a href="../../guides/event-script/ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -1200,7 +1200,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../flow-schema-reference/" class="md-nav__link">
+      <a href="../../guides/flow-schema-reference/" class="md-nav__link">
         
   
   
@@ -1274,7 +1274,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../knowledge-graph/" class="md-nav__link ">
+            <a href="../../guides/knowledge-graph/" class="md-nav__link ">
               
   
   
@@ -1318,7 +1318,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../knowledge-graph/build-your-first-graph/" class="md-nav__link">
+      <a href="../../guides/knowledge-graph/build-your-first-graph/" class="md-nav__link">
         
   
   
@@ -1346,7 +1346,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../knowledge-graph/workflow-suspension/" class="md-nav__link">
+      <a href="../../guides/knowledge-graph/workflow-suspension/" class="md-nav__link">
         
   
   
@@ -1374,7 +1374,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../knowledge-graph/skills-reference/" class="md-nav__link">
+      <a href="../../guides/knowledge-graph/skills-reference/" class="md-nav__link">
         
   
   
@@ -1402,7 +1402,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../knowledge-graph/command-reference/" class="md-nav__link">
+      <a href="../../guides/knowledge-graph/command-reference/" class="md-nav__link">
         
   
   
@@ -1430,7 +1430,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../knowledge-graph/ai-agent-guide/" class="md-nav__link">
+      <a href="../../guides/knowledge-graph/ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -1458,7 +1458,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../knowledge-graph/composing-the-layers/" class="md-nav__link">
+      <a href="../../guides/knowledge-graph/composing-the-layers/" class="md-nav__link">
         
   
   
@@ -1486,7 +1486,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../knowledge-graph/playground-and-companion/" class="md-nav__link">
+      <a href="../../guides/knowledge-graph/playground-and-companion/" class="md-nav__link">
         
   
   
@@ -1514,7 +1514,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../knowledge-graph/property-graph/" class="md-nav__link">
+      <a href="../../guides/knowledge-graph/property-graph/" class="md-nav__link">
         
   
   
@@ -1546,12 +1546,453 @@
       
   
   
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operate & integrate
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operate & integrate
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/build-test-deploy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build, Test & Deploy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/spring-boot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Spring Boot Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/event-over-http/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Event over HTTP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/http-streaming/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP Response Streaming
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/polyglot-functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Polyglot Functions (Python & Node.js)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/minimalist-kafka/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Minimalist Kafka
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/twin-kafka/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Twin Kafka (dual cluster)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/distributed-cache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Distributed Cache
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/schema-registry-mock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema Registry Mock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/sync-over-async/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sync-over-Async
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/service-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Minimalist Service Mesh
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
   
     
     
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
       
         
       
@@ -1593,614 +2034,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Operate & integrate
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_7">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Operate & integrate
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../build-test-deploy/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Build, Test & Deploy
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../observability/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Observability
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../spring-boot/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Spring Boot Integration
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../event-over-http/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Event over HTTP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../http-streaming/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    HTTP Response Streaming
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../polyglot-functions/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Polyglot Functions (Python & Node.js)
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../minimalist-kafka/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Minimalist Kafka
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../twin-kafka/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Twin Kafka (dual cluster)
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../distributed-cache/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Distributed Cache
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Schema Registry Mock
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Schema Registry Mock
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#at-a-glance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        At a glance
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#why-use-this" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why use this?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#running-the-standalone-server" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Running the Standalone Server
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-use-it-in-your-application" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How to use it in your application
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#endpoints-implemented" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Endpoints Implemented
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Endpoints Implemented">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#the-schema-field-is-a-string" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The schema field is a string
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#error-responses" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Error responses
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#state-management" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        State Management
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#try-it-the-worked-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Try it: the worked example
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        See also
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../sync-over-async/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Sync-over-Async
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../service-mesh/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Minimalist Service Mesh
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
-        
-          
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
             
   
   
@@ -2218,7 +2055,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2292,7 +2129,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api-overview/" class="md-nav__link">
+      <a href="../../guides/api-overview/" class="md-nav__link">
         
   
   
@@ -2320,7 +2157,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../annotations-reference/" class="md-nav__link">
+      <a href="../../guides/annotations-reference/" class="md-nav__link">
         
   
   
@@ -2348,7 +2185,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration-reference/" class="md-nav__link">
+      <a href="../../guides/configuration-reference/" class="md-nav__link">
         
   
   
@@ -2376,7 +2213,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../event-envelope-reference/" class="md-nav__link">
+      <a href="../../guides/event-envelope-reference/" class="md-nav__link">
         
   
   
@@ -2404,7 +2241,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../event-envelope-wire-format/" class="md-nav__link">
+      <a href="../../guides/event-envelope-wire-format/" class="md-nav__link">
         
   
   
@@ -2432,7 +2269,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../registration-metadata-contract/" class="md-nav__link">
+      <a href="../../guides/registration-metadata-contract/" class="md-nav__link">
         
   
   
@@ -2460,7 +2297,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../test-reports/event-over-http-interop/" class="md-nav__link">
+      <a href="../event-over-http-interop/" class="md-nav__link">
         
   
   
@@ -2488,7 +2325,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../test-reports/progressive-rendering-interop/" class="md-nav__link">
+      <a href="../progressive-rendering-interop/" class="md-nav__link">
         
   
   
@@ -2516,7 +2353,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../test-reports/suspend-resume-interop/" class="md-nav__link">
+      <a href="../suspend-resume-interop/" class="md-nav__link">
         
   
   
@@ -2541,10 +2378,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../test-reports/distributed-cache-interop/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interop Test Report — Distributed Cache
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2560,6 +2424,175 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-this-drive-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why this drive exists
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#method" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#results-certification-run-112112-checks-passed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results — certification run: 112/112 checks passed
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Results — certification run: 112/112 checks passed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-identity-and-health" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. Identity and health
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b-the-6-6-matrix-every-reader-reads-every-writer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B. The 6 × 6 matrix — every reader reads every writer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-the-wire-key-layout-value-format-ttl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C. The wire — key layout, value format, TTL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#d-cross-engine-deletes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D. Cross-engine deletes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e-one-error-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E. One error shape
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outage-redis-stopped" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outage — Redis stopped
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recovery-redis-restarted-no-application-restart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovery — Redis restarted, no application restart
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#findings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Findings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-reproduce" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to reproduce
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2572,7 +2605,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../test-reports/streaming-return-route-cross-pod/" class="md-nav__link">
+      <a href="../streaming-return-route-cross-pod/" class="md-nav__link">
         
   
   
@@ -2600,7 +2633,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../test-reports/otel-dynatrace-certification/" class="md-nav__link">
+      <a href="../otel-dynatrace-certification/" class="md-nav__link">
         
   
   
@@ -2628,7 +2661,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reserved-names-and-headers/" class="md-nav__link">
+      <a href="../../guides/reserved-names-and-headers/" class="md-nav__link">
         
   
   
@@ -2656,7 +2689,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../actuators-and-http-client/" class="md-nav__link">
+      <a href="../../guides/actuators-and-http-client/" class="md-nav__link">
         
   
   
@@ -2684,7 +2717,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../code-conventions/" class="md-nav__link">
+      <a href="../../guides/code-conventions/" class="md-nav__link">
         
   
   
@@ -2712,7 +2745,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../documentation-conventions/" class="md-nav__link">
+      <a href="../../guides/documentation-conventions/" class="md-nav__link">
         
   
   
@@ -2879,10 +2912,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#at-a-glance" class="md-nav__link">
+  <a href="#why-this-drive-exists" class="md-nav__link">
     <span class="md-ellipsis">
       
-        At a glance
+        Why this drive exists
       
     </span>
   </a>
@@ -2890,10 +2923,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-use-this" class="md-nav__link">
+  <a href="#setup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why use this?
+        Setup
       
     </span>
   </a>
@@ -2901,10 +2934,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-the-standalone-server" class="md-nav__link">
+  <a href="#method" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Running the Standalone Server
+        Method
       
     </span>
   </a>
@@ -2912,33 +2945,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-to-use-it-in-your-application" class="md-nav__link">
+  <a href="#results-certification-run-112112-checks-passed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How to use it in your application
+        Results — certification run: 112/112 checks passed
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#endpoints-implemented" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Endpoints Implemented
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Endpoints Implemented">
+    <nav class="md-nav" aria-label="Results — certification run: 112/112 checks passed">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#the-schema-field-is-a-string" class="md-nav__link">
+  <a href="#a-identity-and-health" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The schema field is a string
+        A. Identity and health
       
     </span>
   </a>
@@ -2946,10 +2968,65 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#error-responses" class="md-nav__link">
+  <a href="#b-the-6-6-matrix-every-reader-reads-every-writer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Error responses
+        B. The 6 × 6 matrix — every reader reads every writer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-the-wire-key-layout-value-format-ttl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C. The wire — key layout, value format, TTL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#d-cross-engine-deletes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D. Cross-engine deletes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#e-one-error-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E. One error shape
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outage-redis-stopped" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outage — Redis stopped
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recovery-redis-restarted-no-application-restart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovery — Redis restarted, no application restart
       
     </span>
   </a>
@@ -2962,10 +3039,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#state-management" class="md-nav__link">
+  <a href="#findings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        State Management
+        Findings
       
     </span>
   </a>
@@ -2973,21 +3050,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#try-it-the-worked-example" class="md-nav__link">
+  <a href="#how-to-reproduce" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Try it: the worked example
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        See also
+        How to reproduce
       
     </span>
   </a>
@@ -3014,115 +3080,502 @@
   
 
 
-<h1 id="standalone-schema-registry-mock">Standalone Schema Registry Mock<a class="headerlink" href="#standalone-schema-registry-mock" title="Permanent link">&para;</a></h1>
-<h2 id="at-a-glance">At a glance<a class="headerlink" href="#at-a-glance" title="Permanent link">&para;</a></h2>
-<p>The <code>schema-registry-standalone</code> module is a lightweight, zero-dependency mock of the Confluent Schema Registry. It runs as a <code>MainApplication</code> on the <code>platform-core</code> runtime and mimics the HTTP API required by <code>KafkaAvroSerializer</code> and <code>KafkaJsonSchemaSerializer</code>.</p>
+<h1 id="interop-test-report-distributed-cache-java-rust">Interop Test Report — Distributed Cache, Java ⇄ Rust<a class="headerlink" href="#interop-test-report-distributed-cache-java-rust" title="Permanent link">&para;</a></h1>
+<p><em>Live cross-engine validation between the Java engine
+(<a href="https://github.com/Accenture/mercury-composable">mercury-composable</a>) and the official Rust
+implementation (<a href="https://github.com/Accenture/mercury">mercury</a>) of the
+<a href="../../guides/distributed-cache/">Distributed Cache</a> — conducted 2026-09-20 UTC (the evening of
+2026-09-19 Pacific) as the certification evidence for the <code>v1.cache.redis</code> lock-step: Java shipped the
+module in v4.12.9, the Rust port merged as mercury PR #285.</em> The same report is kept in the Rust repository's <code>docs/test-reports/</code>.</p>
+<p>This report is a permanent record. It validates the deployment shape the module was built for: a
+<strong>mixed fleet</strong> — some pods on the Java engine, some on the Rust engine — sharing <strong>one Redis cache</strong>,
+where a value written by any layer of either engine must read back, and be evicted, through any layer
+of the other. Everything here is reproducible from the two shipped <code>distributed-cache-example</code>
+applications and the Java repository's <code>helpers/redis-standalone</code> server.</p>
+<h2 id="why-this-drive-exists">Why this drive exists<a class="headerlink" href="#why-this-drive-exists" title="Permanent link">&para;</a></h2>
+<p>The cache contract is a <strong>cross-language wire contract</strong>: the key is <code>{redis.cache.key.prefix}{key}</code>
+(here <code>cache-demo:</code> plus the profile id), the value is opaque bytes the <em>application</em> owns, and every
+key carries its TTL from birth (<code>SETEX</code>). Nothing in the key or the value is engine-specific — so by
+design, which engine wrote a value and which engine reads it must be invisible to the caller. Four
+details are load-bearing for that guarantee, and each was pinned before the drive:</p>
 <ul>
-<li><strong>Location:</strong> <code>helpers/schema-registry-standalone</code></li>
-<li><strong>Default Port:</strong> <code>8081</code> (Confluent's default)</li>
-<li><strong>Storage:</strong> In-memory, persisted as one file per schema id (<code>&lt;id&gt;.json</code>, e.g. <code>1.json</code>) under a configurable directory (<code>schema.registry.data.store</code>, default <code>/tmp/schema-registry</code>)</li>
-<li><strong>Supported Types:</strong> Avro (default), JSON Schema, Protobuf — the mock is schema-language-agnostic (it stores/serves an opaque schema string regardless of type), so it can serve any Confluent client, including a Protobuf one. <strong><code>minimalist-kafka</code>'s own client integration only consumes JSON Schema and Avro</strong> — see the <a href="../minimalist-kafka/#schema">Kafka Flow Adapter guide</a> for why Protobuf support was removed.</li>
+<li><strong>One action vocabulary.</strong> Both engines' <code>v1.cache.redis</code> take the same actions, the same headers
+  (<code>action</code> / <code>key</code> / <code>ttl</code>), the same configuration keys and return the same error messages — a mixed
+  fleet is configured once (Rust port spec §2–§3, byte-compatible by construction).</li>
+<li><strong>The example's value is a plain MsgPack map</strong> — Java <code>MsgPack.packMapOrList</code>, Rust <code>rmpv</code> — not a
+  Java <code>EventEnvelope.toBytes()</code> holder. The Java example was refactored to this form (PR #395)
+  precisely because the Rust port cannot read the envelope encoding.</li>
+<li><strong>One model, two engines.</strong> The Layer 2 flow (<code>l2-profile.yml</code>) and the Layer 3 graph
+  (<code>profile-cache.json</code>) are byte-identical files in the two repositories.</li>
+<li><strong>One error shape.</strong> A REST client sees <code>{status, message, type: error}</code> from either engine whether
+  the failure came from routing or from a function (Rust aligned in PR #285).</li>
 </ul>
-<h2 id="why-use-this">Why use this?<a class="headerlink" href="#why-use-this" title="Permanent link">&para;</a></h2>
-<p>Confluent's serializers require a real HTTP endpoint to register and retrieve schemas (they cannot easily use a Java-level mock object across pods). Running this standalone application provides that HTTP endpoint locally without the heavy footprint of running Kafka and the full Confluent Schema Registry in Docker.</p>
-<p>It is built on <code>platform-core</code> alone — the built-in reactive HTTP server and REST automation provide the
-endpoints, so there is no dependency on <code>rest-spring</code>. Each endpoint is wired in <code>rest.yaml</code> directly to a
-composable function that receives the raw <code>AsyncHttpRequest</code> (no flow).</p>
-<h2 id="running-the-standalone-server">Running the Standalone Server<a class="headerlink" href="#running-the-standalone-server" title="Permanent link">&para;</a></h2>
-<p>First, package the project:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>mvn<span class="w"> </span>clean<span class="w"> </span>package<span class="w"> </span>-f<span class="w"> </span>helpers/schema-registry-standalone/pom.xml
-</code></pre></div></p>
-<p>Then, run the server:</p>
-<blockquote>
-<p><strong>Note</strong>: <code>x.y.z</code> denotes the current Mercury version shown in the root <code>pom.xml</code>.</p>
-</blockquote>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>java<span class="w"> </span>-jar<span class="w"> </span>helpers/schema-registry-standalone/target/schema-registry-standalone-x.y.z.jar
-</code></pre></div>
-<p>If you need to change the port, provide it as a system property <strong>before</strong> <code>-jar</code> (the built-in HTTP
-server reads <code>rest.server.port</code>):
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>java<span class="w"> </span>-Drest.server.port<span class="o">=</span><span class="m">8082</span><span class="w"> </span>-jar<span class="w"> </span>helpers/schema-registry-standalone/target/schema-registry-standalone-x.y.z.jar
-</code></pre></div></p>
-<h2 id="how-to-use-it-in-your-application">How to use it in your application<a class="headerlink" href="#how-to-use-it-in-your-application" title="Permanent link">&para;</a></h2>
-<p>Configure your Kafka producer and consumer properties to point to the local server.</p>
-<p>In your application's <code>application.properties</code> (or <code>kafka-producer.properties</code>/<code>kafka-consumer.properties</code>):
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="na">schema.registry.url</span><span class="o">=</span><span class="s">http://127.0.0.1:8081</span>
-</code></pre></div></p>
-<p>If you are using Avro:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="na">key.serializer</span><span class="o">=</span><span class="s">org.apache.kafka.common.serialization.StringSerializer</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="na">value.serializer</span><span class="o">=</span><span class="s">io.confluent.kafka.serializers.KafkaAvroSerializer</span>
-</code></pre></div></p>
-<p>If you are using JSON Schema:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="na">key.serializer</span><span class="o">=</span><span class="s">org.apache.kafka.common.serialization.StringSerializer</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="na">value.serializer</span><span class="o">=</span><span class="s">io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer</span>
-</code></pre></div></p>
-<h2 id="endpoints-implemented">Endpoints Implemented<a class="headerlink" href="#endpoints-implemented" title="Permanent link">&para;</a></h2>
-<p>The standalone server implements exactly what the Confluent clients require:</p>
-<ol>
-<li><strong><code>GET /</code></strong> (Health Check) — returns <code>{}</code>.</li>
-<li><strong><code>POST /subjects/{subject}/versions</code></strong> — accepts <code>{"schema": "...", "schemaType": "AVRO|JSON|PROTOBUF"}</code> and returns <code>{"id": 101}</code>.</li>
-<li><strong><code>GET /schemas/ids/{id}</code></strong> — retrieves the schema (and its type, for non-Avro) by ID.</li>
-</ol>
-<h3 id="the-schema-field-is-a-string">The <code>schema</code> field is a string<a class="headerlink" href="#the-schema-field-is-a-string" title="Permanent link">&para;</a></h3>
-<p>Per the Confluent spec, the schema travels as an <strong>escaped string</strong> inside the request/response body —
-<code>{"schema": "{\"type\":\"record\",...}"}</code>, not a nested JSON object. The registry treats a schema as an
-opaque string (it is schema-language-agnostic), so the same envelope carries Avro, JSON Schema, and
-Protobuf. <code>schemaType</code> defaults to <code>AVRO</code> and is omitted from the <code>GET</code> response for Avro.</p>
-<p>The schema id is <strong>global and content-based</strong>: registering identical content (even under a different
-subject) returns the same id.</p>
-<h3 id="error-responses">Error responses<a class="headerlink" href="#error-responses" title="Permanent link">&para;</a></h3>
-<p>Errors use Confluent's shape — <code>{"error_code": &lt;int&gt;, "message": "..."}</code> — with the matching HTTP status:</p>
+<h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Condition</th>
-<th>HTTP</th>
-<th><code>error_code</code></th>
+<th>Component</th>
+<th>Detail</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Schema id not found (<code>GET /schemas/ids/{id}</code>)</td>
-<td>404</td>
-<td>40403</td>
+<td>Java app</td>
+<td><code>examples/distributed-cache-example</code> from mercury-composable main (<code>c74ee6be</code>) plus the Layer 1 fix below; <code>java -jar distributed-cache-example-4.12.12.jar</code>, port <strong>8305</strong>; <code>/info</code> reports <code>4.12.12</code></td>
 </tr>
 <tr>
-<td>Subject missing</td>
-<td>404</td>
-<td>40401</td>
+<td>Rust app</td>
+<td><code>examples/distributed-cache-example</code> from mercury main (<code>5ac55eaf</code>, PR #285) plus the Layer 1 fix below; <code>distributed-cache-example -Drest.server.port=8306</code>, port <strong>8306</strong>; <code>/info</code> reports <code>4.12.7</code> (the Rust engine adopts the Java number at its catch-up release)</td>
 </tr>
 <tr>
-<td>Missing or malformed schema (Avro/JSON must be well-formed JSON)</td>
-<td>422</td>
-<td>42201</td>
+<td>Redis</td>
+<td><code>helpers/redis-standalone</code> 4.12.12 — a real <code>redis-server</code> as a plain <code>java -jar</code>, no Docker — port 6379, shared by both apps</td>
+</tr>
+<tr>
+<td>Cache settings (both apps)</td>
+<td><code>redis.cache.key.prefix=cache-demo:</code>, <code>redis.cache.default.ttl=1h</code>, <code>mandatory.health.dependencies=redis.health</code>, <code>app.env=dev</code></td>
+</tr>
+<tr>
+<td>Driver</td>
+<td>a Python script over plain HTTP (<code>urllib</code>), with <code>redis-py</code> and <code>msgpack</code> for raw key inspection; run three times — discovery, fix verification, certification (this record)</td>
 </tr>
 </tbody>
 </table>
-<h2 id="state-management">State Management<a class="headerlink" href="#state-management" title="Permanent link">&para;</a></h2>
-<p>Schemas are persisted as <strong>one file per id</strong> (<code>&lt;id&gt;.json</code>, holding <code>{"schema": ..., "schemaType": ...}</code>)
-under a configurable directory, so that if you restart the mock the schema IDs assigned to your applications
-remain valid — preventing deserialization errors during iterative local development.</p>
-<p>Because storage is one file per id, you can <strong>drop a new schema file (e.g. <code>10.json</code>) into the directory
-while the server is running</strong> and it is picked up on demand by the next <code>GET /schemas/ids/10</code> — no restart
-needed. (A file present at boot is loaded then; a file added later is loaded lazily on first lookup.)</p>
-<p>The directory is set with the <code>schema.registry.data.store</code> config key (in <code>application.properties</code>),
-defaulting to a transient <code>/tmp/schema-registry</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="na">schema.registry.data.store</span><span class="o">=</span><span class="s">/tmp/schema-registry</span>
+<p>The two apps stand in for the mixed fleet; a request to one port is "the load balancer picked a Java
+pod", to the other "a Rust pod". Layer 1 is the <code>v1.profile.l1</code> function driving the cache in code,
+Layer 2 the <code>l2-profile</code> Event Script flow, Layer 3 the <code>profile-cache</code> graph behind the standard
+<code>POST /api/graph/{graph_id}</code> endpoint.</p>
+<h2 id="method">Method<a class="headerlink" href="#method" title="Permanent link">&para;</a></h2>
+<p><strong>Main phase.</strong> (A) <code>/info</code> and <code>/health</code> on both engines. (B) Each engine writes one profile through
+each of its three layers — six writers — and every one of the six readers (three layers × two
+engines) reads all six: a 6 × 6 matrix, 18 of whose cells cross the engine boundary. (C) The raw keys
+are read straight from Redis: layout, TTL, and the bytes decoded as MsgPack; the same payload is then
+written by both engines to compare bytes. (D) Every layer of each engine deletes a profile the <em>other</em>
+engine wrote, the writer confirms the miss on yet another layer, and Redis confirms the key is gone.
+(E) The miss bodies of all three layers and the Layer 3 unknown-action rejection are compared
+field-by-field between the engines.</p>
+<p><strong>Outage phase.</strong> <code>redis-standalone</code> is stopped. Each engine's <code>/health</code> is read, then five probes —
+Layer 1 GET, POST and DELETE, Layer 2 GET, Layer 3 get — must each fail as an <em>error</em>: never a 404
+miss, never a <code>stored</code> acknowledgement.</p>
+<p><strong>Recovery phase.</strong> <code>redis-standalone</code> is restarted (empty — no persistence). Each engine must return
+to <code>/health</code> 200 <strong>without an application restart</strong>, serve a Layer 1 write again within 60 s, and the
+other engine must read that write on Layers 2 and 3. Two negative controls close the run: the earlier
+keys are gone (a real restart, not a reconnect illusion) and the POST attempted during the outage
+never landed.</p>
+<h2 id="results-certification-run-112112-checks-passed">Results — certification run: 112/112 checks passed<a class="headerlink" href="#results-certification-run-112112-checks-passed" title="Permanent link">&para;</a></h2>
+<p>Every hard check passed; one further <em>informational</em> comparison (§C) is recorded as expected. The
+discovery run had exposed one defect in both engines (Finding 1), fixed and re-verified before this
+run.</p>
+<h3 id="a-identity-and-health">A. Identity and health<a class="headerlink" href="#a-identity-and-health" title="Permanent link">&para;</a></h3>
+<p>Both <code>/info</code> endpoints answer 200 with the application block; both <code>/health</code> answer 200 with
+<code>redis.health</code> listed as the mandatory dependency.</p>
+<h3 id="b-the-6-6-matrix-every-reader-reads-every-writer">B. The 6 × 6 matrix — every reader reads every writer<a class="headerlink" href="#b-the-6-6-matrix-every-reader-reads-every-writer" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Writer \ Reader</th>
+<th>Java L1</th>
+<th>Java L2</th>
+<th>Java L3</th>
+<th>Rust L1</th>
+<th>Rust L2</th>
+<th>Rust L3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Java L1</strong> writes <code>java-l1</code></td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><strong>Java L2</strong> writes <code>java-l2</code></td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><strong>Java L3</strong> writes <code>java-l3</code></td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><strong>Rust L1</strong> writes <code>rust-l1</code></td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><strong>Rust L2</strong> writes <code>rust-l2</code></td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><strong>Rust L3</strong> writes <code>rust-l3</code></td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+</tbody>
+</table>
+<p>36/36 reads returned HTTP 200 with the exact profile map; the <strong>18 cross-engine cells</strong> are the interop
+proof, the 18 same-engine cells the control.</p>
+<h3 id="c-the-wire-key-layout-value-format-ttl">C. The wire — key layout, value format, TTL<a class="headerlink" href="#c-the-wire-key-layout-value-format-ttl" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Written by</th>
+<th>Raw value (hex)</th>
+<th>Decoded (MsgPack)</th>
+<th>TTL at read</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cache-demo:java-l1</code></td>
+<td>Java L1</td>
+<td><code>82a46e616d65ac4a617661204c617965722031a5656d61696cb36a6176612d6c31406578616d706c652e636f6d</code></td>
+<td><code>{"name":"Java Layer 1","email":"java-l1@example.com"}</code></td>
+<td>3600 s</td>
+</tr>
+<tr>
+<td><code>cache-demo:java-l2</code></td>
+<td>Java L2</td>
+<td><code>82a46e616d65ac4a617661204c617965722032a5656d61696cb36a6176612d6c32406578616d706c652e636f6d</code></td>
+<td><code>{"name":"Java Layer 2","email":"java-l2@example.com"}</code></td>
+<td>3600 s</td>
+</tr>
+<tr>
+<td><code>cache-demo:java-l3</code></td>
+<td>Java L3</td>
+<td><code>82a46e616d65ac4a617661204c617965722033a5656d61696cb36a6176612d6c33406578616d706c652e636f6d</code></td>
+<td><code>{"name":"Java Layer 3","email":"java-l3@example.com"}</code></td>
+<td>3600 s</td>
+</tr>
+<tr>
+<td><code>cache-demo:rust-l1</code></td>
+<td>Rust L1</td>
+<td><code>82a5656d61696cb3727573742d6c31406578616d706c652e636f6da46e616d65ac52757374204c617965722031</code></td>
+<td><code>{"email":"rust-l1@example.com","name":"Rust Layer 1"}</code></td>
+<td>3600 s</td>
+</tr>
+<tr>
+<td><code>cache-demo:rust-l2</code></td>
+<td>Rust L2</td>
+<td><code>82a5656d61696cb3727573742d6c32406578616d706c652e636f6da46e616d65ac52757374204c617965722032</code></td>
+<td><code>{"email":"rust-l2@example.com","name":"Rust Layer 2"}</code></td>
+<td>3600 s</td>
+</tr>
+<tr>
+<td><code>cache-demo:rust-l3</code></td>
+<td>Rust L3</td>
+<td><code>82a5656d61696cb3727573742d6c33406578616d706c652e636f6da46e616d65ac52757374204c617965722033</code></td>
+<td><code>{"email":"rust-l3@example.com","name":"Rust Layer 3"}</code></td>
+<td>3600 s</td>
+</tr>
+</tbody>
+</table>
+<p>Every value is a plain MsgPack map (<code>0x82</code> = a two-entry map) that decodes to the profile; every TTL is
+the 1 h default counting from the write; the keyspace held exactly the eight <code>cache-demo:</code> keys and
+nothing else.</p>
+<p><strong>Informational — the same payload, written by both engines, is not byte-identical:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Java  L1 → 82a46e616d65a45477696ea5656d61696cb07477696e406578616d706c652e636f6d
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Rust  L1 → 82a5656d61696cb07477696e406578616d706c652e636f6da46e616d65a45477696e
 </code></pre></div>
-<p>Point it at a <strong>durable</strong> location to keep ids stable across reboots — for example your home directory —
-and override it at runtime with a JVM flag:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>java<span class="w"> </span>-Dschema.registry.data.store<span class="o">=</span><span class="nv">$HOME</span>/schema-registry<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">     </span>-jar<span class="w"> </span>helpers/schema-registry-standalone/target/schema-registry-standalone-x.y.z.jar
+<p>Both decode to <code>{"name": "Twin", "email": "twin@example.com"}</code>. The Java packer writes the map in
+insertion order (<code>name</code>, <code>email</code>); the Rust packer serialises <code>serde_json</code>'s map, whose keys are sorted
+(<code>email</code>, <code>name</code>). MsgPack map order carries no meaning and is not part of the contract — the 36/36
+matrix above is the proof — but a byte-level comparison of stored values across engines must not be
+used as an equality test.</p>
+<h3 id="d-cross-engine-deletes">D. Cross-engine deletes<a class="headerlink" href="#d-cross-engine-deletes" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Profile</th>
+<th>Deleted by</th>
+<th>Miss confirmed by</th>
+<th>Redis key</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>java-l1</code> (written by Java L1)</td>
+<td><strong>Rust L2</strong> → HTTP 200</td>
+<td><strong>Java L3</strong> → HTTP 404 <code>Profile not found</code></td>
+<td>gone</td>
+</tr>
+<tr>
+<td><code>rust-l1</code> (written by Rust L1)</td>
+<td><strong>Java L3</strong> → HTTP 200</td>
+<td><strong>Rust L2</strong> → HTTP 404 <code>Profile not found</code></td>
+<td>gone</td>
+</tr>
+<tr>
+<td><code>java-l2</code> (written by Java L2)</td>
+<td><strong>Rust L3</strong> → HTTP 200</td>
+<td><strong>Java L2</strong> → HTTP 404 <code>Profile not found</code></td>
+<td>gone</td>
+</tr>
+<tr>
+<td><code>rust-l2</code> (written by Rust L2)</td>
+<td><strong>Java L2</strong> → HTTP 200</td>
+<td><strong>Rust L3</strong> → HTTP 404 <code>Profile not found</code></td>
+<td>gone</td>
+</tr>
+<tr>
+<td><code>java-l3</code> (written by Java L3)</td>
+<td><strong>Rust L1</strong> → HTTP 200</td>
+<td><strong>Java L3</strong> → HTTP 404 <code>Profile not found</code></td>
+<td>gone</td>
+</tr>
+<tr>
+<td><code>rust-l3</code> (written by Rust L3)</td>
+<td><strong>Java L1</strong> → HTTP 200</td>
+<td><strong>Rust L1</strong> → HTTP 404 <code>Profile not found</code></td>
+<td>gone</td>
+</tr>
+</tbody>
+</table>
+<p>6/6 deletes crossed the engine boundary, each layer of each engine deleting once; every writer then
+missed on a third layer with the same body, and every key was gone from Redis.</p>
+<h3 id="e-one-error-shape">E. One error shape<a class="headerlink" href="#e-one-error-shape" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Java body</th>
+<th>Rust body</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Layer 1 miss</td>
+<td><code>{"message": "Profile not found", "status": 404, "type": "error"}</code></td>
+<td>identical</td>
+</tr>
+<tr>
+<td>Layer 2 miss</td>
+<td><code>{"message": "Profile not found", "status": 404, "type": "error"}</code></td>
+<td>identical</td>
+</tr>
+<tr>
+<td>Layer 3 miss</td>
+<td><code>{"message": "Profile not found", "status": 404, "target": "v1.profile.decode", "type": "error"}</code></td>
+<td>identical</td>
+</tr>
+<tr>
+<td>Layer 3 unknown action</td>
+<td><code>{"message": "Invalid action. Use get, save or delete", "status": 400}</code></td>
+<td>identical</td>
+</tr>
+</tbody>
+</table>
+<p>A client sees the same status, the same keys and the same values from either engine, with
+<code>content-type: application/json</code> on both.</p>
+<h3 id="outage-redis-stopped">Outage — Redis stopped<a class="headerlink" href="#outage-redis-stopped" title="Permanent link">&para;</a></h3>
+<p>Both <code>/health</code> endpoints answered <strong>HTTP 400</strong> with <code>"status": "DOWN"</code> and the dependency block
+reporting <code>redis.health</code> at 503 with a <code>{code, text}</code> message — the same contract on both engines,
+with the cause text engine-specific: Java <code>Redis is not reachable - Command timed out after 5 second(s)</code>, Rust <code>Redis is not reachable - broken pipe</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Engine</th>
+<th>Probe</th>
+<th>Result</th>
+<th>Latency</th>
+<th>Message</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Java</td>
+<td>L1 GET</td>
+<td>HTTP 500</td>
+<td>5.02 s</td>
+<td><code>Timeout for 5000 ms</code></td>
+</tr>
+<tr>
+<td>Java</td>
+<td>L1 POST</td>
+<td>HTTP 500</td>
+<td>5.01 s</td>
+<td><code>Timeout for 5000 ms</code></td>
+</tr>
+<tr>
+<td>Java</td>
+<td>L1 DELETE</td>
+<td>HTTP 500</td>
+<td>5.01 s</td>
+<td><code>Timeout for 5000 ms</code></td>
+</tr>
+<tr>
+<td>Java</td>
+<td>L2 GET</td>
+<td>HTTP 500</td>
+<td>5.01 s</td>
+<td><code>Command timed out after 5 second(s)</code></td>
+</tr>
+<tr>
+<td>Java</td>
+<td>L3 get</td>
+<td>HTTP 500</td>
+<td>5.02 s</td>
+<td><code>Command timed out after 5 second(s)</code></td>
+</tr>
+<tr>
+<td>Rust</td>
+<td>L1 GET</td>
+<td>HTTP 500</td>
+<td>0.0 s</td>
+<td><code>Redis error - broken pipe</code></td>
+</tr>
+<tr>
+<td>Rust</td>
+<td>L1 POST</td>
+<td>HTTP 408</td>
+<td>5.01 s</td>
+<td><code>Request timeout for 5000 ms</code></td>
+</tr>
+<tr>
+<td>Rust</td>
+<td>L1 DELETE</td>
+<td>HTTP 500</td>
+<td>4.46 s</td>
+<td><code>Redis error - Connection refused (os error 61)</code></td>
+</tr>
+<tr>
+<td>Rust</td>
+<td>L2 GET</td>
+<td>HTTP 500</td>
+<td>5.01 s</td>
+<td><code>Redis request timed out after 5000ms</code></td>
+</tr>
+<tr>
+<td>Rust</td>
+<td>L3 get</td>
+<td>HTTP 500</td>
+<td>4.46 s</td>
+<td><code>Redis error - Connection refused (os error 61)</code></td>
+</tr>
+</tbody>
+</table>
+<p>Every probe failed as an error — none answered a 404 miss, none acknowledged <code>stored</code>, and the POST
+never landed in Redis (verified after the restart). The latencies are Finding 2; the statuses Finding 3.</p>
+<h3 id="recovery-redis-restarted-no-application-restart">Recovery — Redis restarted, no application restart<a class="headerlink" href="#recovery-redis-restarted-no-application-restart" title="Permanent link">&para;</a></h3>
+<p>The outage lasted 54 s (Redis stopped at 00:37:07 UTC, listening again at 00:38:01). Both <code>/health</code>
+endpoints answered 200 on the first read after the restart.</p>
+<table>
+<thead>
+<tr>
+<th>Engine</th>
+<th>Layer 1 write attempts after the restart</th>
+<th>Recovered</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Java</td>
+<td>attempt 1 at +0 s → HTTP 500 (<code>Timeout for 5000 ms</code> — the shared Lettuce connection was still on its reconnect backoff); attempt 2 → HTTP 201 at <strong>+10.2 s</strong>, the moment Lettuce's scheduled reconnect fired (<code>Reconnected</code> logged at +10.5 s)</td>
+<td>yes, without a restart</td>
+</tr>
+<tr>
+<td>Rust</td>
+<td>attempt 1 → HTTP 201 (its first probe, at +10.2 s, since the driver probes the engines in sequence); the <code>ConnectionManager</code> reconnects on demand, so it was ready as soon as Redis was</td>
+<td>yes, without a restart</td>
+</tr>
+</tbody>
+</table>
+<p>Each engine's post-recovery write was read by the other on Layers 2 and 3 (4/4); the restarted store
+had lost the earlier keys and held no key from the outage POST. The asymmetry is Finding 4.</p>
+<h2 id="findings">Findings<a class="headerlink" href="#findings" title="Permanent link">&para;</a></h2>
+<p><strong>1. Layer 1 turned a cache failure into a miss — on both engines. Fixed.</strong> In the discovery run,
+with Redis stopped, the Rust Layer 1 GET answered HTTP 404 <code>Profile not found</code> while the
+Rust log showed the cache function failing (<code>Redis error - broken pipe</code>); the Java Layer 1 answered
+HTTP 500 only because its RPC timed out first. Both <code>ProfileCacheL1</code> functions awaited the
+cache reply and tested its <em>body</em> — <code>byte[]</code>/<code>Value::Binary</code>, or <code>null</code> for a miss — without checking
+the reply's <strong>status</strong>. A function that throws replies with the error status and the message as a
+string body, so a fast failure (connection refused, an auth rejection) read as "nothing cached", and a
+POST would have acknowledged <code>stored</code>. Layers 2 and 3 never had the gap: the flow and graph engines
+check a task's status for the author — the <em>Event Script over code</em> principle, observed in the wild.
+The fix is one guard in each Layer 1 function (an error-status reply is rethrown as the function's own
+error), pinned on both sides by a test that swaps <code>v1.cache.redis</code> for a stub that fails fast, so the
+assertion depends neither on a Redis outage nor on which of two timeouts fires first. Both fixes ship with this report — the Java one in the same change as this page, the Rust one in the companion change in the mercury repository (its twin of this page).</p>
+<p><strong>2. Failure latency differs by client library — timing, not semantics.</strong> During the outage the Java
+probes each took ~5 s: Lettuce buffers commands on a disconnected connection until its command timeout
+(<code>redis.timeout</code>, 5 s), and the Layer 1 RPC timeout (5 s) races it. The Rust probes were mixed: the
+first failed in 0 s (<code>broken pipe</code> on the dead multiplexed connection), the next ones waited on the
+<code>ConnectionManager</code>'s reconnect attempts (~4.5 s of exponential retries) or the RPC timeout. Same
+category on both sides — every probe an error — with different latency. Operators of a mixed fleet
+should expect the Java pods to fail slow (bounded by <code>redis.timeout</code>) and the Rust pods to fail faster.</p>
+<p><strong>3. An in-function RPC timeout surfaces as 500 on Java and 408 on Rust.</strong> Java's
+<code>po.request(...).get()</code> completes exceptionally (<code>TimeoutException("Timeout for 5000 ms")</code>), which the
+worker renders as HTTP 500; the Rust <code>po.request</code> returns an error result with status 408
+(<code>Request timeout for 5000 ms</code>), which the function propagates. Both are "the request failed" and
+neither is a miss; a client should treat every 4xx/5xx <em>other than 404</em> from these routes as a
+failure rather than key on one code. Not changed here — both are the engines' documented API styles.</p>
+<p><strong>4. Recovery is bounded by the client library's reconnect policy, and health can be green first.</strong>
+The Rust <code>ConnectionManager</code> reconnects on the first command after Redis is back. Lettuce reconnects on
+its own <strong>exponential backoff, capped at 30 s</strong>: in this run its attempts fell at +0, +9, +17 and +34 s
+into the 54 s outage, and the next one — 30 s later, at +64 s — was the one that succeeded, 10.5 s
+after Redis had returned. In the fix-verification run, whose recovery window was only 10 s, that same
+backoff made every Java cache call fail for the whole window while <code>/health</code> already reported UP,
+because <code>redis.health</code> probes on a <strong>fresh</strong> connection rather than the cache's shared one. So after
+an outage longer than ~30 s a Java pod may serve up to ~30 s of cache errors while its health is
+green; the window closes by itself and no request is misreported (they fail as errors, Finding 1),
+but an operator watching <code>/health</code> alone would call the pod healthy before it served a cache call.
+Worth a follow-up ruling: reset the shared Lettuce connection when a command times out (so recovery
+is bounded by <code>redis.timeout</code> instead of the backoff), lower the reconnect cap, or document the
+window. Not changed here.</p>
+<p><strong>5. What matched exactly.</strong> The health contract (<code>UP</code>/<code>DOWN</code>, HTTP 200/400, the dependency block with
+<code>{code, text}</code>), the miss and rejection bodies on all three layers, the key layout, the TTL semantics,
+and — the point of the drive — 36/36 reads and 6/6 deletes across the engine boundary.</p>
+<h2 id="how-to-reproduce">How to reproduce<a class="headerlink" href="#how-to-reproduce" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># 1. one Redis (the Java repository)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>java<span class="w"> </span>-jar<span class="w"> </span>helpers/redis-standalone/target/redis-standalone-x.y.z.jar
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># 2. the Java example (port 8305) and the Rust example (moved to 8306)</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>java<span class="w"> </span>-jar<span class="w"> </span>examples/distributed-cache-example/target/distributed-cache-example-x.y.z.jar
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>cargo<span class="w"> </span>run<span class="w"> </span>-p<span class="w"> </span>distributed-cache-example<span class="w"> </span>--<span class="w"> </span>-Drest.server.port<span class="o">=</span><span class="m">8306</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># 3. write on one engine and layer, read on the other engine's three layers</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8305/api/l1/profile/alice<span class="w"> </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">     </span>-d<span class="w"> </span><span class="s1">'{"name":"Alice","email":"alice@example.com"}'</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8306/api/l1/profile/alice
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8306/api/l2/profile/alice
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8306/api/graph/profile-cache<span class="w"> </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">     </span>-d<span class="w"> </span><span class="s1">'{"action":"get","id":"alice"}'</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="c1"># 4. evict from the Rust side, confirm the miss on the Java side</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>DELETE<span class="w"> </span>http://127.0.0.1:8306/api/l2/profile/alice
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>curl<span class="w"> </span>-s<span class="w"> </span>-i<span class="w"> </span>http://127.0.0.1:8305/api/l1/profile/alice<span class="w">        </span><span class="c1"># 404 Profile not found</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="c1"># 5. the outage leg: stop redis-standalone, repeat step 3 (every call is an error, never a 404),</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="c1">#    restart it and repeat step 3 again (both apps recover without a restart)</span>
 </code></pre></div>
-<p>Making the path configurable also sidesteps filesystem-permission issues: you choose a directory your
-process can write to.</p>
-<h2 id="try-it-the-worked-example">Try it: the worked example<a class="headerlink" href="#try-it-the-worked-example" title="Permanent link">&para;</a></h2>
-<p><a href="https://github.com/Accenture/mercury-composable/tree/main/examples/schema-registry-demo"><code>examples/schema-registry-demo</code></a>
-drives the server with <code>curl</code> and two tiny zero-dependency Node scripts (<code>register-schema.mjs</code>,
-<code>get-schema.mjs</code>) plus copy-and-edit test-data schema files — no application to build.</p>
-<h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../minimalist-kafka/">Minimalist Kafka Flow Adapter</a></li>
-</ul>
+<p><code>x.y.z</code> is the current version in each repository's build file. Both examples read <code>REDIS_HOST</code> /
+<code>REDIS_PORT</code> from the environment when Redis is not on <code>127.0.0.1:6379</code>.</p>
 
 
 
@@ -3163,7 +3616,7 @@ drives the server with <code>curl</code> and two tiny zero-dependency Node scrip
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../distributed-cache/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Distributed Cache">
+          <a href="../suspend-resume-interop/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Interop Test Report — Suspend/Resume">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3173,20 +3626,20 @@ drives the server with <code>curl</code> and two tiny zero-dependency Node scrip
                 Previous
               </span>
               <div class="md-ellipsis">
-                Distributed Cache
+                Interop Test Report — Suspend/Resume
               </div>
             </div>
           </a>
         
         
           
-          <a href="../sync-over-async/" class="md-footer__link md-footer__link--next" aria-label="Next: Sync-over-Async">
+          <a href="../streaming-return-route-cross-pod/" class="md-footer__link md-footer__link--next" aria-label="Next: Test Report — Streaming Return Route (cross-pod)">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Sync-over-Async
+                Test Report — Streaming Return Route (cross-pod)
               </div>
             </div>
             <div class="md-footer__button md-icon">
