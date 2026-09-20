@@ -550,7 +550,7 @@
   body shape (`byte[]`/`Value::Binary` or null), so with Redis down a fast failure read as 404 *Profile not
   found* and a POST would have acknowledged `stored`. Ours was masked by the 5 s RPC timeout racing
   Lettuce's 5 s command timeout — the same code against a fast-failing cache (connection refused, NOAUTH)
-  misreports. Fixed with a `checked()` guard in both examples, pinned by fail-fast stub tests that swap
+  misreports. Fixed with a `checked()` guard in both examples (PR #426; Rust mercury #286), pinned by fail-fast stub tests that swap
   `v1.cache.redis` (`Platform.release` + `register`, restored in `finally`). Layers 2 and 3 never had the
   gap: the flow and graph engines check task status for the author — [[event-script-over-code]] in the
   wild. Rule for any PostOffice caller: `if (res.getStatus() >= 400) throw new AppException(status, body)`

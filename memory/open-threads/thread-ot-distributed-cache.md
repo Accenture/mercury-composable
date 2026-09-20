@@ -6,7 +6,7 @@
   two Rust-only parity gaps fixed on the way (REST error body, typed-function `EventEnvelope` reply).
   **Proof RUN 2026-09-20:** the two examples side by side on one `redis-standalone` — 112/112 hard checks
   (`docs/test-reports/distributed-cache-interop.md`, twin in the Rust repo); it found the Layer 1 false-miss
-  on a cache failure in BOTH examples, fixed on branches pending Eric's PR gate ([[l1-caller-checks-reply-status]]).
+  on a cache failure in BOTH examples, fixed — PRs #426 (Java) and mercury #286 (Rust) opened by Eric 2026-09-20, merge pending ([[l1-caller-checks-reply-status]]).
   Lesson: copied parity assertions, not code reading, caught both twin gaps — transcribe the reference suite
   into the port. → serves: vision-mercury-composable
   origin: `memory/sessions/2026-09-14-214619.md` (creation) → close record: `2026-09-19-020551.md`
