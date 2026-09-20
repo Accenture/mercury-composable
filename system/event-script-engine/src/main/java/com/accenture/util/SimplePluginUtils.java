@@ -41,7 +41,8 @@ public class SimplePluginUtils {
      * @return the decision table as a map
      * @throws IllegalArgumentException when the input is neither
      */
-    public static Map<?, ?> normalizeDecisionTable(Object data) {
+    @SuppressWarnings("rawtypes")
+    public static Map normalizeDecisionTable(Object data) {
         if (data instanceof Map<?, ?> map) {
             return map;
         }

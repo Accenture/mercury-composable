@@ -267,9 +267,9 @@ class GraphTaskTest {
     @Test
     void staticDecisionTableCommonCaseNeedsNoFunction() throws TimeoutException {
         // unit-test-lookup-1: the common case of the same table - a graph.data.mapper decision node
-        // resolves the rule with the 'lookup' simple plugin, 'f:lookup(state-rules, input.body.state)',
-        // and supplies a default for a miss with f:defaultValue; no composable function is involved.
-        // The plugin reads the node's JSON-text values (keys=[ "a", "b" ]) directly.
+        // resolves the rule in ONE entry, 'f:lookup(state-rules, input.body.state, text(unknown))',
+        // the optional third argument being the default for a miss; no composable function is
+        // involved. The plugin reads the node's JSON-text values (keys=[ "a", "b" ]) directly.
         var response = runGraph("unit-test-lookup-1", Map.of("state", "TX"), Map.of());
         assertEquals(200, response.getStatus());
         var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
@@ -280,14 +280,15 @@ class GraphTaskTest {
         mm = new MultiLevelMap((Map<String, Object>) response.getBody());
         // values are compared as text, case-insensitively
         assertEquals("separate-property", mm.getElement("rule"));
-        // a miss is null, the mapper leaves 'model.rule' unset and f:defaultValue supplies the default
+        // a miss returns the third argument
         response = runGraph("unit-test-lookup-1", Map.of("state", "ZZ"), Map.of());
         assertEquals(200, response.getStatus());
         mm = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("unknown", mm.getElement("rule"));
-        // the semantics the default idiom relies on: a null source REMOVES the target - 'text(preset)'
-        // then an absent 'input.body.missing' leaves no model.probe, so the default entry must come
-        // AFTER the lookup as f:defaultValue (default-then-overlay would lose the default)
+        // probe of the mapping semantics a default must respect: a null source REMOVES the target -
+        // 'text(preset)' then an absent 'input.body.missing' leaves no model.probe, so a default is
+        // supplied by the plugin's third argument (or a later f:defaultValue), never by
+        // default-then-overlay
         assertEquals("removed", mm.getElement("probe"));
         log.info("graph.data.mapper + f:lookup resolves a static decision table without a function");
     }

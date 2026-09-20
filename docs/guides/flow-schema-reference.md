@@ -999,7 +999,7 @@ argument.
 
 | Function | Description | Example |
 |----------|-------------|---------|
-| `f:lookup(table, value)` | Name of the first rule of a decision table whose list contains the value (text comparison, case-insensitive); null on a miss. `table.keys` lists the rules in priority order, each rule field lists its values — lists or JSON arrays as text, or the whole table as JSON text | `f:lookup(model.rules, input.body.state) -> rule` |
+| `f:lookup(table, value, default)` | Name of the first rule of a decision table whose list contains the value (text comparison, case-insensitive); the optional default on a miss, null when omitted. `table.keys` lists the rules in priority order, each rule field lists its values — lists or JSON arrays as text, or the whole table as JSON text | `f:lookup(model.rules, input.body.state, text(unknown)) -> rule` |
 
 ### String operations
 

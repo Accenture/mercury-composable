@@ -73,15 +73,27 @@ class SimpleLookupTest {
 
     @Test
     void shouldReturnNullWhenNoRuleListsTheValue() {
-        // a miss is null so that a mapping can supply a default with f:defaultValue
+        // a miss is null when no default is given
         assertNull(plugin.calculate(TABLE_OF_LISTS, "ZZ"));
         assertNull(plugin.calculate(TABLE_OF_JSON_TEXT, null));
     }
 
     @Test
+    void shouldReturnTheOptionalDefaultOnAMiss() {
+        // f:lookup(state-rules, input.body.state, text(unknown)) -> output.body.rule
+        assertEquals("unknown", plugin.calculate(TABLE_OF_LISTS, "ZZ", "unknown"));
+        assertEquals("unknown", plugin.calculate(TABLE_OF_JSON_TEXT, null, "unknown"));
+        // a hit ignores the default
+        assertEquals("community-property", plugin.calculate(TABLE_OF_LISTS, "TX", "unknown"));
+    }
+
+    @Test
     void shouldRejectInvalidInput() {
         var oneArgument = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(TABLE_OF_LISTS));
-        assertEquals("Expected two input values - actual=1", oneArgument.getMessage());
+        assertEquals("Expected two or three input values - actual=1", oneArgument.getMessage());
+        var fourArguments = assertThrows(IllegalArgumentException.class,
+                () -> plugin.calculate(TABLE_OF_LISTS, "TX", "unknown", "extra"));
+        assertEquals("Expected two or three input values - actual=4", fourArguments.getMessage());
         var notATable = assertThrows(IllegalArgumentException.class, () -> plugin.calculate("state-rules", "TX"));
         assertEquals("First argument must be a decision table as a map or JSON text", notATable.getMessage());
         var missingTable = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(null, "TX"));
