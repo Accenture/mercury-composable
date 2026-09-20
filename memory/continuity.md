@@ -605,7 +605,7 @@
   function by ONE `graph.task` input entry; never hard-coded in a function bundled with the graph (Eric,
   2026-09-20; a doc gap, no engine change; branch `docs/static-decision-table-on-a-node` `00283800` +
   `6ae1a628`; PR #430 MERGED 2026-09-20, squash `c5adc58f`; the `lookup` plugin follows on branch
-  `feat/lookup-plugin` `009181d5` + `42dc8598`, PR pending).** Found when an AI agent compiled a rule-by-state table into a composable function shipped
+  `feat/lookup-plugin` `009181d5` + `42dc8598`; PR #431 open).** Found when an AI agent compiled a rule-by-state table into a composable function shipped
   with its graph. Both engines already copy every node's properties into the state machine at
   instantiation (`initializeWithNodeProperties`: skill node → non-reserved keys at `{node}.{key}`;
   skill-less node → the whole map at `{node}`) and the shared LHS resolver reads any selector, so
