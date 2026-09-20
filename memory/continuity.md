@@ -574,7 +574,8 @@
   `IllegalArgumentException` deliberately wrapped in an `IOException` now reports 400. Eric's related
   convention (`AppException(408, …)` instead of the JDK `TimeoutException` in the four inboxes) is a
   separate, optional decision, NOT taken: javadoc ×10 and three `PostOfficeTest` assertions name
-  `TimeoutException`, and field `onFailure` handlers may. Verified live: the Java Layer 1 outage replies
+  `TimeoutException`, and field `onFailure` handlers may. Verified live, then by a full two-engine re-run (116/116; RPC-timeout status set {408} on both
+  engines, recorded in the report's *Validation run* section): the Java Layer 1 outage replies
   are 408, matching Rust, whose `AppError` carries its status with no wrapper class to hide it. Relates
   [[l1-caller-checks-reply-status]].
   <!-- id: exception-status-from-cause-chain | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: working | origin: 2026-09-20-004702 -->
