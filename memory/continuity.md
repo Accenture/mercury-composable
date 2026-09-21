@@ -687,7 +687,7 @@
   the AI agent guide's pre-send checklist, pinned by `unit-test-task-9` on both engines (twin: mercury
   Increment 123). Applies [[event-script-over-code]] to DATA (config over code) and
   [[clean-knowledge-design-over-engine-coverage]] (no engine feature where the design already works).
-  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: working | origin: 2026-09-20-152704 -->
+  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: active | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
   `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
@@ -711,7 +711,7 @@
   `group.version=1`, because this template shipped the line commented out — automatic switching was opt-in
   and nobody had opted in. **Release note to READ:** an application that never set `group.protocol` now joins a
   KIP-848 cluster with the consumer rebalance protocol. Java branch `feat/kafka-group-protocol-auto-default`
-  (`ee37b907`); Rust twin on mercury `feat/kafka-group-protocol-auto`. Relates [[kafka-mesh-opt-in]] (the module is
+  (`ee37b907`, PR #436); Rust twin on mercury `feat/kafka-group-protocol-auto`. Relates [[kafka-mesh-opt-in]] (the module is
   the opt-in building block, not the mesh) and [[conv-ports-adopt-java-release-number]] (the Rust port carries
   the same default at its next catch-up).
   <!-- id: kafka-group-protocol-auto-default | created: 2026-09-21 | last_used: 2026-09-21 | uses: 1 | tier: working | origin: 2026-09-21-184342 -->
@@ -749,7 +749,7 @@
   PR). Both errors came from writing out of recollection of my own work instead of out of the
   repository. Corrected in both places via PR #411. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-21 | uses: 3 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-21 | uses: 4 | tier: active | origin: 2026-09-17-183008 -->
 - **A thread id names the THING, never its kind — and an existing thread is never renamed (Eric,
   2026-09-18).** The tool writes every open thread to `memory/open-threads/thread-<id>.md`, so an id
   that already begins `ot-` or `thread-` stutters: `thread-ot-distributed-cache.md`, and worst,
@@ -778,7 +778,7 @@
   need this fact to follow it — only to understand why our existing ids look the way they do.
   Relates [[conv-declare-consulted-references]] (the same immutable-log constraint is why both rules
   are forward-looking only).
-  <!-- id: conv-thread-id-names-the-thing | created: 2026-09-18 | last_used: 2026-09-18 | uses: 2 | tier: active | origin: 2026-09-18-174943 -->
+  <!-- id: conv-thread-id-names-the-thing | created: 2026-09-18 | last_used: 2026-09-18 | uses: 2 | tier: archive-candidate | origin: 2026-09-18-174943 -->
 
 - **`continuity.md`'s header shows the metadata footer as an EXAMPLE, and that example's id must stay a
   PLACEHOLDER (2026-09-18, found running the review).** `memory-lint`'s `FOOTER_RE` scans the whole
@@ -796,7 +796,7 @@
   regex; the regex told me it was *possible*, the copies told me it was *the* cause. Relates
   [[conv-thread-id-names-the-thing]] — the sibling case, where the tool's behaviour rather than our
   content was the thing to change.
-  <!-- id: conv-schema-example-not-a-fact | created: 2026-09-18 | last_used: 2026-09-18 | uses: 2 | tier: active | origin: 2026-09-18-215436 -->
+  <!-- id: conv-schema-example-not-a-fact | created: 2026-09-18 | last_used: 2026-09-18 | uses: 2 | tier: archive-candidate | origin: 2026-09-18-215436 -->
 
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
