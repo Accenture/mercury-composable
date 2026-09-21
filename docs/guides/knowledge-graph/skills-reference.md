@@ -339,8 +339,8 @@ substitution**, resolved when the model is loaded (at deployment compile, and at
 graph` for a dry-run) while the authored and exported model keeps the placeholder. The result lands at
 `{node}.result` and response headers at `{node}.header` — in `output[]` mappings, **`result`
 (bare) is the function's whole result** and `result.{key}` a field of it (same rule as
-`graph.extension`). An `output[]` source is a constant, `result`/`result.{key}`, `model.*` or this
-node's own `{node}.*` — `input.*` is valid only on the input side; to echo a request value, stage it at
+`graph.extension`). An `output[]` source is a constant, a simple-plugin call (`f:…`), `result`/`result.{key}`,
+`model.*` or this node's own `{node}.*` — `input.*` is valid only on the input side; to echo a request value, stage it at
 a mapper node (`input.body.id -> model.id`) and map `model.id` out. Any other source fails the node
 with an error that names the entry. Optional `for_each[]` with `concurrency`
 (1–30, default 3) iterates with bounded fork-join; `exception=<node>` routes failures with the
