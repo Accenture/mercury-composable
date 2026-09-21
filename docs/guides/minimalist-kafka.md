@@ -455,6 +455,12 @@ The protocol is selected per cluster in `kafka-consumer.properties` via `group.p
 | `consumer` | The KIP-848 protocol, unconditionally. Fails at runtime if the cluster does not support it. |
 | `auto` | The adapter probes the cluster once at startup and picks `consumer` when available, `classic` otherwise. |
 
+The bundled `kafka-consumer.properties` sets `group.protocol=${KAFKA_GROUP_PROTOCOL:auto}`, so **`auto` is the
+default**: a KIP-848 cluster gets the incremental protocol without configuration, an older cluster keeps
+`classic`. Override it with the `KAFKA_GROUP_PROTOCOL` environment variable or in your own template. (The Rust
+engine ships the same default; its `auto` starts with `consumer` and falls back to `classic` at the first
+join when the broker refuses the protocol, since its client has no feature probe.)
+
 **How `auto` decides.** KIP-848 enablement is a *finalized feature flag* (`group.version >= 1`) —
 controller-managed and cluster-wide, so it is authoritative even during a rolling broker upgrade. The
 probe reads it via the `ApiVersions` handshake that every Kafka client performs on connect: the broker
