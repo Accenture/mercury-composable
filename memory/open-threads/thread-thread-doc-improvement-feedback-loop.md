@@ -42,8 +42,9 @@
   status/headers, `/health` shape, `List<PoJo>`). Fixed, then a re-probe of those four asked also to
   flag cross-page contradictions: **4/4 sufficient → 15/15**, plus five wording slips it surfaced,
   fixed. Sweep: 15 logs since 2026-09-01 carry `## Doc Gaps`, 6 record a gap, **6/6 now closed** (the
-  2026-09-15 graph.task output-mapping source rule was the one still open; closed in `caf93c64`, Java-only
-  because the Rust engine has no such gate — its twins wait on backlog P2). **Queue closed:** the
+  2026-09-15 graph.task output-mapping source rule was the one still open; closed in `caf93c64` + `5c873df3`;
+  the Rust engine enforces the same rule, so its twins take the same sentence in the Rust follow-up —
+  Rust punch-list R1–R5 in the origin log's Correction section). **Queue closed:** the
   `lambda-example` RPC demo shipped as `hello.rpc` with a 408 timeout test. All on PR
   [#434](https://github.com/Accenture/mercury-composable/pull/434) (open). **Next:** re-measure with a
   fresh question set at a later review (the same set only proves the fixes stuck); keep grading
