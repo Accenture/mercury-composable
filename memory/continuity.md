@@ -29,7 +29,7 @@
   raw **500** now answers correctly; consumer-enabled apps were unaffected by both the defect and the
   fix. **Java only — no lockstep** (JVM classloading has no Rust analogue); the outstanding lockstep
   was v4.12.9's distributed cache ([[ot-distributed-cache]] — Rust MERGED 2026-09-19, mercury #285; interop
-  CERTIFIED 2026-09-20, `docs/test-reports/distributed-cache-interop.md`; the Rust catch-up release is pending). Sweep surface: BUILD FILES ONLY,
+  CERTIFIED 2026-09-20, `docs/test-reports/distributed-cache-interop.md`; **the Rust port caught up at v4.12.12 on 2026-09-21** — mercury #296, tag `1ef183cb`). Sweep surface: BUILD FILES ONLY,
   **43 files / 98 occurrences** — unchanged from v4.12.11 because the fix touched no poms, and
   re-derived rather than carried forward (never trust the prior count). Prior: v4.12.11 (2026-09-16 21:03Z — the field-unblock release, **3 PRs #402–#404**
   via release PR #405, squash `06750214`, tag `v4.12.11`, pom verified at the tag): **`kafka.health`
@@ -752,7 +752,7 @@
   and node language packs alike: whenever one is next updated, it is tagged at the Java number it
   caught up to — never at an intermediate number invented to represent partial catch-up. Consequence
   to read correctly: a port sitting below Java (Rust at v4.12.7, the python/node packs at 4.12.1,
-  while Java shipped v4.12.9) is **lag awaiting catch-up, not divergence**, and the gap is not a
+  while Java shipped v4.12.9 — resolved 2026-09-21 when Rust caught up at v4.12.12 in one step) is **lag awaiting catch-up, not divergence**, and the gap is not a
   compatibility signal. Corollary for release notes and continuity entries: state a port's number as
   the content it currently carries, never as a separate cadence. The Java-is-reference principle this
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
