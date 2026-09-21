@@ -557,7 +557,7 @@
   before touching the body. Certification record: `docs/test-reports/distributed-cache-interop.md`
   (112/112; twin in the Rust repo). Recorded there, not changed: after a >30 s outage the shared Lettuce
   connection recovers on its 30 s backoff cap while `redis.health` (a fresh connection) is already green —
-  a follow-up ruling (reset on command timeout, lower the cap, or document); the in-function RPC timeout WAS 500 here vs 408 on Rust — a platform-core mapping gap, fixed
+  ruled 2026-09-21 — reset the shared connection on command timeout, [[redis-connection-reset-on-timeout]]; the in-function RPC timeout WAS 500 here vs 408 on Rust — a platform-core mapping gap, fixed
   2026-09-20 ([[exception-status-from-cause-chain]]): 408 on both. Relates [[redis-connection-foundation]].
   <!-- id: l1-caller-checks-reply-status | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: working | origin: 2026-09-20-004702 -->
 
@@ -601,6 +601,27 @@
   keyed on 500 for a Redis outage now sees 408/503. Relates [[redis-connection-foundation]],
   [[l1-caller-checks-reply-status]].
   <!-- id: redis-failure-classification | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: working | origin: 2026-09-20-004702 -->
+- **The shared Redis connection is RESET after a command timeout — recovery is bounded by `redis.timeout.ms`,
+  not by Lettuce's reconnect backoff (Eric's ruling on interop Finding 4, 2026-09-21; `redis-connection`
+  foundation, branch `fix/redis-reset-on-timeout` `48ab9b4f`, PR pending).** Lettuce reconnects a dropped
+  connection on an exponential backoff capped at 30 s, so after a long outage a pod kept timing out for up to
+  ~30 s after Redis was back while `redis.health` (a fresh probe connection) read green. `ResettableRedisBackend`,
+  the new base of both backends: `commands()`/`async()` are stable Proxy facades resolving the live connection
+  per call (every consumer captures the handle at construction, so it follows the reset); **rule:** a timeout
+  on a connection that is NOT open resets at once, on an OPEN connection the SECOND consecutive timeout does (a
+  reply clears the count), one reset per connection instance; the next command reconnects, a failed connect is
+  a fast 503 held for 250 ms against a connect storm; the first connect stays eager. The async path cannot see
+  an awaited timeout, so `RedisBackend.onCommandTimeout()` lets the cache's `MPUT` report it — and MPUT's
+  timeout is now the same 408 as a blocking one (was `IllegalStateException` → 500). **Proven live:** the
+  Finding 4 scenario re-driven (40 s and 10 s outages) — one in-flight 408, then fast 503s with `/health` 400,
+  and a live reply 30 ms after Redis returned in both runs (report section *Recovery after the connection-reset
+  fix*, both twins). Rust needed no change (redis-rs reconnects on the first command). **Lessons:** a Proxy
+  facade needs a typed rethrow (`<T extends Throwable> RuntimeException rethrow(Throwable) throws T`) so the
+  command's own exception reaches the caller unwrapped without `throws Throwable` (Sonar S112); and a live
+  outage drive must kill the helper's embedded `redis-server` child, not just its JVM, and assert the port
+  closed — the first drive measured nothing. Relates [[redis-failure-classification]],
+  [[redis-connection-foundation]], [[l1-caller-checks-reply-status]]; applies [[conv-reentrantlock-not-synchronized]].
+  <!-- id: redis-connection-reset-on-timeout | created: 2026-09-21 | last_used: 2026-09-21 | uses: 1 | tier: working | origin: 2026-09-21-012124 -->
 - **A static decision table is GRAPH DATA — a skill-less node's properties, handed whole to a generic
   function by ONE `graph.task` input entry; never hard-coded in a function bundled with the graph (Eric,
   2026-09-20; a doc gap, no engine change; branch `docs/static-decision-table-on-a-node` `00283800` +
