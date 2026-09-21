@@ -20,8 +20,6 @@ package org.platformlambda.redis;
 
 import io.lettuce.core.cluster.RedisClusterClient;
 import io.lettuce.core.cluster.api.StatefulRedisClusterConnection;
-import io.lettuce.core.cluster.api.async.RedisClusterAsyncCommands;
-import io.lettuce.core.cluster.api.sync.RedisClusterCommands;
 import io.lettuce.core.codec.RedisCodec;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
 
@@ -29,32 +27,21 @@ import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
  * {@link RedisBackend} over a {@link RedisClusterClient}. {@code connect(codec)} discovers the shard
  * topology from the seed node(s) — so a single seed (an AWS ElastiCache configuration endpoint) is enough —
  * and the client routes each single-key command to the node owning its slot and follows {@code MOVED}/
- * {@code ASK} redirects. {@code commands()} returns {@code RedisAdvancedClusterCommands} and {@code async()}
- * its async twin, which <em>are a</em> {@link RedisClusterCommands} / {@link RedisClusterAsyncCommands};
- * classic {@code PUBLISH} still reaches a subscriber via the cluster bus. Consumers keep every operation
- * single-key (a cross-slot {@code MGET} is scatter-gathered by the client; a bulk write pipelines one
- * single-key {@code SETEX} per entry), so no command ever spans two slots.
+ * {@code ASK} redirects. {@code commands()} is the facade over {@code RedisAdvancedClusterCommands} and
+ * {@code async()} over its async twin, which <em>are a</em> {@code RedisClusterCommands} /
+ * {@code RedisClusterAsyncCommands}; the connection is reset after a command timeout by the
+ * {@link ResettableRedisBackend} base. Classic {@code PUBLISH} still reaches a subscriber via the cluster
+ * bus. Consumers keep every operation single-key (a cross-slot {@code MGET} is scatter-gathered by the
+ * client; a bulk write pipelines one single-key {@code SETEX} per entry), so no command ever spans two slots.
  */
-public class ClusterRedisBackend<V> implements RedisBackend<V> {
-
+public class ClusterRedisBackend<V> extends ResettableRedisBackend<V, StatefulRedisClusterConnection<String, V>> {
     private final RedisClusterClient client;
     private final RedisCodec<String, V> codec;
-    private final StatefulRedisClusterConnection<String, V> connection;
 
     public ClusterRedisBackend(RedisClusterClient client, RedisCodec<String, V> codec) {
+        super(() -> client.connect(codec), StatefulRedisClusterConnection::sync, StatefulRedisClusterConnection::async);
         this.client = client;
         this.codec = codec;
-        this.connection = client.connect(codec);
-    }
-
-    @Override
-    public RedisClusterCommands<String, V> commands() {
-        return connection.sync();
-    }
-
-    @Override
-    public RedisClusterAsyncCommands<String, V> async() {
-        return connection.async();
     }
 
     @Override
@@ -69,7 +56,7 @@ public class ClusterRedisBackend<V> implements RedisBackend<V> {
 
     @Override
     public void close() {
-        connection.close();
+        super.close();
         client.close();
     }
 }

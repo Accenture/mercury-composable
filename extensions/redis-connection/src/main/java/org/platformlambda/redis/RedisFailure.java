@@ -37,8 +37,8 @@ import java.util.Locale;
  *       ({@code Command timed out after N second(s)}), the same 408 the platform uses for an RPC timeout.</li>
  *   <li><b>503</b> - Redis is unreachable: a connect failure ({@link RedisConnectionException},
  *       {@link ConnectException}, {@link ClosedChannelException}) or a rejected/closed connection
- *       ({@code Currently not connected}, {@code Connection is closed}); the message is
- *       {@code Redis unavailable - <cause>}, the vocabulary of the {@code redis.health} check.</li>
+ *       ({@code Currently not connected}, {@code Connection is closed}). The message is
+ *       {@code Redis unavailable - <cause>} - the vocabulary of the {@code redis.health} check.</li>
  *   <li><b>unclassified (null)</b> - the server answered with a command error ({@link RedisCommandExecutionException},
  *       e.g. {@code WRONGTYPE}) or the failure is not Redis-related; the caller rethrows the original and the
  *       platform's default mapping applies.</li>
@@ -63,26 +63,52 @@ public final class RedisFailure {
     public static AppException classify(Throwable failure) {
         Throwable current = failure;
         while (current != null) {
-            if (current instanceof AppException app) {
-                return app;
+            switch (current) {
+                case AppException app -> {
+                    return app;
+                }
+                case RedisCommandTimeoutException timeout -> {
+                    return new AppException(TIMEOUT, message(timeout));
+                }
+                case RedisCommandExecutionException ignored -> {
+                    // the server answered - a genuine command error is not an outage
+                    return null;
+                }
+                case RedisConnectionException unreachable -> {
+                    return unavailable(unreachable);
+                }
+                case ConnectException unreachable -> {
+                    return unavailable(unreachable);
+                }
+                case ClosedChannelException unreachable -> {
+                    return unavailable(unreachable);
+                }
+                case RedisException disconnected when looksDisconnected(disconnected.getMessage()) -> {
+                    return unavailable(disconnected);
+                }
+                default -> current = current.getCause() == current ? null : current.getCause();
             }
+        }
+        return null;
+    }
+
+    private static AppException unavailable(Throwable cause) {
+        return new AppException(UNAVAILABLE, UNAVAILABLE_PREFIX + message(cause));
+    }
+
+    /**
+     * @param failure the exception thrown by a Redis client call (possibly wrapped)
+     * @return {@code true} when the failure, or a cause on its chain, is a Lettuce command timeout
+     */
+    public static boolean isTimeout(Throwable failure) {
+        Throwable current = failure;
+        while (current != null) {
             if (current instanceof RedisCommandTimeoutException) {
-                return new AppException(TIMEOUT, message(current));
-            }
-            if (current instanceof RedisCommandExecutionException) {
-                // the server answered - a genuine command error is not an outage
-                return null;
-            }
-            if (current instanceof RedisConnectionException || current instanceof ConnectException
-                    || current instanceof ClosedChannelException) {
-                return new AppException(UNAVAILABLE, UNAVAILABLE_PREFIX + message(current));
-            }
-            if (current instanceof RedisException && looksDisconnected(current.getMessage())) {
-                return new AppException(UNAVAILABLE, UNAVAILABLE_PREFIX + message(current));
+                return true;
             }
             current = current.getCause() == current ? null : current.getCause();
         }
-        return null;
+        return false;
     }
 
     private static boolean looksDisconnected(String message) {
