@@ -20,6 +20,7 @@ package org.platformlambda.cache;
 
 import io.lettuce.core.KeyValue;
 import io.lettuce.core.LettuceFutures;
+import io.lettuce.core.RedisCommandTimeoutException;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.SetArgs;
@@ -131,7 +132,10 @@ public class RedisCacheStore {
         boolean completed = LettuceFutures.awaitAll(timeoutMs, TimeUnit.MILLISECONDS,
                 futures.toArray(new RedisFuture[0]));
         if (!completed) {
-            throw new IllegalStateException(
+            // the same 408 as a blocking command timeout, and the same connection-reset rule: the facade
+            // cannot see a timeout that surfaces while the caller awaits the futures, so report it
+            backend.onCommandTimeout();
+            throw new RedisCommandTimeoutException(
                     "MPUT timed out after " + timeoutMs + "ms for " + entries.size() + " entries");
         }
     }

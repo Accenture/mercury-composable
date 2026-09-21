@@ -174,6 +174,13 @@ The design is correct independent of Pub/Sub timing:
   to protect a pod under load.
 - **Timeout → 408.** A request with no answer in its budget returns HTTP 408, and its Redis keys are cleaned
   up (TTLs are the safety net for crashes).
+- **The shared Redis connection is reset after a command timeout.** Lettuce reconnects a dropped connection
+  on its own exponential backoff (capped at 30 s); after a long outage that could leave a pod timing out
+  for up to ~30 s after Redis was back. The `redis-connection` foundation now resets the connection when a
+  command times out — at once when the connection is not open, on the second consecutive timeout when it
+  is — so the next command reconnects and recovery is bounded by `soa.redis.timeout.ms`; while Redis is
+  still down that command fails fast (503) instead of waiting out another timeout. The pub/sub
+  subscription reconnects and re-subscribes on Lettuce's own path, as before.
 
 ## Streaming return route {#streaming}
 

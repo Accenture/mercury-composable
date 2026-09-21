@@ -200,6 +200,22 @@ class RedisCacheTest extends RedisTestBase {
      * genuine command error from the server stays unclassified (the platform's default mapping applies).
      */
     @Test
+    void aPipelineTimeoutIsA408AndIsReportedToTheBackend() throws Exception {
+        // MPUT awaits its pipelined futures itself, so the connection facade cannot see that timeout: the
+        // store reports it (the connection-reset rule applies) and throws the same 408 as a blocking timeout
+        java.util.concurrent.atomic.AtomicInteger reports = new java.util.concurrent.atomic.AtomicInteger();
+        RedisCache slowPipeline = new RedisCache(() -> new RedisCacheStore(pendingBackend(reports), "", DEFAULT_TTL, 50));
+        Map<String, Object> entries = new HashMap<>();
+        entries.put("a", "1".getBytes(StandardCharsets.UTF_8));
+        entries.put("b", "2".getBytes(StandardCharsets.UTF_8));
+        AppException timeout = assertThrows(AppException.class,
+                () -> slowPipeline.handleEvent(Map.of("action", "MPUT"), entries, INSTANCE));
+        assertEquals(408, timeout.getStatus());
+        assertEquals("MPUT timed out after 50ms for 2 entries", timeout.getMessage());
+        assertEquals(1, reports.get(), "the store reported the pipeline timeout to the backend once");
+    }
+
+    @Test
     void redisFailuresAreClassifiedForTheCaller() {
         RedisCache down = new RedisCache(() -> {
             throw new RedisConnectionException("Unable to connect to 127.0.0.1:1");
@@ -220,6 +236,68 @@ class RedisCacheTest extends RedisTestBase {
                 "", DEFAULT_TTL, TIMEOUT_MS));
         assertThrows(RedisCommandExecutionException.class,
                 () -> wrongType.handleEvent(headers("action", "GET", "key", "k1"), null, INSTANCE));
+    }
+
+    /**
+     * A backend whose async pipeline never answers - the MPUT await times out - and which counts the
+     * timeout reports it receives through {@link RedisBackend#onCommandTimeout()}.
+     */
+    @SuppressWarnings("unchecked")
+    private static RedisBackend<byte[]> pendingBackend(java.util.concurrent.atomic.AtomicInteger reports) {
+        io.lettuce.core.RedisFuture<Object> never = (io.lettuce.core.RedisFuture<Object>) Proxy.newProxyInstance(
+                RedisCacheTest.class.getClassLoader(), new Class<?>[] {io.lettuce.core.RedisFuture.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "await" -> false;
+                    // LettuceFutures.awaitAll calls get(timeout, unit) per future and reads a TimeoutException
+                    // as "not completed in time"
+                    case "get" -> throw new java.util.concurrent.TimeoutException("never completes");
+                    case "isDone", "isCancelled", "isCompletedExceptionally" -> false;
+                    case "getError" -> null;
+                    case "toString" -> "never-completing RedisFuture";
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "equals" -> proxy == args[0];
+                    default -> throw new UnsupportedOperationException(method.getName());
+                });
+        RedisClusterAsyncCommands<String, byte[]> async = (RedisClusterAsyncCommands<String, byte[]>) Proxy.newProxyInstance(
+                RedisCacheTest.class.getClassLoader(), new Class<?>[] {RedisClusterAsyncCommands.class},
+                (proxy, method, args) -> never);
+        // the store captures commands() at construction, so hand out a facade that fails only when used
+        RedisClusterCommands<String, byte[]> unused = (RedisClusterCommands<String, byte[]>) Proxy.newProxyInstance(
+                RedisCacheTest.class.getClassLoader(), new Class<?>[] {RedisClusterCommands.class},
+                (proxy, method, args) -> {
+                    throw new UnsupportedOperationException("blocking commands are not used by MPUT");
+                });
+        return new RedisBackend<>() {
+            @Override
+            public RedisClusterCommands<String, byte[]> commands() {
+                return unused;
+            }
+
+            @Override
+            public RedisClusterAsyncCommands<String, byte[]> async() {
+                return async;
+            }
+
+            @Override
+            public StatefulRedisPubSubConnection<String, byte[]> openPubSub() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean cluster() {
+                return false;
+            }
+
+            @Override
+            public void onCommandTimeout() {
+                reports.incrementAndGet();
+            }
+
+            @Override
+            public void close() {
+                // nothing to release
+            }
+        };
     }
 
     /** A backend whose every command fails with the given exception - what the store sees during an outage. */

@@ -42,6 +42,11 @@ import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
  * pipeline over the one connection and Lettuce correlates the ordered replies, so a connection pool is not
  * needed for this (non-blocking, no {@code MULTI}/{@code EXEC}) command set. Closing the backend closes the
  * command connection and, when the backend created the client, shuts the client down.
+ *
+ * <p>The connection is <b>reset after a command timeout</b> - at once when it is not open, on the second
+ * consecutive timeout when it is - so recovery from an outage is bounded by the command timeout rather than
+ * Lettuce's reconnect backoff; the facades returned by {@link #commands()} / {@link #async()} keep working
+ * across resets (see {@code ResettableRedisBackend}).
  */
 public interface RedisBackend<V> extends AutoCloseable {
 
@@ -66,6 +71,16 @@ public interface RedisBackend<V> extends AutoCloseable {
 
     /** @return {@code true} if this backend talks to a Redis Cluster (for start-up logging / diagnostics). */
     boolean cluster();
+
+    /**
+     * Report a command timeout the backend could not see itself - a pipelined batch whose futures the caller
+     * awaited (the cache's {@code MPUT}). The blocking {@link #commands()} facade reports its own timeouts;
+     * this is the asynchronous path's equivalent, so the same connection-reset rule applies to both (see
+     * {@code ResettableRedisBackend}). A no-op for a backend without a resettable connection.
+     */
+    default void onCommandTimeout() {
+        // no-op by default
+    }
 
     @Override
     void close();

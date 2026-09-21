@@ -68,7 +68,17 @@ Notes for callers:
   passes the status through — sees the failure for what it is: a command timeout replies **408** (Lettuce's
   `Command timed out after N second(s)`), an unreachable Redis replies **503** `Redis unavailable - …` (the
   `redis.health` vocabulary), and a genuine command error answered by the server (e.g. `WRONGTYPE`) keeps the
-  platform's default 500. The Rust engine classifies the same way, so a mixed fleet fails alike.
+  platform's default 500. The Rust engine classifies the same way, so a mixed fleet fails alike. An `MPUT`
+  whose pipelined replies do not all arrive in time is the same 408.
+- **The shared connection is reset after a command timeout.** Lettuce reconnects a dropped connection on its
+  own exponential backoff (capped at 30 s), so after a long outage a pod could keep timing out for up to
+  ~30 s after Redis was back while `redis.health` — a fresh probe connection — already read green. The
+  module now resets the connection when a command times out: at once when the connection is not open,
+  on the second consecutive timeout when it is (one slow command on a healthy connection does not drop
+  the commands in flight). The next call reconnects, so recovery is bounded by `redis.timeout.ms` rather
+  than the backoff; while Redis is still down that call fails fast with **503** instead of waiting out
+  another timeout. The Rust engine's client reconnects on the first command after Redis returns, so both
+  engines recover within a command timeout.
 
 ## Enabling and configuring {#config}
 
@@ -244,7 +254,9 @@ pipeline of independent single-key `SETEX` (each routes to its own slot). The mo
 multiplexed** Lettuce connection — **no connection pool**: Lettuce pipelines any number of concurrent
 callers over one in-order TCP connection, and this op set has no blocking commands (`LPOP`, not `BLPOP`)
 or `MULTI`/`EXEC` transactions that would warrant a pool. `redis.cache.instances` is virtual-thread worker
-concurrency, not a connection count.
+concurrency, not a connection count. The one connection is **reset after a command timeout** (see the
+failure bullet above), and the command handle the store holds is a facade that follows the reset, so no
+caller ever sees a stale connection.
 
 ## Health check {#health}
 
