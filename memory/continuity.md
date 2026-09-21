@@ -698,6 +698,24 @@
   `hello.remote.relay`). Recorded in the progressive-rendering interop report.
   <!-- id: event-api-local-routes-only | created: 2026-08-30 | last_used: 2026-08-30 | uses: 1 | tier: core | origin: 2026-08-30-050040 -->
 
+- **Both engines ship `group.protocol=auto` in the bundled Kafka consumer template (Eric, 2026-09-21).**
+  Java resolves `auto` by probing the cluster's finalized `group.version` feature (`GroupProtocolResolver`,
+  one probe per cluster, rides the pre-auth `ApiVersions` handshake); the Rust port resolves it
+  optimistically — each binding's consumer starts with the KIP-848 `consumer` protocol and rebuilds once as
+  `classic` when the broker refuses it (librdkafka's fatal `ConsumerGroupHeartbeat` error:
+  `UNSUPPORTED_VERSION` with the protocol disabled, `_UNSUPPORTED_FEATURE` before 4.0; a refused join never
+  becomes a member, so no probe and no synthetic group). Same outcome, different mechanism; both keep the
+  conflict guard (`session.timeout.ms` / `heartbeat.interval.ms` / `partition.assignment.strategy` with `auto`
+  → `classic`, named). Override: `KAFKA_GROUP_PROTOCOL` or the application's own template. **Why:** the Rust
+  K4 interop drive (mercury #300) ran both engines classic on a Kafka 4.3.1 broker that already finalized
+  `group.version=1`, because this template shipped the line commented out — automatic switching was opt-in
+  and nobody had opted in. **Release note to READ:** an application that never set `group.protocol` now joins a
+  KIP-848 cluster with the consumer rebalance protocol. Java branch `feat/kafka-group-protocol-auto-default`
+  (`ee37b907`); Rust twin on mercury `feat/kafka-group-protocol-auto`. Relates [[kafka-mesh-opt-in]] (the module is
+  the opt-in building block, not the mesh) and [[conv-ports-adopt-java-release-number]] (the Rust port carries
+  the same default at its next catch-up).
+  <!-- id: kafka-group-protocol-auto-default | created: 2026-09-21 | last_used: 2026-09-21 | uses: 1 | tier: working | origin: 2026-09-21-184342 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
