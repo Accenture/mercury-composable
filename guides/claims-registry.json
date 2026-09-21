@@ -91,6 +91,14 @@
       "quote": "progressive response streaming (SSE / chunked JSON Lines) on a dedicated ordered reply lane",
       "test": "system/platform-core::EventStreamResponseTest#sseSegmentsArriveProgressivelyWithTerminalDoneEvent",
       "since": "4.12.3+"
+    },
+    {
+      "id": "null-source-removes-target",
+      "claim": "In a MiniGraph data mapping a source that resolves to null (a missing key, or a plugin returning null) removes the target key, so a default must come from the source side, never from default-then-overlay.",
+      "pages": ["docs/guides/knowledge-graph/command-reference.md"],
+      "quote": "A null source removes the target",
+      "test": "system/minigraph-playground-engine::GraphTaskTest#staticDecisionTableCommonCaseNeedsNoFunction",
+      "since": "4.12.12+"
     }
   ]
 }

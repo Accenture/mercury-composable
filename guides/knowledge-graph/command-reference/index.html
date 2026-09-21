@@ -3468,10 +3468,14 @@ matter; use numeric indices (above) when the order must be deterministic.</p>
 <p>A <strong>non-leaf (interior) path maps the entire subtree</strong>, not just scalars: a source like
 <code>fetch-one.result.profile</code> above carries the whole profile object, and <code>response.accounts</code> in a
 Dictionary mapping carries the whole array.</p>
-<p><strong>An unresolvable source skips the entry</strong> — when a mapping's source key does not exist, the
-target is left <strong>untouched</strong> (not nulled). Two idioms for defaults follow from this:
-<code>f:defaultValue(input.body.flag, boolean(false)) -&gt; model.flag</code>, or default-then-overlay
-(<code>boolean(false) -&gt; model.flag</code> followed by <code>input.body.flag -&gt; model.flag</code>).</p>
+<p><strong>A null source removes the target.</strong> When a mapping's source resolves to null — the key does not
+exist, or a plugin returns null — the graph engine <strong>removes the target key</strong> (an indexed target such
+as <code>profile[1]</code> is set to null instead, so list positions stay stable). A default therefore comes from
+the <strong>source</strong> side: <code>f:defaultValue(input.body.flag, boolean(false)) -&gt; model.flag</code>, or a plugin's own
+default such as <code>f:lookup(table, value, text(unknown))</code>. Do not write a default first and overlay it
+with a possibly-null source — the overlay removes the default. (Event Script flows differ: there a null
+source applies only to <code>model.*</code> targets, where it removes the model variable key; for any other target
+the entry is ignored.)</p>
 <h2 id="constants">Constants<a class="headerlink" href="#constants" title="Permanent link">&para;</a></h2>
 <p>A constant is valid wherever a mapping <strong>source</strong> is (a <code>mapping[]</code>/<code>input[]</code>/<code>output[]</code> source, an
 <code>instantiate graph</code> seed line). This is the <strong>closed set</strong> — no other constant or coercion form
