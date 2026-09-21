@@ -477,7 +477,8 @@ response.onFailure(e -> {
 > request-response idiom in one function: build the event, `po.request(request, timeoutMs).get()`, **check
 > the reply's status before reading its body** (a callee that throws replies with its error status and
 > message), return the result; `?timeout=300` with `{"sleep_ms": 1500}` shows the 408 a timeout produces
-> for the REST caller. The cross-instance form of the same idiom is `EventOverHttpRpc` in
+> for the REST caller — `request().get()` throws an `ExecutionException` wrapping a `TimeoutException`
+> ("Timeout for N ms"), and letting it propagate makes the function's own reply a 408. The cross-instance form of the same idiom is `EventOverHttpRpc` in
 > `examples/composable-example`.
 
 ### Perform a fork-n-join RPC call to multiple functions

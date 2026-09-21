@@ -37,19 +37,25 @@ Create a class that implements `TypedLambdaFunction<I, O>` and annotate it with 
 
 ```java
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.TypedLambdaFunction;
 
 import java.util.Map;
 
 @PreLoad(route = "hello.function", instances = 10)
-public class HelloFunction implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
+public class HelloFunction implements TypedLambdaFunction<AsyncHttpRequest, Map<String, Object>> {
 
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers,
-                                           Map<String, Object> input,
+                                           AsyncHttpRequest input,
                                            int instance) throws Exception {
-        var name = input.getOrDefault("name", "world").toString();
-        return Map.of("message", "Hello, " + name + "!");
+        // a REST endpoint delivers the whole HTTP request: "?name=World" is a query parameter,
+        // a JSON body {"name": "Mercury"} arrives as the body map
+        String name = input.getQueryParameter("name");
+        if (name == null && input.getBody() instanceof Map<?, ?> body && body.get("name") != null) {
+            name = String.valueOf(body.get("name"));
+        }
+        return Map.of("message", "Hello, " + (name == null ? "world" : name) + "!");
     }
 }
 ```
@@ -60,7 +66,7 @@ public class HelloFunction implements TypedLambdaFunction<Map<String, Object>, M
 |:---|:---|
 | `@PreLoad(route = "hello.function")` | Registers the function on the event bus under this name. Other components reach it *only* by this string. |
 | `instances = 10` | How many concurrent workers the platform starts for this function. |
-| `TypedLambdaFunction<I, O>` | Typed input/output. Use `Map<String, Object>` for flexible key-value data, or a PoJo for a strict interface contract. |
+| `TypedLambdaFunction<I, O>` | Typed input/output. A function bound directly to a REST endpoint declares `I = AsyncHttpRequest` — the endpoint delivers the **whole HTTP request** (method, URL, headers, path and query parameters, cookies, body), never the bare body. Use `Map<String, Object>` for flexible key-value data or a PoJo for a strict contract when the function is called from a flow or from another function. |
 
 For an **untyped** function that works directly with the raw `EventEnvelope` (useful for
 pass-through or routing logic), implement `LambdaFunction` instead:
@@ -116,12 +122,17 @@ import org.platformlambda.core.models.EventEnvelope;
 // inside handleEvent(...)
 var po = new PostOffice(headers, instance);
 EventEnvelope response = po.request(
-    new EventEnvelope().setTo("hello.function").setBody(Map.of("name", "Mercury")),
+    new EventEnvelope().setTo("hello.function")
+        .setBody(new AsyncHttpRequest().setMethod("POST").setUrl("/api/hello").setBody(Map.of("name", "Mercury"))),
     5000   // timeout in ms
 ).get();
 
 var result = response.getBody(); // Map containing {"message": "Hello, Mercury!"}
 ```
+
+`hello.function` is a REST-bound function, so a caller hands it the same `AsyncHttpRequest` shape the
+endpoint would. A function meant to be called by other functions or by a flow declares a plain
+`Map<String, Object>` or PoJo input instead and is called with that body directly.
 
 `po.request(...).get()` reads as synchronous but never blocks a platform thread — the virtual
 thread is parked while waiting, so you get sequential code at reactive throughput.
@@ -144,7 +155,7 @@ java -jar target/composable-example-x.y.z.jar
 Test with `curl`:
 
 ```bash
-# GET — query parameter mapped automatically
+# GET — the query parameter, read with input.getQueryParameter("name")
 curl "http://127.0.0.1:8085/api/hello?name=World"
 
 # POST — JSON body

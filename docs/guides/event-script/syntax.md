@@ -249,7 +249,7 @@ The HTTP request dataset, addressable with the "input." namespace, contains the 
 
 For easy matching, please use lower case for headers, cookies, query and path parameters.
 
-Regular API uses JSON and XML and they will be converted to a hash map in the event's body.
+Regular API uses JSON and XML and they will be converted to a hash map in the event's body (a JSON array body becomes a list — see the `*` passthrough for `List<PoJo>` input below).
 
 For special use cases like file upload/download, your application logic may invoke a streaming API to retrieve
 the binary payload. Please refer to [Appendix III: Actuators, HTTP Client & More](../actuators-and-http-client.md)

@@ -116,6 +116,34 @@ Your custom health service must respond to the following requests:
 > *Note*: The "href" entry in the health service's response should tell the operator about the target URL
           if the dependency connects to a cloud platform service such as Kafka, Redis, etc.
 
+**What `GET /health` returns.** HTTP **200** with `"status": "UP"` when every *mandatory* check
+passes, HTTP **400** with `"status": "DOWN"` when any mandatory check fails (an *optional* check
+failing is reported but does not fail the endpoint). The body lists one entry per dependency, carrying
+its info-response fields, its health-response status code and — on failure — the message:
+
+```json
+{
+  "status": "UP",
+  "name": "my-app",
+  "origin": "20260921...",
+  "dependency": [
+    {
+      "route": "redis.health",
+      "required": true,
+      "service": "redis",
+      "href": "redis://127.0.0.1:6379",
+      "status_code": 200,
+      "message": "Redis connectivity OK"
+    }
+  ]
+}
+```
+
+A failing check appears with its thrown status (e.g. `"status_code": 503`) and message; a
+misconfigured route appears with `404` and a `Please check ...` hint. With no dependencies configured
+at all, the body carries a `message` reminding you to set `mandatory.health.dependencies` or
+`optional.health.dependencies`.
+
 A sample health service is available in the `DemoHealth` class of the `composable-example` project as follows:
 
 ```java

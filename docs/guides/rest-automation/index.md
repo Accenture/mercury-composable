@@ -176,6 +176,20 @@ the flow's input data mapping selects the pieces (`input.body -> ...`, `input.he
 which is why a flow task sees the mapped body while a directly-bound function sees the whole
 request object.
 
+**Reading the request.** `getMethod()`, `getUrl()`, `getHeader(name)` / `getHeaders()` (names are
+lower-cased), `getPathParameter(name)` / `getPathParameters()`, `getQueryParameter(name)` /
+`getQueryParameters(name)` (repeated keys) / `getQueryParameters()`, `getCookie(name)` /
+`getCookies()`, `getSessionInfo()`, `getRemoteIp()`, `getContentLength()`, and `getBody()` — a
+`Map` for a JSON object body, a `List` for a JSON array, a `String` for text, `byte[]` for binary;
+`getBody(MyPojo.class)` deserializes a JSON object into your class. Multipart uploads expose
+`getFileName()`, `getFileContentTypes()`, `getFileSizes()` and the stream handle `getStreamRoute()`.
+
+**Replying with a status and headers.** Declare the output type as `EventEnvelope` and return
+`new EventEnvelope().setStatus(201).setHeader("Location", url).setBody(result)`: the envelope's status
+becomes the HTTP status, its headers the response headers (after the endpoint's `headers.response`
+rules; `trace_id`/`trace_path` are never exposed, `content-type` and `set-cookie` are honoured), and
+its body the payload. An error is a thrown `AppException(status, message)`.
+
 Your authentication function can return a boolean value to indicate if the request should be accepted or rejected.
 
 If true, the system will send the HTTP request to the service. In this example, it is the "hello.world" function.

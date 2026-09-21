@@ -65,7 +65,7 @@ correctness is checkable before runtime, but not by relying on a crash.
 | `instances` | int | `1` | Number of concurrent workers. Production services typically use 10–100. Max 1000. |
 | `envInstances` | String | `""` | Property key in `application.properties` to read instances at startup (e.g. `"${MY_FN_WORKERS:10}"`). Falls back to `instances` if absent. |
 | `isPrivate` | boolean | `true` | `true` = accessible only within this process (local event bus). `false` = published to the distributed service mesh. REST automation and Event Script flows call functions locally — `true` is correct for almost all functions. |
-| `inputPojoClass` | Class | `Void.class` | Used when `I` is `Object` AND the arriving payload is a `List<Map>`. The engine deserializes each Map to this class. No effect when `I` is already a concrete PoJo type. |
+| `inputPojoClass` | Class | `Void.class` | The element class for a payload the engine cannot infer from `I`: when `I` is a JDK type (`List<MyPojo>`, `Object`, `Map`) the engine deserializes a JSON-list payload element by element to this class (the function receives a `List<MyPojo>`), and a single JSON object to this class. Declare `I = List<MyPojo>` for readability — the erased type is `List`, so the class comes from here (`Object` works too). No effect when `I` is already a concrete PoJo type. |
 | `customSerializer` | Class | `Void.class` | Implements `CustomSerializer` for non-standard wire formats. |
 | `inputStrategy` | enum | `DEFAULT` | `SNAKE` / `CAMEL` / `DEFAULT` serialization for inbound JSON field names. |
 | `outputStrategy` | enum | `DEFAULT` | `SNAKE` / `CAMEL` / `DEFAULT` serialization for outbound JSON field names. |
@@ -118,8 +118,9 @@ the input type varies). For all other cases, prefer `TypedLambdaFunction<I, O>` 
 > - [ ] `instances` is appropriate for concurrency needs (default `1`; typical services use `10–100`; max `1000`).
 > - [ ] Input type `I` is `Map<String, Object>` or a PoJo when the function participates in key-by-key
 >       data mapping. Do **not** use `List` as `I` in that context.
-> - [ ] If the function receives a `List<PoJo>` (via Event Script `*` passthrough), use `I = Object`
->       and set `inputPojoClass = ElementType.class`.
+> - [ ] If the function receives a `List<PoJo>` (via Event Script `*` passthrough, or a JSON-array body
+>       ingested directly), declare `I = List<ElementType>` (or `Object`) **and** set
+>       `inputPojoClass = ElementType.class` — the erased `List` cannot carry the element class.
 > - [ ] `isPrivate = false` is set only if the function must be visible to other services over the
 >       distributed event mesh. For REST or Event Script, leave the default `true`.
 > - [ ] The function holds **no direct reference to another user function** (no `new OtherFunction()`).
@@ -132,7 +133,7 @@ the input type varies). For all other cases, prefer `TypedLambdaFunction<I, O>` 
 
 ## Patterns {#patterns}
 
-### Typed function — Map I/O
+### Typed function — Map I/O (called from a flow or another function)
 
 ```java
 @PreLoad(route = "hello.function", instances = 10)
@@ -144,6 +145,28 @@ public class HelloFunction implements TypedLambdaFunction<Map<String, Object>, M
                                            int instance) throws Exception {
         var name = input.getOrDefault("name", "world").toString();
         return Map.of("message", "Hello, " + name + "!");
+    }
+}
+```
+
+A `Map` (or PoJo) input is the shape a function receives from a flow task's data mapping or from
+another function's `po.request`. **Bound directly to a REST endpoint it would receive the whole
+`AsyncHttpRequest` as its map** (`method`, `url`, `headers`, `parameters`, `body`, …) — so a
+REST-bound function declares `I = AsyncHttpRequest` (see the worked example below).
+
+### Typed function — returning status and headers
+
+```java
+@PreLoad(route = "v1.create.order", instances = 10)
+public class CreateOrder implements TypedLambdaFunction<AsyncHttpRequest, EventEnvelope> {
+
+    @Override
+    public EventEnvelope handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
+        String id = store(input.getBody());
+        // the returned envelope IS the reply: its status becomes the HTTP status, its headers the
+        // response headers (subject to the endpoint's headers.response rules), its body the payload
+        return new EventEnvelope().setStatus(201).setHeader("Location", "/api/orders/" + id)
+                                  .setBody(Map.of("id", id));
     }
 }
 ```
@@ -321,16 +344,19 @@ long t = util.str2long(String.valueOf(map.get("amount")));  // returns -1 if nul
 ## Worked example — full function + HTTP wiring {#example}
 
 ```java
-// 1. The function
+// 1. The function - REST-bound, so it receives the whole HTTP request
 @PreLoad(route = "greeting.function", instances = 10)
-public class GreetingFunction implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
+public class GreetingFunction implements TypedLambdaFunction<AsyncHttpRequest, Map<String, Object>> {
 
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers,
-                                           Map<String, Object> input,
+                                           AsyncHttpRequest input,
                                            int instance) throws Exception {
-        var name = input.getOrDefault("name", "world").toString();
-        return Map.of("greeting", "Hello, " + name + "!");
+        String name = input.getQueryParameter("name");                       // GET /api/greeting?name=World
+        if (name == null && input.getBody() instanceof Map<?, ?> body) {      // POST {"name": "Mercury"}
+            name = body.get("name") == null ? null : String.valueOf(body.get("name"));
+        }
+        return Map.of("greeting", "Hello, " + (name == null ? "world" : name) + "!");
     }
 }
 ```

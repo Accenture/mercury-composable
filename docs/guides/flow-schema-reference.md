@@ -614,7 +614,7 @@ Append `:qualifier` to any source reference to convert the value before mapping:
 | Namespace | Description | Example |
 |-----------|-------------|---------|
 | `input` | Entire HTTP input dataset as a map | `input -> *` |
-| `input.body` | Parsed request body (JSON → Map, text → String) | `input.body -> *` |
+| `input.body` | Parsed request body (JSON object → Map, JSON array → List, text → String) | `input.body -> *` |
 | `input.body.<field>` | Specific field from the request body | `input.body.user_id -> id` |
 | `input.header` | All request headers (lowercase keys) | `input.header -> headers` |
 | `input.header.<name>` | Specific request header | `input.header.authorization -> token` |
@@ -746,7 +746,7 @@ When a flow is triggered by an HTTP request, the following fields are available 
 | `cookie` | Map | HTTP cookies (lowercase keys) |
 | `path_parameter` | Map | URL path parameters (as defined in `rest.yaml`) |
 | `query` | Map | Query string parameters (lowercase keys) |
-| `body` | Map / Object | Parsed request body; JSON → Map, text → String |
+| `body` | Map / List / Object | Parsed request body; JSON object → Map, JSON array → List (map it with `*` into a `List<PoJo>` function), text → String |
 | `stream` | String | Stream route ID for file upload or large body streaming |
 | `ip` | String | Remote IP address |
 | `filename` | String | Original filename (multipart file upload) |

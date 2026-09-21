@@ -294,7 +294,9 @@ in addition to just echoing the input payload. In this fashion, the unit test ca
 of iteration of a pipeline to validate the looping feature of a pipeline.
 
 The unit test programmatically registers the mock function and then release it from the event loop
-when the test finishes.
+when the test finishes. In the snippet, `HOST` is the test server (`http://127.0.0.1:` + the test
+`rest.server.port`), `HTTP_CLIENT` is the built-in `async.http.request` route, and
+`EventEmitter.getInstance()` is the trace-less event API a test may use in place of a `PostOffice`.
 
 ```java
     @SuppressWarnings("unchecked")
