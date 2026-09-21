@@ -636,7 +636,7 @@
   removes the target* (indexed target → null), with the Event Script contrast he stated: a null source
   applies only to `model.*` targets, where it removes the model variable key, and for any other target the
   entry is ignored; claim `null-source-removes-target` registered against the probe test on both engines
-  (branch `docs/null-source-removes-target` `f233067f`, PR #432 open; Rust twin `48111840`, PR #295). **Rule:** the product owner reads and certifies the table
+  (branch `docs/null-source-removes-target` `f233067f`, PR #432 MERGED 2026-09-20 squash `3deb6416`; Rust twin `48111840`, PR #295 merge `bbb8c043`). **Rule:** the product owner reads and certifies the table
   ON the graph, a new table is a new graph version (`v2026-08-prime-rates`) and never a code change, and
   the function stays generic by reading rule names from `table.keys` and ignoring other node properties.
   Nothing in the engine checks mapping sources, so the only place this was ever stated was one row of the
