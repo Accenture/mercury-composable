@@ -19,7 +19,24 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.12 (2026-09-17 — the produce-only unblock, **1 fix PR #409** via release
+- **latest_release:** v4.12.13 (2026-09-20 Pacific, 04:16Z on 09-21 — **the accumulated-improvements release**:
+  11 items over 4.12.12 from the 24 non-memory commits since the tag; release PR #435, squash `1feb3d73`, tag
+  `v4.12.13` → `1d2074f1` (one memory-only commit past the merge), pom verified at the tag; the GitHub release body
+  is the CHANGELOG entry). Added: `f:lookup` + the decision-table recipe (#430/#431), per-iteration `for_each`
+  suspend keys (#418 — a third-party state store must honour the optional `index`), the application log context's
+  automatic UTC `timestamp` + snake_case keys (#414 — **landed AFTER the 4.12.12 tag; a dashboard keyed on
+  `context.traceId` moves to `trace_id`, or keeps the old name on the left side of its own
+  `app-log-context.yaml`**), `hello.rpc` (#434). Changed: the cause-chain status rule (#427 — **read: a wrapped
+  carrier now reports the inner status; an in-function RPC timeout is 408**), Redis 408/503 classification on the
+  cache path (#429 — **read**), the ADR/RFC governance pair in the AI contract (#421/#424), the docs roll-up.
+  Fixed: the shared Redis connection resets after a command timeout (#433; MPUT timeout now 408), the cache
+  example's L1 guard (#426), BouncyCastle 1.86 in test scope (#420). No new runtime dependency. **Lockstep:** the
+  Rust port sits at 4.12.12 and already carries #418, #426, #429–#432 and mercury #298; it adopts 4.12.13 at its
+  next catch-up (Eric, 2026-09-21: "the Rust sync-up (W1 onwards) will catch up the Java release") —
+  [[conv-ports-adopt-java-release-number]]. Sweep surface: BUILD FILES ONLY, **43 files / 98 occurrences** —
+  re-derived, unchanged from 4.12.12. Readiness was checked from the repository (tag range, CI, dependency diff,
+  one full build at the new version: 35 modules, 1499 tests, 0 failures) — [[conv-changelog-from-tag-range]].
+  Prior: v4.12.12 (2026-09-17 — the produce-only unblock, **1 fix PR #409** via release
   PR #410, squash `ebdd2e37`, tag `v4.12.12`, pom verified at the tag): **`kafka.health` works on a
   produce-only leg** (`kafka.consumer.enabled=false`), where v4.12.11's classloader fix covered only
   half the path — Kafka resolves class-valued config DEFAULTS in its config classes' STATIC
@@ -318,13 +335,13 @@
   structurally: span-shaped records cannot contain the application's log messages.
   **The engine's half is already done and is what makes the infra half work.** `log.format=json|compact`
   plus `app-log-context.yaml` already emits `trace_id`/`span_id` on every line inside a traced worker —
-  correlation on a virtual-thread runtime where the MDC pattern is an anti-pattern. The v4.12.12
-  snake_case rename aligned those keys with the distributed-trace block, so a collector maps one
+  correlation on a virtual-thread runtime where the MDC pattern is an anti-pattern. The snake_case rename (#414 — on main since 2026-09-18, SHIPPED in
+  v4.12.13, not 4.12.12) aligned those keys with the distributed-trace block, so a collector maps one
   vocabulary, and the enforced `$utc` gives it an unambiguous timestamp to parse. The gap was never
   correlation; it was transport, which is the platform's job.
   Applies [[clean-knowledge-design-over-engine-coverage]] one level up — the same "should the engine
   absorb this at all" question asked of a *capability* rather than a graph composition.
-  <!-- id: log-forwarding-is-infrastructure | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: archive-candidate | origin: 2026-09-18-174943 -->
+  <!-- id: log-forwarding-is-infrastructure | created: 2026-09-18 | last_used: 2026-09-21 | uses: 2 | tier: active | origin: 2026-09-18-174943 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
