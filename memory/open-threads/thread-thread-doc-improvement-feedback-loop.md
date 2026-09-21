@@ -43,8 +43,8 @@
   flag cross-page contradictions: **4/4 sufficient → 15/15**, plus five wording slips it surfaced,
   fixed. Sweep: 15 logs since 2026-09-01 carry `## Doc Gaps`, 6 record a gap, **6/6 now closed** (the
   2026-09-15 graph.task output-mapping source rule was the one still open; closed in `caf93c64` + `5c873df3`;
-  the Rust engine enforces the same rule, so its twins take the same sentence in the Rust follow-up —
-  Rust punch-list R1–R5 in the origin log's Correction section). **Queue closed:** the
+  the Rust engine enforces the same rule, so its twins took the same sentence — the Rust parity round
+  R1–R5 shipped as mercury #298, merged 2026-09-21 (`3bd89425`); punch-list in the origin log's Correction section). **Queue closed:** the
   `lambda-example` RPC demo shipped as `hello.rpc` with a 408 timeout test. All on PR
   [#434](https://github.com/Accenture/mercury-composable/pull/434), MERGED 2026-09-21 (squash `940994d5`). **Next:** re-measure with a
   fresh question set at a later review (the same set only proves the fixes stuck); keep grading
