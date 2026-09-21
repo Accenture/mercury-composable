@@ -3992,6 +3992,11 @@ support it, this materially reduces rebalance time and the CPU churn of unschedu
 </tr>
 </tbody>
 </table>
+<p>The bundled <code>kafka-consumer.properties</code> sets <code>group.protocol=${KAFKA_GROUP_PROTOCOL:auto}</code>, so <strong><code>auto</code> is the
+default</strong>: a KIP-848 cluster gets the incremental protocol without configuration, an older cluster keeps
+<code>classic</code>. Override it with the <code>KAFKA_GROUP_PROTOCOL</code> environment variable or in your own template. (The Rust
+engine ships the same default; its <code>auto</code> starts with <code>consumer</code> and falls back to <code>classic</code> at the first
+join when the broker refuses the protocol, since its client has no feature probe.)</p>
 <p><strong>How <code>auto</code> decides.</strong> KIP-848 enablement is a <em>finalized feature flag</em> (<code>group.version &gt;= 1</code>) —
 controller-managed and cluster-wide, so it is authoritative even during a rolling broker upgrade. The
 probe reads it via the <code>ApiVersions</code> handshake that every Kafka client performs on connect: the broker
