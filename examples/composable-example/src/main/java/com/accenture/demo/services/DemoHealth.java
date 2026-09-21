@@ -35,7 +35,7 @@ public class DemoHealth implements LambdaFunction {
     public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         /*
          * The interface contract for a health check service includes both INFO and HEALTH responses.
-         * It must return a Map.
+         * The INFO response must be a Map; the HEALTH response may be a String or a Map.
          */
         if (INFO.equals(headers.get(TYPE))) {
             Map<String, Object> about = new HashMap<>();

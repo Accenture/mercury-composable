@@ -217,11 +217,13 @@ tasks:
 
 ### Layer 3 — Knowledge Graph node {#layer3}
 
-A `graph.task` node calls the same route with the same mapping syntax:
+A `graph.task` node calls the same route with the same mapping syntax (the node's properties, as
+they appear in an exported model — in the Playground: `skill=graph.task`, `task=v1.cache.redis`,
+`input[]=…`, `output[]=…`):
 
 ```json
 {
-  "route": "graph.task",
+  "skill": "graph.task",
   "task": "v1.cache.redis",
   "input": [
     "text(GET) -> header.action",

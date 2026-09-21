@@ -502,15 +502,24 @@ service skips trace recording for every invocation of this function.
 ```java
 @ZeroTracing
 @PreLoad(route = "v1.health.check", instances = 10)
-public class HealthCheck implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
+public class HealthCheck implements LambdaFunction {
 
     @Override
-    public Map<String, Object> handleEvent(Map<String, String> headers,
-                                           Map<String, Object> input, int instance) throws Exception {
-        return Map.of("status", "UP");
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
+        // the actuator probes a registered health check with type=info, then type=health
+        if ("info".equals(headers.get("type"))) {
+            return Map.of("service", "my.downstream", "href", "http://127.0.0.1:8080");
+        }
+        // type=health: test the dependency; throw new AppException(status, message) when it fails
+        return "my.downstream is reachable";
     }
 }
 ```
+
+The route is registered with the actuator through `mandatory.health.dependencies` or
+`optional.health.dependencies`; its probes are frequent and carry no business context, so
+they are excluded from tracing. The info reply must be a Map; the health reply may be a
+String or a Map — see [Actuators](actuators-and-http-client.md#custom-health-services).
 
 ### Notes
 

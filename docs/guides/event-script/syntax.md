@@ -249,7 +249,7 @@ The HTTP request dataset, addressable with the "input." namespace, contains the 
 
 For easy matching, please use lower case for headers, cookies, query and path parameters.
 
-Regular API uses JSON and XML and they will be converted to a hash map in the event's body.
+Regular API uses JSON and XML and they will be converted to a hash map in the event's body (a JSON array body becomes a list — see the `*` passthrough for `List<PoJo>` input below).
 
 For special use cases like file upload/download, your application logic may invoke a streaming API to retrieve
 the binary payload. Please refer to [Appendix III: Actuators, HTTP Client & More](../actuators-and-http-client.md)
@@ -1013,7 +1013,7 @@ considerations when it comes to utilizing something other than `Map<String, Obje
    In the above example `other` will not be passed
 
 2. When attempting to read the input as a `List<T>` in your Lambda function you should type the input appropriately
-and utilize `pojoClass` property on preLoad if utilizing a list of complex objects
+and set the `inputPojoClass` property on `@PreLoad` if utilizing a list of complex objects
 
 When using Lists of complex Objects 
 ```java

@@ -321,7 +321,9 @@ call answers 404 ("compiled or 404", ADR-0011).
 | `String` (local path) | `/tmp/graph` |
 
 Where the Playground's `export graph` command writes model JSON. Must be a local filesystem
-path (read/write requirement).
+path (read/write requirement): either a plain path (`/tmp/graph`) or the `file:` form the tutorials
+use (`location.graph.temp=file:/tmp/graph` — the prefix is stripped). A `classpath:` location is
+rejected with an error and the default is used instead.
 
 ### `graph.traversal.log`
 

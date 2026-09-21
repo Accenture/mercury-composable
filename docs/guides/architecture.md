@@ -227,7 +227,7 @@ in the `input:` and `output:` lists is a mapping statement. The namespaces are:
 - `output.header.<name>` — a response header
 - `output.status` — the HTTP response status code
 - `header.<name>` — a key-value passed into the next function's `headers` argument
-- `error.status`, `error.message`, `error.task`, `error.stack` — available in exception handlers
+- `error.code`, `error.message`, `error.task`, `error.stack` — available in exception handlers
 - `text(value)` — a string constant (also used for content-type, e.g., `text(application/json)`)
 - `int(n)`, `long(n)`, `float(n)`, `double(n)`, `boolean(true|false)` — typed constants
 - `map(k=v, ...)` or `map(config.key)` — a map of key-values or values from application config
