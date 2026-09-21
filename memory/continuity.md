@@ -711,7 +711,7 @@
   `group.version=1`, because this template shipped the line commented out — automatic switching was opt-in
   and nobody had opted in. **Release note to READ:** an application that never set `group.protocol` now joins a
   KIP-848 cluster with the consumer rebalance protocol. Java branch `feat/kafka-group-protocol-auto-default`
-  (`ee37b907`, PR #436); Rust twin on mercury `feat/kafka-group-protocol-auto`. Relates [[kafka-mesh-opt-in]] (the module is
+  (`ee37b907`, PR #436 MERGED 2026-09-21, squash `7def2bb4`); Rust twin on mercury `feat/kafka-group-protocol-auto`. Relates [[kafka-mesh-opt-in]] (the module is
   the opt-in building block, not the mesh) and [[conv-ports-adopt-java-release-number]] (the Rust port carries
   the same default at its next catch-up).
   <!-- id: kafka-group-protocol-auto-default | created: 2026-09-21 | last_used: 2026-09-21 | uses: 1 | tier: working | origin: 2026-09-21-184342 -->
