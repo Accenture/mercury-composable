@@ -46,7 +46,7 @@
   the Rust engine enforces the same rule, so its twins take the same sentence in the Rust follow-up —
   Rust punch-list R1–R5 in the origin log's Correction section). **Queue closed:** the
   `lambda-example` RPC demo shipped as `hello.rpc` with a 408 timeout test. All on PR
-  [#434](https://github.com/Accenture/mercury-composable/pull/434) (open). **Next:** re-measure with a
+  [#434](https://github.com/Accenture/mercury-composable/pull/434), MERGED 2026-09-21 (squash `940994d5`). **Next:** re-measure with a
   fresh question set at a later review (the same set only proves the fixes stuck); keep grading
   cross-page agreement, which is where the re-probe found its five slips. Open queue: (none).
   (origin: this measurement's session log — the 2026-09-21 W2 log)
