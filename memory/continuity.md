@@ -37,6 +37,12 @@
   [[conv-ports-adopt-java-release-number]]. Sweep surface: BUILD FILES ONLY, **43 files / 98 occurrences** —
   re-derived, unchanged from 4.12.12. Readiness was checked from the repository (tag range, CI, dependency diff,
   one full build at the new version: 35 modules, 1499 tests, 0 failures) — [[conv-changelog-from-tag-range]].
+  **RELEASE v4.12.14 IN PREPARATION 2026-09-21** — the lock-step release with the Rust port (Eric: "wait for completion
+  of locksteps and then v4.12.14 for both Java and Rust repos"): branch `release/v4.12.14`, sweep re-derived **43 files /
+  98 occurrences** (unchanged), CHANGELOG from `v4.12.13..HEAD` = one item, #436 (`group.protocol=auto` as the template
+  default) with the lock-step paragraph; full build at 4.12.14 green - 35 modules, 217 test classes, 1499 tests, 0 failures, 3 skipped (mvn clean install, exit 0). PR-open, merge and tag are Eric's gates; the Rust side lands K5
+  (Schema Registry, the sync-over-async facade tasks, the demo mirror), its docs twin and its lock-step round at the same
+  number, and publishes `mercury-minimalist-kafka` + `mercury-sync-over-async` to crates.io (origin 2026-09-21-233928.md).
   Prior: v4.12.12 (2026-09-17 — the produce-only unblock, **1 fix PR #409** via release
   PR #410, squash `ebdd2e37`, tag `v4.12.12`, pom verified at the tag): **`kafka.health` works on a
   produce-only leg** (`kafka.consumer.enabled=false`), where v4.12.11's classloader fix covered only
