@@ -8,6 +8,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.12.14, 9/21/2026
+
+The lock-step release — one number on both engines. On the Java side it carries one change (below); it is
+also the number the Rust port adopts on catching up: the completed minimalist-kafka port (the Confluent
+Schema Registry wire format for JSON Schema and Avro, the sync-over-async facade tasks over Kafka, the
+`sync-over-async-demo` mirrored with its raw, JSON Schema and Avro legs, the AI-contract guide twin), its
+lock-step round with 4.12.12/4.12.13 (the CompileGraph task↔skill gate, the case-insensitive
+`input.header.*` fallback, the snake_case log-context keys with the automatic UTC timestamp), and the
+first crates.io publication of `mercury-minimalist-kafka` and `mercury-sync-over-async`. No upgrade
+action for Java applications beyond the note under item 1.
+
+### Changed
+
+1. **`group.protocol=auto` is the bundled Kafka consumer template's default (#436).** The template now
+   ships `group.protocol=${KAFKA_GROUP_PROTOCOL:auto}` uncommented, so an application that never set the
+   key joins a KIP-848 cluster (Apache Kafka 4.0+ with `group.version` finalized) with the consumer
+   rebalance protocol — incremental reassignment, only the interrupted member's partitions move — and an
+   older cluster keeps `classic`. Java resolves `auto` with one `group.version` feature probe per cluster;
+   the Rust port resolves it optimistically (start with `consumer`, rebuild the binding once as `classic`
+   when the broker refuses the join) — same outcome, stated in the guide. The conflict guard stands:
+   `session.timeout.ms`, `heartbeat.interval.ms` or `partition.assignment.strategy` in the template
+   resolve `auto` to `classic` with a `WARN` naming the keys. Found by the Rust K4 interop drive, which ran
+   both engines classic on a Kafka 4.3.1 broker that already finalized `group.version=1` — automatic
+   switching had been opt-in and nobody had opted in.
+
+   **Upgrade action:** read, not configure — an application that never set `group.protocol` now uses the
+   consumer rebalance protocol on a KIP-848 cluster; set `KAFKA_GROUP_PROTOCOL=classic` (or the key in your
+   own template) to keep the classic protocol regardless of cluster support.
+
+**Lock-step.** The Rust port catches up to 4.12.14 at this release (mercury: the K5 branches, the docs
+twin and the lock-step round); the two engines' Kafka building blocks were driven against each other on
+one broker, one Redis and one Schema Registry — the Confluent frames decoded in both directions by both
+engines, a mixed Java+Rust consumer group, and a Java facade delivering replies to a waiting Rust facade
+through the Redis return route (`docs/test-reports/minimalist-kafka-interop.md` in the Rust repository).
+
+---
 ## Version 4.12.13, 9/20/2026
 
 ### Added
