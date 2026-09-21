@@ -65,22 +65,26 @@
   there: the `soa.redis.health` ROUTE rename and `minimalist-kafka` no longer transitive). The live
   version source stays the root pom.xml.)
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-19 | through 2026-09-19-020551.md (SIZE TRIGGER — 6 sessions since,
-  review_every 10; `[continuity-bloat] 36 > 35`, genuine this time: closing
-  [[ot-subgraph-for-each-suspend]] made it decay-eligible. Archived 1 faded fact
-  (`elastic-queue-file-store`, sslu 21 — ADR-0024 keeps the durable rationale; the `virtual-threads-rpc`
-  link to it resolves through `archive/INDEX.md`) and swept 3 completed threads past the window
-  (`thread-elastic-queue-bdb-to-file`, `thread-elastic-queue-docs-adr`, `ot-reverify-invariants-20260916`)
-  → 32 eligible; closed-thread narrative back under 150 lines. Tier changes 5 (refresh-metadata);
-  reactivated 0; superseded 0; archive-verify pass. **Still held deliberately** (sslu 24 — `[overdue]`
-  keeps firing for them by design): `soa-redis-cluster-support`, `cache-separate-from-soa`,
-  `redis-connection-foundation` are the design record of the live [[ot-distributed-cache]] Rust
-  lockstep; sweep them when that thread closes, not before — **it closed 2026-09-19 (mercury #285
-  merged), so they are sweep-eligible at the next review**. Invariant re-verify not due (21 sessions
-  since, cadence 40). Stalled threads: none.
+- **last_review:** 2026-09-21 | through 2026-09-21-012124.md (SIZE TRIGGER — 3 sessions since the 2026-09-19
+  review, cadence 10 not reached; `[continuity-bloat] 38 > 35`, genuine: the cache / decision-table / lookup /
+  connection-reset burst created six working facts in three sessions. **Archived 0** — nothing is past the
+  archive window (the oldest candidates sit at sslu 11; the nine closed threads at sslu 8–11 sweep from the
+  later September sessions on). Tier changes 25 (refresh-metadata): 12 facts/threads → `archive-candidate`
+  (the three Kafka-health facts, the two closed Blueprint gaps, `minigraph-guarded-async-completion`,
+  `log-forwarding-is-infrastructure`, `otel-optional-service-and-negative-control`, three closed threads),
+  6 reactivated to `active` by this week's references — the three Redis design facts held since 09-19 plus
+  `platform-onshutdown-lifecycle`, `conv-reentrantlock-not-synchronized`, the two cache facts of 09-20 — so
+  the "sweep them at the next review" note is void: [[soa-redis-cluster-support]],
+  [[cache-separate-from-soa]] and [[redis-connection-foundation]] were consulted for the Rust lockstep and
+  the connection-reset design and stay live. Reactivated from the archive 0; superseded 0; archive-verify
+  pass. The bloat advisory therefore persists by design until the closed threads age out; no fact was
+  archived ahead of the rule. Invariant re-verify not due (24 sessions since, cadence 40). Stalled threads:
+  none (`thread-doc-improvement-feedback-loop` sslu 7).
+  Prior: 2026-09-19 | 2026-09-19-020551.md (size trigger 36 > 35: archived `elastic-queue-file-store`, swept
+  3 completed threads → 32 eligible; held the three Redis design facts for the then-live cache lockstep).
   Prior: 2026-09-18 | 2026-09-18-215436.md (on command — the FALSE `[continuity-bloat]` trigger from the
   header's schema example, fixed locally and upstream in agent-memory v4.41.2; see
-  [[conv-schema-example-not-a-fact]]; nothing archived then, one closed thread swept later that day).
+  [[conv-schema-example-not-a-fact]]).
 - **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**:
   Track 1 *knowledge graph as application* (deterministic — rules, business logic, outcome; L3
   leverages L2 + L1) and Track 2 *knowledge graph as AI SDLC* (governed AI processing for ambiguity
@@ -190,7 +194,7 @@
   **Bounded 2026-09-16:** the passing "waiting" status covers ONLY a value that has not landed yet —
   a config that can never work fails the check instead, because reporting it as passing is how a real
   defect hid in the field for hours. See [[kafka-class-objects-over-names]].
-  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-17 | uses: 15 | tier: active | origin: 2026-09-11-185752 -->
+  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-17 | uses: 15 | tier: archive-candidate | origin: 2026-09-11-185752 -->
 
 - **Kafka-driving functions run on kernel threads — `@KernelThreadRunner` (2026-09-11, Eric's
   question → PR #362).** The Kafka consumer performs network I/O on the CALLING thread inside
@@ -202,7 +206,7 @@
   the counter-case: Lettuce does I/O on its own netty threads and callers only await futures, so
   `soa.redis.health` deliberately stays on virtual threads. KafkaConsumer itself is NOT thread-safe;
   sequential multi-thread access under external sync (the checks' ReentrantLock) is its contract.
-  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-17 | uses: 7 | tier: active | origin: 2026-09-11-191200 -->
+  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-17 | uses: 7 | tier: archive-candidate | origin: 2026-09-11-191200 -->
 
 - **Kafka class-valued config is set as `Class` OBJECTS, and a config that can never work must FAIL a
   health check (2026-09-16, field bug → PR #403; Eric ruled both halves).** Kafka resolves a class
@@ -230,7 +234,7 @@
   construction left a produce-only leg broken in the field — the loader is consulted earlier still, in
   a Kafka config class's static initializer, reached while resolving the template. See
   [[kafka-config-class-static-init-loader]].
-  <!-- id: kafka-class-objects-over-names | created: 2026-09-16 | last_used: 2026-09-17 | uses: 4 | tier: active | origin: 2026-09-16-185851 -->
+  <!-- id: kafka-class-objects-over-names | created: 2026-09-16 | last_used: 2026-09-17 | uses: 4 | tier: archive-candidate | origin: 2026-09-16-185851 -->
 
 - **Kafka resolves class-valued config DEFAULTS inside its config classes' STATIC INITIALIZERS, so a
   wrong thread context loader poisons the class for the life of the JVM (2026-09-17, field report on
@@ -264,7 +268,7 @@
   reasoning from Kafka internals would have shipped that. Bounds
   [[kafka-class-objects-over-names]]; extends [[kafka-clients-kernel-threads]]; tracked by
   [[ot-kafka-health-producer-only-fix]].
-  <!-- id: kafka-config-class-static-init-loader | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: kafka-config-class-static-init-loader | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: archive-candidate | origin: 2026-09-17-183008 -->
 
 - **A jar under a base scan package needs an `@OptionalService` master switch, and a vendor
   integration is not done until a negative control proves the happy path (2026-09-16, Eric's design
@@ -295,7 +299,7 @@
   build ([[ot-otel-acceptance-traces-pending]]). Report:
   `docs/test-reports/otel-dynatrace-certification.md`; closes [[ot-otel-dynatrace-certification]].
   Splunk's header form is parsed and documented but NOT run live.
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-17 | uses: 4 | tier: active | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-17 | uses: 4 | tier: archive-candidate | origin: 2026-09-16-193203 -->
 
 - **Application log forwarding is an INFRASTRUCTURE task — the engine does not grow that capability
   (Eric with the field architects, 2026-09-18; CLOSED, not parked).** The field found the gap after
@@ -320,7 +324,7 @@
   correlation; it was transport, which is the platform's job.
   Applies [[clean-knowledge-design-over-engine-coverage]] one level up — the same "should the engine
   absorb this at all" question asked of a *capability* rather than a graph composition.
-  <!-- id: log-forwarding-is-infrastructure | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: working | origin: 2026-09-18-174943 -->
+  <!-- id: log-forwarding-is-infrastructure | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: archive-candidate | origin: 2026-09-18-174943 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -344,7 +348,7 @@
   reason from what the user does, not from what the engine can detect. Serves
   [[vision-mercury-composable]] (the certification half of the governance lifecycle); applied by
   [[ot-subgraph-for-each-suspend]].
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-18 | uses: 2 | tier: active | origin: 2026-09-18-174943 -->
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-20 | uses: 3 | tier: active | origin: 2026-09-18-174943 -->
 
 - **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
   `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
@@ -373,7 +377,7 @@
   `withAuthentication(RedisCredentialsProvider)` is the future seam if rotating IAM tokens are ever
   needed. Rust parity for cluster (cluster-client option + the same DEL split) is a parked
   follow-up, NOT a break. Extends [[soa-transport-neutral-cid]].
-  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-16 | uses: 7 | tier: archive-candidate | origin: 2026-09-14-181948 -->
+  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-19 | uses: 8 | tier: active | origin: 2026-09-14-181948 -->
 
 - **The distributed cache is a SEPARATE module — sync-over-async stays small (Eric, 2026-09-14).**
   sync-over-async is a *rendezvous transport* (correlation-id `request:`/`queue:` keys,
@@ -396,7 +400,7 @@
   extracted [[redis-connection-foundation]] (spec draft-design-specs/distributed-cache.md);
   [[ot-distributed-cache]] tracks the remaining Rust lockstep. Builds on [[soa-redis-cluster-support]];
   serves [[vision-mercury-composable]].
-  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-16 | uses: 10 | tier: archive-candidate | origin: 2026-09-14-191748 -->
+  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-20 | uses: 12 | tier: active | origin: 2026-09-14-191748 -->
 
 - **The Redis client layer is a shared `extensions/redis-connection` foundation (2026-09-14; Java
   shipped for v4.12.9).** Extracted from sync-over-async's `support/`: `RedisBackend<V>` (generic in the
@@ -414,7 +418,7 @@
   (cache). Realizes the "extract the foundation" half of [[cache-separate-from-soa]]; tracked by
   [[ot-distributed-cache]]; applied [[preload-before-mainapp-lazy-config]] and
   [[conv-reentrantlock-not-synchronized]].
-  <!-- id: redis-connection-foundation | created: 2026-09-14 | last_used: 2026-09-16 | uses: 5 | tier: archive-candidate | origin: 2026-09-14-230259 -->
+  <!-- id: redis-connection-foundation | created: 2026-09-14 | last_used: 2026-09-21 | uses: 8 | tier: active | origin: 2026-09-14-230259 -->
 
 - **platform-core has a lightweight shutdown lifecycle — `Platform.getInstance().onShutdown(Runnable)`
   (2026-09-14, Eric's minimalist-principle ruling; for v4.12.9).** The platform owns ONE JVM shutdown hook
@@ -429,7 +433,7 @@
   also makes the cache's `shutdown()` a used method, resolving the field Sonar "never used" finding without
   deleting it). Rust parity is a lockstep follow-up (internal lifecycle API, not a wire contract). Applies
   [[conv-reentrantlock-not-synchronized]]; used by [[redis-connection-foundation]].
-  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-16 | uses: 4 | tier: archive-candidate | origin: 2026-09-15-011235 -->
+  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-19 | uses: 5 | tier: active | origin: 2026-09-15-011235 -->
 
 - **MiniGraph async skill callbacks are guarded — a failure surfaces as the node's error, never a
   silent hang (2026-09-15; found building the distributed-cache example, PR #392).** A
@@ -455,7 +459,7 @@
   Parked: CompileGraph static LHS check (dynamic `{…}` limits it to static cases);
   Rust-twin parity check of the same callback pattern. Relates [[trace-thread-keyed-mono-gotcha]]
   (the same async-callback minefield).
-  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-18 | uses: 6 | tier: active | origin: 2026-09-15-040141 -->
+  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-18 | uses: 6 | tier: archive-candidate | origin: 2026-09-15-040141 -->
 
 - **A Layer 3 application is one graph endpoint plus dev mode — and the Playground UI hides behind a
   classpath-order trap (2026-09-15, Eric's polish round on the starter template + the cache example).**
@@ -482,7 +486,7 @@
   colliding resource path in the engine (needs Rust lockstep). Documented in `playground-and-companion.md` (#enabling) and
   `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]]; applies to
   [[ot-distributed-cache]]'s worked example.
-  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-18 | uses: 6 | tier: active | origin: 2026-09-15-221451 -->
+  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-20 | uses: 8 | tier: active | origin: 2026-09-15-221451 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
@@ -559,7 +563,7 @@
   connection recovers on its 30 s backoff cap while `redis.health` (a fresh connection) is already green —
   ruled 2026-09-21 — reset the shared connection on command timeout, [[redis-connection-reset-on-timeout]]; the in-function RPC timeout WAS 500 here vs 408 on Rust — a platform-core mapping gap, fixed
   2026-09-20 ([[exception-status-from-cause-chain]]): 408 on both. Relates [[redis-connection-foundation]].
-  <!-- id: l1-caller-checks-reply-status | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: working | origin: 2026-09-20-004702 -->
+  <!-- id: l1-caller-checks-reply-status | created: 2026-09-20 | last_used: 2026-09-21 | uses: 2 | tier: active | origin: 2026-09-20-004702 -->
 
 - **A function's error status comes from its CAUSE CHAIN — the first `AppException` (its status),
   `TimeoutException` (408) or `IllegalArgumentException` (400) wins; 500 only when none is present (Eric,
@@ -600,7 +604,7 @@
   timeout; Rust 408 for its deadline, 503 for refused/broken-pipe). Behaviour change to READ: a caller that
   keyed on 500 for a Redis outage now sees 408/503. Relates [[redis-connection-foundation]],
   [[l1-caller-checks-reply-status]].
-  <!-- id: redis-failure-classification | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: working | origin: 2026-09-20-004702 -->
+  <!-- id: redis-failure-classification | created: 2026-09-20 | last_used: 2026-09-21 | uses: 2 | tier: active | origin: 2026-09-20-004702 -->
 - **The shared Redis connection is RESET after a command timeout — recovery is bounded by `redis.timeout.ms`,
   not by Lettuce's reconnect backoff (Eric's ruling on interop Finding 4, 2026-09-21; `redis-connection`
   foundation, branch `fix/redis-reset-on-timeout` `48ab9b4f`, PR pending).** Lettuce reconnects a dropped
@@ -689,7 +693,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-18 | uses: 48 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-20 | uses: 49 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -709,7 +713,7 @@
   PR). Both errors came from writing out of recollection of my own work instead of out of the
   repository. Corrected in both places via PR #411. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-20 | uses: 2 | tier: active | origin: 2026-09-17-183008 -->
 - **A thread id names the THING, never its kind — and an existing thread is never renamed (Eric,
   2026-09-18).** The tool writes every open thread to `memory/open-threads/thread-<id>.md`, so an id
   that already begins `ot-` or `thread-` stutters: `thread-ot-distributed-cache.md`, and worst,
@@ -779,7 +783,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-19 | uses: 8 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-20 | uses: 10 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -843,7 +847,7 @@
   comment) and the return-route coordinator; applied to the distributed cache's `CacheRuntime`. This
   decays once the toolchain moves to Java 25 (JEP 491 makes `synchronized` non-pinning). Relates
   [[virtual-threads-rpc]], [[kafka-clients-kernel-threads]]; applied in [[redis-connection-foundation]].
-  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-09-16 | uses: 4 | tier: archive-candidate | origin: 2026-09-14-230259 -->
+  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-09-21 | uses: 5 | tier: active | origin: 2026-09-14-230259 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
@@ -907,7 +911,7 @@
   and human–human collaboration is first-class" is **realized**, and the altitude drift briefly
   flagged against this close does not exist.
   → served: vision-mercury-composable
-  <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-09-17 | uses: 4 | tier: active -->
+  <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-09-17 | uses: 4 | tier: archive-candidate -->
 - [x] (blueprint) **CLOSED 2026-09-17 (Eric, at the first closure gate)** — enterprise governance
   lifecycle for graph models (dry-run → certify → stage → approve → production). **Closed as part of
   AI companion maturity:** this gap *is* the human–AI collaboration and product-owner certification
@@ -916,7 +920,7 @@
   deployment quality gate in the running engine; the certification half is the human process the
   companion now supports. Not a documentation task and not deferred — realized.
   → served: vision-mercury-composable
-  <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-09-17 | uses: 4 | tier: active -->
+  <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-09-17 | uses: 4 | tier: archive-candidate -->
 ## Open Threads
 
 > Open Threads live **one per file** in `memory/open-threads/` (`thread-<id>.md`;

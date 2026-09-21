@@ -9,4 +9,4 @@
   failure that cost two dead ends during the round. Pick evidence the other side has to show you.
   Completes [[otel-optional-service-and-negative-control]].
   origin: `memory/sessions/2026-09-16-211927.md`
-  <!-- id: ot-otel-acceptance-traces-pending | created: 2026-09-16 | last_used: 2026-09-17 | uses: 3 | tier: active | origin: 2026-09-16-211927 -->
+  <!-- id: ot-otel-acceptance-traces-pending | created: 2026-09-16 | last_used: 2026-09-17 | uses: 3 | tier: archive-candidate | origin: 2026-09-16-211927 -->

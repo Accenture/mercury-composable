@@ -6,4 +6,4 @@
   initialization is one-shot, JVM-wide and irreversible, and the *compiler* decides which constant
   references can even trigger it ([[kafka-config-class-static-init-loader]]).
   origin: `memory/sessions/2026-09-17-183008.md`
-  <!-- id: ot-kafka-health-producer-only-fix | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: ot-kafka-health-producer-only-fix | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: archive-candidate | origin: 2026-09-17-183008 -->

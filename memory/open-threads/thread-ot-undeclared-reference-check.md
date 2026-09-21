@@ -7,4 +7,4 @@
   log already declared, so none tested the positive path. A verification harness needs its own
   positive control; prove it can report failure before trusting a success.
   origin: `memory/sessions/2026-09-17-183008.md`
-  <!-- id: ot-undeclared-reference-check | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: ot-undeclared-reference-check | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: archive-candidate | origin: 2026-09-17-183008 -->
