@@ -2601,6 +2601,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#reset-recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovery after the connection-reset fix (2026-09-21)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-to-reproduce" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3087,6 +3098,17 @@
     <span class="md-ellipsis">
       
         Validation run after the cache-failure classification (2026-09-20)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reset-recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovery after the connection-reset fix (2026-09-21)
       
     </span>
   </a>
@@ -3603,6 +3625,12 @@ but an operator watching <code>/health</code> alone would call the pod healthy b
 Worth a follow-up ruling: reset the shared Lettuce connection when a command times out (so recovery
 is bounded by <code>redis.timeout</code> instead of the backoff), lower the reconnect cap, or document the
 window. Not changed here.</p>
+<p><em>Follow-up, 2026-09-21 — ruled and fixed on the Java side:</em> the <code>redis-connection</code> foundation resets the
+shared connection after a command timeout (at once when the connection is not open, on the second
+consecutive timeout when it is), so the next command reconnects and recovery is bounded by the command
+timeout; while Redis is still down that command fails fast with 503. The Rust engine needed no change (its
+client already reconnected on the first command after Redis returned). Live re-run of this scenario:
+see the <em>Recovery after the connection-reset fix</em> section below.</p>
 <p><strong>5. What matched exactly.</strong> The health contract (<code>UP</code>/<code>DOWN</code>, HTTP 200/400, the dependency block with
 <code>{code, text}</code>), the miss and rejection bodies on all three layers, the key layout, the TTL semantics,
 and — the point of the drive — 36/36 reads and 6/6 deletes across the engine boundary.</p>
@@ -3819,6 +3847,45 @@ redis crate failing fast on the dead connection and then waiting on its reconnec
 write: attempt 1 → HTTP 408, attempt 2 → 201 at +8.3 s
 (Lettuce's scheduled reconnect); Rust's: attempt 1 → 201. Cross-engine reads of both post-recovery writes 4/4.</p>
 <p>What changed since the previous validation run: Java L2 GET 500 → <strong>408</strong>; Java L3 get 500 → <strong>408</strong>; Rust L1 GET 500 → <strong>503</strong>; Rust L1 DELETE 500 → <strong>503</strong>; Rust L2 GET 500 → <strong>408</strong>; Rust L3 get 500 → <strong>503</strong>. Everything else is identical.</p>
+<h2 id="reset-recovery">Recovery after the connection-reset fix (2026-09-21)<a class="headerlink" href="#reset-recovery" title="Permanent link">&para;</a></h2>
+<p>Finding 4 was ruled on 2026-09-21 — <em>reset the shared connection on command timeout</em> — and fixed in the
+Java <code>redis-connection</code> foundation: a command timeout on a connection that is not open resets the shared
+connection at once (on an open connection, the second consecutive timeout does), the next command opens a
+fresh connection, and while Redis is still down that connect fails fast with 503 instead of waiting out
+another 5 s timeout. The Rust engine needed no change. The outage scenario was re-driven against the
+rebuilt Java example (<code>distributed-cache-example</code> 4.12.12 with the fix; <code>helpers/redis-standalone</code>
+4.12.12; Layer 1 <code>GET /api/l1/profile/{id}</code> probed every 5 s during the outage and every second after
+the restart, <code>/health</code> alongside). The embedded Redis restarts empty, so a live reply after the restart is
+a 404 miss; the write path was then exercised (201, then 200).</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>During the outage</th>
+<th>First call after Redis returned</th>
+<th>Before the fix (this report)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Redis down 40 s</td>
+<td>first probe 408 <code>Timeout for 5000 ms</code> (the command in flight when Redis died), then every probe <strong>503</strong> <code>Redis unavailable - Unable to connect …</code> within milliseconds; <code>/health</code> 400 throughout</td>
+<td><strong>live reply at +0.03 s</strong> (404 miss), <code>/health</code> 200 at the same poll; write path 201 → 200</td>
+<td>recovery 10.5 s after Redis returned, on Lettuce's next backoff attempt (Finding 4)</td>
+</tr>
+<tr>
+<td>Redis down 10 s</td>
+<td>first probe 408, then the restart</td>
+<td><strong>live reply at +0.03 s</strong>, <code>/health</code> 200; write path 201 → 200</td>
+<td>every cache call failed for the whole 10 s window while <code>/health</code> was green (Finding 4)</td>
+</tr>
+</tbody>
+</table>
+<p>Two things changed. Recovery is no longer bounded by the reconnect backoff — the first request after
+Redis returned succeeded in both runs, because the reset had already closed the dead connection and the
+first call opened a new one — and the outage itself now reads honestly: after the one in-flight timeout,
+callers see a fast 503 rather than a 5 s 408 per call, and <code>/health</code> and the cache path agree at every
+poll. The asymmetry Finding 4 described (health green, cache still failing) did not reappear.</p>
 <h2 id="how-to-reproduce">How to reproduce<a class="headerlink" href="#how-to-reproduce" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># 1. one Redis (the Java repository)</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>java<span class="w"> </span>-jar<span class="w"> </span>helpers/redis-standalone/target/redis-standalone-x.y.z.jar

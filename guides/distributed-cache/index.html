@@ -3192,7 +3192,17 @@ value(s) ride in the body:</p>
   passes the status through — sees the failure for what it is: a command timeout replies <strong>408</strong> (Lettuce's
   <code>Command timed out after N second(s)</code>), an unreachable Redis replies <strong>503</strong> <code>Redis unavailable - …</code> (the
   <code>redis.health</code> vocabulary), and a genuine command error answered by the server (e.g. <code>WRONGTYPE</code>) keeps the
-  platform's default 500. The Rust engine classifies the same way, so a mixed fleet fails alike.</li>
+  platform's default 500. The Rust engine classifies the same way, so a mixed fleet fails alike. An <code>MPUT</code>
+  whose pipelined replies do not all arrive in time is the same 408.</li>
+<li><strong>The shared connection is reset after a command timeout.</strong> Lettuce reconnects a dropped connection on its
+  own exponential backoff (capped at 30 s), so after a long outage a pod could keep timing out for up to
+  ~30 s after Redis was back while <code>redis.health</code> — a fresh probe connection — already read green. The
+  module now resets the connection when a command times out: at once when the connection is not open,
+  on the second consecutive timeout when it is (one slow command on a healthy connection does not drop
+  the commands in flight). The next call reconnects, so recovery is bounded by <code>redis.timeout.ms</code> rather
+  than the backoff; while Redis is still down that call fails fast with <strong>503</strong> instead of waiting out
+  another timeout. The Rust engine's client reconnects on the first command after Redis returns, so both
+  engines recover within a command timeout.</li>
 </ul>
 <h2 id="config">Enabling and configuring<a class="headerlink" href="#config" title="Permanent link">&para;</a></h2>
 <p>Add the <code>distributed-cache</code> jar to the classpath and enable it. The connection uses the plain <strong><code>redis.*</code></strong>
@@ -3395,7 +3405,9 @@ pipeline of independent single-key <code>SETEX</code> (each routes to its own sl
 multiplexed</strong> Lettuce connection — <strong>no connection pool</strong>: Lettuce pipelines any number of concurrent
 callers over one in-order TCP connection, and this op set has no blocking commands (<code>LPOP</code>, not <code>BLPOP</code>)
 or <code>MULTI</code>/<code>EXEC</code> transactions that would warrant a pool. <code>redis.cache.instances</code> is virtual-thread worker
-concurrency, not a connection count.</p>
+concurrency, not a connection count. The one connection is <strong>reset after a command timeout</strong> (see the
+failure bullet above), and the command handle the store holds is a facade that follows the reset, so no
+caller ever sees a stale connection.</p>
 <h2 id="health">Health check<a class="headerlink" href="#health" title="Permanent link">&para;</a></h2>
 <p>The module ships a health-check function at route <strong><code>redis.health</code></strong> (registered with the cache when
 <code>redis.cache.enabled=true</code>). Opt in as a health dependency:</p>
