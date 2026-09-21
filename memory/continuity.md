@@ -607,7 +607,7 @@
   <!-- id: redis-failure-classification | created: 2026-09-20 | last_used: 2026-09-21 | uses: 2 | tier: active | origin: 2026-09-20-004702 -->
 - **The shared Redis connection is RESET after a command timeout — recovery is bounded by `redis.timeout.ms`,
   not by Lettuce's reconnect backoff (Eric's ruling on interop Finding 4, 2026-09-21; `redis-connection`
-  foundation, branch `fix/redis-reset-on-timeout` `48ab9b4f`; PR #433 open).** Lettuce reconnects a dropped
+  foundation, branch `fix/redis-reset-on-timeout` `48ab9b4f`; PR #433 MERGED 2026-09-21, squash `d29318fd`).** Lettuce reconnects a dropped
   connection on an exponential backoff capped at 30 s, so after a long outage a pod kept timing out for up to
   ~30 s after Redis was back while `redis.health` (a fresh probe connection) read green. `ResettableRedisBackend`,
   the new base of both backends: `commands()`/`async()` are stable Proxy facades resolving the live connection
