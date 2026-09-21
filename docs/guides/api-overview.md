@@ -473,6 +473,13 @@ response.onFailure(e -> {
 
 "Event over HTTP" is an important topic. Please refer to [Event over HTTP](event-over-http.md) for more details.
 
+> **Runnable example.** `hello.rpc` in `examples/lambda-example` (`POST /api/hello/rpc`) shows the whole
+> request-response idiom in one function: build the event, `po.request(request, timeoutMs).get()`, **check
+> the reply's status before reading its body** (a callee that throws replies with its error status and
+> message), return the result; `?timeout=300` with `{"sleep_ms": 1500}` shows the 408 a timeout produces
+> for the REST caller. The cross-instance form of the same idiom is `EventOverHttpRpc` in
+> `examples/composable-example`.
+
 ### Perform a fork-n-join RPC call to multiple functions
 
 In a similar fashion, you can make a fork-n-join call that sends request events in parallel to more than one function.

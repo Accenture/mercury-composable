@@ -94,6 +94,21 @@ rest:
     stream: true
 
   #
+  # Request-response (RPC) between two functions in this application: hello.rpc calls
+  # hello.world with po.request(...).get(), checks the reply's status, and returns the
+  # result. "?timeout=_" is the RPC budget in ms (default 5000); pass {"sleep_ms": 1500}
+  # with timeout=300 to see the 408. See HelloRpc.java and the README's
+  # "Request-response (RPC) between functions" section.
+  #
+  - service: "hello.rpc"
+    methods: ['GET', 'POST']
+    url: "/api/hello/rpc?timeout=_"
+    timeout: 15s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  #
   # The engine-to-wrapper streaming composition: the endpoint's function forwards
   # its reply lane into a 'send' to the event-over-http mapped "hello.tokens"
   # function (the python/node demo apps) - the remote segments re-render

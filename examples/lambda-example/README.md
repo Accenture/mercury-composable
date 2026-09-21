@@ -28,6 +28,33 @@ application.properties will be used.
 While application.properties can also store text based key-values, application.yml supports text, numbers, boolean,
 list and map values.
 
+## Request-response (RPC) between functions
+
+The `hello.rpc` function ([HelloRpc.java](src/main/java/org/platformlambda/services/HelloRpc.java))
+serves `/api/hello/rpc` and shows the request-response idiom between two functions in the same
+application: it builds an event for `hello.world`, waits for the reply within a budget with
+`po.request(request, timeoutMs).get()`, **checks the reply's status before reading its body** (a
+callee that throws replies with its error status and message, not with an exception on the caller's
+side), and returns the echoed result with the round-trip time.
+
+```shell
+curl -X POST -H 'content-type: application/json' -d '{"name":"rpc"}' http://127.0.0.1:8085/api/hello/rpc
+```
+
+The call is synchronous in style but does not block a kernel thread: the calling virtual thread
+suspends until the reply arrives. A timeout surfaces to the REST caller as HTTP 408 — try a budget
+shorter than the callee's work:
+
+```shell
+curl -X POST -H 'content-type: application/json' -d '{"sleep_ms":1500}' \
+  'http://127.0.0.1:8085/api/hello/rpc?timeout=300'
+```
+
+The `PostOffice` is created with the function's own headers (`new PostOffice(headers, instance)`),
+so the RPC continues the caller's distributed trace and the callee's span appears as a child of
+`hello.rpc` in the trace. For the same idiom across application instances, see `EventOverHttpRpc`
+in the composable-example.
+
 ## Progressive result set rendering (SSE demo)
 
 The `hello.sse` function ([HelloSse.java](src/main/java/org/platformlambda/services/HelloSse.java))
