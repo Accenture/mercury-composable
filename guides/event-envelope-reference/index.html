@@ -5198,8 +5198,9 @@ as the input type in the <code>TypedLambdaFunction</code> signature:</p>
 <hr />
 <h2 id="header-methods">Header methods<a class="headerlink" href="#header-methods" title="Permanent link">&para;</a></h2>
 <p>Headers are <code>String → String</code> parameters attached to an event. They are delivered directly
-to the <code>headers</code> argument of <code>handleEvent</code> — they are not HTTP headers unless the function
-is a REST endpoint handler.</p>
+to the <code>headers</code> argument of <code>handleEvent</code> — they are not HTTP headers. A function bound to a
+REST endpoint receives the HTTP headers inside its <code>AsyncHttpRequest</code> input
+(<code>input.getHeader(name)</code>, case-insensitive); a flow maps them as <code>input.header.&lt;name&gt;</code>.</p>
 <h3 id="getheaders"><code>getHeaders()</code><a class="headerlink" href="#getheaders" title="Permanent link">&para;</a></h3>
 <table>
 <thead>

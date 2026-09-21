@@ -5371,7 +5371,7 @@ is equivalent to:
 </tr>
 <tr>
 <td><code>input.body</code></td>
-<td>Parsed request body (JSON → Map, text → String)</td>
+<td>Parsed request body (JSON object → Map, JSON array → List, text → String)</td>
 <td><code>input.body -&gt; *</code></td>
 </tr>
 <tr>
@@ -5825,8 +5825,8 @@ segment. Use <code>f:listOfMap()</code> to normalize this into a <code>List&lt;M
 </tr>
 <tr>
 <td><code>body</code></td>
-<td>Map / Object</td>
-<td>Parsed request body; JSON → Map, text → String</td>
+<td>Map / List / Object</td>
+<td>Parsed request body; JSON object → Map, JSON array → List (map it with <code>*</code> into a <code>List&lt;PoJo&gt;</code> function), text → String</td>
 </tr>
 <tr>
 <td><code>stream</code></td>

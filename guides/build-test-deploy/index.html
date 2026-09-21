@@ -3428,7 +3428,9 @@ to override the "no.op" function that is associated with the first task "echo.on
 in addition to just echoing the input payload. In this fashion, the unit test can count the number
 of iteration of a pipeline to validate the looping feature of a pipeline.</p>
 <p>The unit test programmatically registers the mock function and then release it from the event loop
-when the test finishes.</p>
+when the test finishes. In the snippet, <code>HOST</code> is the test server (<code>http://127.0.0.1:</code> + the test
+<code>rest.server.port</code>), <code>HTTP_CLIENT</code> is the built-in <code>async.http.request</code> route, and
+<code>EventEmitter.getInstance()</code> is the trace-less event API a test may use in place of a <code>PostOffice</code>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="w">    </span><span class="nd">@SuppressWarnings</span><span class="p">(</span><span class="s">"unchecked"</span><span class="p">)</span>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">    </span><span class="nd">@Test</span>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">pipelineForLoopTest</span><span class="p">()</span><span class="w"> </span><span class="kd">throws</span><span class="w"> </span><span class="n">InterruptedException</span><span class="w"> </span><span class="p">{</span>

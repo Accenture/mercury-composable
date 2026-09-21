@@ -7500,7 +7500,9 @@ call answers 404 ("compiled or 404", ADR-0011).</p>
 </tbody>
 </table>
 <p>Where the Playground's <code>export graph</code> command writes model JSON. Must be a local filesystem
-path (read/write requirement).</p>
+path (read/write requirement): either a plain path (<code>/tmp/graph</code>) or the <code>file:</code> form the tutorials
+use (<code>location.graph.temp=file:/tmp/graph</code> — the prefix is stripped). A <code>classpath:</code> location is
+rejected with an error and the default is used instead.</p>
 <h3 id="graphtraversallog"><code>graph.traversal.log</code><a class="headerlink" href="#graphtraversallog" title="Permanent link">&para;</a></h3>
 <table>
 <thead>

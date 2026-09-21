@@ -3375,9 +3375,11 @@ key, and the <code>byte[]</code> value rides the whole-body <code>*</code> passt
 <a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sequential</span>
 </code></pre></div>
 <h3 id="layer3">Layer 3 — Knowledge Graph node<a class="headerlink" href="#layer3" title="Permanent link">&para;</a></h3>
-<p>A <code>graph.task</code> node calls the same route with the same mapping syntax:</p>
+<p>A <code>graph.task</code> node calls the same route with the same mapping syntax (the node's properties, as
+they appear in an exported model — in the Playground: <code>skill=graph.task</code>, <code>task=v1.cache.redis</code>,
+<code>input[]=…</code>, <code>output[]=…</code>):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">"route"</span><span class="p">:</span><span class="w"> </span><span class="s2">"graph.task"</span><span class="p">,</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">"skill"</span><span class="p">:</span><span class="w"> </span><span class="s2">"graph.task"</span><span class="p">,</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">"task"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v1.cache.redis"</span><span class="p">,</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="s2">"text(GET) -&gt; header.action"</span><span class="p">,</span>

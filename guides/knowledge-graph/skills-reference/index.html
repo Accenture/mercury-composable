@@ -3363,7 +3363,10 @@ substitution</strong>, resolved when the model is loaded (at deployment compile,
 graph</code> for a dry-run) while the authored and exported model keeps the placeholder. The result lands at
 <code>{node}.result</code> and response headers at <code>{node}.header</code> — in <code>output[]</code> mappings, <strong><code>result</code>
 (bare) is the function's whole result</strong> and <code>result.{key}</code> a field of it (same rule as
-<code>graph.extension</code>). Optional <code>for_each[]</code> with <code>concurrency</code>
+<code>graph.extension</code>). An <code>output[]</code> source is a constant, a simple-plugin call (<code>f:…</code>), <code>result</code>/<code>result.{key}</code>,
+<code>model.*</code> or this node's own <code>{node}.*</code> — <code>input.*</code> is valid only on the input side; to echo a request value, stage it at
+a mapper node (<code>input.body.id -&gt; model.id</code>) and map <code>model.id</code> out. Any other source fails the node
+with an error that names the entry. Optional <code>for_each[]</code> with <code>concurrency</code>
 (1–30, default 3) iterates with bounded fork-join; <code>exception=&lt;node&gt;</code> routes failures with the
 same generic <code>error.source</code>/<code>code</code>/<code>message</code>/<code>stack</code> context as
 <a href="#api-fetcher"><code>graph.api.fetcher</code></a>, so one handler serves them all

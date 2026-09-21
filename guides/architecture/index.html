@@ -3251,7 +3251,7 @@ in the <code>input:</code> and <code>output:</code> lists is a mapping statement
 <li><code>output.header.&lt;name&gt;</code> — a response header</li>
 <li><code>output.status</code> — the HTTP response status code</li>
 <li><code>header.&lt;name&gt;</code> — a key-value passed into the next function's <code>headers</code> argument</li>
-<li><code>error.status</code>, <code>error.message</code>, <code>error.task</code>, <code>error.stack</code> — available in exception handlers</li>
+<li><code>error.code</code>, <code>error.message</code>, <code>error.task</code>, <code>error.stack</code> — available in exception handlers</li>
 <li><code>text(value)</code> — a string constant (also used for content-type, e.g., <code>text(application/json)</code>)</li>
 <li><code>int(n)</code>, <code>long(n)</code>, <code>float(n)</code>, <code>double(n)</code>, <code>boolean(true|false)</code> — typed constants</li>
 <li><code>map(k=v, ...)</code> or <code>map(config.key)</code> — a map of key-values or values from application config</li>

@@ -4408,7 +4408,7 @@ to the flow engine.</p>
 </tbody>
 </table>
 <p>For easy matching, please use lower case for headers, cookies, query and path parameters.</p>
-<p>Regular API uses JSON and XML and they will be converted to a hash map in the event's body.</p>
+<p>Regular API uses JSON and XML and they will be converted to a hash map in the event's body (a JSON array body becomes a list — see the <code>*</code> passthrough for <code>List&lt;PoJo&gt;</code> input below).</p>
 <p>For special use cases like file upload/download, your application logic may invoke a streaming API to retrieve
 the binary payload. Please refer to <a href="../../actuators-and-http-client/">Appendix III: Actuators, HTTP Client &amp; More</a></p>
 <h2 id="task-is-a-composable-function">Task is a composable function<a class="headerlink" href="#task-is-a-composable-function" title="Permanent link">&para;</a></h2>
@@ -5236,7 +5236,7 @@ considerations when it comes to utilizing something other than <code>Map&lt;Stri
 <p>In the above example <code>other</code> will not be passed</p>
 <ol>
 <li>When attempting to read the input as a <code>List&lt;T&gt;</code> in your Lambda function you should type the input appropriately
-and utilize <code>pojoClass</code> property on preLoad if utilizing a list of complex objects</li>
+and set the <code>inputPojoClass</code> property on <code>@PreLoad</code> if utilizing a list of complex objects</li>
 </ol>
 <p>When using Lists of complex Objects 
 <div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="nd">@PreLoad</span><span class="p">(</span><span class="n">route</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"hello.world"</span><span class="p">,</span><span class="w"> </span><span class="n">inputPojoClass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PoJo</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>

@@ -4004,6 +4004,15 @@ target route name, key-values and/or event payload.</p>
 <li>Example-3 makes an "event over HTTP" RPC call to "another.function" in another application instance called "peer".</li>
 </ol>
 <p>"Event over HTTP" is an important topic. Please refer to <a href="../event-over-http/">Event over HTTP</a> for more details.</p>
+<blockquote>
+<p><strong>Runnable example.</strong> <code>hello.rpc</code> in <code>examples/lambda-example</code> (<code>POST /api/hello/rpc</code>) shows the whole
+request-response idiom in one function: build the event, <code>po.request(request, timeoutMs).get()</code>, <strong>check
+the reply's status before reading its body</strong> (a callee that throws replies with its error status and
+message), return the result; <code>?timeout=300</code> with <code>{"sleep_ms": 1500}</code> shows the 408 a timeout produces
+for the REST caller — <code>request().get()</code> throws an <code>ExecutionException</code> wrapping a <code>TimeoutException</code>
+("Timeout for N ms"), and letting it propagate makes the function's own reply a 408. The cross-instance form of the same idiom is <code>EventOverHttpRpc</code> in
+<code>examples/composable-example</code>.</p>
+</blockquote>
 <h3 id="perform-a-fork-n-join-rpc-call-to-multiple-functions">Perform a fork-n-join RPC call to multiple functions<a class="headerlink" href="#perform-a-fork-n-join-rpc-call-to-multiple-functions" title="Permanent link">&para;</a></h3>
 <p>In a similar fashion, you can make a fork-n-join call that sends request events in parallel to more than one function.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1">// example-1</span>

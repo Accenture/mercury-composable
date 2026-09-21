@@ -3189,6 +3189,18 @@ object as the event body and reconstructs it:</p>
 the flow's input data mapping selects the pieces (<code>input.body -&gt; ...</code>, <code>input.header.x -&gt; ...</code>) —
 which is why a flow task sees the mapped body while a directly-bound function sees the whole
 request object.</p>
+<p><strong>Reading the request.</strong> <code>getMethod()</code>, <code>getUrl()</code>, <code>getHeader(name)</code> / <code>getHeaders()</code> (names are
+lower-cased), <code>getPathParameter(name)</code> / <code>getPathParameters()</code>, <code>getQueryParameter(name)</code> /
+<code>getQueryParameters(name)</code> (repeated keys) / <code>getQueryParameters()</code>, <code>getCookie(name)</code> /
+<code>getCookies()</code>, <code>getSessionInfo()</code>, <code>getRemoteIp()</code>, <code>getContentLength()</code>, and <code>getBody()</code> — a
+<code>Map</code> for a JSON object body, a <code>List</code> for a JSON array, a <code>String</code> for text, <code>byte[]</code> for binary;
+<code>getBody(MyPojo.class)</code> deserializes a JSON object into your class. Multipart uploads expose
+<code>getFileName()</code>, <code>getFileContentTypes()</code>, <code>getFileSizes()</code> and the stream handle <code>getStreamRoute()</code>.</p>
+<p><strong>Replying with a status and headers.</strong> Declare the output type as <code>EventEnvelope</code> and return
+<code>new EventEnvelope().setStatus(201).setHeader("Location", url).setBody(result)</code>: the envelope's status
+becomes the HTTP status, its headers the response headers (after the endpoint's <code>headers.response</code>
+rules; <code>trace_id</code>/<code>trace_path</code> are never exposed, <code>content-type</code> and <code>set-cookie</code> are honoured), and
+its body the payload. An error is a thrown <code>AppException(status, message)</code>.</p>
 <p>Your authentication function can return a boolean value to indicate if the request should be accepted or rejected.</p>
 <p>If true, the system will send the HTTP request to the service. In this example, it is the "hello.world" function.
 If false, the user will receive an "HTTP-401 Unauthorized" exception.</p>
