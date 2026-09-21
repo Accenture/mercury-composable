@@ -459,7 +459,7 @@
   Parked: CompileGraph static LHS check (dynamic `{…}` limits it to static cases);
   Rust-twin parity check of the same callback pattern. Relates [[trace-thread-keyed-mono-gotcha]]
   (the same async-callback minefield).
-  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-18 | uses: 6 | tier: archive-candidate | origin: 2026-09-15-040141 -->
+  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-21 | uses: 7 | tier: active | origin: 2026-09-15-040141 -->
 
 - **A Layer 3 application is one graph endpoint plus dev mode — and the Playground UI hides behind a
   classpath-order trap (2026-09-15, Eric's polish round on the starter template + the cache example).**
@@ -563,7 +563,7 @@
   connection recovers on its 30 s backoff cap while `redis.health` (a fresh connection) is already green —
   ruled 2026-09-21 — reset the shared connection on command timeout, [[redis-connection-reset-on-timeout]]; the in-function RPC timeout WAS 500 here vs 408 on Rust — a platform-core mapping gap, fixed
   2026-09-20 ([[exception-status-from-cause-chain]]): 408 on both. Relates [[redis-connection-foundation]].
-  <!-- id: l1-caller-checks-reply-status | created: 2026-09-20 | last_used: 2026-09-21 | uses: 2 | tier: active | origin: 2026-09-20-004702 -->
+  <!-- id: l1-caller-checks-reply-status | created: 2026-09-20 | last_used: 2026-09-21 | uses: 3 | tier: active | origin: 2026-09-20-004702 -->
 
 - **A function's error status comes from its CAUSE CHAIN — the first `AppException` (its status),
   `TimeoutException` (408) or `IllegalArgumentException` (400) wins; 500 only when none is present (Eric,
@@ -583,7 +583,7 @@
   are 408, matching Rust, whose `AppError` carries its status with no wrapper class to hide it. Relates
   [[l1-caller-checks-reply-status]]. The Layer 2/3 500s that remained after this fix were the cache module's own
   unclassified Lettuce exceptions — closed by [[redis-failure-classification]].
-  <!-- id: exception-status-from-cause-chain | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: working | origin: 2026-09-20-004702 -->
+  <!-- id: exception-status-from-cause-chain | created: 2026-09-20 | last_used: 2026-09-21 | uses: 2 | tier: active | origin: 2026-09-20-004702 -->
 
 - **`v1.cache.redis` classifies its own Redis failures — a command timeout is 408, an unreachable Redis is
   503, only a server answer stays 500 — in both engines (Eric, 2026-09-20; Java `RedisFailure.classify` in

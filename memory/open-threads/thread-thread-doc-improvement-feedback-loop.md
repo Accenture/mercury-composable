@@ -33,4 +33,20 @@
   [PR #222](https://github.com/Accenture/mercury/pull/222) squash `c730e17e`; python
   [PR #23](https://github.com/Accenture/mercury-python/pull/23) squash `a12c56b6`; node
   [PR #91](https://github.com/Accenture/mercury-nodejs/pull/91) squash `0899ad59`).
-  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-09-18 | uses: 4 | tier: working | origin: 2026-09-01-032130 -->
+  **MEASURED 2026-09-21 (W2, all three layers run once end to end).** Method: a source-blind fresh-agent
+  probe reads only `docs/llms.txt`, `docs/index.md` and `docs/guides/**`, starts from `llms.txt`, and
+  grades each "how do I" question SUFFICIENT / PARTIAL (names the missing detail) / INSUFFICIENT; the
+  rate is SUFFICIENT over total. Fifteen questions across the three layers and the extensions (the set
+  is recorded in the origin log below — reuse it as the baseline): **11/15 sufficient, 4 partial, 0
+  insufficient**; all four partials were Layer 1–2 REST-edge details (direct binding input, typed
+  status/headers, `/health` shape, `List<PoJo>`). Fixed, then a re-probe of those four asked also to
+  flag cross-page contradictions: **4/4 sufficient → 15/15**, plus five wording slips it surfaced,
+  fixed. Sweep: 15 logs since 2026-09-01 carry `## Doc Gaps`, 6 record a gap, **6/6 now closed** (the
+  2026-09-15 graph.task output-mapping source rule was the one still open; closed in `caf93c64`, Java-only
+  because the Rust engine has no such gate — its twins wait on backlog P2). **Queue closed:** the
+  `lambda-example` RPC demo shipped as `hello.rpc` with a 408 timeout test. All on PR
+  [#434](https://github.com/Accenture/mercury-composable/pull/434) (open). **Next:** re-measure with a
+  fresh question set at a later review (the same set only proves the fixes stuck); keep grading
+  cross-page agreement, which is where the re-probe found its five slips. Open queue: (none).
+  (origin: this measurement's session log — the 2026-09-21 W2 log)
+  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-09-21 | uses: 5 | tier: working | origin: 2026-09-01-032130 -->
