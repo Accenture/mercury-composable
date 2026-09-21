@@ -8,6 +8,154 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.12.13, 9/20/2026
+
+### Added
+
+1. **`f:lookup(table, value[, default])` — a static decision table resolved with no function (#431).**
+   A simple plugin for Event Script and MiniGraph data mapping. The table is a map (or JSON text) whose
+   `keys` lists the rule names in priority order and whose rule fields list the values that select them —
+   lists, or JSON arrays written as text (`community-property=[ "CA", "TX" ]` on a graph node); values
+   compare as text, case-insensitively; a miss returns the optional third argument, or null. The common
+   case of a decision table is therefore one `graph.data.mapper` entry —
+   `f:lookup(state-rules, input.body.state, text(unknown)) -> output.body.rule` — and a composable
+   function is kept for a ruling that needs more than a lookup. Errors: `Expected two or three input
+   values - actual=N`, `Missing keys in input`, `Missing key in input: X`, `Input is not a list of
+   values`, `First argument must be a decision table as a map or JSON text`. The `graph.task` recipe
+   (#430) shows both paths over one skill-less `DecisionTable` node whose properties are graph data,
+   handed whole to a function by one input entry (`state-rules -> table`) — the product owner certifies
+   the rules on the graph and a new table is a new graph version, never a code change. Pinned by
+   `unit-test-task-9` and `unit-test-lookup-1`; catalogued for Event Script with a Layer 2 example.
+
+   **Upgrade action:** none — a new plugin; existing plugins and mappings are unchanged. Plugin authors:
+   a plugin class may not reference `SimpleMapper` directly (the loader's bytecode gate skips such a
+   class silently); reach the serializer through `SimplePluginUtils`.
+
+2. **Per-iteration suspend/resume under `for_each` (#418, #420; design `draft-design-specs/
+   subgraph-suspend-resume-for-each.md`, #415).** A parent that invoked a suspending subgraph through
+   `graph.extension` + `for_each[]` wrote one store record for all iterations — every child inherits
+   the business correlation id by design — so N concurrent suspensions collided and which one survived
+   was a race. The array index now rides the invocation header, is lifted to the reserved
+   `model.iteration_index` (never persisted, never mappable), and joins the store key as a third
+   segment — `graph:{graph_id}:{cid}:{index}` — appended **only when an index is present**, so a single
+   delegation keeps its two-segment key and pre-upgrade records stay reachable. The design rules are
+   declared in the workflow-suspension guide, not enforced by the engine: positional consistency
+   (appending to the array is supported); parent → `for_each` → flow → suspending graph is unsupported
+   (let the subgraph call the flow instead); nested `for_each` with suspension is a non-goal.
+
+   **Upgrade action:** none for the bundled Redis store (`minigraph-state-redis`). A **third-party state
+   store** must honour the optional `index` field now present in the persist body (`type=put`) and the
+   retrieve body (`type=get`) by appending it to its key, as the state-store contract in
+   `workflow-suspension.md` states; a store that ignores it keeps the pre-4.12.13 collision under
+   `for_each`.
+
+3. **Application log context: an automatic UTC timestamp and snake_case keys (#414).** The context
+   block on every log line written inside a traced worker now always carries a machine-parseable UTC
+   time: when `app-log-context.yaml` maps `$utc` to no key, the engine inserts it as `timestamp`
+   (falling back to `utc` if `timestamp` is taken, and leaving the template alone with a warning if
+   both are) — the record's top-level `time` is a local timestamp with no offset, and log-to-trace
+   correlation resolves on a time window, so a line parsed in the wrong zone can be correctly
+   correlated and still invisible on its trace. The default template's output keys are now `cid`,
+   `trace_id`, `trace_path`, `span_id`, `parent_span_id`, `service`, `timestamp` — snake_case, matching
+   the distributed-trace block on the same record. `PostOffice.updateContext` refuses the reserved
+   names in **both** spellings with an `IllegalArgumentException`, and a developer key can no longer
+   shadow a template key (developer keys render first; the template wins).
+
+   **Upgrade action:** the emitted key names changed. A saved query or dashboard keyed on
+   `context.traceId` / `spanId` / `parentSpanId` / `tracePath` moves to the snake_case names — or keeps
+   the old names by writing them on the left side of your own `app-log-context.yaml`, which remains
+   your choice. Delete any hand-written `timestamp: $utc` line; the engine supplies it. Code that
+   called `updateContext("trace_id", …)` or `updateContext("traceId", …)` now fails fast instead of
+   silently overwriting the real trace id.
+
+4. **`hello.rpc` in `examples/lambda-example` (#434)** — the request-response idiom as a runnable
+   demo: build the event, `po.request(request, timeoutMs).get()`, **check the reply's status before
+   reading its body** (a callee that throws replies with its error status and message), return the
+   result; `POST /api/hello/rpc?timeout=300` with `{"sleep_ms": 1500}` shows the 408 a timeout
+   produces. No upgrade action.
+
+### Changed
+
+5. **A function's error status comes from its cause chain, not the outermost wrapper (#427).**
+   `EventEnvelope.setException` and `WorkerHandler` mapped the outermost exception class while the
+   message came from the root cause — so an in-function `po.request(..).get()` timeout
+   (`ExecutionException` wrapping `TimeoutException`) replied 500 "Timeout for N ms", and a
+   `CompletionException` around an `AppException(404)` lost its 404. One rule now
+   (`Utility.getStatusFromException`, shared with `EventStreamWriter.fail`): walking the cause chain,
+   the first `AppException` (its status), `TimeoutException` (408) or `IllegalArgumentException` (400)
+   wins; 500 only when none is present. The event-envelope reference's status table states the rule.
+
+   **Upgrade action:** read, not configure — an application that relied on a 500 for a wrapped carrier
+   now sees the inner status: an in-function RPC timeout is 408, a joined `CompletableFuture` failure
+   keeps its `AppException` status. Accepted edge: an `IllegalArgumentException` deliberately wrapped in
+   an `IOException` now reports 400.
+
+6. **`v1.cache.redis` classifies its Redis failures — 408 for a command timeout, 503 for an unreachable
+   Redis (#429).** Layers 2 and 3 answered 500 for a Redis outage: the flow and graph engines pass a
+   task's status through faithfully, and Lettuce's exceptions carry none. `RedisFailure.classify`
+   (`redis-connection`) walks the cause chain — `RedisCommandTimeoutException` → 408 with Lettuce's
+   message; `RedisConnectionException`, `ConnectException`, `ClosedChannelException` or a closed/rejected
+   connection → 503 `Redis unavailable - …`; a server answer such as WRONGTYPE stays 500 — and
+   `RedisCache` applies it around the store call. Proven by the Java ⇄ Rust distributed-cache interop
+   drive (`docs/test-reports/distributed-cache-interop.md`, #426/#428: 122 of 122 checks; no outage
+   probe on any layer of either engine answers 500).
+
+   **Upgrade action:** read, not configure — a caller that keyed on 500 for a Redis outage now sees 408
+   or 503.
+
+7. **The ADR ledger records decisions only; proposals live in `docs/arch-decisions/RFC.md` (#421,
+   #424).** ADR-0013 to ADR-0017 accepted; the proposal register uses `RFC-NNNN` ids and the status
+   vocabulary `Open · Parked · Promoted → ADR-NNNN · Withdrawn`, and is packaged into the AI-contract
+   skill snapshot next to `ADR.md`, so an agent reading the ledger can follow the pointer. No upgrade
+   action.
+
+8. **Documentation.** MiniGraph: a static decision table is graph data (#430); a null mapping source
+   removes the target — in Event Script a null source applies only to `model.*` targets, where it
+   removes the key, and any other entry is ignored (#432, claim `null-source-removes-target`); the
+   `for_each` store key stated on every page that quotes it (#420, #425); the log-shipping boundary —
+   application log forwarding is the platform's job, not the engine's (#416). Guides corrected by a
+   source-blind fresh-agent probe (#434): a function bound directly to a REST endpoint receives the
+   whole `AsyncHttpRequest` (the tutorials had shown a `Map` input), a typed function sets status and
+   headers by returning an `EventEnvelope`, the `/health` response shape and the info/health contract
+   (info must be a Map; health may be a String or a Map), the `List<PoJo>` rule (`inputPojoClass`), and
+   the `graph.task` output-mapping source rule. The OTel certification's Scenario 6 confirmed in the
+   Dynatrace UI at scope version 4.12.11 (#412); the 4.12.12 CHANGELOG entry completed (#411).
+
+### Fixed
+
+9. **The shared Redis connection resets after a command timeout (#433).** After a long outage the
+   shared Lettuce connection recovered on its reconnect backoff — capped at 30 s — while
+   `redis.health`, a fresh probe connection, was already green: a pod kept timing out against a healthy
+   Redis behind a green health check. Both backends now extend `ResettableRedisBackend`: `commands()`
+   and `async()` are stable facades that resolve the live connection per call; a timeout on a connection
+   that is not open resets it at once, the second consecutive timeout on an open connection does (a
+   reply clears the count); the next command reconnects; a connect that fails is a fast 503 and is not
+   retried for 250 ms, so a burst of callers is not a connect storm. `MPUT` reports its awaited pipeline
+   timeout through `RedisBackend.onCommandTimeout()` and is now the same 408 as a blocking timeout (was
+   an `IllegalStateException` mapped to 500). Proven live on the cache example: a live reply 30 ms after
+   Redis returned, against up to the whole backoff window before (recorded in the interop report).
+
+   **Upgrade action:** none to configure — recovery is now bounded by `redis.timeout.ms`. A caller keyed
+   on 500 for an `MPUT` timeout now sees 408.
+
+10. **Layer 1 of the distributed-cache example surfaces a cache failure, never a miss (#426).**
+    `ProfileCacheL1` tested only the reply body, so with Redis down a GET read "Profile not found" and a
+    POST would have acknowledged a store. A `checked()` guard rethrows any reply of status 400 or above —
+    the rule for any `PostOffice` caller: check the reply's status before reading its body (Layers 2 and
+    3 never had the gap; the flow and graph engines check for the author). Example only; no engine
+    change.
+
+11. **BouncyCastle aligned at 1.86 (#417, #420).** Dependabot bumped `bcprov` alone and `bcpkix` stayed
+    at 1.84, so the test classpath resolved a mixed pair; both are now 1.86 with `bcutil` following.
+    Test scope only — no published artifact and no consumer classpath changes.
+
+**Lock-step.** Every port adopts the Java release number at its next catch-up. The Rust port caught up
+at 4.12.12 on 2026-09-21 and already carries the per-iteration suspend keys, the cache guard, the
+failure classification, the decision-table recipe, the `lookup` plugin, the null-source rule and the
+guide parity round (mercury #298); the remaining items here are assessed at its next catch-up, which
+adopts 4.12.13.
+
+---
 ## Version 4.12.12, 9/17/2026
 
 ### Fixed
