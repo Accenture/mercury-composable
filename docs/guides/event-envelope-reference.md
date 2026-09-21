@@ -177,8 +177,9 @@ This pattern is also required when a function is annotated with
 ## Header methods
 
 Headers are `String → String` parameters attached to an event. They are delivered directly
-to the `headers` argument of `handleEvent` — they are not HTTP headers unless the function
-is a REST endpoint handler.
+to the `headers` argument of `handleEvent` — they are not HTTP headers. A function bound to a
+REST endpoint receives the HTTP headers inside its `AsyncHttpRequest` input
+(`input.getHeader(name)`, case-insensitive); a flow maps them as `input.header.<name>`.
 
 ### `getHeaders()`
 

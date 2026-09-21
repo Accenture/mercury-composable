@@ -1013,7 +1013,7 @@ considerations when it comes to utilizing something other than `Map<String, Obje
    In the above example `other` will not be passed
 
 2. When attempting to read the input as a `List<T>` in your Lambda function you should type the input appropriately
-and utilize `pojoClass` property on preLoad if utilizing a list of complex objects
+and set the `inputPojoClass` property on `@PreLoad` if utilizing a list of complex objects
 
 When using Lists of complex Objects 
 ```java
