@@ -22,7 +22,8 @@
 - **latest_release:** v4.12.13 (2026-09-20 Pacific, 04:16Z on 09-21 — **the accumulated-improvements release**:
   11 items over 4.12.12 from the 24 non-memory commits since the tag; release PR #435, squash `1feb3d73`, tag
   `v4.12.13` → `1d2074f1` (one memory-only commit past the merge), pom verified at the tag; the GitHub release body
-  is the CHANGELOG entry). Added: `f:lookup` + the decision-table recipe (#430/#431), per-iteration `for_each`
+  is the CHANGELOG entry). **FIELD-ACCEPTED 2026-09-21 (Eric): passed the field's CI pipeline and is published
+  for field use.** Added: `f:lookup` + the decision-table recipe (#430/#431), per-iteration `for_each`
   suspend keys (#418 — a third-party state store must honour the optional `index`), the application log context's
   automatic UTC `timestamp` + snake_case keys (#414 — **landed AFTER the 4.12.12 tag; a dashboard keyed on
   `context.traceId` moves to `trace_id`, or keeps the old name on the left side of its own
