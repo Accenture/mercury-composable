@@ -654,11 +654,12 @@ public class KafkaFlowConsumer implements AutoCloseable {
         consumer.wakeup();
         loop.shutdown();
         try {
-            if (loop.awaitTermination(10, TimeUnit.SECONDS)) {
+            if (loop.awaitTermination(KafkaRuntime.SHUTDOWN_GRACE.toSeconds(), TimeUnit.SECONDS)) {
                 log.info("Kafka flow consumer for {} closed - left group {}",
                         binding.topicOrPattern(), binding.groupId());
             } else {
-                log.warn("Kafka flow consumer for {} did not stop within 10s - forcing", binding.topicOrPattern());
+                log.warn("Kafka flow consumer for {} did not stop within {} s - forcing",
+                        binding.topicOrPattern(), KafkaRuntime.SHUTDOWN_GRACE.toSeconds());
                 loop.shutdownNow();
             }
         } catch (InterruptedException e) {

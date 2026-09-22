@@ -20,6 +20,7 @@ package org.platformlambda.twin.kafka;
 
 import org.platformlambda.mini.kafka.KafkaFlowAdapter;
 import org.platformlambda.mini.kafka.KafkaRequestPublisher;
+import org.platformlambda.mini.kafka.KafkaRuntime;
 import org.platformlambda.mini.kafka.schema.SchemaCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,8 +101,13 @@ public final class SecondaryKafkaRuntime {
             publisher = null;
             if (runningPublisher != null) {
                 try {
-                    runningPublisher.close();
-                    log.info("Secondary Kafka producer closed");
+                    int undelivered = runningPublisher.closeWithin(KafkaRuntime.SHUTDOWN_GRACE);
+                    if (undelivered == 0) {
+                        log.info("Secondary Kafka producer closed - buffered records delivered");
+                    } else {
+                        log.warn("Secondary Kafka producer closed after {} s grace - {} message(s) undelivered",
+                                KafkaRuntime.SHUTDOWN_GRACE.toSeconds(), undelivered);
+                    }
                 } catch (RuntimeException e) {
                     log.warn("Secondary Kafka producer did not close cleanly - {}", e.toString());
                 }

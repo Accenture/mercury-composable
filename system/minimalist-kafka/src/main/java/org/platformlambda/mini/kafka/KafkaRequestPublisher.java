@@ -18,19 +18,24 @@
 
 package org.platformlambda.mini.kafka;
 
+import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.PartitionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Thread-safe wrapper around a Kafka producer, shared as a singleton by {@code
@@ -48,6 +53,10 @@ public class KafkaRequestPublisher implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(KafkaRequestPublisher.class);
 
     private final Producer<String, byte[]> producer;
+    /** Records handed to the client whose delivery callback has not fired yet. */
+    private final AtomicInteger inFlight = new AtomicInteger();
+    /** Records whose delivery callback reported a failure (a forced close fails the unsent ones). */
+    private final AtomicInteger failed = new AtomicInteger();
 
     public KafkaRequestPublisher(Producer<String, byte[]> producer) {
         this.producer = producer;
@@ -73,7 +82,7 @@ public class KafkaRequestPublisher implements AutoCloseable {
         }
         // send eagerly; bridge the delivery callback to a future the Mono observes
         CompletableFuture<Void> ack = new CompletableFuture<>();
-        producer.send(producerRecord, (metadata, exception) -> {
+        send(producerRecord, (metadata, exception) -> {
             if (exception != null) {
                 ack.completeExceptionally(exception);
             } else {
@@ -123,11 +132,59 @@ public class KafkaRequestPublisher implements AutoCloseable {
         if (headers != null) {
             headers.forEach((key, value) -> producerRecord.headers().add(key, value));
         }
-        producer.send(producerRecord).get(timeoutMs, TimeUnit.MILLISECONDS);
+        send(producerRecord, (metadata, exception) -> { }).get(timeoutMs, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * Hand a record to the client, counting it in flight until its delivery callback fires (delivered or failed).
+     * A client that refuses the record outright (closed, or a serialization failure) is not counted.
+     */
+    private Future<RecordMetadata> send(ProducerRecord<String, byte[]> producerRecord, Callback callback) {
+        inFlight.incrementAndGet();
+        try {
+            return producer.send(producerRecord, (metadata, exception) -> {
+                inFlight.decrementAndGet();
+                if (exception != null) {
+                    failed.incrementAndGet();
+                }
+                callback.onCompletion(metadata, exception);
+            });
+        } catch (RuntimeException e) {
+            inFlight.decrementAndGet();
+            throw e;
+        }
+    }
+
+    /**
+     * Records handed to the client whose delivery callback has not fired yet.
+     *
+     * @return the in-flight count
+     */
+    public int inFlight() {
+        return inFlight.get();
+    }
+
+    /**
+     * Close the producer, waiting up to {@code grace} for its buffered records to be acknowledged - the shutdown
+     * path ({@link KafkaRuntime#shutdown()}). When the grace ends first, the client fails the records still
+     * unsent or unacknowledged; those are reported so a stopping process can say what it left behind instead
+     * of waiting on a dead broker past its termination grace.
+     *
+     * @param grace how long to wait for the acknowledgements
+     * @return how many records were not delivered - 0 when every buffered record was acknowledged
+     */
+    public int closeWithin(Duration grace) {
+        int failedBefore = failed.get();
+        producer.close(grace);
+        return failed.get() - failedBefore + inFlight.get();
+    }
+
+    /**
+     * Close the producer within {@link KafkaRuntime#SHUTDOWN_GRACE}; the undelivered count, if any, is available
+     * through {@link #closeWithin(Duration)}.
+     */
     @Override
     public void close() {
-        producer.close();
+        closeWithin(KafkaRuntime.SHUTDOWN_GRACE);
     }
 }

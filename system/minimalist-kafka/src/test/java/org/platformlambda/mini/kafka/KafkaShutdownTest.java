@@ -33,10 +33,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.util.Utility;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,6 +51,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * park every partition the old pod held. {@link KafkaFlowAutoStart} registers {@link KafkaRuntime#shutdown()}
  * on {@code Platform.onShutdown} so a {@code SIGTERM} takes exactly this path; the registration itself is a
  * JVM shutdown hook and is verified live (the certification drive of 2026-09-22), not here.
+ * <p>
+ * The producer half: {@link KafkaRuntime#shutdown()} closes the shared producer after the consumers, waiting no
+ * longer than {@link KafkaRuntime#SHUTDOWN_GRACE} for its buffered records to be acknowledged, and reports how many
+ * the grace could not deliver instead of waiting on a dead broker past a pod's termination grace (the Rust port
+ * bounds its flush the same way).
  * <p>
  * Background: found by the two-engine OpenTelemetry drive with the Rust port, whose {@code rdkafka} consumers
  * left their groups on stop while the consumers of this engine were fenced by session expiry ~40 seconds later.
@@ -110,6 +118,40 @@ class KafkaShutdownTest {
         // and nothing-started is fine too
         KafkaRuntime.setPublisher(null);
         assertDoesNotThrow(KafkaRuntime::shutdown);
+    }
+
+    @Test
+    void producerCloseIsBoundedByTheGraceAndReportsUndelivered() {
+        // sends complete only on completeNext(): the shape of a broker that has stopped answering
+        AtomicReference<Duration> closeTimeout = new AtomicReference<>();
+        MockProducer<String, byte[]> producer = recordingProducer(closeTimeout);
+        KafkaRequestPublisher publisher = new KafkaRequestPublisher(producer);
+        publisher.publish(TOPIC, null, Map.of(), "acknowledged".getBytes(StandardCharsets.UTF_8)).subscribe();
+        publisher.publish(TOPIC, null, Map.of(), "stranded".getBytes(StandardCharsets.UTF_8)).subscribe();
+        assertEquals(2, publisher.inFlight());
+        assertTrue(producer.completeNext(), "the broker acknowledges the first record");
+        assertEquals(1, publisher.inFlight());
+        // the property under test: the close waits no longer than the grace and says what it left behind
+        int undelivered = publisher.closeWithin(Duration.ofMillis(200));
+        assertEquals(1, undelivered, "one record was still unacknowledged when the grace ended");
+        assertEquals(Duration.ofMillis(200), closeTimeout.get(), "the client's close is bounded by the grace");
+        assertTrue(producer.closed());
+        // the plain close() applies the shutdown grace
+        MockProducer<String, byte[]> another = recordingProducer(closeTimeout);
+        new KafkaRequestPublisher(another).close();
+        assertEquals(KafkaRuntime.SHUTDOWN_GRACE, closeTimeout.get());
+        assertTrue(another.closed());
+    }
+
+    /** A mock producer that records the timeout its close was given; sends complete only on {@code completeNext()}. */
+    private static MockProducer<String, byte[]> recordingProducer(AtomicReference<Duration> closeTimeout) {
+        return new MockProducer<>(false, null, new StringSerializer(), new ByteArraySerializer()) {
+            @Override
+            public void close(Duration timeout) {
+                closeTimeout.set(timeout);
+                super.close(timeout);
+            }
+        };
     }
 
     /** A flow consumer on a real Kafka consumer against the embedded broker, in the test group. */
