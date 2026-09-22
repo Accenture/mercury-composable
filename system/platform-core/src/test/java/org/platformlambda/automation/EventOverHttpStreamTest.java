@@ -463,9 +463,9 @@ class EventOverHttpStreamTest extends TestBase {
         List<MultiLevelMap> records = new CopyOnWriteArrayList<>();
         LambdaFunction collector = (headers, input, instance) -> {
             if (input instanceof Map<?, ?> m) {
-                MultiLevelMap record = new MultiLevelMap((Map<String, Object>) m);
-                if (traceId.equals(record.getElement("trace.id"))) {
-                    records.add(record);
+                MultiLevelMap dataset = new MultiLevelMap((Map<String, Object>) m);
+                if (traceId.equals(dataset.getElement("trace.id"))) {
+                    records.add(dataset);
                 }
             }
             return null;

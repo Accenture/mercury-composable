@@ -254,6 +254,22 @@ public class HttpRouter {
      * @param holder the closed request context
      * @param status the caller-supplied status, or 0
      */
+    /**
+     * The status a round-trip record reports: a failure marked on the context wins (an in-band
+     * stream failure, an edge error), then the status the caller is about to write, else the
+     * status the response already carries.
+     *
+     * @param holder the closed request context
+     * @param status the caller-supplied status, or 0
+     * @return the HTTP-style status of the round trip
+     */
+    private static int roundTripStatus(AsyncContextHolder holder, int status) {
+        if (holder.errorStatus > 0) {
+            return holder.errorStatus;
+        }
+        return status > 0 ? status : holder.request.response().getStatusCode();
+    }
+
     private static void recordRoundTrip(AsyncContextHolder holder, int status) {
         if (holder.traceId == null || holder.spanId == null) {
             return;
@@ -262,8 +278,7 @@ public class HttpRouter {
         if (!po.exists(Telemetry.DISTRIBUTED_TRACING)) {
             return;
         }
-        int finalStatus = holder.errorStatus > 0 ? holder.errorStatus :
-                            (status > 0 ? status : holder.request.response().getStatusCode());
+        int finalStatus = roundTripStatus(holder, status);
         Map<String, Object> metrics = new HashMap<>();
         metrics.put("origin", Platform.getInstance().getOrigin());
         metrics.put("id", holder.traceId);

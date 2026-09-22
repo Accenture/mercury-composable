@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -66,6 +67,7 @@ class GraphSpanPropagationTest {
     private static final String NODE = "node";
     private static final long TIMEOUT = 8000;
     private static final String SPAN_FORMAT = "[0-9a-f]{16}";
+    private static final Pattern SPAN_PATTERN = Pattern.compile(SPAN_FORMAT);
 
     private static String target;
 
@@ -268,10 +270,10 @@ class GraphSpanPropagationTest {
         Set<String> spanIds = new HashSet<>();
         for (Span s : spans) {
             assertNotNull(s.spanId, "missing span_id for " + s.service);
-            assertTrue(s.spanId.matches(SPAN_FORMAT), "span_id is not 16-char hex: " + s.spanId);
+            assertTrue(SPAN_PATTERN.matcher(s.spanId).matches(), "span_id is not 16-char hex: " + s.spanId);
             assertTrue(spanIds.add(s.spanId), "duplicate span_id " + s.spanId + " for " + s.service);
             if (s.parentSpanId != null) {
-                assertTrue(s.parentSpanId.matches(SPAN_FORMAT),
+                assertTrue(SPAN_PATTERN.matcher(s.parentSpanId).matches(),
                         "parent_span_id is not 16-char hex: " + s.parentSpanId);
                 assertNotEquals(s.spanId, s.parentSpanId, "a span cannot be its own parent: " + s.service);
             }

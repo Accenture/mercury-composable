@@ -132,6 +132,12 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
      * @param format the requester's envelope serialization format
      * @return the wire-level envelope for the classic rendering path
      */
+    private EventEnvelope packedSingleShot(EventEnvelope result, EventEnvelope.Format format) {
+        return new EventEnvelope()
+                .setHeader(LOWER_CONTENT_TYPE, OCTET_STREAM)
+                .setBody(result.toBytes(format));
+    }
+
     /**
      * A stream is traced at its head and its tail, never per token: the producer stamps the
      * trace on the first segment and on the terminal, so this lane's data-segment executions
@@ -149,12 +155,6 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
         } else {
             new PostOffice(headers, instance).annotateTrace(FRAMES, String.valueOf(holder.dataFrames.get()));
         }
-    }
-
-    private EventEnvelope packedSingleShot(EventEnvelope result, EventEnvelope.Format format) {
-        return new EventEnvelope()
-                .setHeader(LOWER_CONTENT_TYPE, OCTET_STREAM)
-                .setBody(result.toBytes(format));
     }
 
     private void setBusinessCorrelationIdHeader(HttpServerResponse response, AsyncContextHolder holder) {
