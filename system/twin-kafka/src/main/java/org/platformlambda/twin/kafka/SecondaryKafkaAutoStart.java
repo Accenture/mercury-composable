@@ -23,6 +23,7 @@ import org.platformlambda.core.annotations.MainApplication;
 import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.mini.kafka.KafkaClientConfig;
 import org.platformlambda.mini.kafka.KafkaFlowAdapter;
 import org.platformlambda.mini.kafka.KafkaRequestPublisher;
@@ -107,6 +108,11 @@ public class SecondaryKafkaAutoStart implements EntryPoint {
             log.info("Secondary Kafka flow adapter started from {}", adapterConfig);
         } else {
             log.info("{} not set; secondary Kafka flow adapter not started", ADAPTER_CONFIG);
+        }
+        if (publisher != null || SecondaryKafkaRuntime.adapter() != null) {
+            // closes the secondary consumers (LeaveGroup) and then the producer on SIGTERM - see
+            // SecondaryKafkaRuntime.shutdown(); the platform runs its hooks in reverse registration order
+            Platform.getInstance().onShutdown(SecondaryKafkaRuntime::shutdown);
         }
     }
 

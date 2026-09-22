@@ -45,8 +45,12 @@ public class SyncErrorHandler implements TypedLambdaFunction<Map<String, Object>
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         // cancel the pending entry registered by sync.prepare when the publish step fails (fail-fast path)
         Object cid = input.get("cid");
-        if (cid != null) {
-            SyncRuntime.coordinator().abort(String.valueOf(cid));
+        // The coordinator is installed by the sync-over-async auto-start, which runs AFTER the REST server
+        // accepts requests - a request that arrives in that window aborts before there is anything to cancel.
+        // Without the guard the NPE here turned the flow's own error into a 500 (seen live, 2026-09-22).
+        var coordinator = SyncRuntime.coordinator();
+        if (cid != null && coordinator != null) {
+            coordinator.abort(String.valueOf(cid));
         }
         int status = Utility.getInstance().str2int(String.valueOf(input.getOrDefault("status", 500)));
         if (status >= 500) {
