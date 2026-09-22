@@ -2585,6 +2585,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scenario-7-two-engines-one-trace-the-rust-port-at-41214-2026-09-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 7 — two engines, one trace: the Rust port at 4.12.14 (2026-09-22)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-remains" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2943,6 +2954,17 @@
     <span class="md-ellipsis">
       
         Scenario 6 — field acceptance on the release build
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-7-two-engines-one-trace-the-rust-port-at-41214-2026-09-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 7 — two engines, one trace: the Rust port at 4.12.14 (2026-09-22)
       
     </span>
   </a>
@@ -3311,6 +3333,68 @@ on when they add the dependency ahead of a decision, and it is now confirmed thr
 in the example app, the absence of the route at runtime, and an explicit log line stating that the
 optional class was skipped. DevOps reading a startup log can see the feature was considered and
 declined, rather than inferring it from silence.</p>
+<h2 id="scenario-7-two-engines-one-trace-the-rust-port-at-41214-2026-09-22">Scenario 7 — two engines, one trace: the Rust port at 4.12.14 (2026-09-22)<a class="headerlink" href="#scenario-7-two-engines-one-trace-the-rust-port-at-41214-2026-09-22" title="Permanent link">&para;</a></h2>
+<p>The Rust port shipped its twin of this module in v4.12.14 (<code>mercury-opentelemetry-forwarder</code>, no
+OpenTelemetry SDK — its own OTLP encoder over the platform HTTP client) and certified it against the
+same Dynatrace tenant. At the maintainer's suggestion the two were then driven <strong>together</strong>: the
+minimalist-kafka interop of the Rust K5 gate — the <code>sync-over-async-demo</code> facade on one engine and its
+backend on the other, over <code>kafka-standalone</code>, <code>redis-standalone</code> and <code>schema-registry-standalone</code>
+4.12.14 — with the forwarder on <strong>both</strong> engines. This module was added to the Java demo's dependencies
+for the drive only (the example ships without it), both apps launched with <code>-Dotel.forwarding=true</code> and
+the same endpoint and credential from the environment, service names <code>mercury-otel-cert-java</code> and
+<code>mercury-otel-cert-rust</code> so the hop is visible, and each request carrying a caller-set <code>traceparent</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Pairing</th>
+<th>Facade</th>
+<th>Backend</th>
+<th>Traces</th>
+<th>Spans exported (failures)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A</strong></td>
+<td>Java <code>:8500</code></td>
+<td>Rust</td>
+<td><code>f78de6d2d9a649d425acaec09a6bba53</code>, <code>72b2e692bac8478e1e2a9c148e3d1606</code> (02:52:59–02:53:01Z)</td>
+<td>Java 18 (0), Rust 6 (0)</td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>Rust <code>:8400</code></td>
+<td>Java</td>
+<td><code>ec6b3fc64b769c9f79c1f80d50371a2e</code>, <code>3481c84b80e6804849a2df2ea6967237</code> (02:53:36–37Z)</td>
+<td>Rust 16 (0), Java 8 (0)</td>
+</tr>
+</tbody>
+</table>
+<p>Every trace crosses the engine boundary twice and the wire says so: in trace <code>72b2e692…</code> the Java
+facade's <code>simple.kafka.notification</code> span <code>b97f815f845b01e7</code> is the parent of the Rust backend's
+<code>system.of.record</code> <code>8d94bd61ca44a0a6</code>, and the Rust backend's reply notification <code>8ddccc5536bf7cdb</code> is
+the parent of the Java facade's <code>soa.reply</code> <code>a8024e25466d1cf1</code> — the Kafka record's <code>traceparent</code> header
+carrying the context each way. <strong>Confirmed by the maintainer in the Dynatrace UI (screenshots,
+2026-09-22): one trace, two services.</strong> Trace <code>72b2e692…</code> opens under <code>mercury-otel-cert-java</code> as
+<code>'http.flow.adapter' Trace</code> and its 22 ms waterfall nests the Rust service inside the Java one exactly as
+the wire said — <code>system.of.record</code>, <code>simple.kafka.notification</code> and <code>task.executor</code> of
+<code>mercury-otel-cert-rust</code> under the Java facade's notification span, the Java <code>task.executor</code> and
+<code>soa.reply</code> under the Rust notification, <code>sync.await</code> alongside until <code>async.http.response</code> closes the
+request; the first drive's <code>47100c7c38ed835d34652799f6e635b9</code> shows the same nesting over 66 ms. This
+module's spans carry scope <code>org.platformlambda.opentelemetry-forwarder</code> 4.12.14, the Rust spans
+<code>mercury-opentelemetry-forwarder</code> 4.12.14. The full record, with the Rust port's own field acceptance on
+its published crate, is the Rust repository's <code>docs/test-reports/otel-dynatrace-certification.md</code>
+(Scenarios 6–7).</p>
+<p><strong>Two Java-side findings came out of the round, neither about telemetry.</strong> (1) Java consumers do not
+leave their groups on SIGTERM: the broker fenced every Java member by session expiry ~40 s after the
+stop, while every Rust member left cleanly — so the first attempt at pairing B timed out twice, the
+stopped Java facade still holding all ten <code>soa.response</code> partitions when the Rust facade joined the same
+group. <code>KafkaFlowAdapter.close()</code> exists but nothing calls it at shutdown (<code>KafkaFlowAutoStart</code> registers
+no <code>Platform.onShutdown</code>); the same for the request publisher's <code>producer.close()</code>. On Kubernetes that is
+a rolling restart parking the old pod's partitions for the KIP-848 session timeout. Tracked as an open
+thread. (2) The demo's <code>SyncErrorHandler</code> calls <code>SyncRuntime.coordinator().abort(cid)</code> without a null
+check, so a request that arrives before the return-route subscriber is listening (the REST port opens
+~100 ms earlier) answers 500 from an NPE rather than the flow's own error.</p>
 <h2 id="what-remains">What remains<a class="headerlink" href="#what-remains" title="Permanent link">&para;</a></h2>
 <p><strong>Nothing.</strong> The last open item — backend confirmation of the two acceptance traces — closed on
 2026-09-17, when Dynatrace support located both in the UI.</p>
