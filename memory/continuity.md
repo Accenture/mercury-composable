@@ -731,8 +731,8 @@
   the root and the response time; report PR #445 `3675590d`, Rust #316 `251bb369`). **Token-bearing re-drive DONE
   (drive 9, 2026-09-22): a temporary mock of the Gemini REST API shadowed the quota-spent provider at its base URL
   (`GOOGLE_GEMINI_BASE_URL` / `GEMINI_API_BASE`, no host code change) — all four pairings streamed 8 token frames,
-  every tree one tree with the terminal `frames: 8`, exported by all four apps (report branch
-  `docs/scenario9-token-redrive` `9b1a17a3`).** Open: v4.12.15 on Eric's go.**
+  every tree one tree with the terminal `frames: 8`, exported by all four apps (report PR #446 `a7abcace`,
+  Rust #317 `a6abb436`).** Open: v4.12.15 on Eric's go.**
   <!-- id: connected-edge-spans | created: 2026-09-22 | last_used: 2026-09-22 | uses: 1 | tier: working | origin: 2026-09-22-200813 -->
 
 ## Conventions
