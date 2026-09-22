@@ -15,7 +15,7 @@
   `sync-over-async-demo`'s `SyncErrorHandler` calls `SyncRuntime.coordinator().abort(cid)` without a null check —
   a request arriving before `Return-route subscriber listening` (the REST port opens ~100 ms earlier) answers
   500 from an NPE instead of the flow's own error; a null check or readiness gating fixes it. **Eric ruled 2026-09-22:
-  implement both — FIX ON `fix/kafka-consumer-leave-group-on-shutdown` `7e7792e9` (PR pending):** `KafkaRuntime.shutdown()`
+  implement both — FIX ON `fix/kafka-consumer-leave-group-on-shutdown` `7e7792e9` + `c06254fc` (inspection tidy-up), **PR #440 OPENED 2026-09-22 ~03:20Z**, CI pending at open:** `KafkaRuntime.shutdown()`
   (idempotent, ReentrantLock) closes the adapter's consumers then the producer, registered by `KafkaFlowAutoStart` on
   `Platform.onShutdown`; the twin for `SecondaryKafkaRuntime`/`SecondaryKafkaAutoStart`; `KafkaFlowConsumer.close()` logs
   the leave; `KafkaShutdownTest` pins the contract on an embedded broker; the demo's `SyncErrorHandler` null-guarded; guide
