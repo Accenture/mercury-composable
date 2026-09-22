@@ -40,7 +40,7 @@
   **RELEASE v4.12.14 IN PREPARATION 2026-09-21** — the lock-step release with the Rust port (Eric: "wait for completion
   of locksteps and then v4.12.14 for both Java and Rust repos"): branch `release/v4.12.14`, sweep re-derived **43 files /
   98 occurrences** (unchanged), CHANGELOG from `v4.12.13..HEAD` = one item, #436 (`group.protocol=auto` as the template
-  default) with the lock-step paragraph; full build at 4.12.14 green - 35 modules, 217 test classes, 1499 tests, 0 failures, 3 skipped (mvn clean install, exit 0). **PR #437 OPENED 2026-09-21** (Eric; CI pending) — merge and tag are Eric's gates; the Rust side lands K5
+  default) with the lock-step paragraph; full build at 4.12.14 green - 35 modules, 217 test classes, 1499 tests, 0 failures, 3 skipped (mvn clean install, exit 0). **PR #437 OPENED 2026-09-21** (Eric; CI green), **MERGED 2026-09-22 00:05Z** — squash `dbc26f31`, root pom reads 4.12.14 on main; the `v4.12.14` tag and the GitHub release are Eric's next gates (not yet tagged as of the 00:30Z check); the release branch is cleaned. Java-side follow-up for the same number: none — the Rust side adds the OpenTelemetry forwarder port (Eric, 2026-09-21: "Open-Telemetry forwarder feature is missing in Rust") before its own 4.12.14 cut, so the Rust CHANGELOG at this number carries it; the Rust side lands K5
   (Schema Registry, the sync-over-async facade tasks, the demo mirror), its docs twin and its lock-step round at the same
   number, and publishes `mercury-minimalist-kafka` + `mercury-sync-over-async` to crates.io (origin 2026-09-21-233928.md).
   Prior: v4.12.12 (2026-09-17 — the produce-only unblock, **1 fix PR #409** via release
