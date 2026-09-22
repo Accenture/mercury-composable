@@ -286,6 +286,13 @@
   build ([[ot-otel-acceptance-traces-pending]]). Report:
   `docs/test-reports/otel-dynatrace-certification.md`; closes [[ot-otel-dynatrace-certification]].
   Splunk's header form is parsed and documented but NOT run live.
+  **Extended 2026-09-22 (Eric's v4.12.15 milestone):** the forwarder exists on all four runtimes — the Rust port's and
+  the two zero-dependency ports of its OTLP encoder in mercury-python (#33) and mercury-nodejs (#101) — and Scenario 8
+  certified them together: the Java and Rust Playground edges rendering Gemini tokens progressively through the hosts'
+  `llm.stream`, four token-bearing traces (one per edge/host pairing), the cross-application lineage read from both
+  sides' datasets, 0 export failures; Eric's Dynatrace lookup is the remaining gate. Lesson of the day: the LLM
+  provider, not the pipeline, decided which calls succeeded (503 high demand, a 429, a retired model id) — probe and pin
+  the model per drive, and give a thinking model a real token budget.
   <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-17 | uses: 4 | tier: archive-candidate | origin: 2026-09-16-193203 -->
 
 - **Application log forwarding is an INFRASTRUCTURE task — the engine does not grow that capability
