@@ -293,6 +293,8 @@
   sides' datasets, 0 export failures; Eric's Dynatrace lookup is the remaining gate. Lesson of the day: the LLM
   provider, not the pipeline, decided which calls succeeded (503 high demand, a 429, a retired model id) — probe and pin
   the model per drive, and give a thinking model a real token budget.
+  **2026-09-22, later:** Eric's Dynatrace view of those four traces found the trees broken — the round-trip span,
+  the parented client leg and head-and-tail stream tracing followed on both engines, [[connected-edge-spans]].
   <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-17 | uses: 4 | tier: archive-candidate | origin: 2026-09-16-193203 -->
 
 - **Application log forwarding is an INFRASTRUCTURE task — the engine does not grow that capability
@@ -696,6 +698,35 @@
   the opt-in building block, not the mesh) and [[conv-ports-adopt-java-release-number]] (the Rust port carries
   the same default at its next catch-up).
   <!-- id: kafka-group-protocol-auto-default | created: 2026-09-21 | last_used: 2026-09-21 | uses: 2 | tier: active | origin: 2026-09-21-184342 -->
+
+- **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed
+  response is traced at its head and its tail, never per token (Eric's rulings on the Dynatrace review of
+  the v4.12.15 certification traces, 2026-09-22; Java `fix/connected-edge-spans` + Rust twin `a95e2a91`;
+  the Python/Node forwarders `fix/otel-span-kind-edge`).** REST automation mints a span at receipt
+  (`TraceInfo.newSpanId()`), the first function (and the auth service) parent onto it, and
+  `HttpRouter.closeContext` emits the record `service=http.request` on every completion path — single-shot
+  writer, stream terminal, error writer, housekeeper timeout — with `start` = receipt, `exec_time` = the
+  round trip, `parent_span_id` = the inbound traceparent span; an in-band stream failure after the head
+  reports its own status. **The four OTel forwarders map SERVER iff `service == http.request`; every
+  function execution is INTERNAL** — a backend's response time for a service is now the request, not the
+  first function's 0.5 ms. The Event-over-HTTP stream relay's client leg (`async.http.request`) parents
+  onto the sender (`sendWithEventHttp` stamps the span; Rust stopped zero-tracing the route —
+  `skip.rpc.tracing` only suppresses the caller-side RPC `round_trip` record, Java's `InboxBase` semantics,
+  which the RPC path had masked for months). `EventStreamWriter` stamps the producer's trace+span on the
+  first segment and the terminal via the thread-keyed `EventEmitter.getCurrentTrace()` (Rust: the traced
+  `po.send` for head/tail, `PostOffice::send_untraced` for data), the client relays stamp the client leg's
+  own span on synthesized head/eof/exception segments and forward raw token frames untraced, and the reply
+  lane annotates the terminal's record with `frames` = the data-segment count. **Why it was invisible until
+  now:** the drive logs showed 0 export failures; only the trace tree in the backend UI showed the orphans —
+  and the drive's fabricated `traceparent` (a random parent nobody exported) broke every root, a drive
+  artifact that looked like an engine defect (send `X-Trace-Id`, or nothing, when there is no real upstream
+  span). Behaviour change to READ at 4.12.15: one more span per traced request; the first function is
+  INTERNAL; an Event-over-HTTP callee edge records its own round trip between the caller's span and
+  `event.api.service`; dashboards keyed on `kind=SERVER` move to the edge record. Extends
+  [[otel-optional-service-and-negative-control]]; applies [[trace-thread-keyed-mono-gotcha]] (capture the
+  span on the worker thread — the relay outlives it); tested by `EventOverHttpStreamTest.edgeRelaySpansAreConnected`
+  and the Rust `event_over_http_stream::edge_relay_spans_are_connected`.
+  <!-- id: connected-edge-spans | created: 2026-09-22 | last_used: 2026-09-22 | uses: 1 | tier: working | origin: 2026-09-22-200813 -->
 
 ## Conventions
 
