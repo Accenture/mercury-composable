@@ -419,7 +419,12 @@
   registers its Redis-connection close from `build()` (so only when a connection actually opened — which
   also makes the cache's `shutdown()` a used method, resolving the field Sonar "never used" finding without
   deleting it). Rust parity is a lockstep follow-up (internal lifecycle API, not a wire contract). Applies
-  [[conv-reentrantlock-not-synchronized]]; used by [[redis-connection-foundation]].
+  [[conv-reentrantlock-not-synchronized]]; used by [[redis-connection-foundation]]. **minimalist-kafka rides it
+  since 2026-09-22:** `KafkaRuntime.shutdown()` (PR #440) closes the flow adapter's consumers (LeaveGroup) then the
+  producer, and PR #441 (squash `7fdc59ab`) bounds BOTH halves by `KafkaRuntime.SHUTDOWN_GRACE` (10 s) — the producer
+  close reports what the grace could not deliver instead of waiting without bound (Eric's ruling; the Rust port
+  flushes within the same bound, mercury #313). The lifecycle now has its first module-level consumer with a
+  graceful-shutdown contract pinned by `KafkaShutdownTest`.
   <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-19 | uses: 5 | tier: active | origin: 2026-09-15-011235 -->
 
 - **MiniGraph async skill callbacks are guarded — a failure surfaces as the node's error, never a
