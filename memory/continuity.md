@@ -30,8 +30,9 @@
   (mercury #308 → `b83c493f`, tag → `2c88fe2b`, GitHub release 02:12:43Z) carrying K3–K5 minimalist-kafka incl. the
   Schema Registry wire format, the OpenTelemetry forwarder port (mercury #307, Dynatrace-certified — the Java module's
   twin, no OTel SDK), the sync-over-async facade tasks + the demo mirror and the 4.12.12/4.12.13 lock-step round — one
-  number on both engines per [[conv-ports-adopt-java-release-number]]; its crates.io publication (12 crates, five for
-  the first time) is Eric's `cargo publish` step after the tag. Both CHANGELOG entries under-state the first-time
+  number on both engines per [[conv-ports-adopt-java-release-number]]; its crates.io publication followed the same night — **12 of 12 crates at 4.12.14 by 02:30Z** (one
+  `cargo publish --workspace` run plus a retry of `mercury-sync-over-async` after a keyword over the registry's 20-char cap
+  and the new-crate rate limit; mercury #309). Both CHANGELOG entries under-state the first-time
   crates (two/three named; five publish first — a docs follow-up on each repo). Origin 2026-09-21-233928.md.
   Prior: v4.12.13 (2026-09-20 Pacific, 04:16Z on 09-21 — **the accumulated-improvements release**:
   11 items over 4.12.12 from the 24 non-memory commits since the tag; release PR #435, squash `1feb3d73`, tag
