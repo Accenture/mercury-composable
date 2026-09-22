@@ -265,8 +265,14 @@ Every trace crosses the engine boundary twice and the wire says so: in trace `72
 facade's `simple.kafka.notification` span `b97f815f845b01e7` is the parent of the Rust backend's
 `system.of.record` `8d94bd61ca44a0a6`, and the Rust backend's reply notification `8ddccc5536bf7cdb` is
 the parent of the Java facade's `soa.reply` `a8024e25466d1cf1` — the Kafka record's `traceparent` header
-carrying the context each way. In the UI: one trace, two services, this module's spans under scope
-`org.platformlambda.opentelemetry-forwarder` 4.12.14 and the Rust spans under
+carrying the context each way. **Confirmed by the maintainer in the Dynatrace UI (screenshots,
+2026-09-22): one trace, two services.** Trace `72b2e692…` opens under `mercury-otel-cert-java` as
+`'http.flow.adapter' Trace` and its 22 ms waterfall nests the Rust service inside the Java one exactly as
+the wire said — `system.of.record`, `simple.kafka.notification` and `task.executor` of
+`mercury-otel-cert-rust` under the Java facade's notification span, the Java `task.executor` and
+`soa.reply` under the Rust notification, `sync.await` alongside until `async.http.response` closes the
+request; the first drive's `47100c7c38ed835d34652799f6e635b9` shows the same nesting over 66 ms. This
+module's spans carry scope `org.platformlambda.opentelemetry-forwarder` 4.12.14, the Rust spans
 `mercury-opentelemetry-forwarder` 4.12.14. The full record, with the Rust port's own field acceptance on
 its published crate, is the Rust repository's `docs/test-reports/otel-dynatrace-certification.md`
 (Scenarios 6–7).
