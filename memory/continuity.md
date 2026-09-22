@@ -19,7 +19,21 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.13 (2026-09-20 Pacific, 04:16Z on 09-21 — **the accumulated-improvements release**:
+- **latest_release:** v4.12.14 (2026-09-22 02:11:55Z — **the lock-step release with the Rust port**: release PR #437,
+  squash `dbc26f31`, tag `v4.12.14` → `e8a8d8e5` (one memory-only commit past the merge), pom verified at the tag; the
+  GitHub release body is the CHANGELOG entry). **One Java change:** #436 — `group.protocol=${KAFKA_GROUP_PROTOCOL:auto}`
+  is the bundled Kafka consumer template's default ([[kafka-group-protocol-auto-default]]; **release note to READ:** an
+  application that never set `group.protocol` now joins a KIP-848 cluster with the consumer rebalance protocol;
+  `KAFKA_GROUP_PROTOCOL=classic` keeps the old one). No new runtime dependency. Sweep surface: BUILD FILES ONLY, **43
+  files / 98 occurrences** — re-derived, unchanged from 4.12.13. Readiness from the repository: full build 35 modules,
+  1499 tests, 0 failures ([[conv-changelog-from-tag-range]]). **Lockstep: the Rust port released v4.12.14 the same hour**
+  (mercury #308 → `b83c493f`, tag → `2c88fe2b`, GitHub release 02:12:43Z) carrying K3–K5 minimalist-kafka incl. the
+  Schema Registry wire format, the OpenTelemetry forwarder port (mercury #307, Dynatrace-certified — the Java module's
+  twin, no OTel SDK), the sync-over-async facade tasks + the demo mirror and the 4.12.12/4.12.13 lock-step round — one
+  number on both engines per [[conv-ports-adopt-java-release-number]]; its crates.io publication (12 crates, five for
+  the first time) is Eric's `cargo publish` step after the tag. Both CHANGELOG entries under-state the first-time
+  crates (two/three named; five publish first — a docs follow-up on each repo). Origin 2026-09-21-233928.md.
+  Prior: v4.12.13 (2026-09-20 Pacific, 04:16Z on 09-21 — **the accumulated-improvements release**:
   11 items over 4.12.12 from the 24 non-memory commits since the tag; release PR #435, squash `1feb3d73`, tag
   `v4.12.13` → `1d2074f1` (one memory-only commit past the merge), pom verified at the tag; the GitHub release body
   is the CHANGELOG entry). **FIELD-ACCEPTED 2026-09-21 (Eric): passed the field's CI pipeline and is published
@@ -37,12 +51,6 @@
   [[conv-ports-adopt-java-release-number]]. Sweep surface: BUILD FILES ONLY, **43 files / 98 occurrences** —
   re-derived, unchanged from 4.12.12. Readiness was checked from the repository (tag range, CI, dependency diff,
   one full build at the new version: 35 modules, 1499 tests, 0 failures) — [[conv-changelog-from-tag-range]].
-  **RELEASE v4.12.14 IN PREPARATION 2026-09-21** — the lock-step release with the Rust port (Eric: "wait for completion
-  of locksteps and then v4.12.14 for both Java and Rust repos"): branch `release/v4.12.14`, sweep re-derived **43 files /
-  98 occurrences** (unchanged), CHANGELOG from `v4.12.13..HEAD` = one item, #436 (`group.protocol=auto` as the template
-  default) with the lock-step paragraph; full build at 4.12.14 green - 35 modules, 217 test classes, 1499 tests, 0 failures, 3 skipped (mvn clean install, exit 0). **PR #437 OPENED 2026-09-21** (Eric; CI green), **MERGED 2026-09-22 00:05Z** — squash `dbc26f31`, root pom reads 4.12.14 on main; the `v4.12.14` tag and the GitHub release are Eric's next gates (not yet tagged as of the 00:30Z check); the release branch is cleaned. Java-side follow-up for the same number: none — the Rust side adds the OpenTelemetry forwarder port (Eric, 2026-09-21: "Open-Telemetry forwarder feature is missing in Rust") before its own 4.12.14 cut, so the Rust CHANGELOG at this number carries it; the Rust side lands K5
-  (Schema Registry, the sync-over-async facade tasks, the demo mirror), its docs twin and its lock-step round at the same
-  number, and publishes `mercury-minimalist-kafka` + `mercury-sync-over-async` to crates.io (origin 2026-09-21-233928.md).
   Prior: v4.12.12 (2026-09-17 — the produce-only unblock, **1 fix PR #409** via release
   PR #410, squash `ebdd2e37`, tag `v4.12.12`, pom verified at the tag): **`kafka.health` works on a
   produce-only leg** (`kafka.consumer.enabled=false`), where v4.12.11's classloader fix covered only
