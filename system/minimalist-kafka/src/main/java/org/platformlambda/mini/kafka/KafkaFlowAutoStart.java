@@ -23,6 +23,7 @@ import org.platformlambda.core.annotations.MainApplication;
 import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.mini.kafka.schema.SchemaCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,6 +103,13 @@ public class KafkaFlowAutoStart implements EntryPoint {
             log.info("Kafka flow adapter started from {}", adapterConfig);
         } else {
             log.info("{} not set; Kafka flow adapter not started", ADAPTER_CONFIG);
+        }
+        if (publisher != null || KafkaRuntime.adapter() != null) {
+            // The platform owns ONE JVM shutdown hook and runs its callbacks in reverse registration order,
+            // each error-isolated. Registering here - where the clients were opened - closes every binding's
+            // consumer (LeaveGroup: partitions move at once instead of after the 45 s session timeout) and
+            // then flushes the producer, on SIGTERM as on Ctrl-C. See KafkaRuntime.shutdown().
+            Platform.getInstance().onShutdown(KafkaRuntime::shutdown);
         }
     }
 

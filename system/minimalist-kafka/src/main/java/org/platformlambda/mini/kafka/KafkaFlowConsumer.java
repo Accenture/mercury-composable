@@ -643,13 +643,22 @@ public class KafkaFlowConsumer implements AutoCloseable {
                 new OffsetAndMetadata(consumerRecord.offset() + 1)));
     }
 
+    /**
+     * Stop the binding: wake the poll loop, whose {@code finally} closes the Kafka consumer - the close that
+     * sends LeaveGroup, so the partitions move to the surviving members at once - and wait for it (bounded,
+     * so a stuck flow cannot hold the JVM's shutdown hostage).
+     */
     @Override
     public void close() {
         running = false;
         consumer.wakeup();
         loop.shutdown();
         try {
-            if (!loop.awaitTermination(10, TimeUnit.SECONDS)) {
+            if (loop.awaitTermination(10, TimeUnit.SECONDS)) {
+                log.info("Kafka flow consumer for {} closed - left group {}",
+                        binding.topicOrPattern(), binding.groupId());
+            } else {
+                log.warn("Kafka flow consumer for {} did not stop within 10s - forcing", binding.topicOrPattern());
                 loop.shutdownNow();
             }
         } catch (InterruptedException e) {
