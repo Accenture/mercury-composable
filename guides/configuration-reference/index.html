@@ -7914,7 +7914,9 @@ not configure it.</p>
 </tr>
 </tbody>
 </table>
-<p>Route names excluded from distributed trace recording.</p>
+<p>Route names whose RPC calls produce no caller-side <code>round_trip</code> trace record - an RPC to a listed route folds into
+the calling function's span. A callback-mode execution of a listed route (the Event-over-HTTP stream relay's
+client leg) still records its own span; see <a href="../observability/#edge-span">Observability</a>.</p>
 <h3 id="stacktracetransportsize"><code>stack.trace.transport.size</code><a class="headerlink" href="#stacktracetransportsize" title="Permanent link">&para;</a></h3>
 <table>
 <thead>

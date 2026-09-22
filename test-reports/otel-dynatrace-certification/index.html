@@ -3492,11 +3492,112 @@ or three token frames and a <code>STOP</code>. A streaming AI node's budget is a
 default. (3) Engine parity held without adjustment: the Java graph JSON compiled unchanged on the Rust
 engine, and the relay contract (the <code>accept: text/event-stream</code> opt-in, the 60 s idle allowance, the
 teaching 503 when no peer is mapped) is byte-for-byte the same on both edges.</p>
+<h2 id="scenario-9-one-connected-tree-per-request-the-round-trip-span-the-parented-client-leg-head-and-tail-stream-tracing-2026-09-22">Scenario 9 — one connected tree per request: the round-trip span, the parented client leg, head-and-tail stream tracing (2026-09-22)<a class="headerlink" href="#scenario-9-one-connected-tree-per-request-the-round-trip-span-the-parented-client-leg-head-and-tail-stream-tracing-2026-09-22" title="Permanent link">&para;</a></h2>
+<p>The maintainer read the four Scenario 8 traces in the Dynatrace UI and found the trees broken: no first leg
+above the relay, <code>async.http.request</code> floating without a parent, and — invisible in the UI but present in
+the datasets — one reply-lane span per relayed token with no parent. Read from both sides' datasets, the
+causes were three: the drive's caller-set <code>traceparent</code> named a random parent span that no application had
+exported, so every root pointed at a span the backend never received; the Java stream relay's client leg
+copied the trace onto its <code>async.http.request</code> event but not the sender's span; and the Java relay stamped
+the trace onto the raw token frames it synthesized, without a span. The design gap behind the first
+symptom was the one worth fixing: <strong>no span covered the HTTP round trip</strong> — the SERVER span was the first
+function's own execution, so a backend showed a 0.5 ms response time for a 6 s stream.</p>
+<p><strong>The fix, on both engines</strong> (this repository and the Rust port, both <code>fix/connected-edge-spans</code>; the Python and
+Node.js forwarders <code>fix/otel-span-kind-edge</code>):</p>
+<ul>
+<li>REST automation mints the edge's <strong>round-trip span</strong> at receipt and every dispatch parents onto it; the
+  record — <code>service: http.request</code>, the marker the first function already carried as <code>from</code> — is emitted
+  when the response completes, with <code>start</code> the receipt time, <code>exec_time</code> the round trip and
+  <code>parent_span_id</code> the inbound <code>traceparent</code> span. All four forwarders map this record, and only this
+  record, to a SERVER span; every function execution is INTERNAL.</li>
+<li>The stream relay's client leg parents onto the sender (the Rust port stopped zero-tracing the HTTP
+  client route: <code>skip.rpc.tracing</code> only suppresses the caller-side RPC <code>round_trip</code> record, as in Java).</li>
+<li><strong>A stream is traced at its head and its tail, never per token</strong>: the producer's writer stamps its trace
+  and span on the first segment and the terminal, data segments carry no trace, the consuming relay
+  forwards raw token frames untraced and parents its synthesized control frames on its own span, and the
+  reply lane annotates the terminal's record with <code>frames</code> — the number of data segments it rendered.</li>
+</ul>
+<p><strong>Re-drive</strong> (the same four-runtime set-up as Scenario 8; <code>gemini-3.6-flash</code>; the caller sent only
+<code>X-Trace-Id</code>, no <code>traceparent</code>, so the edge span is a true root; stream calls only):</p>
+<table>
+<thead>
+<tr>
+<th>Edge → AI node</th>
+<th>Trace (<code>X-Trace-Id</code>)</th>
+<th>Round trip (edge span)</th>
+<th>Outcome</th>
+<th>Terminal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Java → Python</strong></td>
+<td><code>f539673bcb798dd541c49f6553c0fb42</code></td>
+<td>1051.9 ms, status 429</td>
+<td>provider quota exhausted (<code>429</code>)</td>
+<td><code>frames: 0</code></td>
+</tr>
+<tr>
+<td><strong>Java → Node</strong></td>
+<td><code>a3cc25d9782826b32b67191c82e27537</code></td>
+<td>349.8 ms, status 429</td>
+<td>provider quota exhausted (<code>429</code>)</td>
+<td><code>frames: 0</code></td>
+</tr>
+<tr>
+<td><strong>Rust → Node</strong></td>
+<td><code>45e022338a474efaf4b607f08a53b93c</code></td>
+<td>289.8 ms, status 429</td>
+<td>provider quota exhausted (<code>429</code>)</td>
+<td><code>frames: 0</code></td>
+</tr>
+<tr>
+<td><strong>Rust → Python</strong></td>
+<td><code>d1a0957ce0194c42142ac8fab54483a4</code></td>
+<td>338.8 ms, status 429</td>
+<td>provider quota exhausted (<code>429</code>)</td>
+<td><code>frames: 0</code></td>
+</tr>
+</tbody>
+</table>
+<p>Gemini answered <code>429 You exceeded your current quota</code> on all four calls of this run (the day's quota on the
+certification key was spent by the earlier drives); the run immediately before it — the same fix, the
+engines not yet re-linked to their forwarders — carried one token-bearing stream, Rust → Python
+<code>86eb549fa3efd143ec7cb23559599dfe</code> (round trip 3427.8 ms, 3 token frames, terminal <code>frames: 2</code>),
+whose tree is the second one below. Its engine spans were logged but not exported (only the hosts
+exported that run), so the backend view of the token-bearing shape waits for the next drive with quota.</p>
+<p>Every trace reconstructs as one tree from the runtimes' own datasets — exactly one root, the edge; no
+record with a parent outside the trace; the host's <code>llm.stream</code> span under the relay; the engine's
+reply-lane records under the host's span, the head unannotated and the terminal carrying <code>frames</code>
+(the check is mechanical: a script rebuilds each tree from the six logs and fails on a dangling parent):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Java → Python  f539673b…  (drive 8, exported by all four applications)
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>http.request [java]  round trip 1051.9 ms, status 429, exception "LLM provider error - 429 …"   ← the root, SERVER
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>└── llm.stream.relay [java]  from http.request, 0.5 ms
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    ├── async.http.request [java]  64.3 ms, destination http://127.0.0.1:8086/api/event
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    └── llm.stream [python]  928.1 ms
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>        └── async.http.response.stream.0 [java]  the terminal, frames: 0
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>Rust → Python  86eb549f…  (drive 7, the token-bearing shape; engine spans logged, not exported)
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>http.request [rust]  round trip 3427.8 ms, status 200                                              ← the root, SERVER
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>└── llm.stream.relay [rust]  from http.request, 0.1 ms
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    ├── async.http.request [rust]  3346.2 ms, destination http://127.0.0.1:8086/api/event
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    └── llm.stream [python]  3420.7 ms
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>        ├── async.http.response.stream.0 [rust]  the head
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>        └── async.http.response.stream.0 [rust]  the terminal, frames: 2   (the two token frames: no span)
+</code></pre></div>
+<p>Two things worth reading from the shape. The round trip now bounds the request — the edge span is the
+one a backend should use for the service's response time, and it is the only SERVER span. And the
+provider's failures are traces too: a stream the host could not start still yields a complete tree, its
+edge record carrying the provider's status and message and its terminal <code>frames: 0</code>.</p>
+<p><strong>Exports.</strong> the forwarder reported ready in all four applications (both Playgrounds re-linked to their forwarder for the drive, as in Scenario 8) and every application exported with zero failures — the engines 4 spans per trace (edge, relay, client leg, lane terminal), the hosts 1 each.</p>
+<p><strong>Backend view.</strong> pending — the maintainer's Dynatrace lookup of the four traces above, each expected as ONE tree: a SERVER root <code>http.request</code> (kind 2) with the round-trip duration, the relay and the client leg under it, the host's <code>llm.stream</code> under the relay, and the lane terminal under the host, <code>annotation.frames</code> on the terminal; no span without a parent. The Scenario 8 traces, confirmed in the UI on 2026-09-22 (two services each, the host span under the engine's relay, scopes <code>mercury-composable-nodejs 4.12.1</code>, <code>mercury-composable-python 4.12.1</code>, <code>org.platformlambda.opentelemetry-forwarder 4.12.14</code>), are the before picture: the relay's parent absent, <code>async.http.request</code> unparented.</p>
 <h2 id="what-remains">What remains<a class="headerlink" href="#what-remains" title="Permanent link">&para;</a></h2>
-<p><strong>One item: the backend's view of Scenario 8</strong> — the maintainer's Dynatrace lookup of the four traces
-above, each expected to show two services (an engine and a host) with the parentage the datasets
-assert, at instrumentation scopes <code>org.platformlambda.opentelemetry-forwarder</code>,
-<code>mercury-opentelemetry-forwarder</code>, <code>mercury-composable-python</code> and <code>mercury-composable-nodejs</code>.
+<p><strong>Two items.</strong> The backend's view of Scenario 9 — the maintainer's Dynatrace lookup of the four re-drive
+traces, each expected as one connected tree rooted at the edge's <code>http.request</code> SERVER span — and a
+token-bearing re-drive of the same shape once the provider's quota allows (the fix's token-bearing
+tree exists in the runtimes' logs; the backend has not received one yet). Scenario 8's backend view
+is CONFIRMED (2026-09-22, the maintainer's four screenshots): two services per trace and the scopes
+as predicted — and the broken tree shape it revealed is what Scenario 9 fixed.
 Everything before it is closed: the last item of the earlier scenarios — backend confirmation of the
 two acceptance traces — closed on 2026-09-17, when Dynatrace support located both in the UI.</p>
 <table>
@@ -3547,13 +3648,13 @@ that cost two dead ends earlier in this work. Local evidence could not have sett
 value the backend displays can.</p>
 <p>The backend also reconstructed the parentage, which the exporting side could only assert. The two
 shapes differ as predicted, and the write flow nests one level deeper:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>45a6e43c… — POST /api/profile          1c32bbe5… — GET /api/profile/41211
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>http.flow.adapter                      http.flow.adapter
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>├── task.executor                      ├── v1.get.profile
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>└── v1.create.profile                  │   └── v1.decrypt.fields
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    ├── async.http.response            │       └── async.http.response
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    └── v1.encrypt.fields              └── task.executor
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>        └── v1.save.profile
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>45a6e43c… — POST /api/profile          1c32bbe5… — GET /api/profile/41211
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>http.flow.adapter                      http.flow.adapter
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>├── task.executor                      ├── v1.get.profile
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>└── v1.create.profile                  │   └── v1.decrypt.fields
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    ├── async.http.response            │       └── async.http.response
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    └── v1.encrypt.fields              └── task.executor
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>        └── v1.save.profile
 </code></pre></div>
 <p>Sampled span detail shows the attribute mapping survives the round trip intact: <code>v1.create.profile</code>
 reports <code>exec_time_ms 4.116</code>, <code>from task.executor</code>, <code>path POST /api/profile</code>, <code>status 200</code>, span kind

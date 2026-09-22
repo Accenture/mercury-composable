@@ -3343,9 +3343,11 @@ demo shown below.</p>
 </li>
 <li>
 <p>Look at both applications' logs: the trace context propagated across the HTTP hop
-   automatically. Both apps log telemetry under the <strong>same trace id</strong>, the
-   <code>hello.declarative</code> record carries <code>span_id</code> and <code>parent_span_id</code> chaining it onto the
-   caller's flow, and — with the default-on
+   automatically. Both apps log telemetry under the <strong>same trace id</strong>: the callee's edge
+   records the hop's own <a href="../observability/#edge-span">round-trip span</a> (<code>http.request</code>,
+   <code>POST /api/event</code>) parented onto the caller's span, and the <code>hello.declarative</code> record
+   carries <code>span_id</code> and <code>parent_span_id</code> chaining it onto that edge and so onto the
+   caller's flow — and, with the default-on
    <a href="../observability/#log-context">application log context</a> — every structured log line on
    both sides is stamped with that trace id.</p>
 </li>

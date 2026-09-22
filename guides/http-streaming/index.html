@@ -1834,6 +1834,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Produce a stream">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tracing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tracing a stream
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2914,6 +2931,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Produce a stream">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tracing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tracing a stream
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3091,6 +3125,14 @@ exactly as they do to a single-shot response.</p>
 </code></pre></div>
 <p><code>EventStreamWriter</code> (import <code>org.platformlambda.core.system.EventStreamWriter</code>) is thin sugar
 over plain event sends:</p>
+<h3 id="tracing">Tracing a stream<a class="headerlink" href="#tracing" title="Permanent link">&para;</a></h3>
+<p>A stream is traced at its head and its tail, never per token. When the writer is constructed on the worker thread of
+a traced function (the normal case - inside <code>handleEvent</code>), the first segment and the terminal (<code>eof</code> or <code>exception</code>)
+carry the function's trace and span, so the reply lane's records for them parent onto the function; the data segments
+in between carry no trace, because one span per token would flood a tracing backend. The lane annotates the terminal's
+record with <code>frames</code>, the number of data segments it rendered, and the edge's own
+<a href="../observability/#edge-span">round-trip span</a> closes when the terminal is rendered - so a streamed response's real
+duration is visible in the trace without a span per token.</p>
 <table>
 <thead>
 <tr>

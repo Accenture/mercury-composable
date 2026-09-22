@@ -1754,6 +1754,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#edge-span" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The edge's round-trip span
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#layers" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3047,6 +3058,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#edge-span" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The edge's round-trip span
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#layers" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3312,8 +3334,10 @@ is <strong>OpenTelemetry-compliant</strong>, so the spans drop straight into the
 <p>Two controls tune what is recorded:</p>
 <ul>
 <li><code>@ZeroTracing</code> on a function suppresses tracing for that function (used by system services so they never trace themselves).</li>
-<li><code>skip.rpc.tracing</code> (in <code>application.properties</code>) lists route names excluded from trace recording; the default is
-  <code>async.http.request</code>.</li>
+<li><code>skip.rpc.tracing</code> (in <code>application.properties</code>) lists route names whose RPC calls produce no caller-side
+  <code>round_trip</code> record; the default is <code>async.http.request</code>, so an HTTP call made from a function folds into that
+  function's span. A callback-mode execution of a listed route - the Event-over-HTTP stream relay's client leg -
+  still records its own span, parented onto the sender.</li>
 </ul>
 <h3 id="metrics">What a trace records<a class="headerlink" href="#metrics" title="Permanent link">&para;</a></h3>
 <p>When a traced function finishes, the system sends a performance-metrics dataset to the built-in
@@ -3327,6 +3351,30 @@ is <strong>OpenTelemetry-compliant</strong>, so the spans drop straight into the
 <p><code>span_id</code> and <code>parent_span_id</code> are the OpenTelemetry-compatible IDs (see <a href="#w3c">W3C trace context</a>); you can attach
 business context to the span with <code>PostOffice.annotateTrace(key, value)</code>. To attach context to <strong>application logs</strong>
 instead, see <a href="#log-context">Application log context</a>.</p>
+<h3 id="edge-span">The edge's round-trip span<a class="headerlink" href="#edge-span" title="Permanent link">&para;</a></h3>
+<p>A traced endpoint records one more span than its functions: the <strong>round trip</strong> itself. REST automation mints a span
+id when the request arrives, makes it the first function's parent, and emits its record when the response completes -
+the buffered response, the end of a streamed response, an edge error or the edge timeout. The record's <code>service</code> is
+<code>http.request</code>, the same marker the first function carries as <code>from</code>, so the vocabulary stays one word: <em>the request
+came from the edge; the edge's own span is the root</em>.</p>
+<ul>
+<li><code>path</code> is <code>METHOD /path</code>, <code>start</code> is the receipt time and <code>exec_time</code> is the whole round trip - for a streamed
+  response, until the terminal is rendered.</li>
+<li><code>parent_span_id</code> is the inbound <code>traceparent</code> span when the caller sent one; otherwise the record is the trace's root.</li>
+<li><code>status</code> is the HTTP status sent, except that a stream failing in-band after its head was committed reports the
+  failure's own status and message.</li>
+</ul>
+<p>The <a href="https://github.com/Accenture/mercury-composable/tree/main/extensions/opentelemetry-forwarder">OpenTelemetry forwarder</a>
+maps this record, and only this record, to a <code>SERVER</code> span - which is what makes a service's response time in a tracing backend the real one, not the
+first function's own execution time. Every function execution, the first one included, is an <code>INTERNAL</code> span under it.</p>
+<p><strong>Streamed responses are traced at their head and their tail, never per token.</strong> <code>EventStreamWriter</code> stamps the
+producer's trace and span on the first segment (it carries the head control) and on the terminal (<code>eof</code> or
+<code>exception</code>); the data segments in between carry no trace, because one span per token would flood a tracing backend.
+The reply lane that renders the stream therefore records two spans, both parented onto the producer, and annotates the
+terminal's record with <code>frames</code> - the number of data segments it rendered. The Event-over-HTTP stream relay follows the
+same rule on the consuming side: decoded envelope frames keep the remote producer's span, synthesized control frames
+parent onto the relay's client leg (<code>async.http.request</code>, itself parented onto the sender), and raw token frames are
+forwarded untraced. See <a href="../http-streaming/#tracing">HTTP streaming</a>.</p>
 <h3 id="layers">Spans across the three layers<a class="headerlink" href="#layers" title="Permanent link">&para;</a></h3>
 <p>The span tree mirrors the <a href="../architecture/">three paradigm layers</a>, and tracing is <strong>virtual-thread-safe</strong> — the
 parent span is threaded through a per-task anchor, not a <code>ThreadLocal</code>, so concurrently-dispatched siblings still
@@ -3346,6 +3394,11 @@ worker thread before returning. See the
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align: left;"><strong>HTTP edge — REST automation</strong></td>
+<td style="text-align: left;">the request's round trip (<code>service: http.request</code>)</td>
+<td style="text-align: left;">the inbound <code>traceparent</code> span is its parent; the first function parents onto it</td>
+</tr>
 <tr>
 <td style="text-align: left;"><strong>Layer 1 — Platform Core</strong></td>
 <td style="text-align: left;">each function execution</td>
@@ -3371,7 +3424,7 @@ OpenTelemetry uses: a <strong>32-hex trace ID</strong> and <strong>16-hex span I
 standard <code>traceparent</code> header:</p>
 <ul>
 <li>outbound — the HTTP client injects <code>traceparent</code> carrying the current trace + span, alongside <code>X-Trace-Id</code>;</li>
-<li>inbound — the HTTP layer extracts <code>traceparent</code>, continues the upstream trace, and adopts the caller's span as the parent. <code>traceparent</code> takes precedence over <code>X-Trace-Id</code> when both are present.</li>
+<li>inbound — the HTTP layer extracts <code>traceparent</code>, continues the upstream trace, and adopts the caller's span as the parent of the edge's <a href="#edge-span">round-trip span</a>. <code>traceparent</code> takes precedence over <code>X-Trace-Id</code> when both are present.</li>
 </ul>
 <p>The <code>X-Trace-Id</code> header carries the trace ID for callers not yet on W3C Trace Context. The framework does not
 echo the trace ID back to the HTTP client. (The correlation-id — a separate concern — is documented in
