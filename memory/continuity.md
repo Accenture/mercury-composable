@@ -728,7 +728,8 @@
   and the Rust `event_over_http_stream::edge_relay_spans_are_connected`. **MERGED 2026-09-22: PR #444 (squash
   `737ce503`), Rust #315 (`84f8ad66`), Python #36, Node #104; main CI green on the re-run (attempt 1 hit a Maven
   Central 403 — a registry blip); Scenario 9's backend view CONFIRMED in Dynatrace (one tree per trace, the edge span
-  the root and the response time). Open: a token-bearing re-drive once the Gemini quota allows, then v4.12.15.**
+  the root and the response time; report PR #445 `3675590d`, Rust #316 `251bb369`). Open: a token-bearing re-drive
+  once the Gemini quota allows, then v4.12.15.**
   <!-- id: connected-edge-spans | created: 2026-09-22 | last_used: 2026-09-22 | uses: 1 | tier: working | origin: 2026-09-22-200813 -->
 
 ## Conventions
