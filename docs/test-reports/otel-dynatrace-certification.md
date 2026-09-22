@@ -244,6 +244,44 @@ in the example app, the absence of the route at runtime, and an explicit log lin
 optional class was skipped. DevOps reading a startup log can see the feature was considered and
 declined, rather than inferring it from silence.
 
+## Scenario 7 — two engines, one trace: the Rust port at 4.12.14 (2026-09-22)
+
+The Rust port shipped its twin of this module in v4.12.14 (`mercury-opentelemetry-forwarder`, no
+OpenTelemetry SDK — its own OTLP encoder over the platform HTTP client) and certified it against the
+same Dynatrace tenant. At the maintainer's suggestion the two were then driven **together**: the
+minimalist-kafka interop of the Rust K5 gate — the `sync-over-async-demo` facade on one engine and its
+backend on the other, over `kafka-standalone`, `redis-standalone` and `schema-registry-standalone`
+4.12.14 — with the forwarder on **both** engines. This module was added to the Java demo's dependencies
+for the drive only (the example ships without it), both apps launched with `-Dotel.forwarding=true` and
+the same endpoint and credential from the environment, service names `mercury-otel-cert-java` and
+`mercury-otel-cert-rust` so the hop is visible, and each request carrying a caller-set `traceparent`.
+
+| Pairing | Facade | Backend | Traces | Spans exported (failures) |
+|---------|--------|---------|--------|---------------------------|
+| **A** | Java `:8500` | Rust | `f78de6d2d9a649d425acaec09a6bba53`, `72b2e692bac8478e1e2a9c148e3d1606` (02:52:59–02:53:01Z) | Java 18 (0), Rust 6 (0) |
+| **B** | Rust `:8400` | Java | `ec6b3fc64b769c9f79c1f80d50371a2e`, `3481c84b80e6804849a2df2ea6967237` (02:53:36–37Z) | Rust 16 (0), Java 8 (0) |
+
+Every trace crosses the engine boundary twice and the wire says so: in trace `72b2e692…` the Java
+facade's `simple.kafka.notification` span `b97f815f845b01e7` is the parent of the Rust backend's
+`system.of.record` `8d94bd61ca44a0a6`, and the Rust backend's reply notification `8ddccc5536bf7cdb` is
+the parent of the Java facade's `soa.reply` `a8024e25466d1cf1` — the Kafka record's `traceparent` header
+carrying the context each way. In the UI: one trace, two services, this module's spans under scope
+`org.platformlambda.opentelemetry-forwarder` 4.12.14 and the Rust spans under
+`mercury-opentelemetry-forwarder` 4.12.14. The full record, with the Rust port's own field acceptance on
+its published crate, is the Rust repository's `docs/test-reports/otel-dynatrace-certification.md`
+(Scenarios 6–7).
+
+**Two Java-side findings came out of the round, neither about telemetry.** (1) Java consumers do not
+leave their groups on SIGTERM: the broker fenced every Java member by session expiry ~40 s after the
+stop, while every Rust member left cleanly — so the first attempt at pairing B timed out twice, the
+stopped Java facade still holding all ten `soa.response` partitions when the Rust facade joined the same
+group. `KafkaFlowAdapter.close()` exists but nothing calls it at shutdown (`KafkaFlowAutoStart` registers
+no `Platform.onShutdown`); the same for the request publisher's `producer.close()`. On Kubernetes that is
+a rolling restart parking the old pod's partitions for the KIP-848 session timeout. Tracked as an open
+thread. (2) The demo's `SyncErrorHandler` calls `SyncRuntime.coordinator().abort(cid)` without a null
+check, so a request that arrives before the return-route subscriber is listening (the REST port opens
+~100 ms earlier) answers 500 from an NPE rather than the flow's own error.
+
 ## What remains
 
 **Nothing.** The last open item — backend confirmation of the two acceptance traces — closed on
