@@ -496,13 +496,17 @@ every binding's consumer before the process exits, and the consumer's close send
 the broker only notices the dead member when its session expires — 45 seconds by default under the
 KIP-848 consumer protocol — and every partition it held sits unread for that long, which on a rolling
 deploy is a pause of the same length for the pod's share of the traffic. The shared producer is closed
-after the consumers, flushing any buffered records. The whole sequence is `KafkaRuntime.shutdown()`,
+after the consumers, waiting up to the same ten seconds for its buffered records to be acknowledged; when the
+grace ends first, the records still unacknowledged are failed and the log names how many (`Kafka producer
+closed after 10 s grace - N message(s) undelivered`) — a stopping pod must not wait on a dead broker past its
+termination grace. The whole sequence is `KafkaRuntime.shutdown()`,
 registered on the platform's shutdown lifecycle (`Platform.onShutdown`) when the clients open; it is
 idempotent and safe when nothing was started. The log confirms each step — `Kafka flow consumer for
-<topic> closed - left group <group>`, then `Kafka producer closed` — and the broker's own log shows the
+<topic> closed - left group <group>`, then `Kafka producer closed - buffered records delivered` — and the
+broker's own log shows the
 member leaving instead of being fenced. A consumer mid-flow is given ten seconds to finish its current
-record before the close is forced, so a stuck flow cannot hold the shutdown hostage. The Rust port's
-consumers leave the same way.
+record before the close is forced, so a stuck flow cannot hold the shutdown hostage. The Rust port shuts
+down the same way, its producer flushed within the same grace.
 
 ## Outbound: publishing to Kafka {#outbound}
 

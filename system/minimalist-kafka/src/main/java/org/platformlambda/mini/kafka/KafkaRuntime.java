@@ -22,6 +22,7 @@ import org.platformlambda.mini.kafka.schema.SchemaCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -33,6 +34,12 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class KafkaRuntime {
     private static final Logger log = LoggerFactory.getLogger(KafkaRuntime.class);
     // a ReentrantLock, not synchronized: a virtual thread blocking in a synchronized block pins its carrier on Java 21
+    /**
+     * How long a shutdown waits for each Kafka client: a flow consumer to finish its in-flight record, then the
+     * producer to deliver its buffered records (a Kubernetes pod's default termination grace is 30 seconds; the
+     * Rust port uses the same bound).
+     */
+    public static final Duration SHUTDOWN_GRACE = Duration.ofSeconds(10);
     private static final ReentrantLock SHUTDOWN_LOCK = new ReentrantLock();
 
     private static KafkaRequestPublisher publisher;
@@ -98,8 +105,13 @@ public final class KafkaRuntime {
             publisher = null;
             if (runningPublisher != null) {
                 try {
-                    runningPublisher.close();
-                    log.info("Kafka producer closed");
+                    int undelivered = runningPublisher.closeWithin(SHUTDOWN_GRACE);
+                    if (undelivered == 0) {
+                        log.info("Kafka producer closed - buffered records delivered");
+                    } else {
+                        log.warn("Kafka producer closed after {} s grace - {} message(s) undelivered",
+                                SHUTDOWN_GRACE.toSeconds(), undelivered);
+                    }
                 } catch (RuntimeException e) {
                     log.warn("Kafka producer did not close cleanly - {}", e.toString());
                 }
