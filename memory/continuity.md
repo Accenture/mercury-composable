@@ -33,8 +33,10 @@
   number on both engines per [[conv-ports-adopt-java-release-number]]; its crates.io publication followed the same night — **12 of 12 crates at 4.12.14 by 02:30Z** (one
   `cargo publish --workspace` run plus a retry of `mercury-sync-over-async` after a keyword over the registry's 20-char cap
   and the new-crate rate limit; mercury #309). Both CHANGELOG entries under-stated the first-time
-  crates (two/three named; five published first) — corrected on `docs/changelog-4.12.14-crates` in each repo (Java `6fe31620`,
-  Rust `aad0690b`; docs PRs pending Eric). Origin 2026-09-21-233928.md.
+  crates (two/three named; five published first) — corrected on `docs/changelog-4.12.14-crates` in each repo — Java PR #438
+  squash `10eb9e0b`, Rust PR #310 merge `89523616`, both 2026-09-22 02:36Z. **The v4.12.14 release cycle is CLOSED on both
+  engines**; what remains is the Rust forwarder's field acceptance on the published crate (Rust thread
+  `otel-forwarder-certification`) and this repo's overdue memory review. Origin 2026-09-21-233928.md.
   Prior: v4.12.13 (2026-09-20 Pacific, 04:16Z on 09-21 — **the accumulated-improvements release**:
   11 items over 4.12.12 from the 24 non-memory commits since the tag; release PR #435, squash `1feb3d73`, tag
   `v4.12.13` → `1d2074f1` (one memory-only commit past the merge), pom verified at the tag; the GitHub release body
