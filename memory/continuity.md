@@ -32,8 +32,9 @@
   twin, no OTel SDK), the sync-over-async facade tasks + the demo mirror and the 4.12.12/4.12.13 lock-step round — one
   number on both engines per [[conv-ports-adopt-java-release-number]]; its crates.io publication followed the same night — **12 of 12 crates at 4.12.14 by 02:30Z** (one
   `cargo publish --workspace` run plus a retry of `mercury-sync-over-async` after a keyword over the registry's 20-char cap
-  and the new-crate rate limit; mercury #309). Both CHANGELOG entries under-state the first-time
-  crates (two/three named; five publish first — a docs follow-up on each repo). Origin 2026-09-21-233928.md.
+  and the new-crate rate limit; mercury #309). Both CHANGELOG entries under-stated the first-time
+  crates (two/three named; five published first) — corrected on `docs/changelog-4.12.14-crates` in each repo (Java `6fe31620`,
+  Rust `aad0690b`; docs PRs pending Eric). Origin 2026-09-21-233928.md.
   Prior: v4.12.13 (2026-09-20 Pacific, 04:16Z on 09-21 — **the accumulated-improvements release**:
   11 items over 4.12.12 from the 24 non-memory commits since the tag; release PR #435, squash `1feb3d73`, tag
   `v4.12.13` → `1d2074f1` (one memory-only commit past the merge), pom verified at the tag; the GitHub release body
