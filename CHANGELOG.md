@@ -15,9 +15,12 @@ also the number the Rust port adopts on catching up: the completed minimalist-ka
 Schema Registry wire format for JSON Schema and Avro, the sync-over-async facade tasks over Kafka, the
 `sync-over-async-demo` mirrored with its raw, JSON Schema and Avro legs, the AI-contract guide twin), its
 lock-step round with 4.12.12/4.12.13 (the CompileGraph task↔skill gate, the case-insensitive
-`input.header.*` fallback, the snake_case log-context keys with the automatic UTC timestamp), and the
-first crates.io publication of `mercury-minimalist-kafka` and `mercury-sync-over-async`. No upgrade
-action for Java applications beyond the note under item 1.
+`input.header.*` fallback, the snake_case log-context keys with the automatic UTC timestamp), the
+OpenTelemetry trace forwarder port (mercury #307 — the `opentelemetry-forwarder` twin, certified against
+Dynatrace), and the first crates.io publication of five crates — `mercury-minimalist-kafka`,
+`mercury-sync-over-async`, `mercury-opentelemetry-forwarder`, `mercury-redis-connection` and
+`mercury-distributed-cache`; all twelve mercury crates are on the registry at 4.12.14 (2026-09-22). No
+upgrade action for Java applications beyond the note under item 1.
 
 ### Changed
 
@@ -38,7 +41,8 @@ action for Java applications beyond the note under item 1.
    own template) to keep the classic protocol regardless of cluster support.
 
 **Lock-step.** The Rust port catches up to 4.12.14 at this release (mercury: the K5 branches, the docs
-twin and the lock-step round); the two engines' Kafka building blocks were driven against each other on
+twin, the lock-step round and the OpenTelemetry forwarder port — `docs/test-reports/otel-dynatrace-certification.md`
+in the Rust repository, the twin of this repository's report); the two engines' Kafka building blocks were driven against each other on
 one broker, one Redis and one Schema Registry — the Confluent frames decoded in both directions by both
 engines, a mixed Java+Rust consumer group, and a Java facade delivering replies to a waiting Rust facade
 through the Redis return route (`docs/test-reports/minimalist-kafka-interop.md` in the Rust repository).
