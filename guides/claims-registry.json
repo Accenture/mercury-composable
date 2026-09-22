@@ -135,6 +135,16 @@
       "quote": "the consumer's close sends the group coordinator a **LeaveGroup**: the member's partitions are reassigned to the surviving members at once",
       "test": "system/minimalist-kafka::KafkaShutdownTest#closingTheAdapterLeavesTheConsumerGroup",
       "since": "4.12.15+"
+    },
+    {
+      "id": "kafka-producer-close-bounded-by-grace",
+      "claim": "On shutdown the shared Kafka producer is closed after the consumers, waiting at most the ten-second grace for buffered records to be acknowledged; records still unacknowledged when the grace ends are failed and counted in the log rather than waited for.",
+      "pages": [
+        "docs/guides/minimalist-kafka.md"
+      ],
+      "quote": "waiting up to the same ten seconds for its buffered records to be acknowledged",
+      "test": "system/minimalist-kafka::KafkaShutdownTest#producerCloseIsBoundedByTheGraceAndReportsUndelivered",
+      "since": "4.12.15+"
     }
   ]
 }
