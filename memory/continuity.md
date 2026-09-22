@@ -733,8 +733,7 @@
   (`GOOGLE_GEMINI_BASE_URL` / `GEMINI_API_BASE`, no host code change) — all four pairings streamed 8 token frames,
   every tree one tree with the terminal `frames: 8`, exported by all four apps (report PR #446 `a7abcace`,
   Rust #317 `a6abb436`) — and CONFIRMED in Dynatrace by Eric's six screenshots (one tree per trace, the round trip as
-  the response time, `annotation.frames: 8` on the stream terminal; report branch `docs/scenario9-token-backend-view`
-  `3efc922a`, PR pending). The round's Sonar smells were fixed in PR #447 (squash `16ce14ed`).** Open: v4.12.15 on Eric's go.**
+  the response time, `annotation.frames: 8` on the stream terminal; report PR #448 `72cc40d6`). The round's Sonar smells were fixed in PR #447 (squash `16ce14ed`).** Open: v4.12.15 on Eric's go.**
   <!-- id: connected-edge-spans | created: 2026-09-22 | last_used: 2026-09-22 | uses: 1 | tier: working | origin: 2026-09-22-200813 -->
 
 ## Conventions
