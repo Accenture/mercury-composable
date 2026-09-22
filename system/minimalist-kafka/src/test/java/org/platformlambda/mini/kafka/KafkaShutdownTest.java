@@ -42,15 +42,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * The shutdown contract of the Kafka building blocks, proven against a real (embedded) broker rather than
- * inferred from the client's javadoc: closing a flow consumer makes its member <b>leave</b> the consumer
+ * inferred from the client's Javadoc: closing a flow consumer makes its member <b>leave</b> the consumer
  * group - the coordinator sees zero members immediately - instead of the member lingering until its session
  * expires (45 seconds by default under the KIP-848 consumer protocol), which is how a rolling restart used to
  * park every partition the old pod held. {@link KafkaFlowAutoStart} registers {@link KafkaRuntime#shutdown()}
  * on {@code Platform.onShutdown} so a {@code SIGTERM} takes exactly this path; the registration itself is a
  * JVM shutdown hook and is verified live (the certification drive of 2026-09-22), not here.
  * <p>
- * Background: found by the two-engine OpenTelemetry drive with the Rust port, whose rdkafka consumers left
- * their groups on stop while this engine's were fenced by session expiry ~40 seconds later.
+ * Background: found by the two-engine OpenTelemetry drive with the Rust port, whose {@code rdkafka} consumers
+ * left their groups on stop while the consumers of this engine were fenced by session expiry ~40 seconds later.
  */
 class KafkaShutdownTest {
     private static final String TOPIC = "shutdown-test-topic";
@@ -71,18 +71,8 @@ class KafkaShutdownTest {
     }
 
     @Test
-    void closingTheAdapterLeavesTheConsumerGroup() throws Exception {
-        KafkaConsumerBinding binding = KafkaConsumerBinding.builder()
-                .topic(TOPIC).flowId("shutdown-flow").groupId(GROUP).build();
-        Properties props = new Properties();
-        props.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.bootstrapServers());
-        props.setProperty(ConsumerConfig.GROUP_ID_CONFIG, GROUP);
-        props.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        props.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
-        props.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        props.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-        RetryPolicy policy = new RetryPolicy(1, 10, null);
-        KafkaFlowConsumer consumer = new KafkaFlowConsumer(new KafkaConsumer<>(props), binding, 1000, policy, null);
+    void closingTheAdapterLeavesTheConsumerGroup() {
+        KafkaFlowConsumer consumer = flowConsumer();
         try (Admin admin = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.bootstrapServers()))) {
             consumer.start();
             // the member joins: the coordinator reports it
@@ -106,7 +96,7 @@ class KafkaShutdownTest {
         // stand-ins for the process-wide singletons: a mock producer whose closed() flag is observable
         // Kafka 4.x MockProducer: (autoComplete, partitioner, keySerializer, valueSerializer); a null partitioner = default
         MockProducer<String, byte[]> producer =
-                new MockProducer<String, byte[]>(true, null, new StringSerializer(), new ByteArraySerializer());
+                new MockProducer<>(true, null, new StringSerializer(), new ByteArraySerializer());
         KafkaRequestPublisher publisher = new KafkaRequestPublisher(producer);
         KafkaRuntime.setPublisher(publisher);
         KafkaRuntime.setAdapter(null);
@@ -120,6 +110,21 @@ class KafkaShutdownTest {
         // and nothing-started is fine too
         KafkaRuntime.setPublisher(null);
         assertDoesNotThrow(KafkaRuntime::shutdown);
+    }
+
+    /** A flow consumer on a real Kafka consumer against the embedded broker, in the test group. */
+    private static KafkaFlowConsumer flowConsumer() {
+        KafkaConsumerBinding binding = KafkaConsumerBinding.builder()
+                .topic(TOPIC).flowId("shutdown-flow").groupId(GROUP).build();
+        Properties props = new Properties();
+        props.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.bootstrapServers());
+        props.setProperty(ConsumerConfig.GROUP_ID_CONFIG, GROUP);
+        props.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
+        props.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+        RetryPolicy policy = new RetryPolicy(1, 10, null);
+        return new KafkaFlowConsumer(new KafkaConsumer<>(props), binding, 1000, policy, null);
     }
 
     private static boolean awaitMembers(Admin admin, int expected, long timeoutMs) {
