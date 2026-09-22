@@ -425,7 +425,25 @@ class EventOverHttpStreamTest extends TestBase {
     void remoteStreamRendersProgressivelyOutTheEdge() throws IOException, InterruptedException {
         // the engine-to-engine composition: a streaming edge endpoint forwards its
         // reply lane into a 'send' to the event-over-http mapped streaming function -
-        // segments relay through /api/event and re-render progressively here
+        // segments relay through /api/event and re-render progressively here.
+        // Progressive end to end: the remote target paces its two segments 250 ms apart, so
+        // they should arrive ~250 ms apart here too. A stalled CI runner can deliver both in
+        // one burst (0 ms measured on GitHub Actions, 2026-09-22), so the timing half of the
+        // check is allowed one repeat; the ordered relay and the eof metadata are asserted on
+        // every run.
+        long elapsed = relayGap();
+        if (elapsed < 150) {
+            elapsed = relayGap();
+        }
+        assertTrue(elapsed >= 150, "progressive relay expected, elapsed " + elapsed + " ms");
+        Utility.getInstance().sleep(100);
+    }
+
+    /**
+     * One remote-relay request out the edge: asserts the ordered relay and the terminal
+     * metadata, and returns how long after the first segment the second one arrived.
+     */
+    private long relayGap() throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder(
                         URI.create(localHost + "/api/hello/remote"))
                 .timeout(Duration.ofSeconds(20)).header("Accept", TEXT_EVENT_STREAM).build();
@@ -446,9 +464,6 @@ class EventOverHttpStreamTest extends TestBase {
         assertTrue(alpha >= 0 && beta > alpha && done > beta, "ordered relay: " + lines);
         // the remote eof's trailing metadata is the terminal frame's data
         assertTrue(lines.contains("data: {\"segments\":2}"), lines.toString());
-        // progressive end to end: the remote target paces segments 250ms apart
-        long elapsed = arrivals.get(beta) - arrivals.get(alpha);
-        assertTrue(elapsed >= 150, "progressive relay expected, elapsed " + elapsed + " ms");
-        Utility.getInstance().sleep(100);
+        return arrivals.get(beta) - arrivals.get(alpha);
     }
 }
