@@ -181,3 +181,5 @@
 - thread-elastic-queue-bdb-to-file — (complete — P4 landed 2026-09-16 in v4.12.10) Replace ElasticQueue's Berkeley DB spill tie… — faded — 2026-Q3.md
 - thread-elastic-queue-docs-adr — (complete — 2026-09-16, with P4) Docs sync + ADR for the ElasticQueue file store / off-loo… — faded — 2026-Q3.md
 - ot-reverify-invariants-20260916 — Re-verify invariants (2026-09-16, complete — Eric walked the 17+1 set against live-tree — faded — 2026-Q3.md
+- ot-otel-dynatrace-certification — (feature) OpenTelemetry forwarder — Dynatrace certification. DONE 2026-09-16. Opt-in — swept (completed thread, past archive_window) — 2026-Q3.md
+- thread-kafka-header-casing-mismatch — (defect → FIXED 2026-09-16) Mixed-case Kafka headers were unreachable from Event Script — swept (completed thread, past archive_window) — 2026-Q3.md

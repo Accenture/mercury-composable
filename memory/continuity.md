@@ -37,89 +37,40 @@
   squash `10eb9e0b`, Rust PR #310 merge `89523616`, both 2026-09-22 02:36Z. **The v4.12.14 release cycle is CLOSED on both
   engines**; what remains is the Rust forwarder's field acceptance on the published crate (Rust thread
   `otel-forwarder-certification`) and this repo's overdue memory review. Origin 2026-09-21-233928.md.
-  Prior: v4.12.13 (2026-09-20 Pacific, 04:16Z on 09-21 — **the accumulated-improvements release**:
-  11 items over 4.12.12 from the 24 non-memory commits since the tag; release PR #435, squash `1feb3d73`, tag
-  `v4.12.13` → `1d2074f1` (one memory-only commit past the merge), pom verified at the tag; the GitHub release body
-  is the CHANGELOG entry). **FIELD-ACCEPTED 2026-09-21 (Eric): passed the field's CI pipeline and is published
-  for field use.** Added: `f:lookup` + the decision-table recipe (#430/#431), per-iteration `for_each`
-  suspend keys (#418 — a third-party state store must honour the optional `index`), the application log context's
-  automatic UTC `timestamp` + snake_case keys (#414 — **landed AFTER the 4.12.12 tag; a dashboard keyed on
-  `context.traceId` moves to `trace_id`, or keeps the old name on the left side of its own
-  `app-log-context.yaml`**), `hello.rpc` (#434). Changed: the cause-chain status rule (#427 — **read: a wrapped
-  carrier now reports the inner status; an in-function RPC timeout is 408**), Redis 408/503 classification on the
-  cache path (#429 — **read**), the ADR/RFC governance pair in the AI contract (#421/#424), the docs roll-up.
-  Fixed: the shared Redis connection resets after a command timeout (#433; MPUT timeout now 408), the cache
-  example's L1 guard (#426), BouncyCastle 1.86 in test scope (#420). No new runtime dependency. **Lockstep:** the
-  Rust port sits at 4.12.12 and already carries #418, #426, #429–#432 and mercury #298; it adopts 4.12.13 at its
-  next catch-up (Eric, 2026-09-21: "the Rust sync-up (W1 onwards) will catch up the Java release") —
-  [[conv-ports-adopt-java-release-number]]. Sweep surface: BUILD FILES ONLY, **43 files / 98 occurrences** —
-  re-derived, unchanged from 4.12.12. Readiness was checked from the repository (tag range, CI, dependency diff,
-  one full build at the new version: 35 modules, 1499 tests, 0 failures) — [[conv-changelog-from-tag-range]].
-  Prior: v4.12.12 (2026-09-17 — the produce-only unblock, **1 fix PR #409** via release
-  PR #410, squash `ebdd2e37`, tag `v4.12.12`, pom verified at the tag): **`kafka.health` works on a
-  produce-only leg** (`kafka.consumer.enabled=false`), where v4.12.11's classloader fix covered only
-  half the path — Kafka resolves class-valued config DEFAULTS in its config classes' STATIC
-  INITIALIZERS, reached while resolving the template, before any client is built
-  ([[kafka-config-class-static-init-loader]]). **ACTION TO READ, not to take:** no action to
-  configure, no wire/API/config-key change. An app on a produce-only leg whose `/health` answered a
-  raw **500** now answers correctly; consumer-enabled apps were unaffected by both the defect and the
-  fix. **Java only — no lockstep** (JVM classloading has no Rust analogue); the outstanding lockstep
-  was v4.12.9's distributed cache ([[ot-distributed-cache]] — Rust MERGED 2026-09-19, mercury #285; interop
-  CERTIFIED 2026-09-20, `docs/test-reports/distributed-cache-interop.md`; **the Rust port caught up at v4.12.12 on 2026-09-21** — mercury #296, tag `1ef183cb`). Sweep surface: BUILD FILES ONLY,
-  **43 files / 98 occurrences** — unchanged from v4.12.11 because the fix touched no poms, and
-  re-derived rather than carried forward (never trust the prior count). Prior: v4.12.11 (2026-09-16 21:03Z — the field-unblock release, **3 PRs #402–#404**
-  via release PR #405, squash `06750214`, tag `v4.12.11`, pom verified at the tag): **`kafka.health`
-  builds its probe client regardless of the thread context classloader** — the field bug it exists
-  for, where a pooled kernel thread's loader could not see `kafka-clients` while the same JVM's real
-  clients were fine ([[kafka-class-objects-over-names]]); **OpenTelemetry forwarding is now opt-in
-  and certified against Dynatrace** (`otel.forwarding`, default off, `@OptionalService`; legacy
-  `otel.trace.forwarder.enabled` RETIRED; exporter moved onto [[platform-onshutdown-lifecycle]] —
-  [[otel-optional-service-and-negative-control]]). **ACTION TO READ, not to take:** unlike v4.12.10
-  this is NOT a no-action release — an app whose Kafka template genuinely cannot build a client was
-  reporting `/health` green and now answers 503 `Kafka client configuration is unusable`. That is the
-  correction; nothing else changed in wire, API or config keys, and the retired OTel key cannot
-  surprise anyone into exporting (its users land on the new switch's default of off). **Java only —
-  no lockstep needed** (a JVM classloading concern has no Rust analogue); the outstanding lockstep is
-  still v4.12.9's distributed cache ([[ot-distributed-cache]]). Ports adopt this number on catch-up
-  ([[conv-ports-adopt-java-release-number]]). Sweep surface: BUILD FILES ONLY, **43 files / 98
-  occurrences** (97 → 98 when #404 added a forwarder dependency — re-derive the sweep after a rebase,
-  never trust the prior count). **CLOSED 2026-09-17:** Dynatrace support confirmed both
-  field-acceptance traces in the UI, `OTel scope version` **4.12.11** on each — so the released
-  artifacts, not a leftover build, submitted them. Scenario 6 updated (PR #412); the OTel
-  certification is closed end to end ([[ot-otel-acceptance-traces-pending]]).
-  **FIELD REGRESSION, now fixed:** the `kafka.health` half of this release was **incomplete** — a
-  produce-only leg (`kafka.consumer.enabled=false`) still answered `/health` with a raw 500, because
-  the loader override did not cover template resolution. **Corrected in v4.12.12** (above,
-  [[kafka-config-class-static-init-loader]]); read this release's Kafka claim as consumer-path only.
-  Prior: v4.12.10 (2026-09-16 04:01Z — the cleanup release, 2 PRs #399–#400, squash `92e94f2b`:
-  Berkeley DB elastic-queue store RETIRED (ADR-0024), `ServiceQueue` collapsed to ONE dispatch mode
-  ([[elastic-queue-file-store]]), separate-Redis-client guidance, and `BENCHMARK-LOG.md`; no upgrade
-  action). Prior: v4.12.9 (2026-09-16 01:29Z — the distributed-Redis release, 34 PRs #364–#397,
-  squash `9274cf92`: streaming return route, distributed cache, clustered Redis,
-  `Platform.onShutdown`, MsgPack `packMapOrList`/`unpackMapOrList`, three-layer cache example +
-  dev-mode template, the MiniGraph async-callback guard, three field Snyk fixes; action required
-  there: the `soa.redis.health` ROUTE rename and `minimalist-kafka` no longer transitive). The live
-  version source stays the root pom.xml.)
+  Prior: v4.12.13 (2026-09-21 04:16Z — the accumulated-improvements release, 11 items over 4.12.12; release PR #435,
+  squash `1feb3d73`, tag → `1d2074f1`; FIELD-ACCEPTED 2026-09-21. Read: `f:lookup` + the decision-table recipe
+  (#430/#431), per-iteration `for_each` suspend keys (#418 — a third-party store must honour `index`), the log context's
+  snake_case keys + automatic UTC `timestamp` (#414 — a dashboard keyed on `context.traceId` moves to `trace_id`), the
+  cause-chain status rule (#427 — a wrapped carrier reports the inner status; an in-function RPC timeout is 408), Redis
+  408/503 classification (#429), the shared Redis connection reset after a command timeout (#433). Sweep 43/98, build
+  1499 tests green. Origin 2026-09-21-012124.md; detail in the CHANGELOG entry.)
+  Prior: v4.12.12 (2026-09-17 — the produce-only unblock, fix PR #409 via #410, squash `ebdd2e37`: `kafka.health` on a
+  produce-only leg — Kafka resolves class defaults in its config classes' static initializers,
+  [[kafka-config-class-static-init-loader]]; no action to take; Java only.)
+  Prior: v4.12.11 (2026-09-16 21:03Z — the field-unblock release, #402–#404 via #405, squash `06750214`: `kafka.health`
+  builds its probe client regardless of the thread context classloader ([[kafka-class-objects-over-names]] — the
+  consumer-path half, produce-only fixed in 4.12.12); OpenTelemetry forwarding opt-in `otel.forwarding` and certified
+  against Dynatrace ([[otel-optional-service-and-negative-control]]; field acceptance confirmed 2026-09-17 at scope
+  version 4.12.11). READ: an unusable Kafka template now fails `/health` 503 instead of reporting green.)
+  Prior: v4.12.10 (2026-09-16 04:01Z — the cleanup release, #399–#400, squash `92e94f2b`: Berkeley DB elastic-queue
+  store RETIRED (ADR-0024), one dispatch mode; no upgrade action.) Prior: v4.12.9 (2026-09-16 01:29Z — the
+  distributed-Redis release, 34 PRs #364–#397, squash `9274cf92`: streaming return route, distributed cache, clustered
+  Redis, `Platform.onShutdown`, MsgPack `packMapOrList`/`unpackMapOrList`, the MiniGraph async-callback guard; ACTION
+  there: the `soa.redis.health` ROUTE rename and `minimalist-kafka` no longer transitive.) The live version source
+  stays the root pom.xml.)
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-21 | through 2026-09-21-012124.md (SIZE TRIGGER — 3 sessions since the 2026-09-19
-  review, cadence 10 not reached; `[continuity-bloat] 38 > 35`, genuine: the cache / decision-table / lookup /
-  connection-reset burst created six working facts in three sessions. **Archived 0** — nothing is past the
-  archive window (the oldest candidates sit at sslu 11; the nine closed threads at sslu 8–11 sweep from the
-  later September sessions on). Tier changes 25 (refresh-metadata): 12 facts/threads → `archive-candidate`
-  (the three Kafka-health facts, the two closed Blueprint gaps, `minigraph-guarded-async-completion`,
-  `log-forwarding-is-infrastructure`, `otel-optional-service-and-negative-control`, three closed threads),
-  6 reactivated to `active` by this week's references — the three Redis design facts held since 09-19 plus
-  `platform-onshutdown-lifecycle`, `conv-reentrantlock-not-synchronized`, the two cache facts of 09-20 — so
-  the "sweep them at the next review" note is void: [[soa-redis-cluster-support]],
-  [[cache-separate-from-soa]] and [[redis-connection-foundation]] were consulted for the Rust lockstep and
-  the connection-reset design and stay live. Reactivated from the archive 0; superseded 0; archive-verify
-  pass. The bloat advisory therefore persists by design until the closed threads age out; no fact was
-  archived ahead of the rule. Invariant re-verify not due (24 sessions since, cadence 40). Stalled threads:
-  none (`thread-doc-improvement-feedback-loop` sslu 7).
-  Prior: 2026-09-19 | 2026-09-19-020551.md (size trigger 36 > 35: archived `elastic-queue-file-store`, swept
-  3 completed threads → 32 eligible; held the three Redis design facts for the then-live cache lockstep).
-  Prior: 2026-09-18 | 2026-09-18-215436.md (on command — the FALSE `[continuity-bloat]` trigger from the
-  header's schema example, fixed locally and upstream in agent-memory v4.41.2; see
+- **last_review:** 2026-09-22 | through 2026-09-21-233928.md (SIZE TRIGGER — `[continuity-bloat]` 39 > 35 facts and
+  1013 > 1000 lines, 4 sessions since the 2026-09-21 review, cadence 10 not reached. Swept 2 completed threads past
+  `archive_window` (`ot-otel-dynatrace-certification` sslu 22, `thread-kafka-header-casing-mismatch` sslu 21 → 2026-Q3);
+  archived facts 0 (nothing else past the window — the seven remaining closed threads sit at sslu 8–19 and sweep from
+  later sessions on, so the facts advisory persists by design at 37 > 35). Tier changes 5 (refresh-metadata:
+  `kafka-group-protocol-auto-default` working → active, four uses-only bumps). **Condensed the `latest_release` Prior
+  chain** (five releases' narratives → pointers; history belongs in the CHANGELOG and the origin logs — the status rule)
+  to clear the line advisory. Reactivated 0; superseded 0; archive-verify pass. Invariant re-verify not due (28 sessions
+  since 2026-09-16, cadence 40). Stalled threads: none (`thread-doc-improvement-feedback-loop` sslu 11).
+  Prior: 2026-09-21 | 2026-09-21-012124.md (size trigger 38 > 35; archived 0; tier changes 25). Prior: 2026-09-19 |
+  2026-09-19-020551.md (size trigger 36 > 35: archived `elastic-queue-file-store`, swept 3 threads). Prior: 2026-09-18 |
+  2026-09-18-215436.md (on command — the false bloat trigger from the header's schema example,
   [[conv-schema-example-not-a-fact]]).
 - **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**:
   Track 1 *knowledge graph as application* (deterministic — rules, business logic, outcome; L3
@@ -732,7 +683,7 @@
   (`ee37b907`, PR #436 MERGED 2026-09-21, squash `7def2bb4`); Rust twin on mercury `feat/kafka-group-protocol-auto`. Relates [[kafka-mesh-opt-in]] (the module is
   the opt-in building block, not the mesh) and [[conv-ports-adopt-java-release-number]] (the Rust port carries
   the same default at its next catch-up).
-  <!-- id: kafka-group-protocol-auto-default | created: 2026-09-21 | last_used: 2026-09-21 | uses: 1 | tier: working | origin: 2026-09-21-184342 -->
+  <!-- id: kafka-group-protocol-auto-default | created: 2026-09-21 | last_used: 2026-09-21 | uses: 2 | tier: active | origin: 2026-09-21-184342 -->
 
 ## Conventions
 
@@ -767,7 +718,7 @@
   PR). Both errors came from writing out of recollection of my own work instead of out of the
   repository. Corrected in both places via PR #411. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-21 | uses: 4 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-21 | uses: 5 | tier: active | origin: 2026-09-17-183008 -->
 - **A thread id names the THING, never its kind — and an existing thread is never renamed (Eric,
   2026-09-18).** The tool writes every open thread to `memory/open-threads/thread-<id>.md`, so an id
   that already begins `ot-` or `thread-` stutters: `thread-ot-distributed-cache.md`, and worst,
@@ -824,7 +775,7 @@
   examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-21 | uses: 17 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-21 | uses: 18 | tier: active | origin: 2026-09-01-022524 -->
 - **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
   sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
   identifies **content**, not "this engine's Nth release". This covers the Rust port AND the python
@@ -837,7 +788,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-21 | uses: 11 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-21 | uses: 12 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -851,7 +802,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-21 | uses: 11 | tier: active | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-21 | uses: 12 | tier: active | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - **Declare a Memory Reference when a fact is CONSULTED to make a decision — not only when it is
