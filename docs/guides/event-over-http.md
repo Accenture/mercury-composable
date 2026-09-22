@@ -284,9 +284,11 @@ tasks:
     demo shown below.
 
 5. Look at both applications' logs: the trace context propagated across the HTTP hop
-   automatically. Both apps log telemetry under the **same trace id**, the
-   `hello.declarative` record carries `span_id` and `parent_span_id` chaining it onto the
-   caller's flow, and — with the default-on
+   automatically. Both apps log telemetry under the **same trace id**: the callee's edge
+   records the hop's own [round-trip span](observability.md#edge-span) (`http.request`,
+   `POST /api/event`) parented onto the caller's span, and the `hello.declarative` record
+   carries `span_id` and `parent_span_id` chaining it onto that edge and so onto the
+   caller's flow — and, with the default-on
    [application log context](observability.md#log-context) — every structured log line on
    both sides is stamped with that trace id.
 

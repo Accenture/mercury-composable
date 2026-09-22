@@ -92,6 +92,16 @@ public class TokenProducer implements TypedLambdaFunction<EventEnvelope, Void> {
 `EventStreamWriter` (import `org.platformlambda.core.system.EventStreamWriter`) is thin sugar
 over plain event sends:
 
+### Tracing a stream {#tracing}
+
+A stream is traced at its head and its tail, never per token. When the writer is constructed on the worker thread of
+a traced function (the normal case - inside `handleEvent`), the first segment and the terminal (`eof` or `exception`)
+carry the function's trace and span, so the reply lane's records for them parent onto the function; the data segments
+in between carry no trace, because one span per token would flood a tracing backend. The lane annotates the terminal's
+record with `frames`, the number of data segments it rendered, and the edge's own
+[round-trip span](observability.md#edge-span) closes when the terminal is rendered - so a streamed response's real
+duration is visible in the trace without a span per token.
+
 | Method | Meaning |
 | ------ | ------- |
 | `first(status, contentType)` | optional head control, carried by the first outgoing event |

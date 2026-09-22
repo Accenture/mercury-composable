@@ -22,6 +22,7 @@ import io.vertx.core.http.HttpServerRequest;
 import org.platformlambda.core.models.EventEnvelope;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 @SuppressWarnings("java:S1104")
 public class AsyncContextHolder {
@@ -44,11 +45,65 @@ public class AsyncContextHolder {
     // stream events render as the envelope-mode wire dialect in the requester's format
     public volatile EventEnvelope.Format envelopeStreamFormat;
     private final AtomicBoolean laneReleased = new AtomicBoolean(false);
+    // request receipt - the start of the edge's round-trip span (wall clock for the
+    // record's start time, monotonic clock for its duration)
+    public final long startTime = System.currentTimeMillis();
+    private final long startNanos = System.nanoTime();
+    // the edge's trace context when the endpoint is traced: the round-trip span minted at
+    // receipt (the first function's parent) and the inbound traceparent's span as its parent
+    public volatile String traceId;
+    public volatile String tracePath;
+    public volatile String spanId;
+    public volatile String parentSpanId;
+    // a failure surfaced while producing the response (an edge error, the housekeeper's
+    // timeout, an in-band stream failure) - reported on the round-trip record
+    public volatile int errorStatus = 0;
+    public volatile String error;
+    // data segments the reply lane rendered for a streaming response - the lane annotates
+    // its terminal record with this count ("frames")
+    public final AtomicLong dataFrames = new AtomicLong(0);
 
     public AsyncContextHolder(HttpServerRequest request) {
         this.request = request;
         this.timeout = 30 * 1000L;
         this.touch();
+    }
+
+    /**
+     * Bind the edge's trace context (a traced endpoint) to this request
+     *
+     * @param traceId of the request
+     * @param tracePath METHOD /path
+     * @param spanId the round-trip span minted at receipt
+     * @param parentSpanId the inbound traceparent's span, if any
+     */
+    public void setTrace(String traceId, String tracePath, String spanId, String parentSpanId) {
+        this.traceId = traceId;
+        this.tracePath = tracePath;
+        this.spanId = spanId;
+        this.parentSpanId = parentSpanId;
+    }
+
+    /**
+     * Record a failure for the round-trip record (the first one wins)
+     *
+     * @param status HTTP-style status
+     * @param message error text
+     */
+    public void markError(int status, String message) {
+        if (errorStatus == 0) {
+            this.errorStatus = status;
+            this.error = message;
+        }
+    }
+
+    /**
+     * Elapsed time since receipt in milliseconds, to 3 decimal places
+     *
+     * @return elapsed ms
+     */
+    public double elapsedMs() {
+        return Math.round((System.nanoTime() - startNanos) / 1_000.0) / 1_000.0;
     }
 
     public AsyncContextHolder setTimeout(long timeout) {

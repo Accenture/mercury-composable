@@ -42,8 +42,10 @@ Tracing is opt-in per entry point:
 Two controls tune what is recorded:
 
 - `@ZeroTracing` on a function suppresses tracing for that function (used by system services so they never trace themselves).
-- `skip.rpc.tracing` (in `application.properties`) lists route names excluded from trace recording; the default is
-  `async.http.request`.
+- `skip.rpc.tracing` (in `application.properties`) lists route names whose RPC calls produce no caller-side
+  `round_trip` record; the default is `async.http.request`, so an HTTP call made from a function folds into that
+  function's span. A callback-mode execution of a listed route - the Event-over-HTTP stream relay's client leg -
+  still records its own span, parented onto the sender.
 
 ### What a trace records {#metrics}
 
@@ -62,6 +64,33 @@ annotations={ <your key>=<value>, ... }
 business context to the span with `PostOffice.annotateTrace(key, value)`. To attach context to **application logs**
 instead, see [Application log context](#log-context).
 
+### The edge's round-trip span {#edge-span}
+
+A traced endpoint records one more span than its functions: the **round trip** itself. REST automation mints a span
+id when the request arrives, makes it the first function's parent, and emits its record when the response completes -
+the buffered response, the end of a streamed response, an edge error or the edge timeout. The record's `service` is
+`http.request`, the same marker the first function carries as `from`, so the vocabulary stays one word: *the request
+came from the edge; the edge's own span is the root*.
+
+- `path` is `METHOD /path`, `start` is the receipt time and `exec_time` is the whole round trip - for a streamed
+  response, until the terminal is rendered.
+- `parent_span_id` is the inbound `traceparent` span when the caller sent one; otherwise the record is the trace's root.
+- `status` is the HTTP status sent, except that a stream failing in-band after its head was committed reports the
+  failure's own status and message.
+
+The [OpenTelemetry forwarder](https://github.com/Accenture/mercury-composable/tree/main/extensions/opentelemetry-forwarder)
+maps this record, and only this record, to a `SERVER` span - which is what makes a service's response time in a tracing backend the real one, not the
+first function's own execution time. Every function execution, the first one included, is an `INTERNAL` span under it.
+
+**Streamed responses are traced at their head and their tail, never per token.** `EventStreamWriter` stamps the
+producer's trace and span on the first segment (it carries the head control) and on the terminal (`eof` or
+`exception`); the data segments in between carry no trace, because one span per token would flood a tracing backend.
+The reply lane that renders the stream therefore records two spans, both parented onto the producer, and annotates the
+terminal's record with `frames` - the number of data segments it rendered. The Event-over-HTTP stream relay follows the
+same rule on the consuming side: decoded envelope frames keep the remote producer's span, synthesized control frames
+parent onto the relay's client leg (`async.http.request`, itself parented onto the sender), and raw token frames are
+forwarded untraced. See [HTTP streaming](http-streaming.md#tracing).
+
 ### Spans across the three layers {#layers}
 
 The span tree mirrors the [three paradigm layers](architecture.md), and tracing is **virtual-thread-safe** — the
@@ -75,6 +104,7 @@ share the correct parent.
 
 | Layer | What becomes a span | Lineage |
 |:------|:--------------------|:--------|
+| **HTTP edge — REST automation** | the request's round trip (`service: http.request`) | the inbound `traceparent` span is its parent; the first function parents onto it |
 | **Layer 1 — Platform Core** | each function execution | the caller's span becomes the child's `parent_span_id` |
 | **Layer 2 — Event Script** | each task, **plus one synthetic `task.executor` flow-summary span** (annotated with the flow id) | tasks chain exactly like Layer 1; a sub-flow chains to the parent task that dispatched it |
 | **Layer 3 — Knowledge Graph** | each node dispatch through `graph.executor` | the graph traversal threads the parent span through node execution |
@@ -89,7 +119,7 @@ OpenTelemetry uses: a **32-hex trace ID** and **16-hex span ID**. Across an HTTP
 standard `traceparent` header:
 
 - outbound — the HTTP client injects `traceparent` carrying the current trace + span, alongside `X-Trace-Id`;
-- inbound — the HTTP layer extracts `traceparent`, continues the upstream trace, and adopts the caller's span as the parent. `traceparent` takes precedence over `X-Trace-Id` when both are present.
+- inbound — the HTTP layer extracts `traceparent`, continues the upstream trace, and adopts the caller's span as the parent of the edge's [round-trip span](#edge-span). `traceparent` takes precedence over `X-Trace-Id` when both are present.
 
 The `X-Trace-Id` header carries the trace ID for callers not yet on W3C Trace Context. The framework does not
 echo the trace ID back to the HTTP client. (The correlation-id — a separate concern — is documented in

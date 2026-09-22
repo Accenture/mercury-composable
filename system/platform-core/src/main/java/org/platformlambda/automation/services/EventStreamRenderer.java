@@ -223,6 +223,9 @@ public class EventStreamRenderer {
                 writeOrQueue(requestId, holder, frame);
             }
         } else {
+            if (EXCEPTION.equals(signal)) {
+                holder.markError(event.getStatus() >= 400 ? event.getStatus() : 500, errorMessage(event));
+            }
             writeOrQueue(requestId, holder, envelopeFrame(holder, event));
             finish(requestId, holder, signal);
         }
@@ -536,8 +539,9 @@ public class EventStreamRenderer {
             return;
         }
         // the head is already committed - fail in-band (SSE) or truncate (chunked)
+        int status = event.getStatus() >= 400 ? event.getStatus() : 500;
+        holder.markError(status, errorMessage(event));
         if (state.getMode() == EventStreamState.Mode.SSE) {
-            int status = event.getStatus() >= 400 ? event.getStatus() : 500;
             var error = Map.of(STATUS, status, MESSAGE, errorMessage(event), TYPE, ERROR);
             writeOrQueue(requestId, holder, sseFrame(ERROR, toText(error)));
         }
@@ -551,6 +555,7 @@ public class EventStreamRenderer {
             if (!state.offer(buffer, PENDING_CAP_BYTES)) {
                 log.error("Closing event stream for {} - client too slow ({} bytes pending)",
                         requestId, state.getPendingBytes());
+                holder.markError(500, "Client too slow - stream closed with " + state.getPendingBytes() + " bytes pending");
                 hardClose(requestId, holder);
                 return;
             }

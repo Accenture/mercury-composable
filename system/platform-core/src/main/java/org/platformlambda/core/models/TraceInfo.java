@@ -48,9 +48,18 @@ public class TraceInfo {
         } else {
             this.id = id;
             this.path = path;
-            this.spanId = String.format("%016x", UUID.randomUUID().getLeastSignificantBits());
+            this.spanId = newSpanId();
             this.parentSpanId = parentSpanId;
         }
+    }
+
+    /**
+     * Mint a W3C-format 16-hex span id (the same generator every traced execution uses)
+     *
+     * @return a new span id
+     */
+    public static String newSpanId() {
+        return String.format("%016x", UUID.randomUUID().getLeastSignificantBits());
     }
 
     public void annotate(String key, Object value) {

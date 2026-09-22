@@ -22,7 +22,7 @@ import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.system.EventEmitter;
+import org.platformlambda.core.system.PostOffice;
 
 import java.util.Map;
 
@@ -41,7 +41,9 @@ public class MockRemoteRelayService implements TypedLambdaFunction<EventEnvelope
     public Void handleEvent(Map<String, String> headers, EventEnvelope request, int instance) {
         AsyncHttpRequest http = new AsyncHttpRequest(request.getRawBody());
         String mode = http.getQueryParameter("mode");
-        EventEmitter.getInstance().send(new EventEnvelope().setTo("hello.stream.remote")
+        // a trace-aware PostOffice stamps this function's span onto the forward, exactly
+        // like a real relay - the remote target and the client leg parent onto it
+        new PostOffice(headers, instance).send(new EventEnvelope().setTo("hello.stream.remote")
                 .setReplyTo(request.getReplyTo())
                 .setCorrelationId(request.getCorrelationId())
                 .setHeader("accept", "text/event-stream")

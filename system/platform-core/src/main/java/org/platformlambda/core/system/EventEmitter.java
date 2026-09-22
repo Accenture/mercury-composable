@@ -95,6 +95,10 @@ public class EventEmitter {
     private static final ConcurrentMap<String, String> eventHttpTargets = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, Map<String, String>> eventHttpHeaders = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, TraceInfo> traces = new ConcurrentHashMap<>();
+    // the same live TraceInfo keyed by worker thread - a helper constructed ON the worker
+    // thread (e.g. EventStreamWriter) reads its function's trace without route/instance;
+    // torn down with the ref-keyed entry when the worker returns (see stopTracing)
+    private static final ConcurrentMap<Long, TraceInfo> currentTraces = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, ConcurrentMap<String, String>> cloudRoutes = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, Long> cloudOrigins = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, Boolean> journaledRoutes = new ConcurrentHashMap<>();
@@ -383,11 +387,27 @@ public class EventEmitter {
      * @return ref for the thread or coroutine
      */
     public String startTracing(String route, String traceId, String tracePath, String parentSpanId, int instance) {
-        String ref = Thread.currentThread().threadId() + "/" + instance + "/" + route;
+        long threadId = Thread.currentThread().threadId();
+        String ref = threadId + "/" + instance + "/" + route;
         if (route != null && route.contains(".")) {
-            traces.put(ref, new TraceInfo(route, traceId, tracePath, parentSpanId));
+            TraceInfo trace = new TraceInfo(route, traceId, tracePath, parentSpanId);
+            traces.put(ref, trace);
+            currentTraces.put(threadId, trace);
         }
         return ref;
+    }
+
+    /**
+     * The trace of the function executing on the CURRENT worker thread, or null outside a
+     * traced execution (or on another thread - a Mono/Flux completion, a spawned task).
+     * <p>
+     * For a function, {@code PostOffice.getTrace()} is the API; this accessor serves engine
+     * helpers that a function constructs on its worker thread without passing its PostOffice.
+     *
+     * @return the live trace info, or null
+     */
+    public TraceInfo getCurrentTrace() {
+        return currentTraces.get(Thread.currentThread().threadId());
     }
 
     /**
@@ -400,6 +420,7 @@ public class EventEmitter {
             TraceInfo trace = traces.get(ref);
             if (trace != null) {
                 traces.remove(ref);
+                currentTraces.remove(Thread.currentThread().threadId(), trace);
                 return trace;
             }
         }
@@ -891,6 +912,10 @@ public class EventEmitter {
         if (event.getTraceId() != null) {
             request.setTraceId(event.getTraceId());
             request.setTracePath(event.getTracePath());
+            // the client leg is a traced callback-mode execution: it parents onto the
+            // sender's span - the same span the traceparent header carries to the peer -
+            // so the outbound call sits under its caller instead of floating in the trace
+            request.setSpanId(event.getSpanId());
         }
         send(request);
     }

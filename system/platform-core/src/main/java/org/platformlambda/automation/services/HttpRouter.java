@@ -38,6 +38,8 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlParser;
+import org.platformlambda.core.services.Telemetry;
+import org.platformlambda.core.models.TraceInfo;
 import org.platformlambda.core.system.*;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.CryptoApi;
@@ -212,6 +214,20 @@ public class HttpRouter {
     }
 
     public static void closeContext(String requestId) {
+        closeContext(requestId, 0, null);
+    }
+
+    /**
+     * Close a request context: release its reply lane and, for a traced endpoint, emit the
+     * edge's round-trip trace record - the span that covers the whole HTTP request, from
+     * receipt to the completed response.
+     *
+     * @param requestId the context id
+     * @param status the response status when the caller knows it before writing the response
+     *               (an edge error or timeout), or 0 to read it from the response
+     * @param error the error message for a failed request, if any
+     */
+    public static void closeContext(String requestId, int status, String error) {
         AsyncContextHolder holder = contexts.remove(requestId);
         if (holder != null) {
             // the atomic claim in the holder guarantees the lane is released exactly once,
@@ -220,6 +236,59 @@ public class HttpRouter {
             if (lane != null) {
                 EventStreamRenderer.releaseLane(lane);
             }
+            if (status >= 400) {
+                holder.markError(status, error);
+            }
+            recordRoundTrip(holder, status);
+        }
+    }
+
+    /**
+     * Emit the round-trip trace record of a traced request. Its service name is the edge
+     * itself - "http.request", the same marker the first function carries as "from" - so a
+     * trace's root span covers the whole request rather than the first function's own
+     * execution, and OpenTelemetry forwarders map this record (and only this record) to a
+     * SERVER span. An in-band stream failure keeps the committed HTTP status on the wire but
+     * reports its own status here.
+     *
+     * @param holder the closed request context
+     * @param status the caller-supplied status, or 0
+     */
+    private static void recordRoundTrip(AsyncContextHolder holder, int status) {
+        if (holder.traceId == null || holder.spanId == null) {
+            return;
+        }
+        EventEmitter po = EventEmitter.getInstance();
+        if (!po.exists(Telemetry.DISTRIBUTED_TRACING)) {
+            return;
+        }
+        int finalStatus = holder.errorStatus > 0 ? holder.errorStatus :
+                            (status > 0 ? status : holder.request.response().getStatusCode());
+        Map<String, Object> metrics = new HashMap<>();
+        metrics.put("origin", Platform.getInstance().getOrigin());
+        metrics.put("id", holder.traceId);
+        metrics.put("service", HTTP_REQUEST);
+        metrics.put("path", holder.tracePath);
+        metrics.put("start", util.date2str(new Date(holder.startTime)));
+        metrics.put("exec_time", holder.elapsedMs());
+        metrics.put("status", finalStatus);
+        if (finalStatus >= 400) {
+            metrics.put("success", false);
+            metrics.put("exception", holder.error == null ? "status=" + finalStatus : holder.error);
+        } else {
+            metrics.put("success", true);
+        }
+        metrics.put("span_id", holder.spanId);
+        if (holder.parentSpanId != null) {
+            metrics.put("parent_span_id", holder.parentSpanId);
+        }
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("trace", metrics);
+        payload.put("annotations", new HashMap<>());
+        try {
+            po.send(new EventEnvelope().setTo(Telemetry.DISTRIBUTED_TRACING).setBody(payload));
+        } catch (IllegalArgumentException e) {
+            log.error("Unable to send to {}", Telemetry.DISTRIBUTED_TRACING, e);
         }
     }
 
@@ -584,7 +653,15 @@ public class HttpRouter {
         holder.setCorrelation(cidHeaderName, trace.businessCorrelationId());
         final HttpRequestEvent requestEvent = new HttpRequestEvent(requestId, route, authService,
                                                                     trace.traceId(), trace.tracePath());
-        requestEvent.setParentSpanId(trace.parentSpanId());
+        // the edge's round-trip span: minted at receipt, closed when the response completes
+        // (closeContext), with the inbound traceparent's span as ITS parent - so the first
+        // function parents onto the edge and the whole request is one span tree
+        String edgeSpan = null;
+        if (trace.traceId() != null) {
+            edgeSpan = TraceInfo.newSpanId();
+            holder.setTrace(trace.traceId(), trace.tracePath(), edgeSpan, trace.parentSpanId());
+        }
+        requestEvent.setParentSpanId(edgeSpan);
         requestEvent.setBusinessCorrelationId(trace.businessCorrelationId());
         // load HTTP body
         if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {

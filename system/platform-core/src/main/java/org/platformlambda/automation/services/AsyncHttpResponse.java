@@ -30,6 +30,8 @@ import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlWriter;
 import org.platformlambda.core.system.FluxConsumer;
+import org.platformlambda.core.system.EventStreamWriter;
+import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
 
 import java.util.ArrayList;
@@ -63,6 +65,7 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
     private static final String HTML_START = "<html><body><pre>\n";
     private static final String HTML_END = "\n</pre></body></html>";
     private static final String RESULT = "result";
+    private static final String FRAMES = "frames";
     private static final String ACCEPT_ANY = "*/*";
 
     private final ConcurrentMap<String, AsyncContextHolder> contexts;
@@ -84,6 +87,9 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
         holder.touch();
         // multi-shot streaming response? (x-event-stream: data | eof | exception)
         String streamSignal = EventStreamRenderer.getSignal(event);
+        if (streamSignal != null && !HEAD.equals(holder.method)) {
+            trackStreamFrames(headers, instance, holder, streamSignal);
+        }
         if (holder.envelopeStreamFormat != null && !HEAD.equals(holder.method)) {
             // Event-over-HTTP streaming relay context (/api/event with an SSE-accepting
             // caller): stream events render as the envelope-mode wire dialect, while a
@@ -126,6 +132,25 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
      * @param format the requester's envelope serialization format
      * @return the wire-level envelope for the classic rendering path
      */
+    /**
+     * A stream is traced at its head and its tail, never per token: the producer stamps the
+     * trace on the first segment and on the terminal, so this lane's data-segment executions
+     * emit no record. The terminal's record carries how many data segments the stream rendered.
+     *
+     * @param headers the lane's input headers (PostOffice bootstrap)
+     * @param instance the lane instance
+     * @param holder the request context
+     * @param signal data, eof or exception
+     */
+    private void trackStreamFrames(Map<String, String> headers, int instance,
+                                   AsyncContextHolder holder, String signal) {
+        if (EventStreamWriter.DATA.equals(signal)) {
+            holder.dataFrames.incrementAndGet();
+        } else {
+            new PostOffice(headers, instance).annotateTrace(FRAMES, String.valueOf(holder.dataFrames.get()));
+        }
+    }
+
     private EventEnvelope packedSingleShot(EventEnvelope result, EventEnvelope.Format format) {
         return new EventEnvelope()
                 .setHeader(LOWER_CONTENT_TYPE, OCTET_STREAM)

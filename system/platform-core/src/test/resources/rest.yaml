@@ -49,6 +49,7 @@ rest:
     url: "/api/hello/remote"
     timeout: 15s
     stream: true
+    tracing: true
   - service: ["hello.mock"]
     methods: ['GET', 'PUT', 'POST', 'HEAD', 'PATCH', 'DELETE']
     url: "/api/hello/world"

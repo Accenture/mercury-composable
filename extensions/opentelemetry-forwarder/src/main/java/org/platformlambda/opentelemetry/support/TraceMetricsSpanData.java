@@ -104,7 +104,10 @@ public final class TraceMetricsSpanData implements SpanData {
         String service = str(metrics.get(SERVICE));
         String path = str(metrics.get(PATH));
         this.name = spanName(service, path);
-        this.kind = HTTP_REQUEST.equals(str(metrics.get(FROM))) ? SpanKind.SERVER : SpanKind.INTERNAL;
+        // the edge's round-trip record (service "http.request", emitted by REST automation when
+        // the response completes) is the SERVER span; every function execution - including the
+        // first one, whose "from" is http.request - is an INTERNAL hop under it
+        this.kind = HTTP_REQUEST.equals(service) ? SpanKind.SERVER : SpanKind.INTERNAL;
         this.attributes = buildAttributes(metrics, annotations, service, path, execMs);
         this.resource = resource;
         this.scope = scope;

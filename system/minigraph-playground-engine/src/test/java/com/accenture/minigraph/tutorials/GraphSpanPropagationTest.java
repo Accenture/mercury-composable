@@ -124,13 +124,20 @@ class GraphSpanPropagationTest {
     void downstreamHttpServiceChainsToCallerSpanViaTraceparent() throws TimeoutException {
         // tutorial-3's "fetcher" makes an outbound HTTP call to the mock MDM endpoint.
         // The W3C "traceparent" header must carry the fetcher's span across the HTTP boundary
-        // so the downstream server span chains back to it (platform-core inject + extract).
+        // (platform-core inject + extract): the downstream edge records its own round-trip span
+        // (service http.request) parented onto the fetcher, and the downstream service chains
+        // onto that edge span - one connected tree across the hop.
         List<Span> spans = runGraph(3, Map.of("person_id", 100));
         assertSpanInvariants(spans);
         Span fetcher = findFirst(spans, "graph.api.fetcher", GRAPH_EXECUTOR);
+        Span downstreamEdge = spans.stream()
+                .filter(s -> "http.request".equals(s.service) && fetcher.spanId.equals(s.parentSpanId))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError(
+                        "the downstream edge's round-trip span must chain to the fetcher via W3C traceparent"));
         Span downstream = findFirst(spans, "mock.mdm.profile", null);
-        assertEquals(fetcher.spanId, downstream.parentSpanId,
-                "the downstream HTTP service span must chain to the fetcher via W3C traceparent");
+        assertEquals(downstreamEdge.spanId, downstream.parentSpanId,
+                "the downstream HTTP service span must chain to its edge's round-trip span");
     }
 
     @Test

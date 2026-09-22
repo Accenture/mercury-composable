@@ -38,6 +38,7 @@ import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.models.TraceInfo;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlParser;
@@ -197,6 +198,10 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         validateUrl(request);
         String uri = request.getFinalizedUrl();
         po.annotateTrace(DESTINATION, request.getTargetHost() + getRawUrl(uri));
+        // this execution's own span (captured on the worker thread - the relay outlives it):
+        // the parent of the stream segments this client synthesizes on the caller's behalf
+        TraceInfo trace = po.getTrace();
+        String mySpanId = trace == null ? null : trace.spanId;
         if (log.isDebugEnabled()) {
             logHttpRequest(request, uri);
         }
@@ -232,12 +237,12 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {
             final var streams = request.getStreamRoutes();
             if (streams.isEmpty()) {
-                sendHttpBody(sender, input, request);
+                sendHttpBody(sender, input, request, mySpanId);
             } else {
-                uploadFiles(sender, input, request);
+                uploadFiles(sender, input, request, mySpanId);
             }
         } else {
-            var httpResponse = new HttpResponseHandler(input, request, sender);
+            var httpResponse = new HttpResponseHandler(input, request, sender, mySpanId);
             httpResponse.process();
         }
     }
@@ -246,7 +251,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         return uri.contains("?") ? uri.substring(0, uri.lastIndexOf("?")) : uri;
     }
 
-    private void uploadFiles(HttpClient.RequestSender sender, EventEnvelope input, AsyncHttpRequest request) {
+    private void uploadFiles(HttpClient.RequestSender sender, EventEnvelope input, AsyncHttpRequest request,
+                             String mySpanId) {
         String contentType = request.getHeader(CONTENT_TYPE);
         String method = request.getMethod();
         int timeout = request.getTimeoutSeconds();
@@ -271,7 +277,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                     } else {
                         receiver = sender.send(ByteBufFlux.fromPath(files.getFirst().toPath()));
                     }
-                    var httpResponse = new HttpResponseHandler(input, request, receiver);
+                    var httpResponse = new HttpResponseHandler(input, request, receiver, mySpanId);
                     httpResponse.process();
                 })
                 .onFailure(e -> sendErrorResponse(input, e));
@@ -286,7 +292,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         }
     }
 
-    private void sendHttpBody(HttpClient.RequestSender sender, EventEnvelope input, AsyncHttpRequest request) {
+    private void sendHttpBody(HttpClient.RequestSender sender, EventEnvelope input, AsyncHttpRequest request,
+                              String mySpanId) {
         Object reqBody = request.getBody() == null? new byte[0] : request.getBody();
         final byte[] bytes;
         Utility util = Utility.getInstance();
@@ -303,7 +310,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             default -> throw new IllegalArgumentException("Invalid HTTP request body");
         }
         var receiver = sender.send(ByteBufFlux.fromInbound((Mono.just(bytes))));
-        var httpResponse = new HttpResponseHandler(input, request, receiver);
+        var httpResponse = new HttpResponseHandler(input, request, receiver, mySpanId);
         httpResponse.process();
     }
 
@@ -577,11 +584,15 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         private final int timeoutSeconds;
         // the Event-over-HTTP relay path consumes the peer's envelope-mode wire dialect
         private final boolean envelopeRelay;
+        // the client execution's own span: the parent of the segments it synthesizes (null when untraced)
+        private final String mySpanId;
 
-        public HttpResponseHandler(EventEnvelope input, AsyncHttpRequest request, HttpClient.ResponseReceiver<?> http) {
+        public HttpResponseHandler(EventEnvelope input, AsyncHttpRequest request, HttpClient.ResponseReceiver<?> http,
+                                   String mySpanId) {
             this.input = input;
             this.request = request;
             this.http = http;
+            this.mySpanId = mySpanId;
             int timeout = request.getTimeoutSeconds();
             this.timeoutSeconds = timeout > 0? timeout : DEFAULT_TTL_SECONDS;
             this.envelopeRelay = STREAM_RELAY.equals(input.getHeader(X_EVENT_API));
@@ -754,6 +765,21 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         }
 
         /**
+         * Forward a raw data segment WITHOUT a trace: a stream is traced at its head and
+         * its tail (the decoded envelope frames keep the producer's span), never per token -
+         * one span per token would flood a tracing backend with unparented lane records.
+         *
+         * @param segment the synthesized data envelope
+         */
+        private void deliverUntraced(EventEnvelope segment) {
+            segment.setTo(input.getReplyTo())
+                    .setFrom(input.getFrom() == null? ASYNC_HTTP_REQUEST : input.getFrom())
+                    .setReplyTo(null)
+                    .setCorrelationId(input.getCorrelationId());
+            EventEmitter.getInstance().send(segment);
+        }
+
+        /**
          * Progressive SSE consumption (raw mode): an incremental frame parser feeding
          * x-event-stream envelopes to the caller's reply_to. The request TTL is the
          * per-read idle allowance (any upstream bytes - keep-alive comments included -
@@ -870,13 +896,15 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 if (name != null && !name.isEmpty()) {
                     segment.setHeader(EventStreamWriter.X_EVENT_NAME, name);
                 }
-                if (!headSent) {
+                boolean head = !headSent;
+                if (head) {
                     headSent = true;
                     // head control rides the first envelope: upstream status + SSE type
                     segment.setStatus(response.getStatus());
                     segment.setHeader(CONTENT_TYPE, TEXT_EVENT_STREAM);
                 }
-                sendSegment(segment);
+                // head and tail are traced, data segments are not
+                sendSegment(segment, head);
             }
 
             /**
@@ -942,7 +970,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 if (name != null && !name.isEmpty()) {
                     segment.setHeader(EventStreamWriter.X_EVENT_NAME, name);
                 }
-                deliverToCallback(segment);
+                deliverUntraced(segment);
             }
 
             public void onComplete() {
@@ -966,7 +994,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                         headSent = true;
                         eof.setStatus(response.getStatus()).setHeader(CONTENT_TYPE, TEXT_EVENT_STREAM);
                     }
-                    sendSegment(eof);
+                    sendSegment(eof, true);
                 } finally {
                     lock.unlock();
                 }
@@ -1000,9 +1028,10 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                         error.setHeader(CONTENT_TYPE, TEXT_EVENT_STREAM);
                     }
                     if (envelopeRelay) {
-                        deliverToCallback(error);
+                        // a synthesized terminal parents onto this client leg's own span
+                        deliverToCallback(error.setSpanId(mySpanId));
                     } else {
-                        sendSegment(error);
+                        sendSegment(error, true);
                     }
                 } finally {
                     lock.unlock();
@@ -1016,10 +1045,19 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 }
             }
 
-            private void sendSegment(EventEnvelope segment) {
+            /**
+             * Forward one raw-mode segment to the caller's reply route
+             *
+             * @param segment the synthesized envelope
+             * @param traced true for the head and the tail (they parent onto this client
+             *               leg's span), false for a data segment
+             */
+            private void sendSegment(EventEnvelope segment, boolean traced) {
                 segment.setTo(input.getReplyTo()).setFrom(ASYNC_HTTP_REQUEST)
-                        .setCorrelationId(input.getCorrelationId())
-                        .setTrace(input.getTraceId(), input.getTracePath());
+                        .setCorrelationId(input.getCorrelationId());
+                if (traced) {
+                    segment.setTrace(input.getTraceId(), input.getTracePath()).setSpanId(mySpanId);
+                }
                 EventEmitter.getInstance().send(segment);
             }
         }
