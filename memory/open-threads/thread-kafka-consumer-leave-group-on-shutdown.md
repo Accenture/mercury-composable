@@ -14,6 +14,13 @@
   on SIGTERM) and a Kubernetes-style SIGTERM test. **Also from the round (demo-level):** the Java
   `sync-over-async-demo`'s `SyncErrorHandler` calls `SyncRuntime.coordinator().abort(cid)` without a null check —
   a request arriving before `Return-route subscriber listening` (the REST port opens ~100 ms earlier) answers
-  500 from an NPE instead of the flow's own error; a null check or readiness gating fixes it. Eric decides both.
+  500 from an NPE instead of the flow's own error; a null check or readiness gating fixes it. **Eric ruled 2026-09-22:
+  implement both — FIX ON `fix/kafka-consumer-leave-group-on-shutdown` `7e7792e9` (PR pending):** `KafkaRuntime.shutdown()`
+  (idempotent, ReentrantLock) closes the adapter's consumers then the producer, registered by `KafkaFlowAutoStart` on
+  `Platform.onShutdown`; the twin for `SecondaryKafkaRuntime`/`SecondaryKafkaAutoStart`; `KafkaFlowConsumer.close()` logs
+  the leave; `KafkaShutdownTest` pins the contract on an embedded broker; the demo's `SyncErrorHandler` null-guarded; guide
+  §"Shutdown: leaving the group" + claim `kafka-consumer-leaves-group-on-shutdown`. **Live verdict on a fresh
+  kafka-standalone broker: 3 members left, 0 fenced, within 3 s of SIGTERM** (before the fix: fenced ~40 s later). Closes
+  when the PR merges.
   origin: 2026-09-21-233928.
   <!-- id: kafka-consumer-leave-group-on-shutdown | created: 2026-09-22 | last_used: 2026-09-22 | uses: 1 | tier: working | origin: 2026-09-21-233928 -->
