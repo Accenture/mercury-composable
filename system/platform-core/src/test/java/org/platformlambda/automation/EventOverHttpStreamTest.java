@@ -32,6 +32,7 @@ import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.EventStreamWriter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
+import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
 import java.io.IOException;
@@ -44,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -437,6 +439,117 @@ class EventOverHttpStreamTest extends TestBase {
         }
         assertTrue(elapsed >= 150, "progressive relay expected, elapsed " + elapsed + " ms");
         Utility.getInstance().sleep(100);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void edgeRelaySpansAreConnected() throws IOException, InterruptedException {
+        // One connected span tree for a streamed relay (the Dynatrace finding of 2026-09-22):
+        //   caller's traceparent span
+        //   └── http.request (GET /api/hello/remote)  the edge's round-trip span, the root
+        //       └── hello.remote.relay                 the first function parents onto the edge
+        //           ├── async.http.request             the client leg parents onto the relay
+        //           └── http.request (POST /api/event) the peer edge's round trip, parented on the relay
+        //               └── event.api.service
+        //                   └── hello.stream.remote     the producer
+        //                       ├── reply lane: head    (traced, parented on the producer)
+        //                       └── reply lane: eof     (traced, annotated frames=2)
+        // Data frames are never traced - a span per token would flood the backend - and
+        // no lane record is left without a parent.
+        String traceForwarder = "distributed.trace.forwarder";
+        String traceId = Utility.getInstance().getUuid();
+        String upstreamSpan = "00f067aa0ba902b7";
+        Platform platform = Platform.getInstance();
+        List<MultiLevelMap> records = new CopyOnWriteArrayList<>();
+        LambdaFunction collector = (headers, input, instance) -> {
+            if (input instanceof Map<?, ?> m) {
+                MultiLevelMap record = new MultiLevelMap((Map<String, Object>) m);
+                if (traceId.equals(record.getElement("trace.id"))) {
+                    records.add(record);
+                }
+            }
+            return null;
+        };
+        platform.registerPrivate(traceForwarder, collector, 1);
+        try {
+            HttpRequest request = HttpRequest.newBuilder(URI.create(localHost + "/api/hello/remote"))
+                    .timeout(Duration.ofSeconds(20)).header("Accept", TEXT_EVENT_STREAM)
+                    .header("traceparent", "00-" + traceId + "-" + upstreamSpan + "-01").build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, response.statusCode());
+            assertTrue(response.body().contains("data: beta"), response.body());
+            // telemetry is asynchronous - wait for the whole tree, then a little longer for stragglers
+            long deadline = System.currentTimeMillis() + 10000;
+            while (System.currentTimeMillis() < deadline && !(count(records, "http.request") >= 2
+                    && count(records, "hello.remote.relay") >= 1 && count(records, "async.http.request") >= 1
+                    && count(records, "event.api.service") >= 1 && count(records, "hello.stream.remote") >= 1
+                    && laneRecords(records).size() >= 4)) {
+                Utility.getInstance().sleep(50);
+            }
+            Utility.getInstance().sleep(300);
+        } finally {
+            platform.release(traceForwarder);
+        }
+        MultiLevelMap root = records.stream().filter(r -> "http.request".equals(r.getElement("trace.service"))
+                && "GET /api/hello/remote".equals(r.getElement("trace.path"))).findFirst().orElse(null);
+        MultiLevelMap relay = first(records, "hello.remote.relay");
+        MultiLevelMap clientLeg = first(records, "async.http.request");
+        MultiLevelMap peerEdge = records.stream().filter(r -> "http.request".equals(r.getElement("trace.service"))
+                && "POST /api/event".equals(r.getElement("trace.path"))).findFirst().orElse(null);
+        MultiLevelMap eventApi = first(records, "event.api.service");
+        MultiLevelMap producer = first(records, "hello.stream.remote");
+        assertNotNull(root, "the edge's round-trip record: " + services(records));
+        assertNotNull(relay, "the relay's record: " + services(records));
+        assertNotNull(clientLeg, "the client leg's record: " + services(records));
+        assertNotNull(peerEdge, "the peer edge's round-trip record: " + services(records));
+        assertNotNull(eventApi, "the event.api.service record: " + services(records));
+        assertNotNull(producer, "the producer's record: " + services(records));
+        // the round trip covers the whole stream (two 250 ms paces), under the caller's span
+        assertEquals(upstreamSpan, root.getElement("trace.parent_span_id"));
+        assertEquals(200, root.getElement("trace.status"));
+        assertEquals(true, root.getElement("trace.success"));
+        assertTrue(Utility.getInstance().str2double(String.valueOf(root.getElement("trace.exec_time"))) >= 450,
+                "round trip must span the stream: " + root.getElement("trace.exec_time"));
+        assertEquals(root.getElement("trace.span_id"), relay.getElement("trace.parent_span_id"),
+                "the first function parents onto the edge's round-trip span");
+        assertEquals("http.request", relay.getElement("trace.from"));
+        assertEquals(relay.getElement("trace.span_id"), clientLeg.getElement("trace.parent_span_id"),
+                "the client leg parents onto the relay");
+        assertEquals(relay.getElement("trace.span_id"), peerEdge.getElement("trace.parent_span_id"),
+                "the peer edge parents onto the relay through the traceparent header");
+        assertEquals(peerEdge.getElement("trace.span_id"), eventApi.getElement("trace.parent_span_id"));
+        assertEquals(eventApi.getElement("trace.span_id"), producer.getElement("trace.parent_span_id"));
+        // reply lanes on both edges: head and eof only, every one parented on the producer
+        List<MultiLevelMap> lanes = laneRecords(records);
+        assertEquals(4, lanes.size(), "head + eof per lane, no data-frame spans: " + services(records));
+        for (MultiLevelMap lane : lanes) {
+            assertEquals(producer.getElement("trace.span_id"), lane.getElement("trace.parent_span_id"),
+                    "a lane record must parent onto the producer's span");
+        }
+        List<MultiLevelMap> tails = lanes.stream()
+                .filter(r -> r.getElement("annotations.frames") != null).toList();
+        assertEquals(2, tails.size(), "each lane's eof carries the data-frame count");
+        for (MultiLevelMap tail : tails) {
+            assertEquals("2", String.valueOf(tail.getElement("annotations.frames")));
+        }
+    }
+
+    private static long count(List<MultiLevelMap> records, String service) {
+        return records.stream().filter(r -> service.equals(r.getElement("trace.service"))).count();
+    }
+
+    private static MultiLevelMap first(List<MultiLevelMap> records, String service) {
+        return records.stream().filter(r -> service.equals(r.getElement("trace.service"))).findFirst().orElse(null);
+    }
+
+    private static List<MultiLevelMap> laneRecords(List<MultiLevelMap> records) {
+        return records.stream().filter(r -> String.valueOf(r.getElement("trace.service"))
+                .startsWith("async.http.response.stream.")).toList();
+    }
+
+    private static List<String> services(List<MultiLevelMap> records) {
+        return records.stream().map(r -> r.getElement("trace.service") + "<-"
+                + r.getElement("trace.parent_span_id")).toList();
     }
 
     /**

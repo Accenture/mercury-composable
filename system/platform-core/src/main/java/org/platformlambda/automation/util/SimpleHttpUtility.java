@@ -158,7 +158,7 @@ public class SimpleHttpUtility {
     }
 
     public void sendResponse(String type, String requestId, HttpServerRequest request, int status, String message) {
-        HttpRouter.closeContext(requestId);
+        HttpRouter.closeContext(requestId, status, message);
         String accept = request.getHeader(ACCEPT);
         if (accept == null) {
             accept = "?";

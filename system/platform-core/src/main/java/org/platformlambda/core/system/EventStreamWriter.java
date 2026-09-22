@@ -19,6 +19,7 @@
 package org.platformlambda.core.system;
 
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.models.TraceInfo;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * </pre>
  * Writes after close/fail are dropped (debug log) - by design, symmetrical with the
  * edge dropping late segments after a timeout or client disconnect.
+ * <p>
+ * Tracing: a stream is traced at its head and its tail. When the writer is constructed on
+ * the worker thread of a traced function, the first segment and the terminal (eof or
+ * exception) carry the function's trace and span, so the consuming reply lane's records for
+ * them parent onto this function; data segments carry no trace - one span per token would
+ * flood a tracing backend. The terminal's lane record is annotated with the data-segment count.
  */
 public class EventStreamWriter {
     private static final Logger log = LoggerFactory.getLogger(EventStreamWriter.class);
@@ -73,6 +80,11 @@ public class EventStreamWriter {
 
     private final String replyTo;
     private final String correlationId;
+    // the producing function's trace, captured at construction on its worker thread
+    private final String traceId;
+    private final String tracePath;
+    private final String spanId;
+    private final String producer;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private int firstStatus = 200;
     private String firstContentType = null;
@@ -91,6 +103,18 @@ public class EventStreamWriter {
         }
         this.replyTo = replyTo;
         this.correlationId = correlationId;
+        TraceInfo trace = EventEmitter.getInstance().getCurrentTrace();
+        if (trace != null && trace.id != null && trace.spanId != null) {
+            this.traceId = trace.id;
+            this.tracePath = trace.path;
+            this.spanId = trace.spanId;
+            this.producer = trace.route;
+        } else {
+            this.traceId = null;
+            this.tracePath = null;
+            this.spanId = null;
+            this.producer = null;
+        }
     }
 
     /**
@@ -212,6 +236,10 @@ public class EventStreamWriter {
         }
         if (eventName != null && !eventName.isEmpty()) {
             event.setHeader(X_EVENT_NAME, eventName);
+        }
+        // head and tail carry the producer's trace and span; data segments do not
+        if (traceId != null && (!headSent || !DATA.equals(type))) {
+            event.setFrom(producer).setTrace(traceId, tracePath).setSpanId(spanId);
         }
         if (!headSent) {
             headSent = true;

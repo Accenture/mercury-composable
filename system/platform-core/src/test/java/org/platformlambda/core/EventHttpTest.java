@@ -474,9 +474,10 @@ class EventHttpTest extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void eventApiServiceIsAVisibleSpanInTheTrace() throws InterruptedException {
-        // Regression: the "/api/event" edge must connect to the span tree - the
-        // event.api.service span parents onto the remote caller's span (carried by the
-        // inbound trace headers), and the target function parents onto event.api.service.
+        // Regression: the "/api/event" edge must connect to the span tree - the edge's own
+        // round-trip record (service http.request, the SERVER span of the hop) parents onto the
+        // remote caller's span (carried by the inbound trace headers), event.api.service parents
+        // onto that edge span, and the target function parents onto event.api.service.
         // This is the reference behavior for other language implementations.
         String traceForwarder = "distributed.trace.forwarder";
         BlockingQueue<Map<String, Object>> records = new ArrayBlockingQueue<>(20);
@@ -506,10 +507,11 @@ class EventHttpTest extends TestBase {
         po.asyncRequest(new EventEnvelope().setTo(callerFunction).setBody("start"), 8000)
                 .onSuccess(response -> assertEquals(200, response.getStatus()));
         MultiLevelMap callerRecord = null;
+        MultiLevelMap edgeRecord = null;
         MultiLevelMap eventApiRecord = null;
         MultiLevelMap targetRecord = null;
         long deadline = System.currentTimeMillis() + 10000;
-        while ((callerRecord == null || eventApiRecord == null || targetRecord == null)
+        while ((callerRecord == null || edgeRecord == null || eventApiRecord == null || targetRecord == null)
                 && System.currentTimeMillis() < deadline) {
             Map<String, Object> item = records.poll(2, TimeUnit.SECONDS);
             if (item != null) {
@@ -517,6 +519,8 @@ class EventHttpTest extends TestBase {
                 Object service = m.getElement("trace.service");
                 if (callerFunction.equals(service)) {
                     callerRecord = m;
+                } else if ("http.request".equals(service)) {
+                    edgeRecord = m;
                 } else if ("event.api.service".equals(service)) {
                     eventApiRecord = m;
                 } else if ("hello.world".equals(service)) {
@@ -527,11 +531,18 @@ class EventHttpTest extends TestBase {
         platform.release(traceForwarder);
         platform.release(callerFunction);
         assertNotNull(callerRecord, "expect a trace record for the calling function");
+        assertNotNull(edgeRecord, "expect the /api/event edge's round-trip record");
         assertNotNull(eventApiRecord, "expect a trace record for event.api.service");
         assertNotNull(targetRecord, "expect a trace record for the target function");
+        assertEquals("POST /api/event", edgeRecord.getElement("trace.path"));
+        assertEquals(200, edgeRecord.getElement("trace.status"));
+        assertEquals(true, edgeRecord.getElement("trace.success"));
         assertEquals(callerRecord.getElement("trace.span_id"),
+                edgeRecord.getElement("trace.parent_span_id"),
+                "the edge's round-trip span must parent onto the remote caller's span");
+        assertEquals(edgeRecord.getElement("trace.span_id"),
                 eventApiRecord.getElement("trace.parent_span_id"),
-                "event.api.service must parent onto the remote caller's span");
+                "event.api.service must parent onto the edge's round-trip span");
         assertEquals(eventApiRecord.getElement("trace.span_id"),
                 targetRecord.getElement("trace.parent_span_id"),
                 "the target function must parent onto the event.api.service span");

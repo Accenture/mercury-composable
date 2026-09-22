@@ -567,7 +567,9 @@ Environment variable names to expose via the `/env` actuator endpoint.
 |------|---------|
 | `String` (comma-sep list) | `async.http.request` |
 
-Route names excluded from distributed trace recording.
+Route names whose RPC calls produce no caller-side `round_trip` trace record - an RPC to a listed route folds into
+the calling function's span. A callback-mode execution of a listed route (the Event-over-HTTP stream relay's
+client leg) still records its own span; see [Observability](observability.md#edge-span).
 
 ### `stack.trace.transport.size`
 

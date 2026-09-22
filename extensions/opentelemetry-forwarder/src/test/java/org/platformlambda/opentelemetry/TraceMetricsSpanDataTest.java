@@ -78,9 +78,9 @@ class TraceMetricsSpanDataTest {
         assertEquals(SPAN_ID, span.getSpanId());
         assertTrue(span.getParentSpanContext().isValid());
         assertEquals(PARENT_SPAN_ID, span.getParentSpanContext().getSpanId());
-        // name + kind
+        // name + kind: a function execution is an INTERNAL hop, even the first one (from=http.request)
         assertEquals("hello.world", span.getName());
-        assertEquals(SpanKind.SERVER, span.getKind());
+        assertEquals(SpanKind.INTERNAL, span.getKind());
         // duration = exec_time (12.5 ms) in nanos
         assertEquals(12_500_000L, span.getEndEpochNanos() - span.getStartEpochNanos());
         // status
@@ -187,6 +187,26 @@ class TraceMetricsSpanDataTest {
         assertEquals("/api/hello", TraceMetricsSpanData.map(ds, RESOURCE, SCOPE).getName());
         trace.remove("path");              // neither -> "task"
         assertEquals("task", TraceMetricsSpanData.map(ds, RESOURCE, SCOPE).getName());
+    }
+
+    @Test
+    void edgeRoundTripRecordIsTheServerSpan() {
+        // REST automation emits one record per traced request with service "http.request" -
+        // the round trip from receipt to the completed response; it is the SERVER span and
+        // the first function's parent
+        Map<String, Object> ds = dataset(true);
+        Map<String, Object> trace = (Map<String, Object>) ds.get("trace");
+        trace.put("service", "http.request");
+        trace.put("path", "GET /api/hello");
+        trace.remove("from");
+        trace.put("exec_time", 2016.0);
+        SpanData span = TraceMetricsSpanData.map(ds, RESOURCE, SCOPE);
+        assertNotNull(span);
+        assertEquals("http.request", span.getName());
+        assertEquals(SpanKind.SERVER, span.getKind());
+        assertEquals(2_016_000_000L, span.getEndEpochNanos() - span.getStartEpochNanos());
+        assertEquals("GET /api/hello", span.getAttributes().get(AttributeKey.stringKey("path")));
+        assertNull(span.getAttributes().get(AttributeKey.stringKey("from")));
     }
 
     @Test
