@@ -95,9 +95,10 @@ public class EventEmitter {
     private static final ConcurrentMap<String, String> eventHttpTargets = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, Map<String, String>> eventHttpHeaders = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, TraceInfo> traces = new ConcurrentHashMap<>();
-    // the same live TraceInfo keyed by worker thread - a helper constructed ON the worker
-    // thread (e.g. EventStreamWriter) reads its function's trace without route/instance;
-    // torn down with the ref-keyed entry when the worker returns (see stopTracing)
+    // the same live TraceInfo, keyed by worker thread, for an engine helper that a function
+    // constructs on its worker thread and that has neither the route nor the instance to look
+    // the trace up by - the stream writer is one. Removed together with the ref-keyed entry
+    // when the worker returns, in stopTracing.
     private static final ConcurrentMap<Long, TraceInfo> currentTraces = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, ConcurrentMap<String, String>> cloudRoutes = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, Long> cloudOrigins = new ConcurrentHashMap<>();

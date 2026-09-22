@@ -765,21 +765,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         }
 
         /**
-         * Forward a raw data segment WITHOUT a trace: a stream is traced at its head and
-         * its tail (the decoded envelope frames keep the producer's span), never per token -
-         * one span per token would flood a tracing backend with unparented lane records.
-         *
-         * @param segment the synthesized data envelope
-         */
-        private void deliverUntraced(EventEnvelope segment) {
-            segment.setTo(input.getReplyTo())
-                    .setFrom(input.getFrom() == null? ASYNC_HTTP_REQUEST : input.getFrom())
-                    .setReplyTo(null)
-                    .setCorrelationId(input.getCorrelationId());
-            EventEmitter.getInstance().send(segment);
-        }
-
-        /**
          * Progressive SSE consumption (raw mode): an incremental frame parser feeding
          * x-event-stream envelopes to the caller's reply_to. The request TTL is the
          * per-read idle allowance (any upstream bytes - keep-alive comments included -
@@ -1043,6 +1028,21 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                     Platform.getInstance().getVertx().cancelTimer(timer);
                     timer = -1;
                 }
+            }
+
+            /**
+             * Forward a raw data segment WITHOUT a trace: a stream is traced at its head and
+             * its tail (the decoded envelope frames keep the producer's span), never per token -
+             * one span per token would flood a tracing backend with unparented lane records.
+             *
+             * @param segment the synthesized data envelope
+             */
+            private void deliverUntraced(EventEnvelope segment) {
+                segment.setTo(input.getReplyTo())
+                        .setFrom(input.getFrom() == null? ASYNC_HTTP_REQUEST : input.getFrom())
+                        .setReplyTo(null)
+                        .setCorrelationId(input.getCorrelationId());
+                EventEmitter.getInstance().send(segment);
             }
 
             /**

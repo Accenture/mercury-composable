@@ -165,6 +165,9 @@ public class SimpleHttpUtility {
         }
         Utility util = Utility.getInstance();
         HttpServerResponse response = request.response().setStatusCode(status);
+        // the rendering differs per Accept (an HTML page, XML or JSON key-values); the wire tail is one
+        final byte[] payload;
+        final String contentType;
         if (accept.startsWith(TEXT_HTML)) {
             String errorPage = template.replace(SET_STATUS, String.valueOf(status)).replace(SET_MESSAGE, message);
             if (status >= 500) {
@@ -174,27 +177,24 @@ public class SimpleHttpUtility {
             } else {
                 errorPage = errorPage.replace(SET_WARNING, HTTP_UNKNOWN_WARNING);
             }
-            byte[] payload = util.getUTF(errorPage);
-            response.putHeader(CONTENT_TYPE, TEXT_HTML);
-            response.putHeader(CONTENT_LEN, String.valueOf(payload.length));
-            response.write(Buffer.buffer(payload));
+            payload = util.getUTF(errorPage);
+            contentType = TEXT_HTML;
         } else {
             Map<String, Object> result = new HashMap<>();
             result.put("status", status);
             result.put("message", message);
             result.put("type", type);
             if (accept.startsWith(APPLICATION_XML)) {
-                byte[] payload = util.getUTF(xmlWriter.write("root", result));
-                response.putHeader(CONTENT_TYPE, APPLICATION_XML);
-                response.putHeader(CONTENT_LEN, String.valueOf(payload.length));
-                response.write(Buffer.buffer(payload));
+                payload = util.getUTF(xmlWriter.write("root", result));
+                contentType = APPLICATION_XML;
             } else {
-                byte[] payload = SimpleMapper.getInstance().getMapper().writeValueAsBytes(result);
-                response.putHeader(CONTENT_TYPE, APPLICATION_JSON);
-                response.putHeader(CONTENT_LEN, String.valueOf(payload.length));
-                response.write(Buffer.buffer(payload));
+                payload = SimpleMapper.getInstance().getMapper().writeValueAsBytes(result);
+                contentType = APPLICATION_JSON;
             }
         }
+        response.putHeader(CONTENT_TYPE, contentType);
+        response.putHeader(CONTENT_LEN, String.valueOf(payload.length));
+        response.write(Buffer.buffer(payload));
         response.end();
     }
 }
