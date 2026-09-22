@@ -82,5 +82,15 @@ class RestEndpointTest {
         assertInstanceOf(String.class, uiHomePage.getBody());
         var uiPayload = (String) uiHomePage.getBody();
         assertTrue(uiPayload.trim().endsWith("</html>"));
+        // app.env=dev in the test configuration: the routed home page is the Playground web app,
+        // served from template/playground.html (outside the static folder) - and "/" reaches it too
+        assertTrue(uiPayload.contains("<title>Minigraph Playground</title>"));
+        var rootPage = new AsyncHttpRequest().setMethod("GET").setTargetHost(target).setUrl("/");
+        rootPage.setHeader("Accept", "text/html");
+        var rootReq = new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(rootPage);
+        var rootHomePage = po.request(rootReq, 5000).get();
+        assertEquals(200, rootHomePage.getStatus());
+        assertInstanceOf(String.class, rootHomePage.getBody());
+        assertTrue(((String) rootHomePage.getBody()).contains("<title>Minigraph Playground</title>"));
     }
 }

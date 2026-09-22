@@ -37,7 +37,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser. The dev ser
 npm run release
 ```
 
-This builds the app and reloads the output into the backend's `src/main/resources/public/` directory. The Spring Boot / Mercury Composable server then serves the static files.
+This builds the app and reloads the output into the backend in two parts: the hashed assets into `src/main/resources/public/assets/` (static content) and the entry page into `src/main/resources/template/playground.html`, which the engine's `get.index.html` function serves only when `app.env=dev`. Outside dev mode the home page is the plain service page, so a production deployment never shows the Playground UI. `src/main/resources/public/index.html` is that plain page and is left alone.
 
 Once the backend JAR is running:
 

@@ -273,12 +273,13 @@ browser notices).
 
 > **Declare the graph engine and nothing else.** `minigraph-playground-engine` brings
 > `event-script-engine` and `platform-core` transitively, so **one** dependency covers all three
-> layers. Listing them individually is not merely redundant — it creates a resource collision: the
-> Playground UI ships inside the engine as `classpath:/public/index.html` and `platform-core`
-> carries a placeholder welcome page at the *same* path, and the first jar on the classpath wins
-> (for `HttpRouter`'s static route and for `GetIndexHtml` alike). Declaring `platform-core` first is
-> enough to serve the placeholder instead of the Playground, and everything else still passes —
-> `mvn test`, `curl`, even the companion endpoint — so only a browser reveals it.
+> layers. Until 4.12.14, listing them individually could also hide the Playground: its page was the
+> engine jar's static `classpath:/public/index.html`, `platform-core` carries a placeholder welcome
+> page at the *same* path, and the first jar on the classpath won — `mvn test`, `curl` and the
+> companion endpoint all still passed, so only a browser revealed it. Since 4.12.15 the Playground
+> page is `template/playground.html`, served by `get.index.html` **only when `app.env=dev`**; both
+> jars' static `index.html` are plain pages, so a production deployment never shows the Playground
+> UI — and the `get.index.html` route below is what makes the UI appear in dev mode.
 
 **`rest.yaml` — two named profiles.** The template's route list mixes three kinds of routes;
 know which bar you are building to:
@@ -327,7 +328,7 @@ rest:
     tracing: true
 
   # ── [playground-enabled] UI plumbing — required when a human opens the UI ─
-  # Serves the Playground web app
+  # Serves the Playground web app when app.env=dev, a plain service page otherwise
   - service: 'get.index.html'
     methods: ['GET']
     url: '/index.html'
