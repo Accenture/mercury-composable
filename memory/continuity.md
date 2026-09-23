@@ -29,9 +29,8 @@
   too; an absent `app.env` is production). No new runtime dependency. Sweep BUILD FILES ONLY, 43 files / 98 occurrences
   (unchanged). Readiness: full build 35 modules, 1505 tests, 0 failures ([[conv-changelog-from-tag-range]]).
   **Lockstep (one number on all four, [[conv-ports-adopt-java-release-number]]):** the Rust port released v4.12.15 the same
-  hour (mercury #322 → `87ee371f`, tag → `28cd3328`, 01:36:57Z; Increments 132–135 — the E0 twin, the connected spans
-  twin, the Kafka shutdown contract, the starter's dev mode + plain home page, the restart-aware Redis retry with the new
-  key `redis.heartbeat.ms`); the python and node packs moved 4.12.1 → 4.12.15 (mercury-python #37 → `95101575`, tag →
+  hour (mercury #322 → `87ee371f`, tag → `28cd3328`, 01:36:57Z; Increments 132–135 — the E0 and connected-spans twins, the
+  Kafka shutdown contract, the starter's dev mode, the restart-aware Redis retry, new key `redis.heartbeat.ms`); the python and node packs moved 4.12.1 → 4.12.15 (mercury-python #37 → `95101575`, tag →
   `7bf6991`; mercury-nodejs #105 → `13426732`, tag → `4c43ffe`) with the OpenTelemetry forwarder, the span-kind rule and,
   on node, the `llm.chat`/`llm.stream` AI nodes. Registry publications the same night: crates.io 12/12 by 01:57Z (one `cargo publish --workspace`), npm and PyPI
   4.12.15 at 02:34Z (npm's first attempt failed 404 — an unauthenticated PUT reads as 404; the session needed a fresh two-factor `npm login`). Next: the AI SDLC/MCP backlog
@@ -645,9 +644,8 @@
   source key exists or the target is indexed) and is IGNORED for any other target — via one helper,
   `GraphLambdaFunction.applyNullSource`, in mapper/math/js MAPPING, `for_each`, fetcher/extension parameters (a null
   parameter is not supplied) and the graph.task/extension/fetcher output mapping (Java branch
-  `fix/l3-null-source-mapping-parity` `7068678f`; Rust twin `f779e46a`, Increment 136; the same round made graph.math
-  name every unresolved `{selector}` of a COMPUTE/IF — "Unknown identifier: model.threshold or model.factor" — instead of
-  the rendered text `null`, `16d1da80`). Until 4.12.15 it removed ANY target — the
+  `fix/l3-null-source-mapping-parity` `7068678f`; Rust twin `f779e46a`, Increment 136; the same round made graph.math name
+  every unresolved `{selector}` of a COMPUTE/IF instead of the rendered text `null`, `16d1da80`). Until 4.12.15 it removed ANY target — the
   2026-09-20 ruling had documented that (PR #432, Rust #295, claim `null-source-removes-target`, whose text now states
   the shared rule with the command reference, the in-Playground help and the `unit-test-lookup-1` probe). A default
   for a model variable still comes from the source side (the plugin's third argument, or `f:defaultValue`), never
