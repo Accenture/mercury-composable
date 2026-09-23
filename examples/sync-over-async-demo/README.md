@@ -33,7 +33,9 @@ business logic) and [`SyncErrorHandler`](src/main/java/com/accenture/soa/demo/su
 ## Prerequisites
 
 - Java 21 + Maven. Build once from the repo root: `mvn -pl examples/sync-over-async-demo -am install`.
-- The `redis-standalone` and `kafka-standalone` helper jars (built by the same reactor).
+- The `redis-standalone` and `kafka-standalone` helper jars (built by the same reactor). On an Apple
+  Silicon Mac, `redis-standalone` needs Homebrew's OpenSSL 3 (`brew install openssl@3`) — see its
+  [platform prerequisites](../../helpers/redis-standalone/README.md#platform-prerequisites).
 - The `schema-registry-standalone` helper jar — only for the [JSON Schema](#json-schema-variant-confluent-wire-format) and [Avro](#avro-variant-confluent-wire-format) variants below (Protobuf is [not currently supported](#protobuf-not-currently-supported)).
 - Node.js 18+ — only for the one-time topic-creation helper in `node/` (the app client is `curl`).
 

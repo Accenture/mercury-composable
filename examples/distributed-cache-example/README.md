@@ -82,7 +82,10 @@ the Event Script engine, and `graph.executor` + `graph.math` + `graph.task` (the
   ```
   It listens on `127.0.0.1:6379` — the app's default (`redis.host`/`redis.port` in
   [`application.properties`](src/main/resources/application.properties), overridable with `REDIS_HOST` /
-  `REDIS_PORT`). The **unit tests need no standalone Redis** — they start an embedded Redis themselves.
+  `REDIS_PORT`). The **unit tests need no standalone Redis** — they start an embedded Redis themselves
+  (the helper's bundled binary, so the same
+  [platform prerequisites](../../helpers/redis-standalone/README.md#platform-prerequisites) apply: on an
+  Apple Silicon Mac, Homebrew's OpenSSL 3).
 
 ## Run it
 
