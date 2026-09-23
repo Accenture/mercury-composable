@@ -21,4 +21,8 @@
   check, Rust async-callback parity check, typed cache helper, sync SSE client form; the Playground UI path is DONE);
   the Splunk header form never run live, the Rust gzip delta, a real-provider token stream when Gemini quota returns;
   the AI SDLC/MCP backlog ([[bp-agent-orchestration]]) resumes after 4.12.15 (Eric).
+  **Fold-ins (a), (b), (c), (f) DONE 2026-09-23** — (b) Rust #321 `f32b473c`, (c) Java #450 `e8d862e5`, (a) and (f) in
+  the packs' 4.12.15 CHANGELOG entries; (d) and (e) close at the release seam. **Release branches READY and pushed
+  2026-09-23 01:09Z:** Java `0bc9db39`, Rust `dc64647a`, Python `635eb12`, Node `ba81e55` — all gates green (Java
+  1505 tests; the Rust workspace; pytest 115; npm 104); handoffs delivered, awaiting Eric's PR-open/merge/tag/publish.
   <!-- id: v4-12-15-release-prep | created: 2026-09-22 | last_used: 2026-09-22 | uses: 1 | tier: working | origin: 2026-09-22-235615 -->
