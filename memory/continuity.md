@@ -487,8 +487,9 @@
   colliding resource path in the engine (needs Rust lockstep). Documented in `playground-and-companion.md` (#enabling) and
   `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]]; applies to
   [[ot-distributed-cache]]'s worked example.
-  **2026-09-22 (Eric's P10 ruling; both engines, branch `fix/plain-home-page-outside-dev`, Java `d54c11e3` / Rust
-  `037131e8`): the home page is the THIRD dev-mode wiring, and the classpath trap in (3) is RETIRED.** The React
+  **2026-09-22 (Eric's P10 ruling; both engines, branch `fix/plain-home-page-outside-dev` — Java PR #449 MERGED
+  2026-09-23 00:34Z squash `b4051b33`; Rust PR #319 MERGED 00:30Z merge `49403c23`): the home page is the THIRD
+  dev-mode wiring, and the classpath trap in (3) is RETIRED.** The React
   Playground's `index.html` WAS the engine jar's static `public/index.html`, so a Layer 3 app served the Playground
   at `/` in EVERY environment — a production home page that reads as a broken workbench (Eric: "the user would
   panic"). The entry page is now `template/playground.html`, reachable only through the `get.index.html` route (at
