@@ -645,7 +645,9 @@
   source key exists or the target is indexed) and is IGNORED for any other target — via one helper,
   `GraphLambdaFunction.applyNullSource`, in mapper/math/js MAPPING, `for_each`, fetcher/extension parameters (a null
   parameter is not supplied) and the graph.task/extension/fetcher output mapping (Java branch
-  `fix/l3-null-source-mapping-parity` `7068678f`; Rust twin to follow). Until 4.12.15 it removed ANY target — the
+  `fix/l3-null-source-mapping-parity` `7068678f`; Rust twin `f779e46a`, Increment 136; the same round made graph.math
+  name every unresolved `{selector}` of a COMPUTE/IF — "Unknown identifier: model.threshold or model.factor" — instead of
+  the rendered text `null`, `16d1da80`). Until 4.12.15 it removed ANY target — the
   2026-09-20 ruling had documented that (PR #432, Rust #295, claim `null-source-removes-target`, whose text now states
   the shared rule with the command reference, the in-Playground help and the `unit-test-lookup-1` probe). A default
   for a model variable still comes from the source side (the plugin's third argument, or `f:defaultValue`), never
