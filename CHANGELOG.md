@@ -8,6 +8,71 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.12.15, 9/22/2026
+
+The connected-trace release, and a lock-step round on all four runtimes: the Rust port ships 4.12.15 in the
+same round (its Layer 3 starter gains dev mode, the restart-aware Redis retry, the Kafka shutdown twin, the
+Playground E0 twin and the connected edge spans twin), and the python and node language packs move from
+4.12.1 to 4.12.15 with the OpenTelemetry forwarder, the span-kind rule and, on node, the `llm.chat` /
+`llm.stream` AI nodes — one number on all four. Upgrade action: read items 1 and 3; nothing to configure.
+
+### Changed
+
+1. **A traced HTTP request is one connected span tree whose root is the edge's round-trip span (#444; #447 is
+   the Sonar sweep of the same round).** REST automation mints a span when a request arrives and records
+   `service=http.request` when the response completes — buffered, streamed, error page or housekeeper timeout —
+   with `exec_time` the round trip and `parent_span_id` the inbound `traceparent` span; the first function and
+   the authentication service parent onto it. The Event-over-HTTP stream relay's client leg
+   (`async.http.request`) now parents onto its sender, and a streamed response is traced at its head and its
+   tail, never per token: the writer stamps the producer's trace and span on the first segment and the terminal,
+   the reply lane annotates the terminal's record with `frames` (the number of data segments it rendered), and
+   raw token frames carry no trace. The OpenTelemetry forwarder maps SERVER iff `service == http.request`; every
+   function execution is INTERNAL. `skip.rpc.tracing` is documented for what it always did — suppress the
+   caller-side RPC `round_trip` record only. Found by the maintainer's Dynatrace review of the four-runtime
+   certification traces; the report (`docs/test-reports/otel-dynatrace-certification.md`) gained Scenarios 7–9
+   — two engines one trace, four runtimes one trace, and the connected trees confirmed in the backend UI on
+   error traces and on token-bearing streams.
+
+   **Upgrade action:** read — one more span per traced request; a backend's response time for a service is now
+   the request's round trip, not the first function's few milliseconds; the first function is INTERNAL, so a
+   dashboard keyed on `kind=SERVER` moves to the `http.request` record; an Event-over-HTTP callee edge records
+   its own round trip between the caller's span and `event.api.service`. Guides: observability (*The edge's
+   round-trip span*), HTTP streaming (*Tracing a stream*), Event-over-HTTP.
+
+2. **minimalist-kafka joins the graceful shutdown (#440, #441).** `KafkaRuntime.shutdown()` runs on
+   `Platform.onShutdown`: the flow adapter's consumers close first — an explicit LeaveGroup the broker observes,
+   so a rolling restart rebalances at once instead of waiting out the session timeout — then the producer
+   flushes and closes. Both halves are bounded by the 10 s `KafkaRuntime.SHUTDOWN_GRACE`, and a producer close
+   the grace could not drain reports what it left undelivered instead of waiting without bound. Pinned by
+   `KafkaShutdownTest`. No upgrade action.
+
+3. **The home page outside dev mode is a plain page (#449).** The Playground web app's `index.html` was the
+   engine jar's static `public/index.html`, so a Layer 3 application served the Playground UI at `/` in every
+   environment — with the dev-only services absent outside dev, a production home page that reads as a broken
+   workbench. The entry page is now `template/playground.html`, served by `get.index.html` only when
+   `app.env=dev` (the same gate as every Playground service); the plain "MiniGraph Service" page is both the
+   static `public/index.html` and the routed page for any other `app.env`, an absent one included (the function
+   used to default to dev). The starter template gains the `get.index.html` route (its dev mode showed the UI
+   only through the static fallback) and a `/` test, and the classpath-order collision with platform-core's
+   placeholder page no longer decides what a browser shows.
+
+   **Upgrade action:** read — a Layer 3 application that never routed `get.index.html` now gets the plain page
+   at `/` in dev mode too: add the route (the AI guide's `playground-enabled` profile always listed it). An
+   application with no `app.env` gets the plain page where it used to get the Playground. The webapp's
+   `npm run release` now writes the assets to `public/assets/` and the entry page to
+   `template/playground.html`.
+
+**Lock-step.** The Rust port's 4.12.15 (mercury #312–#321) carries the twins of items 1–3 plus its own: the
+Layer 3 starter's dev mode (its P10, Increment 134), the restart-aware Redis retry in the shared foundation — a
+heartbeat monitor (`redis.heartbeat.ms`, Rust engine only) and one retry per lost connection for idempotent
+commands (Increment 135; Lettuce needs no twin because it requeues unwritten commands), the Playground E0 twin
+(the support-triage graph and the `llm.stream` relay, Increment 132) and the *Tracing a stream* guide section.
+The python (#33–#36) and node (#101–#104) packs adopt 4.12.15 with the OpenTelemetry forwarder twin (opt-in,
+dependency-free), the SERVER-iff-`http.request` span-kind rule and, on node, the `llm.chat` / `llm.stream` AI
+nodes; their per-release interop evidence is the four-runtime certification drive of 2026-09-22 recorded in each
+repository's `docs/test-reports/otel-dynatrace-certification.md`.
+
+---
 ## Version 4.12.14, 9/21/2026
 
 The lock-step release — one number on both engines. On the Java side it carries one change (below); it is
