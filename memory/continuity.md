@@ -487,6 +487,22 @@
   colliding resource path in the engine (needs Rust lockstep). Documented in `playground-and-companion.md` (#enabling) and
   `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]]; applies to
   [[ot-distributed-cache]]'s worked example.
+  **2026-09-22 (Eric's P10 ruling; both engines, branch `fix/plain-home-page-outside-dev`, Java `d54c11e3` / Rust
+  `037131e8`): the home page is the THIRD dev-mode wiring, and the classpath trap in (3) is RETIRED.** The React
+  Playground's `index.html` WAS the engine jar's static `public/index.html`, so a Layer 3 app served the Playground
+  at `/` in EVERY environment — a production home page that reads as a broken workbench (Eric: "the user would
+  panic"). The entry page is now `template/playground.html`, reachable only through the `get.index.html` route (at
+  `/index.html`, reached by `/`) and only when `app.env=dev` — the same gate as every Playground service; an ABSENT
+  `app.env` is production (the function used to default to dev; the `@OptionalService` gate always treated absent
+  as closed). The engine's static `public/index.html` is the plain "MiniGraph Service" page, so an app that never
+  routes `get.index.html` gets the plain page in both modes — never the Playground by accident — and the
+  classpath-order collision with platform-core's placeholder no longer decides what the browser shows (both jars'
+  static pages are plain; the one-dependency advice stands for tidiness). Both starters showed the UI only through
+  that static fallback — the Java starter had no `get.index.html` route (added, with a `/` test), the Rust starter
+  no dev mode at all (its P10 delta, now closed the Java way). The webapp's `deploy.js`/`clean.js` split the bundle
+  (assets → `public/assets/`, page → `template/playground.html`). The parked option "move the UI off the colliding
+  resource path (needs Rust lockstep)" is thereby DONE. Behaviour change to READ at 4.12.15: an app without the
+  route now gets the plain page at `/` in dev too — add the route; an app with no `app.env` gets the plain page.
   <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-20 | uses: 8 | tier: active | origin: 2026-09-15-221451 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
