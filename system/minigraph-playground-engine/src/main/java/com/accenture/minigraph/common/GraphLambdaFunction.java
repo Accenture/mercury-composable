@@ -305,16 +305,72 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
      * @param stateMachine the graph state machine
      */
     protected void assertVariablesResolved(String expression, MultiLevelMap stateMachine) {
+        var unresolved = new ArrayList<String>();
+        for (var key : selectorsIn(expression)) {
+            if (helper.getLhsOrConstant(key, stateMachine) == null) {
+                unresolved.add(key);
+            }
+        }
+        if (!unresolved.isEmpty()) {
+            throw unknownIdentifier(unresolved, expression);
+        }
+    }
+
+    /**
+     * The '{selector}' variables of an expression, in order and without duplicates - a segment
+     * holding a JavaScript function or a JSON object (newline, tab or colon inside) is not one.
+     *
+     * @param expression the expression text before substitution
+     * @return the selectors
+     */
+    protected List<String> selectorsIn(String expression) {
+        var keys = new ArrayList<String>();
         for (var segment : util.extractSegments(expression, "{", "}")) {
             var key = expression.substring(segment.start() + 1, segment.end() - 1);
             if (key.contains("\r") || key.contains("\n") || key.contains("\t") || key.contains(":")) {
-                continue;   // a JavaScript function or a JSON object, not a variable
+                continue;
             }
-            if (helper.getLhsOrConstant(key, stateMachine) == null) {
-                throw new IllegalArgumentException("Unknown identifier: " + key +
-                        " (unresolved variable in '" + expression + "')");
+            if (!keys.contains(key)) {
+                keys.add(key);
             }
         }
+        return keys;
+    }
+
+    /**
+     * The evaluator met the rendered text 'null' itself - a selector the pre-check accepted, such as
+     * a variable holding the text "null". The culprits are pinpointed by rendering each selector
+     * again: those that render as 'null' are named ('Unknown identifier: model.threshold'), several
+     * joined by 'or'; only when none can be told apart are all the statement's selectors named.
+     * Any other failure passes through.
+     *
+     * @param e the evaluator's exception
+     * @param expression the expression text before substitution
+     * @param stateMachine the graph state machine
+     * @return the exception to throw
+     */
+    protected RuntimeException nameNullIdentifier(RuntimeException e, String expression, MultiLevelMap stateMachine) {
+        var message = e.getMessage();
+        if (message != null && message.endsWith("Unknown identifier: null")) {
+            var selectors = selectorsIn(expression);
+            var culprits = new ArrayList<String>();
+            for (var key : selectors) {
+                var value = helper.getLhsOrConstant(key, stateMachine);
+                if (value == null || "null".equals(String.valueOf(value))) {
+                    culprits.add(key);
+                }
+            }
+            var named = culprits.isEmpty()? selectors : culprits;
+            if (!named.isEmpty()) {
+                return unknownIdentifier(named, expression);
+            }
+        }
+        return e;
+    }
+
+    private IllegalArgumentException unknownIdentifier(List<String> selectors, String expression) {
+        return new IllegalArgumentException("Unknown identifier: " + String.join(" or ", selectors) +
+                " (unresolved variable in '" + expression + "')");
     }
 
     protected String substituteVarIfAny(String text, MultiLevelMap stateMachine) {

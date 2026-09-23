@@ -16,7 +16,8 @@
         "skill": "graph.data.mapper",
         "mapping": [
           "double(-1) -> model.threshold",
-          "input.body.threshold -> model.threshold"
+          "input.body.threshold -> model.threshold",
+          "input.body.factor -> model.factor"
         ]
       }
     },
@@ -28,7 +29,7 @@
       "properties": {
         "skill": "graph.math",
         "statement": [
-          "COMPUTE: doubled -> {model.threshold} * 2",
+          "COMPUTE: doubled -> {model.threshold} * {model.factor}",
           "MAPPING: use-it.result.doubled -> output.body.doubled"
         ]
       }
@@ -39,7 +40,7 @@
       ],
       "alias": "root",
       "properties": {
-        "purpose": "a COMPUTE over an unresolved model variable fails naming the variable, not 'null'",
+        "purpose": "a COMPUTE over unresolved model variables fails naming every unresolved variable, not 'null'",
         "name": "unit-test-math-1"
       }
     }
