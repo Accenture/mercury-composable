@@ -297,6 +297,23 @@ class GraphTaskTest {
     }
 
     @Test
+    void mathExpressionNamesTheUnresolvedVariable() throws TimeoutException {
+        // unit-test-math-1 (issue #453): the seed's overlay 'input.body.threshold -> model.threshold'
+        // clears the model variable when the input is absent, so the COMPUTE over {model.threshold}
+        // cannot resolve it. The failure names the variable - not the rendered text 'null'.
+        var response = runGraph("unit-test-math-1", Map.of(), Map.of());
+        assertNotEquals(200, response.getStatus());
+        var error = String.valueOf(response.getBody());
+        assertTrue(error.contains("Unknown identifier: model.threshold"), error);
+        assertTrue(error.contains("{model.threshold} * 2"), error);
+        // with the input supplied the same expression computes
+        response = runGraph("unit-test-math-1", Map.of("threshold", 5.5), Map.of());
+        assertEquals(200, response.getStatus());
+        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals(11.0, mm.getElement("doubled"));
+    }
+
+    @Test
     void helpFileFollowsNamingConvention() {
         // 'describe skill graph.task' resolves the file name by replacing dots with hyphens
         assertNotNull(GraphTaskTest.class.getResourceAsStream("/help/help graph-task.md"),

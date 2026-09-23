@@ -45,6 +45,7 @@ graphs:
   # the common case of the same table: the 'lookup' simple plugin in a graph.data.mapper decision
   # node (f:lookup + f:defaultValue), no composable function at all
   - 'unit-test-lookup-1'
+  - 'unit-test-math-1'
   - 'unit-test-join-retry'
   - 'unit-test-join-chain'
   - 'unit-test-cache-key'

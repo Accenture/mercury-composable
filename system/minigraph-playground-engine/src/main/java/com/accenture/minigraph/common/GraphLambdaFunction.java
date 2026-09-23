@@ -294,6 +294,29 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         return name.replace('.', '-');
     }
 
+    /**
+     * Name the unresolved variable before an expression is evaluated (issue #453): an unresolved
+     * '{selector}' renders as the text 'null', which the expression evaluator can only report as
+     * 'Unknown identifier: null'. Checked for COMPUTE and IF expressions only - RESET, DELAY, jump
+     * targets and MAPPING keep the documented 'null' rendering (a RESET is then a no-op, a DELAY is
+     * skipped, a text() constant sees the text 'null').
+     *
+     * @param expression the expression text before substitution
+     * @param stateMachine the graph state machine
+     */
+    protected void assertVariablesResolved(String expression, MultiLevelMap stateMachine) {
+        for (var segment : util.extractSegments(expression, "{", "}")) {
+            var key = expression.substring(segment.start() + 1, segment.end() - 1);
+            if (key.contains("\r") || key.contains("\n") || key.contains("\t") || key.contains(":")) {
+                continue;   // a JavaScript function or a JSON object, not a variable
+            }
+            if (helper.getLhsOrConstant(key, stateMachine) == null) {
+                throw new IllegalArgumentException("Unknown identifier: " + key +
+                        " (unresolved variable in '" + expression + "')");
+            }
+        }
+    }
+
     protected String substituteVarIfAny(String text, MultiLevelMap stateMachine) {
         var logical = hasBooleanOperator(text) || (text.startsWith("$.") && text.contains("@"));
         int leftBrace = text.indexOf('{');
