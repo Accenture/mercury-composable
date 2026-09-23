@@ -163,8 +163,14 @@ The Playground is not a separate application — it rides along in any Mercury a
    belong together: `app.env=dev` without the routes gives you a WebSocket and no HTTP surface;
    the routes without `app.env=dev` give you a start-up log full of
    `Skip [POST] /api/companion/{id}/sync - Service ... not available`.
+3. **The home page route** — `get.index.html` at `/index.html`, which a request for `/` also
+   reaches. The function follows the same switch: it serves the Playground web app when
+   `app.env=dev` and a plain service page for any other value (or no `app.env` at all), so a
+   production deployment never shows the Playground UI. The Playground page lives outside the
+   static folder (`template/playground.html` in the engine jar); without this route, `/` falls
+   through to the engine's static `index.html`, which is the same plain page in both modes.
 
-Both ship pre-wired in [`templates/starter-graph`](https://github.com/Accenture/mercury-composable/tree/main/templates/starter-graph)
+All three ship pre-wired in [`templates/starter-graph`](https://github.com/Accenture/mercury-composable/tree/main/templates/starter-graph)
 — copy that directory and the Playground is live on first run. The
 [distributed-cache example](https://github.com/Accenture/mercury-composable/tree/main/examples/distributed-cache-example)
 shows the same wiring inside an app that also serves ordinary Layer 1 and Layer 2 endpoints: dev
@@ -172,12 +178,13 @@ mode is additive, so a real application can be co-authored in the Playground and
 production routes. Remove the single `app.env=dev` line to close the whole surface for production.
 
 > **Depend on the graph engine alone.** `minigraph-playground-engine` pulls in
-> `event-script-engine` and `platform-core` transitively — one dependency, all three layers. Adding
-> the other two by hand introduces a resource collision: the Playground UI is bundled in the engine
-> jar as `classpath:/public/index.html` and `platform-core` ships a placeholder welcome page at the
-> same resource path, so whichever jar comes first on the classpath wins. The symptom is narrow and
-> easy to misread — every test, `curl`, and companion command still succeeds, while the browser
-> shows the placeholder instead of the Playground.
+> `event-script-engine` and `platform-core` transitively — one dependency, all three layers. Until
+> 4.12.14, adding the other two by hand could also hide the Playground: its page was the engine
+> jar's static `classpath:/public/index.html`, `platform-core` ships a placeholder welcome page at
+> the same resource path, and whichever jar came first on the classpath won — every test, `curl`,
+> and companion command still succeeded while the browser showed the placeholder. Since 4.12.15 the
+> Playground page is served by `get.index.html` from `template/playground.html`, so the classpath
+> order no longer decides what the browser shows: both jars' static `index.html` are plain pages.
 
 ## User–AI collaboration {#collaboration}
 

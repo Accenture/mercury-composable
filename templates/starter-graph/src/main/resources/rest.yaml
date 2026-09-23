@@ -13,6 +13,17 @@ rest:
     headers: header_1
     tracing: true
 
+  # The home page (also reached at "/"). get.index.html serves the MiniGraph Playground
+  # web app when app.env=dev and a plain service page otherwise, so a production
+  # deployment never shows the Playground UI. Without this entry "/" falls through to
+  # the engine's static index.html, which is the same plain page in both modes.
+  - service: 'get.index.html'
+    methods: ['GET']
+    url: '/index.html'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+
 # Below endpoints for minigraph-playground, tutorials and AI companion.
 # They are not loaded when app.env not = dev or absent.
   - service: 'show.graph.model'

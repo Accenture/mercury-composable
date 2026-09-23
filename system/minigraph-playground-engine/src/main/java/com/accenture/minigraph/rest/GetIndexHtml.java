@@ -32,12 +32,18 @@ import java.util.Map;
 @PreLoad(route = "get.index.html", instances = 10)
 public class GetIndexHtml implements TypedLambdaFunction<AsyncHttpRequest, EventEnvelope> {
     private static final Logger log = LoggerFactory.getLogger(GetIndexHtml.class);
+    private static final String PLAYGROUND_PAGE = "/template/playground.html";
+    private static final String PLAIN_PAGE = "/template/index.html";
     private final String content;
 
     public GetIndexHtml() {
         var config = AppConfigReader.getInstance();
-        var location = "dev".equals(config.getProperty("app.env", "dev"))? "/public" : "/template";
-        var resPath = location + "/index.html";
+        // The Playground web app is served ONLY in dev mode - app.env=dev, the same gate as every
+        // Playground service. Any other value, or no app.env at all, serves the plain service page,
+        // so a production deployment never shows the Playground UI. The static public/index.html is
+        // that same plain page, so an application that does not route this function never serves
+        // the Playground by accident either.
+        var resPath = "dev".equals(config.getProperty("app.env"))? PLAYGROUND_PAGE : PLAIN_PAGE;
         log.info("Home page - {}", resPath);
         var in = this.getClass().getResourceAsStream(resPath);
         content = Utility.getInstance().stream2str(in);

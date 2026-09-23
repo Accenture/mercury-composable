@@ -12,6 +12,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class QuoteGraphTest extends TestBase {
     private static final String HTTP_CLIENT = "async.http.request";
@@ -54,6 +55,20 @@ class QuoteGraphTest extends TestBase {
         // a graph that sets output.status 400+ yields the standard error response
         Map<String, Object> body = (Map<String, Object>) result.getBody();
         assertEquals("Missing item. Provide the item name in the 'item' field", body.get("message"));
+    }
+
+    @Test
+    void homePageServesThePlaygroundInDevMode() throws ExecutionException, InterruptedException {
+        // application.properties ships app.env=dev, so get.index.html (also reached at "/") serves the
+        // Playground web app; without that switch the same route serves the plain service page
+        PostOffice po = PostOffice.trackable("unit.test", "303", "TEST /");
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(host).setMethod("GET").setHeader("accept", "text/html").setUrl("/");
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope result = po.request(req, TIMEOUT).get();
+        assertEquals(200, result.getStatus());
+        assertInstanceOf(String.class, result.getBody());
+        assertTrue(((String) result.getBody()).contains("<title>Minigraph Playground</title>"));
     }
 
     @Test

@@ -66,7 +66,9 @@ node scripts/playground-session-broker.mjs --target http://127.0.0.1:8303
 Every Playground service is gated by `@OptionalService("app.env=dev")`, so **deleting that one
 line from `application.properties` closes the whole surface** — the matching `rest.yaml` entries
 are then skipped at start-up. Do that before you ship to production; there is no auth on these
-endpoints.
+endpoints. The home page follows the same switch: `get.index.html` (routed at `/index.html`, also
+reached at `/`) serves the Playground web app in dev mode and a plain service page otherwise, so
+a production deployment never shows the Playground UI.
 
 ## What to look at
 
@@ -76,7 +78,7 @@ endpoints.
 | `src/main/resources/graphs.yaml` | The deployment manifest: only listed graphs that pass the CompileGraph gate are executable ("compiled or 404") |
 | `src/main/resources/flows/graph-executor.yml` | The standard exposure flow behind `/api/graph/{graph_id}` |
 | `src/test/java/com/accenture/starter/QuoteGraphTest.java` | End-to-end graph tests, including the 404 gate behavior |
-| `src/main/resources/rest.yaml` | The one graph endpoint, plus the dev-mode Playground / companion routes |
+| `src/main/resources/rest.yaml` | The one graph endpoint, the home page, plus the dev-mode Playground / companion routes |
 | `src/main/resources/application.properties` | App config — including the `app.env=dev` switch that opens the Playground |
 | `scripts/playground-session-broker.mjs` | Lets an AI agent **host** a Playground session for you (keep-alive, auto-reconnect, localhost control API) — see `scripts/README.md` |
 
