@@ -57,19 +57,17 @@
   condensing the release chain, the stamps and three shipped addenda; facts advisory persists by design at 40 > 35.)
   Prior: 2026-09-22 | 2026-09-21-233928.md (size; swept 2) · 2026-09-21 | 2026-09-21-012124.md · 2026-09-19 | 2026-09-19-020551.md ·
   2026-09-18 | 2026-09-18-215436.md (the false bloat trigger, [[conv-schema-example-not-a-fact]]).
-- **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**:
-  Track 1 *knowledge graph as application* (deterministic — rules, business logic, outcome; L3
-  leverages L2 + L1) and Track 2 *knowledge graph as AI SDLC* (governed AI processing for ambiguity
-  a deterministic program cannot handle; L3 is the foundation and **AI is also the runtime for
-  certain nodes**). The tracks echo each other — shared co-design, certification and promotion —
-  and differ only in the nature of the work and where execution goes. AI gains a **run-time
-  participant** role. **The north star MOVED: the next invariant re-verify must check the 2026-09-17
-  text, not the 2026-06-20 one.** [[bp-agent-orchestration]] is Track 2's Blueprint gap; Track 1 and
-  the collaboration foundation are delivered.
-- **last_invariant_check:** 2026-09-16 | 2026-09-16-041500.md (COMPLETE — Eric walked the set against live-tree evidence:
-  3 invariants + 5 stack + 5 key decisions + 3 conventions + eric-release-rhythm + the Vision confirmed; `virtual-threads-rpc`
-  ENRICHED from ADR-0024; `conv-telemetry-presentation-parity` RETIRED — pure invalidation, no successor. Core 18 → 17.
-  Cadence 40; the next re-verify must check the 2026-09-17 two-track Vision text. Prior: 2026-09-11 | 2026-09-11-005808.md)
+- **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**: Track 1 *knowledge graph as
+  application* (deterministic — rules, business logic, outcome; L3 leverages L2 + L1) and Track 2 *knowledge graph as AI SDLC*
+  (governed AI processing for ambiguity a deterministic program cannot handle; L3 is the foundation and **AI is also the
+  runtime for certain nodes**). The tracks echo each other — shared co-design, certification and promotion — and differ only
+  in the nature of the work and where execution goes; AI gains a **run-time participant** role. **The north star MOVED: the
+  next invariant re-verify must check the 2026-09-17 text, not the 2026-06-20 one.** [[bp-agent-orchestration]] is Track 2's
+  Blueprint gap; Track 1 and the collaboration foundation are delivered.
+- **last_invariant_check:** 2026-09-16 | 2026-09-16-041500.md (COMPLETE — Eric walked 3 invariants + 5 stack + 5 key decisions +
+  3 conventions + eric-release-rhythm + the Vision against live-tree evidence; `virtual-threads-rpc` ENRICHED from ADR-0024;
+  `conv-telemetry-presentation-parity` RETIRED, no successor; core 18 → 17. Cadence 40; the next re-verify checks the 2026-09-17
+  two-track Vision text. Prior: 2026-09-11 | 2026-09-11-005808.md)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
 > environment, carrying forward only the confirmed Vision + Blueprint and the
