@@ -319,7 +319,8 @@
   OpenSSL 3 (Linux x86-64 needs `libssl.so.3` + glibc 2.34, both on `ubuntu-latest`; the other four binaries are self-contained;
   1.4.4 ships the same files), so a Mac without it fails `mvn clean install` in `extensions/redis-connection`. Eric REJECTED the
   fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
-  DOCUMENTED, not engineered around, while CI and the field pass; the library's default provider ignores `EMBEDDED_REDIS_EXECUTABLE`.
+  DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
+  ignores `EMBEDDED_REDIS_EXECUTABLE`.
   <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-23 | uses: 5 | tier: active | origin: 2026-09-18-174943 -->
 
 - **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
