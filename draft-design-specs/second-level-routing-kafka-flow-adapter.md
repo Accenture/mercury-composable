@@ -1,7 +1,10 @@
 # Second-Level Routing for the Kafka Flow Adapter
 
 **Status:** design ratified by Eric 2026-07-30 (refined from the ideation draft in a
-review round grounded against the v4.11.0 adapter code); implementation not yet started.
+review round grounded against the v4.11.0 adapter code). **IMPLEMENTED** — shipped in v4.11.1
+(2026-08-01; CHANGELOG *Second-level routing for the Kafka Flow Adapter*, with the `examples/kafka-demo`
+worked example; guide: `docs/guides/minimalist-kafka.md`). The Rust port carries it since K3 of its
+minimalist-kafka port (mercury PR #299, 2026-09-21). Status header corrected 2026-09-23.
 
 ## Concept
 
