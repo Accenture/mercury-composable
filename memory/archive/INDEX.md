@@ -183,3 +183,14 @@
 - ot-reverify-invariants-20260916 — Re-verify invariants (2026-09-16, complete — Eric walked the 17+1 set against live-tree — faded — 2026-Q3.md
 - ot-otel-dynatrace-certification — (feature) OpenTelemetry forwarder — Dynatrace certification. DONE 2026-09-16. Opt-in — swept (completed thread, past archive_window) — 2026-Q3.md
 - thread-kafka-header-casing-mismatch — (defect → FIXED 2026-09-16) Mixed-case Kafka headers were unreachable from Event Script — swept (completed thread, past archive_window) — 2026-Q3.md
+- preload-before-mainapp-lazy-config — @PreLoad functions are constructed BEFORE @MainApplication runs — never freeze late-arrivi… — faded / completed - past archive_window at the 2026-09-23 cadence review — 2026-Q3.md
+- kafka-clients-kernel-threads — Kafka-driving functions run on kernel threads — `@KernelThreadRunner` (2026-09-11, Eric's — faded / completed - past archive_window at the 2026-09-23 cadence review — 2026-Q3.md
+- kafka-class-objects-over-names — Kafka class-valued config is set as `Class` OBJECTS, and a config that can never work must… — faded / completed - past archive_window at the 2026-09-23 cadence review — 2026-Q3.md
+- kafka-config-class-static-init-loader — Kafka resolves class-valued config DEFAULTS inside its config classes' STATIC INITIALIZERS… — faded / completed - past archive_window at the 2026-09-23 cadence review — 2026-Q3.md
+- bp-ai-companion-llm-backend — (blueprint) CLOSED 2026-09-17 (Eric, at the first closure gate) — integrate a pluggable AI — faded / completed - past archive_window at the 2026-09-23 cadence review — 2026-Q3.md
+- bp-graph-governance-lifecycle — (blueprint) CLOSED 2026-09-17 (Eric, at the first closure gate) — enterprise governance — faded / completed - past archive_window at the 2026-09-23 cadence review — 2026-Q3.md
+- ot-close-stalled-threads-20260917 — Close stalled threads — COMPLETE 2026-09-17. Both dispositioned by Eric at the first run o… — faded / completed - past archive_window at the 2026-09-23 cadence review — 2026-Q3.md
+- ot-kafka-health-producer-only-fix — kafka.health produce-only classloader fix — SHIPPED in v4.12.12 (2026-09-17). v4.12.11 — faded / completed - past archive_window at the 2026-09-23 cadence review — 2026-Q3.md
+- ot-otel-acceptance-traces-pending — (feature) CONFIRMED 2026-09-17 — the OTel certification is closed end to end. Dynatrace — faded / completed - past archive_window at the 2026-09-23 cadence review — 2026-Q3.md
+- ot-undeclared-reference-check — `[undeclared-reference]` shipped in agent-memory v4.41.0 and VERIFIED 2026-09-17. Our repo… — faded / completed - past archive_window at the 2026-09-23 cadence review — 2026-Q3.md
+- thread-compilegraph-syntax-validation — (backlog → FIXED 2026-09-16) `CompileGraph` accepted a working node with no skill — it — faded / completed - past archive_window at the 2026-09-23 cadence review — 2026-Q3.md

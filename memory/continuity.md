@@ -45,10 +45,13 @@
   store retired, ADR-0024, #400 `92e94f2b`) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397, `9274cf92`; ACTION: the
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-23 | through 2026-09-23-014650.md (SIZE TRIGGER — `[continuity-bloat]` 39 > 35 facts and 1032 > 1000
-  lines at the v4.12.15 seam; 2 sessions since the 2026-09-22 review. Archived 0, swept 0 — nothing past `archive_window`; tier changes 6 via `refresh-metadata`; lines 1032 → 1000 by
-  condensing the release chain, the stamps and three shipped addenda; facts advisory persists by design at 40 > 35.)
-  Prior: 2026-09-22 | 2026-09-21-233928.md (size; swept 2) · 2026-09-21 | 2026-09-21-012124.md · 2026-09-19 | 2026-09-19-020551.md.
+- **last_review:** 2026-09-23 | through 2026-09-23-230527.md (CADENCE + SIZE — the `[continuity-bloat]` facts advisory that the
+  morning review left "by design" cleared as its closed items aged past `archive_window`: archived 6 continuity facts — the 4
+  faded Kafka-health lessons (`preload-before-mainapp-lazy-config`, `kafka-clients-kernel-threads`,
+  `kafka-class-objects-over-names`, `kafka-config-class-static-init-loader`; retrievable via `memory/archive/INDEX.md`) and the
+  2 closed Blueprint gaps (`bp-ai-companion-llm-backend`, `bp-graph-governance-lifecycle`); swept 5 completed threads. Facts
+  40 → 34; tier changes 0 (footers already matched the reference log). Invariants not due (cadence 40, last 2026-09-16).)
+  Prior: 2026-09-23 | 2026-09-23-014650.md (size; archived 0, lines 1032 → 1000) · 2026-09-22 | 2026-09-21-233928.md (size; swept 2).
 - **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**: Track 1 *knowledge graph as
   application* (deterministic — rules, business logic, outcome; L3 leverages L2 + L1) and Track 2 *knowledge graph as AI SDLC*
   (governed AI processing for ambiguity a deterministic program cannot handle; L3 is the foundation and **AI is also the
@@ -129,104 +132,6 @@
   <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-27 | uses: 4 | tier: core -->
 
 ## Key Decisions
-
-- **@PreLoad functions are constructed BEFORE @MainApplication runs — never freeze late-arriving
-  config in a @PreLoad constructor (2026-09-11, upstreamed field MR + Eric's ruling).** AppStarter's
-  order is BeforeApplication → preload() → MainApplication, so a constructor-resolved template that
-  interpolates system properties published by a start-up credential bootstrap (vault pattern) freezes
-  them as missing for the life of the instance. `kafka.health`/`secondary.kafka.health` now resolve
-  probe config through a `Supplier` at client build time (re-resolved on every rebuild) and, while
-  the client cannot even be BUILT, report a passing "Waiting for Kafka connection" status instead of
-  failing /health — a pod restart cannot produce a credential (Eric's ruling); only a real round-trip
-  failure (client built, cluster unreachable) fails /health with 503. (Shipped via PR #360.) Applied
-  again by `soa.redis.health` (PR #361, shipped as `redis.health`, renamed 2026-09-13 — the plain
-  name is reserved for the planned generic Redis distributed-cache module's check; sync-over-async —
-  one probe also covers minigraph-state-redis,
-  same `redis.*` keys), with the Redis wrinkle: a late credential surfaces as a server-side auth rejection
-  (NOAUTH/WRONGPASS) at connect time, not at client construction, so those classify as waiting too.
-  Eric's standing rule: every critical infrastructure component needs a health check service.
-  Hardened via PR #362 (squash `88bdff3a`): kernel threads for the Kafka checks (see
-  [[kafka-clients-kernel-threads]]), AtomicReference fields, supplier guards, and the failure
-  message as a `{text, code}` map — `code` for the aggregation/Kubernetes, `text` for the DevOps
-  reader (the healthy shape keeps `status` as its human string).
-  **Bounded 2026-09-16:** the passing "waiting" status covers ONLY a value that has not landed yet —
-  a config that can never work fails the check instead, because reporting it as passing is how a real
-  defect hid in the field for hours. See [[kafka-class-objects-over-names]].
-  <!-- id: preload-before-mainapp-lazy-config | created: 2026-09-11 | last_used: 2026-09-17 | uses: 15 | tier: archive-candidate | origin: 2026-09-11-185752 -->
-
-- **Kafka-driving functions run on kernel threads — `@KernelThreadRunner` (2026-09-11, Eric's
-  question → PR #362).** The Kafka consumer performs network I/O on the CALLING thread inside
-  `synchronized` sections, and Confluent serializers are synchronized too — on Java 21 a virtual
-  thread blocking there PINS its carrier (JEP 491 lifts that only in JDK 24+; the build targets 21
-  and the field runs it). Module rule: functions that drive Kafka clients carry `@KernelThreadRunner`
-  (SimpleKafkaNotification, SchemaCodec, SecondaryKafkaNotification, and now both kafka health
-  checks — live probes AND the warm-up spawn via getKernelThreadExecutor). Event-loop clients are
-  the counter-case: Lettuce does I/O on its own netty threads and callers only await futures, so
-  `soa.redis.health` deliberately stays on virtual threads. KafkaConsumer itself is NOT thread-safe;
-  sequential multi-thread access under external sync (the checks' ReentrantLock) is its contract.
-  <!-- id: kafka-clients-kernel-threads | created: 2026-09-11 | last_used: 2026-09-17 | uses: 7 | tier: archive-candidate | origin: 2026-09-11-191200 -->
-
-- **Kafka class-valued config is set as `Class` OBJECTS, and a config that can never work must FAIL a
-  health check (2026-09-16, field bug → PR #403; Eric ruled both halves).** Kafka resolves a class
-  *name* through `Utils.getContextOrKafkaClassLoader()`, which prefers the thread context classloader
-  and falls back to Kafka's own loader **only when the TCCL is `null`** — so a non-null but *wrong*
-  TCCL fails a lookup that a null one would have completed. A `Class` object short-circuits
-  `ConfigDef.parseType` (`if (value instanceof Class) return value`), so no loader is consulted at
-  all; `KafkaClientConfig` now puts objects (via `put`, not `setProperty` — so those keys leave
-  `stringPropertyNames()`, which `healthProbeProperties` accounts for), converging with
-  kafka-connector, which always did. A template naming its own `partitioner.class` still wins as a
-  String, resolved by Kafka on the app's own startup thread. **The durable lesson is broader than
-  Kafka: a pooled kernel thread changes what code can SEE, not just when it runs** — `kafka.health`
-  is `@KernelThreadRunner` and built its client on a pooled thread whose loader could not see
-  `kafka-clients`, while the same JVM's flow-adapter consumers, same config and same jar on ordinary
-  threads, were fine; that A/B *was* the diagnosis. Fix the loader, not the setting: with the TCCL
-  override disabled, the blind-loader test fails on the deserializers, then `metric.reporters` →
-  `JmxReporter`, then `sasl.oauthbearer.jwt.retriever.class` — Kafka resolves many configs this way.
-  **Second half — the leniency boundary:** the passing "waiting" status exists for ONE case, a value a
-  later `@MainApplication` bootstrap will publish; a class absent from the classpath will not appear
-  because we waited, so it answers 503 naming the *configuration*, not the network. Detection is by
-  message text (Kafka's `ConfigException` carries no cause) and defaults to *waiting*, so a reworded
-  message degrades to leniency rather than to spurious outages. Bounds
-  [[preload-before-mainapp-lazy-config]]; extends [[kafka-clients-kernel-threads]].
-  **INCOMPLETE as shipped in v4.12.11 (2026-09-17):** scoping the loader override to client
-  construction left a produce-only leg broken in the field — the loader is consulted earlier still, in
-  a Kafka config class's static initializer, reached while resolving the template. See
-  [[kafka-config-class-static-init-loader]].
-  <!-- id: kafka-class-objects-over-names | created: 2026-09-16 | last_used: 2026-09-17 | uses: 4 | tier: archive-candidate | origin: 2026-09-16-185851 -->
-
-- **Kafka resolves class-valued config DEFAULTS inside its config classes' STATIC INITIALIZERS, so a
-  wrong thread context loader poisons the class for the life of the JVM (2026-09-17, field report on
-  v4.12.11 → `bee2bc51`).** `ConfigDef.define` parses a `Type.CLASS` setting's default the moment the
-  key is defined (`ConfigKey.<init>`: `defaultValue = parseType(...)`), and
-  `SaslConfigs.addClientSaslSupport` defines `sasl.oauthbearer.jwt.retriever.class` with a class NAME
-  default — so merely initializing `ConsumerConfig` is a classloading event through
-  `Utils.getContextOrKafkaClassLoader()`, with **no broker, no SASL and no credentials involved**.
-  v4.12.11 wrapped only `new KafkaConsumer<>()`, and `kafka.health` still failed on a **produce-only**
-  leg, where `healthProbeProperties` reaches that initializer via `ConsumerConfig.configNames()` while
-  resolving the template — before `buildClient`. The consumer path was spared *only because* its
-  references to the same class are compile-time `String` constants that **javac inlines**, so its
-  first touch is the wrapped construction; verified in bytecode. Same jar, same thread, same config:
-  the difference was one inlined constant.
-  **Two properties that change how this class of bug must be handled.** (1) It arrives as an
-  `ExceptionInInitializerError` — an **Error** — so `catch (Exception)` misses it and `/health`
-  answered a raw **500**, not a 503. (2) A class whose initializer threw is erroneous for the life of
-  the JVM (JLS 12.4.2): every later access fails on *every* thread however correct its loader, so the
-  waiting/leniency model of [[preload-before-mainapp-lazy-config]] does not apply — there is nothing
-  to wait for and a restart is the only cure. Fix: `probe()` and `href()` run **entirely** under the
-  module loader, and a `LinkageError` renders as a 503 naming the configuration.
-  `GroupProtocolResolver` reaches `AdminClientConfig`/`Admin.create` the same way and is safe only
-  under that pin (noted in its javadoc).
-  **Durable lesson, broader than the fix:** v4.12.11 taught "a pooled kernel thread changes what code
-  can SEE"; this bounds it — **what a wrong loader can damage is not limited to the operation you
-  wrapped**, because class initialization is one-shot, JVM-wide and irreversible, and the *compiler*
-  decides which constant references are even capable of triggering it. Wrap every path into the
-  library, not the call you think does the work. Method note: the diagnosis came from a 30-line
-  fresh-JVM reproduction printing the field message verbatim — the field report had the mechanism
-  right and the location wrong (it proposed wrapping `listTopics`, which is never reached), and
-  reasoning from Kafka internals would have shipped that. Bounds
-  [[kafka-class-objects-over-names]]; extends [[kafka-clients-kernel-threads]]; tracked by
-  [[ot-kafka-health-producer-only-fix]].
-  <!-- id: kafka-config-class-static-init-loader | created: 2026-09-17 | last_used: 2026-09-17 | uses: 1 | tier: archive-candidate | origin: 2026-09-17-183008 -->
 
 - **A jar under a base scan package needs an `@OptionalService` master switch, and a vendor
   integration is not done until a negative control proves the happy path (2026-09-16, Eric's design
@@ -930,38 +835,6 @@
   vendor specifics live, never in the engine.
   → serves: vision-mercury-composable
   <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-23 | uses: 19 | tier: working | origin: 2026-08-25-213703 -->
-- [x] (blueprint) **CLOSED 2026-09-17 (Eric, at the first closure gate)** — integrate a pluggable AI
-  companion LLM backend. **Answered:** progressive rendering was driven end-to-end against the live
-  Gemini API (E0 — `llm.chat`/`llm.stream` AI nodes, real verdicts, tokens out the engine SSE edge,
-  one distributed trace), which settles the pluggable-backend question.
-  **This gap is DISTINCT from [[bp-agent-orchestration]] (Eric, correcting the first close record).**
-  The AI companion is *design-time collaboration* — an AI co-authoring graphs with a human in the
-  minigraph Playground. `bp-agent-orchestration` is the *run-time* epic: using graphs to create an AI
-  SDLC. One is how the model gets written, the other is what the model then runs. An earlier draft of
-  this record said "absorbed by", inferred from the two being ruled on together; that was wrong.
-  **Both halves are delivered (Eric, 2026-09-17): the AI companion is production quality, with
-  measured success in field installations.** An earlier draft of this record called the maturation
-  half undelivered because `PostCompanionCommandSync` is still `@OptionalService("app.env=dev")` —
-  a wrong inference. In Eric's words: **"the human–AI collaboration for graph prototyping and
-  productization has matured. It runs in dev mode. After promotion to production, the UI is
-  disabled."** Dev-gating is therefore the *designed lifecycle*, not a shortfall — the Playground is
-  where humans and an AI prototype and productize a graph; what promotes is the *graph*, and the
-  authoring surface is switched off behind it ([[minigraph-dev-mode-app-shape]] — removing that one
-  line is how the surface is closed). "Mature into a governed collaboration layer" meant
-  collaboration quality and certification, not un-gating an endpoint. So the Vision bullet "Human–AI
-  and human–human collaboration is first-class" is **realized**, and the altitude drift briefly
-  flagged against this close does not exist.
-  → served: vision-mercury-composable
-  <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-09-17 | uses: 4 | tier: archive-candidate -->
-- [x] (blueprint) **CLOSED 2026-09-17 (Eric, at the first closure gate)** — enterprise governance
-  lifecycle for graph models (dry-run → certify → stage → approve → production). **Closed as part of
-  AI companion maturity:** this gap *is* the human–AI collaboration and product-owner certification
-  process, and that is delivered alongside the companion — production quality, with measured success
-  in field installations ([[bp-ai-companion-llm-backend]], closed the same day). CompileGraph is the
-  deployment quality gate in the running engine; the certification half is the human process the
-  companion now supports. Not a documentation task and not deferred — realized.
-  → served: vision-mercury-composable
-  <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-09-17 | uses: 4 | tier: archive-candidate -->
 ## Open Threads
 
 > Open Threads live **one per file** in `memory/open-threads/` (`thread-<id>.md`;
