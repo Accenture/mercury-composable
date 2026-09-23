@@ -36,21 +36,16 @@
   on node, the `llm.chat`/`llm.stream` AI nodes. Registry publications the same night: crates.io 12/12 by 01:57Z (one `cargo publish --workspace`), npm and PyPI
   4.12.15 at 02:34Z (npm's first attempt failed 404 — an unauthenticated PUT reads as 404; the session needed a fresh two-factor `npm login`). Next: the AI SDLC/MCP backlog
   ([[bp-agent-orchestration]]) resumes (Eric). Origin 2026-09-23-014650.md.
-  Prior: v4.12.14 (2026-09-22 02:11Z — the first lock-step release with the Rust port; #437 squash `dbc26f31`, tag →
-  `e8a8d8e5`; one Java change, `group.protocol=${KAFKA_GROUP_PROTOCOL:auto}` in the bundled consumer template
-  ([[kafka-group-protocol-auto-default]]; READ: an app that never set `group.protocol` joins a KIP-848 cluster with the
-  consumer protocol); Rust v4.12.14 the same hour with K3–K5 minimalist-kafka, the forwarder port and the sync-over-async
-  facade, 12 crates on crates.io; the CHANGELOG corrections #438/#310. Origin 2026-09-21-233928.md.)
-  Prior: v4.12.13 (2026-09-21 — 11 accumulated improvements; #435 squash `1feb3d73`, tag → `1d2074f1`; FIELD-ACCEPTED.
-  READ: `f:lookup` + the decision-table recipe, per-iteration `for_each` suspend keys, snake_case log-context keys, the
-  cause-chain status rule, Redis 408/503 classification, the connection reset after a command timeout. Origin
-  2026-09-21-012124.md; detail in the CHANGELOG.)
-  Prior: v4.12.12 (2026-09-17 — the produce-only unblock, #410 squash `ebdd2e37`, [[kafka-config-class-static-init-loader]]).
-  Prior: v4.12.11 (2026-09-16 — the field-unblock release, #405 squash `06750214`: the `kafka.health` classloader fix and the
-  `otel.forwarding` opt-in [[otel-optional-service-and-negative-control]]; READ: an unusable Kafka template fails `/health`
-  503). Prior: v4.12.10 (2026-09-16 — the Berkeley DB store retired, ADR-0024, #400 squash `92e94f2b`). Prior: v4.12.9
-  (2026-09-16 — the distributed-Redis release, #364–#397, squash `9274cf92`; ACTION: the `soa.redis.health` route rename,
-  `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
+  Prior: v4.12.14 (2026-09-22 02:11Z — the first lock-step release with the Rust port; #437 squash `dbc26f31`, tag → `e8a8d8e5`;
+  one Java change, `group.protocol=${KAFKA_GROUP_PROTOCOL:auto}` in the bundled consumer template ([[kafka-group-protocol-auto-default]];
+  READ: an app that never set it joins a KIP-848 cluster with the consumer protocol); Rust v4.12.14 the same hour, 12 crates. Origin 2026-09-21-233928.md.)
+  Prior: v4.12.13 (2026-09-21 — 11 accumulated improvements; #435 squash `1feb3d73`, tag → `1d2074f1`; FIELD-ACCEPTED. READ:
+  `f:lookup` + the decision-table recipe, per-iteration `for_each` suspend keys, snake_case log-context keys, the cause-chain
+  status rule, Redis 408/503 classification, the connection reset after a command timeout. Origin 2026-09-21-012124.md.)
+  Prior: v4.12.12 (2026-09-17, the produce-only unblock, #410 `ebdd2e37`, [[kafka-config-class-static-init-loader]]) · v4.12.11
+  (2026-09-16, the field unblock, #405 `06750214`, [[otel-optional-service-and-negative-control]]) · v4.12.10 (2026-09-16, Berkeley DB
+  store retired, ADR-0024, #400 `92e94f2b`) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397, `9274cf92`; ACTION: the
+  `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
 - **last_review:** 2026-09-23 | through 2026-09-23-014650.md (SIZE TRIGGER — `[continuity-bloat]` 39 > 35 facts and 1032 > 1000
   lines at the v4.12.15 seam; 2 sessions since the 2026-09-22 review. Archived 0, swept 0 — nothing past `archive_window`; tier changes 6 via `refresh-metadata`; lines 1032 → 1000 by
@@ -271,7 +266,7 @@
   token-bearing traces, cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided
   which calls succeeded — probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the
   root; the fix is [[connected-edge-spans]] (shipped in v4.12.15).
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-22 | uses: 7 | tier: active | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-23 | uses: 9 | tier: active | origin: 2026-09-16-193203 -->
 
 - **Application log forwarding is an INFRASTRUCTURE task — the engine does not grow that capability
   (Eric with the field architects, 2026-09-18; CLOSED, not parked).** The field found the gap after
@@ -320,7 +315,12 @@
   reason from what the user does, not from what the engine can detect. Serves
   [[vision-mercury-composable]] (the certification half of the governance lifecycle); applied by
   [[ot-subgraph-for-each-suspend]].
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-22 | uses: 4 | tier: active | origin: 2026-09-18-174943 -->
+  **Applied 2026-09-23 to the toolchain (Eric):** embedded-redis's bundled macOS-arm64 `redis-server` is linked against Homebrew
+  OpenSSL 3 (Linux x86-64 needs `libssl.so.3` + glibc 2.34, both on `ubuntu-latest`; the other four binaries are self-contained;
+  1.4.4 ships the same files), so a Mac without it fails `mvn clean install` in `extensions/redis-connection`. Eric REJECTED the
+  fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
+  DOCUMENTED, not engineered around, while CI and the field pass; the library's default provider ignores `EMBEDDED_REDIS_EXECUTABLE`.
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-23 | uses: 5 | tier: active | origin: 2026-09-18-174943 -->
 
 - **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
   `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
@@ -390,7 +390,7 @@
   (cache). Realizes the "extract the foundation" half of [[cache-separate-from-soa]]; tracked by
   [[ot-distributed-cache]]; applied [[preload-before-mainapp-lazy-config]] and
   [[conv-reentrantlock-not-synchronized]].
-  <!-- id: redis-connection-foundation | created: 2026-09-14 | last_used: 2026-09-21 | uses: 8 | tier: active | origin: 2026-09-14-230259 -->
+  <!-- id: redis-connection-foundation | created: 2026-09-14 | last_used: 2026-09-21 | uses: 8 | tier: archive-candidate | origin: 2026-09-14-230259 -->
 
 - **platform-core has a lightweight shutdown lifecycle — `Platform.getInstance().onShutdown(Runnable)`
   (2026-09-14, Eric's minimalist-principle ruling; for v4.12.9).** The platform owns ONE JVM shutdown hook
@@ -657,7 +657,7 @@
   the AI agent guide's pre-send checklist, pinned by `unit-test-task-9` on both engines (twin: mercury
   Increment 123). Applies [[event-script-over-code]] to DATA (config over code) and
   [[clean-knowledge-design-over-engine-coverage]] (no engine feature where the design already works).
-  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: active | origin: 2026-09-20-152704 -->
+  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: archive-candidate | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
   `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
@@ -837,7 +837,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-23 | uses: 14 | tier: active | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-23 | uses: 16 | tier: active | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - **Declare a Memory Reference when a fact is CONSULTED to make a decision — not only when it is
