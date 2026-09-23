@@ -38,9 +38,8 @@
   Prior: v4.12.14 (2026-09-22 02:11Z — the first lock-step release with the Rust port; #437 squash `dbc26f31`, tag → `e8a8d8e5`;
   one Java change, `group.protocol=${KAFKA_GROUP_PROTOCOL:auto}` in the bundled consumer template ([[kafka-group-protocol-auto-default]];
   READ: an app that never set it joins a KIP-848 cluster with the consumer protocol); Rust v4.12.14 the same hour, 12 crates. Origin 2026-09-21-233928.md.)
-  Prior: v4.12.13 (2026-09-21 — 11 accumulated improvements; #435 squash `1feb3d73`, tag → `1d2074f1`; FIELD-ACCEPTED. READ:
-  `f:lookup` + the decision-table recipe, per-iteration `for_each` suspend keys, snake_case log-context keys, the cause-chain
-  status rule, Redis 408/503 classification, the connection reset after a command timeout. Origin 2026-09-21-012124.md.)
+  Prior: v4.12.13 (2026-09-21 — 11 accumulated improvements; #435 squash `1feb3d73`, tag → `1d2074f1`; FIELD-ACCEPTED; READ
+  list in the CHANGELOG. Origin 2026-09-21-012124.md.)
   Prior: v4.12.12 (2026-09-17, the produce-only unblock, #410 `ebdd2e37`, [[kafka-config-class-static-init-loader]]) · v4.12.11
   (2026-09-16, the field unblock, #405 `06750214`, [[otel-optional-service-and-negative-control]]) · v4.12.10 (2026-09-16, Berkeley DB
   store retired, ADR-0024, #400 `92e94f2b`) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397, `9274cf92`; ACTION: the
@@ -289,7 +288,7 @@
   correlation; it was transport, which is the platform's job.
   Applies [[clean-knowledge-design-over-engine-coverage]] one level up — the same "should the engine
   absorb this at all" question asked of a *capability* rather than a graph composition.
-  <!-- id: log-forwarding-is-infrastructure | created: 2026-09-18 | last_used: 2026-09-21 | uses: 2 | tier: active | origin: 2026-09-18-174943 -->
+  <!-- id: log-forwarding-is-infrastructure | created: 2026-09-18 | last_used: 2026-09-21 | uses: 2 | tier: archive-candidate | origin: 2026-09-18-174943 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -314,12 +313,12 @@
   [[vision-mercury-composable]] (the certification half of the governance lifecycle); applied by
   [[ot-subgraph-for-each-suspend]].
   **Applied 2026-09-23 to the toolchain (Eric):** embedded-redis's bundled macOS-arm64 `redis-server` is linked against Homebrew
-  OpenSSL 3 (Linux x86-64 needs `libssl.so.3` + glibc 2.34, both on `ubuntu-latest`; the other four binaries are self-contained;
-  1.4.4 ships the same files), so a Mac without it fails `mvn clean install` in `extensions/redis-connection`. Eric REJECTED the
+  OpenSSL 3 (Linux x86-64 needs `libssl.so.3` + glibc 2.34, both on `ubuntu-latest`; the rest are self-contained), so a Mac
+  without it fails `mvn clean install` in `extensions/redis-connection`. Eric REJECTED the
   fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
   DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
   ignores `EMBEDDED_REDIS_EXECUTABLE`.
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-23 | uses: 6 | tier: active | origin: 2026-09-18-174943 -->
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-23 | uses: 7 | tier: active | origin: 2026-09-18-174943 -->
 
 - **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
   `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
@@ -434,8 +433,10 @@
   mapping aborted the dry-run with the reworded error in the UI console (screenshot proof, 2026-09-15).
   Parked: CompileGraph static LHS check (dynamic `{…}` limits it to static cases);
   Rust-twin parity check of the same callback pattern. Relates [[trace-thread-keyed-mono-gotcha]]
-  (the same async-callback minefield).
-  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-22 | uses: 8 | tier: active | origin: 2026-09-15-040141 -->
+  (the same async-callback minefield). **Extended 2026-09-23 (#454, Eric — "every abort should come with a reason"):** a
+  dry-run's terminal is `Graph traversal aborted: <reason>` on both engines (node named; the companion and the web app
+  match the PREFIX — a bare terminal is gone); arithmetic plugins' null argument now carries a message. Java `bf3250d7`.
+  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-23 | uses: 9 | tier: active | origin: 2026-09-15-040141 -->
 
 - **A Layer 3 application is one graph endpoint plus dev mode — and the Playground UI hides behind a
   classpath-order trap (2026-09-15, Eric's polish round on the starter template + the cache example).**
