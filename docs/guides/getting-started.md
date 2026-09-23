@@ -37,7 +37,11 @@ develop, maintain, deploy, and scale.
 **Prerequisites:** Java 21+ (`java --version`) — **Java 25 (current LTS) is the recommended
 JDK/JRE**. The build targets Java 21 bytecode *deliberately, for wider compatibility*; the
 virtual-thread technology it builds on is fully supported on Java 25. Plus Maven 3.9.7+
-(`mvn --version`) and Git.
+(`mvn --version`) and Git. **On an Apple Silicon Mac, also OpenSSL 3 from Homebrew**
+(`brew install openssl@3`): the unit tests of the Redis-backed modules start an embedded `redis-server`
+whose macOS arm64 binary is linked against it, and without it the build below fails in
+`extensions/redis-connection` with *"Failed to start Redis service"* — details in the
+[redis-standalone README](https://github.com/Accenture/mercury-composable/blob/main/helpers/redis-standalone/README.md#platform-prerequisites).
 
 **1. Clone and build the libraries.**
 

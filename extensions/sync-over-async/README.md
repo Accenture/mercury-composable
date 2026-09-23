@@ -126,5 +126,7 @@ embedded KRaft broker and `redis-server`.
 ## Building
 
 This is an optional extension. Build it from source with `mvn clean install` (or publish it to your
-organization artifactory). Unit tests run against an embedded `redis-server` binary (bundled for macOS
-and Linux, arm64/amd64) — no Docker required.
+organization artifactory). Unit tests run against an embedded `redis-server` binary (bundled for macOS,
+Linux and Windows) — no Docker required; on an Apple Silicon Mac the bundled binary needs Homebrew's
+OpenSSL 3 (`brew install openssl@3`), see the
+[platform prerequisites](../../helpers/redis-standalone/README.md#platform-prerequisites) of `redis-standalone`.

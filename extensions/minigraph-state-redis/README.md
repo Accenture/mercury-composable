@@ -65,5 +65,7 @@ Any composable function honoring the same put/get contract can replace this modu
 implement your own for PostgreSQL, DynamoDB, MongoDB, etc., and name its route in the
 node's `task` property. If the store has no native TTL, implement record expiry yourself.
 The engine's unit tests ship the smallest possible reference implementation (a temp-file
-store). Tests here use embedded Redis (a real `redis-server` binary, macOS arm64/amd64 and
-Linux — no Docker) on port 16380.
+store). Tests here use embedded Redis (a real `redis-server` binary — no Docker; on an Apple
+Silicon Mac it needs Homebrew's OpenSSL 3, see the
+[platform prerequisites](../../helpers/redis-standalone/README.md#platform-prerequisites) of
+`redis-standalone`) on port 16380.
