@@ -3233,6 +3233,12 @@ resolve as bare <code>target/classes</code> directories — so that module abort
 <code>mvn clean install</code> packages and installs each module in dependency order, which is also what CI runs.
 (Testing a single module with <code>mvn test -f &lt;module&gt;/pom.xml</code> is fine: its dependencies then resolve
 from your local Maven repository as jars.)</p>
+<p><strong>Apple Silicon Mac:</strong> the reactor build also needs OpenSSL 3 from Homebrew (<code>brew install openssl@3</code>).
+The unit tests of the Redis-backed modules start an embedded <code>redis-server</code>, and its macOS arm64 binary is
+linked against Homebrew's <code>libssl.3.dylib</code>; without it the build fails in <code>extensions/redis-connection</code>
+with <em>"Failed to start Redis service"</em>. Linux and Windows need nothing extra on current distributions — see
+the <a href="https://github.com/Accenture/mercury-composable/blob/main/helpers/redis-standalone/README.md#platform-prerequisites">platform prerequisites</a>
+in the <code>redis-standalone</code> README.</p>
 </blockquote>
 <p>In the lambda-example project root, you will find the following directories:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>src/main/java

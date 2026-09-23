@@ -3251,7 +3251,11 @@ develop, maintain, deploy, and scale.</p>
 <p><strong>Prerequisites:</strong> Java 21+ (<code>java --version</code>) — <strong>Java 25 (current LTS) is the recommended
 JDK/JRE</strong>. The build targets Java 21 bytecode <em>deliberately, for wider compatibility</em>; the
 virtual-thread technology it builds on is fully supported on Java 25. Plus Maven 3.9.7+
-(<code>mvn --version</code>) and Git.</p>
+(<code>mvn --version</code>) and Git. <strong>On an Apple Silicon Mac, also OpenSSL 3 from Homebrew</strong>
+(<code>brew install openssl@3</code>): the unit tests of the Redis-backed modules start an embedded <code>redis-server</code>
+whose macOS arm64 binary is linked against it, and without it the build below fails in
+<code>extensions/redis-connection</code> with <em>"Failed to start Redis service"</em> — details in the
+<a href="https://github.com/Accenture/mercury-composable/blob/main/helpers/redis-standalone/README.md#platform-prerequisites">redis-standalone README</a>.</p>
 <p><strong>1. Clone and build the libraries.</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/Accenture/mercury-composable.git
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>mercury-composable
