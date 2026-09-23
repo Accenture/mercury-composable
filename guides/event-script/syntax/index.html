@@ -4611,6 +4611,13 @@ using the shared state machine easily.</p>
 <p>A function is self-contained. This modularity reduces application complexity because the developer only needs
 interface contract details for a specific function.</p>
 <p>To handle this level of modularity, the system provides configurable input/output data mapping.</p>
+<p><em>Null sources.</em> When a mapping's source resolves to null — the key does not exist, or a plugin returns
+null — only a <code>model.*</code> target is cleared: the model variable is removed when the source key is absent,
+and set to null when the key exists with a null value. For any other target the entry is ignored when
+the source key is absent, and an existing null value propagates. A default for a model variable
+therefore comes from the source side (<code>f:defaultValue(input.body.flag, boolean(false)) -&gt; model.flag</code>),
+never from a default written first and overlaid by a possibly-null source. The knowledge-graph engine
+applies the same rule to its data mappings.</p>
 <p><em>Namespaces for I/O data mapping</em></p>
 <table>
 <thead>
@@ -5603,6 +5610,13 @@ one, set the value in a model variable first and pass the model variable as the 
 (an <code>f:</code> expression as another plugin's argument) are not supported — the engine deliberately ignores them to
 prevent execution loops.</p>
 <p>For model, input and output variables, you may also use JSON-Path syntax to extract value as argument to a plugin.</p>
+<p><strong>Null arguments are plugin-specific, by design.</strong> A plugin receives an unresolved argument as <code>null</code> and
+each plugin decides what that means: <code>f:defaultValue</code> and <code>f:isNull</code> exist for it, the arithmetic family
+(<code>f:add</code>, <code>f:round</code>, ...) throws — which fails the task, and in a knowledge graph the node and therefore the
+traversal — and other plugins return null or absorb a malformed argument silently. A plain mapping of the
+same absent source is skipped, so wrapping a working mapping in a plugin can change whether it runs. Guard
+an optional source in a preceding entry, because plugin calls do not nest:
+<code>f:defaultValue(model.figure, double(0)) -&gt; model.figure</code> and then <code>f:round(model.figure, int(2)) -&gt; output.body.figure</code>.</p>
 <p>For example:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-60-1" name="__codelineno-60-1" href="#__codelineno-60-1"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
 <a id="__codelineno-60-2" name="__codelineno-60-2" href="#__codelineno-60-2"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.body.account_balance</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.balance'</span>

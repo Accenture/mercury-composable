@@ -3468,14 +3468,18 @@ matter; use numeric indices (above) when the order must be deterministic.</p>
 <p>A <strong>non-leaf (interior) path maps the entire subtree</strong>, not just scalars: a source like
 <code>fetch-one.result.profile</code> above carries the whole profile object, and <code>response.accounts</code> in a
 Dictionary mapping carries the whole array.</p>
-<p><strong>A null source removes the target.</strong> When a mapping's source resolves to null — the key does not
-exist, or a plugin returns null — the graph engine <strong>removes the target key</strong> (an indexed target such
-as <code>profile[1]</code> is set to null instead, so list positions stay stable). A default therefore comes from
-the <strong>source</strong> side: <code>f:defaultValue(input.body.flag, boolean(false)) -&gt; model.flag</code>, or a plugin's own
-default such as <code>f:lookup(table, value, text(unknown))</code>. Do not write a default first and overlay it
-with a possibly-null source — the overlay removes the default. (Event Script flows differ: there a null
-source applies only to <code>model.*</code> targets, where it removes the model variable key; for any other target
-the entry is ignored.)</p>
+<p><strong>A null source clears a <code>model.*</code> target and leaves any other target untouched</strong> — the same rule
+as Event Script flows (#453). When a mapping's source resolves to null — the key does not exist, or a
+plugin returns null — a <code>model.*</code> target is <strong>removed</strong> (set to null instead when the source key exists
+with a null value, or when the target is an indexed element such as <code>model.profiles[1]</code>, so list
+positions stay stable); an <code>output.*</code> or node-alias target is <strong>left as it was</strong> (a source key that
+exists with a null value propagates the null). The rule holds for <code>mapping[]</code> entries, <code>for_each</code>
+entries and the output mapping of <code>graph.task</code>, <code>graph.extension</code> and <code>graph.api.fetcher</code>; a fetcher
+or extension <code>input[]</code> parameter mapped from a null source is simply not supplied. A default for a
+model variable therefore comes from the <strong>source</strong> side: <code>f:defaultValue(input.body.flag,
+boolean(false)) -&gt; model.flag</code>, or a plugin's own default such as <code>f:lookup(table, value,
+text(unknown))</code>. Do not write a default into <code>model.*</code> first and overlay it with a possibly-null
+source — the overlay removes the default.</p>
 <h2 id="constants">Constants<a class="headerlink" href="#constants" title="Permanent link">&para;</a></h2>
 <p>A constant is valid wherever a mapping <strong>source</strong> is (a <code>mapping[]</code>/<code>input[]</code>/<code>output[]</code> source, an
 <code>instantiate graph</code> seed line). This is the <strong>closed set</strong> — no other constant or coercion form
@@ -3584,10 +3588,10 @@ structured outcome comes back in the response's <code>result</code> field.)</p>
 </blockquote>
 <p><strong>Run deadline:</strong> a dry-run traversal is bounded by <code>model.ttl</code> (default 30 s) — the same
 deadline its deployed twin gets from the flow timer, so dev and production time out alike. A
-hung or overlong run ends with <code>Graph traversal timed out after N ms</code> followed by the canonical
-<code>Graph traversal aborted</code> terminal (the console and the synchronous companion endpoint always
-receive an end-of-transmission line). Seed a different budget at the instantiate edge:
-<code>long(60000) -&gt; model.ttl</code>.</p>
+hung or overlong run ends with the canonical terminal carrying its reason, <code>Graph traversal
+aborted: timed out after N ms</code> (every abort names its reason — a node's error, a pre-run gate
+rule, the deadline — and the console and the synchronous companion endpoint always receive an
+end-of-transmission line). Seed a different budget at the instantiate edge: <code>long(60000) -&gt; model.ttl</code>.</p>
 <h3 id="describe">describe / list / seen<a class="headerlink" href="#describe" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>describe graph
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>describe graph {graph-id}        # DISCOVERY: a deployed model's contract view

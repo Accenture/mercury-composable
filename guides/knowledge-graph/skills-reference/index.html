@@ -3200,8 +3200,9 @@ instead of a script.</p>
 <p><strong>Deadline:</strong> a script is cancelled at a hard execution deadline (GraalVM context cancellation),
 failing the node with a 408 <code>script exceeded the N ms execution deadline</code>. Unlike
 <a href="#api-fetcher"><code>graph.api.fetcher</code></a>'s call deadline, this is a <strong>run-level error</strong> — it is not
-<code>exception=</code>-routable: a dry-run emits the 408 line and the canonical <code>Graph traversal aborted</code>
-terminal, and a deployed run fails the whole request with HTTP 408. The default is a tight
+<code>exception=</code>-routable: a dry-run ends with the canonical terminal carrying the 408 reason
+(<code>Graph traversal aborted: script exceeded the N ms execution deadline</code>), and a deployed run fails
+the whole request with HTTP 408. The default is a tight
 <strong>5 seconds</strong> — <code>graph.js</code> (like <code>graph.math</code>) is meant for very simple computation or
 IF-THEN-ELSE, so it deliberately does <strong>not</strong> inherit the typically longer <code>model.ttl</code>; an
 optional node <code>ttl</code> (duration syntax, e.g. <code>10s</code>) overrides it. An endless loop can no longer
