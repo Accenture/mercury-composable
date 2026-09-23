@@ -54,6 +54,13 @@ mapping[]=input.body.join_date -> employee.join_date
 The "[]" syntax is used to create and append a list of one or more data mapping entries
 The "->" signature indicates the direction of mapping where the left-hand-side is source and right-hand-side is target
 
+Null source
+-----------
+A source that resolves to null (a key that does not exist, or a plugin returning null) clears a "model."
+target and leaves any other target untouched - the same rule as Event Script. Put a default on the source
+side (f:defaultValue(input.body.flag, boolean(false)) -> model.flag, or a plugin's own default); a default
+written to a model variable first is removed by a later null overlay.
+
 Decision table lookup
 ---------------------
 A data mapper is also the natural decision node for a static decision table held on a skill-less node

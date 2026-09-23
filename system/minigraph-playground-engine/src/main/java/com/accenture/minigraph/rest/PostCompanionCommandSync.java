@@ -61,7 +61,7 @@ import java.util.concurrent.TimeUnit;
  * ({@code run}) is asynchronous — the handler launches the traveler and replies
  * immediately, then the traveler streams its output afterward — so it is drained
  * on the traveler's <b>terminal line</b> ("Graph traversal completed in N ms" |
- * "Graph traversal aborted"), always emitted last; every other command emits all
+ * "Graph traversal aborted: {reason}"), always emitted last; every other command emits all
  * output before it replies, so a <b>FIFO sentinel</b> marks its buffer drained. A
  * sentinel would race (and usually beat) the traversal tail, truncating the
  * capture. The WebSocket console behavior is unchanged.
@@ -250,7 +250,7 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         // a false positive.
         return line.startsWith("ERROR:") || line.contains("aborted") || line.contains("does not have")
                 || line.startsWith("Invalid") || line.contains("not found") || line.contains("Please try 'help'")
-                || line.startsWith("Syntax:") || line.startsWith("Graph traversal timed out");
+                || line.startsWith("Syntax:");
     }
 
     /**
@@ -290,6 +290,6 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
      * traversal deterministically — no timer, no truncated capture.
      */
     private static boolean isTraversalTerminal(String line) {
-        return line.startsWith("Graph traversal completed in") || line.equals("Graph traversal aborted");
+        return line.startsWith("Graph traversal completed in") || line.startsWith("Graph traversal aborted");
     }
 }

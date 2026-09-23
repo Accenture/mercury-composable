@@ -733,7 +733,10 @@ early-failure paths (no instance yet, missing root/end node) emit their reason *
 `Graph traversal aborted`, so a companion mistake such as `run` before `instantiate` returns promptly
 (`ok:false`) instead of waiting out the timeout. The bounded wait is only a safety net; correctness
 comes from the signal. This keeps the REST contract byte-identical across the Rust and Java engines —
-the companion surface is language-neutral.
+the companion surface is language-neutral. *Amended 2026-09-23 (field issue #454, Eric's ruling):
+every abort carries its reason in the terminal itself — `Graph traversal aborted: {reason}`, the shape
+of the executor's log record — and the drain matches the prefix; the separate reason line before a
+bare terminal is gone.*
 
 ---
 

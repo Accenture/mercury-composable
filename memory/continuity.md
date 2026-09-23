@@ -29,9 +29,8 @@
   too; an absent `app.env` is production). No new runtime dependency. Sweep BUILD FILES ONLY, 43 files / 98 occurrences
   (unchanged). Readiness: full build 35 modules, 1505 tests, 0 failures ([[conv-changelog-from-tag-range]]).
   **Lockstep (one number on all four, [[conv-ports-adopt-java-release-number]]):** the Rust port released v4.12.15 the same
-  hour (mercury #322 → `87ee371f`, tag → `28cd3328`, 01:36:57Z; Increments 132–135 — the E0 twin, the connected spans
-  twin, the Kafka shutdown contract, the starter's dev mode + plain home page, the restart-aware Redis retry with the new
-  key `redis.heartbeat.ms`); the python and node packs moved 4.12.1 → 4.12.15 (mercury-python #37 → `95101575`, tag →
+  hour (mercury #322 → `87ee371f`, tag → `28cd3328`, 01:36:57Z; Increments 132–135 — the E0 and connected-spans twins, the
+  Kafka shutdown contract, the starter's dev mode, the restart-aware Redis retry, new key `redis.heartbeat.ms`); the python and node packs moved 4.12.1 → 4.12.15 (mercury-python #37 → `95101575`, tag →
   `7bf6991`; mercury-nodejs #105 → `13426732`, tag → `4c43ffe`) with the OpenTelemetry forwarder, the span-kind rule and,
   on node, the `llm.chat`/`llm.stream` AI nodes. Registry publications the same night: crates.io 12/12 by 01:57Z (one `cargo publish --workspace`), npm and PyPI
   4.12.15 at 02:34Z (npm's first attempt failed 404 — an unauthenticated PUT reads as 404; the session needed a fresh two-factor `npm login`). Next: the AI SDLC/MCP backlog
@@ -39,9 +38,8 @@
   Prior: v4.12.14 (2026-09-22 02:11Z — the first lock-step release with the Rust port; #437 squash `dbc26f31`, tag → `e8a8d8e5`;
   one Java change, `group.protocol=${KAFKA_GROUP_PROTOCOL:auto}` in the bundled consumer template ([[kafka-group-protocol-auto-default]];
   READ: an app that never set it joins a KIP-848 cluster with the consumer protocol); Rust v4.12.14 the same hour, 12 crates. Origin 2026-09-21-233928.md.)
-  Prior: v4.12.13 (2026-09-21 — 11 accumulated improvements; #435 squash `1feb3d73`, tag → `1d2074f1`; FIELD-ACCEPTED. READ:
-  `f:lookup` + the decision-table recipe, per-iteration `for_each` suspend keys, snake_case log-context keys, the cause-chain
-  status rule, Redis 408/503 classification, the connection reset after a command timeout. Origin 2026-09-21-012124.md.)
+  Prior: v4.12.13 (2026-09-21 — 11 accumulated improvements; #435 squash `1feb3d73`, tag → `1d2074f1`; FIELD-ACCEPTED; READ
+  list in the CHANGELOG. Origin 2026-09-21-012124.md.)
   Prior: v4.12.12 (2026-09-17, the produce-only unblock, #410 `ebdd2e37`, [[kafka-config-class-static-init-loader]]) · v4.12.11
   (2026-09-16, the field unblock, #405 `06750214`, [[otel-optional-service-and-negative-control]]) · v4.12.10 (2026-09-16, Berkeley DB
   store retired, ADR-0024, #400 `92e94f2b`) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397, `9274cf92`; ACTION: the
@@ -50,8 +48,7 @@
 - **last_review:** 2026-09-23 | through 2026-09-23-014650.md (SIZE TRIGGER — `[continuity-bloat]` 39 > 35 facts and 1032 > 1000
   lines at the v4.12.15 seam; 2 sessions since the 2026-09-22 review. Archived 0, swept 0 — nothing past `archive_window`; tier changes 6 via `refresh-metadata`; lines 1032 → 1000 by
   condensing the release chain, the stamps and three shipped addenda; facts advisory persists by design at 40 > 35.)
-  Prior: 2026-09-22 | 2026-09-21-233928.md (size; swept 2) · 2026-09-21 | 2026-09-21-012124.md · 2026-09-19 | 2026-09-19-020551.md ·
-  2026-09-18 | 2026-09-18-215436.md (the false bloat trigger, [[conv-schema-example-not-a-fact]]).
+  Prior: 2026-09-22 | 2026-09-21-233928.md (size; swept 2) · 2026-09-21 | 2026-09-21-012124.md · 2026-09-19 | 2026-09-19-020551.md.
 - **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**: Track 1 *knowledge graph as
   application* (deterministic — rules, business logic, outcome; L3 leverages L2 + L1) and Track 2 *knowledge graph as AI SDLC*
   (governed AI processing for ambiguity a deterministic program cannot handle; L3 is the foundation and **AI is also the
@@ -291,7 +288,7 @@
   correlation; it was transport, which is the platform's job.
   Applies [[clean-knowledge-design-over-engine-coverage]] one level up — the same "should the engine
   absorb this at all" question asked of a *capability* rather than a graph composition.
-  <!-- id: log-forwarding-is-infrastructure | created: 2026-09-18 | last_used: 2026-09-21 | uses: 2 | tier: active | origin: 2026-09-18-174943 -->
+  <!-- id: log-forwarding-is-infrastructure | created: 2026-09-18 | last_used: 2026-09-21 | uses: 2 | tier: archive-candidate | origin: 2026-09-18-174943 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -316,12 +313,12 @@
   [[vision-mercury-composable]] (the certification half of the governance lifecycle); applied by
   [[ot-subgraph-for-each-suspend]].
   **Applied 2026-09-23 to the toolchain (Eric):** embedded-redis's bundled macOS-arm64 `redis-server` is linked against Homebrew
-  OpenSSL 3 (Linux x86-64 needs `libssl.so.3` + glibc 2.34, both on `ubuntu-latest`; the other four binaries are self-contained;
-  1.4.4 ships the same files), so a Mac without it fails `mvn clean install` in `extensions/redis-connection`. Eric REJECTED the
+  OpenSSL 3 (Linux x86-64 needs `libssl.so.3` + glibc 2.34, both on `ubuntu-latest`; the rest are self-contained), so a Mac
+  without it fails `mvn clean install` in `extensions/redis-connection`. Eric REJECTED the
   fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
   DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
   ignores `EMBEDDED_REDIS_EXECUTABLE`.
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-23 | uses: 5 | tier: active | origin: 2026-09-18-174943 -->
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-23 | uses: 7 | tier: active | origin: 2026-09-18-174943 -->
 
 - **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
   `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
@@ -436,8 +433,10 @@
   mapping aborted the dry-run with the reworded error in the UI console (screenshot proof, 2026-09-15).
   Parked: CompileGraph static LHS check (dynamic `{…}` limits it to static cases);
   Rust-twin parity check of the same callback pattern. Relates [[trace-thread-keyed-mono-gotcha]]
-  (the same async-callback minefield).
-  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-22 | uses: 8 | tier: active | origin: 2026-09-15-040141 -->
+  (the same async-callback minefield). **Extended 2026-09-23 (#454, Eric — "every abort should come with a reason"):** a
+  dry-run's terminal is `Graph traversal aborted: <reason>` on both engines (node named; the companion and the web app
+  match the PREFIX — a bare terminal is gone); arithmetic plugins' null argument now carries a message. Java `bf3250d7`.
+  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-23 | uses: 9 | tier: active | origin: 2026-09-15-040141 -->
 
 - **A Layer 3 application is one graph endpoint plus dev mode — and the Playground UI hides behind a
   classpath-order trap (2026-09-15, Eric's polish round on the starter template + the cache example).**
@@ -488,7 +487,7 @@
   Rust repo — both engines share the WS handshake. Dev-only, like the Playground itself.
   Reactivated 2026-09-14: now ALSO shipped in `templates/starter-graph` (both repos), and the AI
   docs are broker-first with the keep-alive failure mode named (mercury-composable#383, mercury#276).
-  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-17 | uses: 10 | tier: archive-candidate | origin: 2026-09-03-172753 -->
+  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-23 | uses: 11 | tier: active | origin: 2026-09-03-172753 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -552,7 +551,7 @@
   connection recovers on its 30 s backoff cap while `redis.health` (a fresh connection) is already green —
   ruled 2026-09-21 — reset the shared connection on command timeout, [[redis-connection-reset-on-timeout]]; the in-function RPC timeout WAS 500 here vs 408 on Rust — a platform-core mapping gap, fixed
   2026-09-20 ([[exception-status-from-cause-chain]]): 408 on both. Relates [[redis-connection-foundation]].
-  <!-- id: l1-caller-checks-reply-status | created: 2026-09-20 | last_used: 2026-09-21 | uses: 3 | tier: active | origin: 2026-09-20-004702 -->
+  <!-- id: l1-caller-checks-reply-status | created: 2026-09-20 | last_used: 2026-09-21 | uses: 3 | tier: archive-candidate | origin: 2026-09-20-004702 -->
 
 - **A function's error status comes from its CAUSE CHAIN — the first `AppException` (its status),
   `TimeoutException` (408) or `IllegalArgumentException` (400) wins; 500 only when none is present (Eric,
@@ -572,7 +571,7 @@
   are 408, matching Rust, whose `AppError` carries its status with no wrapper class to hide it. Relates
   [[l1-caller-checks-reply-status]]. The Layer 2/3 500s that remained after this fix were the cache module's own
   unclassified Lettuce exceptions — closed by [[redis-failure-classification]].
-  <!-- id: exception-status-from-cause-chain | created: 2026-09-20 | last_used: 2026-09-21 | uses: 2 | tier: active | origin: 2026-09-20-004702 -->
+  <!-- id: exception-status-from-cause-chain | created: 2026-09-20 | last_used: 2026-09-21 | uses: 2 | tier: archive-candidate | origin: 2026-09-20-004702 -->
 
 - **`v1.cache.redis` classifies its own Redis failures — a command timeout is 408, an unreachable Redis is
   503, only a server answer stays 500 — in both engines (Eric, 2026-09-20; Java `RedisFailure.classify` in
@@ -617,9 +616,8 @@
   <!-- id: redis-connection-reset-on-timeout | created: 2026-09-21 | last_used: 2026-09-22 | uses: 2 | tier: active | origin: 2026-09-21-012124 -->
 - **A static decision table is GRAPH DATA — a skill-less node's properties, handed whole to a generic
   function by ONE `graph.task` input entry; never hard-coded in a function bundled with the graph (Eric,
-  2026-09-20; a doc gap, no engine change; branch `docs/static-decision-table-on-a-node` `00283800` +
-  `6ae1a628`; PR #430 MERGED 2026-09-20, squash `c5adc58f`; the `lookup` plugin follows on branch
-  `feat/lookup-plugin` `009181d5` + `42dc8598`; PR #431 MERGED 2026-09-20, squash `e52aeaca`).** Found when an AI agent compiled a rule-by-state table into a composable function shipped
+  2026-09-20; a doc gap, no engine change — PR #430 squash `c5adc58f`; the `lookup` plugin PR #431 squash
+  `e52aeaca`).** Found when an AI agent compiled a rule-by-state table into a composable function shipped
   with its graph. Both engines already copy every node's properties into the state machine at
   instantiation (`initializeWithNodeProperties`: skill node → non-reserved keys at `{node}.{key}`;
   skill-less node → the whole map at `{node}`) and the shared LHS resolver reads any selector, so
@@ -642,15 +640,17 @@
   met while reviewing it: (1) a plugin class may not reference `SimpleMapper` — the loader's bytecode gate
   (`ALLOWED_PACKAGES`) SKIPS it silently and every `f:lookup` mapping then fails `SimplePlugin 'lookup' not
   found`; the serializer is reached only through the allowlisted `SimplePluginUtils`, and
-  `SimplePluginGateTest` now pins discovery; (2) **a null mapping source REMOVES the target** in both the
-  graph mapper (`handleDataMappingEntry`) and Event Script (`TaskExecutor`: `keyExists` → set null, else
-  remove) — pinned by a probe in `unit-test-lookup-1` on both engines — so a default comes from the plugin's
-  third argument (or a later `f:defaultValue`), never from default-then-overlay. **Eric's ruling (2026-09-20): the doc moves to the
-  code** — the namespaces section, the command JSON and the Rust data-mapper help now say *A null source
-  removes the target* (indexed target → null), with the Event Script contrast he stated: a null source
-  applies only to `model.*` targets, where it removes the model variable key, and for any other target the
-  entry is ignored; claim `null-source-removes-target` registered against the probe test on both engines
-  (branch `docs/null-source-removes-target` `f233067f`, PR #432 MERGED 2026-09-20 squash `3deb6416`; Rust twin `48111840`, PR #295 merge `bbb8c043`). **Rule:** the product owner reads and certifies the table
+  `SimplePluginGateTest` now pins discovery; (2) **a null mapping source — CHANGED 2026-09-23 (field issue #453, Eric's ruling):** the graph engine now
+  applies Event Script's rule — a null or unresolved source CLEARS a `model.*` target (removed; set to null when the
+  source key exists or the target is indexed) and is IGNORED for any other target — via one helper,
+  `GraphLambdaFunction.applyNullSource`, in mapper/math/js MAPPING, `for_each`, fetcher/extension parameters (a null
+  parameter is not supplied) and the graph.task/extension/fetcher output mapping (Java branch
+  `fix/l3-null-source-mapping-parity` `7068678f`; Rust twin `f779e46a`, Increment 136; the same round made graph.math name
+  every unresolved `{selector}` of a COMPUTE/IF instead of the rendered text `null`, `16d1da80`). Until 4.12.15 it removed ANY target — the
+  2026-09-20 ruling had documented that (PR #432, Rust #295, claim `null-source-removes-target`, whose text now states
+  the shared rule with the command reference, the in-Playground help and the `unit-test-lookup-1` probe). A default
+  for a model variable still comes from the source side (the plugin's third argument, or `f:defaultValue`), never
+  from default-then-overlay — the reporter's idiom is unsupported in BOTH layers. **Rule:** the product owner reads and certifies the table
   ON the graph, a new table is a new graph version (`v2026-08-prime-rates`) and never a code change, and
   the function stays generic by reading rule names from `table.keys` and ignoring other node properties.
   Nothing in the engine checks mapping sources, so the only place this was ever stated was one row of the
@@ -658,7 +658,7 @@
   the AI agent guide's pre-send checklist, pinned by `unit-test-task-9` on both engines (twin: mercury
   Increment 123). Applies [[event-script-over-code]] to DATA (config over code) and
   [[clean-knowledge-design-over-engine-coverage]] (no engine feature where the design already works).
-  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-20 | uses: 1 | tier: archive-candidate | origin: 2026-09-20-152704 -->
+  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-23 | uses: 2 | tier: active | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
   `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
@@ -824,7 +824,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-23 | uses: 15 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-23 | uses: 16 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->

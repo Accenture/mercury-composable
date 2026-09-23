@@ -148,8 +148,9 @@ statement[]=COMPUTE: amount -> (1 - {input.body.discount}) * {book.price}
 **Deadline:** a script is cancelled at a hard execution deadline (GraalVM context cancellation),
 failing the node with a 408 `script exceeded the N ms execution deadline`. Unlike
 [`graph.api.fetcher`](#api-fetcher)'s call deadline, this is a **run-level error** — it is not
-`exception=`-routable: a dry-run emits the 408 line and the canonical `Graph traversal aborted`
-terminal, and a deployed run fails the whole request with HTTP 408. The default is a tight
+`exception=`-routable: a dry-run ends with the canonical terminal carrying the 408 reason
+(`Graph traversal aborted: script exceeded the N ms execution deadline`), and a deployed run fails
+the whole request with HTTP 408. The default is a tight
 **5 seconds** — `graph.js` (like `graph.math`) is meant for very simple computation or
 IF-THEN-ELSE, so it deliberately does **not** inherit the typically longer `model.ttl`; an
 optional node `ttl` (duration syntax, e.g. `10s`) overrides it. An endless loop can no longer

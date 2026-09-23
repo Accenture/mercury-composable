@@ -432,11 +432,10 @@ public class GraphCommandService extends GraphLambdaFunction {
             try {
                 GraphModelValidator.validate(graphInstance.graph);
             } catch (IllegalArgumentException e) {
-                po.send(new EventEnvelope().setTo(outRoute).setBody("Unable to run - " + e.getMessage()));
-                // the uniform end-of-transmission line, matching the traveler's
-                // failure shape so the sync companion's drain stays deterministic
+                // the uniform end-of-transmission line, carrying the reason, matching the
+                // traveler's failure shape so the sync companion's drain stays deterministic
                 po.send(new EventEnvelope().setTo(outRoute).setStatus(400)
-                        .setBody("Graph traversal aborted"));
+                        .setBody("Graph traversal aborted: Unable to run - " + e.getMessage()));
                 return;
             }
         }

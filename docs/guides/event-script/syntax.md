@@ -516,6 +516,14 @@ interface contract details for a specific function.
 
 To handle this level of modularity, the system provides configurable input/output data mapping.
 
+*Null sources.* When a mapping's source resolves to null — the key does not exist, or a plugin returns
+null — only a `model.*` target is cleared: the model variable is removed when the source key is absent,
+and set to null when the key exists with a null value. For any other target the entry is ignored when
+the source key is absent, and an existing null value propagates. A default for a model variable
+therefore comes from the source side (`f:defaultValue(input.body.flag, boolean(false)) -> model.flag`),
+never from a default written first and overlaid by a possibly-null source. The knowledge-graph engine
+applies the same rule to its data mappings.
+
 *Namespaces for I/O data mapping*
 
 | Type                              | Keyword and/or namespace     | LHS / RHS  | Mappings |
@@ -1496,6 +1504,14 @@ one, set the value in a model variable first and pass the model variable as the 
 prevent execution loops.
 
 For model, input and output variables, you may also use JSON-Path syntax to extract value as argument to a plugin.
+
+**Null arguments are plugin-specific, by design.** A plugin receives an unresolved argument as `null` and
+each plugin decides what that means: `f:defaultValue` and `f:isNull` exist for it, the arithmetic family
+(`f:add`, `f:round`, ...) throws — which fails the task, and in a knowledge graph the node and therefore the
+traversal — and other plugins return null or absorb a malformed argument silently. A plain mapping of the
+same absent source is skipped, so wrapping a working mapping in a plugin can change whether it runs. Guard
+an optional source in a preceding entry, because plugin calls do not nest:
+`f:defaultValue(model.figure, double(0)) -> model.figure` and then `f:round(model.figure, int(2)) -> output.body.figure`.
 
 For example:
 

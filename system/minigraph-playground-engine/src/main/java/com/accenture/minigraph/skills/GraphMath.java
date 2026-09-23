@@ -167,8 +167,14 @@ public class GraphMath extends GraphLambdaFunction {
             if (lhs.isEmpty() || rhs.isEmpty()) {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
             }
+            assertVariablesResolved(rhs, graphInstance.stateMachine);
             var text = substituteVarIfAny(rhs, graphInstance.stateMachine);
-            var result = hasBooleanOperator(text)? engine.evalBoolean(text) : engine.evalNumber(text);
+            final Object result;
+            try {
+                result = hasBooleanOperator(text)? engine.evalBoolean(text) : engine.evalNumber(text);
+            } catch (RuntimeException e) {
+                throw nameNullIdentifier(e, rhs, graphInstance.stateMachine);
+            }
             graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
@@ -185,7 +191,14 @@ public class GraphMath extends GraphLambdaFunction {
         if (ifStatement.isEmpty() || thenStatement.isEmpty() || elseStatement.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have if:, then: or else:");
         }
+        assertVariablesResolved(ifStatement, stateMachine);
         var text = substituteVarIfAny(ifStatement, stateMachine);
-        return getNext(graphInstance.graph, engine.evalBoolean(text)? thenStatement : elseStatement);
+        final boolean decision;
+        try {
+            decision = engine.evalBoolean(text);
+        } catch (RuntimeException e) {
+            throw nameNullIdentifier(e, ifStatement, stateMachine);
+        }
+        return getNext(graphInstance.graph, decision? thenStatement : elseStatement);
     }
 }

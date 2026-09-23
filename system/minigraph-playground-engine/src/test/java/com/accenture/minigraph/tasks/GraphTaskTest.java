@@ -285,12 +285,46 @@ class GraphTaskTest {
         assertEquals(200, response.getStatus());
         mm = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("unknown", mm.getElement("rule"));
-        // probe of the mapping semantics a default must respect: a null source REMOVES the target -
-        // 'text(preset)' then an absent 'input.body.missing' leaves no model.probe, so a default is
-        // supplied by the plugin's third argument (or a later f:defaultValue), never by
-        // default-then-overlay
+        // probe of the null-source rule shared with Event Script (#453): a null source CLEARS a
+        // model.* target - 'text(preset)' then an absent 'input.body.missing' leaves no model.probe,
+        // so a default for a model variable is supplied by the plugin's third argument (or a later
+        // f:defaultValue), never by default-then-overlay ...
         assertEquals("removed", mm.getElement("probe"));
+        // ... while any other target is left untouched by a null source: 'text(kept)' survives the
+        // absent overlay on output.body.kept
+        assertEquals("kept", mm.getElement("kept"));
         log.info("graph.data.mapper + f:lookup resolves a static decision table without a function");
+    }
+
+    @Test
+    void mathExpressionNamesTheUnresolvedVariable() throws TimeoutException {
+        // unit-test-math-1 (issue #453): the seed's overlay 'input.body.threshold -> model.threshold'
+        // clears the model variable when the input is absent and 'model.factor' is never set, so the
+        // COMPUTE over {model.threshold} * {model.factor} resolves neither. The failure names every
+        // unresolved variable, joined by 'or' - not the rendered text 'null'.
+        var response = runGraph("unit-test-math-1", Map.of(), Map.of());
+        assertNotEquals(200, response.getStatus());
+        var error = String.valueOf(response.getBody());
+        assertTrue(error.contains("Unknown identifier: model.threshold or model.factor"), error);
+        assertTrue(error.contains("{model.threshold} * {model.factor}"), error);
+        // one resolved: only the other is named
+        response = runGraph("unit-test-math-1", Map.of("factor", 2), Map.of());
+        assertNotEquals(200, response.getStatus());
+        error = String.valueOf(response.getBody());
+        assertTrue(error.contains("Unknown identifier: model.threshold ("), error);
+        // the evaluator's own 'Unknown identifier: null' - a variable holding the TEXT "null" passes
+        // the pre-check and renders as the identifier null - is pinpointed by re-rendering the
+        // selectors: the culprit alone is named
+        response = runGraph("unit-test-math-1", Map.of("threshold", "null", "factor", 2), Map.of());
+        assertNotEquals(200, response.getStatus());
+        error = String.valueOf(response.getBody());
+        assertTrue(error.contains("Unknown identifier: model.threshold ("), error);
+        assertFalse(error.contains("model.threshold or model.factor"), error);
+        // with both inputs supplied the same expression computes
+        response = runGraph("unit-test-math-1", Map.of("threshold", 5.5, "factor", 2), Map.of());
+        assertEquals(200, response.getStatus());
+        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals(11.0, mm.getElement("doubled"));
     }
 
     @Test

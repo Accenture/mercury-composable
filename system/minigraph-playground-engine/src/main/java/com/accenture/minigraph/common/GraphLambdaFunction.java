@@ -294,6 +294,85 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         return name.replace('.', '-');
     }
 
+    /**
+     * Name the unresolved variable before an expression is evaluated (issue #453): an unresolved
+     * '{selector}' renders as the text 'null', which the expression evaluator can only report as
+     * 'Unknown identifier: null'. Checked for COMPUTE and IF expressions only - RESET, DELAY, jump
+     * targets and MAPPING keep the documented 'null' rendering (a RESET is then a no-op, a DELAY is
+     * skipped, a text() constant sees the text 'null').
+     *
+     * @param expression the expression text before substitution
+     * @param stateMachine the graph state machine
+     */
+    protected void assertVariablesResolved(String expression, MultiLevelMap stateMachine) {
+        var unresolved = new ArrayList<String>();
+        for (var key : selectorsIn(expression)) {
+            if (helper.getLhsOrConstant(key, stateMachine) == null) {
+                unresolved.add(key);
+            }
+        }
+        if (!unresolved.isEmpty()) {
+            throw unknownIdentifier(unresolved, expression);
+        }
+    }
+
+    /**
+     * The '{selector}' variables of an expression, in order and without duplicates - a segment
+     * holding a JavaScript function or a JSON object (newline, tab or colon inside) is not one.
+     *
+     * @param expression the expression text before substitution
+     * @return the selectors
+     */
+    protected List<String> selectorsIn(String expression) {
+        var keys = new ArrayList<String>();
+        for (var segment : util.extractSegments(expression, "{", "}")) {
+            var key = expression.substring(segment.start() + 1, segment.end() - 1);
+            if (key.contains("\r") || key.contains("\n") || key.contains("\t") || key.contains(":")) {
+                continue;
+            }
+            if (!keys.contains(key)) {
+                keys.add(key);
+            }
+        }
+        return keys;
+    }
+
+    /**
+     * The evaluator met the rendered text 'null' itself - a selector the pre-check accepted, such as
+     * a variable holding the text "null". The culprits are pinpointed by rendering each selector
+     * again: those that render as 'null' are named ('Unknown identifier: model.threshold'), several
+     * joined by 'or'; only when none can be told apart are all the statement's selectors named.
+     * Any other failure passes through.
+     *
+     * @param e the evaluator's exception
+     * @param expression the expression text before substitution
+     * @param stateMachine the graph state machine
+     * @return the exception to throw
+     */
+    protected RuntimeException nameNullIdentifier(RuntimeException e, String expression, MultiLevelMap stateMachine) {
+        var message = e.getMessage();
+        if (message != null && message.endsWith("Unknown identifier: null")) {
+            var selectors = selectorsIn(expression);
+            var culprits = new ArrayList<String>();
+            for (var key : selectors) {
+                var value = helper.getLhsOrConstant(key, stateMachine);
+                if (value == null || "null".equals(String.valueOf(value))) {
+                    culprits.add(key);
+                }
+            }
+            var named = culprits.isEmpty()? selectors : culprits;
+            if (!named.isEmpty()) {
+                return unknownIdentifier(named, expression);
+            }
+        }
+        return e;
+    }
+
+    private IllegalArgumentException unknownIdentifier(List<String> selectors, String expression) {
+        return new IllegalArgumentException("Unknown identifier: " + String.join(" or ", selectors) +
+                " (unresolved variable in '" + expression + "')");
+    }
+
     protected String substituteVarIfAny(String text, MultiLevelMap stateMachine) {
         var logical = hasBooleanOperator(text) || (text.startsWith("$.") && text.contains("@"));
         int leftBrace = text.indexOf('{');
@@ -377,14 +456,35 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             if (value != null) {
                 stateMachine.setElement(rhs, value);
             } else {
-                if (rhs.endsWith("]") && rhs.contains("[")) {
-                    stateMachine.setElement(rhs, null);
-                } else {
-                    stateMachine.removeElement(rhs);
-                }
+                applyNullSource(stateMachine, lhs, rhs);
             }
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
+        }
+    }
+
+    /**
+     * The null-source rule shared with Event Script (issue #453): when a data mapping's source
+     * resolves to null - a key that does not exist, or a plugin returning null - only a 'model.'
+     * target is cleared. It is removed when the source key is absent, and set to null when the
+     * source key exists with a null value or the target is an indexed element (so list positions
+     * stay stable). Any other target is left untouched, except that a source key that exists with
+     * a null value propagates the null.
+     *
+     * @param stateMachine the graph state machine
+     * @param lhs the resolved source selector
+     * @param target the mapping target
+     */
+    protected void applyNullSource(MultiLevelMap stateMachine, String lhs, String target) {
+        var sourceExists = stateMachine.keyExists(lhs);
+        if (target.startsWith(MODEL_NAMESPACE)) {
+            if (sourceExists || (target.endsWith("]") && target.contains("["))) {
+                stateMachine.setElement(target, null);
+            } else {
+                stateMachine.removeElement(target);
+            }
+        } else if (sourceExists) {
+            stateMachine.setElement(target, null);
         }
     }
 
@@ -526,7 +626,10 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             var value = helper.getLhsOrConstant(lhs, stateMachine);
             if (value != null) {
                 stateMachine.setElement(target, value);
+            } else if (target.startsWith(MODEL_NAMESPACE)) {
+                applyNullSource(stateMachine, lhs, target);
             } else {
+                // a parameter mapped from a null source is not supplied
                 if (target.endsWith("]") && target.contains("[")) {
                     stateMachine.setElement(target, null);
                 } else {
@@ -594,7 +697,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             } else if (value != null) {
                 stateMachine.setElement(rhs, value);
             } else {
-                stateMachine.removeElement(rhs);
+                applyNullSource(stateMachine, lhs, rhs);
             }
         }
         return mappings;
@@ -683,6 +786,9 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             }
             assertMutableModelTarget(nodeName, rhs);
             stateMachine.setElement(rhs, value);
+        } else if (rhs.startsWith(MODEL_NAMESPACE)) {
+            assertMutableModelTarget(nodeName, rhs);
+            applyNullSource(stateMachine, lhs, rhs);
         }
     }
 
