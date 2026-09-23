@@ -34,7 +34,7 @@
   key `redis.heartbeat.ms`); the python and node packs moved 4.12.1 → 4.12.15 (mercury-python #37 → `95101575`, tag →
   `7bf6991`; mercury-nodejs #105 → `13426732`, tag → `4c43ffe`) with the OpenTelemetry forwarder, the span-kind rule and,
   on node, the `llm.chat`/`llm.stream` AI nodes. Registry publications the same night: crates.io 12/12 by 01:57Z (one `cargo publish --workspace`), npm and PyPI
-  4.12.15 at 02:34Z (npm's first attempt failed 404 on an expired token — an unauthenticated PUT reads as 404; `npm login` fixed it). Next: the AI SDLC/MCP backlog
+  4.12.15 at 02:34Z (npm's first attempt failed 404 — an unauthenticated PUT reads as 404; the session needed a fresh two-factor `npm login`). Next: the AI SDLC/MCP backlog
   ([[bp-agent-orchestration]]) resumes (Eric). Origin 2026-09-23-014650.md.
   Prior: v4.12.14 (2026-09-22 02:11Z — the first lock-step release with the Rust port; #437 squash `dbc26f31`, tag →
   `e8a8d8e5`; one Java change, `group.protocol=${KAFKA_GROUP_PROTOCOL:auto}` in the bundled consumer template
