@@ -8,6 +8,75 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.12.16, 9/23/2026
+
+A correctness round from two field reports on the knowledge-graph engine, shipped in lock-step with the Rust port
+(4.12.16, Increment 136): the null-source mapping rule is now the same in Layer 2 and Layer 3, a graph.math failure
+names the variable it could not resolve, and every dry-run abort carries its reason. Upgrade action: read items 1
+and 3; nothing to configure.
+
+### Changed
+
+1. **A null mapping source clears a `model.*` target and leaves any other target untouched — the same rule as
+   Event Script (#456; field issue #453).** Until 4.12.15 the graph engine removed any target whose source resolved
+   to null, which deleted a default written just before an absent overlay and failed a later node with
+   `Unknown identifier: null`. One helper now applies Event Script's rule to `mapping[]` entries
+   (graph.data.mapper, and the MAPPING statements of graph.math and graph.js), `for_each` entries, the `model.*`
+   half of fetcher and extension `input[]` parameters (a parameter mapped from a null source is not supplied, as
+   before) and the output mapping of graph.task, graph.extension and graph.api.fetcher, which used to skip a null
+   result even for a `model.*` target: a `model.*` target is removed (set to null when the source key exists with a
+   null value, or when the target is indexed, so list positions stay stable); an `output.*` or node-alias target is
+   left as it was. The command reference (*Namespaces*), the command JSON, the in-Playground data-mapper help and
+   the claim `null-source-removes-target` state the rule; the Event Script guide now states its own rule in
+   *Input/Output data mapping*.
+
+   **Upgrade action:** read — a null source no longer removes an `output.*` or node-alias target, so a graph that
+   relied on that removal must clear the target explicitly; an output mapping to `model.*` with a null result now
+   clears the variable (it was left untouched); a default for a model variable still comes from the source side —
+   `f:defaultValue(...)`, or a plugin's own default such as `f:lookup(table, value, text(unknown))` —
+   default-then-overlay is unsupported in both layers.
+
+2. **A graph.math COMPUTE or IF over an unresolved variable names it (#456; field issue #453).** A `{selector}` is
+   rendered into the expression as the text `null` before the math package evaluates it, so the failure could only
+   read `Unknown identifier: null` — one node away from the node that failed to set the variable. The expression is
+   now checked before substitution and every unresolved selector is named,
+   `Unknown identifier: model.threshold or model.factor (unresolved variable in '{model.threshold} * {model.factor}')`;
+   when the evaluator itself meets `null` (a variable holding the text "null"), the selectors are re-rendered and the
+   culprits named. RESET, DELAY, jump targets and MAPPING keep the documented `null` rendering.
+
+   **Upgrade action:** none — a failing expression fails as before, with a message that names the variable.
+
+3. **Every dry-run abort carries its reason: `Graph traversal aborted: <reason>` (#456; field issue #454).** The
+   Playground's traveler printed a node's error and then a bare `Graph traversal aborted` — and for an arithmetic
+   plugin given a null argument it printed nothing at all, because the plugin threw a message-less exception. The
+   traveler now follows the executor's log record on every failure path — a node's thrown error naming the node, a
+   node's staged error, the run deadline (`timed out after N ms`), a failure before the walk starts, the pre-run gate
+   (`Unable to run - …`) — and the arithmetic plugins report `Cannot convert null to a number`. The synchronous
+   companion endpoint drains on the prefix and the Playground web app classifies the terminal by prefix (bundle
+   rebuilt). What a plugin does with a null argument is plugin-specific by design and is now documented in the Event
+   Script guide's plugin section: `f:defaultValue` and `f:isNull` accept null, the arithmetic family throws, and an
+   optional source is guarded in a preceding entry because plugin calls do not nest.
+
+   **Upgrade action:** read — a script or companion that matched the bare `Graph traversal aborted` line by equality
+   must match the prefix; the line now ends with the reason.
+
+### Documentation
+
+4. **The embedded Redis prerequisite per platform (#455).** The `redis-server` binaries bundled by `embedded-redis`
+   1.4.3 (and 1.4.4) differ per platform: the macOS arm64 binary is linked against Homebrew's OpenSSL 3
+   (`brew install openssl@3`), the Linux x86-64 binary needs the OpenSSL 3 shared libraries and glibc 2.34 (present
+   on current distributions and on the CI runners), and the Intel macOS, Linux arm64 and Windows binaries are
+   self-contained; without it a reactor build fails in `extensions/redis-connection` with "Failed to start Redis
+   service". The `redis-standalone` README carries the platform table and the symptom; Getting Started and
+   Build/Test/Deploy point to it. No upgrade action.
+
+### Build
+
+5. **JaCoCo 0.8.15 (#452).** The coverage plugin understands JDK 27 class files, for contributors whose local JDK
+   has moved ahead of the Java 21 toolchain — under JDK 27 the previous version left JDK and library classes
+   uninstrumented without failing the build. No upgrade action; the toolchain stays on Java 21.
+
+---
 ## Version 4.12.15, 9/22/2026
 
 The connected-trace release, and a lock-step round on all four runtimes: the Rust port ships 4.12.15 in the
