@@ -55,8 +55,8 @@
 - **last_review:** 2026-09-23 | through 2026-09-23-014650.md (SIZE TRIGGER — `[continuity-bloat]` 39 > 35 facts and 1032 > 1000
   lines at the v4.12.15 seam; 2 sessions since the 2026-09-22 review. Archived 0, swept 0 — nothing past `archive_window`; tier changes 6 via `refresh-metadata`; lines 1032 → 1000 by
   condensing the release chain, the stamps and three shipped addenda; facts advisory persists by design at 40 > 35.)
-  Prior: 2026-09-22 | 2026-09-21-233928.md (size; swept 2). Prior: 2026-09-21 | 2026-09-21-012124.md. Prior: 2026-09-19 |
-  2026-09-19-020551.md. Prior: 2026-09-18 | 2026-09-18-215436.md (the false bloat trigger, [[conv-schema-example-not-a-fact]]).
+  Prior: 2026-09-22 | 2026-09-21-233928.md (size; swept 2) · 2026-09-21 | 2026-09-21-012124.md · 2026-09-19 | 2026-09-19-020551.md ·
+  2026-09-18 | 2026-09-18-215436.md (the false bloat trigger, [[conv-schema-example-not-a-fact]]).
 - **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**:
   Track 1 *knowledge graph as application* (deterministic — rules, business logic, outcome; L3
   leverages L2 + L1) and Track 2 *knowledge graph as AI SDLC* (governed AI processing for ambiguity
