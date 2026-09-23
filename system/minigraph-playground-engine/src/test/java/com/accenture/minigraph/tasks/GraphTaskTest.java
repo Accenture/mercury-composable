@@ -285,11 +285,14 @@ class GraphTaskTest {
         assertEquals(200, response.getStatus());
         mm = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("unknown", mm.getElement("rule"));
-        // probe of the mapping semantics a default must respect: a null source REMOVES the target -
-        // 'text(preset)' then an absent 'input.body.missing' leaves no model.probe, so a default is
-        // supplied by the plugin's third argument (or a later f:defaultValue), never by
-        // default-then-overlay
+        // probe of the null-source rule shared with Event Script (#453): a null source CLEARS a
+        // model.* target - 'text(preset)' then an absent 'input.body.missing' leaves no model.probe,
+        // so a default for a model variable is supplied by the plugin's third argument (or a later
+        // f:defaultValue), never by default-then-overlay ...
         assertEquals("removed", mm.getElement("probe"));
+        // ... while any other target is left untouched by a null source: 'text(kept)' survives the
+        // absent overlay on output.body.kept
+        assertEquals("kept", mm.getElement("kept"));
         log.info("graph.data.mapper + f:lookup resolves a static decision table without a function");
     }
 

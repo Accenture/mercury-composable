@@ -377,14 +377,35 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             if (value != null) {
                 stateMachine.setElement(rhs, value);
             } else {
-                if (rhs.endsWith("]") && rhs.contains("[")) {
-                    stateMachine.setElement(rhs, null);
-                } else {
-                    stateMachine.removeElement(rhs);
-                }
+                applyNullSource(stateMachine, lhs, rhs);
             }
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
+        }
+    }
+
+    /**
+     * The null-source rule shared with Event Script (issue #453): when a data mapping's source
+     * resolves to null - a key that does not exist, or a plugin returning null - only a 'model.'
+     * target is cleared. It is removed when the source key is absent, and set to null when the
+     * source key exists with a null value or the target is an indexed element (so list positions
+     * stay stable). Any other target is left untouched, except that a source key that exists with
+     * a null value propagates the null.
+     *
+     * @param stateMachine the graph state machine
+     * @param lhs the resolved source selector
+     * @param target the mapping target
+     */
+    protected void applyNullSource(MultiLevelMap stateMachine, String lhs, String target) {
+        var sourceExists = stateMachine.keyExists(lhs);
+        if (target.startsWith(MODEL_NAMESPACE)) {
+            if (sourceExists || (target.endsWith("]") && target.contains("["))) {
+                stateMachine.setElement(target, null);
+            } else {
+                stateMachine.removeElement(target);
+            }
+        } else if (sourceExists) {
+            stateMachine.setElement(target, null);
         }
     }
 
@@ -526,7 +547,10 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             var value = helper.getLhsOrConstant(lhs, stateMachine);
             if (value != null) {
                 stateMachine.setElement(target, value);
+            } else if (target.startsWith(MODEL_NAMESPACE)) {
+                applyNullSource(stateMachine, lhs, target);
             } else {
+                // a parameter mapped from a null source is not supplied
                 if (target.endsWith("]") && target.contains("[")) {
                     stateMachine.setElement(target, null);
                 } else {
@@ -594,7 +618,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             } else if (value != null) {
                 stateMachine.setElement(rhs, value);
             } else {
-                stateMachine.removeElement(rhs);
+                applyNullSource(stateMachine, lhs, rhs);
             }
         }
         return mappings;
@@ -683,6 +707,9 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             }
             assertMutableModelTarget(nodeName, rhs);
             stateMachine.setElement(rhs, value);
+        } else if (rhs.startsWith(MODEL_NAMESPACE)) {
+            assertMutableModelTarget(nodeName, rhs);
+            applyNullSource(stateMachine, lhs, rhs);
         }
     }
 
