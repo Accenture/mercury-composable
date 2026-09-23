@@ -13,9 +13,9 @@
   at 4.12.15; (e) memory health — this repo's review is overdue by size (39 > 35 facts, 1015 > 1000 lines), the Rust
   lint reports skipped metadata refresh; (f) cite the 2026-09-22 four-runtime Dynatrace drives as the packs'
   per-release interop evidence (`bp-publish-interop-gate` — its "no build workflow" claim is outdated, both packs
-  ship `ci.yml`). **Gating the release (Eric: "fix Rust P10 before v4.12.15"):** P10 on both engines
-  (`fix/plain-home-page-outside-dev`) and the Rust note-3 retry (`feat/redis-lifecycle-retry`, stacked on it) merge
-  first. **Carry-overs for AFTER 4.12.15:** the Rust `async.http.response` graph-run record has no `from` (Java
+  ship `ci.yml`). **Release gate CLEARED 2026-09-23:** P10 merged on both engines (Java #449 `b4051b33`, Rust #319 `49403c23`) and
+  the Rust note-3 retry merged (#320 `34ff82d6`). Fold-ins (b) and (c) are branches awaiting PRs: Rust
+  `docs/http-streaming-tracing` (`11a27336`), Java `docs/draft-spec-status-headers` (`13c12034`). **Carry-overs for AFTER 4.12.15:** the Rust `async.http.response` graph-run record has no `from` (Java
   `from=task.executor`); an optional CLIENT span kind for `async.http.request`; `minigraph-state-redis` still drives
   its own Redis manager without the lifecycle retry; the parked engine items (CompileGraph static output-mapping
   check, Rust async-callback parity check, typed cache helper, sync SSE client form; the Playground UI path is DONE);
