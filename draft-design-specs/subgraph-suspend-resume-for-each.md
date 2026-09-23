@@ -1,7 +1,10 @@
 # Subgraph suspend/resume under `for_each` — design spec
 
 **Status:** RULED, ready to implement — field edge case reported 2026-09-18; shape and all five
-open questions ruled by Eric the same day (§3, §7). Not implemented.
+open questions ruled by Eric the same day (§3, §7). **IMPLEMENTED on both engines 2026-09-19** — Java
+#418 (`fb171c18`, with the doc sweep #420 and the rule-statement fix #425), shipped in v4.12.13; Rust
+mercury #284 (Increment 118); ADR-0013 accepted in place with the index in the key. Status header
+corrected 2026-09-23.
 
 **The defect.** A parent graph invokes a subgraph through `graph.extension` with `for_each`, and the
 subgraph contains suspend/resume nodes. All iterations write **one** store record, so only the last

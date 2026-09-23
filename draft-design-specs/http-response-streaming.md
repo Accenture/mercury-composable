@@ -5,12 +5,15 @@ as recommended by Eric 2026-08-28**; implemented same day with one design additi
 during implementation (D9, the ordered reply lane — see §2a; **revised same day to
 Eric's checkout-pool design**: dedicated lane per active stream, rotating checkout pool
 of 500 (FIFO round-robin since the 2026-08-31 refinement; originally a LIFO stack),
-HTTP-503 back-pressure, no config knob). Rust twin pending (D7:
-Java-first with the vocabulary pinned). **Serves:** `bp-agent-orchestration` (this is Q8 of
+HTTP-503 back-pressure, no config knob). **Rust twin SHIPPED** (D7: Java-first with the
+vocabulary pinned — the Rust engine's REST automation streams with engine-identical vocabulary and
+framing, in lock-step since its v4.12.12 catch-up; Rust guide `docs/guides/http-streaming.md`; status
+header corrected 2026-09-23). **Serves:** `bp-agent-orchestration` (this is Q8 of
 `ai-agent-orchestration.md`, promoted to prerequisite: without it an `llm.chat` node can
 only deliver a buffered completion). **Engine parity:** REST automation is engine
 surface → Java + Rust lock-step with engine-identical vocabulary and framing
-(`conv-telemetry-presentation-parity`; Java is the reference).
+(`conv-telemetry-presentation-parity`, retired 2026-09-16 — the Java-is-reference principle now lives in
+`conv-ports-adopt-java-release-number`; Java is the reference).
 
 ---
 
