@@ -189,8 +189,8 @@ class CompanionSyncTest {
                 "a failed run must drain on the terminal, not the safety timeout");
         assertEquals(Boolean.FALSE, badRun.get("ok"), "run with no instance -> ok:false: " + badRun);
         var badRunOutput = ((List<?>) badRun.get("output")).stream().map(String::valueOf).toList();
-        assertTrue(badRunOutput.stream().anyMatch("Graph traversal aborted"::equals),
-                "every run ends with a terminal, even on early failure: " + badRunOutput);
+        assertTrue(badRunOutput.stream().anyMatch(l -> l.startsWith("Graph traversal aborted: ")),
+                "every run ends with a terminal carrying its reason, even on early failure: " + badRunOutput);
     }
 
     /**
@@ -226,8 +226,8 @@ class CompanionSyncTest {
         var output = ((List<?>) run.get("output")).stream().map(String::valueOf).toList();
         assertTrue(output.stream().anyMatch(l -> l.contains("Unable to run - node suspend does not have a 'ttl'")),
                 "the gate's rule message must reach the author: " + output);
-        assertTrue(output.stream().anyMatch("Graph traversal aborted"::equals),
-                "pre-run rejection must still emit the uniform terminal: " + output);
+        assertTrue(output.stream().anyMatch(l -> l.startsWith("Graph traversal aborted: Unable to run - ")),
+                "pre-run rejection must still emit the uniform terminal, carrying the reason: " + output);
     }
 
     /**

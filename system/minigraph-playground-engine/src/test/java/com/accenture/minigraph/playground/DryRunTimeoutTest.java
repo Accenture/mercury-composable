@@ -87,10 +87,8 @@ class DryRunTimeoutTest {
                         + elapsed + " ms)");
         assertEquals(Boolean.FALSE, ran.get("ok"), "a timed-out dry-run is a failure: " + ran);
         var output = ((List<?>) ran.get("output")).stream().map(String::valueOf).toList();
-        assertTrue(output.stream().anyMatch("Graph traversal timed out after 1500 ms"::equals),
-                "the watcher must report the model.ttl deadline: " + output);
-        assertTrue(output.stream().anyMatch("Graph traversal aborted"::equals),
-                "a timed-out run must end with the canonical failure terminal: " + output);
+        assertTrue(output.stream().anyMatch("Graph traversal aborted: timed out after 1500 ms"::equals),
+                "a timed-out run must end with the canonical failure terminal naming the model.ttl deadline: " + output);
     }
 
     @Test
@@ -141,7 +139,7 @@ class DryRunTimeoutTest {
             // firing would send a spurious timeout/abort line to this console after success
             Utility.getInstance().sleep(3800);
             var late = teed.stream().filter(String.class::isInstance).map(Object::toString)
-                    .filter(l -> l.startsWith("Graph traversal timed out") || l.equals("Graph traversal aborted"))
+                    .filter(l -> l.startsWith("Graph traversal aborted"))
                     .toList();
             assertTrue(late.isEmpty(),
                     "a completed run must cancel its watcher - no late terminal allowed: " + late);

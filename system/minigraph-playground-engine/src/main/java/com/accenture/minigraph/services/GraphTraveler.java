@@ -88,20 +88,16 @@ public class GraphTraveler extends GraphLambdaFunction {
             beginTraversal(po, graphInstance);
         } catch (Exception e) {
             var rc = e instanceof AppException ex? ex.getStatus() : 400;
-            var error = new EventEnvelope().setTo(event.getReplyTo()).setStatus(rc).setBody(e.getMessage())
-                                                .setCorrelationId(event.getCorrelationId());
-            po.send(error);
             // Uniform end-of-transmission even when the traversal fails before it
             // starts (no graph instance yet, missing root/end) - emit the terminal
-            // line directly to the reply route. When an instance DOES exist (the
-            // failure happened after the run watcher was armed), claim the terminal
-            // so the watcher cannot fire a second one later.
+            // line, carrying the reason, directly to the reply route. When an instance
+            // DOES exist (the failure happened after the run watcher was armed), claim
+            // the terminal so the watcher cannot fire a second one later.
             var graphInstance = graphInstances.get(headers.get(IN));
             if (graphInstance != null) {
                 claimTerminal(graphInstance);
             }
-            po.send(new EventEnvelope().setTo(event.getReplyTo()).setStatus(400)
-                    .setBody("Graph traversal aborted").setCorrelationId(event.getCorrelationId()));
+            emitAborted(po, event.getReplyTo(), event.getCorrelationId(), rc, e.getMessage());
         }
     }
 
@@ -183,10 +179,8 @@ public class GraphTraveler extends GraphLambdaFunction {
         }
         var out = graphInstance.getReplyTo();
         try {
-            po.send(new EventEnvelope().setTo(out).setCorrelationId(event.getCorrelationId())
-                    .setStatus(408)
-                    .setBody("Graph traversal timed out after " + getModelTtl(graphInstance) + " ms"));
-            emitAborted(po, graphInstance);
+            emitAborted(po, out, event.getCorrelationId(), 408,
+                    "timed out after " + getModelTtl(graphInstance) + " ms");
         } catch (Exception e) {
             // best-effort: the reply route may be a released companion capture route -
             // the run is already marked complete, so bookkeeping stays consistent
@@ -215,7 +209,7 @@ public class GraphTraveler extends GraphLambdaFunction {
                 var eMap = getErrorMap(stateMachine.getElement(OUTPUT_BODY), target);
                 stateMachine.setElement(OUTPUT_BODY, eMap);
             }
-            handleErrorResponse(po, graphInstance, response);
+            handleErrorResponse(po, graphInstance, nodeName, response);
             return;
         }
         handleSkillSuccess(po, graphInstance, nodeName, target, response);
@@ -249,12 +243,7 @@ public class GraphTraveler extends GraphLambdaFunction {
         }
         if (processStatus instanceof Integer rc && resultError != null && errorHandler == null) {
             if (claimTerminal(graphInstance)) {
-                var errorMap = getErrorMap(resultError, target);
-                var cid = graphInstance.getCorrelationId();
-                var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid)
-                                                .setBody(errorMap).setStatus(rc);
-                po.send(error);
-                emitAborted(po, graphInstance);
+                emitAborted(po, graphInstance, rc, reasonOf(getErrorMap(resultError, target)));
             }
         } else if (!graphInstance.complete.get()) {
             if (processStatus instanceof Integer && resultError != null) {
@@ -281,7 +270,7 @@ public class GraphTraveler extends GraphLambdaFunction {
             log.error("Looping detected - {} hits in {} ms for {} in {}",
                     total, now - last, nodeName, graphInstance.graphId);
             var response = new EventEnvelope().setBody("Node " + nodeName + " executed too frequently").setStatus(400);
-            handleErrorResponse(po, graphInstance, response);
+            handleErrorResponse(po, graphInstance, nodeName, response);
         }
     }
 
@@ -460,29 +449,49 @@ public class GraphTraveler extends GraphLambdaFunction {
         }
     }
 
-    private void handleErrorResponse(PostOffice po, GraphInstance graphInstance, EventEnvelope response) {
+    private void handleErrorResponse(PostOffice po, GraphInstance graphInstance, String nodeName,
+                                     EventEnvelope response) {
         if (!claimTerminal(graphInstance)) {
             return;
         }
-        var out = graphInstance.getReplyTo();
-        var error = new EventEnvelope().setTo(out).setCorrelationId(graphInstance.getCorrelationId())
-                                        .setBody(response.getBody()).setStatus(response.getStatus());
-        po.send(error);
-        emitAborted(po, graphInstance);
+        // a thrown node error is plain text - name the node so the reader can find it
+        var reason = response.getBody() instanceof Map? reasonOf(response.getBody())
+                        : reasonOf(response.getBody()) + " (node " + nodeName + ")";
+        emitAborted(po, graphInstance, response.getStatus(), reason);
     }
 
     /**
      * Canonical failure terminal — the mirror of the success terminal in
      * {@code executionComplete}. Emits the single end-of-transmission line the
      * synchronous companion endpoint drains on, so <b>every</b> {@code run} finishes
-     * with either "Graph traversal completed in N ms" or "Graph traversal aborted" —
-     * a deterministic signal, never a timeout. Callers own the terminal via
-     * {@link #claimTerminal} before emitting.
+     * with either "Graph traversal completed in N ms" or "Graph traversal aborted: {reason}"
+     * — a deterministic signal, never a timeout, and every abort names its reason, the
+     * shape of the GraphExecutor's log record (field issue #454: a bare abort was
+     * undiagnosable). Callers own the terminal via {@link #claimTerminal} before emitting.
      */
-    private void emitAborted(PostOffice po, GraphInstance graphInstance) {
-        po.send(new EventEnvelope().setTo(graphInstance.getReplyTo())
-                .setCorrelationId(graphInstance.getCorrelationId())
-                .setBody("Graph traversal aborted").setStatus(400));
+    private void emitAborted(PostOffice po, GraphInstance graphInstance, int status, Object reason) {
+        emitAborted(po, graphInstance.getReplyTo(), graphInstance.getCorrelationId(), status, reason);
+    }
+
+    private void emitAborted(PostOffice po, String replyTo, String cid, int status, Object reason) {
+        po.send(new EventEnvelope().setTo(replyTo).setCorrelationId(cid)
+                .setBody("Graph traversal aborted: " + reason).setStatus(status));
+    }
+
+    /**
+     * The human-readable reason of an error body: a structured error map contributes its
+     * message and, when present, the node it names; anything else is rendered as text.
+     *
+     * @param body the error body
+     * @return the reason
+     */
+    private String reasonOf(Object body) {
+        if (body instanceof Map<?, ?> map) {
+            var message = String.valueOf(map.get(MESSAGE));
+            var target = map.get(TARGET);
+            return target == null? message : message + " (node " + target + ")";
+        }
+        return String.valueOf(body);
     }
 
     /**
@@ -494,9 +503,6 @@ public class GraphTraveler extends GraphLambdaFunction {
         if (!claimTerminal(graphInstance)) {
             return;
         }
-        var error = new EventEnvelope().setTo(graphInstance.getReplyTo())
-                            .setCorrelationId(graphInstance.getCorrelationId()).setBody(message).setStatus(400);
-        po.send(error);
-        emitAborted(po, graphInstance);
+        emitAborted(po, graphInstance, 400, message);
     }
 }

@@ -94,6 +94,7 @@ public class SimplePluginUtils {
      */
     public static Number promoteNumber(Object o) {
         return switch (o) {
+            case null -> throw new IllegalArgumentException("Cannot convert null to a number");
             case Short s -> s.longValue();
             case Integer i -> i.longValue();
             case Long l -> l;
