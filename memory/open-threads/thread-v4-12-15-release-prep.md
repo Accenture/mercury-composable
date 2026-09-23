@@ -1,28 +1,7 @@
-- [ ] **v4.12.15 release preparation — the survey's fold-ins (Eric agreed 2026-09-22).** Before the four-repo
-  release round (Java/Rust `v4.12.14..HEAD`, packs `v4.12.1..HEAD`; the packs adopt 4.12.15 per
-  [[conv-ports-adopt-java-release-number]]; CHANGELOGs from the tag ranges per [[conv-changelog-from-tag-range]];
-  sweeps per [[conv-template-version-sweep]] incl. [[snyk-retired-manifest-placeholders]]): (a) the packs' CHANGELOG
-  `Unreleased (4.12.15 in preparation)` carries two `### Changed` headings each — merge and retitle; (b) the Rust
-  `docs/guides/http-streaming.md` lacks the *Tracing a stream* section the Java guide gained in the connected-spans
-  round; (c) three Java draft-spec status headers are stale — `second-level-routing-kafka-flow-adapter.md`
-  ("implementation not yet started"), `http-response-streaming.md` ("Rust twin pending"),
-  `subgraph-suspend-resume-for-each.md` ("Not implemented") — one docs PR; (d) stale memory to close at the seam:
-  the Rust `ot-minimalist-kafka-port` thread is still `[ ]` though K1–K5 shipped in 4.12.14 (its tail says crates.io
-  waits for K5; its "auto = classic" question was answered by the optimistic rebuild), the Rust continuity's "Eric's
-  Dynatrace lookup is the remaining gate" (confirmed since), the Python/Node `otel-forwarder-lockstep` threads close
-  at 4.12.15; (e) memory health — this repo's review is overdue by size (39 > 35 facts, 1015 > 1000 lines), the Rust
-  lint reports skipped metadata refresh; (f) cite the 2026-09-22 four-runtime Dynatrace drives as the packs'
-  per-release interop evidence (`bp-publish-interop-gate` — its "no build workflow" claim is outdated, both packs
-  ship `ci.yml`). **Release gate CLEARED 2026-09-23:** P10 merged on both engines (Java #449 `b4051b33`, Rust #319 `49403c23`) and
-  the Rust note-3 retry merged (#320 `34ff82d6`). Fold-ins (b) and (c) are branches awaiting PRs: Rust
-  `docs/http-streaming-tracing` (`11a27336`), Java `docs/draft-spec-status-headers` (`13c12034`). **Carry-overs for AFTER 4.12.15:** the Rust `async.http.response` graph-run record has no `from` (Java
-  `from=task.executor`); an optional CLIENT span kind for `async.http.request`; `minigraph-state-redis` still drives
-  its own Redis manager without the lifecycle retry; the parked engine items (CompileGraph static output-mapping
-  check, Rust async-callback parity check, typed cache helper, sync SSE client form; the Playground UI path is DONE);
-  the Splunk header form never run live, the Rust gzip delta, a real-provider token stream when Gemini quota returns;
-  the AI SDLC/MCP backlog ([[bp-agent-orchestration]]) resumes after 4.12.15 (Eric).
-  **Fold-ins (a), (b), (c), (f) DONE 2026-09-23** — (b) Rust #321 `f32b473c`, (c) Java #450 `e8d862e5`, (a) and (f) in
-  the packs' 4.12.15 CHANGELOG entries; (d) and (e) close at the release seam. **Release branches READY and pushed
-  2026-09-23 01:09Z:** Java `0bc9db39`, Rust `dc64647a`, Python `635eb12`, Node `ba81e55` — all gates green (Java
-  1505 tests; the Rust workspace; pytest 115; npm 104); handoffs delivered, awaiting Eric's PR-open/merge/tag/publish.
-  <!-- id: v4-12-15-release-prep | created: 2026-09-22 | last_used: 2026-09-22 | uses: 1 | tier: working | origin: 2026-09-22-235615 -->
+- [x] **v4.12.15 release preparation — CLOSED 2026-09-23: released on all four runtimes.** The survey's fold-ins all landed
+  — (a)/(f) in the packs' 4.12.15 CHANGELOG entries, (b) Rust #321, (c) Java #450, (d)+(e) at this seam; release PRs
+  Java #451 (`aafeff04`), mercury #322 (`87ee371f`), mercury-python #37 (`95101575`), mercury-nodejs #105 (`13426732`),
+  tags `v4.12.15` and GitHub releases on all four the same hour. Lesson: a count that comes out of a `tail` is not a count
+  — capture whole, filter afterwards (the Rust "467" was 603; the Java count came from the surefire reports). Carry-overs
+  moved to [[post-4-12-15-carry-overs]]. origin: 2026-09-22-235615, 2026-09-23-014650.
+  <!-- id: v4-12-15-release-prep | created: 2026-09-22 | last_used: 2026-09-23 | uses: 2 | tier: active | origin: 2026-09-22-235615 -->

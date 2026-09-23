@@ -10,4 +10,4 @@
   Lesson: copied parity assertions, not code reading, caught both twin gaps — transcribe the reference suite
   into the port. → serves: vision-mercury-composable
   origin: `memory/sessions/2026-09-14-214619.md` (creation) → close record: `2026-09-19-020551.md`
-  <!-- id: ot-distributed-cache | created: 2026-09-14 | last_used: 2026-09-20 | uses: 14 | tier: active | origin: 2026-09-14-214619 -->
+  <!-- id: ot-distributed-cache | created: 2026-09-14 | last_used: 2026-09-20 | uses: 14 | tier: archive-candidate | origin: 2026-09-14-214619 -->
