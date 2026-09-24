@@ -604,8 +604,11 @@
   field:** a `<prefix>.serde.*` override reaches the serdes' configuration and the DEK-registry client CSFLE builds from it
   (where key access is decided), NOT the codec's own schema-by-id client, which keeps the template's identity — a second
   template covers both; and each codec reads only its own prefix, so a `schema.registry.serde.*` KMS credential is repeated
-  under the consumer prefix. Open (Eric): twin-kafka's secondary cluster and the Rust bootstrap share the same one-codec
-  shape (Rust: same seam, no CSFLE). **Sample:** the sync-over-async demo's `application.properties` (commented block, both
+  under the consumer prefix. **Synced 2026-09-24 (Eric's ruling before v4.12.17):** the policy is now the public, prefix-parameterized
+  `SchemaCodec.forConsumer(config, url, keyPrefix, producerCodec)`; the primary helper delegates and twin-kafka's
+  secondary adapter uses it under `secondary.schema.registry` (`secondary.schema.registry.consumer.properties`, branch
+  `feat/twin-kafka-consumer-registry-identity` `ba379fc6`); the Rust twin `SchemaCodec::for_consumer` (Increment 139)
+  carries the identity in the template — no serde layer there. **Sample:** the sync-over-async demo's `application.properties` (commented block, both
   variants) and `schema-registry-consumer.properties` next to it — in the application, never the library jar (a same-named
   resource would collide by classpath order). Applies [[clean-knowledge-design-over-engine-coverage]]; relates [[kafka-mesh-opt-in]].
   <!-- id: kafka-consumer-registry-identity | created: 2026-09-24 | last_used: 2026-09-24 | uses: 1 | tier: working | origin: 2026-09-24-222349 -->
