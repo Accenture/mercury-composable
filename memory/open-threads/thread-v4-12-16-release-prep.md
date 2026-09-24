@@ -1,10 +1,7 @@
-- [ ] **v4.12.16 release prep (Java + Rust lock-step; Eric asked 2026-09-23 after PRs #456 / mercury #323 merged).**
-  Content since v4.12.15: the shared null-source mapping rule, graph.math naming the unresolved variable, every
-  dry-run abort carrying its reason (#456; Rust #323, Increment 136), the embedded-Redis OpenSSL prerequisite docs
-  (#455), JaCoCo 0.8.15 (#452). Java: branch `release/4.12.16`, sweep BUILD FILES ONLY 43 files / 98 occurrences
-  (re-derived, unchanged), CHANGELOG from `git log v4.12.15..HEAD`, full `mvn clean install` as readiness. Rust:
-  branch `release/4.12.16`, 13 manifests / 24 occurrences + Cargo.lock (`cargo update --workspace`), CHANGELOG twin
-  entry; gates fmt, clippy, claims, links, mkdocs green — `cargo test --workspace` runs AFTER the Java build (shared
-  test ports). Then: PRs opened by Eric, merge gates, tags one memory commit past each merge, GitHub releases = the
-  CHANGELOG entries, crates.io publish by Eric from the tag (clean tree), `latest_release` updates at the seam close.
+- [x] **v4.12.16 release prep — SHIPPED 2026-09-24 (Java #457 `df605533` → tag `dc0ee6fa`; Rust #324 `743d4ea2` → tag
+  `cc138af3`; GitHub releases = the CHANGELOG entries; crates.io 12/12 by 00:12:52Z).** Sweep 43 / 98 (Java) and 13 / 24 +
+  Cargo.lock (Rust) unchanged; CHANGELOGs from the tag ranges; readiness Java 1506 tests / 0 failures, Rust 603 / 0 / 9.
+  Lessons: refresh memory footers BEFORE the PR handoff (a push seconds after the PR opened cancelled the Rust workflow's first
+  run under its cancel-in-progress group); a Rust test run started right after the Java reactor build failed three timing-sensitive
+  tests — environmental, confirmed by a clean re-run, but start it on an idle machine. origin: 2026-09-23-234558.md
   <!-- id: v4-12-16-release-prep | created: 2026-09-23 | last_used: 2026-09-23 | uses: 1 | tier: working | origin: 2026-09-23-230527 -->

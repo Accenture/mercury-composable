@@ -19,22 +19,20 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.15 (2026-09-23 01:35:26Z — **the connected-trace release, a lock-step round on all four
-  runtimes**: release PR #451, squash `aafeff04`, tag `v4.12.15` → `b705e9ff` (one memory-only commit past the merge), pom
-  verified at the tag; the GitHub release body is the CHANGELOG entry; main CI green on the squash). **Three Java
-  changes:** the connected edge spans (#444/#447, [[connected-edge-spans]] — READ: one more span per traced request, the
-  first function is INTERNAL, a dashboard keyed on `kind=SERVER` moves to the `http.request` record), minimalist-kafka's
-  graceful shutdown (#440/#441, [[platform-onshutdown-lifecycle]]), the plain home page outside dev mode (#449,
-  [[minigraph-dev-mode-app-shape]] — READ: an app without the `get.index.html` route gets the plain page at `/` in dev
-  too; an absent `app.env` is production). No new runtime dependency. Sweep BUILD FILES ONLY, 43 files / 98 occurrences
-  (unchanged). Readiness: full build 35 modules, 1505 tests, 0 failures ([[conv-changelog-from-tag-range]]).
-  **Lockstep (one number on all four, [[conv-ports-adopt-java-release-number]]):** the Rust port released v4.12.15 the same
-  hour (mercury #322 → `87ee371f`, tag → `28cd3328`, 01:36:57Z; Increments 132–135 — the E0 and connected-spans twins, the
-  Kafka shutdown contract, the starter's dev mode, the restart-aware Redis retry, new key `redis.heartbeat.ms`); the python and node packs moved 4.12.1 → 4.12.15 (mercury-python #37 → `95101575`, tag →
-  `7bf6991`; mercury-nodejs #105 → `13426732`, tag → `4c43ffe`) with the OpenTelemetry forwarder, the span-kind rule and,
-  on node, the `llm.chat`/`llm.stream` AI nodes. Registry publications the same night: crates.io 12/12 by 01:57Z (one `cargo publish --workspace`), npm and PyPI
-  4.12.15 at 02:34Z (npm's first attempt failed 404 — an unauthenticated PUT reads as 404; the session needed a fresh two-factor `npm login`). Next: the AI SDLC/MCP backlog
-  ([[bp-agent-orchestration]]) resumes (Eric). Origin 2026-09-23-014650.md.
+- **latest_release:** v4.12.16 (2026-09-24 00:08:35Z — **the correctness round from two field reports, lock-step with the Rust
+  port**: release PR #457, squash `df605533`, tag `v4.12.16` → `dc0ee6fa` (one memory-only commit past the merge), pom verified at
+  the tag; the GitHub release body is the CHANGELOG entry; main CI green on the tag commit). **Content:** the null-source mapping
+  rule shared with Event Script, graph.math naming the unresolved variable, every dry-run abort carrying its reason (#456;
+  [[static-decision-table-is-graph-data]], [[minigraph-guarded-async-completion]] — READ: a null source no longer removes an
+  `output.*`/node-alias target, an output mapping to `model.*` with a null result clears the variable, the abort terminal is
+  matched by PREFIX), the embedded-Redis OpenSSL prerequisite docs (#455), JaCoCo 0.8.15 (#452). Sweep BUILD FILES ONLY 43 / 98
+  (unchanged). Readiness 218 suites, 1506 tests, 0 failures, 3 skipped (surefire XML). **Lockstep:** Rust v4.12.16 the same hour
+  (mercury #324 → merge `743d4ea2`, tag → `cc138af3`, release 00:09:26Z, Increment 136; crates.io 12/12 00:12:36–00:12:52Z);
+  the python/node packs stay at 4.12.15 (no content for them). Next: the AI SDLC/MCP backlog ([[bp-agent-orchestration]]) resumes
+  (Eric). Origin 2026-09-23-234558.md.
+  Prior: v4.12.15 (2026-09-23 01:35Z — the connected-trace release, a lock-step round on all four runtimes; #451 squash `aafeff04`,
+  tag → `b705e9ff`; [[connected-edge-spans]], [[platform-onshutdown-lifecycle]], [[minigraph-dev-mode-app-shape]]; READ notes in
+  the CHANGELOG; Rust #322 → `87ee371f`, packs 4.12.1 → 4.12.15; registries the same night. Origin 2026-09-23-014650.md.)
   Prior: v4.12.14 (2026-09-22 02:11Z — the first lock-step release with the Rust port; #437 squash `dbc26f31`, tag → `e8a8d8e5`;
   one Java change, `group.protocol=${KAFKA_GROUP_PROTOCOL:auto}` in the bundled consumer template ([[kafka-group-protocol-auto-default]];
   READ: an app that never set it joins a KIP-848 cluster with the consumer protocol); Rust v4.12.14 the same hour, 12 crates. Origin 2026-09-21-233928.md.)
