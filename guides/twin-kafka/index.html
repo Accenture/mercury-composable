@@ -3174,6 +3174,13 @@ Confluent serialization (<code>subject</code> header on <code>secondary.kafka.no
 decoding on secondary bindings then work against the secondary registry only, while the primary side
 keeps the minimalist raw-byte[] behavior. Each side fails fast with its own config key named in the
 error if a subject is used where no registry is configured.</p>
+<p><strong>Per-direction identity on the secondary cluster.</strong> When the secondary registry grants access per direction
+(most visibly CSFLE key access through separate produce and consume identity pools), set
+<code>secondary.schema.registry.consumer.properties</code> to give the secondary flow adapter its own codec, built under
+the <code>secondary.schema.registry.consumer</code> prefix against the same <code>secondary.schema.registry.url</code> — the exact
+twin of minimalist-kafka's <a href="../minimalist-kafka/#schema-consumer-identity">consumer-side identity</a>, with the
+same rules: presence is the opt-in (blank stays off), <code>secondary.schema.registry.consumer.serde.*</code> overrides
+layer on the template, and the consumer codec reads only its own prefix.</p>
 <h2 id="topologies">Deployment topologies<a class="headerlink" href="#topologies" title="Permanent link">&para;</a></h2>
 <p>Because connection/security is entirely template-driven and the registry is independently optional
 per cluster, common dual-cluster pairings are configuration-only:</p>
@@ -3280,6 +3287,11 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 <td><code>secondary.schema.registry.cache.ttl</code></td>
 <td><code>30m</code></td>
 <td>Secondary schema cache TTL (the cache is separate from the primary's - schema ids are per-registry).</td>
+</tr>
+<tr>
+<td><code>secondary.schema.registry.consumer.properties</code></td>
+<td>-</td>
+<td>Opt in to a separate registry identity for the secondary consume side — the twin of <a href="../minimalist-kafka/#schema-consumer-identity"><code>schema.registry.consumer.properties</code></a>: the secondary adapter's own registry client template (the secondary producer's file or a second one), with <code>secondary.schema.registry.consumer.serde.*</code> overrides on top. Unset or blank = the secondary adapter shares the secondary producer's codec.</td>
 </tr>
 <tr>
 <td><code>secondary.kafka.health.timeout</code></td>

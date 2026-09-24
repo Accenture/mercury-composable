@@ -3893,6 +3893,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#secondaryschemaregistryconsumerproperties-secondaryschemaregistryconsumerserde" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        secondary.schema.registry.consumer.properties / secondary.schema.registry.consumer.serde.*
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#secondarykafkahealthtimeout-secondarykafkahealthstartupgrace" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6499,6 +6510,17 @@
     <span class="md-ellipsis">
       
         secondary.schema.registry.url / secondary.schema.registry.properties
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#secondaryschemaregistryconsumerproperties-secondaryschemaregistryconsumerserde" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        secondary.schema.registry.consumer.properties / secondary.schema.registry.consumer.serde.*
       
     </span>
   </a>
@@ -9118,6 +9140,22 @@ credential chain.</p>
 </tbody>
 </table>
 <p><a href="../twin-kafka/">twin-kafka</a>: the secondary cluster's own optional Schema Registry (URL = feature switch; template passed verbatim to the Confluent client). Registries and their schema-id caches are per-cluster.</p>
+<h3 id="secondaryschemaregistryconsumerproperties-secondaryschemaregistryconsumerserde"><code>secondary.schema.registry.consumer.properties</code> / <code>secondary.schema.registry.consumer.serde.*</code><a class="headerlink" href="#secondaryschemaregistryconsumerproperties-secondaryschemaregistryconsumerserde" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code> (comma-sep paths) / <code>String</code> (prefix family)</td>
+<td>— (the secondary adapter shares the secondary producer's codec)</td>
+</tr>
+</tbody>
+</table>
+<p><a href="../twin-kafka/#asymmetric-registry">twin-kafka</a>: the secondary cluster's twin of <code>schema.registry.consumer.properties</code> — an opt-in <a href="../minimalist-kafka/#schema-consumer-identity">separate Schema Registry identity</a> for the secondary flow adapter, built under the <code>secondary.schema.registry.consumer</code> prefix against the same <code>secondary.schema.registry.url</code>, with identical semantics (presence is the opt-in, blank stays off, the consumer codec reads only its own prefix).</p>
 <h3 id="secondarykafkahealthtimeout-secondarykafkahealthstartupgrace"><code>secondary.kafka.health.timeout</code> / <code>secondary.kafka.health.startup.grace</code><a class="headerlink" href="#secondarykafkahealthtimeout-secondarykafkahealthstartupgrace" title="Permanent link">&para;</a></h3>
 <table>
 <thead>

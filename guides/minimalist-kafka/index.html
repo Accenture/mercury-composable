@@ -4407,7 +4407,8 @@ adapter its own codec, built under the <code>schema.registry.consumer</code> key
 <a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="na">schema.registry.consumer.serde.bearer.auth.identity.pool.id</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_CONSUME_POOL_ID}</span>
 </code></pre></div>
 <p>It is the prefix seam <a href="../twin-kafka/">twin-kafka</a> uses for a second cluster's registry, applied here to one
-registry with two identities:</p>
+registry with two identities (twin-kafka's secondary cluster has the same opt-in under
+<code>secondary.schema.registry.consumer.properties</code>):</p>
 <ul>
 <li><strong>Unset or blank = unchanged.</strong> The adapter shares the producer's codec exactly as before, and the
   <code>${ENV_VAR:}</code> idiom (blank when the variable is unset) keeps it that way per environment; there is no separate
