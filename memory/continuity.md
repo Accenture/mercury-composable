@@ -605,7 +605,9 @@
   (where key access is decided), NOT the codec's own schema-by-id client, which keeps the template's identity — a second
   template covers both; and each codec reads only its own prefix, so a `schema.registry.serde.*` KMS credential is repeated
   under the consumer prefix. Open (Eric): twin-kafka's secondary cluster and the Rust bootstrap share the same one-codec
-  shape (Rust: same seam, no CSFLE). Applies [[clean-knowledge-design-over-engine-coverage]]; relates [[kafka-mesh-opt-in]].
+  shape (Rust: same seam, no CSFLE). **Sample:** the sync-over-async demo's `application.properties` (commented block, both
+  variants) and `schema-registry-consumer.properties` next to it — in the application, never the library jar (a same-named
+  resource would collide by classpath order). Applies [[clean-knowledge-design-over-engine-coverage]]; relates [[kafka-mesh-opt-in]].
   <!-- id: kafka-consumer-registry-identity | created: 2026-09-24 | last_used: 2026-09-24 | uses: 1 | tier: working | origin: 2026-09-24-222349 -->
 
 - **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed
