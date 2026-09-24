@@ -154,6 +154,16 @@ trace continuity — is identical):
 | **Consumer decodes by id** | the `json-topic-1` / `json-topic-2` adapter bindings set `schema.enabled: true`, so the adapter reads the embedded id, fetches the schema, and hands the flow a decoded **Map**. |
 | **Map-input task variants** | because the decoded body is a Map, `system.of.record.json` and `soa.reply.json` take a `Map` (vs the byte[] `system.of.record` / `soa.reply`); they reuse the same logic. |
 
+**Consumer-side registry identity (sample).** Some Confluent installations grant CSFLE key access per
+direction — a produce identity pool and a consume identity pool — and `minimalist-kafka` lets the flow adapter
+carry its own registry identity for that case (`schema.registry.consumer.properties`; see the
+[guide](../../docs/guides/minimalist-kafka.md#schema-consumer-identity)). This demo ships the opt-in as a
+commented sample: the block at the end of the schema section in
+[`application.properties`](src/main/resources/application.properties) shows both variants, and
+[`schema-registry-consumer.properties`](src/main/resources/schema-registry-consumer.properties) is the
+second-template form. The local registry enforces no identity pools, so the sample shows the wiring; uncommenting
+it here changes nothing observable.
+
 ## Avro variant (Confluent wire format)
 
 The same end-to-end pattern again, now over **Confluent Avro** on a third pair of topics — `avro-topic-1`
