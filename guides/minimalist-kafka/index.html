@@ -4425,6 +4425,10 @@ registry with two identities:</p>
   above) that the producer needs must be repeated under <code>schema.registry.consumer.serde.*</code> — the two codecs are
   configured independently.</li>
 </ul>
+<p>A commented sample of both variants ships with the <a href="../sync-over-async/">sync-over-async demo</a>: its
+<code>application.properties</code> carries the opt-in block, and <code>schema-registry-consumer.properties</code> next to it is the
+second-template form. The local registry helper enforces no identity pools, so the sample shows the wiring; the
+registry's own access grants decide the boundary.</p>
 <h3 id="schema-consume">Consume: decode by embedded id<a class="headerlink" href="#schema-consume" title="Permanent link">&para;</a></h3>
 <p>Set <code>schema.enabled: true</code> on a consumer binding. The adapter reads the magic byte + embedded id, looks up
 the registered schema's type, dispatches to the matching deserializer, and hands the flow a <strong><code>Map</code></strong> as
