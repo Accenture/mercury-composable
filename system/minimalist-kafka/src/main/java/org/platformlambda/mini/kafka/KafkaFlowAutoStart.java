@@ -69,11 +69,13 @@ public class KafkaFlowAutoStart implements EntryPoint {
     private static final String MAX_RETRIES = "kafka.flow.max.retries";
     private static final String RETRY_BACKOFF = "kafka.flow.retry.backoff.ms";
     private static final String REGISTRY_URL = "schema.registry.url";
+    private static final String REGISTRY_PREFIX = "schema.registry";
     /*
      * Opt-in, by presence (like ADAPTER_CONFIG): when this names a registry client template, the flow adapter
      * decodes with its own SchemaCodec built under CONSUMER_REGISTRY_PREFIX - the same prefix seam twin-kafka
      * uses for a second cluster's registry, applied here to one registry with two identities. Unset or blank
-     * (the ${ENV_VAR:} idiom), the adapter shares the producer's codec, exactly as before.
+     * (the ${ENV_VAR:} idiom), the adapter shares the producer's codec, exactly as before. The policy itself is
+     * SchemaCodec.forConsumer, shared with twin-kafka's secondary.schema.registry.consumer.properties.
      */
     static final String CONSUMER_REGISTRY_LOCATION = "schema.registry.consumer.properties";
     static final String CONSUMER_REGISTRY_PREFIX = "schema.registry.consumer";
@@ -136,44 +138,21 @@ public class KafkaFlowAutoStart implements EntryPoint {
     }
 
     /**
-     * The codec the flow adapter decodes with. It is the producer's own codec unless
-     * {@code schema.registry.consumer.properties} names a registry client template - then a second codec is built
-     * under the {@code schema.registry.consumer} prefix, so the consumer's registry identity can differ from the
-     * producer's: same registry URL (a consumer decodes messages whose ids were minted by the registry its
-     * producers use), that template (reuse the producer's file or point at a second one),
-     * {@code schema.registry.consumer.serde.*} overrides on top of it, and its own caches
-     * ({@code schema.registry.consumer.cache.ttl}).
-     *
-     * <p>Two consequences of the prefix seam worth knowing. A {@code schema.registry.consumer.serde.*} entry reaches
-     * the Confluent deserializer's configuration - and through it the DEK-registry client CSFLE builds from that
-     * configuration, where key access is decided - but not the codec's own schema-by-id lookups, which
-     * authenticate with the template's identity; when the consume identity must cover those too, the template
-     * itself carries it. And the consumer codec reads only its own prefix: a {@code schema.registry.serde.*} KMS
-     * driver credential the producer needs must be repeated under {@code schema.registry.consumer.serde.*}.</p>
-     *
-     * <p>Package-private (like {@code SchemaCodec.extractSerdeConfig}) so the composition is unit-testable
-     * without a full {@link #start} run.</p>
+     * The codec the flow adapter decodes with: the producer's own codec unless
+     * {@code schema.registry.consumer.properties} names a registry client template - then a second codec built under
+     * the {@code schema.registry.consumer} prefix, so the consumer's registry identity can differ from the producer's.
+     * The policy, its two seam consequences and the logging live in {@link SchemaCodec#forConsumer}; this is the
+     * primary-cluster binding of it. Package-private so the composition is unit-testable without a full {@link #start}
+     * run.
      *
      * @param config              the application configuration
      * @param registryUrl         the shared {@code schema.registry.url}; null/blank means schema features are off
      * @param producerSchemaCodec the producer's codec (null when schema features are off)
-     * @return the producer's codec when the consumer location is unset or blank, otherwise the consumer's own
-     *         codec - null, like the producer's, when {@code schema.registry.url} is not configured
+     * @return the producer's codec when the consumer location is unset or blank, otherwise the consumer's own codec
      */
     static SchemaCodec resolveConsumerSchemaCodec(ConfigBase config, String registryUrl,
                                                   SchemaCodec producerSchemaCodec) {
-        String location = config.getProperty(CONSUMER_REGISTRY_LOCATION);
-        if (location == null || location.isBlank()) {
-            return producerSchemaCodec;
-        }
-        SchemaCodec consumerSchemaCodec = SchemaCodec.fromConfig(config, registryUrl, CONSUMER_REGISTRY_PREFIX);
-        if (consumerSchemaCodec == null) {
-            log.warn("{} is set but {} is not - schema features stay off", CONSUMER_REGISTRY_LOCATION, REGISTRY_URL);
-        } else {
-            log.info("Kafka flow adapter decodes with its own Schema Registry identity ({}={})",
-                    CONSUMER_REGISTRY_LOCATION, location);
-        }
-        return consumerSchemaCodec;
+        return SchemaCodec.forConsumer(config, registryUrl, REGISTRY_PREFIX, producerSchemaCodec);
     }
 
     /**

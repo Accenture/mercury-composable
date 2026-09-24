@@ -870,7 +870,8 @@ schema.registry.consumer.serde.bearer.auth.identity.pool.id=${SCHEMA_REGISTRY_CO
 ```
 
 It is the prefix seam [twin-kafka](twin-kafka.md) uses for a second cluster's registry, applied here to one
-registry with two identities:
+registry with two identities (twin-kafka's secondary cluster has the same opt-in under
+`secondary.schema.registry.consumer.properties`):
 
 - **Unset or blank = unchanged.** The adapter shares the producer's codec exactly as before, and the
   `${ENV_VAR:}` idiom (blank when the variable is unset) keeps it that way per environment; there is no separate

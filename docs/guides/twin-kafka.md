@@ -144,6 +144,14 @@ decoding on secondary bindings then work against the secondary registry only, wh
 keeps the minimalist raw-byte[] behavior. Each side fails fast with its own config key named in the
 error if a subject is used where no registry is configured.
 
+**Per-direction identity on the secondary cluster.** When the secondary registry grants access per direction
+(most visibly CSFLE key access through separate produce and consume identity pools), set
+`secondary.schema.registry.consumer.properties` to give the secondary flow adapter its own codec, built under
+the `secondary.schema.registry.consumer` prefix against the same `secondary.schema.registry.url` — the exact
+twin of minimalist-kafka's [consumer-side identity](minimalist-kafka.md#schema-consumer-identity), with the
+same rules: presence is the opt-in (blank stays off), `secondary.schema.registry.consumer.serde.*` overrides
+layer on the template, and the consumer codec reads only its own prefix.
+
 ## Deployment topologies {#topologies}
 
 Because connection/security is entirely template-driven and the registry is independently optional
@@ -199,6 +207,7 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 | `secondary.schema.registry.url` | - | Secondary cluster's Schema Registry URL; unset = schema features off on that cluster. |
 | `secondary.schema.registry.properties` | `classpath:/secondary-schema-registry.properties` | Secondary registry client template - auth/SSL passed verbatim to the Confluent client. Set to an external file path (or explicit fallback list) to externalize. |
 | `secondary.schema.registry.cache.ttl` | `30m` | Secondary schema cache TTL (the cache is separate from the primary's - schema ids are per-registry). |
+| `secondary.schema.registry.consumer.properties` | - | Opt in to a separate registry identity for the secondary consume side — the twin of [`schema.registry.consumer.properties`](minimalist-kafka.md#schema-consumer-identity): the secondary adapter's own registry client template (the secondary producer's file or a second one), with `secondary.schema.registry.consumer.serde.*` overrides on top. Unset or blank = the secondary adapter shares the secondary producer's codec. |
 | `secondary.kafka.health.timeout` | falls back to `kafka.health.timeout` (`5s`) | Probe timeout for `secondary.kafka.health`. |
 | `secondary.kafka.health.startup.grace` | falls back to `kafka.health.startup.grace` (`30s`) | Start-up grace for `secondary.kafka.health` (placeholder healthy status while the client warms up). |
 | `secondary.kafka.correlation.id.header` | falls back to `kafka.correlation.id.header` (`cid`) | Outbound correlation-id header on the secondary cluster. |

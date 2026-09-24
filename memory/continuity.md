@@ -221,7 +221,7 @@
   fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
   DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
   ignores `EMBEDDED_REDIS_EXECUTABLE`.
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-24 | uses: 8 | tier: active | origin: 2026-09-18-174943 -->
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-24 | uses: 9 | tier: active | origin: 2026-09-18-174943 -->
 
 - **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
   `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
@@ -377,7 +377,7 @@
   stands for tidiness). Both starters gained the route (the Rust starter its whole dev mode); `deploy.js`/`clean.js` split
   the bundle (assets → `public/assets/`, page → `template/playground.html`). READ at 4.12.15: an app without the route gets
   the plain page at `/` in dev too — add the route; an app with no `app.env` gets the plain page.
-  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-23 | uses: 10 | tier: active | origin: 2026-09-15-221451 -->
+  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-24 | uses: 11 | tier: active | origin: 2026-09-15-221451 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
@@ -604,11 +604,14 @@
   field:** a `<prefix>.serde.*` override reaches the serdes' configuration and the DEK-registry client CSFLE builds from it
   (where key access is decided), NOT the codec's own schema-by-id client, which keeps the template's identity — a second
   template covers both; and each codec reads only its own prefix, so a `schema.registry.serde.*` KMS credential is repeated
-  under the consumer prefix. Open (Eric): twin-kafka's secondary cluster and the Rust bootstrap share the same one-codec
-  shape (Rust: same seam, no CSFLE). **Sample:** the sync-over-async demo's `application.properties` (commented block, both
+  under the consumer prefix. **Synced 2026-09-24 (Eric's ruling before v4.12.17):** the policy is now the public, prefix-parameterized
+  `SchemaCodec.forConsumer(config, url, keyPrefix, producerCodec)`; the primary helper delegates and twin-kafka's
+  secondary adapter uses it under `secondary.schema.registry` (`secondary.schema.registry.consumer.properties`, branch
+  `feat/twin-kafka-consumer-registry-identity` `ba379fc6`); the Rust twin `SchemaCodec::for_consumer` (Increment 139)
+  carries the identity in the template — no serde layer there. **Sample:** the sync-over-async demo's `application.properties` (commented block, both
   variants) and `schema-registry-consumer.properties` next to it — in the application, never the library jar (a same-named
   resource would collide by classpath order). Applies [[clean-knowledge-design-over-engine-coverage]]; relates [[kafka-mesh-opt-in]].
-  <!-- id: kafka-consumer-registry-identity | created: 2026-09-24 | last_used: 2026-09-24 | uses: 1 | tier: working | origin: 2026-09-24-222349 -->
+  <!-- id: kafka-consumer-registry-identity | created: 2026-09-24 | last_used: 2026-09-24 | uses: 2 | tier: active | origin: 2026-09-24-222349 -->
 
 - **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed
   response is traced at its head and its tail, never per token (Eric's rulings on the Dynatrace review of
@@ -747,7 +750,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-24 | uses: 18 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-24 | uses: 19 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->

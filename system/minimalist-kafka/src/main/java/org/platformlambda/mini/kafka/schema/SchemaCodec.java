@@ -291,6 +291,51 @@ public class SchemaCodec {
     }
 
     /**
+     * The codec a consume side decodes with: the producer's own codec unless {@code <keyPrefix>.consumer.properties}
+     * names a registry client template, in which case a second codec is built by
+     * {@link #fromConfig(ConfigBase, String, String)} under the {@code <keyPrefix>.consumer} prefix - the same registry
+     * URL (a consumer decodes messages whose ids were minted by the registry its producers use), that template (the
+     * producer's file or a second one), {@code <keyPrefix>.consumer.serde.*} overrides on top of it, and its own caches.
+     * Some Confluent installations grant a service's registry access per direction - most visibly CSFLE key (KEK) access
+     * through separate produce and consume identity pools - so no single identity can decrypt everything the service
+     * consumes; this is the seam that lets the two directions carry different identities. Presence is the opt-in: unset
+     * or blank (the {@code ${ENV_VAR:}} idiom) returns {@code producerCodec} unchanged, and the registry URL stays the
+     * feature switch (a null/blank URL yields {@code null}, as for the producer).
+     *
+     * <p>Two consequences of the prefix seam: a {@code <keyPrefix>.consumer.serde.*} entry reaches the Confluent
+     * deserializer's configuration - and through it the DEK-registry client CSFLE builds from that configuration, where
+     * key access is decided - but not the codec's own schema-by-id lookups, which authenticate with the template's
+     * identity (when the consume identity must cover those too, the template itself carries it); and the consumer codec
+     * reads only its own prefix, so a {@code <keyPrefix>.serde.*} KMS driver credential must be repeated under
+     * {@code <keyPrefix>.consumer.serde.*}. Used by minimalist-kafka's auto-start ({@code schema.registry}) and
+     * twin-kafka's ({@code secondary.schema.registry}).</p>
+     *
+     * @param config        the application configuration
+     * @param registryUrl   the shared registry URL for this prefix; null/blank means schema features are off
+     * @param keyPrefix     the producer's config-key prefix (default {@code schema.registry})
+     * @param producerCodec the producer's codec (null when schema features are off)
+     * @return the producer's codec when the consumer location is unset or blank, otherwise the consumer's own codec -
+     *         null, like the producer's, when the registry URL is not configured
+     */
+    public static SchemaCodec forConsumer(ConfigBase config, String registryUrl, String keyPrefix,
+                                          SchemaCodec producerCodec) {
+        String locationKey = keyPrefix + ".consumer.properties";
+        String location = config.getProperty(locationKey);
+        if (location == null || location.isBlank()) {
+            return producerCodec;
+        }
+        String consumerPrefix = keyPrefix + ".consumer";
+        SchemaCodec consumerCodec = fromConfig(config, registryUrl, consumerPrefix);
+        if (consumerCodec == null) {
+            log.warn("{} is set but {}.url is not - schema features stay off", locationKey, keyPrefix);
+        } else {
+            log.info("Consume side decodes with its own Schema Registry identity ({}={}, prefix {})",
+                    locationKey, location, consumerPrefix);
+        }
+        return consumerCodec;
+    }
+
+    /**
      * @return a fresh, owner-confined serde set (one {@link SchemaSerde} per type) over the shared client
      */
     private Map<SchemaType, SchemaSerde> newSerdes() {

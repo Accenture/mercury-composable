@@ -1199,6 +1199,14 @@ Opt-in [separate Schema Registry identity for the consumer side](minimalist-kafk
 
 [twin-kafka](twin-kafka.md): the secondary cluster's own optional Schema Registry (URL = feature switch; template passed verbatim to the Confluent client). Registries and their schema-id caches are per-cluster.
 
+### `secondary.schema.registry.consumer.properties` / `secondary.schema.registry.consumer.serde.*`
+
+| Type | Default |
+|------|---------|
+| `String` (comma-sep paths) / `String` (prefix family) | — (the secondary adapter shares the secondary producer's codec) |
+
+[twin-kafka](twin-kafka.md#asymmetric-registry): the secondary cluster's twin of `schema.registry.consumer.properties` — an opt-in [separate Schema Registry identity](minimalist-kafka.md#schema-consumer-identity) for the secondary flow adapter, built under the `secondary.schema.registry.consumer` prefix against the same `secondary.schema.registry.url`, with identical semantics (presence is the opt-in, blank stays off, the consumer codec reads only its own prefix).
+
 ### `secondary.kafka.health.timeout` / `secondary.kafka.health.startup.grace`
 
 | Type | Default |
