@@ -43,13 +43,13 @@
   store retired, ADR-0024, #400 `92e94f2b`) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397, `9274cf92`; ACTION: the
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-23 | through 2026-09-23-230527.md (CADENCE + SIZE — the `[continuity-bloat]` facts advisory that the
-  morning review left "by design" cleared as its closed items aged past `archive_window`: archived 6 continuity facts — the 4
-  faded Kafka-health lessons (`preload-before-mainapp-lazy-config`, `kafka-clients-kernel-threads`,
-  `kafka-class-objects-over-names`, `kafka-config-class-static-init-loader`; retrievable via `memory/archive/INDEX.md`) and the
-  2 closed Blueprint gaps (`bp-ai-companion-llm-backend`, `bp-graph-governance-lifecycle`); swept 5 completed threads. Facts
-  40 → 34; tier changes 0 (footers already matched the reference log). Invariants not due (cadence 40, last 2026-09-16).)
-  Prior: 2026-09-23 | 2026-09-23-014650.md (size; archived 0, lines 1032 → 1000) · 2026-09-22 | 2026-09-21-233928.md (size; swept 2).
+- **last_review:** 2026-09-24 | through 2026-09-24-234713.md (ADVISORY SWEEP at the v4.12.17 seam — 2 `[overdue]` conventions
+  archived, `conv-thread-id-names-the-thing` and `conv-schema-example-not-a-fact`: both rules shipped upstream in agent-memory
+  v4.41.1 / v4.41.2 the day they were written, so the facts carried history only; retrievable via `memory/archive/INDEX.md`.
+  Facts 34 → 32; not a cadence review — 4 sessions since the last, `review_every` 10; invariants not due (cadence 40, last
+  2026-09-16).)
+  Prior: 2026-09-23 | through 2026-09-23-230527.md (CADENCE + SIZE — archived 6 faded facts, swept 5 completed threads; facts
+  40 → 34) · 2026-09-23 | 2026-09-23-014650.md (size; archived 0, lines 1032 → 1000) · 2026-09-22 | 2026-09-21-233928.md (size; swept 2).
 - **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**: Track 1 *knowledge graph as
   application* (deterministic — rules, business logic, outcome; L3 leverages L2 + L1) and Track 2 *knowledge graph as AI SDLC*
   (governed AI processing for ambiguity a deterministic program cannot handle; L3 is the foundation and **AI is also the
@@ -250,7 +250,7 @@
   `withAuthentication(RedisCredentialsProvider)` is the future seam if rotating IAM tokens are ever
   needed. Rust parity for cluster (cluster-client option + the same DEL split) is a parked
   follow-up, NOT a break. Extends [[soa-transport-neutral-cid]].
-  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-22 | uses: 9 | tier: active | origin: 2026-09-14-181948 -->
+  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-22 | uses: 9 | tier: archive-candidate | origin: 2026-09-14-181948 -->
 
 - **The distributed cache is a SEPARATE module — sync-over-async stays small (Eric, 2026-09-14).**
   sync-over-async is a *rendezvous transport* (correlation-id `request:`/`queue:` keys,
@@ -273,7 +273,7 @@
   extracted [[redis-connection-foundation]] (spec draft-design-specs/distributed-cache.md);
   [[ot-distributed-cache]] tracks the remaining Rust lockstep. Builds on [[soa-redis-cluster-support]];
   serves [[vision-mercury-composable]].
-  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-22 | uses: 13 | tier: active | origin: 2026-09-14-191748 -->
+  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-22 | uses: 13 | tier: archive-candidate | origin: 2026-09-14-191748 -->
 
 - **The Redis client layer is a shared `extensions/redis-connection` foundation (2026-09-14; Java
   shipped for v4.12.9).** Extracted from sync-over-async's `support/`: `RedisBackend<V>` (generic in the
@@ -495,7 +495,7 @@
   timeout; Rust 408 for its deadline, 503 for refused/broken-pipe). Behaviour change to READ: a caller that
   keyed on 500 for a Redis outage now sees 408/503. Relates [[redis-connection-foundation]],
   [[l1-caller-checks-reply-status]].
-  <!-- id: redis-failure-classification | created: 2026-09-20 | last_used: 2026-09-22 | uses: 3 | tier: active | origin: 2026-09-20-004702 -->
+  <!-- id: redis-failure-classification | created: 2026-09-20 | last_used: 2026-09-22 | uses: 3 | tier: archive-candidate | origin: 2026-09-20-004702 -->
 - **The shared Redis connection is RESET after a command timeout — recovery is bounded by `redis.timeout.ms`,
   not by Lettuce's reconnect backoff (Eric's ruling on interop Finding 4, 2026-09-21; `redis-connection`
   foundation, branch `fix/redis-reset-on-timeout` `48ab9b4f`; PR #433 MERGED 2026-09-21, squash `d29318fd`).** Lettuce reconnects a dropped
@@ -516,7 +516,7 @@
   outage drive must kill the helper's embedded `redis-server` child, not just its JVM, and assert the port
   closed — the first drive measured nothing. Relates [[redis-failure-classification]],
   [[redis-connection-foundation]], [[l1-caller-checks-reply-status]]; applies [[conv-reentrantlock-not-synchronized]].
-  <!-- id: redis-connection-reset-on-timeout | created: 2026-09-21 | last_used: 2026-09-22 | uses: 2 | tier: active | origin: 2026-09-21-012124 -->
+  <!-- id: redis-connection-reset-on-timeout | created: 2026-09-21 | last_used: 2026-09-22 | uses: 2 | tier: archive-candidate | origin: 2026-09-21-012124 -->
 - **A static decision table is GRAPH DATA — a skill-less node's properties, handed whole to a generic
   function by ONE `graph.task` input entry; never hard-coded in a function bundled with the graph (Eric,
   2026-09-20; a doc gap, no engine change — PR #430 squash `c5adc58f`; the `lookup` plugin PR #431 squash
@@ -680,55 +680,7 @@
   PR). Both errors came from writing out of recollection of my own work instead of out of the
   repository. Corrected in both places via PR #411. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-24 | uses: 10 | tier: active | origin: 2026-09-17-183008 -->
-- **A thread id names the THING, never its kind — and an existing thread is never renamed (Eric,
-  2026-09-18).** The tool writes every open thread to `memory/open-threads/thread-<id>.md`, so an id
-  that already begins `ot-` or `thread-` stutters: `thread-ot-distributed-cache.md`, and worst,
-  `thread-thread-doc-improvement-feedback-loop.md`. The directory and the tool's prefix already say
-  it is a thread. **New thread ids therefore carry no kind prefix** — `distributed-cache`, not
-  `ot-distributed-cache`.
-  **Existing threads stay as they are, deliberately.** A rename looks free and is not: session logs
-  are immutable and their `## Memory References` are the only input to `refresh-metadata`, so
-  renaming an id orphans every historical declaration — `ot-distributed-cache` alone is declared in
-  **12** logs. Its usage would collapse to ~1, it would decay to `archive-candidate`, and the next
-  review would propose sweeping a live workstream. That is the same failure as the 2026-09-17
-  `[overdue]` advisories, except self-inflicted and unrepairable. The schema agrees for its own
-  reason: "the filename is the identity and **never changes** for the thread's lifetime". The ugly
-  names retire on their own as threads close and the review sweeps them.
-  **The single `thread-` prefix is upstream, not ours** — `memory-lint` hard-codes
-  `expect = f"thread-{fid}.md"` (one production line; `archive-fact` already keys on the footer id
-  and is prefix-agnostic). Reported to the agent-memory team 2026-09-18 as a cosmetic item,
-  explicitly below the bar of the two decay-signal reports that preceded it — **and it SHIPPED as
-  agent-memory v4.41.1 the same day** (PR #419, squash `c83c5095`), crediting "this team's
-  2026-09-18 note". Both halves landed: the rule is now `DECAY.md` §1 and `.agent/schema.md`, and so
-  is the never-rename constraint, carrying our 12-declarations example; the upgrade's own step 2
-  reported "nothing renamed — 14 of 14 thread files carry a kind-prefixed id and stay as they are".
-  Two things worth reading from that. A report ranked LOWEST of three shipped FASTEST — because it
-  was the one that arrived with a concrete fix attached, not because it mattered most; rank by
-  severity, but attach the fix regardless. And the rule is now upstream, so a future agent does not
-  need this fact to follow it — only to understand why our existing ids look the way they do.
-  Relates [[conv-declare-consulted-references]] (the same immutable-log constraint is why both rules
-  are forward-looking only).
-  <!-- id: conv-thread-id-names-the-thing | created: 2026-09-18 | last_used: 2026-09-18 | uses: 2 | tier: archive-candidate | origin: 2026-09-18-174943 -->
-
-- **`continuity.md`'s header shows the metadata footer as an EXAMPLE, and that example's id must stay a
-  PLACEHOLDER (2026-09-18, found running the review).** `memory-lint`'s `FOOTER_RE` scans the whole
-  file, so a literal-looking `id: kebab-id` in the header's teaching line parses as a live fact — it
-  carries `tier: active`, is not pinned, and therefore counts toward `continuity_max_facts`. That is
-  what fired `[continuity-bloat] 36 > 35` when the true count was 35, exactly at the cap: a **false
-  trigger for the review ritual itself**, which is worse than a noisy advisory, because the review
-  then goes looking for something to archive that does not exist — `REVIEW.md`'s costliest error
-  approached from the other side. The id now reads `<kebab-id>`, consistent with the `YYYY-MM-DD` and
-  `N` placeholders already on that line and failing the `[a-z0-9-]+` capture; it still renders as a
-  real HTML comment, so it teaches the same syntax. **Do not tidy it back to a bare id.** The durable
-  fix is upstream — the parser should skip the header example; every agent-memory repo ships this
-  header and so over-counts by one — reported 2026-09-18 **and shipped as v4.41.2 the same day**: `memory-lint`, the `[undeclared-reference]` mapper and `archive-fact` now treat a backtick-wrapped footer as documentation (`_in_inline_code`), so the placeholder is belt-and-braces rather than load-bearing — keep it anyway, it is the honest form of the example. Method note: the diagnosis was a two-copy
-  experiment (lint an untouched copy, lint a copy with the one line neutralized), not a reading of the
-  regex; the regex told me it was *possible*, the copies told me it was *the* cause. Relates
-  [[conv-thread-id-names-the-thing]] — the sibling case, where the tool's behaviour rather than our
-  content was the thing to change.
-  <!-- id: conv-schema-example-not-a-fact | created: 2026-09-18 | last_used: 2026-09-18 | uses: 2 | tier: archive-candidate | origin: 2026-09-18-215436 -->
-
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-24 | uses: 11 | tier: active | origin: 2026-09-17-183008 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
@@ -737,7 +689,7 @@
   examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-23 | uses: 21 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-24 | uses: 22 | tier: active | origin: 2026-09-01-022524 -->
 - **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
   sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
   identifies **content**, not "this engine's Nth release". This covers the Rust port AND the python
@@ -750,7 +702,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-24 | uses: 19 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-24 | uses: 20 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -764,7 +716,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-23 | uses: 17 | tier: active | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-24 | uses: 18 | tier: active | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - **Declare a Memory Reference when a fact is CONSULTED to make a decision — not only when it is

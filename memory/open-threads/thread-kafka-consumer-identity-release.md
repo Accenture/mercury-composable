@@ -4,6 +4,8 @@
   (re-derive the count), CHANGELOG from `git log v4.12.16..HEAD`, the readiness run, one memory commit past the merge as the
   tag target. Eric ruled 2026-09-24: sync to twin-kafka AND Rust before releasing **v4.12.17** — twin-kafka PR #460 MERGED
   as squash `47d9acf8`, Rust `SchemaCodec::for_consumer` (Increment 139) as
-  mercury PR #327 (head `41beada5`, checks in flight). Relates [[kafka-consumer-registry-identity]], [[eric-release-rhythm]],
+  mercury PR #327 MERGED as `7d5fbc17`. **Release prep 2026-09-24:** Java `release/4.12.17` `fcf44c83` (sweep 43 / 98,
+  CHANGELOG from the tag range, readiness 1514 tests / 0 failures / 3 skipped); Rust `release/4.12.17` (13 / 24 + lock; its
+  CHANGELOG carries Increments 137–139 — two Rust-only increments were unreleased since v4.12.16); PRs and tags Eric's. Relates [[kafka-consumer-registry-identity]], [[eric-release-rhythm]],
   [[conv-changelog-from-tag-range]], [[conv-ports-adopt-java-release-number]].
-  <!-- id: kafka-consumer-identity-release | created: 2026-09-24 | last_used: 2026-09-24 | uses: 2 | tier: working | origin: 2026-09-24-222349 -->
+  <!-- id: kafka-consumer-identity-release | created: 2026-09-24 | last_used: 2026-09-24 | uses: 3 | tier: working | origin: 2026-09-24-222349 -->
