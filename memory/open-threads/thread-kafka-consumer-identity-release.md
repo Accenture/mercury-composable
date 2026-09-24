@@ -6,4 +6,4 @@
   `feat/twin-kafka-consumer-registry-identity` (`ba379fc6`, PR pending), Rust `SchemaCodec::for_consumer` (Increment 139) on
   mercury `feat/kafka-consumer-registry-identity` (gates in flight). Relates [[kafka-consumer-registry-identity]], [[eric-release-rhythm]],
   [[conv-changelog-from-tag-range]], [[conv-ports-adopt-java-release-number]].
-  <!-- id: kafka-consumer-identity-release | created: 2026-09-24 | last_used: 2026-09-24 | uses: 1 | tier: working | origin: 2026-09-24-222349 -->
+  <!-- id: kafka-consumer-identity-release | created: 2026-09-24 | last_used: 2026-09-24 | uses: 2 | tier: working | origin: 2026-09-24-222349 -->
