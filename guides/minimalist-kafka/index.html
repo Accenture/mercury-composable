@@ -2155,6 +2155,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#schema-consumer-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A separate registry identity for the consumer side
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#schema-consume" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3402,6 +3413,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#schema-consumer-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A separate registry identity for the consumer side
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#schema-consume" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4367,16 +4389,52 @@ embedded DEK metadata Confluent's deserializer reads to decrypt). DLQ handling, 
 <p><strong>5. Not covered by the standalone mock.</strong> <a href="../schema-registry-mock/"><code>schema-registry-standalone</code></a> is a
 plaintext dev tool with no <code>ruleSet</code>/KMS support (deliberately — see its own docs). Test/demo CSFLE against a
 real Confluent Schema Registry and a real (or local) KMS.</p>
+<h3 id="schema-consumer-identity">A separate registry identity for the consumer side<a class="headerlink" href="#schema-consumer-identity" title="Permanent link">&para;</a></h3>
+<p>By default <strong>one</strong> codec — one Schema Registry identity, taken from <code>schema-registry.properties</code> — serves both
+directions: <code>simple.kafka.notification</code> encodes and the flow adapter decodes with it. Some Confluent
+installations grant a service's registry access <strong>per direction</strong> — most visibly for CSFLE, where key (KEK)
+access comes through separate <em>produce</em> and <em>consume</em> identity pools — so no single identity can decrypt
+everything the service consumes, and a message decoded under the wrong identity fails as a poison message
+(dead-lettered) with no configuration remedy. Set <code>schema.registry.consumer.properties</code> to give the flow
+adapter its own codec, built under the <code>schema.registry.consumer</code> key prefix against the <strong>same</strong>
+<code>schema.registry.url</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># Producer identity (unchanged)</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="na">schema.registry.url</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_URL}</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="na">schema.registry.properties</span><span class="o">=</span><span class="s">classpath:/schema-registry.properties</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="c1"># Consumer identity: the SAME template, plus the one override that differs</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="na">schema.registry.consumer.properties</span><span class="o">=</span><span class="s">classpath:/schema-registry.properties</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="na">schema.registry.consumer.serde.bearer.auth.identity.pool.id</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_CONSUME_POOL_ID}</span>
+</code></pre></div>
+<p>It is the prefix seam <a href="../twin-kafka/">twin-kafka</a> uses for a second cluster's registry, applied here to one
+registry with two identities:</p>
+<ul>
+<li><strong>Unset or blank = unchanged.</strong> The adapter shares the producer's codec exactly as before, and the
+  <code>${ENV_VAR:}</code> idiom (blank when the variable is unset) keeps it that way per environment; there is no separate
+  switch to remember. The opt-in does not turn schema features on — <code>schema.registry.url</code> stays the switch.</li>
+<li><strong>The consumer keys derive from the prefix:</strong> <code>schema.registry.consumer.properties</code> (the template — reuse the
+  producer's file or point at a second one), <code>schema.registry.consumer.serde.*</code> (pass-through overrides on top of
+  that template) and <code>schema.registry.consumer.cache.ttl</code> (its own caches). The registry URL is shared: a
+  consumer decodes messages whose ids were minted by the registry its producers use.</li>
+<li><strong>Where an override lands.</strong> A <code>schema.registry.consumer.serde.*</code> entry reaches the Confluent deserializer's
+  configuration — and through it the DEK-registry client CSFLE builds from that configuration, where key access
+  is decided. The codec's own schema-by-id lookups still authenticate with the template's identity; when the
+  consume identity must cover those too, point <code>schema.registry.consumer.properties</code> at a second template that
+  carries it instead of layering an override.</li>
+<li><strong>The consumer codec reads only its own prefix.</strong> A <code>schema.registry.serde.*</code> KMS driver credential (item 3
+  above) that the producer needs must be repeated under <code>schema.registry.consumer.serde.*</code> — the two codecs are
+  configured independently.</li>
+</ul>
 <h3 id="schema-consume">Consume: decode by embedded id<a class="headerlink" href="#schema-consume" title="Permanent link">&para;</a></h3>
 <p>Set <code>schema.enabled: true</code> on a consumer binding. The adapter reads the magic byte + embedded id, looks up
 the registered schema's type, dispatches to the matching deserializer, and hands the flow a <strong><code>Map</code></strong> as
 <code>input.body</code> (instead of <code>byte[]</code>). No flow-YAML change is needed (<code>input.body -&gt; *</code> is type-neutral); a
 schema-fed flow task simply takes <code>Map&lt;String,Object&gt;</code> instead of <code>byte[]</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nt">consumer</span><span class="p">:</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic</span><span class="p">:</span><span class="w"> </span><span class="s">'orders'</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'process-order'</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">    </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="s">'order-group'</span>
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">    </span><span class="nt">schema.enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nt">consumer</span><span class="p">:</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic</span><span class="p">:</span><span class="w"> </span><span class="s">'orders'</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'process-order'</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">    </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="s">'order-group'</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">    </span><span class="nt">schema.enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
 <p>A <strong>decode failure is a poison message</strong> (retrying won't help), so the raw record is dead-lettered
 immediately via the <a href="#reliability">DLQ path</a> rather than retried.</p>
@@ -4469,6 +4527,11 @@ The essentials:</p>
 <td><code>schema.registry.cache.ttl</code></td>
 <td><code>30m</code></td>
 <td>TTL for the in-memory (<code>ManagedCache</code>) schema cache (by id); positive results only; cleared at startup.</td>
+</tr>
+<tr>
+<td><code>schema.registry.consumer.properties</code></td>
+<td>—</td>
+<td>Opt in to a <a href="#schema-consumer-identity">separate registry identity for the consumer side</a>: the flow adapter's own registry client template (the producer's file or a second one), with <code>schema.registry.consumer.serde.*</code> overrides on top. Unset or blank = the adapter shares the producer's codec.</td>
 </tr>
 </tbody>
 </table>

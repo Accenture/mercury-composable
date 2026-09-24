@@ -3838,6 +3838,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#schemaregistryconsumerproperties-schemaregistryconsumerserde" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        schema.registry.consumer.properties / schema.registry.consumer.serde.*
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#yamlsecondarykafkaflowadapter" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6440,6 +6451,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#schemaregistryconsumerproperties-schemaregistryconsumerserde" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        schema.registry.consumer.properties / schema.registry.consumer.serde.*
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#yamlsecondarykafkaflowadapter" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -9016,6 +9038,22 @@ property is handed to the serializer/deserializer as <code>&lt;key&gt;</code> ve
 <code>schema.registry.serde.access.key.id=${AWS_ACCESS_KEY_ID}</code> supplies global KMS driver
 credentials for <a href="../minimalist-kafka/#csfle">CSFLE</a>. Omit entirely to use the cloud default
 credential chain.</p>
+<h3 id="schemaregistryconsumerproperties-schemaregistryconsumerserde"><code>schema.registry.consumer.properties</code> / <code>schema.registry.consumer.serde.*</code><a class="headerlink" href="#schemaregistryconsumerproperties-schemaregistryconsumerserde" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code> (comma-sep paths) / <code>String</code> (prefix family)</td>
+<td>— (the flow adapter shares the producer's codec)</td>
+</tr>
+</tbody>
+</table>
+<p>Opt-in <a href="../minimalist-kafka/#schema-consumer-identity">separate Schema Registry identity for the consumer side</a>. When <code>schema.registry.consumer.properties</code> names a registry client template, the Kafka flow adapter decodes with its own codec built under the <code>schema.registry.consumer</code> prefix — the same <code>schema.registry.url</code>, that template (the producer's file or a second one), <code>schema.registry.consumer.serde.*</code> pass-through overrides on top of it, and its own <code>schema.registry.consumer.cache.ttl</code> — so a CSFLE installation that grants key access through separate produce and consume identity pools can serve both. The consumer codec reads only its own prefix (repeat a <code>schema.registry.serde.*</code> KMS credential under it). Unset or blank: unchanged, one shared codec; <code>schema.registry.url</code> remains the feature switch.</p>
 <h3 id="yamlsecondarykafkaflowadapter"><code>yaml.secondary.kafka.flow.adapter</code><a class="headerlink" href="#yamlsecondarykafkaflowadapter" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
