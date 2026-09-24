@@ -44,6 +44,10 @@ import java.util.Properties;
  *   <li>optional schema codec when {@code secondary.schema.registry.url} is set - the Schema Registry
  *       is per-cluster and OPTIONAL, so an on-prem Apache Kafka without a registry can bridge to a
  *       cloud Confluent cluster with one (or vice versa)</li>
+ *   <li>optionally a separate registry identity for the secondary consume side -
+ *       {@code secondary.schema.registry.consumer.properties}, the twin of minimalist-kafka's
+ *       {@code schema.registry.consumer.properties} (see {@link SchemaCodec#forConsumer}); unset or blank, the
+ *       secondary adapter shares the secondary producer's codec</li>
  *   <li>optional flow adapter when {@code yaml.secondary.kafka.flow.adapter} names a binding file -
  *       consumer config from the {@code secondary-kafka-consumer.properties} template</li>
  * </ul>
@@ -85,6 +89,9 @@ public class SecondaryKafkaAutoStart implements EntryPoint {
         // per-cluster and optional: unset means raw byte[] on the secondary cluster
         SchemaCodec schemaCodec = SchemaCodec.fromConfig(config, config.getProperty(REGISTRY_URL), REGISTRY_PREFIX);
         SecondaryKafkaRuntime.setSchemaCodec(schemaCodec);
+        // the secondary consume side may carry its own registry identity (secondary.schema.registry.consumer.*)
+        SchemaCodec consumerSchemaCodec =
+                SchemaCodec.forConsumer(config, config.getProperty(REGISTRY_URL), REGISTRY_PREFIX, schemaCodec);
 
         String adapterConfig = config.getProperty(ADAPTER_CONFIG);
         if (!consumerEnabled) {
@@ -102,7 +109,7 @@ public class SecondaryKafkaAutoStart implements EntryPoint {
             }
             Properties consumerProps = KafkaClientConfig.consumerProperties(config, CONSUMER_LOCATION, DEFAULT_CONSUMER);
             KafkaFlowAdapter adapter = new KafkaFlowAdapter(consumerProps, adapterReader,
-                    dlqTimeout, retryPolicy, schemaCodec, REGISTRY_URL);
+                    dlqTimeout, retryPolicy, consumerSchemaCodec, REGISTRY_URL);
             adapter.start();
             SecondaryKafkaRuntime.setAdapter(adapter);
             log.info("Secondary Kafka flow adapter started from {}", adapterConfig);
