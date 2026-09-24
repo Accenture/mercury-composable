@@ -888,6 +888,11 @@ registry with two identities:
   above) that the producer needs must be repeated under `schema.registry.consumer.serde.*` — the two codecs are
   configured independently.
 
+A commented sample of both variants ships with the [sync-over-async demo](sync-over-async.md): its
+`application.properties` carries the opt-in block, and `schema-registry-consumer.properties` next to it is the
+second-template form. The local registry helper enforces no identity pools, so the sample shows the wiring; the
+registry's own access grants decide the boundary.
+
 ### Consume: decode by embedded id {#schema-consume}
 
 Set `schema.enabled: true` on a consumer binding. The adapter reads the magic byte + embedded id, looks up
