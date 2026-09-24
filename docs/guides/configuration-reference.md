@@ -1159,6 +1159,14 @@ property is handed to the serializer/deserializer as `<key>` verbatim — e.g.
 credentials for [CSFLE](minimalist-kafka.md#csfle). Omit entirely to use the cloud default
 credential chain.
 
+### `schema.registry.consumer.properties` / `schema.registry.consumer.serde.*`
+
+| Type | Default |
+|------|---------|
+| `String` (comma-sep paths) / `String` (prefix family) | — (the flow adapter shares the producer's codec) |
+
+Opt-in [separate Schema Registry identity for the consumer side](minimalist-kafka.md#schema-consumer-identity). When `schema.registry.consumer.properties` names a registry client template, the Kafka flow adapter decodes with its own codec built under the `schema.registry.consumer` prefix — the same `schema.registry.url`, that template (the producer's file or a second one), `schema.registry.consumer.serde.*` pass-through overrides on top of it, and its own `schema.registry.consumer.cache.ttl` — so a CSFLE installation that grants key access through separate produce and consume identity pools can serve both. The consumer codec reads only its own prefix (repeat a `schema.registry.serde.*` KMS credential under it). Unset or blank: unchanged, one shared codec; `schema.registry.url` remains the feature switch.
+
 ### `yaml.secondary.kafka.flow.adapter`
 
 | Type | Default |

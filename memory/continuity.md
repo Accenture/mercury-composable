@@ -221,7 +221,7 @@
   fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
   DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
   ignores `EMBEDDED_REDIS_EXECUTABLE`.
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-23 | uses: 7 | tier: active | origin: 2026-09-18-174943 -->
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-24 | uses: 8 | tier: active | origin: 2026-09-18-174943 -->
 
 - **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
   `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
@@ -590,6 +590,24 @@
   the same default at its next catch-up).
   <!-- id: kafka-group-protocol-auto-default | created: 2026-09-21 | last_used: 2026-09-23 | uses: 3 | tier: active | origin: 2026-09-21-184342 -->
 
+- **The Kafka flow adapter can carry its own Schema Registry identity — an opt-in second codec on the existing prefix seam,
+  never a new mechanism (a field installation's fix, reviewed and reconstructed 2026-09-24; branch
+  `feat/kafka-consumer-registry-identity` `13eddc76`).** `KafkaFlowAutoStart` shares one `SchemaCodec` between
+  `simple.kafka.notification` and the flow adapter unless `schema.registry.consumer.properties` names a registry client
+  template; then `resolveConsumerSchemaCodec` builds the adapter's codec through `SchemaCodec.fromConfig(config, url, prefix)`
+  under `schema.registry.consumer` — the seam twin-kafka runs on for a second cluster's registry, applied to ONE registry with
+  two identities: the same `schema.registry.url` (a consumer decodes ids minted by the registry its producers use), that
+  template, `schema.registry.consumer.serde.*` overrides on top, its own caches. Presence is the opt-in (blank = unset, the
+  `${ENV_VAR:}` idiom); unset, the old behaviour byte-for-byte, pinned by `assertSame`; `schema.registry.url` stays the feature
+  switch. **Why:** Confluent installations that grant CSFLE key (KEK) access per direction — separate produce and consume
+  identity pools — so no single identity decrypts everything a service consumes. **Two seam facts to READ before advising a
+  field:** a `<prefix>.serde.*` override reaches the serdes' configuration and the DEK-registry client CSFLE builds from it
+  (where key access is decided), NOT the codec's own schema-by-id client, which keeps the template's identity — a second
+  template covers both; and each codec reads only its own prefix, so a `schema.registry.serde.*` KMS credential is repeated
+  under the consumer prefix. Open (Eric): twin-kafka's secondary cluster and the Rust bootstrap share the same one-codec
+  shape (Rust: same seam, no CSFLE). Applies [[clean-knowledge-design-over-engine-coverage]]; relates [[kafka-mesh-opt-in]].
+  <!-- id: kafka-consumer-registry-identity | created: 2026-09-24 | last_used: 2026-09-24 | uses: 1 | tier: working | origin: 2026-09-24-222349 -->
+
 - **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed
   response is traced at its head and its tail, never per token (Eric's rulings on the Dynatrace review of
   the v4.12.15 certification traces, 2026-09-22; Java `fix/connected-edge-spans` + Rust twin `a95e2a91`;
@@ -637,7 +655,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-23 | uses: 52 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-24 | uses: 53 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -657,7 +675,7 @@
   PR). Both errors came from writing out of recollection of my own work instead of out of the
   repository. Corrected in both places via PR #411. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-23 | uses: 9 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-24 | uses: 10 | tier: active | origin: 2026-09-17-183008 -->
 - **A thread id names the THING, never its kind — and an existing thread is never renamed (Eric,
   2026-09-18).** The tool writes every open thread to `memory/open-threads/thread-<id>.md`, so an id
   that already begins `ot-` or `thread-` stutters: `thread-ot-distributed-cache.md`, and worst,
@@ -727,7 +745,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-23 | uses: 17 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-24 | uses: 18 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -791,7 +809,7 @@
   comment) and the return-route coordinator; applied to the distributed cache's `CacheRuntime`. This
   decays once the toolchain moves to Java 25 (JEP 491 makes `synchronized` non-pinning). Relates
   [[virtual-threads-rpc]], [[kafka-clients-kernel-threads]]; applied in [[redis-connection-foundation]].
-  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-09-21 | uses: 6 | tier: active | origin: 2026-09-14-230259 -->
+  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-09-21 | uses: 6 | tier: archive-candidate | origin: 2026-09-14-230259 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 

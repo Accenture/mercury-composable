@@ -282,8 +282,10 @@ public class SchemaCodec {
         Map<String, Object> serdeOverrides = extractSerdeConfig(config, keyPrefix + ".serde.");
         Map<String, Object> extraSerdeConfig = new HashMap<>(srTemplate);
         extraSerdeConfig.putAll(serdeOverrides);
-        log.info("Schema codec ready (registry={}, cache={}, ttlMs={}, types={}, csfle={}, auth={})",
-                registryUrl, keyPrefix, ttlMillis, List.of(SchemaType.values()), !serdeOverrides.isEmpty(),
+        // serdeOverrides counts the <prefix>.serde.* entries - KMS driver settings for CSFLE, or an identity
+        // override for a consumer-side codec - so the label states what is known rather than inferring CSFLE
+        log.info("Schema codec ready (registry={}, cache={}, ttlMs={}, types={}, serdeOverrides={}, auth={})",
+                registryUrl, keyPrefix, ttlMillis, List.of(SchemaType.values()), serdeOverrides.size(),
                 bearerAuthSource == null ? "none" : bearerAuthSource);
         return new SchemaCodec(client, registryUrl, extraSerdeConfig);
     }

@@ -15,7 +15,8 @@ keywords: [kafka, flow adapter, minimalist-kafka, consumer, producer, dead lette
   partitioner, content-based partitioning, SimpleRandomPartitioner, partitioner.class,
   schema registry, confluent, avro, json schema, subject, version, schema.enabled, csfle,
   field level encryption, kms, aws kms, azure key vault, gcp kms,
-  oauth2, bearer auth, client credentials, token endpoint, allowed.urls, schema-registry.properties]
+  oauth2, bearer auth, client credentials, token endpoint, allowed.urls, schema-registry.properties,
+  identity pool, consumer identity, schema.registry.consumer.properties]
 ---
 
 # Minimalist Kafka
@@ -847,6 +848,46 @@ embedded DEK metadata Confluent's deserializer reads to decrypt). DLQ handling, 
 plaintext dev tool with no `ruleSet`/KMS support (deliberately — see its own docs). Test/demo CSFLE against a
 real Confluent Schema Registry and a real (or local) KMS.
 
+### A separate registry identity for the consumer side {#schema-consumer-identity}
+
+By default **one** codec — one Schema Registry identity, taken from `schema-registry.properties` — serves both
+directions: `simple.kafka.notification` encodes and the flow adapter decodes with it. Some Confluent
+installations grant a service's registry access **per direction** — most visibly for CSFLE, where key (KEK)
+access comes through separate *produce* and *consume* identity pools — so no single identity can decrypt
+everything the service consumes, and a message decoded under the wrong identity fails as a poison message
+(dead-lettered) with no configuration remedy. Set `schema.registry.consumer.properties` to give the flow
+adapter its own codec, built under the `schema.registry.consumer` key prefix against the **same**
+`schema.registry.url`:
+
+```properties
+# Producer identity (unchanged)
+schema.registry.url=${SCHEMA_REGISTRY_URL}
+schema.registry.properties=classpath:/schema-registry.properties
+
+# Consumer identity: the SAME template, plus the one override that differs
+schema.registry.consumer.properties=classpath:/schema-registry.properties
+schema.registry.consumer.serde.bearer.auth.identity.pool.id=${SCHEMA_REGISTRY_CONSUME_POOL_ID}
+```
+
+It is the prefix seam [twin-kafka](twin-kafka.md) uses for a second cluster's registry, applied here to one
+registry with two identities:
+
+- **Unset or blank = unchanged.** The adapter shares the producer's codec exactly as before, and the
+  `${ENV_VAR:}` idiom (blank when the variable is unset) keeps it that way per environment; there is no separate
+  switch to remember. The opt-in does not turn schema features on — `schema.registry.url` stays the switch.
+- **The consumer keys derive from the prefix:** `schema.registry.consumer.properties` (the template — reuse the
+  producer's file or point at a second one), `schema.registry.consumer.serde.*` (pass-through overrides on top of
+  that template) and `schema.registry.consumer.cache.ttl` (its own caches). The registry URL is shared: a
+  consumer decodes messages whose ids were minted by the registry its producers use.
+- **Where an override lands.** A `schema.registry.consumer.serde.*` entry reaches the Confluent deserializer's
+  configuration — and through it the DEK-registry client CSFLE builds from that configuration, where key access
+  is decided. The codec's own schema-by-id lookups still authenticate with the template's identity; when the
+  consume identity must cover those too, point `schema.registry.consumer.properties` at a second template that
+  carries it instead of layering an override.
+- **The consumer codec reads only its own prefix.** A `schema.registry.serde.*` KMS driver credential (item 3
+  above) that the producer needs must be repeated under `schema.registry.consumer.serde.*` — the two codecs are
+  configured independently.
+
 ### Consume: decode by embedded id {#schema-consume}
 
 Set `schema.enabled: true` on a consumer binding. The adapter reads the magic byte + embedded id, looks up
@@ -906,6 +947,7 @@ The essentials:
 | `schema.registry.url` | — | Confluent Schema Registry URL; unset = [schema features](#schema) off (raw `byte[]`). |
 | `schema.registry.properties` | `classpath:/schema-registry.properties` | Registry client template location — auth/SSL parameters passed verbatim to the Confluent client (see [registry authentication](#schema-auth)). Set to an external file path (or explicit fallback list) to externalize. |
 | `schema.registry.cache.ttl` | `30m` | TTL for the in-memory (`ManagedCache`) schema cache (by id); positive results only; cleared at startup. |
+| `schema.registry.consumer.properties` | — | Opt in to a [separate registry identity for the consumer side](#schema-consumer-identity): the flow adapter's own registry client template (the producer's file or a second one), with `schema.registry.consumer.serde.*` overrides on top. Unset or blank = the adapter shares the producer's codec. |
 
 ## See also
 
