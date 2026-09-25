@@ -11,7 +11,7 @@ plugins {
 }
 
 // single-source version literal - the Mercury release sweep updates it
-def mercuryVersion = '4.12.18'
+def mercuryVersion = '4.12.19'
 
 group = 'com.accenture'
 version = mercuryVersion

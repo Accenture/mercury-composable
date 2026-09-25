@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>sync-over-async</artifactId>
-    <version>4.12.18</version>
+    <version>4.12.19</version>
     <packaging>jar</packaging>
     <name>Sync-over-async (request/reply and streaming for async backends)</name>
     <description>
@@ -77,7 +77,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.12.18</version>
+            <version>4.12.19</version>
         </dependency>
 
         <!-- The shared Redis client layer (standalone/cluster seam, config, auth, health probe). This
@@ -87,7 +87,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>redis-connection</artifactId>
-            <version>4.12.18</version>
+            <version>4.12.19</version>
         </dependency>
 
         <!-- Kafka building blocks for the end-to-end regression only (notification function + flow
@@ -96,7 +96,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minimalist-kafka</artifactId>
-            <version>4.12.18</version>
+            <version>4.12.19</version>
             <scope>test</scope>
         </dependency>
 
