@@ -144,7 +144,7 @@ public class CompileGraph implements EntryPoint {
         // later manifest wins: when a later manifest lists a graph id again, that manifest owns
         // the id - its copy replaces the earlier one, and if the new copy is rejected the id is
         // not executable (404) rather than silently served from the copy the operator meant to
-        // replace (a curl test would otherwise pass against the old behaviour)
+        // replace (a curl test would otherwise pass against the old behavior)
         var previous = CompiledGraphs.getGraphLocation(graphId);
         if (previous != null && !previous.equals(deployLocation)) {
             log.warn("Graph {} from {} replaces the copy from {}", graphId, deployLocation, previous);

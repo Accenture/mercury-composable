@@ -68,16 +68,6 @@ public class CompiledGraphs {
     }
 
     /**
-     * Register a compiled graph model from the default location
-     *
-     * @param graphId of the deployed graph
-     * @param model the compiled graph model
-     */
-    public static void addGraph(String graphId, Map<String, Object> model) {
-        addGraph(graphId, model, DEFAULT_LOCATION);
-    }
-
-    /**
      * Register a compiled graph model
      *
      * @param graphId of the deployed graph
@@ -93,11 +83,10 @@ public class CompiledGraphs {
      * Drop a compiled graph model - a later manifest takes ownership of the id
      *
      * @param graphId of the deployed graph
-     * @return the removed model, or null when the graph was not compiled
      */
-    public static Map<String, Object> removeGraph(String graphId) {
+    public static void removeGraph(String graphId) {
         GRAPH_LOCATIONS.remove(graphId);
-        return COMPILED_GRAPHS.remove(graphId);
+        COMPILED_GRAPHS.remove(graphId);
     }
 
     /**
@@ -108,16 +97,6 @@ public class CompiledGraphs {
      */
     public static String getGraphLocation(String graphId) {
         return GRAPH_LOCATIONS.get(graphId);
-    }
-
-    /**
-     * Replace the deployed locations with a single one (the single-manifest form)
-     *
-     * @param location the deployed graph model folder (file:/ or classpath:/)
-     */
-    public static void setDeployedLocation(String location) {
-        DEPLOYED_LOCATIONS.clear();
-        DEPLOYED_LOCATIONS.add(location);
     }
 
     /**
