@@ -856,25 +856,33 @@ public class GraphCommandService extends GraphLambdaFunction {
     private List<String> deployedGraphIds() {
         var result = new ArrayList<String>();
         for (var location : CompiledGraphs.getDeployedLocations()) {
-            File dir = null;
-            if (location.startsWith(FILE_PREFIX)) {
-                dir = new File(location.substring(FILE_PREFIX.length()));
-            } else if (location.startsWith(CLASSPATH_PREFIX)) {
-                var url = this.getClass().getResource(location.substring(CLASSPATH_PREFIX.length()));
-                if (url != null && "file".equals(url.getProtocol())) {
-                    dir = new File(url.getPath());
-                }
-            }
-            if (dir != null && dir.isDirectory()) {
-                var files = dir.list((d, name) -> name.endsWith(JSON_EXT));
-                if (files != null) {
-                    for (var f : files) {
-                        result.add(f.substring(0, f.length() - JSON_EXT.length()));
-                    }
+            var dir = deployedDirectory(location);
+            // File.list() is null when the location is not an enumerable directory
+            var files = dir == null? null : dir.list((d, name) -> name.endsWith(JSON_EXT));
+            if (files != null) {
+                for (var f : files) {
+                    result.add(f.substring(0, f.length() - JSON_EXT.length()));
                 }
             }
         }
         return result;
+    }
+
+    /**
+     * A deployed location as a directory: a file: location directly; a classpath: location
+     * only when it resolves to an exploded directory (null inside a packaged jar).
+     */
+    private File deployedDirectory(String location) {
+        if (location.startsWith(FILE_PREFIX)) {
+            return new File(location.substring(FILE_PREFIX.length()));
+        }
+        if (location.startsWith(CLASSPATH_PREFIX)) {
+            var url = this.getClass().getResource(location.substring(CLASSPATH_PREFIX.length()));
+            if (url != null && "file".equals(url.getProtocol())) {
+                return new File(url.getPath());
+            }
+        }
+        return null;
     }
 
     /**

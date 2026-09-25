@@ -143,9 +143,9 @@ class CompileGraphTest {
     @Test
     void staticValidatorRejectsEveryInvalidSuspendResumeShape() {
         // Direct coverage of every static rule, independent of the manifest. The fixtures cover
-        // err1 a graph.suspend node not named 'suspend', err2 the suspend marker on graph.math,
-        // err3 a suspendable node without a suspend node, err4 a suspend node without ttl,
-        // err5 a suspendable node without a drawn edge to 'suspend', err6 a suspend node
+        // err1 a graph.suspend node not named 'suspend'. err2 the suspend marker on graph.math.
+        // err3 a suspendable node without a suspend node. err4 a suspend node without ttl.
+        // err5 a suspendable node without a drawn edge to 'suspend'. err6 a suspend node
         // without an outgoing connection, and err7 a suspension point without a
         // continuation edge (a resumed run could not continue)
         for (var id : List.of("unit-test-suspend-err1", "unit-test-suspend-err2", "unit-test-suspend-err3",
