@@ -8,8 +8,15 @@ public final class Evaluator {
 
     private Evaluator() {}
 
+    /**
+     * Evaluate to a number. A boolean result is rejected rather than coerced to 0/1 - a boolean is not
+     * a number in this dialect; a caller that wants a boolean evaluates with {@link #evaluateBoolean}.
+     */
     public static double evaluateNumber(String expression, EvalContext ctx) {
         Value v = evaluateValue(expression, ctx);
+        if (v instanceof BooleanValue) {
+            throw new IllegalArgumentException("Boolean result where a number was expected: " + v);
+        }
         return v.asDouble();
     }
 
@@ -54,30 +61,45 @@ public final class Evaluator {
     private static Value evalUnary(Expr.Unary u, EvalContext ctx) {
         Value r = eval(u.right(), ctx);
         return switch (u.op()) {
-            case "+" -> Value.number(+asNumber(r, "unary '+'"));
-            case "-" -> Value.number(-asNumber(r, "unary '-'"));
+            case "+" -> Value.number(finite(+asNumber(r, "unary '+'"), "unary '+'"));
+            case "-" -> Value.number(finite(-asNumber(r, "unary '-'"), "unary '-'"));
             case "!" -> Value.bool(!r.asBoolean());
             default  -> throw new IllegalArgumentException("Unsupported unary operator: " + u.op());
         };
     }
 
     private static Value evalCall(Expr.Call c, EvalContext ctx) {
+        String name = calleeName(c.callee());
         Object fnObj;
         if (c.callee() instanceof Expr.MemberAccess || c.callee() instanceof Expr.Variable) {
             fnObj = resolveObject(c.callee(), ctx);
         } else {
             fnObj = null;
         }
+        if (fnObj == null) {
+            // a misspelled or unsupported function is rejected by name, never a silent no-op
+            throw new IllegalArgumentException("Unknown function: " + name);
+        }
         if (!(fnObj instanceof MathFunction fn)) {
-            throw new IllegalArgumentException("Attempting to call a non-function");
+            throw new IllegalArgumentException("'" + name + "' is not a function");
         }
         List<Double> argVals = new ArrayList<>(c.args().size());
         for (Expr arg : c.args()) {
-            argVals.add(eval(arg, ctx).asDouble());
+            argVals.add(asNumber(eval(arg, ctx), "argument of " + name + "()"));
         }
         double[] arr = new double[argVals.size()];
         for (int i = 0; i < arr.length; i++) arr[i] = argVals.get(i);
-        return Value.number(fn.apply(arr));
+        return Value.number(finite(fn.apply(arr), name + "()"));
+    }
+
+    private static String calleeName(Expr e) {
+        if (e instanceof Expr.Variable(String name)) {
+            return name;
+        }
+        if (e instanceof Expr.MemberAccess(Expr target, String property)) {
+            return calleeName(target) + "." + property;
+        }
+        return "expression";
     }
 
     private static Value evalBinary(Expr.Binary b, EvalContext ctx) {
@@ -104,12 +126,12 @@ public final class Evaluator {
 
         // Numeric arithmetic
         switch (b.op()) {
-            case "+"  : return Value.number(asNumber(lv, "+") + asNumber(rv, "+"));
-            case "-"  : return Value.number(asNumber(lv, "-") - asNumber(rv, "-"));
-            case "*"  : return Value.number(asNumber(lv, "*") * asNumber(rv, "*"));
-            case "/"  : return Value.number(asNumber(lv, "/") / asNumber(rv, "/"));
-            case "%"  : return Value.number(asNumber(lv, "%") % asNumber(rv, "%"));
-            case "**" : return Value.number(Math.pow(asNumber(lv, "**"), asNumber(rv, "**")));
+            case "+"  : return Value.number(finite(asNumber(lv, "+") + asNumber(rv, "+"), "+"));
+            case "-"  : return Value.number(finite(asNumber(lv, "-") - asNumber(rv, "-"), "-"));
+            case "*"  : return Value.number(finite(asNumber(lv, "*") * asNumber(rv, "*"), "*"));
+            case "/"  : return Value.number(finite(asNumber(lv, "/") / asNumber(rv, "/"), "/"));
+            case "%"  : return Value.number(finite(asNumber(lv, "%") % asNumber(rv, "%"), "%"));
+            case "**" : return Value.number(finite(Math.pow(asNumber(lv, "**"), asNumber(rv, "**")), "**"));
             default: /* next */
         }
 
@@ -174,10 +196,34 @@ public final class Evaluator {
         return null;
     }
 
+    /**
+     * A number for arithmetic, a relational comparison or a function argument. A boolean is never a
+     * number here - one uniform rejection, whichever operator met it - so a JSON boolean that reached
+     * a numeric slot fails by name instead of computing as 1 or 0 (equality already type-checks).
+     */
     private static double asNumber(Value v, String context) {
         if (v instanceof NumberValue(double nv))  return nv;
-        if (v instanceof BooleanValue) return v.asDouble(); // allow bool→number for arithmetic
+        if (v instanceof BooleanValue) {
+            throw new IllegalArgumentException("Boolean operand in '" + context + "': " + v);
+        }
         throw new IllegalArgumentException("Expected number in " + context + ", got " + v);
+    }
+
+    /**
+     * Arithmetic stays finite: a double that overflowed to infinity or lost meaning (NaN) is an error
+     * naming the operator, never a value that travels on to render as the identifier 'Infinity' or a
+     * settled amount.
+     */
+    private static double finite(double d, String context) {
+        if (Double.isNaN(d)) {
+            throw new IllegalArgumentException("Arithmetic result is not a number (NaN) in '" + context + "'");
+        }
+        if (Double.isInfinite(d)) {
+            var cause = "/".equals(context) || "%".equals(context)? "Division by zero or arithmetic overflow"
+                    : "Arithmetic overflow";
+            throw new IllegalArgumentException(cause + " in '" + context + "' (result " + d + ")");
+        }
+        return d;
     }
 
     private static String asString(Value v) {

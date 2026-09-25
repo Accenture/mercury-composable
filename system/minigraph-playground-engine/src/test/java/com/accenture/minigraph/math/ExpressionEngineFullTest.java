@@ -128,13 +128,20 @@ class ExpressionEngineFullTest {
     }
 
     @Test
-    void division_by_zero_and_nan() {
+    void division_by_zero_overflow_and_nan_are_errors() {
+        // arithmetic stays finite: no Infinity or NaN travels on as a value (a field graph once
+        // failed a later node with 'Unknown identifier: Infinity' after an overflow)
         ExpressionEngine engine = new ExpressionEngine();
-        assertEquals(Double.POSITIVE_INFINITY, engine.evalNumber("1 / 0.0"), 0.0);
-        assertEquals(Double.NEGATIVE_INFINITY, engine.evalNumber("-1 / 0.0"), 0.0);
-        // NaN truthiness
-        assertTrue(engine.evalBoolean("!(0/0)"));
-        assertFalse(engine.evalBoolean("(0/0) == (0/0)")); // NaN == NaN -> false
+        var e1 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("1 / 0.0"));
+        assertTrue(e1.getMessage().contains("Division by zero or arithmetic overflow in '/' (result Infinity)"), e1.getMessage());
+        var e2 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("-1 / 0.0"));
+        assertTrue(e2.getMessage().contains("result -Infinity"), e2.getMessage());
+        var e3 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("0 / 0"));
+        assertTrue(e3.getMessage().contains("not a number (NaN) in '/'"), e3.getMessage());
+        var e4 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("1e308 * 10"));
+        assertTrue(e4.getMessage().contains("Arithmetic overflow in '*' (result Infinity)"), e4.getMessage());
+        var e5 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("pow(10, 400)"));
+        assertTrue(e5.getMessage().contains("Arithmetic overflow in 'pow()'"), e5.getMessage());
     }
 
     @Test
@@ -158,11 +165,31 @@ class ExpressionEngineFullTest {
         IllegalArgumentException e1 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("foo + 1"));
         assertTrue(e1.getMessage().toLowerCase().contains("unknown identifier"));
 
-        // calling a non-function
+        // calling a value as a function, and a misspelled function - each rejected by name
         IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("PI(2)"));
-        assertTrue(e2.getMessage().toLowerCase().contains("non-function"));
+        assertEquals("'PI' is not a function", e2.getMessage());
+        IllegalArgumentException e3 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("mn(1, 2)"));
+        assertEquals("Unknown function: mn", e3.getMessage());
+        IllegalArgumentException e4 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("Math.mn(1, 2)"));
+        assertEquals("Unknown function: Math.mn", e4.getMessage());
 
         // type mismatch in equality
         assertThrows(IllegalArgumentException.class, () -> engine.evalBoolean("'1' == 1"));
+
+        // a boolean is never a number: arithmetic, a relational comparison, a function argument and a
+        // bare boolean result are all rejected - uniformly, whichever operator met it
+        var b1 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("true + 1"));
+        assertTrue(b1.getMessage().startsWith("Boolean operand in '+': Boolean(true)"), b1.getMessage());
+        var b2 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("0 - true"));
+        assertTrue(b2.getMessage().startsWith("Boolean operand in '-'"), b2.getMessage());
+        var b3 = assertThrows(IllegalArgumentException.class, () -> engine.evalBoolean("false < 1"));
+        assertTrue(b3.getMessage().startsWith("Boolean operand in '<'"), b3.getMessage());
+        var b4 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("max(true, 2)"));
+        assertTrue(b4.getMessage().startsWith("Boolean operand in 'argument of max()'"), b4.getMessage());
+        var b5 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("true"));
+        assertTrue(b5.getMessage().startsWith("Boolean result where a number was expected"), b5.getMessage());
+        // booleans stay first-class in boolean contexts
+        assertTrue(engine.evalBoolean("true && !false"));
+        assertTrue(engine.evalBoolean("true == true"));
     }
 }

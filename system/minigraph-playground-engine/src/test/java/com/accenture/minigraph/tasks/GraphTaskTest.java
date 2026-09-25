@@ -328,6 +328,63 @@ class GraphTaskTest {
     }
 
     @Test
+    void conditionStoresADeclaredBoolean() throws TimeoutException {
+        // unit-test-math-2 case 1: CONDITION evaluates a boolean whatever operators it carries - a
+        // comparison, a bare boolean variable, a boolean operation over a prior result - and stores it
+        var response = runGraph("unit-test-math-2", Map.of("case", 1, "a", 1, "b", 2, "flag", true), Map.of());
+        assertEquals(200, response.getStatus(), String.valueOf(response.getBody()));
+        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals(true, mm.getElement("ok"));
+        assertEquals(true, mm.getElement("same"));
+        assertEquals(true, mm.getElement("gate"));
+        response = runGraph("unit-test-math-2", Map.of("case", 1, "a", 3, "b", 2, "flag", false), Map.of());
+        assertEquals(200, response.getStatus(), String.valueOf(response.getBody()));
+        mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals(false, mm.getElement("ok"));
+        assertEquals(false, mm.getElement("same"));
+        assertEquals(false, mm.getElement("gate"));
+    }
+
+    @Test
+    void booleanOperandIsRejectedByNameWhereverANumberIsNeeded() throws TimeoutException {
+        // a JSON boolean in a numeric slot never computes as 1 or 0 - arithmetic (case 2), a relational
+        // comparison (case 6) and a bare boolean COMPUTE result (case 7) all fail naming the selector
+        for (int c : new int[] {2, 6, 7}) {
+            var response = runGraph("unit-test-math-2", Map.of("case", c, "flag", true), Map.of());
+            assertNotEquals(200, response.getStatus(), "case " + c);
+            var error = String.valueOf(response.getBody());
+            assertTrue(error.contains("Boolean operand: model.flag (true)"), "case " + c + ": " + error);
+            assertTrue(error.contains("CONDITION"), "case " + c + ": " + error);
+        }
+        var response = runGraph("unit-test-math-2", Map.of("case", 6, "flag", false), Map.of());
+        assertNotEquals(200, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("Boolean operand: model.flag (false) in '{model.flag} < 1'"),
+                String.valueOf(response.getBody()));
+    }
+
+    @Test
+    void unknownFunctionOverflowAndDivisionByZeroFailByName() throws TimeoutException {
+        // case 4: a misspelled function is rejected by name, never a silent no-op
+        var response = runGraph("unit-test-math-2", Map.of("case", 4, "a", 1, "b", 2), Map.of());
+        assertNotEquals(200, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("Unknown function: mn"), String.valueOf(response.getBody()));
+        // case 3: an overflow to infinity fails naming the operator instead of travelling on as 'Infinity'
+        response = runGraph("unit-test-math-2", Map.of("case", 3, "big", 1e308), Map.of());
+        assertNotEquals(200, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("Arithmetic overflow in '*' (result Infinity)"),
+                String.valueOf(response.getBody()));
+        // case 5: a division by zero is an error, not an infinite amount - and the same expression computes
+        response = runGraph("unit-test-math-2", Map.of("case", 5, "a", 1, "b", 0), Map.of());
+        assertNotEquals(200, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("Division by zero or arithmetic overflow in '/'"),
+                String.valueOf(response.getBody()));
+        response = runGraph("unit-test-math-2", Map.of("case", 5, "a", 1, "b", 4), Map.of());
+        assertEquals(200, response.getStatus(), String.valueOf(response.getBody()));
+        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals(0.25, mm.getElement("x"));
+    }
+
+    @Test
     void helpFileFollowsNamingConvention() {
         // 'describe skill graph.task' resolves the file name by replacing dots with hyphens
         assertNotNull(GraphTaskTest.class.getResourceAsStream("/help/help graph-task.md"),
