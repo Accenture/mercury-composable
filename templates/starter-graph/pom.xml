@@ -12,7 +12,7 @@
     <groupId>com.accenture</groupId>
     <artifactId>starter-graph</artifactId>
     <packaging>jar</packaging>
-    <version>4.12.17</version>
+    <version>4.12.18</version>
     <name>Layer 3 starter - Knowledge Graph as Application</name>
 
     <parent>
@@ -59,7 +59,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minigraph-playground-engine</artifactId>
-            <version>4.12.17</version>
+            <version>4.12.18</version>
         </dependency>
 
         <dependency>
