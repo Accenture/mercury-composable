@@ -148,7 +148,10 @@ trusted dev environments** (there is no auth).
 
 > **Restarting the app ends every session — export first.** The working graph lives in the
 > session, not on disk: `export graph as {name}` before any restart (deploying a graph requires
-> one), or the unexported work is lost.
+> one), or the unexported work is lost. For a prototype or a demo the restart need not be a
+> rebuild — see [Rapid prototyping — deploy without a rebuild](ai-agent-guide.md#deploy-without-rebuild)
+> — and the shipped broker survives it: it reconnects, reports the new session id, and the agent
+> re-imports the export before the humans re-subscribe.
 
 ## Turning dev mode on in your own app {#enabling}
 

@@ -168,31 +168,6 @@
   [[connected-edge-spans]].
   <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-23 | uses: 9 | tier: archive-candidate | origin: 2026-09-16-193203 -->
 
-- **Application log forwarding is an INFRASTRUCTURE task — the engine does not grow that capability
-  (Eric with the field architects, 2026-09-18; CLOSED, not parked).** The field found the gap after
-  the OTel trace certification closed: Dynatrace stores traces and logs in two databases, v4.12.12
-  exports spans to `/v1/traces` and they are queryable, but nothing sends application logs to
-  `/v1/logs` — so "View logs for this trace" is empty and a DQL query on the trace id returns nothing.
-  Investigated and specced; the answer is **not** to build an exporter.
-  **The decisive framing was the field's own Splunk practice:** container stdout is shipped to Splunk
-  by a standard forwarder, configured by the platform, with the application doing nothing. One
-  principle, two backends — a collector reads stdout and ships to `/v1/logs` for Dynatrace exactly as
-  a forwarder does for Splunk. Rejected in-app alternative: an OTLP log appender was *easy* (
-  `OtlpHttpLogRecordExporter` is already in the artifact the span exporter uses, so zero new
-  dependencies) and that convenience is bought in the worst place — an HTTP exporter reachable from
-  every `log.info` in the process, owning credentials, retry and back-pressure on the app's critical
-  path. Dynatrace's own "collector copies spans into the logs store" workaround was also rejected,
-  structurally: span-shaped records cannot contain the application's log messages.
-  **The engine's half is already done and is what makes the infra half work.** `log.format=json|compact`
-  plus `app-log-context.yaml` already emits `trace_id`/`span_id` on every line inside a traced worker —
-  correlation on a virtual-thread runtime where the MDC pattern is an anti-pattern. The snake_case rename (#414 — on main since 2026-09-18, SHIPPED in
-  v4.12.13, not 4.12.12) aligned those keys with the distributed-trace block, so a collector maps one
-  vocabulary, and the enforced `$utc` gives it an unambiguous timestamp to parse. The gap was never
-  correlation; it was transport, which is the platform's job.
-  Applies [[clean-knowledge-design-over-engine-coverage]] one level up — the same "should the engine
-  absorb this at all" question asked of a *capability* rather than a graph composition.
-  <!-- id: log-forwarding-is-infrastructure | created: 2026-09-18 | last_used: 2026-09-21 | uses: 2 | tier: archive-candidate | origin: 2026-09-18-174943 -->
-
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
   produces a hard case, the first question is whether the engine should absorb it at all. Chasing
@@ -344,7 +319,7 @@
   `/` in dev too — add the route; an app with no `app.env` gets the plain page. Documented in
   `playground-and-companion.md` (#enabling) and `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]];
   applies to [[ot-distributed-cache]]'s worked example.
-  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-24 | uses: 11 | tier: active | origin: 2026-09-15-221451 -->
+  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-24 | uses: 11 | tier: archive-candidate | origin: 2026-09-15-221451 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
@@ -396,44 +371,6 @@
   `model` via the `*` passthrough. Distilled from the sync-over-async composable refactoring (2026-06-27,
   Claude Code). (ADR-0007)
   <!-- id: event-script-over-code | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
-- **A function that awaits an RPC must check the reply's STATUS before reading its body — the engines
-  do it for flows and graphs, imperative code must do it itself (Java ⇄ Rust cache interop, 2026-09-20).**
-  A function that throws replies with the error status and the message as a string body (`WorkerHandler`);
-  `po.request(...).get()` returns that envelope normally. `ProfileCacheL1` on both engines tested only the
-  body shape (`byte[]`/`Value::Binary` or null), so with Redis down a fast failure read as 404 *Profile not
-  found* and a POST would have acknowledged `stored`. Ours was masked by the 5 s RPC timeout racing
-  Lettuce's 5 s command timeout — the same code against a fast-failing cache (connection refused, NOAUTH)
-  misreports. Fixed with a `checked()` guard in both examples (PR #426 squash `fd3916a0`; Rust mercury #286 merge `01710589`, both 2026-09-20), pinned by fail-fast stub tests that swap
-  `v1.cache.redis` (`Platform.release` + `register`, restored in `finally`). Layers 2 and 3 never had the
-  gap: the flow and graph engines check task status for the author — [[event-script-over-code]] in the
-  wild. Rule for any PostOffice caller: `if (res.getStatus() >= 400) throw new AppException(status, body)`
-  before touching the body. Certification record: `docs/test-reports/distributed-cache-interop.md`
-  (112/112; twin in the Rust repo). Recorded there, not changed: after a >30 s outage the shared Lettuce
-  connection recovers on its 30 s backoff cap while `redis.health` (a fresh connection) is already green —
-  ruled 2026-09-21 — reset the shared connection on command timeout, [[redis-connection-reset-on-timeout]]; the in-function RPC timeout WAS 500 here vs 408 on Rust — a platform-core mapping gap, fixed
-  2026-09-20 ([[exception-status-from-cause-chain]]): 408 on both. Relates [[redis-connection-foundation]].
-  <!-- id: l1-caller-checks-reply-status | created: 2026-09-20 | last_used: 2026-09-21 | uses: 3 | tier: archive-candidate | origin: 2026-09-20-004702 -->
-
-- **A function's error status comes from its CAUSE CHAIN — the first `AppException` (its status),
-  `TimeoutException` (408) or `IllegalArgumentException` (400) wins; 500 only when none is present (Eric,
-  2026-09-20; one rule, `Utility.getStatusFromException`; PR #427 MERGED 2026-09-20, squash `6f020544`).** Found by the cache interop (Finding 3):
-  `EventEnvelope.setException` and `WorkerHandler` each mapped the OUTERMOST exception, with slightly
-  different tables (the envelope's had no 408 at all), while the message came from `getRootCause` — so
-  `po.request(..).get()`'s `ExecutionException(TimeoutException)` replied 500 "Timeout for N ms" and a
-  `CompletionException(AppException 404)` lost its 404: status and message described different exceptions.
-  Now both mappers and `EventStreamWriter.fail` share the one rule, so JDK and Reactor wrappers never hide a
-  status, and the documented table (`event-envelope-reference.md`) says so. **Behaviour change to READ:**
-  an app that relied on a 500 for a wrapped carrier now sees the inner status; accepted edge — an
-  `IllegalArgumentException` deliberately wrapped in an `IOException` now reports 400. Eric's related
-  convention (`AppException(408, …)` instead of the JDK `TimeoutException` in the four inboxes) is a
-  separate, optional decision, NOT taken: javadoc ×10 and three `PostOfficeTest` assertions name
-  `TimeoutException`, and field `onFailure` handlers may. Verified live, then by a full two-engine re-run (116/116; RPC-timeout status set {408} on both
-  engines, recorded in the report's *Validation run* section): the Java Layer 1 outage replies
-  are 408, matching Rust, whose `AppError` carries its status with no wrapper class to hide it. Relates
-  [[l1-caller-checks-reply-status]]. The Layer 2/3 500s that remained after this fix were the cache module's own
-  unclassified Lettuce exceptions — closed by [[redis-failure-classification]].
-  <!-- id: exception-status-from-cause-chain | created: 2026-09-20 | last_used: 2026-09-21 | uses: 2 | tier: archive-candidate | origin: 2026-09-20-004702 -->
-
 - **`v1.cache.redis` classifies its own Redis failures — a command timeout is 408, an unreachable Redis is
   503, only a server answer stays 500 — in both engines (Eric, 2026-09-20; Java `RedisFailure.classify` in
   `redis-connection`, applied by `RedisCache`; Rust `classify_command_error` in the foundation's command
@@ -503,7 +440,7 @@
   code change, and the function stays generic by reading rule names from `table.keys`. In `skills-reference.md`
   (graph.task), the in-Playground help and the AI agent guide's checklist; pinned by `unit-test-task-9` on both engines.
   Applies [[event-script-over-code]] to DATA and [[clean-knowledge-design-over-engine-coverage]].
-  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-25 | uses: 3 | tier: active | origin: 2026-09-20-152704 -->
+  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-25 | uses: 4 | tier: active | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
   `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
@@ -574,6 +511,23 @@
   [[static-decision-table-is-graph-data]] and [[minigraph-guarded-async-completion]].
   <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-09-25 | uses: 3 | tier: active | origin: 2026-09-25-183540 -->
 
+- **`graph.model.automation` accepts a comma-separated list of manifests, and the later manifest wins (Eric, 2026-09-25;
+  Java `feat/graph-manifest-list`, Rust twin Increment 142; for 4.12.19).** Born at the leadership demo's deploy step: an
+  exported graph went live in the running example with `-Dgraph.model.automation=file:/tmp/graph/deploy/graphs.yaml` and no
+  rebuild — but the one manifest REPLACED the bundled set, so a prototype delegating through `graph.extension` to a bundled
+  graph could not run. Now the `yaml.flow.automation` convention (CompileFlows precedent): each manifest carries its own
+  `location`, they compile in order, one that fails to load is skipped with a warning, `CompiledGraphs` records each graph's
+  source location, and `list graphs` / the `import graph from` fallback span every location. **Rule:** the later manifest OWNS
+  a duplicate id — its copy replaces the earlier one (`WARN Graph X from B replaces the copy from A`) and a rejected later copy
+  leaves the id not executable (404), never a silent fallback to the copy the operator meant to replace. **Why (Eric):** the
+  prototyping loop is `import graph from` a deployed graph → correct → dry-run → export → stage in the deploy folder with its
+  manifest → restart with BOTH manifests → curl the deployed behaviour → bundle. Entries are manifests, never bare folders (a
+  manifest is the gate's allowlist). Proven live: the deploy copy of `tutorial-1` answered over curl while `tutorial-2` kept
+  serving from the jar. Docs: `ai-agent-guide.md#deploy-without-rebuild`, the config reference, the walkthrough; claim
+  `graph-manifest-list-later-wins` on both engines; the Rust override is a `-D` program argument
+  (`cargo run -p minigraph-playground -- -D…`). Extends ADR-0011 without changing its rule. Relates [[eric-code-changes-via-pr]].
+  <!-- id: graph-manifest-list-later-wins | created: 2026-09-25 | last_used: 2026-09-25 | uses: 1 | tier: working | origin: 2026-09-25-223633 -->
+
 - **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed response is traced
   at its head and its tail, never per token (Eric's rulings on the Dynatrace review of the v4.12.15 certification traces,
   2026-09-22; PR #444, Rust #315, Python #36, Node #104; SHIPPED in v4.12.15).** REST automation mints a span at receipt
@@ -611,7 +565,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-24 | uses: 53 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-24 | uses: 53 | tier: archive-candidate | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR

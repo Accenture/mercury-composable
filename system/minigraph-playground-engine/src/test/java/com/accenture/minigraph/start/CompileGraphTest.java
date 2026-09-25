@@ -89,17 +89,63 @@ class CompileGraphTest {
 
     @Test
     void manifestLocationDefaultsToClasspathGraph() {
-        // the engine's test manifest declares no 'location' - the CompileFlows-style
-        // default applies (the playground example app's manifest sets it explicitly)
+        // the engine's first test manifest declares no 'location' - the CompileFlows-style
+        // default applies (the playground example app's manifest sets it explicitly), and the
+        // primary location is the first manifest's
         assertEquals("classpath:/graph", CompiledGraphs.getDeployedLocation());
+        // graph.model.automation names two manifests (comma-separated): both locations are
+        // registered, in manifest order
+        assertEquals(List.of("classpath:/graph", "classpath:/graph-extra"), CompiledGraphs.getDeployedLocations());
+    }
+
+    @Test
+    void aSecondManifestCompilesFromItsOwnLocation() {
+        // graphs-extra.yaml is the second manifest in graph.model.automation and carries its own
+        // 'location' - the rapid-prototyping lane: an external manifest next to the bundled one
+        assertTrue(CompiledGraphs.graphExists("unit-test-manifest-extra"));
+        assertEquals("classpath:/graph-extra", CompiledGraphs.getGraphLocation("unit-test-manifest-extra"));
+        // the first manifest's graphs are untouched by the second one
+        assertEquals("classpath:/graph", CompiledGraphs.getGraphLocation("tutorial-1"));
+    }
+
+    @Test
+    void laterManifestWinsForADuplicateGraphId() {
+        // both manifests list unit-test-manifest-dup and the copies differ in the root 'version'
+        // property. The later manifest owns the id: an operator iterating on a deployed graph
+        // exports the updated copy to the external folder and tests it before bundling it
+        assertTrue(CompiledGraphs.graphExists("unit-test-manifest-dup"));
+        assertEquals("classpath:/graph-extra", CompiledGraphs.getGraphLocation("unit-test-manifest-dup"));
+        assertEquals("2", rootVersion(CompiledGraphs.getGraph("unit-test-manifest-dup")));
+    }
+
+    @Test
+    void aRejectedLaterCopyLeavesTheIdNotExecutable() {
+        // both manifests list unit-test-manifest-reject: the first copy is valid, the later copy
+        // has no 'end' node and fails the gate. The later manifest owns the id, so the graph is
+        // NOT executable (404) - it does not fall back to the copy the operator meant to replace,
+        // which would let a curl test pass against the old behavior
+        assertFalse(CompiledGraphs.graphExists("unit-test-manifest-reject"));
+        assertNull(CompiledGraphs.getGraphLocation("unit-test-manifest-reject"));
+    }
+
+    private static String rootVersion(Map<String, Object> model) {
+        if (model.get("nodes") instanceof List<?> nodes) {
+            for (var n : nodes) {
+                if (n instanceof Map<?, ?> node && "root".equals(node.get("alias"))
+                        && node.get("properties") instanceof Map<?, ?> properties) {
+                    return String.valueOf(properties.get("version"));
+                }
+            }
+        }
+        return null;
     }
 
     @Test
     void staticValidatorRejectsEveryInvalidSuspendResumeShape() {
         // Direct coverage of every static rule, independent of the manifest. The fixtures cover
-        // err1 a graph.suspend node not named 'suspend', err2 the suspend marker on graph.math,
-        // err3 a suspensible node without a suspend node, err4 a suspend node without ttl,
-        // err5 a suspensible node without a drawn edge to 'suspend', err6 a suspend node
+        // err1 a graph.suspend node not named 'suspend'. err2 the suspend marker on graph.math.
+        // err3 a suspendable node without a suspend node. err4 a suspend node without ttl.
+        // err5 a suspendable node without a drawn edge to 'suspend'. err6 a suspend node
         // without an outgoing connection, and err7 a suspension point without a
         // continuation edge (a resumed run could not continue)
         for (var id : List.of("unit-test-suspend-err1", "unit-test-suspend-err2", "unit-test-suspend-err3",

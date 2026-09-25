@@ -59,7 +59,9 @@ import java.util.Map;
  *    drawn checkpoint edge, mandatory 'ttl', a 'task' route on suspend/resume nodes); the
  *    runtime guards remain the enforcement floor for graphs not in the manifest.
  * <p>
- * CompileGraph is the deployment gate: set "graph.model.automation" to a YAML file listing the
+ * CompileGraph is the deployment gate: set "graph.model.automation" to a YAML manifest - or, since
+ * 4.12.19, a comma-separated list of manifests, each with its own 'location', where the later manifest
+ * wins for a duplicate graph id - listing the
  * graph IDs to compile at startup (mirroring "yaml.flow.automation" for event flows). Like
  * flows.yaml, the manifest carries the location of its own models in an optional "location"
  * entry (file:/ or classpath:/, default "classpath:/graph") - there is no separate
@@ -96,14 +98,27 @@ public class CompileGraph implements EntryPoint {
             log.warn("location.graph.deployed is obsolete - " +
                     "set 'location' in the graph manifest (graph.model.automation) instead");
         }
-        String manifest = config.getProperty("graph.model.automation", "");
-        if (manifest.isBlank()) {
+        String manifests = config.getProperty("graph.model.automation", "");
+        if (manifests.isBlank()) {
             log.warn("No graph manifest configured (graph.model.automation) - " +
                     "no deployed graph models will be executable");
             return;
         }
+        // Since 4.12.19 the property may name several manifests, comma-separated (the
+        // yaml.flow.automation convention): the one bundled in the artifact and, for rapid
+        // prototyping, an external one - each carries its own 'location'. Manifests compile
+        // in the order listed, and a manifest that cannot be loaded is skipped with a warning
+        // so the others still compile.
+        for (String manifest : util.split(manifests, ", ")) {
+            compileManifest(manifest);
+        }
+        log.info("Graph models compiled: {}", CompiledGraphs.getAllGraphs().size());
+    }
+
+    private void compileManifest(String manifest) {
         try {
             var reader = new ConfigReader(manifest);
+            log.info("Loading graph manifest {}", manifest);
             // like flows.yaml, the manifest carries the location of its own models
             var deployLocation = reader.getProperty(LOCATION, DEFAULT_DEPLOY_DIR);
             if (!deployLocation.startsWith(FILE_PREFIX) && !deployLocation.startsWith(CLASSPATH_PREFIX)) {
@@ -111,7 +126,7 @@ public class CompileGraph implements EntryPoint {
                         DEFAULT_DEPLOY_DIR);
                 deployLocation = DEFAULT_DEPLOY_DIR;
             }
-            CompiledGraphs.setDeployedLocation(deployLocation);
+            CompiledGraphs.addDeployedLocation(deployLocation);
             log.info("Deployed graph model folder - {}", deployLocation);
             Object allGraphs = reader.get(GRAPHS);
             if (allGraphs instanceof List<?> list) {
@@ -123,10 +138,18 @@ public class CompileGraph implements EntryPoint {
         } catch (IllegalArgumentException e) {
             log.warn("Unable to load graph manifest {} - {}", manifest, e.getMessage());
         }
-        log.info("Graph models compiled: {}", CompiledGraphs.getAllGraphs().size());
     }
 
     private void compileOneGraph(String deployLocation, String graphId) {
+        // later manifest wins: when a later manifest lists a graph id again, that manifest owns
+        // the id - its copy replaces the earlier one, and if the new copy is rejected the id is
+        // not executable (404) rather than silently served from the copy the operator meant to
+        // replace (a curl test would otherwise pass against the old behavior)
+        var previous = CompiledGraphs.getGraphLocation(graphId);
+        if (previous != null && !previous.equals(deployLocation)) {
+            log.warn("Graph {} from {} replaces the copy from {}", graphId, deployLocation, previous);
+            CompiledGraphs.removeGraph(graphId);
+        }
         try {
             var reader = new ConfigReader(getNormalizedPath(deployLocation, graphId));
             Map<String, Object> model = reader.getMap();
@@ -144,7 +167,7 @@ public class CompileGraph implements EntryPoint {
                 throw new IllegalArgumentException("graph must have an 'end' node");
             }
             GraphModelValidator.validate(graph);
-            CompiledGraphs.addGraph(graphId, model);
+            CompiledGraphs.addGraph(graphId, model, deployLocation);
             log.info("Compiled graph {}", graphId);
         } catch (IllegalArgumentException e) {
             // a rejected graph is simply not registered: deployed execution is served

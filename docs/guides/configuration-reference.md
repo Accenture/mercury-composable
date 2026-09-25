@@ -306,13 +306,21 @@ Location(s) of the multicast route configuration. Multicast is a **local-JVM fan
 
 | Type | Default |
 |------|---------|
-| `String` (location) | — |
+| `String` (comma-sep manifest paths) | — |
 
 Location of the graph deployment manifest (e.g. `classpath:/graphs.yaml`) listing the graph
 model ids the CompileGraph gate compiles at startup; the manifest's own optional `location`
-key (default `classpath:/graph`) says where the model JSON files live. When this property is
-absent, a warning is logged and **no graphs are executable** — every `/api/graph/{graph-id}`
-call answers 404 ("compiled or 404", ADR-0011).
+key (default `classpath:/graph`) says where the model JSON files live. Since 4.12.19 the property
+accepts a comma-separated list of manifests, each carrying its own location, and when two manifests
+list the same graph id the later manifest wins — its copy replaces the earlier one, and if that copy
+is rejected the id is not executable (the `yaml.flow.automation` convention; a manifest that cannot
+be loaded is skipped with a warning). When this property is absent, a warning is logged and **no
+graphs are executable** — every `/api/graph/{graph-id}` call answers 404 ("compiled or 404",
+ADR-0011). Like every property, a JVM system property overrides it for one run
+(`java -Dgraph.model.automation='classpath:/graphs.yaml, file:/tmp/graph/deploy/graphs.yaml' -jar app.jar`):
+the bundled manifest keeps its graphs, and a `file:/` manifest beside it deploys an exported graph
+without a rebuild — the [rapid-prototyping path](knowledge-graph/ai-agent-guide.md#deploy-without-rebuild).
+Only the ids the listed manifests name are executable.
 
 ### `location.graph.temp`
 
