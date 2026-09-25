@@ -344,7 +344,7 @@
   `/` in dev too — add the route; an app with no `app.env` gets the plain page. Documented in
   `playground-and-companion.md` (#enabling) and `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]];
   applies to [[ot-distributed-cache]]'s worked example.
-  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-24 | uses: 11 | tier: active | origin: 2026-09-15-221451 -->
+  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-24 | uses: 11 | tier: archive-candidate | origin: 2026-09-15-221451 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
@@ -396,44 +396,6 @@
   `model` via the `*` passthrough. Distilled from the sync-over-async composable refactoring (2026-06-27,
   Claude Code). (ADR-0007)
   <!-- id: event-script-over-code | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
-- **A function that awaits an RPC must check the reply's STATUS before reading its body — the engines
-  do it for flows and graphs, imperative code must do it itself (Java ⇄ Rust cache interop, 2026-09-20).**
-  A function that throws replies with the error status and the message as a string body (`WorkerHandler`);
-  `po.request(...).get()` returns that envelope normally. `ProfileCacheL1` on both engines tested only the
-  body shape (`byte[]`/`Value::Binary` or null), so with Redis down a fast failure read as 404 *Profile not
-  found* and a POST would have acknowledged `stored`. Ours was masked by the 5 s RPC timeout racing
-  Lettuce's 5 s command timeout — the same code against a fast-failing cache (connection refused, NOAUTH)
-  misreports. Fixed with a `checked()` guard in both examples (PR #426 squash `fd3916a0`; Rust mercury #286 merge `01710589`, both 2026-09-20), pinned by fail-fast stub tests that swap
-  `v1.cache.redis` (`Platform.release` + `register`, restored in `finally`). Layers 2 and 3 never had the
-  gap: the flow and graph engines check task status for the author — [[event-script-over-code]] in the
-  wild. Rule for any PostOffice caller: `if (res.getStatus() >= 400) throw new AppException(status, body)`
-  before touching the body. Certification record: `docs/test-reports/distributed-cache-interop.md`
-  (112/112; twin in the Rust repo). Recorded there, not changed: after a >30 s outage the shared Lettuce
-  connection recovers on its 30 s backoff cap while `redis.health` (a fresh connection) is already green —
-  ruled 2026-09-21 — reset the shared connection on command timeout, [[redis-connection-reset-on-timeout]]; the in-function RPC timeout WAS 500 here vs 408 on Rust — a platform-core mapping gap, fixed
-  2026-09-20 ([[exception-status-from-cause-chain]]): 408 on both. Relates [[redis-connection-foundation]].
-  <!-- id: l1-caller-checks-reply-status | created: 2026-09-20 | last_used: 2026-09-21 | uses: 3 | tier: archive-candidate | origin: 2026-09-20-004702 -->
-
-- **A function's error status comes from its CAUSE CHAIN — the first `AppException` (its status),
-  `TimeoutException` (408) or `IllegalArgumentException` (400) wins; 500 only when none is present (Eric,
-  2026-09-20; one rule, `Utility.getStatusFromException`; PR #427 MERGED 2026-09-20, squash `6f020544`).** Found by the cache interop (Finding 3):
-  `EventEnvelope.setException` and `WorkerHandler` each mapped the OUTERMOST exception, with slightly
-  different tables (the envelope's had no 408 at all), while the message came from `getRootCause` — so
-  `po.request(..).get()`'s `ExecutionException(TimeoutException)` replied 500 "Timeout for N ms" and a
-  `CompletionException(AppException 404)` lost its 404: status and message described different exceptions.
-  Now both mappers and `EventStreamWriter.fail` share the one rule, so JDK and Reactor wrappers never hide a
-  status, and the documented table (`event-envelope-reference.md`) says so. **Behaviour change to READ:**
-  an app that relied on a 500 for a wrapped carrier now sees the inner status; accepted edge — an
-  `IllegalArgumentException` deliberately wrapped in an `IOException` now reports 400. Eric's related
-  convention (`AppException(408, …)` instead of the JDK `TimeoutException` in the four inboxes) is a
-  separate, optional decision, NOT taken: javadoc ×10 and three `PostOfficeTest` assertions name
-  `TimeoutException`, and field `onFailure` handlers may. Verified live, then by a full two-engine re-run (116/116; RPC-timeout status set {408} on both
-  engines, recorded in the report's *Validation run* section): the Java Layer 1 outage replies
-  are 408, matching Rust, whose `AppError` carries its status with no wrapper class to hide it. Relates
-  [[l1-caller-checks-reply-status]]. The Layer 2/3 500s that remained after this fix were the cache module's own
-  unclassified Lettuce exceptions — closed by [[redis-failure-classification]].
-  <!-- id: exception-status-from-cause-chain | created: 2026-09-20 | last_used: 2026-09-21 | uses: 2 | tier: archive-candidate | origin: 2026-09-20-004702 -->
-
 - **`v1.cache.redis` classifies its own Redis failures — a command timeout is 408, an unreachable Redis is
   503, only a server answer stays 500 — in both engines (Eric, 2026-09-20; Java `RedisFailure.classify` in
   `redis-connection`, applied by `RedisCache`; Rust `classify_command_error` in the foundation's command
@@ -611,7 +573,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-24 | uses: 53 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-24 | uses: 53 | tier: archive-candidate | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR

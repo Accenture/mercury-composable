@@ -312,7 +312,11 @@ Location of the graph deployment manifest (e.g. `classpath:/graphs.yaml`) listin
 model ids the CompileGraph gate compiles at startup; the manifest's own optional `location`
 key (default `classpath:/graph`) says where the model JSON files live. When this property is
 absent, a warning is logged and **no graphs are executable** — every `/api/graph/{graph-id}`
-call answers 404 ("compiled or 404", ADR-0011).
+call answers 404 ("compiled or 404", ADR-0011). Like every property, a JVM system property
+overrides it for one run (`java -Dgraph.model.automation=file:/tmp/graph/deploy/graphs.yaml -jar app.jar`);
+with a `file:/` `location` in that manifest, an exported graph deploys without a rebuild — the
+[rapid-prototyping path](knowledge-graph/ai-agent-guide.md#deploy-without-rebuild). Only the ids the
+active manifest lists are executable.
 
 ### `location.graph.temp`
 
