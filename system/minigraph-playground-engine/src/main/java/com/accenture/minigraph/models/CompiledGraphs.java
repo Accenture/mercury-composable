@@ -23,88 +23,135 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * In-memory registry of graph models that have been validated and converted at startup by CompileGraph.
+ * The compiled-graph registry: every graph model that is listed in a graph manifest
+ * (graph.model.automation) AND passed the CompileGraph quality gate. Deployed execution is
+ * served exclusively from this registry - a graph that failed the gate, or is not listed,
+ * answers 404 as if it does not exist (ADR-0011).
  * <p>
- * This mirrors the role of {@code com.accenture.models.Flows} in event-script-engine: a graph model
- * registered here has already been structurally validated (via MiniGraph.importGraph) and had its data
- * mapping entries converted from the deprecated "simple type matching" syntax to "simple plugin" syntax.
- * GraphExecutor serves deployed graph execution EXCLUSIVELY from this registry: a deployed graph
- * model is executable only when it is listed in the graph manifest (graph.model.automation) AND
- * passed the CompileGraph quality gate. A graph ID that is not here answers HTTP-404 as if the
- * model does not exist - the CompileFlows precedent, where an invalid flow never becomes
- * executable. There is no lazy loading of deployed models. (The playground's dry-run workspace
- * is a separate surface and is not affected.)
+ * Since 4.12.19 the manifest property may name several manifests (comma-separated, the
+ * yaml.flow.automation convention), each carrying its own 'location'. The registry therefore
+ * keeps the deployed locations in manifest order and, per graph, the location its compiled
+ * copy came from. When two manifests list the same graph id the LATER manifest owns the id:
+ * its copy replaces the earlier one, and if that copy is rejected the id is not executable -
+ * the operator's latest intent wins, the way a later configuration source overrides an
+ * earlier one.
  */
 public class CompiledGraphs {
+    private static final String DEFAULT_LOCATION = "classpath:/graph";
     private static final ConcurrentMap<String, Map<String, Object>> COMPILED_GRAPHS = new ConcurrentHashMap<>();
-    private static final AtomicReference<String> DEPLOYED_LOCATION = new AtomicReference<>("classpath:/graph");
+    private static final ConcurrentMap<String, String> GRAPH_LOCATIONS = new ConcurrentHashMap<>();
+    private static final CopyOnWriteArrayList<String> DEPLOYED_LOCATIONS = new CopyOnWriteArrayList<>();
 
     private CompiledGraphs() {}
 
     /**
-     * This is reserved for system use.
-     * DO NOT use this directly in your application code.
+     * Get a compiled graph model
      *
-     * @param graphId of a compiled graph model
-     * @return the compiled graph model, or null if not compiled at startup
+     * @param graphId of the deployed graph
+     * @return the model, or null when the graph is not compiled (not listed or rejected)
      */
     public static Map<String, Object> getGraph(String graphId) {
         return COMPILED_GRAPHS.get(graphId);
     }
 
     /**
-     * This is reserved for system use.
-     * DO NOT use this directly in your application code.
+     * Check if a graph is compiled and therefore executable
      *
-     * @param graphId of a graph model
-     * @return true if the graph model was compiled at startup
+     * @param graphId of the deployed graph
+     * @return true when the compiled registry holds the graph
      */
     public static boolean graphExists(String graphId) {
         return COMPILED_GRAPHS.containsKey(graphId);
     }
 
     /**
-     * This is reserved for system use.
-     * DO NOT use this directly in your application code.
+     * Register a compiled graph model from the default location
      *
-     * @param graphId of a graph model
-     * @param model the validated and converted graph model
+     * @param graphId of the deployed graph
+     * @param model the compiled graph model
      */
     public static void addGraph(String graphId, Map<String, Object> model) {
-        COMPILED_GRAPHS.put(graphId, model);
+        addGraph(graphId, model, DEFAULT_LOCATION);
     }
 
     /**
-     * This is reserved for system use.
-     * DO NOT use this directly in your application code.
-     * <p>
-     * Set by CompileGraph from the graph manifest's 'location' entry
-     * (default classpath:/graph - the CompileFlows convention).
+     * Register a compiled graph model
      *
-     * @param location of the deployed graph models (file:/ or classpath:/)
+     * @param graphId of the deployed graph
+     * @param model the compiled graph model
+     * @param location the deployed location (file:/ or classpath:/) the model was compiled from
+     */
+    public static void addGraph(String graphId, Map<String, Object> model, String location) {
+        COMPILED_GRAPHS.put(graphId, model);
+        GRAPH_LOCATIONS.put(graphId, location);
+    }
+
+    /**
+     * Drop a compiled graph model - a later manifest takes ownership of the id
+     *
+     * @param graphId of the deployed graph
+     * @return the removed model, or null when the graph was not compiled
+     */
+    public static Map<String, Object> removeGraph(String graphId) {
+        GRAPH_LOCATIONS.remove(graphId);
+        return COMPILED_GRAPHS.remove(graphId);
+    }
+
+    /**
+     * The deployed location a compiled graph came from
+     *
+     * @param graphId of the deployed graph
+     * @return the location (file:/ or classpath:/), or null when the graph is not compiled
+     */
+    public static String getGraphLocation(String graphId) {
+        return GRAPH_LOCATIONS.get(graphId);
+    }
+
+    /**
+     * Replace the deployed locations with a single one (the single-manifest form)
+     *
+     * @param location the deployed graph model folder (file:/ or classpath:/)
      */
     public static void setDeployedLocation(String location) {
-        DEPLOYED_LOCATION.set(location);
+        DEPLOYED_LOCATIONS.clear();
+        DEPLOYED_LOCATIONS.add(location);
     }
 
     /**
-     * This is reserved for system use.
-     * DO NOT use this directly in your application code.
+     * Append a manifest's deployed location (manifest order; a repeated location is kept once)
      *
-     * @return the deployed graph model location
+     * @param location the deployed graph model folder (file:/ or classpath:/)
+     */
+    public static void addDeployedLocation(String location) {
+        DEPLOYED_LOCATIONS.addIfAbsent(location);
+    }
+
+    /**
+     * The primary deployed location - the first manifest's folder (the bundled one in the
+     * common case), or the default when no manifest is configured
+     *
+     * @return the deployed graph model folder
      */
     public static String getDeployedLocation() {
-        return DEPLOYED_LOCATION.get();
+        return DEPLOYED_LOCATIONS.isEmpty()? DEFAULT_LOCATION : DEPLOYED_LOCATIONS.getFirst();
     }
 
     /**
-     * This is reserved for system use.
-     * DO NOT use this directly in your application code.
+     * Every deployed location in manifest order
      *
-     * @return all compiled graph IDs
+     * @return the deployed graph model folders (the default alone when no manifest is configured)
+     */
+    public static List<String> getDeployedLocations() {
+        return DEPLOYED_LOCATIONS.isEmpty()? List.of(DEFAULT_LOCATION) : List.copyOf(DEPLOYED_LOCATIONS);
+    }
+
+    /**
+     * Get the IDs of all compiled graphs
+     *
+     * @return list of graph IDs
      */
     public static List<String> getAllGraphs() {
         return new ArrayList<>(COMPILED_GRAPHS.keySet());

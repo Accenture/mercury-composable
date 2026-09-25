@@ -89,9 +89,55 @@ class CompileGraphTest {
 
     @Test
     void manifestLocationDefaultsToClasspathGraph() {
-        // the engine's test manifest declares no 'location' - the CompileFlows-style
-        // default applies (the playground example app's manifest sets it explicitly)
+        // the engine's first test manifest declares no 'location' - the CompileFlows-style
+        // default applies (the playground example app's manifest sets it explicitly), and the
+        // primary location is the first manifest's
         assertEquals("classpath:/graph", CompiledGraphs.getDeployedLocation());
+        // graph.model.automation names two manifests (comma-separated): both locations are
+        // registered, in manifest order
+        assertEquals(List.of("classpath:/graph", "classpath:/graph-extra"), CompiledGraphs.getDeployedLocations());
+    }
+
+    @Test
+    void aSecondManifestCompilesFromItsOwnLocation() {
+        // graphs-extra.yaml is the second manifest in graph.model.automation and carries its own
+        // 'location' - the rapid-prototyping lane: an external manifest next to the bundled one
+        assertTrue(CompiledGraphs.graphExists("unit-test-manifest-extra"));
+        assertEquals("classpath:/graph-extra", CompiledGraphs.getGraphLocation("unit-test-manifest-extra"));
+        // the first manifest's graphs are untouched by the second one
+        assertEquals("classpath:/graph", CompiledGraphs.getGraphLocation("tutorial-1"));
+    }
+
+    @Test
+    void laterManifestWinsForADuplicateGraphId() {
+        // both manifests list unit-test-manifest-dup and the copies differ in the root 'version'
+        // property. The later manifest owns the id: an operator iterating on a deployed graph
+        // exports the updated copy to the external folder and tests it before bundling it
+        assertTrue(CompiledGraphs.graphExists("unit-test-manifest-dup"));
+        assertEquals("classpath:/graph-extra", CompiledGraphs.getGraphLocation("unit-test-manifest-dup"));
+        assertEquals("2", rootProperty(CompiledGraphs.getGraph("unit-test-manifest-dup"), "version"));
+    }
+
+    @Test
+    void aRejectedLaterCopyLeavesTheIdNotExecutable() {
+        // both manifests list unit-test-manifest-reject: the first copy is valid, the later copy
+        // has no 'end' node and fails the gate. The later manifest owns the id, so the graph is
+        // NOT executable (404) - it does not fall back to the copy the operator meant to replace,
+        // which would let a curl test pass against the old behaviour
+        assertFalse(CompiledGraphs.graphExists("unit-test-manifest-reject"));
+        assertNull(CompiledGraphs.getGraphLocation("unit-test-manifest-reject"));
+    }
+
+    private static String rootProperty(Map<String, Object> model, String key) {
+        if (model.get("nodes") instanceof List<?> nodes) {
+            for (var n : nodes) {
+                if (n instanceof Map<?, ?> node && "root".equals(node.get("alias"))
+                        && node.get("properties") instanceof Map<?, ?> properties) {
+                    return String.valueOf(properties.get(key));
+                }
+            }
+        }
+        return null;
     }
 
     @Test

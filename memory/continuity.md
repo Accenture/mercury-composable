@@ -168,31 +168,6 @@
   [[connected-edge-spans]].
   <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-23 | uses: 9 | tier: archive-candidate | origin: 2026-09-16-193203 -->
 
-- **Application log forwarding is an INFRASTRUCTURE task — the engine does not grow that capability
-  (Eric with the field architects, 2026-09-18; CLOSED, not parked).** The field found the gap after
-  the OTel trace certification closed: Dynatrace stores traces and logs in two databases, v4.12.12
-  exports spans to `/v1/traces` and they are queryable, but nothing sends application logs to
-  `/v1/logs` — so "View logs for this trace" is empty and a DQL query on the trace id returns nothing.
-  Investigated and specced; the answer is **not** to build an exporter.
-  **The decisive framing was the field's own Splunk practice:** container stdout is shipped to Splunk
-  by a standard forwarder, configured by the platform, with the application doing nothing. One
-  principle, two backends — a collector reads stdout and ships to `/v1/logs` for Dynatrace exactly as
-  a forwarder does for Splunk. Rejected in-app alternative: an OTLP log appender was *easy* (
-  `OtlpHttpLogRecordExporter` is already in the artifact the span exporter uses, so zero new
-  dependencies) and that convenience is bought in the worst place — an HTTP exporter reachable from
-  every `log.info` in the process, owning credentials, retry and back-pressure on the app's critical
-  path. Dynatrace's own "collector copies spans into the logs store" workaround was also rejected,
-  structurally: span-shaped records cannot contain the application's log messages.
-  **The engine's half is already done and is what makes the infra half work.** `log.format=json|compact`
-  plus `app-log-context.yaml` already emits `trace_id`/`span_id` on every line inside a traced worker —
-  correlation on a virtual-thread runtime where the MDC pattern is an anti-pattern. The snake_case rename (#414 — on main since 2026-09-18, SHIPPED in
-  v4.12.13, not 4.12.12) aligned those keys with the distributed-trace block, so a collector maps one
-  vocabulary, and the enforced `$utc` gives it an unambiguous timestamp to parse. The gap was never
-  correlation; it was transport, which is the platform's job.
-  Applies [[clean-knowledge-design-over-engine-coverage]] one level up — the same "should the engine
-  absorb this at all" question asked of a *capability* rather than a graph composition.
-  <!-- id: log-forwarding-is-infrastructure | created: 2026-09-18 | last_used: 2026-09-21 | uses: 2 | tier: archive-candidate | origin: 2026-09-18-174943 -->
-
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
   produces a hard case, the first question is whether the engine should absorb it at all. Chasing
@@ -465,7 +440,7 @@
   code change, and the function stays generic by reading rule names from `table.keys`. In `skills-reference.md`
   (graph.task), the in-Playground help and the AI agent guide's checklist; pinned by `unit-test-task-9` on both engines.
   Applies [[event-script-over-code]] to DATA and [[clean-knowledge-design-over-engine-coverage]].
-  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-25 | uses: 3 | tier: active | origin: 2026-09-20-152704 -->
+  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-25 | uses: 4 | tier: active | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
   `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
@@ -535,6 +510,23 @@
   were already closed in 4.12.16 (#456). Applies [[clean-knowledge-design-over-engine-coverage]]; extends
   [[static-decision-table-is-graph-data]] and [[minigraph-guarded-async-completion]].
   <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-09-25 | uses: 3 | tier: active | origin: 2026-09-25-183540 -->
+
+- **`graph.model.automation` accepts a comma-separated list of manifests, and the later manifest wins (Eric, 2026-09-25;
+  Java `feat/graph-manifest-list`, Rust twin Increment 142; for 4.12.19).** Born at the leadership demo's deploy step: an
+  exported graph went live in the running example with `-Dgraph.model.automation=file:/tmp/graph/deploy/graphs.yaml` and no
+  rebuild — but the one manifest REPLACED the bundled set, so a prototype delegating through `graph.extension` to a bundled
+  graph could not run. Now the `yaml.flow.automation` convention (CompileFlows precedent): each manifest carries its own
+  `location`, they compile in order, one that fails to load is skipped with a warning, `CompiledGraphs` records each graph's
+  source location, and `list graphs` / the `import graph from` fallback span every location. **Rule:** the later manifest OWNS
+  a duplicate id — its copy replaces the earlier one (`WARN Graph X from B replaces the copy from A`) and a rejected later copy
+  leaves the id not executable (404), never a silent fallback to the copy the operator meant to replace. **Why (Eric):** the
+  prototyping loop is `import graph from` a deployed graph → correct → dry-run → export → stage in the deploy folder with its
+  manifest → restart with BOTH manifests → curl the deployed behaviour → bundle. Entries are manifests, never bare folders (a
+  manifest is the gate's allowlist). Proven live: the deploy copy of `tutorial-1` answered over curl while `tutorial-2` kept
+  serving from the jar. Docs: `ai-agent-guide.md#deploy-without-rebuild`, the config reference, the walkthrough; claim
+  `graph-manifest-list-later-wins` on both engines; the Rust override is a `-D` program argument
+  (`cargo run -p minigraph-playground -- -D…`). Extends ADR-0011 without changing its rule. Relates [[eric-code-changes-via-pr]].
+  <!-- id: graph-manifest-list-later-wins | created: 2026-09-25 | last_used: 2026-09-25 | uses: 1 | tier: working | origin: 2026-09-25-223633 -->
 
 - **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed response is traced
   at its head and its tail, never per token (Eric's rulings on the Dynatrace review of the v4.12.15 certification traces,

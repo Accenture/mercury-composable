@@ -70,7 +70,6 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final SimpleTypeMatchingConverter converter = SimpleTypeMatchingConverter.getInstance();
     private final AtomicInteger counter = new AtomicInteger();
     private final File tempDir;
-    private final String deployedGraphLocation;
 
     public GraphCommandService() {
         var config = AppConfigReader.getInstance();
@@ -104,7 +103,6 @@ public class GraphCommandService extends GraphLambdaFunction {
         // resolved and validated by CompileGraph from the graph manifest's 'location'
         // entry - @BeforeApplication runs before functions are preloaded, so the
         // registry is already populated when this constructor executes
-        this.deployedGraphLocation = CompiledGraphs.getDeployedLocation();
         // initial housekeeping to remove expired temp graph from previous session
         housekeeping();
         // schedule housekeeping for ongoing clean up of expired temp graphs
@@ -850,27 +848,29 @@ public class GraphCommandService extends GraphLambdaFunction {
     }
 
     /**
-     * The deployed location as an enumerable directory: a file: location
-     * directly; a classpath: location only when it resolves to an exploded
-     * directory (not enumerable inside a packaged jar - the compiled registry
-     * still lists those models).
+     * Every deployed location (manifest order - since 4.12.19 there may be several) as an
+     * enumerable directory: a file: location directly; a classpath: location only when it
+     * resolves to an exploded directory (not enumerable inside a packaged jar - the compiled
+     * registry still lists those models).
      */
     private List<String> deployedGraphIds() {
         var result = new ArrayList<String>();
-        File dir = null;
-        if (deployedGraphLocation.startsWith(FILE_PREFIX)) {
-            dir = new File(deployedGraphLocation.substring(FILE_PREFIX.length()));
-        } else if (deployedGraphLocation.startsWith(CLASSPATH_PREFIX)) {
-            var url = this.getClass().getResource(deployedGraphLocation.substring(CLASSPATH_PREFIX.length()));
-            if (url != null && "file".equals(url.getProtocol())) {
-                dir = new File(url.getPath());
+        for (var location : CompiledGraphs.getDeployedLocations()) {
+            File dir = null;
+            if (location.startsWith(FILE_PREFIX)) {
+                dir = new File(location.substring(FILE_PREFIX.length()));
+            } else if (location.startsWith(CLASSPATH_PREFIX)) {
+                var url = this.getClass().getResource(location.substring(CLASSPATH_PREFIX.length()));
+                if (url != null && "file".equals(url.getProtocol())) {
+                    dir = new File(url.getPath());
+                }
             }
-        }
-        if (dir != null && dir.isDirectory()) {
-            var files = dir.list((d, name) -> name.endsWith(JSON_EXT));
-            if (files != null) {
-                for (var f : files) {
-                    result.add(f.substring(0, f.length() - JSON_EXT.length()));
+            if (dir != null && dir.isDirectory()) {
+                var files = dir.list((d, name) -> name.endsWith(JSON_EXT));
+                if (files != null) {
+                    for (var f : files) {
+                        result.add(f.substring(0, f.length() - JSON_EXT.length()));
+                    }
                 }
             }
         }
@@ -1180,12 +1180,12 @@ public class GraphCommandService extends GraphLambdaFunction {
                     importGraphAsDraft(po, inRoute, outRoute, util.file2str(file));
                 } else {
                     po.send(new EventEnvelope().setTo(outRoute).setBody("Graph model not found in "+file.getPath()));
-                    var json = getDeployedGraphAsText(filename);
-                    if (json != null) {
+                    var deployed = findDeployedGraph(filename);
+                    if (deployed != null) {
                         po.send(new EventEnvelope().setTo(outRoute).setBody("Found deployed graph model in " +
-                                        deployedGraphLocation +
+                                        deployed.location() +
                                 "\nPlease export an updated version and re-import to instantiate an instance model"));
-                        importGraphAsDraft(po, inRoute, outRoute, json);
+                        importGraphAsDraft(po, inRoute, outRoute, deployed.json());
                     }
                 }
             }
@@ -1194,8 +1194,41 @@ public class GraphCommandService extends GraphLambdaFunction {
         }
     }
 
+    /** A deployed model's JSON text and the deployed location it was read from */
+    private record DeployedGraph(String location, String json) { }
+
+    /**
+     * Find a deployed model's JSON: the location whose copy compiled (the later manifest's
+     * when two manifests list the id) is searched first, then every deployed location in
+     * manifest order.
+     */
+    private DeployedGraph findDeployedGraph(String filename) {
+        var locations = new ArrayList<String>();
+        var compiledFrom = CompiledGraphs.getGraphLocation(filename);
+        if (compiledFrom != null) {
+            locations.add(compiledFrom);
+        }
+        for (var location : CompiledGraphs.getDeployedLocations()) {
+            if (!locations.contains(location)) {
+                locations.add(location);
+            }
+        }
+        for (var location : locations) {
+            var json = getDeployedGraphAsText(location, filename);
+            if (json != null) {
+                return new DeployedGraph(location, json);
+            }
+        }
+        return null;
+    }
+
     private String getDeployedGraphAsText(String filename) {
-        var filePath = getNormalizedPath(deployedGraphLocation, filename);
+        var deployed = findDeployedGraph(filename);
+        return deployed == null? null : deployed.json();
+    }
+
+    private String getDeployedGraphAsText(String location, String filename) {
+        var filePath = getNormalizedPath(location, filename);
         if (filePath.startsWith(CLASSPATH_PREFIX)) {
             var path = filePath.substring(CLASSPATH_PREFIX.length());
             InputStream in = this.getClass().getResourceAsStream(path);
