@@ -30,7 +30,7 @@
   v4.12.17 the same minute (mercury #328 → merge `ad957930`, tag → `af9d6f30`, release 00:20:16Z; Increment 139 plus the
   Rust-only 137 `yaml_serde` and 138 `cargo audit`, unreleased since 4.12.16 — the tag-range rule surfaced them); the
   python/node packs stay at 4.12.15 (no content for them). Next: the AI SDLC/MCP backlog ([[bp-agent-orchestration]]) resumes
-  (Eric); the two timing-sensitive Rust tests that flaked during the cycle were hardened after it (mercury #329, Increment 140). Origin 2026-09-24-234713.md.
+  (Eric); the two timing-sensitive Rust tests that flaked during the cycle were hardened after it (mercury #329, Increment 140). **On main, UNRELEASED (2026-09-25):** #462 graph.math typed arithmetic + `CONDITION` ([[graph-math-typed-arithmetic]], squash `0c017d5e`; Rust mercury #330 `d97eab9b`) and #463 the field's Snyk bumps (squash `0732ee48`: Jackson 2 BOM 2.22.3, Jackson 3 BOM 3.2.3, Netty 4.2.18.Final, MsgPack 0.9.12 — the MsgPack one best effort, medium, no upstream fix yet) — both for the next patch release; READ notes in the fact. Origin 2026-09-24-234713.md.
   Prior: v4.12.16 (2026-09-24 00:08Z — the correctness round from two field reports; #457 squash `df605533`, tag → `dc0ee6fa`;
   the shared null-source rule, graph.math naming the variable, every abort carrying its reason (#456), the embedded-Redis
   OpenSSL docs (#455), JaCoCo 0.8.15 (#452); Rust #324 → `743d4ea2`, tag → `cc138af3`, crates 12/12. Origin 2026-09-23-234558.md.)
@@ -372,7 +372,7 @@
   Rust repo — both engines share the WS handshake. Dev-only, like the Playground itself.
   Reactivated 2026-09-14: now ALSO shipped in `templates/starter-graph` (both repos), and the AI
   docs are broker-first with the keep-alive failure mode named (mercury-composable#383, mercury#276).
-  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-23 | uses: 11 | tier: active | origin: 2026-09-03-172753 -->
+  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-23 | uses: 11 | tier: archive-candidate | origin: 2026-09-03-172753 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -572,7 +572,7 @@
 
 - **graph.math is typed and finite: a boolean is never a number, an unknown function and an overflow fail by name, and
   exact-decimal money belongs in a `graph.task` function — the math package stays minimal (Eric's rulings on a field
-  installation's nine "wrong answer" behaviours, 2026-09-25; branch `feat/graph-math-condition-and-typed-arithmetic` `b5bea652`).**
+  installation's nine "wrong answer" behaviours, 2026-09-25; PR #462 squash `0c017d5e` MERGED 2026-09-25; Rust twin mercury #330 squash `d97eab9b`, Increment 141).**
   The evaluator coerced a boolean to 1/0 in arithmetic, `<`/`>` and function arguments while equality type-checked — in the
   field one JSON `true` in a threshold slot became a large overcharge with no error. Now one uniform rejection mapped back to
   the selector (`Boolean operand: model.flag (true) in '…' - a boolean is not a number; store a boolean with CONDITION or
@@ -587,7 +587,7 @@
   graph that relied on `true` computing as 1 or on a propagating `Infinity` now fails at that statement. Two of the nine
   were already closed in 4.12.16 (#456). Applies [[clean-knowledge-design-over-engine-coverage]]; extends
   [[static-decision-table-is-graph-data]] and [[minigraph-guarded-async-completion]].
-  <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-09-25 | uses: 1 | tier: working | origin: 2026-09-25-183540 -->
+  <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-09-25 | uses: 2 | tier: active | origin: 2026-09-25-183540 -->
 
 - **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed response is traced
   at its head and its tail, never per token (Eric's rulings on the Dynatrace review of the v4.12.15 certification traces,
@@ -646,7 +646,7 @@
   PR). Both errors came from writing out of recollection of my own work instead of out of the
   repository. Corrected in both places via PR #411. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-24 | uses: 11 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-25 | uses: 12 | tier: active | origin: 2026-09-17-183008 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
