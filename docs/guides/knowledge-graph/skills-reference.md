@@ -139,7 +139,7 @@ rules, each enforced by a named failure rather than a silent value:
 - **A misspelled or unsupported function fails by name** (`Unknown function: mn`).
 - **Arithmetic is IEEE double.** An overflow to infinity, a division by zero and a NaN each fail
   naming the operator (`Arithmetic overflow in '*' (result Infinity)`, `Division by zero or
-  arithmetic overflow in '/'`) instead of travelling on; integers beyond 2^53 lose precision, and
+  arithmetic overflow in '/'`) instead of traveling on; integers beyond 2^53 lose precision, and
   `round` follows `Math.round` (half up toward positive infinity). `COMPUTE` returns a double, so an
   integer result serializes as e.g. `8.0`. **Money that needs exact decimal arithmetic, a stated
   rounding mode or integer cents does not belong in the dialect**: put it in a small composable

@@ -42,7 +42,7 @@ public final class Evaluator {
             case Expr.MemberAccess m     -> evalMemberAccess(m, ctx);
             case Expr.Call c             -> evalCall(c, ctx);
             case Expr.Conditional(Expr test, Expr consequent, Expr alternate)
-                    -> eval(test, ctx).asBoolean() ? eval(consequent, ctx) : eval(alternate, ctx);
+                    -> eval(eval(test, ctx).asBoolean() ? consequent : alternate, ctx);
         };
     }
 

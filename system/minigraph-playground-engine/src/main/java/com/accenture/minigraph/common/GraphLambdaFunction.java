@@ -126,7 +126,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String MODEL_CID = "model.cid";
     // suspend/resume vocabulary: 'suspend' is both the reserved node alias (the root/end
     // pattern - traversal jumps to it by name) and the node property that marks a node
-    // as suspensible; 'resume:<node>' is the walker directive that continues traversal
+    // as suspendable; 'resume:<node>' is the walker directive that continues traversal
     // after that node without re-executing it
     protected static final String SUSPEND = "suspend";
     protected static final String FROM = "from";
@@ -359,33 +359,42 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             return e;
         }
         if (message.endsWith("Unknown identifier: null")) {
-            var selectors = selectorsIn(expression);
-            var culprits = new ArrayList<String>();
-            for (var key : selectors) {
-                var value = helper.getLhsOrConstant(key, stateMachine);
-                if (value == null || "null".equals(String.valueOf(value))) {
-                    culprits.add(key);
-                }
-            }
-            var named = culprits.isEmpty()? selectors : culprits;
-            if (!named.isEmpty()) {
-                return unknownIdentifier(named, expression);
-            }
+            return nameNullSelectors(e, expression, stateMachine);
         }
         if (message.startsWith("Boolean operand in") || message.startsWith("Boolean result where")) {
-            var culprits = new ArrayList<String>();
-            for (var key : selectorsIn(expression)) {
-                if (helper.getLhsOrConstant(key, stateMachine) instanceof Boolean b) {
-                    culprits.add(key + " (" + b + ")");
-                }
-            }
-            if (!culprits.isEmpty()) {
-                return new IllegalArgumentException("Boolean operand: " + String.join(" or ", culprits) +
-                        " in '" + expression + "' - a boolean is not a number; store a boolean with CONDITION" +
-                        " or assert the type with f:validate");
-            }
+            return nameBooleanSelectors(e, expression, stateMachine);
         }
         return e;
+    }
+
+    private RuntimeException nameNullSelectors(RuntimeException e, String expression,
+                                               MultiLevelMap stateMachine) {
+        var selectors = selectorsIn(expression);
+        var culprits = new ArrayList<String>();
+        for (var key : selectors) {
+            var value = helper.getLhsOrConstant(key, stateMachine);
+            if (value == null || "null".equals(String.valueOf(value))) {
+                culprits.add(key);
+            }
+        }
+        var named = culprits.isEmpty()? selectors : culprits;
+        return named.isEmpty()? e : unknownIdentifier(named, expression);
+    }
+
+    private RuntimeException nameBooleanSelectors(RuntimeException e, String expression,
+                                                  MultiLevelMap stateMachine) {
+        var culprits = new ArrayList<String>();
+        for (var key : selectorsIn(expression)) {
+            if (helper.getLhsOrConstant(key, stateMachine) instanceof Boolean b) {
+                culprits.add(key + " (" + b + ")");
+            }
+        }
+        if (culprits.isEmpty()) {
+            return e;
+        }
+        return new IllegalArgumentException("Boolean operand: " + String.join(" or ", culprits) +
+                " in '" + expression + "' - a boolean is not a number; store a boolean with CONDITION" +
+                " or assert the type with f:validate");
     }
 
     private IllegalArgumentException unknownIdentifier(List<String> selectors, String expression) {
@@ -401,7 +410,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     /**
      * Render {selectors} into an expression. In a logical (boolean) context a text value is quoted so
      * it reads as a string literal; CONDITION forces that context because its result is a boolean by
-     * declaration, whether or not the expression carries a comparison operator.
+     * declaration, whether the expression carries a comparison operator or not.
      *
      * @param text the expression before substitution
      * @param stateMachine the graph state machine
