@@ -8,6 +8,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.12.19, 9/25/2026
+
+The rapid-prototyping deploy lane, completed on both engines. `graph.model.automation` now accepts a comma-separated list
+of graph manifests, each with its own `location`, so an exported graph deploys beside the bundled ones without a rebuild —
+and when two manifests list the same graph id, the later manifest wins. Born at a live demo the same day: a single external
+manifest replaced the bundled set, so a prototype that delegates through `graph.extension` to a bundled graph could not run.
+Both engines in lock-step (Rust 4.12.19, Increment 142). Upgrade action: none unless a graph id is listed in two manifests —
+read item 1.
+
+### Added
+
+1. **`graph.model.automation` accepts a comma-separated list of manifests; the later manifest wins (#465).** The
+   `yaml.flow.automation` convention: each manifest carries its own `location`, they compile in the order listed, and a
+   manifest that cannot be loaded is skipped with a warning so the others still compile (`Loading graph manifest …` and
+   `Deployed graph model folder - …` per manifest in the startup log). When two manifests list the same graph id, the
+   later manifest owns it: its copy replaces the earlier one (`Graph {id} from {B} replaces the copy from {A}`), and if
+   that copy is rejected by the CompileGraph gate the id answers 404 rather than silently serving the copy the operator
+   meant to replace. `CompiledGraphs` records each graph's source location; `list graphs` enumerates every location, and
+   the `import graph from` fallback searches the compiled-from location first, then all, naming the location it found.
+   Entries are manifests, never bare folders — a manifest is the gate's allowlist (ADR-0011 unchanged).
+
+   **Upgrade action:** none for a single manifest — it behaves exactly as before. Read if you list a graph id in two
+   manifests: the later one now wins, and its rejection makes the id 404.
+
+### Documentation
+
+2. **Rapid prototyping — deploy without a rebuild (#465).** The AI agent guide gains `#deploy-without-rebuild`: export,
+   stage `/tmp/graph/deploy/` with its own `graphs.yaml`, restart with
+   `-Dgraph.model.automation='classpath:/graphs.yaml, file:/tmp/graph/deploy/graphs.yaml'`, verify the gate in the log,
+   then `curl` — with the two rules to read (later manifest wins; a deployment is still a restart, `CompileGraph` runs once
+   at startup), the broker's new-session-id choreography after a restart, and the loop for iterating on a graph that is
+   already deployed: `import graph from` the deployed copy, correct, dry-run, export, stage, restart with both manifests,
+   `curl`, then bundle. The same recipe in the first-graph walkthrough (Step 4), the Playground guide's restart callout,
+   the configuration reference (`graph.model.automation`: comma-sep manifest paths, the per-run JVM override) and
+   `llms.txt`; claim `graph-manifest-list-later-wins` pins the rule to `CompileGraphTest`. Production keeps the manifest
+   inside the artifact.
+
+   **Upgrade action:** none.
+
+---
 ## Version 4.12.18, 9/25/2026
 
 Two field reports answered. A field installation's page of nine graph.math "behaviours that return a wrong answer"
