@@ -8,6 +8,56 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.12.17, 9/24/2026
+
+A field-reported gap in the Kafka building blocks, closed on both engines in lock-step (Rust 4.12.17, Increment 139):
+the Kafka flow adapter can carry its own Schema Registry identity, so an installation whose Confluent registry grants
+access per direction — a produce identity pool and a consume identity pool — serves both directions from one service.
+Opt-in by the presence of one key on each cluster; nothing changes for an application that never sets it. Upgrade
+action: none unless you opt in; read item 1 before you do.
+
+### Added
+
+1. **A separate Schema Registry identity for the consumer side — `schema.registry.consumer.properties` (#458).**
+   `KafkaFlowAutoStart` built one `SchemaCodec` per JVM, shared by `simple.kafka.notification` (produce) and every
+   flow-adapter binding (consume), so both directions carried one registry identity — and where CSFLE key (KEK) access
+   is granted per identity pool, no single identity could decrypt everything a service consumes. When the new key
+   names a registry client template, the flow adapter decodes with its own codec, built under the
+   `schema.registry.consumer` prefix through the existing multi-registry seam: the same `schema.registry.url` (a
+   consumer decodes messages whose ids were minted by the registry its producers use), that template (the producer's
+   file or a second one), `schema.registry.consumer.serde.*` overrides on top of it, and its own caches
+   (`schema.registry.consumer.cache.ttl`). Presence is the opt-in and a blank value counts as unset, so the
+   `${ENV_VAR:}` idiom switches it per environment; `schema.registry.url` stays the feature switch. Unset, the adapter
+   shares the producer's codec exactly as before. The codec-ready log line reports `serdeOverrides=<n>` instead of
+   `csfle=<boolean>`, which read `csfle=true` for a bare identity override.
+
+   **Upgrade action:** none unless you opt in. Read before you do: a `schema.registry.consumer.serde.*` override
+   reaches the Confluent deserializer's configuration — and through it the DEK-registry client CSFLE builds from that
+   configuration, where key access is decided — but not the codec's own schema-by-id lookups, which keep the
+   template's identity; when the consume identity must cover those too, point the key at a second template that
+   carries it. And the consumer codec reads only its own prefix: a `schema.registry.serde.*` KMS driver credential the
+   producer needs is repeated under `schema.registry.consumer.serde.*`.
+
+2. **The same opt-in on twin-kafka's secondary cluster — `secondary.schema.registry.consumer.properties` (#460).**
+   The policy is one public, prefix-parameterized method, `SchemaCodec.forConsumer(config, registryUrl, keyPrefix,
+   producerCodec)`: minimalist-kafka's auto-start delegates to it under `schema.registry`, and
+   `SecondaryKafkaAutoStart` hands the secondary flow adapter the codec it resolves under `secondary.schema.registry`,
+   so the secondary key (with `secondary.schema.registry.consumer.serde.*` and `.consumer.cache.ttl`) is the exact
+   twin of the primary one and the secondary producer keeps `secondary.schema.registry.*`.
+
+   **Upgrade action:** none unless you opt in; the rules of item 1 apply unchanged.
+
+### Documentation
+
+3. **The opt-in as a sample, and in the guides (#458, #459, #460).** The sync-over-async demo ships a commented sample:
+   its `application.properties` shows both variants — the producer's template plus an identity-pool override, and a
+   second template — and `schema-registry-consumer.properties` next to it is the second-template form (in the
+   application, never the library jar, where a same-named resource would collide by classpath order). The
+   minimalist-kafka guide gained *A separate registry identity for the consumer side*, the twin-kafka guide its
+   secondary-cluster paragraph, the configuration reference both entries, and the two registry templates carry a
+   note.
+
+---
 ## Version 4.12.16, 9/23/2026
 
 A correctness round from two field reports on the knowledge-graph engine, shipped in lock-step with the Rust port
