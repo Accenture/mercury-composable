@@ -218,7 +218,7 @@
   fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
   DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
   ignores `EMBEDDED_REDIS_EXECUTABLE`.
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-24 | uses: 9 | tier: active | origin: 2026-09-18-174943 -->
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-25 | uses: 10 | tier: active | origin: 2026-09-18-174943 -->
 
 - **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
   `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
@@ -336,7 +336,7 @@
   (the same async-callback minefield). **Extended 2026-09-23 (#454, Eric — "every abort should come with a reason"):** a
   dry-run's terminal is `Graph traversal aborted: <reason>` on both engines (node named; the companion and the web app
   match the PREFIX — a bare terminal is gone); arithmetic plugins' null argument now carries a message. Java `bf3250d7`.
-  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-23 | uses: 9 | tier: active | origin: 2026-09-15-040141 -->
+  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-25 | uses: 10 | tier: active | origin: 2026-09-15-040141 -->
 
 - **A Layer 3 application is one graph endpoint plus dev mode, and its home page is dev-mode wiring too (2026-09-15, Eric's
   polish round on the starter template + the cache example; P10 ruling 2026-09-22, SHIPPED in v4.12.15).** Three shape
@@ -518,7 +518,7 @@
   code change, and the function stays generic by reading rule names from `table.keys`. In `skills-reference.md`
   (graph.task), the in-Playground help and the AI agent guide's checklist; pinned by `unit-test-task-9` on both engines.
   Applies [[event-script-over-code]] to DATA and [[clean-knowledge-design-over-engine-coverage]].
-  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-23 | uses: 2 | tier: active | origin: 2026-09-20-152704 -->
+  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-25 | uses: 3 | tier: active | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
   `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
@@ -569,6 +569,25 @@
   variants) and `schema-registry-consumer.properties` next to it — in the application, never the library jar (a same-named
   resource would collide by classpath order). Applies [[clean-knowledge-design-over-engine-coverage]]; relates [[kafka-mesh-opt-in]].
   <!-- id: kafka-consumer-registry-identity | created: 2026-09-24 | last_used: 2026-09-24 | uses: 3 | tier: active | origin: 2026-09-24-222349 -->
+
+- **graph.math is typed and finite: a boolean is never a number, an unknown function and an overflow fail by name, and
+  exact-decimal money belongs in a `graph.task` function — the math package stays minimal (Eric's rulings on a field
+  installation's nine "wrong answer" behaviours, 2026-09-25; branch `feat/graph-math-condition-and-typed-arithmetic` `b5bea652`).**
+  The evaluator coerced a boolean to 1/0 in arithmetic, `<`/`>` and function arguments while equality type-checked — in the
+  field one JSON `true` in a threshold slot became a large overcharge with no error. Now one uniform rejection mapped back to
+  the selector (`Boolean operand: model.flag (true) in '…' - a boolean is not a number; store a boolean with CONDITION or
+  assert the type with f:validate`), a bare boolean COMPUTE result included. **`CONDITION: var -> expr`** is the declared
+  boolean statement (evaluated as a boolean whatever operators it carries; `IF` tests it directly); `COMPUTE` keeps yielding
+  a boolean for a comparison — by design, now documented. `Unknown function: mn` replaces the generic message; every
+  arithmetic result is checked finite (`Arithmetic overflow in '*' (result Infinity)`, `Division by zero or arithmetic
+  overflow in '/'`, NaN by name), so `Infinity` never travels on to fail a later node as an unknown identifier. **Ruled
+  documentation, not engine:** a `run` on the same Playground instance keeps `model.*` (a `model.x[]` append appends again)
+  and `instantiate graph`/`start` is the reset; a taken IF inside a `for_each` body ends the walk (per-row rules are
+  arithmetic gates); the end node is the terminus (last writer wins); `BigDecimal` is never added to the dialect. **READ:** a
+  graph that relied on `true` computing as 1 or on a propagating `Infinity` now fails at that statement. Two of the nine
+  were already closed in 4.12.16 (#456). Applies [[clean-knowledge-design-over-engine-coverage]]; extends
+  [[static-decision-table-is-graph-data]] and [[minigraph-guarded-async-completion]].
+  <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-09-25 | uses: 1 | tier: working | origin: 2026-09-25-183540 -->
 
 - **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed response is traced
   at its head and its tail, never per token (Eric's rulings on the Dynatrace review of the v4.12.15 certification traces,
