@@ -30,30 +30,32 @@
   v4.12.17 the same minute (mercury #328 → merge `ad957930`, tag → `af9d6f30`, release 00:20:16Z; Increment 139 plus the
   Rust-only 137 `yaml_serde` and 138 `cargo audit`, unreleased since 4.12.16 — the tag-range rule surfaced them); the
   python/node packs stay at 4.12.15 (no content for them). Next: the AI SDLC/MCP backlog ([[bp-agent-orchestration]]) resumes
-  (Eric); a test-only hardening PR for two timing-sensitive Rust tests is the recorded follow-up. Origin 2026-09-24-234713.md.
+  (Eric); the two timing-sensitive Rust tests that flaked during the cycle were hardened after it (mercury #329, Increment 140). Origin 2026-09-24-234713.md.
   Prior: v4.12.16 (2026-09-24 00:08Z — the correctness round from two field reports; #457 squash `df605533`, tag → `dc0ee6fa`;
   the shared null-source rule, graph.math naming the variable, every abort carrying its reason (#456), the embedded-Redis
   OpenSSL docs (#455), JaCoCo 0.8.15 (#452); Rust #324 → `743d4ea2`, tag → `cc138af3`, crates 12/12. Origin 2026-09-23-234558.md.)
   Prior: v4.12.15 (2026-09-23 01:35Z — the connected-trace release, a lock-step round on all four runtimes; #451 squash `aafeff04`,
   tag → `b705e9ff`; [[connected-edge-spans]], [[platform-onshutdown-lifecycle]], [[minigraph-dev-mode-app-shape]]; READ notes in
   the CHANGELOG; Rust #322 → `87ee371f`, packs 4.12.1 → 4.12.15; registries the same night. Origin 2026-09-23-014650.md.)
-  Prior: v4.12.14 (2026-09-22 02:11Z — the first lock-step release with the Rust port; #437 squash `dbc26f31`, tag → `e8a8d8e5`;
-  one Java change, `group.protocol=${KAFKA_GROUP_PROTOCOL:auto}` in the bundled consumer template ([[kafka-group-protocol-auto-default]];
-  READ: an app that never set it joins a KIP-848 cluster with the consumer protocol); Rust v4.12.14 the same hour, 12 crates. Origin 2026-09-21-233928.md.)
-  Prior: v4.12.13 (2026-09-21 — 11 accumulated improvements; #435 squash `1feb3d73`, tag → `1d2074f1`; FIELD-ACCEPTED; READ
-  list in the CHANGELOG. Origin 2026-09-21-012124.md.)
-  Prior: v4.12.12 (2026-09-17, the produce-only unblock, #410 `ebdd2e37`, [[kafka-config-class-static-init-loader]]) · v4.12.11
-  (2026-09-16, the field unblock, #405 `06750214`, [[otel-optional-service-and-negative-control]]) · v4.12.10 (2026-09-16, Berkeley DB
-  store retired, ADR-0024, #400 `92e94f2b`) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397, `9274cf92`; ACTION: the
+  Prior: v4.12.14 (2026-09-22 — the first lock-step release with the Rust port; #437 squash `dbc26f31`, tag → `e8a8d8e5`;
+  `group.protocol=${KAFKA_GROUP_PROTOCOL:auto}` in the bundled consumer template — [[kafka-group-protocol-auto-default]], READ:
+  an app that never set it joins a KIP-848 cluster with the consumer protocol. Origin 2026-09-21-233928.md.) · v4.12.13
+  (2026-09-21, 11 accumulated improvements, #435 `1feb3d73`, FIELD-ACCEPTED) · v4.12.12 (2026-09-17, the produce-only unblock,
+  #410) · v4.12.11 (2026-09-16, the field unblock, #405, [[otel-optional-service-and-negative-control]]) · v4.12.10 (2026-09-16,
+  Berkeley DB store retired, ADR-0024, #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-24 | through 2026-09-24-234713.md (ADVISORY SWEEP at the v4.12.17 seam — 2 `[overdue]` conventions
-  archived, `conv-thread-id-names-the-thing` and `conv-schema-example-not-a-fact`: both rules shipped upstream in agent-memory
-  v4.41.1 / v4.41.2 the day they were written, so the facts carried history only; retrievable via `memory/archive/INDEX.md`.
-  Facts 34 → 32; not a cadence review — 4 sessions since the last, `review_every` 10; invariants not due (cadence 40, last
-  2026-09-16).)
-  Prior: 2026-09-23 | through 2026-09-23-230527.md (CADENCE + SIZE — archived 6 faded facts, swept 5 completed threads; facts
-  40 → 34) · 2026-09-23 | 2026-09-23-014650.md (size; archived 0, lines 1032 → 1000) · 2026-09-22 | 2026-09-21-233928.md (size; swept 2).
+- **last_review:** 2026-09-25 | through 2026-09-25-014100.md (ON COMMAND, Eric, after the v4.12.17 cycle — window 0 sessions since the
+  234713 advisory sweep; archived 0 (oldest archive-candidates at 18 of `archive_window` 20), swept 0 (six closed threads at
+  completion ages 0–18, 56 narrative lines ≤ 150), reactivated 0, tier changes 0; invariant re-verify DUE at 40 — thread
+  raised (see `last_invariant_check`); no stalled thread (`thread_stale_window` 40; the two unchecked threads at 14 and < 5);
+  condensed four long shipped decisions (`static-decision-table-is-graph-data`, `minigraph-dev-mode-app-shape`,
+  `otel-optional-service-and-negative-control`, `connected-edge-spans` — every rule, READ note, footer and link kept) and the
+  release priors; two stale statements corrected (the Rust hardening follow-up is done — mercury #329; the consumer-identity
+  fact carries its merge refs and its release). Lines 851 → ~790, facts 52 (+1 gate thread).)
+  Prior: 2026-09-24 | through 2026-09-24-234713.md (advisory sweep at the v4.12.17 seam — archived 2 overdue conventions whose rules
+  shipped upstream; facts 34 → 32) · 2026-09-23 | through 2026-09-23-230527.md (CADENCE + SIZE — archived 6, swept 5; facts 40 → 34) ·
+  2026-09-23 | 2026-09-23-014650.md (size; lines 1032 → 1000) · 2026-09-22 | 2026-09-21-233928.md (size; swept 2).
 - **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**: Track 1 *knowledge graph as
   application* (deterministic — rules, business logic, outcome; L3 leverages L2 + L1) and Track 2 *knowledge graph as AI SDLC*
   (governed AI processing for ambiguity a deterministic program cannot handle; L3 is the foundation and **AI is also the
@@ -61,10 +63,12 @@
   in the nature of the work and where execution goes; AI gains a **run-time participant** role. **The north star MOVED: the
   next invariant re-verify must check the 2026-09-17 text, not the 2026-06-20 one.** [[bp-agent-orchestration]] is Track 2's
   Blueprint gap; Track 1 and the collaboration foundation are delivered.
-- **last_invariant_check:** 2026-09-16 | 2026-09-16-041500.md (COMPLETE — Eric walked 3 invariants + 5 stack + 5 key decisions +
+- **last_invariant_check:** 2026-09-25 | 2026-09-25-014100.md (DUE — 40 sessions since 2026-09-16-041500; the review raised
+  [[reverify-invariants-20260925]] for Eric: the 19 `core` facts + the Vision, which now means the **2026-09-17 two-track
+  text**; the review never confirms or invalidates an invariant itself — Eric checks the thread off or supersedes per
+  DECAY.md §9. Prior: 2026-09-16 | 2026-09-16-041500.md (COMPLETE — Eric walked 3 invariants + 5 stack + 5 key decisions +
   3 conventions + eric-release-rhythm + the Vision against live-tree evidence; `virtual-threads-rpc` ENRICHED from ADR-0024;
-  `conv-telemetry-presentation-parity` RETIRED, no successor; core 18 → 17. Cadence 40; the next re-verify checks the 2026-09-17
-  two-track Vision text. Prior: 2026-09-11 | 2026-09-11-005808.md)
+  `conv-telemetry-presentation-parity` RETIRED, no successor; core 18 → 17.) Prior: 2026-09-11 | 2026-09-11-005808.md.)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
 > environment, carrying forward only the confirmed Vision + Blueprint and the
@@ -135,41 +139,29 @@
 
 ## Key Decisions
 
-- **A jar under a base scan package needs an `@OptionalService` master switch, and a vendor
-  integration is not done until a negative control proves the happy path (2026-09-16, Eric's design
-  → PR #404, v4.12.11).** `opentelemetry-forwarder` lives under `org.platformlambda`, so the jar
-  alone auto-registered `distributed.trace.forwarder` — carrying the dependency silently turned trace
-  export on. It is now `@OptionalService("otel.forwarding")`, default **off**: one artifact ships and
-  DevOps decides per environment, in properties or `-Dotel.forwarding=true` at launch. That is the
-  reusable shape for any scanned extension whose behaviour is an operational choice, and
-  `composable-example` pins it ("dependency present, feature off") so it cannot regress. The legacy
-  `otel.trace.forwarder.enabled` was RETIRED with it — a second switch whose only reachable use was
-  the contradictory `otel.forwarding=true` + `…enabled=false`, and `Telemetry` already no-ops on an
-  unregistered route (`hasRoute`). Credentials resolve **per export** through a `Supplier` (applies
-  [[preload-before-mainapp-lazy-config]]) and the exporter closes via
-  [[platform-onshutdown-lifecycle]], which this extension had been missed by.
-  **The method is the durable half.** Certified live against Dynatrace SaaS and confirmed queryable
-  in its UI (6 spans, one trace, parent/child reconstructed, `server`/`internal` kinds, scope version
-  resolved at runtime). Getting there needed an **A-B-A credential experiment** — real token 0/6
-  export failures, bogus token 6/6, real token 0/6 — because *zero failures proves nothing until a
-  failure is shown to be possible*: a forwarder that skipped export, or never attached the
-  credential, yields the identical zero. Generalize it: **when a verification is blocked on access
-  you do not have, ask what your evidence would look like if the thing were broken; if broken and
-  working look the same, a negative control is the experiment, not a garnish.** Two by-products worth
-  keeping — the app returned HTTP 201 in all three legs (a telemetry outage degrades observability
-  and nothing else, previously asserted and now shown), and the backend-visible instrumentation scope
-  version is a free check that the artifact under test is the one that shipped — and on 2026-09-17
-  that check paid out: Dynatrace support confirmed both v4.12.11 field-acceptance traces in the UI
-  reading scope version **4.12.11**, closing the loop on the RELEASED artifacts rather than a branch
-  build ([[ot-otel-acceptance-traces-pending]]). Report:
-  `docs/test-reports/otel-dynatrace-certification.md`; closes [[ot-otel-dynatrace-certification]].
-  Splunk's header form is parsed and documented but NOT run live.
-  **Extended 2026-09-22 (Eric's v4.12.15 milestone):** the forwarder exists on all four runtimes — the Rust port's and
-  the zero-dependency ports of its OTLP encoder in mercury-python (#33) and mercury-nodejs (#101) — and Scenario 8 certified
-  them together (both engines' Playground edges rendering Gemini tokens progressively through the hosts' `llm.stream`, four
-  token-bearing traces, cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided
-  which calls succeeded — probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the
-  root; the fix is [[connected-edge-spans]] (shipped in v4.12.15).
+- **A jar under a base scan package needs an `@OptionalService` master switch, and a vendor integration is not done until a
+  negative control proves the happy path (2026-09-16, Eric's design → PR #404, v4.12.11).** `opentelemetry-forwarder` lives
+  under `org.platformlambda`, so the jar alone auto-registered `distributed.trace.forwarder` — carrying the dependency
+  silently turned trace export on. It is now `@OptionalService("otel.forwarding")`, default **off**: one artifact ships and
+  DevOps decides per environment (properties or `-Dotel.forwarding=true`); that is the reusable shape for any scanned
+  extension whose behaviour is an operational choice, and `composable-example` pins "dependency present, feature off". The
+  legacy `otel.trace.forwarder.enabled` was RETIRED (a second switch with no reachable use; `Telemetry` already no-ops on an
+  unregistered route). Credentials resolve **per export** through a `Supplier` ([[preload-before-mainapp-lazy-config]]) and
+  the exporter closes via [[platform-onshutdown-lifecycle]]. **The method is the durable half.** Certified live against
+  Dynatrace SaaS and confirmed queryable in its UI; getting there needed an **A-B-A credential experiment** — real token 0/6
+  export failures, bogus token 6/6, real token 0/6 — because *zero failures proves nothing until a failure is shown to be
+  possible*. Generalize it: **when a verification is blocked on access you do not have, ask what your evidence would look like
+  if the thing were broken; if broken and working look the same, a negative control is the experiment, not a garnish.** Two
+  by-products worth keeping: the app returned HTTP 201 in all three legs (a telemetry outage degrades observability and
+  nothing else), and the backend-visible instrumentation scope version is a free check that the artifact under test is the
+  one that shipped — Dynatrace support confirmed the v4.12.11 field-acceptance traces reading scope version **4.12.11**
+  ([[ot-otel-acceptance-traces-pending]]). Report: `docs/test-reports/otel-dynatrace-certification.md`; closes
+  [[ot-otel-dynatrace-certification]]. Splunk's header form is parsed and documented but NOT run live. **Extended
+  2026-09-22 (v4.12.15):** the forwarder exists on all four runtimes (the Rust port's, and the zero-dependency ports of its
+  OTLP encoder in mercury-python #33 and mercury-nodejs #101), certified together in Scenario 8 (four token-bearing traces,
+  cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
+  probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
+  [[connected-edge-spans]].
   <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-23 | uses: 9 | tier: active | origin: 2026-09-16-193203 -->
 
 - **Application log forwarding is an INFRASTRUCTURE task — the engine does not grow that capability
@@ -345,42 +337,27 @@
   match the PREFIX — a bare terminal is gone); arithmetic plugins' null argument now carries a message. Java `bf3250d7`.
   <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-23 | uses: 9 | tier: active | origin: 2026-09-15-040141 -->
 
-- **A Layer 3 application is one graph endpoint plus dev mode — and the Playground UI hides behind a
-  classpath-order trap (2026-09-15, Eric's polish round on the starter template + the cache example).**
-  Two shape rules. **(1) One endpoint, every graph:** `POST /api/graph/{graph_id}` takes the id from the
-  URL path, so a Layer 3 app needs exactly one `rest.yaml` entry and the one stock `graph-executor` flow
-  no matter how many models it deploys — adding a graph means adding its id to `graphs.yaml`, never a
-  bespoke route (the cache example's `/api/l3/profile` + `l3-profile.yml` were deleted for this).
-  **(2) Dev mode is two settings that must travel together:** `app.env=dev` AND the dev-mode rest.yaml
-  entries. Every Playground/companion service is `@OptionalService("app.env=dev")`, and
-  `RoutingEntry.resolveServices` SKIPS a rest entry whose service is unregistered (warn "Service ... not
-  available"), so routes without the switch are dead on arrival and the switch without routes leaves only
-  a WebSocket. Both now ship pre-wired in `templates/starter-graph` (plus `scripts/`), and in
-  `examples/distributed-cache-example` alongside its ordinary L1/L2 routes — removing the one line closes
-  the surface for production. **(3) A graph app declares ONE Mercury dependency —
-  `minigraph-playground-engine`** — which brings event-script-engine and platform-core transitively
-  (compile scope, verified by `dependency:tree`; Gradle too). Listing all three is not just redundant, it
-  creates a resource collision: the Playground UI is `classpath:/public/index.html` inside the engine and
-  platform-core ships a PLACEHOLDER page at the same path, first jar on the classpath wins (for
-  `HttpRouter`'s static route and `GetIndexHtml` alike). The template declared platform-core first and
-  therefore served the placeholder; Eric collapsed it to the single dependency (2026-09-15) rather than
-  relying on declaration order, which a future tidy-up would silently undo. Everything else stays green —
-  tests, curl, the companion endpoint — and only a browser shows the wrong page, which is why it
-  survived until a live run. Parked structural option if it recurs elsewhere: move the UI off the
-  colliding resource path in the engine (needs Rust lockstep). Documented in `playground-and-companion.md` (#enabling) and
-  `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]]; applies to
-  [[ot-distributed-cache]]'s worked example.
-  **2026-09-22 (Eric's P10 ruling; both engines — Java #449 squash `b4051b33`, Rust #319 merge `49403c23`; SHIPPED in
-  v4.12.15): the home page is the THIRD dev-mode wiring, and the classpath trap in (3) is RETIRED.** The React Playground's
-  `index.html` WAS the engine jar's static `public/index.html`, so a Layer 3 app served the Playground at `/` in EVERY
-  environment (Eric: "the user would panic"). The entry page is now `template/playground.html`, reachable only through the
-  `get.index.html` route (at `/index.html`, reached by `/`) and only when `app.env=dev`; an ABSENT `app.env` is production
-  (the function used to default to dev; the `@OptionalService` gate always treated absent as closed). The engine's static
-  `public/index.html` is the plain "MiniGraph Service" page, so an app that never routes `get.index.html` gets the plain
-  page in both modes and the classpath-order collision no longer decides what the browser shows (the one-dependency advice
-  stands for tidiness). Both starters gained the route (the Rust starter its whole dev mode); `deploy.js`/`clean.js` split
-  the bundle (assets → `public/assets/`, page → `template/playground.html`). READ at 4.12.15: an app without the route gets
-  the plain page at `/` in dev too — add the route; an app with no `app.env` gets the plain page.
+- **A Layer 3 application is one graph endpoint plus dev mode, and its home page is dev-mode wiring too (2026-09-15, Eric's
+  polish round on the starter template + the cache example; P10 ruling 2026-09-22, SHIPPED in v4.12.15).** Three shape
+  rules. **(1) One endpoint, every graph:** `POST /api/graph/{graph_id}` takes the id from the URL path, so a Layer 3 app
+  needs exactly one `rest.yaml` entry and the stock `graph-executor` flow no matter how many models it deploys — adding a
+  graph means adding its id to `graphs.yaml`, never a bespoke route. **(2) Dev mode is settings that travel together:**
+  `app.env=dev` AND the dev-mode rest.yaml entries — every Playground/companion service is `@OptionalService("app.env=dev")`
+  and `RoutingEntry.resolveServices` SKIPS a rest entry whose service is unregistered, so routes without the switch are dead
+  and the switch without routes leaves only a WebSocket; both ship pre-wired in `templates/starter-graph` and
+  `examples/distributed-cache-example`, and removing the one line closes the surface for production. **(3) A graph app
+  declares ONE Mercury dependency — `minigraph-playground-engine`** (event-script-engine and platform-core come transitively,
+  Gradle too); the classpath-order collision that once made a wrongly ordered dependency list serve platform-core's
+  placeholder page is RETIRED by P10, and the one-dependency advice stands for tidiness. **P10 (Eric; Java #449, Rust
+  #319):** the React Playground's `index.html` WAS the engine jar's static `public/index.html`, so a Layer 3 app served the
+  Playground at `/` in EVERY environment ("the user would panic"). The entry page is now `template/playground.html`,
+  reachable only through the `get.index.html` route (at `/index.html`, reached by `/`) and only when `app.env=dev`; an
+  ABSENT `app.env` is production (the function used to default to dev). The engine's static `public/index.html` is the plain
+  "MiniGraph Service" page; both starters gained the route; `deploy.js`/`clean.js` split the bundle (assets →
+  `public/assets/`, page → `template/playground.html`). **READ at 4.12.15:** an app without the route gets the plain page at
+  `/` in dev too — add the route; an app with no `app.env` gets the plain page. Documented in
+  `playground-and-companion.md` (#enabling) and `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]];
+  applies to [[ot-distributed-cache]]'s worked example.
   <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-24 | uses: 11 | tier: active | origin: 2026-09-15-221451 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
@@ -521,50 +498,34 @@
   closed — the first drive measured nothing. Relates [[redis-failure-classification]],
   [[redis-connection-foundation]], [[l1-caller-checks-reply-status]]; applies [[conv-reentrantlock-not-synchronized]].
   <!-- id: redis-connection-reset-on-timeout | created: 2026-09-21 | last_used: 2026-09-22 | uses: 2 | tier: archive-candidate | origin: 2026-09-21-012124 -->
-- **A static decision table is GRAPH DATA — a skill-less node's properties, handed whole to a generic
-  function by ONE `graph.task` input entry; never hard-coded in a function bundled with the graph (Eric,
-  2026-09-20; a doc gap, no engine change — PR #430 squash `c5adc58f`; the `lookup` plugin PR #431 squash
-  `e52aeaca`).** Found when an AI agent compiled a rule-by-state table into a composable function shipped
-  with its graph. Both engines already copy every node's properties into the state machine at
-  instantiation (`initializeWithNodeProperties`: skill node → non-reserved keys at `{node}.{key}`;
-  skill-less node → the whole map at `{node}`) and the shared LHS resolver reads any selector, so
-  `state-rules -> table` maps the table in one entry. **Presentation (Eric's review):** each value is a JSON
-  array written as text — `keys=[ "a", "b" ]`, `a=[ "CA", "TX" ]` — which reads as a table on the node and
-  arrives as a string the function reconstructs with `SimpleMapper` (`getMapper().readValue(text,
-  List.class)`); `key[]=` lines build a real list instead, and a nested table is one triple-quoted JSON
-  text property parsed by `f:json(state-rules.table)` at mapping time. **Why (Eric):** readability — the
-  product owner certifies the rules on the graph in the business vocabulary — and one table replaces a
-  ladder of IF-THEN-ELSE in `graph.math` or inside a function, so neither a human nor an agent hard-codes
-  it; the engine was fully capable all along, and the recipe is what steers the design choice.
-  **The common case needs no function at all (Eric's `f:lookup(table, value)` simple plugin, same day):** a
-  `graph.data.mapper` decision node resolves the rule in ONE entry —
-  `f:lookup(state-rules, input.body.state, text(unknown)) -> output.body.rule`, the optional third argument
-  (Eric's suggestion) being the default on a miss — and the composable function stays for a
-  ruling that needs more than a lookup (Eric: even complex rulings generalize into a few decision-table
-  functions in the field). The plugin takes the table as a map or JSON text, `keys`/rule lists as lists or
-  JSON arrays written as text, compares as text case-insensitively, and returns the default (or null) on a
-  miss. Two traps
-  met while reviewing it: (1) a plugin class may not reference `SimpleMapper` — the loader's bytecode gate
-  (`ALLOWED_PACKAGES`) SKIPS it silently and every `f:lookup` mapping then fails `SimplePlugin 'lookup' not
-  found`; the serializer is reached only through the allowlisted `SimplePluginUtils`, and
-  `SimplePluginGateTest` now pins discovery; (2) **a null mapping source — CHANGED 2026-09-23 (field issue #453, Eric's ruling):** the graph engine now
-  applies Event Script's rule — a null or unresolved source CLEARS a `model.*` target (removed; set to null when the
-  source key exists or the target is indexed) and is IGNORED for any other target — via one helper,
-  `GraphLambdaFunction.applyNullSource`, in mapper/math/js MAPPING, `for_each`, fetcher/extension parameters (a null
-  parameter is not supplied) and the graph.task/extension/fetcher output mapping (Java branch
-  `fix/l3-null-source-mapping-parity` `7068678f`; Rust twin `f779e46a`, Increment 136; the same round made graph.math name
-  every unresolved `{selector}` of a COMPUTE/IF instead of the rendered text `null`, `16d1da80`). Until 4.12.15 it removed ANY target — the
-  2026-09-20 ruling had documented that (PR #432, Rust #295, claim `null-source-removes-target`, whose text now states
-  the shared rule with the command reference, the in-Playground help and the `unit-test-lookup-1` probe). A default
-  for a model variable still comes from the source side (the plugin's third argument, or `f:defaultValue`), never
-  from default-then-overlay — the reporter's idiom is unsupported in BOTH layers. **Rule:** the product owner reads and certifies the table
-  ON the graph, a new table is a new graph version (`v2026-08-prime-rates`) and never a code change, and
-  the function stays generic by reading rule names from `table.keys` and ignoring other node properties.
-  Nothing in the engine checks mapping sources, so the only place this was ever stated was one row of the
-  namespaces table — the pattern is now in `skills-reference.md` (graph.task), the in-Playground help and
-  the AI agent guide's pre-send checklist, pinned by `unit-test-task-9` on both engines (twin: mercury
-  Increment 123). Applies [[event-script-over-code]] to DATA (config over code) and
-  [[clean-knowledge-design-over-engine-coverage]] (no engine feature where the design already works).
+- **A static decision table is GRAPH DATA — a skill-less node's properties, handed whole to a generic function by ONE
+  `graph.task` input entry; never hard-coded in a function bundled with the graph (Eric, 2026-09-20; a doc gap, no engine
+  change — PR #430; the `lookup` plugin PR #431).** Found when an AI agent compiled a rule-by-state table into a composable
+  function shipped with its graph. Both engines copy every node's properties into the state machine at instantiation
+  (`initializeWithNodeProperties`: skill node → non-reserved keys at `{node}.{key}`; skill-less node → the whole map at
+  `{node}`) and the shared LHS resolver reads any selector, so `state-rules -> table` maps the table in one entry.
+  **Presentation (Eric):** each value is a JSON array written as text — `keys=[ "a", "b" ]`, `a=[ "CA", "TX" ]` — which
+  reads as a table on the node and arrives as a string the function reconstructs with `SimpleMapper`; `key[]=` lines build a
+  real list; a nested table is one triple-quoted JSON text parsed by `f:json(state-rules.table)` at mapping time. **Why:**
+  the product owner certifies the rules on the graph in the business vocabulary, and one table replaces a ladder of
+  IF-THEN-ELSE. **The common case needs no function (Eric's `f:lookup(table, value, default)` simple plugin):** one
+  `graph.data.mapper` entry — `f:lookup(state-rules, input.body.state, text(unknown)) -> output.body.rule` — the optional
+  third argument the default on a miss; a composable function stays for a ruling that needs more than a lookup. The plugin
+  takes the table as a map or JSON text, lists as lists or JSON arrays written as text, compares as text case-insensitively.
+  **Two traps:** (1) a plugin class may not reference `SimpleMapper` — the loader's bytecode gate (`ALLOWED_PACKAGES`) SKIPS
+  it silently and every `f:lookup` mapping fails `SimplePlugin 'lookup' not found`; the serializer is reached only through
+  the allowlisted `SimplePluginUtils` (`SimplePluginGateTest` pins discovery); (2) **a null mapping source — CHANGED
+  2026-09-23 (field issue #453, Eric's ruling; #456, Rust Increment 136):** the graph engine applies Event Script's rule — a
+  null or unresolved source CLEARS a `model.*` target (removed; set to null when the source key exists or the target is
+  indexed) and is IGNORED for any other target — via `GraphLambdaFunction.applyNullSource` in mapper/math/js MAPPING,
+  `for_each`, fetcher/extension parameters (a null parameter is not supplied) and the graph.task/extension/fetcher output
+  mapping; until 4.12.15 it removed ANY target (claim `null-source-removes-target` now states the shared rule). A default for
+  a model variable comes from the source side (the plugin's third argument or `f:defaultValue`), never from
+  default-then-overlay — unsupported in BOTH layers; the same round made graph.math name every unresolved `{selector}`.
+  **Rule:** the product owner reads and certifies the table ON the graph, a new table is a new graph version and never a
+  code change, and the function stays generic by reading rule names from `table.keys`. In `skills-reference.md`
+  (graph.task), the in-Playground help and the AI agent guide's checklist; pinned by `unit-test-task-9` on both engines.
+  Applies [[event-script-over-code]] to DATA and [[clean-knowledge-design-over-engine-coverage]].
   <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-23 | uses: 2 | tier: active | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
@@ -595,8 +556,8 @@
   <!-- id: kafka-group-protocol-auto-default | created: 2026-09-21 | last_used: 2026-09-23 | uses: 3 | tier: active | origin: 2026-09-21-184342 -->
 
 - **The Kafka flow adapter can carry its own Schema Registry identity — an opt-in second codec on the existing prefix seam,
-  never a new mechanism (a field installation's fix, reviewed and reconstructed 2026-09-24; branch
-  `feat/kafka-consumer-registry-identity` `13eddc76`).** `KafkaFlowAutoStart` shares one `SchemaCodec` between
+  never a new mechanism (a field installation's fix, reviewed and reconstructed 2026-09-24; PR #458 squash
+  `37e0f792`; SHIPPED in v4.12.17).** `KafkaFlowAutoStart` shares one `SchemaCodec` between
   `simple.kafka.notification` and the flow adapter unless `schema.registry.consumer.properties` names a registry client
   template; then `resolveConsumerSchemaCodec` builds the adapter's codec through `SchemaCodec.fromConfig(config, url, prefix)`
   under `schema.registry.consumer` — the seam twin-kafka runs on for a second cluster's registry, applied to ONE registry with
@@ -610,45 +571,35 @@
   template covers both; and each codec reads only its own prefix, so a `schema.registry.serde.*` KMS credential is repeated
   under the consumer prefix. **Synced 2026-09-24 (Eric's ruling before v4.12.17):** the policy is now the public, prefix-parameterized
   `SchemaCodec.forConsumer(config, url, keyPrefix, producerCodec)`; the primary helper delegates and twin-kafka's
-  secondary adapter uses it under `secondary.schema.registry` (`secondary.schema.registry.consumer.properties`, branch
-  `feat/twin-kafka-consumer-registry-identity` `ba379fc6`); the Rust twin `SchemaCodec::for_consumer` (Increment 139)
+  secondary adapter uses it under `secondary.schema.registry` (`secondary.schema.registry.consumer.properties`, PR #460
+  squash `47d9acf8`); the Rust twin `SchemaCodec::for_consumer` (Increment 139)
   carries the identity in the template — no serde layer there. **Sample:** the sync-over-async demo's `application.properties` (commented block, both
   variants) and `schema-registry-consumer.properties` next to it — in the application, never the library jar (a same-named
   resource would collide by classpath order). Applies [[clean-knowledge-design-over-engine-coverage]]; relates [[kafka-mesh-opt-in]].
   <!-- id: kafka-consumer-registry-identity | created: 2026-09-24 | last_used: 2026-09-24 | uses: 3 | tier: active | origin: 2026-09-24-222349 -->
 
-- **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed
-  response is traced at its head and its tail, never per token (Eric's rulings on the Dynatrace review of
-  the v4.12.15 certification traces, 2026-09-22; Java `fix/connected-edge-spans` + Rust twin `a95e2a91`;
-  the Python/Node forwarders `fix/otel-span-kind-edge`).** REST automation mints a span at receipt
-  (`TraceInfo.newSpanId()`), the first function (and the auth service) parent onto it, and
-  `HttpRouter.closeContext` emits the record `service=http.request` on every completion path — single-shot
-  writer, stream terminal, error writer, housekeeper timeout — with `start` = receipt, `exec_time` = the
-  round trip, `parent_span_id` = the inbound traceparent span; an in-band stream failure after the head
-  reports its own status. **The four OTel forwarders map SERVER iff `service == http.request`; every
-  function execution is INTERNAL** — a backend's response time for a service is now the request, not the
-  first function's 0.5 ms. The Event-over-HTTP stream relay's client leg (`async.http.request`) parents
-  onto the sender (`sendWithEventHttp` stamps the span; Rust stopped zero-tracing the route —
-  `skip.rpc.tracing` only suppresses the caller-side RPC `round_trip` record, Java's `InboxBase` semantics,
-  which the RPC path had masked for months). `EventStreamWriter` stamps the producer's trace+span on the
-  first segment and the terminal via the thread-keyed `EventEmitter.getCurrentTrace()` (Rust: the traced
-  `po.send` for head/tail, `PostOffice::send_untraced` for data), the client relays stamp the client leg's
-  own span on synthesized head/eof/exception segments and forward raw token frames untraced, and the reply
-  lane annotates the terminal's record with `frames` = the data-segment count. **Why it was invisible until
-  now:** the drive logs showed 0 export failures; only the trace tree in the backend UI showed the orphans —
-  and the drive's fabricated `traceparent` (a random parent nobody exported) broke every root, a drive
-  artifact that looked like an engine defect (send `X-Trace-Id`, or nothing, when there is no real upstream
-  span). Behaviour change to READ at 4.12.15: one more span per traced request; the first function is
-  INTERNAL; an Event-over-HTTP callee edge records its own round trip between the caller's span and
-  `event.api.service`; dashboards keyed on `kind=SERVER` move to the edge record. Extends
-  [[otel-optional-service-and-negative-control]]; applies [[trace-thread-keyed-mono-gotcha]] (capture the
-  span on the worker thread — the relay outlives it); tested by `EventOverHttpStreamTest.edgeRelaySpansAreConnected`
-  and the Rust `event_over_http_stream::edge_relay_spans_are_connected`. **MERGED 2026-09-22:** PR #444 (squash
-  `737ce503`), Rust #315 (`84f8ad66`), Python #36, Node #104; Scenario 9 (one tree per trace, the edge span the root and the
-  response time) and drive 9 — a temporary mock of the Gemini REST API shadowing the quota-spent provider at its base URL,
-  8 token frames per pairing, `annotation.frames: 8` on the stream terminal — CONFIRMED in Dynatrace by Eric's screenshots
-  (report PRs #445/#446/#448; Rust #316/#317); Sonar smells fixed in #447 (`16ce14ed`). **SHIPPED in v4.12.15
-  (2026-09-23 — Java #451 `aafeff04`, mercury #322 `87ee371f`).**
+- **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed response is traced
+  at its head and its tail, never per token (Eric's rulings on the Dynatrace review of the v4.12.15 certification traces,
+  2026-09-22; PR #444, Rust #315, Python #36, Node #104; SHIPPED in v4.12.15).** REST automation mints a span at receipt
+  (`TraceInfo.newSpanId()`), the first function (and the auth service) parent onto it, and `HttpRouter.closeContext` emits
+  the record `service=http.request` on every completion path — single-shot writer, stream terminal, error writer, housekeeper
+  timeout — with `start` = receipt, `exec_time` = the round trip, `parent_span_id` = the inbound traceparent span; an in-band
+  stream failure after the head reports its own status. **The four OTel forwarders map SERVER iff `service == http.request`;
+  every function execution is INTERNAL** — a backend's response time for a service is now the request, not the first
+  function's 0.5 ms. The Event-over-HTTP stream relay's client leg (`async.http.request`) parents onto the sender
+  (`sendWithEventHttp` stamps the span; Rust stopped zero-tracing the route — `skip.rpc.tracing` only suppresses the
+  caller-side RPC `round_trip` record, `InboxBase` semantics). `EventStreamWriter` stamps the producer's trace+span on the
+  first segment and the terminal via the thread-keyed `EventEmitter.getCurrentTrace()`, the client relays stamp the client
+  leg's own span on synthesized head/eof/exception segments and forward raw token frames untraced, and the reply lane
+  annotates the terminal's record with `frames` = the data-segment count. **Why it was invisible:** 0 export failures in
+  every drive; only the backend's trace tree showed the orphans — and the drive's fabricated `traceparent` broke every root, a
+  drive artifact that looked like an engine defect (send `X-Trace-Id`, or nothing, when there is no real upstream span).
+  **READ at 4.12.15:** one more span per traced request; the first function is INTERNAL; an Event-over-HTTP callee edge
+  records its own round trip between the caller's span and `event.api.service`; dashboards keyed on `kind=SERVER` move to the
+  edge record. Confirmed in Dynatrace by Eric (Scenario 9 and the token-bearing drive 9 with `annotation.frames: 8`; reports
+  in `docs/test-reports/`). Extends [[otel-optional-service-and-negative-control]]; applies
+  [[trace-thread-keyed-mono-gotcha]] (capture the span on the worker thread — the relay outlives it); tested by
+  `EventOverHttpStreamTest.edgeRelaySpansAreConnected` and the Rust `event_over_http_stream::edge_relay_spans_are_connected`.
   <!-- id: connected-edge-spans | created: 2026-09-22 | last_used: 2026-09-23 | uses: 3 | tier: active | origin: 2026-09-22-200813 -->
 
 ## Conventions
