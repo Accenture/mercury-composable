@@ -19,17 +19,21 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.16 (2026-09-24 00:08:35Z — **the correctness round from two field reports, lock-step with the Rust
-  port**: release PR #457, squash `df605533`, tag `v4.12.16` → `dc0ee6fa` (one memory-only commit past the merge), pom verified at
-  the tag; the GitHub release body is the CHANGELOG entry; main CI green on the tag commit). **Content:** the null-source mapping
-  rule shared with Event Script, graph.math naming the unresolved variable, every dry-run abort carrying its reason (#456;
-  [[static-decision-table-is-graph-data]], [[minigraph-guarded-async-completion]] — READ: a null source no longer removes an
-  `output.*`/node-alias target, an output mapping to `model.*` with a null result clears the variable, the abort terminal is
-  matched by PREFIX), the embedded-Redis OpenSSL prerequisite docs (#455), JaCoCo 0.8.15 (#452). Sweep BUILD FILES ONLY 43 / 98
-  (unchanged). Readiness 218 suites, 1506 tests, 0 failures, 3 skipped (surefire XML). **Lockstep:** Rust v4.12.16 the same hour
-  (mercury #324 → merge `743d4ea2`, tag → `cc138af3`, release 00:09:26Z, Increment 136; crates.io 12/12 00:12:36–00:12:52Z);
-  the python/node packs stay at 4.12.15 (no content for them). Next: the AI SDLC/MCP backlog ([[bp-agent-orchestration]]) resumes
-  (Eric). Origin 2026-09-23-234558.md.
+- **latest_release:** v4.12.17 (2026-09-25 00:19:27Z — **the field's Kafka gap closed on both engines, lock-step with the Rust
+  port**: release PR #461, squash `e9cde291`, tag `v4.12.17` → `8a13a02e` (one memory-only commit past the merge), pom verified
+  at the tag; the GitHub release body is the CHANGELOG entry; main CI green on the tag commit). **Content:** the consumer-side
+  Schema Registry identity — `schema.registry.consumer.properties` (#458), its twin on twin-kafka's secondary cluster through
+  the shared `SchemaCodec.forConsumer` (#460), the commented sample in the sync-over-async demo (#459); see
+  [[kafka-consumer-registry-identity]] — READ before opting in: a `.consumer.serde.*` override reaches the deserializer and
+  the DEK-registry client, not the codec's own schema lookups; the consumer codec reads only its own prefix. Sweep BUILD
+  FILES ONLY 43 / 98 (unchanged). Readiness 220 suites, 1514 tests, 0 failures, 3 skipped (surefire XML). **Lockstep:** Rust
+  v4.12.17 the same minute (mercury #328 → merge `ad957930`, tag → `af9d6f30`, release 00:20:16Z; Increment 139 plus the
+  Rust-only 137 `yaml_serde` and 138 `cargo audit`, unreleased since 4.12.16 — the tag-range rule surfaced them); the
+  python/node packs stay at 4.12.15 (no content for them). Next: the AI SDLC/MCP backlog ([[bp-agent-orchestration]]) resumes
+  (Eric); a test-only hardening PR for two timing-sensitive Rust tests is the recorded follow-up. Origin 2026-09-24-234713.md.
+  Prior: v4.12.16 (2026-09-24 00:08Z — the correctness round from two field reports; #457 squash `df605533`, tag → `dc0ee6fa`;
+  the shared null-source rule, graph.math naming the variable, every abort carrying its reason (#456), the embedded-Redis
+  OpenSSL docs (#455), JaCoCo 0.8.15 (#452); Rust #324 → `743d4ea2`, tag → `cc138af3`, crates 12/12. Origin 2026-09-23-234558.md.)
   Prior: v4.12.15 (2026-09-23 01:35Z — the connected-trace release, a lock-step round on all four runtimes; #451 squash `aafeff04`,
   tag → `b705e9ff`; [[connected-edge-spans]], [[platform-onshutdown-lifecycle]], [[minigraph-dev-mode-app-shape]]; READ notes in
   the CHANGELOG; Rust #322 → `87ee371f`, packs 4.12.1 → 4.12.15; registries the same night. Origin 2026-09-23-014650.md.)
@@ -611,7 +615,7 @@
   carries the identity in the template — no serde layer there. **Sample:** the sync-over-async demo's `application.properties` (commented block, both
   variants) and `schema-registry-consumer.properties` next to it — in the application, never the library jar (a same-named
   resource would collide by classpath order). Applies [[clean-knowledge-design-over-engine-coverage]]; relates [[kafka-mesh-opt-in]].
-  <!-- id: kafka-consumer-registry-identity | created: 2026-09-24 | last_used: 2026-09-24 | uses: 2 | tier: active | origin: 2026-09-24-222349 -->
+  <!-- id: kafka-consumer-registry-identity | created: 2026-09-24 | last_used: 2026-09-24 | uses: 3 | tier: active | origin: 2026-09-24-222349 -->
 
 - **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed
   response is traced at its head and its tail, never per token (Eric's rulings on the Dynatrace review of

@@ -1,11 +1,8 @@
-- [ ] **The release that carries the field's consumer-side Schema Registry identity (Eric, 2026-09-24: review the field's
-  branch, reconstruct it here, then "propagate the fix to the field as a new release").** Java first — the field runs Java:
-  PR #458 (from `feat/kafka-consumer-registry-identity` `13eddc76`) MERGED 2026-09-24 as squash `37e0f792`; the sample-config follow-up PR #459 MERGED as squash `af37ab7d` (both halves on main); the release prep at Eric's go — sweep BUILD FILES ONLY
-  (re-derive the count), CHANGELOG from `git log v4.12.16..HEAD`, the readiness run, one memory commit past the merge as the
-  tag target. Eric ruled 2026-09-24: sync to twin-kafka AND Rust before releasing **v4.12.17** — twin-kafka PR #460 MERGED
-  as squash `47d9acf8`, Rust `SchemaCodec::for_consumer` (Increment 139) as
-  mercury PR #327 MERGED as `7d5fbc17`. **Release prep 2026-09-24:** Java `release/4.12.17` `fcf44c83` (sweep 43 / 98,
-  CHANGELOG from the tag range, readiness 1514 tests / 0 failures / 3 skipped); Rust `release/4.12.17` (13 / 24 + lock; its
-  CHANGELOG carries Increments 137–139 — two Rust-only increments were unreleased since v4.12.16); Java release PR #461 MERGED as squash `e9cde291` (tag target = the following memory commit); Rust #328 open, its `test` job failed on a timing-sensitive shutdown test (re-run is Eric's, admin rights). Relates [[kafka-consumer-registry-identity]], [[eric-release-rhythm]],
-  [[conv-changelog-from-tag-range]], [[conv-ports-adopt-java-release-number]].
-  <!-- id: kafka-consumer-identity-release | created: 2026-09-24 | last_used: 2026-09-24 | uses: 3 | tier: working | origin: 2026-09-24-222349 -->
+- [x] **The field's consumer-side Schema Registry identity — SHIPPED in v4.12.17 on both engines (2026-09-25; Java #461
+  squash `e9cde291` → tag `8a13a02e`; Rust #328 merge `ad957930` → tag `af9d6f30`; GitHub releases = the CHANGELOG entries).**
+  Content: #458 (primary opt-in), #459 (sample), #460 (twin-kafka on the shared `SchemaCodec.forConsumer`), mercury #327
+  (Increment 139); readiness Java 1514 / 0 / 3, Rust 603 / 0 / 9. Lessons: derive the CHANGELOG from the tag range — the Rust
+  entry gained two unreleased increments that way; a lint-clean gate before every memory push (two `[stale-metadata]` slips
+  taught it); two timing-sensitive Rust tests flaked on CI and are a recorded test-only follow-up. origin: 2026-09-24-222349.md
+  … 2026-09-24-234713.md
+  <!-- id: kafka-consumer-identity-release | created: 2026-09-24 | last_used: 2026-09-24 | uses: 3 | tier: active | origin: 2026-09-24-222349 -->
