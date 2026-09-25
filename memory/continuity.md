@@ -19,18 +19,21 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.17 (2026-09-25 00:19:27Z — **the field's Kafka gap closed on both engines, lock-step with the Rust
-  port**: release PR #461, squash `e9cde291`, tag `v4.12.17` → `8a13a02e` (one memory-only commit past the merge), pom verified
-  at the tag; the GitHub release body is the CHANGELOG entry; main CI green on the tag commit). **Content:** the consumer-side
-  Schema Registry identity — `schema.registry.consumer.properties` (#458), its twin on twin-kafka's secondary cluster through
-  the shared `SchemaCodec.forConsumer` (#460), the commented sample in the sync-over-async demo (#459); see
-  [[kafka-consumer-registry-identity]] — READ before opting in: a `.consumer.serde.*` override reaches the deserializer and
-  the DEK-registry client, not the codec's own schema lookups; the consumer codec reads only its own prefix. Sweep BUILD
-  FILES ONLY 43 / 98 (unchanged). Readiness 220 suites, 1514 tests, 0 failures, 3 skipped (surefire XML). **Lockstep:** Rust
-  v4.12.17 the same minute (mercury #328 → merge `ad957930`, tag → `af9d6f30`, release 00:20:16Z; Increment 139 plus the
-  Rust-only 137 `yaml_serde` and 138 `cargo audit`, unreleased since 4.12.16 — the tag-range rule surfaced them); the
-  python/node packs stay at 4.12.15 (no content for them). Next: the AI SDLC/MCP backlog ([[bp-agent-orchestration]]) resumes
-  (Eric); the two timing-sensitive Rust tests that flaked during the cycle were hardened after it (mercury #329, Increment 140). **On main, UNRELEASED (2026-09-25):** #462 graph.math typed arithmetic + `CONDITION` ([[graph-math-typed-arithmetic]], squash `0c017d5e`; Rust mercury #330 `d97eab9b`) and #463 the field's Snyk bumps (squash `0732ee48`: Jackson 2 BOM 2.22.3, Jackson 3 BOM 3.2.3, Netty 4.2.18.Final, MsgPack 0.9.12 — the MsgPack one best effort, medium, no upstream fix yet) — both for the next patch release; READ notes in the fact. Origin 2026-09-24-234713.md.
+- **latest_release:** v4.12.18 (2026-09-25 20:56:19Z — **two field reports answered on both engines, lock-step with the Rust
+  port**: release PR #464 squash `1e419a29`, tag `v4.12.18` → `70e00474` (one memory-only commit past the squash), pom verified at
+  the tag; the GitHub release body is the CHANGELOG entry). **Content:** #462 graph.math typed and finite — a boolean is never a
+  number, unknown functions and overflow fail by name, `CONDITION` ([[graph-math-typed-arithmetic]]; READ: a graph that relied on
+  `true` computing as 1/0 or on `Infinity` propagating now fails at that statement) and #463 the field's Snyk bumps (Jackson 2 BOM
+  2.22.3, Jackson 3 BOM 3.2.3, Netty 4.2.18.Final, MsgPack 0.9.12 — the MsgPack one best effort: CVE-2026-90472, medium, no
+  upstream fix yet). Sweep BUILD FILES ONLY 43 / 98 (unchanged). Readiness 220 suites, 1517 tests, 0 failures, 3 skipped (surefire
+  XML; +3 = the #462 tests). **Lockstep:** Rust v4.12.18 the same minute (mercury #331 → merge `568d71b2`, tag → `7d07e9bd`, release
+  20:55:02Z; Increment 141 plus the Rust-only 140; crates 12/12 20:58Z); the python/node packs stay at 4.12.15. Main CI was in
+  progress on the tag commit at close. Next: the AI SDLC/MCP backlog ([[bp-agent-orchestration]]) resumes (Eric). Origin
+  2026-09-25-194902.md.
+  Prior: v4.12.17 (2026-09-25 00:19:27Z — the field's Kafka gap closed on both engines; #461 squash `e9cde291`, tag → `8a13a02e`; the
+  consumer-side Schema Registry identity #458/#460 + the sample #459 ([[kafka-consumer-registry-identity]] — READ before opting in);
+  1514 tests; Rust #328 → `ad957930`, tag → `af9d6f30`, Increments 137–139; the flaky Rust tests hardened after it (mercury #329,
+  Increment 140). Origin 2026-09-24-234713.md.)
   Prior: v4.12.16 (2026-09-24 00:08Z — the correctness round from two field reports; #457 squash `df605533`, tag → `dc0ee6fa`;
   the shared null-source rule, graph.math naming the variable, every abort carrying its reason (#456), the embedded-Redis
   OpenSSL docs (#455), JaCoCo 0.8.15 (#452); Rust #324 → `743d4ea2`, tag → `cc138af3`, crates 12/12. Origin 2026-09-23-234558.md.)
