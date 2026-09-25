@@ -41,7 +41,7 @@
   `group.protocol=${KAFKA_GROUP_PROTOCOL:auto}` in the bundled consumer template — [[kafka-group-protocol-auto-default]], READ:
   an app that never set it joins a KIP-848 cluster with the consumer protocol. Origin 2026-09-21-233928.md.) · v4.12.13
   (2026-09-21, 11 accumulated improvements, #435 `1feb3d73`, FIELD-ACCEPTED) · v4.12.12 (2026-09-17, the produce-only unblock,
-  #410) · v4.12.11 (2026-09-16, the field unblock, #405, [[otel-optional-service-and-negative-control]]) · v4.12.10 (2026-09-16,
+  #410, [[kafka-config-class-static-init-loader]] — archived) · v4.12.11 (2026-09-16, the field unblock, #405, [[otel-optional-service-and-negative-control]]) · v4.12.10 (2026-09-16,
   Berkeley DB store retired, ADR-0024, #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
@@ -52,7 +52,7 @@
   condensed four long shipped decisions (`static-decision-table-is-graph-data`, `minigraph-dev-mode-app-shape`,
   `otel-optional-service-and-negative-control`, `connected-edge-spans` — every rule, READ note, footer and link kept) and the
   release priors; two stale statements corrected (the Rust hardening follow-up is done — mercury #329; the consumer-identity
-  fact carries its merge refs and its release). Lines 851 → ~790, facts 52 (+1 gate thread).)
+  fact carries its merge refs and its release). Lines 851 → 802, facts 52 (+1 gate thread).)
   Prior: 2026-09-24 | through 2026-09-24-234713.md (advisory sweep at the v4.12.17 seam — archived 2 overdue conventions whose rules
   shipped upstream; facts 34 → 32) · 2026-09-23 | through 2026-09-23-230527.md (CADENCE + SIZE — archived 6, swept 5; facts 40 → 34) ·
   2026-09-23 | 2026-09-23-014650.md (size; lines 1032 → 1000) · 2026-09-22 | 2026-09-21-233928.md (size; swept 2).
@@ -307,7 +307,7 @@
   close reports what the grace could not deliver instead of waiting without bound (Eric's ruling; the Rust port
   flushes within the same bound, mercury #313). The lifecycle now has its first module-level consumer with a
   graceful-shutdown contract pinned by `KafkaShutdownTest`.
-  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-23 | uses: 8 | tier: active | origin: 2026-09-15-011235 -->
+  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-23 | uses: 8 | tier: archive-candidate | origin: 2026-09-15-011235 -->
 
 - **MiniGraph async skill callbacks are guarded — a failure surfaces as the node's error, never a
   silent hang (2026-09-15; found building the distributed-cache example, PR #392).** A
@@ -553,7 +553,7 @@
   (`ee37b907`, PR #436 MERGED 2026-09-21, squash `7def2bb4`); Rust twin on mercury `feat/kafka-group-protocol-auto`. Relates [[kafka-mesh-opt-in]] (the module is
   the opt-in building block, not the mesh) and [[conv-ports-adopt-java-release-number]] (the Rust port carries
   the same default at its next catch-up).
-  <!-- id: kafka-group-protocol-auto-default | created: 2026-09-21 | last_used: 2026-09-23 | uses: 3 | tier: active | origin: 2026-09-21-184342 -->
+  <!-- id: kafka-group-protocol-auto-default | created: 2026-09-21 | last_used: 2026-09-23 | uses: 3 | tier: archive-candidate | origin: 2026-09-21-184342 -->
 
 - **The Kafka flow adapter can carry its own Schema Registry identity — an opt-in second codec on the existing prefix seam,
   never a new mechanism (a field installation's fix, reviewed and reconstructed 2026-09-24; PR #458 squash
@@ -600,7 +600,7 @@
   in `docs/test-reports/`). Extends [[otel-optional-service-and-negative-control]]; applies
   [[trace-thread-keyed-mono-gotcha]] (capture the span on the worker thread — the relay outlives it); tested by
   `EventOverHttpStreamTest.edgeRelaySpansAreConnected` and the Rust `event_over_http_stream::edge_relay_spans_are_connected`.
-  <!-- id: connected-edge-spans | created: 2026-09-22 | last_used: 2026-09-23 | uses: 3 | tier: active | origin: 2026-09-22-200813 -->
+  <!-- id: connected-edge-spans | created: 2026-09-22 | last_used: 2026-09-23 | uses: 3 | tier: archive-candidate | origin: 2026-09-22-200813 -->
 
 ## Conventions
 

@@ -4,4 +4,4 @@
   tags `v4.12.15` and GitHub releases on all four the same hour. Lesson: a count that comes out of a `tail` is not a count
   — capture whole, filter afterwards (the Rust "467" was 603; the Java count came from the surefire reports). Carry-overs
   moved to [[post-4-12-15-carry-overs]]. origin: 2026-09-22-235615, 2026-09-23-014650.
-  <!-- id: v4-12-15-release-prep | created: 2026-09-22 | last_used: 2026-09-23 | uses: 2 | tier: active | origin: 2026-09-22-235615 -->
+  <!-- id: v4-12-15-release-prep | created: 2026-09-22 | last_used: 2026-09-23 | uses: 2 | tier: archive-candidate | origin: 2026-09-22-235615 -->
