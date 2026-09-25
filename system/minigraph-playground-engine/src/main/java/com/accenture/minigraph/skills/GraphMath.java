@@ -141,6 +141,9 @@ public class GraphMath extends GraphLambdaFunction {
         if (COMPUTE_TAG.equals(tag)) {
             compute(command, nodeName, graphInstance);
         }
+        if (CONDITION_TAG.equals(tag)) {
+            condition(command, nodeName, graphInstance);
+        }
         if (MAPPING_TAG.equals(tag)) {
             handleDataMappingEntry(nodeName, command, graphInstance);
         }
@@ -173,7 +176,39 @@ public class GraphMath extends GraphLambdaFunction {
             try {
                 result = hasBooleanOperator(text)? engine.evalBoolean(text) : engine.evalNumber(text);
             } catch (RuntimeException e) {
-                throw nameNullIdentifier(e, rhs, graphInstance.stateMachine);
+                throw nameOffendingSelectors(e, rhs, graphInstance.stateMachine);
+            }
+            graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
+        } else {
+            throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
+        }
+    }
+
+    /**
+     * CONDITION: var -> expression - the explicit boolean statement. The expression is evaluated as a
+     * boolean whatever operators it carries (a bare {model.flag} included) and the result is stored as a
+     * Boolean at {node}.result.{var}, so a decision value is declared as one instead of being inferred
+     * from the operators of a COMPUTE.
+     *
+     * @param command the statement after the tag
+     * @param nodeName the node's alias
+     * @param graphInstance the graph instance
+     */
+    private void condition(String command, String nodeName, GraphInstance graphInstance) {
+        int sep = command.lastIndexOf(MAP_TO);
+        if (sep > 0) {
+            var lhs = command.substring(0, sep).trim();
+            var rhs = command.substring(sep + MAP_TO.length()).trim();
+            if (lhs.isEmpty() || rhs.isEmpty()) {
+                throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
+            }
+            assertVariablesResolved(rhs, graphInstance.stateMachine);
+            var text = substituteVarIfAny(rhs, graphInstance.stateMachine, true);
+            final boolean result;
+            try {
+                result = engine.evalBoolean(text);
+            } catch (RuntimeException e) {
+                throw nameOffendingSelectors(e, rhs, graphInstance.stateMachine);
             }
             graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
         } else {
@@ -197,7 +232,7 @@ public class GraphMath extends GraphLambdaFunction {
         try {
             decision = engine.evalBoolean(text);
         } catch (RuntimeException e) {
-            throw nameNullIdentifier(e, ifStatement, stateMachine);
+            throw nameOffendingSelectors(e, ifStatement, stateMachine);
         }
         return getNext(graphInstance.graph, decision? thenStatement : elseStatement);
     }

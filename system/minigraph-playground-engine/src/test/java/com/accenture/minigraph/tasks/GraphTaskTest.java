@@ -91,14 +91,13 @@ class GraphTaskTest {
         stubPeer.start();
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void wholeBodyMergeAndHeaders() throws TimeoutException {
         var response = runGraph("unit-test-task-1", Map.of("hello", "world", "amount", 5),
                                 Map.of("x-demo", "sunshine"));
         assertEquals(200, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());
-        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        var mm = bodyMap(response);
         // 'input.body -> *' seeds the whole body and 'int(100) -> amount' merges over it
         assertEquals("world", mm.getElement("received.hello"));
         assertEquals(100, mm.getElement("received.amount"));
@@ -113,7 +112,6 @@ class GraphTaskTest {
         log.info("graph.task whole-body merge and header mapping work");
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void dynamicModelVariableWithHttpClient() throws TimeoutException {
         // tutorial-13: 'input.body.person_id -> model.person_id' stages the model variable,
@@ -123,7 +121,7 @@ class GraphTaskTest {
         var response = runGraph("tutorial-13", Map.of("person_id", 100), Map.of());
         assertEquals(200, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());
-        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        var mm = bodyMap(response);
         assertEquals("100", mm.getElement("profile.id"));
         assertEquals("Peter", mm.getElement("profile.name"));
         // 'text(5000) -> headers.x-ttl' sets the HTTP timeout and rides the wire as the
@@ -156,13 +154,12 @@ class GraphTaskTest {
         log.info("graph.task input mapping with a reserved model target is rejected at the gate");
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void fieldMappingToPoJoFunction() throws TimeoutException {
         var response = runGraph("unit-test-task-2", Map.of("name", "apple", "amount", 7), Map.of());
         assertEquals(200, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());
-        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        var mm = bodyMap(response);
         assertEquals("apple", mm.getElement("name"));
         assertEquals(14, mm.getElement("total"));
         log.info("graph.task field mapping to a PoJo function works");
@@ -181,19 +178,17 @@ class GraphTaskTest {
         log.info("graph.task for_each fork-join works");
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void exceptionHandlerNode() throws TimeoutException {
         var response = runGraph("unit-test-task-4", Map.of("hello", "world"), Map.of());
         assertEquals(200, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());
-        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        var mm = bodyMap(response);
         assertEquals("recovered", mm.getElement("message"));
         assertEquals(400, mm.getElement("status"));
         log.info("graph.task exception handler routing works");
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void foreignRouteViaEventOverHttp() throws TimeoutException {
         // 'polyglot.stub.function' is not registered locally - it resolves through the
@@ -202,7 +197,7 @@ class GraphTaskTest {
         var response = runGraph("unit-test-task-7", Map.of("text", "polyglot"), Map.of());
         assertEquals(200, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());
-        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        var mm = bodyMap(response);
         assertEquals("stub", mm.getElement("language"));
         assertEquals("polyglot.stub.function", mm.getElement("route"));
         assertEquals("polyglot", mm.getElement("echo.text"));
@@ -235,7 +230,6 @@ class GraphTaskTest {
         log.info("graph.task invalid output mapping surfaces as an error instead of a timeout");
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void staticDecisionTableIsGraphData() throws TimeoutException {
         // unit-test-task-9: the decision table is a skill-less DecisionTable node whose values are
@@ -247,12 +241,12 @@ class GraphTaskTest {
         // compiled into the function.
         var response = runGraph("unit-test-task-9", Map.of("state", "TX"), Map.of());
         assertEquals(200, response.getStatus());
-        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        var mm = bodyMap(response);
         assertEquals("community-property", mm.getElement("rule"));
         assertEquals("community-property", mm.getElement("rule_from_json"));
         response = runGraph("unit-test-task-9", Map.of("state", "NY"), Map.of());
         assertEquals(200, response.getStatus());
-        mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        mm = bodyMap(response);
         assertEquals("separate-property", mm.getElement("rule"));
         assertEquals("separate-property", mm.getElement("rule_from_json"));
         // a key the table does not know is the function's own 404, returned as the graph output
@@ -263,7 +257,6 @@ class GraphTaskTest {
         log.info("graph.task static decision table is graph data, not function code");
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void staticDecisionTableCommonCaseNeedsNoFunction() throws TimeoutException {
         // unit-test-lookup-1: the common case of the same table - a graph.data.mapper decision node
@@ -272,18 +265,18 @@ class GraphTaskTest {
         // involved. The plugin reads the node's JSON-text values (keys=[ "a", "b" ]) directly.
         var response = runGraph("unit-test-lookup-1", Map.of("state", "TX"), Map.of());
         assertEquals(200, response.getStatus());
-        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        var mm = bodyMap(response);
         assertEquals("community-property", mm.getElement("rule"));
         assertEquals("TX", mm.getElement("state"));
         response = runGraph("unit-test-lookup-1", Map.of("state", "ny"), Map.of());
         assertEquals(200, response.getStatus());
-        mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        mm = bodyMap(response);
         // values are compared as text, case-insensitively
         assertEquals("separate-property", mm.getElement("rule"));
         // a miss returns the third argument
         response = runGraph("unit-test-lookup-1", Map.of("state", "ZZ"), Map.of());
         assertEquals(200, response.getStatus());
-        mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        mm = bodyMap(response);
         assertEquals("unknown", mm.getElement("rule"));
         // probe of the null-source rule shared with Event Script (#453): a null source CLEARS a
         // model.* target - 'text(preset)' then an absent 'input.body.missing' leaves no model.probe,
@@ -323,8 +316,65 @@ class GraphTaskTest {
         // with both inputs supplied the same expression computes
         response = runGraph("unit-test-math-1", Map.of("threshold", 5.5, "factor", 2), Map.of());
         assertEquals(200, response.getStatus());
-        var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+        var mm = bodyMap(response);
         assertEquals(11.0, mm.getElement("doubled"));
+    }
+
+    @Test
+    void conditionStoresADeclaredBoolean() throws TimeoutException {
+        // unit-test-math-2 case 1: CONDITION evaluates a boolean whatever operators it carries - a
+        // comparison, a bare boolean variable, a boolean operation over a prior result - and stores it
+        var response = runGraph("unit-test-math-2", Map.of("case", 1, "a", 1, "b", 2, "flag", true), Map.of());
+        assertEquals(200, response.getStatus(), String.valueOf(response.getBody()));
+        var mm = bodyMap(response);
+        assertEquals(true, mm.getElement("ok"));
+        assertEquals(true, mm.getElement("same"));
+        assertEquals(true, mm.getElement("gate"));
+        response = runGraph("unit-test-math-2", Map.of("case", 1, "a", 3, "b", 2, "flag", false), Map.of());
+        assertEquals(200, response.getStatus(), String.valueOf(response.getBody()));
+        mm = bodyMap(response);
+        assertEquals(false, mm.getElement("ok"));
+        assertEquals(false, mm.getElement("same"));
+        assertEquals(false, mm.getElement("gate"));
+    }
+
+    @Test
+    void booleanOperandIsRejectedByNameWhereverANumberIsNeeded() throws TimeoutException {
+        // a JSON boolean in a numeric slot never computes as 1 or 0 - arithmetic (case 2), a relational
+        // comparison (case 6) and a bare boolean COMPUTE result (case 7) all fail naming the selector
+        for (int c : new int[] {2, 6, 7}) {
+            var response = runGraph("unit-test-math-2", Map.of("case", c, "flag", true), Map.of());
+            assertNotEquals(200, response.getStatus(), "case " + c);
+            var error = String.valueOf(response.getBody());
+            assertTrue(error.contains("Boolean operand: model.flag (true)"), "case " + c + ": " + error);
+            assertTrue(error.contains("CONDITION"), "case " + c + ": " + error);
+        }
+        var response = runGraph("unit-test-math-2", Map.of("case", 6, "flag", false), Map.of());
+        assertNotEquals(200, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("Boolean operand: model.flag (false) in '{model.flag} < 1'"),
+                String.valueOf(response.getBody()));
+    }
+
+    @Test
+    void unknownFunctionOverflowAndDivisionByZeroFailByName() throws TimeoutException {
+        // case 4: a misspelled function is rejected by name, never a silent no-op
+        var response = runGraph("unit-test-math-2", Map.of("case", 4, "a", 1, "b", 2), Map.of());
+        assertNotEquals(200, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("Unknown function: mn"), String.valueOf(response.getBody()));
+        // case 3: an overflow to infinity fails naming the operator instead of traveling on as 'Infinity'
+        response = runGraph("unit-test-math-2", Map.of("case", 3, "big", 1e308), Map.of());
+        assertNotEquals(200, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("Arithmetic overflow in '*' (result Infinity)"),
+                String.valueOf(response.getBody()));
+        // case 5: a division by zero is an error, not an infinite amount - and the same expression computes
+        response = runGraph("unit-test-math-2", Map.of("case", 5, "a", 1, "b", 0), Map.of());
+        assertNotEquals(200, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("Division by zero or arithmetic overflow in '/'"),
+                String.valueOf(response.getBody()));
+        response = runGraph("unit-test-math-2", Map.of("case", 5, "a", 1, "b", 4), Map.of());
+        assertEquals(200, response.getStatus(), String.valueOf(response.getBody()));
+        var mm = bodyMap(response);
+        assertEquals(0.25, mm.getElement("x"));
     }
 
     @Test
@@ -332,6 +382,11 @@ class GraphTaskTest {
         // 'describe skill graph.task' resolves the file name by replacing dots with hyphens
         assertNotNull(GraphTaskTest.class.getResourceAsStream("/help/help graph-task.md"),
                 "help file for graph.task is missing");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static MultiLevelMap bodyMap(EventEnvelope response) {
+        return new MultiLevelMap((Map<String, Object>) response.getBody());
     }
 
     private EventEnvelope runGraph(String graphId, Map<String, Object> body, Map<String, String> headers)

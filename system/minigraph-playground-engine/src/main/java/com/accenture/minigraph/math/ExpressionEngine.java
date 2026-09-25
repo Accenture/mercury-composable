@@ -8,7 +8,7 @@ public final class ExpressionEngine {
     public ExpressionEngine() { this(EvalContext.withDefaults()); }
     public ExpressionEngine(EvalContext ctx) { this.ctx = ctx; }
 
-    /** Evaluate to a number; booleans are coerced to 0/1 if produced. */
+    /** Evaluate to a number; a boolean result is rejected (a boolean is not a number in this dialect). */
     public double evalNumber(String expr) {
         return Evaluator.evaluateNumber(expr, ctx);
     }

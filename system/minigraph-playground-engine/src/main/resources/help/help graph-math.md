@@ -30,14 +30,15 @@ Setup
 To enable this skill for a node, set "skill=graph.math" as a property in a node.
 One or more statements can be added.
 
-There are 5 types of statements:
+There are 6 types of statements:
 1. "IF" statement for decision-making
 2. "COMPUTE" statement to evaluate a mathematical formula
-3. "MAPPING" statement to do data mapping from a source to a target variable
-4. "EXECUTE" statement to execute another node with "graph.math" skill
-5. "RESET" statement to reset the state machine for one or more nodes
+3. "CONDITION" statement to evaluate a boolean expression into a declared boolean result
+4. "MAPPING" statement to do data mapping from a source to a target variable
+5. "EXECUTE" statement to execute another node with "graph.math" skill
+6. "RESET" statement to reset the state machine for one or more nodes
 
-You can configure one or more statements of these 3 types.
+You can configure one or more statements of these types.
 
 The system will reject execution if the node contains only "MAP" statements
 because it is more efficient to use the "graph.data.mapper" skills for mapping
@@ -162,6 +163,40 @@ statement[]=COMPUTE: amount -> (1 - {input.body.discount}) * {book.price}
 ```
 
 The syntax `{variable_name}` is used to resolve the value from the variable into the COMPUTE statement.
+
+Syntax for CONDITION statement
+------------------------------
+CONDITION: variable -> boolean expression
+
+The expression is evaluated as a boolean whatever operators it carries - a comparison, a boolean
+operation, or a bare boolean variable - and the result is stored as a boolean in the node's
+"result" namespace. It is the declared form of a decision value; a COMPUTE stores a boolean only
+when its expression happens to carry a comparison or boolean operator.
+
+```
+statement[]=CONDITION: eligible -> {member.age} >= 18 && {member.active}
+statement[]=CONDITION: same -> {model.flag}
+statement[]=MAPPING: check.result.eligible -> output.body.eligible
+```
+
+An IF statement may test the stored boolean directly: `IF: {check.result.eligible}`.
+
+Numbers and booleans
+--------------------
+A boolean is not a number. A boolean where arithmetic, a < or > comparison or a function argument
+needs a number fails naming the selector, e.g. "Boolean operand: model.flag (true) in
+'{model.flag} + 1' - a boolean is not a number; store a boolean with CONDITION or assert the type
+with f:validate". So a JSON true in a numeric slot never computes as 1. Equality (==, !=)
+type-checks its two sides.
+
+A misspelled or unsupported function fails by name ("Unknown function: mn").
+
+Arithmetic is IEEE double precision. An overflow to infinity, a division by zero and a NaN each
+fail naming the operator ("Arithmetic overflow in '*' (result Infinity)", "Division by zero or
+arithmetic overflow in '/'"); integers beyond 2^53 lose precision; round() follows Java's
+Math.round (half up toward positive infinity). Money that needs exact decimal arithmetic, a stated
+rounding mode or integer cents does not belong in this skill: implement it as a small composable
+function (Java BigDecimal) and call it with graph.task. The math package stays minimal by design.
 
 Syntax for IF statement
 -----------------------
