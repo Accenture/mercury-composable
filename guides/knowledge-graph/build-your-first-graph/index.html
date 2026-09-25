@@ -3072,6 +3072,18 @@ in the previous step is what makes this restart safe.</p>
 <p>Like <code>flows.yaml</code>, the manifest carries the location of its own models: the optional
 <code>location</code> entry points at the deployed-graph folder (<code>file:/</code> or <code>classpath:/</code> — it is
 read-only) and defaults to <code>classpath:/graph</code>, so most projects can omit it.</p>
+<p><strong>Rapid prototyping — deploy without a rebuild.</strong> The manifest is an ordinary property, so a JVM
+system property overrides it for one run, and <code>location</code> accepts a <code>file:/</code> folder. Stage the export
+in a folder with its own manifest and restart with the override — the project itself is untouched:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>mkdir<span class="w"> </span>-p<span class="w"> </span>/tmp/graph/deploy<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cp<span class="w"> </span>/tmp/graph/my-first-graph.json<span class="w"> </span>/tmp/graph/deploy/
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nb">printf</span><span class="w"> </span><span class="s2">"graphs:\n  - 'my-first-graph'\nlocation: 'file:/tmp/graph/deploy'\n"</span><span class="w"> </span>&gt;<span class="w"> </span>/tmp/graph/deploy/graphs.yaml
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>java<span class="w"> </span>-Dgraph.model.automation<span class="o">=</span><span class="s1">'classpath:/graphs.yaml, file:/tmp/graph/deploy/graphs.yaml'</span><span class="w"> </span>-jar<span class="w"> </span>target/<span class="o">{</span>your-app<span class="o">}</span>.jar
+</code></pre></div>
+<p>Since 4.12.19 the property takes a comma-separated list of manifests, each with its own <code>location</code>,
+so the bundled graphs stay deployed beside the prototype; when both list the same id the later
+manifest wins. Only listed ids are executable, and a deployment is still a restart — <code>CompileGraph</code>
+runs once at startup. The full recipe, with the log lines to verify and the session choreography for
+a hosted Playground, is in the <a href="../ai-agent-guide/#deploy-without-rebuild">AI agent guide</a>.</p>
 <p>At startup, <code>CompileGraph</code> validates every manifest graph once — structure, the root node's
 <code>purpose</code>, data-mapping syntax, and the suspend/resume contract — and only graphs that pass
 become executable. A graph that fails the gate, or is not listed, answers <strong>HTTP-404</strong> as if
@@ -3080,11 +3092,11 @@ you why a graph was rejected (<code>Rejected graph &lt;id&gt; - &lt;reason&gt;</
 <h2 id="call-over-rest">Step 5 — call it over REST<a class="headerlink" href="#call-over-rest" title="Permanent link">&para;</a></h2>
 <p>A deployed graph is reachable at the generic endpoint <code>POST /api/graph/{graph-id}</code>, where the id is
 the name you exported. Send it some input:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>curl -X POST http://127.0.0.1:8085/api/graph/my-first-graph \
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  -H "Content-Type: application/json" \
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>  -d '{"message": "it is a wonderful day"}'
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>curl -X POST http://127.0.0.1:8085/api/graph/my-first-graph \
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>  -H "Content-Type: application/json" \
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>  -d '{"message": "it is a wonderful day"}'
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"it is a wonderful day"</span><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="p">{</span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"it is a wonderful day"</span><span class="p">}</span>
 </code></pre></div>
 <p>(The port follows your app's configuration; <code>8085</code> is illustrative.)</p>
 <h2 id="how-it-ran">What just happened<a class="headerlink" href="#how-it-ran" title="Permanent link">&para;</a></h2>

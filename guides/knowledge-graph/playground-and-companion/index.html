@@ -3069,7 +3069,10 @@ trusted dev environments</strong> (there is no auth).</p>
 <blockquote>
 <p><strong>Restarting the app ends every session — export first.</strong> The working graph lives in the
 session, not on disk: <code>export graph as {name}</code> before any restart (deploying a graph requires
-one), or the unexported work is lost.</p>
+one), or the unexported work is lost. For a prototype or a demo the restart need not be a
+rebuild — see <a href="../ai-agent-guide/#deploy-without-rebuild">Rapid prototyping — deploy without a rebuild</a>
+— and the shipped broker survives it: it reconnects, reports the new session id, and the agent
+re-imports the export before the humans re-subscribe.</p>
 </blockquote>
 <h2 id="enabling">Turning dev mode on in your own app<a class="headerlink" href="#enabling" title="Permanent link">&para;</a></h2>
 <p>The Playground is not a separate application — it rides along in any Mercury app that depends on

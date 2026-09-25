@@ -155,6 +155,17 @@
       "quote": "waiting up to the same ten seconds for its buffered records to be acknowledged",
       "test": "system/minimalist-kafka::KafkaShutdownTest#producerCloseIsBoundedByTheGraceAndReportsUndelivered",
       "since": "4.12.15+"
+    },
+    {
+      "id": "graph-manifest-list-later-wins",
+      "claim": "graph.model.automation accepts a comma-separated list of graph manifests, each with its own location; when two manifests list the same graph id, the later manifest wins - its copy replaces the earlier one, and a rejected later copy leaves the id not executable (404).",
+      "pages": [
+        "docs/guides/configuration-reference.md",
+        "docs/guides/knowledge-graph/ai-agent-guide.md"
+      ],
+      "quote": "accepts a comma-separated list of manifests, each carrying its own location, and when two manifests list the same graph id the later manifest wins",
+      "test": "system/minigraph-playground-engine::CompileGraphTest#laterManifestWinsForADuplicateGraphId",
+      "since": "4.12.19+"
     }
   ]
 }

@@ -7518,16 +7518,24 @@ that task: the flow still deploys and fails at runtime when the missing task is 
 </thead>
 <tbody>
 <tr>
-<td><code>String</code> (location)</td>
+<td><code>String</code> (comma-sep manifest paths)</td>
 <td>—</td>
 </tr>
 </tbody>
 </table>
 <p>Location of the graph deployment manifest (e.g. <code>classpath:/graphs.yaml</code>) listing the graph
 model ids the CompileGraph gate compiles at startup; the manifest's own optional <code>location</code>
-key (default <code>classpath:/graph</code>) says where the model JSON files live. When this property is
-absent, a warning is logged and <strong>no graphs are executable</strong> — every <code>/api/graph/{graph-id}</code>
-call answers 404 ("compiled or 404", ADR-0011).</p>
+key (default <code>classpath:/graph</code>) says where the model JSON files live. Since 4.12.19 the property
+accepts a comma-separated list of manifests, each carrying its own location, and when two manifests
+list the same graph id the later manifest wins — its copy replaces the earlier one, and if that copy
+is rejected the id is not executable (the <code>yaml.flow.automation</code> convention; a manifest that cannot
+be loaded is skipped with a warning). When this property is absent, a warning is logged and <strong>no
+graphs are executable</strong> — every <code>/api/graph/{graph-id}</code> call answers 404 ("compiled or 404",
+ADR-0011). Like every property, a JVM system property overrides it for one run
+(<code>java -Dgraph.model.automation='classpath:/graphs.yaml, file:/tmp/graph/deploy/graphs.yaml' -jar app.jar</code>):
+the bundled manifest keeps its graphs, and a <code>file:/</code> manifest beside it deploys an exported graph
+without a rebuild — the <a href="../knowledge-graph/ai-agent-guide/#deploy-without-rebuild">rapid-prototyping path</a>.
+Only the ids the listed manifests name are executable.</p>
 <h3 id="locationgraphtemp"><code>location.graph.temp</code><a class="headerlink" href="#locationgraphtemp" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
