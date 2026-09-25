@@ -3116,7 +3116,7 @@ inside one mapper). Example:</p>
 <p>Fast inline math and boolean evaluation for computation and decision-making. This is <strong>the</strong> skill
 for inline compute/branch (never reach for the deprecated <a href="#js"><code>graph.js</code></a> — pair <code>graph.math</code>
 with <a href="#task"><code>graph.task</code></a> for anything the dialect cannot express). Statements run in order;
-five types:</p>
+six types:</p>
 <table>
 <thead>
 <tr>
@@ -3127,7 +3127,11 @@ five types:</p>
 <tbody>
 <tr>
 <td><code>COMPUTE</code></td>
-<td>evaluate a math expression → the node's <code>result</code></td>
+<td>evaluate a math expression → the node's <code>result</code> (a number; an expression with a comparison or boolean operator yields a boolean)</td>
+</tr>
+<tr>
+<td><code>CONDITION</code></td>
+<td>evaluate a <strong>boolean</strong> expression → the node's <code>result</code>, declared as a boolean whatever operators it carries (<code>CONDITION: ok -&gt; {model.a} &lt; {model.b}</code>, <code>CONDITION: same -&gt; {model.flag}</code>)</td>
 </tr>
 <tr>
 <td><code>IF</code></td>
@@ -3167,16 +3171,42 @@ becomes an iteration array (parallel lists advance in lockstep and must agree on
 bind once; an unresolvable source removes the key). <code>BEGIN</code>/<code>END</code> split the statements into
 pre-block (once) / each-block (per element) / post-block (once) — <strong>without <code>BEGIN</code> the whole
 list is the loop body</strong>. Iteration is strictly sequential in list order, inside one node
-execution; a taken <code>IF</code> jump breaks the loop and skips the post-block. Numeric accumulators work
-with either <code>f:add</code> (numeric promotion: all-whole stays exact long, any decimal promotes to
-double) or a pure-<code>COMPUTE</code> read-back. Full rules + worked example:
+execution; <strong>a taken <code>IF</code> jump inside the loop body ends the whole walk</strong> — the current iteration,
+every remaining element and the post-block — and routes traversal to the target, because an <code>IF</code>
+is a traversal jump, not a per-row branch. Write per-row rules as arithmetic gates
+(<code>flag = predicate; hit = open * flag; bucket += amount * hit</code>) and keep <code>IF</code> for the decision
+that follows the loop. Numeric accumulators work with either <code>f:add</code> (numeric promotion:
+all-whole stays exact long, any decimal promotes to double) or a pure-<code>COMPUTE</code> read-back.
+A <code>MAPPING</code> onto <code>model.x[]</code> <strong>appends</strong>; the list is not cleared between executions of the same
+instance, so a walk that accumulates a list reseeds it in the pre-block
+(<code>MAPPING: f:json(text([])) -&gt; model.codes</code>). Full rules + worked example:
 <a href="../command-reference/#math-for-each">for_each</a>.</p>
+<p><strong>Numbers and booleans.</strong> The dialect is a <strong>narrow</strong> JS-like subset — arithmetic, comparison and
+boolean operators, the built-in math functions (<code>min</code>, <code>max</code>, <code>abs</code>, <code>floor</code>, <code>ceil</code>, <code>round</code>,
+<code>sqrt</code>, <code>pow</code>, <code>exp</code>, <code>log</code>, <code>log10</code>, also under <code>Math.</code>), no bitwise operators, no variables. Its
+rules, each enforced by a named failure rather than a silent value:</p>
+<ul>
+<li><strong>A boolean is not a number.</strong> A boolean where arithmetic, a <code>&lt;</code>/<code>&gt;</code> comparison or a function
+  argument needs a number fails naming the selector (<code>Boolean operand: model.flag (true) in
+  '{model.flag} + 1' …</code>), and so does a <code>COMPUTE</code> whose whole result is a boolean variable. JSON
+  <code>true</code> in a numeric slot therefore never computes as <code>1</code>. Equality type-checks its two sides.
+  Assert a slot's type with <code>f:validate(input.body.x, text(x; Double; required; evaluate))</code> when the
+  request is untrusted; store a decision with <code>CONDITION</code>.</li>
+<li><strong><code>COMPUTE</code> yields a boolean when the expression carries a comparison or boolean operator</strong>
+  (<code>&lt;</code>, <code>&gt;</code>, <code>==</code>, <code>!</code>, <code>&amp;&amp;</code>, <code>||</code>) — it evaluates the question you wrote. Use <code>CONDITION</code> to say
+  so in the statement, and keep <code>COMPUTE</code> for amounts.</li>
+<li><strong>A misspelled or unsupported function fails by name</strong> (<code>Unknown function: mn</code>).</li>
+<li><strong>Arithmetic is IEEE double.</strong> An overflow to infinity, a division by zero and a NaN each fail
+  naming the operator (<code>Arithmetic overflow in '*' (result Infinity)</code>, <code>Division by zero or
+  arithmetic overflow in '/'</code>) instead of traveling on; integers beyond 2^53 lose precision, and
+  <code>round</code> follows <code>Math.round</code> (half up toward positive infinity). <code>COMPUTE</code> returns a double, so an
+  integer result serializes as e.g. <code>8.0</code>. <strong>Money that needs exact decimal arithmetic, a stated
+  rounding mode or integer cents does not belong in the dialect</strong>: put it in a small composable
+  function on <code>graph.task</code> (Java <code>BigDecimal</code>), which keeps the math package minimal by design.</li>
+</ul>
 <p><strong>Gotchas:</strong> a node runs <strong>once</strong> (guard against loops) unless you <code>RESET</code> it — an advanced,
-use-with-care feature; a node may not contain only <code>MAPPING</code> statements (use the data mapper). The
-expression dialect is a <strong>narrow</strong> JS-like subset — arithmetic, comparison and boolean operators
-only: <strong>no bitwise operators, no function calls</strong> (e.g. <code>parseInt(...)</code>), no variables. <code>COMPUTE</code>
-returns a double, so an integer result serializes as e.g. <code>8.0</code> (numerically exact — there is no
-in-grammar integer coercion). For anything richer, use <code>graph.task</code> (a composable function).</p>
+use-with-care feature; a node may not contain only <code>MAPPING</code> statements (use the data mapper).
+For anything richer than the dialect, use <code>graph.task</code> (a composable function).</p>
 <h2 id="js">graph.js<a class="headerlink" href="#js" title="Permanent link">&para;</a></h2>
 <blockquote>
 <p><strong>DEPRECATED (2026-09) — do not use in new graphs; AI agents must not use it at all.</strong> It is

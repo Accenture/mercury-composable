@@ -3566,7 +3566,12 @@ per-branch <code>model.*</code> variables), or <strong>append to a shared list w
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>text(100 World Blvd) -&gt; input.body.profile.address1
 </code></pre></div>
 <p>Issuing <code>instantiate graph</code> again <strong>replaces</strong> the current instance — a fresh state machine and
-cleared run marks — which is the standard idiom for a second dry-run with different input.</p>
+cleared run marks — which is the standard idiom for a second dry-run with different input. A
+<code>run</code> without a new <code>instantiate graph</code> re-traverses the <strong>same instance</strong>: <code>model.*</code> values from
+the previous run are still there, a <code>MAPPING</code> onto <code>model.x[]</code> appends to the list it built last
+time, and the run-once marks are what <code>RESET:</code> governs — so a second <code>run</code> that must start clean
+is preceded by <code>instantiate graph</code> (alias <code>start</code>). A deployed graph never sees this: every request
+gets a fresh instance.</p>
 <h3 id="run">run / execute / inspect<a class="headerlink" href="#run" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>run                        # traverse from root to end
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>execute {node}             # run a single node (after instantiate)
@@ -4035,10 +4040,12 @@ JavaScript). <code>graph.math</code>'s own expression dialect is a narrow JS-lik
 arithmetic/comparison/boolean operators only, <strong>no bitwise ops, no function calls, no
 variables</strong>; <code>COMPUTE</code> yields a double (integers serialize as e.g. <code>8.0</code>).</p>
 </blockquote>
-<p>A <code>graph.math</code> node runs an ordered list of <code>statement[]</code> lines. Five statement types:</p>
+<p>A <code>graph.math</code> node runs an ordered list of <code>statement[]</code> lines. Six statement types:</p>
 <dl>
 <dt><code>COMPUTE</code> — <code>COMPUTE: {var} -&gt; {expr}</code></dt>
-<dd>evaluate a JS-like math/boolean expression; the result is stored in <strong>this node's <code>result</code> namespace</strong> — read it back as <code>{this-node}.result.{var}</code> or move it with <code>MAPPING</code></dd>
+<dd>evaluate a JS-like math expression; the result is stored in <strong>this node's <code>result</code> namespace</strong> — read it back as <code>{this-node}.result.{var}</code> or move it with <code>MAPPING</code>. An expression carrying a comparison or boolean operator yields a boolean (the question you wrote); a boolean operand in arithmetic, a <code>&lt;</code>/<code>&gt;</code> comparison or a function argument is rejected by name, and so are an unknown function, an overflow and a division by zero (see <a href="../skills-reference/#math">numbers and booleans</a>)</dd>
+<dt><code>CONDITION</code> — <code>CONDITION: {var} -&gt; {boolean expr}</code></dt>
+<dd>evaluate a boolean expression and store the boolean in this node's <code>result</code> — the declared form of a decision value, whether or not the expression carries an operator (<code>CONDITION: same -&gt; {model.flag}</code>); an <code>IF</code> may test it directly (<code>IF: {node.result.var}</code>)</dd>
 <dt><code>IF</code> — multi-line (see below)</dt>
 <dd>a boolean <strong>decision</strong> that redirects traversal to a named node</dd>
 <dt><code>MAPPING</code> — <code>MAPPING: source -&gt; target</code></dt>
@@ -4164,6 +4171,11 @@ entry has the mapping form <code>source -&gt; model.{var}</code> — the RHS <st
   pre-block it skips the loop and post-block the same way. (A <code>NEXT:</code> exits too, after its block
   completes.) An <code>ELSE: next</code> falls through to the rest of the iteration.</li>
 <li><strong>Empty lists are fine:</strong> the each-block runs zero times; the pre- and post-blocks still run.</li>
+<li><strong>A <code>MAPPING</code> onto <code>model.x[]</code> appends, and the list is never cleared for you.</strong> Within one run,
+  seed the accumulator in the pre-block. Across dry-runs, a second <code>run</code> on the same instance
+  appends to the list the first run built — every dollar total can stay right while the ledger
+  doubles — so reseed it (<code>MAPPING: f:json(text([])) -&gt; model.codes</code>) or <code>instantiate graph</code> again
+  before the second run; a deployed graph gets a fresh instance per request.</li>
 <li><strong>Number dialect:</strong> <code>COMPUTE</code> yields <strong>doubles</strong>; the <code>f:add</code>/<code>f:subtract</code>/… simple plugins
   use <strong>numeric promotion</strong> — all-whole-number inputs keep exact long arithmetic (including
   integer division and the classic integer counters of
@@ -4199,7 +4211,10 @@ the <code>COMPUTE</code> doubles through <code>f:add</code> (both forms are engi
 <h2 id="invariants">Invariants<a class="headerlink" href="#invariants" title="Permanent link">&para;</a></h2>
 <p>Hard rules the engine enforces — violate them and generation fails:</p>
 <ol>
-<li>The root node is named <code>root</code>; the end node is named <code>end</code>.</li>
+<li>The root node is named <code>root</code>; the end node is named <code>end</code>. The end node is the <strong>terminus</strong>:
+   its own mappings run last, so a value it writes to an <code>output.*</code> key overrides what any earlier
+   node wrote there (the last writer along the path wins) — a node that must survive to the
+   response writes a <code>model.*</code> key that <code>end</code> maps out once.</li>
 <li>A node has <strong>0 or 1</strong> skill.</li>
 <li>Node <strong>names</strong> are <strong>lowercase letters, digits and hyphen</strong> (<code>root</code>/<code>end</code> reserved). Node <strong>types</strong> are
    descriptive labels — shipped examples capitalize structural types (see <a href="#lexical">lexical</a>).</li>
