@@ -1,7 +1,7 @@
 # Vision — mercury-composable
 
 > Confirmed by maintainer (Eric Law) on 2026-06-20; re-confirmed 2026-07-27 (invariant
-> re-verification walkthrough). **EVOLVED 2026-09-17 (Eric): the two tracks made explicit** — the
+> re-verification walkthrough), 2026-09-16, and 2026-09-25 (the first walk of the two-track text). **EVOLVED 2026-09-17 (Eric): the two tracks made explicit** — the
 > graph as application (deterministic) and the graph as AI SDLC (governed AI processing for
 > ambiguity). North star for the VBDI loop;
 > tier `core`, re-confirmed on the invariant-verification cadence. The Blueprint

@@ -63,12 +63,13 @@
   in the nature of the work and where execution goes; AI gains a **run-time participant** role. **The north star MOVED: the
   next invariant re-verify must check the 2026-09-17 text, not the 2026-06-20 one.** [[bp-agent-orchestration]] is Track 2's
   Blueprint gap; Track 1 and the collaboration foundation are delivered.
-- **last_invariant_check:** 2026-09-25 | 2026-09-25-014100.md (DUE — 40 sessions since 2026-09-16-041500; the review raised
-  [[reverify-invariants-20260925]] for Eric: the 19 `core` facts + the Vision, which now means the **2026-09-17 two-track
-  text**; the review never confirms or invalidates an invariant itself — Eric checks the thread off or supersedes per
-  DECAY.md §9. Prior: 2026-09-16 | 2026-09-16-041500.md (COMPLETE — Eric walked 3 invariants + 5 stack + 5 key decisions +
-  3 conventions + eric-release-rhythm + the Vision against live-tree evidence; `virtual-threads-rpc` ENRICHED from ADR-0024;
-  `conv-telemetry-presentation-parity` RETIRED, no successor; core 18 → 17.) Prior: 2026-09-11 | 2026-09-11-005808.md.)
+- **last_invariant_check:** 2026-09-25 | 2026-09-25-022841.md (COMPLETE — Eric walked the 19 `core` facts and the Vision — **the 2026-09-17
+  two-track text** — against live-tree evidence; 18 facts + the Vision CONFIRMED as written, `instant-serialization` DEMOTED
+  from core (Eric: an implementation detail that no longer influences key decisions; unreferenced since 2026-06-27, so it
+  archives as faded in the same review); core 19 → 18; [[reverify-invariants-20260925]] closed. Cadence 40; the next re-verify
+  is due 40 sessions after 2026-09-25-022841. Prior: 2026-09-16 | 2026-09-16-041500.md (COMPLETE — 3 invariants + 5 stack + 5 key decisions +
+  3 conventions + eric-release-rhythm + the Vision; `virtual-threads-rpc` ENRICHED from ADR-0024; `conv-telemetry-presentation-parity`
+  RETIRED; core 18 → 17.) Prior: 2026-09-11 | 2026-09-11-005808.md.)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
 > environment, carrying forward only the confirmed Vision + Blueprint and the
@@ -162,7 +163,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-23 | uses: 9 | tier: active | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-23 | uses: 9 | tier: archive-candidate | origin: 2026-09-16-193203 -->
 
 - **Application log forwarding is an INFRASTRUCTURE task — the engine does not grow that capability
   (Eric with the field architects, 2026-09-18; CLOSED, not parked).** The field found the gap after
@@ -385,15 +386,6 @@
   and is **safe** — it returns its response (the `x-stream-id` handle) synchronously on the worker thread, and
   `FluxPublisher` streaming never reads the trace (guarded by `WorkerHandlerTest.fluxResponseForwardsSpanId`).
   <!-- id: trace-thread-keyed-mono-gotcha | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: core -->
-
-- **platform-core serializes `java.time.Instant` as first-class (2026-06-27).** Instant had no adapter and
-  round-tripped wrongly (Gson reflected it to `{seconds,nanos}`; MsgPack fell through to String/PoJo).
-  Fixed at the root in all three serialization paths — `SimpleMapper` (Gson adapter), `MsgPack` (nested
-  `case Instant`), `PayloadMapper` (top-level encode) — each mirroring `Date` via
-  `date2str(Date.from(instant))` → UTC, **millisecond-precision** ISO-8601/RFC-3339 string (same wire format
-  as Date; sub-ms precision is intentionally dropped for consistency). Prefer `Instant` over `java.util.Date`
-  in new code (also clears SonarQube `java:S2143`). Relates to `typed-io-map-or-pojo` (ADR-0003).
-  <!-- id: instant-serialization | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
 
 - **Service mesh is opt-in, not the default.** `cloud.connector=none` is the framework default. The Kafka
   service mesh (`cloud.connector=kafka` + presence-monitor) solves exactly two problems: (1) synchronous
