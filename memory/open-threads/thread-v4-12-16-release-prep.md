@@ -4,4 +4,4 @@
   Lessons: refresh memory footers BEFORE the PR handoff (a push seconds after the PR opened cancelled the Rust workflow's first
   run under its cancel-in-progress group); a Rust test run started right after the Java reactor build failed three timing-sensitive
   tests — environmental, confirmed by a clean re-run, but start it on an idle machine. origin: 2026-09-23-234558.md
-  <!-- id: v4-12-16-release-prep | created: 2026-09-23 | last_used: 2026-09-23 | uses: 1 | tier: active | origin: 2026-09-23-230527 -->
+  <!-- id: v4-12-16-release-prep | created: 2026-09-23 | last_used: 2026-09-23 | uses: 1 | tier: archive-candidate | origin: 2026-09-23-230527 -->

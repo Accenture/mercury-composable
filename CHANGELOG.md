@@ -8,6 +8,70 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.12.18, 9/25/2026
+
+Two field reports answered. A field installation's page of nine graph.math "behaviours that return a wrong answer"
+(measured on 4.12.7) is ruled and closed — four engine changes, the rest documentation or already fixed in 4.12.16 — and
+the field's Snyk scan of the 4.12.17 artifacts is answered with four dependency bumps. Both engines in lock-step (Rust
+4.12.18, Increment 141). Upgrade action: read item 1 — a graph that relied on a boolean computing as 1/0 or on an
+overflowed `Infinity` propagating now fails at that statement with a named message; the dependency bumps need nothing.
+
+### Changed
+
+1. **graph.math: a boolean is never a number; an unknown function, an overflow and a division by zero fail by name
+   (#462).** The evaluator coerced a boolean to 1/0 in arithmetic, in `<`/`>` comparisons and as a function argument
+   while equality type-checked — three outcomes for the same JSON `true`, and in the field a boolean threshold negated
+   into a number produced a large overcharge with no error. Now one uniform rejection, mapped back to the selector that
+   supplied it: `Boolean operand: model.flag (true) in '{model.flag} + 1' - a boolean is not a number; store a boolean
+   with CONDITION or assert the type with f:validate`; a `COMPUTE` whose whole result is a boolean variable is rejected
+   the same way instead of storing 1.0. A misspelled or unsupported function reports its name (`Unknown function: mn`;
+   a callee that is a value, `'PI' is not a function`) instead of the generic "Attempting to call a non-function". Every
+   arithmetic result is checked finite — `Arithmetic overflow in '*' (result Infinity)`, `Division by zero or arithmetic
+   overflow in '/'`, a NaN by name — instead of `Infinity` traveling on to fail a later node as `Unknown identifier:
+   Infinity`. Arithmetic stays IEEE double by design: exact-decimal money (a rounding mode, integer cents) belongs in a
+   small composable function on `graph.task` with `BigDecimal`; the math package does not grow.
+
+   **Upgrade action:** a graph that relied on `true`/`false` computing as 1/0 in a `COMPUTE`, on a boolean `COMPUTE`
+   result storing 1.0, or on an overflowed `Infinity` propagating now fails at that statement with a named message; a
+   graph whose numbers are numbers is unaffected. Assert an untrusted slot's type with `f:validate` at the input, and
+   store decisions with `CONDITION` (item 2).
+
+### Added
+
+2. **`CONDITION: var -> expr` — the declared boolean statement in graph.math (#462).** Evaluated as a boolean whatever
+   operators it carries (`CONDITION: ok -> {model.a} < {model.b}`, `CONDITION: same -> {model.flag}`) and stored as a
+   boolean in the node's `result` namespace; an `IF` may test it directly (`IF: {node.result.ok}`). `COMPUTE` keeps its
+   documented behaviour — an expression with a comparison or boolean operator yields a boolean — now stated in the
+   guide, the command reference, the command JSON and the in-Playground `help graph-math`.
+
+   **Upgrade action:** none; a new statement type, counted by the compile gate like `COMPUTE`.
+
+### Documentation
+
+3. **The rulings that were documentation, not engine (#462).** A `run` on the same Playground instance keeps `model.*` —
+   a `MAPPING` onto `model.x[]` appends to the list the previous run built — and `instantiate graph` (alias `start`) is
+   the reset; a deployed graph gets a fresh instance per request. A taken `IF` inside a `for_each` body ends the whole
+   walk (an `IF` is a traversal jump, not a per-row branch), so per-row rules are arithmetic gates and the `IF` follows
+   the loop. The end node is the terminus: its mappings run last, so the last writer to an `output.*` key wins. The
+   `for_each` rules gain the append/reseed bullet, and the guide's new *Numbers and booleans* paragraph states the
+   numeric model (IEEE double, 2^53, `round` = `Math.round`).
+
+### Build
+
+4. **Dependency bumps for the field's Snyk gate — Jackson 2 BOM 2.22.3, Jackson 3 BOM 3.2.3, Netty 4.2.18.Final,
+   MsgPack 0.9.12 (#463).** The field's scan of the 4.12.17 artifacts reported transitive findings with no upstream
+   remediation path (reactor-netty-http 1.3.7, vertx-core 5.1.6, Confluent 8.3.0 and Avro 1.12.1 have not moved), so the
+   pins are ours. Netty 4.2.18.Final clears two CWE-770 findings on `netty-codec-http` (CVSS 8.7, CVE-2026-93491, and
+   8.2); Jackson 2.22.3 clears CWE-770 CVE-2026-89425 on `jackson-core`, reached through minimalist-kafka's
+   Confluent/Avro path; Jackson 3.2.3 is the current line's patch. MsgPack 0.9.12 is best effort: CWE-674 CVE-2026-90472
+   (medium) has no released fix — OSV lists msgpack-java through 0.9.12 as affected — and Mercury's serializer never
+   calls the library's `unpackValue()`, the vulnerable method. Versions only, 37 poms; the resolved trees verified with
+   `dependency:tree`.
+
+   **Upgrade action:** none — patch releases of the four libraries; an application that pins its own versions of them
+   should move to at least these.
+
+---
 ## Version 4.12.17, 9/24/2026
 
 A field-reported gap in the Kafka building blocks, closed on both engines in lock-step (Rust 4.12.17, Increment 139):

@@ -199,3 +199,4 @@
 - instant-serialization — platform-core serializes `java.time.Instant` as first-class (2026-06-27). Instant had no a… — faded — demoted from core 2026-09-25 by Eric at the invariant walk (an implementation detail, not a decision anyone consults); unreferenced since 2026-06-27 — 2026-Q3.md
 - ot-subgraph-for-each-suspend — completed thread swept at the graph.math rulings session: completion age 21 > archive_window 20 (closed 2026-09-18; the for_each suspend key contract shipped in v4.12.13) — faded — 2026-Q3.md
 - ot-distributed-cache — (feature) Distributed cache module — CLOSED 2026-09-19, shipped in both engines. Java v4.1… — completed thread swept past archive_window — 2026-Q3.md
+- redis-connection-foundation — The Redis client layer is a shared `extensions/redis-connection` foundation (2026-09-14; J… — faded past archive_window at the release seam — 2026-Q3.md
