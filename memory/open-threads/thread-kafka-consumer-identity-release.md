@@ -5,4 +5,4 @@
   entry gained two unreleased increments that way; a lint-clean gate before every memory push (two `[stale-metadata]` slips
   taught it); two timing-sensitive Rust tests flaked on CI and are a recorded test-only follow-up. origin: 2026-09-24-222349.md
   … 2026-09-24-234713.md
-  <!-- id: kafka-consumer-identity-release | created: 2026-09-24 | last_used: 2026-09-24 | uses: 3 | tier: active | origin: 2026-09-24-222349 -->
+  <!-- id: kafka-consumer-identity-release | created: 2026-09-24 | last_used: 2026-09-24 | uses: 3 | tier: archive-candidate | origin: 2026-09-24-222349 -->

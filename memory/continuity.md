@@ -28,7 +28,9 @@
   upstream fix yet). Sweep BUILD FILES ONLY 43 / 98 (unchanged). Readiness 220 suites, 1517 tests, 0 failures, 3 skipped (surefire
   XML; +3 = the #462 tests). **Lockstep:** Rust v4.12.18 the same minute (mercury #331 → merge `568d71b2`, tag → `7d07e9bd`, release
   20:55:02Z; Increment 141 plus the Rust-only 140; crates 12/12 20:58Z); the python/node packs stay at 4.12.15. Main CI was in
-  progress on the tag commit at close. Next: the AI SDLC/MCP backlog ([[bp-agent-orchestration]]) resumes (Eric). Origin
+  progress on the tag commit at close. **Unreleased on main since 2026-09-25:** #465 squash `40ce30a7` — `graph.model.automation` accepts a list of
+  manifests, later wins ([[graph-manifest-list-later-wins]]; Rust #332 `d3d82a3f`, Increment 142) — the 4.12.19 content so far.
+  Next: the AI SDLC/MCP backlog ([[bp-agent-orchestration]]) resumes (Eric). Origin
   2026-09-25-194902.md.
   Prior: v4.12.17 (2026-09-25 00:19:27Z — the field's Kafka gap closed on both engines; #461 squash `e9cde291`, tag → `8a13a02e`; the
   consumer-side Schema Registry identity #458/#460 + the sample #459 ([[kafka-consumer-registry-identity]] — READ before opting in);
@@ -490,7 +492,7 @@
   carries the identity in the template — no serde layer there. **Sample:** the sync-over-async demo's `application.properties` (commented block, both
   variants) and `schema-registry-consumer.properties` next to it — in the application, never the library jar (a same-named
   resource would collide by classpath order). Applies [[clean-knowledge-design-over-engine-coverage]]; relates [[kafka-mesh-opt-in]].
-  <!-- id: kafka-consumer-registry-identity | created: 2026-09-24 | last_used: 2026-09-24 | uses: 3 | tier: active | origin: 2026-09-24-222349 -->
+  <!-- id: kafka-consumer-registry-identity | created: 2026-09-24 | last_used: 2026-09-24 | uses: 3 | tier: archive-candidate | origin: 2026-09-24-222349 -->
 
 - **graph.math is typed and finite: a boolean is never a number, an unknown function and an overflow fail by name, and
   exact-decimal money belongs in a `graph.task` function — the math package stays minimal (Eric's rulings on a field
@@ -512,7 +514,8 @@
   <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-09-25 | uses: 3 | tier: active | origin: 2026-09-25-183540 -->
 
 - **`graph.model.automation` accepts a comma-separated list of manifests, and the later manifest wins (Eric, 2026-09-25;
-  Java `feat/graph-manifest-list`, Rust twin Increment 142; for 4.12.19).** Born at the leadership demo's deploy step: an
+  PR #465 squash `40ce30a7` MERGED 2026-09-25, Rust twin mercury #332 merge `d3d82a3f`, Increment 142; UNRELEASED — ships in
+  4.12.19).** Born at the leadership demo's deploy step: an
   exported graph went live in the running example with `-Dgraph.model.automation=file:/tmp/graph/deploy/graphs.yaml` and no
   rebuild — but the one manifest REPLACED the bundled set, so a prototype delegating through `graph.extension` to a bundled
   graph could not run. Now the `yaml.flow.automation` convention (CompileFlows precedent): each manifest carries its own
@@ -526,7 +529,7 @@
   serving from the jar. Docs: `ai-agent-guide.md#deploy-without-rebuild`, the config reference, the walkthrough; claim
   `graph-manifest-list-later-wins` on both engines; the Rust override is a `-D` program argument
   (`cargo run -p minigraph-playground -- -D…`). Extends ADR-0011 without changing its rule. Relates [[eric-code-changes-via-pr]].
-  <!-- id: graph-manifest-list-later-wins | created: 2026-09-25 | last_used: 2026-09-25 | uses: 1 | tier: working | origin: 2026-09-25-223633 -->
+  <!-- id: graph-manifest-list-later-wins | created: 2026-09-25 | last_used: 2026-09-25 | uses: 2 | tier: active | origin: 2026-09-25-223633 -->
 
 - **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed response is traced
   at its head and its tail, never per token (Eric's rulings on the Dynatrace review of the v4.12.15 certification traces,
