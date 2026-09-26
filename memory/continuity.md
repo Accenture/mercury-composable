@@ -19,19 +19,21 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.18 (2026-09-25 20:56:19Z — **two field reports answered on both engines, lock-step with the Rust
-  port**: release PR #464 squash `1e419a29`, tag `v4.12.18` → `70e00474` (one memory-only commit past the squash), pom verified at
-  the tag; the GitHub release body is the CHANGELOG entry). **Content:** #462 graph.math typed and finite — a boolean is never a
-  number, unknown functions and overflow fail by name, `CONDITION` ([[graph-math-typed-arithmetic]]; READ: a graph that relied on
-  `true` computing as 1/0 or on `Infinity` propagating now fails at that statement) and #463 the field's Snyk bumps (Jackson 2 BOM
-  2.22.3, Jackson 3 BOM 3.2.3, Netty 4.2.18.Final, MsgPack 0.9.12 — the MsgPack one best effort: CVE-2026-90472, medium, no
-  upstream fix yet). Sweep BUILD FILES ONLY 43 / 98 (unchanged). Readiness 220 suites, 1517 tests, 0 failures, 3 skipped (surefire
-  XML; +3 = the #462 tests). **Lockstep:** Rust v4.12.18 the same minute (mercury #331 → merge `568d71b2`, tag → `7d07e9bd`, release
-  20:55:02Z; Increment 141 plus the Rust-only 140; crates 12/12 20:58Z); the python/node packs stay at 4.12.15. Main CI was in
-  progress on the tag commit at close. **Unreleased on main since 2026-09-25:** #465 squash `40ce30a7` — `graph.model.automation` accepts a list of
-  manifests, later wins ([[graph-manifest-list-later-wins]]; Rust #332 `d3d82a3f`, Increment 142) — the 4.12.19 content so far.
-  Next: the AI SDLC/MCP backlog ([[bp-agent-orchestration]]) resumes (Eric). Origin
-  2026-09-25-194902.md.
+- **latest_release:** v4.12.19 (2026-09-25 23:58:19Z — **the rapid-prototyping deploy lane completed on both engines, lock-step with
+  the Rust port**: release PR #466 squash `a261ff18`, tag `v4.12.19` → `35000ef2` (one memory-only commit past the squash), pom
+  verified at the tag; the GitHub release body is the CHANGELOG entry. **Content:** #465 — `graph.model.automation` accepts a
+  comma-separated list of manifests, each with its own `location`, and the later manifest wins ([[graph-manifest-list-later-wins]];
+  READ: a graph id listed in two manifests now resolves to the later one, and its rejection makes the id 404) plus the
+  deploy-without-rebuild recipe (`ai-agent-guide.md#deploy-without-rebuild`). Sweep BUILD FILES ONLY 43 / 98 (unchanged). Readiness
+  220 suites, 1520 tests, 0 failures, 3 skipped (surefire XML; +3 = the #465 gate tests). **Lockstep:** Rust v4.12.19 the same
+  minute (mercury #333 → merge `ff6e269c`, tag → `e659c683`, release 23:59:10Z; Increment 142; crates 12/12 at 4.12.19); the
+  python/node packs stay at 4.12.15. Main CI was in progress on the tag commit at close. Next: the AI SDLC/MCP backlog
+  ([[bp-agent-orchestration]]) resumes (Eric). Origin 2026-09-25-232807.md.
+  Prior: v4.12.18 (2026-09-25 20:56:19Z — two field reports answered on both engines; #464 squash `1e419a29`, tag → `70e00474`;
+  #462 graph.math typed and finite + CONDITION ([[graph-math-typed-arithmetic]] — READ: `true` never computes as 1/0 and `Infinity`
+  never propagates) and #463 the field's Snyk bumps (Jackson 2 BOM 2.22.3, Jackson 3 BOM 3.2.3, Netty 4.2.18.Final, MsgPack 0.9.12
+  best effort — CVE-2026-90472 medium, no upstream fix); 1517 tests; Rust #331 → `568d71b2`, tag → `7d07e9bd`, Increments 140–141;
+  crates 12/12. Origin 2026-09-25-194902.md.)
   Prior: v4.12.17 (2026-09-25 00:19:27Z — the field's Kafka gap closed on both engines; #461 squash `e9cde291`, tag → `8a13a02e`; the
   consumer-side Schema Registry identity #458/#460 + the sample #459 ([[kafka-consumer-registry-identity]] — READ before opting in);
   1514 tests; Rust #328 → `ad957930`, tag → `af9d6f30`, Increments 137–139; the flaky Rust tests hardened after it (mercury #329,
