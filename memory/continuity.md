@@ -27,7 +27,8 @@
   deploy-without-rebuild recipe (`ai-agent-guide.md#deploy-without-rebuild`). Sweep BUILD FILES ONLY 43 / 98 (unchanged). Readiness
   220 suites, 1520 tests, 0 failures, 3 skipped (surefire XML; +3 = the #465 gate tests). **Lockstep:** Rust v4.12.19 the same
   minute (mercury #333 → merge `ff6e269c`, tag → `e659c683`, release 23:59:10Z; Increment 142; crates 12/12 at 4.12.19); the
-  python/node packs stay at 4.12.15. Main CI was in progress on the tag commit at close. Next: the AI SDLC/MCP backlog
+  python/node packs stay at 4.12.15. Main CI green on the tag commit. **FIELD-ACCEPTED 2026-09-25:** the field's CI pipeline
+  passed on v4.12.19, Snyk and Sonar scans clean (Eric). Next: the AI SDLC/MCP backlog
   ([[bp-agent-orchestration]]) resumes (Eric). Origin 2026-09-25-232807.md.
   Prior: v4.12.18 (2026-09-25 20:56:19Z — two field reports answered on both engines; #464 squash `1e419a29`, tag → `70e00474`;
   #462 graph.math typed and finite + CONDITION ([[graph-math-typed-arithmetic]] — READ: `true` never computes as 1/0 and `Infinity`
