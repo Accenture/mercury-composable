@@ -1458,6 +1458,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="graph.math">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#math-dialect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The expression dialect
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2903,6 +2920,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="graph.math">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#math-dialect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The expression dialect
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3181,10 +3215,49 @@ A <code>MAPPING</code> onto <code>model.x[]</code> <strong>appends</strong>; the
 instance, so a walk that accumulates a list reseeds it in the pre-block
 (<code>MAPPING: f:json(text([])) -&gt; model.codes</code>). Full rules + worked example:
 <a href="../command-reference/#math-for-each">for_each</a>.</p>
-<p><strong>Numbers and booleans.</strong> The dialect is a <strong>narrow</strong> JS-like subset — arithmetic, comparison and
-boolean operators, the built-in math functions (<code>min</code>, <code>max</code>, <code>abs</code>, <code>floor</code>, <code>ceil</code>, <code>round</code>,
-<code>sqrt</code>, <code>pow</code>, <code>exp</code>, <code>log</code>, <code>log10</code>, also under <code>Math.</code>), no bitwise operators, no variables. Its
-rules, each enforced by a named failure rather than a silent value:</p>
+<h3 id="math-dialect">The expression dialect<a class="headerlink" href="#math-dialect" title="Permanent link">&para;</a></h3>
+<p>Everything a <code>COMPUTE</code>, <code>CONDITION</code> or <code>IF</code> expression may contain. The engine parses it with its
+own evaluator — a <strong>narrow JS-like subset</strong>, not a JavaScript runtime — so the dialect is a closed
+set. This list is the whole dialect: an operator, function or constant not listed here is rejected
+by name, never silently accepted.</p>
+<ul>
+<li><strong>Literals</strong> — numbers <code>42</code>, <code>3.14</code>, <code>.5</code>, <code>1e-5</code>; strings <code>'text'</code> or <code>"text"</code> (escapes <code>\'</code>,
+  <code>\"</code>, <code>\\</code>, <code>\n</code>, <code>\t</code>); booleans <code>true</code>, <code>false</code>.</li>
+<li><strong>Variables</strong> — <code>{namespace.key}</code> substitutions <strong>only</strong>: <code>{input.body.qty}</code>, <code>{model.total}</code>,
+  <code>{book.price}</code>, <code>{check.result.eligible}</code>. They are resolved into the text before it is parsed: a
+  number or boolean as itself; a text value as a quoted string literal in a boolean context (<code>IF</code>,
+  <code>CONDITION</code>, or a <code>COMPUTE</code> carrying a comparison or boolean operator), so
+  <code>{model.state} == 'CA'</code> compares text. An unresolved selector fails by name <strong>before</strong> evaluation
+  (<code>Unknown identifier: model.threshold (unresolved variable in …)</code>). There is no assignment and no
+  user-defined variable.</li>
+<li><strong>Operators</strong>, tightest-binding first:<ul>
+<li><code>**</code> exponent — right-associative (<code>2 ** 3 ** 2</code> is <code>512</code>); the strict JavaScript rule applies,
+  so a unary operand needs parentheses: <code>-(2 ** 2)</code>, never <code>-2 ** 2</code> (a parse error).</li>
+<li>unary <code>+</code>, <code>-</code>, <code>!</code> — <code>!</code> negates truthiness.</li>
+<li><code>*</code>, <code>/</code>, <code>%</code> — multiply, divide, remainder; a division by zero fails by name.</li>
+<li><code>+</code>, <code>-</code> — add, subtract; <code>+</code> <strong>concatenates</strong> when either side is a string (<code>'id-' + 7</code> is
+  <code>id-7</code>).</li>
+<li><code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code> — two numbers, or two strings compared lexically (ISO-8601 timestamps
+  compare correctly).</li>
+<li><code>==</code>, <code>!=</code> — same type on both sides; <code>'1' == 1</code> fails (<code>Type mismatch for equality</code>).</li>
+<li><code>&amp;&amp;</code>, then <code>||</code> — short-circuit; a number or string operand is truthy the JavaScript way (<code>0</code>
+  and <code>''</code> are false).</li>
+<li><code>test ? a : b</code> — the ternary, lowest precedence; <code>( … )</code> groups.</li>
+</ul>
+</li>
+<li><strong>Functions</strong> — one argument: <code>sin</code>, <code>cos</code>, <code>tan</code>, <code>asin</code>, <code>acos</code>, <code>atan</code>, <code>sqrt</code>, <code>abs</code>,
+  <code>floor</code>, <code>ceil</code>, <code>round</code>, <code>log</code> (natural), <code>log10</code>, <code>exp</code>; two: <code>pow(x, y)</code>; any number:
+  <code>min(a, b, …)</code>, <code>max(a, b, …)</code>; none: <code>random()</code>. Every function is also reachable under <code>Math.</code>
+  (<code>Math.pow(2, 3)</code>). A wrong arity fails by name (<code>Function pow expects 2 args, got 1</code>); an
+  unlisted name fails <code>Unknown function: hypot</code>.</li>
+<li><strong>Constants</strong> — <code>PI</code>, <code>E</code> (also <code>Math.PI</code>, <code>Math.E</code>).</li>
+<li><strong>Not in the dialect</strong> — bitwise and shift operators (<code>&amp;</code>, <code>|</code>, <code>^</code>, <code>~</code>, <code>&lt;&lt;</code>), assignment
+  (<code>=</code>), user identifiers, user-defined functions, arrays, objects, string methods. Each is a parse
+  error or an <code>Unknown identifier</code> / <code>Unknown function</code> failure; anything richer than this list
+  belongs in a <a href="#task"><code>graph.task</code></a> function.</li>
+</ul>
+<p><strong>Numbers and booleans.</strong> The dialect's rules, each enforced by a named failure rather than a silent
+value:</p>
 <ul>
 <li><strong>A boolean is not a number.</strong> A boolean where arithmetic, a <code>&lt;</code>/<code>&gt;</code> comparison or a function
   argument needs a number fails naming the selector (<code>Boolean operand: model.flag (true) in
