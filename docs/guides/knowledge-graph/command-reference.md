@@ -639,9 +639,13 @@ unaffected: the island sinks, so the execution path never enters the knowledge l
 
 > `graph.js` shares this statement model, but its expressions run as **full JavaScript on
 > GraalVM** (slower; capped at 50 instances — prefer `graph.math` unless you need real
-> JavaScript). `graph.math`'s own expression dialect is a narrow JS-like subset —
-> arithmetic/comparison/boolean operators only, **no bitwise ops, no function calls, no
-> variables**; `COMPUTE` yields a double (integers serialize as e.g. `8.0`).
+> JavaScript). `graph.math`'s own expression dialect is a narrow JS-like subset — arithmetic
+> (including `**`), comparison, boolean and ternary operators, **eighteen built-in math functions**
+> (`pow`, `min`, `max`, `abs`, `round`, `sqrt` … also under `Math.`) and the constants `PI` and `E`;
+> **no bitwise operators, no assignment or user variables, no user-defined functions**. The complete
+> catalog — every operator, function and constant the parser accepts — is
+> [the expression dialect](skills-reference.md#math-dialect); `COMPUTE` yields a double
+> (integers serialize as e.g. `8.0`).
 
 A `graph.math` node runs an ordered list of `statement[]` lines. Six statement types:
 

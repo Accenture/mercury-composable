@@ -150,8 +150,34 @@ for the full generic retry handler.
 
 Limitation
 ----------
-This skill is designed to execute a simple inline mathematics or boolean operations that use JavaScript syntax.
-For simplicity and speed of execution, it does not support variables and functions.
+This skill is designed to execute simple inline mathematics or boolean operations that use JavaScript syntax.
+For simplicity and speed of execution, the dialect is a closed set: the operators, built-in functions and
+constants listed under "Operators and functions" below, and nothing else. There is no assignment, no
+user-defined variable or function and no bitwise operator; {variable} substitution is the only variable.
+An unlisted function fails by name ("Unknown function: hypot"), never silently.
+
+Operators and functions
+-----------------------
+The expression dialect accepts exactly the following - an operator, function or constant not listed
+here is rejected by name:
+
+```
+Literals   : numbers (42, 3.14, .5, 1e-5), strings ('text' or "text"), booleans (true, false)
+Variables  : {namespace.key} substitution only - e.g. {input.body.qty}, {model.total}, {book.price};
+             an unresolved selector fails by name before evaluation
+Operators  : **  exponent, right-associative; a unary operand needs parentheses: -(2 ** 2), never -2 ** 2
+             unary + - !          * / % (remainder)          + - (+ concatenates when either side is a string)
+             < <= > >= (two numbers, or two strings compared lexically)
+             == != (same type on both sides)          && || (short-circuit)          test ? a : b          ( )
+Functions  : sin, cos, tan, asin, acos, atan, sqrt, abs, floor, ceil, round, log, log10, exp   (one argument)
+             pow(x, y)          min(a, b, ...)          max(a, b, ...)          random()
+             every function is also available as Math.name, e.g. Math.pow(2, 3)
+Constants  : PI, E (also Math.PI, Math.E)
+Not in the dialect: bitwise and shift operators (& | ^ ~ <<), assignment (=), user-defined variables
+             and functions, arrays, objects, string methods - use a graph.task function instead
+```
+
+Precedence, tightest first: ** > unary > * / % > + - > relational > equality > && > || > ?:
 
 Example
 -------
