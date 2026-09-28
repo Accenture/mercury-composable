@@ -27,7 +27,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Claims-fixture pin for claim id {@code math-expression-dialect}: the graph.math expression
+ * Claims-fixture pin for claim id {@code math-expression-dialect}: the 'graph.math' expression
  * dialect is EXACTLY what the skills reference documents - the operator set, the eighteen
  * built-in functions (each also reachable under the {@code Math} namespace), the two constants
  * {@code PI} and {@code E}, and nothing else. A fresh AI agent generates expressions from that
