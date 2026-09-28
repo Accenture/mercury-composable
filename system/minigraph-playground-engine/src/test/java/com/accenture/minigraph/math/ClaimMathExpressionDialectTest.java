@@ -29,13 +29,14 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Claims-fixture pin for claim id {@code math-expression-dialect}: the graph.math expression
  * dialect is EXACTLY what the skills reference documents - the operator set, the eighteen
- * built-in functions (also reachable under {@code Math.}), the two constants {@code PI} and
- * {@code E}, and nothing else. A fresh AI agent generates expressions from that table alone,
- * so the table and the engine must not drift apart in either direction.
+ * built-in functions (each also reachable under the {@code Math} namespace), the two constants
+ * {@code PI} and {@code E}, and nothing else. A fresh AI agent generates expressions from that
+ * table alone, so the table and the engine must not drift apart in either direction.
  *
  * <p>The set-equality assertion fails when a function or constant is ADDED or REMOVED; the
- * behavioral checks tie each documented operator and arity to the evaluator, and the
- * negative checks pin that the documented "not in the dialect" forms really are rejected.
+ * behavioral checks tie each documented operator and arity to the evaluator, one cohesive group
+ * per test method, and the negative checks pin that the documented "not in the dialect" forms
+ * really are rejected.
  */
 class ClaimMathExpressionDialectTest {
 
@@ -46,6 +47,8 @@ class ClaimMathExpressionDialectTest {
             "min", "max", "pow", "random");
 
     private static final Set<String> CONSTANTS = Set.of("PI", "E");
+
+    private final ExpressionEngine engine = new ExpressionEngine();
 
     @Test
     void theDialectIsExactlyTheDocumentedFunctionsAndConstants() {
@@ -73,9 +76,7 @@ class ClaimMathExpressionDialectTest {
     }
 
     @Test
-    void everyDocumentedFunctionEvaluatesWithItsDocumentedArity() {
-        ExpressionEngine engine = new ExpressionEngine();
-        // one-argument functions
+    void oneArgumentFunctionsEvaluate() {
         assertEquals(0.0, engine.evalNumber("sin(0)"), 1e-12);
         assertEquals(1.0, engine.evalNumber("cos(0)"), 1e-12);
         assertEquals(0.0, engine.evalNumber("tan(0)"), 1e-12);
@@ -88,21 +89,31 @@ class ClaimMathExpressionDialectTest {
         assertEquals(3.0, engine.evalNumber("ceil(2.1)"), 1e-12);
         assertEquals(3.0, engine.evalNumber("round(2.5)"), 1e-12);   // half up toward positive infinity
         assertEquals(-2.0, engine.evalNumber("round(-2.5)"), 1e-12);
-        assertEquals(1.0, engine.evalNumber("log(E)"), 1e-12);
+        assertEquals(1.0, engine.evalNumber("log(E)"), 1e-12);      // natural logarithm
         assertEquals(3.0, engine.evalNumber("log10(1000)"), 1e-12);
         assertEquals(Math.E, engine.evalNumber("exp(1)"), 1e-12);
-        // variadic min/max, two-argument pow, zero-argument random
+    }
+
+    @Test
+    void variadicTwoArgumentAndZeroArgumentFunctionsEvaluate() {
         assertEquals(1.0, engine.evalNumber("min(3, 1, 2)"), 1e-12);
         assertEquals(3.0, engine.evalNumber("max(3, 1, 2)"), 1e-12);
         assertEquals(1024.0, engine.evalNumber("pow(2, 10)"), 1e-12);
         double r = engine.evalNumber("random()");
         assertTrue(r >= 0.0 && r < 1.0, "random() is in [0, 1)");
-        // the constants, bare and under Math.
+    }
+
+    @Test
+    void constantsAndTheMathNamespaceEvaluate() {
         assertEquals(Math.PI, engine.evalNumber("PI"), 0.0);
         assertEquals(Math.E, engine.evalNumber("Math.E"), 0.0);
         assertEquals(8.0, engine.evalNumber("Math.pow(2, 3)"), 1e-12);
         assertEquals(1.0, engine.evalNumber("Math.sin(Math.PI / 2)"), 1e-12);
-        // a wrong arity fails by name, never a silent default
+    }
+
+    @Test
+    void aWrongArityFailsByName() {
+        // never a silent default
         var e1 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("pow(2)"));
         assertTrue(e1.getMessage().contains("pow expects 2 args"), e1.getMessage());
         var e2 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("sqrt(4, 9)"));
@@ -112,8 +123,7 @@ class ClaimMathExpressionDialectTest {
     }
 
     @Test
-    void everyDocumentedOperatorIsAccepted() {
-        ExpressionEngine engine = new ExpressionEngine();
+    void arithmeticOperatorsAreAccepted() {
         // exponent: right-associative, binds tighter than unary minus - the strict JS rule
         assertEquals(512.0, engine.evalNumber("2 ** 3 ** 2"), 1e-12);
         assertEquals(-4.0, engine.evalNumber("-(2 ** 2)"), 1e-12);
@@ -127,6 +137,10 @@ class ClaimMathExpressionDialectTest {
         assertEquals(2.5, engine.evalNumber("10 / 4"), 1e-12);
         // '+' concatenates when either side is a string
         assertEquals("id-7", engine.evaluateValue("'id-' + 7").asString());
+    }
+
+    @Test
+    void comparisonLogicalAndTernaryOperatorsAreAccepted() {
         // relational on numbers and on two strings (lexical - ISO-8601 timestamps compare correctly)
         assertTrue(engine.evalBoolean("1 < 2 && 2 <= 2 && 3 > 2 && 3 >= 3"));
         assertTrue(engine.evalBoolean("'2026-03-02T01:00:01Z' > '2026-03-02T01:00:00Z'"));
@@ -137,7 +151,11 @@ class ClaimMathExpressionDialectTest {
         assertTrue(engine.evalBoolean("!false && (false || true)"));
         assertEquals(1.0, engine.evalNumber("2 > 1 ? 1 : 0"), 0.0);
         assertEquals(0.0, engine.evalNumber("2 < 1 ? 1 : 0"), 0.0);
-        // literals: integer, decimal, leading-dot, exponent, single- and double-quoted strings, booleans
+    }
+
+    @Test
+    void literalsAreAccepted() {
+        // integer, decimal, leading-dot and exponent numbers; single- and double-quoted strings; booleans
         assertEquals(0.5, engine.evalNumber(".5"), 1e-12);
         assertEquals(1230.0, engine.evalNumber("1.23e3"), 1e-12);
         assertEquals("a\"b", engine.evaluateValue("'a\"b'").asString());
@@ -148,7 +166,6 @@ class ClaimMathExpressionDialectTest {
 
     @Test
     void theDocumentedExclusionsAreRejected() {
-        ExpressionEngine engine = new ExpressionEngine();
         // no bitwise or shift operators, no assignment, no user identifiers, no user-defined functions
         for (String expr : new String[] {"1 & 2", "1 | 2", "1 ^ 2", "~1", "1 << 2", "x = 1"}) {
             assertThrows(ParseException.class, () -> engine.evalNumber(expr), expr + " must not parse");
