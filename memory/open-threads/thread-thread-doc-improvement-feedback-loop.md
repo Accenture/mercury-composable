@@ -50,4 +50,13 @@
   fresh question set at a later review (the same set only proves the fixes stuck); keep grading
   cross-page agreement, which is where the re-probe found its five slips. Open queue: (none).
   (origin: this measurement's session log — the 2026-09-21 W2 log)
+  **Gap fired and closed 2026-09-28 (PR #467, Eric's direction after a live demo):** the graph.math
+  expression dialect had no complete catalog — the grammar page said "no function calls" while the
+  skills reference listed a partial function set, and no page named the `**` operator — so the agent
+  read `Evaluator.java` to build `a + b ** 2`. Closed on every surface a fresh agent reads
+  (`skills-reference.md#math-dialect` closed-set list; the grammar summary; the in-band
+  `help graph-math`; an `expression_dialect` object in `minigraph-commands.json`) and GATED: claim
+  `math-expression-dialect` + `ClaimMathExpressionDialectTest` (set-equality on the evaluator's
+  function/constant registry). Lesson: a dialect is a closed set — document it as one and pin the set,
+  or every agent re-derives it from source. Rust twin pending. (origin: 2026-09-28-230310)
   <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-09-21 | uses: 5 | tier: working | origin: 2026-09-01-032130 -->
