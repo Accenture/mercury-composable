@@ -50,7 +50,7 @@
   fresh question set at a later review (the same set only proves the fixes stuck); keep grading
   cross-page agreement, which is where the re-probe found its five slips. Open queue: (none).
   (origin: this measurement's session log — the 2026-09-21 W2 log)
-  **Gap fired and closed 2026-09-28 (PR #467, Eric's direction after a live demo):** the graph.math
+  **Gap fired and closed 2026-09-28 (PR #467, squash `8caa3acf`, MERGED 2026-09-28 — Eric's direction after a live demo):** the graph.math
   expression dialect had no complete catalog — the grammar page said "no function calls" while the
   skills reference listed a partial function set, and no page named the `**` operator — so the agent
   read `Evaluator.java` to build `a + b ** 2`. Closed on every surface a fresh agent reads
