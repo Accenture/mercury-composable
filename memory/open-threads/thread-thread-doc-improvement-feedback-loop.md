@@ -58,5 +58,6 @@
   `help graph-math`; an `expression_dialect` object in `minigraph-commands.json`) and GATED: claim
   `math-expression-dialect` + `ClaimMathExpressionDialectTest` (set-equality on the evaluator's
   function/constant registry). Lesson: a dialect is a closed set — document it as one and pin the set,
-  or every agent re-derives it from source. Rust twin pending. (origin: 2026-09-28-230310)
-  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-09-21 | uses: 5 | tier: working | origin: 2026-09-01-032130 -->
+  or every agent re-derives it from source. Rust twin MERGED the same day (mercury #334, merge `41a7f418`,
+  Increment 143). (origin: 2026-09-28-230310)
+  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-09-28 | uses: 6 | tier: working | origin: 2026-09-01-032130 -->

@@ -53,17 +53,19 @@
   Berkeley DB store retired, ADR-0024, #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-25 | through 2026-09-25-014100.md (ON COMMAND, Eric, after the v4.12.17 cycle — window 0 sessions since the
-  234713 advisory sweep; archived 0 (oldest archive-candidates at 18 of `archive_window` 20), swept 0 (six closed threads at
-  completion ages 0–18, 56 narrative lines ≤ 150), reactivated 0, tier changes 0; invariant re-verify DUE at 40 — thread
-  raised (see `last_invariant_check`); no stalled thread (`thread_stale_window` 40; the two unchecked threads at 14 and < 5);
-  condensed four long shipped decisions (`static-decision-table-is-graph-data`, `minigraph-dev-mode-app-shape`,
-  `otel-optional-service-and-negative-control`, `connected-edge-spans` — every rule, READ note, footer and link kept) and the
-  release priors; two stale statements corrected (the Rust hardening follow-up is done — mercury #329; the consumer-identity
-  fact carries its merge refs and its release). Lines 851 → 802, facts 52 (+1 gate thread).)
-  Prior: 2026-09-24 | through 2026-09-24-234713.md (advisory sweep at the v4.12.17 seam — archived 2 overdue conventions whose rules
-  shipped upstream; facts 34 → 32) · 2026-09-23 | through 2026-09-23-230527.md (CADENCE + SIZE — archived 6, swept 5; facts 40 → 34) ·
-  2026-09-23 | 2026-09-23-014650.md (size; lines 1032 → 1000) · 2026-09-22 | 2026-09-21-233928.md (size; swept 2).
+- **last_review:** 2026-09-28 | through 2026-09-28-230310.md (CADENCE, on Eric's command — 10 sessions since the 2026-09-25 review;
+  `refresh-metadata` refreshed 6 footers: tier changes 3 (`playground-session-broker` and `conv-squash-title-prefill-check`
+  archive-candidate → active on this session's references; `reverify-invariants-20260925` active → archive-candidate at completion
+  age 9); archived 0 (no fact past `archive_window` 20), swept 0 (four closed threads at completion ages
+  11/9/19/14, closed narrative ≤ 150), reactivated 0, superseded 0, archive-verify pass;
+  invariants not due (9 of 40 since 2026-09-25-022841); no stalled thread; contradiction scan: two stale statements corrected
+  (`graph-manifest-list-later-wins` "UNRELEASED — ships in 4.12.19" → SHIPPED in v4.12.19; the doc-improvement thread's "Rust twin
+  pending" → merged as mercury #334). Facts 46 incl. threads. Smoke test not run this time.)
+  Prior: 2026-09-25 | through 2026-09-25-014100.md (ON COMMAND, Eric, after the v4.12.17 cycle — archived 0, swept 0, reactivated 0,
+  tier changes 0; the invariant re-verify thread raised, then completed 2026-09-25-022841; four long shipped decisions condensed and
+  two stale statements corrected; lines 851 → 802, facts 52) · 2026-09-24 | through 2026-09-24-234713.md (advisory sweep at the
+  v4.12.17 seam — archived 2 overdue conventions; facts 34 → 32) · 2026-09-23 | through 2026-09-23-230527.md (CADENCE + SIZE — archived
+  6, swept 5; facts 40 → 34) · 2026-09-23 | 2026-09-23-014650.md (size; lines 1032 → 1000) · 2026-09-22 | 2026-09-21-233928.md (size; swept 2).
 - **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**: Track 1 *knowledge graph as
   application* (deterministic — rules, business logic, outcome; L3 leverages L2 + L1) and Track 2 *knowledge graph as AI SDLC*
   (governed AI processing for ambiguity a deterministic program cannot handle; L3 is the foundation and **AI is also the
@@ -337,7 +339,7 @@
   Rust repo — both engines share the WS handshake. Dev-only, like the Playground itself.
   Reactivated 2026-09-14: now ALSO shipped in `templates/starter-graph` (both repos), and the AI
   docs are broker-first with the keep-alive failure mode named (mercury-composable#383, mercury#276).
-  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-23 | uses: 11 | tier: archive-candidate | origin: 2026-09-03-172753 -->
+  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-28 | uses: 12 | tier: active | origin: 2026-09-03-172753 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -514,11 +516,11 @@
   graph that relied on `true` computing as 1 or on a propagating `Infinity` now fails at that statement. Two of the nine
   were already closed in 4.12.16 (#456). Applies [[clean-knowledge-design-over-engine-coverage]]; extends
   [[static-decision-table-is-graph-data]] and [[minigraph-guarded-async-completion]].
-  <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-09-25 | uses: 3 | tier: active | origin: 2026-09-25-183540 -->
+  <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-09-28 | uses: 4 | tier: active | origin: 2026-09-25-183540 -->
 
 - **`graph.model.automation` accepts a comma-separated list of manifests, and the later manifest wins (Eric, 2026-09-25;
-  PR #465 squash `40ce30a7` MERGED 2026-09-25, Rust twin mercury #332 merge `d3d82a3f`, Increment 142; UNRELEASED — ships in
-  4.12.19).** Born at the leadership demo's deploy step: an
+  PR #465 squash `40ce30a7` MERGED 2026-09-25, Rust twin mercury #332 merge `d3d82a3f`, Increment 142; SHIPPED in
+  v4.12.19 on both engines).** Born at the leadership demo's deploy step: an
   exported graph went live in the running example with `-Dgraph.model.automation=file:/tmp/graph/deploy/graphs.yaml` and no
   rebuild — but the one manifest REPLACED the bundled set, so a prototype delegating through `graph.extension` to a bundled
   graph could not run. Now the `yaml.flow.automation` convention (CompileFlows precedent): each manifest carries its own
@@ -571,7 +573,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-24 | uses: 53 | tier: archive-candidate | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-28 | uses: 54 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -591,7 +593,7 @@
   PR). Both errors came from writing out of recollection of my own work instead of out of the
   repository. Corrected in both places via PR #411. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-25 | uses: 14 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-28 | uses: 15 | tier: active | origin: 2026-09-17-183008 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing

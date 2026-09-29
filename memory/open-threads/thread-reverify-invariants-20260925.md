@@ -6,4 +6,4 @@
   `RFC.md` packaged with `ADR.md`, tonight's four PRs and five direct memory commits for the two preferences. Lesson: a
   demotion is a human call the arithmetic then completes — an unreferenced core fact archives the moment it stops being
   core. origin: 2026-09-25-014100.md (raised) · 2026-09-25-022841.md (walked)
-  <!-- id: reverify-invariants-20260925 | created: 2026-09-25 | last_used: 2026-09-25 | uses: 2 | tier: active | origin: 2026-09-25-014100 -->
+  <!-- id: reverify-invariants-20260925 | created: 2026-09-25 | last_used: 2026-09-25 | uses: 2 | tier: archive-candidate | origin: 2026-09-25-014100 -->
