@@ -60,10 +60,11 @@
   11/9/19/14, closed narrative ≤ 150), reactivated 0, superseded 0, archive-verify pass;
   invariants not due (9 of 40 since 2026-09-25-022841); no stalled thread; contradiction scan: two stale statements corrected
   (`graph-manifest-list-later-wins` "UNRELEASED — ships in 4.12.19" → SHIPPED in v4.12.19; the doc-improvement thread's "Rust twin
-  pending" → merged as mercury #334). Facts 46 incl. threads. Smoke test not run this time.)
-  Prior: 2026-09-25 | through 2026-09-25-014100.md (ON COMMAND, Eric, after the v4.12.17 cycle — archived 0, swept 0, reactivated 0,
-  tier changes 0; the invariant re-verify thread raised, then completed 2026-09-25-022841; four long shipped decisions condensed and
-  two stale statements corrected; lines 851 → 802, facts 52) · 2026-09-24 | through 2026-09-24-234713.md (advisory sweep at the
+  pending" → merged as mercury #334). Facts 46 (memory-lint live count, continuity + threads). Smoke test run the same day: 12/12, read set gained `vision.md`.)
+  Prior: 2026-09-25 | through 2026-09-25-014100.md (ON COMMAND, Eric, after the v4.12.17 cycle — the sweep archived 0, swept 0,
+  reactivated 0, tier changes 0; the invariant re-verify thread raised, then completed 2026-09-25-022841, where `instant-serialization`
+  was demoted from core and archived as faded; four long shipped decisions condensed and two stale statements corrected; lines 851 → 802,
+  facts 52 by that review's count) · 2026-09-24 | through 2026-09-24-234713.md (advisory sweep at the
   v4.12.17 seam — archived 2 overdue conventions; facts 34 → 32) · 2026-09-23 | through 2026-09-23-230527.md (CADENCE + SIZE — archived
   6, swept 5; facts 40 → 34) · 2026-09-23 | 2026-09-23-014650.md (size; lines 1032 → 1000) · 2026-09-22 | 2026-09-21-233928.md (size; swept 2).
 - **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**: Track 1 *knowledge graph as
