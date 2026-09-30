@@ -516,7 +516,9 @@
   arithmetic gates); the end node is the terminus (last writer wins); `BigDecimal` is never added to the dialect. **READ:** a
   graph that relied on `true` computing as 1 or on a propagating `Infinity` now fails at that statement. Two of the nine
   were already closed in 4.12.16 (#456). Applies [[clean-knowledge-design-over-engine-coverage]]; extends
-  [[static-decision-table-is-graph-data]] and [[minigraph-guarded-async-completion]].
+  [[static-decision-table-is-graph-data]] and [[minigraph-guarded-async-completion]]. **Partly superseded 2026-09-30 by
+  [[decimal-statement-exact-arithmetic]]:** the "exact-decimal money belongs in a `graph.task` function, `BigDecimal` is never
+  added to the dialect" ruling no longer holds — `DECIMAL:` is that statement; the typed/finite `COMPUTE` rules stand.
   <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-09-28 | uses: 4 | tier: active | origin: 2026-09-25-183540 -->
 
 - **`graph.model.automation` accepts a comma-separated list of manifests, and the later manifest wins (Eric, 2026-09-25;
@@ -536,6 +538,22 @@
   `graph-manifest-list-later-wins` on both engines; the Rust override is a `-D` program argument
   (`cargo run -p minigraph-playground -- -D…`). Extends ADR-0011 without changing its rule. Relates [[eric-code-changes-via-pr]].
   <!-- id: graph-manifest-list-later-wins | created: 2026-09-25 | last_used: 2026-09-25 | uses: 3 | tier: active | origin: 2026-09-25-223633 -->
+
+- **Exact decimal arithmetic is a `DECIMAL:` statement in `graph.math` — the high-precision `COMPUTE:`, strings at rest, no graph-level
+  mode (Eric's rulings, 2026-09-30; RFC-0001 promoted to ADR-0025 in PR #473; implemented in PR #471, squash `3b4cad82`; UNRELEASED,
+  in the CHANGELOG `## Unreleased`).** `DECIMAL: var -> expr` evaluates in `BigDecimal` and stores a canonical string at
+  `{node}.result.{var}` (plain notation, computed scale kept, a zero of any scale `"0"`), because the state machine does not keep
+  Java types across `graph.suspend`/`graph.resume` or any event hop. `/` is exact when it terminates, else 34 digits HALF_EVEN;
+  `round(x, scale, mode)` always names its mode; `sqrt`, `log`, trigonometry, `random()`, `PI`, `E` and a boolean result fail by
+  name. `COMPUTE:` keeps its meaning and no `CompileGraph` check exists. **Two changes reach existing graphs (READ at release):**
+  numeric strings compare as numbers in `== != < <= > >=` everywhere (PR #471, Eric: it removes a recurring developer error), and
+  the dialect `round` is half up away from zero, like `f:round` (PR #472: `round(-2.5)` is `-3`). A `Double` operand converts
+  through its shortest decimal text, lenient and DECLARED in the guide (send money as strings). Parity rides 151 shared vectors
+  run in every engine. **Supersedes the decimal half of [[graph-math-typed-arithmetic]]** ("exact-decimal money belongs in a
+  `graph.task` function; `BigDecimal` never enters the dialect"); the rest of that ruling stands. **Method note:** RFC first,
+  implement on one branch, promote to ADR only after review and green CI — the ledger recorded a decision, never a proposal
+  ([[conv-proposals-not-in-adr-ledger]]). Open: the `f:decimal.*` plugins and the Rust twin ([[decimal-mode]]). (ADR-0025)
+  <!-- id: decimal-statement-exact-arithmetic | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: working | origin: 2026-09-30-221603 -->
 
 - **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed response is traced
   at its head and its tail, never per token (Eric's rulings on the Dynatrace review of the v4.12.15 certification traces,

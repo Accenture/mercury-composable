@@ -1,4 +1,4 @@
-- [ ] **Exact decimal arithmetic: a `DECIMAL:` statement for `graph.math` and an explicit plugin family (RFC-0001, Open; the
+- [ ] **Exact decimal arithmetic: a `DECIMAL:` statement for `graph.math` and an explicit plugin family (RFC-0001, Promoted → ADR-0025; the
   thread id stays `decimal-mode`).** A field installation needs money and rate math that is exact, reproducible across runs
   and engines, and readable and certifiable on the graph. RFC-0001 (`docs/arch-decisions/RFC.md`, merged in PR #470 as
   `dd889bd5`, revised in PR #471) proposes a `DECIMAL:` statement, the high-precision `COMPUTE:`: a parallel `BigDecimal`
@@ -22,13 +22,14 @@
   arithmetic and over keeping the switch, since the switch carried the result type and the guarantee that conversion cannot.
   (8) a `Double` is accepted through its shortest decimal text at its minimal scale, which makes it lenient; Eric chose to
   support that and to declare in the documentation that a double already computed in floating point is only as exact as that
-  computation, so sending money as strings is a conscious user decision. **State:** the RFC and the Java implementation share
-  one branch and one PR, `feature/decimal-mode` (PR #471, draft until reviewed): the `DECIMAL:` statement, the decimal
-  evaluator and the numeric-string comparison rule are implemented and tested (commits `3ab12eb3` and `3a16736b`: 170 module
-  tests, 151 shared vectors, docs and three claims); no ADR, no `(blueprint)` gap. **Next:** review and tests of PR #471,
-  then Eric decides promotion; on Promoted, write the ADR, supersede the decimal part of [[graph-math-typed-arithmetic]], and
-  open the plugin and Rust-twin work; on Withdrawn, record the reason in the RFC entry and close this thread. The `round`
-  side fix can ship on its own if Eric wants it sooner. Applies [[conv-proposals-not-in-adr-ledger]].
+  computation, so sending money as strings is a conscious user decision. **State (2026-09-30):** Java `graph.math` DELIVERED — PR #471 (squash `3b4cad82`, the `DECIMAL:` statement, the decimal
+  evaluator, the numeric-string comparison rule, 151 vectors, docs, three claims) and PR #472 (the `round` half-up alignment);
+  both UNRELEASED, in the CHANGELOG `## Unreleased`. RFC-0001 promoted by Eric to ADR-0025 (PR #473), the decimal half of
+  [[graph-math-typed-arithmetic]] superseded by [[decimal-statement-exact-arithmetic]]. **Remaining:** (1) the `f:decimal.*`
+  plugin family (its own PR against the shared vectors); (2) the Rust twin — `DECIMAL:`, the comparison rule and `round`
+  half-up (`bigdecimal` the candidate; verify rounding modes and result scales against the vectors); (3) the `f:round`
+  plugin test pinning `-2.5` → `-3`; (4) the canonical string form for `mercury-go`, `mercury-python`, `mercury-nodejs`;
+  (5) which release carries each step. Close this thread when (1) and (2) land. Applies [[conv-proposals-not-in-adr-ledger]].
   → proposal: RFC-0001
   → serves: vision-mercury-composable
   <!-- id: decimal-mode | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: working -->
