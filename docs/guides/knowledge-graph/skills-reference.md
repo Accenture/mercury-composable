@@ -210,9 +210,16 @@ statement[]=DECIMAL: total -> {input.body.qty} * {price.result.rounded}
   restored by [`graph.resume`](#resume), and every event hop serializes it; a string is the same after as
   before, where a `BigDecimal` would come back a string and a small `Long` an `Integer`. It is a JSON
   string in the response too, so no parser turns it into a double.
-- **Decimals travel as strings.** Send `"100.25"`, not `100.25`: a JSON number arrives as a double, and a
-  `DECIMAL` statement **rejects a double by name** (`Inexact number: input.body.rate (0.0375) …`), which
-  also catches the result of a `COMPUTE`. Whole numbers are exact, and so is a string that spells a number.
+- **Numbers or strings: a conscious decision.** A decimal may arrive as a string (`"0.0375"`) or as a JSON
+  number (`0.0375`), and both give the same answer. A JSON number is a double, and `DECIMAL` converts it through the shortest decimal text it prints as, at its minimal scale
+  (`5.0E-4` becomes `0.0005`, `100.0` becomes `100`). That is exact over the text it received, **but a
+  double that was already computed in floating point is only as exact as that computation**:
+  `COMPUTE: 1.005 * 100` is `100.49999999999999`, and rounding that in a `DECIMAL` statement gives `100`
+  where the exact `100.5` gives `101`; and a JSON number longer than a double holds (about 15 to 17 digits)
+  was rounded by the parser before any statement ran. So **send money as strings**, keep a `COMPUTE`
+  result out of a `DECIMAL` statement, and use a number only for a value you trust to be a typed decimal,
+  such as a rate in a request. To insist on strings, assert the type:
+  `f:validate(input.body.rate, text(rate; String; required))`. Whole numbers are exact either way.
 - **Arithmetic.** `+ - *` are exact (a sum keeps the larger scale, a product adds the scales); `/` never
   truncates — the exact quotient when it terminates, otherwise 34 significant digits rounded half-even;
   `%` is the remainder; `**` and `pow(x, n)` take a whole-number exponent from -999 to 999. `abs`, `floor`,
@@ -227,8 +234,8 @@ statement[]=DECIMAL: total -> {input.body.qty} * {price.result.rounded}
 - **Comparing decimals in `IF` and `CONDITION`** needs nothing special: a string that is a canonical number
   compares as a number, so `IF: {price.result.rounded} > 100` and `IF: {price.result.rounded} > '99.5'`
   both compare numbers (see [the dialect](#math-dialect)).
-- **`COMPUTE` on a decimal string computes in binary floating point**, exactly as it does today. Nothing
-  stops you; use `DECIMAL` for money.
+- **`COMPUTE` on a decimal string computes in binary floating point**, exactly as it does today, and a
+  `COMPUTE` result is a double. Nothing stops you; use `DECIMAL` for money.
 
 ## graph.js {#js}
 

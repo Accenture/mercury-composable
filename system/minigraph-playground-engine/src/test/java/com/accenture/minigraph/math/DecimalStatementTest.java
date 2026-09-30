@@ -41,7 +41,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * The DECIMAL statement end to end (RFC-0001): the high-precision COMPUTE. Decimal strings and whole numbers
- * go in, canonical decimal strings come out, a double is rejected by name, and COMPUTE keeps its meaning.
+ * go in, canonical decimal strings come out, a JSON number is accepted through its shortest decimal text, and
+ * COMPUTE keeps its meaning.
  */
 class DecimalStatementTest {
     private static final Logger log = LoggerFactory.getLogger(DecimalStatementTest.class);
@@ -97,15 +98,32 @@ class DecimalStatementTest {
         assertEquals(6.0, ((Number) body.getElement("doubled")).doubleValue(), 0.0);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
-    void aDoubleIsRejectedByName() throws TimeoutException {
-        // a JSON number arrives as a double: the decimal must travel as the string "0.0375"
+    void aJsonNumberIsAcceptedThroughItsShortestDecimalText() throws TimeoutException {
+        // a JSON number arrives as a double; DECIMAL converts it through the shortest decimal text it prints as,
+        // so 0.0375 is 0.0375 - the lenient choice the guide declares
         var response = runGraph(Map.of("amount", "100.25", "rate", 0.0375, "qty", 3));
-        assertNotEquals(200, response.getStatus(), "a double must not silently drop the statement to floating point");
-        var text = String.valueOf(response.getBody());
-        assertTrue(text.contains("Inexact number"), text);
-        assertTrue(text.contains("input.body.rate"), text);
-        log.info("a double was rejected: {}", text);
+        assertEquals(200, response.getStatus());
+        var body = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals("3.759375", body.getElement("fee"));
+        assertEquals("11.28", body.getElement("total"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void aNumberAndTheSameDecimalAsAStringGiveTheSameAnswer() throws TimeoutException {
+        // 0.0005 prints as 5.0E-4, which would parse as 0.00050 - a spurious trailing zero the conversion removes
+        var asString = runGraph(Map.of("amount", "1000", "rate", "0.0005", "qty", 1));
+        var asNumber = runGraph(Map.of("amount", "1000", "rate", 0.0005, "qty", 1));
+        assertEquals(200, asString.getStatus());
+        assertEquals(200, asNumber.getStatus());
+        var expected = new MultiLevelMap((Map<String, Object>) asString.getBody());
+        var actual = new MultiLevelMap((Map<String, Object>) asNumber.getBody());
+        assertEquals("0.5000", expected.getElement("fee"));
+        for (var key : new String[]{"fee", "rounded", "total", "zero", "size"}) {
+            assertEquals(expected.getElement(key), actual.getElement(key), key);
+        }
     }
 
     @Test

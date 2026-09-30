@@ -196,10 +196,12 @@ public class GraphMath extends GraphLambdaFunction {
      * which is what survives graph.suspend, graph.resume and every event hop (a BigDecimal would come back
      * a String). COMPUTE keeps its meaning, so a graph that never says DECIMAL is unchanged.
      * <p>
-     * The statement computes a number, so its variables always render in the arithmetic (unquoted) form,
-     * and a Double or Float value is rejected by name: once a value is text the Java type is gone, so the
-     * values are checked here, before they are rendered. A number sent as a JSON number, or the result of
-     * a COMPUTE, is a double; a decimal travels as a string such as "10.50".
+     * The statement computes a number, so its variables always render in the arithmetic (unquoted) form.
+     * A Double or Float value is accepted through the shortest decimal text it prints as, at its minimal scale:
+     * once a value is text its Java type is gone, so the conversion happens here, before the values are
+     * rendered (5.0E-4 renders 0.0005, not the 0.00050 its own text would parse as). That is exact over the
+     * text received and only as exact as the computation that produced the double - the guide declares it,
+     * so sending a number instead of a string is a conscious decision.
      *
      * @param command the statement after the tag
      * @param nodeName the node's alias
@@ -215,8 +217,7 @@ public class GraphMath extends GraphLambdaFunction {
             }
             var stateMachine = graphInstance.stateMachine;
             assertVariablesResolved(rhs, stateMachine);
-            rejectInexactNumbers(rhs, stateMachine);
-            var text = substituteVarIfAny(rhs, stateMachine, false);
+            var text = substituteVarIfAny(renderInexactNumbers(rhs, stateMachine), stateMachine, false);
             final String result;
             try {
                 result = DecimalEvaluator.evaluate(text);
@@ -229,19 +230,21 @@ public class GraphMath extends GraphLambdaFunction {
         }
     }
 
-    private void rejectInexactNumbers(String expression, MultiLevelMap stateMachine) {
-        var culprits = new ArrayList<String>();
+    private String renderInexactNumbers(String expression, MultiLevelMap stateMachine) {
+        var result = expression;
         for (var key : selectorsIn(expression)) {
             var value = helper.getLhsOrConstant(key, stateMachine);
             if (value instanceof Double || value instanceof Float) {
-                culprits.add(key + " (" + value + ")");
+                final String plain;
+                try {
+                    plain = DecimalEvaluator.plainText((Number) value);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException(e.getMessage() + ": " + key + " in '" + expression + "'");
+                }
+                result = result.replace("{" + key + "}", plain);
             }
         }
-        if (!culprits.isEmpty()) {
-            throw new IllegalArgumentException("Inexact number: " + String.join(" or ", culprits) +
-                    " in '" + expression + "' - a DECIMAL statement does not take a double; send the value as a" +
-                    " string such as \"10.50\", or compute it with DECIMAL");
-        }
+        return result;
     }
 
     /**

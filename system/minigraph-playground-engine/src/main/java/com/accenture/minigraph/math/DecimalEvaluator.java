@@ -25,6 +25,10 @@ import java.util.Set;
  * </ul>
  * A result is a canonical string: plain notation, never scientific, the computed scale kept, and a zero of
  * any scale written "0".
+ * <p>
+ * A double is accepted, through {@link #plainText(Number)}: the shortest decimal text it prints as. That is
+ * exact over the text it received, and only as exact as the computation that produced it - which the guide
+ * declares, so sending a number instead of a string is a conscious decision.
  */
 public final class DecimalEvaluator {
     // the exponent of ** and pow() is bounded so an expression cannot exhaust memory
@@ -88,6 +92,27 @@ public final class DecimalEvaluator {
      */
     public static String canonical(BigDecimal value) {
         return value.signum() == 0? "0" : normalize(value).toPlainString();
+    }
+
+    /**
+     * The decimal text of a Double or Float: the shortest text the number prints as, at its minimal scale and in
+     * plain notation, so 5.0E-4 is 0.0005 (not 0.00050) and 100.0 is 100. A double carries no scale, so a number
+     * and the same decimal written as a string give the same answer. The text is exact over what the number
+     * printed as, and a double that was already computed in floating point is only as exact as that computation.
+     *
+     * @param value a Double or Float
+     * @return its plain decimal text
+     * @throws IllegalArgumentException for NaN and Infinity
+     */
+    public static String plainText(Number value) {
+        final BigDecimal decimal;
+        try {
+            decimal = value instanceof Float f? new BigDecimal(Float.toString(f))
+                    : BigDecimal.valueOf(value.doubleValue());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Not a finite number: " + value);
+        }
+        return normalize(decimal.stripTrailingZeros()).toPlainString();
     }
 
     /**

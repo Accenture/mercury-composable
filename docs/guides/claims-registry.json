@@ -179,7 +179,7 @@
     },
     {
       "id": "math-decimal-statement",
-      "claim": "A graph.math DECIMAL statement is the high-precision COMPUTE: the expression is evaluated with exact decimal arithmetic and the result is stored as a canonical decimal string (plain notation, the computed scale kept, a zero of any scale written \"0\"); a Double or Float value is rejected by name; rounding is always explicit, round(x, scale, mode); sqrt, log, log10, exp, trigonometry, random() and the constants PI and E are refused by name; COMPUTE is unchanged.",
+      "claim": "A graph.math DECIMAL statement is the high-precision COMPUTE: the expression is evaluated with exact decimal arithmetic and the result is stored as a canonical decimal string (plain notation, the computed scale kept, a zero of any scale written \"0\"); a Double or Float value is converted through its shortest decimal text at its minimal scale (exact over that text, and only as exact as the computation that produced it); rounding is always explicit, round(x, scale, mode); sqrt, log, log10, exp, trigonometry, random() and the constants PI and E are refused by name; COMPUTE is unchanged.",
       "pages": [
         "docs/guides/knowledge-graph/skills-reference.md"
       ],
@@ -195,6 +195,16 @@
       ],
       "quote": "A string that is a canonical number compares as a number",
       "test": "system/minigraph-playground-engine::NumericStringComparisonTest#theThreeSpellingsOfOneComparisonAreTheSame",
+      "since": "4.12.20+"
+    },
+    {
+      "id": "math-decimal-number-inputs",
+      "claim": "In a graph.math DECIMAL statement a JSON number (a Double or Float) is accepted and converted through the shortest decimal text it prints as, at its minimal scale and in plain notation (5.0E-4 is 0.0005, 100.0 is 100), so a number and the same decimal written as a string give the same answer; it is exact over that text and only as exact as the computation that produced the number, which the guide declares so that sending numbers instead of strings is a conscious decision.",
+      "pages": [
+        "docs/guides/knowledge-graph/skills-reference.md"
+      ],
+      "quote": "A JSON number is a double, and `DECIMAL` converts it through the shortest decimal text it prints as, at its minimal scale",
+      "test": "system/minigraph-playground-engine::DecimalStatementTest#aNumberAndTheSameDecimalAsAStringGiveTheSameAnswer",
       "since": "4.12.20+"
     }
   ]

@@ -205,11 +205,16 @@ statement[]=DECIMAL: fee -> {input.body.amount} * {input.body.rate}
 statement[]=DECIMAL: rounded -> round({price.result.fee}, 2, HALF_UP)
 ```
 
-Decimals travel as strings: send "100.25", not 100.25. A JSON number arrives as a double, and a DECIMAL
-statement rejects a double by name ("Inexact number: input.body.rate (0.0375) ..."), which also catches
-the result of a COMPUTE. Whole numbers and strings that spell a number are exact. The result is a string
-on purpose: graph.suspend saves the state machine and graph.resume restores it, and a string is the same
-after as before.
+Numbers or strings - a conscious decision: a decimal may arrive as a string ("0.0375") or as a JSON number
+(0.0375), and both give the same answer. A JSON number is a double, and DECIMAL converts it through the
+shortest decimal text it prints as, at its minimal scale (5.0E-4 becomes 0.0005, 100.0 becomes 100). That is
+exact over the text received, but a double that was already computed in floating point is only as exact as
+that computation: COMPUTE: 1.005 * 100 is 100.49999999999999, and rounding that in a DECIMAL statement gives
+100 where the exact 100.5 gives 101; and a JSON number longer than a double holds was rounded by the parser.
+So send money as strings and keep a COMPUTE result out of a DECIMAL statement; to insist on strings, assert
+the type: f:validate(input.body.rate, text(rate; String; required)). Whole numbers are exact either way.
+The result is a string on purpose: graph.suspend saves the state machine and graph.resume restores it, and a
+string is the same after as before.
 
 Arithmetic: + - * are exact; / never truncates (the exact quotient when it terminates, otherwise 34
 significant digits, half-even); % is the remainder; ** and pow(x, n) take a whole exponent from -999 to 999;
