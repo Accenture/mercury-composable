@@ -1,6 +1,6 @@
 - [ ] **Canonical MsgPack packager: sorted-key maps and a manifest as one deterministic byte array, integrity external and
   optional (RFC-0002, Open).** A field installation must promote a set of related documents (graphs first) as one artifact with a
-  stable identity. RFC-0002 (`docs/arch-decisions/RFC.md`, on PR #470 until merged) proposes a packager beside `MsgPack` in
+  stable identity. RFC-0002 (`docs/arch-decisions/RFC.md`, merged in PR #470 as `dd889bd5`) proposes a packager beside `MsgPack` in
   platform-core and its Rust twin: map keys sorted recursively in UTF-8 byte order; a canonical MsgPack profile (smallest
   integers, finite float64 only, shortest str/bin headers, exact numbers as strings per RFC-0001, nulls kept as nil, no extension
   types); multiple maps saved in sorted filename order under `{manifest, maps}`, the `manifest` a metadata map (`format`,

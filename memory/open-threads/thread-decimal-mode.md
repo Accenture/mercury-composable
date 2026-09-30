@@ -1,6 +1,6 @@
 - [ ] **Decimal mode: exact decimal arithmetic for `graph.math` and the arithmetic plugins (RFC-0001, Open).** A field
   installation needs money and rate math that is exact, reproducible across runs and engines, and readable and certifiable on the
-  graph. RFC-0001 (`docs/arch-decisions/RFC.md`, on PR #470 until merged) proposes an opt-in decimal mode: `numeric: decimal` on
+  graph. RFC-0001 (`docs/arch-decisions/RFC.md`, merged in PR #470 as `dd889bd5`) proposes an opt-in decimal mode: `numeric: decimal` on
   the graph root plus `graph.math.numeric`; `BigDecimal` values with specified result scales; a 34-digit HALF_EVEN division
   context; explicit rounding modes; inexact functions refused at run time, not gated at compile time; every high-precision number
   exported and imported as a string; an explicit `f:decimal.*` plugin family (the `f:add` family unchanged); shared conformance
