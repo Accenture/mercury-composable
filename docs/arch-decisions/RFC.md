@@ -40,8 +40,8 @@
 ---
 
 ## RFC-0002 — Canonical MsgPack packager: sorted-key maps and a manifest as one deterministic byte array
-**Status:** Open · **Raised:** 2026-09-30 · **Serves:** vision-mercury-composable · **Thread:** none yet
-<!-- id: rfc-0002 | status: open | thread: none -->
+**Status:** Open · **Raised:** 2026-09-30 · **Serves:** vision-mercury-composable · **Thread:** `canonical-msgpack-packager`
+<!-- id: rfc-0002 | status: open | thread: canonical-msgpack-packager -->
 
 **Motivation.** Some installations must promote a *set* of related documents (knowledge graphs today, but equally flows, rules or tables) as one artifact whose identity can be recorded, compared and, where the field wants it, protected. Loose files cannot do that. Each one is deployed and validated alone, JSON text is not a stable artifact (key order and whitespace vary), and there is no single thing to hash. MsgPack does not fix this by itself: a map has no guaranteed order, and one value has several valid byte encodings, so two packagings of the same content can differ, and their hashes with them. Both engines already use MsgPack (Java through `msgpack-core`, `platform-core/.../serializers/MsgPack.java`; Rust through `rmpv`, `crates/platform-core`), so the smallest useful piece is a **deterministic packager**. Whether a package is then hashed, signed or neither is a deployment decision and stays outside it.
 
@@ -105,8 +105,8 @@ A decision would commit every engine to the canonical profile as a wire contract
 ---
 
 ## RFC-0001 — Decimal mode: exact decimal arithmetic for `graph.math` and the arithmetic plugins
-**Status:** Open · **Raised:** 2026-09-30 · **Serves:** vision-mercury-composable · **Thread:** none yet
-<!-- id: rfc-0001 | status: open | thread: none -->
+**Status:** Open · **Raised:** 2026-09-30 · **Serves:** vision-mercury-composable · **Thread:** `decimal-mode`
+<!-- id: rfc-0001 | status: open | thread: decimal-mode -->
 
 **Motivation.** Knowledge graphs are a natural home for financial rules (settling contracts, rates, fees). Money and rate math must be **exact**, and **reproducible bit-for-bit across runs and across engines**. Today every numeric path is IEEE double or `long`:
 
