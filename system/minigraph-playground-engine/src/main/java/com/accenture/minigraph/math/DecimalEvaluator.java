@@ -320,7 +320,8 @@ public final class DecimalEvaluator {
         return a == null || b == null? null : a.compareTo(b);
     }
 
-    private static Value call(Expr.Call c) {
+    /** The name of a supported function, with any Math. prefix removed; a refused or unknown one fails by name. */
+    private static String functionName(Expr.Call c) {
         if (!(c.callee() instanceof Expr.Variable) && !(c.callee() instanceof Expr.MemberAccess)) {
             throw new IllegalArgumentException("Unknown function: expression");
         }
@@ -334,6 +335,11 @@ public final class DecimalEvaluator {
             // a misspelled or unsupported function is rejected by name, never a silent no-op
             throw new IllegalArgumentException("Unknown function: " + full);
         }
+        return name;
+    }
+
+    private static Value call(Expr.Call c) {
+        var name = functionName(c);
         var args = c.args();
         return switch (name) {
             case ROUND -> round(args);

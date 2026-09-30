@@ -22,8 +22,6 @@ import com.accenture.models.PluginFunction;
 import com.accenture.models.SimplePlugin;
 import com.accenture.util.DecimalPluginUtils;
 
-import java.math.BigDecimal;
-
 /**
  * f:decimalSubtract(a, b, ...) - a minus the remaining arguments, exactly, as a canonical decimal string.
  */
