@@ -18,20 +18,37 @@
 
 package org.platformlambda.core.serializers;
 
-import com.google.gson.*;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.FormattingStyle;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+import com.google.gson.ToNumberPolicy;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.*;
-import java.util.*;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.Date;
 
 /**
- * Intentional singleton
+ * Intentional singleton.
+ * legacy Date/Timestamp adapters kept for PoJo wire compatibility.
  */
-@SuppressWarnings("java:S6548")
+@SuppressWarnings({"java:S6548", "java:S2143"})
 public class SimpleMapper {
     private static final String SNAKE_CASE_SERIALIZATION = "snake.case.serialization";
     private final SimpleObjectMapper mapper;
@@ -127,8 +144,8 @@ public class SimpleMapper {
         builder.registerTypeAdapter(BigDecimal.class, new BigDecimalDeserializer());
         // tell GSON not to use double for all numbers and treat them correctly
         builder.setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE);
-        // Indent JSON output
-        builder.setPrettyPrinting();
+        // Indent JSON output consistently for Linux, Mac and Windows
+        builder.setFormattingStyle(FormattingStyle.PRETTY.withIndent("  ").withNewline("\n"));
         // Camel or snake case
         if (snake) {
             builder.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES);
