@@ -2961,8 +2961,8 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 <p><strong>Resolution.</strong></p>
 <hr />
 <h2 id="rfc-0001-exact-decimal-arithmetic-a-decimal-statement-for-graphmath-and-an-explicit-plugin-family">RFC-0001 — Exact decimal arithmetic: a <code>DECIMAL:</code> statement for <code>graph.math</code> and an explicit plugin family<a class="headerlink" href="#rfc-0001-exact-decimal-arithmetic-a-decimal-statement-for-graphmath-and-an-explicit-plugin-family" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Open · <strong>Raised:</strong> 2026-09-30 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>decimal-mode</code></p>
-<!-- id: rfc-0001 | status: open | thread: decimal-mode -->
+<p><strong>Status:</strong> Promoted → ADR-0025 · <strong>Raised:</strong> 2026-09-30 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>decimal-mode</code></p>
+<!-- id: rfc-0001 | status: promoted | thread: decimal-mode -->
 
 <p><strong>Motivation.</strong> Knowledge graphs are a natural home for financial rules (settling contracts, rates, fees). Money and rate math must be <strong>exact</strong>, and <strong>reproducible bit-for-bit across runs and across engines</strong>. Today every numeric path is IEEE double or <code>long</code>:</p>
 <table>
@@ -3032,7 +3032,7 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 - <strong>Rust type.</strong> The Rust twin would use an arbitrary-precision crate. <code>bigdecimal</code> matches Java <code>BigDecimal</code> semantics best and is already in that workspace's lockfile (0.4.10, through <code>apache-avro</code>); a fixed 96-bit type (e.g. <code>rust_decimal</code>, about 28 digits) cannot reproduce a 34-digit context. <em>(verify <code>bigdecimal</code>'s rounding-mode coverage and result-scale behaviour against the shared vectors when the Rust PR starts)</em>
 - <strong>Exponent bound.</strong> Proposed 999 for <code>**</code> and <code>pow</code>; confirm when the evaluator lands.
 - <strong>Release.</strong> Which version carries each delivery step? <code>mercury-go</code>, <code>mercury-python</code> and <code>mercury-nodejs</code> need at least the canonical string form, zero rule included.</p>
-<p><strong>Resolution.</strong></p>
+<p><strong>Resolution.</strong> Promoted → ADR-0025 (2026-09-30): option (a), the <code>DECIMAL:</code> statement. Delivered in PR #471 (Java <code>graph.math</code>, with the numeric-string comparison rule) and PR #472 (item 10, the <code>round</code> alignment); items 8 (the <code>f:decimal.*</code> plugins) and the Rust twin follow as separate PRs against the shared vectors.</p>
 
 
 

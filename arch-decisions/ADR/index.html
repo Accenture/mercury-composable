@@ -2133,6 +2133,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0025 — Exact decimal arithmetic is a DECIMAL: statement in graph.math, with canonical strings at rest
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0024" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3027,6 +3038,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0025 — Exact decimal arithmetic is a DECIMAL: statement in graph.math, with canonical strings at rest
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0024" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3338,6 +3360,69 @@ governing the codebase — verified against the source (<code>platform-core</cod
 <code>event-script-engine</code>, <code>minigraph-playground-engine</code>) and the published guides, which are
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
+<hr />
+<h2 id="adr-0025">ADR-0025 — Exact decimal arithmetic is a <code>DECIMAL:</code> statement in <code>graph.math</code>, with canonical strings at rest<a class="headerlink" href="#adr-0025" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-09-30 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> decimal-statement-exact-arithmetic</p>
+<!-- id: adr-0025 | status: accepted -->
+
+<p><strong>Abstract.</strong> <code>graph.math</code> gains a <code>DECIMAL: var -&gt; expression</code> statement, the high-precision
+<code>COMPUTE:</code>. It evaluates with exact decimal arithmetic (<code>BigDecimal</code> in flight) and stores the
+result at <code>{node}.result.{var}</code> as a <strong>canonical decimal string</strong>: plain notation, the computed
+scale kept, a zero of any scale written <code>"0"</code>. Rounding is always explicit —
+<code>round(x, scale, mode)</code> with one of seven named modes; <code>/</code> is exact when it terminates and
+otherwise uses a fixed 34-digit HALF_EVEN context; operations that cannot be exact (<code>sqrt</code>, <code>log</code>,
+trigonometry, <code>random()</code>, <code>PI</code>, <code>E</code>) are refused by name at run time. <code>COMPUTE:</code> keeps its
+meaning. There is no graph-level mode, no application default and no <code>CompileGraph</code> check:
+exactness is declared statement by statement, the way <code>CONDITION:</code> declares a boolean. Shipped in
+PR #471 (Java <code>graph.math</code>); the <code>f:decimal.*</code> plugins and the Rust twin follow against the same
+shared conformance vectors. Proposed and revised as RFC-0001 in <a href="../RFC/"><code>RFC.md</code></a>.</p>
+<p><strong>Context.</strong> Knowledge graphs are a natural home for financial rules, where money and rate math
+must be exact and reproducible across runs and engines. Every numeric path was an IEEE double or
+a <code>long</code> (<code>0.1 + 0.2</code> gave <code>0.30000000000000004</code>; <code>f:div(7, 2)</code> gave <code>3</code>). The earlier ruling
+(2026-09-25) was that exact-decimal money belongs in a <code>graph.task</code> function and <code>BigDecimal</code>
+stays out of the dialect. That keeps the math package minimal but hides the formulas in code,
+while the point of a knowledge graph is that the product owner reads and certifies the rules on
+the graph. This decision reopens that ruling deliberately and <strong>supersedes its decimal half</strong>;
+its other rulings (typed, finite <code>COMPUTE</code>; booleans never numbers) stand.</p>
+<p><strong>Decision.</strong> Three findings from reading the code fixed the shape. (1) <code>graph.math</code> renders each
+<code>{selector}</code> into the statement text before parsing it, so the evaluator sees literals and never
+a Java type — the read rule lives in the evaluator. (2) The state machine does not keep Java
+types across <code>graph.suspend</code>, <code>graph.resume</code> or any event hop (a <code>BigDecimal</code> comes back a string,
+a small <code>Long</code> an <code>Integer</code>), so a decimal is stored as its canonical string and is the same
+before and after. (3) A graph-level mode would carry the result type and a place to declare
+exactness, which a statement-level tag does with nothing to configure and nothing to mix.
+Consequent rules:</p>
+<ul>
+<li><strong>Numeric strings compare as numbers</strong> in <code>== != &lt; &lt;= &gt; &gt;=</code> everywhere (<code>COMPUTE:</code>, <code>IF</code>,
+  <code>CONDITION</code>, <code>DECIMAL:</code>), exactly: <code>'200' == 200</code>; two distinct 20-digit ids never collapse into
+  equal numbers. A READ item: a graph that compared numeric-looking strings as text changes.</li>
+<li><strong>A <code>Double</code> operand is accepted</strong> through the shortest decimal text it prints as, at its
+  minimal scale. This is lenient by decision and <strong>declared in the guide, not enforced</strong>: a double
+  already computed in floating point is only as exact as that computation, so sending money as
+  strings is a conscious choice, and <code>f:validate</code> asserts it.</li>
+<li><strong>Parity is enforced by shared test vectors</strong> (151 in the first delivery) run in every
+  executing engine, beside the drift-tested claims registry.</li>
+<li><strong><code>BigDecimal</code> is never added to <code>COMPUTE:</code>'s value model</strong>, and never travels as a JSON or
+  MsgPack number.</li>
+</ul>
+<p><strong>Alternatives.</strong> (a) the <code>DECIMAL:</code> statement — chosen. (b) Replace double with decimal
+everywhere: changes every result's type and rendering. (c) A decimal function library for
+<code>graph.task</code> — the prior ruling: no engine change, but formulas become opaque code and each
+adopter reinvents rounding and serialization. (d) Fixed-point integer minor units: awkward for
+rates, percentages and mixed currency scales, and division still needs a rounding policy.
+(e) A graph-level <code>numeric: decimal</code> mode: zero compatibility risk, but more to configure and a
+mixed-mode limit between graphs that <code>CompileGraph</code> cannot see. (f) Type-directed arithmetic with
+nothing declared: a graph passing numeric strings into arithmetic would flip from a number to a
+string result.</p>
+<p><strong>Consequences.</strong> Every executing engine is committed to one written decimal specification
+(statement, result scales, division context, rounding modes, canonical string form, strings at
+rest, comparison rule) and to the shared vector file maintained in lock-step. The math package is
+no longer minimal in the sense of the 2026-09-25 ruling; money that needs exact decimal
+arithmetic or a stated rounding mode now belongs in a <code>DECIMAL:</code> statement, and a <code>graph.task</code>
+function remains for what a statement cannot express. The dialect <code>round</code> was aligned to half up,
+away from zero, the same as <code>f:round</code> (PR #472), closing the side finding. Open follow-ups: the
+<code>f:decimal.*</code> plugin family, the Rust twin (an arbitrary-precision crate; <code>bigdecimal</code> is the
+candidate), and the <code>mercury-go</code>, <code>mercury-python</code> and <code>mercury-nodejs</code> canonical string form.</p>
 <hr />
 <h2 id="adr-0024">ADR-0024 — The elastic queue spills to a dependency-free file FIFO, and that choice sets the dispatch model<a class="headerlink" href="#adr-0024" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-09-16 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> elastic-queue-file-store</p>
