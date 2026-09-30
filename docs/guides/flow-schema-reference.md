@@ -966,6 +966,24 @@ argument.
 | `f:increment(a)` | `a + 1` | `f:increment(model.count) -> next_count` |
 | `f:decrement(a)` | `a - 1` | `f:decrement(model.count) -> prev_count` |
 
+**Exact decimals.** `f:add` and its family compute in `long` or `double`, which is right for counts and wrong for money. The
+`decimal` family computes in exact decimal arithmetic with the same rules as the `DECIMAL` statement of `graph.math`
+([skills reference](knowledge-graph/skills-reference.md#math-decimal)) and answers a **canonical decimal string**: plain
+notation, the computed scale kept, a zero of any scale written `"0"`. A string survives `graph.suspend`, every event hop and
+a JSON response unchanged, where a number would be rounded by the parser. An operand is a whole number, a string that is a
+canonical number, or a double (taken through the shortest decimal text it prints as — **send money as strings**); anything
+else, a boolean or a `null` included, is an error naming the plugin. The `f:add` family is unchanged.
+
+| Function | Description | Example |
+|----------|-------------|---------|
+| `f:decimalAdd(a, b, ...)` | Exact sum; the scale is the largest operand scale | `f:decimalAdd(model.price, model.fee) -> total` |
+| `f:decimalSubtract(a, b, ...)` | `a` minus the remaining args, exactly | `f:decimalSubtract(model.total, model.fee) -> net` |
+| `f:decimalMultiply(a, b, ...)` | Exact product; the scale is the sum of the scales | `f:decimalMultiply(model.price, model.qty) -> amount` |
+| `f:decimalDiv(a, b)` | Never truncates: the exact quotient when it terminates, otherwise 34 significant digits, half-even; division by zero is an error | `f:decimalDiv(model.total, model.n) -> share` |
+| `f:decimalMod(a, b)` | Exact remainder; division by zero is an error | `f:decimalMod(model.cents, int(100)) -> rem` |
+| `f:decimalRound(x, scale, mode)` | Rounding is always explicit: `mode` is `text(HALF_UP)`, `HALF_EVEN`, `HALF_DOWN`, `UP`, `DOWN`, `CEILING` or `FLOOR`, and the result has exactly `scale` places; the one- and two-argument forms are refused | `f:decimalRound(model.fee, int(2), text(HALF_UP)) -> fee` |
+| `f:decimalCompare(a, b)` | `-1`, `0` or `1` by numeric value (`2.0` equals `2.00`) | `f:decimalCompare(model.balance, text(0)) -> sign` |
+
 ### Logical and comparison
 
 | Function | Description | Example |

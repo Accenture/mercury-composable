@@ -21,6 +21,7 @@ package com.accenture.automation;
 import com.accenture.models.SimplePlugin;
 import com.accenture.util.KeyNormalizationUtils;
 import com.accenture.util.RecursiveClassTypeExaminer;
+import com.accenture.util.DecimalPluginUtils;
 import com.accenture.util.SimplePluginUtils;
 import com.accenture.util.TypeConversionUtils;
 import io.github.classgraph.ClassInfo;
@@ -63,6 +64,7 @@ public class SimplePluginLoader implements EntryPoint {
                                                             PluginFunction.class.getName(),
                                                             MultiLevelMap.class.getName(),
                                                             SimplePluginUtils.class.getName(),
+                                                            DecimalPluginUtils.class.getName(),
                                                             TypeConversionUtils.class.getName(),
                                                             KeyNormalizationUtils.class.getName());
     /**
