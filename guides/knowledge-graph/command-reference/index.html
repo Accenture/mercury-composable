@@ -4042,12 +4042,14 @@ JavaScript). <code>graph.math</code>'s own expression dialect is a narrow JS-lik
 <strong>no bitwise operators, no assignment or user variables, no user-defined functions</strong>. The complete
 catalog — every operator, function and constant the parser accepts — is
 <a href="../skills-reference/#math-dialect">the expression dialect</a>; <code>COMPUTE</code> yields a double
-(integers serialize as e.g. <code>8.0</code>).</p>
+(integers serialize as e.g. <code>8.0</code>); <a href="../skills-reference/#math-decimal"><code>DECIMAL</code></a> is the exact-decimal form.</p>
 </blockquote>
-<p>A <code>graph.math</code> node runs an ordered list of <code>statement[]</code> lines. Six statement types:</p>
+<p>A <code>graph.math</code> node runs an ordered list of <code>statement[]</code> lines. Seven statement types:</p>
 <dl>
 <dt><code>COMPUTE</code> — <code>COMPUTE: {var} -&gt; {expr}</code></dt>
 <dd>evaluate a JS-like math expression; the result is stored in <strong>this node's <code>result</code> namespace</strong> — read it back as <code>{this-node}.result.{var}</code> or move it with <code>MAPPING</code>. An expression carrying a comparison or boolean operator yields a boolean (the question you wrote); a boolean operand in arithmetic, a <code>&lt;</code>/<code>&gt;</code> comparison or a function argument is rejected by name, and so are an unknown function, an overflow and a division by zero (see <a href="../skills-reference/#math">numbers and booleans</a>)</dd>
+<dt><code>DECIMAL</code> — <code>DECIMAL: {var} -&gt; {expr}</code></dt>
+<dd>the <strong>high-precision <code>COMPUTE</code></strong>: evaluate the expression with exact decimal arithmetic and store the result in <strong>this node's <code>result</code> namespace</strong> as a canonical decimal string (<code>{this-node}.result.{var}</code>); a <code>Double</code> operand is converted through its shortest decimal text (send money as strings; <a href="../skills-reference/#math-decimal">the trade-off is declared in the guide</a>), rounding is always explicit (<code>round(x, scale, mode)</code>), and what cannot be exact (<code>sqrt</code>, <code>log</code>, <code>exp</code>, trigonometry, <code>random()</code>, <code>PI</code>, <code>E</code>) is refused — see <a href="../skills-reference/#math-decimal">the DECIMAL statement</a></dd>
 <dt><code>CONDITION</code> — <code>CONDITION: {var} -&gt; {boolean expr}</code></dt>
 <dd>evaluate a boolean expression and store the boolean in this node's <code>result</code> — the declared form of a decision value, whether or not the expression carries an operator (<code>CONDITION: same -&gt; {model.flag}</code>); an <code>IF</code> may test it directly (<code>IF: {node.result.var}</code>)</dd>
 <dt><code>IF</code> — multi-line (see below)</dt>
