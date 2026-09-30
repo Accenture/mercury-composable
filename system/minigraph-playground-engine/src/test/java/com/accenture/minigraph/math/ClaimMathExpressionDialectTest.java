@@ -144,9 +144,10 @@ class ClaimMathExpressionDialectTest {
         // relational on numbers and on two strings (lexical - ISO-8601 timestamps compare correctly)
         assertTrue(engine.evalBoolean("1 < 2 && 2 <= 2 && 3 > 2 && 3 >= 3"));
         assertTrue(engine.evalBoolean("'2026-03-02T01:00:01Z' > '2026-03-02T01:00:00Z'"));
-        // equality is same-type only
+        // equality is same-type, except that a string that is a canonical number compares as a number
         assertTrue(engine.evalBoolean("5 == 5.0 && 1 != 2 && 'a' == 'a' && true == true"));
-        assertThrows(IllegalArgumentException.class, () -> engine.evalBoolean("'1' == 1"));
+        assertTrue(engine.evalBoolean("'1' == 1 && '200' == 200 && '9.5' < '10.25'"));
+        assertThrows(IllegalArgumentException.class, () -> engine.evalBoolean("'a' == 1"));
         // logical not / and / or (short-circuit) and the ternary
         assertTrue(engine.evalBoolean("!false && (false || true)"));
         assertEquals(1.0, engine.evalNumber("2 > 1 ? 1 : 0"), 0.0);

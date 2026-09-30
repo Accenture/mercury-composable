@@ -19,6 +19,7 @@
 package com.accenture.minigraph.skills;
 
 import com.accenture.minigraph.common.GraphLambdaFunction;
+import com.accenture.minigraph.math.DecimalEvaluator;
 import com.accenture.minigraph.math.ExpressionEngine;
 import com.accenture.minigraph.models.GraphInstance;
 
@@ -26,8 +27,10 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
+import org.platformlambda.core.util.MultiLevelMap;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -69,7 +72,7 @@ public class GraphMath extends GraphLambdaFunction {
 
     private String executeNode(String nodeName, GraphInstance graphInstance,
                                List<String> forEach, List<String> statements) {
-        var execute = countExecuteStatements(nodeName, statements);
+        var execute = countExecuteStatements(nodeName, statements, true);
         var merged = execute > 0? combine(ROUTE, nodeName, graphInstance.graph, statements) : statements;
         if (forEach.isEmpty()) {
             return executeStatements(nodeName, merged, graphInstance);
@@ -144,6 +147,9 @@ public class GraphMath extends GraphLambdaFunction {
         if (CONDITION_TAG.equals(tag)) {
             condition(command, nodeName, graphInstance);
         }
+        if (DECIMAL_TAG.equals(tag)) {
+            decimal(command, nodeName, graphInstance);
+        }
         if (MAPPING_TAG.equals(tag)) {
             handleDataMappingEntry(nodeName, command, graphInstance);
         }
@@ -181,6 +187,60 @@ public class GraphMath extends GraphLambdaFunction {
             graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
+        }
+    }
+
+    /**
+     * DECIMAL: var -> expression - the high-precision COMPUTE (RFC-0001). The expression is evaluated with
+     * exact decimal arithmetic and the result is stored at {node}.result.{var} as a canonical decimal string,
+     * which is what survives graph.suspend, graph.resume and every event hop (a BigDecimal would come back
+     * a String). COMPUTE keeps its meaning, so a graph that never says DECIMAL is unchanged.
+     * <p>
+     * The statement computes a number, so its variables always render in the arithmetic (unquoted) form,
+     * and a Double or Float value is rejected by name: once a value is text the Java type is gone, so the
+     * values are checked here, before they are rendered. A number sent as a JSON number, or the result of
+     * a COMPUTE, is a double; a decimal travels as a string such as "10.50".
+     *
+     * @param command the statement after the tag
+     * @param nodeName the node's alias
+     * @param graphInstance the graph instance
+     */
+    private void decimal(String command, String nodeName, GraphInstance graphInstance) {
+        int sep = command.lastIndexOf(MAP_TO);
+        if (sep > 0) {
+            var lhs = command.substring(0, sep).trim();
+            var rhs = command.substring(sep + MAP_TO.length()).trim();
+            if (lhs.isEmpty() || rhs.isEmpty()) {
+                throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
+            }
+            var stateMachine = graphInstance.stateMachine;
+            assertVariablesResolved(rhs, stateMachine);
+            rejectInexactNumbers(rhs, stateMachine);
+            var text = substituteVarIfAny(rhs, stateMachine, false);
+            final String result;
+            try {
+                result = DecimalEvaluator.evaluate(text);
+            } catch (RuntimeException e) {
+                throw nameOffendingSelectors(e, rhs, stateMachine);
+            }
+            stateMachine.setElement(nodeName + ".result." + lhs, result);
+        } else {
+            throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
+        }
+    }
+
+    private void rejectInexactNumbers(String expression, MultiLevelMap stateMachine) {
+        var culprits = new ArrayList<String>();
+        for (var key : selectorsIn(expression)) {
+            var value = helper.getLhsOrConstant(key, stateMachine);
+            if (value instanceof Double || value instanceof Float) {
+                culprits.add(key + " (" + value + ")");
+            }
+        }
+        if (!culprits.isEmpty()) {
+            throw new IllegalArgumentException("Inexact number: " + String.join(" or ", culprits) +
+                    " in '" + expression + "' - a DECIMAL statement does not take a double; send the value as a" +
+                    " string such as \"10.50\", or compute it with DECIMAL");
         }
     }
 

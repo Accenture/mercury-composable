@@ -30,13 +30,14 @@ Setup
 To enable this skill for a node, set "skill=graph.math" as a property in a node.
 One or more statements can be added.
 
-There are 6 types of statements:
+There are 7 types of statements:
 1. "IF" statement for decision-making
 2. "COMPUTE" statement to evaluate a mathematical formula
-3. "CONDITION" statement to evaluate a boolean expression into a declared boolean result
-4. "MAPPING" statement to do data mapping from a source to a target variable
-5. "EXECUTE" statement to execute another node with "graph.math" skill
-6. "RESET" statement to reset the state machine for one or more nodes
+3. "DECIMAL" statement to evaluate a mathematical formula with exact decimal arithmetic (the high-precision COMPUTE)
+4. "CONDITION" statement to evaluate a boolean expression into a declared boolean result
+5. "MAPPING" statement to do data mapping from a source to a target variable
+6. "EXECUTE" statement to execute another node with "graph.math" skill
+7. "RESET" statement to reset the state machine for one or more nodes
 
 You can configure one or more statements of these types.
 
@@ -190,6 +191,34 @@ statement[]=COMPUTE: amount -> (1 - {input.body.discount}) * {book.price}
 
 The syntax `{variable_name}` is used to resolve the value from the variable into the COMPUTE statement.
 
+Syntax for DECIMAL statement
+----------------------------
+DECIMAL: variable -> mathematical statement
+
+DECIMAL is the high-precision COMPUTE: the expression is evaluated with exact decimal arithmetic and the
+result is stored in the node's "result" namespace as a canonical decimal string (plain notation, the
+computed scale kept, a zero of any scale written "0"). COMPUTE is untouched, so a graph that never says
+DECIMAL behaves exactly as before.
+
+```
+statement[]=DECIMAL: fee -> {input.body.amount} * {input.body.rate}
+statement[]=DECIMAL: rounded -> round({price.result.fee}, 2, HALF_UP)
+```
+
+Decimals travel as strings: send "100.25", not 100.25. A JSON number arrives as a double, and a DECIMAL
+statement rejects a double by name ("Inexact number: input.body.rate (0.0375) ..."), which also catches
+the result of a COMPUTE. Whole numbers and strings that spell a number are exact. The result is a string
+on purpose: graph.suspend saves the state machine and graph.resume restores it, and a string is the same
+after as before.
+
+Arithmetic: + - * are exact; / never truncates (the exact quotient when it terminates, otherwise 34
+significant digits, half-even); % is the remainder; ** and pow(x, n) take a whole exponent from -999 to 999;
+abs, floor, ceil, min and max are exact. Rounding is always explicit: round(x, scale, mode) with mode
+HALF_UP, HALF_EVEN, HALF_DOWN, UP, DOWN, CEILING or FLOOR. What cannot be exact is refused by name: sqrt,
+log, log10, exp, trigonometry, random(), PI and E - keep that step in a COMPUTE or a graph.task function.
+A DECIMAL statement computes a number; a comparison may appear only inside a ternary test. A COMPUTE on
+a decimal string computes in binary floating point, so use DECIMAL for money.
+
 Syntax for CONDITION statement
 ------------------------------
 CONDITION: variable -> boolean expression
@@ -213,16 +242,16 @@ A boolean is not a number. A boolean where arithmetic, a < or > comparison or a 
 needs a number fails naming the selector, e.g. "Boolean operand: model.flag (true) in
 '{model.flag} + 1' - a boolean is not a number; store a boolean with CONDITION or assert the type
 with f:validate". So a JSON true in a numeric slot never computes as 1. Equality (==, !=)
-type-checks its two sides.
+type-checks its two sides; a string that is a canonical number counts as a number, so '200' == 200,
+200 == '200' and '200' == '200' are the same comparison and '9.5' < '10.25' compares 9.5 with 10.25.
 
 A misspelled or unsupported function fails by name ("Unknown function: mn").
 
 Arithmetic is IEEE double precision. An overflow to infinity, a division by zero and a NaN each
 fail naming the operator ("Arithmetic overflow in '*' (result Infinity)", "Division by zero or
 arithmetic overflow in '/'"); integers beyond 2^53 lose precision; round() follows Java's
-Math.round (half up toward positive infinity). Money that needs exact decimal arithmetic, a stated
-rounding mode or integer cents does not belong in this skill: implement it as a small composable
-function (Java BigDecimal) and call it with graph.task. The math package stays minimal by design.
+Math.round (half up toward positive infinity). Money that needs exact decimal arithmetic or a stated
+rounding mode belongs in a DECIMAL statement, the high-precision COMPUTE; COMPUTE stays floating point.
 
 Syntax for IF statement
 -----------------------
