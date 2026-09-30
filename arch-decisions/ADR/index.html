@@ -3374,7 +3374,7 @@ otherwise uses a fixed 34-digit HALF_EVEN context; operations that cannot be exa
 trigonometry, <code>random()</code>, <code>PI</code>, <code>E</code>) are refused by name at run time. <code>COMPUTE:</code> keeps its
 meaning. There is no graph-level mode, no application default and no <code>CompileGraph</code> check:
 exactness is declared statement by statement, the way <code>CONDITION:</code> declares a boolean. Shipped in
-PR #471 (Java <code>graph.math</code>); the <code>f:decimal.*</code> plugins and the Rust twin follow against the same
+PR #471 (Java <code>graph.math</code>); the <code>f:decimal*</code> plugins and the Rust twin follow against the same
 shared conformance vectors. Proposed and revised as RFC-0001 in <a href="../RFC/"><code>RFC.md</code></a>.</p>
 <p><strong>Context.</strong> Knowledge graphs are a natural home for financial rules, where money and rate math
 must be exact and reproducible across runs and engines. Every numeric path was an IEEE double or
@@ -3421,7 +3421,7 @@ no longer minimal in the sense of the 2026-09-25 ruling; money that needs exact 
 arithmetic or a stated rounding mode now belongs in a <code>DECIMAL:</code> statement, and a <code>graph.task</code>
 function remains for what a statement cannot express. The dialect <code>round</code> was aligned to half up,
 away from zero, the same as <code>f:round</code> (PR #472), closing the side finding. Open follow-ups: the
-<code>f:decimal.*</code> plugin family, the Rust twin (an arbitrary-precision crate; <code>bigdecimal</code> is the
+<code>f:decimal*</code> plugin family, the Rust twin (an arbitrary-precision crate; <code>bigdecimal</code> is the
 candidate), and the <code>mercury-go</code>, <code>mercury-python</code> and <code>mercury-nodejs</code> canonical string form.</p>
 <hr />
 <h2 id="adr-0024">ADR-0024 — The elastic queue spills to a dependency-free file FIFO, and that choice sets the dispatch model<a class="headerlink" href="#adr-0024" title="Permanent link">&para;</a></h2>
