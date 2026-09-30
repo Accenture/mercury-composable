@@ -22,8 +22,6 @@ import com.accenture.models.PluginFunction;
 import com.accenture.models.SimplePlugin;
 import com.accenture.util.DecimalPluginUtils;
 
-import java.math.BigDecimal;
-
 /**
  * f:decimalMod(a, b) - the exact remainder as a canonical decimal string. Division by zero is an error.
  */

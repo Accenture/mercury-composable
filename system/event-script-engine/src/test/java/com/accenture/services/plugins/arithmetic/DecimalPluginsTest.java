@@ -48,9 +48,10 @@ class DecimalPluginsTest {
 
     @Test
     void nonFiniteDoublesAreRefused() {
-        var nan = assertThrows(IllegalArgumentException.class, () -> new DecimalAdd().calculate(Double.NaN, 1));
+        var add = new DecimalAdd();
+        var nan = assertThrows(IllegalArgumentException.class, () -> add.calculate(Double.NaN, 1));
         assertTrue(nan.getMessage().contains("Not a finite number"));
-        assertThrows(IllegalArgumentException.class, () -> new DecimalAdd().calculate(Double.POSITIVE_INFINITY, 1));
+        assertThrows(IllegalArgumentException.class, () -> add.calculate(Double.POSITIVE_INFINITY, 1));
     }
 
     @Test
@@ -69,7 +70,8 @@ class DecimalPluginsTest {
     @Test
     void anOversizedResultIsRefused() {
         var big = BigInteger.TEN.pow(6000);
-        var e = assertThrows(IllegalArgumentException.class, () -> new DecimalMultiply().calculate(big, big));
+        var multiply = new DecimalMultiply();
+        var e = assertThrows(IllegalArgumentException.class, () -> multiply.calculate(big, big));
         assertTrue(e.getMessage().contains("too large"));
     }
 }

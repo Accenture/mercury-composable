@@ -22,8 +22,6 @@ import com.accenture.models.PluginFunction;
 import com.accenture.models.SimplePlugin;
 import com.accenture.util.DecimalPluginUtils;
 
-import java.math.BigDecimal;
-
 /**
  * f:decimalRound(x, scale, mode) - rounding is always explicit: mode is text(HALF_UP), HALF_EVEN, HALF_DOWN, UP, DOWN, CEILING or FLOOR,
  * and the result has exactly that scale. The one- and two-argument forms are refused; f:round is the half-up double companion.

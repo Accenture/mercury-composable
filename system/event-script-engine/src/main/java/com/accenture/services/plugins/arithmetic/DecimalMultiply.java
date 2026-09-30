@@ -22,8 +22,6 @@ import com.accenture.models.PluginFunction;
 import com.accenture.models.SimplePlugin;
 import com.accenture.util.DecimalPluginUtils;
 
-import java.math.BigDecimal;
-
 /**
  * f:decimalMultiply(a, b, ...) - the exact product as a canonical decimal string (the scale is the sum of the operand scales).
  */

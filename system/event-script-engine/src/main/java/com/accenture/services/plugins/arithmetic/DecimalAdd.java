@@ -22,8 +22,6 @@ import com.accenture.models.PluginFunction;
 import com.accenture.models.SimplePlugin;
 import com.accenture.util.DecimalPluginUtils;
 
-import java.math.BigDecimal;
-
 /**
  * f:decimalAdd(a, b, ...) - the exact sum as a canonical decimal string (the scale is the largest operand scale). Companion to f:add, which computes in long or double.
  */
