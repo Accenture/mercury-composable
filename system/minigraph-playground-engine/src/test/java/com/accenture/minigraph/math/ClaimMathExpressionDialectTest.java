@@ -87,8 +87,10 @@ class ClaimMathExpressionDialectTest {
         assertEquals(2.5, engine.evalNumber("abs(-2.5)"), 1e-12);
         assertEquals(2.0, engine.evalNumber("floor(2.9)"), 1e-12);
         assertEquals(3.0, engine.evalNumber("ceil(2.1)"), 1e-12);
-        assertEquals(3.0, engine.evalNumber("round(2.5)"), 1e-12);   // half up toward positive infinity
-        assertEquals(-2.0, engine.evalNumber("round(-2.5)"), 1e-12);
+        assertEquals(3.0, engine.evalNumber("round(2.5)"), 1e-12);   // half up, away from zero, as f:round
+        assertEquals(-3.0, engine.evalNumber("round(-2.5)"), 1e-12);
+        assertEquals(-2.0, engine.evalNumber("round(-2.4)"), 1e-12);
+        assertEquals(0.0, engine.evalNumber("round(0.4)"), 1e-12);
         assertEquals(1.0, engine.evalNumber("log(E)"), 1e-12);      // natural logarithm
         assertEquals(3.0, engine.evalNumber("log10(1000)"), 1e-12);
         assertEquals(Math.E, engine.evalNumber("exp(1)"), 1e-12);

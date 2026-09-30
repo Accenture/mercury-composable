@@ -184,7 +184,7 @@ value:
 - **Arithmetic is IEEE double.** An overflow to infinity, a division by zero and a NaN each fail
   naming the operator (`Arithmetic overflow in '*' (result Infinity)`, `Division by zero or
   arithmetic overflow in '/'`) instead of traveling on; integers beyond 2^53 lose precision, and
-  `round` follows `Math.round` (half up toward positive infinity). `COMPUTE` returns a double, so an
+  `round` is half up, away from zero (`round(-2.5)` is `-3`), the same as `f:round`. `COMPUTE` returns a double, so an
   integer result serializes as e.g. `8.0`. **Money that needs exact decimal arithmetic or a stated
   rounding mode belongs in a [`DECIMAL`](#math-decimal) statement**, the high-precision `COMPUTE`;
   `COMPUTE` stays floating point.

@@ -1,5 +1,7 @@
 package com.accenture.minigraph.math;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,7 +32,7 @@ public final class EvalContext {
         ctx.define("abs",  a -> Math.abs(req1(a)));
         ctx.define("floor",a -> Math.floor(req1(a)));
         ctx.define("ceil", a -> Math.ceil(req1(a)));
-        ctx.define("round",a -> (double)Math.round(req1(a)));
+        ctx.define("round",a -> roundHalfUp(req1(a)));
         ctx.define("log",  a -> Math.log(req1(a)));
         ctx.define("log10",a -> Math.log10(req1(a)));
         ctx.define("exp",  a -> Math.exp(req1(a)));
@@ -40,6 +42,12 @@ public final class EvalContext {
         ctx.define("random", a -> { reqN(a, 0, "random"); return RANDOM.nextDouble(); });
 
         return ctx;
+    }
+
+    /** Half up, away from zero (-2.5 gives -3), the same as the f:round plugin; non-finite values pass through. */
+    private static double roundHalfUp(double x) {
+        if (Double.isNaN(x) || Double.isInfinite(x)) return x;
+        return BigDecimal.valueOf(x).setScale(0, RoundingMode.HALF_UP).doubleValue();
     }
 
     public EvalContext define(String name, double value) {

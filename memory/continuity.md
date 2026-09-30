@@ -561,6 +561,14 @@
   `EventOverHttpStreamTest.edgeRelaySpansAreConnected` and the Rust `event_over_http_stream::edge_relay_spans_are_connected`.
   <!-- id: connected-edge-spans | created: 2026-09-22 | last_used: 2026-09-23 | uses: 3 | tier: archive-candidate | origin: 2026-09-22-200813 -->
 
+- **`graph.js` is deprecated and its module will be removed once field installations finish migrating (Eric, 2026-09-30; the
+  docs have carried the DEPRECATED notice since 2026-09).** New capability targets `graph.math`, with `graph.task` for what the
+  dialect cannot express; `graph.js` gets no new feature and no branch in shared code: the `DECIMAL:` statement of RFC-0001 is
+  `graph.math` only, and `graph.js` rejects it as it rejects any tag it does not know. The reasons are in
+  `docs/guides/knowledge-graph/skills-reference.md#js` (runtime JavaScript is an injection surface, and an equality comparison
+  with a quoted string literal was measured silently evaluating `false`). Relates [[clean-knowledge-design-over-engine-coverage]].
+  <!-- id: graph-js-deprecated-removal | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: working | origin: 2026-09-30-170759 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
