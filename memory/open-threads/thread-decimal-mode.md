@@ -4,7 +4,7 @@
   `dd889bd5`, revised in PR #471) proposes a `DECIMAL:` statement, the high-precision `COMPUTE:`: a parallel `BigDecimal`
   evaluator; specified result scales; a 34-digit HALF_EVEN division context; explicit three-argument rounding; inexact
   functions refused at run time; a `Double` operand converted through its shortest decimal text (lenient, declared in the
-  guide); the result stored as a canonical string; an explicit `f:decimal.*` plugin family (the `f:add` family unchanged); a
+  guide); the result stored as a canonical string; an explicit `f:decimal*` plugin family (the `f:add` family unchanged); a
   numeric-string comparison rule; shared conformance vectors in every executing engine; and a side fix (dialect `round(-2.5)`
   gives -2, `f:round(-2.5)` gives -3). **It deliberately reopens [[graph-math-typed-arithmetic]]'s ruling** that
   exact-decimal money belongs in a `graph.task` function and `BigDecimal` is never added to the dialect (the RFC's option (c)
@@ -12,7 +12,7 @@
   in the RFC: the Rust decimal type (`bigdecimal` is the candidate), the exponent bound, and which release carries each step;
   the comparison rule's reach into IF, CONDITION and `COMPUTE:` is implemented as proposed, exact with no precision guard,
   and stays a READ item to confirm at review. **Rulings (Eric, 2026-09-30):** (1) amend the RFC before implementing; (2) the
-  first delivery is Java `graph.math` only, then the `f:decimal.*` plugins, then the Rust twin, each its own PR against
+  first delivery is Java `graph.math` only, then the `f:decimal*` plugins, then the Rust twin, each its own PR against
   shared vectors; (3) the RFC's proposed defaults stand (fixed decimal128 division context, computed scale kept, a zero of
   any scale written `"0"`, scope `graph.math` only); (4) promotion to an ADR comes only after a successful implementation,
   review and tests, so the RFC stays Open until then; (5) decimals are canonical strings at rest, because `graph.suspend`
