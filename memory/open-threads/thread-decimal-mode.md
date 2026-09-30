@@ -28,7 +28,7 @@
   [[graph-math-typed-arithmetic]] superseded by [[decimal-statement-exact-arithmetic]]. **Remaining:** (1) DONE — the `f:decimal*` plugin family, PR #475 (squash `da3c33a6`; camelCase names `decimalAdd`, `decimalSubtract`,
   `decimalMultiply`, `decimalDiv`, `decimalMod`, `decimalRound`, `decimalCompare`; `decimal-plugin-vectors.json`; UNRELEASED);
   (2) the Rust twin — `DECIMAL:`, the comparison rule and `round`
-  half-up (`bigdecimal` the candidate; verify rounding modes and result scales against the vectors); (3) the `f:round` agreement test — PR #477 open; (4) the canonical string form for `mercury-go`, `mercury-python`, `mercury-nodejs`;
+  half-up (`bigdecimal` the candidate; verify rounding modes and result scales against the vectors); (3) DONE — the `f:round` agreement test, PR #477; (4) the canonical string form for `mercury-go`, `mercury-python`, `mercury-nodejs`;
   (5) which release carries each step. Close this thread when (2) lands. Applies [[conv-proposals-not-in-adr-ledger]].
   → proposal: RFC-0001
   → serves: vision-mercury-composable
