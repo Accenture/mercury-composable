@@ -31,11 +31,11 @@ class NumericStringComparisonTest {
     private final ExpressionEngine engine = new ExpressionEngine();
 
     private void isTrue(String expression) {
-        assertEquals(true, engine.evalBoolean(expression), expression);
+        assertTrue(engine.evalBoolean(expression), expression);
     }
 
     private void isFalse(String expression) {
-        assertEquals(false, engine.evalBoolean(expression), expression);
+        assertFalse(engine.evalBoolean(expression), expression);
     }
 
     @Test

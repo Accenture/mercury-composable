@@ -140,37 +140,40 @@ public final class Evaluator {
         // Relational / equality with string and number support
         switch (b.op()) {
             case "<", "<=", ">", ">=" -> {
-                // a string that is a canonical number compares as a number (RFC-0001)
-                var numeric = NumericStrings.compare(lv, rv);
-                if (numeric != null) {
-                    return Value.bool(NumericStrings.relation(b.op(), numeric));
-                }
-                if (lv instanceof StringValue(String ls) && rv instanceof StringValue(String rs)) {
-                    int cmp = ls.compareTo(rs);
-                    return switch (b.op()) {
-                        case "<"  -> Value.bool(cmp <  0);
-                        case "<=" -> Value.bool(cmp <= 0);
-                        case ">"  -> Value.bool(cmp >  0);
-                        case ">=" -> Value.bool(cmp >= 0);
-                        default   -> throw new IllegalStateException();
-                    };
-                } else {
-                    double l = asNumber(lv, b.op());
-                    double r = asNumber(rv, b.op());
-                    return switch (b.op()) {
-                        case "<"  -> Value.bool(l <  r);
-                        case "<=" -> Value.bool(l <= r);
-                        case ">"  -> Value.bool(l >  r);
-                        case ">=" -> Value.bool(l >= r);
-                        default   -> throw new IllegalStateException();
-                    };
-                }
+                return evalRelational(lv, rv, b);
             }
             case "==", "!=" -> {
                 return evalBinaryEquality(lv, rv, b);
             }
             default -> throw new IllegalArgumentException("Unsupported binary operator: " + b.op());
         }
+    }
+
+    private static Value evalRelational(Value lv, Value rv, Expr.Binary b) {
+        // a string that is a canonical number compares as a number (RFC-0001)
+        var numeric = NumericStrings.compare(lv, rv);
+        if (numeric != null) {
+            return Value.bool(NumericStrings.relation(b.op(), numeric));
+        }
+        if (lv instanceof StringValue(String ls) && rv instanceof StringValue(String rs)) {
+            int cmp = ls.compareTo(rs);
+            return switch (b.op()) {
+                case "<"  -> Value.bool(cmp <  0);
+                case "<=" -> Value.bool(cmp <= 0);
+                case ">"  -> Value.bool(cmp >  0);
+                case ">=" -> Value.bool(cmp >= 0);
+                default   -> throw new IllegalStateException();
+            };
+        }
+        double l = asNumber(lv, b.op());
+        double r = asNumber(rv, b.op());
+        return switch (b.op()) {
+            case "<"  -> Value.bool(l <  r);
+            case "<=" -> Value.bool(l <= r);
+            case ">"  -> Value.bool(l >  r);
+            case ">=" -> Value.bool(l >= r);
+            default   -> throw new IllegalStateException();
+        };
     }
 
     private static Value evalBinaryEquality(Value lv, Value rv, Expr.Binary b) {

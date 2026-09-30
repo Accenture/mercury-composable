@@ -39,10 +39,11 @@ public final class DecimalEvaluator {
     private static final int MAX_RESULT_PRECISION = 10_000;
     private static final MathContext DIVISION = MathContext.DECIMAL128;
     private static final String MATH = "Math.";
+    private static final String ROUND = "round";
     private static final Set<String> REFUSED_FUNCTIONS = Set.of(
             "sin", "cos", "tan", "asin", "acos", "atan", "sqrt", "log", "log10", "exp", "random");
     private static final Set<String> REFUSED_CONSTANTS = Set.of("PI", "E");
-    private static final Set<String> FUNCTIONS = Set.of("abs", "floor", "ceil", "min", "max", "pow", "round");
+    private static final Set<String> FUNCTIONS = Set.of("abs", "floor", "ceil", "min", "max", "pow", ROUND);
     private static final String MODES = "HALF_UP, HALF_EVEN, HALF_DOWN, UP, DOWN, CEILING or FLOOR";
 
     private DecimalEvaluator() {
@@ -129,7 +130,7 @@ public final class DecimalEvaluator {
     }
 
     private static BigDecimal normalize(BigDecimal value) {
-        return value.scale() < 0? value.setScale(0) : value;
+        return value.scale() < 0? value.setScale(0, RoundingMode.UNNECESSARY) : value;
     }
 
     private static BigDecimal checked(BigDecimal value, String context) {
@@ -145,7 +146,7 @@ public final class DecimalEvaluator {
             case Expr.NumberLiteral ignored -> throw new IllegalStateException("A double literal in a DECIMAL statement");
             case Expr.StringLiteral(String s) -> Value.str(s);
             case Expr.BooleanLiteral(boolean b) -> Value.bool(b);
-            case Expr.Variable v -> variable(v.name());
+            case Expr.Variable(String name) -> variable(name);
             case Expr.Unary u -> unary(u);
             case Expr.Binary b -> binary(b);
             case Expr.MemberAccess m -> member(m);
@@ -220,7 +221,7 @@ public final class DecimalEvaluator {
         }
         try {
             // the exact quotient when it terminates
-            return dividend.divide(divisor);
+            return dividend.divide(divisor, MathContext.UNLIMITED);
         } catch (ArithmeticException e) {
             // non-terminating: 34 significant digits, HALF_EVEN
             return dividend.divide(divisor, DIVISION);
@@ -335,7 +336,7 @@ public final class DecimalEvaluator {
         }
         var args = c.args();
         return switch (name) {
-            case "round" -> round(args);
+            case ROUND -> round(args);
             case "min", "max" -> minMax(name, args);
             case "pow" -> {
                 arity(name, args, 2);
@@ -387,8 +388,8 @@ public final class DecimalEvaluator {
             throw new IllegalArgumentException("round() takes three arguments in a DECIMAL statement, " +
                     "round(x, scale, mode), where mode is " + MODES + "; got " + args.size());
         }
-        var x = argument("round", args.get(0));
-        var scale = wholeNumber(argument("round", args.get(1)), "scale of round()", MAX_SCALE);
+        var x = argument(ROUND, args.get(0));
+        var scale = wholeNumber(argument(ROUND, args.get(1)), "scale of round()", MAX_SCALE);
         var mode = roundingMode(args.get(2));
         return Value.decimal(normalize(x.setScale(scale, mode)));
     }
