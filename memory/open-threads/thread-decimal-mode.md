@@ -27,8 +27,7 @@
   both UNRELEASED, in the CHANGELOG `## Unreleased`. RFC-0001 promoted by Eric to ADR-0025 (PR #473), the decimal half of
   [[graph-math-typed-arithmetic]] superseded by [[decimal-statement-exact-arithmetic]]. **Remaining:** (1) the `f:decimal*`
   plugin family — PR #475 open (camelCase names, Eric: `decimalAdd`, `decimalSubtract`, `decimalMultiply`, `decimalDiv`, `decimalMod`, `decimalRound`, `decimalCompare`; `decimal-plugin-vectors.json`); (2) the Rust twin — `DECIMAL:`, the comparison rule and `round`
-  half-up (`bigdecimal` the candidate; verify rounding modes and result scales against the vectors); (3) the `f:round`
-  plugin test pinning `-2.5` → `-3`; (4) the canonical string form for `mercury-go`, `mercury-python`, `mercury-nodejs`;
+  half-up (`bigdecimal` the candidate; verify rounding modes and result scales against the vectors); (3) the `f:round` agreement test — PR #477 open; (4) the canonical string form for `mercury-go`, `mercury-python`, `mercury-nodejs`;
   (5) which release carries each step. Close this thread when (1) and (2) land. Applies [[conv-proposals-not-in-adr-ledger]].
   → proposal: RFC-0001
   → serves: vision-mercury-composable
