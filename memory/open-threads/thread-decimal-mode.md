@@ -25,8 +25,8 @@
   computation, so sending money as strings is a conscious user decision. **State (2026-09-30):** Java `graph.math` DELIVERED — PR #471 (squash `3b4cad82`, the `DECIMAL:` statement, the decimal
   evaluator, the numeric-string comparison rule, 151 vectors, docs, three claims) and PR #472 (the `round` half-up alignment);
   both UNRELEASED, in the CHANGELOG `## Unreleased`. RFC-0001 promoted by Eric to ADR-0025 (PR #473), the decimal half of
-  [[graph-math-typed-arithmetic]] superseded by [[decimal-statement-exact-arithmetic]]. **Remaining:** (1) the `f:decimal.*`
-  plugin family (its own PR against the shared vectors); (2) the Rust twin — `DECIMAL:`, the comparison rule and `round`
+  [[graph-math-typed-arithmetic]] superseded by [[decimal-statement-exact-arithmetic]]. **Remaining:** (1) the `f:decimal*`
+  plugin family — PR #475 open (camelCase names, Eric: `decimalAdd`, `decimalSubtract`, `decimalMultiply`, `decimalDiv`, `decimalMod`, `decimalRound`, `decimalCompare`; `decimal-plugin-vectors.json`); (2) the Rust twin — `DECIMAL:`, the comparison rule and `round`
   half-up (`bigdecimal` the candidate; verify rounding modes and result scales against the vectors); (3) the `f:round`
   plugin test pinning `-2.5` → `-3`; (4) the canonical string form for `mercury-go`, `mercury-python`, `mercury-nodejs`;
   (5) which release carries each step. Close this thread when (1) and (2) land. Applies [[conv-proposals-not-in-adr-ledger]].
