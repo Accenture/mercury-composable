@@ -52,6 +52,11 @@ class SimplePluginGateTest extends TestBase {
         // the decision-table lookup reaches the serializer only through the allowlisted
         // SimplePluginUtils - a direct SimpleMapper reference would be gated out silently
         assertTrue(SimplePluginLoader.containsSimplePlugin("lookup"));
+        // the decimal family reaches its arithmetic only through the allowlisted DecimalPluginUtils
+        for (var name : new String[]{"decimalAdd", "decimalSubtract", "decimalMultiply", "decimalDiv", "decimalMod",
+                "decimalRound", "decimalCompare"}) {
+            assertTrue(SimplePluginLoader.containsSimplePlugin(name), name + " must pass the gate");
+        }
         // the whole built-in inventory passes through the gate (regression net)
         assertTrue(SimplePluginLoader.getLoadedSimplePlugins().size() >= 50,
                 "built-in plugins must all pass the gate");

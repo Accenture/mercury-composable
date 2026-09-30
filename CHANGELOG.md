@@ -26,16 +26,26 @@ release CHANGELOG is still checked against `git log <previous-tag>..HEAD`.
 
    **Upgrade action:** none for the statement itself — `COMPUTE` is unchanged; read item 2 for the comparison change.
 
+2. **`f:decimalAdd`, `f:decimalSubtract`, `f:decimalMultiply`, `f:decimalDiv`, `f:decimalMod`, `f:decimalRound` and `f:decimalCompare` simple plugins (RFC-0001 item 8, ADR-0025).**
+   Exact decimal arithmetic for Event Script flows and mapper nodes, with the same rules as the `DECIMAL` statement: a
+   canonical decimal string result, scales propagated (`+ -` the larger, `*` the sum), `/` exact when it terminates and
+   otherwise 34 digits half-even, and `decimalRound(x, scale, mode)` with an explicit mode only. An operand is a whole
+   number, a canonical-number string or a double (through its shortest decimal text); a boolean, a `null` and a
+   non-canonical string are errors. The `f:add` family is unchanged. The shared plugin vectors
+   (`decimal-plugin-vectors.json`) run in the engine tests and cross-check the statement, so the two cannot drift.
+
+   **Upgrade action:** none — new plugin names only.
+
 ### Changed
 
-2. **A canonical numeric string compares as a number in `== != < <= > >=` (RFC-0001).** Every value is rendered into
+3. **A canonical numeric string compares as a number in `== != < <= > >=` (RFC-0001).** Every value is rendered into
    the statement text before it is parsed, so a substituted string was indistinguishable from one the author typed; a
    string in plain numeric notation now compares as a number (`'200' == 200`, `{price.result.rounded} > 100`), exactly:
    two distinct 20-digit ids never collapse into equal numbers.
 
    **Upgrade action:** read if a graph compares numeric-looking strings and relied on the string comparison.
 
-3. **`graph.math` `round` is half up, away from zero, the same as `f:round` (#472).** The dialect used `Math.round`
+4. **`graph.math` `round` is half up, away from zero, the same as `f:round` (#472).** The dialect used `Math.round`
    (half toward positive infinity), so `round(-2.5)` was `-2` while the `f:round` plugin gave `-3`. It now rounds through
    `BigDecimal` HALF_UP: `round(-2.5)` is `-3`; positive halves and non-halves are unchanged. NaN and Infinity still reach
    the finite check.
