@@ -49,16 +49,15 @@
 
 1. **The packager.** A small utility beside `MsgPack` in platform-core (and its Rust twin) that turns maps into one byte array. It first converts every map to an **ordered map with keys sorted recursively** (at every depth, including maps inside lists; list order is kept), then writes the result as MsgPack under the canonical profile (item 3). The same content gives the same bytes, in either engine.
 2. **Package structure: a manifest metadata map plus the maps.** The package is one MsgPack map with two parts:
-   - `manifest`, a metadata map: `format` and `format_version`; `entries`, one record per packed map, keyed by entry name, each record carrying that entry's **`id`** (for a graph, the **graph ID**: the id the deployment manifest lists, `POST /api/graph/{graph_id}` serves, and the file `<id>.json` holds) plus optional caller-defined string fields; and an optional `metadata` map of caller-defined string fields (a set name, a version, a certification state), recorded but never interpreted by the engine;
+   - `manifest`, a metadata map. The packager writes `format` and `format_version`; everything else is caller-defined string fields, recorded but never interpreted by the engine. For graphs, the convention is that **`graph_id` holds the graph ID** of the graph the package delivers (the id the deployment manifest lists, `POST /api/graph/{graph_id}` serves, and the file `<graph_id>.json` holds), with the other maps as its subgraphs. A set name, a version or a certification state can sit beside it;
    - `maps`, the packed maps, keyed by entry name.
 
    ```text
-   { "manifest": { "entries": { "quote.json": { "id": "quote" }, ... },
-                   "format": "mercury-package", "format_version": "1", "metadata": { ... } },
-     "maps":     { "quote.json": { ...keys sorted recursively... }, ... } }
+   { "manifest": { "format": "mercury-package", "format_version": "1", "graph_id": "quote", ... },
+     "maps":     { "quote-fees.json": { ...keys sorted recursively... }, "quote.json": { ... } } }
    ```
 
-   **Multiple maps are saved in sorted filename order.** Entry names are file names, ordered by their UTF-8 bytes (never OS listing order or locale collation). Because `entries` and `maps` are keyed by name and every map is key-sorted, that order needs no separate rule. `manifest` sorts before `maps`, so a reader can read the manifest before decoding any map. A duplicate entry name or `id` is an error. The manifest is the package's allowlist, and a reader rejects a package whose entries and maps disagree.
+   **Multiple maps are saved in sorted filename order.** Entry names are file names, ordered by their UTF-8 bytes (never OS listing order or locale collation). Because `maps` is keyed by name and every map is key-sorted, that order needs no separate rule. `manifest` sorts before `maps`, so a reader can read the metadata before decoding any map. A duplicate entry name, or a caller field named `format` or `format_version`, is an error.
 3. **Canonical MsgPack profile, identical in every engine.**
    - **Keys** are text, in ascending order of their UTF-8 bytes (not Java's UTF-16 `String` order, which differs for supplementary characters). A non-text key is converted to text, as the existing serializer does; a collision after conversion, or a null key, is an error.
    - **Null values** are written as nil and never dropped (the general serializer omits null-valued entries unless `supportNulls` is set).
@@ -77,14 +76,14 @@
 6. **Tooling.** `pack` builds a package from a folder or a list of files (JSON to start with); `unpack` writes the maps back as readable JSON, exact numbers kept as text, for review and audit. The source files remain what people read and certify; the package is only the deployment artifact. Hashing and signing use the field's own tools.
 7. **Parity.** Shared test vectors run in every engine's suite:
    - a fixed set of maps with expected bytes (hex) and SHA-256, covering maps nested in lists, keys whose UTF-8 and UTF-16 orders differ, and integer and str/bin header boundaries;
-   - rejection cases: `Float`, NaN, an unsupported type, a duplicate name or `id`, entries and maps that disagree, and non-canonical bytes under a strict read;
+   - rejection cases: `Float`, NaN, an unsupported type, a duplicate entry name, a caller field named `format`, and non-canonical bytes under a strict read;
    - integrity cases: a hash mismatch, a verifier reject, and `signature` mode without a verifier, each decoding nothing.
 
 A decision would commit every engine to the canonical profile as a wire contract, the `manifest` + `maps` structure, and the rule that integrity never lives inside the package. It adds one packager per engine and no dependency.
 
-**First consumer, deliberately out of scope.** A graph-set loader is the intended first consumer and would be raised as its own RFC. It would register all graphs or none, define precedence against `graph.model.automation` manifests (the later-loaded source wins, as for manifest lists), and could check static `graph.extension` targets at load, declaring that it cannot see through `flow://` or targets computed at run time.
+**First consumer, deliberately out of scope.** A graph-set loader is the intended first consumer and would be raised as its own RFC. It would register all graphs or none, define precedence against `graph.model.automation` manifests (the later-loaded source wins, as for manifest lists), verify that `graph_id` names one of the packed graphs, and could also check static `graph.extension` targets at load, declaring that it cannot see through `flow://` or targets computed at run time.
 
-**Deferred until field use asks for it:** trusted timestamps; a reference verifier function (for example RSA over `CryptoApi`); per-entry hashes in the manifest, to show which map changed between versions; hot reload; two versions loaded side by side; compression.
+**Deferred until field use asks for it:** trusted timestamps; a reference verifier function (for example RSA over `CryptoApi`); per-entry records or hashes in the manifest, to show which map changed between versions; hot reload; two versions loaded side by side; compression.
 
 **Options.**
 - *(a) A generic canonical packager, integrity external and optional (above).* One artifact, and the framework owns no signature scheme. **Recommended.**
@@ -94,7 +93,7 @@ A decision would commit every engine to the canonical profile as a wire contract
 - *(e) Leave it to adopters.* No engine change, but each adopter re-solves canonical encoding.
 
 *Open questions:*
-- Is the entry name the file name with its extension (proposed), with `id` supplied by the caller? The folder helper would default `id` to the name without extension, which is the graph-ID convention today.
+- Should `graph_id` stay a documented convention that the packager never interprets (proposed), or should the packager offer a typed field for it? A graph-set loader can already check it, because a graph's id is its file name without `.json` today.
 - Should a strict read be the default (proposed, since it is cheap) or opt-in?
 - Is rejecting `Float` and non-finite doubles right, or should a `Float` be widened through its shortest decimal text?
 - Should the verifier seam be a route (proposed), or a built-in RSA verify with a configured public key through `CryptoApi`?
