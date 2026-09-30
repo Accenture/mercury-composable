@@ -105,8 +105,8 @@ A decision would commit every engine to the canonical profile as a wire contract
 ---
 
 ## RFC-0001 — Exact decimal arithmetic: a `DECIMAL:` statement for `graph.math` and an explicit plugin family
-**Status:** Open · **Raised:** 2026-09-30 · **Serves:** vision-mercury-composable · **Thread:** `decimal-mode`
-<!-- id: rfc-0001 | status: open | thread: decimal-mode -->
+**Status:** Promoted → ADR-0025 · **Raised:** 2026-09-30 · **Serves:** vision-mercury-composable · **Thread:** `decimal-mode`
+<!-- id: rfc-0001 | status: promoted | thread: decimal-mode -->
 
 **Motivation.** Knowledge graphs are a natural home for financial rules (settling contracts, rates, fees). Money and rate math must be **exact**, and **reproducible bit-for-bit across runs and across engines**. Today every numeric path is IEEE double or `long`:
 
@@ -155,4 +155,4 @@ A decision would commit every executing engine to one written decimal specificat
 - **Exponent bound.** Proposed 999 for `**` and `pow`; confirm when the evaluator lands.
 - **Release.** Which version carries each delivery step? `mercury-go`, `mercury-python` and `mercury-nodejs` need at least the canonical string form, zero rule included.
 
-**Resolution.**
+**Resolution.** Promoted → ADR-0025 (2026-09-30): option (a), the `DECIMAL:` statement. Delivered in PR #471 (Java `graph.math`, with the numeric-string comparison rule) and PR #472 (item 10, the `round` alignment); items 8 (the `f:decimal.*` plugins) and the Rust twin follow as separate PRs against the shared vectors.
