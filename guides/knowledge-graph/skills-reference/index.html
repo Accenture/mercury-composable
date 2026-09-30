@@ -3272,7 +3272,7 @@ value:</p>
 <li><strong>Arithmetic is IEEE double.</strong> An overflow to infinity, a division by zero and a NaN each fail
   naming the operator (<code>Arithmetic overflow in '*' (result Infinity)</code>, <code>Division by zero or
   arithmetic overflow in '/'</code>) instead of traveling on; integers beyond 2^53 lose precision, and
-  <code>round</code> follows <code>Math.round</code> (half up toward positive infinity). <code>COMPUTE</code> returns a double, so an
+  <code>round</code> is half up, away from zero (<code>round(-2.5)</code> is <code>-3</code>), the same as <code>f:round</code>. <code>COMPUTE</code> returns a double, so an
   integer result serializes as e.g. <code>8.0</code>. <strong>Money that needs exact decimal arithmetic, a stated
   rounding mode or integer cents does not belong in the dialect</strong>: put it in a small composable
   function on <code>graph.task</code> (Java <code>BigDecimal</code>), which keeps the math package minimal by design.</li>
