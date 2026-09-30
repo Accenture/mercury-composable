@@ -46,7 +46,7 @@ otherwise uses a fixed 34-digit HALF_EVEN context; operations that cannot be exa
 trigonometry, `random()`, `PI`, `E`) are refused by name at run time. `COMPUTE:` keeps its
 meaning. There is no graph-level mode, no application default and no `CompileGraph` check:
 exactness is declared statement by statement, the way `CONDITION:` declares a boolean. Shipped in
-PR #471 (Java `graph.math`); the `f:decimal.*` plugins and the Rust twin follow against the same
+PR #471 (Java `graph.math`); the `f:decimal*` plugins and the Rust twin follow against the same
 shared conformance vectors. Proposed and revised as RFC-0001 in [`RFC.md`](RFC.md).
 
 **Context.** Knowledge graphs are a natural home for financial rules, where money and rate math
@@ -96,7 +96,7 @@ no longer minimal in the sense of the 2026-09-25 ruling; money that needs exact 
 arithmetic or a stated rounding mode now belongs in a `DECIMAL:` statement, and a `graph.task`
 function remains for what a statement cannot express. The dialect `round` was aligned to half up,
 away from zero, the same as `f:round` (PR #472), closing the side finding. Open follow-ups: the
-`f:decimal.*` plugin family, the Rust twin (an arbitrary-precision crate; `bigdecimal` is the
+`f:decimal*` plugin family, the Rust twin (an arbitrary-precision crate; `bigdecimal` is the
 candidate), and the `mercury-go`, `mercury-python` and `mercury-nodejs` canonical string form.
 
 ---
