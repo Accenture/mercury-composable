@@ -1,13 +1,15 @@
 package com.accenture.minigraph.math;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public sealed interface Expr
-        permits Expr.NumberLiteral, Expr.StringLiteral, Expr.BooleanLiteral,
+        permits Expr.NumberLiteral, Expr.DecimalLiteral, Expr.StringLiteral, Expr.BooleanLiteral,
         Expr.Variable, Expr.Unary, Expr.Binary,
         Expr.MemberAccess, Expr.Call, Expr.Conditional {
 
     record NumberLiteral(double value) implements Expr {}
+    record DecimalLiteral(BigDecimal value) implements Expr {}
     record StringLiteral(String value) implements Expr {}
     record BooleanLiteral(boolean value) implements Expr {}
     record Variable(String name) implements Expr {}

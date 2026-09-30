@@ -1,5 +1,6 @@
 package com.accenture.minigraph.math;
 
+import java.math.BigDecimal;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -26,13 +27,18 @@ final class Parser {
     private static final int BP_TERNARY = 5;  // ?:
 
     private final boolean strictJsExponentiationRule;
+    // a DECIMAL statement parses number literals from their text straight into exact decimals
+    private final boolean decimal;
 
     Parser(String src) { this(src, true); }
 
-    Parser(String src, boolean strictJsExponentiationRule) {
+    Parser(String src, boolean strictJsExponentiationRule) { this(src, strictJsExponentiationRule, false); }
+
+    Parser(String src, boolean strictJsExponentiationRule, boolean decimal) {
         this.lexer = new Lexer(src);
         this.lookahead = lexer.next();
         this.strictJsExponentiationRule = strictJsExponentiationRule;
+        this.decimal = decimal;
     }
 
     Expr parse() {
@@ -111,7 +117,8 @@ final class Parser {
 
     private void parseNumberToken(Token t, Deque<Expr> values, AtomicBoolean expectOperand) {
         consume();
-        values.push(new Expr.NumberLiteral(parseDouble(t.lexeme(), t.position())));
+        values.push(decimal? parseDecimal(t.lexeme(), t.position())
+                : new Expr.NumberLiteral(parseDouble(t.lexeme(), t.position())));
         expectOperand.set(false);
         parsePostfixChainOnTop(values);
     }
@@ -333,6 +340,14 @@ final class Parser {
     private static double parseDouble(String s, int pos) {
         try { return Double.parseDouble(s); }
         catch (NumberFormatException e) {
+            throw new ParseException("Invalid number '" + s + "' at position " + pos);
+        }
+    }
+
+    private static Expr.DecimalLiteral parseDecimal(String s, int pos) {
+        try {
+            return new Expr.DecimalLiteral(DecimalEvaluator.literal(new BigDecimal(s)));
+        } catch (NumberFormatException | ArithmeticException e) {
             throw new ParseException("Invalid number '" + s + "' at position " + pos);
         }
     }

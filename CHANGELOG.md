@@ -13,9 +13,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Changes merged to `main` since the last release. Each item moves under its release heading when the version is cut; the
 release CHANGELOG is still checked against `git log <previous-tag>..HEAD`.
 
+### Added
+
+1. **`DECIMAL` statement for `graph.math` — the high-precision `COMPUTE` (RFC-0001).** `DECIMAL: var -> expression`
+   computes in exact decimal arithmetic and stores a canonical decimal string at `{node}.result.{var}` (plain notation,
+   the computed scale kept, a zero of any scale written `"0"`), so the value survives `graph.suspend`/`graph.resume` and
+   every event hop unchanged. `+ - *` are exact, `/` is the exact quotient when it terminates and otherwise 34 significant
+   digits half-even, `%` and `**`/`pow` with a whole-number exponent (-999 to 999), and `round(x, scale, mode)` always names
+   its mode (`HALF_UP`, `HALF_EVEN`, `HALF_DOWN`, `UP`, `DOWN`, `CEILING`, `FLOOR`). What cannot be exact (`sqrt`, `log`,
+   trigonometry, `random()`, `PI`, `E`) and a boolean result fail by name. An operand may be a string or a JSON number; a
+   number is taken through the shortest decimal text it prints as, so send money as strings. `COMPUTE` is untouched.
+
+   **Upgrade action:** none for the statement itself — `COMPUTE` is unchanged; read item 2 for the comparison change.
+
 ### Changed
 
-1. **`graph.math` `round` is half up, away from zero, the same as `f:round` (#472).** The dialect used `Math.round`
+2. **A canonical numeric string compares as a number in `== != < <= > >=` (RFC-0001).** Every value is rendered into
+   the statement text before it is parsed, so a substituted string was indistinguishable from one the author typed; a
+   string in plain numeric notation now compares as a number (`'200' == 200`, `{price.result.rounded} > 100`), exactly:
+   two distinct 20-digit ids never collapse into equal numbers.
+
+   **Upgrade action:** read if a graph compares numeric-looking strings and relied on the string comparison.
+
+3. **`graph.math` `round` is half up, away from zero, the same as `f:round` (#472).** The dialect used `Math.round`
    (half toward positive infinity), so `round(-2.5)` was `-2` while the `f:round` plugin gave `-3`. It now rounds through
    `BigDecimal` HALF_UP: `round(-2.5)` is `-3`; positive halves and non-halves are unchanged. NaN and Infinity still reach
    the finite check.

@@ -2,13 +2,16 @@ package com.accenture.minigraph.math;
 
 import org.jspecify.annotations.NonNull;
 
-/** Sealed union for runtime values: number, boolean, string. */
-public sealed interface Value permits NumberValue, BooleanValue, StringValue {
+import java.math.BigDecimal;
+
+/** Sealed union for runtime values: number, decimal (DECIMAL statements only), boolean, string. */
+public sealed interface Value permits NumberValue, DecimalValue, BooleanValue, StringValue {
     double asDouble();
     boolean asBoolean();
     String asString();
 
     static Value number(double d)   { return new NumberValue(d); }
+    static Value decimal(BigDecimal d) { return new DecimalValue(d); }
     static Value bool(boolean b)    { return new BooleanValue(b); }
     static Value str(String s)      { return new StringValue(s); }
 }
@@ -83,5 +86,30 @@ record StringValue(String value) implements Value {
     @Override
     public String toString() {
         return "String(" + value + ")";
+    }
+}
+
+/** An exact decimal - only a DECIMAL statement produces one. */
+record DecimalValue(BigDecimal value) implements Value {
+
+    @Override
+    public double asDouble() {
+        return value.doubleValue();
+    }
+
+    @Override
+    public boolean asBoolean() {
+        return value.signum() != 0;
+    }
+
+    @Override
+    public String asString() {
+        return DecimalEvaluator.canonical(value);
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "Decimal(" + DecimalEvaluator.canonical(value) + ")";
     }
 }

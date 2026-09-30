@@ -34,6 +34,8 @@ public final class Evaluator {
     private static Value eval(Expr e, EvalContext ctx) {
         return switch (e) {
             case Expr.NumberLiteral(double en)    -> Value.number(en);
+            case Expr.DecimalLiteral ignored      ->
+                    throw new IllegalStateException("A decimal literal belongs to a DECIMAL statement");
             case Expr.StringLiteral(String es)    -> Value.str(es);
             case Expr.BooleanLiteral(boolean eb)  -> Value.bool(eb);
             case Expr.Variable ev        -> evalVar(ev, ctx);
@@ -138,6 +140,11 @@ public final class Evaluator {
         // Relational / equality with string and number support
         switch (b.op()) {
             case "<", "<=", ">", ">=" -> {
+                // a string that is a canonical number compares as a number (RFC-0001)
+                var numeric = NumericStrings.compare(lv, rv);
+                if (numeric != null) {
+                    return Value.bool(NumericStrings.relation(b.op(), numeric));
+                }
                 if (lv instanceof StringValue(String ls) && rv instanceof StringValue(String rs)) {
                     int cmp = ls.compareTo(rs);
                     return switch (b.op()) {
@@ -167,6 +174,11 @@ public final class Evaluator {
     }
 
     private static Value evalBinaryEquality(Value lv, Value rv, Expr.Binary b) {
+        // a string that is a canonical number compares as a number: '200' == 200 is 200 == 200 (RFC-0001)
+        var numeric = NumericStrings.compare(lv, rv);
+        if (numeric != null) {
+            return Value.bool("==".equals(b.op()) == (numeric == 0));
+        }
         boolean eq;
         switch (lv) {
             case StringValue ls when rv instanceof StringValue(String rs) -> eq = ls.value().equals(rs);

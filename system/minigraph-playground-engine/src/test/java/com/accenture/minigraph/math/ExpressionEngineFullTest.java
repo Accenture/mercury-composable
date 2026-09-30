@@ -173,8 +173,10 @@ class ExpressionEngineFullTest {
         IllegalArgumentException e4 = assertThrows(IllegalArgumentException.class, () -> engine.evalNumber("Math.mn(1, 2)"));
         assertEquals("Unknown function: Math.mn", e4.getMessage());
 
-        // type mismatch in equality
-        assertThrows(IllegalArgumentException.class, () -> engine.evalBoolean("'1' == 1"));
+        // type mismatch in equality: a number against text that is not a canonical number
+        // ('1' == 1 is true - a string that is a canonical number compares as a number)
+        assertThrows(IllegalArgumentException.class, () -> engine.evalBoolean("'a' == 1"));
+        assertTrue(engine.evalBoolean("'1' == 1"));
 
         // a boolean is never a number: arithmetic, a relational comparison, a function argument and a
         // bare boolean result are all rejected - uniformly, whichever operator met it

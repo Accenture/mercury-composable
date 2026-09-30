@@ -161,6 +161,9 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String MAPPING_TAG = "mapping:";
     protected static final String COMPUTE_TAG = "compute:";
     protected static final String CONDITION_TAG = "condition:";
+    // the high-precision COMPUTE: exact decimal arithmetic, valid in graph.math nodes only
+    protected static final String DECIMAL_TAG = "decimal:";
+    private static final String MATH_SKILL = "graph.math";
     protected static final String EXECUTE_TAG = "execute:";
     protected static final String RESET_TAG = "reset:";
     protected static final String IF_TAG = "if:";
@@ -922,13 +925,26 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     }
 
     protected int countExecuteStatements(String nodeName, List<String> statements) {
+        return countExecuteStatements(nodeName, statements, false);
+    }
+
+    /**
+     * Count the EXECUTE statements of a node and reject a statement tag the skill does not take.
+     *
+     * @param nodeName the node's alias
+     * @param statements the node's statements
+     * @param decimal true for a graph.math node, the only skill that takes a DECIMAL statement
+     * @return the number of EXECUTE statements
+     */
+    protected int countExecuteStatements(String nodeName, List<String> statements, boolean decimal) {
         var execute = 0;
         var js = 0;
         var error = 0;
         for (var entry : statements) {
             var line = entry.trim().toLowerCase();
             if (line.startsWith(IF_TAG) || line.startsWith(COMPUTE_TAG) || line.startsWith(CONDITION_TAG) ||
-                    line.startsWith(RESET_TAG) || line.startsWith(DELAY_TAG)) {
+                    line.startsWith(RESET_TAG) || line.startsWith(DELAY_TAG) ||
+                    (decimal && line.startsWith(DECIMAL_TAG))) {
                 js++;
             } else if (line.startsWith(EXECUTE_TAG)) {
                 execute++;
@@ -938,13 +954,14 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
                 error++;
             }
         }
+        var decimalTag = decimal? "'DECIMAL:', " : "";
         if (js == 0) {
             throw new IllegalArgumentException(NODE_NAME + nodeName +
-                    " must include 'IF:', 'COMPUTE:', 'CONDITION:', 'EXECUTE:', 'RESET:' or 'DELAY:' statements");
+                    " must include 'IF:', 'COMPUTE:', " + decimalTag + "'CONDITION:', 'EXECUTE:', 'RESET:' or 'DELAY:' statements");
         }
         if (error > 0) {
             throw new IllegalArgumentException(NODE_NAME + nodeName +
-                    " must use 'IF:', 'COMPUTE:', 'CONDITION:', 'EXECUTE:', 'RESET:', " +
+                    " must use 'IF:', 'COMPUTE:', " + decimalTag + "'CONDITION:', 'EXECUTE:', 'RESET:', " +
                     "'MAPPING:', 'NEXT:', 'DELAY:', 'BEGIN' or 'END' keywords");
         }
         return execute;
@@ -1091,7 +1108,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             throw new IllegalArgumentException(NODE_NAME + anotherNode + " does not have skill - "+route);
         }
         var otherStatements = getEntries(that.getProperty(STATEMENT));
-        if (countExecuteStatements(anotherNode, otherStatements) > 0) {
+        if (countExecuteStatements(anotherNode, otherStatements, MATH_SKILL.equals(route)) > 0) {
             throw new IllegalArgumentException(NODE_NAME + anotherNode + " contains nested EXECUTE statements");
         } else {
             merged.addAll(otherStatements);
