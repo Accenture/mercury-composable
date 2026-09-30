@@ -8,6 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Unreleased
+
+Changes merged to `main` since the last release. Each item moves under its release heading when the version is cut; the
+release CHANGELOG is still checked against `git log <previous-tag>..HEAD`.
+
+### Changed
+
+1. **`graph.math` `round` is half up, away from zero, the same as `f:round` (#472).** The dialect used `Math.round`
+   (half toward positive infinity), so `round(-2.5)` was `-2` while the `f:round` plugin gave `-3`. It now rounds through
+   `BigDecimal` HALF_UP: `round(-2.5)` is `-3`; positive halves and non-halves are unchanged. NaN and Infinity still reach
+   the finite check.
+
+   **Upgrade action:** read if a graph rounds a negative value that is exactly x.5 — the result moves away from zero.
+
+---
 ## Version 4.12.19, 9/25/2026
 
 The rapid-prototyping deploy lane, completed on both engines. `graph.model.automation` now accepts a comma-separated list
