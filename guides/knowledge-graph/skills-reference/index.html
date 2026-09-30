@@ -3349,6 +3349,9 @@ For anything richer than the dialect, use <code>graph.task</code> (a composable 
 <li><strong>Comparing decimals in <code>IF</code> and <code>CONDITION</code></strong> needs nothing special: a string that is a canonical number
   compares as a number, so <code>IF: {price.result.rounded} &gt; 100</code> and <code>IF: {price.result.rounded} &gt; '99.5'</code>
   both compare numbers (see <a href="#math-dialect">the dialect</a>).</li>
+<li><strong>In an Event Script flow</strong> the same arithmetic is the <code>f:decimalAdd</code>, <code>f:decimalSubtract</code>, <code>f:decimalMultiply</code>,
+  <code>f:decimalDiv</code>, <code>f:decimalMod</code>, <code>f:decimalRound</code> and <code>f:decimalCompare</code> plugins, which answer the same canonical strings
+  (see the <a href="../../flow-schema-reference/#arithmetic">flow schema reference</a>).</li>
 <li><strong><code>COMPUTE</code> on a decimal string computes in binary floating point</strong>, exactly as it does today, and a
   <code>COMPUTE</code> result is a double. Nothing stops you; use <code>DECIMAL</code> for money.</li>
 </ul>

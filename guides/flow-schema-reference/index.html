@@ -6120,6 +6120,59 @@ argument.</p>
 </tr>
 </tbody>
 </table>
+<p><strong>Exact decimals.</strong> <code>f:add</code> and its family compute in <code>long</code> or <code>double</code>, which is right for counts and wrong for money. The
+<code>decimal</code> family computes in exact decimal arithmetic with the same rules as the <code>DECIMAL</code> statement of <code>graph.math</code>
+(<a href="../knowledge-graph/skills-reference/#math-decimal">skills reference</a>) and answers a <strong>canonical decimal string</strong>: plain
+notation, the computed scale kept, a zero of any scale written <code>"0"</code>. A string survives <code>graph.suspend</code>, every event hop and
+a JSON response unchanged, where a number would be rounded by the parser. An operand is a whole number, a string that is a
+canonical number, or a double (taken through the shortest decimal text it prints as — <strong>send money as strings</strong>); anything
+else, a boolean or a <code>null</code> included, is an error naming the plugin. The <code>f:add</code> family is unchanged.</p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f:decimalAdd(a, b, ...)</code></td>
+<td>Exact sum; the scale is the largest operand scale</td>
+<td><code>f:decimalAdd(model.price, model.fee) -&gt; total</code></td>
+</tr>
+<tr>
+<td><code>f:decimalSubtract(a, b, ...)</code></td>
+<td><code>a</code> minus the remaining args, exactly</td>
+<td><code>f:decimalSubtract(model.total, model.fee) -&gt; net</code></td>
+</tr>
+<tr>
+<td><code>f:decimalMultiply(a, b, ...)</code></td>
+<td>Exact product; the scale is the sum of the scales</td>
+<td><code>f:decimalMultiply(model.price, model.qty) -&gt; amount</code></td>
+</tr>
+<tr>
+<td><code>f:decimalDiv(a, b)</code></td>
+<td>Never truncates: the exact quotient when it terminates, otherwise 34 significant digits, half-even; division by zero is an error</td>
+<td><code>f:decimalDiv(model.total, model.n) -&gt; share</code></td>
+</tr>
+<tr>
+<td><code>f:decimalMod(a, b)</code></td>
+<td>Exact remainder; division by zero is an error</td>
+<td><code>f:decimalMod(model.cents, int(100)) -&gt; rem</code></td>
+</tr>
+<tr>
+<td><code>f:decimalRound(x, scale, mode)</code></td>
+<td>Rounding is always explicit: <code>mode</code> is <code>text(HALF_UP)</code>, <code>HALF_EVEN</code>, <code>HALF_DOWN</code>, <code>UP</code>, <code>DOWN</code>, <code>CEILING</code> or <code>FLOOR</code>, and the result has exactly <code>scale</code> places; the one- and two-argument forms are refused</td>
+<td><code>f:decimalRound(model.fee, int(2), text(HALF_UP)) -&gt; fee</code></td>
+</tr>
+<tr>
+<td><code>f:decimalCompare(a, b)</code></td>
+<td><code>-1</code>, <code>0</code> or <code>1</code> by numeric value (<code>2.0</code> equals <code>2.00</code>)</td>
+<td><code>f:decimalCompare(model.balance, text(0)) -&gt; sign</code></td>
+</tr>
+</tbody>
+</table>
 <h3 id="logical-and-comparison">Logical and comparison<a class="headerlink" href="#logical-and-comparison" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
