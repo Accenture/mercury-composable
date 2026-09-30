@@ -672,6 +672,22 @@
   how a change reaches main).
   <!-- id: conv-proposals-not-in-adr-ledger | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: core | origin: 2026-09-18-221732 -->
 
+- **Downstream secrets are compartmentalized: nothing that identifies a downstream adopter enters the open-source Mercury repos
+  or their memory (Eric, standing instruction, 2026-09-30).** The family (`mercury`, `mercury-composable`, `mercury-python`,
+  `mercury-nodejs`, `mercury-go`) is public, so customer or company names and brands, project and repository names, people's
+  names, and other project-identifiable data (pilot lengths and dates, internal RFC or ticket ids, business-domain specifics,
+  hostnames, cloud accounts) never appear in code, tests, docs, commit or PR text, or `memory/` (session logs, continuity, open
+  threads, archives, ADR and RFC entries). A downstream brand name is never recorded in session memory or in any open thread.
+  **Why:** an adopter's identity is confidential and `main` is append-only, so a leak cannot be quietly undone. **How to apply:**
+  refer to "a downstream adopter" or "the field" (defined in `memory/instructions.md`); describe the technical need, not whose it
+  was; generalize a domain-specific example (financial contracts, not the adopter's niche); read an input document from a
+  downstream project as source material to scrub, citing it only as "a downstream design draft", never by path or repo name; scan
+  the diff (and staged memory) for source-material identifiers before a commit or PR, and if one leaks, stop and tell Eric before
+  pushing. Rule text: `memory/instructions.md` Core Rule 6. First applied the same day to two downstream drafts (RFC-0001 and
+  RFC-0002 in the RFC register, PR #470); all five sibling checkouts scanned clean, tree and commit messages. Relates
+  [[eric-code-changes-via-pr]] (how a change reaches main).
+  <!-- id: conv-compartment-downstream-secrets | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: core | origin: 2026-09-30-164034 -->
+
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
 - [ ] (blueprint) **AI agent orchestration ("graph engineering")** — the Active Knowledge

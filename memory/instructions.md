@@ -128,6 +128,27 @@ Java 21 virtual-thread technology), Maven 3.9.7+ (`.java-version` pins the local
    not ad-hoc controllers.
 4. Respect the serialization gotchas above when choosing types.
 5. Record significant decisions in the session log and `continuity.md`.
+6. **Compartmentalize downstream secrets (standing instruction, Eric, 2026-09-30).** This
+   repository and its siblings — `mercury`, `mercury-composable`, `mercury-python`,
+   `mercury-nodejs`, `mercury-go` — are open source. Nothing that identifies a downstream
+   adopter may enter them: **customer or company names and brands, project and repository
+   names, people's names, and other project-identifiable data** (pilot lengths and dates,
+   internal RFC/ticket ids, business-domain specifics, hostnames, cloud accounts). This
+   covers code, tests, docs, commit messages, PR text, and above all `memory/` — session
+   logs, `continuity.md`, `open-threads/`, archives, and ADR/RFC entries. A downstream
+   brand name is never recorded in session memory or in any open thread.
+   - **Refer to it generically:** "a downstream adopter", "the field" (already defined in
+     `## What This Project Is`), "a field installation". Describe the *technical* need, not
+     whose need it was or what business it serves; generalize a domain-specific example
+     (e.g. "financial contracts", not the adopter's industry niche).
+   - **Input documents from a downstream project** (feature requests, design drafts) may name
+     their origin. Read them, but scrub before anything is copied into this repo: names,
+     "prepared in <their repo>", their internal RFC numbers, adopter-specific use cases.
+     Cite them in memory only as "a downstream design draft" — never by path or repo name.
+   - **Scan before committing or opening a PR:** `git diff` (and staged memory) for any
+     identifier from the source material. If something leaks, stop and tell Eric before
+     pushing; history on `main` is append-only, so a leak cannot be quietly undone.
+   - Applies to every agent and every session, including lightweight logs.
 
 ## Session Working Conventions
 
