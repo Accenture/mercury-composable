@@ -39,53 +39,67 @@
 
 ---
 
-## RFC-0002 — Graph-set packages: a graph and its subgraphs as one signed MsgPack file
+## RFC-0002 — Canonical MsgPack packager: sorted-key maps and a manifest as one deterministic byte array
 **Status:** Open · **Raised:** 2026-09-30 · **Serves:** vision-mercury-composable · **Thread:** none yet
 <!-- id: rfc-0002 | status: open | thread: none -->
 
-**Motivation.** In field installations each knowledge graph represents one business use case, and use cases are small; the 750-node readability guideline has not been a constraint, and a complex system is expressed as many discrete use-case graphs. Some installations, though, must certify a use case together with the subgraphs it calls, and deploy exactly what was certified. Today each graph is deployed and validated on its own:
+**Motivation.** Some installations must promote a *set* of related documents (knowledge graphs today, but equally flows, rules or tables) as one artifact whose identity can be recorded, compared and, where the field wants it, protected. Loose files cannot do that. Each one is deployed and validated alone, JSON text is not a stable artifact (key order and whitespace vary), and there is no single thing to hash. MsgPack does not fix this by itself: a map has no guaranteed order, and one value has several valid byte encodings, so two packagings of the same content can differ, and their hashes with them. Both engines already use MsgPack (Java through `msgpack-core`, `platform-core/.../serializers/MsgPack.java`; Rust through `rmpv`, `crates/platform-core`), so the smallest useful piece is a **deterministic packager**. Whether a package is then hashed, signed or neither is a deployment decision and stays outside it.
 
-- **Graphs load and are rejected one at a time.** `CompileGraph` compiles each id from a manifest separately, and a rejected graph answers 404. A parent can load while one of its subgraphs is rejected.
-- **Subgraph targets are resolved only at call time.** `graph.extension` looks up its target when the node runs, so a missing subgraph shows up mid-run rather than at startup.
-- **There is no integrity check at load.**
+**Proposal.**
 
-Both engines already use MsgPack for event envelopes (Java through `msgpack-core`, `platform-core/.../serializers/MsgPack.java`; Rust through `rmpv`), so a single canonical MsgPack byte array is the smallest possible package: one file, one hash, one signature, no archive format.
+1. **The packager.** A small utility beside `MsgPack` in platform-core (and its Rust twin) that turns maps into one byte array. It first converts every map to an **ordered map with keys sorted recursively** (at every depth, including maps inside lists; list order is kept), then writes the result as MsgPack under the canonical profile (item 3). The same content gives the same bytes, in either engine.
+2. **Package structure: a manifest metadata map plus the maps.** The package is one MsgPack map with two parts:
+   - `manifest`, a metadata map: `format` and `format_version`; `entries`, one record per packed map, keyed by entry name, each record carrying that entry's **`id`** (for a graph, the **graph ID**: the id the deployment manifest lists, `POST /api/graph/{graph_id}` serves, and the file `<id>.json` holds) plus optional caller-defined string fields; and an optional `metadata` map of caller-defined string fields (a set name, a version, a certification state), recorded but never interpreted by the engine;
+   - `maps`, the packed maps, keyed by entry name.
 
-**Proposal: a deliberately minimal first version.**
+   ```text
+   { "manifest": { "entries": { "quote.json": { "id": "quote" }, ... },
+                   "format": "mercury-package", "format_version": "1", "metadata": { ... } },
+     "maps":     { "quote.json": { ...keys sorted recursively... }, ... } }
+   ```
 
-1. **The package.** One file containing an outer MsgPack **array of two elements**, `[payload, signature]`.
-   - `payload` is a MsgPack **binary** holding the canonical encoding (item 2) of an ordered map: `format` (e.g. `"mercury-graph-set"`) and `format_version`; `set_id`, `version`, and `entry` (the id of the graph that invokes the others); `graphs`, a map from graph id to graph, each in its `exportGraph()` structure (membership is declared, never inferred from graph ids); and `metadata`, an optional map of string fields the adopter defines, recorded but never interpreted by the engine.
-   - `signature` is a map `{alg, key_id, value}`, covering **exactly the `payload` bytes as stored**, so it never covers itself.
-   - The set's identity is the **SHA-256 of the `payload` bytes**. A verifier hashes those bytes directly and never re-encodes them. Per-graph hashes are not needed: changing any graph changes the payload hash.
-2. **Canonical MsgPack profile, identical in every engine.** MsgPack allows several byte encodings of the same value and the hash depends on the exact bytes, so:
-   - **maps:** every map at every depth, including node and relation properties, is written with keys in ascending order of their **UTF-8 bytes** (not Java's default UTF-16 `String` order, which differs for supplementary characters). Arrays keep their order; nodes and connections follow `exportGraph()` order;
-   - **integers:** always the smallest encoding, positive and negative fixint first;
-   - **numbers that need precision are strings**, following RFC-0001, so the payload holds no floats. A double-mode value that must be carried is float64 only, never float32 (today a Java `Float` packs as float32 and a `Double` as float64 in `MsgPack.java`, so the same number could otherwise encode two ways);
-   - **text:** always MsgPack str, never bin. Binary appears only as the payload wrapper;
-   - **nothing else:** no extension types, no timestamps (dates are ISO-8601 strings); booleans and nil use their single forms.
-   - The decoder used for the load-time canonical check must **preserve key order**; a `HashMap`-based decode would defeat it.
-3. **Loading.** Packages are listed in a new config key, `graph.set.automation` (`file:/` or `classpath:/` paths). For each package the engine: (1) decodes the outer array; (2) verifies the signature over the payload bytes against a configured public key (`graph.set.public.key`), rejecting unsigned or badly signed packages when a key is configured (RSA sign/verify already exists in `CryptoApi`); (3) decodes the payload and **re-encodes it canonically**, rejecting the package if the bytes differ, so every accepted package has exactly one byte form; (4) compiles each graph through the existing `CompileGraph` gate; (5) checks that every static `graph.extension` target that is not `flow://` is in `graphs`; (6) registers **all graphs or none**, logging which step failed.
-4. **Precedence with manifests.** A package is its own allowlist, like a manifest. When a graph id appears in both a package and a `graph.model.automation` manifest, the **later-loaded source wins** (the manifest-list rule), with the same warning, and a rejected later copy leaves the id not executable. Packages load after manifests, in `graph.set.automation` order.
-5. **Behaviour change to declare.** All-or-none registration differs from today's per-graph 404 behaviour, so it applies to packages only; manifests keep their current semantics. The distinction belongs in the release READ notes.
-6. **Tooling.** `pack` canonical-encodes a set of graphs into a payload (signing is a separate, explicit step). `unpack` decodes a package back to readable graph JSON, numbers as strings, for review and audit. The JSON graphs remain the human-readable source people certify; the MsgPack file is only the deployment artifact.
-7. **Parity.** A handful of shared test vectors, run by every engine's test suite: one graph set with its expected payload bytes (hex) and SHA-256; a tampered payload; a non-canonical encoding of the same set (float32, unsorted keys); a missing subgraph.
+   **Multiple maps are saved in sorted filename order.** Entry names are file names, ordered by their UTF-8 bytes (never OS listing order or locale collation). Because `entries` and `maps` are keyed by name and every map is key-sorted, that order needs no separate rule. `manifest` sorts before `maps`, so a reader can read the manifest before decoding any map. A duplicate entry name or `id` is an error. The manifest is the package's allowlist, and a reader rejects a package whose entries and maps disagree.
+3. **Canonical MsgPack profile, identical in every engine.**
+   - **Keys** are text, in ascending order of their UTF-8 bytes (not Java's UTF-16 `String` order, which differs for supplementary characters). A non-text key is converted to text, as the existing serializer does; a collision after conversion, or a null key, is an error.
+   - **Null values** are written as nil and never dropped (the general serializer omits null-valued entries unless `supportNulls` is set).
+   - **Integers** use the smallest encoding, fixints first.
+   - **Floats** are float64 and finite only: a `Float` (which `MsgPack.java` packs as float32), NaN and Infinity are rejected.
+   - **Text and bytes** are MsgPack str and bin, each with the shortest header.
+   - **Exact numbers** travel as strings, following RFC-0001 (the existing serializer already does this for `BigInteger` and `BigDecimal`), and a date is an ISO-8601 string. No extension types, no timestamps; booleans and nil use their single forms.
+   - **Any other type** is rejected, naming its path, rather than stringified.
+4. **Integrity is external and optional.** Nothing inside the package refers to how it is protected: no signature, hash, key id or timestamp. The field chooses one mode per deployment, applied to the **exact stored bytes**:
+   - `none`: the channel or artifact repository is trusted;
+   - `hash`: the SHA-256 of the bytes, recorded outside the package (a release record, a sidecar `<name>.sha256`, a config value or an environment variable) and compared on load. It detects corruption and substitution, and authenticates only as far as the recorded value is trusted;
+   - `signature`: a detached signature over the bytes, made by the field's own signer (a CI job, a KMS or HSM, `openssl`; any algorithm) and stored beside the package (`<name>.sig`).
 
-A decision would commit every engine to the canonical MsgPack profile, the `[payload, signature]` envelope, atomic set registration, and the load-time subgraph check. It reuses the MsgPack libraries and `CryptoApi` the engines already have.
+   The engine implements `none` and `hash` itself (JDK `MessageDigest`, no new dependency) and reaches `signature` through a **verifier seam**: a route-addressed function that receives the bytes and the detached signature and answers accept or reject. The engine never holds a signing key and never signs, so algorithms, key rotation and KMS integration stay in the field's hands and out of the framework's release cycle. A configured check that fails, or `signature` mode with no verifier, fails closed: nothing is decoded.
+5. **Reading.** `unpack` returns ordered maps (insertion order preserved, never a hash-ordered map) after the configured integrity check. A **strict** read also re-encodes the decoded content canonically and rejects the package if the bytes differ, so an accepted package has exactly one byte form.
+6. **Tooling.** `pack` builds a package from a folder or a list of files (JSON to start with); `unpack` writes the maps back as readable JSON, exact numbers kept as text, for review and audit. The source files remain what people read and certify; the package is only the deployment artifact. Hashing and signing use the field's own tools.
+7. **Parity.** Shared test vectors run in every engine's suite:
+   - a fixed set of maps with expected bytes (hex) and SHA-256, covering maps nested in lists, keys whose UTF-8 and UTF-16 orders differ, and integer and str/bin header boundaries;
+   - rejection cases: `Float`, NaN, an unsupported type, a duplicate name or `id`, entries and maps that disagree, and non-canonical bytes under a strict read;
+   - integrity cases: a hash mismatch, a verifier reject, and `signature` mode without a verifier, each decoding nothing.
 
-**Declared limit (not enforced).** The load-time subgraph check sees only static targets. It cannot see through `flow://` or a target computed at run time, so a green check does not prove every call resolves. Per the project's posture that constraints are declared rather than partially enforced, the guide states this in its Design-rules voice.
+A decision would commit every engine to the canonical profile as a wire contract, the `manifest` + `maps` structure, and the rule that integrity never lives inside the package. It adds one packager per engine and no dependency.
 
-**Deferred until field use asks for it:** trusted timestamps (RFC 3161, an optional field on the signature); a pluggable verifier or KMS/HSM signer; hot reload without restart; two versions of a set side by side; graphs shared across sets; `list` and offline `verify` commands; per-graph hashes.
+**First consumer, deliberately out of scope.** A graph-set loader is the intended first consumer and would be raised as its own RFC. It would register all graphs or none, define precedence against `graph.model.automation` manifests (the later-loaded source wins, as for manifest lists), and could check static `graph.extension` targets at load, declaring that it cannot see through `flow://` or targets computed at run time.
+
+**Deferred until field use asks for it:** trusted timestamps; a reference verifier function (for example RSA over `CryptoApi`); per-entry hashes in the manifest, to show which map changed between versions; hot reload; two versions loaded side by side; compression.
 
 **Options.**
-- *(a) One canonical MsgPack file, `[payload, signature]` (above).* A single artifact and a single hash over stored bytes, using the serializer every engine already has. **Recommended.**
-- *(b) A zip of sorted graph JSON plus a manifest of per-graph hashes and a set hash.* Readable without a decoder, but it needs a two-level hash scheme because zip bytes vary with entry order and timestamps.
-- *(c) A signed manifest of hashes over loose JSON files.* Smallest change, but no single artifact to promote, and partial copies are easy to make.
-- *(d) Leave it to adopters.* No engine change, but each adopter re-solves canonical encoding and atomic loading.
+- *(a) A generic canonical packager, integrity external and optional (above).* One artifact, and the framework owns no signature scheme. **Recommended.**
+- *(b) An embedded signature envelope, `[payload, signature]`.* One file carries its own signature, but the format is bound to one scheme and the framework owns algorithms, key rotation and timestamps; the `none` and `hash` modes need a degenerate envelope.
+- *(c) Canonical JSON (RFC 8785) plus an external hash.* Human-readable and diffable, but it needs a canonicalizer in each engine, its number rules conflict with strings for exact numbers (RFC-0001), and MsgPack is already the bus format in Java and Rust.
+- *(d) A zip of files plus a manifest of per-entry hashes.* Readable without a decoder, but it needs a two-level hash scheme, because zip bytes vary with entry order and timestamps.
+- *(e) Leave it to adopters.* No engine change, but each adopter re-solves canonical encoding.
 
 *Open questions:*
-- Do `msgpack-core` (`packInt` / `packLong`) and `rmpv` both choose the smallest integer encoding? *(verify; the parity vectors will show it)*
-- Must the canonical-encoding check (step 3.3) always run, or may it be skipped when the signature is valid? Mandatory is proposed: it is cheap and guarantees one byte form.
-- Which engines carry it? The Java and Rust engines are the reference pair; should `mercury-go`, `mercury-python` and `mercury-nodejs` (which consume graphs rather than execute them) be required to pass the vectors?
+- Is the entry name the file name with its extension (proposed), with `id` supplied by the caller? The folder helper would default `id` to the name without extension, which is the graph-ID convention today.
+- Should a strict read be the default (proposed, since it is cheap) or opt-in?
+- Is rejecting `Float` and non-finite doubles right, or should a `Float` be widened through its shortest decimal text?
+- Should the verifier seam be a route (proposed), or a built-in RSA verify with a configured public key through `CryptoApi`?
+- Do `msgpack-core` (`packInt` / `packLong`) and `rmpv` both choose the smallest integer encoding? *(verify; the vectors will show it)*
+- Which engines carry it? Java and Rust are the reference pair (the Node.js pack uses `@msgpack/msgpack`). Which of `mercury-go`, `mercury-python` and `mercury-nodejs` must at least read a package and pass the vectors?
 
 **Resolution.**
 
@@ -114,7 +128,7 @@ A decision would commit every engine to the canonical MsgPack profile, the `[pay
 3. **Operators.** `+ - *` are exact, with a **specified result scale** (`+`/`-`: the larger operand scale; `*`: the sum of scales) so both engines agree. `/` never truncates (`7 / 2` gives `3.5`); a non-terminating quotient uses a fixed division context, proposed as 34 significant digits (decimal128) with HALF_EVEN, until the author applies an explicit scale. `%` is defined on decimals. Comparisons use numeric value (`2.0 == 2.00` is true).
 4. **Rounding is always explicit.** `round(x, scale, mode)` takes `HALF_UP | HALF_EVEN | HALF_DOWN | UP | DOWN | CEILING | FLOOR` and returns a decimal at exactly that scale. The two-argument form uses a graph-level `rounding` default (proposed HALF_EVEN). `floor`, `ceil`, `abs`, `min`, `max`, and `pow` with a whole-number exponent are exact.
 5. **Operations that cannot be exact are refused, at run time.** In decimal mode `sqrt`, `log`, `log10`, `exp`, trigonometry, `pow` with a fractional exponent, and `random()` raise an error naming the node. They are refused at run time rather than gated at compile time: a compile-time check would be a partial gate that cannot see values arriving through mapped inputs. An author who needs them keeps that node in double mode or uses a `graph.task` function.
-6. **Strings in, strings out.** Every high-precision number is exported and imported **as a string**, wherever a decimal-mode number is stored or moves: graph JSON, the run's state machine, `output.*`, the exported graph, and a MsgPack graph-set package (RFC-0002). A JSON or MsgPack **number** is never used for a decimal, because standard parsers and MsgPack's float types would round-trip it through a double. Import parses the string straight into a decimal; export writes the canonical form below, so a value survives any number of export/import cycles unchanged. A decimal-mode graph holding a numeric (non-string) value where a decimal is expected is rejected by `CompileGraph` (strict) or converted with a warning (lenient).
+6. **Strings in, strings out.** Every high-precision number is exported and imported **as a string**, wherever a decimal-mode number is stored or moves: graph JSON, the run's state machine, `output.*`, the exported graph, and a canonical MsgPack package (RFC-0002). A JSON or MsgPack **number** is never used for a decimal, because standard parsers and MsgPack's float types would round-trip it through a double. Import parses the string straight into a decimal; export writes the canonical form below, so a value survives any number of export/import cycles unchanged. A decimal-mode graph holding a numeric (non-string) value where a decimal is expected is rejected by `CompileGraph` (strict) or converted with a warning (lenient).
    **Canonical string form:** plain notation, never scientific; keeps its scale (`round(10.5, 2, HALF_UP)` gives `"10.50"`); negative zero normalizes to zero at the same scale.
 7. **Mixed modes.** A decimal string read by a **double-mode** node is a string, not a number, and follows the existing typed-arithmetic rules: the node fails by name rather than coercing silently. Crossing modes is explicit, through `f:decimal.*` or a conversion at a mapper node. A decimal-mode node may read a double-mode graph's numbers only under lenient mode.
 8. **Plugins.** Add an explicit decimal family for flows and mapper nodes: `f:decimal.add`, `.sub`, `.mul`, `.div`, `.mod`, `.round(x, scale, mode)`, `.compare`. The existing `f:add` family keeps its behaviour, so nothing changes silently. Explicit names beat a hidden mode for plugins, which run outside any one graph's context.
