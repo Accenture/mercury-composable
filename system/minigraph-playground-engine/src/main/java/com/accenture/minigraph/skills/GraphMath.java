@@ -30,13 +30,13 @@ import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.MultiLevelMap;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @PreLoad(route = GraphMath.ROUTE, instances=300)
 public class GraphMath extends GraphLambdaFunction {
     public static final String ROUTE = "graph.math";
+    private static final String RESULT = ".result.";
     private static final ExpressionEngine engine = new ExpressionEngine();
 
     @Override
@@ -184,7 +184,7 @@ public class GraphMath extends GraphLambdaFunction {
             } catch (RuntimeException e) {
                 throw nameOffendingSelectors(e, rhs, graphInstance.stateMachine);
             }
-            graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
+            graphInstance.stateMachine.setElement(nodeName + RESULT + lhs, result);
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
         }
@@ -224,7 +224,7 @@ public class GraphMath extends GraphLambdaFunction {
             } catch (RuntimeException e) {
                 throw nameOffendingSelectors(e, rhs, stateMachine);
             }
-            stateMachine.setElement(nodeName + ".result." + lhs, result);
+            stateMachine.setElement(nodeName + RESULT + lhs, result);
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
         }
@@ -273,7 +273,7 @@ public class GraphMath extends GraphLambdaFunction {
             } catch (RuntimeException e) {
                 throw nameOffendingSelectors(e, rhs, graphInstance.stateMachine);
             }
-            graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
+            graphInstance.stateMachine.setElement(nodeName + RESULT + lhs, result);
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
         }

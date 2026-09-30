@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
  */
 final class NumericStrings {
     // plain notation: an optional minus sign, digits without leading zeros, an optional fraction
-    private static final Pattern CANONICAL = Pattern.compile("-?(0|[1-9][0-9]*)(\\.[0-9]+)?");
+    private static final Pattern CANONICAL = Pattern.compile("-?(0|[1-9]\\d*)(\\.\\d+)?");
     // bounds the work a hostile statement can ask of a comparison
     private static final int MAX_LENGTH = 1000;
 
