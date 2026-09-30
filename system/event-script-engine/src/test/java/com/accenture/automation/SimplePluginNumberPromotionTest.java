@@ -77,6 +77,9 @@ class SimplePluginNumberPromotionTest {
         assertEquals(3.0d, new RoundNumbers().calculate(2.5));
         // ties round away from zero
         assertEquals(-3.0d, new RoundNumbers().calculate(-2.5));
+        assertEquals(-1.0d, new RoundNumbers().calculate(-0.5));
+        assertEquals(-2.35d, new RoundNumbers().calculate(-2.345, 2));
+        assertEquals(-1.01d, new RoundNumbers().calculate(-1.005, 2));
         assertEquals(3.142d, new RoundNumbers().calculate(3.14159, 3));
         assertEquals(2.35d, new RoundNumbers().calculate("2.345", 2));
         // a whole number is already exact and passes through unchanged
