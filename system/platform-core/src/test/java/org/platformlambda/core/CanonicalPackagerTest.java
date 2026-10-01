@@ -63,8 +63,8 @@ class CanonicalPackagerTest {
         var mapper = org.platformlambda.core.serializers.SimpleMapper.getInstance().getMapper();
         var one = "{\"nodes\":[{\"alias\":\"root\",\"types\":[\"Root\"]}],\"name\":\"quote\",\"n\":7}";
         var other = "{ \"n\": 7,\n  \"name\": \"quote\",\n  \"nodes\": [ { \"types\": [ \"Root\" ], \"alias\": \"root\" } ] }";
-        var first = mapper.readValue(one, Map.class);
-        var second = mapper.readValue(other, Map.class);
+        Map<String, Object> first = mapper.readValue(one, Map.class);
+        Map<String, Object> second = mapper.readValue(other, Map.class);
         assertNotEquals(new ArrayList<>(first.keySet()), new ArrayList<>(second.keySet()), "the parsed key orders differ");
         var a = CanonicalPackager.builder().manifest("graph_id", "quote").add("quote.json", first).build();
         var b = CanonicalPackager.builder().manifest("graph_id", "quote").add("quote.json", second).build();
@@ -78,19 +78,19 @@ class CanonicalPackagerTest {
         // U+1F600 is the surrogate pair D83D DE00 in UTF-16 (sorts before U+FF5E) but F0 9F 98 80 in UTF-8
         var map = new LinkedHashMap<String, Object>();
         map.put("\uD83D\uDE00", 1);
-        map.put("\uFF5E", 2);
+        map.put("～", 2); // U+FF5E, the fullwidth tilde
         var decoded = (Map<?, ?>) CanonicalPackager.decode(CanonicalPackager.encode(map));
-        assertEquals(List.of("\uFF5E", "\uD83D\uDE00"), new ArrayList<>(decoded.keySet()));
+        assertEquals(List.of("～", "\uD83D\uDE00"), new ArrayList<>(decoded.keySet()));
     }
 
     @Test
     void aNonTextKeyBecomesTextAndACollisionOrANullKeyIsAnError() throws IOException {
-        var numbered = new LinkedHashMap<Object, Object>();
+        var numbered = new LinkedHashMap<>();
         numbered.put(10, "ten");
         numbered.put(2, "two");
         var decoded = (Map<?, ?>) CanonicalPackager.decode(CanonicalPackager.encode(numbered));
         assertEquals(List.of("10", "2"), new ArrayList<>(decoded.keySet()), "text order, not numeric");
-        var collision = new LinkedHashMap<Object, Object>();
+        var collision = new LinkedHashMap<>();
         collision.put(1, "a");
         collision.put("1", "b");
         var e = assertThrows(IllegalArgumentException.class, () -> CanonicalPackager.encode(collision));
@@ -209,7 +209,7 @@ class CanonicalPackagerTest {
     }
 
     @Test
-    void nestingBeyondTheBoundIsRefusedOnBothSides() throws IOException {
+    void nestingBeyondTheBoundIsRefusedOnBothSides() {
         Object deep = "x";
         for (int i = 0; i < 70; i++) {
             deep = List.of(deep);

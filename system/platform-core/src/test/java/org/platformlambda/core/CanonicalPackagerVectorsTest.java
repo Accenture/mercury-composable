@@ -63,7 +63,7 @@ class CanonicalPackagerVectorsTest {
             return null;
         }
         if (e.isJsonArray()) {
-            var list = new ArrayList<Object>();
+            var list = new ArrayList<>();
             e.getAsJsonArray().forEach(item -> list.add(value(item)));
             return list;
         }
@@ -125,6 +125,11 @@ class CanonicalPackagerVectorsTest {
             builder.add(entry.get(0).getAsString(), (Map<?, ?>) value(entry.get(1)));
         }
         return builder;
+    }
+
+    /** The package a vector describes: the builder calls and the build, both of which can reject a value. */
+    private static byte[] pack(JsonObject v) throws IOException {
+        return builder(v).build();
     }
 
     private static String sha256(byte[] bytes) throws Exception {
@@ -193,12 +198,10 @@ class CanonicalPackagerVectorsTest {
             var id = v.get("id").getAsString();
             var fragment = fragments.get(v.get("error").getAsString());
             assertNotNull(fragment, "unknown error code in " + id);
-            var e = assertThrows(IllegalArgumentException.class, () -> {
-                if (!v.has("maps")) {
-                    v.add("maps", new JsonArray());
-                }
-                builder(v).build();
-            }, id);
+            if (!v.has("maps")) {
+                v.add("maps", new JsonArray());
+            }
+            var e = assertThrows(IllegalArgumentException.class, () -> pack(v), id);
             assertTrue(e.getMessage().contains(fragment), id + ": '" + e.getMessage() + "'");
             checked++;
         }
