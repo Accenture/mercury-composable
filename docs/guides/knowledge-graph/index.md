@@ -106,16 +106,16 @@ Ten skills ship with the engine. Each is a composable function on a `graph.*` ro
 
 | Skill (route) | What it does |
 |---|---|
-| `graph.data.mapper` | Copy/transform data between state-machine namespaces (`mapping[]`) |
-| `graph.math` | Fast inline math & boolean evaluation, `IF/THEN/ELSE` branching, loops |
-| `graph.js` | Full JavaScript evaluation via GraalVM — more flexible, slower than `graph.math` |
-| `graph.api.fetcher` | Call external HTTP APIs using data-dictionary/provider nodes, with caching and fork-join concurrency |
-| `graph.extension` | Run another graph model **or** an Event Script flow as a sub-routine |
-| `graph.task` | Invoke a composable function through its route name — plug custom logic into the graph |
-| `graph.suspend` | Persist workflow state to a pluggable external store at a human checkpoint — the run completes and resumes later |
-| `graph.resume` | Restore persisted state by business correlation ID and continue past the checkpoint without re-executing it |
-| `graph.join` | Synchronization barrier — proceeds only once all upstream paths complete |
-| `graph.island` | Mark an isolated sub-graph (pauses traversal); useful while building |
+| [`graph.data.mapper`](skills-reference.md#data-mapper) | Copy/transform data between state-machine namespaces (`mapping[]`) |
+| [`graph.math`](skills-reference.md#math) | Fast inline math & boolean evaluation, `IF/THEN/ELSE` branching, loops |
+| [`graph.js`](skills-reference.md#js) | **DEPRECATED** — full JavaScript evaluation via GraalVM, kept for backward compatibility only; use `graph.math` + `graph.task` |
+| [`graph.api.fetcher`](skills-reference.md#api-fetcher) | Call external HTTP APIs using data-dictionary/provider nodes, with caching and fork-join concurrency |
+| [`graph.extension`](skills-reference.md#extension) | Run another graph model **or** an Event Script flow as a sub-routine |
+| [`graph.task`](skills-reference.md#task) | Invoke a composable function through its route name — plug custom logic into the graph |
+| [`graph.suspend`](skills-reference.md#suspend) | Persist workflow state to a pluggable external store at a human checkpoint — the run completes and resumes later |
+| [`graph.resume`](skills-reference.md#resume) | Restore persisted state by business correlation ID and continue past the checkpoint without re-executing it |
+| [`graph.join`](skills-reference.md#join) | Synchronization barrier — proceeds only once all upstream paths complete |
+| [`graph.island`](skills-reference.md#island) | Mark an isolated sub-graph (pauses traversal); useful while building |
 
 > Per-skill syntax, parameters, and worked examples are in the
 > [Built-in skills reference](skills-reference.md); in the Playground, `describe skill {name}`
