@@ -560,11 +560,11 @@
   twin `platform_core::canonical_packager`, mercury #339, Increment 147; UNRELEASED).** The ordering is the packager's own step — Gson has no
   ordered-keys option and a `String`-order sort is UTF-16, which differs above U+FFFF — and the bytes are written through msgpack-core
   directly, because `MsgPack.pack` drops nulls unless configured, packs a `Float` as float32 and writes a `BigDecimal` zero as `"0.00"`. The
-  profile: nulls kept, smallest integers (signed 64-bit), finite float64 only, shortest str/bin headers, exact numbers as strings (zero `"0"`),
+  profile: nulls kept, smallest integers (signed 64-bit), finite float64 only (a `Float` is WIDENED through its shortest decimal text — Eric, 2026-10-01, before 4.12.20; it was rejected at first), shortest str/bin headers, exact numbers as strings (zero `"0"`),
   nothing else; the read is strict by default (re-encode and compare). **Digital signature is OUT — the user application decides whether to
   protect the exact bytes and with which algorithm; no hash mode, verifier seam or key in the framework.** **The interop proof is one vector file,
-  byte-identical in both repos, whose expected bytes come from an independent encoder written from the spec (not from an engine)** — 65 values, 6
-  packages, 24 rejections and a seeded 60-document corpus; each engine matching it means the engines match each other, and both passed first time.
+  byte-identical in both repos, whose expected bytes come from an independent encoder written from the spec (not from an engine)** — 73 values, 6
+  packages, 25 rejections and a seeded 60-document corpus; each engine matching it means the engines match each other, and both passed first time.
   Method worth keeping: an independent oracle plus one shared file beats a cross-engine drive; it also found that `rmpv` counts two depth units
   per nesting level (its 64 accepted 31), so a library-limit corner needs its own vector. Language packs do not carry it (Event-over-HTTP function
   hosts). Deferred: folder `pack`/`unpack` tooling, trusted timestamps, per-entry manifest records, the graph-set loader RFC. Relates
