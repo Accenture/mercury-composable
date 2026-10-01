@@ -552,7 +552,7 @@
   run in every engine. **Supersedes the decimal half of [[graph-math-typed-arithmetic]]** ("exact-decimal money belongs in a
   `graph.task` function; `BigDecimal` never enters the dialect"); the rest of that ruling stands. **Method note:** RFC first,
   implement on one branch, promote to ADR only after review and green CI — the ledger recorded a decision, never a proposal
-  ([[conv-proposals-not-in-adr-ledger]]). Delivered on both engines (Rust twin: mercury #335 + #336, one shared core); open: the go/python/node string form and the release ([[decimal-ports-and-release]], closes [[decimal-mode]]). (ADR-0025)
+  ([[conv-proposals-not-in-adr-ledger]]). Delivered on both engines (Rust twin: mercury #335 + #336, one shared core); open: the python/node string form and the release ([[decimal-ports-and-release]], closes [[decimal-mode]]). (ADR-0025)
   <!-- id: decimal-statement-exact-arithmetic | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: working | origin: 2026-09-30-221603 -->
 
 - **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed response is traced
