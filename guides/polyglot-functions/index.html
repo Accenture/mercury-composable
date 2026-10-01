@@ -2153,6 +2153,8 @@
       
         
       
+        
+      
     
     
     
@@ -2625,6 +2627,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../test-reports/llm-helper-certification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — The LLM helper (Claude)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reserved-names-and-headers/" class="md-nav__link">
         
   
@@ -3064,11 +3094,11 @@ wrapper's default port is 8085 — the lambda-example's slot.</p>
 <li>
 <p>Instead of the lambda-example, start the Python demo (from a clone of
    mercury-python, after its documented setup):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mercury-serve<span class="w"> </span>examples/demo_app.py<span class="w"> </span>-Drest.server.port<span class="o">=</span><span class="m">8085</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mercury-serve<span class="w"> </span>examples/demo-app/demo_app.py<span class="w"> </span>-Drest.server.port<span class="o">=</span><span class="m">8085</span>
 </code></pre></div>
 <p>or the Node.js demo (from a clone of mercury-nodejs, after <code>npm install</code> and
 <code>npm run build</code>):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>node<span class="w"> </span>dist/src/cli.js<span class="w"> </span>examples/demo-app.mjs<span class="w"> </span>-Drest.server.port<span class="o">=</span><span class="m">8085</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>node<span class="w"> </span>dist/src/cli.js<span class="w"> </span>examples/demo-app/demo-app.mjs<span class="w"> </span>-Drest.server.port<span class="o">=</span><span class="m">8085</span>
 </code></pre></div>
 <p>(The <code>-Dkey=value</code> override syntax is the engines' own — the wrappers carry the same
 configuration conventions, so operating them feels identical.)</p>

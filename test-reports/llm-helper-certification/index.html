@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://accenture.github.io/mercury-composable/test-reports/distributed-cache-interop/">
+        <link rel="canonical" href="https://accenture.github.io/mercury-composable/test-reports/llm-helper-certification/">
       
       
-        <link rel="prev" href="../suspend-resume-interop/">
+        <link rel="prev" href="../otel-dynatrace-certification/">
       
       
-        <link rel="next" href="../streaming-return-route-cross-pod/">
+        <link rel="next" href="../../guides/reserved-names-and-headers/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Interop Test Report — Distributed Cache, Java ⇄ Rust - Composable for Java</title>
+        <title>Test Report — The LLM helper, certified end to end through both engines - Composable for Java</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#interop-test-report-distributed-cache-java-rust" class="md-skip">
+        <a href="#test-report-the-llm-helper-certified-end-to-end-through-both-engines" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Interop Test Report — Distributed Cache, Java ⇄ Rust
+              Test Report — The LLM helper, certified end to end through both engines
             
           </span>
         </div>
@@ -2410,37 +2410,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Interop Test Report — Distributed Cache
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../distributed-cache-interop/" class="md-nav__link">
         
   
   
@@ -2456,208 +2429,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#why-this-drive-exists" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why this drive exists
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Setup
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#method" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Method
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#results-certification-run-112112-checks-passed" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Results — certification run: 112/112 checks passed
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Results — certification run: 112/112 checks passed">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#a-identity-and-health" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        A. Identity and health
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#b-the-6-6-matrix-every-reader-reads-every-writer" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        B. The 6 × 6 matrix — every reader reads every writer
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#c-the-wire-key-layout-value-format-ttl" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        C. The wire — key layout, value format, TTL
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#d-cross-engine-deletes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        D. Cross-engine deletes
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#e-one-error-shape" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        E. One error shape
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#outage-redis-stopped" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Outage — Redis stopped
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#recovery-redis-restarted-no-application-restart" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Recovery — Redis restarted, no application restart
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#findings" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Findings
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#validation-run-after-the-finding-3-fix-2026-09-20" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Validation run after the Finding 3 fix (2026-09-20)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#validation-run-after-the-cache-failure-classification-2026-09-20" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Validation run after the cache-failure classification (2026-09-20)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reset-recovery" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Recovery after the connection-reset fix (2026-09-21)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-reproduce" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How to reproduce
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2723,10 +2494,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../llm-helper-certification/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — The LLM helper (Claude)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2742,6 +2540,169 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#result-in-brief" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Result in brief
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-was-under-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What was under test
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-1-layer-3-the-shipped-support-triage-graph-real-verdicts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 1 — Layer 3: the shipped support-triage graph, real verdicts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-2-layer-3-every-outcome-of-the-contract-live" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 2 — Layer 3: every outcome of the contract, live
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-3-layer-2-an-event-script-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 3 — Layer 2: an Event Script flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-4-layer-1-progressive-rendering-never-buffered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 4 — Layer 1: progressive rendering, never buffered
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-5-concurrency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 5 — Concurrency
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-6-failure-paths-on-the-real-sdks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 6 — Failure paths on the real SDKs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-7-one-connected-tree-per-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 7 — One connected tree per request
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#findings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Findings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defects-found-and-fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Defects found and fixed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproduce" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproduce
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-a-the-deploy-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix A — the deploy folder
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -3005,10 +2966,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#why-this-drive-exists" class="md-nav__link">
+  <a href="#result-in-brief" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why this drive exists
+        Result in brief
       
     </span>
   </a>
@@ -3016,10 +2977,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
+  <a href="#what-was-under-test" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Setup
+        What was under test
       
     </span>
   </a>
@@ -3027,10 +2988,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#method" class="md-nav__link">
+  <a href="#scenario-1-layer-3-the-shipped-support-triage-graph-real-verdicts" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Method
+        Scenario 1 — Layer 3: the shipped support-triage graph, real verdicts
       
     </span>
   </a>
@@ -3038,96 +2999,68 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#results-certification-run-112112-checks-passed" class="md-nav__link">
+  <a href="#scenario-2-layer-3-every-outcome-of-the-contract-live" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Results — certification run: 112/112 checks passed
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Results — certification run: 112/112 checks passed">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#a-identity-and-health" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        A. Identity and health
+        Scenario 2 — Layer 3: every outcome of the contract, live
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#b-the-6-6-matrix-every-reader-reads-every-writer" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#scenario-3-layer-2-an-event-script-flow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        B. The 6 × 6 matrix — every reader reads every writer
+        Scenario 3 — Layer 2: an Event Script flow
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#c-the-wire-key-layout-value-format-ttl" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#scenario-4-layer-1-progressive-rendering-never-buffered" class="md-nav__link">
     <span class="md-ellipsis">
       
-        C. The wire — key layout, value format, TTL
+        Scenario 4 — Layer 1: progressive rendering, never buffered
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#d-cross-engine-deletes" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#scenario-5-concurrency" class="md-nav__link">
     <span class="md-ellipsis">
       
-        D. Cross-engine deletes
+        Scenario 5 — Concurrency
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#e-one-error-shape" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#scenario-6-failure-paths-on-the-real-sdks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        E. One error shape
+        Scenario 6 — Failure paths on the real SDKs
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#outage-redis-stopped" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#scenario-7-one-connected-tree-per-request" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Outage — Redis stopped
+        Scenario 7 — One connected tree per request
       
     </span>
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#recovery-redis-restarted-no-application-restart" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Recovery — Redis restarted, no application restart
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3143,10 +3076,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#validation-run-after-the-finding-3-fix-2026-09-20" class="md-nav__link">
+  <a href="#defects-found-and-fixed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Validation run after the Finding 3 fix (2026-09-20)
+        Defects found and fixed
       
     </span>
   </a>
@@ -3154,10 +3087,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#validation-run-after-the-cache-failure-classification-2026-09-20" class="md-nav__link">
+  <a href="#reproduce" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Validation run after the cache-failure classification (2026-09-20)
+        Reproduce
       
     </span>
   </a>
@@ -3165,21 +3098,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reset-recovery" class="md-nav__link">
+  <a href="#appendix-a-the-deploy-folder" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Recovery after the connection-reset fix (2026-09-21)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-reproduce" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How to reproduce
+        Appendix A — the deploy folder
       
     </span>
   </a>
@@ -3206,771 +3128,602 @@
   
 
 
-<h1 id="interop-test-report-distributed-cache-java-rust">Interop Test Report — Distributed Cache, Java ⇄ Rust<a class="headerlink" href="#interop-test-report-distributed-cache-java-rust" title="Permanent link">&para;</a></h1>
-<p><em>Live cross-engine validation between the Java engine
-(<a href="https://github.com/Accenture/mercury-composable">mercury-composable</a>) and the official Rust
-implementation (<a href="https://github.com/Accenture/mercury">mercury</a>) of the
-<a href="../../guides/distributed-cache/">Distributed Cache</a> — conducted 2026-09-20 UTC (the evening of
-2026-09-19 Pacific) as the certification evidence for the <code>v1.cache.redis</code> lock-step: Java shipped the
-module in v4.12.9, the Rust port merged as mercury PR #285.</em> The same report is kept in the Rust repository's <code>docs/test-reports/</code>.</p>
-<p>This report is a permanent record. It validates the deployment shape the module was built for: a
-<strong>mixed fleet</strong> — some pods on the Java engine, some on the Rust engine — sharing <strong>one Redis cache</strong>,
-where a value written by any layer of either engine must read back, and be evicted, through any layer
-of the other. Everything here is reproducible from the two shipped <code>distributed-cache-example</code>
-applications and the Java repository's <code>helpers/redis-standalone</code> server.</p>
-<h2 id="why-this-drive-exists">Why this drive exists<a class="headerlink" href="#why-this-drive-exists" title="Permanent link">&para;</a></h2>
-<p>The cache contract is a <strong>cross-language wire contract</strong>: the key is <code>{redis.cache.key.prefix}{key}</code>
-(here <code>cache-demo:</code> plus the profile id), the value is opaque bytes the <em>application</em> owns, and every
-key carries its TTL from birth (<code>SETEX</code>). Nothing in the key or the value is engine-specific — so by
-design, which engine wrote a value and which engine reads it must be invisible to the caller. Four
-details are load-bearing for that guarantee, and each was pinned before the drive:</p>
+<h1 id="test-report-the-llm-helper-certified-end-to-end-through-both-engines">Test Report — The LLM helper, certified end to end through both engines<a class="headerlink" href="#test-report-the-llm-helper-certified-end-to-end-through-both-engines" title="Permanent link">&para;</a></h1>
+<p><em>Live validation of the LLM helper app — <code>llm.chat</code>, <code>llm.stream</code> and <code>llm.health</code>, on the official Anthropic SDK —
+hosted by the Python (<a href="https://github.com/Accenture/mercury-python">mercury-python</a>) and Node.js
+(<a href="https://github.com/Accenture/mercury-nodejs">mercury-nodejs</a>) packs and driven by the Java
+(<a href="https://github.com/Accenture/mercury-composable">mercury-composable</a>) and Rust
+(<a href="https://github.com/Accenture/mercury">mercury</a>) engines through Event-over-HTTP, conducted 2026-10-01 (UTC) with
+real Claude calls. It closes the item the OpenTelemetry certification left open in
+<a href="../otel-dynatrace-certification/#scenario-9-one-connected-tree-per-request-the-round-trip-span-the-parented-client-leg-head-and-tail-stream-tracing-2026-09-22">Scenario 9</a>:
+"a real-provider token stream of the same shape follows whenever quota returns". The earlier drives ran on Gemini, whose
+quota and availability decided which calls succeeded, and their token-bearing runs used a mock. This one ran on a paid
+Claude key with nothing throttled.</em></p>
+<h2 id="result-in-brief">Result in brief<a class="headerlink" href="#result-in-brief" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>One action vocabulary.</strong> Both engines' <code>v1.cache.redis</code> take the same actions, the same headers
-  (<code>action</code> / <code>key</code> / <code>ttl</code>), the same configuration keys and return the same error messages — a mixed
-  fleet is configured once (Rust port spec §2–§3, byte-compatible by construction).</li>
-<li><strong>The example's value is a plain MsgPack map</strong> — Java <code>MsgPack.packMapOrList</code>, Rust <code>rmpv</code> — not a
-  Java <code>EventEnvelope.toBytes()</code> holder. The Java example was refactored to this form (PR #395)
-  precisely because the Rust port cannot read the envelope encoding.</li>
-<li><strong>One model, two engines.</strong> The Layer 2 flow (<code>l2-profile.yml</code>) and the Layer 3 graph
-  (<code>profile-cache.json</code>) are byte-identical files in the two repositories.</li>
-<li><strong>One error shape.</strong> A REST client sees <code>{status, message, type: error}</code> from either engine whether
-  the failure came from routing or from a function (Rust aligned in PR #285).</li>
+<li><strong>Four pairs, three layers, no failed check.</strong> Java and Rust, each in front of the Python and the Node.js helper, were driven
+  through a direct service wired to a streaming REST entry (Layer 1), an Event Script flow (Layer 2), and the shipped
+  <code>support-triage</code> graph plus a generic chat graph (Layer 3). 40 results per pair, 124 model calls, 22,596 input and 7,248
+  output tokens: <strong>$0.22</strong> at list prices.</li>
+<li><strong>Progressive rendering is never buffered.</strong> Across 8 streams (two models, four pairs), every batch the helper forwarded
+  reached the engine's HTTP edge as its own frame — 50 to 101 per stream, none merged, none dropped, the text identical —
+  within a few milliseconds and without drift. <a href="#scenario-4-layer-1-progressive-rendering-never-buffered">Scenario 4</a>.</li>
+<li><strong>The cadence a viewer sees is the API's, and it depends on the model.</strong> Measured against the API with no SDK in the path,
+  Haiku 4.5 streams continuously (a batch every 25 ms); Opus 5.5 delivers bursts about every 600 ms. The helper and the
+  engines add nothing to either.</li>
+<li><strong>The error contract holds on the real SDKs</strong>, with the same status and the same message from both helpers, from both
+  engines, on every layer: no credential, an invalid key, an unknown model, a model that rejects a parameter, a deadline, a
+  malformed request. <a href="#scenario-6-failure-paths-on-the-real-sdks">Scenario 6</a>.</li>
+<li><strong>One connected trace tree per request.</strong> All 32 traces that touched a helper rebuild as one tree from the six processes'
+  own logs; none is broken. <a href="#scenario-7-one-connected-tree-per-request">Scenario 7</a>.</li>
+<li><strong>The engines held no credential.</strong> The credential reached the two helpers only; each engine process was started without
+  one (verified by counting the variable in each process's environment: 1 for each helper, 0 for each engine).</li>
 </ul>
-<h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
+<h2 id="what-was-under-test">What was under test<a class="headerlink" href="#what-was-under-test" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
 <th>Component</th>
-<th>Detail</th>
+<th>Build under test</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Java app</td>
-<td><code>examples/distributed-cache-example</code> from mercury-composable main (<code>c74ee6be</code>) plus the Layer 1 fix below; <code>java -jar distributed-cache-example-4.12.12.jar</code>, port <strong>8305</strong>; <code>/info</code> reports <code>4.12.12</code></td>
+<td>Java engine</td>
+<td>MiniGraph Playground 4.12.20, built 2026-10-01 from <code>main</code> at <code>a52ac747</code> plus this branch's wording updates; OpenJDK 27 (the project builds for 21)</td>
 </tr>
 <tr>
-<td>Rust app</td>
-<td><code>examples/distributed-cache-example</code> from mercury main (<code>5ac55eaf</code>, PR #285) plus the Layer 1 fix below; <code>distributed-cache-example -Drest.server.port=8306</code>, port <strong>8306</strong>; <code>/info</code> reports <code>4.12.7</code> (the Rust engine adopts the Java number at its catch-up release)</td>
+<td>Rust engine</td>
+<td><code>minigraph-playground</code> 4.12.20, debug build of 2026-10-01 from <code>main</code> at <code>7201c95d</code> plus the same updates; rustc 1.98.1</td>
 </tr>
 <tr>
-<td>Redis</td>
-<td><code>helpers/redis-standalone</code> 4.12.12 — a real <code>redis-server</code> as a plain <code>java -jar</code>, no Docker — port 6379, shared by both apps</td>
+<td>Python helper</td>
+<td>mercury-python <code>examples/llm-helper</code> on package 4.12.15 (<code>main</code> at <code>e084fd3</code> plus the helper change); Python 3.14.5, <code>anthropic</code> 1.11.0</td>
 </tr>
 <tr>
-<td>Cache settings (both apps)</td>
-<td><code>redis.cache.key.prefix=cache-demo:</code>, <code>redis.cache.default.ttl=1h</code>, <code>mandatory.health.dependencies=redis.health</code>, <code>app.env=dev</code></td>
+<td>Node.js helper</td>
+<td>mercury-nodejs <code>examples/llm-helper</code> on package 4.12.15 (<code>main</code> at <code>da2bb12</code> plus the helper change); Node v22.12.0, <code>@anthropic-ai/sdk</code> 0.131.0</td>
 </tr>
 <tr>
-<td>Driver</td>
-<td>a Python script over plain HTTP (<code>urllib</code>), with <code>redis-py</code> and <code>msgpack</code> for raw key inspection; run three times — discovery, fix verification, certification (this record)</td>
+<td>Model</td>
+<td><code>claude-opus-5-5</code> (the helpers' default); <code>claude-haiku-4-5</code> where a request names it</td>
 </tr>
 </tbody>
 </table>
-<p>The two apps stand in for the mixed fleet; a request to one port is "the load balancer picked a Java
-pod", to the other "a Rust pod". Layer 1 is the <code>v1.profile.l1</code> function driving the cache in code,
-Layer 2 the <code>l2-profile</code> Event Script flow, Layer 3 the <code>profile-cache</code> graph behind the standard
-<code>POST /api/graph/{graph_id}</code> endpoint.</p>
-<h2 id="method">Method<a class="headerlink" href="#method" title="Permanent link">&para;</a></h2>
-<p><strong>Main phase.</strong> (A) <code>/info</code> and <code>/health</code> on both engines. (B) Each engine writes one profile through
-each of its three layers — six writers — and every one of the six readers (three layers × two
-engines) reads all six: a 6 × 6 matrix, 18 of whose cells cross the engine boundary. (C) The raw keys
-are read straight from Redis: layout, TTL, and the bytes decoded as MsgPack; the same payload is then
-written by both engines to compare bytes. (D) Every layer of each engine deletes a profile the <em>other</em>
-engine wrote, the writer confirms the miss on yet another layer, and Redis confirms the key is gone.
-(E) The miss bodies of all three layers and the Layer 3 unknown-action rejection are compared
-field-by-field between the engines.</p>
-<p><strong>Outage phase.</strong> <code>redis-standalone</code> is stopped. Each engine's <code>/health</code> is read, then five probes —
-Layer 1 GET, POST and DELETE, Layer 2 GET, Layer 3 get — must each fail as an <em>error</em>: never a 404
-miss, never a <code>stored</code> acknowledgement.</p>
-<p><strong>Recovery phase.</strong> <code>redis-standalone</code> is restarted (empty — no persistence). Each engine must return
-to <code>/health</code> 200 <strong>without an application restart</strong>, serve a Layer 1 write again within 60 s, and the
-other engine must read that write on Layers 2 and 3. Two negative controls close the run: the earlier
-keys are gone (a real restart, not a reconnect illusion) and the POST attempted during the outage
-never landed.</p>
-<h2 id="results-certification-run-112112-checks-passed">Results — certification run: 112/112 checks passed<a class="headerlink" href="#results-certification-run-112112-checks-passed" title="Permanent link">&para;</a></h2>
-<p>Every hard check passed; one further <em>informational</em> comparison (§C) is recorded as expected. The
-discovery run had exposed one defect in both engines (Finding 1), fixed and re-verified before this
-run.</p>
-<h3 id="a-identity-and-health">A. Identity and health<a class="headerlink" href="#a-identity-and-health" title="Permanent link">&para;</a></h3>
-<p>Both <code>/info</code> endpoints answer 200 with the application block; both <code>/health</code> answer 200 with
-<code>redis.health</code> listed as the mandatory dependency.</p>
-<h3 id="b-the-6-6-matrix-every-reader-reads-every-writer">B. The 6 × 6 matrix — every reader reads every writer<a class="headerlink" href="#b-the-6-6-matrix-every-reader-reads-every-writer" title="Permanent link">&para;</a></h3>
+<p>Ports: the helpers on 8086 (Python) and 8087 (Node.js); Java on 8085 (peer Python) and 8095 (peer Node.js); Rust on 8090
+(peer Python) and 8091 (peer Node.js). The peer is chosen with <code>-Dllm.peer.port</code>; the engines read the map once per process,
+so each pair is its own process. Every application ran with <code>-Dlog.format=compact</code>, and the helpers with
+<code>-Dllm.log.batches=true</code>.</p>
+<p><strong>The three layers, as reached.</strong> The playground's REST automation serves a streaming entry with a direct service — the
+relay <code>llm.stream.relay</code> on <code>POST /api/llm/stream</code>, a Layer 1 function on a <code>stream: true</code> entry that forwards its reply
+lane into the Event-over-HTTP mapped <code>llm.stream</code>. The same hop is taken by a flow task and by a graph task that simply name
+the mapped route. <code>support-triage</code> and the engine's <code>POST /api/graph/{graph_id}</code> were already in the playground; the generic
+chat graph (<code>llm-chat-probe</code>, Layer 3) and the chat flow (<code>llm-chat</code>, Layer 2) were deployed beside them, with no rebuild,
+through the extra-manifest lane (<code>graph.model.automation</code> and <code>yaml.flow.automation</code> take a list; the later manifest wins).
+They are in <a href="#appendix-a-the-deploy-folder">Appendix A</a>. The Rust engine reads one REST location, not Java's merged list, so
+its REST entry for the flow went into a single combined <code>rest.yaml</code>.</p>
+<p><strong>The method.</strong> A small harness drove the stack: it launched the processes, posted every scenario and checked each outcome
+(a failed check was listed and set the exit code), read each Server-Sent Events response line by line and stamped every
+frame on arrival, and two analysers rebuilt the traces and attributed edge frames to helper batches from the processes'
+own logs. It is a scratch tool of the drive and ships in no repository; every request in it is reproducible with the <code>curl</code>
+commands in <a href="#reproduce">Reproduce</a>.</p>
+<h2 id="scenario-1-layer-3-the-shipped-support-triage-graph-real-verdicts">Scenario 1 — Layer 3: the shipped <code>support-triage</code> graph, real verdicts<a class="headerlink" href="#scenario-1-layer-3-the-shipped-support-triage-graph-real-verdicts" title="Permanent link">&para;</a></h2>
+<p>The E0 graph, byte-identical in the two engines, ran against Claude for the first time on this key: its <code>classify</code> node is a
+<code>graph.task</code> calling <code>llm.chat</code> with a JSON schema built in mapping lines, and the graph — not the model — routes on the
+verdict. Each of the three requests below was sent to every pair; every verdict was the expected one and every route followed it.</p>
 <table>
 <thead>
 <tr>
-<th>Writer \ Reader</th>
-<th>Java L1</th>
-<th>Java L2</th>
-<th>Java L3</th>
-<th>Rust L1</th>
-<th>Rust L2</th>
-<th>Rust L3</th>
+<th>Request</th>
+<th>Verdict</th>
+<th>The graph's route</th>
+<th>Java → Python</th>
+<th>Java → Node.js</th>
+<th>Rust → Python</th>
+<th>Rust → Node.js</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>Java L1</strong> writes <code>java-l1</code></td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
+<td>"The app crashes with an error dialog every time I upload a file larger than 5 MB."</td>
+<td><code>bug</code></td>
+<td><code>bug-filed</code></td>
+<td>3896 ms</td>
+<td>3191 ms</td>
+<td>1637 ms</td>
+<td>1490 ms</td>
 </tr>
 <tr>
-<td><strong>Java L2</strong> writes <code>java-l2</code></td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
+<td>"How do I export my monthly report as a PDF file?"</td>
+<td><code>question</code></td>
+<td><code>answered</code></td>
+<td>4808 ms</td>
+<td>2345 ms</td>
+<td>3223 ms</td>
+<td>2346 ms</td>
 </tr>
 <tr>
-<td><strong>Java L3</strong> writes <code>java-l3</code></td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
+<td>"Please add a dark mode to the dashboard, my eyes hurt at night."</td>
+<td><code>feature</code></td>
+<td><code>feature-routed</code></td>
+<td>1533 ms</td>
+<td>1498 ms</td>
+<td>1416 ms</td>
+<td>1282 ms</td>
 </tr>
 <tr>
-<td><strong>Rust L1</strong> writes <code>rust-l1</code></td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-</tr>
-<tr>
-<td><strong>Rust L2</strong> writes <code>rust-l2</code></td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-</tr>
-<tr>
-<td><strong>Rust L3</strong> writes <code>rust-l3</code></td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
-<td>✓</td>
+<td>no text (rejected before any model call)</td>
+<td>—</td>
+<td><code>rejected</code>, HTTP 400</td>
+<td>8 ms</td>
+<td>8 ms</td>
+<td>3 ms</td>
+<td>3 ms</td>
 </tr>
 </tbody>
 </table>
-<p>36/36 reads returned HTTP 200 with the exact profile map; the <strong>18 cross-engine cells</strong> are the interop
-proof, the 18 same-engine cells the control.</p>
-<h3 id="c-the-wire-key-layout-value-format-ttl">C. The wire — key layout, value format, TTL<a class="headerlink" href="#c-the-wire-key-layout-value-format-ttl" title="Permanent link">&para;</a></h3>
+<p>Usage surfaced through <code>model.*</code> into the response (for the bug request: 320 input and 51 output tokens), and the model
+reported itself as <code>claude-opus-5-5</code>. The rejected request spent no tokens: the graph's own check ran first.</p>
+<h2 id="scenario-2-layer-3-every-outcome-of-the-contract-live">Scenario 2 — Layer 3: every outcome of the contract, live<a class="headerlink" href="#scenario-2-layer-3-every-outcome-of-the-contract-live" title="Permanent link">&para;</a></h2>
+<p>The generic chat graph passes the request body to <code>llm.chat</code> and returns the helper's reply, or — through one shared failure
+handler anchored from an island — the provider's status and message. Twelve probes, each run on every pair; the outcome was the
+same on all four, and the error bodies were identical to the character (the request id aside).</p>
 <table>
 <thead>
 <tr>
-<th>Key</th>
-<th>Written by</th>
-<th>Raw value (hex)</th>
-<th>Decoded (MsgPack)</th>
-<th>TTL at read</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>cache-demo:java-l1</code></td>
-<td>Java L1</td>
-<td><code>82a46e616d65ac4a617661204c617965722031a5656d61696cb36a6176612d6c31406578616d706c652e636f6d</code></td>
-<td><code>{"name":"Java Layer 1","email":"java-l1@example.com"}</code></td>
-<td>3600 s</td>
-</tr>
-<tr>
-<td><code>cache-demo:java-l2</code></td>
-<td>Java L2</td>
-<td><code>82a46e616d65ac4a617661204c617965722032a5656d61696cb36a6176612d6c32406578616d706c652e636f6d</code></td>
-<td><code>{"name":"Java Layer 2","email":"java-l2@example.com"}</code></td>
-<td>3600 s</td>
-</tr>
-<tr>
-<td><code>cache-demo:java-l3</code></td>
-<td>Java L3</td>
-<td><code>82a46e616d65ac4a617661204c617965722033a5656d61696cb36a6176612d6c33406578616d706c652e636f6d</code></td>
-<td><code>{"name":"Java Layer 3","email":"java-l3@example.com"}</code></td>
-<td>3600 s</td>
-</tr>
-<tr>
-<td><code>cache-demo:rust-l1</code></td>
-<td>Rust L1</td>
-<td><code>82a5656d61696cb3727573742d6c31406578616d706c652e636f6da46e616d65ac52757374204c617965722031</code></td>
-<td><code>{"email":"rust-l1@example.com","name":"Rust Layer 1"}</code></td>
-<td>3600 s</td>
-</tr>
-<tr>
-<td><code>cache-demo:rust-l2</code></td>
-<td>Rust L2</td>
-<td><code>82a5656d61696cb3727573742d6c32406578616d706c652e636f6da46e616d65ac52757374204c617965722032</code></td>
-<td><code>{"email":"rust-l2@example.com","name":"Rust Layer 2"}</code></td>
-<td>3600 s</td>
-</tr>
-<tr>
-<td><code>cache-demo:rust-l3</code></td>
-<td>Rust L3</td>
-<td><code>82a5656d61696cb3727573742d6c33406578616d706c652e636f6da46e616d65ac52757374204c617965722033</code></td>
-<td><code>{"email":"rust-l3@example.com","name":"Rust Layer 3"}</code></td>
-<td>3600 s</td>
-</tr>
-</tbody>
-</table>
-<p>Every value is a plain MsgPack map (<code>0x82</code> = a two-entry map) that decodes to the profile; every TTL is
-the 1 h default counting from the write; the keyspace held exactly the eight <code>cache-demo:</code> keys and
-nothing else.</p>
-<p><strong>Informational — the same payload, written by both engines, is not byte-identical:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Java  L1 → 82a46e616d65a45477696ea5656d61696cb07477696e406578616d706c652e636f6d
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Rust  L1 → 82a5656d61696cb07477696e406578616d706c652e636f6da46e616d65a45477696e
-</code></pre></div>
-<p>Both decode to <code>{"name": "Twin", "email": "twin@example.com"}</code>. The Java packer writes the map in
-insertion order (<code>name</code>, <code>email</code>); the Rust packer serialises <code>serde_json</code>'s map, whose keys are sorted
-(<code>email</code>, <code>name</code>). MsgPack map order carries no meaning and is not part of the contract — the 36/36
-matrix above is the proof — but a byte-level comparison of stored values across engines must not be
-used as an equality test.</p>
-<h3 id="d-cross-engine-deletes">D. Cross-engine deletes<a class="headerlink" href="#d-cross-engine-deletes" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Profile</th>
-<th>Deleted by</th>
-<th>Miss confirmed by</th>
-<th>Redis key</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>java-l1</code> (written by Java L1)</td>
-<td><strong>Rust L2</strong> → HTTP 200</td>
-<td><strong>Java L3</strong> → HTTP 404 <code>Profile not found</code></td>
-<td>gone</td>
-</tr>
-<tr>
-<td><code>rust-l1</code> (written by Rust L1)</td>
-<td><strong>Java L3</strong> → HTTP 200</td>
-<td><strong>Rust L2</strong> → HTTP 404 <code>Profile not found</code></td>
-<td>gone</td>
-</tr>
-<tr>
-<td><code>java-l2</code> (written by Java L2)</td>
-<td><strong>Rust L3</strong> → HTTP 200</td>
-<td><strong>Java L2</strong> → HTTP 404 <code>Profile not found</code></td>
-<td>gone</td>
-</tr>
-<tr>
-<td><code>rust-l2</code> (written by Rust L2)</td>
-<td><strong>Java L2</strong> → HTTP 200</td>
-<td><strong>Rust L3</strong> → HTTP 404 <code>Profile not found</code></td>
-<td>gone</td>
-</tr>
-<tr>
-<td><code>java-l3</code> (written by Java L3)</td>
-<td><strong>Rust L1</strong> → HTTP 200</td>
-<td><strong>Java L3</strong> → HTTP 404 <code>Profile not found</code></td>
-<td>gone</td>
-</tr>
-<tr>
-<td><code>rust-l3</code> (written by Rust L3)</td>
-<td><strong>Java L1</strong> → HTTP 200</td>
-<td><strong>Rust L1</strong> → HTTP 404 <code>Profile not found</code></td>
-<td>gone</td>
-</tr>
-</tbody>
-</table>
-<p>6/6 deletes crossed the engine boundary, each layer of each engine deleting once; every writer then
-missed on a third layer with the same body, and every key was gone from Redis.</p>
-<h3 id="e-one-error-shape">E. One error shape<a class="headerlink" href="#e-one-error-shape" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Case</th>
-<th>Java body</th>
-<th>Rust body</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Layer 1 miss</td>
-<td><code>{"message": "Profile not found", "status": 404, "type": "error"}</code></td>
-<td>identical</td>
-</tr>
-<tr>
-<td>Layer 2 miss</td>
-<td><code>{"message": "Profile not found", "status": 404, "type": "error"}</code></td>
-<td>identical</td>
-</tr>
-<tr>
-<td>Layer 3 miss</td>
-<td><code>{"message": "Profile not found", "status": 404, "target": "v1.profile.decode", "type": "error"}</code></td>
-<td>identical</td>
-</tr>
-<tr>
-<td>Layer 3 unknown action</td>
-<td><code>{"message": "Invalid action. Use get, save or delete", "status": 400}</code></td>
-<td>identical</td>
-</tr>
-</tbody>
-</table>
-<p>A client sees the same status, the same keys and the same values from either engine, with
-<code>content-type: application/json</code> on both.</p>
-<h3 id="outage-redis-stopped">Outage — Redis stopped<a class="headerlink" href="#outage-redis-stopped" title="Permanent link">&para;</a></h3>
-<p>Both <code>/health</code> endpoints answered <strong>HTTP 400</strong> with <code>"status": "DOWN"</code> and the dependency block
-reporting <code>redis.health</code> at 503 with a <code>{code, text}</code> message — the same contract on both engines,
-with the cause text engine-specific: Java <code>Redis is not reachable - Command timed out after 5 second(s)</code>, Rust <code>Redis is not reachable - broken pipe</code>.</p>
-<table>
-<thead>
-<tr>
-<th>Engine</th>
 <th>Probe</th>
-<th>Result</th>
-<th>Latency</th>
-<th>Message</th>
+<th>Outcome</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Java</td>
-<td>L1 GET</td>
-<td>HTTP 500</td>
-<td>5.02 s</td>
-<td><code>Timeout for 5000 ms</code></td>
+<td>plain prompt</td>
+<td>200 — <code>text: OK</code>, <code>stop_reason: end_turn</code>, 20 input and 4 output tokens, a <code>request_id</code></td>
 </tr>
 <tr>
-<td>Java</td>
-<td>L1 POST</td>
-<td>HTTP 500</td>
-<td>5.01 s</td>
-<td><code>Timeout for 5000 ms</code></td>
+<td>conversation with a system prompt</td>
+<td>200 — the reply uses the earlier turn</td>
 </tr>
 <tr>
-<td>Java</td>
-<td>L1 DELETE</td>
-<td>HTTP 500</td>
-<td>5.01 s</td>
-<td><code>Timeout for 5000 ms</code></td>
+<td>structured output (a schema)</td>
+<td>200 — <code>data</code> is the parsed object, <code>label: bug</code></td>
 </tr>
 <tr>
-<td>Java</td>
-<td>L2 GET</td>
-<td>HTTP 500</td>
-<td>5.01 s</td>
-<td><code>Command timed out after 5 second(s)</code></td>
+<td><code>params.effort: low</code></td>
+<td>200</td>
 </tr>
 <tr>
-<td>Java</td>
-<td>L3 get</td>
-<td>HTTP 500</td>
-<td>5.02 s</td>
-<td><code>Command timed out after 5 second(s)</code></td>
+<td><code>params.stop_sequences: ["5"]</code> on a counting prompt</td>
+<td>200 — <code>stop_reason: stop_sequence</code>, text <code>1 2 3 4</code></td>
 </tr>
 <tr>
-<td>Rust</td>
-<td>L1 GET</td>
-<td>HTTP 500</td>
-<td>0.0 s</td>
-<td><code>Redis error - broken pipe</code></td>
+<td><code>max_tokens: 1</code></td>
+<td>200 — text <code>O</code>, <code>stop_reason: max_tokens</code>: partial text is returned with its reason</td>
 </tr>
 <tr>
-<td>Rust</td>
-<td>L1 POST</td>
-<td>HTTP 408</td>
-<td>5.01 s</td>
-<td><code>Request timeout for 5000 ms</code></td>
+<td>structured output with <code>max_tokens: 1</code></td>
+<td><strong>422</strong> — <code>LLM reply is not valid JSON for the requested schema - stop_reason=max_tokens (the reply was cut off - raise params.max_tokens)</code></td>
 </tr>
 <tr>
-<td>Rust</td>
-<td>L1 DELETE</td>
-<td>HTTP 500</td>
-<td>4.46 s</td>
-<td><code>Redis error - Connection refused (os error 61)</code></td>
+<td><code>params.model: claude-haiku-4-5</code></td>
+<td>200 — <code>model: claude-haiku-4-5-20251001</code>: the override works with no thinking, effort or fallbacks parameter sent</td>
 </tr>
 <tr>
-<td>Rust</td>
-<td>L2 GET</td>
-<td>HTTP 500</td>
-<td>5.01 s</td>
-<td><code>Redis request timed out after 5000ms</code></td>
+<td><code>effort</code> on Haiku 4.5</td>
+<td><strong>400</strong> — <code>LLM provider error - 400 invalid_request_error: This model does not support the effort parameter. (request_id …)</code></td>
 </tr>
 <tr>
-<td>Rust</td>
-<td>L3 get</td>
-<td>HTTP 500</td>
-<td>4.46 s</td>
-<td><code>Redis error - Connection refused (os error 61)</code></td>
+<td>an unknown model</td>
+<td><strong>404</strong> — <code>LLM provider error - 404 not_found_error: model: claude-no-such-model-9 (request_id …)</code></td>
+</tr>
+<tr>
+<td><code>params.timeout_ms: 50</code></td>
+<td><strong>408</strong> — <code>LLM request timed out after 50 ms</code> (about 60 ms at the caller)</td>
+</tr>
+<tr>
+<td><code>params.temperature</code></td>
+<td><strong>400</strong> — <code>unsupported params: temperature - supported: provider, model, max_tokens, timeout_ms, effort, stop_sequences</code></td>
 </tr>
 </tbody>
 </table>
-<p>Every probe failed as an error — none answered a 404 miss, none acknowledged <code>stored</code>, and the POST
-never landed in Redis (verified after the restart). The latencies are Finding 2; the statuses Finding 3.</p>
-<blockquote>
-<p><strong>Amended after the run:</strong> with the Finding 3 fix in place, the three Java Layer 1 rows read <strong>HTTP 408</strong>
-<code>Timeout for 5000 ms</code> — first in a Java-only re-probe (2026-09-20 01:17 UTC), then in the full
-<a href="#validation-run-after-the-finding-3-fix-2026-09-20">validation run</a> below; the Java Layer 2 and 3 rows
-and every Rust row are unchanged.</p>
-</blockquote>
-<h3 id="recovery-redis-restarted-no-application-restart">Recovery — Redis restarted, no application restart<a class="headerlink" href="#recovery-redis-restarted-no-application-restart" title="Permanent link">&para;</a></h3>
-<p>The outage lasted 54 s (Redis stopped at 00:37:07 UTC, listening again at 00:38:01). Both <code>/health</code>
-endpoints answered 200 on the first read after the restart.</p>
+<h2 id="scenario-3-layer-2-an-event-script-flow">Scenario 3 — Layer 2: an Event Script flow<a class="headerlink" href="#scenario-3-layer-2-an-event-script-flow" title="Permanent link">&para;</a></h2>
+<p><code>POST /api/llm/chat</code> runs the flow <code>llm-chat</code>, whose one task is <code>process: 'llm.chat'</code> with <code>input.body -&gt; *</code>: the route is
+not local and resolves through <code>event-over-http.yaml</code>, exactly like the declarative demo in the
+<a href="../../guides/event-over-http/">Event over HTTP guide</a>. On all four pairs a plain prompt answered <code>OK</code> (2172 to 4478 ms),
+a structured request returned <code>data.label: feature</code> (2553 to 3965 ms), and an unknown model returned the provider's 404 as
+the HTTP status with its message, the error body the flow adapter renders.</p>
+<h2 id="scenario-4-layer-1-progressive-rendering-never-buffered">Scenario 4 — Layer 1: progressive rendering, never buffered<a class="headerlink" href="#scenario-4-layer-1-progressive-rendering-never-buffered" title="Permanent link">&para;</a></h2>
+<p>The requirement is that a token batch reaches the caller as it is produced, never gathered and sent as one message. Four
+things were checked, because each hop could break it.</p>
+<p><strong>The helper's own code path.</strong> A unit test in each pack makes the fake model refuse to produce batch <em>k</em> until the caller
+already holds batches 0 to <em>k</em>-1. A mutation that gathers the batches and sends them at the end fails that test, and the
+vector for tokens delivered before a mid-stream error, in both packs; the correct code passes all of them.</p>
+<p><strong>Live: every batch the helper forwarded reached the edge as its own frame.</strong> Each stream carried its own trace id; the
+helper logged each batch's number, size and arrival time for that trace (<code>llm.log.batches</code>), and the harness stamped each frame
+at the edge. The offset is the edge's arrival time minus the helper's forward time for the same batch.</p>
 <table>
 <thead>
 <tr>
-<th>Engine</th>
-<th>Layer 1 write attempts after the restart</th>
-<th>Recovered</th>
+<th>Pair</th>
+<th>Model</th>
+<th>Helper batches</th>
+<th>Edge frames</th>
+<th>Text identical</th>
+<th>Offset, median</th>
+<th>Offset, spread</th>
+<th>Longest gap, helper / edge</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Java</td>
-<td>attempt 1 at +0 s → HTTP 500 (<code>Timeout for 5000 ms</code> — the shared Lettuce connection was still on its reconnect backoff); attempt 2 → HTTP 201 at <strong>+10.2 s</strong>, the moment Lettuce's scheduled reconnect fired (<code>Reconnected</code> logged at +10.5 s)</td>
-<td>yes, without a restart</td>
+<td>Java → Python</td>
+<td>Opus 5.5</td>
+<td>67</td>
+<td>67</td>
+<td>yes</td>
+<td>12 ms</td>
+<td>10 ms</td>
+<td>1201 / 1206 ms</td>
 </tr>
 <tr>
-<td>Rust</td>
-<td>attempt 1 → HTTP 201 (its first probe, at +10.2 s, since the driver probes the engines in sequence); the <code>ConnectionManager</code> reconnects on demand, so it was ready as soon as Redis was</td>
-<td>yes, without a restart</td>
+<td>Java → Python</td>
+<td>Haiku 4.5</td>
+<td>101</td>
+<td>101</td>
+<td>yes</td>
+<td>7 ms</td>
+<td>4 ms</td>
+<td>191 / 191 ms</td>
+</tr>
+<tr>
+<td>Rust → Python</td>
+<td>Opus 5.5</td>
+<td>50</td>
+<td>50</td>
+<td>yes</td>
+<td>4 ms</td>
+<td>9 ms</td>
+<td>922 / 922 ms</td>
+</tr>
+<tr>
+<td>Rust → Python</td>
+<td>Haiku 4.5</td>
+<td>82</td>
+<td>82</td>
+<td>yes</td>
+<td>3 ms</td>
+<td>5 ms</td>
+<td>228 / 227 ms</td>
+</tr>
+<tr>
+<td>Java → Node.js</td>
+<td>Opus 5.5</td>
+<td>51</td>
+<td>51</td>
+<td>yes</td>
+<td>11 ms</td>
+<td>5 ms</td>
+<td>924 / 925 ms</td>
+</tr>
+<tr>
+<td>Java → Node.js</td>
+<td>Haiku 4.5</td>
+<td>81</td>
+<td>81</td>
+<td>yes</td>
+<td>10 ms</td>
+<td>6 ms</td>
+<td>181 / 178 ms</td>
+</tr>
+<tr>
+<td>Rust → Node.js</td>
+<td>Opus 5.5</td>
+<td>55</td>
+<td>55</td>
+<td>yes</td>
+<td>5 ms</td>
+<td>5 ms</td>
+<td>1125 / 1124 ms</td>
+</tr>
+<tr>
+<td>Rust → Node.js</td>
+<td>Haiku 4.5</td>
+<td>96</td>
+<td>96</td>
+<td>yes</td>
+<td>3 ms</td>
+<td>4 ms</td>
+<td>303 / 302 ms</td>
 </tr>
 </tbody>
 </table>
-<p>Each engine's post-recovery write was read by the other on Layers 2 and 3 (4/4); the restarted store
-had lost the earlier keys and held no key from the outage POST. The asymmetry is Finding 4.</p>
+<p>The counts match, the characters match, and the offset stays inside a band of 4 to 10 ms for the whole stream; a hop that
+held batches back would show fewer frames than batches, or an offset that grows. The engine's own count agrees as a third
+witness: the terminal record's <code>frames</code> annotation, counted by the reply lane, is 67 on the Java → Python Opus stream, the same
+67 (the terminal records are in <a href="#scenario-7-one-connected-tree-per-request">Scenario 7</a>). The long gaps are the same at both ends: they are not the
+edge's.</p>
+<p><strong>Where the cadence comes from.</strong> The first Opus stream arrived in bursts: groups of several frames with 0 ms between them,
+then a pause of about 600 ms. The same prompt was measured with the SDK straight to the API (no helper, no engine) and then on
+a raw TLS socket with no SDK and no HTTP library, with no proxy variable in the environment. The raw socket shows the API itself
+delivering the batches that way, so it is neither the SDK, nor the helper, nor an engine. The pace depends on the model:</p>
+<table>
+<thead>
+<tr>
+<th>Model, measured on the raw API (2 runs each)</th>
+<th>Tokens per batch</th>
+<th>Distinct arrival times, of the batches</th>
+<th>Typical pacing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Haiku 4.5</td>
+<td>2.2 to 2.4</td>
+<td>73 and 76, of 85 and 88</td>
+<td>median gap 25 ms, 0 or 1 gap over 150 ms</td>
+</tr>
+<tr>
+<td>Sonnet 5.5, effort low</td>
+<td>3.8 to 4.1</td>
+<td>26 and 33, of 65 and 67</td>
+<td>bursts about every 350 ms</td>
+</tr>
+<tr>
+<td>Opus 5.5, effort low</td>
+<td>5.3 to 5.4</td>
+<td>7 and 8, of 45 and 49</td>
+<td>bursts of about a dozen batches, every 510 to 1490 ms</td>
+</tr>
+<tr>
+<td>Opus 5.5, model default effort</td>
+<td>5.0 to 5.6</td>
+<td>7 and 8, of 46 and 53</td>
+<td>the same</td>
+</tr>
+</tbody>
+</table>
+<p>So the certification drives both ends. <strong>Haiku 4.5</strong> is the continuous case, and its check is strict: at least 30 frames,
+distinct arrival times for at least 60% of them, a median gap of 60 ms or less and no gap over 600 ms. On all four pairs the
+median gap was 24 to 25 ms and the longest 178 to 302 ms, with 69 to 88 distinct arrival times for 81 to 101 frames.
+<strong>Opus 5.5</strong>, the helpers' default, is the case that inherits the API's bursts: 7 to 19 distinct arrival times for 50 to 67
+frames, spread over 3.4 to 4.4 seconds (Haiku's streams spanned 2.0 to 2.5). If smooth rendering matters more than the model,
+set <code>llm.model</code> (or <code>params.model</code>).</p>
+<p><strong>The terminal event</strong> carried everything it should on every stream: <code>model</code>, <code>stop_reason: end_turn</code>, <code>usage</code>, a
+<code>request_id</code>, the helper's <code>language</code> (<code>python</code> or <code>node.js</code>), the caller's business correlation id (<code>X-Correlation-Id</code>)
+and the trace id the caller supplied (<code>X-Trace-Id</code>), both echoed unchanged. A stream cut at one token delivered exactly one
+frame and a terminal with <code>stop_reason: max_tokens</code>; a stream for an unknown model failed before any head with the provider's
+404 as the HTTP status.</p>
+<h2 id="scenario-5-concurrency">Scenario 5 — Concurrency<a class="headerlink" href="#scenario-5-concurrency" title="Permanent link">&para;</a></h2>
+<p>Twelve <code>support-triage</code> requests and four streams were sent at once to each pair. Every chat answered with the expected
+verdict and route, and every stream delivered frames and a terminal.</p>
+<table>
+<thead>
+<tr>
+<th>Pair</th>
+<th>Wall time</th>
+<th>Median</th>
+<th>Slowest</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Java → Python</td>
+<td>5226 ms</td>
+<td>2502 ms</td>
+<td>5215 ms</td>
+</tr>
+<tr>
+<td>Java → Node.js</td>
+<td>4432 ms</td>
+<td>2593 ms</td>
+<td>4425 ms</td>
+</tr>
+<tr>
+<td>Rust → Python</td>
+<td>4404 ms</td>
+<td>2294 ms</td>
+<td>4393 ms</td>
+</tr>
+<tr>
+<td>Rust → Node.js</td>
+<td>3413 ms</td>
+<td>2392 ms</td>
+<td>3403 ms</td>
+</tr>
+</tbody>
+</table>
+<p>The paid key was never throttled: no 429 appeared in any drive.</p>
+<h2 id="scenario-6-failure-paths-on-the-real-sdks">Scenario 6 — Failure paths on the real SDKs<a class="headerlink" href="#scenario-6-failure-paths-on-the-real-sdks" title="Permanent link">&para;</a></h2>
+<p>The vectors pin the error contract against a fake of each SDK; this scenario proves it against the real ones, without a valid
+credential and so without spend. Four helper variants ran beside the real ones — each language with no credential, and each
+with a deliberately invalid placeholder — and were called both through engines and directly from a pack's own client.</p>
+<table>
+<thead>
+<tr>
+<th>Helper</th>
+<th>Called through</th>
+<th>Layer 3 graph</th>
+<th>Layer 2 flow</th>
+<th>Layer 1 relay</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python, <strong>no credential</strong></td>
+<td>Java</td>
+<td>503</td>
+<td>503</td>
+<td>503</td>
+</tr>
+<tr>
+<td>Python, no credential</td>
+<td>Rust</td>
+<td>503</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Node.js, <strong>invalid key</strong></td>
+<td>Rust</td>
+<td>401</td>
+<td>401</td>
+<td>401</td>
+</tr>
+<tr>
+<td>Node.js, invalid key</td>
+<td>Java</td>
+<td>401</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>Called directly with the Python pack's client (no engine), all four variants answered <code>llm.chat</code> with the same text as above:
+<strong>503</strong> <code>LLM provider credential missing - set ANTHROPIC_API_KEY in the environment</code> for each language with no credential,
+<strong>401</strong> <code>LLM provider error - 401 authentication_error: invalid x-api-key (request_id …)</code> for each with an invalid key, and
+<strong>400</strong> <code>unsupported params: temperature - …</code> for a malformed request. The 401 carries Anthropic's own request id. A malformed
+request answered 400 through every layer too: an unsupported param through the graph, a missing prompt through the flow, a
+<code>schema</code> on the streaming route through the relay, a bad <code>effort</code> through the Rust graph, and an unknown provider through the
+Rust relay.</p>
+<p><code>/health</code> tells the credential states apart without a call: a helper with a credential reports <code>UP</code> and names its backend and
+model; one without reports <code>400</code> (its <code>llm.health</code> dependency answered 503). A helper with an invalid key reads as healthy,
+because telling it apart takes a network call and a health probe must never spend a token.</p>
+<h2 id="scenario-7-one-connected-tree-per-request">Scenario 7 — One connected tree per request<a class="headerlink" href="#scenario-7-one-connected-tree-per-request" title="Permanent link">&para;</a></h2>
+<p>The traces were rebuilt from the six processes' own compact logs by the Scenario 9 method: group every distributed-trace
+record by trace id, take the records whose parent is absent as roots, and require exactly one root — the edge's <code>http.request</code>
+round-trip span — and no record whose parent was never exported. The logs held 156 traces; <strong>32 touched a helper, and all 32
+form one connected tree</strong>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Java → Python   eaf5e393…  (the caller supplied X-Trace-Id and no traceparent)
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>http.request [java-py]  5600.5 ms, status 200                                   ← the root, the edge's round trip
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>└── llm.stream.relay [java-py]  0.2 ms
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    ├── async.http.request [java-py]  3.0 ms
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    └── llm.stream [py]  5590.6 ms  (model=claude-opus-5-5, stop_reason=end_turn, output_tokens=302)
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        ├── async.http.response.stream.0 [java-py]  the head
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        └── async.http.response.stream.0 [java-py]  the terminal  (frames=67)
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>Rust → Node.js  a979c78b…
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>http.request [rust-node]  4804.1 ms, status 200
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>└── llm.stream.relay [rust-node]  0.1 ms
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    ├── async.http.request [rust-node]  1222.3 ms
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    └── llm.stream [node]  4802.1 ms  (model=claude-opus-5-5, stop_reason=end_turn, output_tokens=261)
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>        ├── async.http.response.stream.0 [rust-node]  the head
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>        └── async.http.response.stream.0 [rust-node]  the terminal  (frames=55)
+</code></pre></div>
+<p>The helper's usage rides its span as annotations (<code>llm_model</code>, <code>llm_stop_reason</code>, <code>llm_input_tokens</code>, <code>llm_output_tokens</code>,
+<code>llm_request_id</code>), so a backend shows what a call cost. Failed requests are trees too: a stream the helper failed before its
+first token (no credential, an unknown model) is a root <code>http.request</code> carrying the provider's status and message over the
+relay, the client leg, the helper's span and a terminal with <code>frames=0</code>. A helper's application log lines carry the caller's
+business correlation id and the trace id in their <code>context</code> block, and the completed-call line holds the model, the
+<code>stop_reason</code>, the token counts, the request id and the elapsed time — never a prompt or a completion.</p>
 <h2 id="findings">Findings<a class="headerlink" href="#findings" title="Permanent link">&para;</a></h2>
-<p><strong>1. Layer 1 turned a cache failure into a miss — on both engines. Fixed.</strong> In the discovery run,
-with Redis stopped, the Rust Layer 1 GET answered HTTP 404 <code>Profile not found</code> while the
-Rust log showed the cache function failing (<code>Redis error - broken pipe</code>); the Java Layer 1 answered
-HTTP 500 only because its RPC timed out first. Both <code>ProfileCacheL1</code> functions awaited the
-cache reply and tested its <em>body</em> — <code>byte[]</code>/<code>Value::Binary</code>, or <code>null</code> for a miss — without checking
-the reply's <strong>status</strong>. A function that throws replies with the error status and the message as a
-string body, so a fast failure (connection refused, an auth rejection) read as "nothing cached", and a
-POST would have acknowledged <code>stored</code>. Layers 2 and 3 never had the gap: the flow and graph engines
-check a task's status for the author — the <em>Event Script over code</em> principle, observed in the wild.
-The fix is one guard in each Layer 1 function (an error-status reply is rethrown as the function's own
-error), pinned on both sides by a test that swaps <code>v1.cache.redis</code> for a stub that fails fast, so the
-assertion depends neither on a Redis outage nor on which of two timeouts fires first. Both fixes ship with this report — the Java one in the same change as this page, the Rust one in the companion change in the mercury repository (its twin of this page).</p>
-<p><strong>2. Failure latency differs by client library — timing, not semantics.</strong> During the outage the Java
-probes each took ~5 s: Lettuce buffers commands on a disconnected connection until its command timeout
-(<code>redis.timeout</code>, 5 s), and the Layer 1 RPC timeout (5 s) races it. The Rust probes were mixed: the
-first failed in 0 s (<code>broken pipe</code> on the dead multiplexed connection), the next ones waited on the
-<code>ConnectionManager</code>'s reconnect attempts (~4.5 s of exponential retries) or the RPC timeout. Same
-category on both sides — every probe an error — with different latency. Operators of a mixed fleet
-should expect the Java pods to fail slow (bounded by <code>redis.timeout</code>) and the Rust pods to fail faster.</p>
-<p><strong>3. An in-function RPC timeout surfaced as 500 on Java and 408 on Rust — the Java side was a
-platform-core mapping gap, since fixed.</strong> Java's <code>po.request(...).get()</code> rethrows the timeout inside an
-<code>ExecutionException</code>, and both places that turn a function's exception into a reply
-(<code>EventEnvelope.setException</code> and the worker's status mapping) read the status off the <em>outermost</em>
-exception while taking the message from the root cause — so the wrapper's default 500 shipped with the
-cause's message. The status is now resolved from the <strong>cause chain</strong> (<code>Utility.getStatusFromException</code>: the first <code>AppException</code>, <code>TimeoutException</code> → 408 or <code>IllegalArgumentException</code> → 400 wins; 500 only when none is present), one rule shared by both mappers and by <code>EventStreamWriter.fail</code>, with the documented table in the Event Envelope reference updated to match (PR #427). The full drive was then run again against both mains — the
-<a href="#validation-run-after-the-finding-3-fix-2026-09-20">validation run</a> below: every RPC-timeout failure
-renders <strong>408</strong> on both engines and the pre-fix shape (500 with a timeout message) no longer occurs.
-Java's Layers 2 and 3 still answered 500 <code>Command timed out after 5 second(s)</code> in that run — Lettuce's own
-timeout exception, which carried no status — until the cache module learned to classify its own failures
-(Finding 6 and the <a href="#validation-run-after-the-cache-failure-classification-2026-09-20">second validation run</a>).</p>
-<p><strong>4. Recovery is bounded by the client library's reconnect policy, and health can be green first.</strong>
-The Rust <code>ConnectionManager</code> reconnects on the first command after Redis is back. Lettuce reconnects on
-its own <strong>exponential backoff, capped at 30 s</strong>: in this run its attempts fell at +0, +9, +17 and +34 s
-into the 54 s outage, and the next one — 30 s later, at +64 s — was the one that succeeded, 10.5 s
-after Redis had returned. In the fix-verification run, whose recovery window was only 10 s, that same
-backoff made every Java cache call fail for the whole window while <code>/health</code> already reported UP,
-because <code>redis.health</code> probes on a <strong>fresh</strong> connection rather than the cache's shared one. So after
-an outage longer than ~30 s a Java pod may serve up to ~30 s of cache errors while its health is
-green; the window closes by itself and no request is misreported (they fail as errors, Finding 1),
-but an operator watching <code>/health</code> alone would call the pod healthy before it served a cache call.
-Worth a follow-up ruling: reset the shared Lettuce connection when a command times out (so recovery
-is bounded by <code>redis.timeout</code> instead of the backoff), lower the reconnect cap, or document the
-window. Not changed here.</p>
-<p><em>Follow-up, 2026-09-21 — ruled and fixed on the Java side:</em> the <code>redis-connection</code> foundation resets the
-shared connection after a command timeout (at once when the connection is not open, on the second
-consecutive timeout when it is), so the next command reconnects and recovery is bounded by the command
-timeout; while Redis is still down that command fails fast with 503. The Rust engine needed no change (its
-client already reconnected on the first command after Redis returned). Live re-run of this scenario:
-see the <em>Recovery after the connection-reset fix</em> section below.</p>
-<p><strong>5. What matched exactly.</strong> The health contract (<code>UP</code>/<code>DOWN</code>, HTTP 200/400, the dependency block with
-<code>{code, text}</code>), the miss and rejection bodies on all three layers, the key layout, the TTL semantics,
-and — the point of the drive — 36/36 reads and 6/6 deletes across the engine boundary.</p>
-<p><strong>6. The cache module now classifies its own failures — 408 for a timeout, 503 for an unreachable
-Redis — in both engines.</strong> After Finding 3 closed, the Layer 2 and Layer 3 rows still read 500 during an
-outage: the flow and graph engines pass a task's status through faithfully, and the status they were given
-was the one the platform assigns to a client-library exception that carries none — Lettuce's
-<code>RedisCommandTimeoutException</code> on Java, the redis crate's I/O and timeout errors on Rust. Layer 1 read
-408 only because its own RPC timer won a race against Lettuce's command timeout by a few milliseconds.
-So the classification moved to where the failure is known: <code>v1.cache.redis</code> now maps a command timeout
-to <strong>408</strong> (Java keeps Lettuce's <code>Command timed out after N second(s)</code>; Rust <code>Redis request timed out
-after N ms</code>), a refused, dropped or unreachable connection — including a connect failure on the lazy
-build — to <strong>503</strong> <code>Redis unavailable - …</code>, the vocabulary of <code>redis.health</code>, and leaves anything the
-server answered (a wrong type, an unknown command) on the default 500. The classifier lives in the shared <code>redis-connection</code> foundation (<code>RedisFailure</code>) and is applied by <code>RedisCache</code>; the Rust engine classifies in its foundation's command path, so the two engines fail alike. The
-<a href="#validation-run-after-the-cache-failure-classification-2026-09-20">second validation run</a> below shows
-the result: not one outage probe on any layer of either engine answers 500 any more.</p>
-<h2 id="validation-run-after-the-finding-3-fix-2026-09-20">Validation run after the Finding 3 fix (2026-09-20)<a class="headerlink" href="#validation-run-after-the-finding-3-fix-2026-09-20" title="Permanent link">&para;</a></h2>
-<p>The whole drive was run a fourth time against both mains once the Java fix had merged — Java
-mercury-composable <code>6f020544</code> (PR #427), Rust mercury <code>8424bc65</code> — with three assertions added to the
-outage phase: every RPC-timeout failure must render 408 on each engine, no probe may carry the pre-fix
-shape (500 with a timeout message), and the set of RPC-timeout statuses must be identical on both
-engines. <strong>116/116 hard checks passed</strong>, the same single informational byte
-comparison recorded as before.</p>
-<table>
-<thead>
-<tr>
-<th>Engine</th>
-<th>Probe</th>
-<th>Result</th>
-<th>Latency</th>
-<th>Message</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Java</td>
-<td>L1 GET</td>
-<td>HTTP 408</td>
-<td>5.01 s</td>
-<td><code>Timeout for 5000 ms</code></td>
-</tr>
-<tr>
-<td>Java</td>
-<td>L1 POST</td>
-<td>HTTP 408</td>
-<td>5.01 s</td>
-<td><code>Timeout for 5000 ms</code></td>
-</tr>
-<tr>
-<td>Java</td>
-<td>L1 DELETE</td>
-<td>HTTP 408</td>
-<td>5.01 s</td>
-<td><code>Timeout for 5000 ms</code></td>
-</tr>
-<tr>
-<td>Java</td>
-<td>L2 GET</td>
-<td>HTTP 500</td>
-<td>5.02 s</td>
-<td><code>Command timed out after 5 second(s)</code></td>
-</tr>
-<tr>
-<td>Java</td>
-<td>L3 get</td>
-<td>HTTP 500</td>
-<td>5.02 s</td>
-<td><code>Command timed out after 5 second(s)</code></td>
-</tr>
-<tr>
-<td>Rust</td>
-<td>L1 GET</td>
-<td>HTTP 500</td>
-<td>0.0 s</td>
-<td><code>Redis error - broken pipe</code></td>
-</tr>
-<tr>
-<td>Rust</td>
-<td>L1 POST</td>
-<td>HTTP 408</td>
-<td>5.0 s</td>
-<td><code>Request timeout for 5000 ms</code></td>
-</tr>
-<tr>
-<td>Rust</td>
-<td>L1 DELETE</td>
-<td>HTTP 500</td>
-<td>4.45 s</td>
-<td><code>Redis error - Connection refused (os error 61)</code></td>
-</tr>
-<tr>
-<td>Rust</td>
-<td>L2 GET</td>
-<td>HTTP 500</td>
-<td>5.01 s</td>
-<td><code>Redis request timed out after 5000ms</code></td>
-</tr>
-<tr>
-<td>Rust</td>
-<td>L3 get</td>
-<td>HTTP 500</td>
-<td>4.46 s</td>
-<td><code>Redis error - Connection refused (os error 61)</code></td>
-</tr>
-</tbody>
-</table>
-<p><strong>Parity of the RPC-timeout shape.</strong> Java: L1 GET → 408, L1 POST → 408, L1 DELETE → 408 — all 408. Rust: L1 POST → 408 — all 408.
-The RPC-timeout status set is {408} on Java and {408} on Rust; no probe on either engine returned 500 with
-a timeout message. The
-remaining 500s are the client libraries' own failures surfacing through the flow and graph engines
-(Lettuce <code>Command timed out</code>, redis-rs <code>Connection refused</code>/<code>broken pipe</code>), which carry no status and
-are the same category on both sides.</p>
-<p><strong>Recovery, same shape as the certification run.</strong> <code>/health</code> back to 200 on the first read on both
-engines. Java's Layer 1 write: attempt 1 → HTTP 408 (the RPC timeout, now 408), attempt 2 →
-201 at +10.0 s, Lettuce's scheduled reconnect; Rust's: attempt 1 → 201 (its first probe,
-in sequence after Java's). Cross-engine reads of both post-recovery writes 4/4.</p>
-<p>What changed since the certification run is exactly the three Java Layer 1 rows — 500 → <strong>408</strong> — and
-nothing else.</p>
-<h2 id="validation-run-after-the-cache-failure-classification-2026-09-20">Validation run after the cache-failure classification (2026-09-20)<a class="headerlink" href="#validation-run-after-the-cache-failure-classification-2026-09-20" title="Permanent link">&para;</a></h2>
-<p>Finding 6 changes what an outage looks like on every layer, so the drive ran a fifth time against the two
-classified builds, with four more outage assertions: no probe on any layer of either engine answers 500;
-every timeout is 408; every unreachable-Redis failure is 503; and every probe is classified as one or the
-other. <strong>122/122 hard checks passed</strong>, the same single informational byte comparison
-recorded as before.</p>
-<table>
-<thead>
-<tr>
-<th>Engine</th>
-<th>Probe</th>
-<th>Result</th>
-<th>Latency</th>
-<th>Message</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Java</td>
-<td>L1 GET</td>
-<td>HTTP 408</td>
-<td>5.01 s</td>
-<td><code>Timeout for 5000 ms</code></td>
-</tr>
-<tr>
-<td>Java</td>
-<td>L1 POST</td>
-<td>HTTP 408</td>
-<td>5.01 s</td>
-<td><code>Timeout for 5000 ms</code></td>
-</tr>
-<tr>
-<td>Java</td>
-<td>L1 DELETE</td>
-<td>HTTP 408</td>
-<td>5.01 s</td>
-<td><code>Timeout for 5000 ms</code></td>
-</tr>
-<tr>
-<td>Java</td>
-<td>L2 GET</td>
-<td>HTTP 408</td>
-<td>5.02 s</td>
-<td><code>Command timed out after 5 second(s)</code></td>
-</tr>
-<tr>
-<td>Java</td>
-<td>L3 get</td>
-<td>HTTP 408</td>
-<td>5.03 s</td>
-<td><code>Command timed out after 5 second(s)</code></td>
-</tr>
-<tr>
-<td>Rust</td>
-<td>L1 GET</td>
-<td>HTTP 503</td>
-<td>0.0 s</td>
-<td><code>Redis unavailable - broken pipe</code></td>
-</tr>
-<tr>
-<td>Rust</td>
-<td>L1 POST</td>
-<td>HTTP 408</td>
-<td>5.01 s</td>
-<td><code>Request timeout for 5000 ms</code></td>
-</tr>
-<tr>
-<td>Rust</td>
-<td>L1 DELETE</td>
-<td>HTTP 503</td>
-<td>4.46 s</td>
-<td><code>Redis unavailable - Connection refused (os error 61)</code></td>
-</tr>
-<tr>
-<td>Rust</td>
-<td>L2 GET</td>
-<td>HTTP 408</td>
-<td>5.01 s</td>
-<td><code>Redis request timed out after 5000ms</code></td>
-</tr>
-<tr>
-<td>Rust</td>
-<td>L3 get</td>
-<td>HTTP 503</td>
-<td>4.46 s</td>
-<td><code>Redis unavailable - Connection refused (os error 61)</code></td>
-</tr>
-</tbody>
-</table>
-<p><strong>Classification.</strong> Timeouts — Java: L1 GET → 408, L1 POST → 408, L1 DELETE → 408, L2 GET → 408, L3 get → 408; Rust: L1 POST → 408, L2 GET → 408.
-Unreachable — Java: none; Rust: L1 GET → 503, L1 DELETE → 503, L3 get → 503. Nothing fell
-to "other", and no probe answered 500. Java's five probes are all timeouts because Lettuce buffers
-commands on a disconnected connection until its command timeout; Rust's mix of 503 and 408 reflects the
-redis crate failing fast on the dead connection and then waiting on its reconnect attempts.</p>
-<p><strong>Recovery, unchanged in shape.</strong> <code>/health</code> back to 200 on the first read on both engines; Java's Layer 1
-write: attempt 1 → HTTP 408, attempt 2 → 201 at +8.3 s
-(Lettuce's scheduled reconnect); Rust's: attempt 1 → 201. Cross-engine reads of both post-recovery writes 4/4.</p>
-<p>What changed since the previous validation run: Java L2 GET 500 → <strong>408</strong>; Java L3 get 500 → <strong>408</strong>; Rust L1 GET 500 → <strong>503</strong>; Rust L1 DELETE 500 → <strong>503</strong>; Rust L2 GET 500 → <strong>408</strong>; Rust L3 get 500 → <strong>503</strong>. Everything else is identical.</p>
-<h2 id="reset-recovery">Recovery after the connection-reset fix (2026-09-21)<a class="headerlink" href="#reset-recovery" title="Permanent link">&para;</a></h2>
-<p>Finding 4 was ruled on 2026-09-21 — <em>reset the shared connection on command timeout</em> — and fixed in the
-Java <code>redis-connection</code> foundation: a command timeout on a connection that is not open resets the shared
-connection at once (on an open connection, the second consecutive timeout does), the next command opens a
-fresh connection, and while Redis is still down that connect fails fast with 503 instead of waiting out
-another 5 s timeout. The Rust engine needed no change. The outage scenario was re-driven against the
-rebuilt Java example (<code>distributed-cache-example</code> 4.12.12 with the fix; <code>helpers/redis-standalone</code>
-4.12.12; Layer 1 <code>GET /api/l1/profile/{id}</code> probed every 5 s during the outage and every second after
-the restart, <code>/health</code> alongside). The embedded Redis restarts empty, so a live reply after the restart is
-a 404 miss; the write path was then exercised (201, then 200).</p>
-<table>
-<thead>
-<tr>
-<th>Scenario</th>
-<th>During the outage</th>
-<th>First call after Redis returned</th>
-<th>Before the fix (this report)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Redis down 40 s</td>
-<td>first probe 408 <code>Timeout for 5000 ms</code> (the command in flight when Redis died), then every probe <strong>503</strong> <code>Redis unavailable - Unable to connect …</code> within milliseconds; <code>/health</code> 400 throughout</td>
-<td><strong>live reply at +0.03 s</strong> (404 miss), <code>/health</code> 200 at the same poll; write path 201 → 200</td>
-<td>recovery 10.5 s after Redis returned, on Lettuce's next backoff attempt (Finding 4)</td>
-</tr>
-<tr>
-<td>Redis down 10 s</td>
-<td>first probe 408, then the restart</td>
-<td><strong>live reply at +0.03 s</strong>, <code>/health</code> 200; write path 201 → 200</td>
-<td>every cache call failed for the whole 10 s window while <code>/health</code> was green (Finding 4)</td>
-</tr>
-</tbody>
-</table>
-<p>Two things changed. Recovery is no longer bounded by the reconnect backoff — the first request after
-Redis returned succeeded in both runs, because the reset had already closed the dead connection and the
-first call opened a new one — and the outage itself now reads honestly: after the one in-flight timeout,
-callers see a fast 503 rather than a 5 s 408 per call, and <code>/health</code> and the cache path agree at every
-poll. The asymmetry Finding 4 described (health green, cache still failing) did not reappear.</p>
-<h2 id="how-to-reproduce">How to reproduce<a class="headerlink" href="#how-to-reproduce" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># 1. one Redis (the Java repository)</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>java<span class="w"> </span>-jar<span class="w"> </span>helpers/redis-standalone/target/redis-standalone-x.y.z.jar
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># 2. the Java example (port 8305) and the Rust example (moved to 8306)</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>java<span class="w"> </span>-jar<span class="w"> </span>examples/distributed-cache-example/target/distributed-cache-example-x.y.z.jar
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>cargo<span class="w"> </span>run<span class="w"> </span>-p<span class="w"> </span>distributed-cache-example<span class="w"> </span>--<span class="w"> </span>-Drest.server.port<span class="o">=</span><span class="m">8306</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># 3. write on one engine and layer, read on the other engine's three layers</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8305/api/l1/profile/alice<span class="w"> </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">     </span>-d<span class="w"> </span><span class="s1">'{"name":"Alice","email":"alice@example.com"}'</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8306/api/l1/profile/alice
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8306/api/l2/profile/alice
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8306/api/graph/profile-cache<span class="w"> </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">     </span>-d<span class="w"> </span><span class="s1">'{"action":"get","id":"alice"}'</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="c1"># 4. evict from the Rust side, confirm the miss on the Java side</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>DELETE<span class="w"> </span>http://127.0.0.1:8306/api/l2/profile/alice
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>curl<span class="w"> </span>-s<span class="w"> </span>-i<span class="w"> </span>http://127.0.0.1:8305/api/l1/profile/alice<span class="w">        </span><span class="c1"># 404 Profile not found</span>
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>
-<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="c1"># 5. the outage leg: stop redis-standalone, repeat step 3 (every call is an error, never a 404),</span>
-<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="c1">#    restart it and repeat step 3 again (both apps recover without a restart)</span>
+<ol>
+<li><strong>The cadence of progressive rendering belongs to the API and the model, not to the pipeline.</strong> Opus 5.5's batches arrive in
+   bursts about every 600 ms and Haiku 4.5's in a continuous trickle. Neither the helper nor either engine changes the pattern:
+   the batches and the frames are in one-to-one correspondence, with a constant offset. A product that wants smooth rendering
+   chooses the model for it; the helper README says so, and <code>llm.log.batches</code> is the tool for telling a bursty source from a
+   hop that holds batches back.</li>
+<li><strong>Thinking tokens count against <code>max_tokens</code>, and the helper's rule caught it live.</strong> Opus 5.5 thinks before it answers.
+   Twice, unprovoked, in the first Rust drives, a stream with a 120-token budget spent all of it on thinking and produced no
+   text; both helpers answered <code>422 LLM reply is empty - stop_reason=max_tokens, output_tokens=120 (raise params.max_tokens
+   or lower params.effort)</code> instead of an empty 200 stream — the same trap the Gemini drives hit with a 200-token budget, now an
+   explicit error with its remedy. It is stochastic, so it is pinned deterministically by the vectors, not scripted live; the
+   concurrency scenario's budget was raised to 400 tokens afterwards and the final drives ran clean. The demos now ship
+   generous budgets for the same reason: the <code>support-triage</code> graph and the Layer 1 stream example ask for 2000 tokens (they
+   asked for 512 and 300). A probe of 48 live Opus 5.5 calls with those prompts found no empty result at the old or the new
+   budget: the two-sentence stream used 100 to 127 output tokens, thinking included, and the triage call 40 to 49, so the old
+   caps held a margin of between two and ten times, and only a tight budget (the 120 above) or a heavier prompt uses it up.
+   Opus 5.5 stays the default model, deliberately: it is the most capable, and a project that wants the smooth token trickle
+   of Haiku 4.5 sets <code>llm.model: claude-haiku-4-5</code> on the helper.</li>
+<li><strong>Real SDK facts the helpers had to meet.</strong> A missing credential is not an API error: the Python SDK raises a bare
+   <code>TypeError</code> and the Node SDK a plain <code>Error</code> (an <code>AnthropicError</code> on a stream), before anything is sent; both helpers map
+   it to a 503 by its text. Python SDK 1.x takes no <code>temperature</code>, <code>top_p</code> or <code>top_k</code> at all, and the current models reject
+   them, so the contract excludes sampling parameters. The API accepts the server-side refusal fallback (<code>fallbacks: "default"</code>
+   with its beta header) on Opus 5.5.</li>
+<li><strong>The Rust REST automation is a single location.</strong> The Java engine merges a comma-separated list of REST files; the Rust
+   engine reads one. It only mattered for adding a flow's REST entry without a rebuild, solved with one combined file per engine.</li>
+<li><strong>A helper's own span says <code>status 200</code> for a stream that failed in-band.</strong> The function returned normally; the failure is
+   the terminal. The edge's <code>http.request</code> span carries the failure's status and message, so a backend should read failures
+   from the edge span.</li>
+<li><strong>Engine parity held without adjustment.</strong> The same graph JSON, byte for byte, ran on both engines; the relay's contract
+   and error shapes were identical; the only visible difference is cosmetic, the order in which each engine serializes a
+   response map's keys.</li>
+</ol>
+<h2 id="defects-found-and-fixed">Defects found and fixed<a class="headerlink" href="#defects-found-and-fixed" title="Permanent link">&para;</a></h2>
+<p>The round surfaced one product defect, found while building the second helper from the first: in the Python helper a body
+<code>{"messages": "hello"}</code> (not a list) passed the first check and then raised a <code>KeyError</code> on the missing <code>prompt</code>, a 500; only a
+non-empty list now counts as turns, in both helpers, with two vectors for it. The harness had two faults of its own, fixed
+before the final drives: its SSE reader stripped every leading space after <code>data:</code> instead of one, as the specification says,
+and its concurrency scenario used a budget small enough to meet Finding 2.</p>
+<h2 id="reproduce">Reproduce<a class="headerlink" href="#reproduce" title="Permanent link">&para;</a></h2>
+<p>Start a helper with the credential exported in its environment, and each engine without one:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Python helper (8086) and Node.js helper (8087), from their repositories</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>mercury-serve<span class="w"> </span>examples/llm-helper/llm_helper.py<span class="w"> </span>-Dlog.format<span class="o">=</span>compact<span class="w"> </span>-Dllm.log.batches<span class="o">=</span><span class="nb">true</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>node<span class="w"> </span>dist/src/cli.js<span class="w"> </span>examples/llm-helper/llm-helper.mjs<span class="w"> </span>-Dlog.format<span class="o">=</span>compact<span class="w"> </span>-Dllm.log.batches<span class="o">=</span><span class="nb">true</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># the engines, with the deploy folder of Appendix A (replace $DEPLOY; Rust takes one REST location)</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>java<span class="w"> </span>-Drest.server.port<span class="o">=</span><span class="m">8085</span><span class="w"> </span>-Dllm.peer.port<span class="o">=</span><span class="m">8086</span><span class="w"> </span>-Dlog.format<span class="o">=</span>compact<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span>-Dgraph.model.automation<span class="o">=</span><span class="s2">"classpath:/graphs.yaml, file:</span><span class="nv">$DEPLOY</span><span class="s2">/graphs.yaml"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span>-Dyaml.flow.automation<span class="o">=</span><span class="s2">"classpath:/flows.yaml, file:</span><span class="nv">$DEPLOY</span><span class="s2">/flows.yaml"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span>-Dyaml.rest.automation<span class="o">=</span><span class="s2">"file:</span><span class="nv">$DEPLOY</span><span class="s2">/rest-java.yaml"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span>-jar<span class="w"> </span>examples/minigraph-playground/target/minigraph-playground-4.12.20.jar
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>cargo<span class="w"> </span>run<span class="w"> </span>-p<span class="w"> </span>minigraph-playground<span class="w"> </span>--<span class="w"> </span>-Drest.server.port<span class="o">=</span><span class="m">8090</span><span class="w"> </span>-Dllm.peer.port<span class="o">=</span><span class="m">8086</span><span class="w"> </span>-Dlog.format<span class="o">=</span>compact<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span>-Dgraph.model.automation<span class="o">=</span><span class="s2">"classpath:/graphs.yaml, file:</span><span class="nv">$DEPLOY</span><span class="s2">/graphs.yaml"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span>-Dyaml.flow.automation<span class="o">=</span><span class="s2">"classpath:/flows.yaml, file:</span><span class="nv">$DEPLOY</span><span class="s2">/flows.yaml"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">  </span>-Dyaml.rest.automation<span class="o">=</span><span class="s2">"file:</span><span class="nv">$DEPLOY</span><span class="s2">/rest-rust.yaml"</span>
 </code></pre></div>
-<p><code>x.y.z</code> is the current version in each repository's build file. Both examples read <code>REDIS_HOST</code> /
-<code>REDIS_PORT</code> from the environment when Redis is not on <code>127.0.0.1:6379</code>.</p>
+<p>Then, against either engine's port:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Layer 3 - the shipped graph, then the generic chat graph</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"text":"The app crashes when I upload a file."}'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>http://127.0.0.1:8085/api/graph/support-triage
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"prompt":"Reply with exactly one word: OK","params":{"model":"claude-haiku-4-5"}}'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span>http://127.0.0.1:8085/api/graph/llm-chat-probe
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># Layer 2 - the flow</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"prompt":"Reply with exactly one word: OK"}'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">  </span>http://127.0.0.1:8085/api/llm/chat
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1"># Layer 1 - the relay, progressive rendering (a smooth stream: Haiku)</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>curl<span class="w"> </span>-N<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s1">'accept: text/event-stream'</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'content-type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'X-Correlation-Id: biz-demo-1'</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'X-Trace-Id: 0123456789abcdef0123456789abcdef'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"prompt":"Write about 120 words on why event-driven systems decouple producers from consumers.","params":{"model":"claude-haiku-4-5","max_tokens":400}}'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">  </span>http://127.0.0.1:8085/api/llm/stream
+</code></pre></div>
+<p>Without a credential the same commands return the 503 of Scenario 6, which is the quickest check that the wiring is right.</p>
+<h2 id="appendix-a-the-deploy-folder">Appendix A — the deploy folder<a class="headerlink" href="#appendix-a-the-deploy-folder" title="Permanent link">&para;</a></h2>
+<p>The two assets deployed beside the playground, and the REST entry that serves the flow. No engine code changed.</p>
+<p><strong><code>graphs.yaml</code></strong> and <strong><code>flows.yaml</code></strong> each list one id and carry their own <code>location</code> (a <code>file:</code> folder). <strong><code>llm-chat-probe</code></strong>
+is six nodes: <code>root</code> → <code>ask</code> (a <code>graph.task</code> on <code>llm.chat</code> with <code>exception=failed</code>; <code>input[]</code> maps <code>input.body.prompt</code>,
+<code>messages</code>, <code>system</code>, <code>schema</code> and <code>params</code> to the same names, and a null source is simply not supplied, so one graph serves a
+prompt, a conversation and a structured request; <code>output[]</code> is <code>result -&gt; model.reply</code>) → <code>answer</code> (<code>model.reply -&gt;
+output.body</code>) → <code>end</code>; and <code>root</code> → <code>island</code> (<code>graph.island</code>) → <code>failed</code> (a mapper: <code>error.code -&gt; output.status</code>,
+<code>error.source</code>, <code>error.code</code> and <code>error.message</code> into <code>output.body</code>) → <code>end</code>.</p>
+<p><strong><code>flows/llm-chat.yml</code></strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">flow</span><span class="p">:</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="s">'llm-chat'</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Ask</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">LLM</span><span class="nv"> </span><span class="s">helper</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">an</span><span class="nv"> </span><span class="s">Event</span><span class="nv"> </span><span class="s">Script</span><span class="nv"> </span><span class="s">task</span><span class="nv"> </span><span class="s">(Layer</span><span class="nv"> </span><span class="s">2),</span><span class="nv"> </span><span class="s">reached</span><span class="nv"> </span><span class="s">through</span><span class="nv"> </span><span class="s">Event-over-HTTP'</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">45s</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="nt">first.task</span><span class="p">:</span><span class="w"> </span><span class="s">'llm.chat'</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="nt">tasks</span><span class="p">:</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.body</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">*'</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'llm.chat'</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(application/json)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.header.content-type'</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'result</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.body'</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Single-shot</span><span class="nv"> </span><span class="s">completion</span><span class="nv"> </span><span class="s">on</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">LLM</span><span class="nv"> </span><span class="s">helper,</span><span class="nv"> </span><span class="s">resolved</span><span class="nv"> </span><span class="s">through</span><span class="nv"> </span><span class="s">event-over-http.yaml'</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">end</span>
+</code></pre></div>
+<p><strong>The REST entry</strong>, appended to each engine's own <code>rest.yaml</code> in a combined copy:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="s">'http.flow.adapter'</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'POST'</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'/api/llm/chat'</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'llm-chat'</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50s</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</code></pre></div>
 
 
 
@@ -4011,7 +3764,7 @@ poll. The asymmetry Finding 4 described (health green, cache still failing) did 
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../suspend-resume-interop/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Interop Test Report — Suspend/Resume">
+          <a href="../otel-dynatrace-certification/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Test Report — OpenTelemetry forwarder (Dynatrace)">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -4021,20 +3774,20 @@ poll. The asymmetry Finding 4 described (health green, cache still failing) did 
                 Previous
               </span>
               <div class="md-ellipsis">
-                Interop Test Report — Suspend/Resume
+                Test Report — OpenTelemetry forwarder (Dynatrace)
               </div>
             </div>
           </a>
         
         
           
-          <a href="../streaming-return-route-cross-pod/" class="md-footer__link md-footer__link--next" aria-label="Next: Test Report — Streaming Return Route (cross-pod)">
+          <a href="../../guides/reserved-names-and-headers/" class="md-footer__link md-footer__link--next" aria-label="Next: Reserved Names &amp; Headers">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Test Report — Streaming Return Route (cross-pod)
+                Reserved Names & Headers
               </div>
             </div>
             <div class="md-footer__button md-icon">
