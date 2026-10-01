@@ -2018,6 +2018,8 @@
       
         
       
+        
+      
     
     
     
@@ -2362,6 +2364,34 @@
     
   
     Event Envelope Wire Format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/canonical-package-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Canonical Package Format
   
 
     
@@ -2987,7 +3017,7 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
    - <strong>Keys</strong> are text, in ascending order of their UTF-8 bytes (not Java's UTF-16 <code>String</code> order, which differs for supplementary characters). A non-text key is converted to text, as the existing serializer does; a collision after conversion, or a null key, is an error.
    - <strong>Null values</strong> are written as nil and never dropped (the general serializer omits null-valued entries unless <code>supportNulls</code> is set).
    - <strong>Integers</strong> use the smallest encoding, fixints first.
-   - <strong>Floats</strong> are float64 and finite only: a <code>Float</code> (which <code>MsgPack.java</code> packs as float32), NaN and Infinity are rejected.
+   - <strong>Floats</strong> are float64 and finite only: NaN and Infinity are rejected. <em>(Amended 2026-10-01: a <code>Float</code>, which <code>MsgPack.java</code> packs as float32, is accepted and widened through its shortest decimal text; see the Resolution.)</em>
    - <strong>Text and bytes</strong> are MsgPack str and bin, each with the shortest header.
    - <strong>Exact numbers</strong> travel as strings, following RFC-0001 including its zero rule, a zero of any scale being <code>"0"</code> (the existing serializer already packs <code>BigInteger</code> and <code>BigDecimal</code> as strings, but writes a <code>BigDecimal</code> zero as <code>"0.00"</code>, so the packager applies the rule itself), and a date is an ISO-8601 string. No extension types, no timestamps; booleans and nil use their single forms.
    - <strong>Any other type</strong> is rejected, naming its path, rather than stringified.
@@ -3013,11 +3043,11 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 <p><em>Implemented as proposed in the first Java PR, to confirm at review:</em>
 - <code>graph_id</code> stays a documented convention that the packager never interprets, because a graph-set loader can check it against the packed entry names.
 - A strict read is the default.
-- <code>Float</code> and non-finite doubles are rejected. The packager is faithful to a value's type, so the integer 1 and the float 1.0 are different content, and strings are written as given (no Unicode normalization); both are declared in the class documentation.
+- Non-finite doubles are rejected; a <code>Float</code> was rejected here and is now widened (see the Resolution). The packager is faithful to a value's type, so the integer 1 and the float 1.0 are different content, and strings are written as given (no Unicode normalization); both are declared in the class documentation.
 - <code>msgpack-core</code> and <code>rmpv</code> both choose the smallest integer encoding: checked on 21 integers at every encoding boundary and the str headers, all identical bytes (the vectors run the same cases in both engines).
 - The Java packager is <code>org.platformlambda.core.serializers.CanonicalPackager</code> beside <code>MsgPack</code>: a builder (<code>manifest</code>, <code>add</code>, <code>build</code>), <code>encode</code>, <code>decode</code> and <code>unpack</code>; it needs no new dependency.
 - The <code>mercury-python</code> and <code>mercury-nodejs</code> language packs do not carry it: they are minimalist LLM extensions that serve functions to a Java or Rust application over Event-over-HTTP, as if local, and carry no event script or minigraph, so they never read a graph package. (<code>mercury-go</code> is the agent-memory tool, not a language pack.)</p>
-<p><strong>Resolution.</strong> Promoted → ADR-0026 (2026-10-01): option (a), a generic canonical packager with integrity left to the user application. Delivered in the Java engine's PR #481 (the packager, 14 + 5 tests and the shared vector file), PR #482 (the nesting bound pinned) and PR #483 (the Sonar findings), and the Rust engine's PR #339 (Increment 147); all of the shared file passes in both engines. The folder <code>pack</code> / <code>unpack</code> tooling and the graph-set loader RFC remain deferred.</p>
+<p><strong>Resolution.</strong> Promoted → ADR-0026 (2026-10-01): option (a), a generic canonical packager with integrity left to the user application. Delivered in the Java engine's PR #481 (the packager, 14 + 5 tests and the shared vector file), PR #482 (the nesting bound pinned) and PR #483 (the Sonar findings), and the Rust engine's PR #339 (Increment 147); all of the shared file passes in both engines. The folder <code>pack</code> / <code>unpack</code> tooling and the graph-set loader RFC remain deferred. <strong>Amended (2026-10-01, Eric, before the v4.12.20 release):</strong> a <code>Float</code> is accepted and widened to float64 through its shortest decimal text instead of being rejected (the open question about widening a <code>Float</code>); NaN and Infinity stay rejected and a float32 on the wire still fails the strict read.</p>
 <hr />
 <h2 id="rfc-0001-exact-decimal-arithmetic-a-decimal-statement-for-graphmath-and-an-explicit-plugin-family">RFC-0001 — Exact decimal arithmetic: a <code>DECIMAL:</code> statement for <code>graph.math</code> and an explicit plugin family<a class="headerlink" href="#rfc-0001-exact-decimal-arithmetic-a-decimal-statement-for-graphmath-and-an-explicit-plugin-family" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Promoted → ADR-0025 · <strong>Raised:</strong> 2026-09-30 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>decimal-mode</code></p>

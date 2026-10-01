@@ -2018,6 +2018,8 @@
       
         
       
+        
+      
     
     
     
@@ -2537,6 +2539,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#deterministic-packaging-with-canonicalpackager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deterministic packaging with CanonicalPackager
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#minimalist-api-design" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2721,6 +2734,34 @@
     
   
     Event Envelope Wire Format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../canonical-package-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Canonical Package Format
   
 
     
@@ -3536,6 +3577,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#deterministic-packaging-with-canonicalpackager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deterministic packaging with CanonicalPackager
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#minimalist-api-design" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4211,6 +4263,42 @@ over <code>EventEnvelope.toBytes()</code> when a stored value must be read by an
 envelope's compacted encoding is a Java-side wire format. A worked example is the
 <a href="../distributed-cache/">distributed cache guide</a>, where all three layers share one cached value.</p>
 </blockquote>
+<h2 id="deterministic-packaging-with-canonicalpackager">Deterministic packaging with <code>CanonicalPackager</code><a class="headerlink" href="#deterministic-packaging-with-canonicalpackager" title="Permanent link">&para;</a></h2>
+<p><code>org.platformlambda.core.serializers.CanonicalPackager</code> turns a set of maps into <strong>one byte array whose bytes depend only on its
+content</strong>: the same maps give the same bytes whatever order their keys were inserted in, whether they came from a Gson-parsed
+JSON text, a <code>HashMap</code> or a <code>LinkedHashMap</code>, and in the Rust engine too. Use it when related documents (graphs, flows, rules,
+tables) are promoted as one artifact whose identity must be recorded or compared. The format is specified in
+<a href="../canonical-package-format/">Canonical Package Format</a>; this section is the Java API.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="kt">byte</span><span class="o">[]</span><span class="w"> </span><span class="n">bytes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CanonicalPackager</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="w">        </span><span class="p">.</span><span class="na">manifest</span><span class="p">(</span><span class="s">"graph_id"</span><span class="p">,</span><span class="w"> </span><span class="s">"quote"</span><span class="p">)</span><span class="w">              </span><span class="c1">// caller-defined string fields; format and format_version are reserved</span>
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="w">        </span><span class="p">.</span><span class="na">manifest</span><span class="p">(</span><span class="s">"version"</span><span class="p">,</span><span class="w"> </span><span class="s">"1.0.0"</span><span class="p">)</span>
+<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="w">        </span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="s">"quote.json"</span><span class="p">,</span><span class="w"> </span><span class="n">quoteMap</span><span class="p">)</span><span class="w">                 </span><span class="c1">// any Map: keys are sorted at every depth by the packager</span>
+<a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a><span class="w">        </span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="s">"quote-fees.json"</span><span class="p">,</span><span class="w"> </span><span class="n">feesMap</span><span class="p">)</span>
+<a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span><span class="w">                                    </span><span class="c1">// the order of manifest() and add() calls does not matter</span>
+<a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a>
+<a id="__codelineno-37-8" name="__codelineno-37-8" href="#__codelineno-37-8"></a><span class="n">CanonicalPackager</span><span class="p">.</span><span class="na">Package</span><span class="w"> </span><span class="n">pkg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CanonicalPackager</span><span class="p">.</span><span class="na">unpack</span><span class="p">(</span><span class="n">bytes</span><span class="p">);</span><span class="w">      </span><span class="c1">// strict: rejects bytes that are not canonical</span>
+<a id="__codelineno-37-9" name="__codelineno-37-9" href="#__codelineno-37-9"></a><span class="n">String</span><span class="w"> </span><span class="n">graphId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pkg</span><span class="p">.</span><span class="na">manifest</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="s">"graph_id"</span><span class="p">);</span>
+<a id="__codelineno-37-10" name="__codelineno-37-10" href="#__codelineno-37-10"></a><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">quote</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pkg</span><span class="p">.</span><span class="na">maps</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="s">"quote.json"</span><span class="p">);</span><span class="w">             </span><span class="c1">// ordered maps, the order the bytes hold</span>
+<a id="__codelineno-37-11" name="__codelineno-37-11" href="#__codelineno-37-11"></a><span class="n">CanonicalPackager</span><span class="p">.</span><span class="na">unpack</span><span class="p">(</span><span class="n">bytes</span><span class="p">,</span><span class="w"> </span><span class="kc">false</span><span class="p">);</span><span class="w">                               </span><span class="c1">// non-strict: decodes any valid content</span>
+</code></pre></div>
+<ul>
+<li><strong>The ordering is the packager's own step.</strong> Keys sort in <strong>UTF-8 byte order</strong> at every depth (maps inside lists included),
+  because the Gson serializer has no ordered-keys option and an ordered-keys option such as Jackson's sorts by <code>String</code> order
+  (UTF-16), which differs from another engine's bytes above U+FFFF.</li>
+<li><strong>It writes through msgpack-core directly, not through <code>MsgPack.pack</code></strong>, which drops null values unless a configuration
+  switch is set, packs a <code>Float</code> as float32 and writes a <code>BigDecimal</code> zero as <code>"0.00"</code>. The canonical profile keeps nulls,
+  writes a finite float64 only (a <code>Float</code> is widened through its shortest decimal text, so <code>0.1f</code> is the float64 <code>0.1</code>; NaN and Infinity are rejected with <code>IllegalArgumentException</code> naming the path), writes
+  a <code>BigDecimal</code> in plain notation with a zero of any scale as <code>"0"</code>, and a <code>BigInteger</code> as its digits. Dates are ISO-8601
+  strings; any other type is rejected.</li>
+<li><strong>The packager is faithful to a value's type</strong>: the integer <code>1</code> and the float <code>1.0</code> are different content, and strings are written
+  as given with no Unicode normalization.</li>
+<li><strong><code>unpack</code> throws <code>IOException</code></strong> for bytes that are not a canonical package (a non-text or duplicate key, trailing bytes, a wrong
+  <code>format</code> or <code>format_version</code>, nesting beyond 64 levels, a package whose bytes differ from the canonical form of its content).
+  <code>encode(Object)</code> and <code>decode(byte[])</code> expose the same profile for any value.</li>
+<li><strong>No integrity logic.</strong> A hash or a signature, and its algorithm, is your application's decision: compute it over the exact
+  bytes <code>build()</code> returns, for example <code>new CryptoApi().getSHA256(bytes)</code> for a SHA-256 recorded in a release record, or a
+  detached signature from your own signer.</li>
+</ul>
 <h2 id="minimalist-api-design">Minimalist API design<a class="headerlink" href="#minimalist-api-design" title="Permanent link">&para;</a></h2>
 <p>As a best practice, we advocate a minimalist approach in API integration.
 To build powerful composable applications, the above set of APIs is sufficient to perform
