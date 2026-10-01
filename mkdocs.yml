@@ -160,6 +160,7 @@ nav:
     - Configuration Reference: guides/configuration-reference.md
     - Event Envelope Reference: guides/event-envelope-reference.md
     - Event Envelope Wire Format: guides/event-envelope-wire-format.md
+    - Canonical Package Format: guides/canonical-package-format.md
     - Registration Metadata Contract: guides/registration-metadata-contract.md
     - Interop Test Report (Java ⇄ Rust): test-reports/event-over-http-interop.md
     - Interop Test Report — Progressive Rendering: test-reports/progressive-rendering-interop.md
