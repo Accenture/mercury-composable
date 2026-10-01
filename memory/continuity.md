@@ -19,17 +19,24 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.19 (2026-09-25 23:58:19Z — **the rapid-prototyping deploy lane completed on both engines, lock-step with
-  the Rust port**: release PR #466 squash `a261ff18`, tag `v4.12.19` → `35000ef2` (one memory-only commit past the squash), pom
-  verified at the tag; the GitHub release body is the CHANGELOG entry. **Content:** #465 — `graph.model.automation` accepts a
-  comma-separated list of manifests, each with its own `location`, and the later manifest wins ([[graph-manifest-list-later-wins]];
-  READ: a graph id listed in two manifests now resolves to the later one, and its rejection makes the id 404) plus the
-  deploy-without-rebuild recipe (`ai-agent-guide.md#deploy-without-rebuild`). Sweep BUILD FILES ONLY 43 / 98 (unchanged). Readiness
-  220 suites, 1520 tests, 0 failures, 3 skipped (surefire XML; +3 = the #465 gate tests). **Lockstep:** Rust v4.12.19 the same
-  minute (mercury #333 → merge `ff6e269c`, tag → `e659c683`, release 23:59:10Z; Increment 142; crates 12/12 at 4.12.19); the
-  python/node packs stay at 4.12.15. Main CI green on the tag commit. **FIELD-ACCEPTED 2026-09-25:** the field's CI pipeline
-  passed on v4.12.19, Snyk and Sonar scans clean (Eric). Next: the AI SDLC/MCP backlog
-  ([[bp-agent-orchestration]]) resumes (Eric). Origin 2026-09-25-232807.md.
+- **latest_release:** v4.12.20 (2026-10-01 03:11:27Z — **exact decimal arithmetic for money and a deterministic package format, lock-step with
+  the Rust port**: release PR #485 squash `9e515825`, tag `v4.12.20` → `fc940bea` (two memory-only commits past the squash; the non-memory
+  diff is empty), pom verified at the tag; the GitHub release is published (not a draft). **Content:** the `DECIMAL` statement #471
+  ([[decimal-statement-exact-arithmetic]], ADR-0025), the `f:decimal*` plugins #475, `round` half-up #472, the `CanonicalPackager` #481
+  ([[canonical-packager-wire-contract]], ADR-0026), the dialect docs #467, the money-loop and packager guides, and a late `Float` widening
+  in the packager (Eric). **READ:** a numeric-looking string now compares as a number in `== != < <= > >=`, and `round(-2.5)` is `-3`;
+  both reach graphs that never say `DECIMAL`. Sweep BUILD FILES ONLY 43 / 98 (the 4.12.19 shape). Readiness: full reactor
+  `mvn -o clean install` BUILD SUCCESS, 231 suites, 1587 tests, 0 failures, 3 skipped (4.12.19 had 1520), then platform-core 525/0 after the
+  Float change. **Lockstep:** Rust v4.12.20 the same minute (mercury #340 → merge `b4783c5b`, tag → `d63e102a`, release 03:12:43Z;
+  Increments 143–147; 123 suites / 655 tests / 0 failed); the Java–Rust byte-for-byte interop on the 14 tutorials and 50 fixtures
+  (`docs/test-reports/canonical-package-java-rust-interop.md`, composable #486 / mercury #341, docs only) found 0 differences with a
+  14/14 negative control; the python/node packs need no change. Main CI green on both tag commits. **crates.io is NOT yet published:**
+  the sparse index at 03:14Z still ended at 4.12.19 for every crate checked and the API showed 4.12.19 for all twelve — the
+  `cargo publish --workspace` from the tag is Eric's step, then verify 12/12. Next: the crates, the field-acceptance wait (CI, Snyk, Sonar),
+  and the AI SDLC/MCP backlog ([[bp-agent-orchestration]]). Origin 2026-09-30-221603.md.
+  Prior: v4.12.19 (2026-09-25 23:58:19Z — the rapid-prototyping deploy lane on both engines; #466 squash `a261ff18`, tag → `35000ef2`;
+  `graph.model.automation` takes a comma-separated list of manifests and the later one wins ([[graph-manifest-list-later-wins]]); 1520
+  tests; Rust #333 → `ff6e269c`, crates 12/12; FIELD-ACCEPTED 2026-09-25 — the field's CI, Snyk and Sonar clean. Origin 2026-09-25-232807.md.)
   Prior: v4.12.18 (2026-09-25 20:56:19Z — two field reports answered on both engines; #464 squash `1e419a29`, tag → `70e00474`;
   #462 graph.math typed and finite + CONDITION ([[graph-math-typed-arithmetic]] — READ: `true` never computes as 1/0 and `Infinity`
   never propagates) and #463 the field's Snyk bumps (Jackson 2 BOM 2.22.3, Jackson 3 BOM 3.2.3, Netty 4.2.18.Final, MsgPack 0.9.12
@@ -540,8 +547,8 @@
   <!-- id: graph-manifest-list-later-wins | created: 2026-09-25 | last_used: 2026-09-25 | uses: 3 | tier: active | origin: 2026-09-25-223633 -->
 
 - **Exact decimal arithmetic is a `DECIMAL:` statement in `graph.math` — the high-precision `COMPUTE:`, strings at rest, no graph-level
-  mode (Eric's rulings, 2026-09-30; RFC-0001 promoted to ADR-0025 in PR #473; implemented in PR #471, squash `3b4cad82`; UNRELEASED,
-  in the CHANGELOG `## Unreleased`).** `DECIMAL: var -> expr` evaluates in `BigDecimal` and stores a canonical string at
+  mode (Eric's rulings, 2026-09-30; RFC-0001 promoted to ADR-0025 in PR #473; implemented in PR #471, squash `3b4cad82`; SHIPPED in
+  v4.12.20).** `DECIMAL: var -> expr` evaluates in `BigDecimal` and stores a canonical string at
   `{node}.result.{var}` (plain notation, computed scale kept, a zero of any scale `"0"`), because the state machine does not keep
   Java types across `graph.suspend`/`graph.resume` or any event hop. `/` is exact when it terminates, else 34 digits HALF_EVEN;
   `round(x, scale, mode)` always names its mode; `sqrt`, `log`, trigonometry, `random()`, `PI`, `E` and a boolean result fail by
@@ -557,7 +564,7 @@
 
 - **A deterministic MsgPack packager: keys sorted by UTF-8 bytes at every depth, `{manifest, maps}`, one canonical profile, integrity left to the
   application (Eric's rulings, 2026-10-01; RFC-0002 promoted to ADR-0026 in PR #484; Java `CanonicalPackager` #481/#482/#483 and the Rust
-  twin `platform_core::canonical_packager`, mercury #339, Increment 147; UNRELEASED).** The ordering is the packager's own step — Gson has no
+  twin `platform_core::canonical_packager`, mercury #339, Increment 147; SHIPPED in v4.12.20).** The ordering is the packager's own step — Gson has no
   ordered-keys option and a `String`-order sort is UTF-16, which differs above U+FFFF — and the bytes are written through msgpack-core
   directly, because `MsgPack.pack` drops nulls unless configured, packs a `Float` as float32 and writes a `BigDecimal` zero as `"0.00"`. The
   profile: nulls kept, smallest integers (signed 64-bit), finite float64 only (a `Float` is WIDENED through its shortest decimal text — Eric, 2026-10-01, before 4.12.20; it was rejected at first), shortest str/bin headers, exact numbers as strings (zero `"0"`),
