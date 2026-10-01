@@ -118,7 +118,7 @@ A decision would commit every engine to the canonical profile as a wire contract
 - Is rejecting `Float` and non-finite doubles right, or should a `Float` be widened through its shortest decimal text?
 - Should the verifier seam be a route (proposed), or a built-in RSA verify with a configured public key through `CryptoApi`?
 - Do `msgpack-core` (`packInt` / `packLong`) and `rmpv` both choose the smallest integer encoding? *(verify; the vectors will show it)*
-- Which engines carry it? Java and Rust are the reference pair (the Node.js pack uses `@msgpack/msgpack`). Which of the `mercury-python` and `mercury-nodejs` language packs must at least read a package and pass the vectors? (`mercury-go` is the agent-memory tool, not a language pack.)
+- Which engines carry it? Java and Rust are the reference pair (the Node.js pack uses `@msgpack/msgpack`). Neither language pack: `mercury-python` and `mercury-nodejs` are minimalist LLM extensions that serve functions to a Java or Rust application over Event-over-HTTP, as if local, and carry no event script or minigraph, so they never read a graph package. (`mercury-go` is the agent-memory tool, not a language pack.)
 
 **Resolution.**
 
@@ -173,6 +173,6 @@ A decision would commit every executing engine to one written decimal specificat
 - **The comparison rule and existing statements.** Implemented as proposed in the first PR: IF, CONDITION and `COMPUTE:` get the rule too, so `'9.5' > '10.25'` and `'1.0' == '1'` change for existing graphs (a READ item at release). The alternative leaves them as they are today, and `{model.status} == '200'` keeps failing there; confirm at review.
 - **Rust type.** The Rust twin would use an arbitrary-precision crate. `bigdecimal` matches Java `BigDecimal` semantics best and is already in that workspace's lockfile (0.4.10, through `apache-avro`); a fixed 96-bit type (e.g. `rust_decimal`, about 28 digits) cannot reproduce a 34-digit context. *(verify `bigdecimal`'s rounding-mode coverage and result-scale behaviour against the shared vectors when the Rust PR starts)*
 - **Exponent bound.** Proposed 999 for `**` and `pow`; confirm when the evaluator lands.
-- **Release.** Which version carries each delivery step? The `mercury-python` and `mercury-nodejs` language packs need at least the canonical string form, zero rule included (`mercury-go` is the agent-memory tool, not a language pack).
+- **Release.** Which version carries each delivery step? The language packs (`mercury-python`, `mercury-nodejs`) need no engine change for the decimal work: they host functions over Event-over-HTTP and never evaluate a statement or a plugin; a function of theirs that returns money returns a plain-notation string, which a `DECIMAL` statement or a decimal plugin reads (`mercury-go` is the agent-memory tool, not a language pack).
 
 **Resolution.** Promoted → ADR-0025 (2026-09-30): option (a), the `DECIMAL:` statement. Delivered in PR #471 (Java `graph.math`, with the numeric-string comparison rule) and PR #472 (item 10, the `round` alignment); items 8 (the `f:decimal*` plugins) and the Rust twin follow as separate PRs against the shared vectors.
