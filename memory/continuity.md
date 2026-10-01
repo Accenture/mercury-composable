@@ -555,6 +555,22 @@
   ([[conv-proposals-not-in-adr-ledger]]). Delivered on both engines (Rust twin: mercury #335 + #336, one shared core); open: the release ([[decimal-ports-and-release]]; the python/node packs need no change — they are Event-over-HTTP function hosts; closes [[decimal-mode]]). (ADR-0025)
   <!-- id: decimal-statement-exact-arithmetic | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: working | origin: 2026-09-30-221603 -->
 
+- **A deterministic MsgPack packager: keys sorted by UTF-8 bytes at every depth, `{manifest, maps}`, one canonical profile, integrity left to the
+  application (Eric's rulings, 2026-10-01; RFC-0002 promoted to ADR-0026 in PR #484; Java `CanonicalPackager` #481/#482/#483 and the Rust
+  twin `platform_core::canonical_packager`, mercury #339, Increment 147; UNRELEASED).** The ordering is the packager's own step — Gson has no
+  ordered-keys option and a `String`-order sort is UTF-16, which differs above U+FFFF — and the bytes are written through msgpack-core
+  directly, because `MsgPack.pack` drops nulls unless configured, packs a `Float` as float32 and writes a `BigDecimal` zero as `"0.00"`. The
+  profile: nulls kept, smallest integers (signed 64-bit), finite float64 only, shortest str/bin headers, exact numbers as strings (zero `"0"`),
+  nothing else; the read is strict by default (re-encode and compare). **Digital signature is OUT — the user application decides whether to
+  protect the exact bytes and with which algorithm; no hash mode, verifier seam or key in the framework.** **The interop proof is one vector file,
+  byte-identical in both repos, whose expected bytes come from an independent encoder written from the spec (not from an engine)** — 65 values, 6
+  packages, 24 rejections and a seeded 60-document corpus; each engine matching it means the engines match each other, and both passed first time.
+  Method worth keeping: an independent oracle plus one shared file beats a cross-engine drive; it also found that `rmpv` counts two depth units
+  per nesting level (its 64 accepted 31), so a library-limit corner needs its own vector. Language packs do not carry it (Event-over-HTTP function
+  hosts). Deferred: folder `pack`/`unpack` tooling, trusted timestamps, per-entry manifest records, the graph-set loader RFC. Relates
+  [[graph-manifest-list-later-wins]] (the loader's precedence). (ADR-0026)
+  <!-- id: canonical-packager-wire-contract | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-09-30-221603 -->
+
 - **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed response is traced
   at its head and its tail, never per token (Eric's rulings on the Dynatrace review of the v4.12.15 certification traces,
   2026-09-22; PR #444, Rust #315, Python #36, Node #104; SHIPPED in v4.12.15).** REST automation mints a span at receipt
