@@ -50,12 +50,12 @@ half moves away from zero; a graph that never says `DECIMAL` is affected by both
    UTF-8 byte order (the ordering is done by the packager, since Gson has no ordered-keys option and a `String`-order sort
    differs from another engine's bytes above U+FFFF); a package is `{manifest, maps}` with `format` and `format_version`
    written by the packager, caller-defined string manifest fields (by convention `graph_id`) and the maps keyed by entry
-   name in sorted order. The canonical profile: nulls kept, smallest integers, finite float64 only (a `Float`, NaN and
-   Infinity are rejected), shortest str and bin headers, exact numbers as strings (a `BigDecimal` in plain notation, a zero
+   name in sorted order. The canonical profile: nulls kept, smallest integers, finite float64 only (a `Float` is widened
+   through its shortest decimal text; NaN and Infinity are rejected), shortest str and bin headers, exact numbers as strings (a `BigDecimal` in plain notation, a zero
    of any scale `"0"`), dates as ISO-8601 strings, nothing else. `unpack` returns ordered maps and, by default, re-encodes
    the content and rejects bytes that are not canonical. Integrity is not part of it: a hash or a signature, and the algorithm,
-   are the user application's decision. 20 tests and a shared vector file, `canonical-package-vectors.json`, whose expected
-   bytes come from an independent encoder written from the specification (65 values, 6 packages with SHA-256, 24 rejection
+   are the user application's decision. 21 tests and a shared vector file, `canonical-package-vectors.json`, whose expected
+   bytes come from an independent encoder written from the specification (73 values, 6 packages with SHA-256, 25 rejection
    cases, a seeded 60-document differential corpus, and the nesting bound of 64 levels): the Rust twin (Increment 147) passes
    the same byte-identical file, so the two engines agree byte for byte. **Upgrade action:** none — a new class.
 

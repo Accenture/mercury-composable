@@ -775,7 +775,7 @@ CanonicalPackager.unpack(bytes, false);                               // non-str
   (UTF-16), which differs from another engine's bytes above U+FFFF.
 - **It writes through msgpack-core directly, not through `MsgPack.pack`**, which drops null values unless a configuration
   switch is set, packs a `Float` as float32 and writes a `BigDecimal` zero as `"0.00"`. The canonical profile keeps nulls,
-  writes a finite float64 only (`Float`, NaN and Infinity are rejected with `IllegalArgumentException` naming the path), writes
+  writes a finite float64 only (a `Float` is widened through its shortest decimal text, so `0.1f` is the float64 `0.1`; NaN and Infinity are rejected with `IllegalArgumentException` naming the path), writes
   a `BigDecimal` in plain notation with a zero of any scale as `"0"`, and a `BigInteger` as its digits. Dates are ISO-8601
   strings; any other type is rejected.
 - **The packager is faithful to a value's type**: the integer `1` and the float `1.0` are different content, and strings are written

@@ -82,7 +82,7 @@
    - **Keys** are text, in ascending order of their UTF-8 bytes (not Java's UTF-16 `String` order, which differs for supplementary characters). A non-text key is converted to text, as the existing serializer does; a collision after conversion, or a null key, is an error.
    - **Null values** are written as nil and never dropped (the general serializer omits null-valued entries unless `supportNulls` is set).
    - **Integers** use the smallest encoding, fixints first.
-   - **Floats** are float64 and finite only: a `Float` (which `MsgPack.java` packs as float32), NaN and Infinity are rejected.
+   - **Floats** are float64 and finite only: NaN and Infinity are rejected. *(Amended 2026-10-01: a `Float`, which `MsgPack.java` packs as float32, is accepted and widened through its shortest decimal text; see the Resolution.)*
    - **Text and bytes** are MsgPack str and bin, each with the shortest header.
    - **Exact numbers** travel as strings, following RFC-0001 including its zero rule, a zero of any scale being `"0"` (the existing serializer already packs `BigInteger` and `BigDecimal` as strings, but writes a `BigDecimal` zero as `"0.00"`, so the packager applies the rule itself), and a date is an ISO-8601 string. No extension types, no timestamps; booleans and nil use their single forms.
    - **Any other type** is rejected, naming its path, rather than stringified.
@@ -115,12 +115,12 @@ A decision would commit every engine to the canonical profile as a wire contract
 *Implemented as proposed in the first Java PR, to confirm at review:*
 - `graph_id` stays a documented convention that the packager never interprets, because a graph-set loader can check it against the packed entry names.
 - A strict read is the default.
-- `Float` and non-finite doubles are rejected. The packager is faithful to a value's type, so the integer 1 and the float 1.0 are different content, and strings are written as given (no Unicode normalization); both are declared in the class documentation.
+- Non-finite doubles are rejected; a `Float` was rejected here and is now widened (see the Resolution). The packager is faithful to a value's type, so the integer 1 and the float 1.0 are different content, and strings are written as given (no Unicode normalization); both are declared in the class documentation.
 - `msgpack-core` and `rmpv` both choose the smallest integer encoding: checked on 21 integers at every encoding boundary and the str headers, all identical bytes (the vectors run the same cases in both engines).
 - The Java packager is `org.platformlambda.core.serializers.CanonicalPackager` beside `MsgPack`: a builder (`manifest`, `add`, `build`), `encode`, `decode` and `unpack`; it needs no new dependency.
 - The `mercury-python` and `mercury-nodejs` language packs do not carry it: they are minimalist LLM extensions that serve functions to a Java or Rust application over Event-over-HTTP, as if local, and carry no event script or minigraph, so they never read a graph package. (`mercury-go` is the agent-memory tool, not a language pack.)
 
-**Resolution.** Promoted → ADR-0026 (2026-10-01): option (a), a generic canonical packager with integrity left to the user application. Delivered in the Java engine's PR #481 (the packager, 14 + 5 tests and the shared vector file), PR #482 (the nesting bound pinned) and PR #483 (the Sonar findings), and the Rust engine's PR #339 (Increment 147); all of the shared file passes in both engines. The folder `pack` / `unpack` tooling and the graph-set loader RFC remain deferred.
+**Resolution.** Promoted → ADR-0026 (2026-10-01): option (a), a generic canonical packager with integrity left to the user application. Delivered in the Java engine's PR #481 (the packager, 14 + 5 tests and the shared vector file), PR #482 (the nesting bound pinned) and PR #483 (the Sonar findings), and the Rust engine's PR #339 (Increment 147); all of the shared file passes in both engines. The folder `pack` / `unpack` tooling and the graph-set loader RFC remain deferred. **Amended (2026-10-01, Eric, before the v4.12.20 release):** a `Float` is accepted and widened to float64 through its shortest decimal text instead of being rejected (the open question about widening a `Float`); NaN and Infinity stay rejected and a float32 on the wire still fails the strict read.
 
 ---
 

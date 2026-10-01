@@ -83,7 +83,8 @@ class CanonicalPackagerVectorsTest {
                         return new BigInteger(arg.getAsString());
                     }
                     case "$float32" -> {
-                        return arg.getAsFloat();
+                        return arg.getAsJsonPrimitive().isString()
+                                ? Float.parseFloat(arg.getAsString()) : arg.getAsFloat();
                     }
                     case "$double" -> {
                         return Double.parseDouble(arg.getAsString());
@@ -156,7 +157,7 @@ class CanonicalPackagerVectorsTest {
     @Test
     void everyValueEncodesToTheExpectedBytes() throws IOException {
         var all = vectors().getAsJsonArray("values");
-        assertTrue(all.size() > 60, "the vector file looks truncated: " + all.size());
+        assertTrue(all.size() > 70, "the vector file looks truncated: " + all.size());
         var ids = new HashSet<String>();
         for (var item : all) {
             var v = item.getAsJsonObject();
@@ -184,7 +185,6 @@ class CanonicalPackagerVectorsTest {
     @Test
     void everyPackRejectionFailsByName() throws Exception {
         var fragments = Map.of(
-                "float32", "Float is not canonical",
                 "non-finite", "non-finite number",
                 "unsupported-type", "Unsupported type",
                 "duplicate-entry", "Duplicate entry name",
@@ -205,7 +205,7 @@ class CanonicalPackagerVectorsTest {
             assertTrue(e.getMessage().contains(fragment), id + ": '" + e.getMessage() + "'");
             checked++;
         }
-        assertTrue(checked >= 7, "pack rejections checked: " + checked);
+        assertTrue(checked >= 8, "pack rejections checked: " + checked);
     }
 
     @Test
