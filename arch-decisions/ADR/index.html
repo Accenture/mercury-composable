@@ -2133,6 +2133,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0026 — A deterministic MsgPack packager: keys sorted by UTF-8 bytes, {manifest, maps}, integrity left to the application
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0025" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3038,6 +3049,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0026 — A deterministic MsgPack packager: keys sorted by UTF-8 bytes, {manifest, maps}, integrity left to the application
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0025" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3360,6 +3382,71 @@ governing the codebase — verified against the source (<code>platform-core</cod
 <code>event-script-engine</code>, <code>minigraph-playground-engine</code>) and the published guides, which are
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
+<hr />
+<h2 id="adr-0026">ADR-0026 — A deterministic MsgPack packager: keys sorted by UTF-8 bytes, <code>{manifest, maps}</code>, integrity left to the application<a class="headerlink" href="#adr-0026" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-10-01 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> canonical-packager-wire-contract</p>
+<!-- id: adr-0026 | status: accepted -->
+
+<p><strong>Abstract.</strong> A set of related documents (knowledge graphs first, but equally flows, rules or tables) is packed into <strong>one
+byte array whose bytes depend only on its content</strong>, in the Java and Rust engines alike. The packager sorts every map's keys
+at every depth in <strong>UTF-8 byte order</strong>, packs a MsgPack map <code>{manifest, maps}</code> under one <strong>canonical profile</strong>, and reads it
+back as ordered maps, rejecting by default any bytes that are not the canonical form of their content. <code>manifest</code> carries
+<code>format</code> and <code>format_version</code> (written by the packager) and caller-defined string fields (by convention <code>graph_id</code>); <code>maps</code>
+holds the packed maps keyed by entry name in sorted order. <strong>Integrity is not part of a package</strong>: no hash, signature, key id
+or timestamp lives inside it, and the framework carries no hash mode, no verifier seam and no key; the user application
+decides whether to protect the exact bytes and with which algorithm. Shipped as <code>org.platformlambda.core.serializers.CanonicalPackager</code>
+(Java, PRs #481, #482) and <code>platform_core::canonical_packager</code> (Rust, the <code>mercury</code> repository's PR #339, Increment 147);
+proposed and revised as RFC-0002 in <a href="../RFC/"><code>RFC.md</code></a>.</p>
+<p><strong>Context.</strong> Loose files cannot be promoted as one artifact: each is deployed and validated alone, JSON text is not stable (key
+order and whitespace vary), and there is no single thing to hash. MsgPack does not fix this by itself: a map has no guaranteed
+order and one value has several valid encodings, so two packagings of the same content can differ and their hashes with them.
+Both engines already use MsgPack, so the smallest useful piece is a deterministic packager. Whether a package is then hashed,
+signed or neither is a deployment decision.</p>
+<p><strong>Decision.</strong></p>
+<ul>
+<li><strong>The ordering is the packager's own step.</strong> The Gson serializer has no ordered-keys option, and an ordered-keys option such as
+  Jackson's sorts by <code>String</code> order (UTF-16), which differs from another engine's byte order above U+FFFF. The packager sorts
+  after any JSON parsing and before anything is written, whatever map type comes in, so the input's own order never reaches the
+  bytes. It writes through the MsgPack library directly, not through the platform's general <code>MsgPack.pack</code>, which drops null
+  values unless a configuration switch is set, packs a <code>Float</code> as float32 and writes a <code>BigDecimal</code> zero as <code>"0.00"</code>.</li>
+<li><strong>The canonical profile is a wire contract, identical in every engine:</strong> keys are text sorted by UTF-8 bytes (a non-text key is
+  converted to text; a null key or a collision is an error); nulls are kept as nil; integers use the smallest encoding (signed
+  64-bit only); floats are finite float64 (a <code>Float</code>, NaN and Infinity are rejected); str and bin carry the shortest header; exact
+  numbers travel as strings (a zero of any scale is <code>"0"</code>, per RFC-0001) and dates as ISO-8601 strings; no extension types or
+  timestamps; any other type is rejected naming its path. The packager is faithful to a value's type (the integer 1 and the
+  float 1.0 are different content) and applies no Unicode normalization.</li>
+<li><strong>The package structure is <code>{manifest, maps}</code>,</strong> <code>manifest</code> sorting before <code>maps</code> so a reader can read the metadata before
+  decoding any map; entry names are ordered by UTF-8 bytes (never a file system listing or a locale); a duplicate entry name or a
+  caller field named <code>format</code> or <code>format_version</code> is an error. <code>graph_id</code> stays a documented convention that the packager never
+  interprets.</li>
+<li><strong>The read is strict by default:</strong> the decoded content is re-encoded and the package rejected if the bytes differ, so an
+  accepted package has exactly one byte form. The decoder also rejects a non-text or duplicate key, an extension type, trailing
+  bytes and nesting beyond 64 levels.</li>
+<li><strong>Byte-for-byte compatibility is proven by one shared vector file, not by a cross-engine drive.</strong>
+  <code>canonical-package-vectors.json</code> is byte-identical in both repositories, and its expected bytes come from an <strong>independent
+  encoder written from the specification</strong>, not from either engine: 65 values (every integer encoding boundary, header
+  boundaries, the UTF-8 versus UTF-16 key order, exact numbers), 6 packages with SHA-256, 24 rejection cases and a seeded
+  60-document differential corpus. Each engine matching the file means the engines match each other, and all of it passed on
+  the first run in both. It also pins the corners where the libraries differ: <code>rmpv</code> spends two units of its depth counter per
+  nesting level, so its limit of 64 accepted only 31 nested lists where Java accepts 64; the Rust decoder enforces the bound
+  itself and two vectors (sixty-four nested lists decode, sixty-five are refused) hold both engines to it.</li>
+</ul>
+<p><strong>Alternatives.</strong> (a) a generic canonical packager with integrity external and optional — chosen. (b) an embedded signature
+envelope <code>[payload, signature]</code>: one file carries its own signature, but the format is bound to one scheme and the framework owns
+algorithms, key rotation and timestamps. (c) canonical JSON (RFC 8785) plus an external hash: readable, but it needs a canonicalizer
+in each engine and its number rules conflict with strings for exact numbers (RFC-0001). (d) a zip of files plus per-entry hashes:
+readable without a decoder, but zip bytes vary with entry order and timestamps, so it needs a two-level hash. (e) leave it to
+adopters: each adopter re-solves canonical encoding. An earlier draft of (a) had the engine implement a <code>none</code> and a <code>hash</code>
+mode and call a route-addressed verifier for <code>signature</code>; that was withdrawn (Eric, 2026-10-01) so the framework owns no
+algorithm, key rotation or fail-closed policy.</p>
+<p><strong>Consequences.</strong> Every engine that carries the packager is committed to the canonical profile as a wire contract, the
+<code>{manifest, maps}</code> structure, the rule that integrity never lives inside the package, and the shared vector file maintained
+byte-identical in lock-step; it adds one packager per engine and no dependency. The <code>mercury-python</code> and <code>mercury-nodejs</code> language
+packs do not carry it: they serve functions to a Java or Rust application over Event-over-HTTP and never read a graph package.
+Deferred, each its own decision when the field asks: the folder <code>pack</code> and <code>unpack</code> tooling, trusted timestamps, per-entry
+records in the manifest, and a <strong>graph-set loader</strong> — the packager's intended first consumer, which would register all graphs or
+none, define precedence against <code>graph.model.automation</code> manifests and check that <code>graph_id</code> names a packed graph — to be raised
+as its own RFC.</p>
 <hr />
 <h2 id="adr-0025">ADR-0025 — Exact decimal arithmetic is a <code>DECIMAL:</code> statement in <code>graph.math</code>, with canonical strings at rest<a class="headerlink" href="#adr-0025" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-09-30 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> decimal-statement-exact-arithmetic</p>
