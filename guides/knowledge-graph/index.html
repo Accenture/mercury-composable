@@ -3003,43 +3003,43 @@ for downstream nodes.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>graph.data.mapper</code></td>
+<td><a href="skills-reference/#data-mapper"><code>graph.data.mapper</code></a></td>
 <td>Copy/transform data between state-machine namespaces (<code>mapping[]</code>)</td>
 </tr>
 <tr>
-<td><code>graph.math</code></td>
+<td><a href="skills-reference/#math"><code>graph.math</code></a></td>
 <td>Fast inline math &amp; boolean evaluation, <code>IF/THEN/ELSE</code> branching, loops</td>
 </tr>
 <tr>
-<td><code>graph.js</code></td>
-<td>Full JavaScript evaluation via GraalVM — more flexible, slower than <code>graph.math</code></td>
+<td><a href="skills-reference/#js"><code>graph.js</code></a></td>
+<td><strong>DEPRECATED</strong> — full JavaScript evaluation via GraalVM, kept for backward compatibility only; use <code>graph.math</code> + <code>graph.task</code></td>
 </tr>
 <tr>
-<td><code>graph.api.fetcher</code></td>
+<td><a href="skills-reference/#api-fetcher"><code>graph.api.fetcher</code></a></td>
 <td>Call external HTTP APIs using data-dictionary/provider nodes, with caching and fork-join concurrency</td>
 </tr>
 <tr>
-<td><code>graph.extension</code></td>
+<td><a href="skills-reference/#extension"><code>graph.extension</code></a></td>
 <td>Run another graph model <strong>or</strong> an Event Script flow as a sub-routine</td>
 </tr>
 <tr>
-<td><code>graph.task</code></td>
+<td><a href="skills-reference/#task"><code>graph.task</code></a></td>
 <td>Invoke a composable function through its route name — plug custom logic into the graph</td>
 </tr>
 <tr>
-<td><code>graph.suspend</code></td>
+<td><a href="skills-reference/#suspend"><code>graph.suspend</code></a></td>
 <td>Persist workflow state to a pluggable external store at a human checkpoint — the run completes and resumes later</td>
 </tr>
 <tr>
-<td><code>graph.resume</code></td>
+<td><a href="skills-reference/#resume"><code>graph.resume</code></a></td>
 <td>Restore persisted state by business correlation ID and continue past the checkpoint without re-executing it</td>
 </tr>
 <tr>
-<td><code>graph.join</code></td>
+<td><a href="skills-reference/#join"><code>graph.join</code></a></td>
 <td>Synchronization barrier — proceeds only once all upstream paths complete</td>
 </tr>
 <tr>
-<td><code>graph.island</code></td>
+<td><a href="skills-reference/#island"><code>graph.island</code></a></td>
 <td>Mark an isolated sub-graph (pauses traversal); useful while building</td>
 </tr>
 </tbody>
