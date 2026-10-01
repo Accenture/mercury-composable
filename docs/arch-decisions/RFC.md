@@ -67,7 +67,7 @@
 
 **Proposal.**
 
-1. **The packager.** A small utility beside `MsgPack` in platform-core (and its Rust twin) that turns maps into one byte array. It first converts every map to an **ordered map with keys sorted recursively** (at every depth, including maps inside lists; list order is kept), then writes the result as MsgPack under the canonical profile (item 3). The same content gives the same bytes, in either engine.
+1. **The packager.** A small utility beside `MsgPack` in platform-core (and its Rust twin) that turns maps into one byte array. It first converts every map to an **ordered map with keys sorted recursively** (at every depth, including maps inside lists; list order is kept), then writes the result as MsgPack under the canonical profile (item 3). **The ordering is done by the packager itself** (Eric, 2026-10-01): the Gson serializer has no ordered-keys option, and an ordered-keys option such as Jackson's sorts by `String` order (UTF-16), which differs from another engine's byte order above U+FFFF. The input map may be of any kind; its own order never reaches the bytes. The bytes are written through the MsgPack library directly, not through the platform's general `MsgPack.pack`, which drops nulls unless configured, packs a `Float` as float32 and writes a `BigDecimal` zero as `"0.00"` - none of which the profile allows. The same content gives the same bytes, in either engine.
 2. **Package structure: a manifest metadata map plus the maps.** The package is one MsgPack map with two parts:
    - `manifest`, a metadata map. The packager writes `format` and `format_version`; everything else is caller-defined string fields, recorded but never interpreted by the engine. For graphs, the convention is that **`graph_id` holds the graph ID** of the graph the package delivers (the id the deployment manifest lists, `POST /api/graph/{graph_id}` serves, and the file `<graph_id>.json` holds), with the other maps as its subgraphs. A set name, a version or a certification state can sit beside it;
    - `maps`, the packed maps, keyed by entry name.
@@ -86,24 +86,22 @@
    - **Text and bytes** are MsgPack str and bin, each with the shortest header.
    - **Exact numbers** travel as strings, following RFC-0001 including its zero rule, a zero of any scale being `"0"` (the existing serializer already packs `BigInteger` and `BigDecimal` as strings, but writes a `BigDecimal` zero as `"0.00"`, so the packager applies the rule itself), and a date is an ISO-8601 string. No extension types, no timestamps; booleans and nil use their single forms.
    - **Any other type** is rejected, naming its path, rather than stringified.
-4. **Integrity is external and optional.** Nothing inside the package refers to how it is protected: no signature, hash, key id or timestamp. The field chooses one mode per deployment, applied to the **exact stored bytes**:
-   - `none`: the channel or artifact repository is trusted;
-   - `hash`: the SHA-256 of the bytes, recorded outside the package (a release record, a sidecar `<name>.sha256`, a config value or an environment variable) and compared on load. It detects corruption and substitution, and authenticates only as far as the recorded value is trusted;
-   - `signature`: a detached signature over the bytes, made by the field's own signer (a CI job, a KMS or HSM, `openssl`; any algorithm) and stored beside the package (`<name>.sig`).
+4. **Integrity is outside the packager, entirely the user application's decision (Eric, 2026-10-01).** Nothing inside the package refers to how it is protected: no signature, hash, key id or timestamp, and the framework carries no hash mode, no verifier seam and no key. The packager produces deterministic bytes; the application chooses whether to protect those **exact stored bytes**, with which algorithm (SHA-256 recorded in a release record or a sidecar, a detached signature from its own signer, a KMS, `openssl`, or nothing), and where the proof is kept. An earlier draft had the engine implement `none` and `hash` and call a route-addressed verifier for `signature`; that is withdrawn so that the framework owns no algorithm, key rotation or fail-closed policy, which belong to the field.
+5. **Reading.** `unpack` returns ordered maps (insertion order preserved, never a hash-ordered map) and the manifest. A **strict** read, the default, also re-encodes the decoded content canonically and rejects the package if the bytes differ, so an accepted package has exactly one byte form; a non-strict read decodes anything that is valid in the profile's types. The decoder rejects a non-text key, a duplicate key, an extension type, bytes after the value and nesting beyond a fixed bound (64), so untrusted bytes cannot exhaust the stack.
+6. **Tooling.** *Deferred.* A `pack` that builds a package from a folder or a list of files (JSON to start with) and an `unpack` that writes the maps back as readable JSON, exact numbers kept as text, are the natural next step; the source files remain what people read and certify, and the package is only the deployment artifact.
+7. **Parity, and the Rust interop.** One vector file, `canonical-package-vectors.json`, is **byte-identical in the Java and Rust repositories** and run by both engines' suites. Its expected bytes come from an **independent encoder written from this specification**, not from either engine, so an engine that matches the file matches every other engine that does. It holds:
+   - values: integers at every encoding boundary, float64 including `-0.0`, str and bin header boundaries, Unicode (and an unnormalized `e` + combining accent), map and list header boundaries (15 and 16), nulls kept, keys sorted at depth, keys whose UTF-8 and UTF-16 orders differ, exact numbers as strings (the RFC-0001 zero rule included);
+   - packages: the graph-set example in both entry orders (same bytes), entry names ordered by UTF-8 bytes, manifest fields sorted, an empty package, each with its expected hex and SHA-256;
+   - a **generated corpus** of 60 packages of random nested documents from a seeded generator, a differential test that shows a divergence in a rarely used corner of the profile as a byte difference;
+   - rejection cases: `Float`, NaN, Infinity, an unsupported type, a duplicate entry name, a caller field named `format` or `format_version`; and on read, non-canonical integer width, out-of-order keys, a float32, trailing bytes, a non-map, a missing or extra top-level key, a wrong format or version, a non-text manifest field, an entry that is not a map, a duplicate key, a non-text key, an extension type and a truncated package. The cases only a strict read rejects are marked.
 
-   The engine implements `none` and `hash` itself (JDK `MessageDigest`, no new dependency) and reaches `signature` through a **verifier seam**: a route-addressed function that receives the bytes and the detached signature and answers accept or reject. The engine never holds a signing key and never signs, so algorithms, key rotation and KMS integration stay in the field's hands and out of the framework's release cycle. A configured check that fails, or `signature` mode with no verifier, fails closed: nothing is decoded.
-5. **Reading.** `unpack` returns ordered maps (insertion order preserved, never a hash-ordered map) after the configured integrity check. A **strict** read also re-encodes the decoded content canonically and rejects the package if the bytes differ, so an accepted package has exactly one byte form.
-6. **Tooling.** `pack` builds a package from a folder or a list of files (JSON to start with); `unpack` writes the maps back as readable JSON, exact numbers kept as text, for review and audit. The source files remain what people read and certify; the package is only the deployment artifact. Hashing and signing use the field's own tools.
-7. **Parity.** Shared test vectors run in every engine's suite:
-   - a fixed set of maps with expected bytes (hex) and SHA-256, covering maps nested in lists, keys whose UTF-8 and UTF-16 orders differ, and integer and str/bin header boundaries;
-   - rejection cases: `Float`, NaN, an unsupported type, a duplicate entry name, a caller field named `format`, and non-canonical bytes under a strict read;
-   - integrity cases: a hash mismatch, a verifier reject, and `signature` mode without a verifier, each decoding nothing.
+   The Rust twin runs the same file; an engine-to-engine drive (the same documents packed by each engine, the bytes compared, and each engine's strict read accepting the other's bytes) follows with it.
 
 A decision would commit every engine to the canonical profile as a wire contract, the `manifest` + `maps` structure, and the rule that integrity never lives inside the package. It adds one packager per engine and no dependency.
 
 **First consumer, deliberately out of scope.** A graph-set loader is the intended first consumer and would be raised as its own RFC. It would register all graphs or none, define precedence against `graph.model.automation` manifests (the later-loaded source wins, as for manifest lists), verify that `graph_id` names one of the packed graphs, and could also check static `graph.extension` targets at load, declaring that it cannot see through `flow://` or targets computed at run time.
 
-**Deferred until field use asks for it:** trusted timestamps; a reference verifier function (for example RSA over `CryptoApi`); per-entry records or hashes in the manifest, to show which map changed between versions; hot reload; two versions loaded side by side; compression.
+**Deferred until field use asks for it:** the folder `pack` and `unpack` tooling; trusted timestamps; per-entry records or hashes in the manifest, to show which map changed between versions; hot reload; two versions loaded side by side; compression.
 
 **Options.**
 - *(a) A generic canonical packager, integrity external and optional (above).* One artifact, and the framework owns no signature scheme. **Recommended.**
@@ -112,13 +110,15 @@ A decision would commit every engine to the canonical profile as a wire contract
 - *(d) A zip of files plus a manifest of per-entry hashes.* Readable without a decoder, but it needs a two-level hash scheme, because zip bytes vary with entry order and timestamps.
 - *(e) Leave it to adopters.* No engine change, but each adopter re-solves canonical encoding.
 
-*Open questions:*
-- Should `graph_id` stay a documented convention that the packager never interprets (proposed), or should the packager offer a typed field for it? A graph-set loader can already check it, because a graph's id is its file name without `.json` today.
-- Should a strict read be the default (proposed, since it is cheap) or opt-in?
-- Is rejecting `Float` and non-finite doubles right, or should a `Float` be widened through its shortest decimal text?
-- Should the verifier seam be a route (proposed), or a built-in RSA verify with a configured public key through `CryptoApi`?
-- Do `msgpack-core` (`packInt` / `packLong`) and `rmpv` both choose the smallest integer encoding? *(verify; the vectors will show it)*
-- Which engines carry it? Java and Rust are the reference pair (the Node.js pack uses `@msgpack/msgpack`). Neither language pack: `mercury-python` and `mercury-nodejs` are minimalist LLM extensions that serve functions to a Java or Rust application over Event-over-HTTP, as if local, and carry no event script or minigraph, so they never read a graph package. (`mercury-go` is the agent-memory tool, not a language pack.)
+**Settled (Eric, 2026-10-01).** Digital signature, the hash mode and the verifier seam are out of the packager and left to the user application (item 4); the work is the key ordering and the packaging into MsgPack; byte-for-byte compatibility with the Rust engine is a requirement and is enforced by the shared vector file and a later engine-to-engine drive (item 7).
+
+*Implemented as proposed in the first Java PR, to confirm at review:*
+- `graph_id` stays a documented convention that the packager never interprets, because a graph-set loader can check it against the packed entry names.
+- A strict read is the default.
+- `Float` and non-finite doubles are rejected. The packager is faithful to a value's type, so the integer 1 and the float 1.0 are different content, and strings are written as given (no Unicode normalization); both are declared in the class documentation.
+- `msgpack-core` and `rmpv` both choose the smallest integer encoding: checked on 21 integers at every encoding boundary and the str headers, all identical bytes (the vectors run the same cases in both engines).
+- The Java packager is `org.platformlambda.core.serializers.CanonicalPackager` beside `MsgPack`: a builder (`manifest`, `add`, `build`), `encode`, `decode` and `unpack`; it needs no new dependency.
+- The `mercury-python` and `mercury-nodejs` language packs do not carry it: they are minimalist LLM extensions that serve functions to a Java or Rust application over Event-over-HTTP, as if local, and carry no event script or minigraph, so they never read a graph package. (`mercury-go` is the agent-memory tool, not a language pack.)
 
 **Resolution.**
 
