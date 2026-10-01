@@ -14,11 +14,11 @@
   must pass the vectors. **State (2026-10-01):** Eric narrowed the scope — digital signature, the hash mode and the verifier seam are OUT (the user application
   decides whether to protect the exact bytes and with which algorithm); the work is the key ordering and the MsgPack packaging, with
   byte-for-byte Rust interop as a requirement. The ordering is the packager's own step (Gson has no ordered-keys option; Jackson's would
-  sort by UTF-16). First Java PR #481 open (`CanonicalPackager` beside `MsgPack`, builder + `encode`/`decode`/`unpack`, strict read by
+  sort by UTF-16). First Java PR #481 MERGED (`CanonicalPackager` beside `MsgPack`, builder + `encode`/`decode`/`unpack`, strict read by
   default; 14 + 5 tests; platform-core 523/0): bytes are written through msgpack-core, not `MsgPack.pack` (null dropping is config-dependent,
   Float packs as float32, a BigDecimal zero is "0.00"). **The byte contract is `canonical-package-vectors.json`** — expected bytes from an
   independent encoder written from the spec, not from an engine — with a seeded 60-document differential corpus; `msgpack-core` and `rmpv`
-  agree on the smallest-integer and str encodings. RFC-0002 revised and still Open. **Next:** #481 review; the Rust twin against the
+  agree on the smallest-integer and str encodings. RFC-0002 revised and still Open. **2026-10-01 (later):** the Rust twin is open as mercury #339 (Increment 147): all of the shared file passes there on the first run (65 values, 6 packages, the 60-document corpus, 24 rejections), the vector file byte-identical in both repos; one divergence found and pinned — `rmpv` spends two depth units per nesting level (its 64 accepted only 31 nested lists), so the Rust decoder enforces the 64-level bound itself and two new vectors pin the boundary in both engines (composable #482); Sonar cleanup #483; `event_over_http_stream::edge_relay_spans_are_connected` is a PRE-EXISTING flaky Rust test (1/14 on the branch, 2/14 on main), not caused by the packager. **Next:** #482, #483 and #339 review and merge; then Eric decides promotion of RFC-0002 to an ADR (and the v4.12.20 release); the Rust twin before: the original plan against the
   byte-identical vector file plus an engine-to-engine drive (each engine packs the same documents, bytes compared, each strict read accepts
   the other's); then Eric decides promotion (ADR only after implementation and review, per [[conv-proposals-not-in-adr-ledger]]); the
   folder pack/unpack tooling and the graph-set loader RFC stay deferred. Applies [[functions-decoupled-routes]].
