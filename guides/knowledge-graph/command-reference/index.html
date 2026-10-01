@@ -1702,6 +1702,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="for_each[] — iterate a statement block over lists">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#worked-example-decimal-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Worked example (engine-verified) — the money loop, DECIMAL
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -3263,6 +3280,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="for_each[] — iterate a statement block over lists">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#worked-example-decimal-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Worked example (engine-verified) — the money loop, DECIMAL
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -4214,6 +4248,30 @@ seeds the accumulator once, each pass computes <code>total + price*qty</code> an
 <code>COMPUTE: line -&gt; {model.price} * {model.qty}</code> then
 <code>MAPPING: f:add(model.total, totaler.result.line) -&gt; model.total</code> — numeric promotion carries
 the <code>COMPUTE</code> doubles through <code>f:add</code> (both forms are engine-verified).</p>
+<h4 id="worked-example-decimal-loop">Worked example (engine-verified) — the money loop, <code>DECIMAL</code><a class="headerlink" href="#worked-example-decimal-loop" title="Permanent link">&para;</a></h4>
+<p>The <code>COMPUTE</code> example above accumulates in IEEE double (<code>500.0</code>). <strong>Money uses this twin</strong>, which keeps every
+amount an exact canonical string:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>create node totaler
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>with type Loop
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>with properties
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>skill=graph.math
+<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>for_each[]=input.body.prices -&gt; model.price
+<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a>for_each[]=input.body.quantities -&gt; model.qty
+<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a>statement[]=MAPPING: text(0) -&gt; model.total
+<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a>statement[]=BEGIN
+<a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a>statement[]=DECIMAL: line -&gt; {model.price} * {model.qty}
+<a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a>statement[]=DECIMAL: total -&gt; {model.total} + {totaler.result.line}
+<a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a>statement[]=MAPPING: totaler.result.total -&gt; model.total
+<a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a>statement[]=END
+<a id="__codelineno-30-13" name="__codelineno-30-13" href="#__codelineno-30-13"></a>statement[]=DECIMAL: rounded -&gt; round({model.total}, 2, HALF_UP)
+<a id="__codelineno-30-14" name="__codelineno-30-14" href="#__codelineno-30-14"></a>statement[]=MAPPING: totaler.result.rounded -&gt; output.body.total
+</code></pre></div>
+<p>With <code>prices=["10.50","20.25","30"]</code> and <code>quantities=[7,8,9]</code> the run yields <code>total: "505.50"</code>
+(<code>73.50 + 162.00 + 270</code>): the pre-block seeds the accumulator once as the string <code>0</code>, each pass adds the exact
+line total, and the post-block rounds at the currency scale. A balance that passes through zero stores <code>"0"</code> and the
+next scaled addend restores the scale. The decimal plugins run in a mapping too —
+<code>MAPPING: f:decimalAdd(model.total, text(0.10)) -&gt; output.body.plus_dime</code> — see
+<a href="../skills-reference/#math-decimal">the DECIMAL statement</a> for the patterns and the input rules.</p>
 <h2 id="invariants">Invariants<a class="headerlink" href="#invariants" title="Permanent link">&para;</a></h2>
 <p>Hard rules the engine enforces — violate them and generation fails:</p>
 <ol>

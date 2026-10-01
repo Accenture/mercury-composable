@@ -2183,6 +2183,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rfc-0004-a-bracket-lookup-plugin-for-tariff-tables-fdecimalbracket" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RFC-0004 — A bracket-lookup plugin for tariff tables (f:decimalBracket)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rfc-0003-expose-the-for_each-iteration-index-to-the-statements-of-a-graphmath-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RFC-0003 — Expose the for_each iteration index to the statements of a graph.math loop
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#rfc-0002-canonical-msgpack-packager-sorted-key-maps-and-a-manifest-as-one-deterministic-byte-array" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2829,6 +2851,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rfc-0004-a-bracket-lookup-plugin-for-tariff-tables-fdecimalbracket" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RFC-0004 — A bracket-lookup plugin for tariff tables (f:decimalBracket)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rfc-0003-expose-the-for_each-iteration-index-to-the-statements-of-a-graphmath-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RFC-0003 — Expose the for_each iteration index to the statements of a graph.math loop
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#rfc-0002-canonical-msgpack-packager-sorted-key-maps-and-a-manifest-as-one-deterministic-byte-array" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2907,6 +2951,22 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>**Resolution.** Empty while open; `Promoted → ADR-NNNN (date)` or `Withdrawn (date): &lt;reason&gt;`.
 </code></pre></div>
 <hr />
+<h2 id="rfc-0004-a-bracket-lookup-plugin-for-tariff-tables-fdecimalbracket">RFC-0004 — A bracket-lookup plugin for tariff tables (<code>f:decimalBracket</code>)<a class="headerlink" href="#rfc-0004-a-bracket-lookup-plugin-for-tariff-tables-fdecimalbracket" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Withdrawn · <strong>Raised:</strong> 2026-10-01 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> none</p>
+<!-- id: rfc-0004 | status: withdrawn | thread: none -->
+
+<p><strong>Proposal.</strong> A plugin in the <code>f:lookup</code> family, <code>f:decimalBracket(amount, bands, scale, mode)</code>, taking an ordered table of <code>{ upTo, rate }</code> bands (and an optional open final band) and returning the banded amount as a canonical decimal string, so a tariff schedule that arrives as data stays on the graph. Raised by an external review of the DECIMAL statement.
+<strong>Options.</strong> (a) the plugin; (b) leave a fixed schedule unrolled in <code>DECIMAL</code> with <code>min</code> and <code>max</code>, one line per band, and a schedule that arrives with each request in a <code>graph.task</code> function.
+<strong>Resolution.</strong> Withdrawn (2026-10-01, Eric): option (b). A static schedule is graph data that the product owner certifies on the graph, and it unrolls into lines that can be read; bands supplied at run time are not graph data and belong in a function. The plugin would also force rulings the engine has no need to own: marginal bands or the whole amount at the band's rate, an inclusive or an exclusive upper bound, and the open final band — the edge-case chase <code>clean-knowledge-design-over-engine-coverage</code> warns against. The unrolled pattern is documented in the DECIMAL guide.</p>
+<hr />
+<h2 id="rfc-0003-expose-the-for_each-iteration-index-to-the-statements-of-a-graphmath-loop">RFC-0003 — Expose the <code>for_each</code> iteration index to the statements of a <code>graph.math</code> loop<a class="headerlink" href="#rfc-0003-expose-the-for_each-iteration-index-to-the-statements-of-a-graphmath-loop" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Parked · <strong>Raised:</strong> 2026-10-01 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> none</p>
+<!-- id: rfc-0003 | status: parked | thread: none -->
+
+<p><strong>Proposal.</strong> <code>GraphMath.executeForEach</code> counts the iteration and does not store it. Store it for the duration of the iteration, for example <code>model.&lt;node&gt;.index</code> (0-based) and <code>model.&lt;node&gt;.count</code>, overwritten on each pass and absent after the loop, so a statement can address the last line or the Nth line (<code>{model.index} == {model.count} - 1 ? residual : share</code>, inside a <code>DECIMAL</code> ternary; a taken <code>IF</code> would end the walk). Raised by an external review of the DECIMAL statement; both engines would carry it.
+<strong>Options.</strong> (a) store <code>index</code> and <code>count</code>; (b) store nothing and compute an allocation residual outside the loop (<code>amount - share * n</code>, which already goes to a named party without an index); (c) a <code>graph.task</code> function for the rare per-line output list.
+<strong>Resolution.</strong> Parked (2026-10-01, Eric): defer until a field case needs a residual on a specific line of a per-line output list. The loop-free residual covers allocation to a named party today. Reactivate with that case in hand; the change is small and additive, but it is one more engine surface that both engines must carry for ever.</p>
+<hr />
 <h2 id="rfc-0002-canonical-msgpack-packager-sorted-key-maps-and-a-manifest-as-one-deterministic-byte-array">RFC-0002 — Canonical MsgPack packager: sorted-key maps and a manifest as one deterministic byte array<a class="headerlink" href="#rfc-0002-canonical-msgpack-packager-sorted-key-maps-and-a-manifest-as-one-deterministic-byte-array" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Open · <strong>Raised:</strong> 2026-09-30 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>canonical-msgpack-packager</code></p>
 <!-- id: rfc-0002 | status: open | thread: canonical-msgpack-packager -->
@@ -2957,7 +3017,7 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 - Is rejecting <code>Float</code> and non-finite doubles right, or should a <code>Float</code> be widened through its shortest decimal text?
 - Should the verifier seam be a route (proposed), or a built-in RSA verify with a configured public key through <code>CryptoApi</code>?
 - Do <code>msgpack-core</code> (<code>packInt</code> / <code>packLong</code>) and <code>rmpv</code> both choose the smallest integer encoding? <em>(verify; the vectors will show it)</em>
-- Which engines carry it? Java and Rust are the reference pair (the Node.js pack uses <code>@msgpack/msgpack</code>). Which of <code>mercury-go</code>, <code>mercury-python</code> and <code>mercury-nodejs</code> must at least read a package and pass the vectors?</p>
+- Which engines carry it? Java and Rust are the reference pair (the Node.js pack uses <code>@msgpack/msgpack</code>). Neither language pack: <code>mercury-python</code> and <code>mercury-nodejs</code> are minimalist LLM extensions that serve functions to a Java or Rust application over Event-over-HTTP, as if local, and carry no event script or minigraph, so they never read a graph package. (<code>mercury-go</code> is the agent-memory tool, not a language pack.)</p>
 <p><strong>Resolution.</strong></p>
 <hr />
 <h2 id="rfc-0001-exact-decimal-arithmetic-a-decimal-statement-for-graphmath-and-an-explicit-plugin-family">RFC-0001 — Exact decimal arithmetic: a <code>DECIMAL:</code> statement for <code>graph.math</code> and an explicit plugin family<a class="headerlink" href="#rfc-0001-exact-decimal-arithmetic-a-decimal-statement-for-graphmath-and-an-explicit-plugin-family" title="Permanent link">&para;</a></h2>
@@ -3031,7 +3091,7 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 - <strong>The comparison rule and existing statements.</strong> Implemented as proposed in the first PR: IF, CONDITION and <code>COMPUTE:</code> get the rule too, so <code>'9.5' &gt; '10.25'</code> and <code>'1.0' == '1'</code> change for existing graphs (a READ item at release). The alternative leaves them as they are today, and <code>{model.status} == '200'</code> keeps failing there; confirm at review.
 - <strong>Rust type.</strong> The Rust twin would use an arbitrary-precision crate. <code>bigdecimal</code> matches Java <code>BigDecimal</code> semantics best and is already in that workspace's lockfile (0.4.10, through <code>apache-avro</code>); a fixed 96-bit type (e.g. <code>rust_decimal</code>, about 28 digits) cannot reproduce a 34-digit context. <em>(verify <code>bigdecimal</code>'s rounding-mode coverage and result-scale behaviour against the shared vectors when the Rust PR starts)</em>
 - <strong>Exponent bound.</strong> Proposed 999 for <code>**</code> and <code>pow</code>; confirm when the evaluator lands.
-- <strong>Release.</strong> Which version carries each delivery step? <code>mercury-go</code>, <code>mercury-python</code> and <code>mercury-nodejs</code> need at least the canonical string form, zero rule included.</p>
+- <strong>Release.</strong> Which version carries each delivery step? The language packs (<code>mercury-python</code>, <code>mercury-nodejs</code>) need no engine change for the decimal work: they host functions over Event-over-HTTP and never evaluate a statement or a plugin; a function of theirs that returns money returns a plain-notation string, which a <code>DECIMAL</code> statement or a decimal plugin reads (<code>mercury-go</code> is the agent-memory tool, not a language pack).</p>
 <p><strong>Resolution.</strong> Promoted → ADR-0025 (2026-09-30): option (a), the <code>DECIMAL:</code> statement. Delivered in PR #471 (Java <code>graph.math</code>, with the numeric-string comparison rule) and PR #472 (item 10, the <code>round</code> alignment); items 8 (the <code>f:decimal*</code> plugins) and the Rust twin follow as separate PRs against the shared vectors.</p>
 
 

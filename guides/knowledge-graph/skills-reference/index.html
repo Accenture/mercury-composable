@@ -1481,6 +1481,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="The DECIMAL statement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#math-decimal-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transaction patterns
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -2954,6 +2971,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="The DECIMAL statement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#math-decimal-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transaction patterns
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -3312,7 +3346,7 @@ value:</p>
 use-with-care feature; a node may not contain only <code>MAPPING</code> statements (use the data mapper).
 For anything richer than the dialect, use <code>graph.task</code> (a composable function).</p>
 <h3 id="math-decimal">The DECIMAL statement<a class="headerlink" href="#math-decimal" title="Permanent link">&para;</a></h3>
-<p><code>DECIMAL</code> is the high-precision <code>COMPUTE</code>: exact decimal arithmetic whose result is a canonical decimal string, and <code>COMPUTE</code> is untouched. A graph that never says <code>DECIMAL</code> behaves exactly as before; use it for money, rates and anything a double would round.</p>
+<p><code>DECIMAL</code> is the high-precision <code>COMPUTE</code>: exact decimal arithmetic whose result is a canonical decimal string, and <code>COMPUTE</code> is untouched. <code>COMPUTE</code> still computes in binary floating point, and a graph that never says <code>DECIMAL</code> keeps its arithmetic; two rules reach it all the same, and both are READ items at release: a string that is a canonical number now compares as a number in <code>COMPUTE</code>, <code>IF</code> and <code>CONDITION</code> (<code>'9.5' &gt; '10.25'</code> is false, <code>'1.0' == '1'</code> is true), and <code>round</code> is half up, away from zero (<code>round(-2.5)</code> is <code>-3</code>). Use <code>DECIMAL</code> for money, rates and anything a double would round.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>skill=graph.math
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>statement[]=DECIMAL: fee -&gt; {input.body.amount} * {input.body.rate}
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>statement[]=DECIMAL: rounded -&gt; round({price.result.fee}, 2, HALF_UP)
@@ -3354,6 +3388,63 @@ For anything richer than the dialect, use <code>graph.task</code> (a composable 
   (see the <a href="../../flow-schema-reference/#arithmetic">flow schema reference</a>).</li>
 <li><strong><code>COMPUTE</code> on a decimal string computes in binary floating point</strong>, exactly as it does today, and a
   <code>COMPUTE</code> result is a double. Nothing stops you; use <code>DECIMAL</code> for money.</li>
+</ul>
+<h4 id="math-decimal-patterns">Transaction patterns<a class="headerlink" href="#math-decimal-patterns" title="Permanent link">&para;</a></h4>
+<p>What settles a transaction is written on the graph, with no function. The worked loop —
+line totals, an exact running sum, rounding at the currency scale — is in the
+<a href="../command-reference/#worked-example-decimal-loop">command reference</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Where it lives</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Extend a line, sum lines, tax, discount, FX, cap, floor, threshold</td>
+<td><code>DECIMAL</code> with <code>for_each</code>, <code>min</code>/<code>max</code>, <code>IF</code></td>
+</tr>
+<tr>
+<td>Equal split, the residual to one named account</td>
+<td><code>DECIMAL</code>: <code>round(amount / n, 2, HALF_DOWN)</code>, then <code>amount - share * n</code></td>
+</tr>
+<tr>
+<td>A fixed schedule of marginal bands</td>
+<td><code>DECIMAL</code>, unrolled with <code>min</code> and <code>max</code>, one line per band, so the product owner reads the schedule on the graph</td>
+</tr>
+<tr>
+<td>Simple interest, when <code>days</code> is already a number</td>
+<td><code>DECIMAL</code>: <code>round(principal * rate * days / basis, scale, HALF_UP)</code></td>
+</tr>
+<tr>
+<td>Actual/360, 30/360 or business days</td>
+<td>a <a href="#task"><code>graph.task</code></a> function computes <code>days</code>; the interest formula is then <code>DECIMAL</code></td>
+</tr>
+<tr>
+<td>Bands that arrive with each request, "the residual to the last line", IRR, NPV, fractional <code>pow</code>, <code>exp</code>, <code>log</code></td>
+<td>a <a href="#task"><code>graph.task</code></a> function — the result is not exact, or the data is not graph data</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Rates:</strong> a percent is <code>rate / 100</code>, a basis point is <code>rate / 10000</code>, and a tax-inclusive amount is
+  <code>round(gross * rate / (1 + rate), scale, HALF_UP)</code>. The scale can itself be data (<code>0</code>, <code>2</code>, <code>3</code>).</li>
+<li><strong>A per-line exception</strong> that must not break the loop is a <code>CONDITION</code>, then
+  <code>DECIMAL: tax -&gt; {node.result.taxable} ? round(...) : 0</code>. A taken <code>IF</code> inside a <code>for_each</code> ends the walk, so use it
+  for the decision that stops the walk, never for a per-line branch.</li>
+<li><strong>A zero is <code>"0"</code>, whatever its scale</strong>: <code>round(0.004, 2, HALF_UP)</code>, <code>1.50 - 1.50</code> and <code>0.00</code> all store <code>"0"</code>, and
+  <code>"0" + "1.50"</code> is <code>"1.50"</code>: the next scaled addend restores the scale. A final balance of zero is <code>"0"</code>; showing
+  <code>"0.00"</code> is a presentation step, not a second stored scale. Seed an accumulator with <code>text(0)</code>; <code>int(0)</code> works too,
+  because a whole number is exact.</li>
+<li><strong>The remainder follows the dividend's sign</strong>: <code>-7 % 3</code> is <code>"-1"</code>. An allocation that wants a non-negative remainder
+  says so explicitly.</li>
+<li><strong>The decimal plugins work in a mapping</strong> as well: <code>MAPPING: f:decimalAdd(model.total, text(0.10)) -&gt; output.body.x</code>
+  in a <code>graph.math</code> node, or the same line in a <code>graph.data.mapper</code>.</li>
+<li><strong>Inputs:</strong> send money and rates as strings; keep a <code>COMPUTE</code> result out of a <code>DECIMAL</code> statement; assert the type
+  with <code>f:validate(input.body.rate, text(rate; String; required))</code> when the caller must. A JSON number longer than a
+  double holds, and a value already computed in floating point (<code>COMPUTE: 1.005 * 100</code> is <code>100.49999999999999</code>), is not
+  repaired by <code>DECIMAL</code>.</li>
 </ul>
 <h2 id="js">graph.js<a class="headerlink" href="#js" title="Permanent link">&para;</a></h2>
 <blockquote>

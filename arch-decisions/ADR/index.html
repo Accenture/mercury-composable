@@ -3422,7 +3422,7 @@ arithmetic or a stated rounding mode now belongs in a <code>DECIMAL:</code> stat
 function remains for what a statement cannot express. The dialect <code>round</code> was aligned to half up,
 away from zero, the same as <code>f:round</code> (PR #472), closing the side finding. Open follow-ups: the
 <code>f:decimal*</code> plugin family, the Rust twin (an arbitrary-precision crate; <code>bigdecimal</code> is the
-candidate), and the <code>mercury-go</code>, <code>mercury-python</code> and <code>mercury-nodejs</code> canonical string form.</p>
+candidate). The <code>mercury-python</code> and <code>mercury-nodejs</code> language packs need no engine change: they serve functions to a Java or Rust application over Event-over-HTTP and never evaluate a statement or a plugin.</p>
 <hr />
 <h2 id="adr-0024">ADR-0024 — The elastic queue spills to a dependency-free file FIFO, and that choice sets the dispatch model<a class="headerlink" href="#adr-0024" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-09-16 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> elastic-queue-file-store</p>
