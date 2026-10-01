@@ -392,10 +392,10 @@ public final class CanonicalPackager {
                 return unpacker.unpackBoolean();
             }
             case INTEGER -> {
-                return format == MessageFormat.UINT64 ? readUnsigned64(unpacker) : (Object) unpacker.unpackLong();
+                return readInteger(unpacker, format);
             }
             case FLOAT -> {
-                return format == MessageFormat.FLOAT32 ? (Object) unpacker.unpackFloat() : unpacker.unpackDouble();
+                return readFloat(unpacker, format);
             }
             case STRING -> {
                 return unpacker.unpackString();
@@ -404,30 +404,47 @@ public final class CanonicalPackager {
                 return unpacker.readPayload(unpacker.unpackBinaryHeader());
             }
             case ARRAY -> {
-                int size = unpacker.unpackArrayHeader();
-                var list = new ArrayList<Object>();
-                for (int i = 0; i < size; i++) {
-                    list.add(read(unpacker, path + "[" + i + "]", depth + 1));
-                }
-                return list;
+                return readList(unpacker, path, depth);
             }
             case MAP -> {
-                int size = unpacker.unpackMapHeader();
-                var map = new LinkedHashMap<String, Object>();
-                for (int i = 0; i < size; i++) {
-                    if (unpacker.getNextFormat().getValueType() != org.msgpack.value.ValueType.STRING) {
-                        throw new IOException("A key is not text at " + path);
-                    }
-                    var key = unpacker.unpackString();
-                    if (map.containsKey(key)) {
-                        throw new IOException("Duplicate key '" + key + "' at " + path);
-                    }
-                    map.put(key, read(unpacker, path + "." + key, depth + 1));
-                }
-                return map;
+                return readMap(unpacker, path, depth);
             }
             default -> throw new IOException("Unsupported MsgPack type " + format + " at " + path);
         }
+    }
+
+    private static Object readInteger(MessageUnpacker unpacker, MessageFormat format) throws IOException {
+        return format == MessageFormat.UINT64? readUnsigned64(unpacker) : (Object) unpacker.unpackLong();
+    }
+
+    private static Object readFloat(MessageUnpacker unpacker, MessageFormat format) throws IOException {
+        return format == MessageFormat.FLOAT32? (Object) unpacker.unpackFloat() : unpacker.unpackDouble();
+    }
+
+    private static List<Object> readList(MessageUnpacker unpacker, String path, int depth) throws IOException {
+        int size = unpacker.unpackArrayHeader();
+        var list = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            list.add(read(unpacker, path + "[" + i + "]", depth + 1));
+        }
+        return list;
+    }
+
+    private static Map<String, Object> readMap(MessageUnpacker unpacker, String path, int depth)
+            throws IOException {
+        int size = unpacker.unpackMapHeader();
+        var map = new LinkedHashMap<String, Object>();
+        for (int i = 0; i < size; i++) {
+            if (unpacker.getNextFormat().getValueType() != org.msgpack.value.ValueType.STRING) {
+                throw new IOException("A key is not text at " + path);
+            }
+            var key = unpacker.unpackString();
+            if (map.containsKey(key)) {
+                throw new IOException("Duplicate key '" + key + "' at " + path);
+            }
+            map.put(key, read(unpacker, path + "." + key, depth + 1));
+        }
+        return map;
     }
 
     private static Object readUnsigned64(MessageUnpacker unpacker) throws IOException {
