@@ -30,9 +30,8 @@
   Float change. **Lockstep:** Rust v4.12.20 the same minute (mercury #340 → merge `b4783c5b`, tag → `d63e102a`, release 03:12:43Z;
   Increments 143–147; 123 suites / 655 tests / 0 failed); the Java–Rust byte-for-byte interop on the 14 tutorials and 50 fixtures
   (`docs/test-reports/canonical-package-java-rust-interop.md`, composable #486 / mercury #341, docs only) found 0 differences with a
-  14/14 negative control; the python/node packs need no change. Main CI green on both tag commits. **crates.io is NOT yet published:**
-  the sparse index at 03:14Z still ended at 4.12.19 for every crate checked and the API showed 4.12.19 for all twelve — the
-  `cargo publish --workspace` from the tag is Eric's step, then verify 12/12. Next: the crates, the field-acceptance wait (CI, Snyk, Sonar),
+  14/14 negative control; the python/node packs need no change. Main CI green on both tag commits. **The twelve Rust crates are on crates.io at 4.12.20 (verified 12/12, published 03:21:45Z-03:21:58Z by Eric's `cargo publish --workspace` from the tag; the published
+  platform-core tarball matches the tag).** Next: the field-acceptance wait (CI, Snyk, Sonar),
   and the AI SDLC/MCP backlog ([[bp-agent-orchestration]]). Origin 2026-09-30-221603.md.
   Prior: v4.12.19 (2026-09-25 23:58:19Z — the rapid-prototyping deploy lane on both engines; #466 squash `a261ff18`, tag → `35000ef2`;
   `graph.model.automation` takes a comma-separated list of manifests and the later one wins ([[graph-manifest-list-later-wins]]); 1520
