@@ -128,9 +128,9 @@ class CanonicalPackagerVectorsTest {
         return builder;
     }
 
-    /** The package a vector describes: the builder calls and the build, both of which can reject a value. */
-    private static byte[] pack(JsonObject v) throws IOException {
-        return builder(v).build();
+    /** Packs the vector, so a rejection from the builder calls or from the build surfaces from one invocation. */
+    private static void pack(JsonObject v) throws IOException {
+        builder(v).build();
     }
 
     private static String sha256(byte[] bytes) throws Exception {

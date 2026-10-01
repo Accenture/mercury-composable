@@ -75,7 +75,8 @@ class CanonicalPackagerTest {
 
     @Test
     void theExampleOnTheCanonicalPackageFormatPageIsTheCanonicalPackage() throws Exception {
-        // docs/guides/canonical-package-format.md: no caller fields, one map only.json holding {"a": 1}
+        // the worked example on the Canonical Package Format page: no caller fields, and one map named only.json
+        // that holds a single entry, a = 1
         var bytes = CanonicalPackager.builder().add("only.json", Map.of("a", 1)).build();
         assertEquals("82a86d616e696665737482a6666f726d6174af6d6572637572792d7061636b616765ae666f726d61745f7665"
                 + "7273696f6ea131a46d61707381a96f6e6c792e6a736f6e81a16101", HEX.formatHex(bytes));
