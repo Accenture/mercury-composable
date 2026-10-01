@@ -265,6 +265,29 @@ class GraphTests {
 
     @SuppressWarnings("unchecked")
     @Test
+    void tutorial13() throws TimeoutException {
+        // graph.task as an HTTP client by configuration: the profile comes from this app's own dev mock endpoint
+        var result = runTutorial(13, Map.of("person_id", 100));
+        assertInstanceOf(Map.class, result);
+        var mm = new MultiLevelMap((Map<String, Object>) result);
+        assertEquals("100", mm.getElement("profile.id"));
+        assertEquals("Peter", mm.getElement("profile.name"));
+        assertEquals("100 World Blvd", mm.getElement("profile.address"));
+        // 'text(5000) -> headers.x-ttl' rides the wire as the X-TTL request header - the mock echoes it
+        assertEquals("5000", mm.getElement("observed_ttl"));
+        log.info("Tutorial 13 works");
+    }
+
+    @Test
+    void tutorial13UnknownProfile() throws TimeoutException {
+        // the mock throws for an unknown profile and the graph returns the HTTP error as its output
+        var result = runTutorial(13, Map.of("person_id", 999));
+        assertTrue(String.valueOf(result).contains("Profile 999 not found"), "unexpected response: " + result);
+        log.info("Tutorial 13 fails");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void supportTriageRejectsMissingTextWithoutModelCall() throws TimeoutException {
         // proves the deployment gate compiled the AI-node demo graph (a rejected model
         // answers 404 as if nonexistent) and that its input-validation branch bounds

@@ -17,7 +17,7 @@ To run this application, do `java -jar target/minigraph-playground-{version}.jar
 
 ## Model answers
 
-While the model answers for tutorials 1 to 11 are embedded, we recommend you follow the tutorials one by one.
+While the model answers for tutorials 1 to 14 are embedded, we recommend you follow the tutorials one by one.
 
 When you want to compare your graph model with the model answer, you can use the 'import tutorial-n' where
 n is a tutorial chapter number.
