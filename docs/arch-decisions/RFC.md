@@ -60,8 +60,8 @@
 ---
 
 ## RFC-0002 — Canonical MsgPack packager: sorted-key maps and a manifest as one deterministic byte array
-**Status:** Open · **Raised:** 2026-09-30 · **Serves:** vision-mercury-composable · **Thread:** `canonical-msgpack-packager`
-<!-- id: rfc-0002 | status: open | thread: canonical-msgpack-packager -->
+**Status:** Promoted → ADR-0026 · **Raised:** 2026-09-30 · **Serves:** vision-mercury-composable · **Thread:** `canonical-msgpack-packager`
+<!-- id: rfc-0002 | status: promoted | thread: canonical-msgpack-packager -->
 
 **Motivation.** Some installations must promote a *set* of related documents (knowledge graphs today, but equally flows, rules or tables) as one artifact whose identity can be recorded, compared and, where the field wants it, protected. Loose files cannot do that. Each one is deployed and validated alone, JSON text is not a stable artifact (key order and whitespace vary), and there is no single thing to hash. MsgPack does not fix this by itself: a map has no guaranteed order, and one value has several valid byte encodings, so two packagings of the same content can differ, and their hashes with them. Both engines already use MsgPack (Java through `msgpack-core`, `platform-core/.../serializers/MsgPack.java`; Rust through `rmpv`, `crates/platform-core`), so the smallest useful piece is a **deterministic packager**. Whether a package is then hashed, signed or neither is a deployment decision and stays outside it.
 
@@ -120,7 +120,7 @@ A decision would commit every engine to the canonical profile as a wire contract
 - The Java packager is `org.platformlambda.core.serializers.CanonicalPackager` beside `MsgPack`: a builder (`manifest`, `add`, `build`), `encode`, `decode` and `unpack`; it needs no new dependency.
 - The `mercury-python` and `mercury-nodejs` language packs do not carry it: they are minimalist LLM extensions that serve functions to a Java or Rust application over Event-over-HTTP, as if local, and carry no event script or minigraph, so they never read a graph package. (`mercury-go` is the agent-memory tool, not a language pack.)
 
-**Resolution.**
+**Resolution.** Promoted → ADR-0026 (2026-10-01): option (a), a generic canonical packager with integrity left to the user application. Delivered in the Java engine's PR #481 (the packager, 14 + 5 tests and the shared vector file), PR #482 (the nesting bound pinned) and PR #483 (the Sonar findings), and the Rust engine's PR #339 (Increment 147); all of the shared file passes in both engines. The folder `pack` / `unpack` tooling and the graph-set loader RFC remain deferred.
 
 ---
 
