@@ -39,6 +39,26 @@
 
 ---
 
+## RFC-0004 — A bracket-lookup plugin for tariff tables (`f:decimalBracket`)
+**Status:** Withdrawn · **Raised:** 2026-10-01 · **Serves:** vision-mercury-composable · **Thread:** none
+<!-- id: rfc-0004 | status: withdrawn | thread: none -->
+
+**Proposal.** A plugin in the `f:lookup` family, `f:decimalBracket(amount, bands, scale, mode)`, taking an ordered table of `{ upTo, rate }` bands (and an optional open final band) and returning the banded amount as a canonical decimal string, so a tariff schedule that arrives as data stays on the graph. Raised by an external review of the DECIMAL statement.
+**Options.** (a) the plugin; (b) leave a fixed schedule unrolled in `DECIMAL` with `min` and `max`, one line per band, and a schedule that arrives with each request in a `graph.task` function.
+**Resolution.** Withdrawn (2026-10-01, Eric): option (b). A static schedule is graph data that the product owner certifies on the graph, and it unrolls into lines that can be read; bands supplied at run time are not graph data and belong in a function. The plugin would also force rulings the engine has no need to own: marginal bands or the whole amount at the band's rate, an inclusive or an exclusive upper bound, and the open final band — the edge-case chase `clean-knowledge-design-over-engine-coverage` warns against. The unrolled pattern is documented in the DECIMAL guide.
+
+---
+
+## RFC-0003 — Expose the `for_each` iteration index to the statements of a `graph.math` loop
+**Status:** Parked · **Raised:** 2026-10-01 · **Serves:** vision-mercury-composable · **Thread:** none
+<!-- id: rfc-0003 | status: parked | thread: none -->
+
+**Proposal.** `GraphMath.executeForEach` counts the iteration and does not store it. Store it for the duration of the iteration, for example `model.<node>.index` (0-based) and `model.<node>.count`, overwritten on each pass and absent after the loop, so a statement can address the last line or the Nth line (`{model.index} == {model.count} - 1 ? residual : share`, inside a `DECIMAL` ternary; a taken `IF` would end the walk). Raised by an external review of the DECIMAL statement; both engines would carry it.
+**Options.** (a) store `index` and `count`; (b) store nothing and compute an allocation residual outside the loop (`amount - share * n`, which already goes to a named party without an index); (c) a `graph.task` function for the rare per-line output list.
+**Resolution.** Parked (2026-10-01, Eric): defer until a field case needs a residual on a specific line of a per-line output list. The loop-free residual covers allocation to a named party today. Reactivate with that case in hand; the change is small and additive, but it is one more engine surface that both engines must carry for ever.
+
+---
+
 ## RFC-0002 — Canonical MsgPack packager: sorted-key maps and a manifest as one deterministic byte array
 **Status:** Open · **Raised:** 2026-09-30 · **Serves:** vision-mercury-composable · **Thread:** `canonical-msgpack-packager`
 <!-- id: rfc-0002 | status: open | thread: canonical-msgpack-packager -->
@@ -98,7 +118,7 @@ A decision would commit every engine to the canonical profile as a wire contract
 - Is rejecting `Float` and non-finite doubles right, or should a `Float` be widened through its shortest decimal text?
 - Should the verifier seam be a route (proposed), or a built-in RSA verify with a configured public key through `CryptoApi`?
 - Do `msgpack-core` (`packInt` / `packLong`) and `rmpv` both choose the smallest integer encoding? *(verify; the vectors will show it)*
-- Which engines carry it? Java and Rust are the reference pair (the Node.js pack uses `@msgpack/msgpack`). Which of `mercury-go`, `mercury-python` and `mercury-nodejs` must at least read a package and pass the vectors?
+- Which engines carry it? Java and Rust are the reference pair (the Node.js pack uses `@msgpack/msgpack`). Neither language pack: `mercury-python` and `mercury-nodejs` are minimalist LLM extensions that serve functions to a Java or Rust application over Event-over-HTTP, as if local, and carry no event script or minigraph, so they never read a graph package. (`mercury-go` is the agent-memory tool, not a language pack.)
 
 **Resolution.**
 
@@ -153,6 +173,6 @@ A decision would commit every executing engine to one written decimal specificat
 - **The comparison rule and existing statements.** Implemented as proposed in the first PR: IF, CONDITION and `COMPUTE:` get the rule too, so `'9.5' > '10.25'` and `'1.0' == '1'` change for existing graphs (a READ item at release). The alternative leaves them as they are today, and `{model.status} == '200'` keeps failing there; confirm at review.
 - **Rust type.** The Rust twin would use an arbitrary-precision crate. `bigdecimal` matches Java `BigDecimal` semantics best and is already in that workspace's lockfile (0.4.10, through `apache-avro`); a fixed 96-bit type (e.g. `rust_decimal`, about 28 digits) cannot reproduce a 34-digit context. *(verify `bigdecimal`'s rounding-mode coverage and result-scale behaviour against the shared vectors when the Rust PR starts)*
 - **Exponent bound.** Proposed 999 for `**` and `pow`; confirm when the evaluator lands.
-- **Release.** Which version carries each delivery step? `mercury-go`, `mercury-python` and `mercury-nodejs` need at least the canonical string form, zero rule included.
+- **Release.** Which version carries each delivery step? The language packs (`mercury-python`, `mercury-nodejs`) need no engine change for the decimal work: they host functions over Event-over-HTTP and never evaluate a statement or a plugin; a function of theirs that returns money returns a plain-notation string, which a `DECIMAL` statement or a decimal plugin reads (`mercury-go` is the agent-memory tool, not a language pack).
 
 **Resolution.** Promoted → ADR-0025 (2026-09-30): option (a), the `DECIMAL:` statement. Delivered in PR #471 (Java `graph.math`, with the numeric-string comparison rule) and PR #472 (item 10, the `round` alignment); items 8 (the `f:decimal*` plugins) and the Rust twin follow as separate PRs against the shared vectors.

@@ -52,6 +52,16 @@ release CHANGELOG is still checked against `git log <previous-tag>..HEAD`.
 
    **Upgrade action:** read if a graph rounds a negative value that is exactly x.5 — the result moves away from zero.
 
+### Documentation
+
+5. **The DECIMAL guide gains the money loop, the transaction patterns and the compatibility correction.** The command reference
+   adds an engine-verified `DECIMAL` twin of the line-totals example (the `COMPUTE` version accumulates in double; money uses the
+   twin), the skills reference adds *Transaction patterns* (what stays on the graph, what is a `graph.task`, the zero rule, the
+   remainder's sign, the decimal plugins in a mapping, the input rules), and the DECIMAL intro no longer says a graph that never
+   says `DECIMAL` behaves exactly as before: the numeric-string comparison and `round` half-up reach it, as items 3 and 4 say. The
+   in-Playground help and `minigraph-commands.json` carry the same. RFC-0003 (the `for_each` index, Parked) and RFC-0004 (a bracket
+   lookup plugin, Withdrawn) record two suggestions from an external review.
+
 ---
 ## Version 4.12.19, 9/25/2026
 

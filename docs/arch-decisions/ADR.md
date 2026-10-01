@@ -97,7 +97,7 @@ arithmetic or a stated rounding mode now belongs in a `DECIMAL:` statement, and 
 function remains for what a statement cannot express. The dialect `round` was aligned to half up,
 away from zero, the same as `f:round` (PR #472), closing the side finding. Open follow-ups: the
 `f:decimal*` plugin family, the Rust twin (an arbitrary-precision crate; `bigdecimal` is the
-candidate), and the `mercury-go`, `mercury-python` and `mercury-nodejs` canonical string form.
+candidate). The `mercury-python` and `mercury-nodejs` language packs need no engine change: they serve functions to a Java or Rust application over Event-over-HTTP and never evaluate a statement or a plugin.
 
 ---
 

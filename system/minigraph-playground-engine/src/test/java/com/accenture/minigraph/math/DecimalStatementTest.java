@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -149,15 +150,50 @@ class DecimalStatementTest {
         assertEquals("1", DecimalEvaluator.evaluate("'3.759375' > '10.50' ? 0 : 1"));
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void anExactRunningSumOverAForEachLoop() throws TimeoutException {
+        // the documented money loop: the seed is the string 0, each pass adds the exact line total, the post-block
+        // rounds at the currency scale, and a decimal plugin runs in a mapping. 73.50 + 162.00 + 270 = 505.50
+        var response = runLoop(Map.of("prices", List.of("10.50", "20.25", "30"), "quantities", List.of(7, 8, 9)));
+        assertEquals(200, response.getStatus());
+        var body = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals("505.50", body.getElement("total"));
+        assertEquals("505.60", body.getElement("plus_dime"));
+        assertEquals("506", body.getElement("whole"));
+        assertInstanceOf(String.class, body.getElement("total"), "a decimal is never a JSON number");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void theRunningSumPassesThroughZeroAndTheScaleComesBack() throws TimeoutException {
+        // 1.50 - 1.50 stores "0" (a zero of any scale is "0"); the next scaled addend restores the scale
+        var response = runLoop(Map.of("prices", List.of("1.50", "-1.50"), "quantities", List.of(1, 1)));
+        assertEquals(200, response.getStatus());
+        var body = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertEquals("0", body.getElement("total"));
+        assertEquals("0.10", body.getElement("plus_dime"));
+        var cents = runLoop(Map.of("prices", List.of("0.10", "0.20"), "quantities", List.of(1, 1)));
+        assertEquals("0.30", new MultiLevelMap((Map<String, Object>) cents.getBody()).getElement("total"));
+    }
+
+    private EventEnvelope runLoop(Map<String, Object> body) throws TimeoutException {
+        return runGraph("unit-test-decimal-loop", body);
+    }
+
     private EventEnvelope runGraph(Map<String, Object> body) throws TimeoutException {
+        return runGraph("unit-test-decimal", body);
+    }
+
+    private EventEnvelope runGraph(String graphId, Map<String, Object> body) throws TimeoutException {
         var request = new AsyncHttpRequest().setMethod("POST").setTargetHost(target)
-                .setUrl("/api/graph/unit-test-decimal")
+                .setUrl("/api/graph/" + graphId)
                 .setBody(body)
                 .setHeader("Content-Type", "application/json")
                 .setHeader("Accept", "application/json");
         var event = new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(request);
         var po = PostOffice.trackable("unit.test",
-                String.format("%032x", Math.abs(body.hashCode())), "TEST /graph/unit-test-decimal");
+                String.format("%032x", Math.abs(body.hashCode())), "TEST /graph/" + graphId);
         var response = po.asyncRequest(event, TIMEOUT).await(TIMEOUT, TimeUnit.MILLISECONDS);
         if (response.hasError()) {
             log.warn("HTTP-{} - {}", response.getStatus(), response.getBody());
