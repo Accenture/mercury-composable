@@ -27,9 +27,9 @@
   both UNRELEASED, in the CHANGELOG `## Unreleased`. RFC-0001 promoted by Eric to ADR-0025 (PR #473), the decimal half of
   [[graph-math-typed-arithmetic]] superseded by [[decimal-statement-exact-arithmetic]]. **Remaining:** (1) DONE — the `f:decimal*` plugin family, PR #475 (squash `da3c33a6`; camelCase names `decimalAdd`, `decimalSubtract`,
   `decimalMultiply`, `decimalDiv`, `decimalMod`, `decimalRound`, `decimalCompare`; `decimal-plugin-vectors.json`; UNRELEASED);
-  (2) the Rust twin — `DECIMAL:`, the comparison rule and `round`
-  half-up (`bigdecimal` the candidate; verify rounding modes and result scales against the vectors); (3) DONE — the `f:round` agreement test, PR #477; (4) the canonical string form for `mercury-go`, `mercury-python`, `mercury-nodejs`;
-  (5) which release carries each step. Close this thread when (2) lands. Applies [[conv-proposals-not-in-adr-ledger]].
+  (2) the Rust twin — PRs open in the `mercury` repo (Eric ratified one shared decimal core in `event_script::decimal`, where Java keeps two implementations, and two PRs): #335 (`f:decimal*` plugins, Increment 144) and #336 (the `DECIMAL:` statement, comparison rule and `round` half-up, Increment 145, stacked on #335; the 151 + 68 shared vectors pass); the division is written on `BigInt` because the `bigdecimal` crate's `/` is neither exact-if-terminating nor decimal128;
+  (3) DONE — the `f:round` agreement test, PR #477; (4) the canonical string form for `mercury-go`, `mercury-python`, `mercury-nodejs`;
+  (5) which release carries each step. Close this thread when #335 and #336 merge. Applies [[conv-proposals-not-in-adr-ledger]].
   → proposal: RFC-0001
   → serves: vision-mercury-composable
   <!-- id: decimal-mode | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: working -->
