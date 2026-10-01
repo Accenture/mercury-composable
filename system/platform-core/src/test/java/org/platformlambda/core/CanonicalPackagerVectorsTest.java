@@ -213,6 +213,7 @@ class CanonicalPackagerVectorsTest {
                 "not-a-package", List.of("A package is one map", "is not a map", "is not text"),
                 "unsupported-format", List.of("Not a package: the manifest format"),
                 "unsupported-version", List.of("Unsupported package format_version"),
+                "too-deep", List.of("Nesting deeper"),
                 "malformed", List.of("Malformed MsgPack", "Duplicate key", "A key is not text",
                         "Unsupported MsgPack type"));
         int checked = 0;
@@ -234,6 +235,6 @@ class CanonicalPackagerVectorsTest {
             }
             checked++;
         }
-        assertTrue(checked >= 15, "unpack rejections checked: " + checked);
+        assertTrue(checked >= 17, "unpack rejections checked: " + checked);
     }
 }
