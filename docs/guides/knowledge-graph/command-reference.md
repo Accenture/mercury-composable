@@ -844,7 +844,7 @@ seeds the accumulator once, each pass computes `total + price*qty` and writes it
 `MAPPING: f:add(model.total, totaler.result.line) -> model.total` — numeric promotion carries
 the `COMPUTE` doubles through `f:add` (both forms are engine-verified).
 
-Worked example (engine-verified) — the money loop, `DECIMAL` {#worked-example-decimal-loop}:
+#### Worked example (engine-verified) — the money loop, `DECIMAL` {#worked-example-decimal-loop}
 
 The `COMPUTE` example above accumulates in IEEE double (`500.0`). **Money uses this twin**, which keeps every
 amount an exact canonical string:
