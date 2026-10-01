@@ -748,6 +748,45 @@ application's own serialization.
 > envelope's compacted encoding is a Java-side wire format. A worked example is the
 > [distributed cache guide](distributed-cache.md), where all three layers share one cached value.
 
+## Deterministic packaging with `CanonicalPackager`
+
+`org.platformlambda.core.serializers.CanonicalPackager` turns a set of maps into **one byte array whose bytes depend only on its
+content**: the same maps give the same bytes whatever order their keys were inserted in, whether they came from a Gson-parsed
+JSON text, a `HashMap` or a `LinkedHashMap`, and in the Rust engine too. Use it when related documents (graphs, flows, rules,
+tables) are promoted as one artifact whose identity must be recorded or compared. The format is specified in
+[Canonical Package Format](canonical-package-format.md); this section is the Java API.
+
+```java
+byte[] bytes = CanonicalPackager.builder()
+        .manifest("graph_id", "quote")              // caller-defined string fields; format and format_version are reserved
+        .manifest("version", "1.0.0")
+        .add("quote.json", quoteMap)                 // any Map: keys are sorted at every depth by the packager
+        .add("quote-fees.json", feesMap)
+        .build();                                    // the order of manifest() and add() calls does not matter
+
+CanonicalPackager.Package pkg = CanonicalPackager.unpack(bytes);      // strict: rejects bytes that are not canonical
+String graphId = pkg.manifest().get("graph_id");
+Map<String, Object> quote = pkg.maps().get("quote.json");             // ordered maps, the order the bytes hold
+CanonicalPackager.unpack(bytes, false);                               // non-strict: decodes any valid content
+```
+
+- **The ordering is the packager's own step.** Keys sort in **UTF-8 byte order** at every depth (maps inside lists included),
+  because the Gson serializer has no ordered-keys option and an ordered-keys option such as Jackson's sorts by `String` order
+  (UTF-16), which differs from another engine's bytes above U+FFFF.
+- **It writes through msgpack-core directly, not through `MsgPack.pack`**, which drops null values unless a configuration
+  switch is set, packs a `Float` as float32 and writes a `BigDecimal` zero as `"0.00"`. The canonical profile keeps nulls,
+  writes a finite float64 only (a `Float` is widened through its shortest decimal text, so `0.1f` is the float64 `0.1`; NaN and Infinity are rejected with `IllegalArgumentException` naming the path), writes
+  a `BigDecimal` in plain notation with a zero of any scale as `"0"`, and a `BigInteger` as its digits. Dates are ISO-8601
+  strings; any other type is rejected.
+- **The packager is faithful to a value's type**: the integer `1` and the float `1.0` are different content, and strings are written
+  as given with no Unicode normalization.
+- **`unpack` throws `IOException`** for bytes that are not a canonical package (a non-text or duplicate key, trailing bytes, a wrong
+  `format` or `format_version`, nesting beyond 64 levels, a package whose bytes differ from the canonical form of its content).
+  `encode(Object)` and `decode(byte[])` expose the same profile for any value.
+- **No integrity logic.** A hash or a signature, and its algorithm, is your application's decision: compute it over the exact
+  bytes `build()` returns, for example `new CryptoApi().getSHA256(bytes)` for a SHA-256 recorded in a release record, or a
+  detached signature from your own signer.
+
 ## Minimalist API design
 
 As a best practice, we advocate a minimalist approach in API integration.

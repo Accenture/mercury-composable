@@ -74,6 +74,19 @@ class CanonicalPackagerTest {
     }
 
     @Test
+    void theExampleOnTheCanonicalPackageFormatPageIsTheCanonicalPackage() throws Exception {
+        // the worked example on the Canonical Package Format page: no caller fields, and one map named only.json
+        // that holds a single entry, a = 1
+        var bytes = CanonicalPackager.builder().add("only.json", Map.of("a", 1)).build();
+        assertEquals("82a86d616e696665737482a6666f726d6174af6d6572637572792d7061636b616765ae666f726d61745f7665"
+                + "7273696f6ea131a46d61707381a96f6e6c792e6a736f6e81a16101", HEX.formatHex(bytes));
+        assertEquals("56ebc3ba08b5181e1afa0fdcbb499f2e82c3958490d9da31d295c0553c926de7",
+                HEX.formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(bytes)));
+        assertEquals(HEX.formatHex(new org.platformlambda.core.util.CryptoApi().getSHA256(bytes)),
+                HEX.formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(bytes)));
+    }
+
+    @Test
     void keysSortByUtf8BytesNotUtf16() throws IOException {
         // U+1F600 is the surrogate pair D83D DE00 in UTF-16 (sorts before U+FF5E) but F0 9F 98 80 in UTF-8
         var map = new LinkedHashMap<String, Object>();
@@ -129,11 +142,31 @@ class CanonicalPackagerTest {
     @Test
     void floatsAreFloat64AndFiniteOnly() throws IOException {
         assertEquals("cb3ff8000000000000", HEX.formatHex(CanonicalPackager.encode(1.5d)));
-        assertThrows(IllegalArgumentException.class, () -> CanonicalPackager.encode(1.5f));
         assertThrows(IllegalArgumentException.class, () -> CanonicalPackager.encode(Double.NaN));
         assertThrows(IllegalArgumentException.class, () -> CanonicalPackager.encode(Double.NEGATIVE_INFINITY));
         // the integer 1 and the float 1.0 are different content
         assertNotEquals(HEX.formatHex(CanonicalPackager.encode(1)), HEX.formatHex(CanonicalPackager.encode(1.0d)));
+    }
+
+    @Test
+    void aFloatIsWidenedThroughItsShortestDecimalText() throws IOException {
+        // 0.1f is the float64 0.1, not the exact value of the float32 (0.10000000149011612)
+        assertEquals(HEX.formatHex(CanonicalPackager.encode(0.1d)), HEX.formatHex(CanonicalPackager.encode(0.1f)));
+        assertEquals("cb3fb999999999999a", HEX.formatHex(CanonicalPackager.encode(0.1f)));
+        assertEquals("cb3ff8000000000000", HEX.formatHex(CanonicalPackager.encode(1.5f)));
+        assertEquals(HEX.formatHex(CanonicalPackager.encode(1.1d)), HEX.formatHex(CanonicalPackager.encode(1.1f)));
+        // inside a map, and the non-finite forms are still refused
+        var map = new LinkedHashMap<String, Object>();
+        map.put("x", 2.5f);
+        assertEquals(HEX.formatHex(CanonicalPackager.encode(Map.of("x", 2.5d))), HEX.formatHex(CanonicalPackager.encode(map)));
+        var nan = assertThrows(IllegalArgumentException.class, () -> CanonicalPackager.encode(Float.NaN));
+        assertTrue(nan.getMessage().contains("non-finite"), nan.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> CanonicalPackager.encode(Float.POSITIVE_INFINITY));
+        // a float32 on the wire is valid MsgPack but not the canonical form of its content: the strict read refuses it
+        var onTheWire = HEX.parseHex("82a86d616e696665737482a6666f726d6174af6d6572637572792d7061636b616765"
+                + "ae666f726d61745f76657273696f6ea131a46d61707381a66e2e6a736f6e81a178ca3fc00000");
+        assertThrows(IOException.class, () -> CanonicalPackager.unpack(onTheWire));
+        assertEquals(1.5f, CanonicalPackager.unpack(onTheWire, false).maps().get("n.json").get("x"));
     }
 
     @Test

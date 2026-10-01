@@ -57,7 +57,9 @@ import java.util.concurrent.atomic.AtomicLong;
  *     after conversion is an error;</li>
  * <li>a null value is written as nil and is never dropped;</li>
  * <li>integers use the smallest encoding;</li>
- * <li>a floating-point number is a finite float64; a {@code Float}, NaN and Infinity are rejected;</li>
+ * <li>a floating-point number is a finite float64; a {@code Float} is accepted like any other number and widened
+ *     through its shortest decimal text ({@code 0.1f} is the float64 {@code 0.1}, never {@code 0.10000000149011612}),
+ *     so the same value gives the same bytes in every engine; NaN and Infinity are rejected;</li>
  * <li>text and bytes are str and bin, each with the shortest header;</li>
  * <li>an exact number travels as a string - a {@code BigInteger} as its digits, a {@code BigDecimal} in plain
  *     notation with its scale kept and a zero of any scale written {@code "0"} (the rule of RFC-0001) - and a
@@ -312,8 +314,7 @@ public final class CanonicalPackager {
             case AtomicInteger n -> packer.packLong(n.get());
             case AtomicLong n -> packer.packLong(n.get());
             case Double d -> writeDouble(packer, d, path);
-            case Float ignored -> throw new IllegalArgumentException(
-                    "A Float is not canonical at " + path + " - use a Double");
+            case Float f -> writeDouble(packer, Double.parseDouble(f.toString()), path);
             case BigInteger n -> packer.packString(n.toString());
             case BigDecimal n -> packer.packString(canonical(n));
             case Date date -> packer.packString(Utility.getInstance().date2str(date));

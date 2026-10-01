@@ -10,8 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Changes merged to `main` since the last release. Each item moves under its release heading when the version is cut; the
-release CHANGELOG is still checked against `git log <previous-tag>..HEAD`.
+Nothing yet. Each change merged to `main` after v4.12.20 is listed here; it moves under its release heading when the version is cut.
+
+---
+## Version 4.12.20, 10/1/2026
+
+Exact decimal arithmetic for money and rates, and a deterministic package format for related documents, both on both engines
+in lock-step (Rust 4.12.20, Increments 144, 145 and 147). `graph.math` gains a `DECIMAL` statement and Event Script gains seven
+`f:decimal*` plugins, one specification and one set of shared vectors; a new `CanonicalPackager` turns a set of maps into one
+byte array whose bytes depend only on its content, proven byte for byte against the Rust engine by a shared vector file.
+**Upgrade action: read items 4 and 5.** A numeric-looking string now compares as a number, and `round` of a negative exact
+half moves away from zero; a graph that never says `DECIMAL` is affected by both.
 
 ### Added
 
@@ -36,18 +45,19 @@ release CHANGELOG is still checked against `git log <previous-tag>..HEAD`.
 
    **Upgrade action:** none — new plugin names only.
 
-3. **`CanonicalPackager` — a deterministic MsgPack packager (RFC-0002, Open; first Java PR).** `org.platformlambda.core.serializers`,
+3. **`CanonicalPackager` — a deterministic MsgPack packager (RFC-0002, ADR-0026; #481, #482).** `org.platformlambda.core.serializers`,
    beside `MsgPack`: the same content always gives the same bytes. Every map is written with its keys sorted at every depth in
    UTF-8 byte order (the ordering is done by the packager, since Gson has no ordered-keys option and a `String`-order sort
    differs from another engine's bytes above U+FFFF); a package is `{manifest, maps}` with `format` and `format_version`
    written by the packager, caller-defined string manifest fields (by convention `graph_id`) and the maps keyed by entry
-   name in sorted order. The canonical profile: nulls kept, smallest integers, finite float64 only (a `Float`, NaN and
-   Infinity are rejected), shortest str and bin headers, exact numbers as strings (a `BigDecimal` in plain notation, a zero
+   name in sorted order. The canonical profile: nulls kept, smallest integers, finite float64 only (a `Float` is widened
+   through its shortest decimal text; NaN and Infinity are rejected), shortest str and bin headers, exact numbers as strings (a `BigDecimal` in plain notation, a zero
    of any scale `"0"`), dates as ISO-8601 strings, nothing else. `unpack` returns ordered maps and, by default, re-encodes
    the content and rejects bytes that are not canonical. Integrity is not part of it: a hash or a signature, and the algorithm,
-   are the user application's decision. 18 tests and a shared vector file, `canonical-package-vectors.json`, whose expected
-   bytes come from an independent encoder (so the Rust twin can prove byte-for-byte compatibility against the same file),
-   with a seeded 60-document differential corpus. **Upgrade action:** none — a new class.
+   are the user application's decision. 21 tests and a shared vector file, `canonical-package-vectors.json`, whose expected
+   bytes come from an independent encoder written from the specification (73 values, 6 packages with SHA-256, 25 rejection
+   cases, a seeded 60-document differential corpus, and the nesting bound of 64 levels): the Rust twin (Increment 147) passes
+   the same byte-identical file, so the two engines agree byte for byte. **Upgrade action:** none — a new class.
 
 ### Changed
 
@@ -74,6 +84,28 @@ release CHANGELOG is still checked against `git log <previous-tag>..HEAD`.
    says `DECIMAL` behaves exactly as before: the numeric-string comparison and `round` half-up reach it, as items 4 and 5 say. The
    in-Playground help and `minigraph-commands.json` carry the same. RFC-0003 (the `for_each` index, Parked) and RFC-0004 (a bracket
    lookup plugin, Withdrawn) record two suggestions from an external review.
+
+7. **The `graph.math` expression dialect is documented as a closed set and pinned (#467).** The skills reference lists every
+   operator, the eighteen functions and the two constants, the command grammar no longer says "no function calls", and the
+   in-Playground help and `minigraph-commands.json` (`expression_dialect`) carry the same catalog; a claim and a test
+   (`ClaimMathExpressionDialectTest`) fail the build if the evaluator and the documentation drift apart in either direction.
+
+8. **The decisions are recorded.** RFC-0001 (exact decimal arithmetic) and RFC-0002 (the canonical packager) were raised in the
+   RFC register (#470) and promoted to ADR-0025 (#473) and ADR-0026 (#484); RFC-0003 (expose the `for_each` index, Parked) and
+   RFC-0004 (a bracket-lookup plugin, Withdrawn) record two review suggestions.
+
+9. **The packager is documented: a language-neutral spec and the Java API.** The new guide page *Canonical Package Format* is
+   self-contained (the package structure, the canonical profile, key ordering by UTF-8 bytes, the strict read and its
+   rejections, a worked example whose bytes a test pins, and the shared vector file that proves Java and Rust write identical
+   bytes), and the API overview gains *Deterministic packaging with `CanonicalPackager`* (builder, `unpack`, why it writes
+   through msgpack-core and not `MsgPack.pack`, and that integrity is the application's decision). Both are in `llms.txt`.
+
+### Build
+
+10. **Internal, no behavior change.** `SimpleMapper` takes explicit imports, pins its pretty-print style (two-space indent, LF)
+   and suppresses Sonar `java:S2143` on the class, with byte-identical output (#469); test-only changes: the dialect claim
+   test split into cohesive methods (#468), the `f:round` agreement test (#477), the Sonar cleanups on the new code (#474,
+   #478, #483).
 
 ---
 ## Version 4.12.19, 9/25/2026

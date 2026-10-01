@@ -63,10 +63,14 @@ signed or neither is a deployment decision.
   values unless a configuration switch is set, packs a `Float` as float32 and writes a `BigDecimal` zero as `"0.00"`.
 - **The canonical profile is a wire contract, identical in every engine:** keys are text sorted by UTF-8 bytes (a non-text key is
   converted to text; a null key or a collision is an error); nulls are kept as nil; integers use the smallest encoding (signed
-  64-bit only); floats are finite float64 (a `Float`, NaN and Infinity are rejected); str and bin carry the shortest header; exact
+  64-bit only); floats are finite float64 (a `Float` is widened through its shortest decimal text; NaN and Infinity are rejected); str and bin carry the shortest header; exact
   numbers travel as strings (a zero of any scale is `"0"`, per RFC-0001) and dates as ISO-8601 strings; no extension types or
   timestamps; any other type is rejected naming its path. The packager is faithful to a value's type (the integer 1 and the
   float 1.0 are different content) and applies no Unicode normalization.
+- **Amendment (2026-10-01, before the v4.12.20 release, Eric): a `Float` is accepted.** The first implementation rejected a `Float`; it
+  now treats it like any other number and widens it to float64 through its shortest decimal text (`0.1f` is the float64 `0.1`),
+  which is deterministic and identical in both engines; NaN and Infinity stay rejected and a float32 on the wire still fails the
+  strict read. The vectors changed with it (a `Float` value vector replaced the rejection).
 - **The package structure is `{manifest, maps}`,** `manifest` sorting before `maps` so a reader can read the metadata before
   decoding any map; entry names are ordered by UTF-8 bytes (never a file system listing or a locale); a duplicate entry name or a
   caller field named `format` or `format_version` is an error. `graph_id` stays a documented convention that the packager never
@@ -76,8 +80,8 @@ signed or neither is a deployment decision.
   bytes and nesting beyond 64 levels.
 - **Byte-for-byte compatibility is proven by one shared vector file, not by a cross-engine drive.**
   `canonical-package-vectors.json` is byte-identical in both repositories, and its expected bytes come from an **independent
-  encoder written from the specification**, not from either engine: 65 values (every integer encoding boundary, header
-  boundaries, the UTF-8 versus UTF-16 key order, exact numbers), 6 packages with SHA-256, 24 rejection cases and a seeded
+  encoder written from the specification**, not from either engine: 73 values (every integer encoding boundary, `Float` widening, header
+  boundaries, the UTF-8 versus UTF-16 key order, exact numbers), 6 packages with SHA-256, 25 rejection cases and a seeded
   60-document differential corpus. Each engine matching the file means the engines match each other, and all of it passed on
   the first run in both. It also pins the corners where the libraries differ: `rmpv` spends two units of its depth counter per
   nesting level, so its limit of 64 accepted only 31 nested lists where Java accepts 64; the Rust decoder enforces the bound
