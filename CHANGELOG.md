@@ -36,16 +36,29 @@ release CHANGELOG is still checked against `git log <previous-tag>..HEAD`.
 
    **Upgrade action:** none — new plugin names only.
 
+3. **`CanonicalPackager` — a deterministic MsgPack packager (RFC-0002, Open; first Java PR).** `org.platformlambda.core.serializers`,
+   beside `MsgPack`: the same content always gives the same bytes. Every map is written with its keys sorted at every depth in
+   UTF-8 byte order (the ordering is done by the packager, since Gson has no ordered-keys option and a `String`-order sort
+   differs from another engine's bytes above U+FFFF); a package is `{manifest, maps}` with `format` and `format_version`
+   written by the packager, caller-defined string manifest fields (by convention `graph_id`) and the maps keyed by entry
+   name in sorted order. The canonical profile: nulls kept, smallest integers, finite float64 only (a `Float`, NaN and
+   Infinity are rejected), shortest str and bin headers, exact numbers as strings (a `BigDecimal` in plain notation, a zero
+   of any scale `"0"`), dates as ISO-8601 strings, nothing else. `unpack` returns ordered maps and, by default, re-encodes
+   the content and rejects bytes that are not canonical. Integrity is not part of it: a hash or a signature, and the algorithm,
+   are the user application's decision. 18 tests and a shared vector file, `canonical-package-vectors.json`, whose expected
+   bytes come from an independent encoder (so the Rust twin can prove byte-for-byte compatibility against the same file),
+   with a seeded 60-document differential corpus. **Upgrade action:** none — a new class.
+
 ### Changed
 
-3. **A canonical numeric string compares as a number in `== != < <= > >=` (RFC-0001).** Every value is rendered into
+4. **A canonical numeric string compares as a number in `== != < <= > >=` (RFC-0001).** Every value is rendered into
    the statement text before it is parsed, so a substituted string was indistinguishable from one the author typed; a
    string in plain numeric notation now compares as a number (`'200' == 200`, `{price.result.rounded} > 100`), exactly:
    two distinct 20-digit ids never collapse into equal numbers.
 
    **Upgrade action:** read if a graph compares numeric-looking strings and relied on the string comparison.
 
-4. **`graph.math` `round` is half up, away from zero, the same as `f:round` (#472).** The dialect used `Math.round`
+5. **`graph.math` `round` is half up, away from zero, the same as `f:round` (#472).** The dialect used `Math.round`
    (half toward positive infinity), so `round(-2.5)` was `-2` while the `f:round` plugin gave `-3`. It now rounds through
    `BigDecimal` HALF_UP: `round(-2.5)` is `-3`; positive halves and non-halves are unchanged. NaN and Infinity still reach
    the finite check.
@@ -54,11 +67,11 @@ release CHANGELOG is still checked against `git log <previous-tag>..HEAD`.
 
 ### Documentation
 
-5. **The DECIMAL guide gains the money loop, the transaction patterns and the compatibility correction.** The command reference
+6. **The DECIMAL guide gains the money loop, the transaction patterns and the compatibility correction.** The command reference
    adds an engine-verified `DECIMAL` twin of the line-totals example (the `COMPUTE` version accumulates in double; money uses the
    twin), the skills reference adds *Transaction patterns* (what stays on the graph, what is a `graph.task`, the zero rule, the
    remainder's sign, the decimal plugins in a mapping, the input rules), and the DECIMAL intro no longer says a graph that never
-   says `DECIMAL` behaves exactly as before: the numeric-string comparison and `round` half-up reach it, as items 3 and 4 say. The
+   says `DECIMAL` behaves exactly as before: the numeric-string comparison and `round` half-up reach it, as items 4 and 5 say. The
    in-Playground help and `minigraph-commands.json` carry the same. RFC-0003 (the `for_each` index, Parked) and RFC-0004 (a bracket
    lookup plugin, Withdrawn) record two suggestions from an external review.
 
