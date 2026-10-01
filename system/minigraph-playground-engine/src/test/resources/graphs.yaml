@@ -63,6 +63,7 @@ graphs:
   # every statement command resolves dynamic variables: THEN: {model.hop} + DELAY: {model.backoff}
   - 'unit-test-dynamic-jump'
   - 'unit-test-decimal'
+  - 'unit-test-decimal-loop'
   # the virtual 'error' node reports recovery: a successful retry of error.source resolves
   # the context to {source, code 200} with the failure details removed
   - 'unit-test-error-recovery'
