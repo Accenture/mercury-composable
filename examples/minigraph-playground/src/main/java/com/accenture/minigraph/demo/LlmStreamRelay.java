@@ -33,15 +33,16 @@ import java.util.Map;
 /**
  * The AI-token streaming composition (agent-orchestration follow-up to experiment E0):
  * this endpoint's function forwards its own reply lane and correlation id into a 'send'
- * to the event-over-http mapped "llm.stream" function - the python demo app's streaming
- * AI node, which pulls the provider's REAL token stream (Gemini or Claude models) - and
- * opts in with the "accept: text/event-stream" event header. The provider's token
+ * to the event-over-http mapped "llm.stream" function - the LLM helper app's streaming
+ * AI node, which pulls the model's REAL token stream (Claude) - and
+ * opts in with the "accept: text/event-stream" event header. The model's token
  * batches relay through the peer's /api/event in envelope mode and re-render
  * progressively out this application's HTTP edge as SSE, with no imperative streaming
  * code and no LLM dependency in the engine.
  * <p>
- * Requires yaml.event.over.http (see application.properties) and a running wrapper
- * demo app with the provider credential in its environment.
+ * Requires yaml.event.over.http (see application.properties) and a running LLM helper
+ * app (examples/llm-helper of mercury-python or mercury-nodejs) with ANTHROPIC_API_KEY in
+ * its environment.
  */
 @PreLoad(route = "llm.stream.relay", instances = 50)
 @EventInterceptor
@@ -54,8 +55,9 @@ public class LlmStreamRelay implements TypedLambdaFunction<EventEnvelope, Void> 
         // reachable when registered locally (a test mock) or mapped declaratively
         if (!po.exists(REMOTE_ROUTE) && EventEmitter.getInstance().getEventHttpTarget(REMOTE_ROUTE) == null) {
             new EventStreamWriter(request).fail(new AppException(503,
-                    "AI streaming demo is not configured - start a wrapper demo app with an LLM " +
-                    "provider credential and map llm.stream in event-over-http.yaml"));
+                    "AI streaming demo is not configured - start the LLM helper app (examples/llm-helper " +
+                    "of mercury-python or mercury-nodejs) with ANTHROPIC_API_KEY in its environment and " +
+                    "map llm.stream in event-over-http.yaml"));
             return null;
         }
         AsyncHttpRequest http = new AsyncHttpRequest(request.getRawBody());

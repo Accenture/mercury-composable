@@ -53,6 +53,7 @@ class SkillSnapshotTest {
         expected.add("references/arch-decisions/ADR.md");
         expected.add("references/arch-decisions/RFC.md");
         expected.add("references/test-reports/event-over-http-interop.md");
+        expected.add("references/test-reports/llm-helper-certification.md");
         expected.add("references/test-reports/otel-dynatrace-certification.md");
         expected.add("references/test-reports/progressive-rendering-interop.md");
         expected.add("references/test-reports/streaming-return-route-cross-pod.md");
@@ -117,8 +118,11 @@ class SkillSnapshotTest {
         // on a module-level run, maven.multiModuleProjectDirectory is the module itself,
         // so only trust the property when it actually holds the docs tree
         var configured = System.getProperty("mercury.reactor.root");
-        if (configured != null && Files.isDirectory(Path.of(configured).resolve("docs/guides"))) {
-            return Path.of(configured);
+        if (configured != null) {
+            var root = Path.of(configured);
+            if (Files.isDirectory(root.resolve("docs/guides"))) {
+                return root;
+            }
         }
         var current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
         while (current != null && !Files.isDirectory(current.resolve("docs/guides"))) {

@@ -98,8 +98,8 @@ function - the streaming demo of the python or node.js function host - and the
 remote segments re-render progressively out this application's HTTP edge, with no
 imperative streaming code in between.
 
-Start a wrapper demo app (mercury-python's `mercury-serve examples/demo_app.py` on
-port 8086, or mercury-nodejs' demo on 8087 with `-Dpeer.demo.port=8087`), then run
+Start a wrapper demo app (mercury-python's `mercury-serve examples/demo-app/demo_app.py`
+on port 8086, or mercury-nodejs' demo on 8087 with `-Dpeer.demo.port=8087`), then run
 this application with the declarative routing map enabled:
 
 ```shell
