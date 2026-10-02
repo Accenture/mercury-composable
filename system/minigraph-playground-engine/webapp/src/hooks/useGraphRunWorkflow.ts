@@ -38,6 +38,12 @@ export interface UseGraphRunWorkflowOptions {
   connectionEpoch: number | null;
   graphData: MinigraphGraphData | null;
   graphIdentity: string | null;
+  /**
+   * False while this session is subscribed to another. It does not gate the
+   * controls: subscribed sessions are equal partners, and the backend runs a
+   * subscriber's command through the primary in every member's session. A
+   * change (subscribe or unsubscribe) reroutes commands, so it resets the run.
+   */
   isPrimary: boolean;
   sendRawText: (text: string) => boolean;
   addToast: (message: string, type?: ToastType) => void;
@@ -153,7 +159,7 @@ export function useGraphRunWorkflow({
     return false;
   }, [reset, transition]);
 
-  const canInteract = enabled && connected && graphData !== null && isPrimary;
+  const canInteract = enabled && connected && graphData !== null;
   const canInstantiate = canInteract && (
     state.phase === 'idle' ||
     (state.phase === 'ready' && inputBodyPaths.length > 0)
@@ -165,9 +171,7 @@ export function useGraphRunWorkflow({
       ? 'Load a graph first'
       : !connected
         ? 'Connect first to run the graph'
-        : !isPrimary
-          ? 'Run the graph from the host session'
-          : '';
+        : '';
 
   const runGraph = useCallback((): boolean => {
     if (!canRun) return false;
@@ -377,13 +381,19 @@ export function useGraphRunWorkflow({
     previousEpochRef.current = connectionEpoch;
   }, [connectionEpoch, hardReset]);
 
+  const previousPrimaryRef = useRef(isPrimary);
   useEffect(() => {
-    if (!enabled || !connected || !isPrimary) {
+    if (previousPrimaryRef.current !== isPrimary) hardReset();
+    previousPrimaryRef.current = isPrimary;
+  }, [isPrimary, hardReset]);
+
+  useEffect(() => {
+    if (!enabled || !connected) {
       hardReset();
     } else if (!graphData) {
       invalidate();
     }
-  }, [enabled, connected, graphData, hardReset, invalidate, isPrimary]);
+  }, [enabled, connected, graphData, hardReset, invalidate]);
 
   const busy = state.phase !== 'idle' && state.phase !== 'ready';
   return {
