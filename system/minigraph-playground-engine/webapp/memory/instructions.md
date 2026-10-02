@@ -31,8 +31,15 @@ npm run build
 npm run release
 ```
 
-`npm run release` cleans, builds, and deploys `dist/` into
-`../src/main/resources/public`, which is the checked-in bundle served by the Java app.
+`npm run release` cleans, builds, and deploys `dist/`. The bundle (the hashed assets and their source maps) goes to
+`../src/main/resources/public/` (under `assets/`), the checked-in static content the Java app serves. Only `index.html`
+goes elsewhere: it becomes `../src/main/resources/template/playground.html`, served only when `app.env=dev`
+(`public/index.html` is the plain home page and is never touched).
+
+The help pages (`../src/main/resources/help/*.md`) are compiled into the bundle (`src/data/helpContent.ts`,
+`import.meta.glob`), so a help edit is not done until `npm run release` has rebuilt the bundle and the new hashed files
+are committed. CI does not build the webapp, so nothing else catches a stale bundle: the Playground showed no help for
+`CONDITION` or `DECIMAL` after four help edits because the bundle was last regenerated before them (fixed in PR #491).
 
 ## Working Rules
 

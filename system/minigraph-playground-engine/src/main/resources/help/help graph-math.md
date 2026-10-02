@@ -52,6 +52,8 @@ Properties
 ```
 skill=graph.math
 statement[]=COMPUTE: variable -> mathematical statement
+statement[]=DECIMAL: variable -> mathematical statement   (exact decimal arithmetic - see below)
+statement[]=CONDITION: variable -> boolean expression
 statement[]=IF: if-then-else statement
 statement[]=MAPPING: source -> target
 statement[]=EXECUTE: another-node
