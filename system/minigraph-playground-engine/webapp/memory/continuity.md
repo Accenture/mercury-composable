@@ -207,7 +207,7 @@
   <!-- id: webapp-jsonpath-payload-only | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: working | origin: 2026-09-09-223126 -->
 
 - **The panel split opens at its defaults on every page load and is never persisted (2026-10-01,
-  Eric's report; PR #493, branch `fix/playground-console-third-describe-skill-help`, awaiting merge).**
+  Eric's report; PR #493, squash `1619a4f3`, merged 2026-10-02; ships with the next engine release).**
   Console one third, right panel the complement, clipboard sidebar 20%, node editor and mock input
   30%. `useDefaultLayout` is gone: a saved layout beats `defaultSize` at mount while the per-mode
   resize fires only on slot-content changes, so a drag saved in an earlier session pinned the
@@ -221,7 +221,7 @@
   <!-- id: webapp-panel-split-not-persisted | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-032130 -->
 
 - **`describe skill {route}` for a built-in skill is a help command: its page opens in the help
-  panel (2026-10-01, Eric's direction; same PR #493, awaiting merge).** Both engines answer it with the page
+  panel (2026-10-01, Eric's direction; same PR #493, squash `1619a4f3`).** Both engines answer it with the page
   `help {route}`, each `.` replaced by `-` and lowercased (Java `GraphCommandService.describeSkill`,
   Rust `handle_describe`), so `extractCommandHelpTopic` (`utils/helpTopic.ts`) maps the exact
   three-word form the same way, and `resolveBundledHelpTopic` serves both the send path
