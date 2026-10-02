@@ -45,6 +45,15 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    with `npm run release` in the webapp: the help now lists seven statement types, shows `DECIMAL` and `CONDITION` in its property
    list and gives the syntax of both. Nothing else in the bundle changed: a rebuild of the unchanged sources reproduces every other
    asset, source maps included, byte for byte.
+6. **The MiniGraph Playground opens with the console at one third of the width.** The graph view and help take the other two
+   thirds; the console opened at 40%. The split is no longer restored from an earlier session: a drag saved in the browser won at
+   the next page load, so an old drag looked like a wrong default, while toggling the console reset it. A drag still holds while
+   you work, until the console is toggled or a form takes its place. The node editor and the mock-input panel keep their 30%.
+7. **`describe skill` for a built-in skill opens the skill's page in the Playground's help panel.** The engine answers
+   `describe skill graph.math` with the `graph-math` help page, and the console cannot render its markdown. The Playground now shows
+   that page in the help panel, as it does for `help graph-math`, and the console keeps only the command. `describe graph`,
+   `describe node` and `describe connection` still answer in the console, and so does a skill without a bundled page. The engine
+   and the companion API are unchanged: `describe skill` still returns the page as text.
 
 ---
 ## Version 4.12.20, 10/1/2026

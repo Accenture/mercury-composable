@@ -226,15 +226,17 @@ The Help UI is shared across playgrounds, while `PlaygroundConfig.helpContentPro
 
 When the user enters a help command that exists in the active profile while connected, it is **handled locally** by `handleLocalCommand` in `useWebSocket` — no WebSocket round-trip occurs. The console receives a local echo (`> help …`) that is classified identically to a server-echoed command, so `useAutoHelpNavigate` opens the matching content automatically. JSON-Path intentionally intercepts only bare `help`; unsupported topics such as `help create` continue to the backend.
 
+`describe skill {route}` for a built-in skill is a help command too: the engine answers it with the page `help {route}` (each `.` replaced by `-`, lowercased), so the Playground resolves it to that bundled page and shows it in the help panel, which renders markdown — `describe skill graph.math` opens `graph-math`. A skill without a bundled page still goes to the backend, and its answer appears in the console.
+
 Access while disconnected: the header `?` button and the `Ctrl + \`` hotkey always open the help panel regardless of connection state.
 
-`describe …` responses remain **console-driven**; they are not captured by the help panel.
+The other `describe …` responses (`describe graph`, `describe node`, `describe connection`) remain **console-driven**; they are not captured by the help panel.
 
 **Key code locations:**
 - `src/data/helpContent.ts` — profile-aware content/category lookup; Minigraph remains the default profile
 - `src/data/jsonPathHelpContent.ts` — starter JSON-Path Overview markdown
-- `src/utils/helpTopic.ts` — `extractHelpTopic(commandText)`: strips `"help "` prefix → bare topic key (lowercased)
-- `src/utils/localHelpCommand.ts` — `resolveBundledHelpTopic(commandText, supportsHelp, contentProfile)`: returns the topic key when the command exists in the active profile, or `null` when it should go to the backend
+- `src/utils/helpTopic.ts` — `extractHelpTopic(commandText)`: strips `"help "` prefix → bare topic key (lowercased); `extractCommandHelpTopic(commandText)`: the topic a command shows (`help {topic}`, or `describe skill {route}` → the route with `.` as `-`), or `null`
+- `src/utils/localHelpCommand.ts` — `resolveBundledHelpTopic(commandText, supportsHelp, contentProfile)`: returns the topic key when the command shows a page that exists in the active profile, or `null` when it should go to the backend; `useAutoHelpNavigate` uses the same resolver for echoes
 - `src/hooks/useWebSocket.ts` — `handleLocalCommand` option: called inside `sendCommand` before the remote-send path; return `true` to intercept
 - `src/hooks/useAutoHelpNavigate.ts` — subscribes to `command.helpOrDescribe` on the bus; opens the help panel from server-echoed **and** locally-appended echoes (both classify identically)
 - `src/components/HelpBrowser/HelpBrowser.tsx` — the rendered help panel component; `activeTopic` + `onNavigate` props drive the current topic view
@@ -755,7 +757,7 @@ Key responsibilities:
 | Toast notifications | `useToast()` — queue-based, auto-removes after timeout |
 | Live graph source | `sessionGraphPath` derived from `sessionCollaboration.state.sessionId` (`/api/graph/session/{id}`); null until the `session` round-trip answers; the graph view is cleared on disconnect via transition-based `useEffect` in Playground.tsx |
 | Preview message pinning | removed — `MarkdownPreview` and `pinnedMessageId` are deleted |
-| Panel split persistence | `useDefaultLayout` from `react-resizable-panels` — keyed per route path (`config.path + '-panel-split-v2'`, user drags only); per-mode left-slot defaults applied imperatively (console 40%, node-edit/upload 30%) |
+| Panel split defaults | Not persisted: every page load opens at the defaults (console one third, right panel the complement, clipboard sidebar 20%), so a drag saved in an earlier session can never look like a wrong default; per-mode left-slot defaults applied imperatively on slot-content changes (console one third, node-edit/upload 30%), and a drag holds until the slot content changes |
 | Responsive layout | `useMediaQuery('(max-width: 768px)')` → vertical panel stacking on mobile |
 | Clear messages | Clears `successfulUploadPaths` and `graphData`; does **not** clear `modalUploadPath` (modal stays open if active during clear) |
 | Cross-playground routing | Three branches: immediate deposit + navigate when JSON-Path is `'connected'`; overwrite `pendingJsonTransferRef` + toast when `'connecting'` (last-write-wins); `pendingJsonTransferRef` + `ctx.connect()` when `'idle'` |
@@ -965,9 +967,9 @@ Disconnect cleanup: when `connected` flips to false, pending debounce timers are
 
 #### `useAutoHelpNavigate`
 
-Subscribes to `bus.on('command.helpOrDescribe')` when Help is enabled. When the echo resolves inside the active content profile, calls `onTabSwitch()` to open the help panel and sets `activeHelpTopic` via `setHelpTopic`. Both server-echoed and locally-appended help command echoes classify identically; profile filtering prevents JSON-Path from opening Minigraph-only topics.
+Subscribes to `bus.on('command.helpOrDescribe')` when Help is enabled. When the echo resolves inside the active content profile (`resolveBundledHelpTopic` — `help {topic}`, or `describe skill {route}` for a built-in skill), calls `onTabSwitch()` to open the help panel and sets `activeHelpTopic` via `setHelpTopic`. Both server-echoed and locally-appended help command echoes classify identically; profile filtering prevents JSON-Path from opening Minigraph-only topics.
 
-`useAutoMarkdownPin` has been removed. `describe` responses are console-driven and are not captured by the help panel.
+`useAutoMarkdownPin` has been removed. The other `describe` responses (graph, node, connection) are console-driven and are not captured by the help panel.
 
 #### `useGraphRunWorkflow`
 
@@ -1612,7 +1614,7 @@ Disconnect while modal is open
 | Untitled counter | `useLocalStorage` in `useGraphSaveName` | `localStorage` | Keyed per playground; only increments when slot was consumed by a save |
 | Graph save-name state | `useState` + epoch-guarded module-scoped `Map` in `useGraphSaveName` | Memory only | Survives SPA route remounts for the same WebSocket epoch; tracks imported name, last export name, clean/saved flag, and untitled-slot consumption; invalidated by reset, disconnect, epoch change, or manual clear |
 | Toasts | `useReducer` in `useToast` | Memory only | Auto-expires |
-| Panel split ratio | `react-resizable-panels` | `localStorage` | Keyed per route path |
+| Panel split ratio | `react-resizable-panels` | Memory only | Opens at the defaults on every page load; a drag holds until the slot content changes |
 | Autocomplete dropup state | `useState` in `useHistoryAutocomplete` | Memory only | `isOpen`, `activeIndex`; resets on unmount — intentional |
 | ProtocolBus | `useRef` in `Playground` | Memory only | Stable identity for component lifetime; never triggers re-renders |
 | Classification map | `useMemo` in `useProtocolKernel` | Memory only | `Map<number, ProtocolEvent[]>` — re-derived when `messages` changes |

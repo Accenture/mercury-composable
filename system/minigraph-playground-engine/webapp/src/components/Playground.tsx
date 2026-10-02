@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { Group, Panel, Separator, useDefaultLayout, type PanelImperativeHandle } from 'react-resizable-panels';
+import { Group, Panel, Separator, type PanelImperativeHandle } from 'react-resizable-panels';
 import styles from './Playground.module.css';
 import { validatePayload, formatJSON } from '../utils/validators';
 import { useToast } from '../hooks/useToast';
@@ -73,16 +73,29 @@ interface PlaygroundProps {
 type LeftPanelMode = 'console' | 'node-edit' | 'upload';
 
 /**
- * Default left-panel widths per slot content (Eric's spec, 2026-09-09):
- * the console reads best at 40%, while the two in-place forms are narrow
- * cards that only need 30%. Applied on every slot-content change; manual
- * separator drags hold until the content changes again.
+ * Default left-panel widths per slot content, as percentages of the
+ * playground width. The console opens at one third and leaves two thirds to
+ * the graph view and help (Eric, 2026-10-01; it was 40%); the two in-place
+ * forms are narrow cards that only need 30% (Eric's spec, 2026-09-09).
+ * Applied when the playground opens and on every slot-content change; a
+ * separator drag holds until the slot content changes or the page reloads.
  */
-const LEFT_PANEL_DEFAULT_SIZES: Record<LeftPanelMode, string> = {
-  'console':   '40%',
-  'node-edit': '30%',
-  'upload':    '30%',
+const LEFT_PANEL_DEFAULT_PERCENT: Record<LeftPanelMode, number> = {
+  'console':   100 / 3,
+  'node-edit': 30,
+  'upload':    30,
 };
+
+/** Default width of the clipboard sidebar, as a percentage of the playground width. */
+const CLIPBOARD_DEFAULT_PERCENT = 20;
+
+/**
+ * react-resizable-panels reads a bare number as pixels, so a percentage is
+ * passed as a string with an explicit unit.
+ */
+function asPercent(value: number): string {
+  return `${value}%`;
+}
 
 export default function Playground({ config }: PlaygroundProps) {
   const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, supportsClipboard, supportsHelp, helpContentProfile = 'minigraph', supportsAuthoring, supportsGraphRun, supportsSessionCollaboration, tabs } = config;
@@ -643,22 +656,18 @@ export default function Playground({ config }: PlaygroundProps) {
   // Responsive layout: stack panels vertically on narrow viewports
   const isMobile = useMediaQuery('(max-width: 768px)');
 
-  // Persist panel split ratio per playground route. Only user drags are
-  // persisted: the per-mode default widths applied imperatively above must
-  // not overwrite the user's remembered console split. The storage id is
-  // versioned (-v2) so layouts persisted BEFORE the per-mode defaults existed
-  // are orphaned — a first load lands on the new defaults, not a stale split.
-  const { defaultLayout, onLayoutChanged } = useDefaultLayout({
-    id: config.path + '-panel-split-v2',
-    storage: localStorage,
-    onlySaveAfterUserInteractions: true,
-  });
+  // The panel split is deliberately NOT persisted across page loads: the
+  // playground always opens at its default widths. A drag saved in
+  // localStorage used to win at the next load, so a split dragged in an
+  // earlier session looked like a wrong default (reported 2026-09-09 and
+  // 2026-10-01). A drag still holds while the user works, until the slot
+  // content changes.
 
   // ── Left panel slot mode + default widths ─────────────────────────────────
   // Priority: the node editor wins the slot, then the upload form, then the
-  // console. Each content type opens at its own default width (console 40%,
-  // editor/upload 30%); a manual separator drag holds until the slot content
-  // changes again.
+  // console. Each content type opens at its own default width (console one
+  // third, editor/upload 30%); a manual separator drag holds until the slot
+  // content changes again.
   const leftPanelMode: LeftPanelMode | null =
     nodeEditSession !== null ? 'node-edit'
     : uploadPanelPath !== null ? 'upload'
@@ -673,7 +682,7 @@ export default function Playground({ config }: PlaygroundProps) {
     // Defer one frame: on a closed→open transition the Panel mounts in this
     // commit and its imperative handle is populated after the mount pass.
     const frame = requestAnimationFrame(() => {
-      leftPanelRef.current?.resize(LEFT_PANEL_DEFAULT_SIZES[leftPanelMode]);
+      leftPanelRef.current?.resize(asPercent(LEFT_PANEL_DEFAULT_PERCENT[leftPanelMode]));
     });
     return () => cancelAnimationFrame(frame);
   }, [leftPanelMode]);
@@ -682,12 +691,14 @@ export default function Playground({ config }: PlaygroundProps) {
   // (its open flag is shared in localStorage across playgrounds).
   const clipboardVisible = Boolean(supportsClipboard) && clipboardOpen;
 
-  // First-mount complement of the left panel's default width; thereafter the
-  // persisted layout (user drags) wins. Help splits vertically inside the
-  // right panel, so it does not affect this horizontal default.
-  const rightPanelDefaultSize = leftPanelMode !== null
-    ? (clipboardVisible ? '40%' : '60%')
-    : (clipboardVisible ? '80%' : '100%');
+  // The right panel's default is the complement of the left slot's and the
+  // clipboard sidebar's, so the defaults always add up to the full width
+  // (two thirds beside the console). Help splits vertically inside the right
+  // panel, so it does not affect this horizontal default.
+  const leftPanelDefaultPercent = leftPanelMode !== null ? LEFT_PANEL_DEFAULT_PERCENT[leftPanelMode] : 0;
+  const rightPanelDefaultSize = asPercent(
+    100 - leftPanelDefaultPercent - (clipboardVisible ? CLIPBOARD_DEFAULT_PERCENT : 0),
+  );
 
   const handleFormatPayload = useCallback(() => setPayload(formatJSON(payload)), [payload]);
 
@@ -858,12 +869,14 @@ export default function Playground({ config }: PlaygroundProps) {
       <Group
         className={styles.panelGroup}
         orientation={isMobile ? 'vertical' : 'horizontal'}
-        defaultLayout={defaultLayout}
-        onLayoutChanged={onLayoutChanged}
       >
         {leftPanelMode !== null && (
           <>
-            <Panel panelRef={leftPanelRef} defaultSize={LEFT_PANEL_DEFAULT_SIZES[leftPanelMode]} minSize="25%">
+            <Panel
+              panelRef={leftPanelRef}
+              defaultSize={asPercent(LEFT_PANEL_DEFAULT_PERCENT[leftPanelMode])}
+              minSize="25%"
+            >
               {nodeEditSession !== null ? (
                 <NodeEditPanel
                   mode={nodeEditSession.action === 'edit-node' ? 'edit' : 'create'}
@@ -976,7 +989,7 @@ export default function Playground({ config }: PlaygroundProps) {
         {supportsClipboard && clipboardOpen && (
           <>
             <Separator className={styles.resizeHandle} aria-label="Resize clipboard" />
-            <Panel defaultSize="20%" minSize="10%" maxSize="40%">
+            <Panel defaultSize={asPercent(CLIPBOARD_DEFAULT_PERCENT)} minSize="10%" maxSize="40%">
               <ClipboardSidebar
                 connected={ws.connected}
                 onPasteToInput={handlePasteToInput}
