@@ -5,7 +5,7 @@
 - **scope:** MiniGraph Playground React/Vite webapp
 - **root:** `system/minigraph-playground-engine/webapp`
 - **served bundle:** `system/minigraph-playground-engine/src/main/resources/public`
-- **last_session:** 2026-10-02 | agent: Claude Code (2026-10-02-044233)
+- **last_session:** 2026-10-02 | agent: Claude Code (2026-10-02-050449)
 - **last_review:** 2026-10-02 | through 2026-10-02-041143.md (CADENCE — the layer's first review, 10 sessions: 13 footers
   refreshed, 2 superseded facts archived into the new `memory/archive/`, 1 drift thread raised)
 
@@ -143,8 +143,9 @@
 
 - **MiniGraph toolbar execution mirrors backend lifecycle (2026-09-09).** Separate Instantiate and
   Run actions precede Copy; Run unlocks only after the instance acknowledgement and any required
-  `input.body` upload. Typed ProtocolBus events, graph/session/connection invalidation, host-session
-  gating, and stale-response quarantine keep the backend authoritative. Upload invitations use an
+  `input.body` upload. Typed ProtocolBus events, graph/session/connection invalidation and
+  stale-response quarantine keep the backend authoritative (the host-session gating was removed on
+  2026-10-02: see [[webapp-run-controls-equal-partners]]). Upload invitations use an
   active-path plus deduplicated FIFO: exact-path success/cancel/invalidation cannot affect another
   upload panel, and a workflow prompt is not lost behind a manual one. The text protocol still has
   no correlation id, so a workflow serially claims the next invitation after its request.
@@ -238,6 +239,23 @@
   setup file is outside the app graph, so it needs no bundle release (a `vite build` matched the
   committed bundle). The Rust twin is the root thread `webapp-tests-webstorage-rust-twin`.
   <!-- id: webapp-tests-node25-webstorage-setup | created: 2026-10-01 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-041143 -->
+
+- **The run controls work in every session: a subscriber instantiates, uploads its mock input and runs
+  as an equal partner (2026-10-02, Eric's bug report and ruling; branch
+  `fix/playground-subscriber-run-controls`, commit `0fafd86a`, PR opened by Eric).** Eric's design: the
+  primary and its subscribers, human operators or an AI companion, are equal partners for multi-party
+  human-AI collaboration; anyone can enter any command except `session`, which is private to each user,
+  and every member sees the others' actions. Both engines already run a subscriber's command through the
+  primary and replay it in every member's session (Java `GraphCommandService.runAsPrimary`, Rust
+  `commands.rs`), but `useGraphRunWorkflow` disabled Instantiate and Run unless `isPrimary` ("Run the
+  graph from the host session"). The gate is gone. `isPrimary` now only resets the run when it changes
+  (subscribe or unsubscribe): the old reset was level-triggered and would have reset a subscriber's run
+  on every graph refetch, and a test pins that step. **Mock input is per session:** `upload mock data`
+  replays too, so every member gets its own invitation (`POST /api/mock/{its session}`) and its own
+  panel, and an upload loads only that member's instance; a replayed `run` aborts on a member that did
+  not upload (tutorial 3: `Profile {id} not found`). Verified live with the session broker holding the
+  primary. Replaces the host-session gating in [[webapp-graph-toolbar-run-controls]].
+  <!-- id: webapp-run-controls-equal-partners | created: 2026-10-02 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-050449 -->
 
 ## Open Threads
 
