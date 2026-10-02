@@ -631,7 +631,7 @@
   `GraphTests` runs it and its unknown-profile error (23 tests). The Rust example and template got the same flows config in mercury #343. Follow-up: [[flow-11-doc-label]]. Relates [[minigraph-dev-mode-app-shape]].
   <!-- id: playground-example-flows-are-sample-config | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-001806 -->
 
-- **The Playground webapp has one source and two deploy targets, and the help pages are one consolidated set (Eric, 2026-10-02; PR #496, the Rust twin mercury #347).** The webapp "graduated": its scoped
+- **The Playground webapp has one source and two deploy targets, and the help pages are one consolidated set (Eric, 2026-10-02; PR #496 squash `a6dc9ce5`, the Rust twin mercury #347 merge `781fae43`, both MERGED 2026-10-02).** The webapp "graduated": its scoped
   memory bank, steering files and pre-graduation specs under `system/minigraph-playground-engine/webapp/` are retired, its technical documentation is regenerated from the code in `webapp/docs/` (README,
   architecture, protocol, components, graph-view, hooks-and-state, build-test-deploy, extending; 1,336 lines), and its session memory and open threads live at this root. The Rust repo's verbatim copy
   (`crates/knowledge-graph/webapp/`, K7 of the port spec) is retired: `npm run release:rust` in the webapp (or `release:all`, both engines from one build) deploys the bundle to
@@ -641,8 +641,8 @@
   2026-07-19 rewrite (Syntax/Example/Notes) is the base, Java-only content kept, wording engine-neutral, differences stated in place (`graph.js` deprecated here, not registered in Rust). Three stale Java
   claims fell out (`round()` "follows Math.round" — half up away from zero since #472; "an instance runs once" — `run` repeats and `model.*` persists; tutorial 12 titled "Tutorial 10") and one Rust claim
   (`session reset` keeps the draft — both engines clear it). The bundles are byte-identical on both engines (`index-lxX8FQ68`). **Found, not fixed:** the workspace clipboard paste writes scalars as
-  `key[]=value`, which the engine stores as one-element lists (`skill` included; verified on the Java engine). Extends [[help-edit-needs-bundle-release]]; resolves the three Rust-twin threads when #347
-  merges. Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
+  `key[]=value`, which the engine stores as one-element lists (`skill` included; verified on the Java engine). Extends [[help-edit-needs-bundle-release]]; closed the three Rust-twin threads (a port twin of a UI change is a deploy
+  once the UI has one source). Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
   <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-175751 -->
 
 ## Conventions
