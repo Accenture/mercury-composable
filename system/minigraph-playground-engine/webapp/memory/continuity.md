@@ -241,8 +241,8 @@
   <!-- id: webapp-tests-node25-webstorage-setup | created: 2026-10-01 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-041143 -->
 
 - **The run controls work in every session: a subscriber instantiates, uploads its mock input and runs
-  as an equal partner (2026-10-02, Eric's bug report and ruling; branch
-  `fix/playground-subscriber-run-controls`, commit `0fafd86a`, PR #495).** Eric's design: the
+  as an equal partner (2026-10-02, Eric's bug report and ruling; PR #495, squash `75ce191f`,
+  merged 2026-10-02).** Eric's design: the
   primary and its subscribers, human operators or an AI companion, are equal partners for multi-party
   human-AI collaboration; anyone can enter any command except `session`, which is private to each user,
   and every member sees the others' actions. Both engines already run a subscriber's command through the
