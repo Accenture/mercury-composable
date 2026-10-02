@@ -39,6 +39,11 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    of the app's own dev mock endpoint (Java PR #267). All fourteen tutorials and `support-triage` now compile (15 graphs) and answer
    at `POST /api/graph/{graph_id}`; `GraphTests` runs tutorial 13 and its unknown-profile error. The README's "model answers for
    tutorials 1 to 11" now says 1 to 14.
+5. **The MiniGraph Playground's help describes `CONDITION` and `DECIMAL`.** The help pages are compiled into the committed webapp
+   bundle, which was last regenerated on 2026-09-23, so `help graph-math` still listed five statement types and said nothing of
+   `CONDITION` (#462), the closed expression dialect (#467), `DECIMAL` (#471) or the money guidance (#480). The bundle is regenerated
+   with `npm run release` in the webapp: the help now lists seven statement types and the syntax of both. Nothing else in the bundle
+   changed: a rebuild of the unchanged sources reproduces every other asset, source maps included, byte for byte.
 
 ---
 ## Version 4.12.20, 10/1/2026
