@@ -76,6 +76,14 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    graph instance or upload its mock input. Both buttons now work in every session. Mock input stays per session: each member's
    instance holds what was uploaded through that member's own prompt, and every member gets a prompt when anyone instantiates a
    graph that reads `input.body`. Subscribing or unsubscribing still resets the run controls.
+11. **Pasting a workspace-clipboard node into the MiniGraph Playground keeps scalar properties scalar.** The paste rebuilt the
+   node with `key[]=value` for every property, and the engine appends on the `[]` signature, so a pasted node's `skill`,
+   `description` and every other scalar arrived as a one-element list (`"skill": ["graph.math"]`), which the graph traveler
+   reads as the route `[graph.math]`. The paste now writes the node the way the engine's own `edit node` prints it: `key=value`
+   for a scalar, one `key[]=element` line per list element, `path.key=value` for a nested map and `'''` around a multiline
+   value, through the same conversion and command builder as the node editor and undo. A node the grammar cannot carry (an
+   empty list or map, a value containing `'''`, more than one type) is reported as "Paste failed" instead of being sent. The
+   webapp bundle is regenerated for both engines.
 
 ---
 ## Version 4.12.20, 10/1/2026
