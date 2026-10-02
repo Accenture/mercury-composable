@@ -609,6 +609,28 @@
   with a quoted string literal was measured silently evaluating `false`). Relates [[clean-knowledge-design-over-engine-coverage]].
   <!-- id: graph-js-deprecated-removal | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: working | origin: 2026-09-30-170759 -->
 
+- **The LLM helper is not engine code: it is a Claude-only function host in the Python and Node packs, and the Java engine only points at it (PR #488, squash `7c938ef1`; Eric's rulings,
+  2026-10-01).** `examples/llm-helper` in mercury-python (#38) and mercury-nodejs (#106) serves `llm.chat`, `llm.stream` and `llm.health` on the Anthropic SDK; the engine stays LLM-free and holds no
+  credential, and the playground's `support-triage` graph and the `/api/llm/stream` relay (`LlmStreamRelay`) reach the helper through `event-over-http.yaml` by route name. **The evidence is
+  `docs/test-reports/llm-helper-certification.md`** (byte-identical with the Rust engine's, and registered in the three places the AI contract snapshot needs: the pom include set, `skill/files.list`
+  and `SkillSnapshotTest`'s fixed extras): Java and Rust in front of both helpers through a Layer 1 streaming service, a Layer 2 flow and two Layer 3 graphs, with real Claude calls (40 results per
+  pair, 124 model calls, no failed check). Every batch the helper forwarded reached the edge as its own frame (50 to 101 per stream, 4 to 10 ms of drift) — Eric's rule is that progressive tokens are
+  never buffered into one message — the cadence is the API's and depends on the model (Haiku 4.5 continuous, Opus 5.5 bursts about every 600 ms), the error contract holds on the real SDKs, and all 32
+  traces that touched a helper rebuild as one tree ([[connected-edge-spans]]). The deploy lane did the deploying ([[graph-manifest-list-later-wins]]). **Opus 5.5 stays the helper's default**
+  (Eric): it thinks before it answers and its thinking tokens count against `max_tokens`, so the triage graph now asks for 2000 tokens (512 before) and Haiku 4.5 is the documented choice for smooth
+  rendering; a 48-call probe found no empty result at the old budgets either, so the change removes the question. AWS Bedrock through IAM is the helper's planned second backend (a thread in the
+  packs). Rust twin: mercury #342.
+  <!-- id: llm-helper-certification-java | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-001806 -->
+
+- **The playground example's flows config is sample configuration that duplicates the engine's, kept on purpose, and tutorial 13 is deployed there (Eric, 2026-10-01; PR #489, squash `333f78ce`).**
+  The engine module ships `flows.yaml`, `flows/graph-executor.yml` and `flows/flow-11.yml`; `examples/minigraph-playground` carries byte-identical copies in `src/main/resources` (and one more identical trio
+  in `src/test/resources`). **Proved by removal, not assumed:** deleting all six left the example's whole suite green, because the classpath falls through to the engine jar's file per file, while a `flows.yaml`
+  that omits `flow-11.yml` failed exactly `GraphTests.tutorial11` — what tutorial 11 needs is the manifest LISTING, not a file copy. Eric ruled `flow-11.yml` is NOT an orphan (tutorial 11's help page tells
+  the reader to review `flows.yaml` and `flow-11.yml` in the resources folder), so the example keeps them; the test-resource trio is a harmless duplicate. **Tutorial 13** had been missing from the example's
+  manifest since the CompileGraph gate (#240), when it needed a fixture function; it became an `async.http.request` client of the app's own dev mock in #267 and nobody revisited the list. It is listed now, and
+  `GraphTests` runs it and its unknown-profile error (23 tests). The Rust example and template got the same flows config in mercury #343. Follow-up: [[flow-11-doc-label]]. Relates [[minigraph-dev-mode-app-shape]].
+  <!-- id: playground-example-flows-are-sample-config | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-001806 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
@@ -750,7 +772,8 @@
   E0–E4 experiment plan). Direction ratified by Eric 2026-08-25. **E0 DONE 2026-09-01**
   ([[ot-agent-orchestration-e0]]): support-triage graph + llm.chat/llm.stream python AI
   nodes + progressive token rendering out the engine SSE edge — the first live
-  graph.task→wrapper drive, real Gemini verdicts, one distributed trace. Enterprise LLM
+  graph.task→wrapper drive, real Gemini verdicts, one distributed trace. **Re-driven 2026-10-01 with real Claude through both engines and both
+  packs ([[llm-helper-certification-java]]); the AI nodes are now a Claude-only helper app in the packs.** Enterprise LLM
   access is platform-mediated only (Bedrock/Vertex/Foundry — concept doc Q2); the
   Anthropic SDK covers all three, so the switch is client-construction only — re-drive
   waits on Eric's cloud account. **Q8 second half: the TRANSPORT delivered 2026-09-12** —
