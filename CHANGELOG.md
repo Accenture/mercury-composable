@@ -29,10 +29,12 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    calls. It shows that every token batch the helper forwards reaches the engine edge as its own frame, that the cadence of
    progressive rendering is the API's and differs by model (Haiku streams continuously, Opus in bursts about every 600 ms),
    and that the error contract holds on the real SDKs.
+3. The AI agent guide's boilerplate manifest no longer calls `flows/flow-11.yml` a support-triage flow: it is Tutorial 11's echo
+   flow, the `graph.extension` target (`flow://flow-11`), and a flow's `flows.yaml` entry goes with its file.
 
 ### Fixed
 
-3. **The MiniGraph Playground example deploys tutorial 13.** The example's manifest (`graphs.yaml`) listed tutorials 1 to 12 and 14.
+4. **The MiniGraph Playground example deploys tutorial 13.** The example's manifest (`graphs.yaml`) listed tutorials 1 to 12 and 14.
    Tutorial 13 was left out while it needed a test fixture function, and stayed out after it became an `async.http.request` client
    of the app's own dev mock endpoint (Java PR #267). All fourteen tutorials and `support-triage` now compile (15 graphs) and answer
    at `POST /api/graph/{graph_id}`; `GraphTests` runs tutorial 13 and its unknown-profile error. The README's "model answers for

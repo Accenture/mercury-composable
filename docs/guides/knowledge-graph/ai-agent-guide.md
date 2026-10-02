@@ -326,7 +326,7 @@ browser notices).
 | `application.properties` (main + test) | App name, `rest.server.port` (use a distinct test port), `rest.automation=true`, `app.env=dev` for the Playground | keep (edit values) |
 | `rest.yaml` | REST routes | keep — trim **by profile, below** |
 | `flows.yaml` + `flows/graph-executor.yml` | Binds `POST /api/graph/{graph_id}` to the graph executor | keep |
-| `flows/flow-11.yml` and other example flows | Support-triage demo flows | drop unless used |
+| `flows/flow-11.yml` and other example flows | Tutorial 11's echo flow, the `graph.extension` target (`flow://flow-11`), and any other demo flow; a flow's `flows.yaml` entry goes with its file | drop unless used |
 | `graphs.yaml` + `graph/*.json` | Your deployed graph models — list every id you serve | replace with yours |
 | Main class annotated `@MainApplication` | App entry point | keep (rename) |
 
