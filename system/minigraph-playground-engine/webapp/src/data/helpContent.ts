@@ -4,10 +4,10 @@ import { JSON_PATH_OVERVIEW } from './jsonPathHelpContent';
  * All help markdown files bundled as raw strings via Vite's import.meta.glob.
  *
  * The path is relative to THIS file (src/data/helpContent.ts).
- * It resolves to extensions/minigraph-playground-engine/src/main/resources/help/
+ * It resolves to system/minigraph-playground-engine/src/main/resources/help/
  *
  * `eager: true`   — all files are included in the bundle; no async loading needed
- *                   (18 files, each < 10 KB — total overhead is negligible).
+ *                   (the pages are plain-text markdown, so the added bundle size is small).
  * `query: '?raw'` — each file is imported as a plain string, not a JS module.
  */
 const RAW_FILES = import.meta.glob(
