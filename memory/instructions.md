@@ -35,7 +35,8 @@ system/
   event-script-engine      ← compiles & executes YAML event flows
   rest-spring-4            ← Spring Boot integration (REST adapter, autoconfig; Boot 3 lane retired 2026-08-27)
   mini-scheduler           ← scheduled task support
-  minigraph-playground-engine
+  minigraph-playground-engine ← MiniGraph engine + the Playground webapp (webapp/: ONE source for both
+                             engines, `npm run release:all`; docs in webapp/docs/; its memory is this root's)
   minimalist-kafka         ← opt-in Kafka library: flow adapter (inbound) + notification (outbound)
   twin-kafka               ← a SECOND Kafka cluster on top of minimalist-kafka (dual-cluster bridge)
   ai-contract-provider     ← serves the version-matched AI documentation contract

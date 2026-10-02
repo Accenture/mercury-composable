@@ -631,6 +631,20 @@
   `GraphTests` runs it and its unknown-profile error (23 tests). The Rust example and template got the same flows config in mercury #343. Follow-up: [[flow-11-doc-label]]. Relates [[minigraph-dev-mode-app-shape]].
   <!-- id: playground-example-flows-are-sample-config | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-001806 -->
 
+- **The Playground webapp has one source and two deploy targets, and the help pages are one consolidated set (Eric, 2026-10-02; PR #496, the Rust twin mercury #347).** The webapp "graduated": its scoped
+  memory bank, steering files and pre-graduation specs under `system/minigraph-playground-engine/webapp/` are retired, its technical documentation is regenerated from the code in `webapp/docs/` (README,
+  architecture, protocol, components, graph-view, hooks-and-state, build-test-deploy, extending; 1,336 lines), and its session memory and open threads live at this root. The Rust repo's verbatim copy
+  (`crates/knowledge-graph/webapp/`, K7 of the port spec) is retired: `npm run release:rust` in the webapp (or `release:all`, both engines from one build) deploys the bundle to
+  `../../../../mercury/crates/knowledge-graph/resources/` (`MERCURY_RUST_REPO` overrides; `scripts/targets.js` resolves the target and fails clearly when the repo is absent) and MIRRORS
+  `src/main/resources/help/` there, because the help is compiled into the bundle AND read by both engines at run time. `release` alone stays Java-only, so a contributor without the Rust checkout is
+  unaffected. **Why one help set (Eric's direction, my recommendation agreed):** the two sets had drifted on 38 of 42 pages (~3,700 lines) while only ONE fact was a real engine difference; the Rust
+  2026-07-19 rewrite (Syntax/Example/Notes) is the base, Java-only content kept, wording engine-neutral, differences stated in place (`graph.js` deprecated here, not registered in Rust). Three stale Java
+  claims fell out (`round()` "follows Math.round" — half up away from zero since #472; "an instance runs once" — `run` repeats and `model.*` persists; tutorial 12 titled "Tutorial 10") and one Rust claim
+  (`session reset` keeps the draft — both engines clear it). The bundles are byte-identical on both engines (`index-lxX8FQ68`). **Found, not fixed:** the workspace clipboard paste writes scalars as
+  `key[]=value`, which the engine stores as one-element lists (`skill` included; verified on the Java engine). Extends [[help-edit-needs-bundle-release]]; resolves the three Rust-twin threads when #347
+  merges. Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
+  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-175751 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
@@ -765,9 +779,11 @@
   else catches drift: the bundle was last regenerated on 2026-09-23 (#456) while four `help graph-math.md` edits (#462 `CONDITION`, #467 the closed dialect, #471 `DECIMAL`, #480 the money loop) landed after it,
   and the Playground listed five statement types until #491. **The build is reproducible** (Node 22.12 with one harmless `react-router` engines warning): a rebuild of the unchanged sources reproduced every other
   committed file byte for byte, so a regenerated diff reads as the help text plus the `sourceMappingURL` comment (110 lines added, 8 removed in #491). The same PR added `DECIMAL` and `CONDITION` to the page's
-  property list (the Rust help lists them) and corrected `webapp/memory/instructions.md`, the scoped home of this rule. **Any webapp source edit needs the release, a comment included:** the map embeds every source file, so it changes while the
+  property list (the Rust help lists them) and corrected the webapp's scoped instructions (that scoped memory bank was retired on 2026-10-02; the rule's home is this fact and `webapp/docs/build-test-deploy.md`). **Any webapp source edit needs the release, a comment included:** the map embeds every source file, so it changes while the
   chunk and its hash stay put if only comments changed (#492: two comments in `helpContent.ts`, one map line). The regenerated bundle ships in the engine jar of the next release. NOT built: a CI step that
-  rebuilds the bundle and compares it with the committed one, feasible because the build is reproducible; Eric has not asked for it. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout: only the entry
+  rebuilds the bundle and compares it with the committed one, feasible because the build is reproducible; Eric has not asked for it. **Since 2026-10-02 the release has two targets**
+  ([[playground-webapp-single-source]]): `npm run release:rust` or `release:all` also deploys the bundle and a mirror of the help pages into the sibling Rust repo, so a help edit is done when BOTH repos
+  carry the result. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout: only the entry
   page moved out of `public/`).
   <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-015208 -->
 

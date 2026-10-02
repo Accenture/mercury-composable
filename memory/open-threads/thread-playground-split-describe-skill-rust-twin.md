@@ -5,4 +5,5 @@
   then a Rust bundle release (`npm run release`; the Rust repo ignores source maps). The lesson to carry over: a saved drag beat the default sizes at mount, so the
   split is no longer persisted (the webapp fact `webapp-panel-split-not-persisted`). origin: 2026-10-02-031835.
   → serves: vision-mercury-composable
+  **Update 2026-10-02:** resolved by the single-source deploy, not a port: mercury #347 removes the Rust copy and carries the Java bundle with both fixes (PR #496, [[playground-webapp-single-source]]); closes when it merges.
   <!-- id: playground-split-describe-skill-rust-twin | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-031835 -->
