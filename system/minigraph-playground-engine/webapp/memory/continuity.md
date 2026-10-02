@@ -5,7 +5,7 @@
 - **scope:** MiniGraph Playground React/Vite webapp
 - **root:** `system/minigraph-playground-engine/webapp`
 - **served bundle:** `system/minigraph-playground-engine/src/main/resources/public`
-- **last_session:** 2026-09-10 | agent: Claude Code (2026-09-10-033122)
+- **last_session:** 2026-10-02 | agent: Claude Code (2026-10-02-032130)
 
 ## Current Facts
 
@@ -167,14 +167,12 @@
   dry-run, not adding; the awaiting-input disabled-reason says "mock graph input panel") and the
   manual console-row re-open ("⬆️ Upload Mock Data"). Slot priority: node editor > upload panel >
   console — a hidden upload session survives and reappears when the editor closes. **Left-slot
-  default widths (Eric's spec): console 40%, node editor 30%, mock input 30%** — applied on every
-  slot-content change via the react-resizable-panels v4 imperative `panelRef.resize()` (deferred
-  one rAF for closed→open mounts); `useDefaultLayout` uses `onlySaveAfterUserInteractions: true`
-  so imperative resizes never overwrite the user's persisted drag, and `panelLayoutKey` carries
-  the slot mode so the graph re-fits on width changes. The layout storage key is VERSIONED
-  (`-panel-split-v2`, 2026-09-09): a persisted layout beats `defaultSize` at mount and the mode
-  resize only fires on changes, so pre-defaults splits had to be orphaned — bump the suffix again
-  if the default scheme ever changes.
+  default widths: node editor 30%, mock input 30% (Eric's spec), console one third since
+  2026-10-01 (40% before)** — applied on every slot-content change via the react-resizable-panels
+  v4 imperative `panelRef.resize()` (deferred one rAF for closed→open mounts), and `panelLayoutKey`
+  carries the slot mode so the graph re-fits on width changes. The split is no longer persisted,
+  so the versioned `-panel-split-v2` key and its bump-on-change rule are retired: see
+  [[webapp-panel-split-not-persisted]].
   <!-- id: webapp-mock-input-inplace-panel | created: 2026-09-09 | last_used: 2026-09-09 | uses: 2 | tier: working | origin: 2026-09-09-223126 -->
 
 - **The live session graph survives temp-model expiry — restore it, don't toast (2026-09-09,
@@ -207,6 +205,32 @@
   entirely for single-tab playgrounds. Stale persisted tab selections are already normalized by
   `normalizeRightTab`, so removing tabs from a config is safe without migrations.
   <!-- id: webapp-jsonpath-payload-only | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: working | origin: 2026-09-09-223126 -->
+
+- **The panel split opens at its defaults on every page load and is never persisted (2026-10-01,
+  Eric's report; branch `fix/playground-console-third-describe-skill-help`, awaiting merge).**
+  Console one third, right panel the complement, clipboard sidebar 20%, node editor and mock input
+  30%. `useDefaultLayout` is gone: a saved layout beats `defaultSize` at mount while the per-mode
+  resize fires only on slot-content changes, so a drag saved in an earlier session pinned the
+  startup (60% on 2026-09-09, about 70% on 2026-10-01) until a console toggle reset it. Eric read
+  it as a wrong default both times, and a storage-key bump fixes one browser only until its next
+  drag. A drag now holds until the slot content changes or the page reloads. To reproduce such a
+  report, plant `react-resizable-panels:/-panel-split-v2` = `{"_r_1_":71,"_r_3_":29}` in a fresh
+  browser on the old bundle: the panel ids are React `useId` values, stable for the same tree.
+  Pinned by the `Playground panel split` block in `PlaygroundHelp.test.tsx`. Replaces the
+  persisted-split rule of [[webapp-mock-input-inplace-panel]].
+  <!-- id: webapp-panel-split-not-persisted | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-032130 -->
+
+- **`describe skill {route}` for a built-in skill is a help command: its page opens in the help
+  panel (2026-10-01, Eric's direction; same branch).** Both engines answer it with the page
+  `help {route}`, each `.` replaced by `-` and lowercased (Java `GraphCommandService.describeSkill`,
+  Rust `handle_describe`), so `extractCommandHelpTopic` (`utils/helpTopic.ts`) maps the exact
+  three-word form the same way, and `resolveBundledHelpTopic` serves both the send path
+  (`handleLocalCommand`: a local echo, no round-trip) and the echo path (`useAutoHelpNavigate`, so
+  a collaborator's or the companion's command opens the same page). Keep the mapping mirrored with
+  the engines. `describe graph` (a Graph-tab link), `describe node` and `describe connection` stay
+  console answers, and a skill without a bundled page still goes to the backend. Extends
+  [[webapp-playground-help-profiles]].
+  <!-- id: webapp-describe-skill-help-panel | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-032130 -->
 
 ## Open Threads
 
