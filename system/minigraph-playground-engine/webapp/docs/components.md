@@ -59,7 +59,7 @@ Looks up its events in `classificationMap.get(msgId)` and renders by kind:
 | graph link | the 🕸 icon; the row is a `role="button"` ("Click to load graph in Graph View") that calls `onGraphLink` |
 | mock-upload invitation | ⬆ icon; a "⬆ Upload JSON…" button re-opens the upload panel for that path; a ✅ "Upload succeeded" badge once the path is in `successfulUploadPaths` |
 | large payload | ⬇ icon (the content itself is appended as a separate JSON row by `useLargePayloadDownload`) |
-| lifecycle JSON | the type icon (ℹ️ info, ❌ error, 👋 welcome) and the timestamp |
+| lifecycle JSON | the type icon (ℹ️ info, ❌ error, 👋 welcome) and the local time as `HH:MM:SS` (the full start time is the `session` command's) |
 | anything else | plain text (markdown candidates are not rendered as markdown here; the help panel renders markdown) |
 
 Per-row hover buttons: copy (📄 → ✅ for two seconds, via `useCopyToClipboard`), ➡️ "send to

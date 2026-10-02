@@ -40,7 +40,8 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    only (no console command is sent, and a replayed invitation line never opens a form), and Run runs the instance with whatever
    input it holds, so a graph that reads no input (tutorial 1) runs right after Instantiate. The Upload tooltip says how many
    `input.body` paths the graph reads. The multi-select hint on the canvas is gone: Shift/Ctrl/Cmd-click and Shift-drag are the
-   common convention and need no reminder. The bundle is regenerated for both engines.
+   common convention and need no reminder, and the console's connection rows show the local time as `HH:MM:SS` (the `session`
+   command still shows the full start time). The bundle is regenerated for both engines.
 
 ### Documentation
 
