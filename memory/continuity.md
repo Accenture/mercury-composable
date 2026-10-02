@@ -463,6 +463,19 @@
   once the UI has one source). Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
   <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-02 | uses: 2 | tier: active | origin: 2026-10-02-175751 -->
 
+- **The Playground's dry-run lifecycle is three explicit steps - Instantiate, Upload (optional), Run - and a mock-data upload loads every member's instance (Eric's design, 2026-10-02;
+  PR #498, the Rust twin mercury #349, Increment 154).** In a shared session one member's Instantiate used to open the "Upload Mock Data" form on every member's screen: the UI sent
+  `upload mock data` as soon as the instance existed, the engine replays every command to every member, and each member's own invitation line opened its panel. Now Instantiate only
+  creates the instance (and a fresh one while one exists), the toolbar's Upload opens the form for the clicking session's own `/api/mock/{sessionId}` with no console command (an
+  `upload.invitation` line never opens a panel by itself; `useAutoMockUpload` is gone), and Run runs with whatever input the instance holds - tutorial 1 needs none. **Engine rule:**
+  `GraphCommandService.uploadContent` routes the payload through the command service as an `upload` event; the primary loads it and replays it into every subscriber's instance, a
+  subscriber's payload goes through the primary, every member's console prints `Mock data loaded into 'input.body' namespace`, and a session without an instance is refused (HTTP 400);
+  the Rust engine mirrors it (`commands::handle_upload`). **This reverses the same-day ruling that uploads stay per member** (2026-10-02-050449): a replayed `run` on another member's
+  instance had aborted without the data. The multi-select hint left the canvas in the same PR. Pinned by `SessionManagementTest.mockUploadLoadsEveryMemberInstanceTest` and the Rust
+  `mock_upload_loads_every_member_instance`. Extends [[playground-session-broker]] (equal partners); applies [[help-edit-needs-bundle-release]] and
+  [[playground-webapp-single-source]] (one bundle, deployed to both engines).
+  <!-- id: playground-three-step-run-controls | created: 2026-10-02 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-232248 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
