@@ -640,7 +640,7 @@
   unaffected. **Why one help set (Eric's direction, my recommendation agreed):** the two sets had drifted on 38 of 42 pages (~3,700 lines) while only ONE fact was a real engine difference; the Rust
   2026-07-19 rewrite (Syntax/Example/Notes) is the base, Java-only content kept, wording engine-neutral, differences stated in place (`graph.js` deprecated here, not registered in Rust). Three stale Java
   claims fell out (`round()` "follows Math.round" — half up away from zero since #472; "an instance runs once" — `run` repeats and `model.*` persists; tutorial 12 titled "Tutorial 10") and one Rust claim
-  (`session reset` keeps the draft — both engines clear it). The bundles are byte-identical on both engines (`index-lxX8FQ68`). **Found there and fixed the same day (PR #497, deployed to Rust by mercury #348):** the workspace clipboard paste wrote scalars as
+  (`session reset` keeps the draft — both engines clear it). The bundles are byte-identical on both engines (`index-lxX8FQ68`). **Found there and fixed the same day (PR #497 squash `029e5a9f`, deployed to Rust by mercury #348 merge `67a31296`, both MERGED 2026-10-02):** the workspace clipboard paste wrote scalars as
   `key[]=value`, which the engine stores as one-element lists (`skill` included); the paste now reuses the node editor's conversion and the authoring builder, the one serialization boundary, and a node
   the grammar cannot carry is refused with "Paste failed" (bundle `index-CN-KsNrA`). Extends [[help-edit-needs-bundle-release]]; closed the three Rust-twin threads (a port twin of a UI change is a deploy
   once the UI has one source). Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
