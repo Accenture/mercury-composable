@@ -7,6 +7,12 @@ export interface ClipboardPastePlan {
   command: string;
 }
 
+/**
+ * Plan the paste of a clipped node into the current graph: `update node` when the alias already
+ * exists there, `create node` otherwise. The stored connections are not replayed.
+ *
+ * Throws (from `buildNodeCommand`) when the clipped node cannot be written as command text.
+ */
 export function buildClipboardPastePlan(
   item: ClipboardItemRecord,
   graphData: MinigraphGraphData | null,

@@ -158,13 +158,16 @@ and recreates the database (clips are expendable). Sorting (`sortItems.ts`) is d
 recent / type / alias / source / connections / a property key, natural and case-insensitive,
 missing values last. Drag-and-drop carries only the item id under the MIME type
 `application/x-minigraph-clipboard-item`. Paste (`paste.ts` + `commandBuilder.ts`) rebuilds a
-`create node` (or `update node` when the alias exists in the current graph) with `with type
-{types[0]}` and one `key[]=value` line per property or array element; the stored connections are
-not replayed. **Known defect:** the `[]` suffix is used for scalars too, and the engine's
-`setElement("key[]", v)` appends, so a pasted node's scalar properties — `skill` included —
-arrive as one-element lists (verified on the Java engine: `skill[]=graph.math` stores
-`"skill": ["graph.math"]`, which the traveler reads as the route `[graph.math]`). The builder
-should write `key=value` for scalars.
+`create node` (or `update node` when the alias exists in the current graph) through the node
+editor's conversion (`createEditNodeFormState`) and the authoring builder, so the text has the
+shape the engine's own `edit node` prints: `with type {types[0]}`, then one `key=value` line per
+scalar, one `key[]=element` line per list element in list order, one `path.key=value` line per
+leaf of a nested map, keys sorted as `edit node` sorts them, and a value containing a newline
+wrapped in `'''`. (Until 2026-10-02 the builder wrote `key[]=value` for scalars too, and the
+engine's `setElement("key[]", v)` appends, so a pasted `skill` arrived as a one-element list.) A
+node the grammar cannot carry (an empty list or map, a value containing `'''`, more than one
+type, a reserved alias) makes the plan throw and the Playground shows "Paste failed: …"; the
+stored connections are not replayed.
 
 ## Everything the app persists
 

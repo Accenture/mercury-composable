@@ -52,5 +52,20 @@ describe('buildClipboardPastePlan', () => {
     const plan = buildClipboardPastePlan(item, graphData);
 
     expect(plan.command).toBe(buildNodeCommand('update', item.node));
+    expect(plan.command).toBe([
+      'update node fetchpersondata',
+      'with type Fetcher',
+      'with properties',
+      'lines[]=one',
+      'lines[]=two',
+      'skill=graph.fetch',
+    ].join('\n'));
+  });
+
+  it('throws when the clipped node cannot be written as a command', () => {
+    const item = makeClipboardItem('fetchpersondata');
+    item.node.properties = { description: "contains ''' which the grammar cannot escape" };
+
+    expect(() => buildClipboardPastePlan(item, null)).toThrow(/cannot be pasted/);
   });
 });

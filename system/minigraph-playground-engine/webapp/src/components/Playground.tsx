@@ -379,7 +379,13 @@ export default function Playground({ config }: PlaygroundProps) {
   } | null>(null);
 
   const handlePasteToInput = useCallback((item: ClipboardItemRecord) => {
-    const plan = buildClipboardPastePlan(item, graphData);
+    let plan;
+    try {
+      plan = buildClipboardPastePlan(item, graphData);
+    } catch (err) {
+      addToast(`Paste failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
+      return;
+    }
     ws.setCommand(plan.command);
     addToast(`${plan.verb === 'create' ? 'Create' : 'Update'} command for "${item.node.alias}" pasted to input`, 'info');
   }, [graphData, ws.setCommand, addToast]);
@@ -391,7 +397,13 @@ export default function Playground({ config }: PlaygroundProps) {
       return;
     }
 
-    const plan = buildClipboardPastePlan(item, graphData);
+    let plan;
+    try {
+      plan = buildClipboardPastePlan(item, graphData);
+    } catch (err) {
+      addToast(`Paste failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
+      return;
+    }
     if (!ws.sendRawText(plan.command)) {
       addToast('Could not send clipboard paste command because the WebSocket is not open.', 'error');
       return;
