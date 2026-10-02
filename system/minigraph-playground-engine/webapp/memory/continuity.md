@@ -242,7 +242,7 @@
 
 - **The run controls work in every session: a subscriber instantiates, uploads its mock input and runs
   as an equal partner (2026-10-02, Eric's bug report and ruling; branch
-  `fix/playground-subscriber-run-controls`, commit `0fafd86a`, PR opened by Eric).** Eric's design: the
+  `fix/playground-subscriber-run-controls`, commit `0fafd86a`, PR #495).** Eric's design: the
   primary and its subscribers, human operators or an AI companion, are equal partners for multi-party
   human-AI collaboration; anyone can enter any command except `session`, which is private to each user,
   and every member sees the others' actions. Both engines already run a subscriber's command through the

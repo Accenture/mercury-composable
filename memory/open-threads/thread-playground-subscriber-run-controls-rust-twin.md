@@ -1,5 +1,5 @@
 - [ ] **(twin) The Rust Playground webapp still disables Instantiate and Run in a subscribed session.** The Java fix is on branch
-  `fix/playground-subscriber-run-controls` (commit `0fafd86a`; Eric opens the PR): `useGraphRunWorkflow` no longer gates on `isPrimary` and resets the run only
+  `fix/playground-subscriber-run-controls` (commit `0fafd86a`, PR #495): `useGraphRunWorkflow` no longer gates on `isPrimary` and resets the run only
   when the session subscribes or unsubscribes, `Playground.tsx` passes `sessionCollaboration.isPrimary`, two tests replace the gate test, and the webapp README
   and technical documentation drop the host-only rule. In mercury, `crates/knowledge-graph/webapp/src/hooks/useGraphRunWorkflow.ts` was byte-identical to Java
   `main` before the fix, and the Rust engine forwards and replays a subscriber's commands the same way (`commands.rs`), so the twin is a port of those files plus
