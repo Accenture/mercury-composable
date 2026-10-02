@@ -50,7 +50,6 @@ vi.mock('../../GraphToolbar/GraphToolbar', () => ({
 
 vi.mock('../GraphContextMenu', () => ({ default: () => null }));
 vi.mock('../NodeContextMenu', () => ({ default: () => null }));
-vi.mock('../GraphMultiSelectTip', () => ({ default: () => null }));
 vi.mock('../GraphMinimap', () => ({
   default: ({ children }: { children?: ReactNode }) => (
     <div data-testid="rf-controls">{children}</div>
@@ -86,6 +85,8 @@ describe('GraphView viewport controls composition', () => {
           phase: 'idle',
           canInstantiate: true,
           canRun: false,
+          canUpload: false,
+          onUpload: vi.fn(),
           disabledReason: '',
           onInstantiate: vi.fn(),
           onRun: vi.fn(),

@@ -2,92 +2,60 @@
 
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { ProtocolBus } from '../../protocol/bus';
 import { useMockUploadPanel } from '../useMockUploadPanel';
 
-describe('useMockUploadPanel path ownership', () => {
-  it('closes an invalidated workflow path without closing a different manual upload panel', () => {
-    const { result } = renderHook(() => useMockUploadPanel({
-      bus: new ProtocolBus(),
-      addToast: vi.fn(),
-    }));
+describe('useMockUploadPanel', () => {
+  it('opens only on an explicit request and closes by exact path', () => {
+    const { result } = renderHook(() => useMockUploadPanel({ addToast: vi.fn() }));
 
-    act(() => result.current.handleOpenUploadPanel('/api/mock/manual'));
-    act(() => expect(result.current.handleCloseUploadPath('/api/mock/workflow')).toBe(false));
-    expect(result.current.uploadPanelPath).toBe('/api/mock/manual');
+    expect(result.current.uploadPanelPath).toBeNull();
+    act(() => result.current.handleOpenUploadPanel('/api/mock/ws-1-1'));
+    expect(result.current.uploadPanelPath).toBe('/api/mock/ws-1-1');
 
-    act(() => expect(result.current.handleCloseUploadPath('/api/mock/manual')).toBe(true));
+    act(() => expect(result.current.handleCloseUploadPath('/api/mock/other')).toBe(false));
+    expect(result.current.uploadPanelPath).toBe('/api/mock/ws-1-1');
+
+    act(() => expect(result.current.handleCloseUploadPath('/api/mock/ws-1-1')).toBe(true));
     expect(result.current.uploadPanelPath).toBeNull();
   });
 
-  it('can open a later invitation after an invalidated invitation is opened and closed in one event', () => {
-    const bus = new ProtocolBus();
-    const { result } = renderHook(() => useMockUploadPanel({
-      bus,
-      addToast: vi.fn(),
-    }));
-    const offInvalidate = bus.on('upload.invitation', event => {
-      result.current.handleCloseUploadPath(event.uploadPath);
-    });
+  it('queues a second request behind the open panel and advances on close', () => {
+    const { result } = renderHook(() => useMockUploadPanel({ addToast: vi.fn() }));
 
-    act(() => bus.emit({
-      kind: 'upload.invitation',
-      msgId: 1,
-      raw: 'You may upload JSON payload -> POST /api/mock/stale',
-      uploadPath: '/api/mock/stale',
-    }));
-    expect(result.current.uploadPanelPath).toBeNull();
+    act(() => result.current.handleOpenUploadPanel('/api/mock/first'));
+    act(() => result.current.handleOpenUploadPanel('/api/mock/second'));
+    expect(result.current.uploadPanelPath).toBe('/api/mock/first');
 
-    offInvalidate();
-    act(() => bus.emit({
-      kind: 'upload.invitation',
-      msgId: 2,
-      raw: 'You may upload JSON payload -> POST /api/mock/current',
-      uploadPath: '/api/mock/current',
-    }));
-    expect(result.current.uploadPanelPath).toBe('/api/mock/current');
-  });
-
-  it('queues a later invitation instead of losing it behind an open panel', () => {
-    const bus = new ProtocolBus();
-    const { result } = renderHook(() => useMockUploadPanel({
-      bus,
-      addToast: vi.fn(),
-    }));
-
-    act(() => result.current.handleOpenUploadPanel('/api/mock/manual'));
-    act(() => bus.emit({
-      kind: 'upload.invitation',
-      msgId: 1,
-      raw: 'You may upload JSON payload -> POST /api/mock/workflow',
-      uploadPath: '/api/mock/workflow',
-    }));
-
-    expect(result.current.uploadPanelPath).toBe('/api/mock/manual');
     act(() => result.current.handleCloseUploadPanel());
-    expect(result.current.uploadPanelPath).toBe('/api/mock/workflow');
+    expect(result.current.uploadPanelPath).toBe('/api/mock/second');
     act(() => result.current.handleCloseUploadPanel());
     expect(result.current.uploadPanelPath).toBeNull();
   });
 
-  it('can invalidate a queued workflow invitation without closing the current panel', () => {
-    const bus = new ProtocolBus();
-    const { result } = renderHook(() => useMockUploadPanel({
-      bus,
-      addToast: vi.fn(),
-    }));
+  it('can drop a queued request without closing the current panel', () => {
+    const { result } = renderHook(() => useMockUploadPanel({ addToast: vi.fn() }));
 
-    act(() => result.current.handleOpenUploadPanel('/api/mock/manual'));
-    act(() => bus.emit({
-      kind: 'upload.invitation',
-      msgId: 1,
-      raw: 'You may upload JSON payload -> POST /api/mock/workflow',
-      uploadPath: '/api/mock/workflow',
-    }));
-    act(() => expect(result.current.handleCloseUploadPath('/api/mock/workflow')).toBe(true));
+    act(() => result.current.handleOpenUploadPanel('/api/mock/first'));
+    act(() => result.current.handleOpenUploadPanel('/api/mock/second'));
+    act(() => expect(result.current.handleCloseUploadPath('/api/mock/second')).toBe(true));
 
-    expect(result.current.uploadPanelPath).toBe('/api/mock/manual');
+    expect(result.current.uploadPanelPath).toBe('/api/mock/first');
     act(() => result.current.handleCloseUploadPanel());
     expect(result.current.uploadPanelPath).toBeNull();
+  });
+
+  it('records a successful upload for the open path, closes the panel and toasts', () => {
+    const addToast = vi.fn();
+    const { result } = renderHook(() => useMockUploadPanel({ addToast }));
+
+    act(() => result.current.handleOpenUploadPanel('/api/mock/ws-1-1'));
+    act(() => result.current.handleUploadSuccess('{"message":"Content uploaded"}'));
+
+    expect(result.current.uploadPanelPath).toBeNull();
+    expect(result.current.successfulUploadPaths.has('/api/mock/ws-1-1')).toBe(true);
+    expect(addToast).toHaveBeenCalledWith('Mock data uploaded successfully ✓', 'success');
+
+    act(() => result.current.resetSuccessfulPaths());
+    expect(result.current.successfulUploadPaths.size).toBe(0);
   });
 });

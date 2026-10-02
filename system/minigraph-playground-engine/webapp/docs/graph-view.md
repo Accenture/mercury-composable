@@ -114,7 +114,7 @@ What it renders:
   remount. **Ctrl+M** toggles it while the Graph tab is active (Control, not Cmd, on macOS; not
   while typing in a field).
 - The empty state ("No graph data yet." + a **Create Node** button when authoring is supported;
-  disabled with "Connect WebSocket to create a node." while offline), the multi-select tip, the
+  disabled with "Connect WebSocket to create a node." while offline), the
   click-to-connect banner, the refresh spinner and the "Drop to paste workspace node" overlay.
 - The three context menus (below) and a keyed `GraphViewErrorBoundary`: a transform error shows
   "Graph could not be rendered." and reports to `onRenderError` from an effect, never from inside
@@ -128,7 +128,8 @@ What it renders:
 
 - **Multi-select:** `Shift+drag` draws a box (`SelectionMode.Partial`); `Shift`/`Ctrl`/`Cmd` +
   click toggles nodes (nodes carry the class `nokey` so modifier clicks reach React Flow's
-  selection). A tip explains this once per mount, for 5 s or until the first interaction.
+  selection). No on-screen hint: the modifier-click convention is the common one (the tip was
+  removed on 2026-10-02).
 - **Node menu** (right-click): a multi-node target when the node belongs to a selection of two or
   more (aliases de-duplicated, case-insensitive), else a single-node target. Items: "Clip to
   Workspace", "Connect to…", "Edit Node", "Delete Node" (inline confirmation `Delete "alias"?`);

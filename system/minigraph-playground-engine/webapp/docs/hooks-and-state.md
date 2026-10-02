@@ -56,16 +56,21 @@ holds the types and `isValidSessionId`.
 
 ## The run workflow (`hooks/useGraphRunWorkflow.ts`, `graphRun/`)
 
-Phases: `idle → instantiating → (requesting-input → awaiting-input) → ready → running → idle`,
-plus `outcome-uncertain`. The hook mirrors acknowledged backend lines and serialises the same text
-commands a user would type (`GRAPH_RUN_COMMANDS`: `instantiate graph`, `upload mock data`, `run`).
+Phases: `idle → instantiating → ready → running → idle`, plus `outcome-uncertain`. The hook mirrors
+acknowledged backend lines and serialises the same text commands a user would type
+(`GRAPH_RUN_COMMANDS`: `instantiate graph`, `run`). The lifecycle is three explicit steps, and the
+middle one is optional (tutorial 1 needs no input):
 
-- **Instantiate** sends `instantiate graph` and waits for `graph.instance.created`. If the graph
-  references `input.body.*` (paths collected from node properties by `graphRun/graphInputPaths.ts`,
-  descriptive keys excluded — UI hints only), it then sends `upload mock data`, waits for the
-  `upload.invitation` line, claims that upload path and shows the mock-input panel
-  (`awaiting-input`); a successful upload for *that* path makes the run `ready`, cancelling it
-  resets. Without input paths it is `ready` at once.
+- **Instantiate** sends `instantiate graph` and waits for `graph.instance.created`; the run is then
+  `ready` (a toast says whether the graph reads `input.body.*` — paths collected from node
+  properties by `graphRun/graphInputPaths.ts`, descriptive keys excluded, UI hints only).
+  Instantiate stays enabled while `ready`: instantiating again starts a fresh instance.
+- **Upload** is a local action, not a workflow phase: `Playground` opens `MockUploadPanel` for this
+  session's own `/api/mock/{sessionId}` (the hints are the graph's `input.body.*` paths). No
+  console command is sent, so in a collaborative session only the member who clicked sees the
+  form; the engine loads the payload into every member's instance and confirms in every console.
+  A replayed `upload.invitation` line never opens a panel (that was the 2026-10-02 defect: one
+  member's Instantiate opened the form on every member's screen).
 - **Run** sends `run` and waits for `graph.run.terminal` (an abort toasts "Graph run aborted. See
   the console for details.").
 - A typed `instantiate graph` or `run` echo moves the phase too (Ready without inventing a
@@ -102,11 +107,13 @@ the canvas in [graph-view.md](graph-view.md) (state machine, matching, pacing, r
 
 ## Uploads and large payloads
 
-- **`useMockUploadPanel({ bus, addToast })`** — one panel open at a time; further
-  `upload.invitation` lines queue FIFO; `handleCloseUploadPath(path)` closes only the panel that
-  owns that exact path; a success adds the path to `successfulUploadPaths` (the ✅ badge on the
-  console row) and advances the queue; focus returns to the element that had it once the queue
-  drains. `useAutoMockUpload` is the bus subscription it composes.
+- **`useMockUploadPanel({ addToast })`** — one panel open at a time, opened only by an explicit
+  local action (the toolbar's Upload button, or the "⬆ Upload JSON…" button on a console
+  invitation row); a further open request queues FIFO behind the open panel;
+  `handleCloseUploadPath(path)` closes only the panel that owns that exact path; a success adds the
+  path to `successfulUploadPaths` (the ✅ badge on the console row) and advances the queue; focus
+  returns to the element that had it once the queue drains. There is no bus subscription: an
+  `upload.invitation` line by itself never opens the panel.
 - **`useMockUpload({ uploadPath, json, onSuccess, onError })`** — the POST (`application/json`,
   raw text), one `AbortController` per attempt, `isUploading` cleared before the callbacks.
 - **`useLargePayloadDownload({ bus, connected, appendMessage, addToast })`** — on

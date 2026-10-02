@@ -18,6 +18,7 @@
 
 package com.accenture.minigraph.playground;
 
+import com.accenture.minigraph.services.GraphCommandService;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
@@ -49,6 +50,7 @@ class SessionManagementTest {
     private static final Utility util = Utility.getInstance();
     private static final EventEmitter po = EventEmitter.getInstance();
     private static String httpTarget;
+    private static final String MOCK_DATA_LOADED = "Mock data loaded into 'input.body' namespace";
 
     @BeforeAll
     static void setup() {
@@ -470,6 +472,52 @@ class SessionManagementTest {
         po.send(fx.txPathB(), "session subscribe " + fx.sessionA());
         assertNotNull(waitForMessage(fx.messagesB(), "Subscribed to " + fx.sessionA(), 5));
         assertNotNull(waitForMessage(fx.messagesA(), fx.sessionB() + " subscribed to your session", 5));
+    }
+
+    @Test
+    void mockUploadLoadsEveryMemberInstanceTest() throws InterruptedException {
+        SessionFixture fx = createFixture();
+        if (fx == null) {
+            return;
+        }
+        try (fx) {
+            // B subscribes to A; A builds root -> end and instantiates. The instantiate is replayed
+            // into B's session, so both members hold a graph instance.
+            po.send(fx.txPathB(), "session subscribe " + fx.sessionA());
+            assertNotNull(waitForMessage(fx.messagesB(), "Subscribed to " + fx.sessionA(), 5));
+            po.send(fx.txPathA(), "create node root");
+            assertNotNull(waitForMessage(fx.messagesB(), "node root created", 5));
+            po.send(fx.txPathA(), "create node end");
+            assertNotNull(waitForMessage(fx.messagesB(), "node end created", 5));
+            po.send(fx.txPathA(), "connect root to end with relates");
+            assertNotNull(waitForMessage(fx.messagesB(), "node root connected to end", 5));
+            po.send(fx.txPathA(), "instantiate graph");
+            assertNotNull(waitForMessage(fx.messagesA(), "Graph instance created", 5));
+            assertNotNull(waitForMessage(fx.messagesB(), "Graph instance created", 5));
+            // the subscriber uploads: the payload is forwarded to the primary, loaded there and
+            // replayed into every subscriber's instance, each member's console confirming it
+            fx.messagesA().clear();
+            fx.messagesB().clear();
+            assertTrue(GraphCommandService.uploadContent(fx.sessionB(), Map.of("person_id", 100)));
+            assertNotNull(waitForMessage(fx.messagesA(), MOCK_DATA_LOADED, 5));
+            assertNotNull(waitForMessage(fx.messagesB(), MOCK_DATA_LOADED, 5));
+            assertEquals(Map.of("person_id", 100), GraphCommandService.downloadContent(fx.sessionA(), "input.body"));
+            assertEquals(Map.of("person_id", 100), GraphCommandService.downloadContent(fx.sessionB(), "input.body"));
+            // the primary uploads: every subscriber's instance follows
+            fx.messagesA().clear();
+            fx.messagesB().clear();
+            assertTrue(GraphCommandService.uploadContent(fx.sessionA(), Map.of("person_id", 200)));
+            assertNotNull(waitForMessage(fx.messagesA(), MOCK_DATA_LOADED, 5));
+            assertNotNull(waitForMessage(fx.messagesB(), MOCK_DATA_LOADED, 5));
+            assertEquals(Map.of("person_id", 200), GraphCommandService.downloadContent(fx.sessionA(), "input.body"));
+            assertEquals(Map.of("person_id", 200), GraphCommandService.downloadContent(fx.sessionB(), "input.body"));
+            // a run on either member's instance sees the shared mock input
+            fx.messagesB().clear();
+            po.send(fx.txPathB(), "inspect input.body");
+            assertNotNull(waitForMessage(fx.messagesB(), "200", 5));
+            // an unknown session or one without an instance is refused at the REST edge
+            assertFalse(GraphCommandService.uploadContent("ws-000000-0", Map.of("x", 1)));
+        }
     }
 
     private SessionFixture createFixture() throws InterruptedException {

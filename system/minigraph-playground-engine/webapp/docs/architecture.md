@@ -114,7 +114,7 @@ a wrong default). On viewports narrower than 768 px the group stacks vertically.
 | Payload editor text | `Playground` via `useLocalStorage` | `localStorage` per playground |
 | Live graph (`MinigraphGraphData`), selected right tab | `useGraphData` | memory; tab in `localStorage` |
 | Session id, subscriptions, pending session command | `useSessionCollaboration` | memory (reset on reconnect) |
-| Run phase (idle → instantiating → requesting-input → awaiting-input → ready → running) | `useGraphRunWorkflow` | memory |
+| Run phase (idle → instantiating → ready → running) | `useGraphRunWorkflow` | memory |
 | Authoring session (create / edit / connect form, phase, server message) | `useGraphAuthoring` | memory |
 | Undo stack of compensating commands | `useGraphUndo` | memory |
 | Help topic, help/console/sidebar open flags, minimap toggle, compact nodes | `useLocalStorage` keys | `localStorage` |

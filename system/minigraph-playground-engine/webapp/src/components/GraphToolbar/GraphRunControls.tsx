@@ -1,29 +1,26 @@
 import { useId, useState, type ReactNode } from 'react';
 import type { GraphRunPhase } from '../../hooks/useGraphRunWorkflow';
-import { InstantiateIcon, RunIcon } from '../../icons/GraphToolbarIcons';
+import { InstantiateIcon, RunIcon, UploadIcon } from '../../icons/GraphToolbarIcons';
 import styles from './GraphToolbar.module.css';
 
 export interface GraphRunControlsProps {
   phase: GraphRunPhase;
   canInstantiate: boolean;
+  canUpload: boolean;
   canRun: boolean;
   disabledReason: string;
+  /** The `input.body.*` paths the graph references — a hint on the Upload action only. */
+  inputBodyPaths?: string[];
   onInstantiate: () => void;
+  onUpload: () => void;
   onRun: () => void;
 }
 
-const SETUP_BUSY_PHASES = new Set<GraphRunPhase>([
-  'instantiating',
-  'requesting-input',
-  'awaiting-input',
-  'outcome-uncertain',
-]);
+const SETUP_BUSY_PHASES = new Set<GraphRunPhase>(['instantiating', 'outcome-uncertain']);
 
 function instantiateLabel(phase: GraphRunPhase): string {
   switch (phase) {
     case 'instantiating': return 'Instantiating…';
-    case 'requesting-input': return 'Preparing…';
-    case 'awaiting-input': return 'Input required';
     case 'outcome-uncertain': return 'Waiting…';
     default: return 'Instantiate';
   }
@@ -32,8 +29,6 @@ function instantiateLabel(phase: GraphRunPhase): string {
 function instantiateAriaLabel(phase: GraphRunPhase): string {
   switch (phase) {
     case 'instantiating': return 'Graph is being instantiated';
-    case 'requesting-input': return 'Graph input is being prepared';
-    case 'awaiting-input': return 'Graph is waiting for input';
     case 'outcome-uncertain': return 'Waiting for the backend graph outcome';
     default: return 'Instantiate graph';
   }
@@ -42,8 +37,6 @@ function instantiateAriaLabel(phase: GraphRunPhase): string {
 function busyTitle(phase: GraphRunPhase): string {
   switch (phase) {
     case 'instantiating': return 'Graph is being instantiated';
-    case 'requesting-input': return 'Preparing graph input';
-    case 'awaiting-input': return 'Complete or cancel the mock graph input panel';
     case 'running': return 'Graph is running';
     case 'outcome-uncertain': return 'Waiting for the backend graph outcome';
     default: return '';
@@ -54,6 +47,12 @@ function appendStatus(purpose: string, status: string): string {
   if (!status) return purpose;
   const statusSentence = /[.!?]$/.test(status) ? status : `${status}.`;
   return `${purpose} ${statusSentence}`;
+}
+
+function inputHint(inputBodyPaths: string[]): string {
+  if (inputBodyPaths.length === 0) return 'This graph does not read input.body, so uploading is optional';
+  const noun = inputBodyPaths.length === 1 ? 'path' : 'paths';
+  return `This graph reads ${inputBodyPaths.length} input.body ${noun}`;
 }
 
 interface ActionTooltipProps {
@@ -92,29 +91,46 @@ function ActionTooltip({ id, text, keyboardFallback, children }: ActionTooltipPr
   );
 }
 
+/**
+ * The three-step run lifecycle: Instantiate creates the instance (every
+ * member of a collaborative session gets one), Upload opens this session's
+ * mock-input form (optional — only the member who clicks it sees the form;
+ * the engine loads the payload into every member's instance), Run runs it.
+ */
 export default function GraphRunControls({
   phase,
   canInstantiate,
+  canUpload,
   canRun,
   disabledReason,
+  inputBodyPaths = [],
   onInstantiate,
+  onUpload,
   onRun,
 }: GraphRunControlsProps) {
   const tooltipId = useId();
   const instantiateTooltipId = `${tooltipId}-instantiate`;
+  const uploadTooltipId = `${tooltipId}-upload`;
   const runTooltipId = `${tooltipId}-run`;
   const setupBusy = SETUP_BUSY_PHASES.has(phase);
   const phaseTitle = busyTitle(phase);
   const instantiateStatus = disabledReason || phaseTitle || (
-    phase === 'ready' ? 'The graph is already instantiated' : ''
+    phase === 'ready' ? 'Instantiating again starts from a fresh instance' : ''
+  );
+  const uploadStatus = disabledReason || phaseTitle || (
+    !canUpload ? 'Instantiate the graph first' : inputHint(inputBodyPaths)
   );
   const runStatus = disabledReason || phaseTitle || (!canRun ? 'Instantiate the graph first' : '');
   const instantiateTooltip = appendStatus(
-    'Prepare the current graph to run and add input if required.',
+    'Create a runnable instance of the current graph.',
     instantiateStatus,
   );
+  const uploadTooltip = appendStatus(
+    'Upload a JSON payload as the mock input.body of the instance (optional). Only you see the form.',
+    uploadStatus,
+  );
   const runTooltip = appendStatus(
-    'Run the graph after it has been instantiated.',
+    'Run the instantiated graph, with the uploaded mock input if any.',
     runStatus,
   );
 
@@ -136,6 +152,19 @@ export default function GraphRunControls({
         >
           <InstantiateIcon className={styles.toolbarIcon} aria-hidden="true" focusable="false" />
           <span>{instantiateLabel(phase)}</span>
+        </button>
+      </ActionTooltip>
+      <ActionTooltip id={uploadTooltipId} text={uploadTooltip} keyboardFallback={!canUpload}>
+        <button
+          type="button"
+          className={styles.toolbarButton}
+          onClick={onUpload}
+          disabled={!canUpload}
+          aria-label="Upload mock input"
+          aria-describedby={uploadTooltipId}
+        >
+          <UploadIcon className={styles.toolbarIcon} aria-hidden="true" focusable="false" />
+          <span>Upload</span>
         </button>
       </ActionTooltip>
       <ActionTooltip id={runTooltipId} text={runTooltip} keyboardFallback={!canRun}>

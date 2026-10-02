@@ -39,6 +39,8 @@ function renderRightPanel({
     phase: 'idle' as const,
     canInstantiate: true,
     canRun: false,
+    canUpload: false,
+    onUpload: vi.fn(),
     disabledReason: '',
     onInstantiate: vi.fn(),
     onRun: vi.fn(),
@@ -91,7 +93,8 @@ describe('RightPanel tab strip', () => {
         phase: 'idle',
         canInstantiate: true,
         canRun: false,
-      },
+        canUpload: false,
+        },
     });
   });
 });

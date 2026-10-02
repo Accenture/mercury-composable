@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import GraphRunControls from './GraphRunControls';
+import GraphRunControls, { type GraphRunControlsProps } from './GraphRunControls';
 import GraphToolbar from './GraphToolbar';
 
 const graphToolbarCss = readFileSync(
@@ -14,86 +14,82 @@ const graphToolbarCss = readFileSync(
 
 afterEach(cleanup);
 
+function controls(overrides: Partial<GraphRunControlsProps> = {}) {
+  const props: GraphRunControlsProps = {
+    phase: 'idle',
+    canInstantiate: true,
+    canUpload: false,
+    canRun: false,
+    disabledReason: '',
+    inputBodyPaths: [],
+    onInstantiate: vi.fn(),
+    onUpload: vi.fn(),
+    onRun: vi.fn(),
+    ...overrides,
+  };
+  return { props, element: <GraphRunControls {...props} /> };
+}
+
+function button(name: string): HTMLButtonElement {
+  return screen.getByRole('button', { name }) as HTMLButtonElement;
+}
+
 describe('GraphRunControls', () => {
-  it('requires Instantiate before enabling the separate Run action', () => {
-    const onInstantiate = vi.fn();
-    const onRun = vi.fn();
-    const { rerender } = render(
-      <GraphRunControls
-        phase="idle"
-        canInstantiate
-        canRun={false}
-        disabledReason=""
-        onInstantiate={onInstantiate}
-        onRun={onRun}
-      />,
-    );
+  it('requires Instantiate before enabling the optional Upload step and Run', () => {
+    const idle = controls();
+    const { rerender } = render(idle.element);
 
-    const instantiate = screen.getByRole('button', { name: 'Instantiate graph' }) as HTMLButtonElement;
-    const run = screen.getByRole('button', { name: 'Run graph' }) as HTMLButtonElement;
-    expect(instantiate.disabled).toBe(false);
-    expect(run.disabled).toBe(true);
-    fireEvent.click(instantiate);
-    expect(onInstantiate).toHaveBeenCalledTimes(1);
-    expect(onRun).not.toHaveBeenCalled();
+    expect(button('Instantiate graph').disabled).toBe(false);
+    expect(button('Upload mock input').disabled).toBe(true);
+    expect(button('Run graph').disabled).toBe(true);
+    fireEvent.click(button('Instantiate graph'));
+    expect(idle.props.onInstantiate).toHaveBeenCalledTimes(1);
+    expect(idle.props.onUpload).not.toHaveBeenCalled();
+    expect(idle.props.onRun).not.toHaveBeenCalled();
 
-    rerender(
-      <GraphRunControls
-        phase="ready"
-        canInstantiate={false}
-        canRun
-        disabledReason=""
-        onInstantiate={onInstantiate}
-        onRun={onRun}
-      />,
-    );
+    const ready = controls({ phase: 'ready', canUpload: true, canRun: true });
+    rerender(ready.element);
 
-    expect((screen.getByRole('button', { name: 'Instantiate graph' }) as HTMLButtonElement).disabled).toBe(true);
-    const readyRun = screen.getByRole('button', { name: 'Run instantiated graph' }) as HTMLButtonElement;
+    // Instantiate stays available while Ready: it starts a fresh instance.
+    expect(button('Instantiate graph').disabled).toBe(false);
+    expect(button('Upload mock input').disabled).toBe(false);
+    const readyRun = button('Run instantiated graph');
     expect(readyRun.disabled).toBe(false);
+    fireEvent.click(button('Upload mock input'));
     fireEvent.click(readyRun);
-    expect(onRun).toHaveBeenCalledTimes(1);
+    expect(ready.props.onUpload).toHaveBeenCalledTimes(1);
+    expect(ready.props.onRun).toHaveBeenCalledTimes(1);
   });
 
-  it('disables both toolbar actions while setup is busy', () => {
-    render(
-      <GraphRunControls
-        phase="instantiating"
-        canInstantiate={false}
-        canRun={false}
-        disabledReason=""
-        onInstantiate={vi.fn()}
-        onRun={vi.fn()}
-      />,
-    );
+  it('disables all three toolbar actions while setup is busy or the graph runs', () => {
+    const { rerender } = render(controls({ phase: 'instantiating', canInstantiate: false }).element);
 
-    const instantiate = screen.getByRole('button', { name: 'Graph is being instantiated' }) as HTMLButtonElement;
+    const instantiate = button('Graph is being instantiated');
     expect(instantiate.disabled).toBe(true);
     expect(instantiate.getAttribute('aria-busy')).toBe('true');
-    expect((screen.getByRole('button', { name: 'Run graph' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(button('Upload mock input').disabled).toBe(true);
+    expect(button('Run graph').disabled).toBe(true);
+
+    rerender(controls({ phase: 'running', canInstantiate: false }).element);
+    expect(button('Instantiate graph').disabled).toBe(true);
+    expect(button('Upload mock input').disabled).toBe(true);
+    expect(button('Graph is running').textContent).toContain('Running…');
   });
 
-  it('renders Instantiate and Run immediately before the existing Copy action', () => {
+  it('renders Instantiate, Upload and Run in order before the existing Copy action', () => {
     render(
       <GraphToolbar
         graphData={{ nodes: [{ alias: 'root', types: ['Root'], properties: {} }], connections: [] }}
-        extraActions={(
-          <GraphRunControls
-            phase="idle"
-            canInstantiate
-            canRun={false}
-            disabledReason=""
-            onInstantiate={vi.fn()}
-            onRun={vi.fn()}
-          />
-        )}
+        extraActions={controls().element}
       />,
     );
 
-    const instantiate = screen.getByRole('button', { name: 'Instantiate graph' });
-    const run = screen.getByRole('button', { name: 'Run graph' });
-    const copy = screen.getByRole('button', { name: 'Copy raw graph JSON to clipboard' });
-    expect(instantiate.compareDocumentPosition(run) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const instantiate = button('Instantiate graph');
+    const upload = button('Upload mock input');
+    const run = button('Run graph');
+    const copy = button('Copy raw graph JSON to clipboard');
+    expect(instantiate.compareDocumentPosition(upload) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(upload.compareDocumentPosition(run) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(run.compareDocumentPosition(copy) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -101,28 +97,20 @@ describe('GraphRunControls', () => {
     render(
       <GraphToolbar
         graphData={{ nodes: [{ alias: 'root', types: ['Root'], properties: {} }], connections: [] }}
-        extraActions={(
-          <GraphRunControls
-            phase="idle"
-            canInstantiate
-            canRun={false}
-            disabledReason=""
-            onInstantiate={vi.fn()}
-            onRun={vi.fn()}
-          />
-        )}
+        extraActions={controls().element}
       />,
     );
 
     const buttons = [
-      screen.getByRole('button', { name: 'Instantiate graph' }),
-      screen.getByRole('button', { name: 'Run graph' }),
-      screen.getByRole('button', { name: 'Copy raw graph JSON to clipboard' }),
+      button('Instantiate graph'),
+      button('Upload mock input'),
+      button('Run graph'),
+      button('Copy raw graph JSON to clipboard'),
     ];
 
-    for (const button of buttons) {
-      const icon = button.querySelector('svg');
-      expect(icon, button.outerHTML).not.toBeNull();
+    for (const element of buttons) {
+      const icon = element.querySelector('svg');
+      expect(icon, element.outerHTML).not.toBeNull();
       expect(icon?.getAttribute('viewBox')).toBe('0 0 16 16');
       expect(icon?.getAttribute('width')).toBe('16');
       expect(icon?.getAttribute('height')).toBe('16');
@@ -133,38 +121,31 @@ describe('GraphRunControls', () => {
       expect(icon?.getAttribute('stroke-linejoin')).toBe('round');
       expect(icon?.getAttribute('aria-hidden')).toBe('true');
     }
-    expect(buttons[1].textContent).not.toContain('▶');
-    expect(buttons[2].textContent).not.toContain('📑');
+    expect(buttons[2].textContent).not.toContain('▶');
+    expect(buttons[3].textContent).not.toContain('📑');
   });
 
   it('shows each custom tooltip for its own hover or keyboard focus', () => {
-    const onInstantiate = vi.fn();
-    const onRun = vi.fn();
-    const { rerender } = render(
-      <GraphRunControls
-        phase="idle"
-        canInstantiate
-        canRun={false}
-        disabledReason=""
-        onInstantiate={onInstantiate}
-        onRun={onRun}
-      />,
-    );
+    const idle = controls();
+    const { rerender } = render(idle.element);
 
-    const instantiate = screen.getByRole('button', { name: 'Instantiate graph' }) as HTMLButtonElement;
-    const run = screen.getByRole('button', { name: 'Run graph' }) as HTMLButtonElement;
-    const [instantiateTooltip, runTooltip] = screen.getAllByRole('tooltip');
+    const instantiate = button('Instantiate graph');
+    const upload = button('Upload mock input');
+    const run = button('Run graph');
+    const [instantiateTooltip, uploadTooltip, runTooltip] = screen.getAllByRole('tooltip');
 
-    expect(instantiateTooltip.textContent).toBe(
-      'Prepare the current graph to run and add input if required.',
+    expect(instantiateTooltip.textContent).toBe('Create a runnable instance of the current graph.');
+    expect(uploadTooltip.textContent).toBe(
+      'Upload a JSON payload as the mock input.body of the instance (optional). Only you see the form. Instantiate the graph first.',
     );
     expect(runTooltip.textContent).toBe(
-      'Run the graph after it has been instantiated. Instantiate the graph first.',
+      'Run the instantiated graph, with the uploaded mock input if any. Instantiate the graph first.',
     );
     expect(run.disabled).toBe(true);
     expect(instantiate.getAttribute('aria-describedby')).toBe(instantiateTooltip.id);
+    expect(upload.getAttribute('aria-describedby')).toBe(uploadTooltip.id);
     expect(run.getAttribute('aria-describedby')).toBe(runTooltip.id);
-    expect(instantiateTooltip.id).not.toBe(runTooltip.id);
+    expect(new Set([instantiateTooltip.id, uploadTooltip.id, runTooltip.id]).size).toBe(3);
     expect(instantiateTooltip.parentElement).toBe(instantiate.parentElement);
     expect(runTooltip.parentElement).toBe(run.parentElement);
     expect(instantiate.getAttribute('title')).toBeNull();
@@ -190,7 +171,7 @@ describe('GraphRunControls', () => {
     expect(instantiateTooltip.getAttribute('data-state')).toBe('open');
     expect(runTooltip.getAttribute('data-state')).toBe('closed');
     fireEvent.click(instantiate);
-    expect(onInstantiate).toHaveBeenCalledTimes(1);
+    expect(idle.props.onInstantiate).toHaveBeenCalledTimes(1);
     fireEvent.mouseLeave(instantiate.parentElement!);
     expect(instantiateTooltip.getAttribute('data-state')).toBe('closed');
 
@@ -198,28 +179,27 @@ describe('GraphRunControls', () => {
     expect(instantiateTooltip.getAttribute('data-state')).toBe('closed');
     expect(runTooltip.getAttribute('data-state')).toBe('open');
     fireEvent.click(run);
-    expect(onRun).not.toHaveBeenCalled();
+    expect(idle.props.onRun).not.toHaveBeenCalled();
     fireEvent.mouseLeave(run.parentElement!);
     expect(runTooltip.getAttribute('data-state')).toBe('closed');
     expect(graphToolbarCss).toContain('visibility: hidden');
     expect(graphToolbarCss).toContain('transition: none');
 
-    rerender(
-      <GraphRunControls
-        phase="ready"
-        canInstantiate={false}
-        canRun
-        disabledReason=""
-        onInstantiate={vi.fn()}
-        onRun={vi.fn()}
-      />,
+    rerender(controls({ phase: 'ready', canUpload: true, canRun: true }).element);
+    const [readyInstantiate, readyUpload, readyRun] = screen.getAllByRole('tooltip');
+    expect(readyInstantiate.textContent).toBe(
+      'Create a runnable instance of the current graph. Instantiating again starts from a fresh instance.',
     );
+    expect(readyUpload.textContent).toBe(
+      'Upload a JSON payload as the mock input.body of the instance (optional). Only you see the form. This graph does not read input.body, so uploading is optional.',
+    );
+    expect(readyRun.textContent).toBe('Run the instantiated graph, with the uploaded mock input if any.');
 
-    expect(screen.getAllByRole('tooltip')[0].textContent).toBe(
-      'Prepare the current graph to run and add input if required. The graph is already instantiated.',
-    );
+    rerender(controls({
+      phase: 'ready', canUpload: true, canRun: true, inputBodyPaths: ['input.body.person_id', 'input.body.name'],
+    }).element);
     expect(screen.getAllByRole('tooltip')[1].textContent).toBe(
-      'Run the graph after it has been instantiated.',
+      'Upload a JSON payload as the mock input.body of the instance (optional). Only you see the form. This graph reads 2 input.body paths.',
     );
   });
 });
