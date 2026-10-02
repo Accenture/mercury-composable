@@ -7,9 +7,12 @@ applications from **self-contained functions wired by YAML-configured event
 flows**. Functions have no direct knowledge of each other — all coupling is
 through named routes and event envelopes, so orchestration is configuration,
 not code. Uses Java 21 virtual threads throughout, making sequential synchronous
-RPC perform on par with reactive code. An official Rust port exists (github.com/Accenture/mercury);
-the old Node.js port is ~2 years out of sync and slated for a fresh re-port — do NOT point
-readers to it (docs/README references were removed 2026-07-20).
+RPC perform on par with reactive code. An official Rust port exists (github.com/Accenture/mercury).
+The Python and Node.js repos (github.com/Accenture/mercury-python, mercury-nodejs) are **language
+packs**, not engine ports: lightweight Event-over-HTTP function hosts (plus the LLM helper app) that
+carry the Java release number they last caught up to (4.12.15 at this writing — lag is catch-up, not
+divergence). The old full Node.js engine port they replaced is gone; the 2026-07-20 "do not point
+readers to it" note is obsolete (corrected at the 2026-10-02 review).
 
 **Type:** Multi-module framework / SDK (Maven reactor)
 **Primary language:** Java 21 (one Kotlin example module)

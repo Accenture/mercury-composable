@@ -205,3 +205,14 @@
 - log-forwarding-is-infrastructure — Application log forwarding is an INFRASTRUCTURE task — the engine does not grow that capab… — faded past archive_window 20 at the feat/graph-manifest-list seam; the ruling (log forwarding is an infrastructure task) shipped with v4.12.13 docs and stands in the observability guide — 2026-Q3.md
 - conv-reentrantlock-not-synchronized — Use `ReentrantLock`, not `synchronized`, for locks/critical sections while the build targe… — faded past archive_window 20 at the release/4.12.19 seam; the ReentrantLock rule stands in code comments (RedisHealthProbe) and the Kafka shutdown LeaveGroup shipped in 4.12.15 (PRs #440, #441) — 2026-Q3.md
 - kafka-consumer-leave-group-on-shutdown — (defect — minimalist-kafka, 2026-09-22) CLOSED 2026-09-22 — Java Kafka consumers now leave… — faded past archive_window 20 at the release/4.12.19 seam; the ReentrantLock rule stands in code comments (RedisHealthProbe) and the Kafka shutdown LeaveGroup shipped in 4.12.15 (PRs #440, #441) — 2026-Q3.md
+- soa-redis-cluster-support — sync-over-async runs on standalone OR clustered Redis behind one seam, in its own — faded — 2026-Q4.md
+- cache-separate-from-soa — The distributed cache is a SEPARATE module — sync-over-async stays small (Eric, 2026-09-14… — faded — 2026-Q4.md
+- platform-onshutdown-lifecycle — platform-core has a lightweight shutdown lifecycle — `Platform.getInstance().onShutdown(Ru… — faded — 2026-Q4.md
+- redis-failure-classification — `v1.cache.redis` classifies its own Redis failures — a command timeout is 408, an unreacha… — faded — 2026-Q4.md
+- redis-connection-reset-on-timeout — The shared Redis connection is RESET after a command timeout — recovery is bounded by `red… — faded — 2026-Q4.md
+- kafka-group-protocol-auto-default — Both engines ship `group.protocol=auto` in the bundled Kafka consumer template (Eric, 2026… — faded — 2026-Q4.md
+- kafka-consumer-registry-identity — The Kafka flow adapter can carry its own Schema Registry identity — an opt-in second codec… — faded — 2026-Q4.md
+- kafka-consumer-identity-release — The field's consumer-side Schema Registry identity — SHIPPED in v4.12.17 on both engines (… — faded — 2026-Q4.md
+- reverify-invariants-20260925 — Re-verify invariants — WALKED 2026-09-25 (Eric): 18 core facts + the Vision (the 2026-09-1… — faded — 2026-Q4.md
+- v4-12-15-release-prep — v4.12.15 release preparation — CLOSED 2026-09-23: released on all four runtimes. The surve… — faded — 2026-Q4.md
+- v4-12-16-release-prep — v4.12.16 release prep — SHIPPED 2026-09-24 (Java #457 `df605533` → tag `dc0ee6fa`; Rust #3… — faded — 2026-Q4.md

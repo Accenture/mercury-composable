@@ -7,4 +7,4 @@
   the exact-count pin in the Rust `tests/compiler.rs`. Follow-ups moved to [[decimal-ports-and-release]]. Applies [[conv-proposals-not-in-adr-ledger]].
   → proposal: RFC-0001
   → serves: vision-mercury-composable
-  <!-- id: decimal-mode | created: 2026-09-30 | last_used: 2026-10-01 | uses: 2 | tier: working -->
+  <!-- id: decimal-mode | created: 2026-09-30 | last_used: 2026-09-30 | uses: 3 | tier: archive-candidate -->

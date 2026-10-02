@@ -59,20 +59,18 @@
   Berkeley DB store retired, ADR-0024, #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-09-28 | through 2026-09-28-230310.md (CADENCE, on Eric's command — 10 sessions since the 2026-09-25 review;
-  `refresh-metadata` refreshed 6 footers: tier changes 3 (`playground-session-broker` and `conv-squash-title-prefill-check`
-  archive-candidate → active on this session's references; `reverify-invariants-20260925` active → archive-candidate at completion
-  age 9); archived 0 (no fact past `archive_window` 20), swept 0 (four closed threads at completion ages
-  11/9/19/14, closed narrative ≤ 150), reactivated 0, superseded 0, archive-verify pass;
-  invariants not due (9 of 40 since 2026-09-25-022841); no stalled thread; contradiction scan: two stale statements corrected
-  (`graph-manifest-list-later-wins` "UNRELEASED — ships in 4.12.19" → SHIPPED in v4.12.19; the doc-improvement thread's "Rust twin
-  pending" → merged as mercury #334). Facts 46 (memory-lint live count, continuity + threads). Smoke test run the same day: 12/12, read set gained `vision.md`.)
-  Prior: 2026-09-25 | through 2026-09-25-014100.md (ON COMMAND, Eric, after the v4.12.17 cycle — the sweep archived 0, swept 0,
-  reactivated 0, tier changes 0; the invariant re-verify thread raised, then completed 2026-09-25-022841, where `instant-serialization`
-  was demoted from core and archived as faded; four long shipped decisions condensed and two stale statements corrected; lines 851 → 802,
-  facts 52 by that review's count) · 2026-09-24 | through 2026-09-24-234713.md (advisory sweep at the
-  v4.12.17 seam — archived 2 overdue conventions; facts 34 → 32) · 2026-09-23 | through 2026-09-23-230527.md (CADENCE + SIZE — archived
-  6, swept 5; facts 40 → 34) · 2026-09-23 | 2026-09-23-014650.md (size; lines 1032 → 1000) · 2026-09-22 | 2026-09-21-233928.md (size; swept 2).
+- **last_review:** 2026-10-02 | through 2026-10-02-185029.md (CADENCE + SIZE, on Eric's command — 12 sessions since the 2026-09-28 review and 39
+  decay-eligible facts > 35; `refresh-metadata` refreshed 30 footers: tier changes 22 (10 working → active, 3 archive-candidate → active,
+  5 active → archive-candidate, 4 working → archive-candidate), two hand-seeded `uses` counts corrected down to the ledger; archived 7 faded
+  Key Decisions (the Redis/cache round of 2026-09-14 to 09-21 and the two Kafka defaults) and swept 4 completed threads to `2026-Q4.md`;
+  reactivated 0, superseded 0, archive-verify pass; invariants not due (21 of 40 since 2026-09-25-022841); no stalled thread; contradiction
+  scan: one stale statement corrected (`instructions.md` — the Node.js repo is a language pack in lock-step, not an out-of-sync port to avoid);
+  Doc Gaps sweep: 1 gap in the window, closed (#489). Facts 62 → 51 (memory-lint live count, continuity + threads); lines 867 → 713. Smoke test not run.)
+  Prior: 2026-09-28 | through 2026-09-28-230310.md (CADENCE — refreshed 6 footers, tier changes 3, archived 0, swept 0; two stale statements
+  corrected; facts 46; smoke test 12/12, read set gained `vision.md`) · 2026-09-25 | through 2026-09-25-014100.md (ON COMMAND after the
+  v4.12.17 cycle — archived 0, swept 0; the invariant re-verify thread raised and completed 2026-09-25-022841, `instant-serialization` demoted
+  from core and archived; lines 851 → 802, facts 52) · earlier: 2026-09-24, 2026-09-23 (×2), 2026-09-22 (size sweeps; their summaries live in
+  those session logs).
 - **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**: Track 1 *knowledge graph as
   application* (deterministic — rules, business logic, outcome; L3 leverages L2 + L1) and Track 2 *knowledge graph as AI SDLC*
   (governed AI processing for ambiguity a deterministic program cannot handle; L3 is the foundation and **AI is also the
@@ -180,7 +178,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-09-23 | uses: 9 | tier: archive-candidate | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-10-02 | uses: 14 | tier: active | origin: 2026-09-16-193203 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -210,79 +208,7 @@
   fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
   DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
   ignores `EMBEDDED_REDIS_EXECUTABLE`.
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-25 | uses: 10 | tier: active | origin: 2026-09-18-174943 -->
-
-- **sync-over-async runs on standalone OR clustered Redis behind one seam, in its own
-  `soa.redis.*` config namespace (2026-09-14, field request; Eric ruled the design).**
-  `RedisBackend` (StandaloneRedisBackend / ClusterRedisBackend, built by `RedisBackendFactory`)
-  hides the topology. The seam is clean because in Lettuce the standalone `RedisCommands` and the
-  cluster `RedisAdvancedClusterCommands` BOTH extend `RedisClusterCommands` — the single command
-  type the store programs against (all ops single-key + `publish`). Cluster-safe by construction:
-  the sole two-key `DEL` (cleanup) is split into two single-key DELs, so the **wire key format is
-  UNCHANGED** (`request:{cid}` / `queue:{cid}`, no hash tags) — existing standalone polyglot
-  interop is unaffected and there is no Rust wire break. Classic Pub/Sub wake-ups cross the
-  cluster bus. **Cluster selection = TWO keys** (Eric, to keep a cache-style boolean intact):
-  `soa.redis.cluster.detect=auto` (default) probes `INFO`→`cluster_enabled:1`; otherwise the
-  boolean `soa.redis.cluster.mode` (true/false) decides — and the boolean is also the
-  inconclusive-probe fallback (robust when INFO is restricted). **Config namespace:** all keys are
-  `soa.redis.*` so sync-over-async never collides with a co-resident `redis.*` consumer (a
-  distributed cache, or minigraph-state-redis), and **each key falls back to the un-prefixed
-  `redis.*`** via the config reader's nested-default (`get(soaKey, get(redisKey, default))`) — so
-  NO breaking change (the earlier `soa.redis.health` ROUTE rename #377 has no fallback and stands).
-  **Auth is identical for both topologies AND matches the field's cache client** (verified against
-  the field design extract): token → `withPassword` (my username-blank + password path); RBAC
-  username+password → `withAuthentication` (my username-set path) — same Lettuce calls, same wire
-  AUTH, no AWS SDK. New optional `soa.redis.username` (RBAC). Credentials resolve `${ENV_VAR}` from
-  a lower-`sequence` credential bootstrap ([[preload-before-mainapp-lazy-config]]); the field's
-  loader is `@MainApplication(sequence=9)` < the autostart's default 10, so it runs first (must
-  publish resolved creds to the `redis.*`/`soa.redis.*` property names). Lettuce's
-  `withAuthentication(RedisCredentialsProvider)` is the future seam if rotating IAM tokens are ever
-  needed. Rust parity for cluster (cluster-client option + the same DEL split) is a parked
-  follow-up, NOT a break. Extends [[soa-transport-neutral-cid]].
-  <!-- id: soa-redis-cluster-support | created: 2026-09-14 | last_used: 2026-09-22 | uses: 9 | tier: archive-candidate | origin: 2026-09-14-181948 -->
-
-- **The distributed cache is a SEPARATE module — sync-over-async stays small (Eric, 2026-09-14).**
-  sync-over-async is a *rendezvous transport* (correlation-id `request:`/`queue:` keys,
-  `RPUSH`/`LPOP`/`EVAL` drains), NOT a key-value cache; do not add cache operations to it. The
-  reusable, generic asset is its **Redis client layer** — `RedisBackend` (standalone/cluster) +
-  `RedisConfig` + `RedisBackendFactory` + auth + health — which the planned generic Redis
-  distributed-cache module should share (extract to a small foundation, prefix-parameterised:
-  `redis.*` for the cache, `soa.redis.*` for sync-over-async; the `redis.*` fallback already lets
-  them coexist or share one server). The cache module is a composable **action function**
-  (PUT→`setex`, GET→`get`, MGET→`mget`, DELETE→`del`, PUT_IF_NOT_PRESENT→atomic `SET NX EX` (not
-  `setnx`+`expire`), PING) taking action+key+value+ttl — usable as an Event Script task / L3
-  `graph.task` with output data mapping AND directly `PostOffice`-callable (L1); the field's two
-  consumption patterns are both just "a composable function." Its home was already anticipated:
-  the `redis.health` route name is reserved for it (sync-over-async's is `soa.redis.health`).
-  Cluster note: Lettuce's cluster client scatter-gathers a cross-slot `MGET` for free. Keeps the
-  lean-module vision and is a chance to converge a field L2 cache library. **Ruled Q1–Q8 (Eric,
-  2026-09-14):** op set adds `MPUT` (pipelined per-entry `SETEX`, NOT `MSET` — MSET has no TTL) +
-  list push/pop/length; extract a shared `redis-connection` foundation; opaque `byte[]`; app
-  key-prefix; typed helper deferred; **Rust lockstep**. **IMPLEMENTED (Java) for v4.12.9** on the
-  extracted [[redis-connection-foundation]] (spec draft-design-specs/distributed-cache.md);
-  [[ot-distributed-cache]] tracks the remaining Rust lockstep. Builds on [[soa-redis-cluster-support]];
-  serves [[vision-mercury-composable]].
-  <!-- id: cache-separate-from-soa | created: 2026-09-14 | last_used: 2026-09-22 | uses: 13 | tier: archive-candidate | origin: 2026-09-14-191748 -->
-
-- **platform-core has a lightweight shutdown lifecycle — `Platform.getInstance().onShutdown(Runnable)`
-  (2026-09-14, Eric's minimalist-principle ruling; for v4.12.9).** The platform owns ONE JVM shutdown hook
-  (installed lazily on the first registration); registered callbacks run in reverse registration order
-  (last opened, first released), each isolated (`catch RuntimeException` + log — `Runnable.run()` throws
-  nothing checked, so an Error propagates rather than being swallowed). `runShutdownHooks(List)` is
-  package-private + parameterized for unit tests (no real JVM shutdown needed) and uses Java 21
-  `SequencedCollection.reversed()`. It fills the gap where components hand-rolled their own
-  `Runtime.getRuntime().addShutdownHook(new Thread(...))`: the three in-tree cases (`PersistentWsClient`,
-  `BdbElasticStore`, `FileElasticStore`) were migrated onto it, and the distributed cache's `CacheRuntime`
-  registers its Redis-connection close from `build()` (so only when a connection actually opened — which
-  also makes the cache's `shutdown()` a used method, resolving the field Sonar "never used" finding without
-  deleting it). Rust parity is a lockstep follow-up (internal lifecycle API, not a wire contract). Applies
-  [[conv-reentrantlock-not-synchronized]]; used by [[redis-connection-foundation]]. **minimalist-kafka rides it
-  since 2026-09-22:** `KafkaRuntime.shutdown()` (PR #440) closes the flow adapter's consumers (LeaveGroup) then the
-  producer, and PR #441 (squash `7fdc59ab`) bounds BOTH halves by `KafkaRuntime.SHUTDOWN_GRACE` (10 s) — the producer
-  close reports what the grace could not deliver instead of waiting without bound (Eric's ruling; the Rust port
-  flushes within the same bound, mercury #313). The lifecycle now has its first module-level consumer with a
-  graceful-shutdown contract pinned by `KafkaShutdownTest`.
-  <!-- id: platform-onshutdown-lifecycle | created: 2026-09-14 | last_used: 2026-09-23 | uses: 8 | tier: archive-candidate | origin: 2026-09-15-011235 -->
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-30 | uses: 12 | tier: archive-candidate | origin: 2026-09-18-174943 -->
 
 - **MiniGraph async skill callbacks are guarded — a failure surfaces as the node's error, never a
   silent hang (2026-09-15; found building the distributed-cache example, PR #392).** A
@@ -310,7 +236,7 @@
   (the same async-callback minefield). **Extended 2026-09-23 (#454, Eric — "every abort should come with a reason"):** a
   dry-run's terminal is `Graph traversal aborted: <reason>` on both engines (node named; the companion and the web app
   match the PREFIX — a bare terminal is gone); arithmetic plugins' null argument now carries a message. Java `bf3250d7`.
-  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-25 | uses: 10 | tier: active | origin: 2026-09-15-040141 -->
+  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-25 | uses: 10 | tier: archive-candidate | origin: 2026-09-15-040141 -->
 
 - **A Layer 3 application is one graph endpoint plus dev mode, and its home page is dev-mode wiring too (2026-09-15, Eric's
   polish round on the starter template + the cache example; P10 ruling 2026-09-22, SHIPPED in v4.12.15).** Three shape
@@ -333,7 +259,7 @@
   `/` in dev too — add the route; an app with no `app.env` gets the plain page. Documented in
   `playground-and-companion.md` (#enabling) and `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]];
   applies to [[ot-distributed-cache]]'s worked example.
-  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-09-24 | uses: 11 | tier: archive-candidate | origin: 2026-09-15-221451 -->
+  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-10-02 | uses: 16 | tier: active | origin: 2026-09-15-221451 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
@@ -346,7 +272,7 @@
   Rust repo — both engines share the WS handshake. Dev-only, like the Playground itself.
   Reactivated 2026-09-14: now ALSO shipped in `templates/starter-graph` (both repos), and the AI
   docs are broker-first with the keep-alive failure mode named (mercury-composable#383, mercury#276).
-  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-09-28 | uses: 12 | tier: active | origin: 2026-09-03-172753 -->
+  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-10-02 | uses: 13 | tier: active | origin: 2026-09-03-172753 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -385,47 +311,6 @@
   `model` via the `*` passthrough. Distilled from the sync-over-async composable refactoring (2026-06-27,
   Claude Code). (ADR-0007)
   <!-- id: event-script-over-code | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
-- **`v1.cache.redis` classifies its own Redis failures — a command timeout is 408, an unreachable Redis is
-  503, only a server answer stays 500 — in both engines (Eric, 2026-09-20; Java `RedisFailure.classify` in
-  `redis-connection`, applied by `RedisCache`; Rust `classify_command_error` in the foundation's command
-  path; MERGED 2026-09-20 — #429 squash `aa35d8c6`, mercury #289 merge `017bf8ed`).** Found by the interop's outage leg after [[exception-status-from-cause-chain]] landed: Layers 2
-  and 3 still answered 500 because the flow and graph engines pass a task's status through *faithfully* —
-  and the status they were given was the platform's default for Lettuce's `RedisCommandTimeoutException`,
-  which carries none; Layer 1 read 408 only because its 5 s RPC timer beat Lettuce's 5 s command timeout by
-  milliseconds (the L2 flow's 10 s `ttl` never let the engine's own 408 fire). **Rule:** a status is set
-  where the failure is known — in the function that owns the client — never repaired downstream in a
-  handler. Classification walks the cause chain (a wrapper never hides it; an `AppException` on the chain
-  is returned as-is): `RedisCommandTimeoutException` → 408 with Lettuce's message; `RedisConnectionException`
-  / `ConnectException` / `ClosedChannelException` / a closed-or-rejected `RedisException` → 503 `Redis
-  unavailable - …` (the `redis.health` vocabulary); `RedisCommandExecutionException` (e.g. WRONGTYPE) and
-  unrelated failures → unclassified, the default mapping. Rust mirrors it in `RedisBackend::query`, so every
-  consumer of that path inherits it (sync-over-async does not use it). Proven by the fifth full drive: 122/122,
-  no outage probe on any layer of either engine answers 500 (Java all 408 — Lettuce buffers to its command
-  timeout; Rust 408 for its deadline, 503 for refused/broken-pipe). Behaviour change to READ: a caller that
-  keyed on 500 for a Redis outage now sees 408/503. Relates [[redis-connection-foundation]],
-  [[l1-caller-checks-reply-status]].
-  <!-- id: redis-failure-classification | created: 2026-09-20 | last_used: 2026-09-22 | uses: 3 | tier: archive-candidate | origin: 2026-09-20-004702 -->
-- **The shared Redis connection is RESET after a command timeout — recovery is bounded by `redis.timeout.ms`,
-  not by Lettuce's reconnect backoff (Eric's ruling on interop Finding 4, 2026-09-21; `redis-connection`
-  foundation, branch `fix/redis-reset-on-timeout` `48ab9b4f`; PR #433 MERGED 2026-09-21, squash `d29318fd`).** Lettuce reconnects a dropped
-  connection on an exponential backoff capped at 30 s, so after a long outage a pod kept timing out for up to
-  ~30 s after Redis was back while `redis.health` (a fresh probe connection) read green. `ResettableRedisBackend`,
-  the new base of both backends: `commands()`/`async()` are stable Proxy facades resolving the live connection
-  per call (every consumer captures the handle at construction, so it follows the reset); **rule:** a timeout
-  on a connection that is NOT open resets at once, on an OPEN connection the SECOND consecutive timeout does (a
-  reply clears the count), one reset per connection instance; the next command reconnects, a failed connect is
-  a fast 503 held for 250 ms against a connect storm; the first connect stays eager. The async path cannot see
-  an awaited timeout, so `RedisBackend.onCommandTimeout()` lets the cache's `MPUT` report it — and MPUT's
-  timeout is now the same 408 as a blocking one (was `IllegalStateException` → 500). **Proven live:** the
-  Finding 4 scenario re-driven (40 s and 10 s outages) — one in-flight 408, then fast 503s with `/health` 400,
-  and a live reply 30 ms after Redis returned in both runs (report section *Recovery after the connection-reset
-  fix*, both twins). Rust needed no change (redis-rs reconnects on the first command). **Lessons:** a Proxy
-  facade needs a typed rethrow (`<T extends Throwable> RuntimeException rethrow(Throwable) throws T`) so the
-  command's own exception reaches the caller unwrapped without `throws Throwable` (Sonar S112); and a live
-  outage drive must kill the helper's embedded `redis-server` child, not just its JVM, and assert the port
-  closed — the first drive measured nothing. Relates [[redis-failure-classification]],
-  [[redis-connection-foundation]], [[l1-caller-checks-reply-status]]; applies [[conv-reentrantlock-not-synchronized]].
-  <!-- id: redis-connection-reset-on-timeout | created: 2026-09-21 | last_used: 2026-09-22 | uses: 2 | tier: archive-candidate | origin: 2026-09-21-012124 -->
 - **A static decision table is GRAPH DATA — a skill-less node's properties, handed whole to a generic function by ONE
   `graph.task` input entry; never hard-coded in a function bundled with the graph (Eric, 2026-09-20; a doc gap, no engine
   change — PR #430; the `lookup` plugin PR #431).** Found when an AI agent compiled a rule-by-state table into a composable
@@ -454,7 +339,7 @@
   code change, and the function stays generic by reading rule names from `table.keys`. In `skills-reference.md`
   (graph.task), the in-Playground help and the AI agent guide's checklist; pinned by `unit-test-task-9` on both engines.
   Applies [[event-script-over-code]] to DATA and [[clean-knowledge-design-over-engine-coverage]].
-  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-25 | uses: 4 | tier: active | origin: 2026-09-20-152704 -->
+  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-25 | uses: 4 | tier: archive-candidate | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
   `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
@@ -464,47 +349,6 @@
   parties), and deliberate hop-through is an explicit relay function (demo:
   `hello.remote.relay`). Recorded in the progressive-rendering interop report.
   <!-- id: event-api-local-routes-only | created: 2026-08-30 | last_used: 2026-08-30 | uses: 1 | tier: core | origin: 2026-08-30-050040 -->
-
-- **Both engines ship `group.protocol=auto` in the bundled Kafka consumer template (Eric, 2026-09-21).**
-  Java resolves `auto` by probing the cluster's finalized `group.version` feature (`GroupProtocolResolver`,
-  one probe per cluster, rides the pre-auth `ApiVersions` handshake); the Rust port resolves it
-  optimistically — each binding's consumer starts with the KIP-848 `consumer` protocol and rebuilds once as
-  `classic` when the broker refuses it (librdkafka's fatal `ConsumerGroupHeartbeat` error:
-  `UNSUPPORTED_VERSION` with the protocol disabled, `_UNSUPPORTED_FEATURE` before 4.0; a refused join never
-  becomes a member, so no probe and no synthetic group). Same outcome, different mechanism; both keep the
-  conflict guard (`session.timeout.ms` / `heartbeat.interval.ms` / `partition.assignment.strategy` with `auto`
-  → `classic`, named). Override: `KAFKA_GROUP_PROTOCOL` or the application's own template. **Why:** the Rust
-  K4 interop drive (mercury #300) ran both engines classic on a Kafka 4.3.1 broker that already finalized
-  `group.version=1`, because this template shipped the line commented out — automatic switching was opt-in
-  and nobody had opted in. **Release note to READ:** an application that never set `group.protocol` now joins a
-  KIP-848 cluster with the consumer rebalance protocol. Java branch `feat/kafka-group-protocol-auto-default`
-  (`ee37b907`, PR #436 MERGED 2026-09-21, squash `7def2bb4`); Rust twin on mercury `feat/kafka-group-protocol-auto`. Relates [[kafka-mesh-opt-in]] (the module is
-  the opt-in building block, not the mesh) and [[conv-ports-adopt-java-release-number]] (the Rust port carries
-  the same default at its next catch-up).
-  <!-- id: kafka-group-protocol-auto-default | created: 2026-09-21 | last_used: 2026-09-23 | uses: 3 | tier: archive-candidate | origin: 2026-09-21-184342 -->
-
-- **The Kafka flow adapter can carry its own Schema Registry identity — an opt-in second codec on the existing prefix seam,
-  never a new mechanism (a field installation's fix, reviewed and reconstructed 2026-09-24; PR #458 squash
-  `37e0f792`; SHIPPED in v4.12.17).** `KafkaFlowAutoStart` shares one `SchemaCodec` between
-  `simple.kafka.notification` and the flow adapter unless `schema.registry.consumer.properties` names a registry client
-  template; then `resolveConsumerSchemaCodec` builds the adapter's codec through `SchemaCodec.fromConfig(config, url, prefix)`
-  under `schema.registry.consumer` — the seam twin-kafka runs on for a second cluster's registry, applied to ONE registry with
-  two identities: the same `schema.registry.url` (a consumer decodes ids minted by the registry its producers use), that
-  template, `schema.registry.consumer.serde.*` overrides on top, its own caches. Presence is the opt-in (blank = unset, the
-  `${ENV_VAR:}` idiom); unset, the old behaviour byte-for-byte, pinned by `assertSame`; `schema.registry.url` stays the feature
-  switch. **Why:** Confluent installations that grant CSFLE key (KEK) access per direction — separate produce and consume
-  identity pools — so no single identity decrypts everything a service consumes. **Two seam facts to READ before advising a
-  field:** a `<prefix>.serde.*` override reaches the serdes' configuration and the DEK-registry client CSFLE builds from it
-  (where key access is decided), NOT the codec's own schema-by-id client, which keeps the template's identity — a second
-  template covers both; and each codec reads only its own prefix, so a `schema.registry.serde.*` KMS credential is repeated
-  under the consumer prefix. **Synced 2026-09-24 (Eric's ruling before v4.12.17):** the policy is now the public, prefix-parameterized
-  `SchemaCodec.forConsumer(config, url, keyPrefix, producerCodec)`; the primary helper delegates and twin-kafka's
-  secondary adapter uses it under `secondary.schema.registry` (`secondary.schema.registry.consumer.properties`, PR #460
-  squash `47d9acf8`); the Rust twin `SchemaCodec::for_consumer` (Increment 139)
-  carries the identity in the template — no serde layer there. **Sample:** the sync-over-async demo's `application.properties` (commented block, both
-  variants) and `schema-registry-consumer.properties` next to it — in the application, never the library jar (a same-named
-  resource would collide by classpath order). Applies [[clean-knowledge-design-over-engine-coverage]]; relates [[kafka-mesh-opt-in]].
-  <!-- id: kafka-consumer-registry-identity | created: 2026-09-24 | last_used: 2026-09-24 | uses: 3 | tier: archive-candidate | origin: 2026-09-24-222349 -->
 
 - **graph.math is typed and finite: a boolean is never a number, an unknown function and an overflow fail by name, and
   exact-decimal money belongs in a `graph.task` function — the math package stays minimal (Eric's rulings on a field
@@ -525,7 +369,7 @@
   [[static-decision-table-is-graph-data]] and [[minigraph-guarded-async-completion]]. **Partly superseded 2026-09-30 by
   [[decimal-statement-exact-arithmetic]]:** the "exact-decimal money belongs in a `graph.task` function, `BigDecimal` is never
   added to the dialect" ruling no longer holds — `DECIMAL:` is that statement; the typed/finite `COMPUTE` rules stand.
-  <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-09-28 | uses: 4 | tier: active | origin: 2026-09-25-183540 -->
+  <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-10-02 | uses: 8 | tier: active | origin: 2026-09-25-183540 -->
 
 - **`graph.model.automation` accepts a comma-separated list of manifests, and the later manifest wins (Eric, 2026-09-25;
   PR #465 squash `40ce30a7` MERGED 2026-09-25, Rust twin mercury #332 merge `d3d82a3f`, Increment 142; SHIPPED in
@@ -543,7 +387,7 @@
   serving from the jar. Docs: `ai-agent-guide.md#deploy-without-rebuild`, the config reference, the walkthrough; claim
   `graph-manifest-list-later-wins` on both engines; the Rust override is a `-D` program argument
   (`cargo run -p minigraph-playground -- -D…`). Extends ADR-0011 without changing its rule. Relates [[eric-code-changes-via-pr]].
-  <!-- id: graph-manifest-list-later-wins | created: 2026-09-25 | last_used: 2026-09-25 | uses: 3 | tier: active | origin: 2026-09-25-223633 -->
+  <!-- id: graph-manifest-list-later-wins | created: 2026-09-25 | last_used: 2026-10-02 | uses: 6 | tier: active | origin: 2026-09-25-223633 -->
 
 - **Exact decimal arithmetic is a `DECIMAL:` statement in `graph.math` — the high-precision `COMPUTE:`, strings at rest, no graph-level
   mode (Eric's rulings, 2026-09-30; RFC-0001 promoted to ADR-0025 in PR #473; implemented in PR #471, squash `3b4cad82`; SHIPPED in
@@ -559,7 +403,7 @@
   `graph.task` function; `BigDecimal` never enters the dialect"); the rest of that ruling stands. **Method note:** RFC first,
   implement on one branch, promote to ADR only after review and green CI — the ledger recorded a decision, never a proposal
   ([[conv-proposals-not-in-adr-ledger]]). Delivered on both engines (Rust twin: mercury #335 + #336, one shared core); open: the release ([[decimal-ports-and-release]]; the python/node packs need no change — they are Event-over-HTTP function hosts; closes [[decimal-mode]]). (ADR-0025)
-  <!-- id: decimal-statement-exact-arithmetic | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: working | origin: 2026-09-30-221603 -->
+  <!-- id: decimal-statement-exact-arithmetic | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: archive-candidate | origin: 2026-09-30-221603 -->
 
 - **A deterministic MsgPack packager: keys sorted by UTF-8 bytes at every depth, `{manifest, maps}`, one canonical profile, integrity left to the
   application (Eric's rulings, 2026-10-01; RFC-0002 promoted to ADR-0026 in PR #484; Java `CanonicalPackager` #481/#482/#483 and the Rust
@@ -575,7 +419,7 @@
   per nesting level (its 64 accepted 31), so a library-limit corner needs its own vector. Language packs do not carry it (Event-over-HTTP function
   hosts). Deferred: folder `pack`/`unpack` tooling, trusted timestamps, per-entry manifest records, the graph-set loader RFC. Relates
   [[graph-manifest-list-later-wins]] (the loader's precedence). (ADR-0026)
-  <!-- id: canonical-packager-wire-contract | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-09-30-221603 -->
+  <!-- id: canonical-packager-wire-contract | created: 2026-10-01 | last_used: 2026-09-30 | uses: 1 | tier: archive-candidate | origin: 2026-09-30-221603 -->
 
 - **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed response is traced
   at its head and its tail, never per token (Eric's rulings on the Dynatrace review of the v4.12.15 certification traces,
@@ -599,7 +443,7 @@
   in `docs/test-reports/`). Extends [[otel-optional-service-and-negative-control]]; applies
   [[trace-thread-keyed-mono-gotcha]] (capture the span on the worker thread — the relay outlives it); tested by
   `EventOverHttpStreamTest.edgeRelaySpansAreConnected` and the Rust `event_over_http_stream::edge_relay_spans_are_connected`.
-  <!-- id: connected-edge-spans | created: 2026-09-22 | last_used: 2026-09-23 | uses: 3 | tier: archive-candidate | origin: 2026-09-22-200813 -->
+  <!-- id: connected-edge-spans | created: 2026-09-22 | last_used: 2026-10-02 | uses: 4 | tier: active | origin: 2026-09-22-200813 -->
 
 - **`graph.js` is deprecated and its module will be removed once field installations finish migrating (Eric, 2026-09-30; the
   docs have carried the DEPRECATED notice since 2026-09).** New capability targets `graph.math`, with `graph.task` for what the
@@ -607,7 +451,7 @@
   `graph.math` only, and `graph.js` rejects it as it rejects any tag it does not know. The reasons are in
   `docs/guides/knowledge-graph/skills-reference.md#js` (runtime JavaScript is an injection surface, and an equality comparison
   with a quoted string literal was measured silently evaluating `false`). Relates [[clean-knowledge-design-over-engine-coverage]].
-  <!-- id: graph-js-deprecated-removal | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: working | origin: 2026-09-30-170759 -->
+  <!-- id: graph-js-deprecated-removal | created: 2026-09-30 | last_used: 2026-10-02 | uses: 3 | tier: active | origin: 2026-09-30-170759 -->
 
 - **The LLM helper is not engine code: it is a Claude-only function host in the Python and Node packs, and the Java engine only points at it (PR #488, squash `7c938ef1`; Eric's rulings,
   2026-10-01).** `examples/llm-helper` in mercury-python (#38) and mercury-nodejs (#106) serves `llm.chat`, `llm.stream` and `llm.health` on the Anthropic SDK; the engine stays LLM-free and holds no
@@ -620,7 +464,7 @@
   (Eric): it thinks before it answers and its thinking tokens count against `max_tokens`, so the triage graph now asks for 2000 tokens (512 before) and Haiku 4.5 is the documented choice for smooth
   rendering; a 48-call probe found no empty result at the old budgets either, so the change removes the question. AWS Bedrock through IAM is the helper's planned second backend (a thread in the
   packs). Rust twin: mercury #342.
-  <!-- id: llm-helper-certification-java | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-001806 -->
+  <!-- id: llm-helper-certification-java | created: 2026-10-01 | last_used: 2026-10-02 | uses: 1 | tier: active | origin: 2026-10-02-001806 -->
 
 - **The playground example's flows config is sample configuration that duplicates the engine's, kept on purpose, and tutorial 13 is deployed there (Eric, 2026-10-01; PR #489, squash `333f78ce`).**
   The engine module ships `flows.yaml`, `flows/graph-executor.yml` and `flows/flow-11.yml`; `examples/minigraph-playground` carries byte-identical copies in `src/main/resources` (and one more identical trio
@@ -629,7 +473,7 @@
   the reader to review `flows.yaml` and `flow-11.yml` in the resources folder), so the example keeps them; the test-resource trio is a harmless duplicate. **Tutorial 13** had been missing from the example's
   manifest since the CompileGraph gate (#240), when it needed a fixture function; it became an `async.http.request` client of the app's own dev mock in #267 and nobody revisited the list. It is listed now, and
   `GraphTests` runs it and its unknown-profile error (23 tests). The Rust example and template got the same flows config in mercury #343. Follow-up: [[flow-11-doc-label]]. Relates [[minigraph-dev-mode-app-shape]].
-  <!-- id: playground-example-flows-are-sample-config | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-001806 -->
+  <!-- id: playground-example-flows-are-sample-config | created: 2026-10-01 | last_used: 2026-10-02 | uses: 2 | tier: active | origin: 2026-10-02-001806 -->
 
 - **The Playground webapp has one source and two deploy targets, and the help pages are one consolidated set (Eric, 2026-10-02; PR #496 squash `a6dc9ce5`, the Rust twin mercury #347 merge `781fae43`, both MERGED 2026-10-02).** The webapp "graduated": its scoped
   memory bank, steering files and pre-graduation specs under `system/minigraph-playground-engine/webapp/` are retired, its technical documentation is regenerated from the code in `webapp/docs/` (README,
@@ -644,7 +488,7 @@
   `key[]=value`, which the engine stores as one-element lists (`skill` included); the paste now reuses the node editor's conversion and the authoring builder, the one serialization boundary, and a node
   the grammar cannot carry is refused with "Paste failed" (bundle `index-CN-KsNrA`). Extends [[help-edit-needs-bundle-release]]; closed the three Rust-twin threads (a port twin of a UI change is a deploy
   once the UI has one source). Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
-  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-175751 -->
+  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-02 | uses: 2 | tier: active | origin: 2026-10-02-175751 -->
 
 ## Conventions
 
@@ -659,7 +503,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-09-28 | uses: 54 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-02 | uses: 65 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -679,7 +523,7 @@
   PR). Both errors came from writing out of recollection of my own work instead of out of the
   repository. Corrected in both places via PR #411. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-09-28 | uses: 15 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-10-02 | uses: 21 | tier: active | origin: 2026-09-17-183008 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
@@ -688,7 +532,7 @@
   examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-25 | uses: 24 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-25 | uses: 24 | tier: archive-candidate | origin: 2026-09-01-022524 -->
 - **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
   sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
   identifies **content**, not "this engine's Nth release". This covers the Rust port AND the python
@@ -701,7 +545,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-09-25 | uses: 22 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-10-02 | uses: 23 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -715,7 +559,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-25 | uses: 20 | tier: active | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-25 | uses: 20 | tier: archive-candidate | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - **Declare a Memory Reference when a fact is CONSULTED to make a decision — not only when it is
@@ -786,7 +630,7 @@
   ([[playground-webapp-single-source]]): `npm run release:rust` or `release:all` also deploys the bundle and a mirror of the help pages into the sibling Rust repo, so a help edit is done when BOTH repos
   carry the result. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout: only the entry
   page moved out of `public/`).
-  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-015208 -->
+  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-02 | uses: 6 | tier: active | origin: 2026-10-02-015208 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
@@ -828,7 +672,7 @@
   stays LLM/vendor-free with adapters as functions ON the wrappers: the gateway/MCP edge is where
   vendor specifics live, never in the engine.
   → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-09-23 | uses: 19 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-10-02 | uses: 20 | tier: working | origin: 2026-08-25-213703 -->
 ## Open Threads
 
 > Open Threads live **one per file** in `memory/open-threads/` (`thread-<id>.md`;

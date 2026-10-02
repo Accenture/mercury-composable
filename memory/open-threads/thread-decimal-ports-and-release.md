@@ -5,4 +5,4 @@
   change. Not part of this thread: the folder `pack`/`unpack` tooling and the graph-set loader RFC (deferred in ADR-0026), RFC-0003 (Parked) and RFC-0004
   (Withdrawn). Relates [[decimal-statement-exact-arithmetic]], [[canonical-packager-wire-contract]], [[eric-release-rhythm]].
   → serves: vision-mercury-composable
-  <!-- id: decimal-ports-and-release | created: 2026-10-01 | last_used: 2026-10-01 | uses: 5 | tier: working -->
+  <!-- id: decimal-ports-and-release | created: 2026-10-01 | last_used: 2026-09-30 | uses: 1 | tier: working -->

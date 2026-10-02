@@ -60,4 +60,8 @@
   function/constant registry). Lesson: a dialect is a closed set — document it as one and pin the set,
   or every agent re-derives it from source. Rust twin MERGED the same day (mercury #334, merge `41a7f418`,
   Increment 143). (origin: 2026-09-28-230310)
+  **Sweep at the 2026-10-02 review (12 logs since 2026-09-28-230310):** 3 carry `## Doc Gaps`, 1 records a gap — whether the playground
+  example needs its own copy of the flow files (`help tutorial 11`, the AI agent guide's manifest) — CLOSED the same day in PR #489
+  (`playground-example-flows-are-sample-config`; the manifest label fixed, `flow-11-doc-label` closed). Still pending from the W2
+  measurement: the re-measure with a fresh question set (not run at this review).
   <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-09-28 | uses: 6 | tier: working | origin: 2026-09-01-032130 -->

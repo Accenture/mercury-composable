@@ -6,4 +6,4 @@
   are named in [[canonical-packager-wire-contract]]. Applies [[conv-proposals-not-in-adr-ledger]].
   → proposal: RFC-0002
   → serves: vision-mercury-composable
-  <!-- id: canonical-msgpack-packager | created: 2026-09-30 | last_used: 2026-10-01 | uses: 3 | tier: working -->
+  <!-- id: canonical-msgpack-packager | created: 2026-09-30 | last_used: 2026-09-30 | uses: 2 | tier: archive-candidate -->
