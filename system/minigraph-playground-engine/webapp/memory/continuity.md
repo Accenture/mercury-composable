@@ -5,7 +5,7 @@
 - **scope:** MiniGraph Playground React/Vite webapp
 - **root:** `system/minigraph-playground-engine/webapp`
 - **served bundle:** `system/minigraph-playground-engine/src/main/resources/public`
-- **last_session:** 2026-10-02 | agent: Claude Code (2026-10-02-032130)
+- **last_session:** 2026-10-02 | agent: Claude Code (2026-10-02-041143)
 
 ## Current Facts
 
@@ -231,6 +231,25 @@
   console answers, and a skill without a bundled page still goes to the backend. Extends
   [[webapp-playground-help-profiles]].
   <!-- id: webapp-describe-skill-help-panel | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-032130 -->
+
+- **The vitest suite installs happy-dom's web storage itself, so `npm test` needs no `NODE_OPTIONS` on
+  any Node version (2026-10-01, Eric's request; branch `fix/webapp-tests-node26-webstorage`, commit
+  `8818b2de`, PR opened by Eric).** Node 25 turned its own Web Storage API on by default: without
+  `--localstorage-file` Node's `localStorage` reads as undefined (Node 26.10 also warns), and Vitest 4's
+  happy-dom environment does not override a global Node already defines unless the name is on its key
+  list (`Storage` is, `localStorage` and `sessionStorage` are not). On Node 26 that failed 23 tests in
+  three files at `localStorage.clear()`, ran the `sessionStorage` tests on Node's own store, and let
+  `GraphViewControls` pass only through `useLocalStorage`'s catch. `src/test/setupWebStorage.ts` (a
+  `setupFiles` entry) defines both names as fresh happy-dom `Storage` instances when `happyDOM` is on the
+  global, without reading Node's getter, so the warning is gone too;
+  `src/test/__tests__/setupWebStorage.test.ts` pins the contract. No Node flag: Node 26 lists
+  `--no-experimental-webstorage` as an alias of `--webstorage`, and a Node that predates the flag refuses
+  to start with it. **Remove the setup file at the Vitest 5 upgrade** (vitest-dev/vitest#10293 lists both
+  names; the 4.x report #10867 was closed as not planned) and keep the test. Verify storage changes on
+  Node 26 without `NODE_OPTIONS`; `--no-experimental-webstorage` stands in for Node 22's globals. The
+  setup file is outside the app graph, so it needs no bundle release (a `vite build` matched the
+  committed bundle). The Rust twin is the root thread `webapp-tests-webstorage-rust-twin`.
+  <!-- id: webapp-tests-node25-webstorage-setup | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-041143 -->
 
 ## Open Threads
 
