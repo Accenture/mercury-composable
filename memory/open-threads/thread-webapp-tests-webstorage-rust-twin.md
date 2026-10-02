@@ -1,5 +1,5 @@
 - [ ] **(twin) The Rust Playground webapp's vitest suite has no web storage setup file, so its happy-dom tests should fail on Node 25+ as the Java copy's did.** The
-  Java fix is on branch `fix/webapp-tests-node26-webstorage` (commit `8818b2de`; Eric opens the PR): `src/test/setupWebStorage.ts`, a `setupFiles` entry in
+  Java fix is on branch `fix/webapp-tests-node26-webstorage` (commit `8818b2de`, PR #494): `src/test/setupWebStorage.ts`, a `setupFiles` entry in
   `vitest.config.ts`, installs a fresh happy-dom `Storage` as `localStorage` and `sessionStorage`, and `src/test/__tests__/setupWebStorage.test.ts` pins it. In
   mercury, `crates/knowledge-graph/webapp` has the same `vitest.config.ts`, vitest 4.1.11, happy-dom ^20.11.1 and the same four storage-using happy-dom test files
   (not run there), so the twin is those two files and the config lines; test tooling only, no Rust bundle release. The setup file goes at the Vitest 5 upgrade
