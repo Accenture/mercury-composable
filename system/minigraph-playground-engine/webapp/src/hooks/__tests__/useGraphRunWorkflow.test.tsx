@@ -322,12 +322,50 @@ describe('useGraphRunWorkflow', () => {
     expect(result.current.phase).toBe('requesting-input');
   });
 
-  it('rejects actions when the graph cannot be controlled by this session', () => {
-    const { result, rerender, initialProps, sendRawText } = setup();
+  it('lets a subscribed session instantiate, upload its mock input and run, as an equal partner', () => {
+    const { result, rerender, initialProps, bus, sendRawText } = setup(graphWithInput);
 
     act(() => rerender({ ...initialProps, isPrimary: false }));
-    expect(result.current.canInteract).toBe(false);
-    act(() => expect(result.current.runGraph()).toBe(false));
-    expect(sendRawText).not.toHaveBeenCalled();
+    expect(result.current.canInteract).toBe(true);
+    expect(result.current.canInstantiate).toBe(true);
+    expect(result.current.disabledReason).toBe('');
+
+    act(() => expect(result.current.instantiateGraph()).toBe(true));
+    expect(sendRawText).toHaveBeenNthCalledWith(1, GRAPH_RUN_COMMANDS.instantiate);
+    act(() => emitRaw(bus, 1, '> instantiate graph'));
+    act(() => emitRaw(bus, 2, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
+    expect(sendRawText).toHaveBeenNthCalledWith(2, GRAPH_RUN_COMMANDS.requestInputUpload);
+
+    act(() => emitRaw(bus, 3, 'You may upload JSON payload -> POST /api/mock/ws-200-2'));
+    expect(result.current.phase).toBe('awaiting-input');
+    expect(result.current.isWorkflowInputPanel).toBe(true);
+    act(() => expect(result.current.handleInputUploadSuccess('/api/mock/ws-200-2')).toBe(true));
+    expect(result.current.phase).toBe('ready');
+
+    // A graph refetch while subscribed keeps the run (only a topology change resets it).
+    act(() => rerender({ ...initialProps, isPrimary: false, graphData: { ...graphWithInput } }));
+    expect(result.current.phase).toBe('ready');
+
+    act(() => expect(result.current.runGraph()).toBe(true));
+    expect(sendRawText).toHaveBeenNthCalledWith(3, GRAPH_RUN_COMMANDS.run);
+    expect(result.current.phase).toBe('running');
+  });
+
+  it('resets the run when the session subscribes or unsubscribes', () => {
+    const { result, rerender, initialProps, bus } = setup();
+
+    act(() => result.current.instantiateGraph());
+    act(() => emitRaw(bus, 1, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
+    expect(result.current.phase).toBe('ready');
+
+    act(() => rerender({ ...initialProps, isPrimary: false }));
+    expect(result.current.phase).toBe('idle');
+
+    act(() => result.current.instantiateGraph());
+    act(() => emitRaw(bus, 2, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
+    expect(result.current.phase).toBe('ready');
+
+    act(() => rerender({ ...initialProps, isPrimary: true }));
+    expect(result.current.phase).toBe('idle');
   });
 });

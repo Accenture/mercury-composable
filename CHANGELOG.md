@@ -54,6 +54,12 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    that page in the help panel, as it does for `help graph-math`, and the console keeps only the command. `describe graph`,
    `describe node` and `describe connection` still answer in the console, and so does a skill without a bundled page. The engine
    and the companion API are unchanged: `describe skill` still returns the page as text.
+8. **A subscribed MiniGraph Playground session can instantiate and run the graph.** Subscribed sessions are equal partners, and the
+   engine already runs a subscriber's command through the primary in every member's session, but the Playground disabled
+   **Instantiate** and **Run** in a subscribed session ("Run the graph from the host session"), so a subscriber could not start a
+   graph instance or upload its mock input. Both buttons now work in every session. Mock input stays per session: each member's
+   instance holds what was uploaded through that member's own prompt, and every member gets a prompt when anyone instantiates a
+   graph that reads `input.body`. Subscribing or unsubscribing still resets the run controls.
 
 ---
 ## Version 4.12.20, 10/1/2026

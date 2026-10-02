@@ -973,7 +973,7 @@ Subscribes to `bus.on('command.helpOrDescribe')` when Help is enabled. When the 
 
 #### `useGraphRunWorkflow`
 
-Minigraph-only state machine for toolbar-driven graph execution. It sends the existing `instantiate graph`, `upload mock data`, and `run` text commands, then advances only from typed ProtocolBus lifecycle events. Run stays locked until instance creation and any required `input.body` upload are acknowledged. Graph mutation/export, identity changes, session reset, connection-epoch changes, disconnect, and loss of host ownership invalidate Ready or quarantine an outstanding response. Because the text protocol has no correlation id, upload success/cancel also carries the modal's exact invitation path and cannot complete a different workflow-owned prompt.
+Minigraph-only state machine for toolbar-driven graph execution. It sends the existing `instantiate graph`, `upload mock data`, and `run` text commands, then advances only from typed ProtocolBus lifecycle events. Run stays locked until instance creation and any required `input.body` upload are acknowledged. Graph mutation/export, identity changes, session reset, connection-epoch changes, disconnect, and subscribing or unsubscribing invalidate Ready or quarantine an outstanding response. The controls do not depend on the session's role: a subscribed session is an equal partner, and the backend runs its commands through the primary in every member's session. Because the text protocol has no correlation id, upload success/cancel also carries the modal's exact invitation path and cannot complete a different workflow-owned prompt.
 
 #### `useLargePayloadDownload`
 

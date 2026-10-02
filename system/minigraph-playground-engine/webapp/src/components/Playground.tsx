@@ -619,9 +619,9 @@ export default function Playground({ config }: PlaygroundProps) {
     // already invalidate via the workflow's own graph.mutation subscription,
     // and reconnects via connectionEpoch.
     graphIdentity: sessionGraphPath,
-    isPrimary:
-      supportsGraphRun !== true ||
-      (sessionCollaboration.state.sessionId !== null && sessionCollaboration.isPrimary),
+    // Not a gate: a subscribed session runs the graph as an equal partner.
+    // Subscribing or unsubscribing resets the workflow.
+    isPrimary: sessionCollaboration.isPrimary,
     sendRawText: ws.sendRawText,
     addToast,
     onWorkflowInputInvalidated: handleCloseUploadPath,
