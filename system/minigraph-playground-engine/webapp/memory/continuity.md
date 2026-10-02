@@ -6,6 +6,8 @@
 - **root:** `system/minigraph-playground-engine/webapp`
 - **served bundle:** `system/minigraph-playground-engine/src/main/resources/public`
 - **last_session:** 2026-10-02 | agent: Claude Code (2026-10-02-041143)
+- **last_review:** 2026-10-02 | through 2026-10-02-041143.md (CADENCE — the layer's first review, 10 sessions: 13 footers
+  refreshed, 2 superseded facts archived into the new `memory/archive/`, 1 drift thread raised)
 
 ## Current Facts
 
@@ -14,24 +16,24 @@
   sorting-only delta (`f156908c`) → #121 session collaboration (`963f7fde`). The session collaboration
   UI introduced backend-authoritative session status, a Session menu, and raw command helpers for
   `session`, `session subscribe`, `session unsubscribe`, and `session reset`.
-  <!-- id: webapp-ui-pr-stack | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-160756 -->
+  <!-- id: webapp-ui-pr-stack | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: archive-candidate | origin: 2026-07-29-160756 -->
 
 - **Session auto-refresh loop fixed (2026-07-29).** The session collaboration hook sent `session` on
   connected mount, but its effect was coupled to a transport callback whose identity can change when
   WebSocket slot messages change. The tactical fix keeps the latest sender/toast callbacks in refs and
   makes `refreshSession` depend only on `enabled`/`connected`; the regression test injects unstable
   sender identity and verifies the initial request is not repeated after status processing.
-  <!-- id: webapp-session-refresh-loop-fix | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-160756 -->
+  <!-- id: webapp-session-refresh-loop-fix | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: archive-candidate | origin: 2026-07-29-160756 -->
 
 - **Strategic transport lesson.** WebSocket imperative operations (`send`, `sendRawText`, connect/
   disconnect) should be stable and separated from reactive slot/message state. Command-sending effects
   should be transition- or event-driven, not rerender-driven by message-list identity churn.
-  <!-- id: webapp-stable-transport-boundary | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-160756 -->
+  <!-- id: webapp-stable-transport-boundary | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: archive-candidate | origin: 2026-07-29-160756 -->
 
 - **Suspend/resume UI boundary.** Graph suspend/resume is an engine feature; the webapp owns visual
   conventions, help surfacing, and refresh/session behavior around it. Engine contracts remain in root
   memory; frontend follow-up belongs here unless it changes a backend contract.
-  <!-- id: webapp-suspend-resume-ui-boundary | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-160756 -->
+  <!-- id: webapp-suspend-resume-ui-boundary | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: archive-candidate | origin: 2026-07-29-160756 -->
 
 - **Node resize visibility regression fixed (2026-08-19).** The UI integration commit `0119292d`
   added a global selected-node rule that set every React Flow resize control to `display: none`,
@@ -39,7 +41,7 @@
   Removing that rule restores selected-node resize handles without changing multi-select or connection
   authoring; a focused happy-dom test renders the real node type, applies the production CSS, and pins
   the controls' visible computed style.
-  <!-- id: webapp-node-resize-regression-fix | created: 2026-08-19 | last_used: 2026-08-19 | uses: 1 | tier: working | origin: 2026-08-19-163020 -->
+  <!-- id: webapp-node-resize-regression-fix | created: 2026-08-19 | last_used: 2026-08-19 | uses: 1 | tier: active | origin: 2026-08-19-163020 -->
 
 - **Graph nodes are content-sized with a measured re-layout (2026-09-08).** Nodes carry no fixed
   `height`: `initialHeight` (content-aware estimate) sizes the pre-measurement paint,
@@ -73,7 +75,7 @@
   Per-row drag grips reorder; a drop re-sorts by key with a STABLE sort so same-key groups
   reform around the user's new relative order. CDP-synthesized mouse drags don't trigger
   HTML5 DnD — verify with dispatched DragEvents.
-  <!-- id: webapp-edit-node-inplace-panel | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
+  <!-- id: webapp-edit-node-inplace-panel | created: 2026-09-08 | last_used: 2026-09-09 | uses: 1 | tier: active | origin: 2026-09-08-164102 -->
 
 - **Connect gesture is Neo4j-style: body = move, halo ring = connect; no modal (2026-09-08,
   Eric's direction — "borrow the Neo4j graph browser UX").** The connect source Handle is a
@@ -96,7 +98,7 @@
   mouse/touch (not pointer) events; verify body-vs-ring hit-testing with
   `document.elementFromPoint`; default `deleteKeyCode` would delete elements client-side
   only — always intercept.
-  <!-- id: webapp-connect-ux-neo4j-halo | created: 2026-09-08 | last_used: 2026-09-08 | uses: 1 | tier: working | origin: 2026-09-08-164102 -->
+  <!-- id: webapp-connect-ux-neo4j-halo | created: 2026-09-08 | last_used: 2026-09-09 | uses: 1 | tier: active | origin: 2026-09-08-164102 -->
 
 - **Undo is frontend-only compensating commands (2026-09-08, Eric's ruling: the backend
   stays lightweight — minimalist design principle; no engine undo journal, hence no Rust
@@ -122,14 +124,7 @@
   JSON-Path uses the same resizable/maximizable Help shell but exposes only its focused Overview.
   Bare JSON-Path `help` resolves locally, while unsupported MiniGraph topics continue to the backend.
   Configuration, local-command interception, and auto-navigation all carry the same content profile.
-  <!-- id: webapp-playground-help-profiles | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: working | origin: 2026-09-09-153221 -->
-
-- **The graph minimap is optional local UI state (2026-09-09).** It is collapsed by default,
-  pannable when open, and shares the single native React Flow Controls stack with zoom/fit and the
-  existing thumbnail/detail toggle. `Ctrl+M` works only on the active usable Graph tab and ignores
-  editable targets. A one-shot three-second hint pauses while hidden/focused, and mobile toasts use
-  the graph-overlay safe area so they do not cover the minimap lane.
-  <!-- id: webapp-toggleable-minimap | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: superseded | superseded-by: webapp-minimap-floating-island | origin: 2026-09-09-153221 -->
+  <!-- id: webapp-playground-help-profiles | created: 2026-09-09 | last_used: 2026-10-02 | uses: 2 | tier: active | origin: 2026-09-09-153221 -->
 
 - **The open minimap is a draggable floating island; no onboarding hint (2026-09-09, Eric's
   post-regression direction — the promo hint "sold the feature" and the fixed lane consumed graph
@@ -155,7 +150,7 @@
   no correlation id, so a workflow serially claims the next invitation after its request.
   (Presentation moved from a modal to the in-place [[webapp-mock-input-inplace-panel]] 2026-09-09;
   the lifecycle machine was untouched.)
-  <!-- id: webapp-graph-toolbar-run-controls | created: 2026-09-09 | last_used: 2026-09-09 | uses: 1 | tier: working | origin: 2026-09-09-153221 -->
+  <!-- id: webapp-graph-toolbar-run-controls | created: 2026-09-09 | last_used: 2026-09-09 | uses: 3 | tier: active | origin: 2026-09-09-153221 -->
 
 - **Mock-data input (create AND the graph-run workflow step) is an in-place left-slot panel, not
   a modal (2026-09-09, Eric's direction — same in-place convention as the node editor; the
@@ -173,14 +168,7 @@
   carries the slot mode so the graph re-fits on width changes. The split is no longer persisted,
   so the versioned `-panel-split-v2` key and its bump-on-change rule are retired: see
   [[webapp-panel-split-not-persisted]].
-  <!-- id: webapp-mock-input-inplace-panel | created: 2026-09-09 | last_used: 2026-09-09 | uses: 2 | tier: working | origin: 2026-09-09-223126 -->
-
-- **The live session graph survives temp-model expiry — restore it, don't toast (2026-09-09,
-  Eric's direction).** SUPERSEDED 2026-09-10: the restore fallback became the primary source —
-  see webapp-live-session-graph-source. (Historic design: `useSessionGraphRestore` fetched
-  `GET /api/graph/session/{id}` only when the pinned temp-model path was a dead end; the
-  model-endpoint 404 bug it noted was fixed engine-side in Java #346 / Rust #249.)
-  <!-- id: webapp-session-live-graph-restore | created: 2026-09-09 | last_used: 2026-09-10 | uses: 2 | tier: superseded | superseded-by: webapp-live-session-graph-source | origin: 2026-09-09-231740 -->
+  <!-- id: webapp-mock-input-inplace-panel | created: 2026-09-09 | last_used: 2026-10-02 | uses: 3 | tier: active | origin: 2026-09-09-223126 -->
 
 - **The graph view's single source is the live session endpoint; describe/export links are a
   human surface (2026-09-10, Eric's design).** `useGraphData` fetches
@@ -218,7 +206,7 @@
   browser on the old bundle: the panel ids are React `useId` values, stable for the same tree.
   Pinned by the `Playground panel split` block in `PlaygroundHelp.test.tsx`. Replaces the
   persisted-split rule of [[webapp-mock-input-inplace-panel]].
-  <!-- id: webapp-panel-split-not-persisted | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-032130 -->
+  <!-- id: webapp-panel-split-not-persisted | created: 2026-10-01 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-032130 -->
 
 - **`describe skill {route}` for a built-in skill is a help command: its page opens in the help
   panel (2026-10-01, Eric's direction; same PR #493, squash `1619a4f3`).** Both engines answer it with the page
@@ -230,7 +218,7 @@
   the engines. `describe graph` (a Graph-tab link), `describe node` and `describe connection` stay
   console answers, and a skill without a bundled page still goes to the backend. Extends
   [[webapp-playground-help-profiles]].
-  <!-- id: webapp-describe-skill-help-panel | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-032130 -->
+  <!-- id: webapp-describe-skill-help-panel | created: 2026-10-01 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-032130 -->
 
 - **The vitest suite installs happy-dom's web storage itself, so `npm test` needs no `NODE_OPTIONS` on
   any Node version (2026-10-01, Eric's request; branch `fix/webapp-tests-node26-webstorage`, commit
@@ -249,7 +237,7 @@
   Node 26 without `NODE_OPTIONS`; `--no-experimental-webstorage` stands in for Node 22's globals. The
   setup file is outside the app graph, so it needs no bundle release (a `vite build` matched the
   committed bundle). The Rust twin is the root thread `webapp-tests-webstorage-rust-twin`.
-  <!-- id: webapp-tests-node25-webstorage-setup | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-041143 -->
+  <!-- id: webapp-tests-node25-webstorage-setup | created: 2026-10-01 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-041143 -->
 
 ## Open Threads
 
@@ -263,3 +251,10 @@
 - [ ] Manually inspect the Session menu across route navigation and reset before landing
   `feature/ui-merges`.
   <!-- id: thread-webapp-session-menu-manual-check | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-160756 -->
+
+- [ ] **Drift (raised by the 2026-10-02 review):** `thread-webapp-session-menu-manual-check` asks for a manual
+  Session-menu check "before landing `feature/ui-merges`", but the stack landed as PR #262
+  (`feature/ui-merges-v4`, merge `d1c3f1ff`), and no session records the check. Eric decides: close it (done
+  but unrecorded, or dropped), or restate it as a check against the current Playground. The review closes
+  nothing itself.
+  <!-- id: webapp-session-menu-check-drift | created: 2026-10-02 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-041143 -->
