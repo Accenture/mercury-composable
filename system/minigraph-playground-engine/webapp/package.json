@@ -8,8 +8,12 @@
     "build": "npm run typecheck && vite build",
     "preview": "vite preview",
     "clean": "node scripts/clean.js",
-    "release": "npm run clean && npm run build && npm run deploy",
+    "clean:rust": "node scripts/clean.js rust",
     "deploy": "node scripts/deploy.js",
+    "deploy:rust": "node scripts/deploy.js rust",
+    "release": "npm run clean && npm run build && npm run deploy",
+    "release:rust": "npm run clean:rust && npm run build && npm run deploy:rust",
+    "release:all": "npm run clean && npm run clean:rust && npm run build && npm run deploy && npm run deploy:rust",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

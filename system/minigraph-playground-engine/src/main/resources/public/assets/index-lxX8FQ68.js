@@ -39,27 +39,41 @@ Error generating stack: `+e.message+`
     <status>inactive</status>
   </item>
 </items>`};function he(e){return`ws://${window.location.host}${e}`}var F=ne();function ge(e,t,n,r){let i=e[t]??{phase:`idle`,connectionEpoch:null,messages:[]},a=[...i.messages,{id:n,raw:r}];return a.length>200&&a.shift(),{...e,[t]:{...i,messages:a}}}function _e(e,t){let n=e[t.path]??{phase:`idle`,connectionEpoch:null,messages:[]};switch(t.type){case`CONNECTING`:return{...e,[t.path]:{...n,phase:`connecting`}};case`CONNECTED`:return ge({...e,[t.path]:{...n,phase:`connected`,connectionEpoch:t.id}},t.path,t.id,t.msg);case`MESSAGE_RECEIVED`:return ge(e,t.path,t.id,t.msg);case`DISCONNECTED`:return ge({...e,[t.path]:{...n,phase:`idle`}},t.path,t.id,t.msg);case`CONNECT_ERROR`:return{...e,[t.path]:{...n,phase:`idle`}};case`CLEAR_MESSAGES`:return{...e,[t.path]:{...n,messages:[]}};default:return e}}var ve=(0,A.createContext)(null);function ye({children:e}){let[t,n]=(0,A.useReducer)(_e,{}),r=(0,A.useRef)({}),i=(0,A.useRef)({}),a=(0,A.useRef)({});(0,A.useEffect)(()=>()=>{Object.entries(r.current).forEach(([e,t])=>{t?.close();let n=i.current[e];n&&clearInterval(n)})},[]);let o=e=>he(e),s=e=>(a.current[e]=(a.current[e]??0)+1,a.current[e]),c=()=>{let e=new Date().toString(),t=e.indexOf(`GMT`);return t>0?e.substring(0,t).trim():e},l=(e,t)=>JSON.stringify({type:e,message:t,time:c()}),u=e=>{try{let t=JSON.parse(e);if(typeof t==`object`&&t){let e=t.type;return e===`ping`||e===`pong`}}catch{}return!1},d=(0,A.useCallback)((e,t)=>{if(!window.WebSocket){t?.(`WebSocket not supported by your browser`,`error`);return}let a=r.current[e];if(a&&(a.readyState===WebSocket.OPEN||a.readyState===WebSocket.CONNECTING)){t?.(`Already connected`,`error`);return}n({type:`CONNECTING`,path:e});let c=new WebSocket(o(e));r.current[e]=c,c.onopen=()=>{n({type:`CONNECTED`,path:e,id:s(e),msg:l(`info`,`connected`)}),t?.(`Connected to WebSocket`,`success`),c.send(JSON.stringify({type:`welcome`})),i.current[e]=setInterval(()=>{c.readyState===WebSocket.OPEN&&c.send(l(`ping`,`keep alive`))},pe)},c.onmessage=t=>{u(t.data)||n({type:`MESSAGE_RECEIVED`,path:e,id:s(e),msg:t.data})},c.onerror=()=>{n({type:`CONNECT_ERROR`,path:e})},c.onclose=a=>{let o=i.current[e];o&&(clearInterval(o),i.current[e]=null),n({type:`DISCONNECTED`,path:e,id:s(e),msg:l(`info`,`disconnected - (${a.code}) ${a.reason}`)}),t?.(`Disconnected from WebSocket`,`info`),r.current[e]===c&&(r.current[e]=null)}},[]),f=(0,A.useCallback)(e=>{let t=r.current[e];t?t.close():n({type:`MESSAGE_RECEIVED`,path:e,id:s(e),msg:l(`error`,`already disconnected`)})},[]);(0,A.useEffect)(()=>(me.forEach(e=>{d(e.wsPath)}),()=>{me.forEach(e=>{let t=r.current[e.wsPath];t&&t.close()})}),[]);let p=(0,A.useCallback)((e,t)=>{let n=r.current[e];return n&&n.readyState===WebSocket.OPEN?(n.send(t),!0):!1},[]),m=(0,A.useCallback)((e,t)=>{n({type:`MESSAGE_RECEIVED`,path:e,id:s(e),msg:t})},[]),h=(0,A.useCallback)(e=>{n({type:`CLEAR_MESSAGES`,path:e})},[]),[g,_]=(0,A.useState)({}),v=(0,A.useCallback)((e,t)=>{_(n=>{if(t===null){let t={...n};return delete t[e],t}return{...n,[e]:t}})},[]),y=(0,A.useCallback)(e=>g[e]??null,[g]),b=(0,A.useCallback)(e=>{let t=g[e]??null;return t!==null&&_(t=>{let n={...t};return delete n[e],n}),t},[g]),x=(0,A.useCallback)(e=>t[e]??{phase:`idle`,connectionEpoch:null,messages:[]},[t]),S=(0,A.useMemo)(()=>({getSlot:x,connect:d,disconnect:f,send:p,appendMessage:m,clearMessages:h,setPendingPayload:v,peekPendingPayload:y,takePendingPayload:b}),[x,d,f,p,m,h,v,y,b]);return(0,F.jsx)(ve.Provider,{value:S,children:e})}function be(){let e=(0,A.useContext)(ve);if(!e)throw Error(`useWebSocketContext must be used inside <WebSocketProvider>`);return e}var xe=e=>{try{let t=JSON.parse(e);return{type:t.type||`info`,message:t.message||e,time:t.time,raw:e}}catch{return{type:`raw`,message:e,time:null,raw:e}}},Se=e=>({info:`ℹ️`,error:`❌`,ping:`🔄`,welcome:`👋`,raw:``})[e]??`•`,Ce=e=>{try{let t=JSON.parse(e);if(typeof t==`object`&&t)return{isJSON:!0,data:t}}catch{}return{isJSON:!1,data:null}};function we(e){if(!e.includes(`Graph exported to `))return null;let t=De(e);if(!t)return null;let n=t.split(`/`)[4];return n?{graphName:n,apiPath:t}:null}function Te(e){return e.includes(`Invalid filename`)?{reason:`invalid-name`}:e.includes(`Expect root node name`)?{reason:`root-name-conflict`}:null}function Ee(e){let t=Ce(e);return t.isJSON?(t.data.type,!1):!0}function De(e){let t=e.match(/\/api\/graph\/model\/([^\s'"]+)/);return t?t[0]:null}function Oe(e){return Ee(e)?De(e)!==null:!1}function ke(e){let t=e.match(/\/api\/json\/content\/([\w-]+)/);return t?t[0]:null}function Ae(e){let t=e.match(/Large payload \((\d+)\)\s*->\s*GET\s+(\/api\/inspect\/[^\s]+)/i);if(!t)return null;let n=parseInt(t[1],10),r=t[2];return{apiPath:r,byteSize:n,filename:`${r.split(`/`).filter(Boolean).pop()??`payload`}.json`}}function je(e){let t=e.match(/You may upload .*?->\s*POST\s+(\/api\/mock\/[\w-]+)/i);return t?t[1]:null}function Me(e){if(!e.startsWith(`> `))return!1;let t=e.slice(2).trim().toLowerCase();return t===`help`||t.startsWith(`help `)?!0:t.startsWith(`describe `)?!t.slice(9).trim().startsWith(`graph`):!1}function Ne(e){if(!e.startsWith(`> `)||!e.slice(2).trimStart().toLowerCase().startsWith(`import graph from `))return null;let t=e.slice(2).trimStart().slice(18).trim();return t.length>0?t:null}var Pe=/^node ([A-Za-z0-9_-]+) created$/i,Fe=/^node ([A-Za-z0-9_-]+) already exists$/i,Ie=/^node ([A-Za-z0-9_-]+) updated$/i,Le=/^node ([A-Za-z0-9_-]+) deleted$/i,Re=/^node ([A-Za-z0-9_-]+) connected to ([A-Za-z0-9_-]+)$/i,ze=/^node ([A-Za-z0-9_-]+) not found$/i,Be=/^Source and target nodes must be different$/i,Ve=/^Syntax: connect \{node-A\} to \{node-B\} with \{relation\}$/i,He=/^ERROR: (.+)$/;function Ue(e){let t=e.trim();if(t.startsWith(`> `))return null;let n=t.match(Pe);if(n)return{status:`accepted`,action:`create-node`,alias:n[1],targetAlias:null,message:t};let r=t.match(Fe);if(r)return{status:`rejected`,action:`create-node`,alias:r[1],targetAlias:null,message:t};let i=t.match(Ie);if(i)return{status:`accepted`,action:`edit-node`,alias:i[1],targetAlias:null,message:t};let a=t.match(Le);if(a)return{status:`accepted`,action:`delete-node`,alias:a[1],targetAlias:null,message:t};let o=t.match(Re);if(o)return{status:`accepted`,action:`create-connection`,alias:o[1],targetAlias:o[2],message:t};let s=t.match(ze);return s?{status:`rejected`,action:null,alias:s[1],targetAlias:null,message:t}:Be.test(t)||Ve.test(t)?{status:`rejected`,action:`create-connection`,alias:null,targetAlias:null,message:t}:t.match(He)?{status:`error`,action:null,alias:null,targetAlias:null,message:t}:null}function We(e){if(!Ee(e)||e.startsWith(`> `)||Oe(e))return null;let t=e.toLowerCase();return t.includes(`graph model imported as draft`)?`import-graph`:t.includes(` -> `)&&t.includes(`removed`)||t.startsWith(`node `)&&(t.includes(` created`)||t.includes(` updated`)||t.includes(` deleted`)||t.includes(` connected to `)||t.includes(` imported from `)||t.includes(` overwritten by node from `))?`node-mutation`:null}var Ge={command:``,historyIndex:-1,draftCommand:``};function Ke(e,t){switch(t.type){case`SET_COMMAND`:return{...e,command:t.value,historyIndex:-1,draftCommand:``};case`CLEAR_COMMAND`:return{...e,command:``,historyIndex:-1,draftCommand:``};case`SET_HISTORY_INDEX`:return{...e,historyIndex:t.index,command:t.command};case`ENTER_HISTORY`:return{...e,historyIndex:0,command:t.command,draftCommand:e.command};case`EXIT_HISTORY`:return{...e,historyIndex:-1,command:e.draftCommand,draftCommand:``};default:return e}}function qe({wsPath:e,storageKeyHistory:t,payload:n,addToast:r,bus:i,handleLocalCommand:a}){let o=be(),{phase:s,connectionEpoch:c,messages:l}=o.getSlot(e),u=s===`connected`,d=s===`connecting`,[f,p]=(0,A.useReducer)(Ke,Ge),{command:m,historyIndex:h}=f,[g,_]=fe(t,[]),v=(0,A.useRef)(null),y=(0,A.useRef)(!1);(0,A.useEffect)(()=>{v.current&&(v.current.scrollTop=v.current.scrollHeight)},[l]);let b=(0,A.useCallback)(()=>{o.connect(e,r)},[o,e,r]),x=(0,A.useCallback)(()=>{o.disconnect(e)},[o,e]),S=(0,A.useCallback)(()=>{if(s!==`connected`)return;let t=m.trim();if(t.length!==0){if(a?.(t)===!0){g[0]!==t&&_(e=>[t,...e].slice(0,50)),o.appendMessage(e,`> `+t),p({type:`CLEAR_COMMAND`});return}o.send(e,t),g[0]!==t&&_(e=>[t,...e].slice(0,50)),t===`load`&&(n.length===0?o.appendMessage(e,`ERROR: please paste JSON/XML payload in input text area`):o.send(e,n)),p({type:`CLEAR_COMMAND`})}},[o,e,s,m,n,g,_,a]),C=(0,A.useCallback)(e=>{if(e.key===`ArrowUp`){if(e.preventDefault(),g.length===0)return;if(h===-1)p({type:`ENTER_HISTORY`,command:g[0]});else if(h<g.length-1){let e=h+1;p({type:`SET_HISTORY_INDEX`,index:e,command:g[e]})}}else if(e.key===`ArrowDown`)if(e.preventDefault(),h<=0)h===0&&p({type:`EXIT_HISTORY`});else{let e=h-1;p({type:`SET_HISTORY_INDEX`,index:e,command:g[e]})}},[g,h]);(0,A.useEffect)(()=>{if(i)return i.on(`upload.contentPath`,t=>{if(!y.current)return;if(y.current=!1,n.length===0){o.appendMessage(e,`ERROR: please paste JSON/XML payload in the input text area`);return}let i;try{i=JSON.stringify(JSON.parse(n))}catch{o.appendMessage(e,`ERROR: payload is not valid JSON — cannot upload`);return}fetch(t.uploadPath,{method:`POST`,headers:{"Content-Type":`application/json`},body:i}).then(e=>{if(!e.ok)throw Error(`HTTP ${e.status}`);r(`Payload uploaded successfully`,`success`)}).catch(t=>{o.appendMessage(e,`ERROR: upload failed — ${t.message}`),r(`Upload failed: ${t.message}`,`error`)})})},[i,n,e,o,r]),(0,A.useEffect)(()=>{if(i||!y.current||l.length===0)return;let t=l[l.length-1].raw,a=ke(t);if(!a)return;if(y.current=!1,n.length===0){o.appendMessage(e,`ERROR: please paste JSON/XML payload in the input text area`);return}let s;try{s=JSON.stringify(JSON.parse(n))}catch{o.appendMessage(e,`ERROR: payload is not valid JSON — cannot upload`);return}fetch(a,{method:`POST`,headers:{"Content-Type":`application/json`},body:s}).then(e=>{if(!e.ok)throw Error(`HTTP ${e.status}`);r(`Payload uploaded successfully`,`success`)}).catch(t=>{o.appendMessage(e,`ERROR: upload failed — ${t.message}`),r(`Upload failed: ${t.message}`,`error`)})},[i,l,n,e,o,r]);let w=(0,A.useCallback)(()=>{if(s===`connected`){if(n.length===0){r(`Nothing to upload — paste a JSON payload first`,`error`);return}y.current=!0,o.send(e,`upload`)}},[o,e,s,n,r]),ee=(0,A.useCallback)(t=>s===`connected`&&o.send(e,t),[o,e,s]),te=(0,A.useCallback)(()=>{navigator.clipboard.writeText(l.map(e=>e.raw).join(`
-`)),r(`Console copied to clipboard!`,`success`)},[l,r]),T=(0,A.useCallback)(()=>{o.clearMessages(e),r(`Console cleared`,`info`)},[o,e,r]),E=(0,A.useCallback)(t=>{o.appendMessage(e,t)},[o,e]);return{connected:u,connecting:d,connectionEpoch:c,messages:l,command:m,setCommand:(0,A.useCallback)(e=>p({type:`SET_COMMAND`,value:e}),[]),connect:b,disconnect:x,sendCommand:S,handleKeyDown:C,consoleRef:v,copyMessages:te,clearMessages:T,uploadPayload:w,sendRawText:ee,appendMessage:E,history:g}}function Je(e){let[t,n]=(0,A.useState)(()=>window.matchMedia(e).matches);return(0,A.useEffect)(()=>{let t=window.matchMedia(e),r=e=>n(e.matches);return t.addEventListener(`change`,r),()=>t.removeEventListener(`change`,r)},[e]),t}function Ye(e){if(typeof e!=`object`||!e)return!1;let t=e;return Array.isArray(t.nodes)}function Xe(e,t,n){let r=t.includes(n)?n:t[0]??`graph`;return typeof e==`string`&&t.includes(e)?e:r}function Ze(e){return Ye(e)&&e.nodes.length>0?e:null}function Qe(e,t,n,r,i){let[a,o]=(0,A.useState)(null),[s,c]=fe(i,n),l=Xe(s,r,n),[u,d]=(0,A.useState)(!1),f=(0,A.useCallback)(e=>{c(t=>{let i=Xe(t,r,n);return Xe(typeof e==`function`?e(i):e,r,n)})},[c,r,n]);(0,A.useEffect)(()=>{s!==l&&c(l)},[s,l,c]);let p=(0,A.useRef)(e);(0,A.useEffect)(()=>{p.current=e},[e]);let m=(0,A.useRef)(!1);(0,A.useEffect)(()=>{m.current=a!==null},[a]);let h=(0,A.useRef)(null);(0,A.useEffect)(()=>{if(!e){o(null);return}let t=new AbortController;return o(null),fetch(e,{signal:t.signal}).then(e=>{if(!e.ok)throw Error(`HTTP ${e.status}`);return e.json()}).then(e=>{let t=Ze(e);t&&(o(t),f(`graph`))}).catch(()=>{}),()=>{t.abort()}},[e]);let g=(0,A.useCallback)(()=>{let e=p.current;if(!e)return;h.current?.abort();let n=new AbortController;h.current=n,d(!0),fetch(e,{signal:n.signal}).then(e=>{if(!e.ok)throw Error(`HTTP ${e.status}`);return e.json()}).then(e=>{let t=Ze(e),n=t!==null&&!m.current;o(t),n&&f(`graph`),d(!1)}).catch(e=>{e.name!==`AbortError`&&(t(`Graph refresh failed: ${e.message}`,`error`),d(!1))})},[]);return(0,A.useEffect)(()=>()=>{h.current?.abort()},[]),{graphData:a,setGraphData:o,rightTab:l,setRightTab:f,isRefreshing:u,refetchGraph:g}}function $e({bus:e,hasGraph:t,connected:n,refetchGraph:r,clearGraph:i,addToast:a}){let o=(0,A.useRef)(null),s=(0,A.useRef)(t),c=(0,A.useRef)(n),l=(0,A.useRef)(r);(0,A.useEffect)(()=>{s.current=t},[t]),(0,A.useEffect)(()=>{c.current=n},[n]),(0,A.useEffect)(()=>{l.current=r},[r]),(0,A.useEffect)(()=>{!n&&o.current!==null&&(clearTimeout(o.current),o.current=null)},[n]),(0,A.useEffect)(()=>e.on(`graph.mutation`,e=>{if(c.current){if(e.mutationType===`import-graph`){o.current!==null&&(clearTimeout(o.current),o.current=null),l.current(),a(`Graph imported — refreshing view…`,`info`);return}o.current!==null&&clearTimeout(o.current),o.current=setTimeout(()=>{o.current=null,c.current&&(l.current(),a(s.current?`Graph updated — refreshing…`:`Graph updated — opening Graph tab…`,`info`))},300)}}),[e,a]),(0,A.useEffect)(()=>e.on(`session.reset`,()=>{o.current!==null&&(clearTimeout(o.current),o.current=null),i()}),[e,i]),(0,A.useEffect)(()=>()=>{o.current!==null&&clearTimeout(o.current)},[])}function et(e){return e.replace(/^help\s*/i,``).trim().toLowerCase()}function tt(e){let t=e.trim(),n=t.toLowerCase();if(n===`help`||n.startsWith(`help `))return et(t);let[r,i,a,...o]=n.split(/\s+/);return r===`describe`&&i===`skill`&&a!==void 0&&o.length===0?a.replace(/\./g,`-`):null}var nt=`Connect two nodes together
---------------------------
-1. Each connection is directional. Connect A to B is different from B to A.
-2. A node must connect to one or more nodes. When a graph has orphan nodes, you cannot export the graph for deployment.
+`)),r(`Console copied to clipboard!`,`success`)},[l,r]),T=(0,A.useCallback)(()=>{o.clearMessages(e),r(`Console cleared`,`info`)},[o,e,r]),E=(0,A.useCallback)(t=>{o.appendMessage(e,t)},[o,e]);return{connected:u,connecting:d,connectionEpoch:c,messages:l,command:m,setCommand:(0,A.useCallback)(e=>p({type:`SET_COMMAND`,value:e}),[]),connect:b,disconnect:x,sendCommand:S,handleKeyDown:C,consoleRef:v,copyMessages:te,clearMessages:T,uploadPayload:w,sendRawText:ee,appendMessage:E,history:g}}function Je(e){let[t,n]=(0,A.useState)(()=>window.matchMedia(e).matches);return(0,A.useEffect)(()=>{let t=window.matchMedia(e),r=e=>n(e.matches);return t.addEventListener(`change`,r),()=>t.removeEventListener(`change`,r)},[e]),t}function Ye(e){if(typeof e!=`object`||!e)return!1;let t=e;return Array.isArray(t.nodes)}function Xe(e,t,n){let r=t.includes(n)?n:t[0]??`graph`;return typeof e==`string`&&t.includes(e)?e:r}function Ze(e){return Ye(e)&&e.nodes.length>0?e:null}function Qe(e,t,n,r,i){let[a,o]=(0,A.useState)(null),[s,c]=fe(i,n),l=Xe(s,r,n),[u,d]=(0,A.useState)(!1),f=(0,A.useCallback)(e=>{c(t=>{let i=Xe(t,r,n);return Xe(typeof e==`function`?e(i):e,r,n)})},[c,r,n]);(0,A.useEffect)(()=>{s!==l&&c(l)},[s,l,c]);let p=(0,A.useRef)(e);(0,A.useEffect)(()=>{p.current=e},[e]);let m=(0,A.useRef)(!1);(0,A.useEffect)(()=>{m.current=a!==null},[a]);let h=(0,A.useRef)(null);(0,A.useEffect)(()=>{if(!e){o(null);return}let t=new AbortController;return o(null),fetch(e,{signal:t.signal}).then(e=>{if(!e.ok)throw Error(`HTTP ${e.status}`);return e.json()}).then(e=>{let t=Ze(e);t&&(o(t),f(`graph`))}).catch(()=>{}),()=>{t.abort()}},[e]);let g=(0,A.useCallback)(()=>{let e=p.current;if(!e)return;h.current?.abort();let n=new AbortController;h.current=n,d(!0),fetch(e,{signal:n.signal}).then(e=>{if(!e.ok)throw Error(`HTTP ${e.status}`);return e.json()}).then(e=>{let t=Ze(e),n=t!==null&&!m.current;o(t),n&&f(`graph`),d(!1)}).catch(e=>{e.name!==`AbortError`&&(t(`Graph refresh failed: ${e.message}`,`error`),d(!1))})},[]);return(0,A.useEffect)(()=>()=>{h.current?.abort()},[]),{graphData:a,setGraphData:o,rightTab:l,setRightTab:f,isRefreshing:u,refetchGraph:g}}function $e({bus:e,hasGraph:t,connected:n,refetchGraph:r,clearGraph:i,addToast:a}){let o=(0,A.useRef)(null),s=(0,A.useRef)(t),c=(0,A.useRef)(n),l=(0,A.useRef)(r);(0,A.useEffect)(()=>{s.current=t},[t]),(0,A.useEffect)(()=>{c.current=n},[n]),(0,A.useEffect)(()=>{l.current=r},[r]),(0,A.useEffect)(()=>{!n&&o.current!==null&&(clearTimeout(o.current),o.current=null)},[n]),(0,A.useEffect)(()=>e.on(`graph.mutation`,e=>{if(c.current){if(e.mutationType===`import-graph`){o.current!==null&&(clearTimeout(o.current),o.current=null),l.current(),a(`Graph imported — refreshing view…`,`info`);return}o.current!==null&&clearTimeout(o.current),o.current=setTimeout(()=>{o.current=null,c.current&&(l.current(),a(s.current?`Graph updated — refreshing…`:`Graph updated — opening Graph tab…`,`info`))},300)}}),[e,a]),(0,A.useEffect)(()=>e.on(`session.reset`,()=>{o.current!==null&&(clearTimeout(o.current),o.current=null),i()}),[e,i]),(0,A.useEffect)(()=>()=>{o.current!==null&&clearTimeout(o.current)},[])}function et(e){return e.replace(/^help\s*/i,``).trim().toLowerCase()}function tt(e){let t=e.trim(),n=t.toLowerCase();if(n===`help`||n.startsWith(`help `))return et(t);let[r,i,a,...o]=n.split(/\s+/);return r===`describe`&&i===`skill`&&a!==void 0&&o.length===0?a.replace(/\./g,`-`):null}var nt=`Connect two nodes
+-----------------
+Create a directional connection from one node to another with a descriptive
+relation label.
 
 Syntax
 ------
 \`\`\`
 connect {node-A} to {node-B} with {relation}
 \`\`\`
-`,rt=`Create a new node
------------------
-1. Root node must use the name 'root' and end node must use 'end'.
-2. Skill is a property with the name 'skill'. A node has zero or one skill.
-3. The 'create node' is a multi-line command 
-4. Properties are optional for a graph model. If present, they are used as default value. 
-5. For each property, you can use the "triple single quotes" to enter a multi-line value if needed. 
-6. Node name and type should use lower case characters and hyphen only
-7. Type and key-values will be used and validated by the node's skill function if any
-8. The key of a property can be a composable key using the dot-bracket format.
-   The value may use Event Script's constant syntax.
+
+Example
+-------
+\`\`\`
+connect root to fetcher with fetch
+\`\`\`
+
+Notes
+-----
+- Connections are directional: 'connect a to b' is different from
+  'connect b to a'.
+- The relation is a free-form descriptive label (e.g. done, fetch, provider);
+  it is not interpreted for skill routing. For data-entity nodes, meaningful
+  relation names capture enterprise knowledge.
+- Multiple outgoing connections from one node fork traversal into parallel
+  branches, one per connection. Synchronize them with a graph.join node
+  (see 'help graph-join').
+- Every node must connect to at least one other node: a graph with orphan
+  nodes cannot be exported for deployment (see 'help export'). Wire config
+  nodes (Dictionary, Provider) and data entities under a graph.island node
+  so no node is left unconnected (see 'help graph-island').
+`,rt=`Create a node
+-------------
+Add a node to the current graph model. This is a multi-line command: enter
+all lines as one block.
 
 Syntax
 ------
@@ -69,13 +83,7 @@ with type {type}
 with properties
 {key1}={value1}
 {key2}={value2}
-...
 \`\`\`
-
-Best practice
--------------
-For root node, we recommend adding a "name" property as the graph name and "purpose" property to describe
-the use case as a one-liner.
 
 Example
 -------
@@ -85,361 +93,259 @@ with type Root
 with properties
 name=helloworld
 purpose=Demo graph
-...
 \`\`\`
+
+Notes
+-----
+- Node names are matched case-insensitively; use lowercase letters, digits
+  and hyphen. The names 'root' and 'end' are reserved: the root node must be
+  named 'root' and the end node must be named 'end'.
+- Types are descriptive labels, conventionally Capitalized (e.g. Root, End,
+  Provider, Dictionary, Fetcher, Island). The type and properties are used
+  and validated by the node's skill, if any.
+- A node has zero or one skill, set with skill={route}.
+- 'with properties' and the key lines are optional. Property values act as
+  defaults for the instance model.
+- A property key may be composite, using the dot-bracket format; a
+  key[]=entry line appends one entry to the list "key" (repeat per entry).
+  Values may use the Event Script constant syntax, e.g. text(hello),
+  int(100), boolean(true).
+- Wrap a multi-line value in triple single quotes (''').
+- Best practice: give the root node a "name" property (the graph name) and a
+  "purpose" property describing the use case as a one-liner.
 `,it=`Data Dictionary
 ---------------
-Based on the MiniGraph technology, the data dictionary method requires (1) Data Dictionary items,
-(2) Data Providers and (3) API Fetchers.
+The data-dictionary method separates WHAT data to get from WHERE it comes
+from. It uses three kinds of nodes:
 
-1. You can create a node holding a data dictionary item
-2. A data dictionary item presents a data attribute that can be retrieved from a data provider using an API fetcher
-3. It has 'input' and 'output' statements to define input parameter(s) and output data mapping respectively
-4. Default value is supported using the colon (':') character (see example below)
+1. Dictionary - defines one data attribute (or set of attributes)
+   retrievable from a provider
+2. Provider - defines the HTTP endpoint that supplies it
+3. Fetcher - a node with skill=graph.api.fetcher that names dictionaries and
+   makes the call(s) at run time (see 'help graph-api-fetcher')
 
-Syntax
-------
+Dictionary and Provider are CONFIGURATION nodes: they never execute and are
+referenced by name (dictionary[]=..., provider=...). Do not leave them
+floating - wire them into the knowledge layer under a graph.island node so
+the graph carries its own entity-relationship diagram:
+root -[contains]-> island -[data]-> dictionary -[provider]-> provider.
+See 'help graph-island'.
+
+Dictionary node
+---------------
+Defines one data attribute retrievable through a Provider.
+
 \`\`\`
 create node {name}
 with type Dictionary
 with properties
-purpose={something about this data dictionary item}
-provider={data provider}
+purpose={description}
+provider={provider-node-name}
 input[]={parameter}
-output[]={data mapping from response object to result set}
+input[]={parameter}:{default}
+output[]=response.{path} -> result.{key}
 \`\`\`
 
-Example
--------
+- input[] entries are BARE parameter names, not source -> target mappings
+  (the one exception to the mapping rule). An optional :{default} suffix
+  supplies a default value, e.g. input[]=detail:true - that is the ONLY
+  meaning of ':' here.
+- output[] maps the provider's raw HTTP response body (the response.*
+  namespace) into the result set (result.{key}) that the fetcher exposes.
+  The source path may be a leaf OR an interior node - an interior path maps
+  the WHOLE subtree: response.profile.name -> result.name extracts one
+  field, while response.profile -> result.profile captures the entire
+  profile object and response.accounts -> result.account_numbers an entire
+  array.
+
+Example:
+
 \`\`\`
-create node person-name
+create node person-profile
 with type Dictionary
 with properties
-purpose=name of a person
+purpose=full profile record of a person
 provider=mdm-profile
 input[]=person_id
 input[]=detail:true
-output[]=response.profile.name -> result.person_name
+output[]=response.profile.name -> result.name
+output[]=response.profile.address -> result.address
 \`\`\`
 
-Data dictionary node holds key-values and it does not execute by itself. It is used by an API fetcher node.
-Instead, the result set will be saved in the API fetcher node.
-
-One or more data dictionary items can share the same data provider. For example, a complex data structure
-is returned by a data provider, a single data dictionary item will get one or more data attributes.
-If the same input key-values are applied to the same data provider, the API fetcher will only issue a single
-API request.
-
-Data Provider
+Provider node
 -------------
-1. A data provider is also a node
-2. It describes the communication protocol with a target system providing a set of data attributes
-3. It has 'url', 'method', 'feature', 'and 'input' statements
+Defines the HTTP call - the communication contract with the target system.
 
-Syntax
-------
 \`\`\`
 create node {name}
 with type Provider
 with properties
-purpose={something about this provider if any}
-url={url to target system}
-method={GET | POST | PUT | PATCH | HEAD, etc.}
-feature[]={authentication mechanism, encryption, etc.}
-input[]={source -> target}
+purpose={description}
+url={target url}
+method={GET | POST | PUT | PATCH | DELETE | HEAD}
+feature[]={feature flag}
+input[]={source} -> {target}
 \`\`\`
 
-Feature
--------
-The list contains one of more optional features that an API fetcher using this provider must support.
+- The url may embed {name} path placeholders - each one is filled by an
+  input[] line targeting path_parameter.{name}. Standard
+  \${config.key:default} substitution also applies to the url.
+- input[] sources: a constant (e.g. text(application/json)), a Dictionary
+  parameter name (bare), or a state-machine value (model.*). Targets:
+  header.{name}, query.{name}, path_parameter.{name}, body.{key} - or the
+  whole "body" (e.g. to send a string or an array as the request body).
+- feature[] entries declare capabilities the calling fetcher must support
+  (e.g. an auth mechanism). Built-ins: log-request-headers and
+  log-response-headers - the fetcher logs request/response headers into the
+  "header" section of its properties. graph.api.fetcher prints a warning
+  for a feature it does not support (a custom fetcher may enforce it).
 
-Two built-in features are \`log-request-headers\` and \`log-response-headers\`. When these features are included, 
-the fetcher will log request/response headers into the "header" section of its properties.
-
-Input data mapping
-------------------
-The input data mapping is designed to do simple mapping with the following restriction:
-- The left hand side (source) is limited to parameter of the data dictionary item or constants
-- The right hand side (target) is allowed to use the following namespaces:
-
-*Left hand side*
-
-1. Constant
-2. Input parameter for a data dictionary
-3. Other value that is available in the state machine. e.g. "model." namespace.
-
-*Right hand side*
-
-1. \`body.\` - request body
-2. \`header.\` - request header
-3. \`query.\` - request query parameter
-4. \`path_parameter.\` - URI path parameter
-
-The following two examples illustrate a data provider configuration for a hypothetical profile management system
-
-Example one
------------
-In the first example, it maps the parameter 'person_id' of the data dictionary to the path parameter 'id'.
-It also maps the parameter 'detail' of the data dictionary to the query parameter 'id'
+GET example - a URL path placeholder filled from a dictionary parameter,
+plus a JSON accept header:
 
 \`\`\`
 create node mdm-profile
 with type Provider
 with properties
-purpose=MDM profile management system
-url=\${HOST}/api/mdm/profile/{id}
+purpose=MDM profile endpoint
+url=http://127.0.0.1:\${rest.server.port:8080}/api/mdm/profile/{id}
 method=GET
-feature[]=oauth-bearer
 input[]=text(application/json) -> header.accept
 input[]=person_id -> path_parameter.id
-input[]=detail -> query.detail
 \`\`\`
 
-Example two
------------
-In the second example, it uses POST method and expects a request body containing the 'person_id' parameter.
-Since it is a POST request, it requires the configuration of 'content-type' in the header section.
-The 'body.' namespace is used to tell the system to map the input parameter in the API request body.
-For some use cases, you may set the input parameter as the whole 'body'.
-e.g. setting a string or an array as request body instead of key-values.
-
-The 'feature' statement section contains 'oauth-bearer'. Therefore, you must configure an API fetcher that
-supports this feature. Otherwise, the fetcher may throw exception. For demo purpose, we will configure
-the 'graph.api.fetcher' that will just print a warning message if the feature is not supported.
-
-Since the MiniGraph Playground system is extensible, you can always write a custom API fetcher to handle
-new communication protocols and features.
+POST example - body.{key} targets build the JSON request body; set the
+content-type header (no URL placeholder - the parameters travel in the
+body):
 
 \`\`\`
-create node mdm-profile
+create node account-api
 with type Provider
 with properties
-purpose=MDM profile management system
-url=\${HOST}/api/mdm/profile
+purpose=account management endpoint
+url=http://127.0.0.1:\${rest.server.port:8080}/api/account/details
 method=POST
-feature[]=oauth-bearer
 input[]=text(application/json) -> header.accept
 input[]=text(application/json) -> header.content-type
-input[]=person_id -> body.id
-input[]=detail -> query.detail
+input[]=person_id -> body.person_id
+input[]=account_id -> body.account_id
 \`\`\`
 
-API Fetcher
------------
-Data dictionary items are consumed by API fetcher. A built-in API fetcher is called "graph.api.fetcher".
-
-Skill: Graph API Fetcher
-------------------------
-When a node is configured with this skill of "graph API fetcher", it will make an API call to a backend service
-and collect result set into the "result" property of the node. In case of exception, the "status" and "error"
-fields will be set to the node's properties and the graph execution will stop.
-
-Execution will start when the GraphExecutor reaches the node containing this skill.
-
-Route name
-----------
-"graph.api.fetcher"
-
-Setup
------
-To enable this skill for a node, set "skill=graph.api.fetcher" as a property in a node.
-It will find out the data provider from a given data dictionary item to make an outgoing API call.
-
-The following are required in the properties of the node:
-
-1. dictionary - this is a list of valid data dictionary node names configured in the same graph model
-2. input - one or more data mapping as input parameters to invoke the API call
-3. output - one of more data mapping to map result set to another node or the 'output.' namespace
-
-The parameter name in each mapping statement must match that in the data dictionary item.
-Otherwise, execution will fail.
-
-The system uses the same syntax of Event Script for data mapping.
-
-Properties
-----------
-\`\`\`
-skill=graph.api.fetcher
-dictionary[]={data dictionary item}
-input[]={mapping of key-value from input or another node to input parameter(s) of the data dictionary item(s)}
-output[]={optional mapping of result set to one or more variables in the 'model.' or 'output.' namespace}
-\`\`\`
-
-Optional properties
+Putting it together
 -------------------
+The fetcher names the dictionary; the dictionary names the provider:
+
 \`\`\`
-for_each[]={map a result parameter that is an array into a model variable for iterative API execution}
-concurrency={controls parallel API calls for an "iterative API request". Default 3, max 30}
-\`\`\`
-
-Dictionary
-----------
-This list contains one or more data dictionary item (aka 'data attribute')
-
-Feature
--------
-This API fetcher supports features configured in a data provider's node.
-
-There are 2 built-in features that are convenience for development and tests:
-- log-request-headers
-- log-response-headers
-
-When either or both of these features are added to a data provider's node,
-the fetcher will log request/response headers into the "header" section
-of its properties.
-
-Input/Output Data mapping
--------------------------
-source.composite.key -> target.composite.key
-
-For input data mapping, the source can use a key-value from the \`input.\` namespace or another node.
-The target can be a key-value in the state machine (\`model.\` namespace) or an input parameter name of the
-data dictionary.
-
-For output data mapping, the source can be a key-value from the result set and the target can use
-the \`output.\` or \`model.\` namespace.
-
-Output data mapping is optional because you can use another data mapper to map result set of the fetcher
-to another node.
-
-Result set
-----------
-Upon successful execution, the result set will be stored in the "result" parameter in the properties of
-the node. A subsequent data mapper can then map the key-values in the result set to one or more nodes.
-
-Example
--------
-\`\`\`
-create node fetcher-1
+create node fetcher
+with type Fetcher
 with properties
 skill=graph.api.fetcher
-dictionary[]=person-name
-dictionary[]=person-address
-dictionary[]=person-accounts
+dictionary[]=person-profile
 input[]=input.body.person_id -> person_id
-output[]=result.person_name -> output.body.name
-output[]=result.person_address -> output.body.address
+output[]=result.name -> output.body.name
+output[]=result.address -> output.body.address
 \`\`\`
 
-Iterative API call
-------------------
-Using the optional \`for_each\` statement, you can tell the API fetcher to do "fork-n-join" of API requests.
+The fetcher's input[] targets must match the dictionary parameter names
+exactly, or execution fails. Full fetcher semantics (iterative fetching,
+failure routing, deduplication): 'help graph-api-fetcher'.
 
-A "for_each" statement extracts the next array element from result set of a prior API call into a model variable.
-You can then put the model variable in the "left-hand-side" of an input statement. The API fetcher will then
-issue multiple API calls using an iterative stream of the model variable.
-
-If your API call needs more than one parameter, you can configure more than one "for_each" statement.
-
-Example
--------
-In this example, the "for_each" statement extracts the "person_accounts" from the result of a prior API call
-by "fetcher-1" and map the array into an iterative stream of elements using the model variable "account_id".
-
-The concurrency property tells the API fetcher to limit parallelism to avoid overwhelming the target service.
-\`\`\`
-create node fetcher-2
-with properties
-skill=graph.api.fetcher
-dictionary[]=person-id
-dictionary[]=account-id
-for_each[]=fetcher-1.result.person_accounts -> model.account_id
-concurrency=3
-input[]=input.body.person_id -> person_id
-input[]=model.account_id -> account_id
-output[]=result.person_name -> output.body.name
-output[]=result.person_address -> output.body.address
-\`\`\`
-
-- The "[]" syntax is used to create and append a list of one or more data mapping entries
-- The "->" signature indicates the direction of mapping where the left-hand-side is a source
-  and right-hand-side is a target
-
-Caution
--------
-API fetchers can be chained together to make multiple API calls.
-However, you should design the API chain to be minimalist.
-
-An overly complex chain of API requests would mean slow performance. Just take the minimal set of data that are
-required by your application. Don't abuse the flexibility of the API fetcher.
-`,at=`Delete a node, a connection or clear cache
-------------------------------------------
+Notes
+-----
+- Several Dictionary nodes may share one Provider - e.g. a provider returns
+  a complex structure and each dictionary extracts different attributes.
+  Identical calls (same provider + same input values) are deduplicated into
+  a single HTTP request within a graph instance; only successful responses
+  are cached.
+- Dictionary and Provider nodes hold configuration only; the result set is
+  stored on the FETCHER node ({fetcher}.result), not on the dictionary.
+- Wire every dictionary and provider under the island knowledge layer
+  (connect island to {dictionary} with data, connect {dictionary} to
+  {provider} with provider) - leave no node unconnected.
+`,at=`Delete a node, a connection or the fetch cache
+----------------------------------------------
+Remove a node or the connections between two nodes from the current graph
+model, or clear the API-fetcher response cache of the current graph instance.
 
 Syntax
 ------
-Delete a node
--------------
 \`\`\`
 delete node {name}
+delete connection {node-A} and {node-B}
+delete cache
 \`\`\`
 
-Delete the connections between two nodes if any
------------------------------------------------
+Example
+-------
 \`\`\`
-delete connection {nodeA} and {nodeB}
-\`\`\`
-
-Clear cache for API fetchers
-----------------------------
-\`\`\`
-clear cache
+delete node fetcher
+delete connection root and fetcher
 \`\`\`
 
-Alias
+Notes
 -----
-\`clear\` is an alias of \`delete\`
+- Deleting a node also removes every connection touching it.
+- 'delete connection' removes the connections between the two nodes in both
+  directions, if any.
+- 'delete cache' requires a graph instance (see 'help instantiate'). It
+  clears the cache of successful API-fetcher responses, so the next
+  identical call makes a real HTTP request instead of reusing a cached
+  response.
+- 'clear' is an alias of 'delete' (e.g. 'clear cache').
 `,ot=`Describe graph, node, connection or skill
 -----------------------------------------
+Print the structure of the current graph model, the detail of a node or a
+connection, or the documentation of a skill.
 
 Syntax
 ------
-Show the structure of the current graph model
----------------------------------------------
 \`\`\`
 describe graph
-\`\`\`
-
-Print the structure of a node
------------------------------
-\`\`\`
+describe graph {graph-id}
 describe node {name}
-\`\`\`
-
-Confirm if there is a connection between node-A and node-B
-----------------------------------------------------------
-\`\`\`
 describe connection {node-A} and {node-B}
-\`\`\`
-
-Skill description of a specific composable function
----------------------------------------------------
-\`\`\`
 describe skill {skill.route.name}
 \`\`\`
+
+- 'describe graph' (no id) describes the CURRENT DRAFT of this session.
+- 'describe graph {graph-id}' (discovery, read-only) shows a DEPLOYED
+  model's contract view: its purpose, node/connection counts, and the
+  input.*/output.* data surface derived from the model's own mappings -
+  everything needed to wire an extension= delegation without trial
+  execution. Find the available ids with 'list graphs'.
+
+Example
+-------
+\`\`\`
+describe node fetcher
+describe skill graph.api.fetcher
+\`\`\`
+
+Notes
+-----
+- 'describe graph' shows the structure of the current draft graph model.
+- 'describe node' prints a node's type and properties.
+- 'describe connection' reports the connections between the two nodes in
+  either direction, or that they are not connected.
+- 'describe skill' prints the shipped documentation of a skill by its route
+  name - the same content as the hyphenated help topic (e.g.
+  'help graph-api-fetcher').
 `,st=`Edit a node
 -----------
-This is a convenience feature to populate an "update node" command with raw input data.
+A convenience command: prints an existing node as a complete 'update node'
+command so you can copy it, edit the text, and submit the update.
 
 Syntax
 ------
 \`\`\`
 edit node {name}
-with type {type}
-with properties
-{key1}={value1}
-{key2}={value2}
-...
 \`\`\`
 
 Example
 -------
 \`\`\`
 edit node demo-node
-...
 \`\`\`
-
-The above command will print the raw input data of "demo-node" if it exists.
-You can then edit the raw input data and submit the update.
 
 Sample output
 -------------
@@ -449,189 +355,174 @@ with type Demo
 with properties
 hello=world
 test='''
-this is a sample multiple key-value
+this is a sample multi-line value
 line two
 line three
 '''
 good=day
-...
 \`\`\`
-`,ct=`Execute a node with a skill
----------------------------
-1. Execution is performed only when the node has a skill
-2. The skill property must contain only one skill route
-3. The system will invoke the skill providing function
-4. Graph traversal is disabled to isolate the execution for functional verification
+
+Notes
+-----
+- The printed command carries the node's current type and all properties,
+  flattened to one key per line; list properties print one key[]=entry line
+  per element, in order.
+- Multi-line values are wrapped in triple single quotes.
+- Edit the printed text and submit it as-is to apply the change (see
+  'help update'). The node must exist, or the command reports an error.
+`,ct=`Execute a single node
+---------------------
+Run one node's skill in isolation. Graph traversal is paused, so you can
+functionally verify a node without walking the whole graph.
 
 Syntax
 ------
 \`\`\`
 execute node {name}
+execute {name}
 \`\`\`
 
-Short form
-----------
+Example
+-------
 \`\`\`
-execute {node-name}
+execute fetcher
 \`\`\`
+
+Notes
+-----
+- Requires a graph instance (see 'help instantiate').
+- The node must have a 'skill' property with exactly one skill route, and
+  that route must exist at runtime.
+- The node reads from and writes to the instance's state machine exactly as
+  it would during a run; use 'inspect' to check the outcome (see
+  'help inspect').
+- On success the console reports the execution time and the node's exit
+  path; the node is marked as seen (see 'help seen').
 `,lt=`Export a graph model
 --------------------
-1. This command exports a graph as a model in JSON format for deployment
-2. The name does not require the ".json" extension
+Write the current graph model as a JSON file for deployment or later
+re-import.
 
 Syntax
 ------
 \`\`\`
 export graph as {name}
 \`\`\`
+
+Example
+-------
+\`\`\`
+export graph as helloworld
+\`\`\`
+
+Notes
+-----
+- The name uses letters, digits and hyphen; do not add a ".json" extension.
+- The file is written to the Playground temp folder (configuration key
+  location.graph.temp, default /tmp/graph).
+- The export sets name={name} on the root node. If the root node's "name"
+  property differs from {name} and the target file already exists, the
+  export is refused - update the root node's name to overwrite the existing
+  model. If no root node exists, one is created automatically.
+- Export fails when the graph has orphan nodes: every node must connect to
+  at least one other node (see 'help connect').
+- The reply includes "Described in /api/graph/model/{name}/{token}", a
+  read-only HTTP view of the exported model.
 `,I=`Skill: Graph API Fetcher
 ------------------------
-When a node is configured with this skill of "graph API fetcher", it will make an API call to a backend service
-and collect result set into the "result" property of the node. In case of exception, the "status" and "error"
-fields will be set to the node's properties and the graph execution will stop.
+Calls an external HTTP API declaratively. The node never holds a URL itself:
+it names one or more Dictionary nodes (data attributes), and each Dictionary
+names the Provider node (endpoint definition) that supplies it. When
+traversal reaches the node, the fetcher resolves the provider through the
+dictionary, makes the call(s), and collects the result set into the node's
+"result" property.
 
-Execution will start when the GraphExecutor reaches the node containing this skill.
-
-Pre-requisite
--------------
-Please refer to the "data dictionary" documentation using "help data-dictionary" before creating an API fetcher node.
+Authoring the Dictionary and Provider configuration nodes is covered in
+'help data-dictionary' - read that first.
 
 Route name
 ----------
 "graph.api.fetcher"
 
-Setup
------
-To enable this skill for a node, set "skill=graph.api.fetcher" as a property in a node.
-It will find out the data provider from a given data dictionary item to make an outgoing API call.
-
-The following are required in the properties of the node:
-
-1. dictionary - this is a list of valid data dictionary node names configured in the same graph model
-2. input - one or more data mapping as input parameters to invoke the API call
-3. output - one of more data mapping to map result set to another node or the 'output.' namespace
-
-The parameter name in each mapping statement must match that in the data dictionary item.
-Otherwise, execution will fail.
-
-The system uses the same syntax of Event Script for data mapping.
-
 Properties
 ----------
 \`\`\`
 skill=graph.api.fetcher
-dictionary[]={data dictionary item}
-input[]={mapping of key-value from input or another node to input parameter(s) of the data dictionary item(s)}
-output[]={optional mapping of result set to one or more variables in the 'model.' or 'output.' namespace}
+dictionary[]={dictionary-node-name}
+input[]={source} -> {dictionary-parameter}
+output[]={source} -> {target}
 \`\`\`
 
-Optional properties
--------------------
+- dictionary[] (required) - one or more Dictionary node names configured in
+  the same graph model. This is the only hard-required property.
+- input[] - required whenever the dictionaries declare parameters (the usual
+  case). Each entry's TARGET must match a dictionary parameter name exactly,
+  or execution fails.
+- output[] (optional) - maps the result set onward (e.g. to output.* or
+  model.*). Optional because the result set always lands at {node}.result,
+  where a later data mapper can pick it up.
+
+Optional:
+
 \`\`\`
-for_each[]={map an array parameter for iterative API execution}
-concurrency={controls parallel API calls for an "iterative API request". Default 3, max 30}
-exception={exception-handler-node-name}
+for_each[]={array-source} -> model.{var}   (iterative fetching - see below)
+concurrency={1-30}                         (parallel fan-out, default 3)
+exception={error-handler-node}             (jump on failure instead of abort)
 \`\`\`
-
-Dictionary
-----------
-This list contains one or more data dictionary item (aka 'data attribute')
-
-Feature
--------
-This API fetcher supports features configured in a data provider's node.
-
-There are 2 built-in features that are convenience for development and tests:
-- log-request-headers
-- log-response-headers
-
-When either or both of these features are added to a data provider's node, 
-the fetcher will log request/response headers into the "header" section
-of its properties.
-
-Input/Output Data mapping
--------------------------
-source.composite.key -> target.composite.key
-
-For input data mapping, the source can use a key-value from the \`input.\` namespace or another node.
-The target can be a key-value in the state machine (\`model.\` namespace) or an input parameter name of the
-data dictionary.
-
-For output data mapping, the source can be a key-value from the result set and the target can use
-the \`output.\` or \`model.\` namespace.
-
-Output data mapping is optional because you can use another data mapper to map result set of the fetcher
-to another node.
 
 Result set
 ----------
-Upon successful execution, the result set will be stored in the "result" parameter in the properties of
-the node. A subsequent data mapper can then map the key-values in the result set to one or more nodes.
+On success the result set - the values the Dictionary's output[] mappings
+produced as result.{key} - is stored at {node}.result. In this node's own
+output[] mappings, result.{key} reads from that set; later nodes read
+{node}.result.{key}.
 
 Example
 -------
 \`\`\`
-create node fetcher-1
+create node fetcher
+with type Fetcher
 with properties
 skill=graph.api.fetcher
-dictionary[]=person_name
-dictionary[]=person_address
-dictionary[]=person_accounts
+dictionary[]=person-profile
 input[]=input.body.person_id -> person_id
-output[]=result.person_name -> output.body.name
-output[]=result.person_address -> output.body.address
+output[]=result.name -> output.body.name
+output[]=result.address -> output.body.address
 \`\`\`
 
-Iterative API call
-------------------
-Using the optional \`for_each\` statement, you can tell the API fetcher to do "fork-n-join" of API requests.
+Iterative fetching (for_each)
+-----------------------------
+A fetcher can execute once per element of a runtime array - the mechanism
+for "fetch details for each item in a list obtained from a previous call":
 
-A "for_each" statement extracts the next array element from result set of a prior API call into a model variable.
-You can then put the model variable in the "left-hand-side" of an input statement. The API fetcher will then
-issue multiple API calls using an iterative stream of the model variable.
-
-If your API call needs more than one parameter, you can configure more than one "for_each" statement.
-
-Example
--------
-In this example, the "for_each" statement extracts the "person_accounts" from the result of a prior API call
-by "fetcher-1" and map the array into an iterative stream of elements using the model variable "account_id".
-
-The concurrency property tells the API fetcher to limit parallelism to avoid overwhelming the target service.
 \`\`\`
-create node fetcher-2
+create node accounts-fetcher
+with type Fetcher
 with properties
 skill=graph.api.fetcher
-dictionary[]=person_id
-dictionary[]=account_id
-for_each[]=fetcher-1.result.person_accounts -> model.account_id
+dictionary[]=account-detail
+for_each[]=profile-fetcher.result.accounts -> model.account_id
 concurrency=3
 input[]=input.body.person_id -> person_id
 input[]=model.account_id -> account_id
-output[]=result.person_name -> output.body.name
-output[]=result.person_address -> output.body.address
+output[]=result.detail -> model.account_details
 \`\`\`
 
-- The "[]" syntax is used to create and append a list of one or more data mapping entries
-- The "->" signature indicates the direction of mapping where the left-hand-side is a source
-  and right-hand-side is a target
+- The for_each source MUST resolve to a list - typically a prior fetcher's
+  result ({fetcher}.result.{key}) or a model.* array. Multiple for_each[]
+  lines iterate multiple parameters in lock-step.
+- Wire the current element into each call with an ordinary input mapping:
+  input[]=model.{var} -> {dictionary-parameter}. Non-iterated inputs (like
+  person_id above) pass unchanged to every call.
+- concurrency bounds the parallel fan-out (1-30, default 3); calls run in
+  batches of that size to avoid overwhelming the target service.
+- Aggregation is GUARANTEED and ordered: each iteration's result.{key}
+  values are appended into a single array on this node's result set - after
+  N iterations, result.detail above is an array of N - and the aggregated
+  array preserves the source list's order regardless of concurrency.
 
-Deprecated syntax
------------------
-Event Script's "simple type matching" syntax (e.g. \`model.someKey:text\`) is deprecated. Use "simple plugin"
-syntax instead (e.g. \`f:text(model.someKey)\`). If you (or an AI agent) submit a "create node" or "update node"
-command that still uses the deprecated colon-type syntax, the system will automatically convert it to the
-simple plugin syntax and return a deprecation notice - it will not silently fail, but please switch to the
-new syntax going forward.
-
-Custom error handling
----------------------
-By default, when an API request fails, the system will abort the graph execution and return the error code
-and message to the caller.
-
-If you want to handle the exception in your graph model, you can set the node-name of the error-handler in
-the "exception" property to tell the system to traverse to the error-handler node.
-
+Failure routing (exception)
+---------------------------
 On a failed call (HTTP status >= 400):
 
 - {node}.status and {node}.error are set (the engine's error record; {node}.stack is
@@ -667,10 +558,8 @@ alias 'error' is reserved for this namespace - probe it in a dry-run session wit
 code=200 with the source kept and the failure details removed - the source match ensures a
 parallel node's success never clears a different node's outstanding failure.
 
-To handle an exception with retry logic, the error-handler node should be a decision-making node using
-the graph.math or graph.js skill.
-It can evaluate the status code and error in the API fetcher node to determine the next step. The
-canonical bounded-retry handler:
+A retry handler is typically a graph.math decision node that inspects the
+fetcher's status/error, counts attempts, and retries with a bound:
 
 \`\`\`
 create node error-handler
@@ -691,96 +580,83 @@ statement[]=DELAY: 50
 
 The handler is fully GENERIC: every statement command resolves {dynamic variables}, so
 RESET: {error.source} and NEXT: {error.source} retry whichever node routed here - one handler
-serves every fetcher and task in the graph. RESET comes first among the action statements so it
-runs on every path (a taken IF jump ends the statement list) - the attempt counters live in the
-"model" namespace, which RESET never touches. If the handler also carries a defensive check on
-the failing status (IF: {error.code} == 200), that check must come BEFORE the RESET (it reads
-state the reset wipes). Wire the handler back explicitly (connect error-handler to fetcher with
-retry) - no node left unconnected. See tutorial 12 for the full walkthrough.
+serves every fetcher and task in the graph. See tutorial 12 for the full walkthrough.
 
-HTTP semantics
---------------
-- One data-provider call is exactly one HTTP request - redirects are never followed. A 3xx answer
-  is a non-failure: its status and body are captured and traversal proceeds (only >= 400 triggers
-  the exception route). Point the provider url at the redirect target to land on it.
-- {node}.status always carries the HTTP status of the fetch, success included (a 200 or a 301 is
-  readable there, not just failures). The response.* namespace in a dictionary output[] addresses
-  the BODY only; the bare root (response -> result.page) captures a whole non-JSON body such as
-  an HTML page.
-- Deduplication: identical requests (same provider + same input values) within one graph instance
-  are deduplicated into a single HTTP call. Only SUCCESSFUL responses are cached - a failed call
-  is never cached, so a retry after RESET makes a real call, while an identical successful call
+RESET comes first among the action statements so it runs on every path (a
+taken IF jump ends the list) - the attempt counters live in the "model"
+namespace, which RESET never touches. If the handler also carries a defensive
+check on the failed node's status, that check must come BEFORE the RESET (it
+reads state the reset wipes).
+
+Wire the handler back explicitly (connect error-handler to fetcher with
+retry) - no node left unconnected. See 'help graph-math' for the statement
+grammar and the engine's loop guard.
+
+Notes
+-----
+- One Provider call is exactly one HTTP request - redirects are never
+  followed. A 3xx answer is a non-failure: its status and body are captured
+  and traversal proceeds (only >= 400 triggers failure routing). Point the
+  Provider url at the redirect target to land on it.
+- {node}.status always carries the HTTP status of the fetch, success
+  included (a 200 or a 301 is readable there, not just failures). The
+  response.* namespace in a Dictionary output[] addresses the BODY only;
+  the bare root (response -> result.page) captures a whole non-JSON body
+  such as an HTML page.
+- Deduplication: identical requests (same provider + same input values)
+  within one graph instance are deduplicated into a single HTTP call. Only
+  SUCCESSFUL responses are cached - a failed call is never cached, so a
+  retry after RESET makes a real call, while an identical successful call
   reuses the cached response.
-
-Caution
--------
-API fetchers can be chained together to make multiple API calls. 
-However, you should design the API chain to be minimalist.
-
-An overly complex chain of API requests would mean slow performance. Just take the minimal set of data that are
-required by your application. Don't abuse the flexibility of the API fetcher.
+- Provider feature[] flags declare capabilities this fetcher must support.
+  Built-ins: log-request-headers and log-response-headers - the fetcher
+  logs request/response headers into the "header" section of its
+  properties. An unsupported feature produces a warning (a custom fetcher
+  may enforce it).
+- Keep chains minimalist: fetchers can be chained to make multiple API
+  calls, but an overly complex chain means slow performance. Take only the
+  minimal set of data your application requires - don't abuse the
+  flexibility of the API fetcher.
+- Wire the Dictionary and Provider nodes into the island knowledge layer so
+  no node is left unconnected - see 'help graph-island'.
 `,ut=`Skill: Graph Data Mapper
 ------------------------
-When a node is configured with this skill of "data mapping", it will execute a set of data mapping entries
-to populate data attributes into one or more nodes where each node represents a data entity.
-
-Execution will start when the GraphExecutor reaches the node containing this skill.
+Copies and transforms data between state-machine namespaces. Each mapping[]
+entry moves one value from a source to a target when the node executes. This
+is the workhorse skill for shaping inputs, staging intermediate values in
+model.*, and assembling the response in output.body.
 
 Route name
 ----------
 "graph.data.mapper"
 
-Setup
------
-To enable this skill for a node, set "skill=graph.data.mapper" as a property in a node.
-One or more data mapping entries can be added to the property "mapping".
-
 Properties
 ----------
 \`\`\`
 skill=graph.data.mapper
-mapping[]=source -> target
+mapping[]={source} -> {target}
 \`\`\`
 
-The system uses the same syntax of Event Script for data mapping.
+- mapping[] (required) - one entry per line; entries execute in order,
+  so a later entry may read an earlier entry's target (the chain idiom:
+  ingest -> transform -> publish inside one mapper).
 
-Execution
----------
-Upon successful execution, key-values will be populated to one or more nodes.
-
-Syntax for mapping
-------------------
-source.composite.key -> target.composite.key
-
-The source composite key can use the following namespaces:
-1. "input." namespace to map key-values from the input header or body of an incoming request
-2. Node name (aka 'alias') to map key-values of a node's properties
-3. "model." namespace for holding intermediate key-values for simple data transformation
-
-The target composite key can use the following namespaces:
-1. "output." namespace to map key-values to the result set to be returned as response to the calling party
-2. Node name (aka 'alias') to map key-values of a node's properties
-3. "model." namespace for holding intermediate key-values for simple data transformation
+Sources: input.body / input.header, model.*, a node name (its properties),
+{node}.result, a constant, an f:plugin(...) call, or a $. JSONPath
+expression. Targets: output.body / output.header, model.*, or a node name.
 
 Example
 -------
 \`\`\`
-create node my-simple-mapper
+create node shape-response
+with type Mapper
 with properties
 skill=graph.data.mapper
 mapping[]=input.body.hr_id -> employee.id
-mapping[]=input.body.join_date -> employee.join_date
+mapping[]=fetch-one.result.profile -> output.body.profile[0]
+mapping[]=fetch-two.result.profile -> output.body.profile[1]
+mapping[]=f:now(text(local)) -> output.body.timestamp
 \`\`\`
-
-The "[]" syntax is used to create and append a list of one or more data mapping entries
-The "->" signature indicates the direction of mapping where the left-hand-side is source and right-hand-side is target
-
-Null source
------------
-A source that resolves to null (a key that does not exist, or a plugin returning null) clears a "model."
-target and leaves any other target untouched - the same rule as Event Script. Put a default on the source
-side (f:defaultValue(input.body.flag, boolean(false)) -> model.flag, or a plugin's own default); a default
-written to a model variable first is removed by a later null overlay.
 
 Decision table lookup
 ---------------------
@@ -801,18 +677,58 @@ The table's "keys" field lists the rule names in priority order and each rule fi
 each may be a list or a JSON array written as text (keys=[ "a", "b" ]), and the table itself may be
 JSON text. One table replaces a ladder of IF-THEN-ELSE and the product owner certifies it on the graph.
 
-Deprecated syntax
------------------
-Event Script's "simple type matching" syntax (e.g. \`model.someKey:text\`) is deprecated. Use "simple plugin"
-syntax instead (e.g. \`f:text(model.someKey)\`). If you (or an AI agent) submit a "create node" or "update node"
-command that still uses the deprecated colon-type syntax, the system will automatically convert it to the
-simple plugin syntax and return a deprecation notice - it will not silently fail, but please switch to the
-new syntax going forward.
+Constants
+---------
+A constant is valid wherever a source is. This is the full set:
+
+- text(hello world) - string, verbatim (no quoting needed)
+- int(100) / long(10000000000) - integer (non-numeric input yields -1; a
+  decimal part is dropped)
+- float(1.5) / double(1.5) - floating-point number
+- boolean(true) - true only for case-insensitive "true"; anything else false
+- map(k1=v1, k2=v2) - inline map literal (values are strings)
+- map(config.key) - the value of an application-configuration key
+- file(text:/tmp/f.txt) / file(json:...) / file(binary:...) - file content
+  as text / parsed JSON / bytes
+- classpath(text:/data/f.txt) - like file(), resolved against the app's
+  resource roots
+
+Beyond constants, two non-constant source forms are valid:
+
+- f:plugin(args...) - a simple-plugin call, e.g. f:uuid(),
+  f:now(text(local)), f:concat(model.a, text(!)), f:add(model.n, int(1)),
+  f:ternary(...), f:defaultValue(input.body.flag, boolean(false)),
+  f:removeKey(model.list, text(key)), f:listOfMap(...).
+- $.  - a JSONPath expression over the state machine. Prefer plain
+  dot-bracket keys; use JSONPath only when the query needs it.
+
+Notes
+-----
+- Composite keys use dot-bracket form on both sides. A numeric index in a
+  target creates/sets that list slot (profile[0], profile[1]) - the idiom
+  for assembling a JSON list deterministically, e.g. after a fork/join. An
+  empty index "[]" appends one element to the end of the list (and creates
+  the list with that first element when it does not yet exist).
+- An interior (non-leaf) source path maps the ENTIRE subtree, not just
+  scalars - fetch-one.result.profile above carries the whole profile object.
+- A NULL source (a missing key, or a plugin returning null) CLEARS a "model."
+  target (removed; set to null when the source key exists or the target is
+  indexed such as model.list[1]) and leaves any other target untouched - the
+  same rule as Event Script. Defaults for a model variable come from the
+  source side: f:defaultValue(input.body.flag, boolean(false)) -> model.flag,
+  or a plugin default such as f:lookup(table, value, text(unknown)) - never
+  default-then-overlay, which the null overlay would remove.
+- The legacy colon-type suffix ("simple type matching") is deprecated - use
+  the f:plugin forms instead.
+- Inside a graph.math node, MAPPING: statements use exactly this syntax; see
+  'help graph-math'.
 `,dt=`Skill: Graph Extension
 ----------------------
-When a node is configured with this skill of "graph extension", it will make an API call to another graph model
-(or flow) and collect result set into the "result" property of the node. In case of exception, the "status" and
-"result.error" fields will be set to the node's properties and the graph execution will stop.
+Delegates to another graph model (a sub-graph) or to an Event Script flow,
+so larger capabilities compose from smaller ones. The node passes named
+inputs to the target, and the target's response body becomes this node's
+result. This is the seam between the knowledge-graph layer and the Event
+Script layer beneath it.
 
 The delegated graph or flow inherits the caller's business correlation ID (model.cid), the same
 way an Event Script sub-flow does. A delegated subgraph that suspends therefore persists its
@@ -820,59 +736,56 @@ state under the shared business correlation ID scoped by its own graph ID - re-i
 same correlation ID resumes it. This makes a parent graph a natural orchestrator of independently
 resumable subgraph paths (see the workflow-suspension guide's orchestrator pattern).
 
-Execution will start when the GraphExecutor reaches the node containing this skill.
-
 Route name
 ----------
 "graph.extension"
-
-Setup
------
-To enable this skill for a node, set "skill=graph.extension" as a property in a node.
-
-The following parameters are required in the properties of the node:
-
-1. extension - this should be a valid graph model name or flow identifier in the same memory space
-2. input - this should include one or more data mapping as input parameters to invoke the API call
-
-A flow identifier is prefixed by a flow protocol signature "flow://". e.g. "flow://hello-world".
-
-The system uses the same syntax of Event Script for data mapping.
 
 Properties
 ----------
 \`\`\`
 skill=graph.extension
-extension=graph-id or flow-id
-input[]={mapping of key-value from input or another node to input parameter(s) of the data dictionary item(s)}
-output[]={optional mapping of result set to one or more variables in the 'model.' or 'output.' namespace}
+extension={graph-id}           (a deployed sub-graph ...)
+extension=flow://{flow-id}     (... or an Event Script flow)
+input[]={source} -> {key}
+output[]={source} -> {target}
 \`\`\`
 
-Optional properties
--------------------
+- extension (required) - the target. A graph id resolves among DEPLOYED
+  graph models only (compiled at startup from the app's resources/graph
+  folder - the same ids callable at POST /api/graph/{graph-id}). A session
+  draft is NOT addressable: export and deploy it first. A missing id fails
+  the node fast at run time. A flow target takes the flow:// prefix, e.g.
+  extension=flow://hello-world.
+- input[] (required) - each entry's TARGET is a bare key that becomes the
+  target's input.body.{key}. There is NO whole-body "*" target on this
+  skill - map named keys (the "*" merge idiom is graph.task-only; see
+  'help graph-task').
+- output[] (optional) - maps the result onward; the result always lands at
+  {node}.result regardless.
+
+Optional:
+
 \`\`\`
-for_each[]={map an array parameter for iterative API execution}
-concurrency={controls parallel API calls for an "iterative API request". Default 3, max 30}
-exception={error-handler-node-name}
+for_each[]={array-source} -> model.{var}   (iterate over a runtime list)
+concurrency={1-30}                         (parallel fan-out, default 3)
+exception={error-handler-node}             (jump on failure instead of abort)
 \`\`\`
 
 Result set
 ----------
-Upon successful execution, the result set will be stored in the "result" parameter in the properties of
-the node. A subsequent data mapper can then map the key-values in the result set to one or more nodes.
+This node's result namespace IS the target's output.body:
 
-Input Data mapping
-------------------
-source.composite.key -> target.composite.key
+- bare "result" in an output[] mapping is the whole response body
+- result.{key} is a field of it
 
-For input data mapping, the source can use a key-value from the \`input.\` namespace or another node.
-The target can be a key-value in the state machine (\`model.\` namespace) or an input parameter name of the
-data dictionary.
+The same contract applies to both target kinds: the named input keys feed
+the sub-graph's or flow's input.body, and result.* is its output.body.
 
 Example
 -------
 \`\`\`
 create node performance-evaluator
+with type Extension
 with properties
 skill=graph.extension
 extension=evaluate-sales-performance
@@ -880,57 +793,39 @@ input[]=input.body.department_id -> id
 output[]=result.sales_performance -> output.body.sales_performance
 \`\`\`
 
-Iterative API call
-------------------
-Using the optional \`for_each\` statement, you can tell the "Extension" skill to do "fork-n-join" of API requests.
+Here input.body.department_id feeds the sub-graph's input.body.id, and the
+sub-graph's output.body.sales_performance comes back as
+result.sales_performance.
 
-A "for_each" statement extracts the next array element from a node result set into a model variable.
-You can then put the model variable in the "left-hand-side" of the mapping statement. The skill will then
-issue multiple API calls using an iterative stream of the model variable.
-
-If your API call needs more than one parameter, you can configure more than one "for_each" statement.
-
-The concurrency property tells the skill to limit parallelism to avoid overwhelming the target service.
-
-The "[]" syntax is used to create and append a list of one or more data mapping entries
-The "->" signature indicates the direction of mapping where the left-hand-side is source and right-hand-side is target
-
-Custom error handling
----------------------
-By default, when an API request fails, the system will abort the graph execution and return the error code
-and message to the caller.
-
-If you want to handle the exception in your graph model, you can set the node-name of the error-handler in
-the "exception" property to tell the system to traverse to the error-handler node.
-
-When traversal jumps to the handler, the engine also stages a generic exception context
-(error.source, error.code, error.message and error.stack when available) so ONE handler node
-can serve the "exception" route of every node in the graph - error.source is the failing node's
-alias. For an extension node, error.source is the extension node in THIS graph; failures inside
-the delegated subgraph or flow route to that graph's own handlers. Anchor a shared handler from
-an island (root -> island -> handler) because it is reached by jumping. The alias 'error' is
-reserved for this namespace - probe it in a dry-run session with "inspect error".
-
-To handle an exception with retry logic, the error-handler node should be a decision-making node
-using the graph.math or graph.js skill.
-It can evaluate the status code and error in the failed node to determine the next step.
+Notes
+-----
+- Failure routing: on failure, {node}.status and {node}.error are set and
+  the output[] mappings are skipped. With exception={handler-node},
+  traversal jumps to the handler instead of aborting; without it, the run
+  aborts. The jump also stages the generic exception context
+  (error.source/code/message and error.stack when available) so ONE
+  island-anchored handler can serve every node - error.source is the
+  extension node in THIS graph; failures inside the delegated subgraph or
+  flow route to that graph's own handlers. The bounded-retry pattern and
+  the full error-context contract are shown under 'help graph-api-fetcher'.
+- for_each[]={array-source} -> model.{var} invokes the target once per
+  element of a runtime list, with bounded parallel fan-out (concurrency
+  1-30, default 3). The shared iteration rules are under
+  'help graph-api-fetcher'.
+- Use graph.extension for multi-step orchestration; use graph.task for a
+  single composable-function call.
 `,ft=`Skill: Graph Island
 -------------------
-The purpose of a node with this skill is to tell the system to block graph traversal.
-
-In this way, we can use this node as a connector to data entities and other things that are used to
-represent some knowledge. We don't want to system to actively executing the nodes on the "isolated island".
-
-Execution will start when the GraphExecutor reaches the node containing this skill.
+Marks an isolated node. A node with this skill always returns ".sink", so
+graph traversal never continues through it. That isolation is the point: the
+island anchors the graph's knowledge layer. Dictionary, Provider, data-entity,
+and reusable Module nodes hang off the island, turning the graph into its own
+entity-relationship diagram - living documentation of the enterprise knowledge
+behind the execution path.
 
 Route name
 ----------
 "graph.island"
-
-Setup
------
-To enable this skill for a node, set "skill=graph.island" as a property in a node.
-This node does not require additional properties.
 
 Properties
 ----------
@@ -938,24 +833,62 @@ Properties
 skill=graph.island
 \`\`\`
 
-Execution
----------
-Upon successful execution, a node with this skill will return ".sink" to tell the system
-that there is no need for further traversal.
+No other properties are required or accepted.
+
+Example
+-------
+\`\`\`
+create node dictionary
+with type Island
+with properties
+skill=graph.island
+\`\`\`
+
+Wire the knowledge layer under it:
+
+\`\`\`
+connect root to dictionary with contains
+connect dictionary to person-profile with data
+connect dictionary to account-detail with data
+connect person-profile to mdm-profile with provider
+connect account-detail to account-api with provider
+\`\`\`
+
+Notes
+-----
+- Required convention: leave no node unconnected. Whenever the graph has
+  off-path nodes - Dictionary/Provider configuration, data-entity, or
+  reusable Module nodes - wire every one of them into the island structure:
+  root -[contains]-> island -[data]-> dictionary -[provider]-> provider,
+  and island -[module]-> module for reusable graph.math modules.
+- Encouraged even for graphs with no off-path nodes: data-entity nodes that
+  document the domain model (entities, fields, which fields are
+  internal-only) make even a small graph discoverable enterprise knowledge.
+- Relation labels are free-form and descriptive; "contains", "data",
+  "provider" and "module" are the shipped conventions - choose names that
+  capture the real-world relationship.
+- Traversal is unaffected: the island sinks, so the run log shows a single
+  "Executed ... with skill graph.island" line and the execution path never
+  enters the knowledge layer.
+- Reusable modules are documented under 'help graph-math'; the Dictionary and
+  Provider configuration nodes under 'help data-dictionary'.
 `,pt=`Skill: Graph Join
 -----------------
-A node with this skill will wait for all connected nodes that join to this node to complete.
+A synchronization barrier for parallel branches. A node with this skill
+returns "next" only when ALL upstream nodes connected to it have completed;
+until then it returns ".sink" (the arriving path pauses). Use it to bring
+forked branches back together before continuing.
 
-Execution will start when the GraphExecutor reaches the node containing this skill.
+Completion is success-only and current: a branch that failed into its
+"exception=" route does not count while it retries, and a RESET node stops
+counting until it re-executes successfully - so a retry loop feeding a join
+holds the barrier instead of firing it prematurely. A chained upstream join
+counts only once it actually FIRED (an evaluation that sank does not count),
+so multi-stage joins compose safely.
 
 Route name
 ----------
 "graph.join"
-
-Setup
------
-To enable this skill for a node, set "skill=graph.join" as a property in a node.
-This node does not require additional properties.
 
 Properties
 ----------
@@ -963,67 +896,91 @@ Properties
 skill=graph.join
 \`\`\`
 
-Execution
----------
-Upon successful execution, a node with this skill will return "next" if all connected nodes to finish
-processing. Otherwise, it will return ".sink" to tell the system that it is not ready.
-`,mt=`Skill: Graph JS
----------------
-When a node is configured with this skill of "graph js", it will execute a set of simple JavaScript statements
-to return result. For example, doing mathematical calculation or boolean operation for decision-making.
+No other properties are required or accepted.
 
-Execution will start when the GraphExecutor reaches the node containing this skill.
+Example
+-------
+\`\`\`
+create node join
+with type Join
+with properties
+skill=graph.join
+\`\`\`
 
-Route name
-----------
-"graph.js"
+Fork, then join:
 
-Setup
+\`\`\`
+connect root to fetch-name with fetch
+connect root to fetch-address with fetch
+connect fetch-name to join with done
+connect fetch-address to join with done
+connect join to combine with proceed
+\`\`\`
+
+Notes
 -----
-To enable this skill for a node, set "skill=graph.js" as a property in a node.
-One or more statements can be added.
+- The fork side needs no special node: multiple outgoing connections from one
+  node run their branches in parallel.
+- A join is only meaningful with two or more upstream connections. Without a
+  join, traversal simply proceeds as each branch completes.
+- Data mapping is thread-safe (state-machine operations are serialized), but
+  parallel branches must not write the SAME scalar key - the last writer
+  wins, nondeterministically. Use disjoint keys (e.g. per-branch model.*
+  variables), or append to a shared list with the race-free "[]" target form
+  (element order then follows completion order). When the final order must
+  be deterministic, assemble with numeric indices after the join, e.g.
+  fetch-name.result.profile -> output.body.profile[0]. See
+  'help graph-data-mapper'.
+`,mt=`Skill: Graph JS (deprecated)
+----------------------------
+The graph.js skill evaluates inline JavaScript statements for computation and
+decision-making. It is DEPRECATED: do not author new graph.js nodes. Use
+graph.math for inline computation and IF/THEN/ELSE decisions - its expression
+dialect covers the same ground without a script engine (see 'help graph-math') -
+and graph.task to invoke a composable function for any logic an inline
+expression cannot express (see 'help graph-task').
 
-There are 5 types of statements:
-1. "IF" statement for decision-making
-2. "COMPUTE" statement to evaluate a mathematical formula
-3. "MAPPING" statement to do data mapping from a source to a target variable
-4. "EXECUTE" statement to execute another node with "graph.js" skill
-5. "RESET" statement to reset one or more nodes from the state machine
+Status by engine
+----------------
+- Java engine: still registered so that existing graph models keep running;
+  the module is scheduled for removal once field installations have migrated.
+  Runtime JavaScript is an injection surface, and an equality comparison with a
+  quoted string literal was measured silently evaluating to false - the reasons
+  are recorded in the skills reference (graph.js section).
+- Rust engine: never registered. A node with skill=graph.js fails at execution
+  time with:
 
-You can configure one or more statements of these 3 types.
+\`\`\`
+Skill graph.js is retired for security reasons - use graph.math or graph.task instead
+\`\`\`
 
-The system will reject execution if the node contains only "MAP" statements
-because it is more efficient to use the "graph.data.mapper" skills for mapping
-only operations.
+Migrating a graph model
+-----------------------
+When importing an older graph model that contains graph.js nodes, replace
+skill=graph.js with graph.math (compute/branch) or graph.task (custom logic)
+before running it. The statement grammar has the same shape - COMPUTE, IF,
+MAPPING, EXECUTE, RESET, NEXT, DELAY and for_each with BEGIN/END - so most
+nodes migrate by changing the skill and rewriting each expression in the
+graph.math dialect (a closed set of operators and functions, listed under
+'help graph-math').
 
-Statements are executed orderly.
+Reference for existing graph.js nodes (Java engine only)
+--------------------------------------------------------
+Route name: "graph.js"
 
-Properties
-----------
+Properties:
+
 \`\`\`
 skill=graph.js
-statement[]=COMPUTE: variable -> mathematical statement
+statement[]=COMPUTE: variable -> JavaScript statement
 statement[]=IF: if-then-else statement
 statement[]=MAPPING: source -> target
 statement[]=EXECUTE: another-node
+statement[]=RESET: node-name
 \`\`\`
 
-Node cannot be executed more than once
---------------------------------------
-To avoid unintended looping, the system guarantees that a node, that has been "seen", is not executed again.
+Optional properties:
 
-The \`reset\` command clears the "seen" status and erases its result from the state machine. This is reserved
-for advanced use cases that require executing a node more than once. You should use this feature with care.
-
-The following statement resets the node named "previous-node" so that the graph executor can run this node
-again when conditional traversal points to the node.
-
-\`\`\`
-statement[]=RESET: previous-node
-\`\`\`
-
-Optional properties
--------------------
 \`\`\`
 for_each[]={map an array parameter for iterative statement execution}
 statement[]=BEGIN
@@ -1032,62 +989,28 @@ statement[]=NEXT: {next-node-name}
 statement[]=DELAY: {milliseconds}
 \`\`\`
 
-Execution
----------
-Upon successful execution of a "COMPUTE" statement, the result set will be stored in the "result" namespace
-of the node. A subsequent "MAPPING" statement can map the key-values in the result set to one or more nodes.
+- Statements execute in order. A node with only MAPPING statements is rejected -
+  use graph.data.mapper for mapping-only work.
+- A COMPUTE result is stored in the node's "result" namespace; a later MAPPING
+  statement can map it onward.
+- An IF statement evaluates a boolean operation and may override the natural
+  traversal order by jumping to a named node; when every statement resolves to
+  "next", natural traversal is preserved.
+- A node executes once per run (the run-once guard). RESET: clears a node's
+  "seen" status and its result so conditional traversal can run it again;
+  use it with care.
+- for_each[] with BEGIN/END iterates a statement block over a runtime array,
+  NEXT: jumps to a named node and DELAY: pauses before the next node - the same
+  rules as graph.math. Every statement command resolves {dynamic variables}, so
+  NEXT:/THEN:/ELSE: targets, RESET: entries and DELAY: values may each be a
+  {namespace.key} reference (e.g. NEXT: {error.source} in a generic error
+  handler).
+- The skill is designed for a simple inline JavaScript statement using the
+  standard JavaScript library; complex functions and variables are not
+  supported.
 
-For an "IF" statement, the system will execute a boolean operation.
-This process will override the natural graph traversal order and jump to a specific node.
-If the function returns "next" after evaluation of all statements, the natural graph traversal order
-will be preserved.
+COMPUTE statement:
 
-Iterative Execution and Begin-End
----------------------------------
-Using the optional \`for_each\` statement, you can tell the skill module to execute the statements iteratively.
-
-A "for_each" statement extracts the next array element from another array variable into a model variable.
-You can then put the model variable in the "left-hand-side" of an input statement. The module will then
-execute the statement block using an iterative stream of the model variable.
-
-You can also use the \`BEGIN\` and \`END\` control statements to select a section of the statements for the
-iterative execution based on the "for_each" criteria.
-
-Syntax for COMPUTE statement
-----------------------------
-It will be a regular JavaScript statement with parameter substitution using the bracket syntax where
-the enclosed parameter is a reference to a data attributes in the namespace of "input.", "model." or node name.
-
-When you have more than one JavaScript statement, a subsequent statement can use the result of a prior statement
-as its parameters.
-
-Each parameter is wrapped by a set of curly brackets.
-
-Override Graph Traversal
-------------------------
-Normally the next node is the one or more nodes that this node is connected to.
-If you want to tell system to jump to a specific "next-node", you can use the "NEXT:" syntax and put the name
-of the node to jump to. Every statement command resolves {dynamic variables} - the same rule as
-graph.math statements - so NEXT:/THEN:/ELSE: targets, RESET: entries and DELAY: values may each
-be a {namespace.key} reference (e.g. NEXT: {error.source} in a generic error handler).
-
-Deferred completion
--------------------
-You can add an artificial delay to defer completion of the execution of this node. This is useful to simulate
-a slow service for performance test and to pause between retries.
-
-Next and Delay statements
--------------------------
-It is a good practice to place the next or delay statement, if any, as last one in the block.
-However, the placement does not change the behavior because they will only be processed at the end.
-
-Limitation
-----------
-This skill is designed to execute a simple inline JavaScript statement that uses standard JavaScript library.
-Complex functions and variables are not recommended.
-
-Example
--------
 \`\`\`
 create node demo-js-runner
 with properties
@@ -1095,202 +1018,237 @@ skill=graph.js
 statement[]=COMPUTE: amount -> (1 - {input.body.discount}) * {book.price}
 \`\`\`
 
-The syntax \`{variable_name}\` is used to resolve the value from the variable into the COMPUTE statement.
+The syntax {variable_name} resolves a value from the "input." or "model."
+namespace or from a node's properties into the statement. A later statement
+can use the result of a prior statement as its parameter.
 
-Syntax for IF statement
------------------------
-Each IF statement is a multiline command:
-\`\`\`
-IF: JavaScript-statement
-THEN: node-name | next
-ELSE: node-name | next
-\`\`\`
+IF statement - a multi-line command:
 
-The "next" keyword tells the system to execute the next statement.
-
-The if-then-else is used to select two options after evaluation of the JavaScript statement.
-If the JavaScript statement does not return a boolean value, the following resolution would apply:
-1. numeric value - true is positive value and false is negative value
-2. text value - "true", "yes", "T", "Y" are positive and all other values are false
-3. other value will be converted to a text string first
-
-Example
--------
 \`\`\`
 statement[]='''
 IF: (1 - {input.body.discount}) * {book.price} > 5000
 THEN: high-price
 ELSE: low-price
+'''
 \`\`\`
 
-The syntax \`{variable_name}\` is used to resolve the value from the variable into the IF statement.
+THEN: and ELSE: each name the node to jump to, or the keyword "next". When the
+JavaScript statement does not return a boolean, the result is coerced: a
+positive number is true and a negative number false; the text values "true",
+"yes", "T" and "Y" are true and any other text is false; any other value is
+converted to text first. (graph.math never coerces - a boolean is never a
+number there.)
 
-Syntax for MAPPING statement
-----------------------------
-MAPPING: source.composite.key -> target.composite.key
+MAPPING statement - identical to the data mapper, so no curly braces:
 
-The source composite key can use the following namespaces:
-1. "input." namespace to map key-values from the input header or body of an incoming request
-2. Node name (aka 'alias') to map key-values of a node's properties
-3. "model." namespace for holding intermediate key-values for simple data transformation
-
-The target composite key can use the following namespaces:
-1. "output." namespace to map key-values to the result set to be returned as response to the calling party
-2. Node name (aka 'alias') to map key-values of a node's properties
-3. "model." namespace for holding intermediate key-values for simple data transformation
-
-Example
--------
 \`\`\`
-statment[]=MAPPING: input.body.hr_id -> employee.id
+statement[]=MAPPING: input.body.hr_id -> employee.id
 statement[]=MAPPING: input.body.join_date -> employee.join_date
 \`\`\`
 
-Note that the MAPPING statement operates exactly in the same way as a data-mapper so there is
-no need to use curly braces to wrap around variables.
+EXECUTE statement - runs another graph.js node's statements:
 
-Syntax for EXECUTE statement
-----------------------------
-EXECUTE: another-node
-
-Example
--------
 \`\`\`
-statment[]=EXECUTE: js-3
+statement[]=EXECUTE: js-3
 \`\`\`
 
-The "[]" syntax is used to create and append a list of one or more statements
+The "[]" suffix appends one statement per line to the node's statement list.
 `,ht=`Skill: Graph Math
 -----------------
-When a node is configured with this skill of "graph math", it will execute a set of simple math or boolean statements
-to return result. For example, doing mathematical calculation or boolean operation for decision-making.
-
-While your math and/or boolean statements use JavaScript syntax, this skill does not support full JavaScript language.
-Its capability is limited to simple math and boolean operations.
-
-Examples for math statement: 
-- \`COMPUTE: Math.sin(Math.PI / 2) + 1\`
-- \`COMPUTE: value -> x ** 2 + 10 * {interest.rate}\`
-
-where "interest" is a node-name and "rate" is a property of the node.
-The return value is a floating point number with double precision.
-
-Example for boolean statement: 
-- \`IF: {member.age} >= 18\`
-The return value is true or false to execute the THEN or ELSE path.
-
-For performance reason, you should use this skill instead of the "graph.js" skill.
-
-Execution will start when the GraphExecutor reaches the node containing this skill.
+Fast inline math and boolean evaluation for computation and decision-making.
+A node with this skill runs an ordered list of statement[] lines. This is the
+skill for inline compute and branching (graph.js is deprecated - see
+'help graph-js'). For anything richer than the narrow expression dialect
+described below, invoke a composable function instead (see 'help graph-task').
 
 Route name
 ----------
 "graph.math"
 
-Setup
------
-To enable this skill for a node, set "skill=graph.math" as a property in a node.
-One or more statements can be added.
-
-There are 7 types of statements:
-1. "IF" statement for decision-making
-2. "COMPUTE" statement to evaluate a mathematical formula
-3. "DECIMAL" statement to evaluate a mathematical formula with exact decimal arithmetic (the high-precision COMPUTE)
-4. "CONDITION" statement to evaluate a boolean expression into a declared boolean result
-5. "MAPPING" statement to do data mapping from a source to a target variable
-6. "EXECUTE" statement to execute another node with "graph.math" skill
-7. "RESET" statement to reset the state machine for one or more nodes
-
-You can configure one or more statements of these types.
-
-The system will reject execution if the node contains only "MAP" statements
-because it is more efficient to use the "graph.data.mapper" skills for mapping
-only operations.
-
-Statements are executed orderly.
-
 Properties
 ----------
 \`\`\`
 skill=graph.math
-statement[]=COMPUTE: variable -> mathematical statement
-statement[]=DECIMAL: variable -> mathematical statement   (exact decimal arithmetic - see below)
-statement[]=CONDITION: variable -> boolean expression
-statement[]=IF: if-then-else statement
-statement[]=MAPPING: source -> target
-statement[]=EXECUTE: another-node
+statement[]=COMPUTE: {var} -> {expression}
+statement[]=DECIMAL: {var} -> {expression}   (exact decimal arithmetic - see below)
+statement[]=CONDITION: {var} -> {boolean expression}
+statement[]=IF: / THEN: / ELSE:              (multi-line - see below)
+statement[]=MAPPING: {source} -> {target}
+statement[]=EXECUTE: {node-name}
+statement[]=RESET: {node-name}[, {node-name} ...]
 \`\`\`
 
-Node cannot be executed more than once
---------------------------------------
-To avoid unintended looping, the system guarantees that a node, that has been "seen", is not executed again.
+- statement[] (required) - at least one statement; statements run in order.
 
-The \`reset\` command clears the "seen" status and erases its result from the state machine. This is reserved
-for advanced use cases that execute a node more than once. *This optional feature must be used with care*.
-
-The following statement resets the node named "previous-node" so that the graph executor can run this node
-again when conditional traversal points to the node.
+Optional:
 
 \`\`\`
-statement[]=RESET: previous-node
-\`\`\`
-
-Optional properties
--------------------
-\`\`\`
-for_each[]={map an array parameter for iterative statement execution}
-statement[]=BEGIN
-statement[]=END
-statement[]=NEXT: {next-node-name}
+for_each[]={array-source} -> model.{var}     (iterate a statement block)
+statement[]=BEGIN / statement[]=END          (delimit the for_each block)
+statement[]=NEXT: {node-name}
 statement[]=DELAY: {milliseconds}
 \`\`\`
 
-Execution
----------
-Upon successful execution of a "COMPUTE" statement, the result set will be stored in the "result" namespace
-of the node. A subsequent "MAPPING" statement can map the key-values in the result set to one or more nodes.
+Statements
+----------
+- COMPUTE: {var} -> {expression} - evaluate the expression; the result is
+  stored in THIS node's result namespace, readable as
+  {this-node}.result.{var} or moved onward with a MAPPING statement.
+- DECIMAL: {var} -> {expression} - the high-precision COMPUTE: the expression
+  is evaluated with exact decimal arithmetic and the result is stored in the
+  node's result namespace as a canonical decimal string (plain notation, the
+  computed scale kept, a zero of any scale written "0"). COMPUTE still computes
+  in binary floating point, and a graph that never says DECIMAL keeps its
+  arithmetic; two rules reach it all the same: a string that is a canonical
+  number compares as a number, and round() is half up, away from zero. See
+  "DECIMAL statement" below.
+- CONDITION: {var} -> {boolean expression} - the declared boolean statement:
+  evaluated as a boolean whatever operators it carries (a bare {model.flag}
+  included) and stored as a boolean in THIS node's result namespace; an IF
+  may test it directly (IF: {this-node}.result.{var}). A COMPUTE stores a
+  boolean only when its expression happens to carry a comparison or boolean
+  operator - CONDITION says so in the statement.
+- IF - a boolean decision that can redirect traversal (see below).
+- MAPPING: {source} -> {target} - data mapping, identical to the data mapper
+  (see 'help graph-data-mapper'). Do NOT wrap source/target in curly braces.
+  A node with ONLY MAPPING statements is rejected - use graph.data.mapper.
+- EXECUTE: {node-name} - run another graph.math node's statements inline, IN
+  THE CALLING NODE'S CONTEXT: any COMPUTE results land on the INVOKING node
+  ({invoker}.result.{var}); the executed module's own namespace stays empty.
+  This is the module-reuse mechanism - author a formula once in an off-path
+  Module node reading neutral model.* operands, and any node borrows it.
+- RESET: {node-name}[, ...] - forget one or MORE nodes completely (the
+  run-once guard, the completion mark, and the node state; comma/space
+  list). A reset node stops satisfying a graph.join barrier until it
+  re-executes successfully. Resetting a never-executed node is a safe
+  no-op. Advanced - see Notes.
 
-For an "IF" statement, the system will execute a boolean operation.
-This process will override the natural graph traversal order and jump to a specific node.
-If the function returns "next" after evaluation of all statements, the natural graph traversal order
-will be preserved.
+Expressions
+-----------
+{namespace.key} substitutes a value from input.*, model.*, or a node's
+properties/result into a COMPUTE or IF expression, e.g.
+{input.body.discount}, {book.price}, {model.x}. Substitution is robust to
+hyphenated names - {unit-price} is the value of "unit-price", never parsed
+as a subtraction - so use communicative hyphenated names freely.
 
-Iterative Execution and Begin-End
----------------------------------
-Using the optional \`for_each\` statement, you can tell the skill module to execute the statements iteratively.
+The dialect is a NARROW JavaScript-like subset evaluated by the engine's own
+parser, not a JavaScript runtime - a closed set. It accepts exactly the
+following; an operator, function or constant not listed here is rejected by
+name ("Unknown function: hypot"), never silently. COMPUTE yields a double, so
+an integer result serializes as e.g. 8.0 (numerically exact).
 
-A "for_each" statement extracts the next array element from another array variable into a model variable.
-You can then put the model variable in the "left-hand-side" of an input statement. The module will then
-execute the statement block using an iterative stream of the model variable.
+\`\`\`
+Literals   : numbers (42, 3.14, .5, 1e-5), strings ('text' or "text"), booleans (true, false)
+Variables  : {namespace.key} substitution only - e.g. {input.body.qty}, {model.total}, {book.price};
+             an unresolved selector fails by name before evaluation
+Operators  : **  exponent, right-associative; a unary operand needs parentheses: -(2 ** 2), never -2 ** 2
+             unary + - !          * / % (remainder)          + - (+ concatenates when either side is a string)
+             < <= > >= (two numbers, or two strings compared lexically)
+             == != (same type on both sides)          && || (short-circuit)          test ? a : b          ( )
+Functions  : sin, cos, tan, asin, acos, atan, sqrt, abs, floor, ceil, round, log, log10, exp   (one argument)
+             pow(x, y)          min(a, b, ...)          max(a, b, ...)          random()
+             every function is also available as Math.name, e.g. Math.pow(2, 3)
+Constants  : PI, E (also Math.PI, Math.E)
+Not in the dialect: bitwise and shift operators (& | ^ ~ <<), assignment (=), user-defined variables
+             and functions, arrays, objects, string methods - use a graph.task function instead
+\`\`\`
 
-You can also use the \`BEGIN\` and \`END\` control statements to select a section of the statements for the
-iterative execution based on the "for_each" criteria.
+Precedence, tightest first: ** > unary > * / % > + - > relational > equality > && > || > ?:
 
-Syntax for COMPUTE statement
-----------------------------
-It will be a regular JavaScript statement with parameter substitution using the bracket syntax where
-the enclosed parameter is a reference to a data attributes in the namespace of "input.", "model." or node name.
+Numbers and booleans - each rule is enforced by a named failure, never a
+silent value:
+- A boolean is not a number. A boolean where arithmetic, a < or > comparison
+  or a function argument needs a number fails naming the selector, e.g.
+  "Boolean operand: model.flag (true) in '{model.flag} + 1' - a boolean is
+  not a number; store a boolean with CONDITION or assert the type with
+  f:validate". A JSON true in a numeric slot never computes as 1. Equality
+  (==, !=) type-checks its two sides; a string that is a canonical number
+  counts as a number, so '200' == 200, 200 == '200' and '200' == '200' are the
+  same comparison and '9.5' < '10.25' compares 9.5 with 10.25.
+- A misspelled or unsupported function fails by name ("Unknown function: mn").
+- Arithmetic is IEEE double precision. An overflow to infinity, a division by
+  zero and a NaN each fail naming the operator ("Arithmetic overflow in '*'
+  (result Infinity)", "Division by zero or arithmetic overflow in '/'");
+  integers beyond 2^53 lose precision; round() is half up, away from zero
+  (round(-2.5) is -3), the same as f:round. Money that needs exact decimal
+  arithmetic or a stated rounding mode belongs in a DECIMAL statement, the
+  high-precision COMPUTE; COMPUTE stays floating point.
 
-When you have more than one JavaScript statement, a subsequent statement can use the result of a prior statement
-as its parameters.
+DECIMAL statement
+-----------------
+\`\`\`
+statement[]=DECIMAL: fee -> {input.body.amount} * {input.body.rate}
+statement[]=DECIMAL: rounded -> round({price.result.fee}, 2, HALF_UP)
+\`\`\`
 
-Each parameter is wrapped by a set of curly brackets.
+Numbers or strings - a conscious decision: a decimal may arrive as a string
+("0.0375") or as a JSON number (0.0375), and both give the same answer. A JSON
+number is a double, and DECIMAL converts it through the shortest decimal text
+it prints as, at its minimal scale (5.0E-4 becomes 0.0005, 100.0 becomes 100).
+That is exact over the text received, but a double that was already computed in
+floating point is only as exact as that computation: COMPUTE: 1.005 * 100 is
+100.49999999999999, and rounding that in a DECIMAL statement gives 100 where
+the exact 100.5 gives 101; and a JSON number longer than a double holds was
+rounded by the parser. So send money as strings and keep a COMPUTE result out
+of a DECIMAL statement; to insist on strings, assert the type:
+f:validate(input.body.rate, text(rate; String; required)). Whole numbers are
+exact either way. The result is a string on purpose: graph.suspend saves the
+state machine and graph.resume restores it, and a string is the same after as
+before.
 
-Override Graph Traversal
-------------------------
-Normally the next node is the one or more nodes that this node is connected to.
-If you want to tell system to jump to a specific "next-node", you can use the "NEXT:" syntax and put the name
-of the node to jump to.
+Arithmetic: + - * are exact; / never truncates (the exact quotient when it
+terminates, otherwise 34 significant digits, half-even); % is the remainder;
+** and pow(x, n) take a whole exponent from -999 to 999; abs, floor, ceil, min
+and max are exact. Rounding is always explicit: round(x, scale, mode) with mode
+HALF_UP, HALF_EVEN, HALF_DOWN, UP, DOWN, CEILING or FLOOR. What cannot be exact
+is refused by name: sqrt, log, log10, exp, trigonometry, random(), PI and E -
+keep that step in a COMPUTE or a graph.task function. A DECIMAL statement
+computes a number; a comparison may appear only inside a ternary test. A COMPUTE
+on a decimal string computes in binary floating point, so use DECIMAL for money.
 
-Deferred completion
--------------------
-You can add an artificial delay to defer completion of the execution of this node. This is useful to simulate
-a slow service for performance test and to pause between retries.
+A zero of any scale is stored as "0" (round(0.004, 2, HALF_UP), 1.50 - 1.50 and
+0.00 all give "0"), and "0" + "1.50" is "1.50": the next scaled addend restores
+the scale. The remainder (%) follows the sign of the dividend (-7 % 3 is "-1").
+The decimal plugins (f:decimalAdd, f:decimalRound ...) work in a MAPPING
+statement.
 
-Next and Delay statements
--------------------------
-It is a good practice to place the next or delay statement, if any, as last one in the statement block.
-However, the placement does not change the behavior because they will only be processed at the end.
+IF / THEN / ELSE
+----------------
+IF is the decision construct. It is a multi-line statement - enter it as one
+statement[] value wrapped in triple single quotes. THEN: and ELSE: are both
+REQUIRED, or the engine aborts the run.
+
+\`\`\`
+statement[]='''
+IF: {input.body.a} >= {input.body.b}
+THEN: ge-path
+ELSE: lt-path
+'''
+\`\`\`
+
+- THEN: / ELSE: each name the node to jump to, or the keyword "next".
+- A taken node-jump ENDS the statement list immediately - later statements
+  do not run. A branch resolving to "next" FALLS THROUGH: processing
+  continues with the following statements, and natural traversal is
+  preserved if nothing else redirects it. Order the list accordingly (e.g.
+  an early-exit check first, retry logic after).
+
+Traversal control
+-----------------
+- NEXT: {node-name} - unconditionally jump to a node BY NAME (a node name,
+  not a connection label). Unlike a taken IF jump, NEXT: does not stop
+  processing: the remaining statements still run, and the jump applies after
+  the whole list completes (the last NEXT: wins).
+- DELAY: {milliseconds} - pause after this node completes, before the walk
+  continues to the next node. Paces retries; simulates a slow service.
+- RESET enables retry loops. A node may reset ITSELF - the run-once mark is
+  set before execution, so a self-reset survives and the node can run again.
+  Placement rule: put RESET FIRST among the action statements - it then runs
+  on every path (a later taken IF jump would skip it) and everything the node
+  stores afterwards (such as DELAY's pending pause) survives the self-wipe.
+  The one exception: keep RESET after any statement that reads state it would
+  wipe - an IF on a just-wiped variable (e.g. {fetcher.status} after
+  RESET: fetcher) aborts the run, so a defensive status check goes before it.
 
 Dynamic variables in statement commands
 ---------------------------------------
@@ -1313,179 +1271,124 @@ fails before evaluation and names it ("Unknown identifier: model.backoff (unreso
 model.threshold or model.factor") - so the node that failed to set it can be found. See tutorial 12
 for the full generic retry handler.
 
-Limitation
-----------
-This skill is designed to execute simple inline mathematics or boolean operations that use JavaScript syntax.
-For simplicity and speed of execution, the dialect is a closed set: the operators, built-in functions and
-constants listed under "Operators and functions" below, and nothing else. There is no assignment, no
-user-defined variable or function and no bitwise operator; {variable} substitution is the only variable.
-An unlisted function fails by name ("Unknown function: hypot"), never silently.
+Iterating lists (for_each)
+--------------------------
+for_each[] turns part of the statement list into a loop. Each entry has the
+mapping form {source} -> model.{var}; the right-hand side MUST be a model.*
+key.
 
-Operators and functions
------------------------
-The expression dialect accepts exactly the following - an operator, function or constant not listed
-here is rejected by name:
+- A LIST-valued source becomes an iteration array: model.{var} is rebound to
+  element i on each pass. Multiple list entries advance in LOCKSTEP (parallel
+  arrays) and must all have the same length. At least one entry must resolve
+  to a list, or the node aborts.
+- A SCALAR source binds its model.{var} once, before the loop - even when
+  the lists are empty.
+- An UNRESOLVABLE source REMOVES the model.{var} key.
+
+BEGIN and END split the statements into three blocks:
 
 \`\`\`
-Literals   : numbers (42, 3.14, .5, 1e-5), strings ('text' or "text"), booleans (true, false)
-Variables  : {namespace.key} substitution only - e.g. {input.body.qty}, {model.total}, {book.price};
-             an unresolved selector fails by name before evaluation
-Operators  : **  exponent, right-associative; a unary operand needs parentheses: -(2 ** 2), never -2 ** 2
-             unary + - !          * / % (remainder)          + - (+ concatenates when either side is a string)
-             < <= > >= (two numbers, or two strings compared lexically)
-             == != (same type on both sides)          && || (short-circuit)          test ? a : b          ( )
-Functions  : sin, cos, tan, asin, acos, atan, sqrt, abs, floor, ceil, round, log, log10, exp   (one argument)
-             pow(x, y)          min(a, b, ...)          max(a, b, ...)          random()
-             every function is also available as Math.name, e.g. Math.pow(2, 3)
-Constants  : PI, E (also Math.PI, Math.E)
-Not in the dialect: bitwise and shift operators (& | ^ ~ <<), assignment (=), user-defined variables
-             and functions, arrays, objects, string methods - use a graph.task function instead
+statement[]=...       <- pre-block: runs ONCE, before the loop
+statement[]=BEGIN
+statement[]=...       <- each-block: runs once PER ELEMENT
+statement[]=END
+statement[]=...       <- post-block: runs ONCE, after the loop
 \`\`\`
 
-Precedence, tightest first: ** > unary > * / % > + - > relational > equality > && > || > ?:
+- Without BEGIN, the WHOLE statement list is the loop body - seed
+  accumulators in a pre-block, or the seeding re-runs on every iteration.
+- Iteration is strictly SEQUENTIAL, in list order, inside one node execution
+  (a long list does not trip the loop guard). Contrast: the API fetcher's
+  for_each fans HTTP calls out concurrently - see 'help graph-api-fetcher'.
+- A taken IF jump BREAKS the loop: it ends the current iteration, skips the
+  remaining elements and the post-block, and redirects traversal. An
+  "ELSE: next" falls through within the iteration.
+- Empty lists are fine: the each-block runs zero times; pre/post still run.
+- COMPUTE yields doubles; the f:add family uses numeric promotion - inputs
+  that are all whole numbers keep exact long arithmetic (including integer
+  division), while any decimal argument promotes the whole computation to a
+  double. So f:add composes directly with COMPUTE results; accumulate with
+  either f:add or a pure-COMPUTE read-back, as below. Tame floating-point
+  precision artifacts with f:round(value, int(2)) - half-up rounding on the
+  number's decimal representation (1.005 rounds to 1.01 at 2 places).
+
+\`\`\`
+create node totaler
+with type Loop
+with properties
+skill=graph.math
+for_each[]=input.body.prices -> model.price
+for_each[]=input.body.quantities -> model.qty
+statement[]=MAPPING: int(0) -> model.total
+statement[]=BEGIN
+statement[]=COMPUTE: total -> {model.total} + {model.price} * {model.qty}
+statement[]=MAPPING: totaler.result.total -> model.total
+statement[]=END
+statement[]=MAPPING: model.total -> output.body.total
+\`\`\`
+
+With prices=[10,20,30] and quantities=[7,8,9] the run yields total: 500.0 -
+the pre-block seeds the accumulator once, each pass computes
+total + price*qty and writes it back, and the post-block maps the final
+value out. The plugin form is equivalent:
+COMPUTE: line -> {model.price} * {model.qty} followed by
+MAPPING: f:add(model.total, totaler.result.line) -> model.total.
 
 Example
 -------
 \`\`\`
-create node demo-math-runner
+create node price-check
+with type Decision
 with properties
 skill=graph.math
 statement[]=COMPUTE: amount -> (1 - {input.body.discount}) * {book.price}
-\`\`\`
-
-The syntax \`{variable_name}\` is used to resolve the value from the variable into the COMPUTE statement.
-
-Syntax for DECIMAL statement
-----------------------------
-DECIMAL: variable -> mathematical statement
-
-DECIMAL is the high-precision COMPUTE: the expression is evaluated with exact decimal arithmetic and the
-result is stored in the node's "result" namespace as a canonical decimal string (plain notation, the
-computed scale kept, a zero of any scale written "0"). COMPUTE still computes in binary floating point,
-and a graph that never says DECIMAL keeps its arithmetic; two rules reach it all the same: a string that is a
-canonical number compares as a number, and round() is half up, away from zero.
-
-\`\`\`
-statement[]=DECIMAL: fee -> {input.body.amount} * {input.body.rate}
-statement[]=DECIMAL: rounded -> round({price.result.fee}, 2, HALF_UP)
-\`\`\`
-
-Numbers or strings - a conscious decision: a decimal may arrive as a string ("0.0375") or as a JSON number
-(0.0375), and both give the same answer. A JSON number is a double, and DECIMAL converts it through the
-shortest decimal text it prints as, at its minimal scale (5.0E-4 becomes 0.0005, 100.0 becomes 100). That is
-exact over the text received, but a double that was already computed in floating point is only as exact as
-that computation: COMPUTE: 1.005 * 100 is 100.49999999999999, and rounding that in a DECIMAL statement gives
-100 where the exact 100.5 gives 101; and a JSON number longer than a double holds was rounded by the parser.
-So send money as strings and keep a COMPUTE result out of a DECIMAL statement; to insist on strings, assert
-the type: f:validate(input.body.rate, text(rate; String; required)). Whole numbers are exact either way.
-The result is a string on purpose: graph.suspend saves the state machine and graph.resume restores it, and a
-string is the same after as before.
-
-Arithmetic: + - * are exact; / never truncates (the exact quotient when it terminates, otherwise 34
-significant digits, half-even); % is the remainder; ** and pow(x, n) take a whole exponent from -999 to 999;
-abs, floor, ceil, min and max are exact. Rounding is always explicit: round(x, scale, mode) with mode
-HALF_UP, HALF_EVEN, HALF_DOWN, UP, DOWN, CEILING or FLOOR. What cannot be exact is refused by name: sqrt,
-log, log10, exp, trigonometry, random(), PI and E - keep that step in a COMPUTE or a graph.task function.
-A DECIMAL statement computes a number; a comparison may appear only inside a ternary test. A COMPUTE on
-a decimal string computes in binary floating point, so use DECIMAL for money.
-
-A zero of any scale is stored as "0" (round(0.004, 2, HALF_UP), 1.50 - 1.50 and 0.00 all give "0"), and
-"0" + "1.50" is "1.50": the next scaled addend restores the scale. The remainder (%) follows the sign of the
-dividend (-7 % 3 is "-1"). The decimal plugins (f:decimalAdd, f:decimalRound ...) work in a MAPPING statement.
-
-Syntax for CONDITION statement
-------------------------------
-CONDITION: variable -> boolean expression
-
-The expression is evaluated as a boolean whatever operators it carries - a comparison, a boolean
-operation, or a bare boolean variable - and the result is stored as a boolean in the node's
-"result" namespace. It is the declared form of a decision value; a COMPUTE stores a boolean only
-when its expression happens to carry a comparison or boolean operator.
-
-\`\`\`
-statement[]=CONDITION: eligible -> {member.age} >= 18 && {member.active}
-statement[]=CONDITION: same -> {model.flag}
-statement[]=MAPPING: check.result.eligible -> output.body.eligible
-\`\`\`
-
-An IF statement may test the stored boolean directly: \`IF: {check.result.eligible}\`.
-
-Numbers and booleans
---------------------
-A boolean is not a number. A boolean where arithmetic, a < or > comparison or a function argument
-needs a number fails naming the selector, e.g. "Boolean operand: model.flag (true) in
-'{model.flag} + 1' - a boolean is not a number; store a boolean with CONDITION or assert the type
-with f:validate". So a JSON true in a numeric slot never computes as 1. Equality (==, !=)
-type-checks its two sides; a string that is a canonical number counts as a number, so '200' == 200,
-200 == '200' and '200' == '200' are the same comparison and '9.5' < '10.25' compares 9.5 with 10.25.
-
-A misspelled or unsupported function fails by name ("Unknown function: mn").
-
-Arithmetic is IEEE double precision. An overflow to infinity, a division by zero and a NaN each
-fail naming the operator ("Arithmetic overflow in '*' (result Infinity)", "Division by zero or
-arithmetic overflow in '/'"); integers beyond 2^53 lose precision; round() follows Java's
-Math.round (half up toward positive infinity). Money that needs exact decimal arithmetic or a stated
-rounding mode belongs in a DECIMAL statement, the high-precision COMPUTE; COMPUTE stays floating point.
-
-Syntax for IF statement
------------------------
-Each IF statement is a multiline command:
-\`\`\`
-IF: Boolean-operation-statement
-THEN: node-name | next
-ELSE: node-name | next
-\`\`\`
-
-The "next" keyword tells the system to execute the next statement.
-
-The if-then-else is used to select two options after evaluation of the boolean operation statement.
-
-Example
--------
-\`\`\`
 statement[]='''
 IF: (1 - {input.body.discount}) * {book.price} > 5000
 THEN: high-price
 ELSE: low-price
+'''
 \`\`\`
 
-The syntax \`{variable_name}\` is used to resolve the value from the variable into the IF statement.
+Reusable module - author the formula once, borrow it anywhere:
 
-Syntax for MAPPING statement
-----------------------------
-MAPPING: source.composite.key -> target.composite.key
-
-The source composite key can use the following namespaces:
-1. "input." namespace to map key-values from the input header or body of an incoming request
-2. Node name (aka 'alias') to map key-values of a node's properties
-3. "model." namespace for holding intermediate key-values for simple data transformation
-
-The target composite key can use the following namespaces:
-1. "output." namespace to map key-values to the result set to be returned as response to the calling party
-2. Node name (aka 'alias') to map key-values of a node's properties
-3. "model." namespace for holding intermediate key-values for simple data transformation
-
-Example
--------
 \`\`\`
-statment[]=MAPPING: input.body.hr_id -> employee.id
-statement[]=MAPPING: input.body.join_date -> employee.join_date
+create node addition
+with type Module
+with properties
+skill=graph.math
+statement[]=COMPUTE: sum -> {model.a} + {model.b}
 \`\`\`
 
-Note that the MAPPING statement operates exactly in the same way as a data-mapper so there is
-no need to use curly braces to wrap around variables.
-
-Syntax for EXECUTE statement
-----------------------------
-EXECUTE: another-node
-
-Example
--------
 \`\`\`
-statment[]=EXECUTE: math-3
+create node calculate
+with type Compute
+with properties
+skill=graph.math
+statement[]=MAPPING: input.body.a -> model.a
+statement[]=MAPPING: input.body.b -> model.b
+statement[]=EXECUTE: addition
+statement[]=MAPPING: calculate.result.sum -> output.body.sum
 \`\`\`
 
-The "[]" syntax is used to create and append a list of one or more statements
+Note "calculate.result.sum", not "addition.result.sum" - the caller borrows
+the logic, so the result belongs to the caller. Keep the module off the
+execution path and hang it under the island knowledge layer
+(island -[module]-> addition) - see 'help graph-island'.
+
+Notes
+-----
+- A node executes ONCE per run (the run-once guard); a RESET statement is
+  the only escape, for advanced re-execution. Use it with care.
+- Loop guard: a node executed too frequently (default: more than 10 times
+  per second) aborts the traversal - bound every retry loop and pace it
+  with DELAY:.
+- for_each[]={array-source} -> model.{var} iterates a statement block over a
+  runtime array; BEGIN / END delimit the block to iterate (they are for_each
+  delimiters, not IF braces) - see "Iterating lists" above. Without
+  for_each[], BEGIN/END lines are accepted and ignored.
+- The bounded-retry pattern (RESET the failing node and itself first, count
+  attempts with f:defaultValue + f:add, exit at the bound via a taken IF
+  jump, NEXT: back, DELAY: to pace) is shown under 'help graph-api-fetcher'.
 `,gt=`Skill: Graph Resume
 -------------------
 When a graph run starts with the same business correlation ID as a previously suspended
@@ -1810,55 +1713,97 @@ input[]=input.header.hello -> header.hello
 output[]=result -> model.soap_request_payload
 skill=graph.task
 \`\`\`
-`,yt=`Import a graph model
---------------------
-1. This command imports a graph as a model for review and update
-2. The name does not require the ".json" extension
+`,yt=`Import a graph model or a node
+------------------------------
+Load an exported graph model into your session as a draft for review and
+update, or copy a single node from another graph model.
 
 Syntax
 ------
 \`\`\`
 import graph from {name}
-\`\`\`
-
-Example
--------
-\`\`\`
-import graph from helloworld
-\`\`\`
-
-Import a node from another graph model
---------------------------------------
-You can re-use nodes from another graph.
-
-A best practice is to publish some common graph model holding reusable nodes as modules and skills
-so that other members can borrow the nodes for use in their own graph models.
-
-Syntax
-------
-\`\`\`
 import node {node-name} from {graph-name}
 \`\`\`
 
 Example
 -------
 \`\`\`
+import graph from helloworld
 import node fetcher from helloworld
 \`\`\`
-`,bt='Inspect state machine\n---------------------\nThis command inspects the state machine containing properties of nodes, input, output and model namespaces.\n\nPre-requisite\n-------------\nA graph instance is created with the "instantiate" command\n\nSyntax\n------\n```\ninspect {variable_name}\n```\n`{variable_name}` is a placeholder — substitute your key and do **not** type the\nbraces (see the examples). A whole namespace (`input` | `output` | `model` | `error`) is\nalso valid, e.g. `inspect output`.\n\nAfter a failed node routes to its exception handler, `inspect error` shows the staged\nexception context — `error.source` (the failing node), `error.code`, `error.message` and\n`error.stack` when available. When the failing node is later retried successfully, the\ncontext resolves: code becomes 200, the source stays, and the failure details are removed\n— so an empty context means nothing failed, `{source, code: 200}` means recovered, and a\nfull context means an outstanding failure. The `error` namespace is a first-class\nstate-machine citizen like `model`, which is why `error` is a reserved node alias.\n\nExamples\n--------\n```\ninspect input.body.user_id\ninspect book.price\ninspect model.some_variable\ninspect output.body.some_key\ninspect error\ninspect error.source\n```\n',xt=`Instantiate from a Graph Model
-------------------------------
-1. This command creates a graph instance with mock input from the current graph model for development and tests
-2. You must do this before using "execute", "inspect" and "run" commands
-3. The name does not require the ".json" extension
-4. You can tell the system to mock one or more constants as input variables
-5. The input namespace contains 'body' and 'header'
-6. The model namespace is a state machine. It is optional unless you want to emulate some model variables.
+
+Notes
+-----
+- The name uses letters, digits and hyphen; do not add a ".json" extension.
+- 'import graph' looks in the Playground temp folder first (where
+  'export graph' writes). When the file is not there, it falls back to the
+  graph models deployed with the application. The message "Graph model not
+  found in /tmp/graph/... Found deployed graph model" is this normal
+  fallback, not an error - the deployed model is imported as your draft.
+- 'import node' copies one node (its type and properties, not its
+  connections) from an exported graph model in the temp folder - export the
+  source graph first. If a node with the same name already exists in your
+  draft, it is overwritten.
+- Best practice: publish a common graph model holding reusable nodes
+  (modules and skills) so team members can import them into their own
+  graph models.
+`,bt=`Inspect the state machine
+-------------------------
+Read a value from the current graph instance's state machine: node
+properties, and the input, output and model namespaces.
+
+Syntax
+------
+\`\`\`
+inspect {key}
+\`\`\`
+
+\`{key}\` is a placeholder - substitute your key and do not type the braces.
+A whole namespace (input | output | model | error) is also valid, e.g.
+'inspect output'.
+
+After a failed node routes to its exception handler, 'inspect error' shows the staged
+exception context - error.source (the failing node), error.code, error.message and
+error.stack when available. When the failing node is later retried successfully, the
+context resolves: code becomes 200, the source stays, and the failure details are removed
+- so an empty context means nothing failed, {source, code: 200} means recovered, and a
+full context means an outstanding failure. The 'error' namespace is a first-class
+state-machine citizen like 'model', which is why 'error' is a reserved node alias.
+
+Example
+-------
+\`\`\`
+inspect output
+inspect input.body.user_id
+inspect model.some_variable
+inspect output.body.some_key
+inspect book.price
+inspect error
+inspect error.source
+\`\`\`
+
+Notes
+-----
+- Requires a graph instance (see 'help instantiate').
+- Keys may be composite (dot-bracket), e.g. output.body.profile[0].name.
+- A node's properties and results are addressed by node name, e.g.
+  book.price or fetcher.result.name.
+- A value too large for the console is redirected: the reply prints a
+  GET /api/inspect/... URL to download it instead.
+`,xt=`Instantiate a graph instance
+----------------------------
+Create a runnable instance of the current graph model, optionally seeded
+with mock input for development and testing. Required before the 'run',
+'execute' and 'inspect' commands. This is a multi-line command: enter all
+lines as one block.
 
 Syntax
 ------
 \`\`\`
 instantiate graph
 {constant} -> input.body.{key}
+{constant} -> input.header.{key}
+{constant} -> model.{key}
 \`\`\`
 
 Example
@@ -1870,180 +1815,169 @@ text(application/json) -> input.header.content-type
 text(world) -> model.hello
 \`\`\`
 
-Alias
+Notes
 -----
-\`start\` is an alias of \`instantiate\`
+- The seed lines are optional. Each line assigns a constant (text(...),
+  int(...), boolean(...), etc.) to the input.body, input.header or model
+  namespace - no other targets are accepted. The model namespace is the
+  state machine; seed it only to emulate model variables.
+- Seed keys may be composite (dot-bracket), so nested mock payloads seed
+  directly:
+
+\`\`\`
+instantiate graph
+text(Peter) -> input.body.profile.name
+text(100 World Blvd) -> input.body.profile.address1
+\`\`\`
+
+- The graph must have a root node and an end node.
+- Instantiating replaces any previous instance of your session.
+- The reply reports the number of mock entries loaded and the instance's
+  model.ttl (default 30000 ms), the execution time budget - seed model.ttl
+  to change it.
+- 'start' is an alias of 'instantiate'.
+- To mock a large input.body with a JSON payload, see 'help upload'.
 `,St=`List nodes, connections, graphs or flows
 ----------------------------------------
-The "list nodes" and "list connections" commands list all the nodes and connections of the current graph model
-respectively. The "list graphs" and "list flows" commands are read-only DISCOVERY commands: they enumerate the
-deployable graph models (each with its root node's "purpose" - living documentation) and the Event Script flows -
-the valid extension={graph-id} and extension=flow://{flow-id} delegation targets.
+Show all nodes or all connections of the current graph model - or discover
+the deployable graph models and Event Script flows of this server.
 
 Syntax
 ------
-List all nodes
---------------
 \`\`\`
 list nodes
-\`\`\`
-
-List all connections
---------------------
-\`\`\`
 list connections
-\`\`\`
-
-List deployable graph models (discovery)
-----------------------------------------
-\`\`\`
 list graphs
-\`\`\`
-
-List Event Script flows (discovery)
------------------------------------
-\`\`\`
 list flows
 \`\`\`
+
+Notes
+-----
+- 'list graphs' (discovery, read-only) enumerates the deployable graph
+  models - the valid extension={graph-id} delegation targets - each with
+  its root node's "purpose" property, so the listing reads as living
+  documentation of the enterprise knowledge on this server. Follow up
+  with 'describe graph {graph-id}' for a model's input/output contract.
+- 'list flows' (discovery, read-only) enumerates the Event Script flows -
+  the valid extension=flow://{flow-id} delegation targets.
+- 'list nodes' prints each node with its type: the root node first, the end
+  node last, and the other nodes in alphabetical order. A missing root or
+  end node is flagged with "(does not exist)".
+- 'list connections' prints one line per connection with its relation
+  label(s).
+- Use 'describe node {name}' for the full detail of a single node (see
+  'help describe').
 `,Ct=`Run a graph instance
 --------------------
-1. This command runs a graph instance from a root node. Using graph traversal, it will execute any node with skill
-   configured.
-2. Each new instance can only be executed once.
-3. You must close the current instance and instantiate a new one for the next "run" command.
-4. Before traversal begins, the graph is checked against the same whole-graph rules that the
-   CompileGraph deployment gate enforces (the suspend/resume contract). Draft authoring allows
-   partial models, but a runnable graph must honor these rules - a violation is reported as
-   "Unable to run - <reason>" and the run is aborted.
-
-Pre-requisite
--------------
-A graph instance is created with the "instantiate" command
+Traverse the current graph instance from the root node to the end node,
+executing every node that has a skill along the way.
 
 Syntax
 ------
 \`\`\`
 run
 \`\`\`
+
+Notes
+-----
+- Requires a graph instance (see 'help instantiate').
+- Before traversal begins, the graph is checked against the same whole-graph
+  rules that the CompileGraph deployment gate enforces (the suspend/resume
+  contract). Draft authoring allows partial models, but a runnable graph must
+  honor these rules - a violation is reported as "Unable to run - <reason>"
+  and the run is aborted.
+- Traversal starts at the root node. Multiple outgoing connections fork into
+  parallel branches (synchronize them with graph.join); each node executes
+  at most once per run (loop guard).
+- Every run ends with either "Graph traversal completed in N ms" or
+  "Graph traversal aborted: <reason>" - every abort names its reason (a node's
+  error, a pre-run gate rule, the deadline).
+- 'run' may be repeated on the same instance: each run clears the visited
+  set and the output namespace, but model values persist across runs -
+  instantiate again for a completely fresh state.
+- Use 'seen' to list the nodes visited by the last run, and 'inspect' to
+  read the results (e.g. 'inspect output.body').
 `,wt=`Display nodes that have been 'seen'
 -----------------------------------
-This command displays the list of nodes that have been seen or executed.
-
-Pre-requisite
--------------
-A graph instance is created with the "instantiate" command
+List the nodes of the current graph instance that have been seen - visited
+by graph traversal or executed directly.
 
 Syntax
 ------
 \`\`\`
 seen
 \`\`\`
+
+Notes
+-----
+- Requires a graph instance (see 'help instantiate').
+- Covers nodes visited by 'run' and nodes tested with 'execute'.
+- The visited set is cleared at the start of each run.
 `,Tt=`Session commands
 ----------------
-The session commands are used for user collaboration.
-
-1. Display current session 
-2. Subscribe to a session for collaboration with another user
-3. Reset the current session
-4. Unsubscribe from another session
+Manage your Playground session and collaborate with other users by
+subscribing to a primary session, so both users see and drive the same graph.
 
 Syntax
 ------
-
-Display current session
------------------------
 \`\`\`
-session
+session                    show this session's id and subscriptions
+session subscribe {id}     mirror a primary session into yours
+session unsubscribe        detach from the session you subscribed to
+session reset              restart your session
 \`\`\`
 
-For example, when your session is subscribed by another user.
+Example
+-------
 \`\`\`
 > session
 Session ws-178443-2 started since 2026-06-02 10:20:32.054
 subscribed by [ws-485844-4]
 \`\`\`
 
-Subscribe to another session
-----------------------------
-\`\`\`
-session subscribe {session-id}
-\`\`\`
-
-e.g.
-\`\`\`
-> session subscribe ws-178443-2
-Subscribed to ws-178443-2
-\`\`\`
-
-When you subscribe to a session, input commands from you and the other user
-will be executed in both the sessions, thus syncing the action and content
-of the graph sessions.
-
-If the target session is not a primary session, you will see this error.
-
-\`\`\`
-> session subscribe ws-485844-4
-ws-485844-4 is not a primary session
-\`\`\`
-
-The system will also reject your subscription request if you try to subscribe
-to yourself.
-
-Reset as a new session
-----------------------
-\`\`\`
-session reset
-\`\`\`
-
-e.g.
-\`\`\`
-> session reset
-Session restarted
-\`\`\`
-
-When you reset a session and you are the primary session, all subscribers will be disconnected.
-Your session will be cleared but the previous subscribers would retain their own graphs so they can
-continue updating them.
-
-Unsubscribe
------------
-\`\`\`
-session unsubscribe
-\`\`\`
-
-e.g.
-\`\`\`
-> session unsubscribe
-Session unsubscribed from ws-287159-4
-\`\`\`
-
-If you have subscribed to another session, the "unsubscribe" command decouples your session from it.
-The graph in your session is retained so that you can continue editing.
-
-If you are the primary session, the system will reject your "unsubscribe" command with an error message
-"Nothing to unsubscribe".
+Notes
+-----
+- 'session' shows the session id and start time, the session you subscribed
+  to (if any), and the sessions subscribed to yours.
+- Subscribing mirrors commands both ways: input commands from either user
+  run in both sessions, keeping the graphs in sync. On subscribe the graphs
+  are aligned - if the primary session is empty, your draft is pushed to it;
+  otherwise its graph replaces your draft.
+- You can subscribe only to a primary session (one that has not itself
+  subscribed to another), and never to yourself. If you are already
+  subscribed, do 'session reset' before subscribing to another session.
+- 'session unsubscribe' decouples your session from the one you subscribed
+  to; your graph is retained so you can continue editing. A primary session
+  gets "Nothing to unsubscribe".
+- 'session reset' restarts your session with an empty draft graph. As a
+  primary session it disconnects all subscribers (they keep their own
+  graphs); as a subscriber it unsubscribes first. Export first if you want
+  to keep your draft (see 'help export').
+- The companion REST endpoints reject 'session subscribe', 'session
+  unsubscribe' and 'session reset': a companion is an assistant to a
+  session, not a session of its own. Only the read-only 'session' status
+  query works there - session topology is managed from a
+  WebSocket-connected session (the browser console) only.
 `,Et=`Tutorial 1
 ----------
-Welcome to the MiniGraph Playground, the self-service user interface for creating amazing applications
-using [Active Knowledge Graph](https://accenture.github.io/mercury-composable/guides/CHAPTER-11/)
-(*right-click to open new tab*).
+Welcome to the MiniGraph Playground, the self-service user interface for creating
+applications with the Active Knowledge Graph.
 
-Let's get started.
-
-In this session, you will create the simplest application that returns a "hello world" message.
+In this tutorial, you will create the simplest possible application: a graph model
+that returns a "hello world" message.
 
 Exercise
 --------
-If you can see this page, this means you have successfully started the MiniGraph Playground from a browser
-and connected to a designer workbench session.
+If you can see this page, you have successfully started the MiniGraph Playground in a
+browser and connected to a designer workbench session.
 
-If your session is disconnected, select the "Tools" dropdown in the top-right corner, click MiniGraph's start
-and select "MiniGraph".
+If your session is disconnected, select the "Tools" dropdown in the top-right corner,
+click MiniGraph's start toggle and select "MiniGraph".
 
-Create a starting point of a graph
-----------------------------------
-**Create a root node** that is the starting point for a graph model.
-Select multiline and enter the following command in the bottom-right inbox box.
+Create the starting point of a graph
+------------------------------------
+**Create a root node** — the starting point of every graph model.
+Select multiline and enter the following command in the bottom-right input box.
 
 \`\`\`
 create node root
@@ -2059,18 +1993,15 @@ The console displays:
 Graph with 1 node described in /api/graph/model/ws-875677-2/165-1
 \`\`\`
 
-A drawing will be shown on the right hand side under the "Graph" tab.
-
-This means a graph with a single node called "root" has been created.
+A drawing appears on the right-hand side under the "Graph" tab: a graph with a single
+node called "root" has been created.
 
 \`ws-875677-2\` is the session ID of the workbench.
 \`165-1\` is a random number for the session that you can ignore.
 
 Create an end node
 ------------------
-An end node is the exit point of a graph model.
-
-Enter the following to create an end node.
+An end node is the exit point of a graph model. Enter the following to create one.
 
 \`\`\`
 create node end
@@ -2087,20 +2018,19 @@ The console displays:
 Graph with 2 nodes described in /api/graph/model/ws-875677-2/061-2
 \`\`\`
 
-The "skill=graph.data.mapper" assigns the data mapper function to the end node.
-In a data mapper, you can do data mapping. 
+The \`skill=graph.data.mapper\` line assigns the data mapper skill to the end node.
+A data mapper node performs data mapping when it executes.
 
-The mapping statement \`mapping[]=text(hello world) -> output.body\` tells the
-system to map the constant "hello world" to \`output.body\` that is the response
-payload when the graph is executed. The \`[]\` syntax means it is a list of statements.
+The mapping statement \`mapping[]=text(hello world) -> output.body\` maps the constant
+"hello world" to \`output.body\` — the response payload when the graph is executed.
+The \`[]\` suffix means \`mapping\` is a list: each \`mapping[]=\` line appends one statement.
 
-The MiniGraph system uses the same Event Script's data mapping syntax. For more details, please refer to
-[Data Mapping Syntax](https://accenture.github.io/mercury-composable/guides/CHAPTER-4/#tasks-and-data-mapping)
-(*right-click to open new tab*).
+MiniGraph uses the same data mapping syntax as Event Script. For a quick reference,
+enter "help graph-data-mapper" in the console.
 
-First attempt to run a graph
-----------------------------
-To run a graph model, you can use the \`instantiate graph\` command.
+First attempt to run the graph
+------------------------------
+To run a graph model, first create an instance of it with the \`instantiate graph\` command.
 
 The console displays:
 
@@ -2109,10 +2039,7 @@ The console displays:
 Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms
 \`\`\`
 
-When you enter "instantiate graph", you ask the system to create an "instance"
-from a graph model.
-
-You can now try to run the graph by entering the "run" command.
+Now try to run the graph by entering the \`run\` command.
 
 The console displays:
 
@@ -2121,23 +2048,21 @@ The console displays:
 Walk to root
 \`\`\`
 
-The system will start running the graph from the starting point. i.e. the root node.
-However, nothing happens after that.
+The system starts graph traversal from the starting point, i.e. the root node —
+and then nothing happens.
 
 What is missing?
 ----------------
-Active Knowledge Graph is a "property graph" that contains one or more "active" nodes.
-An active node is associated with a "skill" that is backed by a composable function.
+An Active Knowledge Graph is a "property graph" that contains one or more "active"
+nodes. An active node carries a "skill" that is backed by a composable function.
 
-The system performs graph traversal from the root node. There is nothing happened
-because there are no further nodes to reach after the root node.
-
-Graph traversal will stop when running in the MiniGraph Playground because the graph
-model is incomplete without an "end" node.
+The system traverses the graph from the root node. Nothing happened because there is
+no further node to reach after the root node: the two nodes are not yet connected,
+so traversal stops before it can reach the end node.
 
 Connecting nodes
 ----------------
-Please enter the following command to connect the root node to the end node.
+Enter the following command to connect the root node to the end node.
 
 \`\`\`
 connect root to end with done
@@ -2151,14 +2076,14 @@ node root connected to end
 Graph with 2 nodes described in /api/graph/model/ws-875677-2/551-3
 \`\`\`
 
-The graph model drawing is updated on the right panel.
+The graph drawing on the right panel is updated.
 
 Running the graph
 -----------------
-Now you have a graph that has a start and an ending point where one node contains a skill to do something.
-i.e. the end node with a data mapping statement.
+You now have a graph with a starting point and an ending point, where one node
+carries a skill — the end node with its data mapping statement.
 
-You can now instantiate the graph again and run it by entering the following commands.
+Instantiate the graph again and run it by entering the following commands.
 
 \`\`\`
 instantiate graph
@@ -2182,12 +2107,12 @@ Executed end with skill graph.data.mapper in 1.736 ms
 Graph traversal completed in 9 ms
 \`\`\`
 
-Congratulations. You have create your first MiniGraph that works.
+Congratulations — you have created your first working MiniGraph.
 It returns "hello world" when it runs.
 
 Export the graph
 ----------------
-You may now export the graph so that you can deploy it to production.
+You may now export the graph so that you can deploy it later.
 
 Enter the export command below:
 
@@ -2195,8 +2120,8 @@ Enter the export command below:
 export graph as tutorial-1
 \`\`\`
 
-This will export the graph model in JSON format with the name \`tutorial-1\`
-in "/tmp/graph/helloworld.json"
+This exports the graph model in JSON format with the name \`tutorial-1\`
+as "/tmp/graph/tutorial-1.json".
 
 The console displays:
 
@@ -2207,13 +2132,12 @@ Graph exported to /tmp/graph/tutorial-1.json
 Described in /api/graph/model/tutorial-1/436-4
 \`\`\`
 
-Note that the system will add the graph name (i.e. unique "id") to the root node.
-This avoids the user from accidentally overwriting an existing graph model.
+Note that the system adds the graph name (its unique "id") to the root node.
+This prevents you from accidentally overwriting a different graph model.
 
 Help pages
 ----------
-To display more information about each command that you use in this tutorial,
-enter the following:
+To learn more about each command used in this tutorial, enter:
 
 \`\`\`
 help create
@@ -2225,29 +2149,34 @@ help export
 
 Summary
 -------
-In this session, you have created the simplest graph model to return a "hello world" message when the graph
-API endpoint is called. You have exported the graph model and tested some help pages.
+In this tutorial, you created the simplest graph model — it returns a "hello world"
+message when its graph API endpoint is called — exported it, and tried some help pages.
 
 Well done. Let's move on to "Tutorial 2".
 `,Dt=`Tutorial 10
 -----------
-In this session, you will create a graph model to use an extension.
+In this tutorial, you will create a graph model that uses another graph model as an extension.
 
 Exercise
 --------
-You will use an existing graph model as an extension. Then create a new graph model to use the extension.
+You will use an existing graph model as an extension, then create a new graph model that calls it.
 
-To clear the previous graph session, click the Tools button in the top-right corner and click the "Stop" and "Start"
-toggle button. A new graph session will start.
+To clear the previous graph session, click the Tools button in the top-right corner and click the
+"Stop" and "Start" toggle button. A new graph session will start.
 
 What is a graph extension?
 --------------------------
-A graph extension is a graph model that is built to serve some logic that can be reused by another graph model.
+A graph extension is a graph model built to serve some logic that another graph model can reuse.
+
+The \`extension\` property of a graph.extension node names a **deployed** graph model — one compiled
+at application startup from the \`resources/graph\` folder (the same ids callable at
+POST /api/graph/{graph-id}). A session draft is not addressable as an extension: export and deploy
+it first.
 
 Import tutorial 3 as an extension
 ---------------------------------
-Enter the following to import tutorial 3. Note that tutorial-3.json is preloaded into the main/resources/graph
-folder.
+Enter the following to import tutorial 3. Note that tutorial-3.json is preloaded into the
+\`resources/graph\` folder.
 
 \`\`\`
 > import graph from tutorial-3
@@ -2264,7 +2193,7 @@ start graph
 int(100) -> input.body.person_id
 \`\`\`
 
-Then do a 'dry-run'
+Then do a 'dry-run'.
 
 \`\`\`
 > run
@@ -2283,16 +2212,17 @@ Walk to end
 Graph traversal completed in 2 ms
 \`\`\`
 
-You see that it fetches data using the input parameter (person_id=100) and return name and address of the person.
+You can see that it fetches data using the input parameter (person_id=100) and returns the name
+and address of the person. This is the behavior your new graph will reuse.
 
 Restart playground session
 --------------------------
-You will clear the current graph session - click the Tools button in the top-right corner and click the "Stop" 
-and "Start" toggle button. A new graph session will start.
+You will clear the current graph session — click the Tools button in the top-right corner and
+click the "Stop" and "Start" toggle button. A new graph session will start.
 
 Create a root node and an end node
 ----------------------------------
-You will create a new graph model with root node and end node.
+You will create a new graph model with a root node and an end node.
 
 \`\`\`
 create node root
@@ -2309,9 +2239,10 @@ with type End
 
 Create a node to use an extension
 ---------------------------------
-Enter the following to create an extension node. The skill is 'extension' and the extension is 'tutorial-3'.
+Enter the following to create an extension node. The skill is 'graph.extension' and the
+'extension' property names the deployed graph model 'tutorial-3'.
 
-The input mapping sets the input parameter(s) to an extension which is also a graph model.
+The input mapping sets the input parameter(s) of the extension, which is itself a graph model.
 The output mapping sets the result from the extension to the output payload.
 
 \`\`\`
@@ -2360,8 +2291,8 @@ Walk to end
 Graph traversal completed in 20 ms
 \`\`\`
 
-The input for the current graph instance is mapped as input parameter to the extension 'tutorial-3'.
-The result is mapped as output for the graph.
+The input of the current graph instance is mapped as an input parameter to the extension
+'tutorial-3', and the result is mapped as the output of the graph.
 
 If you inspect the extension node, you will see:
 
@@ -2393,22 +2324,22 @@ If you inspect the extension node, you will see:
 
 Check the application log
 -------------------------
-Complete telemetry information is shown in the application log. You will see that 'tutorial-3' is invoked
-as an extension and it fetches data from the data provider with the input parameter 'person_id'.
+Complete telemetry information is shown in the application log. You will see that 'tutorial-3' is
+invoked as an extension and that it fetches data from the data provider with the input parameter
+'person_id'.
 
 \`\`\`
-GraphExtension:202 - Call extension tutorial-3, ttl=30000
-GraphApiFetcher:410 - GET http://127.0.0.1:8085/api/mdm/profile/100, with [person_id], ttl=30000
+Call extension tutorial-3, ttl=30000
+GET http://127.0.0.1:8085/api/mdm/profile/100, with [person_id], ttl=30000
 \`\`\`
 
-This is a trivial example to demonstrate that you can call an extension from a graph instance.
-A typical use case is that the main graph model would use one or more extensions for API data fetching and perform
-decision-making using the retrieved data.
+This is a small example, but it demonstrates the pattern: a typical main graph model uses one or
+more extensions for API data fetching, then performs decision-making using the retrieved data.
 
 Reusability
 -----------
-Graph extension promotes reusability. Common use cases can be built using graph models that are available as
-"extensions" for another graph model to use.
+Graph extension promotes reusability. Common use cases can be built as graph models and made
+available as "extensions" for other graph models to use.
 
 Export the graph model
 ----------------------
@@ -2422,8 +2353,8 @@ Described in /api/graph/model/tutorial-10/286-8
 
 Deploy the graph model
 ----------------------
-To deploy the graph model, copy "/tmp/graph/tutorial-10.json" to your application's \`main/resources/graph\` folder.
-You can then test the deployed model with a curl command.
+To deploy the graph model, copy "/tmp/graph/tutorial-10.json" to your application's
+\`resources/graph\` folder. You can then test the deployed model with a curl command.
 
 \`\`\`
 curl -X POST http://127.0.0.1:8085/api/graph/tutorial-10 \\
@@ -2435,39 +2366,43 @@ curl -X POST http://127.0.0.1:8085/api/graph/tutorial-10 \\
 
 Summary
 -------
-In this session, you have created a graph model that uses a graph extension.
+In this tutorial, you have created a graph model that uses a graph extension: the 'extension'
+property names a deployed graph model, input mappings feed its input.body, and the extension's
+output.body comes back as the node's result.
 `,Ot=`Tutorial 11
 -----------
-In this session, you will create a graph model to use an "event flow" as an extension.
+In this tutorial, you will create a graph model that uses an "event flow" as an extension.
 
 Pre-requisite
 -------------
-You would need some working knowledge with event script. For more details, please refer to
-[Event Script Syntax](https://accenture.github.io/mercury-composable/guides/CHAPTER-4).
+You would need some working knowledge of Event Script. For more details, see the
+Event Script guide: https://accenture.github.io/mercury-composable/guides/event-script/
 
-Assume you already know how to create an event flow (configuration and composable functions as tasks),
-it is easy to use event flow as an extension.
+Assuming you already know how to create an event flow (configuration plus composable functions as
+tasks), it is easy to use an event flow as an extension.
 
 What is a flow extension?
 -------------------------
-A flow extension is an event flow that is built to serve some logic that can be reused by a graph model.
+A flow extension is an event flow built to serve some logic that a graph model can reuse. The same
+graph.extension skill from tutorial 10 is used — only the target changes: the "flow://" protocol
+prefix tells the system to execute an event flow instead of another graph model.
 
-Import graph model from Tutorial-10
------------------------------------
-In tutorial 10, you have created an extension in a main graph to call another graph.
-
-You will update the graph model in tutorial 10 to call a flow as an extension.
+Import the graph model from tutorial 10
+---------------------------------------
+In tutorial 10, you created a main graph that calls another graph as an extension and exported it
+as tutorial-10. Import it back as your starting point:
 
 \`\`\`
-> import graph from tutorial-10
-Graph exported to /tmp/graph/tutorial-11.json
-Described in /api/graph/model/tutorial-11/431-3
+import graph from tutorial-10
 \`\`\`
+
+The import loads the version you exported in tutorial 10 from the temporary graph folder — or
+falls back to the preloaded copy in classpath:/graph if you have not exported one.
 
 Edit the root node
 ------------------
-Enter 'edit node root' and copy-n-paste the content into the inbox box. Change the name and purpose for
-tutorial 11.
+Enter 'edit node root' and copy-n-paste the content into the input box. Change the name and
+purpose for tutorial 11.
 
 \`\`\`
 update node root
@@ -2479,9 +2414,9 @@ purpose=Demonstrate the use of flow extension
 
 Edit the extension node
 -----------------------
-Enter 'edit node extension' and copy-n-paste the content into the inbox box. Update the extension to "flow://flow-11"
-and change the input statements to pass "hello" and "message" as parameters. The flow protocol prefix tells the
-system to execute the flow with the identifier "flow-11".
+Enter 'edit node extension' and copy-n-paste the content into the input box. Update the extension
+to "flow://flow-11" and change the input statements to pass "hello" and "message" as parameters.
+The flow protocol prefix tells the system to execute the flow with the identifier "flow-11".
 
 \`\`\`
 update node extension
@@ -2496,9 +2431,10 @@ skill=graph.extension
 
 About flow 11
 -------------
-For your convenience, "flow-11" is preloaded. You can review the configuration files "flows.yaml" and "flow-11.yml"
-in the resources folder. The event flow "flow-11" is an echo program. The task "no.op" will echo everything from
-the input and pass it as output. Below is an extract of the event flow's first task.
+For your convenience, "flow-11" is preloaded. You can review the configuration files "flows.yaml"
+and "flow-11.yml" in the resources folder. The event flow "flow-11" is an echo program: the task
+"no.op" echoes everything from the input and passes it as output. Below is an extract of the event
+flow's first task.
 
 \`\`\`yaml
 tasks:
@@ -2514,7 +2450,8 @@ tasks:
 
 Perform a dry-run
 -----------------
-To test the updated graph model, you can instantiate the graph with the two input "hello" and "message" as follows:
+To test the updated graph model, instantiate the graph with the two inputs "hello" and "message"
+as follows:
 
 \`\`\`
 instantiate graph
@@ -2543,17 +2480,28 @@ Walk to end
 Graph traversal completed in 7 ms
 \`\`\`
 
-You can also check the application log. Telemetry and tracing information are shown.
+You can also check the application log, where telemetry and tracing information are shown.
 
 \`\`\`
-GraphExtension:202 - Call extension flow://flow-11, ttl=30000
-Telemetry:81 - {trace={path=/graph/playground, service=graph.extension...
-Telemetry:81 - {trace={path=/graph/playground, service=no.op...
-Telemetry:81 - {trace={path=/graph/playground, service=task.executor...
-Telemetry:81 - {trace={path=/graph/playground, service=event.script.manager...
+Call extension flow://flow-11, ttl=30000
+{trace={path=/graph/playground, service=graph.extension...
+{trace={path=/graph/playground, service=no.op...
+{trace={path=/graph/playground, service=task.executor...
+{trace={path=/graph/playground, service=event.script.manager...
 \`\`\`
 
-This validates that the event flow instance for "flow-11" was executed by the graph instance for tutorial-11.
+This validates that the event flow instance for "flow-11" was executed by the graph instance for
+tutorial-11.
+
+Why extend a graph model with an event flow?
+--------------------------------------------
+While the graph extension discussed in tutorial 10 can compose sophisticated and powerful graph
+models, extending a graph with an event flow lets you go beyond API fetching, data mapping,
+computation and decision-making.
+
+With an event flow, you can model very complex transaction processing in "pro-code". Combining
+graph modeling with Event Script programming gives you the best of both worlds — no-code and
+pro-code — to tackle the most demanding use cases.
 
 Export the graph model
 ----------------------
@@ -2567,8 +2515,8 @@ Described in /api/graph/model/tutorial-11/794-6
 
 Deploy the graph model
 ----------------------
-To deploy the graph model, copy "/tmp/graph/tutorial-11.json" to your application's \`main/resources/graph\` folder.
-You can then test the deployed model with a curl command.
+To deploy the graph model, copy "/tmp/graph/tutorial-11.json" to your application's
+\`resources/graph\` folder. You can then test the deployed model with a curl command.
 
 \`\`\`
 curl -X POST http://127.0.0.1:8085/api/graph/tutorial-11 \\
@@ -2581,33 +2529,24 @@ curl -X POST http://127.0.0.1:8085/api/graph/tutorial-11 \\
 
 Summary
 -------
-In this session, we have discussed the use of an event flow as an extension to a graph model and
-the use of the flow protocol prefix "flow://".
-
-Why extending a graph model with event flow?
---------------------------------------------
-While graph extension discussed in tutorial 10 can create sophisticated and powerful graph models,
-extending a graph with event flow allows us to do things beyond simple API fetching, data mapping, computation
-and decision-making.
-
-With event flow, you can model very complex transaction processing with "pro-code". The combined graph modeling
-and event script programming provides the best of both worlds in no-code and pro-code to tackle the most
-demanding use cases.
-`,kt=`Tutorial 10
+In this tutorial, you have used an event flow as an extension to a graph model, selected with the
+flow protocol prefix "flow://". The delegation contract is the same as for a sub-graph: the input
+mappings feed the flow's input.body, and the flow's output.body comes back as the node's result.
+`,kt=`Tutorial 12
 -----------
-In this session, you will create a graph model with custom error handling.
+In this tutorial, you will create a graph model with custom error handling.
 
 Exercise
 --------
-You will import tutorial 3 and add an error-handler node to retry an API failure.
+You will import tutorial 3 and add an error-handler node that retries an API failure.
 
-To clear the previous graph session, click the Tools button in the top-right corner and click the "Stop" and "Start"
-toggle button. A new graph session will start.
+To clear the previous graph session, click the Tools button in the top-right corner and click the
+"Stop" and "Start" toggle button. A new graph session will start.
 
 Import tutorial 3 as a template
 -------------------------------
-Enter the following to import tutorial 3. Note that tutorial-3.json is preloaded into the main/resources/graph
-folder.
+Enter the following to import tutorial 3. Note that tutorial-3.json is preloaded into the
+\`resources/graph\` folder.
 
 \`\`\`
 > import graph from tutorial-3
@@ -2619,13 +2558,14 @@ Graph model imported as draft
 
 Update the root node
 --------------------
-Enter the following to update the root node. It assigns the skill "graph.data.mapper" to the node and
-maps the input parameter "exception" to the model variable with the same name.
+Enter the following to update the root node. It assigns the skill "graph.data.mapper" to the node
+and maps the input parameter "exception" to the model variable with the same name.
 
 The \`f:defaultValue()\` plugin function sets the variable "model.exception" to false when the input
 parameter is not given.
 
-We will use the model.exception parameter to trigger a simulated exception for the mdm-profile service.
+We will use the model.exception parameter to trigger a simulated exception in the mdm-profile
+service.
 
 \`\`\`
 update node root
@@ -2639,8 +2579,8 @@ skill=graph.data.mapper
 
 Update the dictionary
 ---------------------
-For person-address, you will add the input parameter \`exception:false\` where ":false" is the default value of
-the parameter if not given.
+For person-address, you will add the input parameter \`exception:false\`, where ":false" is the
+default value of the parameter when it is not given.
 
 \`\`\`
 update node person-address
@@ -2668,8 +2608,8 @@ purpose=name of a person
 
 Update the data provider
 ------------------------
-You will add the input data mapping \`exception -> header.x-exception\` to the mdm-profile node. The input parameter
-"exception" is used to set the HTTP request header "X-Exception".
+You will add the input data mapping \`exception -> header.x-exception\` to the mdm-profile node. The
+input parameter "exception" is used to set the HTTP request header "X-Exception".
 
 \`\`\`
 update node mdm-profile
@@ -2687,11 +2627,11 @@ url=http://127.0.0.1:\${rest.server.port:8080}/api/mdm/profile/{id}
 
 Update the fetcher node
 -----------------------
-You will add the input data mapping \`model.exception -> exception\` to set the parameter exception to retrieve
-the two data dictionary items (person-name and person-address).
+You will add the input data mapping \`model.exception -> exception\` to set the parameter
+"exception" when retrieving the two data dictionary items (person-name and person-address).
 
-You also add the property \`exception=error-handler\`. This tells the system to route the flow to the "error-handler"
-node.
+You also add the property \`exception=error-handler\`. This tells the system to route the flow to
+the "error-handler" node when a call fails, instead of aborting the graph traversal.
 
 \`\`\`
 update node fetcher
@@ -2707,7 +2647,9 @@ output[]=result.address -> output.body.address
 skill=graph.api.fetcher
 \`\`\`
 
-The mock endpoint contains this:
+The dev-mode mock endpoint (mock.mdm.profile) answers with a 401 "simulated
+exception" when the request header x-exception is true. In the Java example it
+reads like this (the Rust example's mock endpoint does the same):
 
 \`\`\`java
 @Override
@@ -2719,36 +2661,47 @@ public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, i
 }
 \`\`\`
 
-Create Error-Handler node
--------------------------
-You will then create the error-handler node that is referenced in the fetcher node above.
+Create the error-handler node
+-----------------------------
+You will now create the error-handler node referenced by the fetcher above.
 
-When the "exception" property is configured in a fetcher, the system will not abort the graph traversal, it will
-route it to the given error handler.
+When the "exception" property is configured on a fetcher, a failed call — an error status is
+always a value of 400 or higher — does not abort the graph traversal: the engine sets the node's
+"status" and "error" variables, skips its output mappings, and routes the flow to the named error
+handler.
 
 This handler is GENERIC: it never names the failing node. When a failed node routes to its
-"exception" handler, the engine stages the exception context in the state machine -
+"exception" handler, the engine stages the exception context in the state machine —
 error.source (the failing node's alias), error.code (the status code), error.message and
-error.stack when available - and every statement command resolves {dynamic variables}, so
-the handler reads and jumps back through the context ('inspect error' shows it in a
-dry-run session; the node alias "error" is reserved for this namespace).
+error.stack when available — and every statement command resolves {dynamic variables}, so the
+handler reads and jumps back through the context ('inspect error' shows it in a dry-run
+session; the node alias "error" is reserved for this namespace).
 
-In the handler, you test "{error.code}" to see if it is HTTP-200. While an error status is
-always a value equals or larger than 200, it is a good practice to do simple validation to
-avoid unintended configuration error.
+The handler's statements run in order:
 
-If it is not 200, the statement block will execute. The first 2 mapping statements increment the variable
-"model.attempts". The next evaluation statement checks if the maximum attempts have reached, it will clear
-the simulated exception by routing to the "clear-exception" node.
-
-The "NEXT: {error.source}" statement tells the system to connect to the failing node again -
-whichever node routed here. Since a node cannot be executed twice, you use the "RESET:"
-command (also with the dynamic reference) to clear its states so that it can be executed again.
-
-The "DELAY: 50" means that it will pause for 50 milliseconds before the next retry. This is a best practice because
-it avoids very rapid retries that may contribute to a side effect called "recovery storm" or 
-"unintended denial-of-service attack". (A DELAY value may also be a dynamic variable, e.g.
-"DELAY: {model.backoff}" for a computed backoff.)
+1. The first IF tests "{error.code}". It is good practice to test for exactly 200 so an
+   unintended configuration error cannot slip through. On HTTP-200 the THEN branch jumps to the
+   end node — a taken node-jump ends the statement list immediately. Otherwise the ELSE branch
+   resolves to "next" and falls through to the following statements.
+2. RESET comes **first among the action statements**: it clears the run-once guard and state of a
+   comma-separated list of nodes so they can be executed again — here "{error.source}" (whichever
+   node routed here) and the error-handler itself (a node may reset itself because the run-once
+   mark is set before its statements execute). Placing RESET early guarantees it runs on every
+   path — a later taken IF jump would skip it — and everything the node stores afterwards (such
+   as the pending DELAY) survives the self-wipe. Keep RESET **after** any check that reads state
+   it would wipe: the status IF above must run first, because RESET clears the failing node's
+   "status" and an IF on a wiped variable aborts the run (the staged "error.*" context itself is
+   not node state, so it survives).
+3. The two MAPPING statements increment the retry counter "model.attempts" (\`f:defaultValue()\`
+   seeds it to 0 on the first pass). The "model" namespace is not touched by RESET.
+4. The second IF bounds the retry loop: after 3 attempts it jumps to the "clear-exception" node.
+5. "NEXT: {error.source}" tells the traversal system to jump back to the failing node — whichever
+   node routed here. Unlike a taken IF jump, NEXT does not stop the statement list — the jump is
+   applied after the whole list completes.
+6. "DELAY: 50" pauses for 50 milliseconds after this node completes, before the next retry. Pacing
+   retries is a best practice: it avoids very rapid retries that can cause a "recovery storm" — an
+   unintended denial-of-service attack on the target service. (A DELAY value may also be a dynamic
+   variable, e.g. "DELAY: {model.backoff}" for a computed backoff.)
 
 After the successful retry, the virtual "error" node reports the RECOVERY instead of the stale
 failure: "inspect error" shows code=200 with the source kept and the failure details removed.
@@ -2764,6 +2717,7 @@ IF: {error.code} == 200
 THEN: end
 ELSE: next
 '''
+statement[]=RESET: {error.source}, error-handler
 statement[]=MAPPING: f:defaultValue(model.attempts, int(0)) -> model.attempts
 statement[]=MAPPING: f:add(model.attempts, int(1)) -> model.attempts
 statement[]='''
@@ -2771,33 +2725,31 @@ IF: {model.attempts} >= 3
 THEN: clear-exception
 ELSE: next
 '''
-statement[]=RESET: {error.source}, error-handler
 statement[]=NEXT: {error.source}
 statement[]=DELAY: 50
 \`\`\`
 
 Create the clear-exception node
 -------------------------------
-In the clear-exception node, you add statements to set the variable "model.exception" to false so that
-the mock service will return normal response instead of an exception. You also clear the "model.attempts" to zero
-and reset the failing node (again via the dynamic "{error.source}" reference - the exception
-context stays readable for the rest of the run) and the clear-exception node itself, so the
-system can execute them again.
-
-You will then create new connections to complete the exercise.
+In the clear-exception node, the RESET comes first (nothing before it reads node state), clearing
+the failing node — again via the dynamic "{error.source}" reference, since the exception context
+stays readable for the rest of the run — and the clear-exception node itself so that the system
+can execute them again. You then set the variable "model.exception" to false so that the mock
+service returns a normal response instead of an exception, and clear "model.attempts" to zero.
 
 \`\`\`
 create node clear-exception
 with type Decision
 with properties
 skill=graph.math
+statement[]=RESET: {error.source}, clear-exception
 statement[]=MAPPING: boolean(false) -> model.exception
 statement[]=MAPPING: int(0) -> model.attempts
-statement[]=RESET: {error.source}, clear-exception
 \`\`\`
 
 Connections for error-handler and clear-exception nodes
 -------------------------------------------------------
+Create the connections to complete the retry loop.
 
 \`\`\`
 connect error-handler to fetcher with retry
@@ -2806,8 +2758,8 @@ connect clear-exception to fetcher with reset
 
 Do a dry-run
 ------------
-Enter the following to start the graph with mock input data. You are setting integer of 100 to person_id
-and boolean value of "true" to exception in the input payload.
+Enter the following to start the graph with mock input data. You are setting the integer 100 to
+person_id and the boolean value "true" to exception in the input payload.
 
 \`\`\`
 start graph
@@ -2815,7 +2767,7 @@ int(100) -> input.body.person_id
 boolean(true) -> input.body.exception
 \`\`\`
 
-Execute the run command
+Execute the run command.
 
 \`\`\`
 > run
@@ -2851,9 +2803,9 @@ Walk to end
 Graph traversal completed in 201 ms
 \`\`\`
 
-The graph traversal log shows that the "error-handler" node has been executed for 3 times before
-the clear-exception node is executed. After clearing the exception, the mock service returns
-a correct result set as "output".
+The graph traversal log shows that the "error-handler" node executed 3 times before the
+clear-exception node ran. After the exception is cleared, the mock service returns a correct
+result set as "output".
 
 Export the graph model
 ----------------------
@@ -2867,8 +2819,8 @@ Described in /api/graph/model/tutorial-12/591-5
 
 Deploy the graph model
 ----------------------
-To deploy the graph model, copy "/tmp/graph/tutorial-10.json" to your application's \`main/resources/graph\` folder.
-You can then test the deployed model with a curl command.
+To deploy the graph model, copy "/tmp/graph/tutorial-12.json" to your application's
+\`resources/graph\` folder. You can then test the deployed model with a curl command.
 
 \`\`\`
 curl -X POST http://127.0.0.1:8085/api/graph/tutorial-12 \\
@@ -2881,25 +2833,28 @@ curl -X POST http://127.0.0.1:8085/api/graph/tutorial-12 \\
 
 Summary
 -------
-In this session, you have used tutorial-3 as a template and enhanced it with custom error handling.
+In this tutorial, you have used tutorial-3 as a template and enhanced it with custom error
+handling.
 
-You have used the keywords "RESET", "NEXT" and "DELAY" to reset the states of the nodes visited, to tell the
-graph traversal system to route to a specific node and to introduce an artificial delay to avoid overwhelming
-the target service.
+You have used the keywords "RESET", "NEXT" and "DELAY" to clear the state of visited nodes, to
+tell the graph traversal system to route to a specific node, and to introduce an artificial delay
+that avoids overwhelming the target service.
 
 IMPORTANT: Graph traversal loops
 --------------------------------
-The graph traversal system is designed to allow a node to be executed only once.
+The graph traversal system is designed to allow a node to be executed only once per run.
 
-When using the keyword "RESET: node-name", the "seen" status and all state information are cleared so that the node
-can be executed again. This would create a potential endless loop in graph traversal.
+When you use the keyword "RESET: node-name", the "seen" status and all state information are
+cleared so that the node can be executed again. This creates the potential for an endless loop in
+graph traversal.
 
-Therefore, please pay attention to have some decision logic to stop looping or retries.
+Therefore, always include decision logic that bounds the looping or retries — like the
+"model.attempts" counter in this tutorial.
 
-As a protection mechanism, the system has a built-in loop detection logic. When a node is executed too frequently,
-the graph traversal will be aborted.
+As a protection mechanism, the system has built-in loop detection. When a node is executed too
+frequently, the graph traversal is aborted.
 
-The default parameters in \`application.properties\` are 10 visits per second for the same node.
+The default parameters in \`application.properties\` allow 10 visits per second for the same node.
 
 \`\`\`properties
 graph.max.loop.interval=1000
@@ -3396,8 +3351,10 @@ For your convenience, this graph model is preloaded as "tutorial-14".
 Dry-run the workflow interactively
 ----------------------------------
 You can exercise all three checkpoints without leaving the playground. Two things to
-remember: each graph instance runs once, so instantiate before every run; and the SAME
-model.cid must be supplied each time - it is the resume key. Redis must be running.
+remember: instantiate before every run so each round starts with a fresh state machine
+('run' may repeat on one instance and model values persist across runs -
+see 'help run' - which would pollute a short-run simulation); and the SAME model.cid
+must be supplied each time - it is the resume key. Redis must be running.
 
 Import the deployed model as a draft:
 
@@ -3622,22 +3579,26 @@ pluggable - Redis is the packaged implementation, and any composable function ho
 documented store contract can replace it.
 `,Mt=`Tutorial 2
 ----------
-In this session, you will deploy the graph model 'hello world' that you created in tutorial 1.
+In this tutorial, you will deploy the 'hello world' graph model that you created in
+tutorial 1, then enhance it into an echo application.
 
 Exercise
 --------
-To deploy the graph model from tutorial 1, copy the 'tutorial-1.json' file that was exported earlier.
+To deploy the graph model from tutorial 1, copy the 'tutorial-1.json' file that was
+exported earlier into your application's resources/graph folder
+(src/main/resources/graph in a Java project, resources/graph in a Rust project).
 
 \`\`\`
-cp /tmp/tutorial-1.json ~/sandbox/{your_minigraph_project}/src/main/resources/graph
+cp /tmp/graph/tutorial-1.json ~/sandbox/{your_project}/src/main/resources/graph
 \`\`\`
 
-The temp graph folder is configured in the application.properties file:
+The temp graph folder and the graph manifest are set in the application configuration
+file (application.properties or application.yml):
 
 \`\`\`properties
 #
 # temp graph working location
-# (temp graph location must use "file:/" prefix because of READ/WRITE requirements
+# (temp graph location must use "file:/" prefix because of READ/WRITE requirements)
 #
 location.graph.temp=file:/tmp/graph
 #
@@ -3662,56 +3623,51 @@ The 'location' entry is optional (default 'classpath:/graph'; a read-only folder
 
 Invoke the graph API REST endpoint
 ----------------------------------
-The generic graph API endpoint is \`POST /api/graph/{graph_id}\` where 'graph_id' is the name of the graph model.
+The generic graph API endpoint is \`POST /api/graph/{graph_id}\`, where 'graph_id' is
+the name of the graph model.
 
-To make a request to the 'tutorial-1' graph model, please enter the following curl command.
+To make a request to the 'tutorial-1' graph model, enter the following curl command.
 
 \`\`\`
 > curl -X POST http://127.0.0.1:8085/api/graph/tutorial-1
 hello world
 \`\`\`
 
-It will return 'hello world'.
+It returns 'hello world'.
 
-Since the "hello world" graph model does not require any input parameter, you can also use HTTP-GET to execute
-the graph.
+Since the "hello world" graph model does not require any input parameter, you can also
+use HTTP GET to execute the graph.
 
 \`\`\`
 > curl http://127.0.0.1:8085/api/graph/tutorial-1
 hello world
 \`\`\`
 
-In the application log, you will see the 'telemetry' of the event flow. The HTTP-POST request is received
-by the 'http.flow.adapter' that executes a flow called 'graph-executor'.
+In the application log, you will see the 'telemetry' of the event flow. The HTTP POST
+request is received by the 'http.flow.adapter' that executes a flow called
+'graph-executor'.
 
-The Graph Executor creates an instance of the graph, traverses from the "root" node and comes to the "end" node
-that contains the "graph.data.mapper" skill. The data mapper sets the output as "hello world" that routes the
-result to the "async.http.response" and the curl command receives.
+The Graph Executor creates an instance of the graph, traverses from the "root" node
+and comes to the "end" node that contains the "graph.data.mapper" skill. The data
+mapper sets the output to "hello world", which is routed to "async.http.response"
+and returned to the curl command.
+
+The telemetry entries look like this (abridged; the Rust engine logs the same trace
+records in its own JSON log format):
 
 \`\`\`
-2026-03-31 15:19:08.052 INFO  org.platformlambda.core.services.Telemetry:81 - 
-    {trace={path=POST /api/graph/tutorial-1, service=http.flow.adapter, success=true, 
-     origin=20260331aa0d11b425ce44c79f00afa8947885fc, start=2026-03-31T22:19:08.051Z, exec_time=0.12, 
-     from=http.request, id=2cc56126d544483abcdbc523f486a232, status=200}}
-2026-03-31 15:19:08.055 INFO  org.platformlambda.core.services.Telemetry:81 - 
-    {trace={path=POST /api/graph/tutorial-1, service=graph.data.mapper, success=true, 
-     origin=20260331aa0d11b425ce44c79f00afa8947885fc, start=2026-03-31T22:19:08.054Z, exec_time=0.074, 
-     from=graph.executor, id=2cc56126d544483abcdbc523f486a232, status=200}, annotations={node=end}}
-2026-03-31 15:19:08.056 INFO  com.accenture.minigraph.services.GraphHousekeeper:44 - 
-    Graph instance 2c1a00d63f7d4ec2b657db4a75021068 for model 'tutorial-1' cleared
-2026-03-31 15:19:08.056 INFO  org.platformlambda.core.services.Telemetry:81 - 
-    {trace={path=POST /api/graph/tutorial-1, service=task.executor, success=true, 
-     origin=20260331aa0d11b425ce44c79f00afa8947885fc, exec_time=4.0, start=2026-03-31T22:19:08.051Z, 
-     from=event.script.manager, id=2cc56126d544483abcdbc523f486a232, status=200}, 
-     annotations={execution=Run 1 task in 4 ms, tasks=[{spent=3.477, name=graph.executor}], flow=graph-executor}}
-2026-03-31 15:19:08.056 INFO  org.platformlambda.core.services.Telemetry:81 - 
-    {trace={path=POST /api/graph/tutorial-1, service=async.http.response, success=true, 
-    origin=20260331aa0d11b425ce44c79f00afa8947885fc, start=2026-03-31T22:19:08.055Z, exec_time=0.224, 
-    from=task.executor, id=2cc56126d544483abcdbc523f486a232, status=200}}
-2026-03-31 15:19:08.057 INFO  org.platformlambda.core.services.Telemetry:81 - 
-    {trace={path=POST /api/graph/tutorial-1, service=graph.housekeeper, success=true, 
-    origin=20260331aa0d11b425ce44c79f00afa8947885fc, start=2026-03-31T22:19:08.056Z, exec_time=0.241, 
-    from=task.executor, id=2cc56126d544483abcdbc523f486a232, status=200}}
+2026-03-31 15:19:08.052 INFO  Telemetry:81 - {trace={path=POST /api/graph/tutorial-1,
+    service=http.flow.adapter, success=true, from=http.request, exec_time=0.12, status=200}}
+2026-03-31 15:19:08.055 INFO  Telemetry:81 - {trace={path=POST /api/graph/tutorial-1,
+    service=graph.data.mapper, success=true, from=graph.executor, exec_time=0.074, status=200},
+    annotations={node=end}}
+2026-03-31 15:19:08.056 INFO  GraphHousekeeper:44 - Graph instance 2c1a00d63f7d4ec2b657db4a75021068
+    for model 'tutorial-1' cleared
+2026-03-31 15:19:08.056 INFO  Telemetry:81 - {trace={path=POST /api/graph/tutorial-1,
+    service=task.executor, success=true, from=event.script.manager, exec_time=4.0, status=200},
+    annotations={execution=Run 1 task in 4 ms, flow=graph-executor}}
+2026-03-31 15:19:08.056 INFO  Telemetry:81 - {trace={path=POST /api/graph/tutorial-1,
+    service=async.http.response, success=true, from=task.executor, exec_time=0.224, status=200}}
 \`\`\`
 
 Let's enhance the graph model to echo input.
@@ -3740,7 +3696,7 @@ name=tutorial-1
 purpose=Tutorial one to return a 'hello world' message
 \`\`\`
 
-You can copy-n-paste the "update node" block into the input box and modify it as:
+Copy-and-paste the "update node" block into the input box and modify it as:
 
 \`\`\`
 update node root
@@ -3750,14 +3706,14 @@ name=tutorial-2
 purpose=Tutorial two to echo a user message
 \`\`\`
 
-Click enter and you will see:
+Press enter and you will see:
 
 \`\`\`
 > update node root...
 node root updated
 \`\`\`
 
-Then you will update the end root in the same fashion. Modify its content like this:
+Then update the end node in the same fashion. Modify its content like this:
 
 \`\`\`
 update node end
@@ -3767,10 +3723,10 @@ mapping[]=input.body -> output.body
 skill=graph.data.mapper
 \`\`\`
 
-Perform a Dry-Run
+Perform a dry-run
 -----------------
-
-To run the updated graph model, you can use the \`instantiate graph\` command with some mock input content.
+To run the updated graph model, use the \`instantiate graph\` command with some
+mock input content.
 
 \`\`\`
 > instantiate graph
@@ -3778,8 +3734,8 @@ To run the updated graph model, you can use the \`instantiate graph\` command wi
 Graph instance created. Loaded 1 mock entry, model.ttl = 30000 ms
 \`\`\`
 
-In the above command, you insert the constant value "it works" into the "message" key in the "input.body"
-namespace.
+In the above command, you insert the constant value "it works" into the "message"
+key of the "input.body" namespace.
 
 Enter "run" to do a dry-run and you will see this:
 
@@ -3800,7 +3756,7 @@ Graph traversal completed in 2 ms
 
 Export the updated graph model
 ------------------------------
-You may export the updated model graph as "tutorial 2".
+You may export the updated graph model as "tutorial-2".
 
 \`\`\`
 > export graph as tutorial-2
@@ -3810,13 +3766,14 @@ Described in /api/graph/model/tutorial-2/235-7
 
 Deploy the graph model
 ----------------------
-Repeat the deployment step in the beginning of this tutorial and apply it to 'tutorial-2'.
+Repeat the deployment step at the beginning of this tutorial: copy
+"/tmp/graph/tutorial-2.json" into your application's resources/graph folder.
 
 Test the deployed graph model
 -----------------------------
 Restart your application to load the deployed graphs into memory.
 
-Send the following curl command
+Send the following curl command:
 
 \`\`\`
 curl -X POST http://127.0.0.1:8085/api/graph/tutorial-2 \\
@@ -3827,7 +3784,7 @@ curl -X POST http://127.0.0.1:8085/api/graph/tutorial-2 \\
   }'
 \`\`\`
 
-It will response with:
+It responds with:
 
 \`\`\`json
 {
@@ -3838,29 +3795,30 @@ It will response with:
 
 Summary
 -------
-In this session, you have completed the following exercise:
+In this tutorial, you have completed the following exercise:
 
-1. deploy the graph model 'tutorial-1' and invoke the API that executes the graph model as an instance
-2. enhance the graph model from a simple 'hello world' application to an echo program
-3. perform a dry-run with mock input to test the response
-4. export the updated graph model as 'tutorial-2'
-5. deploy 'tutorial-2' graph model
-6. test the 'tutorial-2' graph model using a HTTP-POST command with some input payload
+1. deployed the graph model 'tutorial-1' and invoked the API that executes the graph model as an instance
+2. enhanced the graph model from a simple 'hello world' application to an echo program
+3. performed a dry-run with mock input to test the response
+4. exported the updated graph model as 'tutorial-2'
+5. deployed the 'tutorial-2' graph model
+6. tested the 'tutorial-2' graph model using an HTTP POST request with an input payload
 `,Nt=`Tutorial 3
 ----------
-In this session, you will learn about the data dictionary method to source data from an external service.
+In this tutorial, you will learn the data dictionary method to source data from an
+external service.
 
 Exercise
 --------
-You will create a root node, an end node, a data dictionary node, a data provider node and an API fetcher node
-as an exercise.
+You will create a root node, an end node, two data dictionary nodes, a data provider
+node and an API fetcher node.
 
-To clear the previous graph session, click the Tools button in the top-right corner and click the "Stop" and "Start"
-toggle button. A new graph session will start.
+To clear the previous graph session, click the Tools button in the top-right corner
+and click the "Stop" and "Start" toggle button. A new graph session will start.
 
 Create root and end nodes
 -------------------------
-Enter the "create node" command for "root" and "end" nodes first.
+Enter the "create node" command for the "root" and "end" nodes first.
 
 \`\`\`
 create node root
@@ -3877,7 +3835,8 @@ with type End
 
 Create data dictionary items
 ----------------------------
-A data dictionary describes a "data attribute" and its "data provider". Please enter the following:
+A data dictionary describes a "data attribute" and its "data provider". Please enter
+the following:
 
 \`\`\`
 create node person-name
@@ -3897,20 +3856,25 @@ input[]=person_id
 output[]=response.profile.address -> result.address
 \`\`\`
 
-This command create two nodes called "person-name" and "person-address" with a data provider called "mdm-profile".
-The input parameter to retrieve these data attribute from the data provider is "person_id".
-The output section contains a data mapping statement that maps the response's key-value(s)
-as the data dictionary's result set. The "response." and "result." are namespaces that
-represent the response key-values from the data provider and the result key-values obtained
-with this data dictionary.
+This creates two Dictionary nodes, "person-name" and "person-address", both served by
+a data provider called "mdm-profile".
 
-In the "person-name" data dictionary, it tells the system to extract the "profile.name" data attribute from
-the response's data structure and map it as the key "name".
+In a Dictionary node, \`input[]\` entries are **bare parameter names** — not
+\`source -> target\` mappings. Here, the parameter required to retrieve these data
+attributes is "person_id". If a parameter has a sensible default, supply it with an
+optional \`:{default}\` suffix (e.g. \`input[]=detail:true\`) — a default value is the
+only meaning of \`:\` in a Dictionary input entry.
+
+The \`output[]\` section maps the provider's response into the dictionary's result set.
+The \`response.\` and \`result.\` namespaces represent the response key-values from the
+data provider and the result key-values produced by this data dictionary.
+
+In the "person-name" data dictionary, the output mapping extracts the "profile.name"
+attribute from the response's data structure and exposes it as the key "name".
 
 Create a data provider
 ----------------------
-The data dictionary assigns a data provider "mdm-profile". We will create a node for the
-data provider.
+The data dictionaries name a data provider "mdm-profile". Create a node for it:
 
 \`\`\`
 create node mdm-profile
@@ -3925,20 +3889,22 @@ input[]=text(application/json) -> header.accept
 input[]=person_id -> path_parameter.id
 \`\`\`
 
-The "url" is the REST endpoint of the target service for "mdm-profile".
-The \`\${rest.server.port:8080}\` is used to obtain a key-value from the application.properties or environment variable.
-The colon syntax is optional. If yes, you can set a default value.
+The "url" is the REST endpoint of the target service. \`\${rest.server.port:8080}\`
+resolves a key-value from the application configuration or an environment variable;
+the value after the optional \`:\` is a default.
 
-In this example, the url has a path parameter "id".
+In this example, the url has a path parameter "id" — filled by the \`input[]\` line
+that targets \`path_parameter.id\`.
 
-The "feature" section tells the system to apply pre-processing and/or post-processing of HTTP request/response.
-The "log-request-headers" feature will log request headers, if any and the "log-response-headers" feature will
-print the HTTP response headers from the target service. These 2 features are for demonstration purpose.
-In real-world use case, you may implement an "oauth2-bearer" feature. We will discuss custom feature in a
-subsequent tutorial.
+The "feature" section tells the system to apply pre-processing and/or post-processing
+to the HTTP request/response. "log-request-headers" logs the request headers, if any,
+and "log-response-headers" logs the HTTP response headers from the target service.
+These two features are for demonstration; in a real-world use case, you might
+implement an "oauth2-bearer" feature. Custom features are discussed in a subsequent
+tutorial.
 
-The input section tells the system to map HTTP request headers, path parameter, query and/or body key-values.
-The namespaces are:
+The input section maps values into the outgoing HTTP request — headers, path
+parameters, query and/or body key-values. The target namespaces are:
 
 \`\`\`
 header.
@@ -3947,11 +3913,13 @@ path_parameter.
 body.
 \`\`\`
 
-The left hand side of the input mapping is the input parameter(s) from the associated data dictionary.
+The left-hand side of a provider input mapping is a constant (e.g.
+\`text(application/json)\`) or an input parameter declared by the associated data
+dictionary (e.g. \`person_id\`).
 
 Create an API fetcher
 ---------------------
-You will create a fetcher node like this:
+Create a fetcher node like this:
 
 \`\`\`
 create node fetcher
@@ -3969,7 +3937,7 @@ After this step, you will see 6 nodes in the graph diagram on the right panel.
 
 Connect the fetcher
 -------------------
-You will connect the root node to the fetcher node and then connect it to the end node.
+Connect the root node to the fetcher node, then the fetcher to the end node.
 
 \`\`\`
 > connect root to fetcher with fetch
@@ -3980,7 +3948,7 @@ node fetcher connected to end
 
 Export the graph model
 ----------------------
-The graph model is complete. Let's export it as 'tutorial-3'.
+The execution path is complete. Let's export it as 'tutorial-3'.
 
 \`\`\`
 > export graph as tutorial-3
@@ -3990,24 +3958,26 @@ Described in /api/graph/model/tutorial-3/849-13
 
 Test the fetcher node
 ---------------------
-Before you do a dry-run, you can test the fetcher alone because it is self-contained. It maps the input parameter
-to 'person_id', makes an outgoing HTTP request using the data dictionary and returns the result as "output.body".
+Before you do a dry-run, you can test the fetcher alone because it is self-contained:
+it maps the input parameter to 'person_id', makes an outgoing HTTP request using the
+data dictionary and returns the result as "output.body".
 
-First, you can instantiate the graph model and mock the input parameter like this:
+First, instantiate the graph model and mock the input parameter like this:
 
 \`\`\`
 instantiate graph
 int(100) -> input.body.person_id
 \`\`\`
 
-The system will acknowledge your command as follows:
+The system acknowledges your command as follows:
 
 \`\`\`
 > instantiate graph...
 Graph instance created. Loaded 1 mock entry, model.ttl = 30000 ms
 \`\`\`
 
-Before you test the fetcher, you can check the input and output key-values with the \`inspect\` command:
+Before you test the fetcher, check the input and output key-values with the
+\`inspect\` command:
 
 \`\`\`
 > inspect input
@@ -4026,11 +3996,12 @@ Before you test the fetcher, you can check the input and output key-values with 
 }
 \`\`\`
 
-When a graph model is instantiated, the system creates a temporary "state machine" for each graph instance.
-The inspect command allows you to check the current key-values in the "state machine".
+When a graph model is instantiated, the system creates a temporary "state machine"
+for the graph instance. The inspect command lets you check the current key-values in
+that state machine.
 
-The above output shows that "person_id" of integer value 100 is stored in the input.body and there is nothing
-in the "output.body".
+The above output shows that "person_id" with the integer value 100 is stored in
+input.body, and there is nothing in the output yet.
 
 You can now test the fetcher with the "execute" command:
 
@@ -4039,9 +4010,9 @@ You can now test the fetcher with the "execute" command:
 node fetcher run for 0.266 ms with exit path 'next'
 \`\`\`
 
-The system shows that fetcher has been executed and it is ready to continue to the next node.
+The fetcher has been executed and it is ready to continue to the next node.
 
-Now you can inspect the "output" in the state machine again.
+Now inspect the "output" in the state machine again.
 
 \`\`\`
 > inspect output
@@ -4056,14 +4027,13 @@ Now you can inspect the "output" in the state machine again.
 }
 \`\`\`
 
-It shows that the result set contains name and address obtained from the target service correctly.
+The result set contains the name and address obtained from the target service.
 
-Dry-Run
+Dry-run
 -------
+The fetcher is configured correctly, so you can do a dry-run from beginning to end.
 
-We know that the fetcher is configured correctly. You can do a dry-run from the beginning to the end.
-
-You can clear the state machine by instantiating the graph model using the command earlier.
+Clear the state machine by instantiating the graph model again:
 
 \`\`\`
 instantiate graph
@@ -4075,7 +4045,7 @@ int(100) -> input.body.person_id
 Graph instance created. Loaded 1 mock entry, model.ttl = 30000 ms
 \`\`\`
 
-Verify that the output's key-values are cleared when you do \`inspect output\`. Then enter \`run\`.
+Verify that the output key-values are cleared with \`inspect output\`. Then enter \`run\`.
 
 \`\`\`
 > run
@@ -4096,7 +4066,7 @@ Graph traversal completed in 15 ms
 
 List nodes and connections
 --------------------------
-Before we close this session, let's check the nodes and connections for the graph model 'tutorial-3'.
+Let's check the nodes and connections of the graph model 'tutorial-3'.
 
 Enter the \`list nodes\` and \`list connections\` commands:
 
@@ -4113,16 +4083,20 @@ root -[fetch]-> fetcher
 fetcher -[complete]-> end
 \`\`\`
 
-Note that data dictionary and data provider nodes do not need to be connected. It is because they are
-"configuration" nodes. They are not active nodes that can be executed by themselves. The API fetcher node
-uses the configuration given in the data dictionary and data provider to make an external API call.
+Note that the data dictionary and data provider nodes have no connections yet. They
+are "configuration" nodes — not active nodes that execute on their own. The API
+fetcher references them by name and uses their configuration to make an external
+API call.
 
-For more details of the data dictionary method, you may enter "help data-dictionary".
+For more details of the data dictionary method, enter "help data-dictionary".
 
-Create an island to hold data dictionary
-----------------------------------------
-The data dictionary and data provider nodes are not connected. To organize, you can create an "island" node
-to hold them.
+Configuration nodes must still not be left floating — the next step wires them into
+the graph's knowledge layer.
+
+Create an island to hold the data dictionary
+--------------------------------------------
+The required convention is: **leave no node unconnected**. Configuration nodes are
+wired into the graph's knowledge layer with an "island" node.
 
 \`\`\`
 create node dictionary
@@ -4131,7 +4105,7 @@ with properties
 skill=graph.island
 \`\`\`
 
-Then you can connect the data dictionary nodes and provider node to it.
+Then connect the data dictionary nodes and the provider node to it.
 
 \`\`\`
 > connect root to dictionary with contains
@@ -4154,16 +4128,17 @@ person-name -[provider]-> mdm-profile
 fetcher -[complete]-> end
 \`\`\`
 
-The purpose of an "island" node is to isolate sub-graph that does not require execution.
-The data dictionary and provider nodes hold configuration for the API fetcher.
-They are not executable by themselves.
+A "graph.island" node is isolated from graph traversal: it never hands execution to
+the next node, so the execution path is unaffected. Its purpose is knowledge
+structure — the island subgraph is the graph's entity-relationship diagram.
 
-Connecting data dictionary and provider nodes helps to describe the relationships, but this is not mandatory.
+Data entities such as person, account and order, and the directional relationships
+between them, represent enterprise knowledge. With the dictionaries, providers and
+entities wired under the island, the graph becomes living documentation: a new team
+member (or an AI agent) can read the knowledge layer to discover the domain model,
+not just the execution path.
 
-However, for data entities such as person, account and order, defining the directional connections with relationships
-is a best practice that we recommend. It is because data entities and relationships represent enterprise knowledge.
-
-To save the updated graph model, you should export it again.
+To save the updated graph model, export it again.
 
 \`\`\`
 > export graph as tutorial-3
@@ -4173,8 +4148,9 @@ Described in /api/graph/model/tutorial-3/287-4
 
 Deploy the graph model
 ----------------------
-To deploy, you may copy "/tmp/graph/tutorial-3.json" into your application's main/resources/graph folder and
-restart the application. You can use the following curl command to invoke the knowledge graph endpoint.
+To deploy, copy "/tmp/graph/tutorial-3.json" into your application's resources/graph
+folder and restart the application. You can then invoke the knowledge graph endpoint
+with the following curl command.
 
 \`\`\`
 curl -X POST http://127.0.0.1:8085/api/graph/tutorial-3 \\
@@ -4184,7 +4160,8 @@ curl -X POST http://127.0.0.1:8085/api/graph/tutorial-3 \\
   }'
 \`\`\`
 
-Note that input parameters, if any, must be submitted as a POST request body with content type "application/json".
+Note that input parameters, if any, must be submitted as a POST request body with
+content type "application/json".
 
 You will receive the following response:
 
@@ -4195,7 +4172,8 @@ You will receive the following response:
 }
 \`\`\`
 
-If you change the person_id to 10, you will receive an error because the test profile is set to 100.
+If you change the person_id to 10, you will receive an error because the test profile
+is set to 100.
 
 \`\`\`json
 {
@@ -4206,40 +4184,42 @@ If you change the person_id to 10, you will receive an error because the test pr
 }
 \`\`\`
 
-Well done! You have successfully created a graph model that can fetch external data.
+Well done! You have successfully created a graph model that fetches external data.
 
 API call optimization
 ---------------------
-If you check the application log, you notice that each graph instance makes one HTTP call to
-\`http://127.0.0.1:8085/api/mdm/profile/10\` only.
+If you check the application log, you will notice that each graph instance makes only
+one HTTP call to \`http://127.0.0.1:8085/api/mdm/profile/10\`.
 
-When the target URL and method for multiple data dictionary items and their input parameter(s)
-are the same, the system will avoid making redundant API calls.
+When multiple data dictionary items share the same target URL, method and input
+parameter values, the system avoids making redundant API calls.
 
-Therefore, it is important to configure the data dictionary and provider correctly so that
-the system will efficiently fetch data.
+Therefore, it is important to configure the data dictionary and provider correctly so
+that the system fetches data efficiently.
 
 Summary
 -------
-In this session, you have configured data dictionary and data provider. You have defined an API fetcher
-node to use the data dictionary and data provider to fetch some data. You have deployed the graph model
-and made an API request using CURL command.
+In this tutorial, you configured a data dictionary and a data provider, and defined an
+API fetcher node that uses them to fetch data. You deployed the graph model and made
+an API request with a curl command.
 
-You have also learnt how to organize data dictionary and provider nodes in an "island" (aka 'subgraph').
+You also organized the data dictionary and provider nodes under an "island" — the
+required knowledge-layer convention that leaves no node unconnected.
 `,Pt=`Tutorial 4
 ----------
-In this session, you will setup simple mathematics and boolean operations in a graph model to make decision.
+In this tutorial, you will set up simple mathematics and boolean operations in a
+graph model to make a decision.
 
 Exercise
 --------
-You will create a root node, an end node, a decision node as an exercise.
+You will create a root node, an end node and a decision node.
 
-To clear the previous graph session, click the Tools button in the top-right corner and click the "Stop" and "Start"
-toggle button. A new graph session will start.
+To clear the previous graph session, click the Tools button in the top-right corner
+and click the "Stop" and "Start" toggle button. A new graph session will start.
 
 Create root and end nodes
 -------------------------
-Enter the "create node" command for "root" and "end" nodes first.
+Enter the "create node" command for the "root" and "end" nodes first.
 
 \`\`\`
 create node root
@@ -4249,8 +4229,8 @@ name=tutorial-4
 purpose=Demonstrate decision making using mathematics and boolean operations
 \`\`\`
 
-Assume there are two input parameters (a and b) and the 'decision' node will add the two numbers,
-the end node will echo the input parameters and the sum of the two numbers.
+Assume there are two input parameters (a and b). The 'decision' node will add the two
+numbers, and the end node will echo the input parameters and the sum.
 
 \`\`\`
 create node end
@@ -4264,7 +4244,7 @@ mapping[]=decision.result.c -> output.body.sum
 
 Create a decision node
 ----------------------
-You may create node with skill 'graph.math' to do decision-making.
+Create a node with the skill 'graph.math' to do decision-making.
 
 \`\`\`
 create node decision
@@ -4281,29 +4261,39 @@ statement[]=MAPPING: text(a >= b) -> output.body.message
 statement[]=MAPPING: boolean(false) -> output.body.less_than
 \`\`\`
 
-The skill "graph.math" supports statements for:
+The skill "graph.math" supports these statement types:
 
-| Type         | Operation                                                    |
-|--------------|--------------------------------------------------------------|
-| COMPUTE      | to generate a value (LHS) from a mathematics operation (RHS) |
-| IF-THEN-ELSE | to evaluate a condition with a boolean operation             |
-| MAPPING      | to perform a data mapping operation                          |
-| RESET        | to reset the current state of one or more nodes              |
+| Type         | Operation                                                       |
+|--------------|-----------------------------------------------------------------|
+| COMPUTE      | generate a value (LHS) from a mathematics expression (RHS)      |
+| IF-THEN-ELSE | evaluate a boolean condition and select the next node           |
+| MAPPING      | perform a data mapping operation                                |
+| EXECUTE      | run another graph.math node's statements inline (module reuse)  |
+| RESET        | reset the current state of one or more nodes                    |
 
-We will discuss 'reset' feature in a more advanced tutorial chapter later.
+The 'RESET' and 'EXECUTE' features are covered in more advanced tutorials.
+Enter "help graph-math" for the full statement grammar.
 
-You can use the 'triple single quote' syntax to create the IF-THEN-ELSE statement.
+Use the 'triple single quote' syntax to enter the IF-THEN-ELSE statement as one
+multi-line value.
 
-The IF statement is a boolean operation.
-The THEN is the next step or another node when the IF statement is true.
-The ELSE is the next step or another node when the IF statement is false.
+The IF line is a boolean expression. THEN names the next step when the expression is
+true; ELSE names the next step when it is false. Each may be a node name or the
+keyword 'next'.
 
-Statements are evaluated in order. The 'next' statement refers to the one after the current IF-THEN-ELSE.
-In the above example, the next statements are doing data mapping to set output key-values.
+Statements are evaluated in order. A branch that resolves to 'next' falls through to
+the statements after the IF-THEN-ELSE — in this example, the two MAPPING statements
+that set the positive-case output key-values. A branch that jumps to a named node
+(here 'less-than') ends the statement list immediately, so those mappings do not run.
+
+The curly brace syntax \`{key}\` substitutes the value of the bracketed key inside a
+COMPUTE or IF expression. A MAPPING statement does not use curly braces — it is data
+mapping only, where the left-hand side is a constant, an input parameter or a model
+variable, and the right-hand side is a model or output variable.
 
 Create a node to handle the negative case
 -----------------------------------------
-Let's create a node called "less-than" to handle the negative case from the decision node.
+Create a node called "less-than" to handle the negative case from the decision node.
 
 \`\`\`
 create node less-than
@@ -4314,12 +4304,6 @@ mapping[]=boolean(true) -> output.body.less_than
 skill=graph.data.mapper
 \`\`\`
 
-The curly brace syntax \`{}\` is used to tell the system to get the value from the bracketed key.
-
-A mapping statement does not need the curly brace syntax because it is designed for data mapping only where
-the left-hand-side is a constant, an input parameter or a model variable and the right-hand-side is a model
-variable or an output variable.
-
 Connect the nodes
 -----------------
 
@@ -4329,8 +4313,9 @@ connect less-than to end with negative
 connect decision to end with positive
 \`\`\`
 
-The "less-than" node is invoked by the decision node if "a < b". Therefore, it does not need to connect to the "root".
-When it finishes execution, it will hand off to the "end" node. If you do a "list connections" command, you will see:
+The "less-than" node is reached only when the decision node evaluates "a < b", so it
+does not need a connection from the root. When it finishes, it hands off to the "end"
+node. A "list connections" command shows:
 
 \`\`\`
 > list connections
@@ -4339,7 +4324,7 @@ decision -[positive]-> end
 less-than -[negative]-> end
 \`\`\`
 
-You can also use the "describe node" command to see connections:
+You can also use the "describe node" command to see a node's content and connections:
 
 \`\`\`
 > describe node decision
@@ -4354,9 +4339,9 @@ You can also use the "describe node" command to see connections:
       "skill": "graph.math",
       "statement": [
         "COMPUTE: c -> {input.body.a} + {input.body.b}",
-        "IF: {input.body.a} > {input.body.b}
+        "IF: {input.body.a} >= {input.body.b}
          THEN: next
-         ELSE: less-than",        
+         ELSE: less-than",
         "MAPPING: text(a >= b) -> output.body.message",
         "MAPPING: boolean(false) -> output.body.less_than"
       ]
@@ -4371,9 +4356,9 @@ You can also use the "describe node" command to see connections:
 }
 \`\`\`
 
-Test positive case
-------------------
-To test a positive case, you can mock input value and instantiate the graph model. 
+Test the positive case
+----------------------
+To test the positive case, mock the input values and instantiate the graph model.
 Note that "start" is an alias of "instantiate".
 
 \`\`\`
@@ -4382,7 +4367,7 @@ int(100) -> input.body.a
 int(50) -> input.body.b
 \`\`\`
 
-Then you can test the graph model with the "run" command:
+Then test the graph model with the "run" command:
 
 \`\`\`
 > run
@@ -4405,8 +4390,11 @@ Executed end with skill graph.data.mapper in 0.099 ms
 Graph traversal completed in 7 ms
 \`\`\`
 
-Test negative case
-------------------
+Note that "sum" is 150.0 — a COMPUTE statement evaluates to a floating-point number,
+so an integer result serializes with a decimal point (it is numerically exact).
+
+Test the negative case
+----------------------
 
 \`\`\`
 start graph
@@ -4441,7 +4429,7 @@ Graph traversal completed in 2 ms
 
 Export the graph model
 ----------------------
-You may save the graph model by exporting it.
+Save the graph model by exporting it.
 
 \`\`\`
 > export graph as tutorial-4
@@ -4451,28 +4439,30 @@ Described in /api/graph/model/tutorial-4/804-24
 
 Deploy the graph model
 ----------------------
-To deploy the graph model, copy "/tmp/graph/tutorial-4.json" to your application's \`main/resources/graph\` folder.
-You can then test the deployed model with a curl command.
+To deploy the graph model, copy "/tmp/graph/tutorial-4.json" to your application's
+resources/graph folder. You can then test the deployed model with a curl command.
 
 Summary
 -------
-In this session, you have created a graph model to add two numbers together, compare the two numbers and return
-a decision.
+In this tutorial, you created a graph model that adds two numbers, compares them and
+returns a decision.
 
-While this is a trivial example, it demonstrates that you can create very useful computation and evaluation
-logic using an Active Knowledge Graph that contains just simple mathematics and boolean operation statements.
+While this is a trivial example, it demonstrates that you can build useful computation
+and evaluation logic in an Active Knowledge Graph using just simple mathematics and
+boolean operation statements.
 `,Ft=`Tutorial 5
 ----------
-In this session, we will explore parallel processing and sophisticated graph navigation using a node
-with the skill 'graph.join'.
+In this tutorial, you will explore parallel processing and graph navigation using a
+node with the skill 'graph.join'.
 
 Exercise
 --------
-You will import the graph model from tutorial-3 and update it to fetch two user profiles at the same time.
+You will import the graph model from tutorial-3 and update it to fetch two user
+profiles at the same time.
 
 Import a graph model
 --------------------
-Enter 'import graph from tutorial-3'
+Enter 'import graph from tutorial-3'.
 
 \`\`\`
 > import graph from tutorial-3
@@ -4481,11 +4471,11 @@ Found deployed graph model in classpath:/graph
 Please export an updated version and re-import to instantiate an instance model
 \`\`\`
 
-If you have not exported tutorial-3 earlier, the system will import it from a demo graph.
+If you have not exported tutorial-3 earlier, the system imports it from a demo graph.
 
 Examine the graph model
 -----------------------
-You can examine the graph model with the 'list nodes' and 'list connections' commands.
+Examine the graph model with the 'list nodes' and 'list connections' commands.
 
 \`\`\`
 > list nodes
@@ -4502,7 +4492,8 @@ fetcher -[complete]-> end
 
 Review the fetcher node
 -----------------------
-Enter 'edit node fetcher' to review the configuration of the node. The system displays the following:
+Enter 'edit node fetcher' to review the configuration of the node. The system
+displays the following:
 
 \`\`\`
 update node fetcher
@@ -4518,8 +4509,8 @@ skill=graph.api.fetcher
 
 Create two new fetchers
 -----------------------
-Assume the use case that we want to fetch two user profiles at the same time. You will create two fetchers
-like this:
+Assume the use case is to fetch two user profiles at the same time. Create two
+fetchers like this:
 
 \`\`\`
 create node fetcher-1
@@ -4547,17 +4538,18 @@ output[]=model.fetcher-2 -> output.body.profile[]
 skill=graph.api.fetcher
 \`\`\`
 
-When two skilled nodes are executed in parallel, we must pay attention to avoid one execution stepping
-on the memory space of another one. In this case, we can use two temporary variables in the "state machine".
+When two skilled nodes execute in parallel, pay attention to how they share the state
+machine. Data mapping itself is thread-safe — state-machine operations are
+serialized — but parallel branches must not write to the same scalar key: the last
+writer wins, nondeterministically. Write to disjoint keys instead. Here, each fetcher
+assembles its profile under its own temporary variable in the "model" namespace:
+\`model.fetcher-1\` and \`model.fetcher-2\`.
 
-The state machine uses the namespace "model", we therefore use two variables \`model.fetcher-1\` and \`model.fetcher-2\`
-to avoid concurrent updates to the same variable.
-
-The final step of output data mapping is the use of array append syntax \`[]\`. This tells the system to append
-the map containing name and address to the variable 'profile'.
-
-Due to parallelism, the order of the array is undetermined. If you want to guarantee person1's result go to array
-element-0 and person2 to element-1, set the array element index directly. e.g.
+The final output mapping uses the array append syntax \`[]\`, which appends the map
+containing name and address to the 'profile' array. Appending with \`[]\` from parallel
+branches is race-free, but the element order follows completion order — undetermined
+across parallel branches. If you must guarantee that person1's result goes to array
+element 0 and person2's to element 1, set the array element index directly:
 
 \`\`\`
 output[]=model.fetcher-1 -> output.body.profile[0]
@@ -4567,11 +4559,11 @@ output[]=model.fetcher-1 -> output.body.profile[0]
 output[]=model.fetcher-2 -> output.body.profile[1]
 \`\`\`
 
-Since profile order does not matter in this tutorial, we will use the array append feature \`[]\`.
+Since profile order does not matter in this tutorial, we will use the append form \`[]\`.
 
 Create a join node
 ------------------
-You can now create a "join" node like this:
+Create a "join" node to synchronize the two parallel branches:
 
 \`\`\`
 create node join
@@ -4589,11 +4581,12 @@ Enter 'delete node fetcher' to remove the original fetcher node.
 node fetcher deleted
 \`\`\`
 
-After you have deleted the original fetcher, its connections to the root node and end node will be removed too.
+When the original fetcher is deleted, its connections to the root node and end node
+are removed too.
 
 Connect the new fetchers
 ------------------------
-Please enter the following to define the graph navigation.
+Enter the following to define the graph navigation.
 
 \`\`\`
 connect root to fetcher-1 with one
@@ -4616,7 +4609,7 @@ join -[done]-> end
 
 Perform a dry-run
 -----------------
-You may start the graph model with this mock input:
+Start the graph model with this mock input:
 
 \`\`\`
 start graph
@@ -4657,18 +4650,19 @@ Executed join with skill graph.join in 0.017 ms
 Graph traversal completed in 6 ms
 \`\`\`
 
-If you check the application log, you will see the two fetchers are executed in parallel.
+If you check the application log, you will see the two fetchers executed in parallel.
 
 \`\`\`
-2026-04-02 16:47:32.633 INFO  com.accenture.minigraph.skills.GraphApiFetcher:410 - 
-           GET http://127.0.0.1:8085/api/mdm/profile/100, with [person_id], ttl=30000
-2026-04-02 16:47:32.633 INFO  com.accenture.minigraph.skills.GraphApiFetcher:410 - 
-           GET http://127.0.0.1:8085/api/mdm/profile/200, with [person_id], ttl=30000
+GET http://127.0.0.1:8085/api/mdm/profile/100, with [person_id], ttl=30000
+GET http://127.0.0.1:8085/api/mdm/profile/200, with [person_id], ttl=30000
 \`\`\`
 
-Create an island to hold data dictionary
-----------------------------------------
-Just like tutorial 3, you will create an island node to hold the data dictionary and provider nodes.
+Create an island to hold the data dictionary
+--------------------------------------------
+Just like tutorial 3, wire the data dictionary and provider nodes into the graph's
+knowledge layer with an island node. This is the required convention — leave no node
+unconnected: the island subgraph is the graph's entity-relationship diagram, turning
+the graph into living documentation of enterprise knowledge.
 
 \`\`\`
 create node dictionary
@@ -4677,7 +4671,7 @@ with properties
 skill=graph.island
 \`\`\`
 
-Then you can connect the data dictionary nodes and provider node to it.
+Then connect the data dictionary nodes and the provider node to it.
 
 \`\`\`
 > connect root to dictionary with contains
@@ -4705,7 +4699,7 @@ join -[done]-> end
 
 Export the graph model
 ----------------------
-You may save the graph model by exporting it.
+Save the graph model by exporting it.
 
 \`\`\`
 > export graph as tutorial-5
@@ -4715,8 +4709,8 @@ Described in /api/graph/model/tutorial-5/920-28
 
 Deploy the graph model
 ----------------------
-To deploy the graph model, copy "/tmp/graph/tutorial-5.json" to your application's \`main/resources/graph\` folder.
-You can then test the deployed model with a curl command.
+To deploy the graph model, copy "/tmp/graph/tutorial-5.json" to your application's
+resources/graph folder. You can then test the deployed model with a curl command.
 
 \`\`\`
 curl -X POST http://127.0.0.1:8085/api/graph/tutorial-5 \\
@@ -4729,27 +4723,28 @@ curl -X POST http://127.0.0.1:8085/api/graph/tutorial-5 \\
 
 Summary
 -------
-In this session, you have created a graph model that is capable of doing parallel processing. It makes two
-API requests to fetch data at the same time. The two nodes then converge into a "join" node before reaching
-the "end" node.
+In this tutorial, you created a graph model capable of parallel processing. It makes
+two API requests at the same time; the two branches then converge into a "join" node
+before reaching the "end" node.
 
-The execution of a graph instance is guided by "graph traversal". It will follow the connections that you define
-for the nodes. If a node has a skill assigned, the graph executor will run the composable function that provides
-the skill. If the node does not have a skill, the graph executor will find the next 'downstream' node from there.
+The execution of a graph instance is guided by graph traversal: it follows the
+connections you define between nodes. If a node has a skill, the graph executor runs
+the composable function that provides the skill; if not, the graph executor continues
+to the next downstream node.
 `,It=`Tutorial 6
 ----------
-In this session, we will create a graph model that would fetch an array list from one service and iterate
-the elements in the array to fetch more details from another service. We will examine the use of the
-"for_each" keyword.
+In this tutorial, you will create a graph model that fetches an array list from one
+service and iterates over the elements of the array to fetch more details from
+another service, using the "for_each" keyword.
 
 Exercise
 --------
-You will import the graph model from tutorial-3 as a template and expand it to handle a multi-step
-data fetch use case.
+You will import the graph model from tutorial-3 as a template and expand it to handle
+a multi-step data fetch use case.
 
 Import a graph model
 --------------------
-Enter 'import graph from tutorial-3'
+Enter 'import graph from tutorial-3'.
 
 \`\`\`
 > import graph from tutorial-3
@@ -4758,11 +4753,11 @@ Found deployed graph model in classpath:/graph
 Please export an updated version and re-import to instantiate an instance model
 \`\`\`
 
-If you have not exported tutorial-3 earlier, the system will import it from a demo graph.
+If you have not exported tutorial-3 earlier, the system imports it from a demo graph.
 
 Examine the graph model
 -----------------------
-You can examine the graph model with the 'list nodes' and 'list connections' commands.
+Examine the graph model with the 'list nodes' and 'list connections' commands.
 
 \`\`\`
 > list nodes
@@ -4779,8 +4774,9 @@ fetcher -[complete]-> end
 
 Create a new data dictionary node
 ---------------------------------
-Enter the following to create a new data dictionary node "person-accounts". This uses the same data provider
-"mdm-profile" to retrieve a list of accounts for the user. The list of accounts is an array of account numbers.
+Enter the following to create a new data dictionary node "person-accounts". It uses
+the same data provider "mdm-profile" to retrieve the list of accounts for a person —
+an array of account numbers.
 
 \`\`\`
 create node person-accounts
@@ -4794,7 +4790,7 @@ purpose=accounts of a person
 
 Update the fetcher
 ------------------
-Add the dictionary item "person-accounts" in the original fetcher.
+Add the dictionary item "person-accounts" to the original fetcher.
 
 \`\`\`
 update node fetcher
@@ -4811,8 +4807,9 @@ skill=graph.api.fetcher
 
 Create one more data dictionary node
 ------------------------------------
-Create a data dictionary node "account-details" that is associated with the data provider "account-details-provider"
-to retrieve account details based on person_id and account_id.
+Create a data dictionary node "account-details", associated with the data provider
+"account-details-provider", to retrieve account details based on person_id and
+account_id.
 
 \`\`\`
 create node account-details
@@ -4827,14 +4824,16 @@ purpose=Account details
 
 Create a new data provider
 --------------------------
-Enter the following to create a data provider that retrieves account details.
-In the feature section, there are oauth2-bearer, log-request-headers and log-response-headers.
-The "oauth2-bearer" is a placeholder and you should implement according to your organization
-security guideline. Functionally, it would acquire OAuth2 bearer token from a security authority 
-using client-id and secret configured in the deployed environment. It should cache and refresh
-the access token as required and insert the "authorization" header in a pre-processing step
-for the Graph API Fetcher. The log-request-headers and log-response-headers can be used as
-templates to implement your own pre-processing and post-processing features.
+Enter the following to create the data provider that retrieves account details.
+
+Its feature section declares oauth2-bearer, log-request-headers and
+log-response-headers. The "oauth2-bearer" entry is a placeholder — implement it
+according to your organization's security guidelines. Functionally, it would acquire
+an OAuth2 bearer token from a security authority using a client id and secret
+configured in the deployed environment, cache and refresh the access token as
+required, and insert the "authorization" header in a pre-processing step of the Graph
+API Fetcher. The log-request-headers and log-response-headers features can serve as
+templates for implementing your own pre-processing and post-processing features.
 
 \`\`\`
 create node account-details-provider
@@ -4852,12 +4851,18 @@ purpose=Account Management Endpoint
 url=http://127.0.0.1:\${rest.server.port}/api/account/details
 \`\`\`
 
+Note that this is a POST provider: the \`body.{key}\` input targets build the JSON
+request body, and the parameters travel in the body rather than the URL.
+
 Create a second fetcher
 -----------------------
-You will create a second fetcher as follows. You will apply the \`for_each\` statement to iterate
-the array in the fetcher's result set and map each element into "model.account_number".
+Create a second fetcher as follows. The \`for_each\` statement iterates over the array
+in the first fetcher's result set (\`fetcher.result.account_numbers\`), mapping each
+element into "model.account_number".
 
-For each element, the input statement block will be executed to populate the input parameter "account_id".
+For each element, the input statement block runs to populate the input parameters:
+"person_id" is passed unchanged to every call, while "account_id" takes the current
+element.
 
 \`\`\`
 create node fetcher-2
@@ -4871,12 +4876,16 @@ output[]=result.accounts -> output.body.accounts
 skill=graph.api.fetcher
 \`\`\`
 
+Each iteration's \`result.accounts\` value is appended into a single array on this
+node's result set — with five account numbers, "output.body.accounts" becomes an
+array of five account detail records.
+
 Rearrange the connections
 -------------------------
-You will connect the first fetcher to the second fetcher, delete the original connection between fetcher and
-the end node. Then connect the second fetcher to the end node.
+Connect the first fetcher to the second fetcher, delete the original connection
+between the fetcher and the end node, then connect the second fetcher to the end node.
 
-Then enter 'list connections' to show the updated connections.
+Enter 'list connections' to show the updated connections.
 
 \`\`\`
 > connect fetcher to fetcher-2 with details
@@ -4893,8 +4902,8 @@ fetcher-2 -[complete]-> end
 
 Update the root node
 --------------------
-Since you are using tutorial-3 graph model as a template, it is a good practice to update the root node
-to describe the new purpose of tutorial-6. Enter the following.
+Since you are using the tutorial-3 graph model as a template, it is good practice to
+update the root node to describe the new purpose of tutorial-6. Enter the following.
 
 \`\`\`
 update node root
@@ -4906,16 +4915,14 @@ purpose=Demonstrate multi-step API fetching and the "for_each" method
 
 Perform a dry-run
 -----------------
-Enter the following to mock the input parameter of "person_id = 100".
+Enter the following to mock the input parameter "person_id = 100".
 
 \`\`\`
 start graph
 int(100) -> input.body.person_id
 \`\`\`
 
-Then enter \`run\` to do a dry-run.
-
-You will see the following:
+Then enter \`run\` to do a dry-run. You will see the following:
 
 \`\`\`
 > start graph...
@@ -4967,15 +4974,26 @@ Graph traversal completed in 28 ms
 
 Parallelism
 -----------
-When using the "for_each" method, the system will perform parallel API fetching. The default concurrency is 3.
-If you want to change this value, set "concurrency" in "fetcher-2" to try.
+With the "for_each" method, the system performs the API fetches in parallel. The
+default concurrency is 3; set "concurrency" in "fetcher-2" (1-30) to try other
+values.
 
-With concurrency of 3 and there are 5 accounts, the system will perform a batch of 3 and a batch of 2 API requests.
-When you changed the concurrency setting, you will see the batch size will be adjusted accordingly.
+With a concurrency of 3 and five accounts, the system makes a batch of 3 followed by
+a batch of 2 API requests. When you change the concurrency setting, the batch size
+adjusts accordingly.
 
-Create an island to hold data dictionary
-----------------------------------------
-You will create an island node to organize the data dictionary and provider nodes.
+Aggregation order is guaranteed: batches execute in source-list order and responses
+join in request order, so the aggregated result array preserves the order of the
+source account numbers — regardless of the concurrency setting. You can see this in
+the dry-run above: the account details appear in the same order as the account
+numbers (a101 to e500).
+
+Create an island to hold the data dictionary
+--------------------------------------------
+Wire the data dictionary and provider nodes into the graph's knowledge layer with an
+island node. This is the required convention — leave no node unconnected: the island
+subgraph is the graph's entity-relationship diagram, turning the graph into living
+documentation of enterprise knowledge.
 
 \`\`\`
 create node dictionary
@@ -4984,7 +5002,7 @@ with properties
 skill=graph.island
 \`\`\`
 
-Then you can connect the data dictionary nodes and provider node to it.
+Then connect the data dictionary nodes and provider nodes to it.
 
 \`\`\`
 > connect root to dictionary with contains
@@ -5003,7 +5021,7 @@ node person-address connected to mdm-profile
 node person-accounts connected to mdm-profile
 > connect dictionary to account-details with data
 node dictionary connected to account-details
-> connect account-details to account-details-provider with data
+> connect account-details to account-details-provider with provider
 node account-details connected to account-details-provider
 > list connections
 root -[contains]-> dictionary
@@ -5022,7 +5040,7 @@ fetcher-2 -[complete]-> end
 
 Export the graph model
 ----------------------
-You may save the graph model by exporting it.
+Save the graph model by exporting it.
 
 \`\`\`
 > export graph as tutorial-6
@@ -5032,8 +5050,8 @@ Described in /api/graph/model/tutorial-6/775-18
 
 Deploy the graph model
 ----------------------
-To deploy the graph model, copy "/tmp/graph/tutorial-6.json" to your application's \`main/resources/graph\` folder.
-You can then test the deployed model with a curl command.
+To deploy the graph model, copy "/tmp/graph/tutorial-6.json" to your application's
+resources/graph folder. You can then test the deployed model with a curl command.
 
 \`\`\`
 curl -X POST http://127.0.0.1:8085/api/graph/tutorial-6 \\
@@ -5045,23 +5063,24 @@ curl -X POST http://127.0.0.1:8085/api/graph/tutorial-6 \\
 
 Summary
 -------
-In this session, you have created a graph model that performs 2 steps of API fetching. The first one gets the
-name, address and list of account numbers. The second one uses the account numbers to fetch the account details
-for each account using the "for_each" method.
+In this tutorial, you created a graph model that performs two steps of API fetching.
+The first step gets the name, address and list of account numbers. The second step
+uses the "for_each" method to fetch the account details for each account number, and
+aggregates the results into a single array in source-list order.
 `,Lt=`Tutorial 7
 ----------
-In this session, we will discuss data mapping in more details.
+In this tutorial, you will explore data mapping in more detail.
 
 Exercise
 --------
-You will create a new graph model with to test various data mapping methods.
+You will create a new graph model to test various data mapping methods.
 
-To clear the previous graph session, click the Tools button in the top-right corner and click the "Stop" and "Start"
-toggle button. A new graph session will start.
+To clear the previous graph session, click the Tools button in the top-right corner
+and click the "Stop" and "Start" toggle button. A new graph session will start.
 
 Create a root node and an end node
 ----------------------------------
-Enter the following to create a root node and an end node
+Enter the following to create a root node and an end node.
 
 \`\`\`
 create node root
@@ -5094,26 +5113,28 @@ mapping[]=model.address -> output.body.address
 mapping[]=f:now(text(local)) -> output.body.time
 \`\`\`
 
-\`mapping[]\` tells the system to create a data mapping statement in "append mode"
-so that the statements will be evaluated in the order that they are provided.
+\`mapping[]\` builds the node's data mapping statement list in "append mode": the
+statements are evaluated in the order provided.
 
-Each data mapping statement has a left-hand-side and right-hand-side separated by the "map to" (\`->\`) indicator.
+Each data mapping statement has a left-hand side (the source) and a right-hand side
+(the target), separated by the "map to" indicator (\`->\`). The value of the source is
+mapped to the target key.
 
-The value of the left-hand-side will be mapped to the key of the right-hand-side.
+MiniGraph uses the same data mapping syntax as Event Script. For a quick reference,
+enter "help graph-data-mapper"; the full syntax is in the Event Script syntax guide:
+https://accenture.github.io/mercury-composable/guides/event-script/syntax/
 
-The MiniGraph system uses the same Event Script's data mapping syntax. For more details, please refer to
-[Data Mapping Syntax](https://accenture.github.io/mercury-composable/guides/CHAPTER-4/#tasks-and-data-mapping)
-(*right-click to open new tab*).
+*Constant* — \`text(world)\` means a constant of "world". \`output.body.\` is the
+namespace for the output payload when a graph finishes execution. In this example,
+output.body is populated with "hello=world".
 
-*Constant* - 'text(world)' means a constant of "world". \`output.body.\` is the namespace for the output payload
-when a graph finishes execution. In this example, the output.body will be populated with "hello=world".
-
-*Input* - \`input.body\` is the namespace for input payload that is provided to a graph instance when it is started.
+*Input* — \`input.body\` is the namespace for the input payload provided to a graph
+instance when it starts.
 
 Assuming the input payload looks like this:
 
 \`\`\`json
-{ 
+{
   "profile": {
     "name": "Peter",
     "address1": "100 World Blvd",
@@ -5122,19 +5143,17 @@ Assuming the input payload looks like this:
 }
 \`\`\`
 
-The value "Peter" will be mapped to the "name" field and the address1 and address2 as the first and second element
-of an array in "model.address". The \`model.\` namespace refers to a temporal state machine during the execution of 
-the graph instance. You can use the model key-values as temporary data buffer for data transformation.
+The value "Peter" is mapped to the "name" field, and address1 and address2 become the
+first and second elements of an array in "model.address". The \`model.\` namespace is a
+temporary state machine that lives for the duration of the graph instance — use it as
+a scratch buffer for data transformation.
 
-*Output* - the mapping statement \`model.address -> output.body.address\` maps the address array with 2 elements
-into the output payload of the graph instance when it finishes execution.
+*Output* — the mapping statement \`model.address -> output.body.address\` maps the
+two-element address array into the output payload of the graph instance.
 
-*Idempotent design* - the array append syntax (\`[]\`) would create side effect when the same array key has been used
-more than once. For example, during testing, you may execute the same node multiple times. This would create
-duplicated entries in the array. To ensure idempotence, you can clear the model array key before you append values.
-This is done by mapping an non-existent model key (e.g. \`model.none\`) to the model.address array field.
-
-For this exercise, a better solution would be direct addressing instead of "append" mode:
+Building an array — two techniques
+----------------------------------
+*Direct addressing (preferred)* — set the array element index explicitly:
 
 \`\`\`
 mapping[]=input.body.profile.address1 -> model.address[0]
@@ -5142,19 +5161,39 @@ mapping[]=input.body.profile.address2 -> model.address[1]
 mapping[]=model.address -> output.body.address
 \`\`\`
 
-It achieves the same outcome without using the clear variable method (\`model.none -> model.address\`).
+Numeric indices write each value into a known slot, so the result is deterministic
+and the mapping is idempotent — executing the node again simply overwrites the same
+slots. Use direct addressing whenever you know where each value belongs.
 
-*plugin functions* - the left-hand-side of \`f:now(text(local)) -> output.body.time\` uses the "f:" syntax
-to execute a "plugin" function called "now". It takes the constant value of "local" to return a local time stamp.
+*Append + clear (for append-mode workflows)* — the array append syntax (\`[]\`) adds
+one element to the end of the array on every execution. That is what you want when a
+workflow accumulates an unknown number of elements — but it is not idempotent: during
+testing, you may execute the same node several times, and each pass would append
+duplicate entries. To make an append sequence repeatable, clear the array first by
+mapping a non-existent key (conventionally \`model.none\`) to it:
 
-A number of built-in data mapping plugins are available. Please refer to the Event Script syntax page above for
-more details.
+\`\`\`
+mapping[]=model.none -> model.address
+mapping[]=input.body.profile.address1 -> model.address[]
+mapping[]=input.body.profile.address2 -> model.address[]
+\`\`\`
+
+Mapping a source that does not exist removes the target key — the \`model.none\` clear
+idiom. This exercise deliberately uses the append + clear form so you can observe the
+idiom at work.
+
+*Plugin functions* — the left-hand side of \`f:now(text(local)) -> output.body.time\`
+uses the \`f:\` syntax to execute a "plugin" function called "now". It takes the
+constant value "local" and returns a local timestamp. A number of built-in data
+mapping plugins are available — see the simple-plugin catalog in the Event Script
+syntax guide: https://accenture.github.io/mercury-composable/guides/event-script/syntax/
 
 Test the data mapper
 --------------------
 You can test the data mapper before you complete the whole graph model.
 
-Enter the following to instantiate the graph and open a dialog box to enter the mock input data.
+Enter the following to instantiate the graph and open a dialog box for the mock
+input data.
 
 \`\`\`
 > instantiate graph
@@ -5163,10 +5202,10 @@ Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms
 Mock data loaded into 'input.body' namespace
 \`\`\`
 
-When you enter the "upload mock data" command, an input dialog box will be opened. Please paste the sample
-input payload for the "profile" of "Peter" listed above.
+When you enter the "upload mock data" command, an input dialog box opens. Paste the
+sample input payload for the "profile" of "Peter" listed above.
 
-To confirm that you have uploaded the mock input. Enter "inspect input".
+To confirm that you have uploaded the mock input, enter "inspect input".
 
 \`\`\`
 > inspect input
@@ -5191,10 +5230,11 @@ You can now test the data mapper by "executing" it. Enter "execute data-mapper".
 ERROR: node data-mapper does not have a skill property
 \`\`\`
 
-The system rejects the request with an error message telling that the data mapper is missing a skill.
+The system rejects the request with an error message: the data-mapper node is missing
+a skill.
 
-You can update the data-mapper node with the 'edit node data-mapper' command and copy-n-paste the content
-to the inbox box for editing. Add "skill=graph.data.mapper" and submit.
+Enter 'edit node data-mapper', copy the printed "update node" block into the input
+box, add "skill=graph.data.mapper" and submit.
 
 \`\`\`
 > edit node data-mapper
@@ -5213,8 +5253,8 @@ skill=graph.data.mapper
 
 The system will display "node data-mapper updated".
 
-To activate the updated node, you can re-start the graph instance by entering 'instantiate graph' and
-'update mock data'. Submit the mock input payload.
+To activate the updated node, restart the graph instance by entering
+'instantiate graph' and 'upload mock data'. Submit the mock input payload again.
 
 Then execute the data-mapper again.
 
@@ -5227,7 +5267,7 @@ The data-mapper runs successfully.
 
 Inspect the model and output
 ----------------------------
-You can inspect the model and the output key-values to see what values are mapped.
+Inspect the model and the output key-values to see what values were mapped.
 
 \`\`\`
 > inspect model
@@ -5268,11 +5308,11 @@ node root connected to data-mapper
 node data-mapper connected to end
 \`\`\`
 
-The graph model will be shown in the right panel.
+The graph model is shown in the right panel.
 
 Export the graph model
 ----------------------
-You may save the graph model by exporting it.
+Save the graph model by exporting it.
 
 \`\`\`
 > export graph as tutorial-7
@@ -5282,13 +5322,13 @@ Described in /api/graph/model/tutorial-7/152-13
 
 Deploy the graph model
 ----------------------
-To deploy the graph model, copy "/tmp/graph/tutorial-7.json" to your application's \`main/resources/graph\` folder.
-You can then test the deployed model with a curl command.
+To deploy the graph model, copy "/tmp/graph/tutorial-7.json" to your application's
+resources/graph folder. You can then test the deployed model with a curl command.
 
 \`\`\`
 curl -X POST http://127.0.0.1:8085/api/graph/tutorial-7 \\
   -H "Content-Type: application/json" \\
-  -d '{ 
+  -d '{
   "profile": {
     "name": "Peter",
     "address1": "100 World Blvd",
@@ -5299,19 +5339,23 @@ curl -X POST http://127.0.0.1:8085/api/graph/tutorial-7 \\
 
 Summary
 -------
-In this session, you have created a graph model that data mapping. You used the array append method to transform
-the input address1 and address2 into an array. You learnt how to clear model variable using an non-existing variable
-\`model.none\`. You also applied the "f:now()" plugin function to return the current time.
+In this tutorial, you created a graph model that performs data mapping. You compared
+the two array-building techniques — direct addressing (preferred) and append + clear
+with the \`model.none\` idiom — transformed address1 and address2 into an array, and
+applied the "f:now()" plugin function to return the current time.
 `,Rt=`Tutorial 8
 ----------
-In this session, we will use JSON-Path search feature to retrieve key-values from input payload.
+In this tutorial, you will use the JSON-Path search feature to retrieve key-values from the input
+payload, then reshape the result with the f:listOfMap() and f:removeKey() plugins. Reshaping a
+third-party API response into your own internal data contract — "impedance matching" — is one of
+the most common jobs for a data mapper, and these tools let you do it without writing code.
 
 Exercise
 --------
 You will import tutorial-7 and replace some data mapping statements with JSON-Path search requests.
 
-To clear the previous graph session, click the Tools button in the top-right corner and click the "Stop" and "Start"
-toggle button. A new graph session will start.
+To clear the previous graph session, click the Tools button in the top-right corner and click the
+"Stop" and "Start" toggle button. A new graph session will start.
 
 Import tutorial-7
 -----------------
@@ -5326,9 +5370,9 @@ Graph model imported as draft
 
 Input payload
 -------------
-The account holder "Peter" has 2 accounts.
-We will assume the following input payload data structure. You would copy-n-paste this JSON dataset
-when using the "upload mock data" dialog box in this tutorial exercise.
+The account holder "Peter" has 2 accounts. We will assume the following input payload data
+structure. You will copy-n-paste this JSON dataset when the "upload mock data" dialog box opens
+later in this exercise.
 
 \`\`\`json
 { 
@@ -5367,13 +5411,13 @@ mapping[]=$.input.body.profile.account[*].amount -> model.amount
 skill=graph.data.mapper
 \`\`\`
 
-The above data mapping statements extract the type, id and amount from the account list in the
-input payload using JSON-Path search syntax.
+A mapping source that starts with "$." is a JSON-Path expression evaluated over the state machine.
+The three JSON-Path statements above use the [*] wildcard to extract the type, id and amount from
+every element of the account list in the input payload. For a simple key, prefer the plain
+dot-bracket form (like the first statement) and save JSON-Path for queries that need it.
 
 Test the data mapper
 --------------------
-Let's test the data mapper first.
-
 Enter the following to instantiate the graph and open a dialog box to enter the mock input data.
 
 \`\`\`
@@ -5383,14 +5427,14 @@ Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms
 Mock data loaded into 'input.body' namespace
 \`\`\`
 
-The first data mapping statement maps the input.body.profile.name into the "name" field of the output body.
-The subsequent data mapping statements extract the type, id and amount key-values form the account list and
-map them into the model variables type, id and amount accordingly.
+The first data mapping statement maps input.body.profile.name into the "name" field of the output
+body. The JSON-Path statements extract the type, id and amount key-values from the account list
+and map them into the model variables type, id and amount accordingly.
 
-When you enter the "upload mock data" command, an input dialog box will be opened. Please paste the sample
-input payload listed above.
+When you enter the "upload mock data" command, an input dialog box will open. Please paste the
+sample input payload listed above.
 
-To confirm that you have uploaded the mock input. Enter "inspect input".
+To confirm that you have uploaded the mock input, enter "inspect input".
 
 \`\`\`
 > inspect input
@@ -5420,7 +5464,7 @@ To confirm that you have uploaded the mock input. Enter "inspect input".
 }
 \`\`\`
 
-You can now test the data mapper by "executing" it. Enter "execute data-mapper".
+You can now test the data mapper by executing it. Enter "execute data-mapper".
 
 \`\`\`
 > execute data-mapper
@@ -5463,16 +5507,15 @@ You can inspect the model and the output key-values to see what values are mappe
 }
 \`\`\`
 
-This confirms that the JSON-Path commands have extracted the key-values from the account list successfully.
-However, presenting data in list of key-values in maps is usually not a good schema design. It may be easier
-for an application to parse the key-values but it reduces readability for a human operator.
-
-This is just a demo to illustrate that we can use JSON-Path retrieval syntax.
+This confirms that the JSON-Path statements have extracted the key-values from the account list
+successfully. However, three parallel lists — a "map of lists" — is usually not a good schema
+design: easy for an application to parse, but harder for a human to read. Let's turn it into a
+proper list of maps.
 
 Using the listOfMap plugin
 --------------------------
-For proper data structure representation, we can use the plugin "f:listOfMap()" to consolidate the map of lists.
-You can add a data mapping statement to use the listOfMap plugin like this:
+For proper data structure representation, use the plugin f:listOfMap() to consolidate the maps of
+lists into a list of maps. Update the data mapper like this:
 
 \`\`\`
 update node data-mapper
@@ -5486,10 +5529,11 @@ mapping[]=f:listOfMap(model.account) -> output.body.account
 skill=graph.data.mapper
 \`\`\`
 
-Note that you add one level of key called "account" to hold the 3 maps of lists for type, id and amount.
-Then you apply the plugin "f:listOfMap()" to consolidate the maps of lists into a list of maps.
+Note the extra level of key called "account" that holds the 3 lists for type, id and amount. The
+f:listOfMap() plugin then consolidates the maps of lists into a list of maps.
 
-When you enter 'inspect model' and 'inspect output', you will see:
+Instantiate the graph, upload the same mock data and execute the data-mapper again. When you enter
+'inspect model' and 'inspect output', you will see:
 
 \`\`\`
 > inspect model
@@ -5535,21 +5579,28 @@ When you enter 'inspect model' and 'inspect output', you will see:
 }
 \`\`\`
 
-This illustrates that the \`listOfMap\` plugin can perform simple data transformation.
-This is handy when your graph model uses API fetchers to retrieve data from multiple sources.
-Without writing code, you can group data from different data structures.
+This illustrates that the listOfMap plugin can perform simple data transformation. It is handy
+when your graph model uses API fetchers to retrieve data from multiple sources: without writing
+code, you can group data from different data structures into the shape your consumers expect.
 
 Using the removeKey plugin
 --------------------------
-For a single data source, it is indeed easier to use the plugin \`f:removeKey()\` to remove one or more keys
-from the data structure.
+When the data comes from a single source, it is even easier to use the f:removeKey() plugin to
+drop the unwanted keys directly. Its form is:
+
+\`\`\`
+f:removeKey(source, text(key1), text(key2), ...)
+\`\`\`
+
+It removes the named keys from a map — or from every map in a list — and returns a copy of the
+data structure. Here it strips the "description" field from every account:
 
 \`\`\`
 mapping[]=f:removeKey(input.body.profile.account, text(description)) -> output.body.account
 \`\`\`
 
-Let's prove this by editing the data-mapper again. We add a new data mapping statement at the end to map
-the alternative solution to the "account2" field in the output payload.
+Let's prove this by editing the data-mapper again. We add a new data mapping statement at the end
+to map the alternative solution to the "account2" field in the output payload.
 
 \`\`\`
 update node data-mapper
@@ -5564,8 +5615,8 @@ mapping[]=f:removeKey(input.body.profile.account, text(description)) -> output.b
 skill=graph.data.mapper
 \`\`\`
 
-You will do 'instantiate graph' and 'upload mock data' with the same input payload.
-Then 'execute data-mapper' and 'inspect output' to see the outcome.
+Do 'instantiate graph' and 'upload mock data' with the same input payload. Then
+'execute data-mapper' and 'inspect output' to see the outcome.
 
 \`\`\`
 > execute data-mapper
@@ -5606,7 +5657,7 @@ node data-mapper run for 2.826 ms with exit path 'next'
 \`\`\`
 
 Note that "account" and "account2" have the same key-values and data structure. This confirms that
-the "description" key-value has been removed from each map in a list successfully.
+the "description" key-value has been removed from each map in the list successfully.
 
 Export the graph model
 ----------------------
@@ -5620,8 +5671,8 @@ Described in /api/graph/model/tutorial-8/315-6
 
 Deploy the graph model
 ----------------------
-To deploy the graph model, copy "/tmp/graph/tutorial-8.json" to your application's \`main/resources/graph\` folder.
-You can then test the deployed model with a curl command.
+To deploy the graph model, copy "/tmp/graph/tutorial-8.json" to your application's
+\`resources/graph\` folder. You can then test the deployed model with a curl command.
 
 \`\`\`
 curl -X POST http://127.0.0.1:8085/api/graph/tutorial-8 \\
@@ -5649,40 +5700,42 @@ curl -X POST http://127.0.0.1:8085/api/graph/tutorial-8 \\
 
 Summary
 -------
-In this session, you have created a graph model that uses JSON-Path retrieval and search features. 
-You have applied the plugin "f:listOfMap()" to consolidate maps of lists into a list of maps.
-You have also tested the plugin "f:removeKey()" to remove unwanted key-values from a list of maps.
+In this tutorial, you have used JSON-Path retrieval to extract key-values from a list, applied the
+f:listOfMap() plugin to consolidate maps of lists into a list of maps, and used the f:removeKey()
+plugin to remove unwanted key-values from a list of maps — the building blocks for reshaping a
+third-party API response into your internal data contract.
 
-Note that JSON-Path retrieval and search syntax supports value comparison for selective key-value retrieval.
-Please refer to JSON-Path syntax on the web for more details.
+Note that JSON-Path also supports value comparison for selective key-value retrieval. Please refer
+to a JSON-Path syntax reference on the web for more details.
 `,zt=`Tutorial 9
 ----------
-In this session, we will discuss the 'reusable module' use case.
+In this tutorial, you will create a reusable module — a formula authored once, then borrowed by
+any node that needs it.
 
 Exercise
 --------
-You will create a reusable module and put it in a common graph model. Then create another graph model and
-import the reusable module into the graph model to reuse it.
+You will create a reusable "addition" module, call it from a compute node with the EXECUTE
+statement, and organize the module under an island node.
 
-To clear the previous graph session, click the Tools button in the top-right corner and click the "Stop" and "Start"
-toggle button. A new graph session will start.
+To clear the previous graph session, click the Tools button in the top-right corner and click the
+"Stop" and "Start" toggle button. A new graph session will start.
 
 What is a reusable module?
 --------------------------
-A module is a node that contains either the graph.js or graph.math skill. For frequently used math formula
-or boolean operation, you can save the "common logic" in one or more module nodes and export it as a common graph model.
+A module is a node with the graph.math skill that stays off the execution path. For a frequently
+used math formula or boolean operation, you can save the "common logic" in one or more module
+nodes and export them as a common graph model. When you design a new graph model, you can import
+the modules you need from that common model.
 
-When you design a new graph model, you can import one or more reusable modules from the common graph model.
+This is a best practice for common computation and decision logic: developers do not re-invent the
+same formula, and the shared modules encourage quality control and governance.
 
-This is a best practice for graph modeling of common computation and decision logic so that developers do not need
-to re-invent the same logic. This also encourages quality control and governance.
-
-For this tutorial, we will skip the export of the common graph model and focus in creation of a reusable module
-and illustration of how to use it in a graph model.
+For this tutorial, we will skip exporting a common graph model and focus on creating a reusable
+module and using it in a graph model.
 
 Create a root node and an end node
 ----------------------------------
-Enter the following to create a root node and an end node
+Enter the following to create a root node and an end node.
 
 \`\`\`
 create node root
@@ -5699,7 +5752,8 @@ with type End
 
 Create a reusable module
 -------------------------
-You will create a simple "addition" module by adding two numbers and save the result in a variable called "sum".
+You will create a simple "addition" module that adds two numbers and saves the result in a
+variable called "sum".
 
 \`\`\`
 create node addition
@@ -5711,8 +5765,8 @@ statement[]=COMPUTE: sum -> {model.a} + {model.b}
 
 Test the module
 ---------------
-Enter the following to start the graph model and set two numbers in variable "a" and "b" in the state machine
-"model".
+Enter the following to start the graph model and set two numbers in the variables "a" and "b" of
+the state machine's "model" namespace.
 
 \`\`\`
 instantiate graph
@@ -5720,7 +5774,7 @@ int(10) -> model.a
 int(20) -> model.b
 \`\`\`
 
-You can then test the module using 'execute addition'. 
+You can then test the module using 'execute addition'.
 
 \`\`\`
 > execute addition
@@ -5742,12 +5796,13 @@ Then you can inspect the node.
 }
 \`\`\`
 
-You can see the module adds the two numbers and save the result "30.0" into the variable "sum" in the result set
-of the node.
+The module adds the two numbers and saves the result "30.0" into the variable "sum" in the node's
+result set. (When executed directly, the result lands on the module itself — the next step shows
+what changes when another node executes it.)
 
 Using the new module
 --------------------
-You will create a new node to use the module.
+You will create a new node that uses the module.
 
 \`\`\`
 create node compute
@@ -5760,9 +5815,9 @@ statement[]=EXECUTE: addition
 statement[]=MAPPING: compute.result.sum -> output.body.sum
 \`\`\`
 
-In this node, it maps the input parameter "a" and "b" into the model variable "a" and "b".
-Then it executes the module "addition". The computed result is saved in the "compute" node.
-The last statement maps the computed value to the output payload "output.body.sum".
+This node maps the input parameters "a" and "b" into the model variables "a" and "b", executes the
+module "addition", then maps the computed value to the output payload "output.body.sum". Note the
+last statement reads compute.result.sum — not addition.result.sum — for the reason shown next.
 
 Test the compute node
 ---------------------
@@ -5774,14 +5829,15 @@ int(10) -> input.body.a
 int(20) -> input.body.b
 \`\`\`
 
-Then you enter 'execute compute'. It will invoke the node 'compute' and it maps the input parameters to the model
-variables. Then it executes the module "addition" that adds the two model variables together.
+Then enter 'execute compute'. It maps the input parameters to the model variables and executes the
+module "addition" that adds the two model variables together.
 
 Inspect the result
 ------------------
-The result is saved to the variable "sum" under the "compute" node instead of the module "addition".
-It is because the compute node is the one that executes the statements.
-It just borrows the logic from the module "addition".
+The result is saved to the variable "sum" under the "compute" node instead of the module
+"addition". EXECUTE runs the module's statements in the caller's context: any COMPUTE result lands
+on the invoking node (compute.result.sum here), and the module's own namespace stays empty — the
+compute node just borrows the logic from the module.
 
 \`\`\`
 > inspect compute
@@ -5818,7 +5874,7 @@ It just borrows the logic from the module "addition".
 }
 \`\`\`
 
-Now the module works as expected.
+The module works as expected.
 
 Connect the nodes
 -----------------
@@ -5831,7 +5887,7 @@ connect compute to end with finish
 
 Test the completed model
 ------------------------
-You will enter the following to test the whole model.
+You will enter the following to test the whole model ('start' is an alias of 'instantiate').
 
 \`\`\`
 start graph
@@ -5839,7 +5895,7 @@ int(10) -> input.body.a
 int(20) -> input.body.b
 \`\`\`
 
-and enter 'run' to do a 'dry-run' from the root to the end node.
+Then enter 'run' to do a 'dry-run' from the root to the end node.
 
 \`\`\`
 > run
@@ -5859,7 +5915,7 @@ Graph traversal completed in 7 ms
 
 Check the nodes and connections
 -------------------------------
-Enter the following to show the nodes and connections
+Enter the following to show the nodes and connections.
 
 \`\`\`
 > list nodes
@@ -5872,12 +5928,15 @@ root -[calculate]-> compute
 compute -[finish]-> end
 \`\`\`
 
-Note that the module "addition" does not need to be connected because it is a reusable module. The node that executes
-it must be connected so that the graph executor can execute it when the graph traversal starts.
+Note that the module "addition" is not part of the traversal path — the compute node that executes
+it is. However, the convention is to leave no node unconnected: 'export' fails if any node is an
+orphan, and off-path nodes belong in the graph's knowledge structure so the model documents
+itself. The next step wires the module in.
 
 Create an island to hold modules
 --------------------------------
-You will create an island node to organize one or more module nodes.
+You will create an island node to organize one or more module nodes. An island is isolated from
+graph traversal, so the execution path is unaffected.
 
 \`\`\`
 create node modules
@@ -5886,7 +5945,7 @@ with properties
 skill=graph.island
 \`\`\`
 
-Then you can connect the data dictionary nodes and provider node to it.
+Then connect the root to the island, and the island to the module.
 
 \`\`\`
 > connect root to modules with contains
@@ -5912,8 +5971,8 @@ Described in /api/graph/model/tutorial-9/359-15
 
 Deploy the graph model
 ----------------------
-To deploy the graph model, copy "/tmp/graph/tutorial-9.json" to your application's \`main/resources/graph\` folder.
-You can then test the deployed model with a curl command.
+To deploy the graph model, copy "/tmp/graph/tutorial-9.json" to your application's
+\`resources/graph\` folder. You can then test the deployed model with a curl command.
 
 \`\`\`
 curl -X POST http://127.0.0.1:8085/api/graph/tutorial-9 \\
@@ -5926,33 +5985,55 @@ curl -X POST http://127.0.0.1:8085/api/graph/tutorial-9 \\
 
 Summary
 -------
-In this session, you have created a graph model that contains a compute node that executes a reusable module.
+In this tutorial, you have created a graph model with a compute node that executes a reusable
+module. You have seen that EXECUTE runs the module's statements in the caller's context — the
+result lands on the invoking node — and you have organized the module under an island so that no
+node is left unconnected.
 `,Bt=`Update a node
 -------------
-1. Root node must use the name 'root'
-2. Skill is a property with the name 'skill'. A node has zero or one skill.
-3. The 'update node' is a multi-line command
-4. Properties are optional for a graph model. If present, they are used as default value.
-5. For each property, you can use the "triple single quotes" to enter a multi-line value if needed.
-6. Node name and type should use lower case characters and hyphen only
-7. Type and key-values will be used and validated by the node's skill function if any
-8. The key of a property can be a composable key using the dot-bracket format.
-   The value may use Event Script's constant syntax.
+Replace the definition of an existing node. This multi-line command has the
+same shape as 'create node' (see 'help create'): enter all lines as one
+block, and the node takes the type and properties you provide.
 
 Syntax
 ------
 \`\`\`
 update node {name}
-with type={type}
+with type {type}
 with properties
 {key1}={value1}
 {key2}={value2}
-...
 \`\`\`
-`,Vt=`Upload mock data to current graph instance
-------------------------------------------
-When the following command is entered, the system will print out a URL for you to upload
-a JSON payload to the current graph instance.
+
+Example
+-------
+\`\`\`
+update node greeting
+with type Task
+with properties
+skill=graph.task
+task=no.op
+input[]=input.body -> *
+output[]=result -> output.body
+\`\`\`
+
+Notes
+-----
+- Node names are matched case-insensitively; use lowercase letters, digits
+  and hyphen ('root' and 'end' are reserved for the root and end nodes).
+- Types are descriptive labels, conventionally Capitalized; the type and
+  properties are validated by the node's skill, if any.
+- A node has zero or one skill, set with skill={route}.
+- 'with properties' and the key lines are optional; a key[]=entry line
+  appends one entry to the list "key"; wrap a multi-line value in triple
+  single quotes ('''). Values may use the Event Script constant syntax.
+- Tip: 'edit node {name}' prints an existing node as a ready-to-edit
+  'update node' command (see 'help edit').
+`,Vt=`Upload mock data
+----------------
+Print a URL for uploading a JSON payload as the mock 'input.body' of the
+current graph instance - convenient when the mock input is too large to seed
+line by line.
 
 Syntax
 ------
@@ -5960,29 +6041,44 @@ Syntax
 upload mock data
 \`\`\`
 
-Upon receiving a HTTP POST request to the given URL, the JSON request payload will be used
-as mock "input.body".
+Example
+-------
+\`\`\`
+> upload mock data
+You may upload JSON payload -> POST /api/mock/{name}
+\`\`\`
 
-If you want to mock some input headers or the state machine, please use the "instantiate graph" command
-before uploading.
+Notes
+-----
+- Requires a graph instance (see 'help instantiate').
+- An HTTP POST of a JSON payload to the given URL replaces the instance's
+  'input.body'; the console confirms with "Mock data loaded into
+  'input.body' namespace".
+- Only 'input.body' can be uploaded. To mock input headers or model
+  variables, seed them with the 'instantiate graph' command before
+  uploading.
 `,Ht=`MiniGraph
 ---------
-A mini-graph is a property graph that is designed to run entirely in memory.
-It is recommended that you limit the number of nodes to less than 750.
+A mini-graph is a property graph designed to run entirely in memory
+(default capacity: 750 nodes).
 
-Graph Model is used to describe a business use case using graph methodology.
-Optionally, you may configure a nodes to have a special skill to react to incoming events.
+A graph model describes a business use case using graph methodology.
+Optionally, you may give a node a special skill so it reacts to incoming
+events. A skill is a property with the label "skill" whose value is a
+composable function route name.
 
-Instance Model is an instance of a graph model that is used to process a specific business use case
-or transaction. It is created when an incoming event arrives. It will map data attributes from input
-of a request to properties of one or more nodes.
+An instance model is an instance of a graph model used to process one
+specific business use case or transaction. In the Playground you create it
+with the "instantiate" command, optionally seeding mock input; in a deployed
+application it is created when an incoming event arrives. Input data
+attributes map to properties of one or more nodes.
 
-Execution of an instance model will start from the root node of a graph until it reaches the end node.
-Result of the end node will be returned to the calling party.
+Execution of an instance model starts from the root node and walks the graph
+until it reaches the end node. The result of the end node is returned to the
+calling party.
 
-For a model to be meaningful, you must configure at least one node to have a skill to process the data
-attributes of some nodes (aka "data entities"). A skill is a property with the label "skill" and the
-value is a composable function route name.
+For a model to be meaningful, at least one node should have a skill to
+process the data attributes of other nodes (the "data entities").
 
 For more information about each feature, try the following help topics.
 
@@ -5994,12 +6090,12 @@ Keyboard shortcuts
 For graph model
 ---------------
 - help create (node)
-- help delete (node, connection or cache)
 - help update (node)
 - help edit (node)
+- help delete (node, connection or cache)
 - help connect (node-A to node-B)
 - help list (nodes, connections, graphs, flows)
-- help export
+- help export (graph model as JSON for deployment)
 - help import (graph or node)
 - help describe (graph, node, connection or skill)
 - help data-dictionary
@@ -6007,41 +6103,44 @@ For graph model
 
 For instance model
 ------------------
-- help instantiate (create an instance from a graph model)
+- help instantiate (create an instance from the current graph model)
 - help upload (mock data)
-- help execute (skill of a specific node. Graph traversal is paused to enable functional test in isolation.)
-- help inspect (state-machine for properties of nodes, input, output and model namespaces)
-- help run (execute a graph instance from a root node to the end node, if any, using graph traversal.)
+- help execute (the skill of one node in isolation, for functional testing)
+- help inspect (state machine: node properties, input, output and model namespaces)
+- help run (traverse a graph instance from the root node to the end node)
 - help seen (display the nodes that have been seen or executed)
 
 Built-in skills
 ---------------
-1. graph.data.mapper - map data from one node to another
-2. graph.math - perform simple math function and boolean operation using native Java
-3. graph.js - handle simple math function and boolean operation using a JavaScript engine
-4. graph.api.fetcher - make API call to other systems
-5. graph.extension - issue API call to another graph model
-6. graph.island - this indicates that the node leads to isolated nodes and graph traversal would pause
-7. graph.join - a node with this skill will wait for completion of all nodes that connect to it
+1. graph.data.mapper - map data from one node or namespace to another
+2. graph.math - compute and branch with a fast built-in math/boolean expression engine
+3. graph.js - deprecated (not registered in the Rust engine); use graph.math or graph.task instead
+4. graph.api.fetcher - make API calls to other systems via Dictionary and Provider nodes
+5. graph.extension - delegate to another graph model or an Event Script flow
+6. graph.island - marks the knowledge layer; the node leads to isolated nodes and traversal pauses there
+7. graph.join - wait for completion of all nodes that connect to it (parallel-branch barrier)
 8. graph.task - invoke a composable function through its route name
 9. graph.suspend - persist workflow state at a suspension point (the reserved 'suspend' node)
 10. graph.resume - restore workflow state and continue past the suspension point
+
+For skill details, use the hyphenated help topics, e.g. 'help graph-math',
+'help graph-api-fetcher', or 'describe skill {route}'.
 
 Tutorials
 ---------
 - help tutorial 1 (your first 'hello world' graph model)
 - help tutorial 2 (deploying a graph model)
 - help tutorial 3 (data dictionary, provider and API fetcher)
-- help tutorial 4 (decision-making using mathematics and boolean operations)
-- help tutorial 5 (more sophisticated graph navigation)
-- help tutorial 6 (iterative API fetching using the 'for_each' keyword)
+- help tutorial 4 (decision-making with math and boolean expressions)
+- help tutorial 5 (parallel processing with a join barrier)
+- help tutorial 6 (iterative API fetching with the 'for_each' keyword)
 - help tutorial 7 (data mapping)
 - help tutorial 8 (JSON-Path key-value retrieval and search)
 - help tutorial 9 (reusable 'modules')
 - help tutorial 10 (graph extension)
 - help tutorial 11 (flow extension)
 - help tutorial 12 (custom error handling)
-- help tutorial 13 (invoking a composable function with the task skill)
+- help tutorial 13 (invoking a composable function with the graph.task skill)
 - help tutorial 14 (workflow suspension - a purchase workflow with three human checkpoints)
 `,Ut=[`# JSON-Path Playground Overview`,``,`Use the JSON-Path Playground to load a JSON or XML document and evaluate expressions against it.`,`This starter Overview is intentionally the only section for now and can grow into a fuller guide later.`,``,`## Quick start`,``,`1. Click **Start** to connect to the JSON-Path playground.`,`2. Paste a document into the Payload Editor, or choose a Quick load sample.`,"3. Enter `load` to send the document to the active session.","4. Enter a JSONPath expression beginning with `$`, such as `$.response.user.name`.",``,`## Example expressions`,``,`| Expression | Purpose |`,`| --- | --- |`,"| `$.response` | Read the loaded response object |","| `$.response.items[*]` | Select every item in an array |","| `$.response.items[0].name` | Read a field from the first item |",``,`## Help controls`,``,"- `Ctrl + backtick` - Toggle the Help panel",`- Use the maximize button to expand Help and the close button to return to the editor`].join(`
 `),Wt=Object.assign({"../../../src/main/resources/help/help connect.md":nt,"../../../src/main/resources/help/help create.md":rt,"../../../src/main/resources/help/help data-dictionary.md":it,"../../../src/main/resources/help/help delete.md":at,"../../../src/main/resources/help/help describe.md":ot,"../../../src/main/resources/help/help edit.md":st,"../../../src/main/resources/help/help execute.md":ct,"../../../src/main/resources/help/help export.md":lt,"../../../src/main/resources/help/help graph-api-fetcher.md":I,"../../../src/main/resources/help/help graph-data-mapper.md":ut,"../../../src/main/resources/help/help graph-extension.md":dt,"../../../src/main/resources/help/help graph-island.md":ft,"../../../src/main/resources/help/help graph-join.md":pt,"../../../src/main/resources/help/help graph-js.md":mt,"../../../src/main/resources/help/help graph-math.md":ht,"../../../src/main/resources/help/help graph-resume.md":gt,"../../../src/main/resources/help/help graph-suspend.md":_t,"../../../src/main/resources/help/help graph-task.md":vt,"../../../src/main/resources/help/help import.md":yt,"../../../src/main/resources/help/help inspect.md":bt,"../../../src/main/resources/help/help instantiate.md":xt,"../../../src/main/resources/help/help list.md":St,"../../../src/main/resources/help/help run.md":Ct,"../../../src/main/resources/help/help seen.md":wt,"../../../src/main/resources/help/help session.md":Tt,"../../../src/main/resources/help/help tutorial 1.md":Et,"../../../src/main/resources/help/help tutorial 10.md":Dt,"../../../src/main/resources/help/help tutorial 11.md":Ot,"../../../src/main/resources/help/help tutorial 12.md":kt,"../../../src/main/resources/help/help tutorial 13.md":At,"../../../src/main/resources/help/help tutorial 14.md":jt,"../../../src/main/resources/help/help tutorial 2.md":Mt,"../../../src/main/resources/help/help tutorial 3.md":Nt,"../../../src/main/resources/help/help tutorial 4.md":Pt,"../../../src/main/resources/help/help tutorial 5.md":Ft,"../../../src/main/resources/help/help tutorial 6.md":It,"../../../src/main/resources/help/help tutorial 7.md":Lt,"../../../src/main/resources/help/help tutorial 8.md":Rt,"../../../src/main/resources/help/help tutorial 9.md":zt,"../../../src/main/resources/help/help update.md":Bt,"../../../src/main/resources/help/help upload.md":Vt,"../../../src/main/resources/help/help.md":Ht});function Gt(e){let t=e.split(`/`);return(t[t.length-1]??e).replace(/\.md$/,``)}var Kt=Object.fromEntries(Object.entries(Wt).map(([e,t])=>[Gt(e),t])),qt={help:Ut};function Jt(e){return e===`json-path`?qt:Kt}function Yt(e,t=`minigraph`){let n=e===``?`help`:`help ${e}`;return Jt(t)[n]??null}var Xt=Object.keys(Kt).filter(e=>e!==`help`).map(e=>e.replace(/^help\s+/,``)).sort(),Zt=[{id:`overview`,label:`Overview`},{id:`graph-model`,label:`Graph Model`},{id:`graph-skills`,label:`Graph Skills`},{id:`instance-model`,label:`Instance Model`},{id:`tutorials`,label:`Tutorials`,chipStripLabel:`Chapters`}],Qt=[{id:`overview`,label:`Overview`}];function $t(e=`minigraph`){return e===`json-path`?Qt:Zt}var en=new Set([`execute`,`inspect`,`instantiate`,`run`,`seen`,`upload`]);function tn(e,t=`minigraph`){return t===`json-path`||e===``?`overview`:e.startsWith(`tutorial `)?`tutorials`:e.startsWith(`graph-`)?`graph-skills`:en.has(e)?`instance-model`:`graph-model`}function nn(e,t=`minigraph`){if(e===`overview`)return[``];if(t===`json-path`)return[];let n=Xt.filter(n=>tn(n,t)===e);return e===`tutorials`?[...n].sort((e,t)=>parseInt(e.replace(/^tutorial\s+/,``),10)-parseInt(t.replace(/^tutorial\s+/,``),10)):n}function rn(e,t){return e===``?`Overview`:t===`tutorials`?e.replace(/^tutorial\s+/,``):e}function an(e=`minigraph`){return $t(e).flatMap(t=>nn(t.id,e))}an();function on(e,t,n=`minigraph`){if(!t)return null;let r=tt(e);return r===null||Yt(r,n)===null?null:r}function sn({bus:e,setHelpTopic:t,onTabSwitch:n,enabled:r=!0,contentProfile:i=`minigraph`}){let a=(0,A.useRef)(n);(0,A.useEffect)(()=>{a.current=n}),(0,A.useEffect)(()=>{if(r)return e.on(`command.helpOrDescribe`,e=>{let n=on(e.commandText,!0,i);n!==null&&(t(n),a.current())})},[e,t,r,i])}function cn({ctx:e,navigate:t,addToast:n,wsPath:r}){let i=me.find(e=>e.tabs.includes(`payload`)&&e.supportsUpload),a=(0,A.useRef)(null),o=i?.wsPath;(0,A.useEffect)(()=>{if(!(!o||!a.current)&&e.getSlot(o).phase===`connected`){let{wsPath:r,json:o}=a.current;a.current=null,e.setPendingPayload(r,o),t(i.path),n(`JSON loaded into JSON-Path editor ✓`,`success`)}},[o,e,t,n,i]);let s=(0,A.useCallback)(r=>{if(!i)return;let o=e.getSlot(i.wsPath);o.phase===`connected`?(e.setPendingPayload(i.wsPath,r),t(i.path),n(`JSON loaded into JSON-Path editor ✓`,`success`)):o.phase===`connecting`?(a.current={wsPath:i.wsPath,json:r},n(`Updated pending JSON transfer — latest payload will open when connected`,`info`)):(a.current={wsPath:i.wsPath,json:r},e.connect(i.wsPath,n),n(`Connecting to JSON-Path Playground…`,`info`))},[e,t,n,i]);return{handleSendToJsonPath:i&&r!==i.wsPath?s:void 0}}function ln({bus:e,onOpenPanel:t}){(0,A.useEffect)(()=>e.on(`upload.invitation`,e=>{t(e.uploadPath)}),[e,t])}function un({bus:e,addToast:t}){let[n,r]=(0,A.useState)(null),i=(0,A.useRef)(null),a=(0,A.useRef)([]),o=(0,A.useRef)(null),[s,c]=(0,A.useState)(new Set),l=(0,A.useCallback)(e=>{let t=i.current;if(t!==null){t!==e&&!a.current.includes(e)&&a.current.push(e);return}o.current=document.activeElement,i.current=e,r(e)},[]),u=(0,A.useCallback)(()=>{let e=a.current.shift()??null;i.current=e,r(e),e===null&&setTimeout(()=>o.current?.focus(),0)},[]),d=(0,A.useCallback)(()=>{u()},[u]),f=(0,A.useCallback)(e=>{if(i.current===e)return u(),!0;let t=a.current.indexOf(e);return t===-1?!1:(a.current.splice(t,1),!0)},[u]),p=(0,A.useCallback)(e=>{let n=i.current;n&&c(e=>new Set([...e,n])),u(),t(`Mock data uploaded successfully ✓`,`success`)},[t,u]),m=(0,A.useCallback)(e=>{t(`Upload failed: ${e}`,`error`)},[t]),h=(0,A.useCallback)(()=>{c(new Set)},[]);return ln({bus:e,onOpenPanel:l}),{uploadPanelPath:n,successfulUploadPaths:s,handleOpenUploadPanel:l,handleCloseUploadPanel:d,handleCloseUploadPath:f,handleUploadSuccess:p,handleUploadError:m,resetSuccessfulPaths:h}}function dn({bus:e,connected:t,appendMessage:n,addToast:r}){let i=(0,A.useRef)(null),a=(0,A.useRef)(!1),o=(0,A.useRef)(n);(0,A.useEffect)(()=>{o.current=n},[n]);let s=(0,A.useRef)(r);(0,A.useEffect)(()=>{s.current=r},[r]),(0,A.useEffect)(()=>{t||(i.current?.abort(),i.current=null,a.current=!1)},[t]),(0,A.useEffect)(()=>()=>{i.current?.abort()},[]),(0,A.useEffect)(()=>e.on(`payload.large`,e=>{if(a.current)return;let{apiPath:t,byteSize:n}=e;i.current?.abort();let r=new AbortController;i.current=r;let c=(n/(1024*1024)).toFixed(2);s.current(`Fetching large payload (${c} MB)…`,`info`),a.current=!0,fetch(t,{signal:r.signal}).then(e=>{if(!e.ok)throw Error(`HTTP ${e.status}`);return e.text()}).then(e=>{if(!e.trim())throw Error(`empty response body`);let t=e;try{t=JSON.stringify(JSON.parse(e),null,2)}catch{}o.current(t),a.current=!1,i.current=null}).catch(e=>{e.name!==`AbortError`&&(a.current=!1,i.current=null,o.current(`ERROR: payload fetch failed — ${e.message}`),s.current(`Payload fetch failed: ${e.message}`,`error`))})}),[e])}function fn(e){let[t,n]=fe(e,{}),r=(0,A.useCallback)(e=>{n(t=>({...t,[e]:{name:e,savedAt:new Date().toISOString()}}))},[n]),i=(0,A.useCallback)(e=>{n(t=>{let n={...t};return delete n[e],n})},[n]),a=(0,A.useCallback)(e=>Object.prototype.hasOwnProperty.call(t,e),[t]);return{savedGraphs:(0,A.useMemo)(()=>Object.values(t).sort((e,t)=>new Date(t.savedAt).getTime()-new Date(e.savedAt).getTime()),[t]),saveGraph:r,deleteGraph:i,hasGraph:a}}var pn={importedName:null,lastSavedName:null,isSaved:!1,untitledSlotConsumed:!1};function mn(e,t){switch(t.type){case`imported`:return{...e,importedName:t.name,lastSavedName:null,isSaved:!1};case`exported`:return{...e,lastSavedName:t.name,isSaved:!0,untitledSlotConsumed:e.untitledSlotConsumed||t.consumesUntitled};case`dirty`:return{...e,isSaved:!1};case`reset`:return{...pn}}}var hn=new Map;function gn(e,t,n){return t&&n!==null&&e===n}function _n(e,t){let n=e.on(`command.importGraph`,e=>{t.onImported(e.graphName)}),r=e.on(`graph.exported`,e=>{t.onExported(e.graphName)}),i=e.on(`graph.mutation`,()=>{t.onDirty()}),a=e.on(`session.reset`,()=>{t.onReset()});return()=>{n(),r(),i(),a()}}function vn(e,t,n,r){let[i,a]=fe(e,1),[o,s]=(0,A.useState)(()=>{let t=hn.get(e);return t&&gn(t.connectionEpoch,n,r)?t.state:{...pn}}),c=(0,A.useRef)(o),l=(0,A.useCallback)(t=>{let n=mn(c.current,t);c.current=n,t.type===`reset`?hn.delete(e):r!==null&&hn.set(e,{connectionEpoch:r,state:n}),s(n)},[r,e]),u=(0,A.useCallback)(e=>{l({type:`exported`,name:e,consumesUntitled:e===`untitled-${i}`})},[i,l]),d=(0,A.useCallback)(()=>{let t=hn.get(e)?.state;(c.current.untitledSlotConsumed||t?.untitledSlotConsumed)&&a(e=>e+1),l({type:`reset`})},[a,e,l]),f=(0,A.useRef)(r);return(0,A.useEffect)(()=>{let t=hn.get(e)?.connectionEpoch;(!n||f.current!==r||t!==void 0&&t!==r)&&d(),f.current=r},[n,r,d,e]),(0,A.useEffect)(()=>_n(t,{onImported:e=>l({type:`imported`,name:e}),onExported:u,onDirty:()=>l({type:`dirty`}),onReset:d}),[t,d,u,l]),{defaultName:o.lastSavedName??o.importedName??`untitled-${i}`,savedName:o.isSaved?o.lastSavedName:null,resetName:d}}var yn=new Set([`description`,`question`,`purpose`]),bn=`input.body`;function xn(e){return/[A-Za-z0-9_.]/.test(e)}function Sn(e){return/[A-Za-z0-9_.*\[\]-]/.test(e)}function Cn(e,t){let n=0;for(;n<e.length;){let r=e.indexOf(bn,n);if(r===-1)return;let i=r>0?e[r-1]:``,a=r>1?e[r-2]:``,o=e[r+10]??``;if(i&&xn(i)&&!(i===`.`&&a===`$`)||o&&/[A-Za-z0-9_]/.test(o)){n=r+10;continue}let s=r+10;for(;s<e.length&&Sn(e[s]);)s+=1;let c=e.slice(r,s);for(;c.endsWith(`.`)||c.endsWith(`-`)||c.endsWith(`[`);)c=c.slice(0,-1);for(;c.endsWith(`]`)&&!c.includes(`[`);)c=c.slice(0,-1);t.add(c),n=Math.max(s,r+10)}}function wn(e,t,n){if(!(n&&yn.has(n.toLowerCase()))){if(typeof e==`string`){Cn(e,t);return}if(Array.isArray(e)){for(let n of e)wn(n,t);return}if(typeof e==`object`&&e)for(let[n,r]of Object.entries(e))wn(r,t,n)}}function Tn(e){if(!e)return[];let t=new Set;for(let n of e.nodes)wn(n.properties,t);return Array.from(t).sort()}var En={instantiate:`instantiate graph`,requestInputUpload:`upload mock data`,run:`run`},Dn=/^Graph instance created\. Loaded (\d+) mock (?:entry|entries), model\.ttl = (\d+) ms$/,On=/^Graph traversal completed in (\d+) ms$/,kn=/^ERROR:\s*(.+)$/;function An(e){let t=e.match(Dn);return t?{mockEntries:Number.parseInt(t[1],10),ttlMs:Number.parseInt(t[2],10)}:null}function jn(e){return e===`Graph instance cleared`}function Mn(e){let t=e.match(On);return t?{status:`completed`,elapsedMs:Number.parseInt(t[1],10)}:e.startsWith(`Graph traversal aborted`)?{status:`aborted`,elapsedMs:null}:null}function Nn(e){return e.match(kn)?.[1]?.trim()||null}function Pn(e){let t=e.trim().toLowerCase();return t===En.instantiate||t===`${En.instantiate}...`}function Fn(e){return e.trim().toLowerCase()===En.run}var In=1e4,Ln={phase:`idle`,intent:null,pendingSignal:null,invalidated:!1};function Rn({enabled:e,bus:t,connected:n,connectionEpoch:r,graphData:i,graphIdentity:a,isPrimary:o,sendRawText:s,addToast:c,onWorkflowInputInvalidated:l}){let[u,d]=(0,A.useState)(Ln),f=(0,A.useRef)(Ln),p=(0,A.useRef)(null),m=(0,A.useRef)(s),h=(0,A.useRef)(c),g=(0,A.useRef)(l),_=(0,A.useMemo)(()=>Tn(i),[i]),v=(0,A.useRef)(_);(0,A.useEffect)(()=>{m.current=s},[s]),(0,A.useEffect)(()=>{h.current=c},[c]),(0,A.useEffect)(()=>{g.current=l},[l]),(0,A.useEffect)(()=>{v.current=_},[_]);let y=(0,A.useCallback)(e=>{f.current=e,d(e)},[]),b=(0,A.useCallback)(()=>{p.current=null,y({...Ln})},[y]),x=(0,A.useCallback)(()=>{let e=p.current;p.current=null,e&&g.current?.(e)},[]),S=(0,A.useCallback)(()=>{x(),b()},[x,b]),C=(0,A.useCallback)(()=>{let e=f.current;if(x(),e.pendingSignal!==null){y({...e,phase:`outcome-uncertain`,invalidated:!0});return}b()},[x,b,y]),w=(0,A.useCallback)((e,t,n)=>(y(t),m.current(e)?!0:(b(),h.current(n,`error`),!1)),[b,y]),ee=e&&n&&i!==null,te=ee&&(u.phase===`idle`||u.phase===`ready`&&_.length>0),T=ee&&u.phase===`ready`,E=e?i?n?``:`Connect first to run the graph`:`Load a graph first`:`Graph run controls are unavailable`,ne=(0,A.useCallback)(()=>!T||f.current.phase!==`ready`?!1:w(En.run,{phase:`running`,intent:null,pendingSignal:`run-terminal`,invalidated:!1},`Could not run graph because the WebSocket is not open.`),[T,w]),D=(0,A.useCallback)(()=>{if(!te)return!1;let e=f.current;return e.phase!==`idle`&&e.phase!==`ready`?!1:w(En.instantiate,{phase:`instantiating`,intent:`instantiate-only`,pendingSignal:`instance-created`,invalidated:!1},`Could not instantiate graph because the WebSocket is not open.`)},[te,w]),re=(0,A.useCallback)(e=>{let t=f.current;return t.phase!==`awaiting-input`&&t.phase!==`requesting-input`||t.intent===null||p.current!==e?!1:(p.current=null,y({phase:`ready`,intent:null,pendingSignal:null,invalidated:!1}),h.current(`Graph instantiated and ready to run.`,`success`),!0)},[y]),ie=(0,A.useCallback)(e=>{let t=f.current;return t.phase!==`awaiting-input`&&t.phase!==`requesting-input`||t.intent===null||p.current!==e?!1:(b(),h.current(`Graph instantiation cancelled.`,`info`),!0)},[b]);(0,A.useEffect)(()=>{let e=t.on(`graph.instance.created`,()=>{let e=f.current;if(e.pendingSignal===`instance-created`){if(e.invalidated){b();return}if(e.intent===null){y({phase:`ready`,intent:null,pendingSignal:null,invalidated:!1});return}v.current.length>0?w(En.requestInputUpload,{phase:`requesting-input`,intent:e.intent,pendingSignal:`upload-invitation`,invalidated:!1},`Graph was instantiated, but the input upload could not be requested.`):(y({phase:`ready`,intent:null,pendingSignal:null,invalidated:!1}),h.current(`Graph instantiated and ready to run.`,`success`))}}),n=t.on(`graph.instance.cleared`,S),r=t.on(`graph.mutation`,C),i=t.on(`session.reset`,S),a=t.on(`graph.exported`,C),o=t.on(`upload.invitation`,e=>{let t=f.current;if(t.pendingSignal===`upload-invitation`){if(t.invalidated){g.current?.(e.uploadPath),b();return}t.intent!==null&&(p.current=e.uploadPath,y({phase:`awaiting-input`,intent:t.intent,pendingSignal:null,invalidated:!1}))}}),s=t.on(`graph.run.terminal`,e=>{let t=f.current;if(t.pendingSignal!==`run-terminal`)return;let n=!t.invalidated&&e.status===`aborted`;b(),n&&h.current(`Graph run aborted. See the console for details.`,`error`)}),c=t.on(`command.error`,e=>{let t=f.current;if(t.pendingSignal===`instance-created`){let n=!t.invalidated;b(),n&&h.current(`Could not instantiate graph: ${e.message}`,`error`)}else if(t.pendingSignal===`upload-invitation`){let n=!t.invalidated;b(),n&&h.current(`Could not request graph input: ${e.message}`,`error`)}}),l=t.on(`command.echo`,e=>{let t=f.current;Pn(e.commandText)?(t.phase===`idle`||t.phase===`ready`)&&y({phase:`instantiating`,intent:null,pendingSignal:`instance-created`,invalidated:!1}):Fn(e.commandText)&&(t.phase===`idle`||t.phase===`ready`)&&y({phase:`running`,intent:null,pendingSignal:`run-terminal`,invalidated:!1})});return()=>{e(),n(),r(),i(),a(),o(),s(),c(),l()}},[t,S,C,b,w,y]),(0,A.useEffect)(()=>{if(u.phase!==`instantiating`&&u.phase!==`requesting-input`)return;let e=setTimeout(()=>{let e=f.current;(e.phase===`instantiating`||e.phase===`requesting-input`)&&(y({...e,phase:`outcome-uncertain`}),h.current(`Graph setup is taking longer than expected. Waiting for the backend outcome…`,`info`))},In);return()=>clearTimeout(e)},[u.phase,y]);let ae=(0,A.useRef)(a);(0,A.useEffect)(()=>{ae.current!==a&&C(),ae.current=a},[a,C]);let oe=(0,A.useRef)(r);(0,A.useEffect)(()=>{oe.current!==r&&S(),oe.current=r},[r,S]);let se=(0,A.useRef)(o);(0,A.useEffect)(()=>{se.current!==o&&S(),se.current=o},[o,S]),(0,A.useEffect)(()=>{!e||!n?S():i||C()},[e,n,i,S,C]);let O=u.phase!==`idle`&&u.phase!==`ready`;return{phase:u.phase,ready:u.phase===`ready`,busy:O,canInteract:ee,canInstantiate:te,canRun:T,disabledReason:E,inputBodyPaths:_,inputIntent:u.intent,workflowUploadPath:p.current,isWorkflowInputPanel:u.intent!==null&&(u.phase===`requesting-input`||u.phase===`awaiting-input`),runGraph:ne,instantiateGraph:D,handleInputUploadSuccess:re,handleInputCancelled:ie}}function zn(e,t){return e.on(`graph.exported`,e=>t(e.graphName))}function Bn({bus:e,connected:t,sendRawText:n,saveGraph:r,addToast:i}){let a=(0,A.useRef)(null),o=(0,A.useCallback)(e=>{if(!t){i(`Save failed: connection required to export graph`,`error`);return}let r=setTimeout(()=>{a.current!==null&&(a.current=null,i(`Save failed: export confirmation timed out`,`error`))},1e4);a.current={graphName:e,timeoutId:r},n(`export graph as ${e}`)},[t,n,i]);return(0,A.useEffect)(()=>{if(r!==null)return zn(e,r)},[e,r]),(0,A.useEffect)(()=>e.on(`graph.exported`,e=>{if(a.current===null||e.graphName!==a.current.graphName)return;clearTimeout(a.current.timeoutId);let t=a.current.graphName;a.current=null,i(`Graph saved as "${t}"`,`success`)}),[e,i]),(0,A.useEffect)(()=>e.on(`graph.export.failed`,e=>{a.current!==null&&(clearTimeout(a.current.timeoutId),a.current=null,e.reason===`invalid-name`?i(`Save failed: invalid filename (a–z, A–Z, 0–9, hyphen only)`,`error`):i(`Save failed: root node name does not match existing graph`,`error`))}),[e,i]),(0,A.useEffect)(()=>{!t&&a.current!==null&&(clearTimeout(a.current.timeoutId),a.current=null,i(`Save failed: connection closed before export confirmation`,`error`))},[t,i]),(0,A.useEffect)(()=>()=>{a.current!==null&&clearTimeout(a.current.timeoutId)},[]),{handleSaveGraph:o,handleLoadGraph:(0,A.useCallback)(e=>{t&&(n(`import graph from ${e}`),i(`Importing graph "${e}"…`,`info`))},[t,n,i])}}function Vn(e){if(e==null)return``;let t=typeof e==`string`?e:JSON.stringify(e);return t.includes(`'''`)&&console.warn(`[commandBuilder] Property value contains "'''" which cannot be escaped in the backend grammar. The value may be truncated on paste.`),t.includes(`
@@ -6067,4 +6166,4 @@ with properties
 `);if(!(e.key===`ArrowUp`&&i||e.key===`ArrowDown`&&a))return}n(e),requestAnimationFrame(()=>{let e=s.current;e&&(e.selectionStart=e.selectionEnd=e.value.length)});return}n(e)},onBlur:()=>f.dismiss(),autoComplete:`off`,autoCorrect:`off`,spellCheck:!1})]}),(0,F.jsx)(`button`,{className:Wo.sendButton,onClick:()=>{r(),s.current?.focus()},disabled:i,"aria-label":`Send command`,children:`Send`})]}),h&&(0,F.jsx)(`p`,{className:Wo.hint,children:h})]})}var Xo={root:`_root_1ac49_1`};function Zo({messages:e,classificationMap:t,onCopy:n,onClear:r,consoleRef:i,onGraphLinkMessage:a,onCopyMessage:o,onSendToJsonPath:s,onUploadMockData:c,successfulUploadPaths:l,command:u,onCommandChange:d,onCommandKeyDown:f,onSend:p,sendDisabled:m,inputDisabled:h,commandHistory:g}){return(0,F.jsxs)(`div`,{className:Xo.root,children:[(0,F.jsx)(Uo,{messages:e,classificationMap:t,onCopy:n,onClear:r,consoleRef:i,onGraphLinkMessage:a,onCopyMessage:o,onSendToJsonPath:s,onUploadMockData:c,successfulUploadPaths:l}),(0,F.jsx)(Yo,{command:u,onChange:d,onKeyDown:f,onSend:p,disabled:h,sendDisabled:m,history:g})]})}var Qo=e=>(0,F.jsxs)(`svg`,{xmlns:`http://www.w3.org/2000/svg`,viewBox:`0 0 16 16`,fill:`none`,width:16,height:16,stroke:`currentColor`,strokeWidth:1.8,strokeLinecap:`round`,strokeLinejoin:`round`,...e,children:[(0,F.jsx)(`line`,{x1:4.75,y1:4.75,x2:11.25,y2:11.25}),(0,F.jsx)(`line`,{x1:11.25,y1:4.75,x2:4.75,y2:11.25})]}),U={root:`_root_1qoh5_9`,card:`_card_1qoh5_19`,ribbon:`_ribbon_1qoh5_32`,ribbonIcon:`_ribbonIcon_1qoh5_45`,ribbonAlias:`_ribbonAlias_1qoh5_50`,ribbonAliasInput:`_ribbonAliasInput_1qoh5_57`,ribbonBadge:`_ribbonBadge_1qoh5_82`,ribbonClose:`_ribbonClose_1qoh5_93`,ribbonCloseIcon:`_ribbonCloseIcon_1qoh5_114`,body:`_body_1qoh5_121`,row:`_row_1qoh5_128`,rowDropTarget:`_rowDropTarget_1qoh5_138`,dragGrip:`_dragGrip_1qoh5_142`,rowLabel:`_rowLabel_1qoh5_166`,rowKey:`_rowKey_1qoh5_167`,rowValue:`_rowValue_1qoh5_178`,rowSpacer:`_rowSpacer_1qoh5_185`,keyInput:`_keyInput_1qoh5_189`,valueInput:`_valueInput_1qoh5_190`,removeButton:`_removeButton_1qoh5_228`,removeIcon:`_removeIcon_1qoh5_251`,addRow:`_addRow_1qoh5_257`,addButton:`_addButton_1qoh5_263`,message:`_message_1qoh5_282`,errorMessage:`_errorMessage_1qoh5_283`,warningMessage:`_warningMessage_1qoh5_284`,errorText:`_errorText_1qoh5_306`,footer:`_footer_1qoh5_312`,secondaryButton:`_secondaryButton_1qoh5_321`,primaryButton:`_primaryButton_1qoh5_322`},$o=1,es=10,ts=36;function ns(e){let t=e.split(`
 `).reduce((e,t)=>e+Math.max(1,Math.ceil(t.length/ts)),0);return Math.min(Math.max(t,$o),es)}function rs({mode:e,formState:t,phase:n,lockReason:r,serverMessage:i,validationErrors:a,onFormStateChange:o,onSubmit:s,onClose:c}){let l=(0,A.useRef)(null),u=(0,A.useRef)(null),d=(0,A.useRef)(new Map),f=(0,A.useRef)(null),p=e===`create`,m=n===`sending`,h=r===`disconnected`,g=m||h,_=p?`Create Node`:`Save Changes`,v=p?`Creating...`:`Saving...`,y=p?`Connection disconnected. Refresh the page and create the node again after the app reconnects.`:`Connection disconnected. Refresh the page and edit the node again after the app reconnects.`,b=ui(t.nodeType),x=di(t.nodeType);(0,A.useEffect)(()=>{p?l.current?.focus():u.current?.focus();let e=e=>{e.key===`Escape`&&(e.preventDefault(),m||c())};return document.addEventListener(`keydown`,e),()=>{document.removeEventListener(`keydown`,e)}},[p,c,m]),(0,A.useEffect)(()=>{let e=f.current;if(!e)return;let t=d.current.get(e);t&&(t.focus(),f.current=null)},[t.properties]);let S=(0,A.useCallback)(e=>{e.preventDefault(),!g&&s()},[g,s]),C=(0,A.useCallback)(e=>{o({...t,...e})},[t,o]),w=(0,A.useCallback)((e,n)=>{o({...t,properties:t.properties.map(t=>t.id===e?{...t,...n}:t)})},[t,o]),ee=(0,A.useCallback)(()=>{let e=_r();f.current=e.id,o({...t,properties:[...t.properties,e]})},[t,o]),te=(0,A.useCallback)(e=>{let n=t.properties.filter(t=>t.id!==e);o({...t,properties:n.length>0?n:[_r()]})},[t,o]),T=(0,A.useRef)(null),[E,ne]=(0,A.useState)(null),D=(0,A.useCallback)(()=>{T.current=null,ne(null)},[]),re=(0,A.useCallback)(e=>t=>{if(T.current=e,t.dataTransfer){t.dataTransfer.effectAllowed=`move`,t.dataTransfer.setData(`text/plain`,e);let n=t.currentTarget.closest(`[data-row-id]`);n instanceof HTMLElement&&typeof t.dataTransfer.setDragImage==`function`&&t.dataTransfer.setDragImage(n,16,16)}},[]),ie=(0,A.useCallback)(e=>t=>{T.current!==null&&(t.preventDefault(),t.dataTransfer&&(t.dataTransfer.dropEffect=`move`),ne(t=>t===e?t:e))},[]),ae=(0,A.useCallback)(e=>{let n=T.current;if(D(),n===null||n===e)return;let r=t.properties.find(e=>e.id===n);if(!r)return;let i=t.properties.filter(e=>e.id!==n),a=i.length;if(e!==null){let t=i.findIndex(t=>t.id===e);t!==-1&&(a=t)}let s=[...i.slice(0,a),r,...i.slice(a)];o({...t,properties:Sr(s)})},[D,t,o]),oe=(0,A.useCallback)(e=>t=>{T.current!==null&&(t.preventDefault(),ae(e))},[ae]);return(0,F.jsx)(`div`,{className:U.root,children:(0,F.jsxs)(`form`,{className:U.card,style:{borderColor:x,"--node-accent":x},"aria-label":p?`Create node`:`Edit node ${t.alias}`,onSubmit:S,children:[(0,F.jsxs)(`header`,{className:U.ribbon,children:[(0,F.jsx)(`span`,{className:U.ribbonIcon,"aria-hidden":`true`,children:b.icon}),p?(0,F.jsx)(`input`,{ref:l,className:U.ribbonAliasInput,value:t.alias,placeholder:`node-alias`,"aria-label":`Node alias`,disabled:g,"aria-invalid":!!a.alias,onChange:e=>C({alias:e.target.value})}):(0,F.jsx)(`span`,{className:U.ribbonAlias,children:t.alias}),(0,F.jsx)(`span`,{className:U.ribbonBadge,children:b.label}),(0,F.jsx)(`button`,{type:`button`,className:U.ribbonClose,"aria-label":`Close node editor`,title:`Close (Esc)`,onClick:c,disabled:m,children:(0,F.jsx)(Qo,{className:U.ribbonCloseIcon,"aria-hidden":`true`,focusable:`false`})})]}),(0,F.jsxs)(`div`,{className:U.body,children:[i&&!h&&(0,F.jsx)(`div`,{className:U.message,role:`status`,children:i}),a.command&&(0,F.jsx)(`div`,{className:U.errorMessage,role:`alert`,children:a.command}),a.alias&&(0,F.jsx)(`div`,{className:U.errorMessage,role:`alert`,children:a.alias}),h&&(0,F.jsx)(`div`,{className:U.warningMessage,role:`status`,children:i??y}),(0,F.jsxs)(`div`,{className:U.row,children:[(0,F.jsx)(`span`,{"aria-hidden":`true`}),(0,F.jsx)(`label`,{className:U.rowLabel,htmlFor:`node-edit-type`,children:`type`}),(0,F.jsxs)(`div`,{className:U.rowValue,children:[(0,F.jsx)(`input`,{id:`node-edit-type`,ref:u,className:U.valueInput,value:t.nodeType,disabled:g,"aria-invalid":!!a.nodeType,onChange:e=>C({nodeType:e.target.value})}),a.nodeType&&(0,F.jsx)(`span`,{className:U.errorText,children:a.nodeType})]}),(0,F.jsx)(`span`,{className:U.rowSpacer,"aria-hidden":`true`})]}),t.properties.map(e=>{let t=a[Xn(e.id,`key`)],n=a[Xn(e.id,`value`)];return(0,F.jsxs)(`div`,{"data-row-id":e.id,className:E===e.id?`${U.row} ${U.rowDropTarget}`:U.row,onDragOver:ie(e.id),onDrop:oe(e.id),children:[(0,F.jsx)(`span`,{className:U.dragGrip,role:`button`,"aria-label":`Reorder property ${e.key.trim()||`(empty)`}`,title:`Drag to reorder — same keys append as [0], [1], … in row order`,draggable:!g,onDragStart:re(e.id),onDragEnd:D,children:`⠿`}),(0,F.jsxs)(`div`,{className:U.rowKey,children:[(0,F.jsx)(`input`,{ref:t=>{t?d.current.set(e.id,t):d.current.delete(e.id)},className:U.keyInput,value:e.key,placeholder:`key`,"aria-label":`Property key`,disabled:g,"aria-invalid":!!t,onChange:t=>w(e.id,{key:t.target.value})}),t&&(0,F.jsx)(`span`,{className:U.errorText,children:t})]}),(0,F.jsxs)(`div`,{className:U.rowValue,children:[(0,F.jsx)(`textarea`,{className:U.valueInput,value:e.value,placeholder:`value`,"aria-label":`Property value`,disabled:g,rows:ns(e.value),"aria-invalid":!!n,onChange:t=>w(e.id,{value:t.target.value})}),n&&(0,F.jsx)(`span`,{className:U.errorText,children:n})]}),(0,F.jsx)(`button`,{type:`button`,className:U.removeButton,"aria-label":`Remove property`,disabled:g,onClick:()=>te(e.id),children:(0,F.jsx)(Qo,{className:U.removeIcon,"aria-hidden":`true`,focusable:`false`})})]},e.id)}),(0,F.jsx)(`div`,{className:E===`end`?`${U.addRow} ${U.rowDropTarget}`:U.addRow,onDragOver:ie(`end`),onDrop:oe(null),children:(0,F.jsxs)(`button`,{type:`button`,className:U.addButton,disabled:g,onClick:ee,children:[(0,F.jsx)(`span`,{"aria-hidden":`true`,children:`+`}),(0,F.jsx)(`span`,{children:`Add Property`})]})})]}),(0,F.jsxs)(`footer`,{className:U.footer,children:[(0,F.jsx)(`button`,{type:`button`,className:U.secondaryButton,onClick:c,disabled:m,children:`Cancel`}),(0,F.jsx)(`button`,{type:`submit`,className:U.primaryButton,disabled:g,children:m?v:_})]})]})})}var W={root:`_root_rdck7_7`,card:`_card_rdck7_17`,ribbon:`_ribbon_rdck7_30`,titleGroup:`_titleGroup_rdck7_41`,title:`_title_rdck7_41`,path:`_path_rdck7_54`,ribbonClose:`_ribbonClose_rdck7_61`,ribbonCloseIcon:`_ribbonCloseIcon_rdck7_90`,body:`_body_rdck7_96`,description:`_description_rdck7_105`,inputHints:`_inputHints_rdck7_112`,inputHintsLabel:`_inputHintsLabel_rdck7_122`,inputHintList:`_inputHintList_rdck7_128`,moreHints:`_moreHints_rdck7_135`,inputHintsNote:`_inputHintsNote_rdck7_147`,dropZone:`_dropZone_rdck7_153`,dropZoneActive:`_dropZoneActive_rdck7_175`,dropZoneIcon:`_dropZoneIcon_rdck7_181`,dropZoneText:`_dropZoneText_rdck7_187`,dropZoneOr:`_dropZoneOr_rdck7_200`,browseButton:`_browseButton_rdck7_207`,fileInputHidden:`_fileInputHidden_rdck7_236`,fileError:`_fileError_rdck7_241`,textareaLabel:`_textareaLabel_rdck7_246`,textarea:`_textarea_rdck7_246`,validationError:`_validationError_rdck7_274`,keyboardHint:`_keyboardHint_rdck7_279`,errorBanner:`_errorBanner_rdck7_284`,footer:`_footer_rdck7_295`,footerActions:`_footerActions_rdck7_305`,formatButton:`_formatButton_rdck7_311`,cancelButton:`_cancelButton_rdck7_312`,uploadButton:`_uploadButton_rdck7_313`,spinner:`_spinner_rdck7_380`,spin:`_spin_rdck7_380`};function is({uploadPath:e,json:t,onSuccess:n,onError:r}){let[i,a]=(0,A.useState)(!1),o=(0,A.useRef)(null),s=(0,A.useCallback)(()=>{o.current?.abort(),o.current=null,a(!1)},[]);return{isUploading:i,upload:(0,A.useCallback)(async()=>{o.current?.abort();let i=new AbortController;o.current=i,a(!0);try{let o=await fetch(e,{method:`POST`,headers:{"Content-Type":`application/json`},body:t,signal:i.signal}),s=await o.text();if(!o.ok){a(!1),r(`HTTP ${o.status} — ${s}`);return}a(!1),n(s)}catch(e){if(e.name===`AbortError`){a(!1);return}a(!1),r(e.message??`Network error`)}},[e,t,n,r]),cancel:s}}var as=(navigator.userAgentData?.platform??navigator.platform).toLowerCase().includes(`mac`);function os(e){return new Promise((t,n)=>{let r=new FileReader;r.onload=()=>t(r.result),r.onerror=()=>n(Error(`Could not read file "${e.name}"`)),r.readAsText(e,`utf-8`)})}function ss(e){let t=e.name.toLowerCase().endsWith(`.json`),n=e.type===`application/json`||e.type===`text/plain`;return!t&&!n?`"${e.name}" does not appear to be a JSON file. Only .json files are accepted.`:null}function cs({uploadPath:e,onSuccess:t,onClose:n,onError:r,title:i=`⬆️ Upload Mock Data`,description:a,inputPathHints:o=[],submitLabel:s=`Upload`}){let[c,l]=(0,A.useState)(``),[u,d]=(0,A.useState)(null),[f,p]=(0,A.useState)(null),[m,h]=(0,A.useState)(!1),g=(0,A.useRef)(null),_=(0,A.useRef)(null),v=Ce(c).isJSON,y=v&&c.trim()!==``,{isUploading:b,upload:x,cancel:S}=is({uploadPath:e,json:c,onSuccess:n=>t(n,e),onError:e=>{d(e),r(e)}}),C=(0,A.useCallback)(()=>{S(),n(e)},[S,n,e]),w=(0,A.useRef)(b);(0,A.useEffect)(()=>{w.current=b},[b]),(0,A.useEffect)(()=>{g.current?.focus();let e=e=>{e.key===`Escape`&&(e.preventDefault(),w.current||C())};return document.addEventListener(`keydown`,e),()=>document.removeEventListener(`keydown`,e)},[C]);let ee=(0,A.useCallback)(()=>{d(null),x()},[x]),te=(0,A.useCallback)(e=>{e.key===`Enter`&&(e.ctrlKey||e.metaKey)&&(e.preventDefault(),y&&!b&&ee())},[y,b,ee]),T=(0,A.useCallback)(()=>{v&&l(ue(c))},[v,c]),E=(0,A.useCallback)(async e=>{p(null),d(null);let t=ss(e);if(t){p(t);return}try{let t=await os(e);if(!Ce(t).isJSON){p(`"${e.name}" contains invalid JSON.`);return}l(ue(t)),g.current?.focus()}catch(e){p(e.message)}},[]),ne=(0,A.useCallback)(e=>{e.preventDefault(),e.stopPropagation(),m||h(!0)},[m]),D=(0,A.useCallback)(e=>{e.preventDefault(),e.stopPropagation(),(e.currentTarget===e.target||!e.currentTarget.contains(e.relatedTarget))&&h(!1)},[]),re=(0,A.useCallback)(e=>{e.preventDefault(),e.stopPropagation(),h(!1);let t=e.dataTransfer.files[0];t&&E(t)},[E]),ie=(0,A.useCallback)(e=>{let t=e.target.files?.[0];t&&(E(t),e.target.value=``)},[E]),ae=!v&&c.trim()!==``;return(0,F.jsx)(`div`,{className:W.root,children:(0,F.jsxs)(`section`,{className:W.card,"aria-label":i,children:[(0,F.jsxs)(`header`,{className:W.ribbon,children:[(0,F.jsxs)(`div`,{className:W.titleGroup,children:[(0,F.jsx)(`span`,{className:W.title,children:i}),(0,F.jsx)(`span`,{className:W.path,children:e})]}),(0,F.jsx)(`button`,{className:W.ribbonClose,onClick:C,"aria-label":`Close upload panel`,title:`Close (Esc)`,disabled:b,children:(0,F.jsx)(Qo,{className:W.ribbonCloseIcon,"aria-hidden":`true`,focusable:`false`})})]}),(0,F.jsxs)(`div`,{className:W.body,children:[a&&(0,F.jsx)(`p`,{className:W.description,children:a}),o.length>0&&(0,F.jsxs)(`div`,{className:W.inputHints,"aria-label":`Referenced graph input paths`,children:[(0,F.jsx)(`span`,{className:W.inputHintsLabel,children:`Referenced input paths`}),(0,F.jsxs)(`div`,{className:W.inputHintList,children:[o.slice(0,6).map(e=>(0,F.jsx)(`code`,{children:e},e)),o.length>6&&(0,F.jsxs)(`span`,{className:W.moreHints,children:[`+`,o.length-6,` more`]})]}),(0,F.jsx)(`span`,{className:W.inputHintsNote,children:`Hints are derived from graph references.`})]}),(0,F.jsxs)(`div`,{className:`${W.dropZone} ${m?W.dropZoneActive:``}`,onDragOver:ne,onDragLeave:D,onDrop:re,"aria-label":`Drop a JSON file here`,children:[(0,F.jsx)(`span`,{className:W.dropZoneIcon,children:`📂`}),(0,F.jsxs)(`span`,{className:W.dropZoneText,children:[`Drop a `,(0,F.jsx)(`code`,{children:`.json`}),` file here`]}),(0,F.jsx)(`span`,{className:W.dropZoneOr,children:`— or —`}),(0,F.jsx)(`input`,{ref:_,type:`file`,accept:`.json,application/json`,className:W.fileInputHidden,"aria-hidden":`true`,tabIndex:-1,onChange:ie}),(0,F.jsx)(`button`,{type:`button`,className:W.browseButton,onClick:()=>_.current?.click(),disabled:b,"aria-label":`Browse for a JSON file`,children:`Browse file…`})]}),f&&(0,F.jsxs)(`span`,{className:W.fileError,role:`alert`,children:[`⚠️ `,f]}),(0,F.jsx)(`label`,{htmlFor:`mock-upload-textarea`,className:W.textareaLabel,children:`JSON Payload`}),(0,F.jsx)(`textarea`,{id:`mock-upload-textarea`,ref:g,className:W.textarea,value:c,onChange:e=>{l(e.target.value),p(null)},onKeyDown:te,placeholder:`Paste JSON here, or drop / browse a .json file above`,rows:10,spellCheck:!1,"aria-describedby":ae?`mock-upload-validation`:void 0}),ae&&(0,F.jsx)(`span`,{id:`mock-upload-validation`,className:W.validationError,role:`status`,children:`⚠️ Invalid JSON — check syntax`}),(0,F.jsx)(`span`,{className:W.keyboardHint,children:as?`⌘+Enter to ${s.toLowerCase()}`:`Ctrl+Enter to ${s.toLowerCase()}`}),u&&(0,F.jsxs)(`div`,{className:W.errorBanner,role:`alert`,children:[`❌ Upload failed: `,u]})]}),(0,F.jsxs)(`footer`,{className:W.footer,children:[(0,F.jsx)(`button`,{className:W.formatButton,onClick:T,disabled:!v||b,title:`Format JSON`,"aria-label":`Format JSON`,children:`Format`}),(0,F.jsxs)(`div`,{className:W.footerActions,children:[(0,F.jsx)(`button`,{className:W.cancelButton,onClick:C,disabled:b,children:`Cancel`}),(0,F.jsx)(`button`,{className:W.uploadButton,onClick:ee,disabled:!y||b,"aria-busy":b,children:b?(0,F.jsxs)(F.Fragment,{children:[(0,F.jsx)(`span`,{className:W.spinner,"aria-hidden":`true`}),` Uploading…`]}):s===`Upload`?`Upload ▶`:s})]})]})]})})}var ls={popover:`_popover_qw337_7`,header:`_header_qw337_19`,endpoint:`_endpoint_qw337_30`,arrow:`_arrow_qw337_41`,chips:`_chips_qw337_46`,chip:`_chip_qw337_46`,customRow:`_customRow_qw337_73`,input:`_input_qw337_78`,submitButton:`_submitButton_qw337_100`,errorText:`_errorText_qw337_122`,statusText:`_statusText_qw337_128`,warningText:`_warningText_qw337_129`},us=12;function ds({formState:e,phase:t,lockReason:n,serverMessage:r,validationErrors:i,anchor:a,onFormStateChange:o,onSubmit:s,onClose:c}){let l=(0,A.useRef)(null),u=(0,A.useRef)(null),[d,f]=(0,A.useState)(null),p=t===`sending`,m=n===`disconnected`,h=p||m,g=(0,A.useRef)(null);(0,A.useEffect)(()=>{g.current!==null&&e.relation===g.current&&(g.current=null,h||s())},[h,e.relation,s]),(0,A.useEffect)(()=>{u.current?.focus()},[]),(0,A.useLayoutEffect)(()=>{let e={x:window.innerWidth/2,y:96},t=a??e,n=l.current?.getBoundingClientRect(),r=n?.width??280,i=n?.height??180;f({left:Math.min(Math.max(t.x-r/2,us),Math.max(us,window.innerWidth-r-us)),top:Math.min(Math.max(t.y+14,us),Math.max(us,window.innerHeight-i-us))})},[a]),(0,A.useEffect)(()=>{let e=e=>{e.key===`Escape`&&(e.preventDefault(),p||c())},t=e=>{p||l.current&&!l.current.contains(e.target)&&c()};return document.addEventListener(`keydown`,e),document.addEventListener(`pointerdown`,t),()=>{document.removeEventListener(`keydown`,e),document.removeEventListener(`pointerdown`,t)}},[c,p]);let _=(0,A.useCallback)(t=>{o({...e,relation:t})},[e,o]),v=(0,A.useCallback)(t=>{h||(g.current=t,o({...e,relation:t}))},[h,e,o]),y=(0,A.useCallback)(e=>{e.preventDefault(),!h&&s()},[h,s]),b=i.relation??i.command??i.sourceAlias??i.targetAlias;return(0,F.jsxs)(`div`,{ref:l,className:ls.popover,style:d?{left:d.left,top:d.top}:{visibility:`hidden`},role:`dialog`,"aria-label":`Create connection from ${e.sourceAlias} to ${e.targetAlias}`,children:[(0,F.jsxs)(`div`,{className:ls.header,children:[(0,F.jsx)(`span`,{className:ls.endpoint,children:e.sourceAlias}),(0,F.jsx)(`span`,{className:ls.arrow,"aria-hidden":`true`,children:`→`}),(0,F.jsx)(`span`,{className:ls.endpoint,children:e.targetAlias})]}),(0,F.jsx)(`div`,{className:ls.chips,children:xi.map(e=>(0,F.jsx)(`button`,{type:`button`,className:ls.chip,style:{"--chip-color":Si[e]},disabled:h,onClick:()=>v(e),children:e},e))}),(0,F.jsxs)(`form`,{className:ls.customRow,onSubmit:y,children:[(0,F.jsx)(`input`,{ref:u,className:ls.input,value:e.relation,placeholder:`custom relation…`,autoComplete:`off`,autoCorrect:`off`,spellCheck:!1,disabled:h,"aria-label":`Relation name`,"aria-invalid":!!i.relation,onChange:e=>_(e.target.value)}),(0,F.jsx)(`button`,{type:`submit`,className:ls.submitButton,disabled:h||!e.relation.trim(),children:p?`Creating…`:`Connect`})]}),b&&!p&&(0,F.jsx)(`div`,{className:ls.errorText,role:`alert`,children:b}),r&&(0,F.jsx)(`div`,{className:m?ls.warningText:ls.statusText,role:`status`,children:r})]})}var fs=1e4,ps=`A graph authoring action is already pending. Wait for it to finish before starting another.`,ms=`Could not send the create-node command because the WebSocket is not open. The form values remain in this dialog.`,hs=`Could not send the edit-node command because the WebSocket is not open. Your changes remain in this dialog.`,gs=`Could not send the delete-node command because the WebSocket is not open.`,_s=`Could not send the create-connection command because the WebSocket is not open. The form values remain in this dialog.`,vs=`Could not send delete-node commands because the WebSocket is not open.`,ys=`No selected nodes are available to delete.`,bs=`Select 100 or fewer nodes to delete at once.`,xs=`Some delete-node commands were sent, but not all backend results were observed yet. Refresh the graph before trying again.`,Ss=`This node is no longer available in the current graph.`,Cs=`Connection disconnected. Refresh the page and create the node again after the app reconnects.`,ws=`Connection disconnected. Refresh the page and edit the node again after the app reconnects.`,Ts=`Connection disconnected. Refresh the page and create the connection again after the app reconnects.`,Es=`Connection disconnected while the graph authoring action was pending. The outcome is unknown. Refresh the page and check the graph before trying again.`,Ds={status:`closed`,pendingSubmit:null,serverMessage:null};function Os(e){return e.pendingSubmit}function ks(e){return e.action===`delete-nodes`}function As(e){return e===`create-connection`?_s:e===`edit-node`?hs:e===`delete-node`?gs:ms}function js(e){return ks(e)?xs:`The ${e.action} command was sent, but no backend result was observed yet. The outcome is unknown.`}function Ms(e){return e===`create-connection`?Ts:e===`edit-node`?ws:Cs}function Ns(e,t){return!e||!t?!1:e.trim().toLowerCase()===t.trim().toLowerCase()}function Ps(e,t){return e?.nodes.find(e=>e.alias.toLowerCase()===t.toLowerCase())??null}function Fs(e,t){return e.status===`error`?!0:t.action===`create-connection`?e.action===`create-connection`?e.alias===null?!0:Ns(e.alias,t.alias)?e.status===`accepted`?Ns(e.targetAlias,t.targetAlias):e.targetAlias===null||Ns(e.targetAlias,t.targetAlias):!1:e.action===null?Ns(e.alias,t.alias)||Ns(e.alias,t.targetAlias):!1:Ns(e.alias,t.alias)?e.action===null||e.action===t.action:!1}function Is(e,t){let n=Os(e);return!n||ks(n)||!Fs(t,n)?null:t.status===`accepted`?{state:Ds,acceptedResult:{status:t.status,action:t.action,alias:t.alias,targetAlias:t.targetAlias,message:t.message}}:e.status===`open`?{state:{...e,phase:`editing`,pendingSubmit:null,serverMessage:t.status===`error`?`Backend returned an error while this submit was pending: ${t.message}`:t.message}}:{state:Ds,notification:{message:t.message,type:`error`}}}function Ls(e){return{...e,phase:`editing`,pendingSubmit:null,serverMessage:As(e.action)}}function Rs(e){let t=Os(e);if(!t)return null;let n=js(t);return e.status===`open`?{state:{...e,phase:`editing`,pendingSubmit:null,serverMessage:n}}:{state:Ds,notification:{message:n,type:`error`}}}function zs(e){let t=Os(e);if(e.status===`open`){let n=t?Es:Ms(e.action);return{state:{...e,phase:`editing`,pendingSubmit:null,serverMessage:n,connectionLost:!0}}}return t?{state:Ds,notification:{message:Es,type:`error`}}:null}function Bs(e){return`sourceAlias`in e}function Vs({bus:e,connected:t,graphData:n,executor:r,timeoutMs:i=fs,onAccepted:a,onUserMessage:o}){let[s,c]=(0,A.useState)(Ds),[l,u]=(0,A.useState)({}),d=(0,A.useRef)(s),f=(0,A.useRef)(null),p=(0,A.useRef)(t),m=(0,A.useRef)(n),h=(0,A.useRef)(a),g=(0,A.useRef)(o);(0,A.useEffect)(()=>{d.current=s},[s]),(0,A.useEffect)(()=>{m.current=n},[n]),(0,A.useEffect)(()=>{h.current=a},[a]),(0,A.useEffect)(()=>{g.current=o},[o]);let _=(0,A.useCallback)((e,t=`error`)=>{g.current?.(e,t)},[]),v=(0,A.useCallback)(e=>{d.current=e,c(e)},[]),y=(0,A.useCallback)(()=>{f.current!==null&&(clearTimeout(f.current),f.current=null)},[]),b=(0,A.useCallback)(()=>{y(),f.current=setTimeout(()=>{let e=Rs(d.current);e&&(v(e.state),e.notification&&_(e.notification.message,e.notification.type)),f.current=null},i)},[y,_,v,i]),x=(0,A.useCallback)(e=>{if(!t)return;if(Os(d.current)){_(ps,`error`);return}let n=vr(e);u({}),v({status:`open`,action:`create-node`,phase:`editing`,formState:n,originalAlias:null,pendingSubmit:null,serverMessage:null,connectionLost:!1})},[t,_,v]),S=(0,A.useCallback)((e,n)=>{if(!t)return;if(Os(d.current)){_(ps,`error`);return}let r={sourceAlias:e,targetAlias:n,relation:``},{relation:i,...a}=rr(r,{graphData:m.current,connected:t}).errors;Object.keys(a).length>0||(u({}),v({status:`open`,action:`create-connection`,phase:`editing`,formState:r,pendingSubmit:null,serverMessage:null,connectionLost:!1}))},[t,_,v]),C=(0,A.useCallback)(e=>{if(!t){_(ws,`error`);return}if(Os(d.current)){_(ps,`error`);return}let n=Ps(m.current,e.alias);if(!n){_(Ss,`error`);return}let r=Dr(n);if(!r.valid||!r.formState){_(r.message??`This node cannot be edited in the UI.`,`error`);return}u({}),v({status:`open`,action:`edit-node`,phase:`editing`,formState:r.formState,originalAlias:n.alias,pendingSubmit:null,serverMessage:null,connectionLost:!1})},[t,_,v]),w=(0,A.useCallback)(e=>{if(!t){_(gs,`error`);return}if(Os(d.current)){_(ps,`error`);return}let n=er(e.alias,{graphData:m.current});if(!n.valid){_(Object.values(n.errors)[0]??`Invalid node alias.`,`error`);return}let i;try{i=ur(e.alias,{graphData:m.current})}catch(e){_(e instanceof Error?e.message:String(e),`error`);return}if(!r.execute(i)){_(gs,`error`);return}let a={action:`delete-node`,alias:e.alias.trim(),command:i,sentAt:new Date().toISOString()};u({}),v({status:`closed`,pendingSubmit:a,serverMessage:null}),b()},[t,r,_,v,b]),ee=(0,A.useCallback)(e=>{if(!t){_(vs,`error`);return}if(Os(d.current)){_(ps,`error`);return}if(e.length===0){_(ys,`info`);return}if(e.length>100){_(bs,`error`);return}let n=new Set,i=e.filter(e=>{let t=e.alias.trim().toLowerCase();return n.has(t)?!1:(n.add(t),!0)}),a=[],o=[];for(let e of i){let t=er(e.alias,{graphData:m.current});if(!t.valid){_(Object.values(t.errors)[0]??ys,`error`);return}try{o.push(e.alias.trim()),a.push(ur(e.alias,{graphData:m.current}))}catch(e){_(e instanceof Error?e.message:String(e),`error`);return}}for(let[e,t]of a.entries())if(!r.execute(t)){_(e===0?vs:Es,`error`);return}let s={action:`delete-nodes`,aliases:o,commands:a,sentAt:new Date().toISOString(),results:{}};u({}),v({status:`closed`,pendingSubmit:s,serverMessage:null}),_(`${o.length} delete-node commands sent. Waiting for backend response.`,`info`),b()},[t,r,_,v,b]),te=(0,A.useCallback)(e=>{let t=d.current;if(t.status===`open`&&!(t.phase===`sending`||t.connectionLost)){if(u({}),t.action===`create-connection`){if(!Bs(e))return;v({...t,formState:e,pendingSubmit:null,serverMessage:null,connectionLost:!1});return}Bs(e)||v({...t,formState:e,pendingSubmit:null,serverMessage:null,connectionLost:!1})}},[v]),T=(0,A.useCallback)(()=>{let e=d.current;if(e.status!==`open`||e.phase===`sending`||e.connectionLost)return;let n=e.action;if(!t){v({...e,serverMessage:As(n)});return}let i=e.action===`create-connection`?rr(e.formState,{graphData:m.current,connected:t}):$n(e.formState,e.action===`edit-node`?{mode:`edit`,originalAlias:e.originalAlias}:{graphData:m.current});if(!i.valid){u(i.errors);return}let a,o,s=null;try{if(e.action===`edit-node`)o=e.originalAlias?.trim()??``,a=lr(e.formState,o);else if(e.action===`create-node`)o=e.formState.alias.trim(),a=cr(e.formState);else if(Bs(e.formState))o=e.formState.sourceAlias.trim(),s=e.formState.targetAlias.trim(),a=fr(e.formState);else{u({command:`Invalid connection form state.`});return}}catch(e){u({command:e instanceof Error?e.message:String(e)});return}if(!r.execute(a)){v(Ls(e));return}let c={action:n,alias:o,targetAlias:s,command:a,sentAt:new Date().toISOString()};u({}),v({...e,phase:`sending`,pendingSubmit:c,serverMessage:null,connectionLost:!1}),b()},[t,r,v,b]),E=(0,A.useCallback)(()=>{let e=d.current;e.status===`open`&&e.phase!==`sending`&&(y(),u({}),v(Ds))},[y,v]);return(0,A.useEffect)(()=>e.on(`minigraph.nodeAction.textResult`,e=>{let t=d.current,n=Os(t);if(!n)return;if(ks(n)){let r=Lr(n,e);if(!r)return;if(e.status===`accepted`&&h.current?.({status:e.status,action:e.action,alias:e.alias,targetAlias:e.targetAlias,message:e.message}),!Rr(r)){v({...t,pendingSubmit:r});return}y(),v(Ds);let i=zr(r);_(i.message,i.type);return}let r=Is(t,e);r&&(y(),r.acceptedResult&&u({}),v(r.state),r.acceptedResult&&h.current?.(r.acceptedResult),r.notification&&_(r.notification.message,r.notification.type))}),[e,y,_,v]),(0,A.useEffect)(()=>{if(p.current&&!t){let e=zs(d.current);e&&(y(),v(e.state),e.notification&&_(e.notification.message,e.notification.type))}p.current=t},[y,t,_,v]),(0,A.useEffect)(()=>()=>{y()},[y]),{state:s,validationErrors:l,openCreateNode:x,openCreateConnection:S,openEditNode:C,deleteNode:w,deleteNodes:ee,updateFormState:te,submit:T,close:E}}var Hs=/^ws-\d+-\d+$/;function Us(e){return Hs.test(e.trim())}var Ws={sessionId:null,startedSince:null,subscribedTo:null,subscribers:[],loading:!1,pendingCommand:null,error:null,lastInfo:null};function Gs(e){return Array.from(new Set(e)).sort()}function Ks({enabled:e,connected:t,bus:n,classificationMap:r,sendRawText:i,addToast:a}){let[o,s]=(0,A.useState)(Ws),c=(0,A.useRef)(new Set),l=(0,A.useRef)(0),u=(0,A.useRef)(i),d=(0,A.useRef)(a);(0,A.useEffect)(()=>{u.current=i},[i]),(0,A.useEffect)(()=>{d.current=a},[a]);let f=(0,A.useCallback)(()=>{if(!e||!t)return!1;s(e=>({...e,loading:!0,pendingCommand:`refresh`,error:null,lastInfo:null}));let n=u.current(`session`);if(!n){let e=`Could not load session details because the WebSocket is not open.`;s(t=>({...t,loading:!1,pendingCommand:null,error:e})),d.current(e,`error`)}return n},[t,e]),p=(0,A.useCallback)(e=>{let t=`${e.kind}:${e.msgId}`;if(!c.current.has(t)){if(c.current.add(t),e.kind===`minigraph.session.started`){s({...Ws,sessionId:e.sessionId});return}if(e.kind===`minigraph.session.status`){s(t=>({...t,sessionId:e.sessionId,startedSince:e.startedSince,subscribedTo:e.subscribedTo,subscribers:Gs(e.subscribers),loading:!1,pendingCommand:null,error:null,lastInfo:null}));return}if(e.kind===`minigraph.session.commandResult`){if(e.status===`accepted`){s(t=>({...t,subscribedTo:e.command===`subscribe`?e.sessionId:e.command===`unsubscribe`?null:t.subscribedTo,pendingCommand:null,error:null,lastInfo:null}));return}s(t=>({...t,pendingCommand:null,error:e.message,lastInfo:null}));return}if(e.kind===`minigraph.session.notification`){e.type===`host-closed`?s(t=>({...t,subscribedTo:t.subscribedTo===e.sessionId?null:t.subscribedTo,subscribers:t.subscribers.filter(t=>t!==e.sessionId),error:null,lastInfo:null})):e.type===`subscriber-joined`?s(t=>({...t,subscribers:Gs([...t.subscribers,e.sessionId]),error:null,lastInfo:null})):s(t=>({...t,subscribers:t.subscribers.filter(t=>t!==e.sessionId),error:null,lastInfo:null}));return}e.kind===`session.reset`&&(s(e=>({...e,startedSince:null,subscribedTo:null,subscribers:[],loading:!1,pendingCommand:null,error:null,lastInfo:null})),f())}},[f]),m=(0,A.useCallback)(()=>{s(e=>({...e,error:null,lastInfo:null}))},[]),h=(0,A.useCallback)(n=>{let r=n.trim();if(!e||!t||o.pendingCommand!==null||o.subscribedTo!==null)return!1;if(!Us(r))return s(e=>({...e,error:`Enter a valid session ID like ws-123456-1.`,lastInfo:null})),!1;s(e=>({...e,pendingCommand:`subscribe`,error:null,lastInfo:null}));let c=i(`session subscribe ${r}`);if(!c){let e=`Could not subscribe because the WebSocket is not open.`;s(t=>({...t,pendingCommand:null,error:e})),a(e,`error`)}return c},[a,t,e,i,o.pendingCommand,o.subscribedTo]),g=(0,A.useCallback)(()=>{if(!e||!t||o.pendingCommand!==null||o.subscribedTo===null)return!1;s(e=>({...e,pendingCommand:`unsubscribe`,error:null,lastInfo:null}));let n=i(`session unsubscribe`);if(!n){let e=`Could not unsubscribe because the WebSocket is not open.`;s(t=>({...t,pendingCommand:null,error:e})),a(e,`error`)}return n},[a,t,e,i,o.pendingCommand,o.subscribedTo]),_=(0,A.useCallback)(()=>{if(!e||!t||o.pendingCommand!==null||o.subscribedTo!==null||o.subscribers.length===0)return!1;s(e=>({...e,pendingCommand:`reset`,error:null,lastInfo:null}));let n=i(`session reset`);if(!n){let e=`Could not reset because the WebSocket is not open.`;s(t=>({...t,pendingCommand:null,error:e})),a(e,`error`)}return n},[a,t,e,i,o.pendingCommand,o.subscribedTo,o.subscribers.length]);(0,A.useEffect)(()=>{e&&t||(c.current.clear(),l.current=0,s(Ws))},[t,e]),(0,A.useEffect)(()=>{if(!e)return;let t=n.on(`minigraph.session.started`,e=>{p(e)}),r=n.on(`minigraph.session.status`,e=>{p(e)}),i=n.on(`minigraph.session.commandResult`,e=>{p(e)}),a=n.on(`minigraph.session.notification`,e=>{p(e)}),o=n.on(`session.reset`,e=>{p(e)});return()=>{t(),r(),i(),a(),o()}},[n,e,p]),(0,A.useEffect)(()=>{!e||!t||f()},[t,e,f]),(0,A.useEffect)(()=>{if(!e||!r)return;let t=l.current;for(let[e,n]of r)if(!(e<=l.current)){for(let e of n)(e.kind===`minigraph.session.started`||e.kind===`minigraph.session.status`||e.kind===`minigraph.session.commandResult`||e.kind===`minigraph.session.notification`||e.kind===`session.reset`)&&p(e);t=Math.max(t,e)}l.current=t,c.current.clear()},[r,e,p]);let v=o.subscribedTo===null,y=o.subscribers.length>0;return(0,A.useMemo)(()=>({state:o,connected:t,isPrimary:v,hasSubscribers:y,canSubscribe:e&&t&&o.pendingCommand===null&&o.subscribedTo===null,canUnsubscribe:e&&t&&o.subscribedTo!==null&&o.pendingCommand===null,canReset:e&&t&&o.pendingCommand===null&&o.subscribedTo===null&&o.subscribers.length>0,subscribeToSession:h,unsubscribe:g,resetSession:_,clearMessage:m}),[m,t,e,y,v,_,o,h,g])}var qs=(e,t)=>t.some(t=>e instanceof t),Js,Ys;function Xs(){return Js||=[IDBDatabase,IDBObjectStore,IDBIndex,IDBCursor,IDBTransaction]}function Zs(){return Ys||=[IDBCursor.prototype.advance,IDBCursor.prototype.continue,IDBCursor.prototype.continuePrimaryKey]}var Qs=new WeakMap,$s=new WeakMap,ec=new WeakMap;function tc(e){let t=new Promise((t,n)=>{let r=()=>{e.removeEventListener(`success`,i),e.removeEventListener(`error`,a)},i=()=>{t(sc(e.result)),r()},a=()=>{n(e.error),r()};e.addEventListener(`success`,i),e.addEventListener(`error`,a)});return ec.set(t,e),t}function nc(e){if(Qs.has(e))return;let t=new Promise((t,n)=>{let r=()=>{e.removeEventListener(`complete`,i),e.removeEventListener(`error`,a),e.removeEventListener(`abort`,a)},i=()=>{t(),r()},a=()=>{n(e.error||new DOMException(`AbortError`,`AbortError`)),r()};e.addEventListener(`complete`,i),e.addEventListener(`error`,a),e.addEventListener(`abort`,a)});Qs.set(e,t)}var rc={get(e,t,n){if(e instanceof IDBTransaction){if(t===`done`)return Qs.get(e);if(t===`store`)return n.objectStoreNames[1]?void 0:n.objectStore(n.objectStoreNames[0])}return sc(e[t])},set(e,t,n){return e[t]=n,!0},has(e,t){return e instanceof IDBTransaction&&(t===`done`||t===`store`)||t in e}};function ic(e){rc=e(rc)}function ac(e){return Zs().includes(e)?function(...t){return e.apply(cc(this),t),sc(this.request)}:function(...t){return sc(e.apply(cc(this),t))}}function oc(e){return typeof e==`function`?ac(e):(e instanceof IDBTransaction&&nc(e),qs(e,Xs())?new Proxy(e,rc):e)}function sc(e){if(e instanceof IDBRequest)return tc(e);if($s.has(e))return $s.get(e);let t=oc(e);return t!==e&&($s.set(e,t),ec.set(t,e)),t}var cc=e=>ec.get(e);function lc(e,t,{blocked:n,upgrade:r,blocking:i,terminated:a}={}){let o=indexedDB.open(e,t),s=sc(o);return r&&o.addEventListener(`upgradeneeded`,e=>{r(sc(o.result),e.oldVersion,e.newVersion,sc(o.transaction),e)}),n&&o.addEventListener(`blocked`,e=>n(e.oldVersion,e.newVersion,e)),s.then(e=>{a&&e.addEventListener(`close`,()=>a()),i&&e.addEventListener(`versionchange`,e=>i(e.oldVersion,e.newVersion,e))}).catch(()=>{}),s}function uc(e,{blocked:t}={}){let n=indexedDB.deleteDatabase(e);return t&&n.addEventListener(`blocked`,e=>t(e.oldVersion,e)),sc(n).then(()=>void 0)}var dc=[`get`,`getKey`,`getAll`,`getAllKeys`,`count`],fc=[`put`,`add`,`delete`,`clear`],pc=new Map;function mc(e,t){if(!(e instanceof IDBDatabase&&!(t in e)&&typeof t==`string`))return;if(pc.get(t))return pc.get(t);let n=t.replace(/FromIndex$/,``),r=t!==n,i=fc.includes(n);if(!(n in(r?IDBIndex:IDBObjectStore).prototype)||!(i||dc.includes(n)))return;let a=async function(e,...t){let a=this.transaction(e,i?`readwrite`:`readonly`),o=a.store;return r&&(o=o.index(t.shift())),(await Promise.all([o[n](...t),i&&a.done]))[0]};return pc.set(t,a),a}ic(e=>({...e,get:(t,n,r)=>mc(t,n)||e.get(t,n,r),has:(t,n)=>!!mc(t,n)||e.has(t,n)}));var hc=[`continue`,`continuePrimaryKey`,`advance`],gc={},_c=new WeakMap,vc=new WeakMap,yc={get(e,t){if(!hc.includes(t))return e[t];let n=gc[t];return n||=gc[t]=function(...e){_c.set(this,vc.get(this)[t](...e))},n}};async function*bc(...e){let t=this;if(t instanceof IDBCursor||(t=await t.openCursor(...e)),!t)return;t=t;let n=new Proxy(t,yc);for(vc.set(n,t),ec.set(n,cc(t));t;)yield n,t=await(_c.get(n)||t.continue()),_c.delete(n)}function xc(e,t){return t===Symbol.asyncIterator&&qs(e,[IDBIndex,IDBObjectStore,IDBCursor])||t===`iterate`&&qs(e,[IDBIndex,IDBObjectStore])}ic(e=>({...e,get(t,n,r){return xc(t,n)?bc:e.get(t,n,r)},has(t,n){return xc(t,n)||e.has(t,n)}}));var Sc=`minigraph-clipboard`,Cc=1,wc=`items`,Tc=null;function Ec(){return lc(Sc,Cc,{upgrade(e){e.objectStoreNames.contains(wc)&&e.deleteObjectStore(wc);let t=e.createObjectStore(wc,{keyPath:`id`});t.createIndex(`by-alias`,`node.alias`,{unique:!0}),t.createIndex(`by-clippedAt`,`clippedAt`)}})}function Dc(){return Tc||=Ec().catch(async e=>(console.warn(`[clipboard/db] openDB failed, deleting and recreating:`,e),Tc=null,await uc(Sc),Ec())),Tc}async function Oc(){return(await(await Dc()).getAllFromIndex(wc,`by-clippedAt`)).reverse()}async function kc(e){return(await Dc()).getFromIndex(wc,`by-alias`,e)}async function Ac(e){await(await Dc()).add(wc,e)}async function jc(e,t){let n=(await Dc()).transaction(wc,`readwrite`);await n.store.delete(e),await n.store.add(t),await n.done}async function Mc(e){await(await Dc()).delete(wc,e)}async function Nc(){await(await Dc()).clear(wc)}var Pc=`minigraph-clipboard-sync`;function Fc(){return new BroadcastChannel(Pc)}function Ic(e,t){switch(t.type){case`HYDRATE`:return{items:t.items,isLoading:!1};case`ITEM_ADDED`:return{...e,items:[t.item,...e.items]};case`ITEM_REPLACED`:{let n=e.items.filter(e=>e.id!==t.previousId);return{...e,items:[t.item,...n]}}case`ITEM_REMOVED`:return{...e,items:e.items.filter(e=>e.id!==t.id)};case`ITEMS_CLEARED`:return{...e,items:[]};default:return e}}var Lc=(0,A.createContext)(null);function Rc({children:e}){let[t,n]=(0,A.useReducer)(Ic,{items:[],isLoading:!0}),r=(0,A.useRef)(null);(0,A.useEffect)(()=>{Oc().then(e=>n({type:`HYDRATE`,items:e}))},[]),(0,A.useEffect)(()=>{let e;try{e=Fc()}catch{return}return r.current=e,e.onmessage=e=>{let t=e.data;switch(t.type){case`item-added`:n({type:`ITEM_ADDED`,item:t.item});break;case`item-replaced`:n({type:`ITEM_REPLACED`,item:t.item,previousId:t.previousId});break;case`item-removed`:n({type:`ITEM_REMOVED`,id:t.id});break;case`items-cleared`:n({type:`ITEMS_CLEARED`});break}},()=>{e.close(),r.current=null}},[]);let i=(0,A.useCallback)(e=>{r.current?.postMessage(e)},[]),a=(0,A.useCallback)(async(e,t,r)=>{try{let a={id:crypto.randomUUID(),clippedAt:new Date().toISOString(),sourceWsPath:r.sourceWsPath,sourceLabel:r.sourceLabel,node:e,connections:t},o=await kc(e.alias);if(o)return{status:`duplicate`,existingItem:o,pendingItem:a};try{await Ac(a)}catch(t){if(t instanceof DOMException&&t.name===`ConstraintError`){let t=await kc(e.alias);if(t)return{status:`duplicate`,existingItem:t,pendingItem:a}}throw t}return n({type:`ITEM_ADDED`,item:a}),i({type:`item-added`,item:a}),{status:`added`}}catch(e){return{status:`error`,message:e instanceof Error?e.message:String(e)}}},[i]),o=(0,A.useCallback)(async(e,t)=>{await jc(t,e),n({type:`ITEM_REPLACED`,item:e,previousId:t}),i({type:`item-replaced`,item:e,previousId:t})},[i]),s=(0,A.useCallback)(async e=>{await Mc(e),n({type:`ITEM_REMOVED`,id:e}),i({type:`item-removed`,id:e})},[i]),c=(0,A.useCallback)(async()=>{await Nc(),n({type:`ITEMS_CLEARED`}),i({type:`items-cleared`})},[i]);return(0,F.jsx)(Lc.Provider,{value:{items:t.items,isLoading:t.isLoading,clipNode:a,confirmReplace:o,removeItem:s,clearAll:c},children:e})}function zc(){let e=(0,A.useContext)(Lc);if(!e)throw Error(`useClipboardContext must be used inside <ClipboardProvider>`);return e}var Bc=new Intl.Collator(void 0,{sensitivity:`base`,numeric:!0});function Vc(e){return e.node.types[0]?.trim()||`unknown`}function Hc(e,t){return Bc.compare(e,t)}function Uc(e,t){return e-t}function Wc(e){return e===`recent`||e===`connections`?`descending`:`ascending`}function Gc(e,t){return t===`descending`?-e:e}function Kc(e,t){let n=t.trim();if(!n)return{missing:!0,value:``};let r=e.node.properties[n];return r==null?{missing:!0,value:``}:typeof r==`string`?{missing:!1,value:r}:typeof r==`number`||typeof r==`boolean`?{missing:!1,value:String(r)}:{missing:!1,value:JSON.stringify(r)}}function qc(e,t,n,r){let i=Kc(e,n),a=Kc(t,n);return i.missing&&!a.missing?1:!i.missing&&a.missing?-1:Gc(Hc(i.value,a.value),r)}function Jc(e,t){let n=t.direction??Wc(t.field);return e.map((e,t)=>({item:e,originalIndex:t})).sort((e,r)=>{let i=0;switch(t.field){case`type`:i=Hc(Vc(e.item),Vc(r.item));break;case`alias`:i=Hc(e.item.node.alias,r.item.node.alias);break;case`source`:i=Hc(e.item.sourceLabel,r.item.sourceLabel);break;case`connections`:i=e.item.connections.length-r.item.connections.length;break;case`property`:i=qc(e.item,r.item,t.propertyKey??``,n);break;default:i=Date.parse(e.item.clippedAt)-Date.parse(r.item.clippedAt);break}return t.field!==`property`&&(i=Gc(i,n)),i===0?Uc(e.originalIndex,r.originalIndex):i}).map(({item:e})=>e)}function Yc(e){let t=Date.now()-new Date(e).getTime();if(t<0)return`just now`;let n=Math.floor(t/1e3);if(n<60)return`just now`;let r=Math.floor(n/60);if(r<60)return`${r} min ago`;let i=Math.floor(r/60);if(i<24)return`${i} hour${i>1?`s`:``} ago`;let a=Math.floor(i/24);return a===1?`yesterday`:a<30?`${a} days ago`:new Date(e).toLocaleDateString()}var Xc={item:`_item_1ne62_1`,previewFrame:`_previewFrame_1ne62_13`,preview:`_preview_1ne62_13`,previewShell:`_previewShell_1ne62_25`,metaBlock:`_metaBlock_1ne62_29`,timestamp:`_timestamp_1ne62_35`,removeChrome:`_removeChrome_1ne62_40`,removeIcon:`_removeIcon_1ne62_71`};function Zc({item:e,onRemove:t,onOpenMenu:n,onCloseMenu:r}){let{node:i,clippedAt:a,sourceLabel:o}=e;return(0,F.jsxs)(`div`,{className:Xc.item,children:[(0,F.jsxs)(`div`,{className:Xc.previewFrame,children:[(0,F.jsx)(`button`,{type:`button`,className:Xc.removeChrome,draggable:!1,"aria-label":`Remove node ${i.alias} from clipboard`,onClick:n=>{n.stopPropagation(),r(),t(e.id)},children:(0,F.jsx)(Qo,{className:Xc.removeIcon,"aria-hidden":`true`,focusable:`false`})}),(0,F.jsx)(`div`,{className:Xc.preview,role:`group`,draggable:!0,onDragStart:t=>{r(),Va(t.dataTransfer,e.id)},onContextMenu:t=>{t.preventDefault(),n(e.id,t.clientX,t.clientY)},onKeyDown:t=>{if(t.key===`ContextMenu`||t.key===`F10`&&t.shiftKey){t.preventDefault();let r=t.currentTarget.getBoundingClientRect();n(e.id,Math.round(r.left+8),Math.round(r.top+8))}},tabIndex:0,"aria-label":`Drag node ${i.alias} into the graph to paste`,children:(0,F.jsx)(`div`,{className:Xc.previewShell,style:fi(i.types[0]??`unknown`),children:(0,F.jsx)(gi,{alias:i.alias,nodeType:i.types[0]??`unknown`,properties:i.properties})})})]}),(0,F.jsx)(`div`,{className:Xc.metaBlock,children:(0,F.jsxs)(`div`,{className:Xc.timestamp,children:[`Clipped `,Yc(a),` from `,o]})})]})}var Qc={menu:`_menu_164vh_1`,menuItem:`_menuItem_164vh_12`},$c=16;function el(e,t,n){let r=$c,i=Math.max($c,n-t-$c);return Math.min(Math.max(e,r),i)}function tl({open:e,x:t,y:n,canPasteToInput:r,onPasteToInput:i,onInspect:a,onClose:o}){let s=(0,A.useRef)(null),c=(0,A.useRef)(null),l=(0,A.useRef)(null),[u,d]=(0,A.useState)({left:t,top:n});return(0,A.useLayoutEffect)(()=>{if(!e||!s.current)return;let r=s.current.getBoundingClientRect();d({left:el(t,r.width,window.innerWidth),top:el(n,r.height,window.innerHeight)})},[e,t,n]),(0,A.useEffect)(()=>{if(!e)return;r?c.current?.focus():l.current?.focus();let t=e=>{s.current&&!s.current.contains(e.target)&&o()},n=e=>{e.key===`Escape`&&(e.preventDefault(),o())},i=()=>o();return document.addEventListener(`pointerdown`,t),document.addEventListener(`keydown`,n),window.addEventListener(`scroll`,i,!0),window.addEventListener(`resize`,i),()=>{document.removeEventListener(`pointerdown`,t),document.removeEventListener(`keydown`,n),window.removeEventListener(`scroll`,i,!0),window.removeEventListener(`resize`,i)}},[e,r,o]),e?(0,F.jsxs)(`div`,{ref:s,className:Qc.menu,style:{left:u.left,top:u.top},role:`menu`,"aria-label":`Clipboard item actions`,children:[(0,F.jsx)(`button`,{ref:c,role:`menuitem`,type:`button`,className:Qc.menuItem,disabled:!r,onClick:()=>{r&&i()},children:`Paste to Input`}),(0,F.jsx)(`button`,{ref:l,role:`menuitem`,type:`button`,className:Qc.menuItem,onClick:a,children:`Inspect`})]}):null}var G={sidebar:`_sidebar_1jo34_2`,header:`_header_1jo34_12`,headerTitle:`_headerTitle_1jo34_25`,clearBtn:`_clearBtn_1jo34_32`,sortBar:`_sortBar_1jo34_48`,sortMenuWrapper:`_sortMenuWrapper_1jo34_63`,sortMenuButton:`_sortMenuButton_1jo34_68`,sortButtonLabel:`_sortButtonLabel_1jo34_93`,sortButtonValue:`_sortButtonValue_1jo34_98`,sortButtonDirection:`_sortButtonDirection_1jo34_106`,sortButtonCaret:`_sortButtonCaret_1jo34_114`,sortButtonCaretOpen:`_sortButtonCaretOpen_1jo34_121`,sortPopover:`_sortPopover_1jo34_125`,sortGroup:`_sortGroup_1jo34_139`,propertySortRow:`_propertySortRow_1jo34_150`,sortGroupTitle:`_sortGroupTitle_1jo34_154`,sortOption:`_sortOption_1jo34_164`,propertyLabel:`_propertyLabel_1jo34_197`,propertyInput:`_propertyInput_1jo34_205`,itemList:`_itemList_1jo34_223`,loading:`_loading_1jo34_233`,emptyState:`_emptyState_1jo34_243`,emptyIcon:`_emptyIcon_1jo34_256`,emptyTitle:`_emptyTitle_1jo34_261`,emptyHint:`_emptyHint_1jo34_265`,inspectPanel:`_inspectPanel_1jo34_271`,inspectHeader:`_inspectHeader_1jo34_279`,inspectClose:`_inspectClose_1jo34_293`,inspectBody:`_inspectBody_1jo34_307`,dialog:`_dialog_1jo34_313`,dialogTitle:`_dialogTitle_1jo34_328`,dialogBody:`_dialogBody_1jo34_335`,dialogActions:`_dialogActions_1jo34_342`,cancelBtn:`_cancelBtn_1jo34_349`,replaceBtn:`_replaceBtn_1jo34_363`};function nl(){return(0,F.jsxs)(`div`,{className:G.emptyState,children:[(0,F.jsx)(`span`,{className:G.emptyIcon,children:`📋`}),(0,F.jsx)(`span`,{className:G.emptyTitle,children:`No items clipped yet.`}),(0,F.jsx)(`span`,{className:G.emptyHint,children:`Right-click a node in the Graph view to get started.`})]})}var rl=[{value:`recent`,label:`Recent`},{value:`type`,label:`Type`},{value:`alias`,label:`Alias`},{value:`source`,label:`Source`},{value:`connections`,label:`Connections`},{value:`property`,label:`Property`}],il=[{value:`ascending`,label:`Ascending`},{value:`descending`,label:`Descending`}],al=rl.reduce((e,t)=>({...e,[t.value]:t.label}),{});function ol({connected:e,onPasteToInput:t}){let n=(0,A.useId)(),i=(0,A.useId)(),a=(0,A.useRef)(null),s=zc(),[c,l]=(0,A.useState)(null),[u,d]=(0,A.useState)(null),[f,p]=(0,A.useState)(`recent`),[m,h]=(0,A.useState)(Wc(`recent`)),[g,_]=(0,A.useState)(``),[v,y]=(0,A.useState)(!1),b=(e,t,n)=>{d({itemId:e,x:t,y:n})},x=()=>{d(null)},S=e=>{x(),t(e)},C=e=>{x(),l(t=>t?.id===e.id?null:e)},w=e=>{x(),l(t=>t?.id===e?null:t),s.removeItem(e)},ee=()=>{x(),l(null),s.clearAll()},te=e=>{p(e),h(Wc(e))};(0,A.useEffect)(()=>{let e=new Set(s.items.map(e=>e.id));u&&!e.has(u.itemId)&&d(null),c&&!e.has(c.id)&&l(null)},[s.items,u,c]),(0,A.useEffect)(()=>{if(!v)return;let e=e=>{a.current?.contains(e.target)||y(!1)},t=e=>{e.key===`Escape`&&y(!1)};return document.addEventListener(`pointerdown`,e),document.addEventListener(`keydown`,t),()=>{document.removeEventListener(`pointerdown`,e),document.removeEventListener(`keydown`,t)}},[v]);let T=(0,A.useMemo)(()=>u?s.items.find(e=>e.id===u.itemId)??null:null,[u,s.items]),E=(0,A.useMemo)(()=>Jc(s.items,{field:f,direction:m,propertyKey:g}),[s.items,m,f,g]);return(0,F.jsxs)(`div`,{className:G.sidebar,children:[(0,F.jsxs)(`div`,{className:G.header,children:[(0,F.jsx)(`span`,{className:G.headerTitle,children:`Workspace`}),s.items.length>0&&(0,F.jsx)(`button`,{className:G.clearBtn,onClick:ee,"aria-label":`Clear all workspace items`,children:`Clear`})]}),s.items.length>0&&(0,F.jsx)(`div`,{className:G.sortBar,children:(0,F.jsxs)(`div`,{className:G.sortMenuWrapper,ref:a,children:[(0,F.jsxs)(`button`,{type:`button`,className:G.sortMenuButton,onClick:()=>y(e=>!e),"aria-expanded":v,"aria-controls":n,children:[(0,F.jsx)(`span`,{className:G.sortButtonLabel,children:`Sort`}),(0,F.jsx)(`span`,{className:G.sortButtonValue,children:al[f]}),(0,F.jsx)(`span`,{className:G.sortButtonDirection,children:m===`ascending`?`Asc`:`Desc`}),(0,F.jsx)(`span`,{className:`${G.sortButtonCaret}${v?` ${G.sortButtonCaretOpen}`:``}`,"aria-hidden":`true`,children:`▾`})]}),v&&(0,F.jsxs)(`div`,{id:n,className:G.sortPopover,children:[(0,F.jsxs)(`div`,{className:G.sortGroup,role:`group`,"aria-labelledby":`${n}-field-title`,children:[(0,F.jsx)(`div`,{id:`${n}-field-title`,className:G.sortGroupTitle,children:`Sort By`}),rl.map(e=>(0,F.jsxs)(`label`,{className:G.sortOption,children:[(0,F.jsx)(`input`,{type:`radio`,name:`${n}-field`,value:e.value,checked:f===e.value,onChange:()=>te(e.value)}),(0,F.jsx)(`span`,{children:e.label})]},e.value))]}),f===`property`&&(0,F.jsxs)(`div`,{className:G.propertySortRow,children:[(0,F.jsx)(`label`,{className:G.propertyLabel,htmlFor:i,children:`Property Key`}),(0,F.jsx)(`input`,{id:i,className:G.propertyInput,value:g,onChange:e=>_(e.target.value),placeholder:`skill`,"aria-label":`Property key to sort by`})]}),(0,F.jsxs)(`div`,{className:G.sortGroup,role:`group`,"aria-labelledby":`${n}-direction-title`,children:[(0,F.jsx)(`div`,{id:`${n}-direction-title`,className:G.sortGroupTitle,children:`Sort Direction`}),il.map(e=>(0,F.jsxs)(`label`,{className:G.sortOption,children:[(0,F.jsx)(`input`,{type:`radio`,name:`${n}-direction`,value:e.value,checked:m===e.value,onChange:()=>h(e.value)}),(0,F.jsx)(`span`,{children:e.label})]},e.value))]})]})]})}),(0,F.jsx)(`div`,{className:G.itemList,children:s.isLoading?(0,F.jsx)(`div`,{className:G.loading,children:`Loading…`}):s.items.length===0?(0,F.jsx)(nl,{}):E.map(e=>(0,F.jsx)(Zc,{item:e,onRemove:w,onOpenMenu:b,onCloseMenu:x},e.id))}),c&&(0,F.jsxs)(`div`,{className:G.inspectPanel,children:[(0,F.jsxs)(`div`,{className:G.inspectHeader,children:[(0,F.jsxs)(`span`,{children:[`Inspect node `,c.node.alias]}),(0,F.jsx)(`button`,{className:G.inspectClose,onClick:()=>l(null),"aria-label":`Close inspect panel`,children:`✕`})]}),(0,F.jsx)(`div`,{className:G.inspectBody,children:(0,F.jsx)(o,{data:{node:c.node,connections:c.connections},style:r})})]}),u&&T&&(0,F.jsx)(tl,{open:!0,x:u.x,y:u.y,canPasteToInput:e,onPasteToInput:()=>S(T),onInspect:()=>C(T),onClose:x})]})}function sl(e){let{wheelTargetRef:t,scrollRef:n,contentWrapperRef:r,currentIndex:i,totalPages:a,onNavigatePrev:o,onNavigateNext:s}=e,c=(0,A.useRef)(0),l=(0,A.useRef)(null),u=(0,A.useRef)(!1),d=(0,A.useRef)(null),f=(0,A.useRef)(o),p=(0,A.useRef)(s),m=(0,A.useRef)(i),h=(0,A.useRef)(a);(0,A.useEffect)(()=>{f.current=o}),(0,A.useEffect)(()=>{p.current=s}),(0,A.useEffect)(()=>{m.current=i}),(0,A.useEffect)(()=>{h.current=a}),(0,A.useEffect)(()=>{d.current!==null&&(clearTimeout(d.current),d.current=null),r.current&&(r.current.style.transition=`none`,r.current.style.transform=`translateY(0)`),c.current=0,l.current=null},[i]),(0,A.useEffect)(()=>{let e=t.current;if(!e)return;function i(){c.current=0,l.current=null,r.current&&(r.current.style.transition=`transform 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94)`,r.current.style.transform=`translateY(0)`)}function a(e){if(e.deltaY===0)return;let t=n.current;if(!t)return;let a=t.scrollTop<=0,o=t.scrollTop+t.clientHeight>=t.scrollHeight-1,s=e.deltaY<0,g=e.deltaY>0,_=a&&s,v=o&&g;if(!_&&!v){i();return}if(u.current)return;let y=m.current,b=h.current;if(_&&y===0||v&&y===b-1)return;let x=_?`prev`:`next`;if(l.current!==null&&l.current!==x&&i(),l.current=x,c.current+=Math.abs(e.deltaY),r.current){let e=x===`prev`?-1:1,t=c.current*(18/120),n=Math.min(t,18)*e;r.current.style.transition=`none`,r.current.style.transform=`translateY(${n}px)`}if(d.current!==null&&clearTimeout(d.current),d.current=setTimeout(i,180),c.current>=120){d.current!==null&&clearTimeout(d.current);let e=l.current;i(),u.current=!0,e===`prev`?f.current():p.current(),setTimeout(()=>{u.current=!1},650)}}return e.addEventListener(`wheel`,a,{passive:!0}),()=>{d.current!==null&&clearTimeout(d.current),e.removeEventListener(`wheel`,a)}},[])}var K={helpRoot:`_helpRoot_18tja_2`,categoryNav:`_categoryNav_18tja_11`,categoryTabScroller:`_categoryTabScroller_18tja_21`,categoryTab:`_categoryTab_18tja_21`,categoryTabActive:`_categoryTabActive_18tja_71`,maximizeButton:`_maximizeButton_18tja_78`,closeButton:`_closeButton_18tja_100`,helpBody:`_helpBody_18tja_122`,emptyFallback:`_emptyFallback_18tja_130`,helpContent:`_helpContent_18tja_147`,topicLink:`_topicLink_18tja_226`,helpBodyContent:`_helpBodyContent_18tja_271`,chipStrip:`_chipStrip_18tja_276`,chipStripLabel:`_chipStripLabel_18tja_294`,topicChip:`_topicChip_18tja_310`,topicChipActive:`_topicChipActive_18tja_338`};function cl(e){return typeof e==`string`?e:typeof e==`number`?String(e):Array.isArray(e)?e.map(cl).join(``):A.isValidElement(e)?cl(e.props.children):``}function ll(e){if(!e.trim().toLowerCase().startsWith(`help `))return null;let t=e.trim().slice(5).replace(/\s*\(.*\)\s*$/,``).trim().toLowerCase();return t.length>0?t:null}function ul({activeTopic:e,onNavigate:t,onClose:n,onToggleMaximize:r,isMaximized:i,contentProfile:a=`minigraph`}){let o=(0,A.useRef)(null),s=(0,A.useRef)(null),c=(0,A.useRef)(null),l=(0,A.useRef)(null);(0,A.useEffect)(()=>{o.current&&(o.current.scrollTop=0)},[e]),(0,A.useEffect)(()=>{let e=l.current;if(!e)return;let t=e.querySelector(`[aria-current="step"]`);t&&t.scrollIntoView({block:`nearest`,inline:`nearest`,behavior:`smooth`})},[e]);let u=(0,A.useMemo)(()=>$t(a),[a]),d=(0,A.useMemo)(()=>an(a),[a]),f=tn(e,a),p=(0,A.useMemo)(()=>nn(f,a),[f,a]),m=p.length,h=(0,A.useMemo)(()=>u.find(e=>e.id===f)?.chipStripLabel??null,[f,u]),g=d.indexOf(e),_=g<0?0:g,v=d.length;sl({wheelTargetRef:s,scrollRef:o,contentWrapperRef:c,currentIndex:_,totalPages:v,onNavigatePrev:()=>t(d[_-1]??``),onNavigateNext:()=>t(d[_+1]??d[d.length-1])});let y=Yt(e,a);return(0,F.jsxs)(`div`,{className:K.helpRoot,role:`region`,"aria-label":`Help browser`,ref:s,children:[(0,F.jsxs)(`nav`,{className:K.categoryNav,"aria-label":`Help categories`,children:[(0,F.jsx)(`div`,{className:K.categoryTabScroller,children:u.map(e=>(0,F.jsx)(`button`,{className:[K.categoryTab,e.id===f?K.categoryTabActive:``].join(` `).trim(),"aria-current":e.id===f?`true`:void 0,onClick:()=>{t(nn(e.id,a)[0]??``)},children:e.label},e.id))}),r&&(0,F.jsx)(`button`,{className:K.maximizeButton,onClick:r,"aria-label":i?`Restore help panel`:`Maximize help panel`,children:i?`⊞`:`⛶`}),n&&(0,F.jsx)(`button`,{className:K.closeButton,onClick:n,"aria-label":`Close help panel`,children:`×`})]}),m>1&&(0,F.jsxs)(`div`,{className:K.chipStrip,ref:l,children:[h!==null&&(0,F.jsx)(`span`,{className:K.chipStripLabel,children:h}),p.map(n=>{let r=n===e,i=rn(n,f);return(0,F.jsx)(`button`,{className:[K.topicChip,r?K.topicChipActive:``].join(` `).trim(),"aria-current":r?`step`:void 0,onClick:()=>t(n),children:i},n)})]}),(0,F.jsx)(`div`,{className:K.helpBody,ref:o,children:(0,F.jsx)(`div`,{className:K.helpBodyContent,ref:c,children:y===null?(0,F.jsxs)(`div`,{className:K.emptyFallback,children:[(0,F.jsxs)(`code`,{children:[`help `,e||``]}),`\xA0 not found in the local bundle.`]}):(0,F.jsx)(`div`,{className:K.helpContent,children:(0,F.jsx)(E,{remarkPlugins:[D],components:e===``?{li:({children:e,...n})=>{let r=ll(cl(e).trim());return r!==null&&Yt(r,a)!==null?(0,F.jsx)(`li`,{...n,children:(0,F.jsx)(`button`,{className:K.topicLink,"aria-label":`Open help topic: ${r}`,onClick:()=>t(r),children:e})}):(0,F.jsx)(`li`,{...n,children:e})}}:void 0,children:y})})})})]})}function dl({existingItem:e,pendingItem:t,onReplace:n,onCancel:r}){let i=(0,A.useRef)(null);return(0,A.useEffect)(()=>{let e=i.current;e&&!e.open&&e.showModal()},[]),(0,F.jsxs)(`dialog`,{ref:i,className:G.dialog,onClose:r,"aria-labelledby":`duplicate-dialog-title`,children:[(0,F.jsx)(`h2`,{id:`duplicate-dialog-title`,className:G.dialogTitle,children:`Duplicate Node`}),(0,F.jsxs)(`p`,{className:G.dialogBody,children:[`A clipboard item with alias `,(0,F.jsxs)(`strong`,{children:[`"`,t.node.alias,`"`]}),` already exists (clipped `,Yc(e.clippedAt),`).`]}),(0,F.jsx)(`p`,{className:G.dialogBody,children:`Replace it with the new snapshot?`}),(0,F.jsxs)(`div`,{className:G.dialogActions,children:[(0,F.jsx)(`button`,{className:G.cancelBtn,onClick:r,children:`Cancel`}),(0,F.jsx)(`button`,{className:G.replaceBtn,onClick:n,children:`Replace`})]})]})}var fl=class{constructor(){this.listeners=new Map}on(e,t){let n=e;return this.listeners.has(n)||this.listeners.set(n,new Set),this.listeners.get(n).add(t),()=>{this.listeners.get(n)?.delete(t)}}emit(e){let t=this.listeners.get(e.kind);t&&t.forEach(t=>{try{t(e)}catch(t){console.error(`[ProtocolBus] listener for '${e.kind}' threw:`,t)}})}clear(){this.listeners.clear()}},pl=`(ws-\\d+-\\d+)`,ml=RegExp(`^session ${pl} started(?:\\nCompanion endpoint: (\\/api\\/companion\\/${pl}))?$`,`i`),hl=RegExp(`^Session ${pl} started since (.+)$`),gl=RegExp(`^subscribed to ${pl}$`),_l=/^subscribed by \[(.*)]$/,vl=RegExp(`^Subscribed to ${pl}$`),yl=RegExp(`^Session unsubscribed from ${pl}$`),bl=RegExp(`^Session ${pl} not found$`),xl=RegExp(`^${pl} is not a primary session$`),Sl=RegExp(`^You have already subscribed to ${pl}(?:\\nPlease do 'session reset' before subscribing to another session)?$`),Cl=RegExp(`^${pl} subscribed to your session$`),wl=RegExp(`^${pl} unsubscribed from your session$`),Tl=RegExp(`^Session ${pl} has closed$`);function El(e){let t=e.trim();return t.length===0||t.startsWith(`> `)?null:t}function Dl(e){return e.split(`,`).map(e=>e.trim()).filter(e=>e.length>0&&Us(e))}function Ol(e){let t=El(e);if(!t)return null;let n=t.match(ml);return n?{sessionId:n[1],companionEndpoint:n[2]??null}:null}function kl(e){let t=El(e);if(!t)return null;let n=t.split(`
 `).map(e=>e.trim()).filter(Boolean),r=n[0];if(!r)return null;let i=r.match(hl);if(!i)return null;let a=null,o=[];for(let e of n.slice(1)){let t=e.match(gl);if(t){a=t[1];continue}let n=e.match(_l);n&&(o=Dl(n[1]))}return{sessionId:i[1],startedSince:i[2],subscribedTo:a,subscribers:o}}function Al(e){let t=El(e);if(!t)return null;let n=t.match(vl);if(n)return{command:`subscribe`,status:`accepted`,sessionId:n[1],message:t};let r=t.match(yl);if(r)return{command:`unsubscribe`,status:`accepted`,sessionId:r[1],message:t};let i=t.match(bl);if(i)return{command:`subscribe`,status:`rejected`,sessionId:i[1],message:t};let a=t.match(xl);if(a)return{command:`subscribe`,status:`rejected`,sessionId:a[1],message:t};let o=t.match(Sl);return o?{command:`subscribe`,status:`rejected`,sessionId:o[1],message:t}:t===`You cannot subscribe to yourself`?{command:`subscribe`,status:`rejected`,sessionId:null,message:t}:t===`Nothing to unsubscribe`?{command:`unsubscribe`,status:`rejected`,sessionId:null,message:t}:t===`Invalid session command`?{command:`unknown`,status:`rejected`,sessionId:null,message:t}:null}function jl(e){let t=El(e);if(!t)return null;let n=t.match(Cl);if(n)return{type:`subscriber-joined`,sessionId:n[1],message:t};let r=t.match(wl);if(r)return{type:`subscriber-left`,sessionId:r[1],message:t};let i=t.match(Tl);return i?{type:`host-closed`,sessionId:i[1],message:t}:null}var Ml=new Set([`info`,`error`,`ping`,`welcome`]);function Nl(e,t){let n=[],r={msgId:e,raw:t},i=!1,a=!1,o=!1,s=!1,c=!1,l=!1,u=Ce(t);if(u.isJSON){let e=u.data;if(typeof e.type==`string`){let i=e.type;return n.push({...r,kind:`lifecycle`,type:i,knownType:Ml.has(i),message:typeof e.message==`string`?e.message:t,time:e.time??null}),n.length>0?n:[{...r,kind:`unclassified`}]}return n.push({...r,kind:`json.response`,data:u.data}),n.length>0?n:[{...r,kind:`unclassified`}]}let d=Ae(t);d&&(c=!0,n.push({...r,kind:`payload.large`,apiPath:d.apiPath,byteSize:d.byteSize,filename:d.filename}));let f=je(t);f&&(o=!0,n.push({...r,kind:`upload.invitation`,uploadPath:f}));let p=ke(t);if(p&&(s=!0,n.push({...r,kind:`upload.contentPath`,uploadPath:p})),Oe(t)){a=!0;let e=De(t);e&&n.push({...r,kind:`graph.link`,apiPath:e})}if(a){let e=we(t);e&&n.push({...r,kind:`graph.exported`,graphName:e.graphName,apiPath:e.apiPath})}let m=We(t);m&&n.push({...r,kind:`graph.mutation`,mutationType:m});let h=An(t);h&&n.push({...r,kind:`graph.instance.created`,mockEntries:h.mockEntries,ttlMs:h.ttlMs}),jn(t)&&n.push({...r,kind:`graph.instance.cleared`});let g=Mn(t);g&&n.push({...r,kind:`graph.run.terminal`,status:g.status,elapsedMs:g.elapsedMs});let _=Nn(t);_&&n.push({...r,kind:`command.error`,message:_});let v=Ue(t);v&&n.push({...r,kind:`minigraph.nodeAction.textResult`,status:v.status,action:v.action,alias:v.alias,targetAlias:v.targetAlias,message:v.message}),v&&(v.action===`create-node`||v.status===`error`)&&n.push({...r,kind:`minigraph.createNode.textResult`,status:v.status,alias:v.alias,message:v.message}),t===`Session restarted`&&(l=!0,n.push({...r,kind:`session.reset`}));let y=Ol(t);y&&(l=!0,n.push({...r,kind:`minigraph.session.started`,sessionId:y.sessionId,companionEndpoint:y.companionEndpoint}));let b=kl(t);b&&(l=!0,n.push({...r,kind:`minigraph.session.status`,sessionId:b.sessionId,startedSince:b.startedSince,subscribedTo:b.subscribedTo,subscribers:b.subscribers}));let x=Al(t);x&&(l=!0,n.push({...r,kind:`minigraph.session.commandResult`,command:x.command,status:x.status,sessionId:x.sessionId,message:x.message}));let S=jl(t);S&&(l=!0,n.push({...r,kind:`minigraph.session.notification`,type:S.type,sessionId:S.sessionId,message:S.message})),t.startsWith(`> `)&&(i=!0,n.push({...r,kind:`command.echo`,commandText:t.slice(2)})),Me(t)&&n.push({...r,kind:`command.helpOrDescribe`,commandText:t.slice(2)});let C=Ne(t);C&&n.push({...r,kind:`command.importGraph`,graphName:C});let w=Te(t);return w&&n.push({...r,kind:`graph.export.failed`,reason:w.reason}),!i&&!a&&!o&&!s&&!c&&!l&&Ee(t)&&n.push({...r,kind:`docs.response`,isMarkdown:!0}),n.length===0&&n.push({...r,kind:`unclassified`}),n}function Pl({messages:e,bus:t}){let n=(0,A.useRef)(-1);(0,A.useEffect)(()=>{e.length>0&&(n.current=e[e.length-1].id)},[]);let r=(0,A.useMemo)(()=>{let t=new Map;for(let n of e)t.set(n.id,Nl(n.id,n.raw));return t},[e]);return(0,A.useEffect)(()=>{if(e.length===0)return;let i=e.filter(e=>e.id>n.current);if(i.length!==0){n.current=e[e.length-1].id;for(let e of i){let n=r.get(e.id);if(n)for(let e of n)t.emit(e)}}},[e,t,r]),{classificationMap:r}}var Fl={console:100/3,"node-edit":30,upload:30},Il=20;function Ll(e){return`${e}%`}function q({config:e}){let{title:t,wsPath:n,storageKeyPayload:r,storageKeyHistory:i,storageKeyTab:a,storageKeySavedGraphs:o,supportsUpload:s,supportsClipboard:c,supportsHelp:l,helpContentProfile:u=`minigraph`,supportsAuthoring:d,supportsGraphRun:f,supportsSessionCollaboration:p,tabs:m}=e,h=ee(),[g,_]=fe(r,``),v=be(),[y,b]=(0,A.useState)(()=>v.peekPendingPayload(n)),{takePendingPayload:x}=v;(0,A.useEffect)(()=>{let e=x(n);e!==null&&b(e)},[x,n]);let S=y??g,C=(0,A.useCallback)(e=>{b(null),_(e)},[_]),w=(0,A.useMemo)(()=>S?N(S):{valid:!0,error:null,type:null},[S]),{toasts:te,addToast:T,removeToast:E}=de(),ne=(0,A.useRef)(new fl).current,D=qe({wsPath:n,storageKeyHistory:i,payload:S,addToast:T,bus:ne,handleLocalCommand:(0,A.useCallback)(e=>on(e,l===!0,u)!==null,[l,u])}),{classificationMap:oe}=Pl({messages:D.messages,bus:ne}),se=Ks({enabled:p===!0,bus:ne,classificationMap:oe,connected:D.connected,sendRawText:D.sendRawText,addToast:T}),O=se.state.sessionId===null?null:`/api/graph/session/${se.state.sessionId}`,{graphData:k,setGraphData:ce,rightTab:le,setRightTab:M,isRefreshing:pe,refetchGraph:me}=Qe(O,T,m[0],m,a),{uploadPanelPath:P,successfulUploadPaths:he,handleOpenUploadPanel:ge,handleCloseUploadPanel:_e,handleCloseUploadPath:ve,handleUploadSuccess:ye,handleUploadError:xe,resetSuccessfulPaths:Se}=un({bus:ne,addToast:T}),Ce=(0,A.useCallback)(()=>ce(null),[ce]);$e({bus:ne,hasGraph:k!==null,connected:D.connected,refetchGraph:me,clearGraph:Ce,addToast:T});let we=Fr({bus:ne,connected:D.connected,sendRawText:D.sendRawText,addToast:T}),Te=(0,A.useRef)(null),Ee=(0,A.useRef)(null),De=(0,A.useRef)(new Map),Oe=(0,A.useCallback)((e,t)=>{if(t===null){T(e,`success`);return}T(e,`success`,{durationMs:6e3,action:{label:`Undo`,onClick:()=>we.undoEntry(t)}})},[T,we.undoEntry]),ke=(0,A.useCallback)(e=>{if(e.action===`edit-node`){let t=Te.current;Te.current=null,t&&t.alias===e.alias&&Oe(`Updated node ${t.alias}`,we.push(Ar(t)));return}if(e.action===`create-node`&&e.alias){Oe(`Created node ${e.alias}`,we.push(jr(e.alias)));return}if(e.action===`create-connection`){let t=Ee.current;Ee.current=null,Oe(`Connected ${e.alias??``} → ${e.targetAlias??``}`,we.push(t));return}if(e.action===`delete-node`&&e.alias){let t=De.current.get(e.alias)??null;De.current.delete(e.alias),Oe(`Deleted node ${e.alias}`,we.push(t))}},[we.push,Oe]),Ae=(0,A.useRef)(!1);(0,A.useEffect)(()=>{Ae.current&&!D.connected&&ce(null),Ae.current=D.connected},[D.connected,ce]);let[je,Me]=fe(e.storageKeyHelpTopic??`help-topic-fallback`,``),[Ne,Pe]=fe(`help-panel-open`,!1),[Fe,Ie]=(0,A.useState)(()=>!!l&&!Ne),[Le,Re]=(0,A.useState)(!1),ze=(0,A.useRef)(null),Be=(0,A.useCallback)(()=>{Fe&&(Re(!0),ze.current=setTimeout(()=>Ie(!1),400))},[Fe]);(0,A.useEffect)(()=>{if(!Fe||Le)return;let e=setTimeout(Be,3e3);return()=>clearTimeout(e)},[Fe,Le,Be]),(0,A.useEffect)(()=>{Ne&&Fe&&Be()},[Ne,Fe,Be]),(0,A.useEffect)(()=>()=>{ze.current&&clearTimeout(ze.current)},[]),(0,A.useEffect)(()=>{if(!l)return;let e=e=>{e.ctrlKey&&e.key==="`"&&(e.preventDefault(),Pe(e=>!e))};return window.addEventListener(`keydown`,e),()=>window.removeEventListener(`keydown`,e)},[l,Pe]),sn({bus:ne,setHelpTopic:Me,onTabSwitch:l?()=>Pe(!0):()=>{},enabled:l===!0,contentProfile:u}),dn({bus:ne,connected:D.connected,appendMessage:D.appendMessage,addToast:T});let[Ve,He]=fe(`console-panel-open`,!0),Ue=zc(),[We,Ge]=fe(`clipboard-sidebar-open`,!1),[Ke,Ye]=(0,A.useState)(null),Xe=(0,A.useCallback)(e=>{let t=Un(e,k);D.setCommand(t.command),T(`${t.verb===`create`?`Create`:`Update`} command for "${e.node.alias}" pasted to input`,`info`)},[k,D.setCommand,T]),Ze=(0,A.useCallback)(e=>{let t=Ue.items.find(t=>t.id===e);if(!t){T(`Clipboard item is no longer available. It may have been removed in another tab.`,`error`);return}let n=Un(t,k);if(!D.sendRawText(n.command)){T(`Could not send clipboard paste command because the WebSocket is not open.`,`error`);return}T(`Clipboard node "${t.node.alias}" sent as ${n.verb}. Waiting for backend response.`,`info`)},[Ue.items,k,D.sendRawText,T]),et=(0,A.useCallback)(async(t,r)=>{try{let i=await Ue.clipNode(t,r,{sourceWsPath:n,sourceLabel:e.label});switch(i.status){case`added`:T(`Node "${t.alias}" clipped to workspace`,`success`);break;case`duplicate`:Ye({pendingItem:i.pendingItem,existingItem:i.existingItem});break;case`error`:T(`Clip failed: ${i.message}`,`error`);break}}catch(e){T(`Clip failed: ${e instanceof Error?e.message:String(e)}`,`error`)}},[Ue,n,e.label,T]),tt=(0,A.useCallback)(async t=>{if(t.length===0){T(`No selected nodes are available to clip.`,`info`);return}if(t.length>100){T(`Select 100 or fewer nodes to clip at once.`,`error`);return}let r={added:0,duplicates:0,failed:0};for(let i of t){if(!i.node?.alias?.trim()){r.failed+=1;continue}try{let t=await Ue.clipNode(i.node,i.connections,{sourceWsPath:n,sourceLabel:e.label});t.status===`added`&&(r.added+=1),t.status===`duplicate`&&(r.duplicates+=1),t.status===`error`&&(r.failed+=1)}catch{r.failed+=1}}let i=Gn(r);T(i.message,i.type)},[T,Ue,e.label,n]),nt=fn(o??``),{defaultName:rt,savedName:it,resetName:at}=vn(o?`${o}-untitled-counter`:`untitled-counter`,ne,D.connected,D.connectionEpoch),ot=(0,A.useMemo)(()=>{let e=k?.nodes.find(e=>e.types.includes(`Root`)),t=typeof e?.properties?.name==`string`?e.properties.name:void 0;return t?.trim()?t:null},[k])??rt,st=(0,A.useMemo)(()=>Kn(D.sendRawText),[D.sendRawText]),ct=Vs({bus:ne,connected:D.connected,graphData:k,executor:st,onAccepted:ke,onUserMessage:T}),lt=ct.state,I=d&&lt.status===`open`&&(lt.action===`edit-node`||lt.action===`create-node`)?lt:null,ut=d&&lt.status===`open`&&lt.action===`create-connection`?lt:null,[dt,ft]=(0,A.useState)(null),pt=I!==null||ut!==null;(0,A.useEffect)(()=>{let e=e=>{if(e.key!==`z`&&e.key!==`Z`||!(e.metaKey||e.ctrlKey)||e.shiftKey||e.altKey)return;let t=e.target;t instanceof Element&&t.closest(`input, textarea, select, [contenteditable="true"]`)||pt||we.hasEntries()&&(e.preventDefault(),we.undoLast())};return window.addEventListener(`keydown`,e),()=>window.removeEventListener(`keydown`,e)},[pt,we.hasEntries,we.undoLast]);let mt=(0,A.useCallback)((e,t,n)=>{ft(n??null),Ee.current=k?Mr(k,e,t):null,ct.openCreateConnection(e,t)},[ct.openCreateConnection,k]),ht=(0,A.useCallback)(e=>{if(!k)return;let t=mr(k,e);t&&(we.runCommands(t.commands),Oe(`Deleted ${hr(t.removed)}`,we.push(kr(t.removed))))},[k,we.push,we.runCommands,Oe]),gt=(0,A.useCallback)(e=>{Te.current=e,ct.openEditNode(e)},[ct.openEditNode]),_t=(0,A.useCallback)(e=>{De.current.set(e.alias,k?Nr(k,e):null),ct.deleteNode(e)},[ct.deleteNode,k]),vt=D.consoleRef,yt=Ve&&I===null&&P===null;(0,A.useEffect)(()=>{yt&&vt.current&&(vt.current.scrollTop=vt.current.scrollHeight)},[yt,vt]);let bt=Rn({enabled:f===!0,bus:ne,connected:D.connected,connectionEpoch:D.connectionEpoch,graphData:k,graphIdentity:O,isPrimary:se.isPrimary,sendRawText:D.sendRawText,addToast:T,onWorkflowInputInvalidated:ve}),{handleSaveGraph:xt,handleLoadGraph:St}=Bn({bus:ne,connected:D.connected,sendRawText:D.sendRawText,saveGraph:o?nt.saveGraph:null,addToast:T}),Ct=(0,A.useCallback)(e=>{oe.get(e.id)?.find(e=>e.kind===`graph.link`)&&(me(),M(`graph`))},[oe,me,M]),{handleSendToJsonPath:wt}=cn({ctx:v,navigate:h,addToast:T,wsPath:n}),Tt=Je(`(max-width: 768px)`),Et=I===null?P===null?Ve?`console`:null:`upload`:`node-edit`,Dt=(0,A.useRef)(null),Ot=(0,A.useRef)(Et);(0,A.useEffect)(()=>{let e=Ot.current;if(Ot.current=Et,Et===null||Et===e)return;let t=requestAnimationFrame(()=>{Dt.current?.resize(Ll(Fl[Et]))});return()=>cancelAnimationFrame(t)},[Et]);let kt=!!c&&We,At=Ll(100-(Et===null?0:Fl[Et])-(kt?Il:0)),jt=(0,A.useCallback)(()=>C(ue(S)),[S]),Mt=(0,A.useCallback)(()=>{D.clearMessages(),ce(null),Se(),at()},[D.clearMessages,ce,Se,at]),Nt=(0,A.useCallback)((e,t)=>{ye(e),bt.handleInputUploadSuccess(t)},[bt.handleInputUploadSuccess,ye]),Pt=(0,A.useCallback)(e=>{_e(),bt.handleInputCancelled(e)},[bt.handleInputCancelled,_e]),Ft=P!==null&&bt.isWorkflowInputPanel&&bt.workflowUploadPath===P;return(0,F.jsxs)(`div`,{className:j.wrapper,children:[(0,F.jsx)(Vr,{toasts:te,onRemove:E}),ut!==null&&(0,F.jsx)(ds,{formState:ut.formState,phase:ut.phase,lockReason:ut.phase===`sending`?`sending`:ut.connectionLost?`disconnected`:null,serverMessage:ut.serverMessage,validationErrors:ct.validationErrors,anchor:dt,onFormStateChange:ct.updateFormState,onSubmit:ct.submit,onClose:ct.close}),(0,F.jsxs)(`header`,{className:j.header,children:[(0,F.jsx)(`h1`,{className:j.title,children:t}),(0,F.jsxs)(`div`,{className:j.headerActions,children:[o&&(0,F.jsx)(ti,{disabled:!k,defaultName:rt,savedName:it,onSave:xt,nameExists:nt.hasGraph,connected:D.connected}),o&&nt.savedGraphs.length>0&&(0,F.jsx)(ri,{savedGraphs:nt.savedGraphs,onLoad:St,onDelete:nt.deleteGraph,connected:D.connected}),(0,F.jsx)(`button`,{className:j.panelToggle,onClick:()=>{if(I!==null){I.phase!==`sending`&&(ct.close(),He(!0));return}if(P!==null){Pt(P),He(!0);return}He(e=>!e)},"aria-label":I===null?P===null?Ve?`Hide console panel`:`Show console panel`:`Show console panel and close the upload form`:`Show console panel and close the node editor`,"aria-pressed":yt,title:I===null?P===null?void 0:`Closes the upload form`:`Closes the node editor`,children:`Console`}),c&&(0,F.jsxs)(`button`,{className:j.panelToggle,onClick:()=>Ge(e=>!e),"aria-label":We?`Close workspace sidebar`:`Open workspace sidebar`,"aria-pressed":We,children:[`Workspace`,Ue.items.length>0?` (${Ue.items.length})`:``]}),(0,F.jsx)(Qr,{addToast:T,sessionCollaboration:p?se:null}),l&&(0,F.jsxs)(`div`,{className:j.helpButtonWrapper,children:[(0,F.jsx)(`button`,{className:`${j.helpToggle}${Fe&&!Le?` ${j.helpTogglePulsing}`:``}`,onClick:()=>Pe(e=>!e),"aria-label":Ne?`Close help panel`:`Open help panel`,"aria-pressed":Ne,children:`?`}),Fe&&(0,F.jsxs)(`div`,{className:`${j.helpHint}${Le?` ${j.helpHintFading}`:``}`,onClick:Be,role:`status`,children:[(0,F.jsx)(`kbd`,{className:j.helpHintKbd,children:"Ctrl + `"}),` to toggle help`]})]})]})]}),Ke&&(0,F.jsx)(dl,{existingItem:Ke.existingItem,pendingItem:Ke.pendingItem,onReplace:async()=>{try{await Ue.confirmReplace(Ke.pendingItem,Ke.existingItem.id),Ye(null),T(`Clipboard item "${Ke.pendingItem.node.alias}" replaced`,`success`)}catch(e){T(`Replace failed: ${e instanceof Error?e.message:String(e)}`,`error`)}},onCancel:()=>{Ye(null),T(`Clip cancelled`,`info`)}}),(0,F.jsxs)(ae,{className:j.panelGroup,orientation:Tt?`vertical`:`horizontal`,children:[Et!==null&&(0,F.jsxs)(F.Fragment,{children:[(0,F.jsx)(re,{panelRef:Dt,defaultSize:Ll(Fl[Et]),minSize:`25%`,children:I===null?P===null?(0,F.jsx)(Zo,{messages:D.messages,classificationMap:oe,onCopy:D.copyMessages,onClear:Mt,consoleRef:D.consoleRef,command:D.command,onCommandChange:D.setCommand,onCommandKeyDown:D.handleKeyDown,onSend:D.sendCommand,sendDisabled:!D.connected||!D.command.trim(),inputDisabled:!D.connected,commandHistory:D.history,onGraphLinkMessage:Ct,onCopyMessage:()=>T(`Copied to clipboard`,`success`),onSendToJsonPath:wt,onUploadMockData:ge,successfulUploadPaths:he}):(0,F.jsx)(cs,{uploadPath:P,onSuccess:Nt,onClose:Pt,onError:xe,title:Ft?`▶ Mock Graph Input`:void 0,description:Ft?`Add the JSON body and keep this graph instantiated for a later run.`:void 0,inputPathHints:Ft?bt.inputBodyPaths:void 0,submitLabel:Ft?`Upload & Instantiate`:void 0},P):(0,F.jsx)(rs,{mode:I.action===`edit-node`?`edit`:`create`,formState:I.formState,phase:I.phase,lockReason:I.phase===`sending`?`sending`:I.connectionLost?`disconnected`:null,serverMessage:I.serverMessage,validationErrors:ct.validationErrors,onFormStateChange:ct.updateFormState,onSubmit:ct.submit,onClose:ct.close})}),(0,F.jsx)(ie,{className:j.resizeHandle,"aria-label":`Resize panels`})]}),(0,F.jsx)(re,{defaultSize:At,minSize:`20%`,children:(0,F.jsx)(Ro,{tabs:m,payload:S,onChange:C,validation:w,onFormat:jt,onUpload:s?D.uploadPayload:void 0,graphData:k,graphName:ot,activeTab:le,onTabChange:M,onGraphRenderError:e=>T(e,`error`),onGraphDataCopySuccess:()=>T(`Graph JSON copied to clipboard!`,`success`),onGraphDataCopyError:()=>T(`Copy failed`,`error`),graphRunControls:f?{phase:bt.phase,canInstantiate:bt.canInstantiate,canRun:bt.canRun,disabledReason:bt.disabledReason,onInstantiate:bt.instantiateGraph,onRun:bt.runGraph}:void 0,isGraphRefreshing:pe,onClipNode:c?et:void 0,onClipNodes:c?tt:void 0,onClipboardDrop:c?Ze:void 0,isConnected:D.connected,supportsAuthoring:d,onCreateNode:d?ct.openCreateNode:void 0,onCreateConnection:d?mt:void 0,onEditNode:d?gt:void 0,onDeleteNode:d?_t:void 0,onDeleteNodes:d?ct.deleteNodes:void 0,onDeleteConnections:d?ht:void 0,panelLayoutKey:`${Et??`closed`}|${We}|${Ne}`,helpPanel:l&&Ne?((e,t)=>(0,F.jsx)(ul,{activeTopic:je,contentProfile:u,onNavigate:Me,onClose:()=>Pe(!1),onToggleMaximize:e,isMaximized:t})):void 0})}),c&&We&&(0,F.jsxs)(F.Fragment,{children:[(0,F.jsx)(ie,{className:j.resizeHandle,"aria-label":`Resize clipboard`}),(0,F.jsx)(re,{defaultSize:Ll(Il),minSize:`10%`,maxSize:`40%`,children:(0,F.jsx)(ol,{connected:D.connected,onPasteToInput:Xe})})]})]})]})}function J(){let e=me[0].path;return(0,F.jsx)(ye,{children:(0,F.jsx)(Rc,{children:(0,F.jsx)(T,{children:(0,F.jsxs)(S,{children:[me.map(e=>(0,F.jsx)(C,{path:e.path,element:(0,F.jsx)(q,{config:e},e.path)},e.path)),(0,F.jsx)(C,{path:`*`,element:(0,F.jsx)(te,{to:e,replace:!0})})]})})})})}(0,ce.createRoot)(document.getElementById(`root`)).render((0,F.jsx)(A.StrictMode,{children:(0,F.jsx)(J,{})}));
-//# sourceMappingURL=index-MqSbU1H8.js.map
+//# sourceMappingURL=index-lxX8FQ68.js.map

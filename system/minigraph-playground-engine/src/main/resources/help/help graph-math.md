@@ -1,134 +1,199 @@
 Skill: Graph Math
 -----------------
-When a node is configured with this skill of "graph math", it will execute a set of simple math or boolean statements
-to return result. For example, doing mathematical calculation or boolean operation for decision-making.
-
-While your math and/or boolean statements use JavaScript syntax, this skill does not support full JavaScript language.
-Its capability is limited to simple math and boolean operations.
-
-Examples for math statement: 
-- `COMPUTE: Math.sin(Math.PI / 2) + 1`
-- `COMPUTE: value -> x ** 2 + 10 * {interest.rate}`
-
-where "interest" is a node-name and "rate" is a property of the node.
-The return value is a floating point number with double precision.
-
-Example for boolean statement: 
-- `IF: {member.age} >= 18`
-The return value is true or false to execute the THEN or ELSE path.
-
-For performance reason, you should use this skill instead of the "graph.js" skill.
-
-Execution will start when the GraphExecutor reaches the node containing this skill.
+Fast inline math and boolean evaluation for computation and decision-making.
+A node with this skill runs an ordered list of statement[] lines. This is the
+skill for inline compute and branching (graph.js is deprecated - see
+'help graph-js'). For anything richer than the narrow expression dialect
+described below, invoke a composable function instead (see 'help graph-task').
 
 Route name
 ----------
 "graph.math"
 
-Setup
------
-To enable this skill for a node, set "skill=graph.math" as a property in a node.
-One or more statements can be added.
-
-There are 7 types of statements:
-1. "IF" statement for decision-making
-2. "COMPUTE" statement to evaluate a mathematical formula
-3. "DECIMAL" statement to evaluate a mathematical formula with exact decimal arithmetic (the high-precision COMPUTE)
-4. "CONDITION" statement to evaluate a boolean expression into a declared boolean result
-5. "MAPPING" statement to do data mapping from a source to a target variable
-6. "EXECUTE" statement to execute another node with "graph.math" skill
-7. "RESET" statement to reset the state machine for one or more nodes
-
-You can configure one or more statements of these types.
-
-The system will reject execution if the node contains only "MAP" statements
-because it is more efficient to use the "graph.data.mapper" skills for mapping
-only operations.
-
-Statements are executed orderly.
-
 Properties
 ----------
 ```
 skill=graph.math
-statement[]=COMPUTE: variable -> mathematical statement
-statement[]=DECIMAL: variable -> mathematical statement   (exact decimal arithmetic - see below)
-statement[]=CONDITION: variable -> boolean expression
-statement[]=IF: if-then-else statement
-statement[]=MAPPING: source -> target
-statement[]=EXECUTE: another-node
+statement[]=COMPUTE: {var} -> {expression}
+statement[]=DECIMAL: {var} -> {expression}   (exact decimal arithmetic - see below)
+statement[]=CONDITION: {var} -> {boolean expression}
+statement[]=IF: / THEN: / ELSE:              (multi-line - see below)
+statement[]=MAPPING: {source} -> {target}
+statement[]=EXECUTE: {node-name}
+statement[]=RESET: {node-name}[, {node-name} ...]
 ```
 
-Node cannot be executed more than once
---------------------------------------
-To avoid unintended looping, the system guarantees that a node, that has been "seen", is not executed again.
+- statement[] (required) - at least one statement; statements run in order.
 
-The `reset` command clears the "seen" status and erases its result from the state machine. This is reserved
-for advanced use cases that execute a node more than once. *This optional feature must be used with care*.
-
-The following statement resets the node named "previous-node" so that the graph executor can run this node
-again when conditional traversal points to the node.
+Optional:
 
 ```
-statement[]=RESET: previous-node
-```
-
-Optional properties
--------------------
-```
-for_each[]={map an array parameter for iterative statement execution}
-statement[]=BEGIN
-statement[]=END
-statement[]=NEXT: {next-node-name}
+for_each[]={array-source} -> model.{var}     (iterate a statement block)
+statement[]=BEGIN / statement[]=END          (delimit the for_each block)
+statement[]=NEXT: {node-name}
 statement[]=DELAY: {milliseconds}
 ```
 
-Execution
----------
-Upon successful execution of a "COMPUTE" statement, the result set will be stored in the "result" namespace
-of the node. A subsequent "MAPPING" statement can map the key-values in the result set to one or more nodes.
+Statements
+----------
+- COMPUTE: {var} -> {expression} - evaluate the expression; the result is
+  stored in THIS node's result namespace, readable as
+  {this-node}.result.{var} or moved onward with a MAPPING statement.
+- DECIMAL: {var} -> {expression} - the high-precision COMPUTE: the expression
+  is evaluated with exact decimal arithmetic and the result is stored in the
+  node's result namespace as a canonical decimal string (plain notation, the
+  computed scale kept, a zero of any scale written "0"). COMPUTE still computes
+  in binary floating point, and a graph that never says DECIMAL keeps its
+  arithmetic; two rules reach it all the same: a string that is a canonical
+  number compares as a number, and round() is half up, away from zero. See
+  "DECIMAL statement" below.
+- CONDITION: {var} -> {boolean expression} - the declared boolean statement:
+  evaluated as a boolean whatever operators it carries (a bare {model.flag}
+  included) and stored as a boolean in THIS node's result namespace; an IF
+  may test it directly (IF: {this-node}.result.{var}). A COMPUTE stores a
+  boolean only when its expression happens to carry a comparison or boolean
+  operator - CONDITION says so in the statement.
+- IF - a boolean decision that can redirect traversal (see below).
+- MAPPING: {source} -> {target} - data mapping, identical to the data mapper
+  (see 'help graph-data-mapper'). Do NOT wrap source/target in curly braces.
+  A node with ONLY MAPPING statements is rejected - use graph.data.mapper.
+- EXECUTE: {node-name} - run another graph.math node's statements inline, IN
+  THE CALLING NODE'S CONTEXT: any COMPUTE results land on the INVOKING node
+  ({invoker}.result.{var}); the executed module's own namespace stays empty.
+  This is the module-reuse mechanism - author a formula once in an off-path
+  Module node reading neutral model.* operands, and any node borrows it.
+- RESET: {node-name}[, ...] - forget one or MORE nodes completely (the
+  run-once guard, the completion mark, and the node state; comma/space
+  list). A reset node stops satisfying a graph.join barrier until it
+  re-executes successfully. Resetting a never-executed node is a safe
+  no-op. Advanced - see Notes.
 
-For an "IF" statement, the system will execute a boolean operation.
-This process will override the natural graph traversal order and jump to a specific node.
-If the function returns "next" after evaluation of all statements, the natural graph traversal order
-will be preserved.
+Expressions
+-----------
+{namespace.key} substitutes a value from input.*, model.*, or a node's
+properties/result into a COMPUTE or IF expression, e.g.
+{input.body.discount}, {book.price}, {model.x}. Substitution is robust to
+hyphenated names - {unit-price} is the value of "unit-price", never parsed
+as a subtraction - so use communicative hyphenated names freely.
 
-Iterative Execution and Begin-End
----------------------------------
-Using the optional `for_each` statement, you can tell the skill module to execute the statements iteratively.
+The dialect is a NARROW JavaScript-like subset evaluated by the engine's own
+parser, not a JavaScript runtime - a closed set. It accepts exactly the
+following; an operator, function or constant not listed here is rejected by
+name ("Unknown function: hypot"), never silently. COMPUTE yields a double, so
+an integer result serializes as e.g. 8.0 (numerically exact).
 
-A "for_each" statement extracts the next array element from another array variable into a model variable.
-You can then put the model variable in the "left-hand-side" of an input statement. The module will then
-execute the statement block using an iterative stream of the model variable.
+```
+Literals   : numbers (42, 3.14, .5, 1e-5), strings ('text' or "text"), booleans (true, false)
+Variables  : {namespace.key} substitution only - e.g. {input.body.qty}, {model.total}, {book.price};
+             an unresolved selector fails by name before evaluation
+Operators  : **  exponent, right-associative; a unary operand needs parentheses: -(2 ** 2), never -2 ** 2
+             unary + - !          * / % (remainder)          + - (+ concatenates when either side is a string)
+             < <= > >= (two numbers, or two strings compared lexically)
+             == != (same type on both sides)          && || (short-circuit)          test ? a : b          ( )
+Functions  : sin, cos, tan, asin, acos, atan, sqrt, abs, floor, ceil, round, log, log10, exp   (one argument)
+             pow(x, y)          min(a, b, ...)          max(a, b, ...)          random()
+             every function is also available as Math.name, e.g. Math.pow(2, 3)
+Constants  : PI, E (also Math.PI, Math.E)
+Not in the dialect: bitwise and shift operators (& | ^ ~ <<), assignment (=), user-defined variables
+             and functions, arrays, objects, string methods - use a graph.task function instead
+```
 
-You can also use the `BEGIN` and `END` control statements to select a section of the statements for the
-iterative execution based on the "for_each" criteria.
+Precedence, tightest first: ** > unary > * / % > + - > relational > equality > && > || > ?:
 
-Syntax for COMPUTE statement
-----------------------------
-It will be a regular JavaScript statement with parameter substitution using the bracket syntax where
-the enclosed parameter is a reference to a data attributes in the namespace of "input.", "model." or node name.
+Numbers and booleans - each rule is enforced by a named failure, never a
+silent value:
+- A boolean is not a number. A boolean where arithmetic, a < or > comparison
+  or a function argument needs a number fails naming the selector, e.g.
+  "Boolean operand: model.flag (true) in '{model.flag} + 1' - a boolean is
+  not a number; store a boolean with CONDITION or assert the type with
+  f:validate". A JSON true in a numeric slot never computes as 1. Equality
+  (==, !=) type-checks its two sides; a string that is a canonical number
+  counts as a number, so '200' == 200, 200 == '200' and '200' == '200' are the
+  same comparison and '9.5' < '10.25' compares 9.5 with 10.25.
+- A misspelled or unsupported function fails by name ("Unknown function: mn").
+- Arithmetic is IEEE double precision. An overflow to infinity, a division by
+  zero and a NaN each fail naming the operator ("Arithmetic overflow in '*'
+  (result Infinity)", "Division by zero or arithmetic overflow in '/'");
+  integers beyond 2^53 lose precision; round() is half up, away from zero
+  (round(-2.5) is -3), the same as f:round. Money that needs exact decimal
+  arithmetic or a stated rounding mode belongs in a DECIMAL statement, the
+  high-precision COMPUTE; COMPUTE stays floating point.
 
-When you have more than one JavaScript statement, a subsequent statement can use the result of a prior statement
-as its parameters.
+DECIMAL statement
+-----------------
+```
+statement[]=DECIMAL: fee -> {input.body.amount} * {input.body.rate}
+statement[]=DECIMAL: rounded -> round({price.result.fee}, 2, HALF_UP)
+```
 
-Each parameter is wrapped by a set of curly brackets.
+Numbers or strings - a conscious decision: a decimal may arrive as a string
+("0.0375") or as a JSON number (0.0375), and both give the same answer. A JSON
+number is a double, and DECIMAL converts it through the shortest decimal text
+it prints as, at its minimal scale (5.0E-4 becomes 0.0005, 100.0 becomes 100).
+That is exact over the text received, but a double that was already computed in
+floating point is only as exact as that computation: COMPUTE: 1.005 * 100 is
+100.49999999999999, and rounding that in a DECIMAL statement gives 100 where
+the exact 100.5 gives 101; and a JSON number longer than a double holds was
+rounded by the parser. So send money as strings and keep a COMPUTE result out
+of a DECIMAL statement; to insist on strings, assert the type:
+f:validate(input.body.rate, text(rate; String; required)). Whole numbers are
+exact either way. The result is a string on purpose: graph.suspend saves the
+state machine and graph.resume restores it, and a string is the same after as
+before.
 
-Override Graph Traversal
-------------------------
-Normally the next node is the one or more nodes that this node is connected to.
-If you want to tell system to jump to a specific "next-node", you can use the "NEXT:" syntax and put the name
-of the node to jump to.
+Arithmetic: + - * are exact; / never truncates (the exact quotient when it
+terminates, otherwise 34 significant digits, half-even); % is the remainder;
+** and pow(x, n) take a whole exponent from -999 to 999; abs, floor, ceil, min
+and max are exact. Rounding is always explicit: round(x, scale, mode) with mode
+HALF_UP, HALF_EVEN, HALF_DOWN, UP, DOWN, CEILING or FLOOR. What cannot be exact
+is refused by name: sqrt, log, log10, exp, trigonometry, random(), PI and E -
+keep that step in a COMPUTE or a graph.task function. A DECIMAL statement
+computes a number; a comparison may appear only inside a ternary test. A COMPUTE
+on a decimal string computes in binary floating point, so use DECIMAL for money.
 
-Deferred completion
--------------------
-You can add an artificial delay to defer completion of the execution of this node. This is useful to simulate
-a slow service for performance test and to pause between retries.
+A zero of any scale is stored as "0" (round(0.004, 2, HALF_UP), 1.50 - 1.50 and
+0.00 all give "0"), and "0" + "1.50" is "1.50": the next scaled addend restores
+the scale. The remainder (%) follows the sign of the dividend (-7 % 3 is "-1").
+The decimal plugins (f:decimalAdd, f:decimalRound ...) work in a MAPPING
+statement.
 
-Next and Delay statements
--------------------------
-It is a good practice to place the next or delay statement, if any, as last one in the statement block.
-However, the placement does not change the behavior because they will only be processed at the end.
+IF / THEN / ELSE
+----------------
+IF is the decision construct. It is a multi-line statement - enter it as one
+statement[] value wrapped in triple single quotes. THEN: and ELSE: are both
+REQUIRED, or the engine aborts the run.
+
+```
+statement[]='''
+IF: {input.body.a} >= {input.body.b}
+THEN: ge-path
+ELSE: lt-path
+'''
+```
+
+- THEN: / ELSE: each name the node to jump to, or the keyword "next".
+- A taken node-jump ENDS the statement list immediately - later statements
+  do not run. A branch resolving to "next" FALLS THROUGH: processing
+  continues with the following statements, and natural traversal is
+  preserved if nothing else redirects it. Order the list accordingly (e.g.
+  an early-exit check first, retry logic after).
+
+Traversal control
+-----------------
+- NEXT: {node-name} - unconditionally jump to a node BY NAME (a node name,
+  not a connection label). Unlike a taken IF jump, NEXT: does not stop
+  processing: the remaining statements still run, and the jump applies after
+  the whole list completes (the last NEXT: wins).
+- DELAY: {milliseconds} - pause after this node completes, before the walk
+  continues to the next node. Paces retries; simulates a slow service.
+- RESET enables retry loops. A node may reset ITSELF - the run-once mark is
+  set before execution, so a self-reset survives and the node can run again.
+  Placement rule: put RESET FIRST among the action statements - it then runs
+  on every path (a later taken IF jump would skip it) and everything the node
+  stores afterwards (such as DELAY's pending pause) survives the self-wipe.
+  The one exception: keep RESET after any statement that reads state it would
+  wipe - an IF on a just-wiped variable (e.g. {fetcher.status} after
+  RESET: fetcher) aborts the run, so a defensive status check goes before it.
 
 Dynamic variables in statement commands
 ---------------------------------------
@@ -151,176 +216,121 @@ fails before evaluation and names it ("Unknown identifier: model.backoff (unreso
 model.threshold or model.factor") - so the node that failed to set it can be found. See tutorial 12
 for the full generic retry handler.
 
-Limitation
-----------
-This skill is designed to execute simple inline mathematics or boolean operations that use JavaScript syntax.
-For simplicity and speed of execution, the dialect is a closed set: the operators, built-in functions and
-constants listed under "Operators and functions" below, and nothing else. There is no assignment, no
-user-defined variable or function and no bitwise operator; {variable} substitution is the only variable.
-An unlisted function fails by name ("Unknown function: hypot"), never silently.
+Iterating lists (for_each)
+--------------------------
+for_each[] turns part of the statement list into a loop. Each entry has the
+mapping form {source} -> model.{var}; the right-hand side MUST be a model.*
+key.
 
-Operators and functions
------------------------
-The expression dialect accepts exactly the following - an operator, function or constant not listed
-here is rejected by name:
+- A LIST-valued source becomes an iteration array: model.{var} is rebound to
+  element i on each pass. Multiple list entries advance in LOCKSTEP (parallel
+  arrays) and must all have the same length. At least one entry must resolve
+  to a list, or the node aborts.
+- A SCALAR source binds its model.{var} once, before the loop - even when
+  the lists are empty.
+- An UNRESOLVABLE source REMOVES the model.{var} key.
+
+BEGIN and END split the statements into three blocks:
 
 ```
-Literals   : numbers (42, 3.14, .5, 1e-5), strings ('text' or "text"), booleans (true, false)
-Variables  : {namespace.key} substitution only - e.g. {input.body.qty}, {model.total}, {book.price};
-             an unresolved selector fails by name before evaluation
-Operators  : **  exponent, right-associative; a unary operand needs parentheses: -(2 ** 2), never -2 ** 2
-             unary + - !          * / % (remainder)          + - (+ concatenates when either side is a string)
-             < <= > >= (two numbers, or two strings compared lexically)
-             == != (same type on both sides)          && || (short-circuit)          test ? a : b          ( )
-Functions  : sin, cos, tan, asin, acos, atan, sqrt, abs, floor, ceil, round, log, log10, exp   (one argument)
-             pow(x, y)          min(a, b, ...)          max(a, b, ...)          random()
-             every function is also available as Math.name, e.g. Math.pow(2, 3)
-Constants  : PI, E (also Math.PI, Math.E)
-Not in the dialect: bitwise and shift operators (& | ^ ~ <<), assignment (=), user-defined variables
-             and functions, arrays, objects, string methods - use a graph.task function instead
+statement[]=...       <- pre-block: runs ONCE, before the loop
+statement[]=BEGIN
+statement[]=...       <- each-block: runs once PER ELEMENT
+statement[]=END
+statement[]=...       <- post-block: runs ONCE, after the loop
 ```
 
-Precedence, tightest first: ** > unary > * / % > + - > relational > equality > && > || > ?:
+- Without BEGIN, the WHOLE statement list is the loop body - seed
+  accumulators in a pre-block, or the seeding re-runs on every iteration.
+- Iteration is strictly SEQUENTIAL, in list order, inside one node execution
+  (a long list does not trip the loop guard). Contrast: the API fetcher's
+  for_each fans HTTP calls out concurrently - see 'help graph-api-fetcher'.
+- A taken IF jump BREAKS the loop: it ends the current iteration, skips the
+  remaining elements and the post-block, and redirects traversal. An
+  "ELSE: next" falls through within the iteration.
+- Empty lists are fine: the each-block runs zero times; pre/post still run.
+- COMPUTE yields doubles; the f:add family uses numeric promotion - inputs
+  that are all whole numbers keep exact long arithmetic (including integer
+  division), while any decimal argument promotes the whole computation to a
+  double. So f:add composes directly with COMPUTE results; accumulate with
+  either f:add or a pure-COMPUTE read-back, as below. Tame floating-point
+  precision artifacts with f:round(value, int(2)) - half-up rounding on the
+  number's decimal representation (1.005 rounds to 1.01 at 2 places).
+
+```
+create node totaler
+with type Loop
+with properties
+skill=graph.math
+for_each[]=input.body.prices -> model.price
+for_each[]=input.body.quantities -> model.qty
+statement[]=MAPPING: int(0) -> model.total
+statement[]=BEGIN
+statement[]=COMPUTE: total -> {model.total} + {model.price} * {model.qty}
+statement[]=MAPPING: totaler.result.total -> model.total
+statement[]=END
+statement[]=MAPPING: model.total -> output.body.total
+```
+
+With prices=[10,20,30] and quantities=[7,8,9] the run yields total: 500.0 -
+the pre-block seeds the accumulator once, each pass computes
+total + price*qty and writes it back, and the post-block maps the final
+value out. The plugin form is equivalent:
+COMPUTE: line -> {model.price} * {model.qty} followed by
+MAPPING: f:add(model.total, totaler.result.line) -> model.total.
 
 Example
 -------
 ```
-create node demo-math-runner
+create node price-check
+with type Decision
 with properties
 skill=graph.math
 statement[]=COMPUTE: amount -> (1 - {input.body.discount}) * {book.price}
-```
-
-The syntax `{variable_name}` is used to resolve the value from the variable into the COMPUTE statement.
-
-Syntax for DECIMAL statement
-----------------------------
-DECIMAL: variable -> mathematical statement
-
-DECIMAL is the high-precision COMPUTE: the expression is evaluated with exact decimal arithmetic and the
-result is stored in the node's "result" namespace as a canonical decimal string (plain notation, the
-computed scale kept, a zero of any scale written "0"). COMPUTE still computes in binary floating point,
-and a graph that never says DECIMAL keeps its arithmetic; two rules reach it all the same: a string that is a
-canonical number compares as a number, and round() is half up, away from zero.
-
-```
-statement[]=DECIMAL: fee -> {input.body.amount} * {input.body.rate}
-statement[]=DECIMAL: rounded -> round({price.result.fee}, 2, HALF_UP)
-```
-
-Numbers or strings - a conscious decision: a decimal may arrive as a string ("0.0375") or as a JSON number
-(0.0375), and both give the same answer. A JSON number is a double, and DECIMAL converts it through the
-shortest decimal text it prints as, at its minimal scale (5.0E-4 becomes 0.0005, 100.0 becomes 100). That is
-exact over the text received, but a double that was already computed in floating point is only as exact as
-that computation: COMPUTE: 1.005 * 100 is 100.49999999999999, and rounding that in a DECIMAL statement gives
-100 where the exact 100.5 gives 101; and a JSON number longer than a double holds was rounded by the parser.
-So send money as strings and keep a COMPUTE result out of a DECIMAL statement; to insist on strings, assert
-the type: f:validate(input.body.rate, text(rate; String; required)). Whole numbers are exact either way.
-The result is a string on purpose: graph.suspend saves the state machine and graph.resume restores it, and a
-string is the same after as before.
-
-Arithmetic: + - * are exact; / never truncates (the exact quotient when it terminates, otherwise 34
-significant digits, half-even); % is the remainder; ** and pow(x, n) take a whole exponent from -999 to 999;
-abs, floor, ceil, min and max are exact. Rounding is always explicit: round(x, scale, mode) with mode
-HALF_UP, HALF_EVEN, HALF_DOWN, UP, DOWN, CEILING or FLOOR. What cannot be exact is refused by name: sqrt,
-log, log10, exp, trigonometry, random(), PI and E - keep that step in a COMPUTE or a graph.task function.
-A DECIMAL statement computes a number; a comparison may appear only inside a ternary test. A COMPUTE on
-a decimal string computes in binary floating point, so use DECIMAL for money.
-
-A zero of any scale is stored as "0" (round(0.004, 2, HALF_UP), 1.50 - 1.50 and 0.00 all give "0"), and
-"0" + "1.50" is "1.50": the next scaled addend restores the scale. The remainder (%) follows the sign of the
-dividend (-7 % 3 is "-1"). The decimal plugins (f:decimalAdd, f:decimalRound ...) work in a MAPPING statement.
-
-Syntax for CONDITION statement
-------------------------------
-CONDITION: variable -> boolean expression
-
-The expression is evaluated as a boolean whatever operators it carries - a comparison, a boolean
-operation, or a bare boolean variable - and the result is stored as a boolean in the node's
-"result" namespace. It is the declared form of a decision value; a COMPUTE stores a boolean only
-when its expression happens to carry a comparison or boolean operator.
-
-```
-statement[]=CONDITION: eligible -> {member.age} >= 18 && {member.active}
-statement[]=CONDITION: same -> {model.flag}
-statement[]=MAPPING: check.result.eligible -> output.body.eligible
-```
-
-An IF statement may test the stored boolean directly: `IF: {check.result.eligible}`.
-
-Numbers and booleans
---------------------
-A boolean is not a number. A boolean where arithmetic, a < or > comparison or a function argument
-needs a number fails naming the selector, e.g. "Boolean operand: model.flag (true) in
-'{model.flag} + 1' - a boolean is not a number; store a boolean with CONDITION or assert the type
-with f:validate". So a JSON true in a numeric slot never computes as 1. Equality (==, !=)
-type-checks its two sides; a string that is a canonical number counts as a number, so '200' == 200,
-200 == '200' and '200' == '200' are the same comparison and '9.5' < '10.25' compares 9.5 with 10.25.
-
-A misspelled or unsupported function fails by name ("Unknown function: mn").
-
-Arithmetic is IEEE double precision. An overflow to infinity, a division by zero and a NaN each
-fail naming the operator ("Arithmetic overflow in '*' (result Infinity)", "Division by zero or
-arithmetic overflow in '/'"); integers beyond 2^53 lose precision; round() follows Java's
-Math.round (half up toward positive infinity). Money that needs exact decimal arithmetic or a stated
-rounding mode belongs in a DECIMAL statement, the high-precision COMPUTE; COMPUTE stays floating point.
-
-Syntax for IF statement
------------------------
-Each IF statement is a multiline command:
-```
-IF: Boolean-operation-statement
-THEN: node-name | next
-ELSE: node-name | next
-```
-
-The "next" keyword tells the system to execute the next statement.
-
-The if-then-else is used to select two options after evaluation of the boolean operation statement.
-
-Example
--------
-```
 statement[]='''
 IF: (1 - {input.body.discount}) * {book.price} > 5000
 THEN: high-price
 ELSE: low-price
+'''
 ```
 
-The syntax `{variable_name}` is used to resolve the value from the variable into the IF statement.
+Reusable module - author the formula once, borrow it anywhere:
 
-Syntax for MAPPING statement
-----------------------------
-MAPPING: source.composite.key -> target.composite.key
-
-The source composite key can use the following namespaces:
-1. "input." namespace to map key-values from the input header or body of an incoming request
-2. Node name (aka 'alias') to map key-values of a node's properties
-3. "model." namespace for holding intermediate key-values for simple data transformation
-
-The target composite key can use the following namespaces:
-1. "output." namespace to map key-values to the result set to be returned as response to the calling party
-2. Node name (aka 'alias') to map key-values of a node's properties
-3. "model." namespace for holding intermediate key-values for simple data transformation
-
-Example
--------
 ```
-statment[]=MAPPING: input.body.hr_id -> employee.id
-statement[]=MAPPING: input.body.join_date -> employee.join_date
+create node addition
+with type Module
+with properties
+skill=graph.math
+statement[]=COMPUTE: sum -> {model.a} + {model.b}
 ```
 
-Note that the MAPPING statement operates exactly in the same way as a data-mapper so there is
-no need to use curly braces to wrap around variables.
-
-Syntax for EXECUTE statement
-----------------------------
-EXECUTE: another-node
-
-Example
--------
 ```
-statment[]=EXECUTE: math-3
+create node calculate
+with type Compute
+with properties
+skill=graph.math
+statement[]=MAPPING: input.body.a -> model.a
+statement[]=MAPPING: input.body.b -> model.b
+statement[]=EXECUTE: addition
+statement[]=MAPPING: calculate.result.sum -> output.body.sum
 ```
 
-The "[]" syntax is used to create and append a list of one or more statements
+Note "calculate.result.sum", not "addition.result.sum" - the caller borrows
+the logic, so the result belongs to the caller. Keep the module off the
+execution path and hang it under the island knowledge layer
+(island -[module]-> addition) - see 'help graph-island'.
+
+Notes
+-----
+- A node executes ONCE per run (the run-once guard); a RESET statement is
+  the only escape, for advanced re-execution. Use it with care.
+- Loop guard: a node executed too frequently (default: more than 10 times
+  per second) aborts the traversal - bound every retry loop and pace it
+  with DELAY:.
+- for_each[]={array-source} -> model.{var} iterates a statement block over a
+  runtime array; BEGIN / END delimit the block to iterate (they are for_each
+  delimiters, not IF braces) - see "Iterating lists" above. Without
+  for_each[], BEGIN/END lines are accepted and ignored.
+- The bounded-retry pattern (RESET the failing node and itself first, count
+  attempts with f:defaultValue + f:add, exit at the bound via a taken IF
+  jump, NEXT: back, DELAY: to pace) is shown under 'help graph-api-fetcher'.

@@ -1,60 +1,53 @@
-Skill: Graph JS
----------------
-When a node is configured with this skill of "graph js", it will execute a set of simple JavaScript statements
-to return result. For example, doing mathematical calculation or boolean operation for decision-making.
+Skill: Graph JS (deprecated)
+----------------------------
+The graph.js skill evaluates inline JavaScript statements for computation and
+decision-making. It is DEPRECATED: do not author new graph.js nodes. Use
+graph.math for inline computation and IF/THEN/ELSE decisions - its expression
+dialect covers the same ground without a script engine (see 'help graph-math') -
+and graph.task to invoke a composable function for any logic an inline
+expression cannot express (see 'help graph-task').
 
-Execution will start when the GraphExecutor reaches the node containing this skill.
+Status by engine
+----------------
+- Java engine: still registered so that existing graph models keep running;
+  the module is scheduled for removal once field installations have migrated.
+  Runtime JavaScript is an injection surface, and an equality comparison with a
+  quoted string literal was measured silently evaluating to false - the reasons
+  are recorded in the skills reference (graph.js section).
+- Rust engine: never registered. A node with skill=graph.js fails at execution
+  time with:
 
-Route name
-----------
-"graph.js"
+```
+Skill graph.js is retired for security reasons - use graph.math or graph.task instead
+```
 
-Setup
------
-To enable this skill for a node, set "skill=graph.js" as a property in a node.
-One or more statements can be added.
+Migrating a graph model
+-----------------------
+When importing an older graph model that contains graph.js nodes, replace
+skill=graph.js with graph.math (compute/branch) or graph.task (custom logic)
+before running it. The statement grammar has the same shape - COMPUTE, IF,
+MAPPING, EXECUTE, RESET, NEXT, DELAY and for_each with BEGIN/END - so most
+nodes migrate by changing the skill and rewriting each expression in the
+graph.math dialect (a closed set of operators and functions, listed under
+'help graph-math').
 
-There are 5 types of statements:
-1. "IF" statement for decision-making
-2. "COMPUTE" statement to evaluate a mathematical formula
-3. "MAPPING" statement to do data mapping from a source to a target variable
-4. "EXECUTE" statement to execute another node with "graph.js" skill
-5. "RESET" statement to reset one or more nodes from the state machine
+Reference for existing graph.js nodes (Java engine only)
+--------------------------------------------------------
+Route name: "graph.js"
 
-You can configure one or more statements of these 3 types.
+Properties:
 
-The system will reject execution if the node contains only "MAP" statements
-because it is more efficient to use the "graph.data.mapper" skills for mapping
-only operations.
-
-Statements are executed orderly.
-
-Properties
-----------
 ```
 skill=graph.js
-statement[]=COMPUTE: variable -> mathematical statement
+statement[]=COMPUTE: variable -> JavaScript statement
 statement[]=IF: if-then-else statement
 statement[]=MAPPING: source -> target
 statement[]=EXECUTE: another-node
+statement[]=RESET: node-name
 ```
 
-Node cannot be executed more than once
---------------------------------------
-To avoid unintended looping, the system guarantees that a node, that has been "seen", is not executed again.
+Optional properties:
 
-The `reset` command clears the "seen" status and erases its result from the state machine. This is reserved
-for advanced use cases that require executing a node more than once. You should use this feature with care.
-
-The following statement resets the node named "previous-node" so that the graph executor can run this node
-again when conditional traversal points to the node.
-
-```
-statement[]=RESET: previous-node
-```
-
-Optional properties
--------------------
 ```
 for_each[]={map an array parameter for iterative statement execution}
 statement[]=BEGIN
@@ -63,62 +56,28 @@ statement[]=NEXT: {next-node-name}
 statement[]=DELAY: {milliseconds}
 ```
 
-Execution
----------
-Upon successful execution of a "COMPUTE" statement, the result set will be stored in the "result" namespace
-of the node. A subsequent "MAPPING" statement can map the key-values in the result set to one or more nodes.
+- Statements execute in order. A node with only MAPPING statements is rejected -
+  use graph.data.mapper for mapping-only work.
+- A COMPUTE result is stored in the node's "result" namespace; a later MAPPING
+  statement can map it onward.
+- An IF statement evaluates a boolean operation and may override the natural
+  traversal order by jumping to a named node; when every statement resolves to
+  "next", natural traversal is preserved.
+- A node executes once per run (the run-once guard). RESET: clears a node's
+  "seen" status and its result so conditional traversal can run it again;
+  use it with care.
+- for_each[] with BEGIN/END iterates a statement block over a runtime array,
+  NEXT: jumps to a named node and DELAY: pauses before the next node - the same
+  rules as graph.math. Every statement command resolves {dynamic variables}, so
+  NEXT:/THEN:/ELSE: targets, RESET: entries and DELAY: values may each be a
+  {namespace.key} reference (e.g. NEXT: {error.source} in a generic error
+  handler).
+- The skill is designed for a simple inline JavaScript statement using the
+  standard JavaScript library; complex functions and variables are not
+  supported.
 
-For an "IF" statement, the system will execute a boolean operation.
-This process will override the natural graph traversal order and jump to a specific node.
-If the function returns "next" after evaluation of all statements, the natural graph traversal order
-will be preserved.
+COMPUTE statement:
 
-Iterative Execution and Begin-End
----------------------------------
-Using the optional `for_each` statement, you can tell the skill module to execute the statements iteratively.
-
-A "for_each" statement extracts the next array element from another array variable into a model variable.
-You can then put the model variable in the "left-hand-side" of an input statement. The module will then
-execute the statement block using an iterative stream of the model variable.
-
-You can also use the `BEGIN` and `END` control statements to select a section of the statements for the
-iterative execution based on the "for_each" criteria.
-
-Syntax for COMPUTE statement
-----------------------------
-It will be a regular JavaScript statement with parameter substitution using the bracket syntax where
-the enclosed parameter is a reference to a data attributes in the namespace of "input.", "model." or node name.
-
-When you have more than one JavaScript statement, a subsequent statement can use the result of a prior statement
-as its parameters.
-
-Each parameter is wrapped by a set of curly brackets.
-
-Override Graph Traversal
-------------------------
-Normally the next node is the one or more nodes that this node is connected to.
-If you want to tell system to jump to a specific "next-node", you can use the "NEXT:" syntax and put the name
-of the node to jump to. Every statement command resolves {dynamic variables} - the same rule as
-graph.math statements - so NEXT:/THEN:/ELSE: targets, RESET: entries and DELAY: values may each
-be a {namespace.key} reference (e.g. NEXT: {error.source} in a generic error handler).
-
-Deferred completion
--------------------
-You can add an artificial delay to defer completion of the execution of this node. This is useful to simulate
-a slow service for performance test and to pause between retries.
-
-Next and Delay statements
--------------------------
-It is a good practice to place the next or delay statement, if any, as last one in the block.
-However, the placement does not change the behavior because they will only be processed at the end.
-
-Limitation
-----------
-This skill is designed to execute a simple inline JavaScript statement that uses standard JavaScript library.
-Complex functions and variables are not recommended.
-
-Example
--------
 ```
 create node demo-js-runner
 with properties
@@ -126,68 +85,38 @@ skill=graph.js
 statement[]=COMPUTE: amount -> (1 - {input.body.discount}) * {book.price}
 ```
 
-The syntax `{variable_name}` is used to resolve the value from the variable into the COMPUTE statement.
+The syntax {variable_name} resolves a value from the "input." or "model."
+namespace or from a node's properties into the statement. A later statement
+can use the result of a prior statement as its parameter.
 
-Syntax for IF statement
------------------------
-Each IF statement is a multiline command:
-```
-IF: JavaScript-statement
-THEN: node-name | next
-ELSE: node-name | next
-```
+IF statement - a multi-line command:
 
-The "next" keyword tells the system to execute the next statement.
-
-The if-then-else is used to select two options after evaluation of the JavaScript statement.
-If the JavaScript statement does not return a boolean value, the following resolution would apply:
-1. numeric value - true is positive value and false is negative value
-2. text value - "true", "yes", "T", "Y" are positive and all other values are false
-3. other value will be converted to a text string first
-
-Example
--------
 ```
 statement[]='''
 IF: (1 - {input.body.discount}) * {book.price} > 5000
 THEN: high-price
 ELSE: low-price
+'''
 ```
 
-The syntax `{variable_name}` is used to resolve the value from the variable into the IF statement.
+THEN: and ELSE: each name the node to jump to, or the keyword "next". When the
+JavaScript statement does not return a boolean, the result is coerced: a
+positive number is true and a negative number false; the text values "true",
+"yes", "T" and "Y" are true and any other text is false; any other value is
+converted to text first. (graph.math never coerces - a boolean is never a
+number there.)
 
-Syntax for MAPPING statement
-----------------------------
-MAPPING: source.composite.key -> target.composite.key
+MAPPING statement - identical to the data mapper, so no curly braces:
 
-The source composite key can use the following namespaces:
-1. "input." namespace to map key-values from the input header or body of an incoming request
-2. Node name (aka 'alias') to map key-values of a node's properties
-3. "model." namespace for holding intermediate key-values for simple data transformation
-
-The target composite key can use the following namespaces:
-1. "output." namespace to map key-values to the result set to be returned as response to the calling party
-2. Node name (aka 'alias') to map key-values of a node's properties
-3. "model." namespace for holding intermediate key-values for simple data transformation
-
-Example
--------
 ```
-statment[]=MAPPING: input.body.hr_id -> employee.id
+statement[]=MAPPING: input.body.hr_id -> employee.id
 statement[]=MAPPING: input.body.join_date -> employee.join_date
 ```
 
-Note that the MAPPING statement operates exactly in the same way as a data-mapper so there is
-no need to use curly braces to wrap around variables.
+EXECUTE statement - runs another graph.js node's statements:
 
-Syntax for EXECUTE statement
-----------------------------
-EXECUTE: another-node
-
-Example
--------
 ```
-statment[]=EXECUTE: js-3
+statement[]=EXECUTE: js-3
 ```
 
-The "[]" syntax is used to create and append a list of one or more statements
+The "[]" suffix appends one statement per line to the node's statement list.

@@ -22,39 +22,55 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    model, Opus 5.5, thinks before it answers and its thinking tokens count against `max_tokens`, so a tight budget can end
    with no text.
 
+2. **The MiniGraph Playground webapp is single-sourced for both engines, and its help pages are consolidated.** The Rust repo's
+   verbatim copy of the webapp is retired: `npm run release:rust` in `system/minigraph-playground-engine/webapp` (or
+   `release:all`, both engines from one build) deploys the bundle and the help pages into the `mercury` repo checked out beside
+   this one (`MERCURY_RUST_REPO` overrides the location). The help pages are one set now, merged from both repos' versions: the
+   Rust rewrite's structure (Syntax, Example, Notes), the Java-only content kept, engine-neutral wording, and the two engine
+   differences stated in place (`graph.js` is deprecated here and not registered in the Rust engine; the resources folder per
+   engine). Two stale Java statements went with it: `help graph-math` said `round()` follows `Math.round` while its own `DECIMAL`
+   section said half up away from zero (the engine rounds half up away from zero since 4.12.20), and `help run` said an instance
+   runs once (`run` repeats on one instance, model values persist across runs, `instantiate` is the reset). Tutorial 12's title
+   read "Tutorial 10". The bundle is regenerated with the merged help.
+
 ### Documentation
 
-2. **The LLM helper certification report** (`docs/test-reports/llm-helper-certification.md`): Java and Rust, each in front of the
+3. **The LLM helper certification report** (`docs/test-reports/llm-helper-certification.md`): Java and Rust, each in front of the
    Python and the Node.js helper, driven through a streaming service, an Event Script flow and two graphs with real Claude
    calls. It shows that every token batch the helper forwards reaches the engine edge as its own frame, that the cadence of
    progressive rendering is the API's and differs by model (Haiku streams continuously, Opus in bursts about every 600 ms),
    and that the error contract holds on the real SDKs.
-3. The AI agent guide's boilerplate manifest no longer calls `flows/flow-11.yml` a support-triage flow: it is Tutorial 11's echo
+4. The AI agent guide's boilerplate manifest no longer calls `flows/flow-11.yml` a support-triage flow: it is Tutorial 11's echo
    flow, the `graph.extension` target (`flow://flow-11`), and a flow's `flows.yaml` entry goes with its file.
+
+5. **The Playground webapp's technical documentation is regenerated from the code** in
+   `system/minigraph-playground-engine/webapp/docs/`: architecture, the backend protocol, components, hooks and state,
+   build/test/deploy and extension recipes, replacing the pre-graduation specs. The webapp's scoped memory bank is retired; its
+   session memory and open threads live at the repository root.
 
 ### Fixed
 
-4. **The MiniGraph Playground example deploys tutorial 13.** The example's manifest (`graphs.yaml`) listed tutorials 1 to 12 and 14.
+6. **The MiniGraph Playground example deploys tutorial 13.** The example's manifest (`graphs.yaml`) listed tutorials 1 to 12 and 14.
    Tutorial 13 was left out while it needed a test fixture function, and stayed out after it became an `async.http.request` client
    of the app's own dev mock endpoint (Java PR #267). All fourteen tutorials and `support-triage` now compile (15 graphs) and answer
    at `POST /api/graph/{graph_id}`; `GraphTests` runs tutorial 13 and its unknown-profile error. The README's "model answers for
    tutorials 1 to 11" now says 1 to 14.
-5. **The MiniGraph Playground's help describes `CONDITION` and `DECIMAL`.** The help pages are compiled into the committed webapp
+7. **The MiniGraph Playground's help describes `CONDITION` and `DECIMAL`.** The help pages are compiled into the committed webapp
    bundle, which was last regenerated on 2026-09-23, so `help graph-math` still listed five statement types and said nothing of
    `CONDITION` (#462), the closed expression dialect (#467), `DECIMAL` (#471) or the money guidance (#480). The bundle is regenerated
    with `npm run release` in the webapp: the help now lists seven statement types, shows `DECIMAL` and `CONDITION` in its property
    list and gives the syntax of both. Nothing else in the bundle changed: a rebuild of the unchanged sources reproduces every other
    asset, source maps included, byte for byte.
-6. **The MiniGraph Playground opens with the console at one third of the width.** The graph view and help take the other two
+8. **The MiniGraph Playground opens with the console at one third of the width.** The graph view and help take the other two
    thirds; the console opened at 40%. The split is no longer restored from an earlier session: a drag saved in the browser won at
    the next page load, so an old drag looked like a wrong default, while toggling the console reset it. A drag still holds while
    you work, until the console is toggled or a form takes its place. The node editor and the mock-input panel keep their 30%.
-7. **`describe skill` for a built-in skill opens the skill's page in the Playground's help panel.** The engine answers
+9. **`describe skill` for a built-in skill opens the skill's page in the Playground's help panel.** The engine answers
    `describe skill graph.math` with the `graph-math` help page, and the console cannot render its markdown. The Playground now shows
    that page in the help panel, as it does for `help graph-math`, and the console keeps only the command. `describe graph`,
    `describe node` and `describe connection` still answer in the console, and so does a skill without a bundled page. The engine
    and the companion API are unchanged: `describe skill` still returns the page as text.
-8. **A subscribed MiniGraph Playground session can instantiate and run the graph.** Subscribed sessions are equal partners, and the
+10. **A subscribed MiniGraph Playground session can instantiate and run the graph.** Subscribed sessions are equal partners, and the
    engine already runs a subscriber's command through the primary in every member's session, but the Playground disabled
    **Instantiate** and **Run** in a subscribed session ("Run the graph from the host session"), so a subscriber could not start a
    graph instance or upload its mock input. Both buttons now work in every session. Mock input stays per session: each member's

@@ -2,6 +2,8 @@
 
 A lightweight, browser-based developer tool for interacting with Mercury Composable backend services over WebSocket. Each **playground** is a dedicated page for a specific backend endpoint — you write commands, send payloads, and observe live responses in real time.
 
+This folder is the single source of the Playground UI for both engines: the Java engine in this repository and the Rust engine in the sibling `mercury` repository serve the bundle built here. Technical documentation for developers and AI agents lives in [docs/](docs/README.md).
+
 ---
 
 ## Table of Contents
@@ -25,19 +27,23 @@ A lightweight, browser-based developer tool for interacting with Mercury Composa
 ### Development server
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser. The dev server proxies WebSocket connections to `ws://localhost:3000`.
+Open [http://localhost:3000](http://localhost:3000) in your browser. The Vite dev server proxies `/ws` (WebSocket), `/api`, `/info`, `/health` and `/env` to an engine on port 8085, so start a MiniGraph playground example first (Java: `examples/minigraph-playground`; Rust: `cargo run -p minigraph-playground` in the `mercury` repo).
 
-### Production release (deploy to backend)
+### Production release (deploy to an engine)
 
 ```bash
-npm run release
+npm run release        # the Java engine (this repository) - the default
+npm run release:rust   # the Rust engine (the sibling mercury repository)
+npm run release:all    # both engines from one build
 ```
 
-This builds the app and reloads the output into the backend in two parts: the hashed assets into `src/main/resources/public/assets/` (static content) and the entry page into `src/main/resources/template/playground.html`, which the engine's `get.index.html` function serves only when `app.env=dev`. Outside dev mode the home page is the plain service page, so a production deployment never shows the Playground UI. `src/main/resources/public/index.html` is that plain page and is left alone.
+`release` cleans the target, builds the app (typecheck + `vite build`) and deploys the output in two parts: the hashed assets into `src/main/resources/public/assets/` (static content) and the entry page into `src/main/resources/template/playground.html`, which the engine's `get.index.html` function serves only when `app.env=dev`. Outside dev mode the home page is the plain service page, so a production deployment never shows the Playground UI. `src/main/resources/public/index.html` is that plain page and is left alone.
+
+`release:rust` deploys the same bundle into `crates/knowledge-graph/resources/` of the `mercury` repo checked out beside this one (set `MERCURY_RUST_REPO` to point elsewhere) and mirrors the help pages there too: the help markdown is compiled into the bundle at build time and read by the engines at run time, so both copies come from `src/main/resources/help/` in this repository. The committed bundle and help pages in both repos are build artifacts of this folder — edit sources and help here, then release to both. Details: [docs/build-test-deploy.md](docs/build-test-deploy.md).
 
 Once the backend JAR is running:
 
@@ -303,9 +309,13 @@ To add new **Quick load** samples, add entries to the `SAMPLE_DATA` object in th
 
 | Library | Version | Role |
 |---|---|---|
-| React | 19 | UI framework |
+| React | 19 | UI framework (with the React Compiler, `babel-plugin-react-compiler`) |
 | TypeScript | 5.9 | Type safety |
-| Vite | 6 | Dev server + build |
-| react-router-dom | 7 | Client-side routing |
+| Vite | 8 | Dev server + build (Rolldown) |
+| react-router | 8 | Client-side routing |
+| @xyflow/react | 12 | Graph canvas (React Flow) |
 | react-resizable-panels | 4.6 | Draggable split-panel layout |
 | react-json-view-lite | 2.5 | Collapsible JSON tree in console |
+| react-markdown + remark-gfm | 10 / 4 | Markdown rendering in the Help panel |
+| idb | 8 | IndexedDB wrapper for the workspace clipboard |
+| Vitest + happy-dom + Testing Library | 4.1 / 20 / 16 | Unit and component tests |
