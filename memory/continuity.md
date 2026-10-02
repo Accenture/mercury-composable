@@ -765,7 +765,8 @@
   else catches drift: the bundle was last regenerated on 2026-09-23 (#456) while four `help graph-math.md` edits (#462 `CONDITION`, #467 the closed dialect, #471 `DECIMAL`, #480 the money loop) landed after it,
   and the Playground listed five statement types until #491. **The build is reproducible** (Node 22.12 with one harmless `react-router` engines warning): a rebuild of the unchanged sources reproduced every other
   committed file byte for byte, so a regenerated diff reads as the help text plus the `sourceMappingURL` comment (110 lines added, 8 removed in #491). The same PR added `DECIMAL` and `CONDITION` to the page's
-  property list (the Rust help lists them) and corrected `webapp/memory/instructions.md`, the scoped home of this rule. The regenerated bundle ships in the engine jar of the next release. NOT built: a CI step that
+  property list (the Rust help lists them) and corrected `webapp/memory/instructions.md`, the scoped home of this rule. **Any webapp source edit needs the release, a comment included:** the map embeds every source file, so it changes while the
+  chunk and its hash stay put if only comments changed (#492: two comments in `helpContent.ts`, one map line). The regenerated bundle ships in the engine jar of the next release. NOT built: a CI step that
   rebuilds the bundle and compares it with the committed one, feasible because the build is reproducible; Eric has not asked for it. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout: only the entry
   page moved out of `public/`).
   <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-01 | uses: 1 | tier: working | origin: 2026-10-02-015208 -->
