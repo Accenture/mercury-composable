@@ -1,32 +1,30 @@
 List nodes, connections, graphs or flows
 ----------------------------------------
-The "list nodes" and "list connections" commands list all the nodes and connections of the current graph model
-respectively. The "list graphs" and "list flows" commands are read-only DISCOVERY commands: they enumerate the
-deployable graph models (each with its root node's "purpose" - living documentation) and the Event Script flows -
-the valid extension={graph-id} and extension=flow://{flow-id} delegation targets.
+Show all nodes or all connections of the current graph model - or discover
+the deployable graph models and Event Script flows of this server.
 
 Syntax
 ------
-List all nodes
---------------
 ```
 list nodes
-```
-
-List all connections
---------------------
-```
 list connections
-```
-
-List deployable graph models (discovery)
-----------------------------------------
-```
 list graphs
-```
-
-List Event Script flows (discovery)
------------------------------------
-```
 list flows
 ```
+
+Notes
+-----
+- 'list graphs' (discovery, read-only) enumerates the deployable graph
+  models - the valid extension={graph-id} delegation targets - each with
+  its root node's "purpose" property, so the listing reads as living
+  documentation of the enterprise knowledge on this server. Follow up
+  with 'describe graph {graph-id}' for a model's input/output contract.
+- 'list flows' (discovery, read-only) enumerates the Event Script flows -
+  the valid extension=flow://{flow-id} delegation targets.
+- 'list nodes' prints each node with its type: the root node first, the end
+  node last, and the other nodes in alphabetical order. A missing root or
+  end node is flagged with "(does not exist)".
+- 'list connections' prints one line per connection with its relation
+  label(s).
+- Use 'describe node {name}' for the full detail of a single node (see
+  'help describe').
