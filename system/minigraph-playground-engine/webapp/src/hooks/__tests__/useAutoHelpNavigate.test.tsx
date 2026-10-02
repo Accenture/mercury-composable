@@ -8,7 +8,7 @@ import { useAutoHelpNavigate } from '../useAutoHelpNavigate';
 vi.mock('../../data/helpContent', () => ({
   getHelpContent: (topic: string, profile = 'minigraph') => {
     if (profile === 'json-path') return topic === '' ? '# JSON-Path Overview' : null;
-    return topic === '' || topic === 'create' ? '# MiniGraph Help' : null;
+    return topic === '' || topic === 'create' || topic === 'graph-math' ? '# MiniGraph Help' : null;
   },
 }));
 
@@ -55,6 +55,28 @@ describe('useAutoHelpNavigate', () => {
     }));
 
     act(() => emitHelp(bus, 'help create'));
+
+    expect(setHelpTopic).not.toHaveBeenCalled();
+    expect(openHelp).not.toHaveBeenCalled();
+  });
+
+  it("opens a built-in skill's page for describe skill", () => {
+    renderHook(() => useAutoHelpNavigate({ bus, setHelpTopic, onTabSwitch: openHelp }));
+
+    act(() => emitHelp(bus, 'describe skill graph.math'));
+
+    expect(setHelpTopic).toHaveBeenCalledWith('graph-math');
+    expect(openHelp).toHaveBeenCalledOnce();
+  });
+
+  it('leaves describe node and connection answers, and unbundled skills, in the console', () => {
+    renderHook(() => useAutoHelpNavigate({ bus, setHelpTopic, onTabSwitch: openHelp }));
+
+    act(() => {
+      emitHelp(bus, 'describe node fetcher');
+      emitHelp(bus, 'describe connection fetcher and decision');
+      emitHelp(bus, 'describe skill my.custom.skill');
+    });
 
     expect(setHelpTopic).not.toHaveBeenCalled();
     expect(openHelp).not.toHaveBeenCalled();

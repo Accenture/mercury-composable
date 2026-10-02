@@ -47,11 +47,21 @@ const testDoubles = vi.hoisted(() => {
 
 vi.mock('react-router', () => ({ useNavigate: () => testDoubles.noop }));
 
+// The panel doubles expose their size props as data attributes, so the split
+// tests can read the latest render from the DOM.
 vi.mock('react-resizable-panels', () => ({
-  Group: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  Panel: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  Group: ({ children, defaultLayout }: { children: ReactNode; defaultLayout?: unknown }) => (
+    <div
+      data-testid="panel-group"
+      data-default-layout={defaultLayout === undefined ? undefined : JSON.stringify(defaultLayout)}
+    >
+      {children}
+    </div>
+  ),
+  Panel: ({ children, defaultSize }: { children: ReactNode; defaultSize?: string }) => (
+    <div data-testid="resizable-panel" data-default-size={defaultSize}>{children}</div>
+  ),
   Separator: () => <div />,
-  useDefaultLayout: () => ({ defaultLayout: undefined, onLayoutChanged: testDoubles.noop }),
 }));
 
 // The production module uses Vite raw-file globs outside the webapp root.
@@ -232,5 +242,59 @@ describe('Playground JSON-Path Help wiring', () => {
       phase: 'idle',
       canRun: false,
     });
+  });
+});
+
+describe('Playground panel split', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  afterEach(cleanup);
+
+  /** Default widths of the rendered panels, left to right, as percentages. */
+  function panelPercents(): number[] {
+    return screen.getAllByTestId('resizable-panel')
+      .map(panel => parseFloat(panel.getAttribute('data-default-size') ?? 'NaN'));
+  }
+
+  it('opens the console at one third and the graph and help at two thirds', () => {
+    render(<Playground config={minigraphConfig} />);
+
+    const percents = panelPercents();
+    expect(percents).toHaveLength(2);
+    expect(percents[0]).toBeCloseTo(100 / 3, 3);
+    expect(percents[1]).toBeCloseTo(200 / 3, 3);
+  });
+
+  it('ignores a split saved by an earlier version, so a dragged split never replaces the default', () => {
+    localStorage.setItem('react-resizable-panels:/-panel-split-v2', JSON.stringify({ _r_1_: 71, _r_3_: 29 }));
+
+    render(<Playground config={minigraphConfig} />);
+
+    expect(screen.getByTestId('panel-group').hasAttribute('data-default-layout')).toBe(false);
+    const percents = panelPercents();
+    expect(percents[0]).toBeCloseTo(100 / 3, 3);
+    expect(percents[1]).toBeCloseTo(200 / 3, 3);
+  });
+
+  it('keeps the defaults adding up to the full width when the workspace sidebar is open', () => {
+    localStorage.setItem('clipboard-sidebar-open', 'true');
+
+    render(<Playground config={minigraphConfig} />);
+
+    const percents = panelPercents();
+    expect(percents).toHaveLength(3);
+    expect(percents[0]).toBeCloseTo(100 / 3, 3);
+    expect(percents[2]).toBe(20);
+    expect(percents.reduce((sum, percent) => sum + percent, 0)).toBeCloseTo(100, 6);
+  });
+
+  it('gives the right panel the whole width while the console is hidden', () => {
+    localStorage.setItem('console-panel-open', 'false');
+
+    render(<Playground config={minigraphConfig} />);
+
+    expect(panelPercents()).toEqual([100]);
   });
 });

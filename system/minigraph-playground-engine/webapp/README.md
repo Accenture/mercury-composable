@@ -71,7 +71,7 @@ visit [http://127.0.0.1:8085](http://127.0.0.1:8085).
 └────────────────────────────┴────────────────────────────────────┘
 ```
 
-The two panels are **resizable** — drag the divider between them. On viewports narrower than 768 px the panels stack vertically.
+The two panels are **resizable** — drag the divider between them. The console opens at one third of the width and the right panel at two thirds, on every page load; a drag holds until the console is toggled or a form takes its place. On viewports narrower than 768 px the panels stack vertically.
 
 ---
 
@@ -231,9 +231,9 @@ All data is stored in **`localStorage`** per playground — nothing is sent to t
 |---|---|---|
 | Payload textarea | `minigraph-last-payload` | — |
 | Command history | `minigraph-command-history` | 50 entries |
-| Panel split ratio | `<path>-panel-split` | — |
 
 Each playground has its own independent storage keys, so switching between playgrounds never overwrites the other's data.
+The panel split is not stored: every page load opens at the default widths.
 
 ---
 
@@ -253,6 +253,10 @@ Each playground has its own independent storage keys, so switching between playg
 5. Type `response` to retrieve the full loaded object.
 6. Use dot-bracket notation for simple retrieval: `response.hello` returns `"world"` given `{ "hello": "world" }`.
 7. Use JSONPath for richer queries: `$.response.hello` — see e.g. [SmartBear JSONPath docs](https://support.smartbear.com/alertsite/docs/monitors/api/endpoint/jsonpath.html).
+
+While connected, `help {topic}` and `describe skill {route}` for a built-in skill (for example
+`describe skill graph.math`) open that page in the Help panel, which renders its markdown;
+`describe graph`, `describe node` and `describe connection` answer in the console.
 
 After loading a graph, use the toolbar's separate **Instantiate** and **Run** actions. Run remains
 disabled until the backend confirms the instance; graphs that reference `input.body` prompt for JSON
