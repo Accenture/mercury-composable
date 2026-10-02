@@ -5,7 +5,7 @@
 - **scope:** MiniGraph Playground React/Vite webapp
 - **root:** `system/minigraph-playground-engine/webapp`
 - **served bundle:** `system/minigraph-playground-engine/src/main/resources/public`
-- **last_session:** 2026-10-02 | agent: Claude Code (2026-10-02-041143)
+- **last_session:** 2026-10-02 | agent: Claude Code (2026-10-02-044233)
 - **last_review:** 2026-10-02 | through 2026-10-02-041143.md (CADENCE — the layer's first review, 10 sessions: 13 footers
   refreshed, 2 superseded facts archived into the new `memory/archive/`, 1 drift thread raised)
 
@@ -241,20 +241,21 @@
 
 ## Open Threads
 
-- [ ] Review MiniGraph webapp architecture after the UI PR stack and graph suspend/resume engine work.
-  Priority questions: stable WebSocket transport vs reactive slot state; command causality (`session`,
-  `describe graph`, upload, collaboration commands); single owner for protocol classification/backlog
-  dedupe; graph/session reset ordering; suspend/resume refresh semantics; and release/deploy validation
-  for checked-in bundles. Initial report: `memory/architecture-review-2026-07-29.md`.
+- [x] **Review the MiniGraph webapp architecture: CLOSED 2026-10-02 at Eric's direction, with no second review.** The
+  2026-07-29 report (`memory/architecture-review-2026-07-29.md`) stands. Later work removed the stale graph-link path its
+  generation guard aimed at (`webapp-live-session-graph-source`) and typed the run workflow's events
+  (`webapp-graph-toolbar-run-controls`). Deliberately dropped: the transport split, a command intent layer (the text protocol
+  still has no correlation id), one owner for the backlog dedupe, suspend/resume refresh semantics, and deploy validation for
+  the checked-in bundle. Lesson: a review thread with no exit criterion outlives the work it asks about. origin: 2026-07-29-160756.
   <!-- id: thread-webapp-architecture-review | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-160756 -->
 
-- [ ] Manually inspect the Session menu across route navigation and reset before landing
-  `feature/ui-merges`.
+- [x] **Manually inspect the Session menu before landing `feature/ui-merges`: CLOSED 2026-10-02 at Eric's direction.** The
+  stack landed as PR #262 (`feature/ui-merges-v4`, merge `d1c3f1ff`, 2026-08-07) and no session recorded the check, so it is
+  dropped rather than carried. Lesson: a thread gated on "before landing X" must close or be restated when X lands; this one
+  outlived its gate by eight weeks. origin: 2026-07-29-160756.
   <!-- id: thread-webapp-session-menu-manual-check | created: 2026-07-29 | last_used: 2026-07-29 | uses: 1 | tier: working | origin: 2026-07-29-160756 -->
 
-- [ ] **Drift (raised by the 2026-10-02 review):** `thread-webapp-session-menu-manual-check` asks for a manual
-  Session-menu check "before landing `feature/ui-merges`", but the stack landed as PR #262
-  (`feature/ui-merges-v4`, merge `d1c3f1ff`), and no session records the check. Eric decides: close it (done
-  but unrecorded, or dropped), or restate it as a check against the current Playground. The review closes
-  nothing itself.
+- [x] **Drift: the Session-menu check outlived its gate. RESOLVED 2026-10-02.** Raised by the webapp layer's first review;
+  Eric closed `thread-webapp-session-menu-manual-check` (above). Lesson: an unchecked thread never decays, so the review's
+  thread-body scan is what catches a gate that has passed. origin: 2026-10-02-041143.
   <!-- id: webapp-session-menu-check-drift | created: 2026-10-02 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-041143 -->
