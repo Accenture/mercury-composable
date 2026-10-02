@@ -64,4 +64,4 @@
   example needs its own copy of the flow files (`help tutorial 11`, the AI agent guide's manifest) — CLOSED the same day in PR #489
   (`playground-example-flows-are-sample-config`; the manifest label fixed, `flow-11-doc-label` closed). Still pending from the W2
   measurement: the re-measure with a fresh question set (not run at this review).
-  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-09-28 | uses: 6 | tier: working | origin: 2026-09-01-032130 -->
+  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-10-02 | uses: 7 | tier: working | origin: 2026-09-01-032130 -->

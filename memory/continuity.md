@@ -60,12 +60,13 @@
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
 - **last_review:** 2026-10-02 | through 2026-10-02-185029.md (CADENCE + SIZE, on Eric's command — 12 sessions since the 2026-09-28 review and 39
-  decay-eligible facts > 35; `refresh-metadata` refreshed 30 footers: tier changes 22 (10 working → active, 3 archive-candidate → active,
-  5 active → archive-candidate, 4 working → archive-candidate), two hand-seeded `uses` counts corrected down to the ledger; archived 7 faded
-  Key Decisions (the Redis/cache round of 2026-09-14 to 09-21 and the two Kafka defaults) and swept 4 completed threads to `2026-Q4.md`;
+  decay-eligible facts > 35; `refresh-metadata` refreshed 35 footers (30 before the review log, 5 after it — the review's own log is a session,
+  so refresh again after writing it): tier changes 25 (10 working → active, 3 archive-candidate → active, 8 active → archive-candidate,
+  4 working → archive-candidate), two hand-seeded `uses` counts corrected down to the ledger; archived 8 faded Key Decisions (the Redis/cache
+  round of 2026-09-14 to 09-21, the two Kafka defaults, the guarded async completion) and swept 4 completed threads to `2026-Q4.md`;
   reactivated 0, superseded 0, archive-verify pass; invariants not due (21 of 40 since 2026-09-25-022841); no stalled thread; contradiction
   scan: one stale statement corrected (`instructions.md` — the Node.js repo is a language pack in lock-step, not an out-of-sync port to avoid);
-  Doc Gaps sweep: 1 gap in the window, closed (#489). Facts 62 → 51 (memory-lint live count, continuity + threads); lines 867 → 713. Smoke test not run.)
+  Doc Gaps sweep: 1 gap in the window, closed (#489). Facts 62 → 50 (memory-lint live count, continuity + threads); lines 867 → 683. Smoke test not run.)
   Prior: 2026-09-28 | through 2026-09-28-230310.md (CADENCE — refreshed 6 footers, tier changes 3, archived 0, swept 0; two stale statements
   corrected; facts 46; smoke test 12/12, read set gained `vision.md`) · 2026-09-25 | through 2026-09-25-014100.md (ON COMMAND after the
   v4.12.17 cycle — archived 0, swept 0; the invariant re-verify thread raised and completed 2026-09-25-022841, `instant-serialization` demoted
@@ -209,34 +210,6 @@
   DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
   ignores `EMBEDDED_REDIS_EXECUTABLE`.
   <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-30 | uses: 12 | tier: archive-candidate | origin: 2026-09-18-174943 -->
-
-- **MiniGraph async skill callbacks are guarded — a failure surfaces as the node's error, never a
-  silent hang (2026-09-15; found building the distributed-cache example, PR #392).** A
-  `graph.task`/`graph.extension`/`graph.api.fetcher` OUTPUT-mapping LHS may only be a constant or a
-  `result.`/`model.`/`<node>.` element (`setOutputMappingEntry`, renamed from `setFetcherOutputEntry`
-  in PR #394; its sibling `performFetcherOutputMapping`→`performOutputMapping`) — `input.*` is INPUT-side only; to
-  echo an input value, stage it at a mapper/decision node (`MAPPING: input.body.id -> model.id` —
-  graph.math MAPPING uses the unrestricted `getLhsOrConstant`) and map `model.id` out. Before the
-  fix, that IllegalArgumentException threw inside `Mono.create(sink -> pending.thenAccept(...))`,
-  was swallowed by the unobserved CompletableFuture stage, the sink never completed, and the caller
-  timed out with ZERO diagnostics (graph traversed, Redis PUT logged 200 — it looked like a
-  transport bug). Both async skills now complete through `GraphLambdaFunction.guardedCompletion`
-  (failed future unwrapped + throwing handler → sink.error), so the failure renders exactly like a
-  synchronous skill throw, trace context intact (WorkerHandler's Mono error path). Regression:
-  `unit-test-task-8` + `GraphLambdaFunctionGuardTest`; PR #393 (`1df13078`, merged squash `6b5b5cf1`).
-  Follow-up PR #394 (merged squash `3f3ef3fe`, Eric's review of the surfaced error) reworded the two mapping errors — drop the
-  stale "API fetcher"/"data dictionary" labels, name the node, quote the offending `lhs -> rhs`, add
-  the clue `'input.*' is valid only on the input side` — and renamed the helpers (above). Verified
-  end-to-end in a live Playground: the distributed-cache-example run in dev mode (`app.env=dev` +
-  `com.accenture.minigraph` scan + a trimmed companion/UI `rest.yaml`) hosted by the
-  [[playground-session-broker]], driven via `/api/companion/{id}/sync` — a broken `cache-get` output
-  mapping aborted the dry-run with the reworded error in the UI console (screenshot proof, 2026-09-15).
-  Parked: CompileGraph static LHS check (dynamic `{…}` limits it to static cases);
-  Rust-twin parity check of the same callback pattern. Relates [[trace-thread-keyed-mono-gotcha]]
-  (the same async-callback minefield). **Extended 2026-09-23 (#454, Eric — "every abort should come with a reason"):** a
-  dry-run's terminal is `Graph traversal aborted: <reason>` on both engines (node named; the companion and the web app
-  match the PREFIX — a bare terminal is gone); arithmetic plugins' null argument now carries a message. Java `bf3250d7`.
-  <!-- id: minigraph-guarded-async-completion | created: 2026-09-15 | last_used: 2026-09-25 | uses: 10 | tier: archive-candidate | origin: 2026-09-15-040141 -->
 
 - **A Layer 3 application is one graph endpoint plus dev mode, and its home page is dev-mode wiring too (2026-09-15, Eric's
   polish round on the starter template + the cache example; P10 ruling 2026-09-22, SHIPPED in v4.12.15).** Three shape
@@ -387,7 +360,7 @@
   serving from the jar. Docs: `ai-agent-guide.md#deploy-without-rebuild`, the config reference, the walkthrough; claim
   `graph-manifest-list-later-wins` on both engines; the Rust override is a `-D` program argument
   (`cargo run -p minigraph-playground -- -D…`). Extends ADR-0011 without changing its rule. Relates [[eric-code-changes-via-pr]].
-  <!-- id: graph-manifest-list-later-wins | created: 2026-09-25 | last_used: 2026-10-02 | uses: 6 | tier: active | origin: 2026-09-25-223633 -->
+  <!-- id: graph-manifest-list-later-wins | created: 2026-09-25 | last_used: 2026-10-02 | uses: 6 | tier: archive-candidate | origin: 2026-09-25-223633 -->
 
 - **Exact decimal arithmetic is a `DECIMAL:` statement in `graph.math` — the high-precision `COMPUTE:`, strings at rest, no graph-level
   mode (Eric's rulings, 2026-09-30; RFC-0001 promoted to ADR-0025 in PR #473; implemented in PR #471, squash `3b4cad82`; SHIPPED in
@@ -443,7 +416,7 @@
   in `docs/test-reports/`). Extends [[otel-optional-service-and-negative-control]]; applies
   [[trace-thread-keyed-mono-gotcha]] (capture the span on the worker thread — the relay outlives it); tested by
   `EventOverHttpStreamTest.edgeRelaySpansAreConnected` and the Rust `event_over_http_stream::edge_relay_spans_are_connected`.
-  <!-- id: connected-edge-spans | created: 2026-09-22 | last_used: 2026-10-02 | uses: 4 | tier: active | origin: 2026-09-22-200813 -->
+  <!-- id: connected-edge-spans | created: 2026-09-22 | last_used: 2026-10-02 | uses: 4 | tier: archive-candidate | origin: 2026-09-22-200813 -->
 
 - **`graph.js` is deprecated and its module will be removed once field installations finish migrating (Eric, 2026-09-30; the
   docs have carried the DEPRECATED notice since 2026-09).** New capability targets `graph.math`, with `graph.task` for what the
@@ -464,7 +437,7 @@
   (Eric): it thinks before it answers and its thinking tokens count against `max_tokens`, so the triage graph now asks for 2000 tokens (512 before) and Haiku 4.5 is the documented choice for smooth
   rendering; a 48-call probe found no empty result at the old budgets either, so the change removes the question. AWS Bedrock through IAM is the helper's planned second backend (a thread in the
   packs). Rust twin: mercury #342.
-  <!-- id: llm-helper-certification-java | created: 2026-10-01 | last_used: 2026-10-02 | uses: 1 | tier: active | origin: 2026-10-02-001806 -->
+  <!-- id: llm-helper-certification-java | created: 2026-10-01 | last_used: 2026-10-02 | uses: 1 | tier: archive-candidate | origin: 2026-10-02-001806 -->
 
 - **The playground example's flows config is sample configuration that duplicates the engine's, kept on purpose, and tutorial 13 is deployed there (Eric, 2026-10-01; PR #489, squash `333f78ce`).**
   The engine module ships `flows.yaml`, `flows/graph-executor.yml` and `flows/flow-11.yml`; `examples/minigraph-playground` carries byte-identical copies in `src/main/resources` (and one more identical trio
@@ -545,7 +518,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-10-02 | uses: 23 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-10-02 | uses: 24 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->

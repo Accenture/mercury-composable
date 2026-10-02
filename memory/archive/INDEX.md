@@ -216,3 +216,4 @@
 - reverify-invariants-20260925 — Re-verify invariants — WALKED 2026-09-25 (Eric): 18 core facts + the Vision (the 2026-09-1… — faded — 2026-Q4.md
 - v4-12-15-release-prep — v4.12.15 release preparation — CLOSED 2026-09-23: released on all four runtimes. The surve… — faded — 2026-Q4.md
 - v4-12-16-release-prep — v4.12.16 release prep — SHIPPED 2026-09-24 (Java #457 `df605533` → tag `dc0ee6fa`; Rust #3… — faded — 2026-Q4.md
+- minigraph-guarded-async-completion — MiniGraph async skill callbacks are guarded — a failure surfaces as the node's error, neve… — faded — 2026-Q4.md
