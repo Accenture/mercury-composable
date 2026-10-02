@@ -253,7 +253,8 @@
   on every graph refetch, and a test pins that step. **Mock input is per session:** `upload mock data`
   replays too, so every member gets its own invitation (`POST /api/mock/{its session}`) and its own
   panel, and an upload loads only that member's instance; a replayed `run` aborts on a member that did
-  not upload (tutorial 3: `Profile {id} not found`). Verified live with the session broker holding the
+  not upload (tutorial 3: `Profile {id} not found`); Eric ruled that uploads stay per member, not shared
+  (2026-10-02). Verified live with the session broker holding the
   primary. Replaces the host-session gating in [[webapp-graph-toolbar-run-controls]].
   <!-- id: webapp-run-controls-equal-partners | created: 2026-10-02 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-050449 -->
 
