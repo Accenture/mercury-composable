@@ -135,52 +135,74 @@ public class GraphCommandService extends GraphLambdaFunction {
         return null;
     }
 
-    private void handleRequest(PostOffice po, Map<String, Object> input)
-            throws IOException {
-        var type = input.get(TYPE);
-        var in = input.get(IN);
-        var out = input.get(OUT);
-        var message = input.get(MESSAGE);
+    private void handleRequest(PostOffice po, Map<String, Object> input) throws IOException {
+        if (!(input.get(IN) instanceof String inRoute)) {
+            return;
+        }
         var forwarded = input.get(FORWARDED) instanceof Boolean flag && flag;
         // "direct" marks a synchronous companion RPC (finding #62): not a flaky
         // WS client, so the identical-command dedup guard does not apply
         var direct = input.get(DIRECT) instanceof Boolean d && d;
-        if (OPEN.equals(type) && in instanceof String inRoute) {
-            sessions.put(inRoute, new GraphSession(inRoute));
-            graphModels.put(inRoute, new MiniGraph());
-        } else if (CLOSE.equals(type) && in instanceof String inRoute) {
-            var session = sessions.get(inRoute);
-            resetSession(po, session, GraphSession.getOutRoute(session.getSessionId()));
-            sessions.remove(inRoute);
-            graphModels.remove(inRoute);
-            graphInstances.remove(inRoute);
-            var filename = getTempGraphName(inRoute);
-            var file = new File(tempDir, filename + JSON_EXT);
-            if (file.exists()) {
-                // delete draft graph model
-                Files.delete(file.toPath());
+        switch (String.valueOf(input.get(TYPE))) {
+            case OPEN -> openSession(inRoute);
+            case CLOSE -> closeSession(po, inRoute);
+            case COMMAND -> handleCommandRequest(po, inRoute, input, forwarded, direct);
+            case UPLOAD -> handleUploadRequest(po, inRoute, input, forwarded);
+            case IMPORT -> handleImportRequest(po, inRoute, input, forwarded);
+            default -> {
+                // an unknown request type is ignored
             }
-        } else if (COMMAND.equals(type) && in instanceof String inRoute && out instanceof String outRoute &&
-                message instanceof String text) {
+        }
+    }
+
+    private void openSession(String inRoute) {
+        sessions.put(inRoute, new GraphSession(inRoute));
+        graphModels.put(inRoute, new MiniGraph());
+    }
+
+    private void closeSession(PostOffice po, String inRoute) throws IOException {
+        var session = sessions.get(inRoute);
+        if (session != null) {
+            resetSession(po, session, GraphSession.getOutRoute(session.getSessionId()));
+        }
+        sessions.remove(inRoute);
+        graphModels.remove(inRoute);
+        graphInstances.remove(inRoute);
+        var file = new File(tempDir, getTempGraphName(inRoute) + JSON_EXT);
+        if (file.exists()) {
+            // delete draft graph model
+            Files.delete(file.toPath());
+        }
+    }
+
+    private void handleCommandRequest(PostOffice po, String inRoute, Map<String, Object> input,
+                                      boolean forwarded, boolean direct) throws IOException {
+        if (input.get(OUT) instanceof String outRoute && input.get(MESSAGE) instanceof String text) {
             var command = text.trim();
             if (!command.isEmpty()) {
                 handleCommand(po, command, inRoute, outRoute, forwarded, direct);
             }
-        } else if (UPLOAD.equals(type) && in instanceof String inRoute && out instanceof String outRoute &&
-                input.get(CONTENT) != null) {
+        }
+    }
+
+    private void handleUploadRequest(PostOffice po, String inRoute, Map<String, Object> input, boolean forwarded) {
+        if (input.get(OUT) instanceof String outRoute && input.get(CONTENT) != null) {
             handleUpload(po, inRoute, outRoute, input.get(CONTENT), forwarded);
-        } else if (IMPORT.equals(type) && in instanceof String inRoute && out instanceof String outRoute &&
-                input.get(CONTENT) instanceof Map<?, ?> content) {
+        }
+    }
+
+    private void handleImportRequest(PostOffice po, String inRoute, Map<String, Object> input, boolean forwarded) {
+        if (input.get(OUT) instanceof String outRoute && input.get(CONTENT) instanceof Map<?, ?> content) {
             handleImport(po, inRoute, outRoute, content, forwarded);
         }
     }
 
     /**
-     * Mock data for a dry-run travels like a command: when the uploader is the primary session, its
-     * instance loads the payload and the upload is replayed into every subscriber's instance; a
+     * A mock-data upload for a dry-run travels like a command: when the uploader is the primary session,
+     * its instance loads the payload and the upload is replayed into every subscriber's instance; a
      * subscriber forwards the payload to the primary, which does the same (the subscriber receives it
      * back on the replay). Every member of a collaborative session then runs the graph with the same
-     * input.body, and every member's console confirms the load.
+     * {@code input.body}, and every member's console confirms the load.
      */
     private void handleUpload(PostOffice po, String inRoute, String outRoute, Object content, boolean forwarded) {
         if (forwarded) {
@@ -532,11 +554,11 @@ public class GraphCommandService extends GraphLambdaFunction {
                 words.get(1).equalsIgnoreCase(GRAPH) &&
                 words.get(2).equalsIgnoreCase("as")) {
             handleExportCommand(po, inRoute, outRoute, words.get(3));
-        } else if (words.size() == 4 && words.getFirst().equalsIgnoreCase("import") &&
+        } else if (words.size() == 4 && words.getFirst().equalsIgnoreCase(IMPORT) &&
                 words.get(1).equalsIgnoreCase(GRAPH) &&
                 words.get(2).equalsIgnoreCase("from")) {
             handleImportGraphCommand(po, inRoute, outRoute, words.get(3));
-        } else if (words.size() == 5 && words.getFirst().equalsIgnoreCase("import") &&
+        } else if (words.size() == 5 && words.getFirst().equalsIgnoreCase(IMPORT) &&
                 words.get(1).equalsIgnoreCase(NODE) &&
                 words.get(3).equalsIgnoreCase("from")) {
             handleImportNodeCommand(po, inRoute, outRoute, words.get(2), words.get(4));
@@ -806,7 +828,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         var sb = new StringBuilder();
         if (NODES.equalsIgnoreCase(type)) {
             listNodes(graph, sb);
-        } else if ("connections".equalsIgnoreCase(type)) {
+        } else if (CONNECTIONS.equalsIgnoreCase(type)) {
             listConnections(graph, sb);
         } else if ("graphs".equalsIgnoreCase(type)) {
             listGraphs(sb);
@@ -856,7 +878,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             return;
         }
         var nodes = model.get(NODES) instanceof List<?> n? n.size() : 0;
-        var connections = model.get("connections") instanceof List<?> c? c.size() : 0;
+        var connections = model.get(CONNECTIONS) instanceof List<?> c? c.size() : 0;
         var sb = new StringBuilder();
         sb.append("Deployed graph model '").append(graphId).append("'\n");
         var purpose = graphPurpose(graphId);
